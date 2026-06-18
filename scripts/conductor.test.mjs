@@ -36,6 +36,38 @@ export function parseBrief(cwd) {
   return out.trim() ? JSON.parse(out).hookSpecificOutput.additionalContext : "";
 }
 
+test("epic without lane reads as openspec (back-compat) and shows a Lane column", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  writeState(cwd, {
+    version: 1, active: null, detourStack: [],
+    epics: [{ id: "legacy", title: "Legacy epic", priority: "P1", status: "queued", role: "epic", links: [], reconcileNeeded: false }],
+  });
+  run(["render"], { cwd });
+  const md = projectMd(cwd);
+  assert.match(md, /\| Lane \|/);            // Lane column header exists
+  assert.match(md, /`legacy`/);
+  assert.match(md, /\| openspec \|/);        // legacy epic defaulted to openspec
+});
+
+test("epics sort by priority then lane rank deterministically", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  writeState(cwd, {
+    version: 1, active: null, detourStack: [],
+    epics: [
+      { id: "b-sp", title: "b", priority: "P1", status: "queued", role: "epic", lane: "superpowers", links: [] },
+      { id: "a-os", title: "a", priority: "P1", status: "queued", role: "epic", lane: "openspec", links: [] },
+      { id: "c-cc", title: "c", priority: "P0", status: "queued", role: "epic", lane: "claude-code", links: [] },
+    ],
+  });
+  run(["render"], { cwd });
+  const md = projectMd(cwd);
+  // P0 claude-code first, then P1 openspec before P1 superpowers
+  const order = ["c-cc", "a-os", "b-sp"].map(id => md.indexOf(`\`${id}\``));
+  assert.ok(order[0] < order[1] && order[1] < order[2], `bad order: ${order}`);
+});
+
 test("init scaffolds state.json, PROJECT.md, and CLAUDE.md rules block", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });

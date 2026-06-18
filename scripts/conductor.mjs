@@ -45,6 +45,10 @@ const PROJECT_MD = path.join(ROOT, "PROJECT.md");
 const CLAUDE_MD = path.join(ROOT, "CLAUDE.md");
 const CHANGES_DIR = path.join(ROOT, "openspec", "changes");
 const ARCHIVE_DIR = path.join(CHANGES_DIR, "archive");
+const PLANS_DIR = path.join(ROOT, "docs", "superpowers", "plans");
+const KNOWN_LANES = ["openspec", "superpowers", "claude-code", "decision", "external"];
+const LANE_RANK = { openspec: 0, superpowers: 1, "claude-code": 2, decision: 3, external: 4 };
+const laneRank = (l) => (l in LANE_RANK ? LANE_RANK[l] : 9);
 
 const RULES_BEGIN = "<!-- BEGIN pm-conductor rules (managed by /pm:init — safe to delete this block) -->";
 const RULES_END = "<!-- END pm-conductor rules -->";
@@ -126,16 +130,21 @@ function resolveEpics(state) {
       id, title: id, priority: "P?", status: "untriaged", role: "epic",
       links: [], reconcileNeeded: false,
     };
-    out.push({ ...meta, progress: storyProgress(id), present: true });
+    const lane = meta.lane || "openspec";
+    out.push({ ...meta, lane, progress: storyProgress(id), present: true });
   }
   for (const e of state.epics) {
     if (!onDisk.has(e.id)) {
-      out.push({ ...e, progress: storyProgress(e.id),
+      const lane = e.lane || "openspec";
+      out.push({ ...e, lane, progress: storyProgress(e.id),
         status: isArchived(e.id) ? "archived" : e.status, present: false });
     }
   }
   const rank = { P0: 0, P1: 1, P2: 2, P3: 3, "P?": 9 };
-  out.sort((a, b) => (rank[a.priority] ?? 9) - (rank[b.priority] ?? 9));
+  out.sort((a, b) =>
+    ((rank[a.priority] ?? 9) - (rank[b.priority] ?? 9)) ||
+    (laneRank(a.lane) - laneRank(b.lane)) ||
+    a.id.localeCompare(b.id));
   return out;
 }
 
@@ -304,11 +313,11 @@ function render() {
 
   md.push("## Epics");
   md.push("");
-  md.push("| Priority | Epic (OpenSpec change) | Role | Status | Stories | Links |");
-  md.push("|----------|------------------------|------|--------|---------|-------|");
+  md.push("| Priority | Epic | Lane | Role | Status | Progress | Links |");
+  md.push("|----------|------|------|------|--------|----------|-------|");
   for (const e of epics) {
     const links = (e.links || []).map(l => `${l.type}→${l.epic}`).join("; ") || "-";
-    md.push(`| ${e.priority} | \`${e.id}\` | ${e.role} | ${e.status}${e.reconcileNeeded ? " ⚠" : ""} | ${bar(e.progress)} | ${links} |`);
+    md.push(`| ${e.priority} | \`${e.id}\` | ${e.lane} | ${e.role} | ${e.status}${e.reconcileNeeded ? " ⚠" : ""} | ${bar(e.progress)} | ${links} |`);
   }
   md.push("");
 
