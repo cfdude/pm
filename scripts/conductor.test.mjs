@@ -188,3 +188,43 @@ test("active epic is shown even when NEXT UP is capped", () => {
   const brief = parseBrief(cwd);
   assert.match(brief, /NOW: `live`/);
 });
+
+function expectFail(fn) {
+  try { fn(); return null; } catch (e) { return e; }
+}
+
+test("add-epic inserts a lane-tagged epic with defaults", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "refactor-auth", "--title", "Refactor auth", "--lane", "superpowers", "--priority", "P1"], { cwd });
+  const e = readState(cwd).epics.find(x => x.id === "refactor-auth");
+  assert.equal(e.lane, "superpowers");
+  assert.equal(e.priority, "P1");
+  assert.equal(e.status, "queued");
+  assert.equal(e.role, "epic");
+});
+
+test("add-epic rejects a duplicate id", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "dup", "--lane", "claude-code"], { cwd });
+  const err = expectFail(() => run(["add-epic", "--id", "dup", "--lane", "claude-code"], { cwd }));
+  assert.ok(err, "expected non-zero exit on duplicate");
+});
+
+test("add-epic rejects a bad id and an unknown lane", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  assert.ok(expectFail(() => run(["add-epic", "--id", "Bad ID", "--lane", "claude-code"], { cwd })));
+  assert.ok(expectFail(() => run(["add-epic", "--id", "ok", "--lane", "nope"], { cwd })));
+});
+
+test("add-epic stores planPath and links", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "x", "--lane", "superpowers", "--plan", "docs/superpowers/plans/x.md",
+       "--link", "blocks:y:needs token"], { cwd });
+  const e = readState(cwd).epics.find(x => x.id === "x");
+  assert.equal(e.planPath, "docs/superpowers/plans/x.md");
+  assert.deepEqual(e.links, [{ type: "blocks", epic: "y", reason: "needs token" }]);
+});

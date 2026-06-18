@@ -476,6 +476,51 @@ function logDetour() {
   process.stderr.write("conductor: logged minimal detour\n");
 }
 
+// ---------- add-epic ----------
+
+function parseFlags(argv) {
+  const o = {};
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (!a.startsWith("--")) continue;
+    const k = a.slice(2);
+    const v = (argv[i + 1] !== undefined && !argv[i + 1].startsWith("--")) ? argv[++i] : "true";
+    if (k === "link") (o.link || (o.link = [])).push(v);
+    else o[k] = v;
+  }
+  return o;
+}
+
+function addEpic() {
+  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  const f = parseFlags(process.argv.slice(3));
+  if (!f.id || !/^[a-z0-9][a-z0-9._-]*$/.test(f.id)) {
+    process.stderr.write("conductor: --id required, format ^[a-z0-9][a-z0-9._-]*$\n"); process.exit(1);
+  }
+  const lane = f.lane;
+  if (!KNOWN_LANES.includes(lane)) {
+    process.stderr.write(`conductor: --lane must be one of ${KNOWN_LANES.join("|")}\n`); process.exit(1);
+  }
+  const state = loadState();
+  if (state.epics.some(e => e.id === f.id)) {
+    process.stderr.write(`conductor: epic '${f.id}' already exists\n`); process.exit(1);
+  }
+  const links = (f.link || []).map(s => {
+    const [type, epic, ...rest] = s.split(":");
+    const reason = rest.join(":").trim();
+    return reason ? { type, epic, reason } : { type, epic };
+  });
+  const epic = {
+    id: f.id, title: f.title || f.id, priority: f.priority || "P?",
+    status: f.status || "queued", role: "epic", lane, links, reconcileNeeded: false,
+  };
+  if (f.plan) epic.planPath = f.plan;
+  state.epics.push(epic);
+  saveState(state);
+  render();
+  process.stderr.write(`conductor: added epic '${f.id}' (${lane})\n`);
+}
+
 // ---------- dispatch ----------
 
 const cmd = process.argv[2];
@@ -487,9 +532,10 @@ const cmd = process.argv[2];
   "commit-nudge": commitNudge,
   sync: () => sync(false),
   "log-detour": logDetour,
+  "add-epic": addEpic,
   rules: () => process.stdout.write(rulesBlock()),
   "write-rules": writeRules,
 }[cmd] || (() => {
-  process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|rules|write-rules\n");
+  process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|add-epic|rules|write-rules\n");
   process.exit(1);
 }))();
