@@ -259,3 +259,23 @@ test("sync skips a plan whose id collides with an existing epic", () => {
   assert.equal(matches.length, 1);
   assert.equal(matches[0].lane, "openspec");   // original kept; plan skipped
 });
+
+test("sync: openspec change discovered in same run prevents same-id plan from being added", () => {
+  // This test guards the known.add(id) call inside the openspec loop of sync.
+  // Without that call, a plan with the same id as a freshly-discovered openspec
+  // change would be pushed as a second epic with lane "superpowers".
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  // On-disk OpenSpec change directory with tasks.md (no pre-existing epic in state)
+  const chDir = path.join(cwd, "openspec", "changes", "auth");
+  fs.mkdirSync(chDir, { recursive: true });
+  fs.writeFileSync(path.join(chDir, "tasks.md"), "- [ ] a\n");
+  // Superpowers plan with the same id
+  fs.mkdirSync(path.join(cwd, "docs", "superpowers", "plans"), { recursive: true });
+  fs.writeFileSync(path.join(cwd, "docs", "superpowers", "plans", "auth.md"), "# Auth\n- [ ] a\n");
+  // Both are discovered in the same sync run
+  run(["sync"], { cwd });
+  const matches = readState(cwd).epics.filter(x => x.id === "auth");
+  assert.equal(matches.length, 1, "expected exactly one 'auth' epic");
+  assert.equal(matches[0].lane, "openspec", "openspec change should win over same-run plan");
+});
