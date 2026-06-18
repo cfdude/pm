@@ -135,3 +135,27 @@ test("openspec lane still reads tasks.md by id", () => {
   run(["render"], { cwd });
   assert.match(projectMd(cwd), /2\/3 stories/);
 });
+
+test("non-openspec epic appears in NEXT UP", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  writeState(cwd, { version: 1, active: null, detourStack: [], epics: [
+    { id: "sp1", title: "sp1", priority: "P1", status: "queued", role: "epic", lane: "superpowers",
+      stories: [{ title: "x", done: false }], links: [] },
+  ]});
+  const brief = parseBrief(cwd);
+  assert.match(brief, /NEXT UP/);
+  assert.match(brief, /`sp1` \(P1, superpowers, queued\)/);
+});
+
+test("missing openspec change is marked and excluded from NEXT UP", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  writeState(cwd, { version: 1, active: null, detourStack: [], epics: [
+    { id: "ghost", title: "ghost", priority: "P1", status: "queued", role: "epic", lane: "openspec", links: [] },
+  ]});
+  run(["render"], { cwd });
+  assert.match(projectMd(cwd), /no change on disk/);
+  const brief = parseBrief(cwd);
+  assert.doesNotMatch(brief, /`ghost`/);
+});

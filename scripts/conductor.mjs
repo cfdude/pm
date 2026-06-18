@@ -168,6 +168,11 @@ function resolveEpics(state) {
   return out;
 }
 
+/** An openspec epic with no change on disk and not archived = genuinely missing its change. */
+function missing(e) {
+  return e.lane === "openspec" && !e.present && !isArchived(e.id);
+}
+
 function bar(p) {
   if (!p) return "—";
   if (p.warn) return `⚠ ${p.warn}`;
@@ -249,7 +254,7 @@ function buildBrief(state) {
 
   const active = state.active && byId[state.active];
   if (active) {
-    L.push(`NOW: \`${active.id}\` (${active.role}, ${active.priority}) — ${bar(active.progress)}`);
+    L.push(`NOW: \`${active.id}\` (${active.lane}, ${active.role}, ${active.priority}) — ${bar(active.progress)}`);
     if (active.reconcileNeeded)
       L.push(`  ⚠ RECONCILE PENDING: re-validate this proposal before continuing (a detour touched shared code).`);
   } else {
@@ -269,10 +274,10 @@ function buildBrief(state) {
     L.push("");
   }
 
-  const queued = epics.filter(e => ["queued", "untriaged"].includes(e.status) && e.present);
+  const queued = epics.filter(e => ["queued", "untriaged"].includes(e.status) && !missing(e));
   if (queued.length) {
-    L.push("NEXT UP (by priority):");
-    for (const e of queued) L.push(`  • \`${e.id}\` (${e.priority}, ${e.status}) — ${bar(e.progress)}`);
+    L.push("NEXT UP (by priority, then lane):");
+    for (const e of queued) L.push(`  • \`${e.id}\` (${e.priority}, ${e.lane}, ${e.status}) — ${bar(e.progress)}`);
     L.push("");
   }
 
@@ -340,7 +345,8 @@ function render() {
   md.push("|----------|------|------|------|--------|----------|-------|");
   for (const e of epics) {
     const links = (e.links || []).map(l => `${l.type}→${l.epic}`).join("; ") || "-";
-    md.push(`| ${e.priority} | \`${e.id}\` | ${e.lane} | ${e.role} | ${e.status}${e.reconcileNeeded ? " ⚠" : ""} | ${bar(e.progress)} | ${links} |`);
+    const miss = missing(e) ? " ⚠ no change on disk" : "";
+    md.push(`| ${e.priority} | \`${e.id}\` | ${e.lane} | ${e.role} | ${e.status}${e.reconcileNeeded ? " ⚠" : ""}${miss} | ${bar(e.progress)} | ${links} |`);
   }
   md.push("");
 
