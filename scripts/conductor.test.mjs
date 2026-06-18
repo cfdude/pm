@@ -347,3 +347,39 @@ test("rules block is lane-agnostic, not openspec-only", () => {
   assert.match(out, /openspec \| superpowers \| claude-code/);
   assert.doesNotMatch(out, /becomes its own OpenSpec proposal/);
 });
+
+test("ACCEPTANCE: 30 lane-tagged epics, zero OpenSpec changes", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const lanes = ["superpowers", "claude-code", "decision"];
+  for (let i = 0; i < 30; i++) {
+    const lane = lanes[i % lanes.length];
+    const pr = `P${i % 4}`;
+    run(["add-epic", "--id", `item-${String(i).padStart(2, "0")}`, "--title", `Item ${i}`,
+         "--lane", lane, "--priority", pr], { cwd });
+  }
+  // mark one superpowers epic active with manual progress
+  const s = readState(cwd);
+  const target = s.epics.find(e => e.lane === "superpowers");
+  target.status = "active";
+  target.stories = [{ title: "a", done: true }, { title: "b", done: false }];
+  s.active = target.id;
+  writeState(cwd, s);
+  run(["render"], { cwd });
+
+  // all 30 registered, none from OpenSpec
+  assert.equal(readState(cwd).epics.length, 30);
+  assert.equal(fs.existsSync(path.join(cwd, "openspec")), false);
+
+  // PROJECT.md shows them with lanes and the active one's progress
+  const md = projectMd(cwd);
+  for (let i = 0; i < 30; i++) assert.match(md, new RegExp(`item-${String(i).padStart(2, "0")}`));
+  assert.match(md, /1\/2 stories/);                  // active epic's manual progress rendered
+  assert.match(md, new RegExp(`\`${target.id}\``));
+
+  // brief is bounded and shows lane counts
+  const brief = parseBrief(cwd);
+  assert.match(brief, /NOW: `/);
+  assert.match(brief, /lanes: /);
+  assert.match(brief, /\(\+\d+ more — see PROJECT\.md\)/);
+});
