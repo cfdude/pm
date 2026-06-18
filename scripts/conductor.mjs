@@ -102,6 +102,24 @@ function activeChangeIds() {
   } catch { return []; }
 }
 
+function planFiles() {
+  try {
+    return fs.readdirSync(PLANS_DIR, { withFileTypes: true })
+      .filter(d => d.isFile() && d.name.endsWith(".md"))
+      .map(d => d.name);
+  } catch { return []; }
+}
+
+function firstHeading(absPath) {
+  try {
+    for (const line of fs.readFileSync(absPath, "utf8").split("\n")) {
+      const m = line.match(/^#\s+(.+)/);
+      if (m) return m[1].trim();
+    }
+  } catch { /* ignore */ }
+  return null;
+}
+
 function isArchived(id) {
   return fs.existsSync(path.join(ARCHIVE_DIR, id));
 }
@@ -458,9 +476,20 @@ function sync(quiet = false) {
   let added = 0;
   for (const id of activeChangeIds()) {
     if (!known.has(id)) {
-      state.epics.push({ id, title: id, priority: "P?", status: "untriaged", role: "epic", links: [], reconcileNeeded: false });
-      added++;
+      state.epics.push({ id, title: id, priority: "P?", status: "untriaged", role: "epic", lane: "openspec", links: [], reconcileNeeded: false });
+      known.add(id); added++;
     }
+  }
+  for (const fname of planFiles()) {
+    const id = fname.replace(/\.md$/, "");
+    if (known.has(id)) {
+      if (!quiet) process.stderr.write(`conductor: sync skipped plan '${id}' — id already exists\n`);
+      continue;
+    }
+    const planPath = path.join("docs", "superpowers", "plans", fname);
+    const title = firstHeading(path.join(PLANS_DIR, fname)) || id;
+    state.epics.push({ id, title, priority: "P?", status: "untriaged", role: "epic", lane: "superpowers", planPath, links: [], reconcileNeeded: false });
+    known.add(id); added++;
   }
   saveState(state);
   if (!quiet) process.stderr.write(`conductor: synced (${added} new epic(s) added as untriaged)\n`);

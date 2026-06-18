@@ -228,3 +228,34 @@ test("add-epic stores planPath and links", () => {
   assert.equal(e.planPath, "docs/superpowers/plans/x.md");
   assert.deepEqual(e.links, [{ type: "blocks", epic: "y", reason: "needs token" }]);
 });
+
+test("sync imports superpowers plans as lane-tagged epics", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  fs.mkdirSync(path.join(cwd, "docs", "superpowers", "plans"), { recursive: true });
+  fs.writeFileSync(path.join(cwd, "docs", "superpowers", "plans", "big-refactor.md"), "# Big Refactor\n- [ ] a\n");
+  run(["sync"], { cwd });
+  const e = readState(cwd).epics.find(x => x.id === "big-refactor");
+  assert.equal(e.lane, "superpowers");
+  assert.equal(e.title, "Big Refactor");
+  assert.equal(e.planPath, "docs/superpowers/plans/big-refactor.md");
+});
+
+test("sync tolerates a missing plans dir", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });            // no docs/ dir at all
+  run(["sync"], { cwd });            // must not throw
+  assert.ok(Array.isArray(readState(cwd).epics));
+});
+
+test("sync skips a plan whose id collides with an existing epic", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "auth", "--lane", "openspec"], { cwd });
+  fs.mkdirSync(path.join(cwd, "docs", "superpowers", "plans"), { recursive: true });
+  fs.writeFileSync(path.join(cwd, "docs", "superpowers", "plans", "auth.md"), "# Auth\n- [ ] a\n");
+  run(["sync"], { cwd });
+  const matches = readState(cwd).epics.filter(x => x.id === "auth");
+  assert.equal(matches.length, 1);
+  assert.equal(matches[0].lane, "openspec");   // original kept; plan skipped
+});
