@@ -106,17 +106,37 @@ function isArchived(id) {
   return fs.existsSync(path.join(ARCHIVE_DIR, id));
 }
 
-/** Count [ ] / [x] checkboxes in a change's tasks.md. Source of truth for stories. */
-function storyProgress(id) {
-  const f = path.join(CHANGES_DIR, id, "tasks.md");
-  let total = 0, done = 0;
+/** Count [ ] / [x] checkboxes in a markdown file. */
+function countCheckboxes(absPath) {
+  let total = 0, done = 0, exists = false;
   try {
-    for (const line of fs.readFileSync(f, "utf8").split("\n")) {
+    const txt = fs.readFileSync(absPath, "utf8");
+    exists = true;
+    for (const line of txt.split("\n")) {
       const m = line.match(/^\s*[-*]\s+\[([ xX])\]/);
       if (m) { total++; if (m[1].toLowerCase() === "x") done++; }
     }
-  } catch { /* no tasks.md yet */ }
-  return { done, total };
+  } catch { /* missing file */ }
+  return { done, total, exists };
+}
+
+/** Resolve an epic's progress by precedence: stories -> planPath -> openspec tasks.md -> none. */
+function epicProgress(epic) {
+  if (Array.isArray(epic.stories)) {
+    const total = epic.stories.length;
+    const done = epic.stories.filter(s => s && s.done).length;
+    return { done, total, source: "stories", warn: null };
+  }
+  if (epic.planPath) {
+    const c = countCheckboxes(path.join(ROOT, epic.planPath));
+    if (!c.exists) return { done: 0, total: 0, source: "plan", warn: "planPath missing" };
+    return { done: c.done, total: c.total, source: "plan", warn: null };
+  }
+  if ((epic.lane || "openspec") === "openspec") {
+    const c = countCheckboxes(path.join(CHANGES_DIR, epic.id, "tasks.md"));
+    return { done: c.done, total: c.total, source: "openspec", warn: null };
+  }
+  return { done: 0, total: 0, source: "none", warn: null };
 }
 
 /** Merge state metadata with what's actually on disk. */
@@ -131,12 +151,12 @@ function resolveEpics(state) {
       links: [], reconcileNeeded: false,
     };
     const lane = meta.lane || "openspec";
-    out.push({ ...meta, lane, progress: storyProgress(id), present: true });
+    out.push({ ...meta, lane, progress: epicProgress({ ...meta, lane }), present: true });
   }
   for (const e of state.epics) {
     if (!onDisk.has(e.id)) {
       const lane = e.lane || "openspec";
-      out.push({ ...e, lane, progress: storyProgress(e.id),
+      out.push({ ...e, lane, progress: epicProgress({ ...e, lane }),
         status: isArchived(e.id) ? "archived" : e.status, present: false });
     }
   }
@@ -148,8 +168,11 @@ function resolveEpics(state) {
   return out;
 }
 
-function bar({ done, total }) {
-  return total ? `${done}/${total} stories` : "no tasks.md";
+function bar(p) {
+  if (!p) return "—";
+  if (p.warn) return `⚠ ${p.warn}`;
+  if (p.total > 0) return `${p.done}/${p.total} ${p.source === "plan" ? "tasks" : "stories"}`;
+  return "—";
 }
 
 /** Is the project currently inside a detour? (active epic is a detour, or stack non-empty) */

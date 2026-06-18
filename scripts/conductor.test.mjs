@@ -78,3 +78,60 @@ test("init scaffolds state.json, PROJECT.md, and CLAUDE.md rules block", () => {
   assert.match(projectMd(cwd), /PROJECT — Conductor Index/);
   assert.match(claudeMd(cwd), /BEGIN pm-conductor rules/);
 });
+
+test("progress precedence: manual stories win", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  writeState(cwd, { version: 1, active: null, detourStack: [], epics: [
+    { id: "m", title: "m", priority: "P1", status: "queued", role: "epic", lane: "claude-code",
+      stories: [{ title: "a", done: true }, { title: "b", done: false }], links: [] },
+  ]});
+  run(["render"], { cwd });
+  assert.match(projectMd(cwd), /1\/2 stories/);
+});
+
+test("progress precedence: planPath checkboxes when no stories", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  fs.mkdirSync(path.join(cwd, "docs", "superpowers", "plans"), { recursive: true });
+  fs.writeFileSync(path.join(cwd, "docs", "superpowers", "plans", "p.md"),
+    "# Plan\n- [x] one\n- [ ] two\n- [ ] three\n");
+  writeState(cwd, { version: 1, active: null, detourStack: [], epics: [
+    { id: "sp", title: "sp", priority: "P1", status: "queued", role: "epic", lane: "superpowers",
+      planPath: "docs/superpowers/plans/p.md", links: [] },
+  ]});
+  run(["render"], { cwd });
+  assert.match(projectMd(cwd), /1\/3 tasks/);
+});
+
+test("dangling planPath renders a warning, not a count", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  writeState(cwd, { version: 1, active: null, detourStack: [], epics: [
+    { id: "sp", title: "sp", priority: "P1", status: "queued", role: "epic", lane: "superpowers",
+      planPath: "docs/superpowers/plans/missing.md", links: [] },
+  ]});
+  run(["render"], { cwd });
+  assert.match(projectMd(cwd), /⚠ planPath missing/);
+});
+
+test("decision lane with no source renders an em dash", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  writeState(cwd, { version: 1, active: null, detourStack: [], epics: [
+    { id: "d", title: "d", priority: "P2", status: "queued", role: "epic", lane: "decision", links: [] },
+  ]});
+  run(["render"], { cwd });
+  assert.match(projectMd(cwd), /`d` \| decision \| epic \| queued \| — \|/);
+});
+
+test("openspec lane still reads tasks.md by id", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const ch = path.join(cwd, "openspec", "changes", "feat-x");
+  fs.mkdirSync(ch, { recursive: true });
+  fs.writeFileSync(path.join(ch, "tasks.md"), "- [x] a\n- [x] b\n- [ ] c\n");
+  run(["sync"], { cwd });
+  run(["render"], { cwd });
+  assert.match(projectMd(cwd), /2\/3 stories/);
+});
