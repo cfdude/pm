@@ -312,3 +312,29 @@ test("no nudge when stamped equals running", () => {
   const out = JSON.parse(run(["brief"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root } })).hookSpecificOutput.additionalContext;
   assert.doesNotMatch(out, /since this repo was set up/);
 });
+
+test("upgrade on a never-stamped repo runs migrations, stamps lanes + pmVersion", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  // simulate a pre-0.3.0 repo: remove pmVersion, add an epic with no lane
+  const s = readState(cwd); delete s.pmVersion;
+  s.epics.push({ id: "legacy", title: "legacy", priority: "P1", status: "queued", role: "epic", links: [] });
+  writeState(cwd, s);
+  const root = fixturePluginRoot("0.3.0");
+  run(["upgrade"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root } });
+  const after = readState(cwd);
+  assert.equal(after.pmVersion, "0.3.0");
+  assert.equal(after.epics.find(e => e.id === "legacy").lane, "openspec");
+});
+
+test("upgrade is idempotent on a second run", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const s = readState(cwd); delete s.pmVersion; writeState(cwd, s);
+  const root = fixturePluginRoot("0.3.0");
+  run(["upgrade"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root } });
+  const first = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  run(["upgrade"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root } });
+  const second = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  assert.equal(first, second);
+});

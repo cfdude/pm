@@ -584,6 +584,33 @@ function addEpic() {
   process.stderr.write(`conductor: added epic '${f.id}' (${lane})\n`);
 }
 
+// ---------- migrations ----------
+
+const MIGRATIONS = [
+  {
+    release: "0.3.0",
+    note: "stamp explicit lane on epics (lane-agnostic schema)",
+    apply(state) {
+      for (const e of state.epics) if (!e.lane) e.lane = "openspec";
+    },
+  },
+];
+
+function upgrade() {
+  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  const state = loadState();
+  const stamped = state.pmVersion || "0.0.0";
+  let applied = 0;
+  for (const m of MIGRATIONS) {
+    if (cmpVer(m.release, stamped) > 0) { m.apply(state); applied++; }
+  }
+  stampVersion(state);
+  saveState(state);
+  writeRules();
+  render();
+  process.stderr.write(`conductor: upgraded (${applied} migration(s)), pmVersion now ${state.pmVersion || "unknown"}\n`);
+}
+
 // ---------- dispatch ----------
 
 const cmd = process.argv[2];
@@ -596,9 +623,10 @@ const cmd = process.argv[2];
   sync: () => sync(false),
   "log-detour": logDetour,
   "add-epic": addEpic,
+  upgrade,
   rules: () => process.stdout.write(rulesBlock()),
   "write-rules": writeRules,
 }[cmd] || (() => {
-  process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|add-epic|rules|write-rules\n");
+  process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|add-epic|upgrade|rules|write-rules\n");
   process.exit(1);
 }))();
