@@ -2,10 +2,10 @@
 name: conductor
 description: >
   Project-management discipline that sits ABOVE OpenSpec and Superpowers. Use whenever
-  work spans more than one OpenSpec proposal, when a review or build reveals something
+  work spans more than one epic, when a review or build reveals something
   broken/orphaned/unwired that forces a detour, when deciding what to work on next, or
-  when resuming after a context compaction. Keeps a single index of epics (= OpenSpec
-  proposals), an explicit detour stack, and epic links so nothing is lost across pivots.
+  when resuming after a context compaction. Keeps a single lane-agnostic index of epics,
+  an explicit detour stack, and epic links so nothing is lost across pivots.
   Triggers: "what were we working on", "what's next", "this is broken, fix it first",
   "park this", "resume", "where did we leave off".
 ---
@@ -14,11 +14,13 @@ description: >
 
 ## Mental model (read first)
 
-- An **epic = one OpenSpec proposal** (`openspec/changes/<id>/`). That is the unit of work.
-- **Stories/phases** live in that proposal's `tasks.md` as checkboxes. OpenSpec owns them.
-  Never copy stories into the conductor — read them from `tasks.md`.
-- The conductor owns ONLY what OpenSpec can't: cross-epic **priority/ordering**, the
-  **detour stack**, and **epic links** (especially the reconcile relationship).
+- An **epic** is any backlog item, tagged by `lane` — `openspec | superpowers | claude-code
+  | decision | external`. OpenSpec proposals are one lane, not the only one.
+- **Stories/phases** live in the best available source: `tasks.md` checkboxes (openspec),
+  `planPath` checkboxes (superpowers), inline `stories[]` (claude-code), or `—` (decision /
+  external). Never copy these into `state.json` manually unless using inline `stories[]`.
+- The conductor owns ONLY what no lane-specific tool can: cross-epic **priority/ordering**,
+  the **detour stack**, and **epic links** (especially the reconcile relationship).
 - State of record is `.conductor/state.json`. `PROJECT.md` is a generated view — never
   hand-edit it. After any state change, run `node "$CLAUDE_PLUGIN_ROOT/scripts/conductor.mjs" render`.
 
@@ -27,7 +29,8 @@ You (Claude) are myopic across compactions. This skill is how you stop losing th
 ## Commands
 
 `/pm:init` scaffold · `/pm:status` show · `/pm:next` decide · `/pm:detour` park ·
-`/pm:resume` resume + reconcile · `/pm:sync` register new proposals.
+`/pm:resume` resume + reconcile · `/pm:sync` register new proposals and plans ·
+`/pm:epic add` register any epic · `/pm:upgrade` refresh rules + stamp lanes.
 
 ## When something blocks progress: classify the detour FIRST
 
@@ -41,25 +44,26 @@ stack entry. Rule of thumb: fits before the next compaction and doesn't change t
 the current proposal.
 
 **Substantial detour** — needs its own design, changes shared behavior, or is multi-step.
-OpenSpec must not conflate two concerns, so this becomes its OWN proposal. Run PUSH.
-When unsure, treat as substantial — a needless stack entry is cheap; a lost thread is the
-whole problem we're solving.
+This becomes its own **epic in the appropriate lane** (openspec, superpowers, or claude-code
+as fits the scope). Run PUSH. When unsure, treat as substantial — a needless stack entry is
+cheap; a lost thread is the whole problem we're solving.
 
 ## PUSH protocol (entering a substantial detour)
 
-1. Make the current epic's `tasks.md` reflect reality; commit so nothing is uncommitted.
+1. Make the current epic's progress source reflect reality; commit so nothing is uncommitted.
 2. In `.conductor/state.json`: set the current epic `status: "paused"`; push a frame onto
    `detourStack`:
    ```json
    { "pausedEpic": "<current>", "pausedAt": "<iso>", "reason": "<why, concretely>",
-     "spawnedDetour": "<new-proposal-id>", "reconcileOnResume": true }
+     "spawnedDetour": "<new-epic-id>", "reconcileOnResume": true }
    ```
    Set `reconcileOnResume: true` whenever the detour will touch code/behavior the paused
    epic depends on (default true unless certain it won't).
-3. Add the detour as an epic (`role: "detour"`, usually `P0`) with links:
-   detour `resolves-blocker-for` parent; parent `may-invalidate` detour.
-4. Set `active` to the detour. Render. Build it through the normal OpenSpec + Superpowers
-   loop (propose → review → apply → review → commit), then `openspec archive <id>`.
+3. Add the detour as an epic (`role: "detour"`, `lane` = appropriate lane, usually `P0`)
+   with links: detour `resolves-blocker-for` parent; parent `may-invalidate` detour.
+   Use `/pm:epic add` or edit `state.json` directly.
+4. Set `active` to the detour. Render. Build it through the appropriate lane's workflow,
+   then archive/close it.
 5. **Write a one-line Honcho memory** ("paused `<parent>` for `<detour>` — <reason>") via
    your Honcho MCP memory/conclusion tool, so the pivot survives outside this repo.
 
@@ -100,10 +104,15 @@ commit made while a detour is active is auto-logged to `.conductor/detours.log` 
 ## state.json reference
 
 ```
-active   : "<epic-id>" | null
-epics[]  : { id, title, priority, status, role, links[], reconcileNeeded }
+active        : "<epic-id>" | null
+pmVersion     : "<semver>" — release that last touched this repo (set by init/upgrade)
+epics[]       : { id, title, priority, status, role, lane, planPath?, stories[]?, links[], reconcileNeeded? }
 detourStack[] : { pausedEpic, pausedAt, reason, spawnedDetour, reconcileOnResume }
 status   ∈ active | paused | queued | later | blocked | archived | untriaged
-role     ∈ epic | detour          priority ∈ P0 | P1 | P2 | P3 | P?
+role     ∈ epic | detour
+lane     ∈ openspec | superpowers | claude-code | decision | external   (default: openspec)
+priority ∈ P0 | P1 | P2 | P3 | P?
 link.type ∈ resolves-blocker-for | may-invalidate | depends-on | relates-to
+planPath      : repo-relative path to a markdown plan (progress source for superpowers lane)
+stories[]     : [{ title, done }] — inline progress (highest-priority source)
 ```

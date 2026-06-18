@@ -23,5 +23,5 @@ Initialize the `pm` conductor for the current project.
 3. Show the result with `/pm:status`.
 
 Note: until this runs, the plugin's hooks stay dormant in this repo by design — like
-`openspec init`. The conductor sits ABOVE OpenSpec (epics = proposals) and Superpowers
-(execution); it does not replace either.
+`openspec init`. The conductor sits ABOVE OpenSpec and Superpowers; epics are lane-agnostic
+(openspec | superpowers | claude-code | decision | external). It does not replace either.
