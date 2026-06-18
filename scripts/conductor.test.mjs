@@ -279,3 +279,36 @@ test("sync: openspec change discovered in same run prevents same-id plan from be
   assert.equal(matches.length, 1, "expected exactly one 'auth' epic");
   assert.equal(matches[0].lane, "openspec", "openspec change should win over same-run plan");
 });
+
+function fixturePluginRoot(version) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pm-plugin-"));
+  fs.mkdirSync(path.join(dir, ".claude-plugin"), { recursive: true });
+  fs.writeFileSync(path.join(dir, ".claude-plugin", "plugin.json"), JSON.stringify({ name: "pm", version }) + "\n");
+  return dir;
+}
+
+test("init stamps pmVersion from the running plugin", () => {
+  const cwd = tmpRepo();
+  const root = fixturePluginRoot("0.3.0");
+  run(["init"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root } });
+  assert.equal(readState(cwd).pmVersion, "0.3.0");
+});
+
+test("brief nudges when stamped pmVersion is older than running (semver-aware)", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  // simulate an old repo: stamp 0.9.0, run as 0.10.0 (string compare would get this wrong)
+  const s = readState(cwd); s.pmVersion = "0.9.0"; writeState(cwd, s);
+  const root = fixturePluginRoot("0.10.0");
+  const out = JSON.parse(run(["brief"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root } })).hookSpecificOutput.additionalContext;
+  assert.match(out, /pm 0\.9\.0 → 0\.10\.0 since this repo was set up/);
+  assert.match(out, /\/pm:upgrade/);
+});
+
+test("no nudge when stamped equals running", () => {
+  const cwd = tmpRepo();
+  const root = fixturePluginRoot("0.3.0");
+  run(["init"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root } });
+  const out = JSON.parse(run(["brief"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root } })).hookSpecificOutput.additionalContext;
+  assert.doesNotMatch(out, /since this repo was set up/);
+});

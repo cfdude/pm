@@ -35,6 +35,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
 const ROOT = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 const CONDUCTOR_DIR = path.join(ROOT, ".conductor");
@@ -85,6 +86,31 @@ function loadState() {
 function saveState(state) {
   fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
   fs.writeFileSync(STATE_PATH, JSON.stringify(state, null, 2) + "\n");
+}
+
+/** The running plugin's release. Env-first so tests can point at a fixture plugin.json. */
+function pluginVersion() {
+  const root = process.env.CLAUDE_PLUGIN_ROOT
+    ? process.env.CLAUDE_PLUGIN_ROOT
+    : path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
+  const pj = readJSON(path.join(root, ".claude-plugin", "plugin.json"), null);
+  return pj && pj.version ? String(pj.version) : null;
+}
+
+/** Numeric semver compare: <0 if a<b, 0 if equal, >0 if a>b. */
+function cmpVer(a, b) {
+  const pa = String(a).split(".").map(n => parseInt(n, 10) || 0);
+  const pb = String(b).split(".").map(n => parseInt(n, 10) || 0);
+  for (let i = 0; i < 3; i++) {
+    const d = (pa[i] || 0) - (pb[i] || 0);
+    if (d) return d;
+  }
+  return 0;
+}
+
+function stampVersion(state) {
+  const v = pluginVersion();
+  if (v) state.pmVersion = v;
 }
 
 function appendDetourLog(kind, epic, note) {
@@ -267,6 +293,13 @@ function buildBrief(state) {
   const byId = Object.fromEntries(epics.map(e => [e.id, e]));
   const L = [];
 
+  const running = pluginVersion();
+  const stamped = state.pmVersion || "0.0.0";
+  if (running && cmpVer(stamped, running) < 0) {
+    L.push(`⚠ pm ${stamped} → ${running} since this repo was set up — run \`/pm:upgrade\` (CLAUDE.md rules and epic schema may need refreshing).`);
+    L.push("");
+  }
+
   L.push("CONDUCTOR STATE — where we are and what's next");
   L.push("");
 
@@ -412,8 +445,9 @@ function init() {
     saveState(defaultState());
     process.stderr.write("conductor: created .conductor/state.json\n");
   }
-  sync(true);        // pull in existing openspec changes as untriaged
-  writeRules();      // install/refresh the CLAUDE.md rules block
+  sync(true);                 // pull in existing openspec changes + plans
+  { const s = loadState(); stampVersion(s); saveState(s); }
+  writeRules();
   render();
   process.stderr.write(
     "conductor: initialized. Triage epics in .conductor/state.json " +
