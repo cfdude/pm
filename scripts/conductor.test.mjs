@@ -338,3 +338,12 @@ test("upgrade is idempotent on a second run", () => {
   const second = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
   assert.equal(first, second);
 });
+
+test("rules block is lane-agnostic, not openspec-only", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const out = run(["rules"], { cwd });
+  assert.match(out, /lane-agnostic/i);
+  assert.match(out, /openspec \| superpowers \| claude-code/);
+  assert.doesNotMatch(out, /becomes its own OpenSpec proposal/);
+});
