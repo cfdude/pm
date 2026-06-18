@@ -274,10 +274,19 @@ function buildBrief(state) {
     L.push("");
   }
 
+  const NEXT_CAP = 5;
   const queued = epics.filter(e => ["queued", "untriaged"].includes(e.status) && !missing(e));
   if (queued.length) {
     L.push("NEXT UP (by priority, then lane):");
-    for (const e of queued) L.push(`  • \`${e.id}\` (${e.priority}, ${e.lane}, ${e.status}) — ${bar(e.progress)}`);
+    for (const e of queued.slice(0, NEXT_CAP)) {
+      L.push(`  • \`${e.id}\` (${e.priority}, ${e.lane}, ${e.status}) — ${bar(e.progress)}`);
+    }
+    if (queued.length > NEXT_CAP) L.push(`  (+${queued.length - NEXT_CAP} more — see PROJECT.md)`);
+    const counts = {};
+    for (const e of epics) if (!missing(e)) counts[e.lane] = (counts[e.lane] || 0) + 1;
+    const ordered = KNOWN_LANES.filter(l => counts[l]).map(l => `${l} ${counts[l]}`);
+    const unknown = Object.keys(counts).filter(l => !KNOWN_LANES.includes(l)).sort().map(l => `${l} ${counts[l]}`);
+    L.push(`  lanes: ${[...ordered, ...unknown].join(" · ")}`);
     L.push("");
   }
 

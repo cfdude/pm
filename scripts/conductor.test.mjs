@@ -159,3 +159,32 @@ test("missing openspec change is marked and excluded from NEXT UP", () => {
   const brief = parseBrief(cwd);
   assert.doesNotMatch(brief, /`ghost`/);
 });
+
+function manyEpics(n) {
+  return Array.from({ length: n }, (_, i) => ({
+    id: `e${String(i).padStart(2, "0")}`, title: `e${i}`, priority: "P1",
+    status: "queued", role: "epic", lane: "superpowers",
+    stories: [{ title: "x", done: false }], links: [],
+  }));
+}
+
+test("brief caps NEXT UP at 5 and reports the remainder", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  writeState(cwd, { version: 1, active: null, detourStack: [], epics: manyEpics(8) });
+  const brief = parseBrief(cwd);
+  const shown = (brief.match(/^ {2}• /gm) || []).length;
+  assert.equal(shown, 5);
+  assert.match(brief, /\(\+3 more — see PROJECT\.md\)/);
+  assert.match(brief, /lanes: superpowers 8/);
+});
+
+test("active epic is shown even when NEXT UP is capped", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const epics = manyEpics(8);
+  epics.push({ id: "live", title: "live", priority: "P0", status: "active", role: "epic", lane: "openspec", links: [] });
+  writeState(cwd, { version: 1, active: "live", detourStack: [], epics });
+  const brief = parseBrief(cwd);
+  assert.match(brief, /NOW: `live`/);
+});
