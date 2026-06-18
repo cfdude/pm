@@ -1,0 +1,40 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "comment": "PM CONDUCTOR: Inject the project briefing (active epic, detour stack, next-up) on startup, resume, and AFTER auto-compaction (source=compact). No-ops silently in projects that have not run /pm:init.",
+        "matcher": "startup|resume|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs\" brief"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "comment": "PM CONDUCTOR: PreCompact cannot inject context, so snapshot the freshest state (re-render PROJECT.md + write .conductor/brief.txt) right before the window collapses.",
+        "matcher": "auto|manual",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs\" snapshot"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "comment": "PM CONDUCTOR: After a git commit, re-render the index and nudge to update epic status / pop a finished detour. Non-blocking.",
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs\" commit-nudge"
+          }
+        ]
+      }
+    ]
+  }
+}
