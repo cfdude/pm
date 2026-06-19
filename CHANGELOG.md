@@ -6,6 +6,53 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.4.0] — 2026-06-18
+
+### Added
+
+- **`status: planned` — roadmap as ordered backlog.** A new epic status for items that are
+  known, sequenced, but not yet ready to start. `planned: N` appears as a brief summary line
+  in the briefing; planned epics are excluded from NEXT UP and the lanes rollup, but are
+  shown in the PROJECT.md epics table so the full backlog is visible.
+
+- **`sync` auto-transitions proposed planned epics → untriaged (openspec lane).** When
+  `sync`/`init` discovers a new OpenSpec change on disk and an epic with the same id already
+  exists with `status: planned`, it transitions that epic to `untriaged` automatically so it
+  enters the normal triage flow without manual state editing.
+
+- **PROJECT.md stamp-on-content-change only.** `render` now compares the new output to the
+  current file before writing; if the content is identical, the file is not touched. Prevents
+  mtime churn and spurious git diffs when nothing meaningful changed.
+
+- **`add-epic` validates `--status` against known statuses.** Passing an unknown status to
+  `/pm:epic add` is now an error rather than silently stored. A valueless-flag guard also
+  catches `--status` with no argument (e.g. `--status --lane`) and reports a clear error
+  instead of treating the next flag as the status value.
+
+- **Portable `ls -t` glob in command docs.** The `find`-based file listing in `sync` command
+  documentation is replaced with a portable `ls -t` glob, removing a macOS/GNU `find`
+  incompatibility.
+
+- **`--status` documented in `/pm:epic`.** The `add` sub-command now shows all valid status
+  values (including `planned`) in its help text and the commands table.
+
+- **Roadmap on-ramp guidance.** README and SKILL document how to import an existing roadmap
+  into the conductor without parsing: in an interactive session, read the roadmap doc and
+  register each item via `/pm:epic add … --status planned`, choosing the appropriate
+  execution lane. The conductor does not parse roadmap files automatically.
+
+### Changed
+
+- Rules block wording updated: documents `planned` status (roadmap on-ramp), auto-transition
+  of planned epics on `sync`, and stamp-on-content-change behaviour.
+
+### Upgrade
+
+**Existing repos:** run `/pm:upgrade` after updating — refreshes rules, stamps 0.4.0 into
+`state.json`. Idempotent; safe to run multiple times. No data migration required.
+
+---
+
 ## [0.3.0] — 2026-06-18
 
 ### Added

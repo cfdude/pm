@@ -41,6 +41,19 @@ only one:
 
 An epic missing `lane` is treated as `openspec` (backward-compatible with pre-0.3.0 repos).
 
+### Epic statuses
+
+| Status | Meaning |
+|--------|---------|
+| `active` | Currently being worked on |
+| `paused` | Pushed onto the detour stack |
+| `queued` | Ready to start; included in NEXT UP |
+| `later` | Intentionally deferred; excluded from NEXT UP |
+| `blocked` | Waiting on an external dependency |
+| `untriaged` | Newly registered; needs priority and lane assignment |
+| `planned` | Roadmap item — known and sequenced, not yet ready to start. Excluded from NEXT UP and the lanes rollup; shown in PROJECT.md epics table. Use for importing a roadmap. |
+| `archived` | Done or abandoned |
+
 ### Epic fields (`.conductor/state.json`)
 
 ```jsonc
@@ -114,11 +127,37 @@ you have connected.
 | `/pm:detour --minimal "<what>"` | Fast-path: log a minimal detour to `detours.log` and move on |
 | `/pm:resume` | Pop the detour stack and run the reconcile gate |
 | `/pm:sync` | Register new OpenSpec proposals and Superpowers plans as epics |
-| `/pm:epic add --id X --title "…" --lane L --priority P` | Register any epic directly (all lanes) |
+| `/pm:epic add --id X --title "…" --lane L --priority P [--status S]` | Register any epic directly (all lanes); `--status` accepts any known status (default: `queued`); use `--status planned` for roadmap items |
 | `/pm:upgrade` | Refresh CLAUDE.md rules, stamp lanes on pre-0.3.0 epics, update `pmVersion` |
 
 Plus a `conductor` skill (the reasoning) and a `reconciler` agent (clean-context
 re-validation at the reconcile gate).
+
+## Importing an existing roadmap
+
+If you have a roadmap document (any markdown — a notion export, a spec, a bullet list), you
+can register each item in the conductor without the conductor parsing the file automatically.
+
+In an interactive Claude Code session:
+
+1. Read your roadmap document: tell Claude to read the file and list the items.
+2. For each item, register it with:
+   ```
+   /pm:epic add --id <slug> --title "…" --lane <lane> --priority P2 --status planned
+   ```
+   Choose the execution lane that fits: `openspec` for spec-driven work, `superpowers` for
+   plan-file work, `claude-code` for single-session work, `decision` for research or
+   architecture, `external` for third-party dependencies.
+3. After all items are registered, run `/pm:status` to see the full backlog.
+4. Triage: set priorities and promote items to `queued` as you're ready to start them.
+
+**Key behaviour:**
+- `planned` items appear in the PROJECT.md epics table so the full backlog is visible but
+  stay out of NEXT UP and the lanes rollup — the briefing stays compact.
+- When you run `/pm:sync` after creating an OpenSpec change for a `planned` epic, the
+  conductor auto-transitions it to `untriaged` so it enters the normal triage flow.
+- The conductor does **not** parse roadmap files automatically. The import is a one-time
+  interactive step.
 
 ## Install
 

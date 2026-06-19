@@ -101,6 +101,21 @@ by the SessionStart hook (so they survive compaction). Two artifacts back them u
 commit made while a detour is active is auto-logged to `.conductor/detours.log` by the hook
 (deterministic), and minimal detours are logged there by `log-detour` (rule-driven).
 
+## Importing an existing roadmap
+
+If you have a roadmap doc (any markdown), register each item interactively — the conductor
+does **not** parse roadmap files automatically.
+
+1. Read the roadmap file; list the items for the user to confirm.
+2. For each item: `/pm:epic add --id <slug> --title "…" --lane <lane> --priority P2 --status planned`
+   - Choose lane: `openspec` | `superpowers` | `claude-code` | `decision` | `external`
+3. `planned` items appear in PROJECT.md but are excluded from NEXT UP and lanes rollup.
+4. When you create an OpenSpec change for a `planned` epic and run `/pm:sync`, it
+   auto-transitions to `untriaged` and enters the normal triage flow.
+5. Triage the backlog: set priorities, promote items to `queued` as work becomes ready.
+
+`/pm:epic add` validates `--status` — unknown values are rejected with a clear error.
+
 ## state.json reference
 
 ```
@@ -108,7 +123,7 @@ active        : "<epic-id>" | null
 pmVersion     : "<semver>" — release that last touched this repo (set by init/upgrade)
 epics[]       : { id, title, priority, status, role, lane, planPath?, stories[]?, links[], reconcileNeeded? }
 detourStack[] : { pausedEpic, pausedAt, reason, spawnedDetour, reconcileOnResume }
-status   ∈ active | paused | queued | later | blocked | archived | untriaged
+status   ∈ active | paused | queued | later | blocked | archived | untriaged | planned
 role     ∈ epic | detour
 lane     ∈ openspec | superpowers | claude-code | decision | external   (default: openspec)
 priority ∈ P0 | P1 | P2 | P3 | P?
