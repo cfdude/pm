@@ -9,7 +9,7 @@ Show where the project stands.
 node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" render
 ```
 (If `${CLAUDE_PLUGIN_ROOT}` is empty:
-`ENGINE=$(find ~/.claude -name conductor.mjs -path '*pm*' 2>/dev/null | head -1); node "$ENGINE" render`)
+`ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1); node "$ENGINE" render`)
 
 Then read `PROJECT.md` and summarize for the user:
 - the **active** epic and its live story progress,

@@ -14,6 +14,6 @@ anytime; idempotent. Use it when the briefing shows a "pm <old> → <new>" upgra
    ```
 
    If `${CLAUDE_PLUGIN_ROOT}` is empty:
-   `ENGINE=$(find ~/.claude -name conductor.mjs -path '*pm*' 2>/dev/null | head -1); node "$ENGINE" upgrade`
+   `ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1); node "$ENGINE" upgrade`
 
 2. Show the result with `/pm:status`.

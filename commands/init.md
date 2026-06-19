@@ -13,7 +13,7 @@ Initialize the `pm` conductor for the current project.
    ```
 
    If `${CLAUDE_PLUGIN_ROOT}` is empty, locate the engine first:
-   `ENGINE=$(find ~/.claude -name conductor.mjs -path '*pm*' 2>/dev/null | head -1); node "$ENGINE" init`
+   `ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1); node "$ENGINE" init`
 
 2. Read `.conductor/state.json` and help the user TRIAGE:
    - set `active` to the epic currently being built,
