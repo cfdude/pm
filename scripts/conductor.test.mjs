@@ -456,3 +456,24 @@ test("planned epics do not inflate the brief lanes: rollup", () => {
   assert.doesNotMatch(brief, /openspec 1/);  // planned openspec excluded from lanes rollup
   assert.match(brief, /planned: 1/);
 });
+
+test("sync auto-transitions a planned openspec epic to untriaged once its change dir exists", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "feat-z", "--lane", "openspec", "--priority", "P1", "--status", "planned"], { cwd });
+  assert.doesNotMatch(parseBrief(cwd), /`feat-z`/);  // planned → not in NEXT UP yet
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", "feat-z"), { recursive: true });
+  fs.writeFileSync(path.join(cwd, "openspec", "changes", "feat-z", "tasks.md"), "- [ ] a\n");
+  run(["sync"], { cwd });
+  assert.equal(readState(cwd).epics.find(e => e.id === "feat-z").status, "untriaged");
+  assert.match(parseBrief(cwd), /`feat-z`/);         // now actionable
+});
+
+test("sync does not transition a non-openspec planned epic (lane guard)", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "dual", "--lane", "claude-code", "--status", "planned"], { cwd });
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", "dual"), { recursive: true });
+  run(["sync"], { cwd });
+  const e = readState(cwd).epics.find(x => x.id === "dual");
+  assert.equal(e.lane, "claude-code");
+  assert.equal(e.status, "planned");  // lane guard: not flipped despite a matching change dir
+});

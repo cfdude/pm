@@ -524,6 +524,13 @@ function commitNudge() {
 
 function sync(quiet = false) {
   const state = loadState();
+  const onDiskChanges = new Set(activeChangeIds());
+  for (const e of state.epics) {
+    if ((e.lane || "openspec") === "openspec" && e.status === "planned" && onDiskChanges.has(e.id)) {
+      e.status = "untriaged";
+      if (!quiet) process.stderr.write(`conductor: '${e.id}' proposed — planned → untriaged\n`);
+    }
+  }
   const known = new Set(state.epics.map(e => e.id));
   let added = 0;
   for (const id of activeChangeIds()) {
