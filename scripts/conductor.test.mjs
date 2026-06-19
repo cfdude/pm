@@ -430,3 +430,29 @@ test("ACCEPTANCE: 30 lane-tagged epics, zero OpenSpec changes", () => {
   assert.match(brief, /lanes: /);
   assert.match(brief, /\(\+\d+ more — see PROJECT\.md\)/);
 });
+
+test("planned openspec epic: not missing, not in NEXT UP, counted, in table", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  writeState(cwd, { version: 1, active: null, detourStack: [], epics: [
+    { id: "4c", title: "4c", priority: "P0", status: "planned", role: "epic", lane: "openspec", links: [] },
+  ]});
+  run(["render"], { cwd });
+  const md = projectMd(cwd);
+  assert.doesNotMatch(md, /no change on disk/);            // not flagged missing
+  assert.match(md, /`4c` \| openspec \| epic \| planned/); // shown in Epics table
+  const brief = parseBrief(cwd);
+  assert.doesNotMatch(brief, /NEXT UP/);                   // not actionable
+  assert.match(brief, /planned: 1 — see PROJECT\.md/);
+});
+
+test("planned epics do not inflate the brief lanes: rollup", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  writeState(cwd, { version: 1, active: null, detourStack: [], epics: [
+    { id: "q1", title: "q1", priority: "P1", status: "queued", role: "epic", lane: "superpowers", stories: [{ title: "a", done: false }], links: [] },
+    { id: "p1", title: "p1", priority: "P0", status: "planned", role: "epic", lane: "openspec", links: [] },
+  ]});
+  const brief = parseBrief(cwd);
+  assert.match(brief, /lanes: superpowers 1/);
+  assert.doesNotMatch(brief, /openspec 1/);  // planned openspec excluded from lanes rollup
+  assert.match(brief, /planned: 1/);
+});

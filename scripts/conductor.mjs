@@ -215,7 +215,7 @@ function resolveEpics(state) {
 
 /** An openspec epic with no change on disk and not archived = genuinely missing its change. */
 function missing(e) {
-  return e.lane === "openspec" && !e.present && !isArchived(e.id);
+  return e.lane === "openspec" && !e.present && !isArchived(e.id) && e.status !== "planned";
 }
 
 function bar(p) {
@@ -338,10 +338,16 @@ function buildBrief(state) {
     }
     if (queued.length > NEXT_CAP) L.push(`  (+${queued.length - NEXT_CAP} more — see PROJECT.md)`);
     const counts = {};
-    for (const e of epics) if (!missing(e)) counts[e.lane] = (counts[e.lane] || 0) + 1;
+    for (const e of epics) if (!missing(e) && e.status !== "planned") counts[e.lane] = (counts[e.lane] || 0) + 1;
     const ordered = KNOWN_LANES.filter(l => counts[l]).map(l => `${l} ${counts[l]}`);
     const unknown = Object.keys(counts).filter(l => !KNOWN_LANES.includes(l)).sort().map(l => `${l} ${counts[l]}`);
     L.push(`  lanes: ${[...ordered, ...unknown].join(" · ")}`);
+    L.push("");
+  }
+
+  const plannedCount = epics.filter(e => e.status === "planned").length;
+  if (plannedCount) {
+    L.push(`planned: ${plannedCount} — see PROJECT.md`);
     L.push("");
   }
 
