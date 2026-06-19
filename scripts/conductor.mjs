@@ -48,6 +48,7 @@ const CHANGES_DIR = path.join(ROOT, "openspec", "changes");
 const ARCHIVE_DIR = path.join(CHANGES_DIR, "archive");
 const PLANS_DIR = path.join(ROOT, "docs", "superpowers", "plans");
 const KNOWN_LANES = ["openspec", "superpowers", "claude-code", "decision", "external"];
+const KNOWN_STATUSES = ["untriaged", "queued", "active", "paused", "planned", "archived"];
 const LANE_RANK = { openspec: 0, superpowers: 1, "claude-code": 2, decision: 3, external: 4 };
 const laneRank = (l) => (l in LANE_RANK ? LANE_RANK[l] : 9);
 
@@ -558,7 +559,7 @@ function parseFlags(argv) {
     const a = argv[i];
     if (!a.startsWith("--")) continue;
     const k = a.slice(2);
-    const v = (argv[i + 1] !== undefined && !argv[i + 1].startsWith("--")) ? argv[++i] : "true";
+    const v = (argv[i + 1] !== undefined && !argv[i + 1].startsWith("--")) ? argv[++i] : true;
     if (k === "link") (o.link || (o.link = [])).push(v);
     else o[k] = v;
   }
@@ -568,31 +569,37 @@ function parseFlags(argv) {
 function addEpic() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const f = parseFlags(process.argv.slice(3));
-  if (!f.id || !/^[a-z0-9][a-z0-9._-]*$/.test(f.id)) {
+  const str = (v) => (typeof v === "string" ? v : undefined); // valueless flags arrive as boolean true
+  const id = str(f.id);
+  if (!id || !/^[a-z0-9][a-z0-9._-]*$/.test(id)) {
     process.stderr.write("conductor: --id required, format ^[a-z0-9][a-z0-9._-]*$\n"); process.exit(1);
   }
-  const lane = f.lane;
-  if (!KNOWN_LANES.includes(lane)) {
+  const lane = str(f.lane);
+  if (!lane || !KNOWN_LANES.includes(lane)) {
     process.stderr.write(`conductor: --lane must be one of ${KNOWN_LANES.join("|")}\n`); process.exit(1);
   }
-  const state = loadState();
-  if (state.epics.some(e => e.id === f.id)) {
-    process.stderr.write(`conductor: epic '${f.id}' already exists\n`); process.exit(1);
+  const status = str(f.status) || "queued";
+  if (!KNOWN_STATUSES.includes(status)) {
+    process.stderr.write(`conductor: --status must be one of ${KNOWN_STATUSES.join("|")}\n`); process.exit(1);
   }
-  const links = (f.link || []).map(s => {
+  const state = loadState();
+  if (state.epics.some(e => e.id === id)) {
+    process.stderr.write(`conductor: epic '${id}' already exists\n`); process.exit(1);
+  }
+  const links = (f.link || []).filter(s => typeof s === "string").map(s => {
     const [type, epic, ...rest] = s.split(":");
     const reason = rest.join(":").trim();
     return reason ? { type, epic, reason } : { type, epic };
   });
   const epic = {
-    id: f.id, title: f.title || f.id, priority: f.priority || "P?",
-    status: f.status || "queued", role: "epic", lane, links, reconcileNeeded: false,
+    id, title: str(f.title) || id, priority: str(f.priority) || "P?",
+    status, role: "epic", lane, links, reconcileNeeded: false,
   };
-  if (f.plan) epic.planPath = f.plan;
+  if (str(f.plan)) epic.planPath = f.plan;
   state.epics.push(epic);
   saveState(state);
   render();
-  process.stderr.write(`conductor: added epic '${f.id}' (${lane})\n`);
+  process.stderr.write(`conductor: added epic '${id}' (${lane}, ${status})\n`);
 }
 
 // ---------- migrations ----------

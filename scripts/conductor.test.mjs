@@ -372,6 +372,29 @@ test("render rewrites with a fresh stamp when content changes", () => {
   assert.match(after, /`x`/);
 });
 
+test("add-epic accepts --status planned", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "road-1", "--title", "Road 1", "--lane", "openspec", "--status", "planned"], { cwd });
+  assert.equal(readState(cwd).epics.find(e => e.id === "road-1").status, "planned");
+});
+
+test("add-epic rejects an unknown --status", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  assert.ok(expectFail(() => run(["add-epic", "--id", "x", "--lane", "openspec", "--status", "bogus"], { cwd })));
+});
+
+test("add-epic rejects a valueless --id and writes nothing", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  assert.ok(expectFail(() => run(["add-epic", "--lane", "openspec", "--id"], { cwd })));
+  assert.equal(readState(cwd).epics.length, 0);
+});
+
+test("add-epic tolerates a valueless --link without crashing", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "y", "--lane", "claude-code", "--link"], { cwd }); // must not throw
+  assert.deepEqual(readState(cwd).epics.find(e => e.id === "y").links, []);
+});
+
 test("ACCEPTANCE: 30 lane-tagged epics, zero OpenSpec changes", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
