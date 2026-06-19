@@ -477,3 +477,10 @@ test("sync does not transition a non-openspec planned epic (lane guard)", () => 
   assert.equal(e.lane, "claude-code");
   assert.equal(e.status, "planned");  // lane guard: not flipped despite a matching change dir
 });
+
+test("rules block mentions planned status and the roadmap on-ramp", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  const out = run(["rules"], { cwd });
+  assert.match(out, /planned/);
+  assert.match(out, /roadmap/i);
+});
