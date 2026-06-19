@@ -348,6 +348,30 @@ test("rules block is lane-agnostic, not openspec-only", () => {
   assert.doesNotMatch(out, /becomes its own OpenSpec proposal/);
 });
 
+test("render is a no-op when content is unchanged (no timestamp churn)", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["render"], { cwd });
+  const first = fs.readFileSync(path.join(cwd, "PROJECT.md"), "utf8");
+  run(["render"], { cwd });
+  const second = fs.readFileSync(path.join(cwd, "PROJECT.md"), "utf8");
+  assert.equal(first, second); // byte-identical, including the Last rendered line
+});
+
+test("render rewrites with a fresh stamp when content changes", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["render"], { cwd });
+  const before = fs.readFileSync(path.join(cwd, "PROJECT.md"), "utf8");
+  const s = readState(cwd);
+  s.epics.push({ id: "x", title: "x", priority: "P1", status: "queued", role: "epic", lane: "claude-code", links: [] });
+  writeState(cwd, s);
+  run(["render"], { cwd });
+  const after = fs.readFileSync(path.join(cwd, "PROJECT.md"), "utf8");
+  assert.notEqual(before, after);
+  assert.match(after, /`x`/);
+});
+
 test("ACCEPTANCE: 30 lane-tagged epics, zero OpenSpec changes", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });

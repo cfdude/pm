@@ -435,7 +435,15 @@ function render() {
   md.push("```");
   md.push("");
 
-  fs.writeFileSync(PROJECT_MD, md.join("\n"));
+  const content = md.join("\n");
+  const STAMP_RE = /^> Last rendered: .*$/m;
+  let existing = "";
+  try { existing = fs.readFileSync(PROJECT_MD, "utf8"); } catch { /* no file yet */ }
+  if (existing && existing.replace(STAMP_RE, "") === content.replace(STAMP_RE, "")) {
+    process.stderr.write("conductor: PROJECT.md unchanged (skipped rewrite)\n");
+    return;
+  }
+  fs.writeFileSync(PROJECT_MD, content);
   process.stderr.write(`conductor: rendered ${PROJECT_MD}\n`);
 }
 
