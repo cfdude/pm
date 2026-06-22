@@ -176,6 +176,34 @@ Then, in any project you want to manage:
 
 Requirements: Node 18+ (already present via OpenSpec). No npm install, no other deps.
 
+## Updating pm in your projects
+
+When a new version of pm ships, follow this sequence every time:
+
+1. **Update the plugin.** Pull the latest marketplace and update pm — either via the
+   marketplace auto-update or `/plugin update pm@cfdude-plugins` in Claude Code.
+
+2. **`/reload-plugins` or restart Claude Code — required.** Claude Code loads all
+   plugin commands, hooks, and the conductor engine at session start. Without a reload,
+   `/pm:upgrade` runs the *old* engine even though the new files are on disk. The
+   SessionStart briefing will tell you an upgrade is available; that is your signal to
+   reload before proceeding.
+
+3. **`/pm:upgrade` in each project that uses pm.** Run this once per repo after the
+   reload. It is idempotent — running it a second time is harmless. It applies any pending
+   migrations, refreshes the CLAUDE.md rules block with current wording, re-renders
+   `PROJECT.md`, and stamps the new version into `state.json` so the upgrade nudge stops
+   appearing.
+
+The SessionStart nudge (shown in every briefing until resolved) names the full sequence and
+repeats on each session start until you complete it in that repo.
+
+> **Note:** the staleness guard (introduced in 0.4.1) refuses to run if the engine version
+> and the installed version don't match, and prints the reload reminder instead of silently
+> re-stamping an old version. This means from 0.4.1 onward every upgrade is self-guarding.
+> The first upgrade *into* 0.4.1 still runs the old 0.4.0 engine until you reload —
+> that one requires the manual sequence above.
+
 ## Companions (not bundled, on purpose)
 
 - **OpenSpec** — optional (not required). It's an npm CLI, not a plugin, so it can't be a

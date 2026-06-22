@@ -6,6 +6,42 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.4.1] — 2026-06-22
+
+### Added
+
+- **`/pm:upgrade` staleness guard.** `/pm:upgrade` now checks whether the running engine
+  version matches the newest installed version before proceeding. If they differ (i.e. the
+  plugin was updated but Claude Code has not been reloaded), it refuses with a clear message
+  — "this is pm <old> but <new> is installed; run `/reload-plugins` or restart Claude Code
+  first" — instead of silently re-stamping an old version. From 0.4.1 forward every upgrade
+  is self-guarding.
+
+- **SessionStart nudge fires from newest installed version.** The upgrade nudge in the
+  SessionStart briefing now keys on the newest installed version (from the plugin's
+  `plugin.json`) rather than the running engine version. This means the nudge fires even
+  before you reload Claude Code, and it names the full sequence: (1) reload/restart; (2)
+  `/pm:upgrade` per repo.
+
+- **Documented update sequence.** `upgrade.md` and README both document the required
+  three-step sequence: update the plugin → `/reload-plugins` or restart → `/pm:upgrade`
+  per project. The upgrade command note now explains why the reload step is mandatory
+  (Claude Code loads the engine at session start).
+
+### Limitation
+
+The staleness guard ships inside 0.4.1, so the first upgrade *into* 0.4.1 still runs the
+old 0.4.0 engine until you `/reload-plugins`. From 0.4.1 forward every upgrade is
+self-guarding.
+
+### Upgrade
+
+**Existing repos:** run `/pm:upgrade` after updating — refreshes rules, stamps 0.4.1 into
+`state.json`. Idempotent; safe to run multiple times. No data migration required. Remember
+to `/reload-plugins` first (see above).
+
+---
+
 ## [0.4.0] — 2026-06-18
 
 ### Added
