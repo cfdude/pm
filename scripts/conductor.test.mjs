@@ -495,3 +495,42 @@ test("rules block mentions planned status and the roadmap on-ramp", () => {
   assert.match(out, /planned/);
   assert.match(out, /roadmap/i);
 });
+
+test("upgrade refuses when a newer pm is installed than the running engine", () => {
+  const cwd = tmpRepo();
+  const root03 = fixturePluginRoot("0.4.0");
+  run(["init"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root03 } });
+  const stampedBefore = readState(cwd).pmVersion; // 0.4.0
+  const cache = fixtureCache(["0.4.0", "0.4.1"]);
+  const err = expectFail(() => run(["upgrade"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root03, PM_CACHE_ROOT: cache } }));
+  assert.ok(err, "expected non-zero exit when stale");
+  assert.match(String(err.stderr || err.message), /0\.4\.0.*0\.4\.1|0\.4\.1.*installed/);
+  assert.equal(readState(cwd).pmVersion, stampedBefore); // unchanged — no mutation
+});
+
+test("upgrade proceeds when the running engine is the newest installed", () => {
+  const cwd = tmpRepo();
+  const root = fixturePluginRoot("0.4.1");
+  run(["init"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root } });
+  const cache = fixtureCache(["0.4.0", "0.4.1"]);
+  run(["upgrade"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root, PM_CACHE_ROOT: cache } });
+  assert.equal(readState(cwd).pmVersion, "0.4.1");
+});
+
+test("upgrade proceeds when the cache cannot be read (newest null)", () => {
+  const cwd = tmpRepo();
+  const root = fixturePluginRoot("0.4.0");
+  run(["init"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root } });
+  // PM_CACHE_ROOT defaults to the empty cache → newest is null → guard no-op
+  run(["upgrade"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root } });
+  assert.equal(readState(cwd).pmVersion, "0.4.0");
+});
+
+test("newest-version semver: 0.10.0 beats 0.9.0 (guard fires)", () => {
+  const cwd = tmpRepo();
+  const root = fixturePluginRoot("0.9.0");
+  run(["init"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root } });
+  const cache = fixtureCache(["0.9.0", "0.10.0"]);
+  const err = expectFail(() => run(["upgrade"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root, PM_CACHE_ROOT: cache } }));
+  assert.ok(err, "0.10.0 must be treated as newer than 0.9.0");
+});
