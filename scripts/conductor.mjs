@@ -326,11 +326,19 @@ function buildBrief(state) {
   const byId = Object.fromEntries(epics.map(e => [e.id, e]));
   const L = [];
 
-  const running = pluginVersion();
   const stamped = state.pmVersion || "0.0.0";
-  if (running && cmpVer(stamped, running) < 0) {
-    L.push(`⚠ pm ${stamped} → ${running} since this repo was set up — run \`/pm:upgrade\` (CLAUDE.md rules and epic schema may need refreshing).`);
-    L.push("");
+  const newest = newestInstalledVersion();
+  if (newest !== null) {
+    if (cmpVer(stamped, newest) < 0) {
+      L.push(`⚠ pm ${stamped} → ${newest} available — run \`/reload-plugins\` (if you just updated the plugin), then \`/pm:upgrade\`.`);
+      L.push("");
+    }
+  } else {
+    const running = pluginVersion();
+    if (running && cmpVer(stamped, running) < 0) {
+      L.push(`⚠ pm ${stamped} → ${running} since this repo was set up — run \`/pm:upgrade\` (CLAUDE.md rules and epic schema may need refreshing).`);
+      L.push("");
+    }
   }
 
   L.push("CONDUCTOR STATE — where we are and what's next");

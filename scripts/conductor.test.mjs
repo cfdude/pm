@@ -534,3 +534,37 @@ test("newest-version semver: 0.10.0 beats 0.9.0 (guard fires)", () => {
   const err = expectFail(() => run(["upgrade"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root, PM_CACHE_ROOT: cache } }));
   assert.ok(err, "0.10.0 must be treated as newer than 0.9.0");
 });
+
+test("nudge fires from newest-installed even when the running engine is old", () => {
+  const cwd = tmpRepo();
+  const root = fixturePluginRoot("0.3.0");
+  run(["init"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root } }); // stamps 0.3.0
+  const cache = fixtureCache(["0.3.0", "0.4.1"]);
+  const out = JSON.parse(run(["brief"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root, PM_CACHE_ROOT: cache } }))
+    .hookSpecificOutput.additionalContext;
+  assert.match(out, /pm 0\.3\.0 → 0\.4\.1 available/);
+  assert.match(out, /\/reload-plugins/);
+  assert.match(out, /\/pm:upgrade/);
+});
+
+test("no nudge when stamped equals newest installed", () => {
+  const cwd = tmpRepo();
+  const root = fixturePluginRoot("0.4.1");
+  run(["init"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root } });
+  const cache = fixtureCache(["0.4.1"]);
+  const out = JSON.parse(run(["brief"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root, PM_CACHE_ROOT: cache } }))
+    .hookSpecificOutput.additionalContext;
+  assert.doesNotMatch(out, /available —/);
+  assert.doesNotMatch(out, /since this repo was set up/);
+});
+
+test("nudge falls back to running-version comparison when cache is unreadable", () => {
+  const cwd = tmpRepo();
+  const root = fixturePluginRoot("0.3.0");
+  run(["init"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root } });
+  const newer = fixturePluginRoot("0.4.1");
+  // default PM_CACHE_ROOT (empty) → newest null → fallback compares stamped(0.3.0) vs running(0.4.1)
+  const out = JSON.parse(run(["brief"], { cwd, env: { CLAUDE_PLUGIN_ROOT: newer } }))
+    .hookSpecificOutput.additionalContext;
+  assert.match(out, /since this repo was set up/);
+});
