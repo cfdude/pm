@@ -616,6 +616,24 @@ function parseFlags(argv) {
   return o;
 }
 
+/** Validate a proposed `parent` for epic `id` against the current `epics`.
+ *  Returns an error string, or null if the parent is acceptable (or unset).
+ *  `id` need not yet exist (add-epic); for re-parenting (update-epic) it will.
+ *  Shared by add-epic, update-epic, and add-many so the tree stays acyclic. */
+function parentError(epics, id, parent) {
+  if (parent === undefined || parent === null) return null;
+  if (parent === id) return `epic '${id}' cannot be its own parent`;
+  const byId = new Map(epics.map(e => [e.id, e]));
+  if (!byId.has(parent)) return `parent '${parent}' is not a known epic`;
+  // Walk ancestors of `parent`; reaching `id` means this edge would close a cycle.
+  let cur = byId.get(parent), guard = 0;
+  while (cur && cur.parent && guard++ < 10000) {
+    if (cur.parent === id) return `setting parent '${parent}' on '${id}' would create a cycle`;
+    cur = byId.get(cur.parent);
+  }
+  return null;
+}
+
 function addEpic() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const f = parseFlags(process.argv.slice(3));
@@ -641,11 +659,17 @@ function addEpic() {
     const reason = rest.join(":").trim();
     return reason ? { type, epic, reason } : { type, epic };
   });
+  const parent = str(f.parent);
+  if (parent !== undefined) {
+    const perr = parentError(state.epics, id, parent);
+    if (perr) { process.stderr.write(`conductor: ${perr}\n`); process.exit(1); }
+  }
   const epic = {
     id, title: str(f.title) || id, priority: str(f.priority) || "P?",
     status, role: "epic", lane, links, reconcileNeeded: false,
   };
   if (str(f.plan)) epic.planPath = f.plan;
+  if (parent !== undefined) epic.parent = parent;
   state.epics.push(epic);
   saveState(state);
   render();

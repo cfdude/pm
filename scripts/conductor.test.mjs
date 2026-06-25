@@ -568,3 +568,44 @@ test("nudge falls back to running-version comparison when cache is unreadable", 
     .hookSpecificOutput.additionalContext;
   assert.match(out, /since this repo was set up/);
 });
+
+// ───────────────────────── 0.5.0: epic hierarchy ─────────────────────────
+
+test("0.4.1-shaped state (no parent/externalId/tracker) loads and renders unchanged", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  // A state exactly as v0.4.1 would write it — no new fields anywhere.
+  writeState(cwd, {
+    version: 1, active: "live", detourStack: [], pmVersion: "0.4.1",
+    epics: [
+      { id: "live", title: "Live one", priority: "P0", status: "active", role: "epic", lane: "openspec", links: [], reconcileNeeded: false },
+      { id: "q", title: "Queued", priority: "P1", status: "queued", role: "epic", lane: "superpowers", stories: [{ title: "a", done: false }], links: [] },
+    ],
+  });
+  run(["render"], { cwd });
+  const md = projectMd(cwd);
+  assert.match(md, /`live`/);
+  assert.match(md, /`q`/);
+  assert.doesNotMatch(md, /undefined/);
+  const brief = parseBrief(cwd);
+  assert.match(brief, /NOW: `live`/);
+  assert.doesNotMatch(brief, /undefined/);
+});
+
+test("add-epic --parent sets parent when the parent exists", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "sprint", "--lane", "external", "--priority", "P0"], { cwd });
+  run(["add-epic", "--id", "child-1", "--lane", "external", "--parent", "sprint"], { cwd });
+  assert.equal(readState(cwd).epics.find(e => e.id === "child-1").parent, "sprint");
+});
+
+test("add-epic --parent rejects a non-existent parent and writes nothing", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const before = readState(cwd).epics.length;
+  const err = expectFail(() => run(["add-epic", "--id", "orphan", "--lane", "external", "--parent", "nope"], { cwd }));
+  assert.ok(err, "expected non-zero exit for missing parent");
+  assert.match(String(err.stderr || err.message), /parent/i);
+  assert.equal(readState(cwd).epics.length, before);
+});
