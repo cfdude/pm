@@ -249,6 +249,12 @@ function bar(p) {
   return "—";
 }
 
+/** A link is renderable only when both endpoints are strings. Guards against
+ *  malformed/partial entries (incl. older schemas) that would render `undefined`. */
+function validLink(l) {
+  return l && typeof l.type === "string" && typeof l.epic === "string";
+}
+
 /** Is the project currently inside a detour? (active epic is a detour, or stack non-empty) */
 function detourContext(state) {
   if (state.detourStack && state.detourStack.length) {
@@ -389,7 +395,7 @@ function buildBrief(state) {
     L.push("");
   }
 
-  const links = epics.flatMap(e => (e.links || []).map(l => ({ from: e.id, ...l })));
+  const links = epics.flatMap(e => (e.links || []).filter(validLink).map(l => ({ from: e.id, ...l })));
   if (links.length) {
     L.push("EPIC LINKS:");
     for (const l of links) L.push(`  • \`${l.from}\` ${l.type} \`${l.epic}\`${l.reason ? ` — ${l.reason}` : ""}`);
@@ -457,7 +463,7 @@ function render() {
   const byId = new Map(epics.map(e => [e.id, e]));
   const childrenOf = (id) => epics.filter(e => e.parent === id);
   const epicRow = (e, depth) => {
-    const links = (e.links || []).map(l => `${l.type}→${l.epic}`).join("; ") || "-";
+    const links = (e.links || []).filter(validLink).map(l => `${l.type}→${l.epic}`).join("; ") || "-";
     const miss = missing(e) ? " ⚠ no change on disk" : "";
     const indent = depth > 0 ? "└─ ".repeat(depth) : "";
     const kids = childrenOf(e.id);

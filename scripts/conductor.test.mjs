@@ -652,3 +652,22 @@ test("brief keeps a child's priority slot in NEXT UP and annotates its parent", 
   assert.ok(brief.indexOf("`kid`") < brief.indexOf("`par`"), "P0 child outranks its P2 parent in NEXT UP");
   assert.match(brief, /`kid`[^\n]*parent: `par`/);     // child annotated with its parent
 });
+
+// ───────────────────────── 0.5.0: defensive render ─────────────────────────
+
+test("malformed links never render as undefined, valid links still show", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  writeState(cwd, { version: 1, active: null, detourStack: [], epics: [
+    { id: "a", title: "a", priority: "P1", status: "queued", role: "epic", lane: "external",
+      links: [{ reason: "broken — no type/epic" }, { type: "blocks", epic: "b" }] },
+    { id: "b", title: "b", priority: "P1", status: "queued", role: "epic", lane: "external", links: [] },
+  ]});
+  run(["render"], { cwd });
+  const md = projectMd(cwd);
+  assert.doesNotMatch(md, /undefined/);
+  assert.match(md, /blocks→b/);                  // valid link still rendered in the table
+  const brief = parseBrief(cwd);
+  assert.doesNotMatch(brief, /undefined/);
+  assert.match(brief, /`a` blocks `b`/);         // valid link still rendered in EPIC LINKS
+});
