@@ -687,3 +687,47 @@ test("set-tracker writes a tracker block with a multi-entry statusIntent map", (
   assert.equal(t.mechanism, "mcp");
   assert.deepEqual(t.statusIntent, { active: "in-progress", paused: "todo", archived: "done" });
 });
+
+test("add-epic stores externalId/externalUrl", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "job-506", "--lane", "external",
+       "--external-id", "JOB-506", "--external-url", "https://onvex.example/JOB-506"], { cwd });
+  const e = readState(cwd).epics.find(x => x.id === "job-506");
+  assert.equal(e.externalId, "JOB-506");
+  assert.equal(e.externalUrl, "https://onvex.example/JOB-506");
+});
+
+test("update-epic records external id/url onto an existing epic (write-back)", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "job-507", "--lane", "external"], { cwd });
+  run(["update-epic", "job-507", "--external-id", "JOB-507", "--external-url", "https://onvex.example/JOB-507"], { cwd });
+  const e = readState(cwd).epics.find(x => x.id === "job-507");
+  assert.equal(e.externalId, "JOB-507");
+  assert.equal(e.externalUrl, "https://onvex.example/JOB-507");
+});
+
+test("update-epic re-status/re-priority works; self-parent and cycle are rejected", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "external"], { cwd });
+  run(["add-epic", "--id", "b", "--lane", "external", "--parent", "a"], { cwd }); // b under a
+  run(["update-epic", "a", "--status", "active", "--priority", "P0"], { cwd });
+  const e = readState(cwd).epics.find(x => x.id === "a");
+  assert.equal(e.status, "active");
+  assert.equal(e.priority, "P0");
+  assert.ok(expectFail(() => run(["update-epic", "a", "--parent", "a"], { cwd })), "self-parent rejected");
+  assert.ok(expectFail(() => run(["update-epic", "a", "--parent", "b"], { cwd })), "cycle rejected");
+  assert.equal(readState(cwd).epics.find(x => x.id === "a").parent, undefined);
+});
+
+test("update-epic on an unknown id exits non-zero and writes nothing", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "real", "--lane", "external"], { cwd });
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  const err = expectFail(() => run(["update-epic", "ghost", "--status", "active"], { cwd }));
+  assert.ok(err, "expected non-zero exit for unknown id");
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
+});

@@ -700,10 +700,49 @@ function addEpic() {
   };
   if (str(f.plan)) epic.planPath = f.plan;
   if (parent !== undefined) epic.parent = parent;
+  if (str(f["external-id"]) !== undefined) epic.externalId = str(f["external-id"]);
+  if (str(f["external-url"]) !== undefined) epic.externalUrl = str(f["external-url"]);
   state.epics.push(epic);
   saveState(state);
   render();
   process.stderr.write(`conductor: added epic '${id}' (${lane}, ${status})\n`);
+}
+
+// ---------- update-epic (write-back) ----------
+
+/** Update an EXISTING epic's externalId/externalUrl/parent/status/priority.
+ *  The id is POSITIONAL (parseFlags skips non-`--` tokens). Closes the tracker
+ *  sync loop: after the agent creates an issue it records the key here. */
+function updateEpic() {
+  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  const argv = process.argv.slice(3);
+  const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
+  if (!id) { process.stderr.write("usage: conductor.mjs update-epic <id> [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P]\n"); process.exit(1); }
+  const f = parseFlags(argv.slice(1));
+  const str = (v) => (typeof v === "string" ? v : undefined);
+  const state = loadState();
+  const epic = state.epics.find(e => e.id === id);
+  if (!epic) { process.stderr.write(`conductor: epic '${id}' not found\n`); process.exit(1); }
+
+  const parent = str(f.parent);
+  if (parent !== undefined) {
+    const perr = parentError(state.epics, id, parent);
+    if (perr) { process.stderr.write(`conductor: ${perr}\n`); process.exit(1); }
+  }
+  const status = str(f.status);
+  if (status !== undefined && !KNOWN_STATUSES.includes(status)) {
+    process.stderr.write(`conductor: --status must be one of ${KNOWN_STATUSES.join("|")}\n`); process.exit(1);
+  }
+
+  if (str(f["external-id"]) !== undefined) epic.externalId = str(f["external-id"]);
+  if (str(f["external-url"]) !== undefined) epic.externalUrl = str(f["external-url"]);
+  if (parent !== undefined) epic.parent = parent;
+  if (status !== undefined) epic.status = status;
+  if (str(f.priority) !== undefined) epic.priority = str(f.priority);
+
+  saveState(state);
+  render();
+  process.stderr.write(`conductor: updated '${id}'\n`);
 }
 
 // ---------- tracker ----------
@@ -789,6 +828,7 @@ const cmd = process.argv[2];
   sync: () => sync(false),
   "log-detour": logDetour,
   "add-epic": addEpic,
+  "update-epic": updateEpic,
   "set-tracker": setTracker,
   upgrade,
   rules: () => process.stdout.write(rulesBlock()),
