@@ -609,3 +609,46 @@ test("add-epic --parent rejects a non-existent parent and writes nothing", () =>
   assert.match(String(err.stderr || err.message), /parent/i);
   assert.equal(readState(cwd).epics.length, before);
 });
+
+test("render groups children under their parent with indent, rollup, and sorted siblings", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  writeState(cwd, { version: 1, active: null, detourStack: [], epics: [
+    { id: "sprint", title: "Sprint", priority: "P0", status: "queued", role: "epic", lane: "external", links: [] },
+    { id: "c-b", title: "cb", priority: "P1", status: "queued", role: "epic", lane: "external", parent: "sprint", links: [] },
+    { id: "c-a", title: "ca", priority: "P0", status: "archived", role: "epic", lane: "external", parent: "sprint", links: [] },
+  ]});
+  run(["render"], { cwd });
+  const md = projectMd(cwd);
+  assert.match(md, /└─ `c-a`/);                       // children indented
+  assert.match(md, /└─ `c-b`/);
+  assert.match(md, /1\/2 children archived/);          // rollup on the parent row
+  assert.ok(md.indexOf("`sprint`") < md.indexOf("`c-a`"), "parent renders before its children");
+  assert.ok(md.indexOf("`c-a`") < md.indexOf("`c-b`"), "siblings sorted by priority (P0 before P1)");
+});
+
+test("render indents grandchildren one level deeper", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  writeState(cwd, { version: 1, active: null, detourStack: [], epics: [
+    { id: "p", title: "p", priority: "P0", status: "queued", role: "epic", lane: "external", links: [] },
+    { id: "c", title: "c", priority: "P0", status: "queued", role: "epic", lane: "external", parent: "p", links: [] },
+    { id: "gc", title: "gc", priority: "P0", status: "queued", role: "epic", lane: "external", parent: "c", links: [] },
+  ]});
+  run(["render"], { cwd });
+  const md = projectMd(cwd);
+  assert.match(md, /└─ `c`/);
+  assert.match(md, /└─ └─ `gc`/);
+});
+
+test("brief keeps a child's priority slot in NEXT UP and annotates its parent", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  writeState(cwd, { version: 1, active: null, detourStack: [], epics: [
+    { id: "par", title: "par", priority: "P2", status: "queued", role: "epic", lane: "external", links: [] },
+    { id: "kid", title: "kid", priority: "P0", status: "queued", role: "epic", lane: "external", parent: "par", links: [] },
+  ]});
+  const brief = parseBrief(cwd);
+  assert.ok(brief.indexOf("`kid`") < brief.indexOf("`par`"), "P0 child outranks its P2 parent in NEXT UP");
+  assert.match(brief, /`kid`[^\n]*parent: `par`/);     // child annotated with its parent
+});

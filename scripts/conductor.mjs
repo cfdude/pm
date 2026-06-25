@@ -371,7 +371,8 @@ function buildBrief(state) {
   if (queued.length) {
     L.push("NEXT UP (by priority, then lane):");
     for (const e of queued.slice(0, NEXT_CAP)) {
-      L.push(`  • \`${e.id}\` (${e.priority}, ${e.lane}, ${e.status}) — ${bar(e.progress)}`);
+      const pa = e.parent ? `, parent: \`${e.parent}\`` : "";
+      L.push(`  • \`${e.id}\` (${e.priority}, ${e.lane}, ${e.status}${pa}) — ${bar(e.progress)}`);
     }
     if (queued.length > NEXT_CAP) L.push(`  (+${queued.length - NEXT_CAP} more — see PROJECT.md)`);
     const counts = {};
@@ -450,11 +451,33 @@ function render() {
   md.push("");
   md.push("| Priority | Epic | Lane | Role | Status | Progress | Links |");
   md.push("|----------|------|------|------|--------|----------|-------|");
-  for (const e of epics) {
+  // Render as a tree: roots in resolveEpics() order, each followed by its
+  // descendants depth-first. Grouping is render-only — it does not touch the
+  // resolveEpics() sort that buildBrief()/NEXT UP rely on.
+  const byId = new Map(epics.map(e => [e.id, e]));
+  const childrenOf = (id) => epics.filter(e => e.parent === id);
+  const epicRow = (e, depth) => {
     const links = (e.links || []).map(l => `${l.type}→${l.epic}`).join("; ") || "-";
     const miss = missing(e) ? " ⚠ no change on disk" : "";
-    md.push(`| ${e.priority} | \`${e.id}\` | ${e.lane} | ${e.role} | ${e.status}${e.reconcileNeeded ? " ⚠" : ""}${miss} | ${bar(e.progress)} | ${links} |`);
-  }
+    const indent = depth > 0 ? "└─ ".repeat(depth) : "";
+    const kids = childrenOf(e.id);
+    let progress = bar(e.progress);
+    if (kids.length) {
+      const archived = kids.filter(k => k.status === "archived").length;
+      const rollup = `${archived}/${kids.length} children archived`;
+      progress = progress === "—" ? rollup : `${rollup} · ${progress}`;
+    }
+    md.push(`| ${e.priority} | ${indent}\`${e.id}\` | ${e.lane} | ${e.role} | ${e.status}${e.reconcileNeeded ? " ⚠" : ""}${miss} | ${progress} | ${links} |`);
+  };
+  const seen = new Set();
+  const emit = (e, depth) => {
+    if (seen.has(e.id)) return;                 // cycle guard (validation prevents; render stays safe)
+    seen.add(e.id);
+    epicRow(e, depth);
+    for (const c of childrenOf(e.id)) emit(c, depth + 1);
+  };
+  for (const e of epics) if (!e.parent || !byId.has(e.parent)) emit(e, 0);
+  for (const e of epics) if (!seen.has(e.id)) emit(e, 0);   // orphaned by a cycle → render flat
   md.push("");
 
   md.push("## Recent detours");
