@@ -33,3 +33,44 @@ invocation.
    `ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1); node "$ENGINE" add-epic …`
 
 3. Show the result with `/pm:status`.
+
+---
+
+## Bulk create — `add-many`
+
+To register a parent epic and its children in one atomic operation (e.g. a sprint of audit
+tickets), author a JSON batch and pass it with `--from <path>` (or `--from -` for stdin):
+
+```json
+{
+  "parent":  { "id": "sprint-2026-06-25", "title": "Pre-staging sprint", "lane": "external", "priority": "P0", "status": "queued" },
+  "epics": [
+    { "id": "job-506", "title": "[JOB-506] HMAC-verify webhooks", "lane": "external", "priority": "P0", "externalId": "JOB-506", "externalUrl": "https://onvex.example/JOB-506" },
+    { "id": "job-507", "title": "[JOB-507] …", "lane": "external", "priority": "P1", "externalId": "JOB-507" }
+  ]
+}
+```
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" add-many --from /path/to/batch.json
+```
+
+- If `parent` is present it is created first and each `epics[]` entry defaults its `parent` to it.
+- **Atomic:** every entry is validated up front (id format, uniqueness vs existing AND within the
+  batch, lane, status, parent refs/cycles). On any failure nothing is written and the command
+  exits non-zero naming the offender. A valid batch is persisted in a single write — no `&&`
+  chaining, no write race.
+- JSON only (the engine is zero-dependency). `parent` is optional; a bare `{ "epics": [...] }`
+  batch works too.
+
+## Write-back — `update-epic`
+
+To change an epic that already exists (notably, to record a tracker key after creating the issue):
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" update-epic <id> \
+  [--external-id <KEY>] [--external-url <url>] [--parent <id>] [--status <status>] [--priority <P?>]
+```
+
+The id is positional. Parent/status changes are validated like `add-epic` (no self-parent, no
+cycle, known status). On an unknown id it exits non-zero and writes nothing.

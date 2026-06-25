@@ -778,3 +778,78 @@ test("brief invents no transition drift when all active epics are mirrored", () 
   assert.doesNotMatch(brief, /not yet in jira/);                       // nothing to create
   assert.doesNotMatch(brief, /transition pending|out of sync|drift/i); // no fabricated transition drift
 });
+
+// ───────────────────────── 0.5.0: bulk creation ─────────────────────────
+
+function writeBatch(cwd, obj) {
+  const p = path.join(cwd, "batch.json");
+  fs.writeFileSync(p, JSON.stringify(obj));
+  return p;
+}
+
+test("add-many creates a parent + children atomically; children inherit the parent id", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const batch = writeBatch(cwd, {
+    parent: { id: "sprint", title: "Sprint", lane: "external", priority: "P0", status: "queued" },
+    epics: [
+      { id: "job-1", title: "one", lane: "external", priority: "P0", externalId: "JOB-1" },
+      { id: "job-2", title: "two", lane: "external", priority: "P1" },
+    ],
+  });
+  run(["add-many", "--from", batch], { cwd });
+  const s = readState(cwd);
+  assert.ok(s.epics.find(e => e.id === "sprint"));
+  assert.equal(s.epics.find(e => e.id === "job-1").parent, "sprint");
+  assert.equal(s.epics.find(e => e.id === "job-2").parent, "sprint");
+  assert.equal(s.epics.find(e => e.id === "job-1").externalId, "JOB-1");
+});
+
+test("add-many children-only batch leaves parent unset", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const batch = writeBatch(cwd, { epics: [
+    { id: "x", lane: "external", priority: "P1" }, { id: "y", lane: "external", priority: "P1" }] });
+  run(["add-many", "--from", batch], { cwd });
+  const s = readState(cwd);
+  assert.ok(s.epics.find(e => e.id === "x") && s.epics.find(e => e.id === "y"));
+  assert.equal(s.epics.find(e => e.id === "x").parent, undefined);
+});
+
+test("add-many aborts the whole batch on one invalid entry, writing nothing", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const before = readState(cwd).epics.length;
+  const batch = writeBatch(cwd, { epics: [
+    { id: "good", lane: "external", priority: "P1" },
+    { id: "Bad ID", lane: "external" },                 // malformed id
+  ]});
+  assert.ok(expectFail(() => run(["add-many", "--from", batch], { cwd })), "expected non-zero exit");
+  assert.equal(readState(cwd).epics.length, before);     // nothing written — not even 'good'
+});
+
+test("add-many rejects a duplicate id within the batch", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const batch = writeBatch(cwd, { epics: [{ id: "dup", lane: "external" }, { id: "dup", lane: "external" }] });
+  assert.ok(expectFail(() => run(["add-many", "--from", batch], { cwd })));
+  assert.equal(readState(cwd).epics.length, 0);
+});
+
+test("add-many rejects a duplicate against an existing epic", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "exists", "--lane", "external"], { cwd });
+  const batch = writeBatch(cwd, { epics: [{ id: "exists", lane: "external" }] });
+  assert.ok(expectFail(() => run(["add-many", "--from", batch], { cwd })));
+  assert.equal(readState(cwd).epics.filter(e => e.id === "exists").length, 1);
+});
+
+test("add-many rejects an intra-batch parent cycle", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const batch = writeBatch(cwd, { epics: [
+    { id: "x", lane: "external", parent: "y" }, { id: "y", lane: "external", parent: "x" }] });
+  assert.ok(expectFail(() => run(["add-many", "--from", batch], { cwd })));
+  assert.equal(readState(cwd).epics.length, 0);
+});
