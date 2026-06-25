@@ -64,11 +64,49 @@ An epic missing `lane` is treated as `openspec` (backward-compatible with pre-0.
   "status": "queued",
   "role": "epic",
   "lane": "superpowers",                          // optional; defaults to "openspec"
+  "parent": "sprint-2026-06-25",                  // optional: nest under a parent epic (tree)
+  "externalId": "JOB-498",                        // optional: linked tracker issue key
+  "externalUrl": "https://onvex.example/JOB-498", // optional: direct link to the issue
   "planPath": "docs/superpowers/plans/auth.md",   // optional: progress source for superpowers lane
   "stories": [{ "title": "vend token", "done": false }], // optional: inline progress
   "links": []
 }
 ```
+
+### Hierarchy
+
+Epics form a single-parent tree via the optional `parent` field. `PROJECT.md` renders children
+indented (`└─`) beneath their parent, groups each family ordered by the parent's priority, and
+shows an `X/Y children archived` rollup on the parent. Grouping is render-only — NEXT UP keeps the
+global priority order, so a P0 child of a P2 parent still surfaces at P0. Create with
+`/pm:epic add … --parent <id>` (validated: the parent must exist, no self-parent, no cycle), or
+build a whole sprint at once with `add-many` (below).
+
+### External-tracker awareness (Jira / GitHub / Linear)
+
+The conductor can be made *aware* that a project mirrors its epics to an external tracker, without
+the plugin ever talking to that tracker — it remains an **instruction layer, not an integration
+layer**. An optional `tracker` block in `state.json` records the system:
+
+```jsonc
+"tracker": {
+  "system": "jira", "instance": "onvex", "projectKey": "JOB", "mechanism": "mcp",
+  "statusIntent": { "active": "in-progress", "paused": "todo", "archived": "done" }
+}
+```
+
+`statusIntent` maps conductor lifecycle to a *semantic* target — never a literal transition name;
+the interactive agent resolves the real workflow transition itself. When a tracker is configured:
+
+- the CLAUDE.md rules block gains an "External tracker sync" section assigning **you (the agent)**
+  ownership: create the issue for an unmirrored epic and record its key with `update-epic`;
+  transition the linked issue toward the `statusIntent` target on each status change; create a
+  parent epic as a tracker epic and link its children;
+- the briefing's `TRACKER SYNC` line lists only honestly-computable drift — active-work epics with
+  no `externalId`. It does **not** fabricate transition drift (the engine can't see tracker state).
+
+Configure with `/pm:tracker` (it detects signals, confirms with you, and calls `set-tracker`).
+Record an issue key after creating it with `/pm:epic` → `update-epic <id> --external-id <KEY>`.
 
 ## Detours
 
@@ -127,8 +165,11 @@ you have connected.
 | `/pm:detour --minimal "<what>"` | Fast-path: log a minimal detour to `detours.log` and move on |
 | `/pm:resume` | Pop the detour stack and run the reconcile gate |
 | `/pm:sync` | Register new OpenSpec proposals and Superpowers plans as epics |
-| `/pm:epic add --id X --title "…" --lane L --priority P [--status S]` | Register any epic directly (all lanes); `--status` accepts any known status (default: `queued`); use `--status planned` for roadmap items |
-| `/pm:upgrade` | Refresh CLAUDE.md rules, stamp lanes on pre-0.3.0 epics, update `pmVersion` |
+| `/pm:epic add --id X --title "…" --lane L --priority P [--status S] [--parent ID] [--external-id KEY]` | Register any epic directly (all lanes); optionally nest under a parent or link a tracker issue |
+| `/pm:epic` → `add-many --from <path\|->` | Atomically bulk-create a parent + children from a JSON batch |
+| `/pm:epic` → `update-epic <id> [--external-id …] [--parent …] [--status …]` | Update an existing epic (write-back path for recording tracker keys) |
+| `/pm:tracker` | Make the conductor aware of an external tracker (Jira/GitHub/Linear); detect → confirm → `set-tracker` |
+| `/pm:upgrade` | Refresh CLAUDE.md rules, run migrations (lanes, 0.5.0 link normalization), update `pmVersion` |
 
 Plus a `conductor` skill (the reasoning) and a `reconciler` agent (clean-context
 re-validation at the reconcile gate).
@@ -220,7 +261,7 @@ repeats on each session start until you complete it in that repo.
 
 ```
 .claude-plugin/plugin.json   manifest (name: pm)
-commands/                    /pm:init /pm:status /pm:next /pm:detour /pm:resume /pm:sync /pm:epic /pm:upgrade
+commands/                    /pm:init /pm:status /pm:next /pm:detour /pm:resume /pm:sync /pm:epic /pm:tracker /pm:upgrade
 skills/conductor/SKILL.md    the discipline (detour classification, PUSH/POP, reconcile)
 agents/reconciler.md         fresh-context re-validation of a paused proposal
 hooks/hooks.json             SessionStart inject · PreCompact snapshot · PostToolUse nudge

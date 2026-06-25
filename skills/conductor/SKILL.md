@@ -30,7 +30,22 @@ You (Claude) are myopic across compactions. This skill is how you stop losing th
 
 `/pm:init` scaffold · `/pm:status` show · `/pm:next` decide · `/pm:detour` park ·
 `/pm:resume` resume + reconcile · `/pm:sync` register new proposals and plans ·
-`/pm:epic add` register any epic · `/pm:upgrade` refresh rules + stamp lanes.
+`/pm:epic add` register any epic (`--parent`, `--external-id`) · `/pm:epic` → `add-many`
+(atomic bulk create) / `update-epic` (write-back) · `/pm:tracker` make the conductor
+tracker-aware · `/pm:upgrade` refresh rules + run migrations.
+
+## Hierarchy & external trackers
+
+- **Hierarchy:** epics form a single-parent tree via `parent`. Nest with `--parent <id>`
+  (validated: parent exists, no self/cycle) or bulk-create a parent + children atomically with
+  `add-many --from <json>`. PROJECT.md indents children and rolls up `X/Y children archived`;
+  NEXT UP keeps global priority order (grouping is render-only).
+- **Tracker awareness (instruction layer ONLY — never call the tracker yourself from the
+  engine):** if a `tracker` block is set (via `/pm:tracker`), the rules block + brief tell YOU
+  to mirror epics to Jira/GitHub/Linear with your own tooling — create an issue for any epic
+  lacking `externalId` then record the key with `update-epic --external-id`, and transition the
+  linked issue toward the `statusIntent` semantic target on each status change. The brief lists
+  only unmirrored epics; it never fabricates transition drift.
 
 ## When something blocks progress: classify the detour FIRST
 
@@ -121,12 +136,16 @@ does **not** parse roadmap files automatically.
 ```
 active        : "<epic-id>" | null
 pmVersion     : "<semver>" — release that last touched this repo (set by init/upgrade)
-epics[]       : { id, title, priority, status, role, lane, planPath?, stories[]?, links[], reconcileNeeded? }
+tracker?      : { system, instance?, projectKey?, mechanism?, statusIntent? }  — optional; opt-in
+epics[]       : { id, title, priority, status, role, lane, parent?, externalId?, externalUrl?, planPath?, stories[]?, links[], reconcileNeeded? }
 detourStack[] : { pausedEpic, pausedAt, reason, spawnedDetour, reconcileOnResume }
 status   ∈ active | paused | queued | later | blocked | archived | untriaged | planned
 role     ∈ epic | detour
 lane     ∈ openspec | superpowers | claude-code | decision | external   (default: openspec)
 priority ∈ P0 | P1 | P2 | P3 | P?
+parent        : id of another epic — single-parent tree (validated: exists, no self/cycle)
+externalId/externalUrl : link to a tracker issue (system comes from the tracker block)
+tracker.statusIntent   : { <conductor-status>: "<semantic target>" } — NOT a literal transition
 link.type ∈ resolves-blocker-for | may-invalidate | depends-on | relates-to
 planPath      : repo-relative path to a markdown plan (progress source for superpowers lane)
 stories[]     : [{ title, done }] — inline progress (highest-priority source)
