@@ -731,3 +731,50 @@ test("update-epic on an unknown id exits non-zero and writes nothing", () => {
   assert.ok(err, "expected non-zero exit for unknown id");
   assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
 });
+
+test("rules block gains an External tracker sync section only when a tracker is configured", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  assert.doesNotMatch(claudeMd(cwd), /External tracker sync/);     // none after a plain init
+  run(["set-tracker", "--system", "jira", "--project", "JOB"], { cwd });
+  assert.match(claudeMd(cwd), /External tracker sync/);
+  assert.match(claudeMd(cwd), /jira/);
+});
+
+test("brief surfaces create-issue drift only for unmirrored active-work epics", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  writeState(cwd, { version: 1, active: null, detourStack: [],
+    tracker: { system: "jira", projectKey: "JOB", statusIntent: {} },
+    epics: [
+      { id: "m1", title: "m1", priority: "P1", status: "queued", role: "epic", lane: "external", links: [] },                       // unmirrored → listed
+      { id: "m2", title: "m2", priority: "P1", status: "active", role: "epic", lane: "external", externalId: "JOB-2", links: [] },   // mirrored → excluded
+      { id: "done", title: "done", priority: "P1", status: "archived", role: "epic", lane: "external", links: [] },                  // archived → excluded
+      { id: "later", title: "later", priority: "P1", status: "planned", role: "epic", lane: "external", links: [] },                 // planned → excluded
+      { id: "ghost", title: "ghost", priority: "P1", status: "queued", role: "epic", lane: "openspec", links: [] },                  // missing() openspec → excluded
+    ]});
+  const brief = parseBrief(cwd);
+  assert.match(brief, /TRACKER SYNC \(jira · JOB\)/);
+  const syncLine = brief.split("\n").find(l => /not yet in jira/.test(l)) || "";
+  assert.match(syncLine, /`m1`/);
+  for (const id of ["m2", "done", "later", "ghost"]) assert.doesNotMatch(syncLine, new RegExp(`\`${id}\``));
+});
+
+test("no tracker block → no TRACKER SYNC in the brief", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  writeState(cwd, { version: 1, active: null, detourStack: [], epics: [
+    { id: "x", title: "x", priority: "P1", status: "queued", role: "epic", lane: "external", links: [] }]});
+  assert.doesNotMatch(parseBrief(cwd), /TRACKER SYNC/);
+});
+
+test("brief invents no transition drift when all active epics are mirrored", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  writeState(cwd, { version: 1, active: null, detourStack: [],
+    tracker: { system: "jira", projectKey: "JOB", statusIntent: { archived: "done" } },
+    epics: [{ id: "m", title: "m", priority: "P1", status: "active", role: "epic", lane: "external", externalId: "JOB-1", links: [] }]});
+  const brief = parseBrief(cwd);
+  assert.doesNotMatch(brief, /not yet in jira/);                       // nothing to create
+  assert.doesNotMatch(brief, /transition pending|out of sync|drift/i); // no fabricated transition drift
+});

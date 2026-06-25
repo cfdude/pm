@@ -268,8 +268,13 @@ function detourContext(state) {
 
 // ---------- rules ----------
 
-function rulesBlock() {
-  return [
+/** The tracker block from state, or null — used to make emitted instructions tracker-aware. */
+function currentTracker() {
+  try { const t = loadState().tracker; return t && t.system ? t : null; } catch { return null; }
+}
+
+function rulesBlock(tracker) {
+  const lines = [
     RULES_BEGIN,
     "## PM Conductor — operating rules",
     "",
@@ -299,16 +304,35 @@ function rulesBlock() {
     "   as ordered backlog in `PROJECT.md` and a `planned: N` count in the briefing, without a",
     "   \"no change on disk\" warning; `/pm:sync` flips an openspec planned epic to untriaged once",
     "   its change is proposed. Have a roadmap doc? Read it in-session and load each item this way.",
-    RULES_END,
-    "",
-  ].join("\n");
+  ];
+  if (tracker && tracker.system) {
+    const sys = tracker.system;
+    const scope = tracker.projectKey ? ` · ${tracker.projectKey}` : "";
+    lines.push(
+      "",
+      `## External tracker sync (${sys}${scope})`,
+      "",
+      `This repo mirrors conductor epics to **${sys}**. YOU (the interactive agent) own this sync —`,
+      `the pm plugin NEVER calls ${sys} itself. On these events, perform the matching action with`,
+      "your own tooling (MCP, connector, CLI — whatever this project uses):",
+      `- A real epic has no \`externalId\` → create the ${sys} issue, then record its key with`,
+      "  `/pm:epic` → `update-epic <id> --external-id <KEY> --external-url <url>`.",
+      "- An epic moves to a status with a `statusIntent` (e.g. active/archived) → transition the",
+      "  linked issue toward that SEMANTIC target, resolving the real workflow transition yourself.",
+      `- A parent epic → create it as a ${sys} epic and link its children.`,
+      "The SessionStart brief lists epics not yet mirrored under `TRACKER SYNC`. Status-transition",
+      "sync is your responsibility on every status change (the brief does not fabricate it).",
+    );
+  }
+  lines.push(RULES_END, "");
+  return lines.join("\n");
 }
 
 function writeRules() {
   let existing = "";
   try { existing = fs.readFileSync(CLAUDE_MD, "utf8"); } catch { /* no CLAUDE.md yet */ }
 
-  const block = rulesBlock();
+  const block = rulesBlock(currentTracker());
   let next;
   if (existing.includes(RULES_BEGIN) && existing.includes(RULES_END)) {
     // refresh in place
@@ -399,6 +423,24 @@ function buildBrief(state) {
   if (links.length) {
     L.push("EPIC LINKS:");
     for (const l of links) L.push(`  • \`${l.from}\` ${l.type} \`${l.epic}\`${l.reason ? ` — ${l.reason}` : ""}`);
+    L.push("");
+  }
+
+  // TRACKER SYNC — only when a tracker is configured, and only honestly-computable drift:
+  // active-work epics (queued/active/paused, excluding missing() ghosts) with no externalId.
+  // Status-transition sync is the agent's job (rules block), NOT fabricated here.
+  if (state.tracker && state.tracker.system) {
+    const tr = state.tracker;
+    const scope = tr.projectKey ? ` · ${tr.projectKey}` : "";
+    const unmirrored = epics.filter(e =>
+      ["queued", "active", "paused"].includes(e.status) && !missing(e) && !e.externalId);
+    L.push(`TRACKER SYNC (${tr.system}${scope}):`);
+    if (unmirrored.length) {
+      L.push(`  ⚠ not yet in ${tr.system} — create issues + record keys (update-epic): ` +
+        unmirrored.map(e => `\`${e.id}\``).join(", "));
+    } else {
+      L.push(`  ✓ all active epics are mirrored to ${tr.system}`);
+    }
     L.push("");
   }
 
@@ -775,6 +817,7 @@ function setTracker() {
   }
   state.tracker = t;
   saveState(state);
+  writeRules();   // refresh CLAUDE.md so the agent sees its new tracker-sync responsibility
   render();
   process.stderr.write(`conductor: tracker set (${t.system}${t.projectKey ? ` ${t.projectKey}` : ""})\n`);
 }
@@ -831,7 +874,7 @@ const cmd = process.argv[2];
   "update-epic": updateEpic,
   "set-tracker": setTracker,
   upgrade,
-  rules: () => process.stdout.write(rulesBlock()),
+  rules: () => process.stdout.write(rulesBlock(currentTracker())),
   "write-rules": writeRules,
 }[cmd] || (() => {
   process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|add-epic|add-many|update-epic|set-tracker|upgrade|rules|write-rules\n");

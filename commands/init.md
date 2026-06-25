@@ -20,7 +20,14 @@ Initialize the `pm` conductor for the current project.
    - assign each epic a `priority` (P0–P3) and `status` (active | queued | later),
    - leave `detourStack` empty unless work is already paused.
 
-3. Show the result with `/pm:status`.
+3. **Detect an external tracker (optional).** Check whether this project tracks work in an
+   external issue tracker (Jira/GitHub/Linear) — look for a connected tracker MCP server, tracker
+   mentions in `CLAUDE.md`/`.mcp.json`, or issue-key conventions in history. If so, follow the
+   detection + `set-tracker` procedure in `/pm:tracker` (confirm system/projectKey/instance with
+   the user first). If the project does not use a tracker, skip this — the conductor stays
+   tracker-unaware by default.
+
+4. Show the result with `/pm:status`.
 
 Note: until this runs, the plugin's hooks stay dormant in this repo by design — like
 `openspec init`. The conductor sits ABOVE OpenSpec and Superpowers; epics are lane-agnostic

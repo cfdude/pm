@@ -22,4 +22,9 @@ anytime; idempotent. Use it when the briefing shows a "pm <old> → <new>" upgra
    If `${CLAUDE_PLUGIN_ROOT}` is empty:
    `ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1); node "$ENGINE" upgrade`
 
-2. Show the result with `/pm:status`.
+2. **Tracker awareness (only if not already set).** If `.conductor/state.json` has no `tracker`
+   block and this project tracks work in an external issue tracker (Jira/GitHub/Linear), offer to
+   record it now via the detection procedure in `/pm:tracker`. If a `tracker` block already
+   exists, leave it untouched.
+
+3. Show the result with `/pm:status`.
