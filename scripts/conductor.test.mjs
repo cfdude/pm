@@ -12,11 +12,12 @@ const EMPTY_CACHE = fs.mkdtempSync(path.join(os.tmpdir(), "pm-empty-cache-"));
 export function tmpRepo() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "pm-test-"));
 }
-export function run(args, { cwd, env = {} } = {}) {
+export function run(args, { cwd, env = {}, input } = {}) {
   return execFileSync("node", [ENGINE, ...args], {
     cwd,
     env: { ...process.env, CLAUDE_PROJECT_DIR: cwd, PM_CACHE_ROOT: EMPTY_CACHE, ...env },
     encoding: "utf8",
+    input,
   });
 }
 export function readState(cwd) {
@@ -843,6 +844,14 @@ test("add-many rejects a duplicate against an existing epic", () => {
   const batch = writeBatch(cwd, { epics: [{ id: "exists", lane: "external" }] });
   assert.ok(expectFail(() => run(["add-many", "--from", batch], { cwd })));
   assert.equal(readState(cwd).epics.filter(e => e.id === "exists").length, 1);
+});
+
+test("add-many reads a batch from stdin (--from -)", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const batch = JSON.stringify({ epics: [{ id: "s1", lane: "external", priority: "P1" }] });
+  run(["add-many", "--from", "-"], { cwd, input: batch });
+  assert.ok(readState(cwd).epics.find(e => e.id === "s1"));
 });
 
 test("add-many rejects an intra-batch parent cycle", () => {
