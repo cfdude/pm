@@ -6,6 +6,72 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.5.0] — 2026-06-25
+
+### Added
+
+- **First-class epic hierarchy.** Epics gain an optional `parent` field (single-parent tree,
+  arbitrary depth). `add-epic --parent <id>` validates the reference (must exist, no self-parent,
+  no cycle) via a shared `parentError()` ancestor-walk helper. `PROJECT.md` renders children
+  indented beneath their parent (`└─`, deepened per level), groups families ordered by parent
+  priority, and shows an `X/Y children archived` rollup in the parent's Progress cell. The
+  briefing's NEXT UP annotates a child with its parent id. **Grouping is render-only** — the
+  `resolveEpics` priority sort is untouched, so a P0 child of a P2 parent keeps its NEXT UP slot.
+
+- **External-tracker awareness (instruction layer only).** An optional `tracker` block in
+  `state.json` (`system`, `instance`, `projectKey`, `mechanism`, and a semantic `statusIntent`
+  map) makes the conductor *aware* a project mirrors epics to Jira/GitHub/Linear. **The engine
+  never calls the tracker** — it only shapes the instructions it already emits:
+  - the CLAUDE.md rules block gains an "External tracker sync" section assigning the interactive
+    agent ownership (create issue + record key; transition on status change toward the semantic
+    `statusIntent`; parent epic → tracker epic);
+  - the briefing gains a `TRACKER SYNC` block listing only honestly-computable drift — active-work
+    epics (`queued`/`active`/`paused`, excluding `missing()` ghosts) with no `externalId`. No
+    transition-drift is fabricated (the engine cannot see tracker state).
+  - New `set-tracker` subcommand (repeatable `--intent <status>:<target>`; `parseFlags` now
+    accumulates `intent` like `link`) writes the block and refreshes the rules.
+  - New per-epic `externalId`/`externalUrl` fields (on `add-epic` and `update-epic`).
+  - New **`update-epic <id>`** write-back subcommand (positional id) mutates
+    `externalId`/`externalUrl`/`parent`/`status`/`priority` on an existing epic under the same
+    validation as creation — closing the sync loop after the agent creates an issue.
+  - New `/pm:tracker` command doc; `/pm:init` and `/pm:upgrade` gain an agent-driven detection
+    step (detect signals → confirm with the user → `set-tracker`; upgrade only when unset).
+
+- **Atomic bulk creation.** New `add-many --from <path|->` reads a JSON `{ parent?, epics[] }`
+  batch. If `parent` is present it is created first and children default their `parent` to it.
+  Every entry is validated up front (id format, uniqueness vs existing AND within the batch, lane,
+  status, parent refs + intra-batch cycles); on any failure nothing is written and it exits
+  non-zero. A valid batch persists in a single write — removing the race that forced chaining
+  individual `add-epic` calls. JSON only (the engine stays zero-dependency).
+
+### Fixed
+
+- **Stale-link rendering.** `render()` and the briefing now emit a link only when both its `type`
+  and `epic` are strings (shared `validLink()` helper), so malformed or older-schema link entries
+  no longer render as `undefined undefined`.
+
+### Migration
+
+- **0.5.0 migration (repair-first).** `MIGRATIONS` gains a `0.5.0` entry that normalizes stored
+  `links`: valid `{type, epic}` objects pass through, the documented colon-string encoding
+  `type:epic[:reason]` is repaired into an object, and unrecoverable entries are dropped. Additive
+  and idempotent. Defensive rendering (above) is the shape-agnostic durable fix.
+
+### Compatibility
+
+All additions are optional and backward-compatible: a `state.json` written by v0.4.1 loads
+unchanged, and a 0.5.0-written state remains loadable by the older engine (it ignores the new
+optional fields).
+
+### Upgrade
+
+**Existing repos:** update the plugin → `/reload-plugins` (or restart) → `/pm:upgrade` per repo.
+The upgrade runs the additive, idempotent 0.5.0 migration, refreshes the rules, and stamps
+`pmVersion: 0.5.0`. To make a repo tracker-aware, run `/pm:tracker` (or answer the detection
+prompt during `/pm:upgrade`).
+
+---
+
 ## [0.4.1] — 2026-06-22
 
 ### Added
