@@ -671,3 +671,19 @@ test("malformed links never render as undefined, valid links still show", () => 
   assert.doesNotMatch(brief, /undefined/);
   assert.match(brief, /`a` blocks `b`/);         // valid link still rendered in EPIC LINKS
 });
+
+// ─────────────────── 0.5.0: external-tracker awareness ───────────────────
+
+test("set-tracker writes a tracker block with a multi-entry statusIntent map", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-tracker", "--system", "jira", "--instance", "onvex", "--project", "JOB",
+       "--mechanism", "mcp", "--intent", "active:in-progress", "--intent", "paused:todo",
+       "--intent", "archived:done"], { cwd });
+  const t = readState(cwd).tracker;
+  assert.equal(t.system, "jira");
+  assert.equal(t.instance, "onvex");
+  assert.equal(t.projectKey, "JOB");
+  assert.equal(t.mechanism, "mcp");
+  assert.deepEqual(t.statusIntent, { active: "in-progress", paused: "todo", archived: "done" });
+});

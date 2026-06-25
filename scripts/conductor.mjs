@@ -640,6 +640,7 @@ function parseFlags(argv) {
     const k = a.slice(2);
     const v = (argv[i + 1] !== undefined && !argv[i + 1].startsWith("--")) ? argv[++i] : true;
     if (k === "link") (o.link || (o.link = [])).push(v);
+    else if (k === "intent") (o.intent || (o.intent = [])).push(v);
     else o[k] = v;
   }
   return o;
@@ -705,6 +706,40 @@ function addEpic() {
   process.stderr.write(`conductor: added epic '${id}' (${lane}, ${status})\n`);
 }
 
+// ---------- tracker ----------
+
+/** Write/merge the `tracker` block. Pure local state write — the engine NEVER
+ *  contacts the tracker; it only records that one is in use so the instructions
+ *  it emits (rules block + brief) can assign sync work to the interactive agent. */
+function setTracker() {
+  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  const f = parseFlags(process.argv.slice(3));
+  const str = (v) => (typeof v === "string" ? v : undefined);
+  const state = loadState();
+  const t = { ...(state.tracker || {}) };
+  if (str(f.system) !== undefined) t.system = str(f.system);
+  if (str(f.instance) !== undefined) t.instance = str(f.instance);
+  if (str(f.project) !== undefined) t.projectKey = str(f.project);
+  if (str(f.mechanism) !== undefined) t.mechanism = str(f.mechanism);
+  if (Array.isArray(f.intent)) {
+    const si = { ...(t.statusIntent || {}) };
+    for (const pair of f.intent) {
+      if (typeof pair !== "string") continue;
+      const i = pair.indexOf(":");                 // split once — target may contain no ':'
+      if (i <= 0 || i === pair.length - 1) continue;
+      si[pair.slice(0, i).trim()] = pair.slice(i + 1).trim();
+    }
+    t.statusIntent = si;
+  }
+  if (!t.system) {
+    process.stderr.write("conductor: set-tracker requires --system (e.g. jira)\n"); process.exit(1);
+  }
+  state.tracker = t;
+  saveState(state);
+  render();
+  process.stderr.write(`conductor: tracker set (${t.system}${t.projectKey ? ` ${t.projectKey}` : ""})\n`);
+}
+
 // ---------- migrations ----------
 
 const MIGRATIONS = [
@@ -754,10 +789,11 @@ const cmd = process.argv[2];
   sync: () => sync(false),
   "log-detour": logDetour,
   "add-epic": addEpic,
+  "set-tracker": setTracker,
   upgrade,
   rules: () => process.stdout.write(rulesBlock()),
   "write-rules": writeRules,
 }[cmd] || (() => {
-  process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|add-epic|upgrade|rules|write-rules\n");
+  process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|add-epic|add-many|update-epic|set-tracker|upgrade|rules|write-rules\n");
   process.exit(1);
 }))();
