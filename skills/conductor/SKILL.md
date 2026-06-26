@@ -32,7 +32,8 @@ You (Claude) are myopic across compactions. This skill is how you stop losing th
 `/pm:resume` resume + reconcile · `/pm:sync` register new proposals and plans ·
 `/pm:epic add` register any epic (`--parent`, `--external-id`) · `/pm:epic` → `add-many`
 (atomic bulk create) / `update-epic` (write-back) · `/pm:tracker` make the conductor
-tracker-aware · `/pm:upgrade` refresh rules + run migrations.
+tracker-aware · `/pm:changelog` what changed since your version · `/pm:upgrade` refresh rules +
+run migrations + print the changelog delta.
 
 ## Hierarchy & external trackers
 

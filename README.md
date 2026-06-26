@@ -169,7 +169,8 @@ you have connected.
 | `/pm:epic` → `add-many --from <path\|->` | Atomically bulk-create a parent + children from a JSON batch |
 | `/pm:epic` → `update-epic <id> [--external-id …] [--parent …] [--status …]` | Update an existing epic (write-back path for recording tracker keys) |
 | `/pm:tracker` | Make the conductor aware of an external tracker (Jira/GitHub/Linear); detect → confirm → `set-tracker` |
-| `/pm:upgrade` | Refresh CLAUDE.md rules, run migrations (lanes, 0.5.0 link normalization), update `pmVersion` |
+| `/pm:upgrade` | Refresh CLAUDE.md rules, run migrations, update `pmVersion`, and print the changelog delta for the versions it crossed |
+| `/pm:changelog [--since X]` | Show what changed in the plugin since a version (default: this repo's stamped version) |
 
 Plus a `conductor` skill (the reasoning) and a `reconciler` agent (clean-context
 re-validation at the reconcile gate).
@@ -261,7 +262,7 @@ repeats on each session start until you complete it in that repo.
 
 ```
 .claude-plugin/plugin.json   manifest (name: pm)
-commands/                    /pm:init /pm:status /pm:next /pm:detour /pm:resume /pm:sync /pm:epic /pm:tracker /pm:upgrade
+commands/                    /pm:init /pm:status /pm:next /pm:detour /pm:resume /pm:sync /pm:epic /pm:tracker /pm:changelog /pm:upgrade
 skills/conductor/SKILL.md    the discipline (detour classification, PUSH/POP, reconcile)
 agents/reconciler.md         fresh-context re-validation of a paused proposal
 hooks/hooks.json             SessionStart inject · PreCompact snapshot · PostToolUse nudge

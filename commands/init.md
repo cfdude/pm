@@ -5,6 +5,14 @@ allowed-tools: Bash, Read, Edit
 
 Initialize the `pm` conductor for the current project.
 
+0. **Orient first (especially on a cold/first-time install).** Before scaffolding, load the
+   **`conductor` skill** — it is the agent-facing how-to (the mental model, lanes, statuses, the
+   detour → PUSH/POP → reconcile workflow, and the `state.json` reference). This is what lets you
+   drive the plugin correctly even if you've never seen this version before. For deeper human
+   reference, `${CLAUDE_PLUGIN_ROOT}/README.md` also ships with the plugin. (You do NOT need to
+   re-read these every session — the persistent CLAUDE.md rules block written below carries the
+   recurring essentials; this step is the one-time deep orientation.)
+
 1. Run the engine's init (it creates `.conductor/state.json`, registers existing OpenSpec
    changes as untriaged epics, and renders `PROJECT.md`):
 

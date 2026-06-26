@@ -292,12 +292,32 @@ function fixtureCache(versions) {
   return root;
 }
 
-function fixturePluginRoot(version) {
+function fixturePluginRoot(version, changelog) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pm-plugin-"));
   fs.mkdirSync(path.join(dir, ".claude-plugin"), { recursive: true });
   fs.writeFileSync(path.join(dir, ".claude-plugin", "plugin.json"), JSON.stringify({ name: "pm", version }) + "\n");
+  if (changelog) fs.writeFileSync(path.join(dir, "CHANGELOG.md"), changelog);
   return dir;
 }
+
+const FIXTURE_CHANGELOG = `# Changelog
+
+## [0.6.0] — 2026-06-25
+### Added
+- Feature F6 lands here.
+
+---
+
+## [0.5.0] — 2026-06-24
+### Added
+- Feature F5 lands here.
+
+---
+
+## [0.4.0] — 2026-06-23
+### Added
+- Feature F4 lands here.
+`;
 
 test("init stamps pmVersion from the running plugin", () => {
   const cwd = tmpRepo();
@@ -574,6 +594,56 @@ test("no nudge when stamped equals newest installed", () => {
     .hookSpecificOutput.additionalContext;
   assert.doesNotMatch(out, /available —/);
   assert.doesNotMatch(out, /since this repo was set up/);
+});
+
+// ───────────────────── 0.6.0: changelog surfacing ─────────────────────
+
+test("changelog --since lists only entries newer than the given version", () => {
+  const cwd = tmpRepo();
+  const root = fixturePluginRoot("0.6.0", FIXTURE_CHANGELOG);
+  run(["init"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root } });
+  const out = run(["changelog", "--since", "0.4.0"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root } });
+  assert.match(out, /Feature F6/);
+  assert.match(out, /Feature F5/);
+  assert.doesNotMatch(out, /Feature F4/);   // 0.4.0 is the floor, excluded
+});
+
+test("changelog defaults --since to the version stamped in this repo", () => {
+  const cwd = tmpRepo();
+  const root = fixturePluginRoot("0.6.0", FIXTURE_CHANGELOG);
+  run(["init"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root } });
+  const s = readState(cwd); s.pmVersion = "0.5.0"; writeState(cwd, s);
+  const out = run(["changelog"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root } });
+  assert.match(out, /Feature F6/);
+  assert.doesNotMatch(out, /Feature F5/);   // 0.5.0 not newer than stamped 0.5.0
+});
+
+test("changelog is graceful when the plugin ships no CHANGELOG", () => {
+  const cwd = tmpRepo();
+  const root = fixturePluginRoot("0.6.0");   // no changelog file
+  run(["init"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root } });
+  const out = run(["changelog", "--since", "0.1.0"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root } });
+  assert.match(out, /no CHANGELOG/i);
+});
+
+test("upgrade prints the changelog delta for the versions it crossed", () => {
+  const cwd = tmpRepo();
+  const root = fixturePluginRoot("0.6.0", FIXTURE_CHANGELOG);
+  run(["init"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root } });
+  const s = readState(cwd); s.pmVersion = "0.4.0"; writeState(cwd, s);
+  const out = run(["upgrade"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root } });
+  assert.match(out, /What's new/i);
+  assert.match(out, /Feature F6/);
+  assert.match(out, /Feature F5/);
+  assert.doesNotMatch(out, /Feature F4/);   // from-version excluded
+});
+
+test("upgrade prints no changelog delta on an idempotent re-run", () => {
+  const cwd = tmpRepo();
+  const root = fixturePluginRoot("0.6.0", FIXTURE_CHANGELOG);
+  run(["init"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root } });   // stamps 0.6.0 == running
+  const out = run(["upgrade"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root } });
+  assert.doesNotMatch(out, /Feature F6/);
 });
 
 test("nudge falls back to running-version comparison when cache is unreadable", () => {

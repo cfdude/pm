@@ -90,13 +90,47 @@ function saveState(state) {
   fs.writeFileSync(STATE_PATH, JSON.stringify(state, null, 2) + "\n");
 }
 
-/** The running plugin's release. Env-first so tests can point at a fixture plugin.json. */
-function pluginVersion() {
-  const root = process.env.CLAUDE_PLUGIN_ROOT
+/** The running plugin's root dir. Env-first so tests can point at a fixture. */
+function pluginRoot() {
+  return process.env.CLAUDE_PLUGIN_ROOT
     ? process.env.CLAUDE_PLUGIN_ROOT
     : path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
-  const pj = readJSON(path.join(root, ".claude-plugin", "plugin.json"), null);
+}
+
+/** The running plugin's release. Env-first so tests can point at a fixture plugin.json. */
+function pluginVersion() {
+  const pj = readJSON(path.join(pluginRoot(), ".claude-plugin", "plugin.json"), null);
   return pj && pj.version ? String(pj.version) : null;
+}
+
+/** Parse the plugin's own CHANGELOG.md into [{version, body}] sections (file order,
+ *  newest-first). Returns null if no CHANGELOG ships with this version. Zero-dep:
+ *  sections are delimited by `## [x.y.z]` headers. */
+function changelogSections() {
+  let txt;
+  try { txt = fs.readFileSync(path.join(pluginRoot(), "CHANGELOG.md"), "utf8"); }
+  catch { return null; }
+  const sections = [];
+  let cur = null;
+  for (const line of txt.split("\n")) {
+    const m = line.match(/^##\s+\[(\d+\.\d+\.\d+)\]/);
+    if (m) { cur = { version: m[1], lines: [line] }; sections.push(cur); }
+    else if (cur) cur.lines.push(line);
+  }
+  return sections.map(s => ({
+    version: s.version,
+    body: s.lines.join("\n").replace(/\n*-{3,}\s*$/, "").trimEnd(),
+  }));
+}
+
+/** CHANGELOG sections with version in (fromVer, toVer]. `fromVer`/`toVer` may be null
+ *  (open bound). Returns null only when no CHANGELOG exists. */
+function changelogBetween(fromVer, toVer) {
+  const secs = changelogSections();
+  if (secs === null) return null;
+  return secs.filter(s =>
+    (fromVer == null || cmpVer(s.version, fromVer) > 0) &&
+    (toVer == null || cmpVer(s.version, toVer) <= 0));
 }
 
 /** Highest pm version present in the plugin cache, or null if it can't be determined.
@@ -961,6 +995,34 @@ function upgrade() {
   writeRules();
   render();
   process.stderr.write(`conductor: upgraded (${applied} migration(s)), pmVersion now ${state.pmVersion || "unknown"}\n`);
+
+  // Surface WHAT the upgrade brought, not just that it happened — close the
+  // post-upgrade blindspot. Print the CHANGELOG delta for (stamped, running].
+  const delta = changelogBetween(stamped, state.pmVersion || null);
+  if (delta && delta.length) {
+    process.stdout.write(
+      `What's new in pm (since ${stamped}):\n\n` + delta.map(s => s.body).join("\n\n") + "\n");
+  }
+}
+
+// ---------- changelog ----------
+
+/** Show CHANGELOG entries newer than a version. `--since <x.y.z>` overrides the
+ *  default, which is the version stamped in this repo's state.json. On-demand
+ *  companion to the delta that `upgrade` prints automatically. */
+function changelog() {
+  const f = parseFlags(process.argv.slice(3));
+  const since = typeof f.since === "string"
+    ? f.since
+    : (isInitialized() ? (loadState().pmVersion || null) : null);
+  const secs = changelogBetween(since, null);
+  if (secs === null) {
+    process.stdout.write("conductor: no CHANGELOG.md ships with this pm version\n"); return;
+  }
+  if (!secs.length) {
+    process.stdout.write(`conductor: no changelog entries newer than ${since || "(start)"}\n`); return;
+  }
+  process.stdout.write(secs.map(s => s.body).join("\n\n") + "\n");
 }
 
 // ---------- dispatch ----------
@@ -979,9 +1041,10 @@ const cmd = process.argv[2];
   "update-epic": updateEpic,
   "set-tracker": setTracker,
   upgrade,
+  changelog,
   rules: () => process.stdout.write(rulesBlock(currentTracker())),
   "write-rules": writeRules,
 }[cmd] || (() => {
-  process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|add-epic|add-many|update-epic|set-tracker|upgrade|rules|write-rules\n");
+  process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|add-epic|add-many|update-epic|set-tracker|upgrade|changelog|rules|write-rules\n");
   process.exit(1);
 }))();

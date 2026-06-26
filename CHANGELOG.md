@@ -6,6 +6,32 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.6.0] — 2026-06-25
+
+### Added
+
+- **Knowledge surfacing — the plugin now teaches the agent at the two moments that matter.**
+  Previously an upgrade exposed new commands but never explained *what* it brought, and a
+  first-time install gave the agent no orientation beyond command descriptions. Closed both:
+  - **`/pm:upgrade` prints a changelog delta.** After applying migrations, the engine reads its
+    own `CHANGELOG.md` and prints every entry in `(stamped, running]` — so the agent and user see
+    exactly what the version added, not just that it happened.
+  - **New `changelog` subcommand + `/pm:changelog [--since <x.y.z>]`.** On-demand changelog delta;
+    defaults its floor to the version stamped in this repo's `state.json`. Zero-dependency
+    markdown parsing (sections split on `## [x.y.z]` headers); graceful when no CHANGELOG ships.
+  - **`/pm:init` orients the agent first.** Init now instructs the agent to load the `conductor`
+    skill (the agent-facing how-to) — and points at the shipped `README.md` for deeper reference —
+    so even a cold install of a much-later version knows how to drive the plugin. Deep orientation
+    stays a one-time/on-demand load; the persistent CLAUDE.md rules block remains the recurring
+    anchor (no full-orientation injection every session).
+
+### Upgrade
+
+Minor release — no schema change, no data migration. Update the plugin → `/reload-plugins` →
+`/pm:upgrade`; the upgrade will now print what this version (and any you skipped) brought.
+
+---
+
 ## [0.5.1] — 2026-06-25
 
 ### Fixed
