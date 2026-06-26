@@ -3,24 +3,43 @@ description: Make the conductor aware of an external issue tracker (Jira/GitHub/
 allowed-tools: Bash, Read
 ---
 
-Record (or update) the external **tracker** this repo mirrors conductor epics to. This makes the
-conductor *tracker-aware*: the CLAUDE.md rules block gains an "External tracker sync" section and
-the SessionStart brief surfaces epics not yet mirrored. **The plugin never calls the tracker** —
-it only shapes the instructions YOU (the interactive agent) act on, with whatever tooling the
-project uses (a Jira MCP server, an Atlassian connector, a CLI, a Python lib — it does not matter).
+Record (or update) the external **tracker** this repo mirrors conductor epics to. Tracker
+awareness is **optional and additive**. Whether or not you set it, the conductor already tracks
+everything locally — `.conductor/state.json` (the JSON system of record) and `PROJECT.md` (the
+generated Markdown view). A tracker block ONLY adds *mirroring* to an external system; it never
+replaces local tracking. When set, the CLAUDE.md rules block gains an "External tracker sync"
+section and the brief surfaces epics not yet mirrored. **The plugin never calls the tracker** — it
+only shapes the instructions YOU (the interactive agent) act on, with whatever tooling the project
+uses (a Jira/Linear MCP server, the GitHub CLI, an Atlassian connector, a Python lib — it does not
+matter).
 
-## Detection (run this when the user asks to connect a tracker, or during `/pm:init`/`/pm:upgrade`)
+## Detection (run when the user asks to connect a tracker, or as an OPTIONAL offer during `/pm:init`/`/pm:upgrade`)
 
-1. Look for signals that this project uses a tracker:
-   - a connected Jira/Atlassian/Linear/GitHub MCP server (tools like `mcp__jira__*`,
-     `mcp__*Atlassian*`, `mcp__linear__*`),
-   - mentions of Jira/Linear/GitHub Issues in `CLAUDE.md`, `README`, or `.mcp.json`,
-   - issue-key conventions in branch names or commit history (e.g. `JOB-123`).
-2. **Confirm with the user** — do not guess. Ask which `system` (jira | github | linear | …),
-   the `projectKey` (e.g. `JOB`), the `instance` (e.g. `onvex`), and the `mechanism` they use
-   (e.g. `mcp`). If the user does not use a tracker, record nothing and stop.
-3. Map conductor lifecycle → a SEMANTIC target via `--intent` (NOT a literal tracker transition
-   name — you resolve the real workflow transition yourself when syncing).
+**Hosting is NOT a tracker signal.** Every hosted Git service — GitHub, GitLab, Bitbucket, and
+others — offers issues and pull/merge requests, but the mere fact that a repo is *hosted* on one
+(it has a remote, it is public) is NOT evidence that the team manages work there. Do not infer a
+tracker from the remote. Only treat it as a real signal when work is *actively* managed in an
+issue tracker:
+
+- a connected issue-tracker MCP that is actually in use (`mcp__jira__*`, `mcp__linear__*`,
+  a GitHub issues/projects tool, …),
+- real issue-key conventions in commit/branch history (e.g. `JOB-123`, `#142`),
+- an explicit statement in `CLAUDE.md`/`README` that "we track work in <X>".
+
+Then:
+
+1. **Offer it as a choice — never assume.** Present it plainly: *"This project could mirror epics
+   to <service> (creating issues and tracking PRs there), or you can keep tracking locally only.
+   Either is fine."* Saying **yes** is perfectly valid — it sets up the mirror between conductor
+   epics and the tracker's issues/PRs. Saying **no** is equally valid.
+2. **Reassure on "no":** declining changes nothing about tracking — the conductor still records
+   every epic, status, priority, and story locally in `.conductor/state.json` and `PROJECT.md`.
+   "No tracker" means "no external mirror," not "no tracking." If the user declines, record
+   nothing and stop.
+3. **On "yes", confirm the specifics** — `system` (jira | github | gitlab | bitbucket | linear |
+   …), `projectKey` (e.g. `JOB`), `instance`, and `mechanism` (e.g. `mcp`/`cli`). Then map
+   conductor lifecycle → a SEMANTIC target via `--intent` (NOT a literal tracker transition name —
+   you resolve the real workflow transition yourself when syncing).
 
 ## Record it
 

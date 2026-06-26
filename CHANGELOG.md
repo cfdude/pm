@@ -6,6 +6,34 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.5.1] — 2026-06-25
+
+### Fixed
+
+- **Multi-version upgrade ordering (hardening).** `upgrade()` already replayed every migration
+  newer than the stamped version, so a repo several versions behind (e.g. `0.2.0 → 0.5.x`) was
+  upgraded correctly. This release makes that guarantee robust: migrations are now applied **sorted
+  by release** (independent of array authoring order), the `MIGRATIONS` array is documented as
+  **append-only / never-reorder**, and a regression test asserts a two-versions-behind repo replays
+  *both* the 0.3.0 (lane) and 0.5.0 (link-normalize) migrations in order.
+
+- **Tracker detection no longer over-triggers on Git hosting.** The `/pm:tracker`, `/pm:init`, and
+  `/pm:upgrade` detection guidance previously let the agent infer a tracker from the fact that a
+  repo is hosted on GitHub. Hosting on any Git service (GitHub, GitLab, Bitbucket, …) is **not** a
+  signal — they all have issues/PRs, but a remote is not evidence that work is managed there.
+  Detection now requires a *real* signal (an in-use tracker MCP, issue-key conventions, or an
+  explicit statement), frames tracker mirroring as an **optional choice**, and reassures that
+  declining loses nothing — the conductor always tracks everything locally in
+  `.conductor/state.json` + `PROJECT.md`; a tracker only *adds* an external mirror. Choosing a Git
+  host as the tracker (issues + PRs) remains fully valid.
+
+### Upgrade
+
+Patch release — no schema change, no data migration. Update the plugin → `/reload-plugins` →
+`/pm:upgrade` to stamp `0.5.1` and refresh the rules/command docs.
+
+---
+
 ## [0.5.0] — 2026-06-25
 
 ### Added

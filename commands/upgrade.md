@@ -22,9 +22,12 @@ anytime; idempotent. Use it when the briefing shows a "pm <old> → <new>" upgra
    If `${CLAUDE_PLUGIN_ROOT}` is empty:
    `ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1); node "$ENGINE" upgrade`
 
-2. **Tracker awareness (only if not already set).** If `.conductor/state.json` has no `tracker`
-   block and this project tracks work in an external issue tracker (Jira/GitHub/Linear), offer to
-   record it now via the detection procedure in `/pm:tracker`. If a `tracker` block already
-   exists, leave it untouched.
+2. **Tracker awareness (optional; only if not already set).** If `.conductor/state.json` has no
+   `tracker` block AND there is a *real* signal that work is actively managed in an issue tracker
+   (a connected/in-use tracker MCP, issue-key conventions, or an explicit note), *offer* it as a
+   choice via the `/pm:tracker` procedure. **Do not infer a tracker from the Git host** — being on
+   GitHub/GitLab/Bitbucket is not a signal. Reassure that declining loses nothing: the conductor
+   keeps tracking everything locally in `.conductor/state.json` + `PROJECT.md`; a tracker only adds
+   an external mirror. If a `tracker` block already exists, leave it untouched.
 
 3. Show the result with `/pm:status`.

@@ -20,12 +20,14 @@ Initialize the `pm` conductor for the current project.
    - assign each epic a `priority` (P0–P3) and `status` (active | queued | later),
    - leave `detourStack` empty unless work is already paused.
 
-3. **Detect an external tracker (optional).** Check whether this project tracks work in an
-   external issue tracker (Jira/GitHub/Linear) — look for a connected tracker MCP server, tracker
-   mentions in `CLAUDE.md`/`.mcp.json`, or issue-key conventions in history. If so, follow the
-   detection + `set-tracker` procedure in `/pm:tracker` (confirm system/projectKey/instance with
-   the user first). If the project does not use a tracker, skip this — the conductor stays
-   tracker-unaware by default.
+3. **Offer external-tracker mirroring (optional).** Only if there is a *real* signal that work is
+   actively managed in an issue tracker — a connected/in-use tracker MCP, issue-key conventions in
+   history, or an explicit "we track work in X" note. **Being hosted on GitHub/GitLab/Bitbucket is
+   NOT a signal** (every Git host has issues/PRs; hosting ≠ tracking there) — never infer a tracker
+   from the remote. If there is a real signal, *offer it as a choice* and follow the `/pm:tracker`
+   procedure on a yes. Make clear that saying no loses nothing: the conductor always tracks
+   everything locally in `.conductor/state.json` + `PROJECT.md`; a tracker only *adds* an external
+   mirror. Default to tracker-unaware.
 
 4. Show the result with `/pm:status`.
 

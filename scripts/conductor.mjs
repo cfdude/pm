@@ -911,6 +911,11 @@ function setTracker() {
 
 // ---------- migrations ----------
 
+// MIGRATIONS — APPEND-ONLY, each keyed by the release that introduced the change.
+// NEVER remove or reorder a shipped entry: a repo many versions behind replays every
+// entry whose release > its stamped version. upgrade() applies them SORTED by release,
+// so a multi-version jump (e.g. 0.2.0 → 0.5.x) runs them in the correct order regardless
+// of array position. Each apply() must be additive, idempotent, and backward-compatible.
 const MIGRATIONS = [
   {
     release: "0.3.0",
@@ -945,7 +950,10 @@ function upgrade() {
   const state = loadState();
   const stamped = state.pmVersion || "0.0.0";
   let applied = 0;
-  for (const m of MIGRATIONS) {
+  // Apply in ascending release order (independent of array authoring order) so a
+  // repo several versions behind runs every missed migration in the correct sequence.
+  const ordered = [...MIGRATIONS].sort((a, b) => cmpVer(a.release, b.release));
+  for (const m of ordered) {
     if (cmpVer(m.release, stamped) > 0) { m.apply(state); applied++; }
   }
   stampVersion(state);

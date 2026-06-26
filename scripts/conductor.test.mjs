@@ -339,6 +339,23 @@ test("upgrade on a never-stamped repo runs migrations, stamps lanes + pmVersion"
   assert.equal(after.epics.find(e => e.id === "legacy").lane, "openspec");
 });
 
+test("upgrade from several versions behind applies ALL intermediate migrations", () => {
+  // A repo two minor versions behind (0.2.0) must replay BOTH the 0.3.0 (lane) and
+  // 0.5.0 (link-normalize) migrations — not just the most recent one.
+  const cwd = tmpRepo();
+  const root = fixturePluginRoot("0.5.1");
+  run(["init"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root } });
+  writeState(cwd, { version: 1, active: null, detourStack: [], pmVersion: "0.2.0",
+    epics: [{ id: "old", title: "old", priority: "P1", status: "queued", role: "epic",
+              links: ["blocks:other:was flaky", ""] }] });
+  run(["upgrade"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root } });
+  const after = readState(cwd);
+  assert.equal(after.pmVersion, "0.5.1");
+  const e = after.epics.find(x => x.id === "old");
+  assert.equal(e.lane, "openspec");                                                 // 0.3.0 migration fired
+  assert.deepEqual(e.links, [{ type: "blocks", epic: "other", reason: "was flaky" }]); // 0.5.0 migration fired
+});
+
 test("upgrade is idempotent on a second run", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
