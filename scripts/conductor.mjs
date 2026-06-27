@@ -205,8 +205,30 @@ function firstHeading(absPath) {
   return null;
 }
 
+/** Archived-change detection. OpenSpec archives a change as `archive/<YYYY-MM-DD>-<id>`,
+ *  so an exact-name check misses it. Match the exact id (older/manual) OR a date-prefixed dir. */
 function isArchived(id) {
-  return fs.existsSync(path.join(ARCHIVE_DIR, id));
+  if (fs.existsSync(path.join(ARCHIVE_DIR, id))) return true;
+  let entries;
+  try { entries = fs.readdirSync(ARCHIVE_DIR, { withFileTypes: true }); } catch { return false; }
+  const re = new RegExp(`^\\d{4}-\\d{2}-\\d{2}-${id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`);
+  return entries.some(d => d.isDirectory() && re.test(d.name));
+}
+
+/** Heal drift between the conductor and the on-disk archive: any epic whose change is
+ *  archived becomes status `archived`, and an `active` pointer aimed at an archived epic
+ *  is cleared. Returns true if it changed anything. Called from the mutating paths
+ *  (sync/commit-nudge/init/upgrade) so the agent never has to hand-edit state.json. */
+function reconcileArchived(state) {
+  let changed = false;
+  for (const e of state.epics) {
+    if (e.status !== "archived" && isArchived(e.id)) { e.status = "archived"; changed = true; }
+  }
+  if (state.active) {
+    const a = state.epics.find(e => e.id === state.active);
+    if ((a && a.status === "archived") || isArchived(state.active)) { state.active = null; changed = true; }
+  }
+  return changed;
 }
 
 /** Count [ ] / [x] checkboxes in a markdown file. */
@@ -424,11 +446,14 @@ function buildBrief(state) {
   L.push("CONDUCTOR STATE — where we are and what's next");
   L.push("");
 
-  const active = state.active && byId[state.active];
+  const activeEpic = state.active ? byId[state.active] : null;
+  const active = activeEpic && activeEpic.status !== "archived" ? activeEpic : null;
   if (active) {
     L.push(`NOW: \`${active.id}\` (${active.lane}, ${active.role}, ${active.priority}) — ${bar(active.progress)}`);
     if (active.reconcileNeeded)
       L.push(`  ⚠ RECONCILE PENDING: re-validate this proposal before continuing (a detour touched shared code).`);
+  } else if (activeEpic && activeEpic.status === "archived") {
+    L.push(`NOW: (no active epic — \`${activeEpic.id}\` was archived; the active pointer clears on next /pm:sync or commit)`);
   } else {
     L.push("NOW: (no active epic set)");
   }
@@ -518,7 +543,8 @@ function render() {
   md.push(`> Last rendered: ${new Date().toISOString()}`);
   md.push("");
 
-  const active = epics.find(e => e.id === state.active);
+  const activeEpic = epics.find(e => e.id === state.active);
+  const active = activeEpic && activeEpic.status !== "archived" ? activeEpic : null;
   md.push("## Now");
   md.push("");
   if (active) {
@@ -527,6 +553,8 @@ function render() {
       md.push("");
       md.push("⚠ **Reconcile pending** — re-validate this proposal before continuing.");
     }
+  } else if (activeEpic && activeEpic.status === "archived") {
+    md.push(`_\`${activeEpic.id}\` was archived; the active pointer clears on next \`/pm:sync\` or commit._`);
   } else {
     md.push("_No active epic set._");
   }
@@ -667,6 +695,9 @@ function commitNudge() {
     const subject = (m && (m[1] || m[2] || m[3])) || "";
     appendDetourLog("DETOUR-COMMIT", ctx.detourId, subject);
   }
+  // Self-heal: if this commit archived the active epic (e.g. an OpenSpec archive),
+  // clear the stale active pointer + stamp archived status so /pm:next advances.
+  if (reconcileArchived(state)) saveState(state);
   render();
 
   const msg = ctx.active
@@ -708,6 +739,7 @@ function sync(quiet = false) {
     state.epics.push({ id, title, priority: "P?", status: "untriaged", role: "epic", lane: "superpowers", planPath, links: [], reconcileNeeded: false });
     known.add(id); added++;
   }
+  reconcileArchived(state);
   saveState(state);
   if (!quiet) process.stderr.write(`conductor: synced (${added} new epic(s) added as untriaged)\n`);
 }
@@ -990,6 +1022,7 @@ function upgrade() {
   for (const m of ordered) {
     if (cmpVer(m.release, stamped) > 0) { m.apply(state); applied++; }
   }
+  reconcileArchived(state);
   stampVersion(state);
   saveState(state);
   writeRules();

@@ -596,6 +596,50 @@ test("no nudge when stamped equals newest installed", () => {
   assert.doesNotMatch(out, /since this repo was set up/);
 });
 
+// ──────────────── 0.6.1: date-prefixed archive detection ────────────────
+
+function withArchivedChange(cwd, id) {
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", `2026-06-25-${id}`), { recursive: true });
+  writeState(cwd, { version: 1, active: id, detourStack: [], epics: [
+    { id, title: id, priority: "P0", status: "active", role: "epic", lane: "openspec", links: [] }] });
+}
+
+test("isArchived recognizes a date-prefixed openspec archive dir (status flips, no ghost)", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  withArchivedChange(cwd, "feat-x");
+  run(["render"], { cwd });
+  const md = projectMd(cwd);
+  assert.match(md, /`feat-x` \| openspec \| epic \| archived/);   // derived status = archived
+  assert.doesNotMatch(md, /no change on disk/);                   // not a false ghost
+});
+
+test("brief does not show an archived epic as active, and stays read-only", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  withArchivedChange(cwd, "feat-x");
+  const brief = parseBrief(cwd);
+  assert.doesNotMatch(brief, /NOW: `feat-x`/);    // not presented as active
+  assert.match(brief, /was archived/);            // honest note instead
+  assert.equal(readState(cwd).active, "feat-x");  // brief did NOT mutate state (read path)
+});
+
+test("sync clears an archived active pointer and stamps archived status", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  withArchivedChange(cwd, "feat-x");
+  run(["sync"], { cwd });
+  const s = readState(cwd);
+  assert.equal(s.active, null);
+  assert.equal(s.epics.find(e => e.id === "feat-x").status, "archived");
+});
+
+test("commit-nudge self-heals an archived active pointer after a git commit", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  withArchivedChange(cwd, "feat-x");
+  run(["commit-nudge"], { cwd, input: JSON.stringify({ tool_input: { command: 'git commit -m "archive feat-x"' } }) });
+  const s = readState(cwd);
+  assert.equal(s.active, null);
+  assert.equal(s.epics.find(e => e.id === "feat-x").status, "archived");
+});
+
 // ───────────────────── 0.6.0: changelog surfacing ─────────────────────
 
 test("changelog --since lists only entries newer than the given version", () => {

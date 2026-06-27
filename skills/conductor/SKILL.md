@@ -110,6 +110,9 @@ Resume the **top of the detour stack** first if non-empty. Otherwise the highest
   re-renders automatically.
 - On PUSH/POP/priority change: edit `state.json`, then render.
 - New proposal outside this flow? `/pm:sync` registers it as `untriaged`; then triage.
+- Archived an OpenSpec change? The conductor self-heals — `sync`/`commit-nudge` clear the
+  `active` pointer and stamp `archived` automatically (OpenSpec's date-prefixed archive dirs are
+  detected), so `/pm:next` advances without hand-editing `state.json`.
 - `state.json` always wins over `PROJECT.md` — just re-render.
 
 These rules are also installed into the project's `CLAUDE.md` by `/pm:init` and re-injected

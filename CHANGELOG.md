@@ -6,6 +6,32 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.6.1] — 2026-06-26
+
+### Fixed
+
+- **Archived OpenSpec epics stayed stuck as the active epic.** `isArchived()` only matched an
+  archive dir named exactly `<id>`, but OpenSpec archives a change as
+  `openspec/changes/archive/<YYYY-MM-DD>-<id>`. So the engine never detected the archive: the epic
+  kept its `active` status, `state.active` kept pointing at it, `/pm:status` showed a finished epic
+  as **NOW**, `/pm:next` wouldn't advance, and the epic could even be mis-flagged "⚠ no change on
+  disk." Fixed three ways:
+  - `isArchived()` now matches both the exact id and OpenSpec's date-prefixed dir.
+  - **Display honesty:** `render`/`brief` no longer present an archived epic as the active one —
+    they show "(no active epic — `X` was archived)", so `/pm:status` and `/pm:next` are correct
+    immediately, with no state mutation.
+  - **Self-heal:** a new `reconcileArchived()` clears an `active` pointer aimed at an archived epic
+    and stamps `status: archived`. It runs in `sync`, `commit-nudge` (so the state heals on the
+    same commit that archives the change), `init`, and `upgrade` — no more hand-editing
+    `state.json` after an archive.
+
+### Upgrade
+
+Patch release — no schema change, no data migration. Update the plugin → `/reload-plugins` →
+`/pm:upgrade`.
+
+---
+
 ## [0.6.0] — 2026-06-25
 
 ### Added
