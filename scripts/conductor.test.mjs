@@ -596,6 +596,71 @@ test("no nudge when stamped equals newest installed", () => {
   assert.doesNotMatch(out, /since this repo was set up/);
 });
 
+// ─────────────── 0.7.0: set-active / clear-active + active↔status ───────────────
+
+test("set-active sets the .active pointer and the epic's status, demoting a prior active", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code"], { cwd });
+  run(["add-epic", "--id", "b", "--lane", "claude-code"], { cwd });
+  run(["set-active", "a"], { cwd });
+  let s = readState(cwd);
+  assert.equal(s.active, "a");
+  assert.equal(s.epics.find(e => e.id === "a").status, "active");
+  run(["set-active", "b"], { cwd });
+  s = readState(cwd);
+  assert.equal(s.active, "b");
+  assert.equal(s.epics.find(e => e.id === "b").status, "active");
+  assert.equal(s.epics.find(e => e.id === "a").status, "queued");   // prior active demoted
+});
+
+test("set-active rejects an unknown or archived id and writes nothing", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "real", "--lane", "claude-code"], { cwd });
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  assert.ok(expectFail(() => run(["set-active", "ghost"], { cwd })), "unknown id rejected");
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
+  // archived id
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", "2026-07-08-done"), { recursive: true });
+  run(["add-epic", "--id", "done", "--lane", "openspec"], { cwd });
+  assert.ok(expectFail(() => run(["set-active", "done"], { cwd })), "archived id rejected");
+});
+
+test("clear-active nulls the pointer and demotes the active epic", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code"], { cwd });
+  run(["set-active", "a"], { cwd });
+  run(["clear-active"], { cwd });
+  const s = readState(cwd);
+  assert.equal(s.active, null);
+  assert.equal(s.epics.find(e => e.id === "a").status, "queued");
+});
+
+test("update-epic --status active also sets the .active pointer (no desync)", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code"], { cwd });
+  run(["update-epic", "a", "--status", "active"], { cwd });
+  const s = readState(cwd);
+  assert.equal(s.active, "a");                                       // the reported footgun, fixed
+  assert.equal(s.epics.find(e => e.id === "a").status, "active");
+  assert.match(parseBrief(cwd), /NOW: `a`/);
+});
+
+test("update-epic moving the active epic off active clears the pointer", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code"], { cwd });
+  run(["set-active", "a"], { cwd });
+  run(["update-epic", "a", "--status", "queued"], { cwd });
+  const s = readState(cwd);
+  assert.equal(s.active, null);
+  assert.equal(s.epics.find(e => e.id === "a").status, "queued");
+});
+
+test("add-epic --status active sets the .active pointer too", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code", "--status", "active"], { cwd });
+  assert.equal(readState(cwd).active, "a");
+});
+
 // ──────────────── 0.6.1: date-prefixed archive detection ────────────────
 
 function withArchivedChange(cwd, id) {

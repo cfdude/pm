@@ -22,18 +22,33 @@ description: >
 - The conductor owns ONLY what no lane-specific tool can: cross-epic **priority/ordering**,
   the **detour stack**, and **epic links** (especially the reconcile relationship).
 - State of record is `.conductor/state.json`. `PROJECT.md` is a generated view — never
-  hand-edit it. After any state change, run `node "$CLAUDE_PLUGIN_ROOT/scripts/conductor.mjs" render`.
+  hand-edit it. After any state change, run `node "$ENGINE" render` (see "Running the engine").
 
 You (Claude) are myopic across compactions. This skill is how you stop losing the thread.
+
+## Running the engine (resolve the path — never version-pin)
+
+When you invoke `conductor.mjs` from a Bash step, resolve it version-independently. Prefer
+`$CLAUDE_PLUGIN_ROOT`; if that env var is unset (common outside a slash-command), fall back to the
+newest installed copy. **Never** hardcode a versioned cache path like `…/pm/0.6.1/scripts/…` — it
+breaks on the next upgrade.
+
+```bash
+ENGINE="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/scripts/conductor.mjs}"
+[ -f "$ENGINE" ] || ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1)
+node "$ENGINE" <subcommand>
+```
+
+Below, `$ENGINE` means the path resolved this way.
 
 ## Commands
 
 `/pm:init` scaffold · `/pm:status` show · `/pm:next` decide · `/pm:detour` park ·
 `/pm:resume` resume + reconcile · `/pm:sync` register new proposals and plans ·
 `/pm:epic add` register any epic (`--parent`, `--external-id`) · `/pm:epic` → `add-many`
-(atomic bulk create) / `update-epic` (write-back) · `/pm:tracker` make the conductor
-tracker-aware · `/pm:changelog` what changed since your version · `/pm:upgrade` refresh rules +
-run migrations + print the changelog delta.
+(atomic bulk create) / `update-epic` (write-back) · **`set-active <id>` / `clear-active`** set the
+top-level active epic · `/pm:tracker` make the conductor tracker-aware · `/pm:changelog` what
+changed since your version · `/pm:upgrade` refresh rules + run migrations + print the changelog delta.
 
 ## Hierarchy & external trackers
 
@@ -54,7 +69,7 @@ Do not start fixing. Decide which kind this is and say so.
 
 **Minimal detour** — small, self-contained, no design ambiguity.
 Fix → test → commit → push, then record it so it leaves a trail:
-`node "$CLAUDE_PLUGIN_ROOT/scripts/conductor.mjs" log-detour "<what you fixed>"` (appends a
+`node "$ENGINE" log-detour "<what you fixed>"` (appends a
 timestamped line + commit SHA to `.conductor/detours.log`). Then resume. No proposal, no
 stack entry. Rule of thumb: fits before the next compaction and doesn't change the shape of
 the current proposal.
@@ -78,7 +93,8 @@ cheap; a lost thread is the whole problem we're solving.
 3. Add the detour as an epic (`role: "detour"`, `lane` = appropriate lane, usually `P0`)
    with links: detour `resolves-blocker-for` parent; parent `may-invalidate` detour.
    Use `/pm:epic add` or edit `state.json` directly.
-4. Set `active` to the detour. Render. Build it through the appropriate lane's workflow,
+4. Make the detour active with `node "$ENGINE" set-active <detour-id>`. Build it through the
+   appropriate lane's workflow,
    then archive/close it.
 5. **Write a one-line Honcho memory** ("paused `<parent>` for `<detour>` — <reason>") via
    your Honcho MCP memory/conclusion tool, so the pivot survives outside this repo.
@@ -88,7 +104,7 @@ cheap; a lost thread is the whole problem we're solving.
 The step otherwise lost after compaction. Do not skip it.
 
 1. Confirm the detour epic is archived and committed/deployed.
-2. Pop its frame; set the paused epic back to `active`.
+2. Pop its frame; `node "$ENGINE" set-active <paused-id>` to make the paused epic active again.
 3. If `reconcileOnResume` was true, RECONCILE before writing code: delegate to the
    **reconciler** agent with the paused id + detour id. It re-reads the paused proposal,
    diffs what the detour shipped, and reports validity + stories to amend.
@@ -108,7 +124,9 @@ Resume the **top of the detour stack** first if non-empty. Otherwise the highest
 - After completing stories: tick `tasks.md` checkboxes (OpenSpec), then render.
 - After a commit: the PostToolUse hook reminds you — update `state.json` status, it
   re-renders automatically.
-- On PUSH/POP/priority change: edit `state.json`, then render.
+- Set the active epic with `set-active <id>` (never hand-edit the `.active` pointer); it also
+  keeps `status: "active"` in sync and demotes any prior active epic. `clear-active` drops it.
+- On PUSH/POP/priority change: edit `state.json` (or use the verbs above), then render.
 - New proposal outside this flow? `/pm:sync` registers it as `untriaged`; then triage.
 - Archived an OpenSpec change? The conductor self-heals — `sync`/`commit-nudge` clear the
   `active` pointer and stamp `archived` automatically (OpenSpec's date-prefixed archive dirs are

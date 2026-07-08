@@ -168,6 +168,7 @@ you have connected.
 | `/pm:epic add --id X --title "…" --lane L --priority P [--status S] [--parent ID] [--external-id KEY]` | Register any epic directly (all lanes); optionally nest under a parent or link a tracker issue |
 | `/pm:epic` → `add-many --from <path\|->` | Atomically bulk-create a parent + children from a JSON batch |
 | `/pm:epic` → `update-epic <id> [--external-id …] [--parent …] [--status …]` | Update an existing epic (write-back path for recording tracker keys) |
+| `/pm:epic` → `set-active <id>` / `clear-active` | Set/clear the top-level active epic via the CLI (keeps `.active` and `status: active` in sync) |
 | `/pm:tracker` | Make the conductor aware of an external tracker (Jira/GitHub/Linear); detect → confirm → `set-tracker` |
 | `/pm:upgrade` | Refresh CLAUDE.md rules, run migrations, update `pmVersion`, and print the changelog delta for the versions it crossed |
 | `/pm:changelog [--since X]` | Show what changed in the plugin since a version (default: this repo's stamped version) |

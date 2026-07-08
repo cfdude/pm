@@ -827,6 +827,7 @@ function addEpic() {
   if (str(f["external-id"]) !== undefined) epic.externalId = str(f["external-id"]);
   if (str(f["external-url"]) !== undefined) epic.externalUrl = str(f["external-url"]);
   state.epics.push(epic);
+  if (epic.status === "active") activate(state, id);   // keep .active in sync on creation
   saveState(state);
   render();
   process.stderr.write(`conductor: added epic '${id}' (${lane}, ${status})\n`);
@@ -903,6 +904,50 @@ function addMany() {
   process.stderr.write(`conductor: add-many added ${incoming.length} epic(s)\n`);
 }
 
+// ---------- active pointer ----------
+
+/** Enforce the single-active invariant: `id` becomes the one active epic AND the
+ *  top-level `.active` pointer. Any OTHER epic left at status "active" is demoted to
+ *  "queued", so `.active` and `status: "active"` can never silently disagree. */
+function activate(state, id) {
+  for (const e of state.epics) if (e.status === "active" && e.id !== id) e.status = "queued";
+  const t = state.epics.find(e => e.id === id);
+  if (t) t.status = "active";
+  state.active = id;
+}
+
+/** `set-active <id>` — the CLI verb for the top-level active pointer (positional id). */
+function setActive() {
+  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  const argv = process.argv.slice(3);
+  const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
+  if (!id) { process.stderr.write("usage: conductor.mjs set-active <id>\n"); process.exit(1); }
+  const state = loadState();
+  const t = state.epics.find(e => e.id === id);
+  if (!t) { process.stderr.write(`conductor: epic '${id}' not found\n`); process.exit(1); }
+  if (t.status === "archived" || isArchived(id)) {
+    process.stderr.write(`conductor: epic '${id}' is archived — cannot make it active\n`); process.exit(1);
+  }
+  activate(state, id);
+  saveState(state);
+  render();
+  process.stderr.write(`conductor: active is now '${id}'\n`);
+}
+
+/** `clear-active` — drop the active pointer and demote the epic it pointed at. */
+function clearActive() {
+  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  const state = loadState();
+  if (state.active) {
+    const a = state.epics.find(e => e.id === state.active);
+    if (a && a.status === "active") a.status = "queued";
+  }
+  state.active = null;
+  saveState(state);
+  render();
+  process.stderr.write("conductor: active cleared\n");
+}
+
 // ---------- update-epic (write-back) ----------
 
 /** Update an EXISTING epic's externalId/externalUrl/parent/status/priority.
@@ -934,6 +979,10 @@ function updateEpic() {
   if (parent !== undefined) epic.parent = parent;
   if (status !== undefined) epic.status = status;
   if (str(f.priority) !== undefined) epic.priority = str(f.priority);
+
+  // Keep .active consistent with status — the two must never disagree.
+  if (epic.status === "active") activate(state, id);
+  else if (state.active === id) state.active = null;
 
   saveState(state);
   render();
@@ -1072,12 +1121,14 @@ const cmd = process.argv[2];
   "add-epic": addEpic,
   "add-many": addMany,
   "update-epic": updateEpic,
+  "set-active": setActive,
+  "clear-active": clearActive,
   "set-tracker": setTracker,
   upgrade,
   changelog,
   rules: () => process.stdout.write(rulesBlock(currentTracker())),
   "write-rules": writeRules,
 }[cmd] || (() => {
-  process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|add-epic|add-many|update-epic|set-tracker|upgrade|changelog|rules|write-rules\n");
+  process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|add-epic|add-many|update-epic|set-active|clear-active|set-tracker|upgrade|changelog|rules|write-rules\n");
   process.exit(1);
 }))();

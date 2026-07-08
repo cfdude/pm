@@ -6,6 +6,41 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.7.0] — 2026-07-08
+
+### Added
+
+- **`set-active <id>` / `clear-active` — a CLI verb for the top-level active epic** (closes
+  [#1](https://github.com/cfdude/cfdude-plugins/issues/1)). Previously `.active` — the pointer the
+  briefing's "NOW" line reads — had *no* CLI setter, so `/pm:next`'s "make it active" forced
+  hand-editing `state.json`, against the "CLI is the safe interface" model. `set-active <id>`
+  (positional id) sets the pointer; `clear-active` drops it.
+
+### Fixed
+
+- **`.active` and `status: "active"` can no longer silently disagree.** They were independent
+  fields — `update-epic --status active` flipped the status but left `.active` null, so the brief
+  reported "no active epic" despite an active epic. Now a single-active invariant is enforced
+  through every CLI path: `set-active`, `update-epic --status active`, and `add-epic --status
+  active` all set `.active` **and** the epic's status together and demote any previously-active
+  epic to `queued`; moving the active epic off `active` (or `clear-active`) clears the pointer.
+  `set-active` rejects an unknown or archived id.
+
+### Changed
+
+- **Skills/commands resolve the engine version-independently.** The `conductor` skill and `/pm:next`
+  now prefer `$CLAUDE_PLUGIN_ROOT` and fall back to the newest installed `conductor.mjs`
+  (`ls -t …/pm/*/… | head -1`) instead of embedding a versioned cache path like `…/pm/0.6.1/…`,
+  which broke on upgrade. `set-active`/`clear-active` are documented in `/pm:next`, `/pm:epic`, the
+  skill, and the README.
+
+### Upgrade
+
+Minor release — no schema change, no data migration. Update the plugin → `/reload-plugins` →
+`/pm:upgrade`.
+
+---
+
 ## [0.6.1] — 2026-06-26
 
 ### Fixed

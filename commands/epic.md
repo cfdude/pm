@@ -74,3 +74,18 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" update-epic <id> \
 
 The id is positional. Parent/status changes are validated like `add-epic` (no self-parent, no
 cycle, known status). On an unknown id it exits non-zero and writes nothing.
+
+## Set the active epic — `set-active` / `clear-active`
+
+The top-level `.active` pointer (what the briefing's "NOW" line reads) has its own verbs — never
+hand-edit `state.json` for this:
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" set-active <id>     # make <id> the active epic
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" clear-active        # no active epic
+```
+
+`set-active <id>` (positional id) sets `.active = <id>` **and** the epic's `status: "active"`
+together, demoting any previously-active epic to `queued` — so the pointer and status can never
+disagree. It rejects an unknown or archived id. `update-epic <id> --status active` keeps them in
+sync too (it sets `.active`), and moving the active epic off `active` clears the pointer.
