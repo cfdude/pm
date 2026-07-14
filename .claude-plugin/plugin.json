@@ -1,6 +1,6 @@
 {
   "name": "pm",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "A lightweight project-management layer that sits above OpenSpec and Superpowers. Tracks active proposals as epics, maintains an explicit detour stack, and enforces a reconcile gate so nothing is lost when development pivots or context is compacted.",
   "author": {
     "name": "Rob Sherman",

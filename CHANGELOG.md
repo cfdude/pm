@@ -6,6 +6,22 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.9.1] — 2026-07-14
+
+### Fixed
+
+- **Regression from 0.8.4: `reconcileNeeded` was cleared on an active epic with no live
+  detour frame, defeating the post-pop reconcile gate.** POP protocol removes the detour-
+  stack frame BEFORE reconciliation runs, so deriving the flag purely from live-frame
+  presence wiped it out at exactly the moment it needed to stay true (just-resumed,
+  reconcile not yet done). `reconcileArchived()` now only recomputes what's safely
+  derivable from current state: an archived epic always clears it (reconcile is moot); a
+  still-paused epic with a live `reconcileOnResume` frame gets it forced true; anything
+  else stale heals to false only if it's NOT the current active epic, since that's exactly
+  the legitimate post-pop-pre-reconcile window.
+
+---
+
 ## [0.9.0] — 2026-07-14
 
 ### Added
