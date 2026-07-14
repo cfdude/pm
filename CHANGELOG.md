@@ -6,6 +6,18 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.8.3] — 2026-07-14
+
+### Fixed
+
+- **`state.json` writes are now atomic (tmp+rename).** `saveState()` previously wrote directly
+  via `writeFileSync`; a crash or kill mid-write could leave a truncated, unparseable
+  `state.json` with no recovery path. Now writes to a `.tmp-<pid>-<ts>` file in the same
+  directory and `rename(2)`s over the real path — atomic on the same filesystem, so a crash
+  leaves a truncated tmp file instead of corrupting the system of record.
+
+---
+
 ## [0.8.2] — 2026-07-14
 
 ### Fixed
