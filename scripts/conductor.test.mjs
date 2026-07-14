@@ -408,6 +408,17 @@ test("rules block is lane-agnostic, not openspec-only", () => {
   assert.doesNotMatch(out, /becomes its own OpenSpec proposal/);
 });
 
+test("rules block always includes the epic-level autonomy section, with the five-criteria decision rule", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const out = run(["rules"], { cwd });
+  assert.match(out, /## Epic-level autonomy/);
+  assert.match(out, /set-autonomy/);
+  assert.match(out, /No backup\/restore path exists\? → STOP/);
+  assert.match(out, /Destructive but restorable.*→ WARN/);
+  assert.match(out, /irreversible EXTERNAL side/i);   // scope boundary called out explicitly
+});
+
 test("render is a no-op when content is unchanged (no timestamp churn)", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
