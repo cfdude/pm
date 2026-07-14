@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "active": null,
+  "epics": [
+    {
+      "id": "pm-fix-link-flag-validation-and-update",
+      "title": "add-epic --link accepts malformed format silently; update-epic has no --link flag to fix it",
+      "priority": "P1",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false
+    }
+  ],
+  "detourStack": [],
+  "pmVersion": "0.8.0"
+}
