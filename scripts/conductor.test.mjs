@@ -715,6 +715,26 @@ test("set-autonomy on an unknown id exits non-zero and writes nothing", () => {
   assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
 });
 
+test("render marks an autonomous epic with 🤖 in its Status cell; a plain epic gets no marker", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "auto", "--lane", "claude-code"], { cwd });
+  run(["add-epic", "--id", "plain", "--lane", "claude-code"], { cwd });
+  run(["set-autonomy", "auto", "--level", "autonomous"], { cwd });
+  const md = projectMd(cwd);
+  const autoLine = md.split("\n").find(l => l.includes("`auto`"));
+  const plainLine = md.split("\n").find(l => l.includes("`plain`"));
+  assert.match(autoLine, /🤖/);
+  assert.doesNotMatch(plainLine, /🤖/);
+});
+
+test("brief NOW line shows 🤖 autonomous only when the active epic is autonomous", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code", "--status", "active"], { cwd });
+  assert.doesNotMatch(parseBrief(cwd), /🤖/);
+  run(["set-autonomy", "a", "--level", "autonomous"], { cwd });
+  assert.match(parseBrief(cwd), /NOW: `a`.*🤖 autonomous/);
+});
+
 // ──────────────── 0.6.1: date-prefixed archive detection ────────────────
 
 function withArchivedChange(cwd, id) {

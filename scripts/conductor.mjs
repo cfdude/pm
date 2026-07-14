@@ -466,7 +466,8 @@ function buildBrief(state) {
   const activeEpic = state.active ? byId[state.active] : null;
   const active = activeEpic && activeEpic.status !== "archived" ? activeEpic : null;
   if (active) {
-    L.push(`NOW: \`${active.id}\` (${active.lane}, ${active.role}, ${active.priority}) — ${bar(active.progress)}`);
+    const autonomous = getAutonomy(active).level === "autonomous" ? ", 🤖 autonomous" : "";
+    L.push(`NOW: \`${active.id}\` (${active.lane}, ${active.role}, ${active.priority}${autonomous}) — ${bar(active.progress)}`);
     if (active.reconcileNeeded)
       L.push(`  ⚠ RECONCILE PENDING: re-validate this proposal before continuing (a detour touched shared code).`);
   } else if (activeEpic && activeEpic.status === "archived") {
@@ -610,7 +611,8 @@ function render() {
       const rollup = `${archived}/${kids.length} children archived`;
       progress = progress === "—" ? rollup : `${rollup} · ${progress}`;
     }
-    md.push(`| ${e.priority} | ${indent}\`${e.id}\` | ${e.lane} | ${e.role} | ${e.status}${e.reconcileNeeded ? " ⚠" : ""}${miss} | ${progress} | ${links} |`);
+    const autonomous = getAutonomy(e).level === "autonomous" ? " 🤖" : "";
+    md.push(`| ${e.priority} | ${indent}\`${e.id}\` | ${e.lane} | ${e.role} | ${e.status}${e.reconcileNeeded ? " ⚠" : ""}${miss}${autonomous} | ${progress} | ${links} |`);
   };
   const seen = new Set();
   const emit = (e, depth) => {
