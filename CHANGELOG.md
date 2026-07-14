@@ -6,6 +6,19 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.8.2] — 2026-07-14
+
+### Fixed
+
+- **`KNOWN_STATUSES` omitted `later`/`blocked` despite both being documented** in the README's
+  Epic statuses table and `commands/init.md` — `add-epic`/`update-epic --status later` (or
+  `blocked`) was rejected outright. Both statuses now validate and persist correctly; NEXT UP
+  already excluded them (only `queued`/`untriaged` are included) with no other code change
+  needed, and they correctly still count in the lanes rollup (only `planned` is excluded from
+  both NEXT UP and the rollup, per the documented distinction).
+
+---
+
 ## [0.8.1] — 2026-07-14
 
 ### Fixed
