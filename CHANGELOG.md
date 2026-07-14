@@ -6,6 +6,21 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.9.0] — 2026-07-14
+
+### Added
+
+- **`set-review-mode <off|standard|thorough>` — a bounded, repo-level review-count dial.**
+  Incorporates Comet's `review_mode` concept: a single setting (not per-epic) replacing an
+  ad-hoc "how many reviews, when" judgment call with an explicit, dedup'd table. `off` = self-
+  review only; `standard` (default when unset) = one fresh-context reviewer per gate; `thorough`
+  = two independent reviewers per gate with disagreement adjudicated by you. Writes
+  `state.reviewMode` and refreshes the CLAUDE.md rules block's new unconditional "## Review
+  mode" section, which always shows the currently active mode. Pure instruction-layer — no
+  external calls.
+
+---
+
 ## [0.8.4] — 2026-07-14
 
 ### Fixed
