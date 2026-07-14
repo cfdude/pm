@@ -226,6 +226,11 @@ function isArchived(id) {
  *  archived becomes status `archived`, and an `active` pointer aimed at an archived epic
  *  is cleared. Returns true if it changed anything. Called from the mutating paths
  *  (sync/commit-nudge/init/upgrade) so the agent never has to hand-edit state.json. */
+/** Recompute-don't-remember: re-derive active validity and reconcile obligation from
+ *  disk/state on every call, rather than trusting stored flags that can go stale (a
+ *  hand-edit, a lost compaction, a forgotten clear on resume). Called by write paths
+ *  (render, sync, commit-nudge, upgrade) — NOT by brief(), which stays read-only and
+ *  displays the same recomputed truth in-memory via resolveEpics() without persisting. */
 function reconcileArchived(state) {
   let changed = false;
   for (const e of state.epics) {
@@ -233,7 +238,19 @@ function reconcileArchived(state) {
   }
   if (state.active) {
     const a = state.epics.find(e => e.id === state.active);
-    if ((a && a.status === "archived") || isArchived(state.active)) { state.active = null; changed = true; }
+    // Missing entirely (!a), archived, or archived on disk — any of these means the
+    // pointer no longer refers to a real, in-flight epic.
+    if (!a || a.status === "archived" || isArchived(state.active)) { state.active = null; changed = true; }
+  }
+  // An epic is only legitimately pending reconcile if it's the pausedEpic of a detour-stack
+  // frame with reconcileOnResume true — anything else (already resumed and never cleared,
+  // hand-edited, orphaned) is stale and gets healed in both directions.
+  const pendingReconcile = new Set(
+    (state.detourStack || []).filter(f => f.reconcileOnResume).map(f => f.pausedEpic)
+  );
+  for (const e of state.epics) {
+    const shouldBeNeeded = pendingReconcile.has(e.id);
+    if (Boolean(e.reconcileNeeded) !== shouldBeNeeded) { e.reconcileNeeded = shouldBeNeeded; changed = true; }
   }
   return changed;
 }
@@ -591,6 +608,7 @@ function buildBrief(state) {
 
 function render() {
   const state = loadState();
+  if (reconcileArchived(state)) saveState(state);
   const epics = resolveEpics(state);
   const md = [];
 

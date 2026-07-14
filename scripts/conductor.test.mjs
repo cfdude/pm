@@ -831,6 +831,46 @@ test("commit-nudge self-heals an archived active pointer after a git commit", ()
   assert.equal(s.epics.find(e => e.id === "feat-x").status, "archived");
 });
 
+// ───────── recompute-don't-remember: active validity + reconcileNeeded self-heal ─────────
+
+test("render clears a dangling active pointer that references a completely missing epic (not just an archived one)", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  writeState(cwd, { version: 1, active: "ghost-id", detourStack: [], epics: [
+    { id: "real", title: "real", priority: "P1", status: "queued", role: "epic", lane: "claude-code", links: [] },
+  ]});
+  run(["render"], { cwd });
+  assert.equal(readState(cwd).active, null);
+});
+
+test("render recomputes reconcileNeeded from the detour stack rather than trusting a stored flag", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  writeState(cwd, {
+    version: 1, active: "paused-a", detourStack: [
+      { pausedEpic: "paused-a", pausedAt: "2026-07-14T00:00:00Z", reason: "x", spawnedDetour: "d1", reconcileOnResume: true },
+    ],
+    epics: [
+      // stale true with no matching frame → should be healed to false
+      { id: "stale-true", title: "stale-true", priority: "P1", status: "queued", role: "epic", lane: "claude-code", links: [], reconcileNeeded: true },
+      // missing/false but IS the pausedEpic of a reconcileOnResume frame → should be healed to true
+      { id: "paused-a", title: "paused-a", priority: "P1", status: "paused", role: "epic", lane: "claude-code", links: [], reconcileNeeded: false },
+    ],
+  });
+  run(["render"], { cwd });
+  const s = readState(cwd);
+  assert.equal(s.epics.find(e => e.id === "stale-true").reconcileNeeded, false);
+  assert.equal(s.epics.find(e => e.id === "paused-a").reconcileNeeded, true);
+});
+
+test("brief displays the recomputed truth but stays read-only, even for the new active/reconcile checks", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  writeState(cwd, { version: 1, active: "ghost-id", detourStack: [], epics: [
+    { id: "real", title: "real", priority: "P1", status: "queued", role: "epic", lane: "claude-code", links: [] },
+  ]});
+  const brief = parseBrief(cwd);
+  assert.match(brief, /NOW: \(no active epic set\)/);
+  assert.equal(readState(cwd).active, "ghost-id");   // brief did NOT mutate state (read path)
+});
+
 // ───────────────────── 0.6.0: changelog surfacing ─────────────────────
 
 test("changelog --since lists only entries newer than the given version", () => {
