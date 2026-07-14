@@ -6,6 +6,22 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.8.4] — 2026-07-14
+
+### Fixed
+
+- **Recompute-don't-remember: `.active` validity and `reconcileNeeded` are re-derived from
+  disk, not trusted as stored flags.** `reconcileArchived()` previously only cleared `.active`
+  when it pointed at an *archived* epic — a pointer referencing an epic id missing entirely
+  from `state.epics` was never healed. `reconcileNeeded` was pure remembered state (set/cleared
+  only by hand-editing per the PUSH/POP protocol), with no recovery if a session lost context
+  mid-detour. Both are now recomputed from ground truth (the epics array, the detour stack's
+  `reconcileOnResume` frames) every time `render()` runs — including at the end of `/pm:resume`
+  — healing stale flags in either direction. `brief()` stays deliberately read-only, displaying
+  the same recomputed truth in-memory without persisting.
+
+---
+
 ## [0.8.3] — 2026-07-14
 
 ### Fixed
