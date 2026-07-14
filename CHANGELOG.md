@@ -6,6 +6,30 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.9.2] — 2026-07-14
+
+### Added
+
+- **`set-gate-guard <on|off>` — optional, opt-in `PreToolUse` guard hook.** Blocks
+  `Edit`/`Write`/`NotebookEdit` while the active epic still owes a reconcile after a detour
+  POP (`reconcileNeeded`). Off by default and dormant until `/pm:init`. This is the one place
+  pm's law tolerates mechanical blocking over pure instruction — it protects the single
+  highest-stakes skip (writing source before the reconcile gate runs) as a deliberate,
+  reversible opt-in, never a silent default.
+
+### Fixed
+
+- **POP protocol never actually told you to SET `reconcileNeeded`.** The conductor skill
+  documented clearing it after reconciliation, but never setting it true on the paused epic
+  before its detour-stack frame is popped — without that, the flag (and the new gate guard)
+  would never actually trigger. Documented as a hand-edited step, mirroring how the frame
+  itself is already hand-edited.
+- **Doc drift in the conductor skill:** the Commands line and `state.json` reference were
+  missing `set-autonomy`, `set-review-mode`, `autonomy`, `reviewMode`, and `gateGuard` — none
+  had been added when those features shipped in 0.8.0/0.9.0.
+
+---
+
 ## [0.9.1] — 2026-07-14
 
 ### Fixed
