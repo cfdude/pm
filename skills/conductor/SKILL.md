@@ -46,8 +46,11 @@ Below, `$ENGINE` means the path resolved this way.
 `/pm:init` scaffold · `/pm:status` show · `/pm:next` decide · `/pm:detour` park ·
 `/pm:resume` resume + reconcile · `/pm:sync` register new proposals and plans ·
 `/pm:epic add` register any epic (`--parent`, `--external-id`) · `/pm:epic` → `add-many`
-(atomic bulk create) / `update-epic` (write-back) · **`set-active <id>` / `clear-active`** set the
-top-level active epic · `/pm:tracker` make the conductor tracker-aware · `/pm:changelog` what
+(atomic bulk create) / `update-epic` (write-back, incl. `--title`) · **`set-active <id>` /
+`clear-active`** set the top-level active epic · `set-autonomy <id>` grant an epic broad
+execution trust (see "Epic-level autonomy" below) · `set-review-mode` the repo's bounded
+review-count dial (off/standard/thorough) · `/pm:gate-guard` optional opt-in hard reconcile-gate
+backstop (off by default) · `/pm:tracker` make the conductor tracker-aware · `/pm:changelog` what
 changed since your version · `/pm:upgrade` refresh rules + run migrations + print the changelog delta.
 
 ## Hierarchy & external trackers
@@ -104,12 +107,19 @@ cheap; a lost thread is the whole problem we're solving.
 The step otherwise lost after compaction. Do not skip it.
 
 1. Confirm the detour epic is archived and committed/deployed.
-2. Pop its frame; `node "$ENGINE" set-active <paused-id>` to make the paused epic active again.
+2. Before popping the frame: if it has `reconcileOnResume: true`, set `reconcileNeeded: true`
+   on the paused epic in `.conductor/state.json` (a hand-edited field, like the frame itself) —
+   the frame is about to be removed, so this is the only place that obligation survives. Then
+   pop the frame and `node "$ENGINE" set-active <paused-id>` to make the paused epic active
+   again.
 3. If `reconcileOnResume` was true, RECONCILE before writing code: delegate to the
    **reconciler** agent with the paused id + detour id. It re-reads the paused proposal,
    diffs what the detour shipped, and reports validity + stories to amend.
    - Invalidated → amend the proposal + `tasks.md` first, then clear `reconcileNeeded`.
    - Still valid → say so explicitly, clear `reconcileNeeded`, resume.
+   - **Optional hard backstop:** if this repo has `set-gate-guard on` set, a PreToolUse hook
+     mechanically blocks `Edit`/`Write`/`NotebookEdit` while `reconcileNeeded` is still true —
+     off by default, see `/pm:gate-guard`.
 4. **Write a one-line Honcho memory** ("resumed `<parent>` after `<detour>`; reconcile =
    valid | amended …") via your Honcho MCP memory/conclusion tool.
 5. Render. State the exact next story to build.
@@ -201,7 +211,10 @@ regardless of caller.
 active        : "<epic-id>" | null
 pmVersion     : "<semver>" — release that last touched this repo (set by init/upgrade)
 tracker?      : { system, instance?, projectKey?, mechanism?, statusIntent? }  — optional; opt-in
-epics[]       : { id, title, priority, status, role, lane, parent?, externalId?, externalUrl?, planPath?, stories[]?, links[], reconcileNeeded? }
+reviewMode?   : "off" | "standard" | "thorough" — repo-level dial (default "standard" if unset)
+gateGuard?    : boolean — optional opt-in PreToolUse guard (default false/off)
+epics[]       : { id, title, priority, status, role, lane, parent?, externalId?, externalUrl?, planPath?, stories[]?, links[], reconcileNeeded?, autonomy? }
+autonomy?     : { level: "off"|"autonomous", preAuthorized[], context[], notifications[] } — per epic
 detourStack[] : { pausedEpic, pausedAt, reason, spawnedDetour, reconcileOnResume }
 status   ∈ active | paused | queued | later | blocked | archived | untriaged | planned
 role     ∈ epic | detour

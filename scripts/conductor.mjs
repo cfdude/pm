@@ -1228,6 +1228,47 @@ function setReviewMode() {
   process.stderr.write(`conductor: review mode is now '${mode}'\n`);
 }
 
+// ---------- gate guard (optional opt-in PreToolUse guard) ----------
+
+/** `set-gate-guard <on|off>` — repo-level opt-in for a hard PreToolUse guard blocking
+ *  source writes while the active epic still owes a reconcile. Off by default. This is
+ *  the one place pm's law tolerates mechanical blocking over pure instruction, because it
+ *  protects the single highest-stakes skip (writing code before the reconcile gate runs
+ *  on a detour POP) — opt-in, reversible, never silent. */
+function setGateGuard() {
+  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  const val = process.argv[3];
+  if (val !== "on" && val !== "off") {
+    process.stderr.write("usage: conductor.mjs set-gate-guard <on|off>\n"); process.exit(1);
+  }
+  const state = loadState();
+  state.gateGuard = (val === "on");
+  saveState(state);
+  render();
+  process.stderr.write(`conductor: gate guard is now ${val}\n`);
+}
+
+/** PreToolUse hook body: block Edit/Write/NotebookEdit while the active epic still owes a
+ *  reconcile (`reconcileNeeded` — see reconcileArchived()'s comment for why this can be
+ *  legitimately true with an empty detour stack). Dormant until /pm:init AND
+ *  `set-gate-guard on`; exits 2 to block per Claude Code's PreToolUse convention (stderr
+ *  becomes the reason shown to the agent). */
+function gateGuardCheck() {
+  if (!isInitialized()) return;         // DORMANT until /pm:init
+  readStdin();                          // drain, unused — this check needs no tool_input
+  const state = loadState();
+  if (!state.gateGuard) return;         // opt-in, off by default
+  const active = state.active ? state.epics.find(e => e.id === state.active) : null;
+  if (active && active.reconcileNeeded) {
+    process.stderr.write(
+      `conductor: gate guard — '${active.id}' still owes a reconcile (a detour touched shared ` +
+      "code). Run the reconcile gate (reconciler agent, per the conductor skill's POP protocol) " +
+      "before writing source. Turn the guard off with `set-gate-guard off` if you need to bypass.\n"
+    );
+    process.exit(2);
+  }
+}
+
 // ---------- migrations ----------
 
 // MIGRATIONS — APPEND-ONLY, each keyed by the release that introduced the change.
@@ -1330,11 +1371,13 @@ const cmd = process.argv[2];
   "set-tracker": setTracker,
   "set-autonomy": setAutonomy,
   "set-review-mode": setReviewMode,
+  "set-gate-guard": setGateGuard,
+  "gate-guard": gateGuardCheck,
   upgrade,
   changelog,
   rules: () => process.stdout.write(rulesBlock(currentTracker(), currentReviewMode())),
   "write-rules": writeRules,
 }[cmd] || (() => {
-  process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|add-epic|add-many|update-epic|set-active|clear-active|set-tracker|set-autonomy|set-review-mode|upgrade|changelog|rules|write-rules\n");
+  process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|add-epic|add-many|update-epic|set-active|clear-active|set-tracker|set-autonomy|set-review-mode|set-gate-guard|gate-guard|upgrade|changelog|rules|write-rules\n");
   process.exit(1);
 }))();

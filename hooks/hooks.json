@@ -35,6 +35,18 @@
           }
         ]
       }
+    ],
+    "PreToolUse": [
+      {
+        "comment": "PM CONDUCTOR: optional, opt-in gate guard (off by default — enable with `set-gate-guard on`). Blocks Edit/Write/NotebookEdit while the active epic still owes a reconcile after a detour POP. Dormant until /pm:init.",
+        "matcher": "Edit|Write|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs\" gate-guard"
+          }
+        ]
+      }
     ]
   }
 }
