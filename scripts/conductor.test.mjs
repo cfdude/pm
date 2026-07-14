@@ -1023,6 +1023,19 @@ test("rules block gains an External tracker sync section only when a tracker is 
   assert.match(claudeMd(cwd), /jira/);
 });
 
+test("tracker-linked autonomy addendum appears only when a tracker is configured", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const noTracker = run(["rules"], { cwd });
+  assert.doesNotMatch(noTracker, /Epic-level autonomy on tracker-linked epics/);
+
+  run(["set-tracker", "--system", "jira", "--project", "JOB"], { cwd });
+  const withTracker = run(["rules"], { cwd });
+  assert.match(withTracker, /Epic-level autonomy on tracker-linked epics/);
+  assert.match(withTracker, /mid-run drift/i);
+  assert.match(withTracker, /non-authoritative/i);
+});
+
 test("brief surfaces create-issue drift only for unmirrored active-work epics", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });

@@ -438,6 +438,14 @@ function rulesBlock(tracker) {
       `- A parent epic → create it as a ${sys} epic and link its children.`,
       "The SessionStart brief lists epics not yet mirrored under `TRACKER SYNC`. Status-transition",
       "sync is your responsibility on every status change (the brief does not fabricate it).",
+      "",
+      "**Epic-level autonomy on tracker-linked epics:** before running the preflight scan on a",
+      `tracker-linked epic, pull the ${sys} issue + its child stories/subtasks with your own`,
+      "tracker tools (the same ones you use for status sync) — that IS its source, not a local",
+      "file alone. Mirror the preflight Q&A as a comment on the issue for visibility — this is a",
+      "non-authoritative echo, `.conductor/state.json` stays the sole source of truth. If the",
+      "tracker issue changes materially after the preflight snapshot, treat that as decision-rule",
+      "item (d) — mid-run drift is a new genuine unknown, not something autonomy silently absorbs.",
     );
   }
   lines.push(RULES_END, "");
