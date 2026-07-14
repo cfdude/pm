@@ -167,8 +167,11 @@ you have connected.
 | `/pm:sync` | Register new OpenSpec proposals and Superpowers plans as epics |
 | `/pm:epic add --id X --title "…" --lane L --priority P [--status S] [--parent ID] [--external-id KEY]` | Register any epic directly (all lanes); optionally nest under a parent or link a tracker issue |
 | `/pm:epic` → `add-many --from <path\|->` | Atomically bulk-create a parent + children from a JSON batch |
-| `/pm:epic` → `update-epic <id> [--external-id …] [--parent …] [--status …]` | Update an existing epic (write-back path for recording tracker keys) |
+| `/pm:epic` → `update-epic <id> [--title …] [--external-id …] [--parent …] [--status …]` | Update an existing epic (write-back path for recording tracker keys and title corrections) |
 | `/pm:epic` → `set-active <id>` / `clear-active` | Set/clear the top-level active epic via the CLI (keeps `.active` and `status: active` in sync) |
+| `set-autonomy <id> [--level off\|autonomous] [--preauthorize …] [--context …] [--notify …]` | Grant an epic broad execution trust after a preflight risk-scan (see the `conductor` skill) |
+| `set-review-mode --mode off\|standard\|thorough` | The repo's bounded review-count dial (default: `standard`) |
+| `/pm:gate-guard` → `set-gate-guard on\|off` | Optional, opt-in hard `PreToolUse` guard blocking source writes while the active epic still owes a reconcile (off by default) |
 | `/pm:tracker` | Make the conductor aware of an external tracker (Jira/GitHub/Linear); detect → confirm → `set-tracker` |
 | `/pm:upgrade` | Refresh CLAUDE.md rules, run migrations, update `pmVersion`, and print the changelog delta for the versions it crossed |
 | `/pm:changelog [--since X]` | Show what changed in the plugin since a version (default: this repo's stamped version) |
@@ -263,10 +266,14 @@ repeats on each session start until you complete it in that repo.
 
 ```
 .claude-plugin/plugin.json   manifest (name: pm)
-commands/                    /pm:init /pm:status /pm:next /pm:detour /pm:resume /pm:sync /pm:epic /pm:tracker /pm:changelog /pm:upgrade
-skills/conductor/SKILL.md    the discipline (detour classification, PUSH/POP, reconcile)
+CHANGELOG.md                 release history (Keep a Changelog + SemVer)
+commands/                    /pm:init /pm:status /pm:next /pm:detour /pm:resume /pm:sync /pm:epic
+                              /pm:tracker /pm:changelog /pm:upgrade /pm:gate-guard
+skills/conductor/SKILL.md    the discipline (detour classification, PUSH/POP, reconcile,
+                              epic-level autonomy + preflight scan)
 agents/reconciler.md         fresh-context re-validation of a paused proposal
-hooks/hooks.json             SessionStart inject · PreCompact snapshot · PostToolUse nudge
+hooks/hooks.json             SessionStart inject · PreCompact snapshot · PostToolUse nudge ·
+                              PreToolUse gate-guard (optional, opt-in)
 scripts/conductor.mjs        the engine (zero dependencies)
 ```
 
