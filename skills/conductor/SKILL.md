@@ -153,6 +153,48 @@ does **not** parse roadmap files automatically.
 
 `/pm:epic add` validates `--status` — unknown values are rejected with a clear error.
 
+## Epic-level autonomy — the preflight scan
+
+An epic can be granted broad execution trust so it runs through phase transitions and
+destructive actions without a human present for each one — but ONLY after a preflight scan, and
+autonomy never removes a genuine safety stop. This section defines the scan; the decision rule
+and reporting obligations that consume its output are in the rules block re-injected into
+CLAUDE.md (see `/pm:epic` → `set-autonomy`).
+
+**When:** before setting any epic's `autonomy.level` to `"autonomous"` (see `set-autonomy` below).
+
+**How to scan an epic (`epicId`):**
+
+1. Read that epic's FULL source, not a summary — whichever is its lane's real progress source:
+   - `openspec` lane: `openspec/changes/<epicId>/{proposal,design,tasks}.md` and everything under
+     its `specs/` directory.
+   - `superpowers` lane: the file at the epic's `planPath`.
+   - `claude-code` lane: the epic's inline `stories[]` in `.conductor/state.json`.
+   - `external`/tracker-linked: see the tracker-specific addendum below — pull the tracker issue
+     first, it IS the source.
+2. Reason over the WHOLE document — do not keyword-grep for "DROP"/"migration"/"rm". A shallow
+   scan is worse than no scan: it creates false confidence and lets a real risk slip through
+   silently. Full read is the only approach approved for this primitive (see the design doc's
+   "Approaches considered" table for why keyword-triggered scanning was rejected).
+3. Produce exactly two sections:
+   - **Destructive-risk points** — anything that changes/deletes/migrates existing data or state
+     in a way that could be hard to undo. For each: what it is, why it's risky, and whether a
+     backup/restore path is obvious from the plan or not.
+   - **Genuine unknowns** — real ambiguities or missing decisions that should NOT just be
+     guessed on — things needing explicit human approval or clarification before this epic could
+     run start-to-finish unattended.
+4. Keep it SHORT and high-signal. If there is nothing destructive, say so plainly. If there is
+   no genuine unknown, say so plainly. Padding the output with non-issues defeats the entire
+   point — it is exactly what turns autonomous execution into a wall of blockers.
+5. Present the findings as ONE batch of questions to the user, before execution starts. Record
+   the answers with `set-autonomy <epicId> --preauthorize "<action>:<reason>"` (repeatable, one
+   per approved item) and `--context "<note>"` (repeatable, one per piece of background supplied)
+   — then, only once recorded, `set-autonomy <epicId> --level autonomous`.
+
+This same read-and-scan process is the one reused, unchanged, by any future work that needs to
+scan several epics at once (e.g. a parent epic's children) — it takes one epic id at a time
+regardless of caller.
+
 ## state.json reference
 
 ```
