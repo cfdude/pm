@@ -81,6 +81,23 @@ test("init scaffolds state.json, PROJECT.md, and CLAUDE.md rules block", () => {
   assert.match(claudeMd(cwd), /BEGIN pm-conductor rules/);
 });
 
+test("state.json writes leave no stray tmp file behind after tmp+rename", () => {
+  // This is a hygiene/regression check for the success path, not a fault-injection proof
+  // of atomicity — the CLI is exercised via execFileSync (a child process), so this test
+  // harness can't inject a crash mid-write to directly observe the failure-path guarantee
+  // (a crash leaves a truncated .tmp-* file, never a truncated state.json, because rename(2)
+  // is atomic on the same filesystem). What IS verified here: repeated writes never leave a
+  // leftover tmp file next to state.json, and the final file is always valid, complete JSON.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code"], { cwd });
+  run(["update-epic", "a", "--title", "Renamed"], { cwd });
+  const entries = fs.readdirSync(path.join(cwd, ".conductor"));
+  assert.deepEqual(entries.sort(), ["state.json"]);
+  const parsed = JSON.parse(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"));
+  assert.equal(parsed.epics.find(e => e.id === "a").title, "Renamed");
+});
+
 test("progress precedence: manual stories win", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });

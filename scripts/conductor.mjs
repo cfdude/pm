@@ -86,9 +86,15 @@ function loadState() {
   return s && typeof s === "object" ? { ...defaultState(), ...s } : defaultState();
 }
 
+/** Atomic write: write to a tmp file in the same directory, then rename(2) over the
+ *  real path. rename is atomic on the same filesystem — a crash mid-write leaves a
+ *  truncated .tmp-* file, never a truncated state.json. */
 function saveState(state) {
   fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
-  fs.writeFileSync(STATE_PATH, JSON.stringify(state, null, 2) + "\n");
+  const data = JSON.stringify(state, null, 2) + "\n";
+  const tmpPath = `${STATE_PATH}.tmp-${process.pid}-${Date.now()}`;
+  fs.writeFileSync(tmpPath, data);
+  fs.renameSync(tmpPath, STATE_PATH);
 }
 
 /** The running plugin's root dir. Env-first so tests can point at a fixture. */
