@@ -112,7 +112,21 @@ Open questions nobody has answered yet (surface these when scoping, don't guess)
 This is the epic most likely to need its own brainstorm session before a design doc — it has the
 least prior thinking behind it of the three.
 
-## D — Infra-runbook preflight discipline
+## D — Infra-runbook preflight discipline — ✅ DONE 2026-07-14
+
+**What actually shipped (turned out to be a docs/taxonomy task, not a pm engine change):**
+- Reorganized `~/Servers/infra-playbooks` — `railway/` split into `general/` (cross-project) and
+  on-demand `<project-slug>/`; new top-level `machines/<hostname>/` group (never nested under a
+  provider folder); `~/SERVER_PORTS.md` migrated into `machines/rob-macbook-pro-max/server-ports.md`
+  and the standalone file deleted.
+- Scaffolded a second repo, `~/Servers/highway-infra-playbooks`, for Highway-side infra (Bitbucket,
+  not GitHub — Rob caught that Highway and personal/Onvex infra need separate repos on separate
+  hosts). No Bitbucket remote pushed yet — local-only until workspace/project confirmed.
+- Rewrote the global CLAUDE.md's Ports + Infra-playbooks bullets to route by whose infra it is
+  (personal → `infra-playbooks`, Highway → `highway-infra-playbooks`) and to state the grouping
+  rules explicitly instead of leaving the structure flat.
+
+**Original section below, preserved for context:**
 
 **Partially exists already, just not wired into pm.** Rob's global CLAUDE.md already has an
 "Infra playbooks" section: `~/Servers/infra-playbooks` (repo `onvexai/infra-playbooks`, private) —

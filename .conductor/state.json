@@ -42,7 +42,7 @@
       "id": "infra-runbook-preflight",
       "title": "Wire infra-runbook preflight (~/Servers/infra-playbooks) into pm's epic/hierarchy preflight (see docs/vision/2026-07-14-autonomy-orchestration-vision.md, section D — cheapest of the three, existing convention just needs wiring)",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "decision",
       "links": [],
