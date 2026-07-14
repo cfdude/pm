@@ -11,6 +11,42 @@
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false
+    },
+    {
+      "id": "epic-hierarchy-orchestration",
+      "title": "Epic-hierarchy orchestration — run a parent epic's children unattended (see docs/vision/2026-07-14-autonomy-orchestration-vision.md, section B)",
+      "priority": "P2",
+      "status": "planned",
+      "role": "epic",
+      "lane": "decision",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "portfolio-architecture-consistency-scan",
+      "title": "Portfolio/architecture-consistency scanning across the backlog (see docs/vision/2026-07-14-autonomy-orchestration-vision.md, section C — least-scoped of the three, needs its own brainstorm)",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "decision",
+      "links": [
+        {
+          "type": "depends-on",
+          "epic": "epic-hierarchy-orchestration",
+          "reason": "C presumes B's hierarchy execution exists to propagate cross-cutting decisions into"
+        }
+      ],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "infra-runbook-preflight",
+      "title": "Wire infra-runbook preflight (~/Servers/infra-playbooks) into pm's epic/hierarchy preflight (see docs/vision/2026-07-14-autonomy-orchestration-vision.md, section D — cheapest of the three, existing convention just needs wiring)",
+      "priority": "P2",
+      "status": "planned",
+      "role": "epic",
+      "lane": "decision",
+      "links": [],
+      "reconcileNeeded": false
     }
   ],
   "detourStack": [],
