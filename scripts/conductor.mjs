@@ -50,6 +50,7 @@ const ARCHIVE_DIR = path.join(CHANGES_DIR, "archive");
 const PLANS_DIR = path.join(ROOT, "docs", "superpowers", "plans");
 const KNOWN_LANES = ["openspec", "superpowers", "claude-code", "decision", "external"];
 const KNOWN_STATUSES = ["untriaged", "queued", "active", "paused", "planned", "archived"];
+const KNOWN_AUTONOMY_LEVELS = ["off", "autonomous"];
 const LANE_RANK = { openspec: 0, superpowers: 1, "claude-code": 2, decision: 3, external: 4 };
 const laneRank = (l) => (l in LANE_RANK ? LANE_RANK[l] : 9);
 
@@ -303,6 +304,22 @@ function bar(p) {
   if (p.warn) return `⚠ ${p.warn}`;
   if (p.total > 0) return `${p.done}/${p.total} ${p.source === "plan" ? "tasks" : "stories"}`;
   return "—";
+}
+
+// `autonomy` is optional per epic — absent means "off", today's behavior, unchanged.
+// getAutonomy() is the ONLY place that should read epic.autonomy directly; everywhere
+// else (render, brief, set-autonomy) calls this so a missing field never needs a
+// migration to backfill — it defaults cleanly at read-time.
+const DEFAULT_AUTONOMY = Object.freeze({ level: "off", preAuthorized: [], context: [], notifications: [] });
+function getAutonomy(epic) {
+  const a = epic.autonomy;
+  if (!a) return DEFAULT_AUTONOMY;
+  return {
+    level: a.level || "off",
+    preAuthorized: Array.isArray(a.preAuthorized) ? a.preAuthorized : [],
+    context: Array.isArray(a.context) ? a.context : [],
+    notifications: Array.isArray(a.notifications) ? a.notifications : [],
+  };
 }
 
 /** A link is renderable only when both endpoints are strings. Guards against

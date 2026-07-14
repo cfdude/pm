@@ -195,6 +195,17 @@ function expectFail(fn) {
   try { fn(); return null; } catch (e) { return e; }
 }
 
+test("epic with no autonomy field defaults to level off via render/brief (no crash, no marker)", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code", "--status", "active"], { cwd });
+  const md = projectMd(cwd);
+  assert.match(md, /`a`/);
+  assert.doesNotMatch(md, /🤖/);              // no autonomy marker for a plain epic
+  const brief = parseBrief(cwd);
+  assert.doesNotMatch(brief, /🤖/);
+});
+
 test("add-epic inserts a lane-tagged epic with defaults", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
