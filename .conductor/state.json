@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": null,
+  "active": "epic-hierarchy-orchestration",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -16,7 +16,7 @@
       "id": "epic-hierarchy-orchestration",
       "title": "Epic-hierarchy orchestration — run a parent epic's children unattended (see docs/vision/2026-07-14-autonomy-orchestration-vision.md, section B)",
       "priority": "P2",
-      "status": "planned",
+      "status": "active",
       "role": "epic",
       "lane": "decision",
       "links": [],
