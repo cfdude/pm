@@ -672,6 +672,49 @@ test("add-epic --status active sets the .active pointer too", () => {
   assert.equal(readState(cwd).active, "a");
 });
 
+// ──────────────── epic-level autonomy: set-autonomy ────────────────
+
+test("set-autonomy sets level and rejects an unknown level", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code"], { cwd });
+  run(["set-autonomy", "a", "--level", "autonomous"], { cwd });
+  assert.equal(readState(cwd).epics.find(e => e.id === "a").autonomy.level, "autonomous");
+  assert.ok(expectFail(() => run(["set-autonomy", "a", "--level", "bogus"], { cwd })), "bad level rejected");
+});
+
+test("set-autonomy records preauthorize/context/notify entries, repeatable and merged across calls", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code"], { cwd });
+  run(["set-autonomy", "a",
+    "--preauthorize", "drop-scratch-table:reviewed, safe to drop",
+    "--preauthorize", "rename-field:no external readers",
+    "--context", "staging DB only, no prod access",
+  ], { cwd });
+  let a = readState(cwd).epics.find(e => e.id === "a").autonomy;
+  assert.equal(a.preAuthorized.length, 2);
+  assert.deepEqual(
+    { action: a.preAuthorized[0].action, reason: a.preAuthorized[0].reason },
+    { action: "drop-scratch-table", reason: "reviewed, safe to drop" },
+  );
+  assert.ok(a.preAuthorized[0].grantedAt);            // timestamp present
+  assert.deepEqual(a.context, ["staging DB only, no prod access"]);
+
+  // a second call APPENDS, does not clobber
+  run(["set-autonomy", "a", "--notify", "ran a schema migration"], { cwd });
+  a = readState(cwd).epics.find(e => e.id === "a").autonomy;
+  assert.equal(a.preAuthorized.length, 2);            // unchanged by the second call
+  assert.equal(a.notifications.length, 1);
+  assert.equal(a.notifications[0].what, "ran a schema migration");
+  assert.ok(a.notifications[0].when);
+});
+
+test("set-autonomy on an unknown id exits non-zero and writes nothing", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  assert.ok(expectFail(() => run(["set-autonomy", "ghost", "--level", "autonomous"], { cwd })));
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
+});
+
 // ──────────────── 0.6.1: date-prefixed archive detection ────────────────
 
 function withArchivedChange(cwd, id) {

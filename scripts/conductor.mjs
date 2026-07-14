@@ -773,6 +773,10 @@ function logDetour() {
 
 // ---------- add-epic ----------
 
+// Flags that accumulate into an array across repeated `--flag value` occurrences,
+// shared by add-epic/add-many (--link), set-tracker (--intent), and set-autonomy
+// (--preauthorize/--context/--notify).
+const REPEATABLE_FLAGS = ["link", "intent", "preauthorize", "context", "notify"];
 function parseFlags(argv) {
   const o = {};
   for (let i = 0; i < argv.length; i++) {
@@ -780,8 +784,7 @@ function parseFlags(argv) {
     if (!a.startsWith("--")) continue;
     const k = a.slice(2);
     const v = (argv[i + 1] !== undefined && !argv[i + 1].startsWith("--")) ? argv[++i] : true;
-    if (k === "link") (o.link || (o.link = [])).push(v);
-    else if (k === "intent") (o.intent || (o.intent = [])).push(v);
+    if (REPEATABLE_FLAGS.includes(k)) (o[k] || (o[k] = [])).push(v);
     else o[k] = v;
   }
   return o;
@@ -1006,6 +1009,59 @@ function updateEpic() {
   process.stderr.write(`conductor: updated '${id}'\n`);
 }
 
+// ---------- autonomy ----------
+
+/** `set-autonomy <id> [--level off|autonomous] [--preauthorize "<action>:<reason>"]
+ *  [--context "<note>"] [--notify "<what>"]` — writes/merges an epic's `autonomy` block.
+ *  Every flag is additive (repeated calls APPEND to preAuthorized/context/notifications,
+ *  never clobber) except --level, which replaces. Pure local state write — no external
+ *  calls, consistent with the engine's instruction-layer law. */
+function setAutonomy() {
+  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  const argv = process.argv.slice(3);
+  const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
+  if (!id) {
+    process.stderr.write(
+      "usage: conductor.mjs set-autonomy <id> [--level off|autonomous] " +
+      "[--preauthorize \"<action>:<reason>\"] [--context \"<note>\"] [--notify \"<what>\"]\n");
+    process.exit(1);
+  }
+  const f = parseFlags(argv.slice(1));
+  const state = loadState();
+  const epic = state.epics.find(e => e.id === id);
+  if (!epic) { process.stderr.write(`conductor: epic '${id}' not found\n`); process.exit(1); }
+
+  const level = typeof f.level === "string" ? f.level : undefined;
+  if (level !== undefined && !KNOWN_AUTONOMY_LEVELS.includes(level)) {
+    process.stderr.write(`conductor: --level must be one of ${KNOWN_AUTONOMY_LEVELS.join("|")}\n`);
+    process.exit(1);
+  }
+
+  const a = { ...getAutonomy(epic) };
+  if (level !== undefined) a.level = level;
+
+  for (const s of (f.preauthorize || [])) {
+    if (typeof s !== "string") continue;
+    const i = s.indexOf(":");
+    const action = i === -1 ? s.trim() : s.slice(0, i).trim();
+    const reason = i === -1 ? undefined : s.slice(i + 1).trim();
+    const entry = { action, grantedAt: new Date().toISOString() };
+    if (reason) entry.reason = reason;
+    a.preAuthorized = [...a.preAuthorized, entry];
+  }
+  for (const c of (f.context || [])) {
+    if (typeof c === "string") a.context = [...a.context, c];
+  }
+  for (const n of (f.notify || [])) {
+    if (typeof n === "string") a.notifications = [...a.notifications, { what: n, when: new Date().toISOString() }];
+  }
+
+  epic.autonomy = a;
+  saveState(state);
+  render();
+  process.stderr.write(`conductor: autonomy for '${id}' is now level=${a.level}\n`);
+}
+
 // ---------- tracker ----------
 
 /** Write/merge the `tracker` block. Pure local state write — the engine NEVER
@@ -1141,11 +1197,12 @@ const cmd = process.argv[2];
   "set-active": setActive,
   "clear-active": clearActive,
   "set-tracker": setTracker,
+  "set-autonomy": setAutonomy,
   upgrade,
   changelog,
   rules: () => process.stdout.write(rulesBlock(currentTracker())),
   "write-rules": writeRules,
 }[cmd] || (() => {
-  process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|add-epic|add-many|update-epic|set-active|clear-active|set-tracker|upgrade|changelog|rules|write-rules\n");
+  process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|add-epic|add-many|update-epic|set-active|clear-active|set-tracker|set-autonomy|upgrade|changelog|rules|write-rules\n");
   process.exit(1);
 }))();
