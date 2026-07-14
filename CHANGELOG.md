@@ -6,6 +6,22 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.8.1] — 2026-07-14
+
+### Fixed
+
+- **`update-epic` silently no-op'd on an unrecognized flag.** A typo'd or unwired flag would
+  parse, run `saveState`/`render`, and print `conductor: updated '<id>'` even though nothing
+  changed — the only way to catch it was cross-checking `git diff`. `update-epic` now validates
+  its flags against a known set and exits non-zero with an "unknown flag" error instead of a
+  false success.
+- **`update-epic` had no `--title` flag.** `add-epic` supports `--title` at creation, but
+  correcting a title after an investigation changes what an epic is actually about (a common,
+  legitimate mid-epic event) had no CLI path and required hand-editing `state.json`, which the
+  tool explicitly discourages. `update-epic <id> --title "..."` now works.
+
+---
+
 ## [0.8.0] — 2026-07-13
 
 ### Added
