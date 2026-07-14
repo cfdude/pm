@@ -1007,15 +1007,26 @@ function clearActive() {
 
 // ---------- update-epic (write-back) ----------
 
-/** Update an EXISTING epic's externalId/externalUrl/parent/status/priority.
+// The flags update-epic recognizes. Anything else is a rejected error, not a
+// silent no-op — an unrecognized flag (e.g. a typo) used to parse, run, and
+// print "updated" with nothing actually changed.
+const UPDATE_EPIC_FLAGS = ["external-id", "external-url", "parent", "status", "priority", "title"];
+
+/** Update an EXISTING epic's title/externalId/externalUrl/parent/status/priority.
  *  The id is POSITIONAL (parseFlags skips non-`--` tokens). Closes the tracker
  *  sync loop: after the agent creates an issue it records the key here. */
 function updateEpic() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const argv = process.argv.slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
-  if (!id) { process.stderr.write("usage: conductor.mjs update-epic <id> [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P]\n"); process.exit(1); }
+  if (!id) { process.stderr.write("usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P]\n"); process.exit(1); }
   const f = parseFlags(argv.slice(1));
+  const unknown = Object.keys(f).filter(k => !UPDATE_EPIC_FLAGS.includes(k));
+  if (unknown.length) {
+    process.stderr.write(`conductor: update-epic: unknown flag(s) --${unknown.join(", --")} ` +
+      `(known: ${UPDATE_EPIC_FLAGS.map(k => `--${k}`).join(", ")})\n`);
+    process.exit(1);
+  }
   const str = (v) => (typeof v === "string" ? v : undefined);
   const state = loadState();
   const epic = state.epics.find(e => e.id === id);
@@ -1031,6 +1042,7 @@ function updateEpic() {
     process.stderr.write(`conductor: --status must be one of ${KNOWN_STATUSES.join("|")}\n`); process.exit(1);
   }
 
+  if (str(f.title) !== undefined) epic.title = str(f.title);
   if (str(f["external-id"]) !== undefined) epic.externalId = str(f["external-id"]);
   if (str(f["external-url"]) !== undefined) epic.externalUrl = str(f["external-url"]);
   if (parent !== undefined) epic.parent = parent;

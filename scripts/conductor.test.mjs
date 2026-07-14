@@ -1014,6 +1014,26 @@ test("update-epic on an unknown id exits non-zero and writes nothing", () => {
   assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
 });
 
+test("update-epic --title updates an existing epic's title, mirroring add-epic", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--title", "Old title", "--lane", "claude-code"], { cwd });
+  run(["update-epic", "a", "--title", "New, corrected title"], { cwd });
+  assert.equal(readState(cwd).epics.find(e => e.id === "a").title, "New, corrected title");
+});
+
+test("update-epic rejects an unrecognized flag instead of silently no-op'ing, and writes nothing", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--title", "Original", "--lane", "claude-code"], { cwd });
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  const err = expectFail(() => run(["update-epic", "a", "--titel", "Typo'd flag name"], { cwd }));
+  assert.ok(err, "expected non-zero exit for an unknown flag");
+  assert.match(String(err.stderr || err.message), /unknown flag/);
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
+  assert.equal(readState(cwd).epics.find(e => e.id === "a").title, "Original");
+});
+
 test("rules block gains an External tracker sync section only when a tracker is configured", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
