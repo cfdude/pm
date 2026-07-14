@@ -449,6 +449,30 @@ test("add-epic accepts --status planned", () => {
   assert.equal(readState(cwd).epics.find(e => e.id === "road-1").status, "planned");
 });
 
+test("add-epic and update-epic accept --status later and --status blocked (documented in README, previously rejected)", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "deferred", "--lane", "claude-code", "--status", "later"], { cwd });
+  assert.equal(readState(cwd).epics.find(e => e.id === "deferred").status, "later");
+  run(["add-epic", "--id", "stuck", "--lane", "claude-code", "--status", "blocked"], { cwd });
+  assert.equal(readState(cwd).epics.find(e => e.id === "stuck").status, "blocked");
+  run(["update-epic", "deferred", "--status", "blocked"], { cwd });
+  assert.equal(readState(cwd).epics.find(e => e.id === "deferred").status, "blocked");
+});
+
+test("later/blocked epics are excluded from NEXT UP but still appear in the lanes rollup (unlike planned, which is excluded from both)", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  writeState(cwd, { version: 1, active: null, detourStack: [], epics: [
+    { id: "ready", title: "ready", priority: "P1", status: "queued", role: "epic", lane: "claude-code", links: [] },
+    { id: "deferred", title: "deferred", priority: "P0", status: "later", role: "epic", lane: "claude-code", links: [] },
+    { id: "stuck", title: "stuck", priority: "P0", status: "blocked", role: "epic", lane: "claude-code", links: [] },
+  ]});
+  const brief = parseBrief(cwd);
+  assert.match(brief, /`ready`/);
+  assert.doesNotMatch(brief, /`deferred`/);
+  assert.doesNotMatch(brief, /`stuck`/);
+  assert.match(brief, /lanes: claude-code 3/);   // rollup counts all three, unlike planned
+});
+
 test("add-epic rejects an unknown --status", () => {
   const cwd = tmpRepo(); run(["init"], { cwd });
   assert.ok(expectFail(() => run(["add-epic", "--id", "x", "--lane", "openspec", "--status", "bogus"], { cwd })));

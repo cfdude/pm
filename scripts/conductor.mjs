@@ -49,7 +49,7 @@ const CHANGES_DIR = path.join(ROOT, "openspec", "changes");
 const ARCHIVE_DIR = path.join(CHANGES_DIR, "archive");
 const PLANS_DIR = path.join(ROOT, "docs", "superpowers", "plans");
 const KNOWN_LANES = ["openspec", "superpowers", "claude-code", "decision", "external"];
-const KNOWN_STATUSES = ["untriaged", "queued", "active", "paused", "planned", "archived"];
+const KNOWN_STATUSES = ["untriaged", "queued", "active", "paused", "later", "blocked", "planned", "archived"];
 const KNOWN_AUTONOMY_LEVELS = ["off", "autonomous"];
 const LANE_RANK = { openspec: 0, superpowers: 1, "claude-code": 2, decision: 3, external: 4 };
 const laneRank = (l) => (l in LANE_RANK ? LANE_RANK[l] : 9);
