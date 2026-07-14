@@ -6,6 +6,27 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.8.0] — 2026-07-13
+
+### Added
+
+- **`set-autonomy <id>` — per-epic autonomy contract.** An epic can be granted broad execution
+  trust (`autonomy.level: "autonomous"`, default `"off"` — unchanged behavior) so it runs through
+  phase transitions without stopping for permission each time. Autonomy is granted only after a
+  preflight risk-scan (documented in the `conductor` skill) records the user's pre-authorized
+  actions and supplied context via `--preauthorize`/`--context` (repeatable, additive). A
+  five-criteria execution-time decision rule (injected into the CLAUDE.md rules block) still
+  hard-stops for anything with no backup/restore path or no context to act on — autonomy never
+  overrides a genuine safety gate, only removes false ones. `PROJECT.md` and the session brief
+  mark an autonomous epic with 🤖. Tracker-linked epics (Jira etc.) get an addendum covering
+  lane-aware source reading, non-authoritative comment-mirroring of approvals, and mid-run drift
+  as its own stop condition.
+- Development-time scope only — this does not cover actions with irreversible EXTERNAL side
+  effects (sending email/Slack, deploying to production, third-party API calls, pushing to a
+  shared branch); those remain out of scope regardless of autonomy level.
+
+---
+
 ## [0.7.0] — 2026-07-08
 
 ### Added

@@ -89,3 +89,20 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" clear-active        # no acti
 together, demoting any previously-active epic to `queued` — so the pointer and status can never
 disagree. It rejects an unknown or archived id. `update-epic <id> --status active` keeps them in
 sync too (it sets `.active`), and moving the active epic off `active` clears the pointer.
+
+## Grant epic-level autonomy — `set-autonomy`
+
+Before an epic can run unattended through phase transitions and destructive actions, it needs a
+preflight scan (see the `conductor` skill's "Epic-level autonomy — the preflight scan" section)
+and the user's recorded answers.
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" set-autonomy <id> \
+  --preauthorize "drop-scratch-table:reviewed, safe to drop" \
+  --context "staging DB only, no prod access" \
+  --level autonomous
+```
+
+`--preauthorize`/`--context`/`--notify` are repeatable and additive — re-running `set-autonomy`
+APPENDS, it never clobbers prior entries. `--level` replaces (default `"off"` — today's
+behavior, unchanged). `PROJECT.md` and the session brief mark an autonomous epic with 🤖.
