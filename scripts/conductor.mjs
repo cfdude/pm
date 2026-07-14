@@ -243,15 +243,28 @@ function reconcileArchived(state) {
     // pointer no longer refers to a real, in-flight epic.
     if (!a || a.status === "archived" || isArchived(state.active)) { state.active = null; changed = true; }
   }
-  // An epic is only legitimately pending reconcile if it's the pausedEpic of a detour-stack
-  // frame with reconcileOnResume true — anything else (already resumed and never cleared,
-  // hand-edited, orphaned) is stale and gets healed in both directions.
+  // reconcileNeeded is a genuine state-TRANSITION flag, not a pure function of current
+  // state: POP protocol removes the detour-stack frame BEFORE reconciliation runs (per
+  // the conductor skill), so "is there still a live frame for this epic" is false during
+  // the exact window (just-resumed, reconcile not yet done) the flag needs to stay true.
+  // Recompute only the cases that ARE safely derivable from current state:
   const pendingReconcile = new Set(
     (state.detourStack || []).filter(f => f.reconcileOnResume).map(f => f.pausedEpic)
   );
   for (const e of state.epics) {
-    const shouldBeNeeded = pendingReconcile.has(e.id);
-    if (Boolean(e.reconcileNeeded) !== shouldBeNeeded) { e.reconcileNeeded = shouldBeNeeded; changed = true; }
+    if (e.status === "archived") {
+      // Done/abandoned — reconcile is moot regardless of how it got set.
+      if (e.reconcileNeeded) { e.reconcileNeeded = false; changed = true; }
+    } else if (pendingReconcile.has(e.id)) {
+      // Still paused with a live frame demanding reconcile — ensure it's flagged.
+      if (!e.reconcileNeeded) { e.reconcileNeeded = true; changed = true; }
+    } else if (e.reconcileNeeded && e.id !== state.active) {
+      // Not archived, no live frame, AND not the current active epic: this can only be
+      // orphaned/forgotten state (a hand-edit, or leftover from an aborted flow) — the
+      // legitimate post-pop-pre-reconcile window is exactly `e.id === state.active`,
+      // which this branch deliberately never touches.
+      e.reconcileNeeded = false; changed = true;
+    }
   }
   return changed;
 }

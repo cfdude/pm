@@ -861,6 +861,22 @@ test("render recomputes reconcileNeeded from the detour stack rather than trusti
   assert.equal(s.epics.find(e => e.id === "paused-a").reconcileNeeded, true);
 });
 
+test("render NEVER clears reconcileNeeded on the currently active epic, even with no live detour frame (the legitimate just-popped, pre-reconcile window)", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  // POP protocol removes the detour-stack frame BEFORE reconciliation runs, so an active
+  // epic can legitimately still owe reconcile with an EMPTY detourStack. A naive recompute
+  // that derives reconcileNeeded purely from live-frame presence would wipe this out at
+  // exactly the moment it matters most — this regression test locks that in.
+  writeState(cwd, {
+    version: 1, active: "just-resumed", detourStack: [],
+    epics: [
+      { id: "just-resumed", title: "just-resumed", priority: "P1", status: "active", role: "epic", lane: "claude-code", links: [], reconcileNeeded: true },
+    ],
+  });
+  run(["render"], { cwd });
+  assert.equal(readState(cwd).epics.find(e => e.id === "just-resumed").reconcileNeeded, true);
+});
+
 test("brief displays the recomputed truth but stays read-only, even for the new active/reconcile checks", () => {
   const cwd = tmpRepo(); run(["init"], { cwd });
   writeState(cwd, { version: 1, active: "ghost-id", detourStack: [], epics: [
