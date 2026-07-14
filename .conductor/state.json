@@ -1,12 +1,12 @@
 {
   "version": 1,
-  "active": "pm-fix-link-flag-validation-and-update",
+  "active": null,
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
       "title": "add-epic --link accepts malformed format silently; update-epic has no --link flag to fix it",
       "priority": "P1",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
