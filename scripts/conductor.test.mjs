@@ -1115,6 +1115,27 @@ test("update-epic rejects an unrecognized flag instead of silently no-op'ing, an
   assert.equal(readState(cwd).epics.find(e => e.id === "a").title, "Original");
 });
 
+test("rules block always includes the Review mode section, defaulting to standard when never set", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const out = run(["rules"], { cwd });
+  assert.match(out, /## Review mode/);
+  assert.match(out, /set-review-mode/);
+  assert.match(out, /\| `off` \|/);
+  assert.match(out, /\| `standard` \|/);
+  assert.match(out, /\| `thorough` \|/);
+  assert.match(out, /Current mode: \*\*standard\*\*/);
+});
+
+test("set-review-mode sets the active mode and rejects an unknown mode", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["set-review-mode", "--mode", "thorough"], { cwd });
+  assert.equal(readState(cwd).reviewMode, "thorough");
+  assert.match(run(["rules"], { cwd }), /Current mode: \*\*thorough\*\*/);
+  assert.ok(expectFail(() => run(["set-review-mode", "--mode", "bogus"], { cwd })), "bad mode rejected");
+  assert.ok(expectFail(() => run(["set-review-mode"], { cwd })), "missing --mode rejected");
+});
+
 test("rules block gains an External tracker sync section only when a tracker is configured", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });

@@ -51,6 +51,7 @@ const PLANS_DIR = path.join(ROOT, "docs", "superpowers", "plans");
 const KNOWN_LANES = ["openspec", "superpowers", "claude-code", "decision", "external"];
 const KNOWN_STATUSES = ["untriaged", "queued", "active", "paused", "later", "blocked", "planned", "archived"];
 const KNOWN_AUTONOMY_LEVELS = ["off", "autonomous"];
+const KNOWN_REVIEW_MODES = ["off", "standard", "thorough"];
 const LANE_RANK = { openspec: 0, superpowers: 1, "claude-code": 2, decision: 3, external: 4 };
 const laneRank = (l) => (l in LANE_RANK ? LANE_RANK[l] : 9);
 
@@ -385,7 +386,16 @@ function currentTracker() {
   try { const t = loadState().tracker; return t && t.system ? t : null; } catch { return null; }
 }
 
-function rulesBlock(tracker) {
+/** The active review-mode dial, defaulting to "standard" when unset or invalid. */
+function currentReviewMode() {
+  try {
+    const m = loadState().reviewMode;
+    return KNOWN_REVIEW_MODES.includes(m) ? m : "standard";
+  } catch { return "standard"; }
+}
+
+function rulesBlock(tracker, reviewMode) {
+  const mode = KNOWN_REVIEW_MODES.includes(reviewMode) ? reviewMode : "standard";
   const lines = [
     RULES_BEGIN,
     "## PM Conductor — operating rules",
@@ -443,6 +453,19 @@ function rulesBlock(tracker) {
     "   made in the user's absence (the WARN-class log), and an explicit \"are you OK with",
     "   these?\" checkpoint, THEN run tests. Leave room to iterate — including rewriting code —",
     "   if the user is not satisfied.",
+    "",
+    "## Review mode",
+    "",
+    "Review intensity is a bounded dial, not a free-form call each time — set via",
+    "`set-review-mode --mode <off|standard|thorough>` (default: `standard` if never set).",
+    "",
+    "| Mode | Reviewer budget | Trigger |",
+    "|------|-----------------|---------|",
+    "| `off` | none — self-review only | tiny, low-risk, single-file claude-code tweaks |",
+    "| `standard` | one fresh-context reviewer per gate | the default: OpenSpec Gate 1/Gate 2, a Superpowers task review |",
+    "| `thorough` | two independent fresh-context reviewers per gate; adjudicate any disagreement yourself | schema/migration changes, security-sensitive work, or anything explicitly flagged high-stakes |",
+    "",
+    `Current mode: **${mode}**.`,
   ];
   if (tracker && tracker.system) {
     const sys = tracker.system;
@@ -479,7 +502,7 @@ function writeRules() {
   let existing = "";
   try { existing = fs.readFileSync(CLAUDE_MD, "utf8"); } catch { /* no CLAUDE.md yet */ }
 
-  const block = rulesBlock(currentTracker());
+  const block = rulesBlock(currentTracker(), currentReviewMode());
   let next;
   if (existing.includes(RULES_BEGIN) && existing.includes(RULES_END)) {
     // refresh in place
@@ -1170,6 +1193,28 @@ function setTracker() {
   process.stderr.write(`conductor: tracker set (${t.system}${t.projectKey ? ` ${t.projectKey}` : ""})\n`);
 }
 
+// ---------- review mode ----------
+
+/** `set-review-mode --mode off|standard|thorough` — a repo-level dial (not per-epic),
+ *  mirroring Comet's review_mode: bounds how many fresh-context reviewer passes run and
+ *  when, replacing an ad-hoc judgment call with an explicit, dedup'd budget. Pure local
+ *  state write — no external calls. */
+function setReviewMode() {
+  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  const f = parseFlags(process.argv.slice(3));
+  const mode = typeof f.mode === "string" ? f.mode : undefined;
+  if (!mode || !KNOWN_REVIEW_MODES.includes(mode)) {
+    process.stderr.write(`conductor: set-review-mode requires --mode, one of ${KNOWN_REVIEW_MODES.join("|")}\n`);
+    process.exit(1);
+  }
+  const state = loadState();
+  state.reviewMode = mode;
+  saveState(state);
+  writeRules();   // refresh CLAUDE.md so the agent sees the new active mode
+  render();
+  process.stderr.write(`conductor: review mode is now '${mode}'\n`);
+}
+
 // ---------- migrations ----------
 
 // MIGRATIONS — APPEND-ONLY, each keyed by the release that introduced the change.
@@ -1271,11 +1316,12 @@ const cmd = process.argv[2];
   "clear-active": clearActive,
   "set-tracker": setTracker,
   "set-autonomy": setAutonomy,
+  "set-review-mode": setReviewMode,
   upgrade,
   changelog,
-  rules: () => process.stdout.write(rulesBlock(currentTracker())),
+  rules: () => process.stdout.write(rulesBlock(currentTracker(), currentReviewMode())),
   "write-rules": writeRules,
 }[cmd] || (() => {
-  process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|add-epic|add-many|update-epic|set-active|clear-active|set-tracker|set-autonomy|upgrade|changelog|rules|write-rules\n");
+  process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|add-epic|add-many|update-epic|set-active|clear-active|set-tracker|set-autonomy|set-review-mode|upgrade|changelog|rules|write-rules\n");
   process.exit(1);
 }))();
