@@ -252,11 +252,51 @@ test("add-epic rejects a bad id and an unknown lane", () => {
 test("add-epic stores planPath and links", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
+  run(["add-epic", "--id", "y", "--lane", "claude-code"], { cwd });   // link target must exist
   run(["add-epic", "--id", "x", "--lane", "superpowers", "--plan", "docs/superpowers/plans/x.md",
        "--link", "blocks:y:needs token"], { cwd });
   const e = readState(cwd).epics.find(x => x.id === "x");
   assert.equal(e.planPath, "docs/superpowers/plans/x.md");
   assert.deepEqual(e.links, [{ type: "blocks", epic: "y", reason: "needs token" }]);
+});
+
+test("add-epic rejects a --link whose epic id doesn't exist, instead of silently storing garbage", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  // the reported real-world typo: "type:related:epic:..." — split(":") yields
+  // type="type", epic="related", and "related" is not a real epic id.
+  const err = expectFail(() => run(["add-epic", "--id", "x", "--lane", "claude-code",
+    "--link", "type:related:epic:some reason"], { cwd }));
+  assert.ok(err, "expected rejection");
+  assert.match(String(err.stderr || err.message), /not a known epic/);
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
+  assert.equal(readState(cwd).epics.length, 0);   // epic itself was not created either
+});
+
+test("add-epic rejects a --link with fewer than two segments", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  assert.ok(expectFail(() => run(["add-epic", "--id", "x", "--lane", "claude-code",
+    "--link", "justoneword"], { cwd })));
+});
+
+test("update-epic --link replaces the epic's links wholesale, validated the same way as add-epic", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "y", "--lane", "claude-code"], { cwd });
+  run(["add-epic", "--id", "z", "--lane", "claude-code"], { cwd });
+  run(["add-epic", "--id", "x", "--lane", "claude-code", "--link", "blocks:y:old reason"], { cwd });
+  run(["update-epic", "x", "--link", "relates-to:z:new reason"], { cwd });
+  const e = readState(cwd).epics.find(x => x.id === "x");
+  assert.deepEqual(e.links, [{ type: "relates-to", epic: "z", reason: "new reason" }]);   // replaced, not appended
+
+  // fixing a malformed link works the same way: an invalid --link is rejected and
+  // writes nothing, leaving the last-good links array intact.
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  const err = expectFail(() => run(["update-epic", "x", "--link", "type:ghost-epic:bad"], { cwd }));
+  assert.ok(err, "expected rejection");
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
 });
 
 test("sync imports superpowers plans as lane-tagged epics", () => {

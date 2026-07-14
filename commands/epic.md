@@ -15,6 +15,12 @@ form a cycle. Use `--external-id`/`--external-url` to link the epic to an issue 
 external tracker (see `/pm:tracker`). The matching engine flags are added to the `add-epic`
 invocation.
 
+`--link "<type>:<epic>[:<reason>]"` (repeatable) is validated, not just parsed: `<epic>` must be
+an already-known epic id, and the string must split into at least `type` and `epic`. A malformed
+value (wrong segment order, a typo'd epic id) is rejected with a clear error instead of being
+silently stored as a garbage link object — this used to succeed silently, which is how a bad
+link could end up in `state.json` with no CLI path to fix it.
+
 1. Parse the user's request into: id (kebab-case), title, lane (one of
    openspec|superpowers|claude-code|decision|external), priority (P0–P3, default P?),
    optional parent, optional external id/url, optional plan path, optional links.
@@ -69,11 +75,20 @@ To change an epic that already exists (notably, to record a tracker key after cr
 
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" update-epic <id> \
-  [--external-id <KEY>] [--external-url <url>] [--parent <id>] [--status <status>] [--priority <P?>]
+  [--title <title>] [--external-id <KEY>] [--external-url <url>] [--parent <id>] \
+  [--status <status>] [--priority <P?>] [--link "<type>:<epic>[:<reason>]"]
 ```
 
-The id is positional. Parent/status changes are validated like `add-epic` (no self-parent, no
-cycle, known status). On an unknown id it exits non-zero and writes nothing.
+The id is positional. Parent/status/link changes are validated like `add-epic` (no self-parent,
+no cycle, known status, `--link`'s epic must be a known epic id). On an unknown id, or any
+invalid flag value, it exits non-zero and writes nothing — including an unrecognized flag name,
+which used to silently no-op and print a false "updated" success.
+
+**`--link` REPLACES the epic's links wholesale**, unlike the other flags which patch a single
+field — this is the intended CLI path to fix a malformed link (recorded with a bad `add-epic
+--link` before this validation existed, or hand-edited) without touching `state.json` directly.
+Pass every link you want the epic to have; omitting `--link` entirely leaves existing links
+untouched.
 
 ## Set the active epic — `set-active` / `clear-active`
 

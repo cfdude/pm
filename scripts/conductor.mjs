@@ -887,6 +887,26 @@ function parseFlags(argv) {
   return o;
 }
 
+/** Parse `--link "<type>:<epic>[:<reason>]"` strings into validated {type,epic,reason?}
+ *  objects. Rejects malformed input (fewer than two segments, or an `epic` that isn't a
+ *  real known epic id) by THROWING, instead of the prior behavior of silently storing a
+ *  garbage link object — a typo like "type:related:epic:..." used to parse successfully
+ *  (type="type", epic="related") because nothing checked that "related" was a real epic.
+ *  Shared by add-epic and update-epic. */
+function parseLinkFlags(raw, knownEpicIds) {
+  return (raw || []).filter(s => typeof s === "string").map(s => {
+    const [type, epic, ...rest] = s.split(":");
+    if (!type || !epic) {
+      throw new Error(`bad --link '${s}': expected "<type>:<epic>[:<reason>]"`);
+    }
+    if (!knownEpicIds.has(epic)) {
+      throw new Error(`bad --link '${s}': '${epic}' is not a known epic id`);
+    }
+    const reason = rest.join(":").trim();
+    return reason ? { type, epic, reason } : { type, epic };
+  });
+}
+
 /** Validate a proposed `parent` for epic `id` against the current `epics`.
  *  Returns an error string, or null if the parent is acceptable (or unset).
  *  `id` need not yet exist (add-epic); for re-parenting (update-epic) it will.
@@ -925,11 +945,12 @@ function addEpic() {
   if (state.epics.some(e => e.id === id)) {
     process.stderr.write(`conductor: epic '${id}' already exists\n`); process.exit(1);
   }
-  const links = (f.link || []).filter(s => typeof s === "string").map(s => {
-    const [type, epic, ...rest] = s.split(":");
-    const reason = rest.join(":").trim();
-    return reason ? { type, epic, reason } : { type, epic };
-  });
+  let links;
+  try {
+    links = parseLinkFlags(f.link, new Set(state.epics.map(e => e.id)));
+  } catch (e) {
+    process.stderr.write(`conductor: ${e.message}\n`); process.exit(1);
+  }
   const parent = str(f.parent);
   if (parent !== undefined) {
     const perr = parentError(state.epics, id, parent);
@@ -1070,16 +1091,19 @@ function clearActive() {
 // The flags update-epic recognizes. Anything else is a rejected error, not a
 // silent no-op — an unrecognized flag (e.g. a typo) used to parse, run, and
 // print "updated" with nothing actually changed.
-const UPDATE_EPIC_FLAGS = ["external-id", "external-url", "parent", "status", "priority", "title"];
+const UPDATE_EPIC_FLAGS = ["external-id", "external-url", "parent", "status", "priority", "title", "link"];
 
-/** Update an EXISTING epic's title/externalId/externalUrl/parent/status/priority.
+/** Update an EXISTING epic's title/externalId/externalUrl/parent/status/priority/links.
  *  The id is POSITIONAL (parseFlags skips non-`--` tokens). Closes the tracker
- *  sync loop: after the agent creates an issue it records the key here. */
+ *  sync loop: after the agent creates an issue it records the key here.
+ *  --link REPLACES the links array wholesale (unlike the other flags, which patch single
+ *  fields) — this is the CLI path to fix a malformed link without hand-editing state.json;
+ *  "fixing" means replacing the bad entry, not layering a new one on top of it. */
 function updateEpic() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const argv = process.argv.slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
-  if (!id) { process.stderr.write("usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P]\n"); process.exit(1); }
+  if (!id) { process.stderr.write("usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--link \"<type>:<epic>[:<reason>]\"]\n"); process.exit(1); }
   const f = parseFlags(argv.slice(1));
   const unknown = Object.keys(f).filter(k => !UPDATE_EPIC_FLAGS.includes(k));
   if (unknown.length) {
@@ -1101,6 +1125,14 @@ function updateEpic() {
   if (status !== undefined && !KNOWN_STATUSES.includes(status)) {
     process.stderr.write(`conductor: --status must be one of ${KNOWN_STATUSES.join("|")}\n`); process.exit(1);
   }
+  let links;
+  if (f.link !== undefined) {
+    try {
+      links = parseLinkFlags(f.link, new Set(state.epics.map(e => e.id)));
+    } catch (e) {
+      process.stderr.write(`conductor: ${e.message}\n`); process.exit(1);
+    }
+  }
 
   if (str(f.title) !== undefined) epic.title = str(f.title);
   if (str(f["external-id"]) !== undefined) epic.externalId = str(f["external-id"]);
@@ -1108,6 +1140,7 @@ function updateEpic() {
   if (parent !== undefined) epic.parent = parent;
   if (status !== undefined) epic.status = status;
   if (str(f.priority) !== undefined) epic.priority = str(f.priority);
+  if (links !== undefined) epic.links = links;
 
   // Keep .active consistent with status — the two must never disagree.
   if (epic.status === "active") activate(state, id);
