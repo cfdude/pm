@@ -6,6 +6,24 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.9.3] — 2026-07-14
+
+### Fixed
+
+- **`add-epic --link` accepted a malformed value silently instead of erroring.** It split the
+  string on `:` and stored whatever came out with no validation — a typo like
+  `type:related:epic:...` parsed successfully as `{type:"type", epic:"related"}` since nothing
+  checked that `"related"` was a real epic id. `parseLinkFlags()` now requires at least two
+  segments and that `<epic>` references a known, existing epic id, rejecting otherwise with a
+  clear error (shared by `add-epic` and `update-epic`).
+- **`update-epic` had no `--link` flag**, so a malformed link (from before this validation
+  existed, or from a hand-edit) had no CLI path to fix — forcing a direct `state.json` edit,
+  which is what caused a reported em-dash JSON-escaping corruption across unrelated epics.
+  `update-epic <id> --link "<type>:<epic>[:<reason>]"` now REPLACES the epic's links wholesale
+  (unlike the other flags, which patch a single field) — the intended fix path.
+
+---
+
 ## [0.9.2] — 2026-07-14
 
 ### Added
