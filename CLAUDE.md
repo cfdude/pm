@@ -69,7 +69,11 @@ plan, or a manual list). Follow these rules:
 2. **State of record is `.conductor/state.json`.** After any change to epics, status,
    priority, or the detour stack, re-render with `/pm:status`. Never hand-edit `PROJECT.md`.
 3. **Resuming after a detour** — use `/pm:resume`. If the popped frame had
-   `reconcileOnResume`, run the reconcile gate (reconciler agent) BEFORE writing code.
+   `reconcileOnResume`, run the reconcile gate (reconciler agent) BEFORE writing code,
+   then write its verdict back durably with `record-reconcile <id> --detour <id>
+   --verdict valid|invalidated [--amendments "<a>;<b>"]` — this attaches
+   `{verdict, amendments, reconciledAt}` to the paused epic's link to the detour and
+   clears `reconcileNeeded`, instead of the judgment only ever living in conversation.
 4. **Honcho** — on every PUSH and POP, also write a one-line memory to Honcho
    ("paused X for Y" / "resumed X, reconciled vs Y") so the relationship survives outside
    this repo.

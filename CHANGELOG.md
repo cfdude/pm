@@ -6,6 +6,20 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- **`record-reconcile <epicId> --detour <detourId> --verdict valid|invalidated
+  [--amendments "<a>;<b>"]`.** The reconciler agent's verdict at the POP-protocol reconcile
+  gate previously only ever lived in the conversation transcript. This subcommand writes a
+  structured `{verdict, amendments, reconciledAt}` object onto the paused epic's link to the
+  detour that triggered reconciliation (creating a `may-invalidate` link if none exists yet),
+  and clears `reconcileNeeded` — so the judgment is durable in `.conductor/state.json` and
+  visible in `PROJECT.md`, not just something Claude said once. `agents/reconciler.md`'s
+  report format, `commands/resume.md`, and the conductor skill's POP protocol / rules block
+  now describe this writeback step.
+
 ## [0.12.2] — 2026-07-15
 
 ### Added

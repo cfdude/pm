@@ -50,7 +50,8 @@ Below, `$ENGINE` means the path resolved this way.
 ## Commands
 
 `/pm:init` scaffold · `/pm:status` show · `/pm:next` decide · `/pm:detour` park ·
-`/pm:resume` resume + reconcile · `/pm:sync` register new proposals and plans ·
+`/pm:resume` resume + reconcile (writes the reconciler's verdict back durably via
+`record-reconcile`) · `/pm:sync` register new proposals and plans ·
 `/pm:epic add` register any epic (`--parent`, `--external-id`) · `/pm:epic` → `add-many`
 (atomic bulk create) / `update-epic` (write-back, incl. `--title`/`--link`) / `remove-epic`
 (hard-delete, `--cascade` for a parent + descendants) · **`set-active <id>` / `clear-active`**
@@ -123,9 +124,17 @@ The step otherwise lost after compaction. Do not skip it.
    again.
 3. If `reconcileOnResume` was true, RECONCILE before writing code: delegate to the
    **reconciler** agent with the paused id + detour id. It re-reads the paused proposal,
-   diffs what the detour shipped, and reports validity + stories to amend.
-   - Invalidated → amend the proposal + `tasks.md` first, then clear `reconcileNeeded`.
-   - Still valid → say so explicitly, clear `reconcileNeeded`, resume.
+   diffs what the detour shipped, and reports back `VERDICT: valid|invalidated` +
+   `AMENDMENTS:` (one per line) — see `agents/reconciler.md`.
+   - Invalidated → amend the proposal + `tasks.md` first.
+   - Still valid → say so explicitly.
+   - Either way, **write the verdict back durably** — this is what actually clears
+     `reconcileNeeded` now (don't hand-clear it): `node "$ENGINE" record-reconcile
+     <paused-id> --detour <detour-id> --verdict <valid|invalidated> --amendments
+     "<a>;<b>;..."`. This attaches `{verdict, amendments, reconciledAt}` to the paused
+     epic's link to the detour in `.conductor/state.json` (creating a `may-invalidate`
+     link if one doesn't already exist), so the judgment survives past this
+     conversation instead of only ever living in the transcript.
    - **Optional hard backstop:** if this repo has `set-gate-guard on` set, a PreToolUse hook
      mechanically blocks `Edit`/`Write`/`NotebookEdit` while `reconcileNeeded` is still true —
      off by default, see `/pm:gate-guard`.

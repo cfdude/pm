@@ -429,7 +429,11 @@ function rulesBlock(tracker, reviewMode) {
     "2. **State of record is `.conductor/state.json`.** After any change to epics, status,",
     "   priority, or the detour stack, re-render with `/pm:status`. Never hand-edit `PROJECT.md`.",
     "3. **Resuming after a detour** — use `/pm:resume`. If the popped frame had",
-    "   `reconcileOnResume`, run the reconcile gate (reconciler agent) BEFORE writing code.",
+    "   `reconcileOnResume`, run the reconcile gate (reconciler agent) BEFORE writing code,",
+    "   then write its verdict back durably with `record-reconcile <id> --detour <id>",
+    "   --verdict valid|invalidated [--amendments \"<a>;<b>\"]` — this attaches",
+    "   `{verdict, amendments, reconciledAt}` to the paused epic's link to the detour and",
+    "   clears `reconcileNeeded`, instead of the judgment only ever living in conversation.",
     "4. **Honcho** — on every PUSH and POP, also write a one-line memory to Honcho",
     "   (\"paused X for Y\" / \"resumed X, reconciled vs Y\") so the relationship survives outside",
     "   this repo.",
@@ -1374,6 +1378,62 @@ function setAutonomy() {
   process.stderr.write(`conductor: autonomy for '${id}' is now level=${a.level}\n`);
 }
 
+// ---------- reconciler structured writeback ----------
+
+const KNOWN_RECONCILE_VERDICTS = ["valid", "invalidated"];
+
+/** `record-reconcile <epicId> --detour <detourId> --verdict <valid|invalidated>
+ *  [--amendments "<a>;<b>"]` — the durable half of the reconcile gate. The reconciler
+ *  agent's judgment (see agents/reconciler.md) previously only ever lived in the
+ *  conversation transcript; this writes it onto the paused epic's link entry for the
+ *  detour that triggered reconciliation, so the verdict survives compaction and is
+ *  visible in `.conductor/state.json`/PROJECT.md. Finds the existing link (any type)
+ *  to `--detour`, or creates a `may-invalidate` link if none exists yet (mirrors the
+ *  PUSH-protocol convention in the conductor skill: "parent may-invalidate detour").
+ *  Also clears `reconcileNeeded` on the epic — recording a verdict IS completing the
+ *  gate, matching the conductor skill's POP protocol step 3. Pure local state write. */
+function recordReconcile() {
+  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  const argv = process.argv.slice(3);
+  const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
+  const f = parseFlags(id ? argv.slice(1) : argv);
+  const detourId = typeof f.detour === "string" ? f.detour : undefined;
+  const verdict = typeof f.verdict === "string" ? f.verdict : undefined;
+  if (!id || !detourId || !verdict) {
+    process.stderr.write(
+      "usage: conductor.mjs record-reconcile <epicId> --detour <detourId> " +
+      "--verdict valid|invalidated [--amendments \"<a>;<b>\"]\n");
+    process.exit(1);
+  }
+  if (!KNOWN_RECONCILE_VERDICTS.includes(verdict)) {
+    process.stderr.write(`conductor: --verdict must be one of ${KNOWN_RECONCILE_VERDICTS.join("|")}\n`);
+    process.exit(1);
+  }
+  const state = loadState();
+  const epic = state.epics.find(e => e.id === id);
+  if (!epic) { process.stderr.write(`conductor: epic '${id}' not found\n`); process.exit(1); }
+  if (!state.epics.some(e => e.id === detourId)) {
+    process.stderr.write(`conductor: detour epic '${detourId}' not found\n`); process.exit(1);
+  }
+
+  const amendments = typeof f.amendments === "string"
+    ? f.amendments.split(";").map(s => s.trim()).filter(Boolean)
+    : [];
+
+  epic.links = Array.isArray(epic.links) ? epic.links : [];
+  let link = epic.links.find(l => l && l.epic === detourId);
+  if (!link) {
+    link = { type: "may-invalidate", epic: detourId };
+    epic.links.push(link);
+  }
+  link.reconciled = { verdict, amendments, reconciledAt: new Date().toISOString() };
+  epic.reconcileNeeded = false;
+
+  saveState(state);
+  render();
+  process.stderr.write(`conductor: recorded reconcile verdict '${verdict}' for '${id}' vs '${detourId}'\n`);
+}
+
 // ---------- tracker ----------
 
 /** Write/merge the `tracker` block. Pure local state write — the engine NEVER
@@ -1618,6 +1678,7 @@ if (!process.env.PM_QUIET_ENGINE_BANNER) {
   "clear-active": clearActive,
   "set-tracker": setTracker,
   "set-autonomy": setAutonomy,
+  "record-reconcile": recordReconcile,
   "set-review-mode": setReviewMode,
   "set-gate-guard": setGateGuard,
   "gate-guard": gateGuardCheck,
@@ -1628,6 +1689,6 @@ if (!process.env.PM_QUIET_ENGINE_BANNER) {
   rules: () => process.stdout.write(rulesBlock(currentTracker(), currentReviewMode())),
   "write-rules": writeRules,
 }[cmd] || (() => {
-  process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|add-epic|add-many|update-epic|remove-epic|set-active|clear-active|set-tracker|set-autonomy|set-review-mode|set-gate-guard|gate-guard|plan-hierarchy|verify-worktrees|upgrade|changelog|rules|write-rules\n");
+  process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|add-epic|add-many|update-epic|remove-epic|set-active|clear-active|set-tracker|set-autonomy|record-reconcile|set-review-mode|set-gate-guard|gate-guard|plan-hierarchy|verify-worktrees|upgrade|changelog|rules|write-rules\n");
   process.exit(1);
 }))();
