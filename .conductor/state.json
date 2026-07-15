@@ -527,7 +527,7 @@
       "id": "df-plan-hierarchy-includes-archived-children",
       "title": "DF: plan-hierarchy includes an already-archived child epic in its batch output instead of filtering it out — found live running plan-hierarchy --parent pm-plugin-improvements-2026-07-14 after archiving remove-epic-verb: it still appeared in batch 0 with autonomous:true, dependsOn:[], indistinguishable from real not-yet-done work. An agent following the documented dispatch process ('dispatch one hierarchy-child-executor per epic in the batch') would blindly re-dispatch already-completed work unless it manually cross-checks status first. Fix: plan-hierarchy's batch computation should exclude status===archived children (same class of bug as fix-archived-no-change-warning, different code path)",
       "priority": "P0",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -547,5 +547,5 @@
     }
   ],
   "detourStack": [],
-  "pmVersion": "0.10.0"
+  "pmVersion": "0.12.0"
 }
