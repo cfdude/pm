@@ -32,9 +32,15 @@ Do NOT start fixing yet. Follow the `conductor` skill's detour protocol.
    - Set `active` to the detour. Then create the OpenSpec proposal for it and build through
      your normal propose → review → apply → review → commit → archive loop.
 
-3. **Write a Honcho memory** for the pivot: one line, e.g. "Paused `<parent>` to handle
-   `<detour>` — <reason>." Use your Honcho MCP memory/conclusion tool. This keeps the
-   relationship recoverable even outside this repo.
+3. **Write a Honcho memory** for the pivot. Get the exact ready-to-copy line (and a durable
+   local record of it) via:
+   ```bash
+   node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" honcho-memory push <parent-epic-id> "<reason>"
+   ```
+   Prints `paused <parent> for <reason>` and appends it to `.conductor/honcho-memories.log`.
+   Paste that printed line into your actual Honcho MCP memory/conclusion tool call — the
+   engine only formats + logs it, it never calls Honcho itself. This keeps the relationship
+   recoverable even outside this repo.
 
 4. Re-render: `node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" render`.
 

@@ -1952,3 +1952,44 @@ test("a completed epic is never flagged stale, even if startedAt is old", () => 
   const md = projectMd(cwd);
   assert.doesNotMatch(md, /stale/);
 });
+
+// ─────────────── honcho-memory: push/pop ready-to-copy line ───────────────
+
+test("honcho-memory push prints the exact ready-to-copy line and appends it to .conductor/honcho-memories.log", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const out = run(["honcho-memory", "push", "parent-epic", "blocking bug in shared lib"], { cwd });
+  assert.equal(out.trim(), "paused parent-epic for blocking bug in shared lib");
+
+  const logPath = path.join(cwd, ".conductor", "honcho-memories.log");
+  const logged = fs.readFileSync(logPath, "utf8").trim().split("\n");
+  assert.equal(logged.length, 1);
+  const [ts, line] = logged[0].split("\t");
+  assert.ok(!Number.isNaN(Date.parse(ts)), "first field should be an ISO timestamp");
+  assert.equal(line, "paused parent-epic for blocking bug in shared lib");
+});
+
+test("honcho-memory pop prints the resume line, formatted differently from push", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const out = run(["honcho-memory", "pop", "parent-epic", "detour-fix-shared-lib"], { cwd });
+  assert.equal(out.trim(), "resumed parent-epic, reconciled vs detour-fix-shared-lib");
+});
+
+test("honcho-memory appends multiple emissions to the same log file, one line each", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["honcho-memory", "push", "epic-a", "reason one"], { cwd });
+  run(["honcho-memory", "pop", "epic-a", "detour-a"], { cwd });
+  const logPath = path.join(cwd, ".conductor", "honcho-memories.log");
+  const lines = fs.readFileSync(logPath, "utf8").trim().split("\n");
+  assert.equal(lines.length, 2);
+  assert.match(lines[0], /paused epic-a for reason one$/);
+  assert.match(lines[1], /resumed epic-a, reconciled vs detour-a$/);
+});
+
+test("honcho-memory rejects an unknown action", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  assert.throws(() => run(["honcho-memory", "sideways", "epic-a", "reason"], { cwd }));
+});

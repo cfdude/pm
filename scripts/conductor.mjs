@@ -12,6 +12,7 @@
  * State of record:  .conductor/state.json   (structured; Claude + you edit it)
  * Human view:       PROJECT.md              (fully GENERATED — do not hand-edit)
  * Detour trail:     .conductor/detours.log  (append-only; minimal detours + detour commits)
+ * Honcho memories:  .conductor/honcho-memories.log  (append-only; every honcho-memory emission)
  * Story progress:   DERIVED live from tasks.md checkboxes at render time.
  *
  * Subcommands:
@@ -22,6 +23,7 @@
  *   commit-nudge   PostToolUse(Bash): after a git commit, log detour commits + nudge
  *   sync           add any new openspec changes to state.json as "untriaged"
  *   log-detour "x" record a MINIMAL detour in detours.log (with the current git SHA)
+ *   honcho-memory  <push|pop> <epicId> "<reason>" — print + log the ready-to-copy Honcho line
  *   rules          print the CLAUDE.md rules block to stdout
  *   write-rules    insert/refresh the rules block in ./CLAUDE.md (idempotent)
  *
@@ -968,6 +970,43 @@ function logDetour() {
   process.stderr.write("conductor: logged minimal detour\n");
 }
 
+const HONCHO_MEMORIES_LOG = path.join(CONDUCTOR_DIR, "honcho-memories.log");
+
+/** Format the exact one-line Honcho memory string for a detour-stack PUSH or POP, per
+ *  CLAUDE.md rule 4 ("on every PUSH and POP, also write a one-line memory to Honcho").
+ *  Pure string formatting — the engine never calls Honcho itself (see the ZERO-DEPENDENCY /
+ *  INSTRUCTION-LAYER law above); this only gives the interactive agent an exact, consistently
+ *  worded, ready-to-copy string instead of composing one ad hoc from context each time. */
+function honchoMemoryLine(action, epicId, reason) {
+  if (action === "push") return `paused ${epicId} for ${reason}`;
+  if (action === "pop") return `resumed ${epicId}, reconciled vs ${reason}`;
+  throw new Error(`honchoMemoryLine: unknown action '${action}' (expected 'push' or 'pop')`);
+}
+
+/** `honcho-memory <push|pop> <epicId> "<reason>"` — prints the ready-to-copy Honcho memory
+ *  line to stdout (for the interactive agent to paste into its actual Honcho MCP call) AND
+ *  appends a timestamped copy to `.conductor/honcho-memories.log`, so there's a durable local
+ *  record of what was emitted even if the agent forgets to actually send it. */
+function honchoMemory() {
+  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  const [action, epicId, ...rest] = process.argv.slice(3);
+  const reason = rest.join(" ").trim();
+  if (!action || !epicId || !reason) {
+    process.stderr.write("usage: conductor.mjs honcho-memory <push|pop> <epicId> \"<reason>\"\n");
+    process.exit(1);
+  }
+  let line;
+  try {
+    line = honchoMemoryLine(action, epicId, reason);
+  } catch (e) {
+    process.stderr.write(`conductor: ${e.message}\n`);
+    process.exit(1);
+  }
+  fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
+  fs.appendFileSync(HONCHO_MEMORIES_LOG, `${new Date().toISOString()}\t${line}\n`);
+  process.stdout.write(line + "\n");
+}
+
 // ---------- add-epic ----------
 
 // Flags that accumulate into an array across repeated `--flag value` occurrences,
@@ -1766,6 +1805,7 @@ if (!process.env.PM_QUIET_ENGINE_BANNER) {
   "commit-nudge": commitNudge,
   sync: () => sync(false),
   "log-detour": logDetour,
+  "honcho-memory": honchoMemory,
   "add-epic": addEpic,
   "add-many": addMany,
   "update-epic": updateEpic,
@@ -1784,6 +1824,6 @@ if (!process.env.PM_QUIET_ENGINE_BANNER) {
   rules: () => process.stdout.write(rulesBlock(currentTracker(), currentReviewMode())),
   "write-rules": writeRules,
 }[cmd] || (() => {
-  process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|add-epic|add-many|update-epic|remove-epic|set-active|clear-active|set-tracker|set-autonomy|set-review-mode|set-gate-guard|gate-guard|plan-hierarchy|verify-worktrees|upgrade|changelog|rules|write-rules\n");
+  process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|set-active|clear-active|set-tracker|set-autonomy|set-review-mode|set-gate-guard|gate-guard|plan-hierarchy|verify-worktrees|upgrade|changelog|rules|write-rules\n");
   process.exit(1);
 }))();
