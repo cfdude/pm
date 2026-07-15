@@ -6,6 +6,20 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- **`/pm:feedback [bug|feature] "<summary>"`.** File a bug report or feature request against
+  `pm` itself directly as a GitHub issue on `cfdude/pm`, from any session using the plugin —
+  replacing the previous workflow of manually copy-pasting details between sessions. Pure
+  command-doc addition: the interactive agent gathers the report, searches open issues on
+  `cfdude/pm` for a near-duplicate title (commenting on a match instead of filing a new issue),
+  and otherwise runs `gh issue create --repo cfdude/pm` with a `bug`/`enhancement` label,
+  reporting back the issue URL. No engine code involved — `scripts/conductor.mjs` never calls
+  GitHub itself; all `gh` calls are agent-invoked Bash, per the instruction-layer law. See
+  `commands/feedback.md`.
+
 ## [0.13.0] — 2026-07-15
 
 ### Added
