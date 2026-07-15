@@ -452,7 +452,26 @@
       "role": "epic",
       "lane": "claude-code",
       "links": [],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "autonomy": {
+        "level": "autonomous",
+        "preAuthorized": [
+          {
+            "action": "create a new skill/command (/pm",
+            "grantedAt": "2026-07-15T22:49:09.870Z",
+            "reason": "feedback) that calls gh issue create against cfdude/pm to post a bug/feature report:matches recorded decision"
+          },
+          {
+            "action": "call gh issue list/search against cfdude/pm to check for a near-duplicate before creating a new issue",
+            "grantedAt": "2026-07-15T22:49:09.871Z",
+            "reason": "read-only dedup check, no risk"
+          }
+        ],
+        "context": [
+          "Decision: use gh CLI via Bash (agent-invoked, not the engine — complies with the instruction-layer law: pm never calls external systems itself). Labels: bug or enhancement based on report type. Dedup: search open issues for a near-duplicate title before creating; if found, comment on the existing issue instead of creating a new one."
+        ],
+        "notifications": []
+      }
     },
     {
       "id": "github-issue-tracker-sync",
@@ -468,7 +487,26 @@
           "reason": "issues created by the feedback loop are exactly what this syncs back in"
         }
       ],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "autonomy": {
+        "level": "autonomous",
+        "preAuthorized": [
+          {
+            "action": "extend /pm",
+            "grantedAt": "2026-07-15T22:49:09.916Z",
+            "reason": "sync (or add a subcommand) to call gh issue list against cfdude/pm and register new untriaged epics via add-epic:matches recorded decision, mirrors existing Jira-tracker sync pattern"
+          },
+          {
+            "action": "add externalId/externalUrl mapping fields when registering a GitHub-issue-sourced epic",
+            "grantedAt": "2026-07-15T22:49:09.917Z",
+            "reason": "additive schema use, no data removed"
+          }
+        ],
+        "context": [
+          "Decision: mirror the existing Jira-tracker sync pattern exactly — open GitHub issues not already mapped via externalId become new untriaged epics; priority defaults P2 unless a label maps to a different priority. Re-running sync must not create duplicate epics for the same issue (dedup by externalId)."
+        ],
+        "notifications": []
+      }
     },
     {
       "id": "cfdude-pm-repo-governance",
@@ -500,7 +538,21 @@
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
-      "parent": "cfdude-pm-repo-governance"
+      "parent": "cfdude-pm-repo-governance",
+      "autonomy": {
+        "level": "autonomous",
+        "preAuthorized": [
+          {
+            "action": "add .github/workflows/ci.yml running node --test scripts/conductor.test.mjs and a node -c syntax check on push/PR",
+            "grantedAt": "2026-07-15T22:49:09.959Z",
+            "reason": "additive, no destructive risk"
+          }
+        ],
+        "context": [
+          "Decision: Node 18.x only (this repo's stated minimum). No separate lint tool exists in this zero-dependency repo — 'lint' means a node -c syntax check on conductor.mjs and conductor.test.mjs, not a third-party linter."
+        ],
+        "notifications": []
+      }
     },
     {
       "id": "autonomous-issue-resolution-agent",
