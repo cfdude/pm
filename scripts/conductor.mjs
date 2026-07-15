@@ -907,6 +907,95 @@ function parseLinkFlags(raw, knownEpicIds) {
   });
 }
 
+/** DFS cycle-path finder over a dependency map (id -> Set of ids it depends on), restricted
+ *  to `stuckIds` (the set Kahn's algorithm couldn't place). Returns the actual cycle as an
+ *  array of ids ending back at its start (e.g. ["a","b","a"]), for a debuggable error message
+ *  instead of an unordered dump of every stuck id. */
+function findCyclePath(stuckIds, deps) {
+  const stuckSet = new Set(stuckIds);
+  const visited = new Set();
+  const stack = [];
+  const onStack = new Set();
+  function dfs(id) {
+    stack.push(id); onStack.add(id); visited.add(id);
+    for (const dep of deps.get(id)) {
+      if (!stuckSet.has(dep)) continue;
+      if (onStack.has(dep)) return [...stack.slice(stack.indexOf(dep)), dep];
+      if (!visited.has(dep)) {
+        const found = dfs(dep);
+        if (found) return found;
+      }
+    }
+    stack.pop(); onStack.delete(id);
+    return null;
+  }
+  for (const id of stuckIds) {
+    if (!visited.has(id)) {
+      const found = dfs(id);
+      if (found) return found;
+    }
+  }
+  return stuckIds; // defensive fallback — Kahn's algorithm guarantees a real cycle exists
+}
+
+/** `plan-hierarchy --parent <id>` — computes execution batches for a parent epic's children,
+ *  recomputed fresh from existing data every call (no new persistent state): `depends-on`
+ *  links BETWEEN SIBLINGS drive a topological sort into batches (Kahn's algorithm); within a
+ *  batch, order by priority (P0 first, ties broken by id). Each child is annotated with
+ *  whether it already has `autonomy.level === "autonomous"` — dispatching one that doesn't
+ *  would immediately hit the epic-autonomy decision rule's "no context to act on" stop.
+ *  A dependency cycle among children is rejected outright (exit 1), naming the cycle path,
+ *  rather than producing a bogus order. Pure read + stdout — no state mutation. */
+function planHierarchy() {
+  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  const f = parseFlags(process.argv.slice(3));
+  const parent = typeof f.parent === "string" ? f.parent : undefined;
+  if (!parent) { process.stderr.write("usage: conductor.mjs plan-hierarchy --parent <id>\n"); process.exit(1); }
+  const state = loadState();
+  if (!state.epics.some(e => e.id === parent)) {
+    process.stderr.write(`conductor: epic '${parent}' not found\n`); process.exit(1);
+  }
+  const children = state.epics.filter(e => e.parent === parent);
+  const childIds = new Set(children.map(e => e.id));
+
+  const deps = new Map(children.map(e => [e.id, new Set()]));
+  for (const e of children) {
+    for (const l of (e.links || [])) {
+      if (l && l.type === "depends-on" && childIds.has(l.epic)) deps.get(e.id).add(l.epic);
+    }
+  }
+
+  const rank = { P0: 0, P1: 1, P2: 2, P3: 3, "P?": 9 };
+  const placed = new Set();
+  const batches = [];
+  while (placed.size < children.length) {
+    const ready = children.filter(e =>
+      !placed.has(e.id) && [...deps.get(e.id)].every(d => placed.has(d)));
+    if (!ready.length) {
+      const stuck = children.filter(e => !placed.has(e.id)).map(e => e.id);
+      const cycle = findCyclePath(stuck, deps);
+      process.stderr.write(
+        `conductor: plan-hierarchy: dependency cycle among children of '${parent}': ${cycle.join(" -> ")}\n`);
+      process.exit(1);
+    }
+    ready.sort((a, b) => ((rank[a.priority] ?? 9) - (rank[b.priority] ?? 9)) || a.id.localeCompare(b.id));
+    batches.push(ready);
+    for (const e of ready) placed.add(e.id);
+  }
+
+  const plan = {
+    parent,
+    batches: batches.map((epics, i) => ({
+      batch: i,
+      epics: epics.map(e => ({
+        id: e.id, priority: e.priority,
+        autonomous: !!(e.autonomy && e.autonomy.level === "autonomous"),
+      })),
+    })),
+  };
+  process.stdout.write(JSON.stringify(plan) + "\n");
+}
+
 /** Validate a proposed `parent` for epic `id` against the current `epics`.
  *  Returns an error string, or null if the parent is acceptable (or unset).
  *  `id` need not yet exist (add-epic); for re-parenting (update-epic) it will.
@@ -1406,11 +1495,12 @@ const cmd = process.argv[2];
   "set-review-mode": setReviewMode,
   "set-gate-guard": setGateGuard,
   "gate-guard": gateGuardCheck,
+  "plan-hierarchy": planHierarchy,
   upgrade,
   changelog,
   rules: () => process.stdout.write(rulesBlock(currentTracker(), currentReviewMode())),
   "write-rules": writeRules,
 }[cmd] || (() => {
-  process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|add-epic|add-many|update-epic|set-active|clear-active|set-tracker|set-autonomy|set-review-mode|set-gate-guard|gate-guard|upgrade|changelog|rules|write-rules\n");
+  process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|add-epic|add-many|update-epic|set-active|clear-active|set-tracker|set-autonomy|set-review-mode|set-gate-guard|gate-guard|plan-hierarchy|upgrade|changelog|rules|write-rules\n");
   process.exit(1);
 }))();

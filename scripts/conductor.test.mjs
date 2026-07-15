@@ -1397,3 +1397,86 @@ test("0.5.0 migration repairs colon-string links, drops unrecoverable, is idempo
   run(["upgrade"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root } });
   assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), first);
 });
+
+// ──────────────── epic-hierarchy orchestration: plan-hierarchy ────────────────
+
+function setupHierarchy(cwd, childOverrides = {}) {
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "sprint", "--lane", "claude-code"], { cwd });
+  run(["add-epic", "--id", "child-a", "--lane", "claude-code", "--parent", "sprint", "--priority", "P1"], { cwd });
+  run(["add-epic", "--id", "child-b", "--lane", "claude-code", "--parent", "sprint", "--priority", "P0"], { cwd });
+  run(["add-epic", "--id", "child-c", "--lane", "claude-code", "--parent", "sprint", "--priority", "P2"], { cwd });
+  if (childOverrides.applyLinks) childOverrides.applyLinks(cwd);
+}
+
+test("plan-hierarchy batches independent children together, ordered by priority within a batch", () => {
+  const cwd = tmpRepo();
+  setupHierarchy(cwd);
+  const out = JSON.parse(run(["plan-hierarchy", "--parent", "sprint"], { cwd }));
+  assert.equal(out.parent, "sprint");
+  assert.equal(out.batches.length, 1);
+  assert.deepEqual(out.batches[0].epics.map(e => e.id), ["child-b", "child-a", "child-c"]); // P0, P1, P2
+});
+
+test("plan-hierarchy sequences a depends-on chain into separate batches", () => {
+  const cwd = tmpRepo();
+  setupHierarchy(cwd);
+  run(["update-epic", "child-b", "--link", "depends-on:child-a:needs a's output"], { cwd });
+  const out = JSON.parse(run(["plan-hierarchy", "--parent", "sprint"], { cwd }));
+  assert.equal(out.batches.length, 2);
+  assert.deepEqual(out.batches[0].epics.map(e => e.id), ["child-a", "child-c"]); // no unresolved deps
+  assert.deepEqual(out.batches[1].epics.map(e => e.id), ["child-b"]);            // waits on child-a
+});
+
+test("plan-hierarchy ignores a depends-on link to an epic outside the hierarchy", () => {
+  const cwd = tmpRepo();
+  setupHierarchy(cwd);
+  run(["add-epic", "--id", "outsider", "--lane", "claude-code"], { cwd });
+  run(["update-epic", "child-a", "--link", "depends-on:outsider:unrelated"], { cwd });
+  const out = JSON.parse(run(["plan-hierarchy", "--parent", "sprint"], { cwd }));
+  assert.equal(out.batches.length, 1); // outsider isn't a sibling, so it doesn't force a second batch
+});
+
+test("plan-hierarchy detects and rejects a dependency cycle among children, naming the cycle path", () => {
+  const cwd = tmpRepo();
+  setupHierarchy(cwd);
+  run(["update-epic", "child-a", "--link", "depends-on:child-b:x"], { cwd });
+  run(["update-epic", "child-b", "--link", "depends-on:child-a:y"], { cwd });
+  const err = expectFail(() => run(["plan-hierarchy", "--parent", "sprint"], { cwd }));
+  assert.ok(err, "expected a cycle rejection");
+  const msg = String(err.stderr || err.message);
+  assert.match(msg, /dependency cycle/);
+  assert.match(msg, /child-a/);
+  assert.match(msg, /child-b/);
+});
+
+test("plan-hierarchy annotates each child's autonomy status", () => {
+  const cwd = tmpRepo();
+  setupHierarchy(cwd);
+  run(["set-autonomy", "child-a", "--level", "autonomous"], { cwd });
+  const out = JSON.parse(run(["plan-hierarchy", "--parent", "sprint"], { cwd }));
+  const byId = Object.fromEntries(out.batches[0].epics.map(e => [e.id, e.autonomous]));
+  assert.equal(byId["child-a"], true);
+  assert.equal(byId["child-b"], false);
+  assert.equal(byId["child-c"], false);
+});
+
+test("plan-hierarchy on a parent with no children returns an empty batches array", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "lonely-parent", "--lane", "claude-code"], { cwd });
+  const out = JSON.parse(run(["plan-hierarchy", "--parent", "lonely-parent"], { cwd }));
+  assert.deepEqual(out.batches, []);
+});
+
+test("plan-hierarchy rejects an unknown parent id", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  assert.ok(expectFail(() => run(["plan-hierarchy", "--parent", "ghost"], { cwd })));
+});
+
+test("plan-hierarchy requires --parent", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  assert.ok(expectFail(() => run(["plan-hierarchy"], { cwd })));
+});
