@@ -1213,12 +1213,14 @@ test("set-gate-guard toggles the opt-in flag and rejects an invalid value", () =
   assert.ok(expectFail(() => run(["set-gate-guard", "bogus"], { cwd })), "invalid value rejected");
 });
 
-test("gate-guard is a no-op (exit 0) when never enabled, even if the active epic owes a reconcile", () => {
+test("gate-guard blocks by default (no set-gate-guard needed) when the active epic owes a reconcile", () => {
   const cwd = tmpRepo(); run(["init"], { cwd });
   writeState(cwd, { version: 1, active: "a", detourStack: [], epics: [
     { id: "a", title: "a", priority: "P1", status: "active", role: "epic", lane: "claude-code", links: [], reconcileNeeded: true },
   ]});
-  run(["gate-guard"], { cwd, input: "{}" });   // does not throw
+  const err = expectFail(() => run(["gate-guard"], { cwd, input: "{}" }));
+  assert.ok(err, "expected a block");
+  assert.match(String(err.stderr || err.message), /still owes a reconcile/);
 });
 
 test("gate-guard blocks (exit non-zero, reason on stderr) when enabled and the active epic owes a reconcile", () => {
@@ -1238,6 +1240,26 @@ test("gate-guard does not block when enabled but the active epic does not owe a 
     { id: "a", title: "a", priority: "P1", status: "active", role: "epic", lane: "claude-code", links: [], reconcileNeeded: false },
   ]});
   run(["gate-guard"], { cwd, input: "{}" });   // does not throw
+});
+
+test("gate-guard does not block when explicitly off and the active epic does not owe a reconcile", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["set-gate-guard", "off"], { cwd });
+  writeState(cwd, { version: 1, active: "a", detourStack: [], gateGuard: false, epics: [
+    { id: "a", title: "a", priority: "P1", status: "active", role: "epic", lane: "claude-code", links: [], reconcileNeeded: false },
+  ]});
+  run(["gate-guard"], { cwd, input: "{}" });   // does not throw
+});
+
+test("gate-guard still blocks on reconcileNeeded even when explicitly set off (reconcile safety overrides the opt-out)", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["set-gate-guard", "off"], { cwd });
+  writeState(cwd, { version: 1, active: "a", detourStack: [], gateGuard: false, epics: [
+    { id: "a", title: "a", priority: "P1", status: "active", role: "epic", lane: "claude-code", links: [], reconcileNeeded: true },
+  ]});
+  const err = expectFail(() => run(["gate-guard"], { cwd, input: "{}" }));
+  assert.ok(err, "expected a block even with gateGuard explicitly off");
+  assert.match(String(err.stderr || err.message), /still owes a reconcile/);
 });
 
 test("rules block gains an External tracker sync section only when a tracker is configured", () => {

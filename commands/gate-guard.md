@@ -1,23 +1,31 @@
 ---
-description: Turn the optional, opt-in reconcile-gate guard on or off (off by default)
+description: Inspect or (partially) toggle the reconcile-gate guard
 allowed-tools: Bash, Read
 ---
 
-Toggle the **gate guard** — an optional, opt-in `PreToolUse` hook that mechanically blocks
-`Edit`/`Write`/`NotebookEdit` while the active epic still owes a reconcile after a detour POP.
-This is the one place pm's law tolerates mechanical blocking over pure instruction: it protects
-the single highest-stakes skip (writing source before the reconcile gate actually runs), and it
-is **off by default** — the plugin never silently adopts this, you turn it on deliberately.
+The **gate guard** is a `PreToolUse` hook that mechanically blocks `Edit`/`Write`/`NotebookEdit`
+while the active epic still owes a reconcile after a detour POP (`reconcileNeeded: true`). This
+is the one place pm's law tolerates mechanical blocking over pure instruction: it protects the
+single highest-stakes skip (writing source before the reconcile gate actually runs).
 
-## Why off by default
+## On by default for the reconcile-owed case
 
-pm's instruction-layer law means this is normally enforced by telling you (the interactive
-agent) what to do, not by a hook mechanically stopping a tool call. That's usually enough — but
-an instruction CAN be missed. If you want a hard backstop specifically for the reconcile gate
-(the highest-stakes single skip), turn this on. If an instruction-only approach has worked fine
-for you, leave it off.
+As of the `gate-guard-default-on-reconcile` change, this check is **always active** whenever
+the active epic has `reconcileNeeded: true` — this applies retroactively to any epic that
+already carries that flag, not just future detour POPs. It previously required an explicit
+`set-gate-guard on`; real-usage feedback showed that opt-in was never actually turned on across
+several sessions where it would have caught a real skip, so the default flipped after the
+policy was reconsidered and approved.
 
-## Turn it on or off
+**There is no bypass for this specific case.** `set-gate-guard off` no longer silences the
+reconcile-owed block — the only way past it is to actually run the reconcile gate (delegate to
+the reconciler agent per the conductor skill's POP protocol), which clears `reconcileNeeded`.
+
+## `set-gate-guard on|off`
+
+The repo-level `gateGuard` flag in `.conductor/state.json` still exists and is still toggled by
+this command, reserved for any future generalization of the hook to other checks. It has no
+effect on the reconcile-owed check described above.
 
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" set-gate-guard on
@@ -29,8 +37,7 @@ If `${CLAUDE_PLUGIN_ROOT}` is empty:
 
 ## What it checks
 
-When enabled, every `Edit`/`Write`/`NotebookEdit` call is checked: if the currently active epic's
-`reconcileNeeded` is `true` (it still owes a reconcile — see the conductor skill's POP protocol),
-the tool call is blocked with a message pointing you at the reconciler agent. Run the reconcile
-gate first, or `set-gate-guard off` if you need to bypass once. It never blocks anything else —
-epics with no pending reconcile are unaffected regardless of the setting.
+Every `Edit`/`Write`/`NotebookEdit` call is checked: if the currently active epic's
+`reconcileNeeded` is `true` (it still owes a reconcile — see the conductor skill's POP
+protocol), the tool call is blocked with a message pointing you at the reconciler agent. Run the
+reconcile gate first. Epics with no pending reconcile are unaffected.

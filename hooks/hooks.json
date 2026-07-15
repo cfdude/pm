@@ -38,7 +38,7 @@
     ],
     "PreToolUse": [
       {
-        "comment": "PM CONDUCTOR: optional, opt-in gate guard (off by default — enable with `set-gate-guard on`). Blocks Edit/Write/NotebookEdit while the active epic still owes a reconcile after a detour POP. Dormant until /pm:init.",
+        "comment": "PM CONDUCTOR: gate guard — on by default for any epic with reconcileNeeded:true (unconditional, `set-gate-guard off` does not bypass it). Blocks Edit/Write/NotebookEdit while the active epic still owes a reconcile after a detour POP. Dormant until /pm:init.",
         "matcher": "Edit|Write|NotebookEdit",
         "hooks": [
           {

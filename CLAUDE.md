@@ -29,9 +29,10 @@
   connection or call an external system (Jira, GitHub, Linear, …) itself. External tracker sync
   is the *agent's* job; the engine's only role is to know a tracker is in use and shape the
   instructions it already emits. No code path in the engine talks to a tracker. The one
-  deliberate, documented exception is the **optional, opt-in gate-guard hook**
-  (`set-gate-guard on`) — a local `PreToolUse` mechanical block, off by default, never a silent
-  default; see `commands/gate-guard.md`.
+  deliberate, documented exception is the **gate-guard hook** — a local `PreToolUse`
+  mechanical block, on by default and unconditional whenever the active epic has
+  `reconcileNeeded: true` (`set-gate-guard off` does not bypass that case); see
+  `commands/gate-guard.md`.
 - **Release discipline.** A feature: (1) bumps `.claude-plugin/plugin.json` `version`; (2) adds
   a `CHANGELOG.md` entry; (3) if the `state.json` schema changes in a way existing data must be
   *transformed* to remain valid, adds a `MIGRATIONS` entry keyed to the new release (additive,

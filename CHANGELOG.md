@@ -6,6 +6,22 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [Unreleased]
+
+### Changed
+
+- **Gate guard is now on by default whenever an epic owes a reconcile.** `gateGuardCheck()`
+  now blocks `Edit`/`Write`/`NotebookEdit` unconditionally when the active epic's
+  `reconcileNeeded` is `true`, regardless of the repo's `gateGuard` setting in
+  `state.json` — `set-gate-guard off` no longer bypasses this specific case. Applies
+  retroactively to any epic that already has `reconcileNeeded: true`, not just future detour
+  POPs. Reverses the original opt-in design after real-usage feedback
+  (`docs/feedback/2026-07-14-pm-plugin-improvement-feedback.md`) showed the guard had never
+  actually been turned on across several sessions where it would have caught a real skip. The
+  repo-level `gateGuard` flag and `set-gate-guard on|off` command still exist, reserved for any
+  future generalization of the hook to other checks. See `commands/gate-guard.md` and the
+  `conductor` skill's POP protocol.
+
 ## [0.12.2] — 2026-07-15
 
 ### Added
