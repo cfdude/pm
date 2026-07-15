@@ -561,7 +561,7 @@ function buildBrief(state) {
   const active = activeEpic && activeEpic.status !== "archived" ? activeEpic : null;
   if (active) {
     const autonomous = getAutonomy(active).level === "autonomous" ? ", 🤖 autonomous" : "";
-    L.push(`NOW: \`${active.id}\` (${active.lane}, ${active.role}, ${active.priority}${autonomous}) — ${bar(active.progress)}`);
+    L.push(`NOW: \`${active.id}\` (${active.lane}, ${active.role}, ${active.priority}${autonomous}) — ${bar(active.progress)}${staleMarker(active)}`);
     if (active.reconcileNeeded)
       L.push(`  ⚠ RECONCILE PENDING: re-validate this proposal before continuing (a detour touched shared code).`);
   } else if (activeEpic && activeEpic.status === "archived") {
@@ -589,7 +589,7 @@ function buildBrief(state) {
     L.push("NEXT UP (by priority, then lane):");
     for (const e of queued.slice(0, NEXT_CAP)) {
       const pa = e.parent ? `, parent: \`${e.parent}\`` : "";
-      L.push(`  • \`${e.id}\` (${e.priority}, ${e.lane}, ${e.status}${pa}) — ${bar(e.progress)}`);
+      L.push(`  • \`${e.id}\` (${e.priority}, ${e.lane}, ${e.status}${pa}) — ${bar(e.progress)}${staleMarker(e)}`);
     }
     if (queued.length > NEXT_CAP) L.push(`  (+${queued.length - NEXT_CAP} more — see PROJECT.md)`);
     const counts = {};
@@ -661,7 +661,7 @@ function render() {
   md.push("## Now");
   md.push("");
   if (active) {
-    md.push(`**\`${active.id}\`** — ${active.title} (${active.role}, ${active.priority}) — ${bar(active.progress)}`);
+    md.push(`**\`${active.id}\`** — ${active.title} (${active.role}, ${active.priority}) — ${bar(active.progress)}${staleMarker(active)}`);
     if (active.reconcileNeeded) {
       md.push("");
       md.push("⚠ **Reconcile pending** — re-validate this proposal before continuing.");
@@ -707,7 +707,7 @@ function render() {
       progress = progress === "—" ? rollup : `${rollup} · ${progress}`;
     }
     const autonomous = getAutonomy(e).level === "autonomous" ? " 🤖" : "";
-    md.push(`| ${e.priority} | ${indent}\`${e.id}\` | ${e.lane} | ${e.role} | ${e.status}${e.reconcileNeeded ? " ⚠" : ""}${miss}${autonomous} | ${progress} | ${links} |`);
+    md.push(`| ${e.priority} | ${indent}\`${e.id}\` | ${e.lane} | ${e.role} | ${e.status}${e.reconcileNeeded ? " ⚠" : ""}${miss}${autonomous}${staleMarker(e)} | ${progress} | ${links} |`);
   };
   const seen = new Set();
   const emit = (e, depth) => {
@@ -1144,8 +1144,31 @@ function addMany() {
 function activate(state, id) {
   for (const e of state.epics) if (e.status === "active" && e.id !== id) e.status = "queued";
   const t = state.epics.find(e => e.id === id);
-  if (t) t.status = "active";
+  if (t) {
+    t.status = "active";
+    // Stamp startedAt only once — re-activating (e.g. resuming after a demotion)
+    // must not reset the clock used for staleness/velocity tracking.
+    if (!t.startedAt) t.startedAt = new Date().toISOString();
+  }
   state.active = id;
+}
+
+const STALE_DAYS = 14;
+
+/** Days elapsed since `startedAt`, or null if the epic has no startedAt (never activated)
+ *  or is already completed (completedAt set) — a finished epic is never "stale". */
+function daysActive(epic) {
+  if (!epic.startedAt || epic.completedAt) return null;
+  const started = Date.parse(epic.startedAt);
+  if (Number.isNaN(started)) return null;
+  return Math.floor((Date.now() - started) / (24 * 60 * 60 * 1000));
+}
+
+/** `⚠ stale, Nd active` marker for an epic that's been active more than STALE_DAYS with
+ *  no completedAt — surfaced in both PROJECT.md's table and the brief's NOW/NEXT UP lines. */
+function staleMarker(epic) {
+  const d = daysActive(epic);
+  return d !== null && d > STALE_DAYS ? ` ⚠ stale, ${d}d active` : "";
 }
 
 /** `set-active <id>` — the CLI verb for the top-level active pointer (positional id). */
@@ -1235,6 +1258,10 @@ function updateEpic() {
   if (status !== undefined) epic.status = status;
   if (str(f.priority) !== undefined) epic.priority = str(f.priority);
   if (links !== undefined) epic.links = links;
+
+  // Stamp completedAt the moment an epic transitions TO archived (not merely re-saved
+  // while already archived) — supports velocity tracking off startedAt/completedAt.
+  if (status === "archived" && !epic.completedAt) epic.completedAt = new Date().toISOString();
 
   // Keep .active consistent with status — the two must never disagree.
   if (epic.status === "active") activate(state, id);

@@ -1676,3 +1676,80 @@ test("the engine banner is suppressed when PM_QUIET_ENGINE_BANNER is set", () =>
   const r = runCombined(["render"], { cwd, env: { PM_QUIET_ENGINE_BANNER: "1" } });
   assert.doesNotMatch(r, /conductor: engine/);
 });
+
+// ─────────────── timestamps + staleness ───────────────
+
+test("set-active stamps startedAt (ISO string) on first activation, and does not reset it on re-activation", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code"], { cwd });
+  run(["add-epic", "--id", "b", "--lane", "claude-code"], { cwd });
+  run(["set-active", "a"], { cwd });
+  const s1 = readState(cwd);
+  const a1 = s1.epics.find(e => e.id === "a");
+  assert.ok(a1.startedAt, "startedAt stamped");
+  assert.ok(!Number.isNaN(Date.parse(a1.startedAt)), "startedAt is a valid ISO string");
+
+  run(["set-active", "b"], { cwd });      // demotes a
+  run(["set-active", "a"], { cwd });      // re-activate a
+  const s2 = readState(cwd);
+  const a2 = s2.epics.find(e => e.id === "a");
+  assert.equal(a2.startedAt, a1.startedAt, "re-activation does not reset startedAt");
+});
+
+test("update-epic --status archived stamps completedAt", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code"], { cwd });
+  run(["set-active", "a"], { cwd });
+  run(["update-epic", "a", "--status", "archived"], { cwd });
+  const s = readState(cwd);
+  const a = s.epics.find(e => e.id === "a");
+  assert.ok(a.completedAt, "completedAt stamped");
+  assert.ok(!Number.isNaN(Date.parse(a.completedAt)), "completedAt is a valid ISO string");
+});
+
+test("update-epic --status queued (not archived) does not stamp completedAt", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code"], { cwd });
+  run(["set-active", "a"], { cwd });
+  run(["update-epic", "a", "--status", "queued"], { cwd });
+  const s = readState(cwd);
+  assert.equal(s.epics.find(e => e.id === "a").completedAt, undefined);
+});
+
+test("PROJECT.md and the brief flag a stale epic (startedAt > 14 days ago, no completedAt)", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code"], { cwd });
+  run(["set-active", "a"], { cwd });
+  const s = readState(cwd);
+  const staleDate = new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString();
+  s.epics.find(e => e.id === "a").startedAt = staleDate;
+  writeState(cwd, s);
+  run(["render"], { cwd });
+  const md = projectMd(cwd);
+  assert.match(md, /⚠ stale, 20d active/);
+  const brief = parseBrief(cwd);
+  assert.match(brief, /⚠ stale, 20d active/);
+});
+
+test("an epic active fewer than 14 days is not flagged stale", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code"], { cwd });
+  run(["set-active", "a"], { cwd });
+  run(["render"], { cwd });
+  const md = projectMd(cwd);
+  assert.doesNotMatch(md, /stale/);
+});
+
+test("a completed epic is never flagged stale, even if startedAt is old", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code"], { cwd });
+  run(["set-active", "a"], { cwd });
+  run(["update-epic", "a", "--status", "archived"], { cwd });
+  const s = readState(cwd);
+  const a = s.epics.find(e => e.id === "a");
+  a.startedAt = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  writeState(cwd, s);
+  run(["render"], { cwd });
+  const md = projectMd(cwd);
+  assert.doesNotMatch(md, /stale/);
+});
