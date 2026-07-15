@@ -8,6 +8,18 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Category-based `--preauthorize` shorthand for epic-level autonomy.** `set-autonomy <id>
+  --preauthorize "category:<filesystem|network|schema|external-api>:<reason>"` grants routine
+  actions by category instead of requiring every one enumerated individually. Stored as a
+  distinct `{ category, reason?, grantedAt }` grant shape alongside existing exact-action
+  `{ action, reason?, grantedAt }` grants in the same `preAuthorized[]` array — exact-action
+  matching is unchanged. Unknown categories are rejected with a non-zero exit and no state
+  write. The matching heuristic each category expands to at decision-rule time (approximate
+  by design) is documented in the `conductor` skill's "Epic-level autonomy — the preflight
+  scan" section.
+
 ### Changed
 
 - **Epic-level-autonomy decision rule now says "`--notify` incrementally as it happens," not

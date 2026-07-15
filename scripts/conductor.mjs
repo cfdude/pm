@@ -51,6 +51,11 @@ const PLANS_DIR = path.join(ROOT, "docs", "superpowers", "plans");
 const KNOWN_LANES = ["openspec", "superpowers", "claude-code", "decision", "external"];
 const KNOWN_STATUSES = ["untriaged", "queued", "active", "paused", "later", "blocked", "planned", "archived"];
 const KNOWN_AUTONOMY_LEVELS = ["off", "autonomous"];
+// Default category taxonomy for the `--preauthorize "category:<name>:<reason>"` shorthand —
+// see the `conductor` skill's "Epic-level autonomy" section for the matching heuristic each
+// category expands to at decision-rule time. Additive-only convention: adding a category here
+// is not a breaking change for existing preAuthorized entries.
+const KNOWN_PREAUTHORIZE_CATEGORIES = ["filesystem", "network", "schema", "external-api"];
 const KNOWN_REVIEW_MODES = ["off", "standard", "thorough"];
 const LANE_RANK = { openspec: 0, superpowers: 1, "claude-code": 2, decision: 3, external: 4 };
 const laneRank = (l) => (l in LANE_RANK ? LANE_RANK[l] : 9);
@@ -460,10 +465,16 @@ function rulesBlock(tracker, reviewMode) {
     "   the epic's full source, produce a short batch of destructive-risk-points +",
     "   genuine-unknowns questions, get the user's answers, THEN record them:",
     "   `set-autonomy <id> --preauthorize \"<action>:<reason>\"` / `--context \"<note>\"`, and only",
-    "   then `set-autonomy <id> --level autonomous`.",
+    "   then `set-autonomy <id> --level autonomous`. For routine, repeated categories of action",
+    "   instead of enumerating each one, use the shorthand",
+    "   `--preauthorize \"category:<filesystem|network|schema|external-api>:<reason>\"` — see the",
+    "   `conductor` skill's \"Epic-level autonomy\" section for the exact keyword heuristic each",
+    "   category matches at decision-rule time.",
     "2. **Execution-time decision rule** — check every destructive action against these, in",
     "   order, before treating it as a stop:",
-    "   a. Already pre-authorized in the preflight? → proceed, record via `--notify`.",
+    "   a. Already pre-authorized in the preflight — either an exact `action` match or the",
+    "      action falls under a granted `category` (per the category heuristic)? → proceed,",
+    "      record via `--notify`.",
     "   b. No backup/restore path exists? → STOP regardless of autonomy level.",
     "   c. Destructive but restorable (backed up first)? → WARN — `--notify` it immediately, proceed.",
     "   d. No context to act on? → STOP — a real gap, not a false stall.",
@@ -1361,10 +1372,15 @@ function removeEpic() {
 // ---------- autonomy ----------
 
 /** `set-autonomy <id> [--level off|autonomous] [--preauthorize "<action>:<reason>"]
- *  [--context "<note>"] [--notify "<what>"]` — writes/merges an epic's `autonomy` block.
- *  Every flag is additive (repeated calls APPEND to preAuthorized/context/notifications,
- *  never clobber) except --level, which replaces. Pure local state write — no external
- *  calls, consistent with the engine's instruction-layer law. */
+ *  [--preauthorize "category:<name>:<reason>"] [--context "<note>"] [--notify "<what>"]` —
+ *  writes/merges an epic's `autonomy` block. Every flag is additive (repeated calls APPEND
+ *  to preAuthorized/context/notifications, never clobber) except --level, which replaces.
+ *  A `--preauthorize` value starting with "category:" is stored as a category-based grant
+ *  (`{ category, reason, grantedAt }`, no `action` field) distinct from an exact-action grant
+ *  (`{ action, reason, grantedAt }`, no `category` field) — see KNOWN_PREAUTHORIZE_CATEGORIES
+ *  and the `conductor` skill's "Epic-level autonomy" section for the matching heuristic each
+ *  category expands to at decision-rule time. Pure local state write — no external calls,
+ *  consistent with the engine's instruction-layer law. */
 function setAutonomy() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const argv = process.argv.slice(3);
@@ -1372,7 +1388,8 @@ function setAutonomy() {
   if (!id) {
     process.stderr.write(
       "usage: conductor.mjs set-autonomy <id> [--level off|autonomous] " +
-      "[--preauthorize \"<action>:<reason>\"] [--context \"<note>\"] [--notify \"<what>\"]\n");
+      "[--preauthorize \"<action>:<reason>\"] [--preauthorize \"category:<filesystem|network|schema|external-api>:<reason>\"] " +
+      "[--context \"<note>\"] [--notify \"<what>\"]\n");
     process.exit(1);
   }
   const f = parseFlags(argv.slice(1));
@@ -1391,6 +1408,24 @@ function setAutonomy() {
 
   for (const s of (f.preauthorize || [])) {
     if (typeof s !== "string") continue;
+    if (s.startsWith("category:")) {
+      // "category:<name>:<reason>" — shorthand covering any action the decision rule matches
+      // to that category, instead of enumerating each specific action string. See the
+      // `conductor` skill's "Epic-level autonomy" section for the matching heuristic.
+      const rest = s.slice("category:".length);
+      const i = rest.indexOf(":");
+      const category = (i === -1 ? rest : rest.slice(0, i)).trim();
+      const reason = i === -1 ? undefined : rest.slice(i + 1).trim();
+      if (!KNOWN_PREAUTHORIZE_CATEGORIES.includes(category)) {
+        process.stderr.write(
+          `conductor: --preauthorize category must be one of ${KNOWN_PREAUTHORIZE_CATEGORIES.join("|")}\n`);
+        process.exit(1);
+      }
+      const entry = { category, grantedAt: new Date().toISOString() };
+      if (reason) entry.reason = reason;
+      a.preAuthorized = [...a.preAuthorized, entry];
+      continue;
+    }
     const i = s.indexOf(":");
     const action = i === -1 ? s.trim() : s.slice(0, i).trim();
     const reason = i === -1 ? undefined : s.slice(i + 1).trim();
