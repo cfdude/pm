@@ -168,6 +168,7 @@ you have connected.
 | `/pm:epic add --id X --title "…" --lane L --priority P [--status S] [--parent ID] [--external-id KEY]` | Register any epic directly (all lanes); optionally nest under a parent or link a tracker issue |
 | `/pm:epic` → `add-many --from <path\|->` | Atomically bulk-create a parent + children from a JSON batch |
 | `/pm:epic` → `update-epic <id> [--title …] [--external-id …] [--parent …] [--status …]` | Update an existing epic (write-back path for recording tracker keys and title corrections) |
+| `/pm:epic` → `remove-epic <id> [--cascade]` | Hard-delete an epic (blocked by default if it has children; `--cascade` removes it and its descendants); strips dangling `links[]` referencing it from other epics |
 | `/pm:epic` → `set-active <id>` / `clear-active` | Set/clear the top-level active epic via the CLI (keeps `.active` and `status: active` in sync) |
 | `set-autonomy <id> [--level off\|autonomous] [--preauthorize …] [--context …] [--notify …]` | Grant an epic broad execution trust after a preflight risk-scan (see the `conductor` skill) |
 | `set-review-mode --mode off\|standard\|thorough` | The repo's bounded review-count dial (default: `standard`) |

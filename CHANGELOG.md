@@ -6,6 +6,22 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.11.0] — 2026-07-15
+
+### Added
+
+- **`remove-epic <id> [--cascade]` — hard-delete an epic**, replacing the raw `git checkout`
+  workaround that was the only prior recovery from a mis-registered epic. Blocked by default if
+  the epic has children: prints a concise `(id, title, lane/priority/status)` table of the parent
+  plus every child and exits non-zero, so removing a parent with descendants is always a
+  deliberate, informed choice; `--cascade` removes the epic and all descendants together in one
+  atomic write. Any other epic's `links[]` entries referencing a removed id are stripped
+  automatically, with a warning naming the affected epics. Recoverable only via git history —
+  deliberately no in-app undo, since this verb exists specifically to replace that workaround, not
+  add a softer one next to it.
+
+---
+
 ## [0.10.0] — 2026-07-14
 
 ### Added

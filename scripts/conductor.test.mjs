@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -19,6 +19,17 @@ export function run(args, { cwd, env = {}, input } = {}) {
     encoding: "utf8",
     input,
   });
+}
+/** Like run(), but returns stdout+stderr combined — for commands whose confirmation
+ *  message (e.g. remove-epic's "stripped dangling link" warning) is on stderr. */
+export function runCombined(args, { cwd, env = {}, input } = {}) {
+  const r = spawnSync("node", [ENGINE, ...args], {
+    cwd,
+    env: { ...process.env, CLAUDE_PROJECT_DIR: cwd, PM_CACHE_ROOT: EMPTY_CACHE, ...env },
+    encoding: "utf8",
+    input,
+  });
+  return (r.stdout || "") + (r.stderr || "");
 }
 export function readState(cwd) {
   return JSON.parse(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"));
@@ -1484,4 +1495,90 @@ test("plan-hierarchy requires --parent", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
   assert.ok(expectFail(() => run(["plan-hierarchy"], { cwd })));
+});
+
+// ---------- remove-epic ----------
+
+test("remove-epic hard-deletes a childless, unreferenced epic", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code"], { cwd });
+  run(["remove-epic", "a"], { cwd });
+  const state = readState(cwd);
+  assert.ok(!state.epics.some(e => e.id === "a"));
+});
+
+test("remove-epic clears the active pointer when the removed epic was active", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code", "--status", "active"], { cwd });
+  run(["remove-epic", "a"], { cwd });
+  const state = readState(cwd);
+  assert.equal(state.active, null);
+});
+
+test("remove-epic strips dangling links[] from other epics and warns", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code"], { cwd });
+  run(["add-epic", "--id", "b", "--lane", "claude-code", "--link", "depends-on:a"], { cwd });
+  const out = runCombined(["remove-epic", "a"], { cwd });
+  const state = readState(cwd);
+  const b = state.epics.find(e => e.id === "b");
+  assert.deepEqual(b.links, []);
+  assert.match(out, /stripped dangling link/);
+  assert.match(out, /\bb\b/);
+});
+
+test("remove-epic blocks removal of an epic with children by default, printing a table", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "parent", "--lane", "claude-code", "--title", "Parent epic"], { cwd });
+  run(["add-epic", "--id", "child1", "--lane", "claude-code", "--parent", "parent", "--title", "Child one"], { cwd });
+  run(["add-epic", "--id", "child2", "--lane", "claude-code", "--parent", "parent", "--title", "Child two"], { cwd });
+  const err = expectFail(() => run(["remove-epic", "parent"], { cwd }));
+  assert.ok(err);
+  const out = String(err.stdout || "") + String(err.stderr || "");
+  assert.match(out, /child1/);
+  assert.match(out, /child2/);
+  assert.match(out, /--cascade/);
+  const state = readState(cwd);
+  assert.ok(state.epics.some(e => e.id === "parent"));
+  assert.ok(state.epics.some(e => e.id === "child1"));
+});
+
+test("remove-epic blocked-removal preview includes grandchildren, not just direct children", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "parent", "--lane", "claude-code"], { cwd });
+  run(["add-epic", "--id", "child", "--lane", "claude-code", "--parent", "parent"], { cwd });
+  run(["add-epic", "--id", "grandchild", "--lane", "claude-code", "--parent", "child"], { cwd });
+  const err = expectFail(() => run(["remove-epic", "parent"], { cwd }));
+  assert.ok(err);
+  const out = String(err.stdout || "") + String(err.stderr || "");
+  assert.match(out, /grandchild/);
+  assert.match(out, /2 descendant\(s\) total/);
+});
+
+test("remove-epic --cascade removes a parent and all its descendants", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "parent", "--lane", "claude-code"], { cwd });
+  run(["add-epic", "--id", "child1", "--lane", "claude-code", "--parent", "parent"], { cwd });
+  run(["add-epic", "--id", "grandchild", "--lane", "claude-code", "--parent", "child1"], { cwd });
+  run(["remove-epic", "parent", "--cascade"], { cwd });
+  const state = readState(cwd);
+  assert.equal(state.epics.length, 0);
+});
+
+test("remove-epic rejects an unknown id", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  assert.ok(expectFail(() => run(["remove-epic", "ghost"], { cwd })));
+});
+
+test("remove-epic requires a positional id", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  assert.ok(expectFail(() => run(["remove-epic"], { cwd })));
 });

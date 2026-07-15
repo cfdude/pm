@@ -90,6 +90,31 @@ field — this is the intended CLI path to fix a malformed link (recorded with a
 Pass every link you want the epic to have; omitting `--link` entirely leaves existing links
 untouched.
 
+## Remove an epic — `remove-epic`
+
+The only prior recovery from a mis-registered epic was a raw `git checkout` on `state.json`.
+`remove-epic` hard-deletes an epic (recoverable only via git history — there is no in-app undo,
+by design: this replaces the git-checkout workaround, it doesn't add a softer one):
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" remove-epic <id> [--cascade]
+```
+
+- **Dangling links are cleaned up automatically.** Any other epic's `links[]` entries that
+  reference the removed id are stripped, and the command reports which epics were affected — a
+  dangling reference is worse than a silently smaller graph.
+- **Blocked by default if the epic has any descendants** (`parent: <id>`, walked recursively —
+  children, grandchildren, etc.). The command prints a short `(id, title, lane/priority/status)`
+  table of the parent plus every descendant at any depth and exits non-zero — reassign or remove
+  the descendants first, or pass `--cascade` to remove the epic and *all* of its descendants
+  together in one atomic write. The preview table and `--cascade`'s actual blast radius always
+  agree — a human confirming from the table is confirming the real deletion set, not just the
+  direct children.
+- **`--cascade` is a real "delete N epics" action** — before you run it, show the human the table
+  the blocked attempt printed and get explicit confirmation. The engine has no interactive
+  prompt of its own; that confirmation step is the agent's job, not the CLI's.
+- If the removed epic was `.active`, the pointer is cleared automatically.
+
 ## Set the active epic — `set-active` / `clear-active`
 
 The top-level `.active` pointer (what the briefing's "NOW" line reads) has its own verbs — never

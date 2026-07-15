@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": null,
+  "active": "remove-epic-verb",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -14,7 +14,7 @@
     },
     {
       "id": "epic-hierarchy-orchestration",
-      "title": "Epic-hierarchy orchestration — run a parent epic's children unattended (see docs/vision/2026-07-14-autonomy-orchestration-vision.md, section B)",
+      "title": "Epic-hierarchy orchestration \u2014 run a parent epic's children unattended (see docs/vision/2026-07-14-autonomy-orchestration-vision.md, section B)",
       "priority": "P2",
       "status": "archived",
       "role": "epic",
@@ -24,7 +24,7 @@
     },
     {
       "id": "portfolio-architecture-consistency-scan",
-      "title": "Portfolio/architecture-consistency scanning across the backlog (see docs/vision/2026-07-14-autonomy-orchestration-vision.md, section C — least-scoped of the three, needs its own brainstorm)",
+      "title": "Portfolio/architecture-consistency scanning across the backlog (see docs/vision/2026-07-14-autonomy-orchestration-vision.md, section C \u2014 least-scoped of the three, needs its own brainstorm)",
       "priority": "P3",
       "status": "planned",
       "role": "epic",
@@ -40,7 +40,7 @@
     },
     {
       "id": "infra-runbook-preflight",
-      "title": "Wire infra-runbook preflight (~/Servers/infra-playbooks) into pm's epic/hierarchy preflight (see docs/vision/2026-07-14-autonomy-orchestration-vision.md, section D — cheapest of the three, existing convention just needs wiring)",
+      "title": "Wire infra-runbook preflight (~/Servers/infra-playbooks) into pm's epic/hierarchy preflight (see docs/vision/2026-07-14-autonomy-orchestration-vision.md, section D \u2014 cheapest of the three, existing convention just needs wiring)",
       "priority": "P2",
       "status": "archived",
       "role": "epic",
@@ -50,7 +50,7 @@
     },
     {
       "id": "pm-plugin-improvements-2026-07-14",
-      "title": "pm plugin improvements from three dogfooding sessions (2026-07-14) — see docs/feedback/2026-07-14-pm-plugin-improvement-feedback.md",
+      "title": "pm plugin improvements from three dogfooding sessions (2026-07-14) \u2014 see docs/feedback/2026-07-14-pm-plugin-improvement-feedback.md",
       "priority": "P2",
       "status": "queued",
       "role": "epic",
@@ -60,7 +60,7 @@
     },
     {
       "id": "gate-guard-default-on-reconcile",
-      "title": "Flip gate-guard default to ON for epics with reconcileOnResume — reverses the deliberate opt-in choice, approved after real-usage feedback showed it's never been turned on",
+      "title": "Flip gate-guard default to ON for epics with reconcileOnResume \u2014 reverses the deliberate opt-in choice, approved after real-usage feedback showed it's never been turned on",
       "priority": "P1",
       "status": "queued",
       "role": "epic",
@@ -71,7 +71,7 @@
     },
     {
       "id": "diffshape-minimal-detour-inference",
-      "title": "Auto-detect an unlogged minimal detour from commit/diff shape and log it without a manual /pm:detour --minimal invocation — 3 sessions converge on this, user's #1 priority",
+      "title": "Auto-detect an unlogged minimal detour from commit/diff shape and log it without a manual /pm:detour --minimal invocation \u2014 3 sessions converge on this, user's #1 priority",
       "priority": "P1",
       "status": "queued",
       "role": "epic",
@@ -82,18 +82,63 @@
     },
     {
       "id": "remove-epic-verb",
-      "title": "Add a remove-epic (or soft-delete/archive-with-reason) CLI verb — the only current recovery from a mis-registered epic is a raw git checkout",
+      "title": "Add a remove-epic (or soft-delete/archive-with-reason) CLI verb \u2014 the only current recovery from a mis-registered epic is a raw git checkout",
       "priority": "P2",
-      "status": "queued",
+      "status": "active",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
-      "parent": "pm-plugin-improvements-2026-07-14"
+      "parent": "pm-plugin-improvements-2026-07-14",
+      "autonomy": {
+        "level": "autonomous",
+        "preAuthorized": [
+          {
+            "action": "hard-delete an epic with zero children and strip any dangling links referencing it, printing a warning",
+            "grantedAt": "2026-07-15T06:28:16.289Z",
+            "reason": "matches recorded decision, routine case"
+          },
+          {
+            "action": "block (not silently allow) removal of an epic that still has children, surfacing a table for human review",
+            "grantedAt": "2026-07-15T06:28:16.330Z",
+            "reason": "matches recorded decision, default-safe path"
+          }
+        ],
+        "context": [
+          "Decisions from preflight Q&A: (1) hard delete (splice from array) \u2014 recoverable only via git history, matching the git-checkout workaround this replaces; (2) dangling links[] in OTHER epics referencing the removed id are stripped automatically and a warning naming affected epics is printed; (3) removal of an epic with children is BLOCKED BY DEFAULT \u2014 prints a concise table (id, title, short summary) of the parent + all children \u2014 with a --cascade flag as an explicit escape hatch to remove the parent and all descendants in one go; the agent must surface this table and get explicit human confirmation before ever passing --cascade, since the engine itself has no interactive prompt"
+        ],
+        "notifications": []
+      },
+      "stories": [
+        {
+          "title": "Preflight scan + Q&A recorded via set-autonomy",
+          "done": true
+        },
+        {
+          "title": "TDD: remove-epic hard-delete, --cascade, link-stripping, active-clear tests",
+          "done": true
+        },
+        {
+          "title": "Implement removeEpic() + epicSummaryTable() + dispatch registration",
+          "done": true
+        },
+        {
+          "title": "commands/epic.md + README.md docs",
+          "done": true
+        },
+        {
+          "title": "CHANGELOG 0.11.0 + version bump",
+          "done": true
+        },
+        {
+          "title": "Fresh-context code review (standard review mode)",
+          "done": false
+        }
+      ]
     },
     {
       "id": "fix-archived-no-change-warning",
-      "title": "Fix missing() to exclude status===archived — an already-closed epic can show an unresolvable '⚠ no change on disk' warning forever",
+      "title": "Fix missing() to exclude status===archived \u2014 an already-closed epic can show an unresolvable '\u26a0 no change on disk' warning forever",
       "priority": "P2",
       "status": "queued",
       "role": "epic",
@@ -104,7 +149,7 @@
     },
     {
       "id": "reconciler-structured-writeback",
-      "title": "Reconciler returns a structured {valid, amendments} verdict AND writes it back onto the relevant link — currently the judgment only ever lives in conversation",
+      "title": "Reconciler returns a structured {valid, amendments} verdict AND writes it back onto the relevant link \u2014 currently the judgment only ever lives in conversation",
       "priority": "P2",
       "status": "queued",
       "role": "epic",
@@ -126,7 +171,7 @@
     },
     {
       "id": "autonomy-hierarchy-adoption-investigation",
-      "title": "Investigate why epic-level autonomy and epic-hierarchy orchestration show zero real-world usage in at least one dogfooding repo — ceremony weight vs discoverability vs genuinely not needed",
+      "title": "Investigate why epic-level autonomy and epic-hierarchy orchestration show zero real-world usage in at least one dogfooding repo \u2014 ceremony weight vs discoverability vs genuinely not needed",
       "priority": "P2",
       "status": "queued",
       "role": "epic",
@@ -159,7 +204,7 @@
     },
     {
       "id": "dependency-aware-standalone-ordering",
-      "title": "Extend plan-hierarchy's depends-on topological sort to top-level queued epics generally, not just parent/child hierarchies — the same starvation problem exists at the top-level queue",
+      "title": "Extend plan-hierarchy's depends-on topological sort to top-level queued epics generally, not just parent/child hierarchies \u2014 the same starvation problem exists at the top-level queue",
       "priority": "P2",
       "status": "queued",
       "role": "epic",
@@ -181,7 +226,7 @@
     },
     {
       "id": "epic-timestamps-and-staleness",
-      "title": "Add startedAt/completedAt timestamps to epics, and surface a staleness/days-active indicator in PROJECT.md and /pm:next — supports velocity tracking and the weekly Ship-Real-Software check",
+      "title": "Add startedAt/completedAt timestamps to epics, and surface a staleness/days-active indicator in PROJECT.md and /pm:next \u2014 supports velocity tracking and the weekly Ship-Real-Software check",
       "priority": "P2",
       "status": "queued",
       "role": "epic",
@@ -203,7 +248,7 @@
     },
     {
       "id": "incremental-notify-timing-fix",
-      "title": "Clarify the epic-level-autonomy decision rule's wording so WARN-class decisions are --notify'd incrementally as they happen, not just gathered for the end-of-epic report — a compaction-safety fix using the mechanism that already exists",
+      "title": "Clarify the epic-level-autonomy decision rule's wording so WARN-class decisions are --notify'd incrementally as they happen, not just gathered for the end-of-epic report \u2014 a compaction-safety fix using the mechanism that already exists",
       "priority": "P2",
       "status": "queued",
       "role": "epic",
@@ -214,7 +259,7 @@
     },
     {
       "id": "cross-repo-epic-dependency-investigation",
-      "title": "Investigate a mechanism for cross-repo epic dependencies — links currently only reference epics within one repo, but real cross-repo dependencies exist (e.g. a deploy epic depending on infra-playbooks conventions)",
+      "title": "Investigate a mechanism for cross-repo epic dependencies \u2014 links currently only reference epics within one repo, but real cross-repo dependencies exist (e.g. a deploy epic depending on infra-playbooks conventions)",
       "priority": "P3",
       "status": "queued",
       "role": "epic",
@@ -236,7 +281,7 @@
     },
     {
       "id": "ai-feedback-loop-github-issues",
-      "title": "Skill-driven /pm:feedback command — post a bug report or feature request as a GitHub issue on cfdude/pm directly from any Claude Code session using the plugin",
+      "title": "Skill-driven /pm:feedback command \u2014 post a bug report or feature request as a GitHub issue on cfdude/pm directly from any Claude Code session using the plugin",
       "priority": "P2",
       "status": "queued",
       "role": "epic",
@@ -246,7 +291,7 @@
     },
     {
       "id": "github-issue-tracker-sync",
-      "title": "GitHub issue tracker: extend set-tracker/sync so open cfdude/pm issues can be pulled into the conductor as untriaged epics, same pattern as OpenSpec/Superpowers auto-registration — closes the loop with ai-feedback-loop-github-issues",
+      "title": "GitHub issue tracker: extend set-tracker/sync so open cfdude/pm issues can be pulled into the conductor as untriaged epics, same pattern as OpenSpec/Superpowers auto-registration \u2014 closes the loop with ai-feedback-loop-github-issues",
       "priority": "P2",
       "status": "queued",
       "role": "epic",
@@ -283,7 +328,7 @@
     },
     {
       "id": "ci-test-lint-workflow",
-      "title": "Add a GitHub Actions workflow on cfdude/pm running node --test (and syntax/lint checks) on every PR — CI gate before merge",
+      "title": "Add a GitHub Actions workflow on cfdude/pm running node --test (and syntax/lint checks) on every PR \u2014 CI gate before merge",
       "priority": "P2",
       "status": "queued",
       "role": "epic",
@@ -294,7 +339,7 @@
     },
     {
       "id": "autonomous-issue-resolution-agent",
-      "title": "Research + design an autonomous issue-to-PR pipeline for cfdude/pm: a GitHub-Actions-hosted Claude agent that analyzes a validated issue, implements a fix on a branch, and opens a PR; a CI check gates that the PR genuinely came from this trusted automation (not a spoofed external PR); the user remains the final human approver/merger always. Needs its own research pass (what mechanism — an official Claude Code GitHub Action, a custom Claude API workflow, something else) before any design — substantially bigger and more novel than the other two governance items.",
+      "title": "Research + design an autonomous issue-to-PR pipeline for cfdude/pm: a GitHub-Actions-hosted Claude agent that analyzes a validated issue, implements a fix on a branch, and opens a PR; a CI check gates that the PR genuinely came from this trusted automation (not a spoofed external PR); the user remains the final human approver/merger always. Needs its own research pass (what mechanism \u2014 an official Claude Code GitHub Action, a custom Claude API workflow, something else) before any design \u2014 substantially bigger and more novel than the other two governance items.",
       "priority": "P3",
       "status": "queued",
       "role": "epic",
