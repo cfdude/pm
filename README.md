@@ -172,7 +172,7 @@ you have connected.
 | `/pm:epic` → `set-active <id>` / `clear-active` | Set/clear the top-level active epic via the CLI (keeps `.active` and `status: active` in sync) |
 | `set-autonomy <id> [--level off\|autonomous] [--preauthorize …] [--context …] [--notify …]` | Grant an epic broad execution trust after a preflight risk-scan (see the `conductor` skill) |
 | `set-review-mode --mode off\|standard\|thorough` | The repo's bounded review-count dial (default: `standard`) |
-| `/pm:gate-guard` → `set-gate-guard on\|off` | Optional, opt-in hard `PreToolUse` guard blocking source writes while the active epic still owes a reconcile (off by default) |
+| `/pm:gate-guard` → `set-gate-guard on\|off` | Hard `PreToolUse` guard blocking source writes while the active epic still owes a reconcile — on by default and unconditional for that case (`set-gate-guard off` no longer bypasses it) |
 | `/pm:tracker` | Make the conductor aware of an external tracker (Jira/GitHub/Linear); detect → confirm → `set-tracker` |
 | `/pm:upgrade` | Refresh CLAUDE.md rules, run migrations, update `pmVersion`, and print the changelog delta for the versions it crossed |
 | `/pm:changelog [--since X]` | Show what changed in the plugin since a version (default: this repo's stamped version) |
@@ -274,7 +274,7 @@ skills/conductor/SKILL.md    the discipline (detour classification, PUSH/POP, re
                               epic-level autonomy + preflight scan)
 agents/reconciler.md         fresh-context re-validation of a paused proposal
 hooks/hooks.json             SessionStart inject · PreCompact snapshot · PostToolUse nudge ·
-                              PreToolUse gate-guard (optional, opt-in)
+                              PreToolUse gate-guard (on by default for reconcile-owed epics)
 scripts/conductor.mjs        the engine (zero dependencies)
 ```
 

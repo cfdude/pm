@@ -58,8 +58,10 @@ set the top-level active epic · `set-autonomy <id>` grant an epic broad executi
 "Epic-level autonomy" below) · `plan-hierarchy --parent <id>` batched execution plan for a
 parent's children (see "Epic-hierarchy orchestration" below) · `verify-worktrees` flag orphaned
 hierarchy-dispatch worktrees · `set-review-mode` the repo's bounded review-count dial
-(off/standard/thorough) · `/pm:gate-guard` optional opt-in hard reconcile-gate backstop (off by
-default) · `/pm:tracker` make the conductor tracker-aware · `/pm:changelog` what changed since
+(off/standard/thorough) · `/pm:gate-guard` hard reconcile-gate backstop — ON BY DEFAULT for any
+epic with `reconcileNeeded: true` and cannot be turned off for that case; `set-gate-guard
+on|off` still exists but only gates any future generalization of the hook, not the
+reconcile-owed check itself · `/pm:tracker` make the conductor tracker-aware · `/pm:changelog` what changed since
 your version · `/pm:upgrade` refresh rules + run migrations + print the changelog delta.
 
 ## Hierarchy & external trackers
@@ -126,9 +128,9 @@ The step otherwise lost after compaction. Do not skip it.
    diffs what the detour shipped, and reports validity + stories to amend.
    - Invalidated → amend the proposal + `tasks.md` first, then clear `reconcileNeeded`.
    - Still valid → say so explicitly, clear `reconcileNeeded`, resume.
-   - **Optional hard backstop:** if this repo has `set-gate-guard on` set, a PreToolUse hook
-     mechanically blocks `Edit`/`Write`/`NotebookEdit` while `reconcileNeeded` is still true —
-     off by default, see `/pm:gate-guard`.
+   - **Hard backstop (on by default):** a PreToolUse hook mechanically blocks
+     `Edit`/`Write`/`NotebookEdit` while `reconcileNeeded` is still true on the active epic —
+     this is unconditional, regardless of the repo's `gateGuard` setting; see `/pm:gate-guard`.
 4. **Write a one-line Honcho memory** ("resumed `<parent>` after `<detour>`; reconcile =
    valid | amended …") via your Honcho MCP memory/conclusion tool.
 5. Render. State the exact next story to build.
@@ -292,7 +294,10 @@ active        : "<epic-id>" | null
 pmVersion     : "<semver>" — release that last touched this repo (set by init/upgrade)
 tracker?      : { system, instance?, projectKey?, mechanism?, statusIntent? }  — optional; opt-in
 reviewMode?   : "off" | "standard" | "thorough" — repo-level dial (default "standard" if unset)
-gateGuard?    : boolean — optional opt-in PreToolUse guard (default false/off)
+gateGuard?    : boolean — repo-level PreToolUse guard toggle; no longer gates the
+                reconcile-owed check (that blocks unconditionally whenever
+                reconcileNeeded is true) — reserved for any future generalization
+
 epics[]       : { id, title, priority, status, role, lane, parent?, externalId?, externalUrl?, planPath?, stories[]?, links[], reconcileNeeded?, autonomy? }
 autonomy?     : { level: "off"|"autonomous", preAuthorized[], context[], notifications[] } — per epic
 detourStack[] : { pausedEpic, pausedAt, reason, spawnedDetour, reconcileOnResume }
