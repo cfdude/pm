@@ -172,6 +172,33 @@ does **not** parse roadmap files automatically.
 
 `/pm:epic add` validates `--status` — unknown values are rejected with a clear error.
 
+## Lane routing overrides (per-repo)
+
+The lane heuristic above (`>8h`/cross-system → openspec; `2-8h` single-subsystem →
+superpowers; `<2h` tweak → claude-code; procurement/product → decision; other-repo →
+external) is generic and usually right, but some repos have a standing local rule that
+overrides it — e.g. "anything touching billing always goes through openspec regardless of
+size" or "anything titled hotfix skips design and goes straight to claude-code." Rather than
+carve that rule into CLAUDE.md prose (which nothing checks), record it as real per-repo
+config: `laneRouting.overrides` in `.conductor/state.json`, set via `set-lane-routing` and
+looked up via `suggest-lane` (see `commands/lane-routing.md` for full syntax).
+
+**When assigning a lane to a new epic** (at `/pm:epic add`, at `/pm:sync`, at hierarchy
+planning), consult overrides FIRST, before applying the generic heuristic:
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" suggest-lane "<epic title/description>"
+```
+
+- `{"lane":"<lane>","matched":"<rule>"}` — an override matched; use `<lane>`, and note which
+  rule matched if you're reporting the decision.
+- `{"lane":null,"matched":null}` — no override configured or none matched; fall back to the
+  generic heuristic as documented above.
+
+This is purely local, additive config — like `set-tracker`, the engine does not enforce
+lanes on its own (`add-epic` always still takes an explicit `--lane`); `suggest-lane` only
+surfaces the match for you to act on.
+
 ## Epic-level autonomy — the preflight scan
 
 An epic can be granted broad execution trust so it runs through phase transitions and
@@ -293,6 +320,9 @@ pmVersion     : "<semver>" — release that last touched this repo (set by init/
 tracker?      : { system, instance?, projectKey?, mechanism?, statusIntent? }  — optional; opt-in
 reviewMode?   : "off" | "standard" | "thorough" — repo-level dial (default "standard" if unset)
 gateGuard?    : boolean — optional opt-in PreToolUse guard (default false/off)
+laneRouting?  : { overrides: [{ match, lane }] } — optional per-repo lane overrides, checked
+                before the generic lane heuristic (see "Lane routing overrides" above);
+                set via set-lane-routing, looked up via suggest-lane
 epics[]       : { id, title, priority, status, role, lane, parent?, externalId?, externalUrl?, planPath?, stories[]?, links[], reconcileNeeded?, autonomy? }
 autonomy?     : { level: "off"|"autonomous", preAuthorized[], context[], notifications[] } — per epic
 detourStack[] : { pausedEpic, pausedAt, reason, spawnedDetour, reconcileOnResume }
