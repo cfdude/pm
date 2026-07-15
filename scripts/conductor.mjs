@@ -331,9 +331,15 @@ function resolveEpics(state) {
   return out;
 }
 
-/** An openspec epic with no change on disk and not archived = genuinely missing its change. */
+/** An openspec epic with no change on disk and not archived = genuinely missing its change.
+ *  Archived is checked both ways: via disk (isArchived) for epics whose status hasn't been
+ *  healed yet, and via e.status directly — an already-closed epic (status archived) has its
+ *  openspec/changes/<id> directory legitimately removed by the archive process, so there is
+ *  no change on disk BY DESIGN and it must never show the warning, regardless of whether the
+ *  on-disk archive-dir naming convention still matches. */
 function missing(e) {
-  return e.lane === "openspec" && !e.present && !isArchived(e.id) && e.status !== "planned";
+  return e.lane === "openspec" && !e.present && !isArchived(e.id) &&
+    e.status !== "planned" && e.status !== "archived";
 }
 
 function bar(p) {
