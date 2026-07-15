@@ -6,6 +6,23 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.12.2] — 2026-07-15
+
+### Added
+
+- **Engine version+source banner on every invocation.** `conductor.mjs` now prints
+  `conductor: engine <version> @ <path>` to stderr on every run (silenceable via
+  `PM_QUIET_ENGINE_BANNER=1`). Discovered live while dogfooding: `$ENGINE` resolution had
+  silently picked up the installed plugin cache's `0.12.0` copy while this repo — the plugin's
+  own source — was already at `0.12.1`, with no signal anything was stale.
+
+### Fixed
+
+- **ENGINE-resolution snippets (skill doc + every command doc) now prefer a repo-local
+  `$CLAUDE_PROJECT_DIR/scripts/conductor.mjs` before `$CLAUDE_PLUGIN_ROOT` and the installed-cache
+  fallback.** When the repo being worked on IS the pm plugin source (self-hosting), that copy is
+  always the one under active development and should win over a stale cached install.
+
 ## [0.12.1] — 2026-07-15
 
 ### Fixed
