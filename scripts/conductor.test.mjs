@@ -190,6 +190,16 @@ test("missing openspec change is marked and excluded from NEXT UP", () => {
   assert.doesNotMatch(brief, /`ghost`/);
 });
 
+test("an archived openspec epic is never flagged as missing its change, even if its change dir is gone", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  writeState(cwd, { version: 1, active: null, detourStack: [], epics: [
+    { id: "shipped", title: "shipped", priority: "P1", status: "archived", role: "epic", lane: "openspec", links: [] },
+  ]});
+  run(["render"], { cwd });
+  assert.doesNotMatch(projectMd(cwd), /no change on disk/);
+});
+
 function manyEpics(n) {
   return Array.from({ length: n }, (_, i) => ({
     id: `e${String(i).padStart(2, "0")}`, title: `e${i}`, priority: "P1",

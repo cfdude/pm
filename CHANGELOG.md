@@ -6,6 +6,18 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [Unreleased]
+
+### Fixed
+
+- **`missing()` now excludes `status === "archived"` epics.** An already-archived openspec
+  epic (proposed, built, and archived — its `openspec/changes/<id>` directory legitimately
+  moved to `openspec/specs/` by the archive process) could still render the unresolvable
+  "⚠ no change on disk" warning forever if its on-disk archive-dir name didn't match
+  `isArchived()`'s dated-prefix convention. Same class of bug already fixed for
+  `planHierarchy()` (`df-plan-hierarchy-includes-archived-children`, 0.12.1), applied here to
+  the missing-change-warning code path.
+
 ## [0.12.2] — 2026-07-15
 
 ### Added
