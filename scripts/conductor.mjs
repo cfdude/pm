@@ -955,7 +955,11 @@ function planHierarchy() {
   if (!state.epics.some(e => e.id === parent)) {
     process.stderr.write(`conductor: epic '${parent}' not found\n`); process.exit(1);
   }
-  const children = state.epics.filter(e => e.parent === parent);
+  // Archived children are done — exclude them from the plan entirely. This also means a
+  // depends-on reference to an archived sibling falls outside `childIds` below and is
+  // silently treated as "not a hierarchy dependency" (satisfied), exactly the existing
+  // behavior for a link to any epic outside the hierarchy — a done dependency imposes no wait.
+  const children = state.epics.filter(e => e.parent === parent && e.status !== "archived");
   const childIds = new Set(children.map(e => e.id));
 
   const deps = new Map(children.map(e => [e.id, new Set()]));

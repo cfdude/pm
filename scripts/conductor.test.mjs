@@ -1641,3 +1641,24 @@ test("verify-worktrees returns an empty orphaned list gracefully when the cwd is
   const out = JSON.parse(run(["verify-worktrees"], { cwd }));
   assert.deepEqual(out.orphaned, []);
 });
+
+test("plan-hierarchy excludes already-archived children from the plan", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "sprint", "--lane", "claude-code"], { cwd });
+  run(["add-epic", "--id", "done-child", "--lane", "claude-code", "--parent", "sprint", "--status", "archived"], { cwd });
+  run(["add-epic", "--id", "pending-child", "--lane", "claude-code", "--parent", "sprint"], { cwd });
+  const out = JSON.parse(run(["plan-hierarchy", "--parent", "sprint"], { cwd }));
+  const allIds = out.batches.flatMap(b => b.epics.map(e => e.id));
+  assert.ok(!allIds.includes("done-child"), "archived child should not appear in the plan");
+  assert.ok(allIds.includes("pending-child"), "non-archived child should still appear");
+});
+
+test("plan-hierarchy on a parent whose only children are all archived returns an empty batches array", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "sprint2", "--lane", "claude-code"], { cwd });
+  run(["add-epic", "--id", "done-only", "--lane", "claude-code", "--parent", "sprint2", "--status", "archived"], { cwd });
+  const out = JSON.parse(run(["plan-hierarchy", "--parent", "sprint2"], { cwd }));
+  assert.deepEqual(out.batches, []);
+});
