@@ -525,7 +525,7 @@
       "id": "branch-protection-and-pr-workflow",
       "title": "Protect main on cfdude/pm: require PRs into main (no direct pushes), operate off a dev branch, matching the ff-only dev/main convention already used elsewhere this session",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -549,7 +549,8 @@
           "Decision (from user preflight): solo-repo defaults — require PRs into main, no required-reviewer count, required status check = the CI job named 'test' (shipped in ci-test-lint-workflow, 0.14.0), squash merge only. This is a LIVE change to the real cfdude/pm GitHub repo's settings — restorable via GitHub UI/API (turn protection off / edit the ruleset) but not git-history-reversible like a code commit; --notify this action explicitly per the WARN-class decision rule rather than only reporting it at the end."
         ],
         "notifications": []
-      }
+      },
+      "completedAt": "2026-07-15T23:06:28.073Z"
     },
     {
       "id": "ci-test-lint-workflow",
