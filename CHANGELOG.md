@@ -6,6 +6,19 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.12.1] — 2026-07-15
+
+### Fixed
+
+- **`plan-hierarchy` no longer includes already-archived children in a hierarchy plan.**
+  Children were filtered by `parent` only, with no status check — a done child (e.g. one
+  already merged and archived from a prior dispatch batch) still showed up in the plan,
+  indistinguishable from real pending work. Discovered via the first live dogfood resumption
+  against `pm-plugin-improvements-2026-07-14`. Excluding `status === "archived"` from the
+  children filter also correctly makes a `depends-on` reference to an archived sibling fall
+  outside the hierarchy's dependency graph — the same existing behavior as a link to any epic
+  outside the hierarchy, since a done dependency imposes no wait.
+
 ## [0.12.0] — 2026-07-15
 
 ### Added
