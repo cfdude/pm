@@ -84,6 +84,16 @@ file a bug report or feature request for `pm` itself as a GitHub issue on `cfdud
   lacking `externalId` then record the key with `update-epic --external-id`, and transition the
   linked issue toward the `statusIntent` semantic target on each status change. The brief lists
   only unmirrored epics; it never fabricates transition drift.
+- **`github-issues` tracker (inward pull, opposite direction of the mirror above):** set via
+  `set-tracker --system github-issues --repo <owner/name>`. Open issues in that repo become NEW
+  untriaged epics, same pattern as `sync`'s existing OpenSpec-change/Superpowers-plan
+  auto-registration. As part of `/pm:sync`, the rules block tells YOU to `gh issue list --repo
+  <repo> --state open --json number,title,url,labels`, skip any issue already mapped to an epic
+  via `externalId` (dedup — re-running sync must never duplicate), and register the rest with
+  `add-epic --status untriaged --external-id <n> --external-url <url> --lane claude-code
+  --priority P2` (a `P0`/`P1`/`P2`/`P3` label overrides the P2 default). `add-epic` itself
+  rejects a duplicate `--external-id` as a second line of defense. See `commands/tracker.md` and
+  `commands/sync.md`.
 
 ## When something blocks progress: classify the detour FIRST
 
@@ -376,7 +386,8 @@ not just one epic.
 ```
 active        : "<epic-id>" | null
 pmVersion     : "<semver>" — release that last touched this repo (set by init/upgrade)
-tracker?      : { system, instance?, projectKey?, mechanism?, statusIntent? }  — optional; opt-in
+tracker?      : { system, instance?, projectKey?, mechanism?, repo?, statusIntent? }  — optional;
+                opt-in. `repo` (`owner/name`) is used by the `github-issues` inward-pull shape.
 reviewMode?   : "off" | "standard" | "thorough" — repo-level dial (default "standard" if unset)
 gateGuard?    : boolean — repo-level PreToolUse guard toggle; no longer gates the
                 reconcile-owed check (that blocks unconditionally whenever

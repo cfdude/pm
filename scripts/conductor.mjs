@@ -632,6 +632,28 @@ function rulesBlock(tracker, reviewMode) {
       "tracker issue changes materially after the preflight snapshot, treat that as decision-rule",
       "item (d) — mid-run drift is a new genuine unknown, not something autonomy silently absorbs.",
     );
+    if (sys === "github-issues" && tracker.repo) {
+      const repo = tracker.repo;
+      lines.push(
+        "",
+        `## GitHub issue sync (${repo})`,
+        "",
+        "This tracker is inward: open GitHub issues become conductor epics, same pattern as the",
+        "OpenSpec/Superpowers auto-registration `sync` already does for on-disk changes/plans. The",
+        "pm plugin NEVER calls `gh` itself — as part of running `/pm:sync`, YOU (the interactive",
+        "agent) do:",
+        `1. \`gh issue list --repo ${repo} --state open --json number,title,url,labels\`.`,
+        "2. For each issue, check whether an epic with that issue number as `externalId` already",
+        "   exists (`/pm:epic list` or read `.conductor/state.json`) — if so, skip it (already",
+        "   mirrored; re-running sync must never create a duplicate epic for the same issue).",
+        "3. Otherwise register a new untriaged epic: `add-epic --status untriaged --external-id",
+        "   <issue-number> --external-url <issue-url> --lane claude-code --priority P2`, unless a",
+        "   `P0`/`P1`/`P2`/`P3` label is present on the issue, in which case use that label's",
+        "   priority instead of the P2 default. `add-epic` itself rejects a duplicate `--external-id`",
+        "   as a second line of defense, so a stale local view can't produce a duplicate either.",
+        "4. Set `--title` from the issue title so the epic is legible before you triage it further.",
+      );
+    }
   }
   lines.push(RULES_END, "");
   return lines.join("\n");
@@ -1256,6 +1278,14 @@ function addEpic() {
   if (state.epics.some(e => e.id === id)) {
     process.stderr.write(`conductor: epic '${id}' already exists\n`); process.exit(1);
   }
+  const externalId = str(f["external-id"]);
+  if (externalId !== undefined) {
+    const dup = state.epics.find(e => e.externalId === externalId);
+    if (dup) {
+      process.stderr.write(`conductor: epic with external-id '${externalId}' already exists ('${dup.id}') — skipped\n`);
+      process.exit(1);
+    }
+  }
   let links;
   try {
     links = parseLinkFlags(f.link, new Set(state.epics.map(e => e.id)));
@@ -1732,6 +1762,7 @@ function setTracker() {
   if (str(f.instance) !== undefined) t.instance = str(f.instance);
   if (str(f.project) !== undefined) t.projectKey = str(f.project);
   if (str(f.mechanism) !== undefined) t.mechanism = str(f.mechanism);
+  if (str(f.repo) !== undefined) t.repo = str(f.repo);
   if (Array.isArray(f.intent)) {
     const si = { ...(t.statusIntent || {}) };
     for (const pair of f.intent) {

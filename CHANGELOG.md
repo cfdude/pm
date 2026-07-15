@@ -10,6 +10,18 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **`github-issues` tracker: inward pull (open issues → new untriaged epics).** `set-tracker
+  --system github-issues --repo <owner/name>` records a repo alongside the tracker's `system`.
+  The rules block now gains a "GitHub issue sync" section (in addition to the existing outward
+  "External tracker sync" mirror) telling the interactive agent — as part of `/pm:sync` — to
+  `gh issue list --repo <repo> --state open`, skip issues already mapped to an epic via
+  `externalId`, and register the rest with `add-epic --status untriaged --external-id <n>
+  --external-url <url> --lane claude-code --priority P2` (a `P0`/`P1`/`P2`/`P3` label on the
+  issue overrides the P2 default). The engine itself never calls `gh` — same instruction-layer
+  law as every other tracker. `add-epic` now also rejects a duplicate `--external-id` outright
+  (exits non-zero, writes nothing), so re-running sync can never create a duplicate epic for the
+  same issue even off a stale local view. See `commands/tracker.md`, `commands/sync.md`, and the
+  conductor skill's "Hierarchy & external trackers" section.
 - **`.github/workflows/ci.yml`.** A GitHub Actions CI workflow on push to `main` and on every
   pull request targeting `main`, running Node 18.x: a `node -c` syntax check on
   `scripts/conductor.mjs` and `scripts/conductor.test.mjs`, then the full test suite via
