@@ -17,7 +17,9 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" plan-hierarchy --parent <id>
 If `${CLAUDE_PLUGIN_ROOT}` is empty:
 `ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1); node "$ENGINE" plan-hierarchy --parent <id>`
 
-Prints `{ parent, batches: [{ batch, epics: [{ id, priority, autonomous }] }] }`. Batches run in
+Prints `{ parent, batches: [{ batch, epics: [{ id, priority, autonomous, dependsOn }] }] }`.
+`dependsOn` is each epic's list of sibling ids (within this hierarchy) it depends on — use it to
+check, transitively, whether a later batch depends on a blocked child. Batches run in
 order; epics within a batch have no dependency on each other and may dispatch in parallel. A
 dependency cycle among children exits non-zero, naming the cycle — fix the offending `links`
 before retrying.

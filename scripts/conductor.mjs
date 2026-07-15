@@ -990,6 +990,7 @@ function planHierarchy() {
       epics: epics.map(e => ({
         id: e.id, priority: e.priority,
         autonomous: !!(e.autonomy && e.autonomy.level === "autonomous"),
+        dependsOn: [...deps.get(e.id)].sort(),
       })),
     })),
   };

@@ -1416,6 +1416,7 @@ test("plan-hierarchy batches independent children together, ordered by priority 
   assert.equal(out.parent, "sprint");
   assert.equal(out.batches.length, 1);
   assert.deepEqual(out.batches[0].epics.map(e => e.id), ["child-b", "child-a", "child-c"]); // P0, P1, P2
+  for (const e of out.batches[0].epics) assert.deepEqual(e.dependsOn, []);
 });
 
 test("plan-hierarchy sequences a depends-on chain into separate batches", () => {
@@ -1426,6 +1427,10 @@ test("plan-hierarchy sequences a depends-on chain into separate batches", () => 
   assert.equal(out.batches.length, 2);
   assert.deepEqual(out.batches[0].epics.map(e => e.id), ["child-a", "child-c"]); // no unresolved deps
   assert.deepEqual(out.batches[1].epics.map(e => e.id), ["child-b"]);            // waits on child-a
+  const childA = out.batches[0].epics.find(e => e.id === "child-a");
+  assert.deepEqual(childA.dependsOn, []);
+  const childB = out.batches[1].epics.find(e => e.id === "child-b");
+  assert.deepEqual(childB.dependsOn, ["child-a"]);
 });
 
 test("plan-hierarchy ignores a depends-on link to an epic outside the hierarchy", () => {

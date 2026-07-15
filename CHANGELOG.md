@@ -16,8 +16,11 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   each other land in the same batch (dispatchable in parallel), children in a dependency chain
   land in separate, ordered batches. Each child is annotated with whether it already has
   `autonomy.level: "autonomous"` (from epic-level autonomy), so a hierarchy dispatch never fires
-  a child that hasn't been preflighted. A dependency cycle among children is rejected outright,
-  naming the cycle path, rather than producing a bogus order.
+  a child that hasn't been preflighted. Each child also carries `dependsOn`, its sibling
+  dependency ids within the hierarchy, so a blocked-child handler can check whether a later
+  batch depends on it (directly or transitively) rather than guessing from batch order alone.
+  A dependency cycle among children is rejected outright, naming the cycle path, rather than
+  producing a bogus order.
 - **`agents/hierarchy-child-executor.md` — a packaged subagent** dispatched once per child epic
   in a batch: front-loaded with the epic's full context and its autonomy grant, works the epic
   to completion using its lane's normal workflow, follows epic-level autonomy's decision rule

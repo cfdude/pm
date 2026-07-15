@@ -224,7 +224,8 @@ not just one epic.
    --preauthorize "<action>:<reason>"` / `--context "<note>"`, then `set-autonomy <child-id>
    --level autonomous` once a child is cleared.
 2. **Get the execution plan:** `node "$ENGINE" plan-hierarchy --parent <id>`. This prints
-   `{ parent, batches: [{ batch, epics: [{ id, priority, autonomous }] }] }`. If any epic in the
+   `{ parent, batches: [{ batch, epics: [{ id, priority, autonomous, dependsOn }] }] }` —
+   `dependsOn` is each epic's list of sibling ids (within this hierarchy) it depends on. If any epic in the
    plan shows `autonomous: false`, that child wasn't cleared in step 1 — resolve that before
    dispatching it (do not dispatch a non-autonomous child; it will immediately hit decision-rule
    item (d), "no context to act on").
@@ -236,9 +237,11 @@ not just one epic.
    dispatches in the same turn) when the batch has more than one epic, since batch membership
    already means they have no dependency on each other. Do **not** start the next batch until
    every dispatch in the current batch has reported back.
-   - A dispatch reporting `STATUS: blocked` — do not advance to a LATER batch that depends on
-     that child (check the plan's batch order); batches unrelated to it may still proceed. Flag
-     the blocked child for the human in the end-of-hierarchy report; do not auto-retry it.
+   - A dispatch reporting `STATUS: blocked` — check every later epic's `dependsOn` list
+     (transitively, since a dependency chain can be more than one hop) for the blocked child's
+     id; do not advance any batch containing an epic that depends on it, directly or
+     transitively. Batches with no such dependency may still proceed. Flag the blocked child for
+     the human in the end-of-hierarchy report; do not auto-retry it.
    - A dispatch reporting `STATUS: stopped-for-genuine-unknown` — this is decision-rule item (d)
      firing correctly, not a bug. Surface it to the human now, same as a single-epic stop would.
 4. **After all batches, write ONE consolidated end-of-hierarchy report:** what was asked (the
