@@ -106,4 +106,17 @@ shared branch); those are out of scope regardless of autonomy level.
    made in the user's absence (the WARN-class log), and an explicit "are you OK with
    these?" checkpoint, THEN run tests. Leave room to iterate — including rewriting code —
    if the user is not satisfied.
+
+## Review mode
+
+Review intensity is a bounded dial, not a free-form call each time — set via
+`set-review-mode --mode <off|standard|thorough>` (default: `standard` if never set).
+
+| Mode | Reviewer budget | Trigger |
+|------|-----------------|---------|
+| `off` | none — self-review only | tiny, low-risk, single-file claude-code tweaks |
+| `standard` | one fresh-context reviewer per gate | the default: OpenSpec Gate 1/Gate 2, a Superpowers task review |
+| `thorough` | two independent fresh-context reviewers per gate; adjudicate any disagreement yourself | schema/migration changes, security-sensitive work, or anything explicitly flagged high-stakes |
+
+Current mode: **standard**.
 <!-- END pm-conductor rules -->
