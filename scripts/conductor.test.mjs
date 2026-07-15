@@ -1624,6 +1624,78 @@ test("plan-hierarchy requires --parent", () => {
   assert.ok(expectFail(() => run(["plan-hierarchy"], { cwd })));
 });
 
+// ──────── top-level queue: dependency-aware ordering (dependency-aware-standalone-ordering) ────────
+
+test("NEXT UP does not starve a top-level epic's unresolved depends-on dependency, even when the dependent outranks it on priority", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "low-dep", "--lane", "claude-code", "--priority", "P3"], { cwd });
+  run(["add-epic", "--id", "high-blocked", "--lane", "claude-code", "--priority", "P0",
+       "--link", "depends-on:low-dep:needs low-dep shipped first"], { cwd });
+  const brief = parseBrief(cwd);
+  assert.ok(brief.indexOf("`low-dep`") < brief.indexOf("`high-blocked`"),
+    "unresolved dependency must be listed ahead of the higher-priority epic waiting on it");
+});
+
+test("brief prints a one-line note naming the blocking epic when priority order is overridden by an unresolved depends-on", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "low-dep", "--lane", "claude-code", "--priority", "P3"], { cwd });
+  run(["add-epic", "--id", "high-blocked", "--lane", "claude-code", "--priority", "P0",
+       "--link", "depends-on:low-dep:needs low-dep shipped first"], { cwd });
+  const brief = parseBrief(cwd);
+  assert.match(brief, /`high-blocked` ready but waiting on `low-dep`/);
+});
+
+test("top-level dependency ordering applies across unrelated epics, not just siblings under one parent", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  // No parent/child relationship at all — both are top-level, unrelated epics.
+  run(["add-epic", "--id", "infra", "--lane", "claude-code", "--priority", "P2"], { cwd });
+  run(["add-epic", "--id", "feature", "--lane", "claude-code", "--priority", "P0",
+       "--link", "depends-on:infra:needs infra"], { cwd });
+  const brief = parseBrief(cwd);
+  assert.ok(brief.indexOf("`infra`") < brief.indexOf("`feature`"),
+    "top-level depends-on ordering must not be limited to plan-hierarchy's parent/child scope");
+  assert.match(brief, /`feature` ready but waiting on `infra`/);
+});
+
+test("a resolved depends-on (dependency archived) does not starve the dependent — no reordering, no note", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "done-dep", "--lane", "claude-code", "--priority", "P3"], { cwd });
+  run(["add-epic", "--id", "dependent", "--lane", "claude-code", "--priority", "P0",
+       "--link", "depends-on:done-dep:needs done-dep"], { cwd });
+  run(["update-epic", "done-dep", "--status", "archived"], { cwd });
+  const brief = parseBrief(cwd);
+  assert.doesNotMatch(brief, /ready but waiting on/);
+  // dependent is now the only queued epic left (done-dep archived, excluded from NEXT UP).
+  assert.match(brief, /`dependent`/);
+});
+
+test("no unresolved depends-on among queued epics leaves plain priority order untouched (no notes)", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code", "--priority", "P0"], { cwd });
+  run(["add-epic", "--id", "b", "--lane", "claude-code", "--priority", "P1"], { cwd });
+  const brief = parseBrief(cwd);
+  assert.ok(brief.indexOf("`a`") < brief.indexOf("`b`"));
+  assert.doesNotMatch(brief, /ready but waiting on/);
+});
+
+test("a dependency cycle among top-level queued epics does not crash the brief — falls back gracefully", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code", "--priority", "P1"], { cwd });
+  run(["add-epic", "--id", "b", "--lane", "claude-code", "--priority", "P1"], { cwd });
+  run(["update-epic", "a", "--link", "depends-on:b:cyclic"], { cwd });
+  run(["update-epic", "b", "--link", "depends-on:a:cyclic"], { cwd });
+  const brief = parseBrief(cwd);
+  assert.match(brief, /NEXT UP/);
+  assert.match(brief, /`a`/);
+  assert.match(brief, /`b`/);
+});
+
 // ---------- remove-epic ----------
 
 test("remove-epic hard-deletes a childless, unreferenced epic", () => {

@@ -10,6 +10,17 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Dependency-aware ordering for the top-level queue, not just hierarchy siblings.** The
+  brief's NEXT UP list (and thus `/pm:next`'s recommendation) now applies the same
+  `depends-on` topological ordering `plan-hierarchy` already used for one parent's children to
+  ALL top-level queued/untriaged epics: a higher-priority epic with an unresolved `depends-on`
+  link to another still-queued epic is no longer listed (or picked) ahead of the dependency
+  it's waiting on, even across otherwise-unrelated epics with no shared parent. When ordering
+  overrides plain priority this way, the brief prints a one-line note naming the blocker, e.g.
+  `⚠ epic \`high-blocked\` ready but waiting on \`low-dep\``. Unlike `plan-hierarchy`, a
+  dependency cycle among queued epics does not error here — it's a display/selection helper,
+  not an execution plan, so it falls back to the original priority order for the stuck
+  remainder.
 - **SessionStart upgrade nudge now inlines top Added-bullet headlines.** The
   `pm X.Y.Z → A.B.C available` nudge previously named only the old/new versions, forcing a
   separate `/pm:changelog` round trip to judge whether upgrading was worth mid-epic churn. It

@@ -370,6 +370,58 @@ function missing(e) {
     e.status !== "planned" && e.status !== "archived";
 }
 
+/** Extends plan-hierarchy's depends-on topological sort from ONE parent's children to ALL
+ *  top-level queued/untriaged epics generally — the same starvation problem exists there: a
+ *  higher-priority epic with an unresolved `depends-on` link to another still-queued epic would
+ *  otherwise be listed (and picked by /pm:next) ahead of the very dependency it's waiting on.
+ *  `sorted` is a priority-then-lane-then-id-ordered list (resolveEpics()'s existing sort,
+ *  already filtered to queued/untriaged + not-missing — this function does not re-derive that
+ *  filter, so it applies uniformly whether or not the epics involved share a parent). Returns
+ *  `{ ordered, notes }`: `ordered` respects every unresolved depends-on edge between epics in
+ *  `sorted` (Kahn's algorithm, batching by the existing priority order within each batch, same
+ *  approach as planHierarchy()); `notes` is one human-readable line per case where dependency
+ *  ordering actually demoted an epic behind a lower-priority one it would otherwise have
+ *  outranked — i.e. exactly the cases where /pm:next's pick changed because of a dependency.
+ *  A dependency cycle among queued epics does not fail here (unlike plan-hierarchy, which is
+ *  the authoritative execution plan for a hierarchy) — this only drives a status display and a
+ *  /pm:next recommendation, so on a cycle we fall back to the original priority order for
+ *  whatever's left rather than erroring out of a status render. A depends-on link to an epic
+ *  NOT in `sorted` (done, archived, or simply not in this queued/untriaged set) imposes no
+ *  wait, matching plan-hierarchy's existing "outside the hierarchy" behavior. */
+function orderQueueWithDependencies(sorted) {
+  const ids = new Set(sorted.map(e => e.id));
+  const deps = new Map(sorted.map(e => [e.id, new Set(
+    (e.links || []).filter(l => l && l.type === "depends-on" && ids.has(l.epic)).map(l => l.epic))]));
+
+  const indexOf = new Map(sorted.map((e, i) => [e.id, i]));
+  const notes = [];
+  for (const e of sorted) {
+    for (const d of deps.get(e.id)) {
+      // The naive priority order already placed e ahead of its own dependency d — that's
+      // exactly the starvation case this function exists to prevent, and worth flagging.
+      if (indexOf.get(e.id) < indexOf.get(d)) {
+        notes.push(`epic \`${e.id}\` ready but waiting on \`${d}\``);
+      }
+    }
+  }
+
+  const placed = new Set();
+  const ordered = [];
+  let remaining = sorted;
+  while (remaining.length) {
+    const ready = remaining.filter(e => [...deps.get(e.id)].every(d => placed.has(d)));
+    if (!ready.length) {
+      // Cycle among queued epics — not fatal for a display/selection helper; keep whatever's
+      // left in its original priority order rather than erroring out of a status render.
+      ordered.push(...remaining);
+      break;
+    }
+    for (const e of ready) { ordered.push(e); placed.add(e.id); }
+    remaining = remaining.filter(e => !placed.has(e.id));
+  }
+  return { ordered, notes };
+}
+
 function bar(p) {
   if (!p) return "—";
   if (p.warn) return `⚠ ${p.warn}`;
@@ -630,7 +682,8 @@ function buildBrief(state) {
   }
 
   const NEXT_CAP = 5;
-  const queued = epics.filter(e => ["queued", "untriaged"].includes(e.status) && !missing(e));
+  const queuedByPriority = epics.filter(e => ["queued", "untriaged"].includes(e.status) && !missing(e));
+  const { ordered: queued, notes: starvationNotes } = orderQueueWithDependencies(queuedByPriority);
   if (queued.length) {
     L.push("NEXT UP (by priority, then lane):");
     for (const e of queued.slice(0, NEXT_CAP)) {
@@ -638,6 +691,7 @@ function buildBrief(state) {
       L.push(`  • \`${e.id}\` (${e.priority}, ${e.lane}, ${e.status}${pa}) — ${bar(e.progress)}${staleMarker(e)}`);
     }
     if (queued.length > NEXT_CAP) L.push(`  (+${queued.length - NEXT_CAP} more — see PROJECT.md)`);
+    for (const note of starvationNotes) L.push(`  ⚠ ${note}`);
     const counts = {};
     for (const e of epics) if (!missing(e) && e.status !== "planned") counts[e.lane] = (counts[e.lane] || 0) + 1;
     const ordered = KNOWN_LANES.filter(l => counts[l]).map(l => `${l} ${counts[l]}`);
