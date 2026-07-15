@@ -184,3 +184,34 @@ parent through the full B process (preflight all sixteen, `plan-hierarchy`, disp
 the pending manual dogfood validation for B itself — though note it exercises only the
 fully-parallel, single-batch case (no dependency edges among these sixteen), not the sequential/
 cycle/blocked paths; those still need a separate, deliberately-constructed test.
+
+## Source D — Rob's own observation across ~15 concurrently-open Claude Code sessions
+
+Not a self-report from one session — Rob's direct observation that sessions stay quiet about
+friction unless explicitly told "you're talking to the plugin's developer, flag anything." One
+session, told this, did something worth codifying directly rather than relying on being asked:
+
+- **Automated AI feedback loop** — a skill-driven command covering both bug reports and feature
+  requests that posts directly to a GitHub issue on `cfdude/pm`, instead of the current pattern
+  (ask a session, it writes prose, Rob copy-pastes it here manually — literally this
+  conversation's last three exchanges). → epic `ai-feedback-loop-github-issues`.
+- **GitHub issue tracker sync** — pm already has generic tracker awareness (`set-tracker
+  --system github` works via the existing mechanism), but nothing pulls open issues *into* the
+  conductor as untriaged epics the way OpenSpec/Superpowers artifacts already auto-register. →
+  epic `github-issue-tracker-sync`. Closes the loop with the feedback-loop epic above: issues
+  created there flow back in here.
+- **CI/CD and repo governance for `cfdude/pm` itself** — not a plugin feature, real
+  infrastructure/governance work on the repo. Split into three epics of very different size
+  (confirmed with Rob rather than bundled as one, matching how B/C/D were scoped earlier this
+  session):
+  - `branch-protection-and-pr-workflow` (small, mechanical) — protect `main`, require PRs,
+    operate off a `dev` branch.
+  - `ci-test-lint-workflow` (small-medium) — a GitHub Actions workflow running `node --test`
+    and lint/syntax checks on every PR.
+  - `autonomous-issue-resolution-agent` (large, novel — `decision` lane, research first) — a
+    GitHub-Actions-hosted agent that implements a fix for a validated issue and opens a PR; a CI
+    check gates that the PR genuinely came from this trusted automation, not a spoofed external
+    one; Rob remains the final human approver/merger always (his own design already has this —
+    "as a final gate, I am added as an approver... I make the final decision to merge," so this
+    is an auto-*triage*/auto-*eligibility* gate ahead of mandatory human review, not an
+    auto-merge bypassing it). Grouped under parent `cfdude-pm-repo-governance`.

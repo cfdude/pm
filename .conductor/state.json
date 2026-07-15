@@ -233,6 +233,75 @@
       "links": [],
       "reconcileNeeded": false,
       "parent": "pm-plugin-improvements-2026-07-14"
+    },
+    {
+      "id": "ai-feedback-loop-github-issues",
+      "title": "Skill-driven /pm:feedback command — post a bug report or feature request as a GitHub issue on cfdude/pm directly from any Claude Code session using the plugin",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "github-issue-tracker-sync",
+      "title": "GitHub issue tracker: extend set-tracker/sync so open cfdude/pm issues can be pulled into the conductor as untriaged epics, same pattern as OpenSpec/Superpowers auto-registration — closes the loop with ai-feedback-loop-github-issues",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "ai-feedback-loop-github-issues",
+          "reason": "issues created by the feedback loop are exactly what this syncs back in"
+        }
+      ],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "cfdude-pm-repo-governance",
+      "title": "Secure and automate the cfdude/pm GitHub repo: branch protection, CI, and (eventually) autonomous issue-to-PR resolution",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "branch-protection-and-pr-workflow",
+      "title": "Protect main on cfdude/pm: require PRs into main (no direct pushes), operate off a dev branch, matching the ff-only dev/main convention already used elsewhere this session",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "parent": "cfdude-pm-repo-governance"
+    },
+    {
+      "id": "ci-test-lint-workflow",
+      "title": "Add a GitHub Actions workflow on cfdude/pm running node --test (and syntax/lint checks) on every PR — CI gate before merge",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "parent": "cfdude-pm-repo-governance"
+    },
+    {
+      "id": "autonomous-issue-resolution-agent",
+      "title": "Research + design an autonomous issue-to-PR pipeline for cfdude/pm: a GitHub-Actions-hosted Claude agent that analyzes a validated issue, implements a fix on a branch, and opens a PR; a CI check gates that the PR genuinely came from this trusted automation (not a spoofed external PR); the user remains the final human approver/merger always. Needs its own research pass (what mechanism — an official Claude Code GitHub Action, a custom Claude API workflow, something else) before any design — substantially bigger and more novel than the other two governance items.",
+      "priority": "P3",
+      "status": "queued",
+      "role": "epic",
+      "lane": "decision",
+      "links": [],
+      "reconcileNeeded": false,
+      "parent": "cfdude-pm-repo-governance"
     }
   ],
   "detourStack": [],
