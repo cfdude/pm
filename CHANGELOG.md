@@ -10,6 +10,17 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Per-repo lane-routing overrides.** New optional `laneRouting.overrides` config block in
+  `.conductor/state.json` — keyword/glob rules (`{match, lane}`) checked BEFORE the generic
+  lane heuristic when an agent decides which lane should build an epic. Set via the new
+  `set-lane-routing --add "<match>:<lane>" [--add ...] | --remove "<match>" | --clear`
+  subcommand; looked up via the new `suggest-lane "<free text>"` subcommand, which prints
+  `{lane, matched}` JSON (`lane: null` means no override matched — fall back to the generic
+  heuristic). Replaces the need for a CLAUDE.md prose carve-out when the generic heuristic is
+  wrong for a repo (e.g. "anything touching billing always goes through openspec"). See
+  `commands/lane-routing.md` and the `conductor` skill's "Lane routing overrides" section.
+  Pure local state write — the engine still never assigns a lane itself; `add-epic` always
+  takes an explicit `--lane`.
 - **Per-epic review-mode override (escalation-only).** `update-epic <id> --review-mode
   off|standard|thorough` sets an epic-level override that can only ESCALATE above the
   repo-global `set-review-mode` dial — never de-escalate below it (an attempt to set a lower

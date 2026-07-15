@@ -59,11 +59,13 @@ set the top-level active epic · `set-autonomy <id>` grant an epic broad executi
 parent's children (see "Epic-hierarchy orchestration" below) · `verify-worktrees` flag orphaned
 hierarchy-dispatch worktrees · `verify-state` fail loudly if state.json's mtime is newer than
 the last render's stamp (a mechanical check for an undetected hand-edit) · `set-review-mode` the
-repo's bounded review-count dial (off/standard/thorough) · `/pm:gate-guard` hard reconcile-gate
-backstop — ON BY DEFAULT for any epic with `reconcileNeeded: true` and cannot be turned off for
-that case; `set-gate-guard on|off` still exists but only gates any future generalization of the
-hook, not the reconcile-owed check itself · `/pm:tracker` make the conductor tracker-aware ·
-`/pm:changelog` what changed since
+repo's bounded review-count dial (off/standard/thorough), `update-epic <id> --review-mode`
+escalates a single epic above the repo dial · `set-lane-routing` / `suggest-lane` per-repo
+lane-routing overrides checked before the generic heuristic (see "Lane routing overrides" above)
+· `/pm:gate-guard` hard reconcile-gate backstop — ON BY DEFAULT for any epic with
+`reconcileNeeded: true` and cannot be turned off for that case; `set-gate-guard on|off` still
+exists but only gates any future generalization of the hook, not the reconcile-owed check itself
+· `/pm:tracker` make the conductor tracker-aware · `/pm:changelog` what changed since
 your version · `/pm:upgrade` refresh rules + run migrations + print the changelog delta.
 
 ## Hierarchy & external trackers
@@ -187,6 +189,33 @@ does **not** parse roadmap files automatically.
 5. Triage the backlog: set priorities, promote items to `queued` as work becomes ready.
 
 `/pm:epic add` validates `--status` — unknown values are rejected with a clear error.
+
+## Lane routing overrides (per-repo)
+
+The lane heuristic above (`>8h`/cross-system → openspec; `2-8h` single-subsystem →
+superpowers; `<2h` tweak → claude-code; procurement/product → decision; other-repo →
+external) is generic and usually right, but some repos have a standing local rule that
+overrides it — e.g. "anything touching billing always goes through openspec regardless of
+size" or "anything titled hotfix skips design and goes straight to claude-code." Rather than
+carve that rule into CLAUDE.md prose (which nothing checks), record it as real per-repo
+config: `laneRouting.overrides` in `.conductor/state.json`, set via `set-lane-routing` and
+looked up via `suggest-lane` (see `commands/lane-routing.md` for full syntax).
+
+**When assigning a lane to a new epic** (at `/pm:epic add`, at `/pm:sync`, at hierarchy
+planning), consult overrides FIRST, before applying the generic heuristic:
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" suggest-lane "<epic title/description>"
+```
+
+- `{"lane":"<lane>","matched":"<rule>"}` — an override matched; use `<lane>`, and note which
+  rule matched if you're reporting the decision.
+- `{"lane":null,"matched":null}` — no override configured or none matched; fall back to the
+  generic heuristic as documented above.
+
+This is purely local, additive config — like `set-tracker`, the engine does not enforce
+lanes on its own (`add-epic` always still takes an explicit `--lane`); `suggest-lane` only
+surfaces the match for you to act on.
 
 ## Epic-level autonomy — the preflight scan
 
@@ -340,7 +369,9 @@ reviewMode?   : "off" | "standard" | "thorough" — repo-level dial (default "st
 gateGuard?    : boolean — repo-level PreToolUse guard toggle; no longer gates the
                 reconcile-owed check (that blocks unconditionally whenever
                 reconcileNeeded is true) — reserved for any future generalization
-
+laneRouting?  : { overrides: [{ match, lane }] } — optional per-repo lane overrides, checked
+                before the generic lane heuristic (see "Lane routing overrides" above);
+                set via set-lane-routing, looked up via suggest-lane
 epics[]       : { id, title, priority, status, role, lane, parent?, externalId?, externalUrl?, planPath?, stories[]?, links[], reconcileNeeded?, autonomy? }
 autonomy?     : { level: "off"|"autonomous", preAuthorized[], context[], notifications[] } — per epic
 preAuthorized[] entries are either { action, reason?, grantedAt } (exact-action grant) or

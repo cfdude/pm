@@ -2152,3 +2152,81 @@ test("commit-nudge does not auto-log a commit already inside a detour (existing 
   assert.match(log, /DETOUR-COMMIT/);
   assert.doesNotMatch(log, /AUTO-DETOUR/);
 });
+
+// ─────────────────── lane-routing overrides ───────────────────
+
+test("set-lane-routing --add writes a laneRouting.overrides block", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-lane-routing", "--add", "billing-*:openspec", "--add", "hotfix:claude-code"], { cwd });
+  const lr = readState(cwd).laneRouting;
+  assert.deepEqual(lr.overrides, [
+    { match: "billing-*", lane: "openspec" },
+    { match: "hotfix", lane: "claude-code" },
+  ]);
+});
+
+test("set-lane-routing rejects an override naming an unknown lane", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  assert.throws(() => run(["set-lane-routing", "--add", "foo:not-a-lane"], { cwd }));
+});
+
+test("set-lane-routing rejects a malformed override (missing ':lane')", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  assert.throws(() => run(["set-lane-routing", "--add", "no-colon-here"], { cwd }));
+});
+
+test("set-lane-routing --remove drops a single override by its match string", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-lane-routing", "--add", "billing-*:openspec", "--add", "hotfix:claude-code"], { cwd });
+  run(["set-lane-routing", "--remove", "hotfix"], { cwd });
+  const lr = readState(cwd).laneRouting;
+  assert.deepEqual(lr.overrides, [{ match: "billing-*", lane: "openspec" }]);
+});
+
+test("set-lane-routing --clear empties the overrides list", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-lane-routing", "--add", "billing-*:openspec"], { cwd });
+  run(["set-lane-routing", "--clear"], { cwd });
+  const lr = readState(cwd).laneRouting;
+  assert.deepEqual(lr.overrides, []);
+});
+
+test("suggest-lane matches an exact keyword override before falling back", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-lane-routing", "--add", "hotfix:claude-code"], { cwd });
+  const out = run(["suggest-lane", "urgent hotfix for prod"], { cwd }).trim();
+  const parsed = JSON.parse(out);
+  assert.equal(parsed.lane, "claude-code");
+  assert.equal(parsed.matched, "hotfix");
+});
+
+test("suggest-lane matches a glob-style override (billing-*)", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-lane-routing", "--add", "billing-*:openspec"], { cwd });
+  const out = JSON.parse(run(["suggest-lane", "billing-refund-flow"], { cwd }).trim());
+  assert.equal(out.lane, "openspec");
+  assert.equal(out.matched, "billing-*");
+});
+
+test("suggest-lane with no matching override reports no override so the generic heuristic applies", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-lane-routing", "--add", "hotfix:claude-code"], { cwd });
+  const out = JSON.parse(run(["suggest-lane", "brand new capability"], { cwd }).trim());
+  assert.equal(out.lane, null);
+  assert.equal(out.matched, null);
+});
+
+test("suggest-lane with no laneRouting configured at all reports no override", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const out = JSON.parse(run(["suggest-lane", "anything"], { cwd }).trim());
+  assert.equal(out.lane, null);
+});
