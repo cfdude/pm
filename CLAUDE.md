@@ -99,10 +99,16 @@ shared branch); those are out of scope regardless of autonomy level.
    the epic's full source, produce a short batch of destructive-risk-points +
    genuine-unknowns questions, get the user's answers, THEN record them:
    `set-autonomy <id> --preauthorize "<action>:<reason>"` / `--context "<note>"`, and only
-   then `set-autonomy <id> --level autonomous`.
+   then `set-autonomy <id> --level autonomous`. For routine, repeated categories of action
+   instead of enumerating each one, use the shorthand
+   `--preauthorize "category:<filesystem|network|schema|external-api>:<reason>"` — see the
+   `conductor` skill's "Epic-level autonomy" section for the exact keyword heuristic each
+   category matches at decision-rule time.
 2. **Execution-time decision rule** — check every destructive action against these, in
    order, before treating it as a stop:
-   a. Already pre-authorized in the preflight? → proceed, record via `--notify`.
+   a. Already pre-authorized in the preflight — either an exact `action` match or the
+      action falls under a granted `category` (per the category heuristic)? → proceed,
+      record via `--notify`.
    b. No backup/restore path exists? → STOP regardless of autonomy level.
    c. Destructive but restorable (backed up first)? → WARN — `--notify` it immediately, proceed.
    d. No context to act on? → STOP — a real gap, not a false stall.
