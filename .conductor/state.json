@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "df-hierarchy-no-shared-file-conflict-detection",
+  "active": null,
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -538,7 +538,7 @@
       "id": "df-hierarchy-no-shared-file-conflict-detection",
       "title": "DF: plan-hierarchy's all-parallel batch (16 siblings, no depends-on edges) has no notion that many children touch the SAME source file — every pm-plugin-improvements-2026-07-14 child modifies scripts/conductor.mjs, so a literal 'dispatch every epic in this batch in parallel' per the conductor skill's documented process would race N concurrent Edit/Write calls against one file. Found while about to dispatch the real 17-child batch for this session's hierarchy test — priority/depends-on scheduling alone doesn't capture this hazard; plan-hierarchy has no file/path overlap signal at all. Needs its own design (e.g. an optional touchedPaths hint per epic feeding batch computation, or per-batch worktree isolation the orchestrator forces automatically when it can't prove non-overlap)",
       "priority": "P1",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
