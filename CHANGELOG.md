@@ -10,6 +10,12 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **`.github/workflows/ci.yml`.** A GitHub Actions CI workflow on push to `main` and on every
+  pull request targeting `main`, running Node 18.x: a `node -c` syntax check on
+  `scripts/conductor.mjs` and `scripts/conductor.test.mjs`, then the full test suite via
+  `node --test scripts/conductor.test.mjs`. This repo is zero-dependency, so "lint" here means
+  the syntax check rather than a third-party linter. The job is named `test` (`jobs.test`) —
+  a follow-up epic wires this job into required branch-protection status checks.
 - **`/pm:feedback [bug|feature] "<summary>"`.** File a bug report or feature request against
   `pm` itself directly as a GitHub issue on `cfdude/pm`, from any session using the plugin —
   replacing the previous workflow of manually copy-pasting details between sessions. Pure

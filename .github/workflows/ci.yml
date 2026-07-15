@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Syntax check
+        run: |
+          node -c scripts/conductor.mjs
+          node -c scripts/conductor.test.mjs
+
+      - name: Run test suite
+        run: node --test scripts/conductor.test.mjs
