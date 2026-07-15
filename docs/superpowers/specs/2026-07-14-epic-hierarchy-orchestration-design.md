@@ -160,3 +160,104 @@ epic needs to act on itself.
   here.
 - Any change to how a single epic (without a parent/children) is executed — A's behavior is
   unchanged.
+
+---
+
+## Addendum (2026-07-15) — worktree-isolated dispatch + tiered conflict resolution
+
+**Discovered via actual dogfooding, not speculation.** The first live attempt to run this
+feature against a real hierarchy (`pm-plugin-improvements-2026-07-14`, 15+ children) surfaced a
+real gap the original design missed: §4's "parallel within a batch" dispatch assumed children
+working independently, but nothing prevented two children from concurrently mutating the *same*
+files — and in this specific batch, every child touches `scripts/conductor.mjs`. Logged as
+`df-hierarchy-no-shared-file-conflict-detection` during the dogfood run itself; this addendum is
+its resolution.
+
+**Rejected approach:** an opt-in `--touches-files` declaration per epic, with `plan-hierarchy`
+marking a batch `parallelSafe` only when declared file sets are provably disjoint. Rejected
+because it puts the burden of prediction on the epic author (fragile, and the same class of
+false confidence the preflight scan's own design already rejected for keyword-based scanning —
+see "Approaches considered" above) and doesn't actually fix concurrent writes, only tries to
+avoid triggering them.
+
+**Adopted approach: git-worktree isolation per child, sequential merge-back, tiered conflict
+resolution.** This fixes the underlying problem (concurrent writes) rather than predicting
+around it, and requires **no change to `plan-hierarchy`'s output** — only to the dispatch/merge
+instructions in `SKILL.md` and one new packaged agent.
+
+### 1. Each child works in its own git worktree + branch
+
+Per `superpowers:using-git-worktrees`. Branch naming convention: `hierarchy-child/<epic-id>` —
+deterministic and greppable, so tooling (see §3 below) can reliably identify hierarchy-dispatch
+worktrees versus any other worktree in play. Cleanup (worktree removal + branch deletion) happens
+immediately after that child's branch merges back — never left dangling, per this repo's own
+CLAUDE.md worktree-hygiene rule, which this addendum now bakes into the *plugin itself* (see §3)
+rather than leaving it to depend on a user's personal global instructions being in place.
+
+### 2. Children never write `.conductor/state.json`
+
+`saveState()` rewrites the entire file (`JSON.stringify(state, null, 2)`) on every mutation —
+two children each calling a state-mutating verb in their own worktree would produce two full
+rewrites of the same file, which is exactly the shape of change most likely to conflict on
+merge even when the two children's *logical* edits don't overlap. Rather than rely on git to
+merge that cleanly, **children don't touch it at all.** They only return their fixed report
+(`STATUS`/`DONE`/`DECISIONS`/`CONCERNS`, unchanged from §4 above). The orchestrating agent is the
+**sole writer** of state transitions — marking a child `active` before dispatch, `archived` after
+its worktree merges cleanly — applied in one pass after the batch, not interleaved with dispatch.
+
+### 3. Sequential merge-back, with mechanical orphan detection
+
+Even though children work in parallel, their worktree branches merge back **one at a time** —
+this is what converts a silent concurrent-write race into a normal, visible git merge conflict
+if two children genuinely touched overlapping lines, which is safe (git refuses to silently
+produce a wrong result) even though it isn't free of conflicts entirely.
+
+A new engine verb, **`verify-worktrees`** (pure read, zero-dependency, fully testable — same
+shape as `plan-hierarchy`/`verify-state-command`): cross-references `git worktree list` against
+`hierarchy-child/<epic-id>` branch names and each epic's current `status`. Any such worktree
+whose epic is already `archived` (i.e. successfully merged and closed out) is flagged as
+orphaned — this is what makes worktree hygiene a property of the **plugin**, checkable on any
+fresh install, rather than something that only holds because a particular user's global CLAUDE.md
+happens to say so.
+
+### 4. Tiered conflict resolution — never a hard stop for an ordinary merge conflict
+
+This is a direct, consistent application of epic-level autonomy's *existing* five-criteria
+decision rule, not a new exception carved out for this feature: an ordinary git merge conflict is
+always recoverable (inspect, revert, re-attempt — the branch and its history remain), which is
+exactly criterion (c) — "destructive but restorable → WARN, log it, proceed" — never criterion
+(b), which is the only one that would justify an unconditional stop, and which a git-tracked
+conflict never triggers (there is always a restore path: the commit history itself).
+
+The resolution ladder, attempted in order, on a merge conflict:
+
+1. Attempt the merge normally.
+2. On conflict: dispatch a new packaged agent, **`agents/merge-conflict-resolver.md`** (mirrors
+   `reconciler.md`'s shape) — reads both sides of the conflict plus the merge base, and attempts
+   a reasoned resolution.
+3. If that agent reports uncertainty: escalate — retry with a more capable model (e.g. Opus)
+   and/or consult the `advisor()` tool for a second opinion before finalizing.
+4. If still genuinely unresolvable: commit the best-effort resolution anyway (recoverable via git
+   history, so this is WARN not STOP per the existing decision rule) and **log a new follow-up
+   epic under the same parent** describing the residual issue/technical debt, then continue the
+   batch. The orchestrator never tells the human "we can't merge this, you handle it" for an
+   ordinary code conflict — that outcome is explicitly designed out.
+
+### Updated error handling (supersedes the relevant line above)
+
+- **A child's subagent reports `blocked`** → unchanged from the original design (§ Error
+  handling above) — still don't advance a later batch that depends on it.
+- **A worktree merge conflict** → NOT a stop condition, per §4 above — resolved through the
+  tiered ladder, worst case logged as a follow-up epic, batch continues.
+- **An orphaned hierarchy worktree detected by `verify-worktrees`** → surfaced to the user/agent
+  for cleanup; not auto-deleted without confirmation, since a worktree could in principle still
+  hold in-progress work the epic-status bookkeeping hasn't caught up with yet.
+
+### Updated testing
+
+- `verify-worktrees`: full `node --test` coverage — detecting an orphan (archived epic + still-
+  present matching worktree), the clean case (no orphans), and epics with no corresponding
+  worktree at all (the common case — most epics never had one).
+- `agents/merge-conflict-resolver.md` and the updated dispatch/merge instructions in `SKILL.md`
+  are agent behavior, not unit-testable — validated via the same live dogfood run this addendum
+  itself grew out of, once implemented.
