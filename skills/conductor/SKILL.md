@@ -46,12 +46,15 @@ Below, `$ENGINE` means the path resolved this way.
 `/pm:init` scaffold · `/pm:status` show · `/pm:next` decide · `/pm:detour` park ·
 `/pm:resume` resume + reconcile · `/pm:sync` register new proposals and plans ·
 `/pm:epic add` register any epic (`--parent`, `--external-id`) · `/pm:epic` → `add-many`
-(atomic bulk create) / `update-epic` (write-back, incl. `--title`) · **`set-active <id>` /
-`clear-active`** set the top-level active epic · `set-autonomy <id>` grant an epic broad
-execution trust (see "Epic-level autonomy" below) · `set-review-mode` the repo's bounded
-review-count dial (off/standard/thorough) · `/pm:gate-guard` optional opt-in hard reconcile-gate
-backstop (off by default) · `/pm:tracker` make the conductor tracker-aware · `/pm:changelog` what
-changed since your version · `/pm:upgrade` refresh rules + run migrations + print the changelog delta.
+(atomic bulk create) / `update-epic` (write-back, incl. `--title`/`--link`) / `remove-epic`
+(hard-delete, `--cascade` for a parent + descendants) · **`set-active <id>` / `clear-active`**
+set the top-level active epic · `set-autonomy <id>` grant an epic broad execution trust (see
+"Epic-level autonomy" below) · `plan-hierarchy --parent <id>` batched execution plan for a
+parent's children (see "Epic-hierarchy orchestration" below) · `verify-worktrees` flag orphaned
+hierarchy-dispatch worktrees · `set-review-mode` the repo's bounded review-count dial
+(off/standard/thorough) · `/pm:gate-guard` optional opt-in hard reconcile-gate backstop (off by
+default) · `/pm:tracker` make the conductor tracker-aware · `/pm:changelog` what changed since
+your version · `/pm:upgrade` refresh rules + run migrations + print the changelog delta.
 
 ## Hierarchy & external trackers
 
@@ -232,11 +235,35 @@ not just one epic.
    - If `plan-hierarchy` exits non-zero naming a dependency cycle, that's a real data problem
      (two children `depends-on` each other) — fix the `links` before re-running, don't retry
      blindly.
-3. **Dispatch batch by batch, in order.** For each batch: dispatch one
-   `agents/hierarchy-child-executor` per epic in that batch — **in parallel** (multiple
-   dispatches in the same turn) when the batch has more than one epic, since batch membership
-   already means they have no dependency on each other. Do **not** start the next batch until
-   every dispatch in the current batch has reported back.
+3. **Dispatch batch by batch, in order, each child isolated in its own git worktree.** For each
+   batch: create a worktree + branch `hierarchy-child/<epic-id>` per epic in that batch (per
+   `superpowers:using-git-worktrees`), then dispatch one `agents/hierarchy-child-executor` per
+   epic, working inside its own worktree — **in parallel** (multiple dispatches in the same turn)
+   when the batch has more than one epic, since batch membership already means they have no
+   dependency on each other. Do **not** start the next batch until every dispatch in the current
+   batch has reported back AND its worktree has merged (see below).
+   - **Children never write `.conductor/state.json` themselves** — they only return their fixed
+     report. You (the orchestrator) are the sole writer of state transitions, applied in one pass
+     after the batch (mark each merged child `archived`), not interleaved with dispatch. This is
+     what makes parallel dispatch safe for the state file specifically: there's only ever one
+     writer, so there's nothing to merge-conflict on `state.json` itself.
+   - **Merge each child's worktree branch back sequentially**, one at a time, even though the
+     *work* happened in parallel. On an ordinary merge conflict (two children's code genuinely
+     touched overlapping lines): this is NOT a stop condition — it's decision-rule item (c)
+     (destructive but restorable; git history means it's always recoverable), never item (b).
+     Resolve it via this ladder, in order: (1) attempt the merge normally; (2) on conflict,
+     dispatch `agents/merge-conflict-resolver` to read both sides + the merge base and resolve it;
+     (3) if that agent reports `STATUS: uncertain`, escalate — retry with a more capable model
+     (e.g. Opus) and/or consult the `advisor()` tool for a second opinion before finalizing; (4) if
+     still genuinely unresolvable, commit the best-effort resolution anyway (still recoverable via
+     git history) and **log a new follow-up epic under the same parent** describing the residual
+     issue, then continue. Never tell the human "we can't merge this, you handle it" for an
+     ordinary code conflict — that outcome is explicitly designed out.
+   - Once a child's branch has merged (cleanly or via the ladder above), remove its worktree and
+     delete its branch immediately — never leave it dangling. `node "$ENGINE" verify-worktrees`
+     cross-references `git worktree list` against epic status and flags any `hierarchy-child/*`
+     worktree whose epic is already archived but wasn't cleaned up; run it after a batch if you're
+     ever unsure everything was torn down correctly.
    - A dispatch reporting `STATUS: blocked` — check every later epic's `dependsOn` list
      (transitively, since a dependency chain can be more than one hop) for the blocked child's
      id; do not advance any batch containing an epic that depends on it, directly or
@@ -246,11 +273,11 @@ not just one epic.
      firing correctly, not a bug. Surface it to the human now, same as a single-epic stop would.
 4. **After all batches, write ONE consolidated end-of-hierarchy report:** what was asked (the
    step-1 preflight batch), what was done (fold in every dispatch's `DONE`), every `DECISIONS`
-   entry across the whole hierarchy, and an explicit **controversial** flag on anything from
-   `CONCERNS` or a WARN-class decision — these may affect other backlog items, which is exactly
-   the seed a future portfolio-consistency pass would need. The parent epic's own status is
-   **never auto-archived** by this process — that stays a human call, same as epic-level
-   autonomy never auto-closes an epic either.
+   entry across the whole hierarchy, any follow-up epics logged from unresolvable merge conflicts,
+   and an explicit **controversial** flag on anything from `CONCERNS` or a WARN-class decision —
+   these may affect other backlog items, which is exactly the seed a future portfolio-consistency
+   pass would need. The parent epic's own status is **never auto-archived** by this process —
+   that stays a human call, same as epic-level autonomy never auto-closes an epic either.
 
 ## state.json reference
 
