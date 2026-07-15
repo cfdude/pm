@@ -104,7 +104,7 @@ test("state.json writes leave no stray tmp file behind after tmp+rename", () => 
   run(["add-epic", "--id", "a", "--lane", "claude-code"], { cwd });
   run(["update-epic", "a", "--title", "Renamed"], { cwd });
   const entries = fs.readdirSync(path.join(cwd, ".conductor"));
-  assert.deepEqual(entries.sort(), ["state.json"]);
+  assert.deepEqual(entries.sort(), ["render-stamp.json", "state.json"]);
   const parsed = JSON.parse(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"));
   assert.equal(parsed.epics.find(e => e.id === "a").title, "Renamed");
 });
@@ -1640,6 +1640,49 @@ test("verify-worktrees returns an empty orphaned list gracefully when the cwd is
   run(["init"], { cwd });
   const out = JSON.parse(run(["verify-worktrees"], { cwd }));
   assert.deepEqual(out.orphaned, []);
+});
+
+// ──────────────── verify-state ────────────────
+
+test("verify-state succeeds right after init/render (stamp matches state.json)", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const out = runCombined(["verify-state"], { cwd });
+  assert.match(out, /conductor: state.json matches the last render/);
+});
+
+test("verify-state succeeds after render is re-run following a legitimate state change", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code"], { cwd });
+  run(["render"], { cwd });
+  const out = runCombined(["verify-state"], { cwd });
+  assert.match(out, /conductor: state.json matches the last render/);
+});
+
+test("verify-state fails loudly when state.json is hand-edited after the last render", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const state = readState(cwd);
+  state.epics.push({ id: "hand-edited", title: "Hand edited", priority: "P2", status: "queued", role: "epic", lane: "claude-code", links: [], reconcileNeeded: false });
+  // Force the on-disk mtime forward so it's unambiguously newer than the render stamp,
+  // even on filesystems with coarse mtime resolution.
+  const statePath = path.join(cwd, ".conductor", "state.json");
+  fs.writeFileSync(statePath, JSON.stringify(state, null, 2) + "\n");
+  const future = new Date(Date.now() + 60_000);
+  fs.utimesSync(statePath, future, future);
+  const err = expectFail(() => run(["verify-state"], { cwd }));
+  assert.ok(err);
+  const out = runCombined(["verify-state"], { cwd });
+  assert.match(out, /hand-edit|re-render|\/pm:status/i);
+});
+
+test("verify-state fails loudly when never rendered (no stamp) but state.json exists", () => {
+  const cwd = tmpRepo();
+  fs.mkdirSync(path.join(cwd, ".conductor"), { recursive: true });
+  writeState(cwd, { version: 1, active: null, detourStack: [], epics: [] });
+  const err = expectFail(() => run(["verify-state"], { cwd }));
+  assert.ok(err);
 });
 
 test("plan-hierarchy excludes already-archived children from the plan", () => {

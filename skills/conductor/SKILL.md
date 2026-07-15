@@ -57,7 +57,8 @@ Below, `$ENGINE` means the path resolved this way.
 set the top-level active epic · `set-autonomy <id>` grant an epic broad execution trust (see
 "Epic-level autonomy" below) · `plan-hierarchy --parent <id>` batched execution plan for a
 parent's children (see "Epic-hierarchy orchestration" below) · `verify-worktrees` flag orphaned
-hierarchy-dispatch worktrees · `set-review-mode` the repo's bounded review-count dial
+hierarchy-dispatch worktrees · `verify-state` fail loudly if state.json's mtime is newer than
+the last render's stamp (a mechanical check for an undetected hand-edit) · `set-review-mode` the repo's bounded review-count dial
 (off/standard/thorough) · `/pm:gate-guard` optional opt-in hard reconcile-gate backstop (off by
 default) · `/pm:tracker` make the conductor tracker-aware · `/pm:changelog` what changed since
 your version · `/pm:upgrade` refresh rules + run migrations + print the changelog delta.
