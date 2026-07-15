@@ -205,6 +205,50 @@ This same read-and-scan process is the one reused, unchanged, by any future work
 scan several epics at once (e.g. a parent epic's children) — it takes one epic id at a time
 regardless of caller.
 
+## Epic-hierarchy orchestration
+
+Runs a whole parent epic's children unattended — batched by priority and dependency, each
+dispatched as a fresh subagent. Builds on epic-level autonomy above; read that section first if
+you haven't. No new persistent state: everything below is recomputed fresh from `parent`,
+`priority`, `links`, and each child's `autonomy` block every time.
+
+**When:** the user wants to run an entire hierarchy (a parent epic + its children) unattended,
+not just one epic.
+
+**The process:**
+
+1. **Preflight EVERY child up front, not one at a time.** Run the epic-level-autonomy preflight
+   scan (above) against every child of the parent. Consolidate all findings into ONE batch of
+   questions presented to the user — across the whole hierarchy, not per-child. Record answers
+   per child exactly as epic-level autonomy already works: `set-autonomy <child-id>
+   --preauthorize "<action>:<reason>"` / `--context "<note>"`, then `set-autonomy <child-id>
+   --level autonomous` once a child is cleared.
+2. **Get the execution plan:** `node "$ENGINE" plan-hierarchy --parent <id>`. This prints
+   `{ parent, batches: [{ batch, epics: [{ id, priority, autonomous }] }] }`. If any epic in the
+   plan shows `autonomous: false`, that child wasn't cleared in step 1 — resolve that before
+   dispatching it (do not dispatch a non-autonomous child; it will immediately hit decision-rule
+   item (d), "no context to act on").
+   - If `plan-hierarchy` exits non-zero naming a dependency cycle, that's a real data problem
+     (two children `depends-on` each other) — fix the `links` before re-running, don't retry
+     blindly.
+3. **Dispatch batch by batch, in order.** For each batch: dispatch one
+   `agents/hierarchy-child-executor` per epic in that batch — **in parallel** (multiple
+   dispatches in the same turn) when the batch has more than one epic, since batch membership
+   already means they have no dependency on each other. Do **not** start the next batch until
+   every dispatch in the current batch has reported back.
+   - A dispatch reporting `STATUS: blocked` — do not advance to a LATER batch that depends on
+     that child (check the plan's batch order); batches unrelated to it may still proceed. Flag
+     the blocked child for the human in the end-of-hierarchy report; do not auto-retry it.
+   - A dispatch reporting `STATUS: stopped-for-genuine-unknown` — this is decision-rule item (d)
+     firing correctly, not a bug. Surface it to the human now, same as a single-epic stop would.
+4. **After all batches, write ONE consolidated end-of-hierarchy report:** what was asked (the
+   step-1 preflight batch), what was done (fold in every dispatch's `DONE`), every `DECISIONS`
+   entry across the whole hierarchy, and an explicit **controversial** flag on anything from
+   `CONCERNS` or a WARN-class decision — these may affect other backlog items, which is exactly
+   the seed a future portfolio-consistency pass would need. The parent epic's own status is
+   **never auto-archived** by this process — that stays a human call, same as epic-level
+   autonomy never auto-closes an epic either.
+
 ## state.json reference
 
 ```
