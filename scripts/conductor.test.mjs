@@ -811,6 +811,41 @@ test("set-autonomy records preauthorize/context/notify entries, repeatable and m
   assert.ok(a.notifications[0].when);
 });
 
+test("set-autonomy supports a category-based --preauthorize shorthand distinct from exact-action grants", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code"], { cwd });
+  run(["set-autonomy", "a",
+    "--preauthorize", "category:filesystem:routine scratch-file cleanup",
+    "--preauthorize", "delete-legacy-config:reviewed, one-off",
+    "--preauthorize", "category:network:internal health checks only",
+  ], { cwd });
+  const a = readState(cwd).epics.find(e => e.id === "a").autonomy;
+  assert.equal(a.preAuthorized.length, 3);
+
+  const catEntry = a.preAuthorized.find(e => e.category === "filesystem");
+  assert.ok(catEntry, "filesystem category entry recorded");
+  assert.equal(catEntry.action, undefined);           // category entries carry no `action`
+  assert.equal(catEntry.reason, "routine scratch-file cleanup");
+  assert.ok(catEntry.grantedAt);
+
+  const actionEntry = a.preAuthorized.find(e => e.action === "delete-legacy-config");
+  assert.ok(actionEntry, "exact-action entry still recorded unchanged");
+  assert.equal(actionEntry.category, undefined);      // exact-action entries carry no `category`
+  assert.equal(actionEntry.reason, "reviewed, one-off");
+
+  const netEntry = a.preAuthorized.find(e => e.category === "network");
+  assert.ok(netEntry);
+  assert.equal(netEntry.reason, "internal health checks only");
+});
+
+test("set-autonomy rejects an unknown --preauthorize category", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code"], { cwd });
+  assert.ok(expectFail(() => run(["set-autonomy", "a",
+    "--preauthorize", "category:bogus-category:whatever",
+  ], { cwd })), "unknown category rejected");
+});
+
 test("set-autonomy on an unknown id exits non-zero and writes nothing", () => {
   const cwd = tmpRepo(); run(["init"], { cwd });
   const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");

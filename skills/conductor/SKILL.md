@@ -210,6 +210,35 @@ CLAUDE.md (see `/pm:epic` → `set-autonomy`).
    per approved item) and `--context "<note>"` (repeatable, one per piece of background supplied)
    — then, only once recorded, `set-autonomy <epicId> --level autonomous`.
 
+   For a whole class of routine, low-risk actions the epic will repeat many times (creating
+   scratch files, calling a local dev API, etc.), enumerating each exact action string is
+   needless overhead. Use the category shorthand instead:
+   `set-autonomy <epicId> --preauthorize "category:<name>:<reason>"`, where `<name>` is one of
+   the default taxonomy below. This is stored as a distinct grant shape
+   (`{ category, reason, grantedAt }`, no `action` field) alongside exact-action grants
+   (`{ action, reason, grantedAt }`) in the same `preAuthorized[]` array — `set-autonomy`
+   rejects any category outside this list, so a typo fails loudly instead of silently granting
+   nothing.
+
+   **Default category taxonomy and matching heuristic** (this is inherently approximate —
+   treat it as a coarse filter, not a precise classifier; when in doubt about whether an
+   action falls under a granted category, don't guess, fall through to the decision rule's
+   exact-match / genuine-unknown handling instead):
+   - `filesystem` — matches an action description whose text is dominated by file/directory
+     verbs: create, delete, move, rename, write, copy — applied to a file or directory (not a
+     database row, not a remote resource).
+   - `network` — matches an action description whose text names an HTTP request, an API call,
+     or a socket/connection operation.
+   - `schema` — matches an action description whose text names a change to `.conductor/state.json`'s
+     own schema (adding/removing/renaming a field, a migration) — NOT changes to epic content
+     within the existing schema.
+   - `external-api` — matches an action description whose text names a call to a specific
+     named third-party service (Jira, GitHub, Linear, Slack, a payment processor, etc.), as
+     opposed to a generic `network` call to code you own.
+   - This taxonomy is fixed at four categories by default; a project needing a different
+     taxonomy should say so explicitly during the preflight scan rather than silently
+     inventing new category names (`set-autonomy` will reject anything not in this list).
+
 This same read-and-scan process is the one reused, unchanged, by any future work that needs to
 scan several epics at once (e.g. a parent epic's children) — it takes one epic id at a time
 regardless of caller.
@@ -295,6 +324,9 @@ reviewMode?   : "off" | "standard" | "thorough" — repo-level dial (default "st
 gateGuard?    : boolean — optional opt-in PreToolUse guard (default false/off)
 epics[]       : { id, title, priority, status, role, lane, parent?, externalId?, externalUrl?, planPath?, stories[]?, links[], reconcileNeeded?, autonomy? }
 autonomy?     : { level: "off"|"autonomous", preAuthorized[], context[], notifications[] } — per epic
+preAuthorized[] entries are either { action, reason?, grantedAt } (exact-action grant) or
+  { category, reason?, grantedAt } (category-shorthand grant, category one of
+  filesystem|network|schema|external-api) — never both on the same entry
 detourStack[] : { pausedEpic, pausedAt, reason, spawnedDetour, reconcileOnResume }
 status   ∈ active | paused | queued | later | blocked | archived | untriaged | planned
 role     ∈ epic | detour
