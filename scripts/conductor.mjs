@@ -65,6 +65,9 @@ const KNOWN_AUTONOMY_LEVELS = ["off", "autonomous"];
 // is not a breaking change for existing preAuthorized entries.
 const KNOWN_PREAUTHORIZE_CATEGORIES = ["filesystem", "network", "schema", "external-api"];
 const KNOWN_REVIEW_MODES = ["off", "standard", "thorough"];
+/** Rank used to compare review modes so an epic-level override can only ESCALATE above the
+ *  repo-global dial, never de-escalate below it — see currentReviewMode(epicId). */
+const REVIEW_MODE_RANK = { off: 0, standard: 1, thorough: 2 };
 const LANE_RANK = { openspec: 0, superpowers: 1, "claude-code": 2, decision: 3, external: 4 };
 const laneRank = (l) => (l in LANE_RANK ? LANE_RANK[l] : 9);
 
@@ -493,11 +496,26 @@ function currentTracker() {
   try { const t = loadState().tracker; return t && t.system ? t : null; } catch { return null; }
 }
 
-/** The active review-mode dial, defaulting to "standard" when unset or invalid. */
-function currentReviewMode() {
+/** The repo-global review-mode dial, defaulting to "standard" when unset or invalid. */
+function globalReviewMode(state) {
+  const m = state && state.reviewMode;
+  return KNOWN_REVIEW_MODES.includes(m) ? m : "standard";
+}
+
+/** The active review-mode dial. With no `epicId`, this is just the repo-global dial. With an
+ *  `epicId`, returns the EFFECTIVE mode for that epic: the higher-ranked of the repo-global
+ *  dial and the epic's own `reviewMode` override (if any) — an epic override can only escalate
+ *  above the global dial, never silently de-escalate below it (enforced at write time in
+ *  updateEpic(), not here; this is just "take the max" for read time). */
+function currentReviewMode(epicId) {
   try {
-    const m = loadState().reviewMode;
-    return KNOWN_REVIEW_MODES.includes(m) ? m : "standard";
+    const state = loadState();
+    const global = globalReviewMode(state);
+    if (!epicId) return global;
+    const epic = state.epics.find(e => e.id === epicId);
+    const override = epic && KNOWN_REVIEW_MODES.includes(epic.reviewMode) ? epic.reviewMode : null;
+    if (!override) return global;
+    return REVIEW_MODE_RANK[override] > REVIEW_MODE_RANK[global] ? override : global;
   } catch { return "standard"; }
 }
 
@@ -1403,7 +1421,7 @@ function clearActive() {
 // The flags update-epic recognizes. Anything else is a rejected error, not a
 // silent no-op — an unrecognized flag (e.g. a typo) used to parse, run, and
 // print "updated" with nothing actually changed.
-const UPDATE_EPIC_FLAGS = ["external-id", "external-url", "parent", "status", "priority", "title", "link"];
+const UPDATE_EPIC_FLAGS = ["external-id", "external-url", "parent", "status", "priority", "title", "link", "review-mode"];
 
 /** Update an EXISTING epic's title/externalId/externalUrl/parent/status/priority/links.
  *  The id is POSITIONAL (parseFlags skips non-`--` tokens). Closes the tracker
@@ -1415,7 +1433,7 @@ function updateEpic() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const argv = process.argv.slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
-  if (!id) { process.stderr.write("usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--link \"<type>:<epic>[:<reason>]\"]\n"); process.exit(1); }
+  if (!id) { process.stderr.write("usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--link \"<type>:<epic>[:<reason>]\"] [--review-mode off|standard|thorough]\n"); process.exit(1); }
   const f = parseFlags(argv.slice(1));
   const unknown = Object.keys(f).filter(k => !UPDATE_EPIC_FLAGS.includes(k));
   if (unknown.length) {
@@ -1446,6 +1464,24 @@ function updateEpic() {
     }
   }
 
+  // --review-mode: a per-epic escalation-only override of the repo-global review-mode dial
+  // (set-review-mode). It must never be usable to quietly de-escalate below the global dial —
+  // that would let one epic silently weaken review rigor a human explicitly raised repo-wide.
+  const reviewMode = str(f["review-mode"]);
+  if (reviewMode !== undefined) {
+    if (!KNOWN_REVIEW_MODES.includes(reviewMode)) {
+      process.stderr.write(`conductor: --review-mode must be one of ${KNOWN_REVIEW_MODES.join("|")}\n`);
+      process.exit(1);
+    }
+    const global = globalReviewMode(state);
+    if (REVIEW_MODE_RANK[reviewMode] < REVIEW_MODE_RANK[global]) {
+      process.stderr.write(
+        `conductor: --review-mode '${reviewMode}' would de-escalate below the repo-global dial ` +
+        `('${global}') — an epic-level override may only escalate above the global dial, never below it\n`);
+      process.exit(1);
+    }
+  }
+
   if (str(f.title) !== undefined) epic.title = str(f.title);
   if (str(f["external-id"]) !== undefined) epic.externalId = str(f["external-id"]);
   if (str(f["external-url"]) !== undefined) epic.externalUrl = str(f["external-url"]);
@@ -1453,6 +1489,7 @@ function updateEpic() {
   if (status !== undefined) epic.status = status;
   if (str(f.priority) !== undefined) epic.priority = str(f.priority);
   if (links !== undefined) epic.links = links;
+  if (reviewMode !== undefined) epic.reviewMode = reviewMode;
 
   // Stamp completedAt the moment an epic transitions TO archived (not merely re-saved
   // while already archived) — supports velocity tracking off startedAt/completedAt.
@@ -1657,10 +1694,11 @@ function setTracker() {
 
 // ---------- review mode ----------
 
-/** `set-review-mode --mode off|standard|thorough` — a repo-level dial (not per-epic),
- *  mirroring Comet's review_mode: bounds how many fresh-context reviewer passes run and
- *  when, replacing an ad-hoc judgment call with an explicit, dedup'd budget. Pure local
- *  state write — no external calls. */
+/** `set-review-mode --mode off|standard|thorough` — the repo-level dial, mirroring Comet's
+ *  review_mode: bounds how many fresh-context reviewer passes run and when, replacing an
+ *  ad-hoc judgment call with an explicit, dedup'd budget. Pure local state write — no
+ *  external calls. A single epic can escalate ABOVE this dial via
+ *  `update-epic <id> --review-mode <mode>` (never below it) — see currentReviewMode(epicId). */
 function setReviewMode() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const f = parseFlags(process.argv.slice(3));
@@ -1908,7 +1946,11 @@ if (!process.env.PM_QUIET_ENGINE_BANNER) {
   "verify-state": verifyState,
   upgrade,
   changelog,
-  rules: () => process.stdout.write(rulesBlock(currentTracker(), currentReviewMode())),
+  rules: () => {
+    const f = parseFlags(process.argv.slice(3));
+    const epicId = typeof f.epic === "string" ? f.epic : undefined;
+    process.stdout.write(rulesBlock(currentTracker(), currentReviewMode(epicId)));
+  },
   "write-rules": writeRules,
 }[cmd] || (() => {
   process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|set-active|clear-active|set-tracker|set-autonomy|set-review-mode|set-gate-guard|gate-guard|plan-hierarchy|verify-worktrees|verify-state|upgrade|changelog|rules|write-rules\n");

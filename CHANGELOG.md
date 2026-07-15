@@ -10,6 +10,14 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Per-epic review-mode override (escalation-only).** `update-epic <id> --review-mode
+  off|standard|thorough` sets an epic-level override that can only ESCALATE above the
+  repo-global `set-review-mode` dial — never de-escalate below it (an attempt to set a lower
+  mode than the current global dial is rejected outright, state unchanged). `currentReviewMode`
+  now accepts an optional `epicId` and returns the effective mode for that epic: the
+  higher-ranked of the global dial and the epic's override. `rules --epic <id>` surfaces the
+  effective per-epic mode in the emitted "Current mode" line. Lets one security-sensitive epic
+  force `thorough` review without flipping an otherwise-`standard` repo's global dial.
 - **Auto-detected minimal detours from commit diff shape.** `commit-nudge` (the
   `PostToolUse(Bash)` hook that already fires after every `git commit`) now recognizes an
   UNLOGGED minimal detour by its shape — a small commit (<=3 files changed) with a

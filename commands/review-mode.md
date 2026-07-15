@@ -36,4 +36,30 @@ time). It refreshes the CLAUDE.md rules block so the "Current mode" line stays a
 
 Read the active mode from the rules block (or `state.reviewMode`) before starting a review pass,
 and size the reviewer budget accordingly — don't default back to ad-hoc judgment. This is a
-repo-level setting, not per-epic: it applies uniformly regardless of which epic is active.
+repo-level setting: it applies uniformly regardless of which epic is active, EXCEPT where a
+single epic has an escalation-only override (below).
+
+## Per-epic override (escalate only, never de-escalate)
+
+A single epic can be forced to a stricter mode than the repo-global dial — e.g. a
+security-sensitive epic in an otherwise `standard` repo — without flipping the whole repo to
+`thorough`:
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" update-epic <id> --review-mode thorough
+```
+
+Rules:
+- The override may only ESCALATE above the repo-global dial (`off` < `standard` < `thorough`).
+  An attempt to set an epic's `--review-mode` BELOW the current global dial is rejected outright
+  (non-zero exit, state unchanged) — an epic can never quietly weaken review rigor a human
+  explicitly raised repo-wide.
+- The effective mode for a given epic is `max(global dial, that epic's override)`. Query it with
+  `conductor.mjs rules --epic <id>` (look for "Current mode" in the emitted block), or read
+  `state.epics[].reviewMode` directly alongside `state.reviewMode`.
+- If the repo-global dial is later raised above a previously-set epic override, the global dial
+  wins again for that epic — the override never pins a *lower* effective mode than the current
+  global dial; it only ever adds a floor above it.
+- Clearing an override requires setting `--review-mode` to a value at or above the current global
+  dial (there is no separate "unset" — set it equal to the current global dial to make the
+  override a no-op).

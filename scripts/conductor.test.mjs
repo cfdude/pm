@@ -1308,6 +1308,46 @@ test("set-review-mode sets the active mode and rejects an unknown mode", () => {
   assert.ok(expectFail(() => run(["set-review-mode"], { cwd })), "missing --mode rejected");
 });
 
+test("update-epic --review-mode escalates above the repo-global dial but never de-escalates below it", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--title", "Security-sensitive epic", "--lane", "claude-code"], { cwd });
+
+  // Repo dial defaults to "standard". Escalating a single epic to "thorough" is allowed.
+  run(["update-epic", "a", "--review-mode", "thorough"], { cwd });
+  assert.equal(readState(cwd).epics.find(e => e.id === "a").reviewMode, "thorough");
+
+  // Now raise the repo dial to "thorough" and try to set the epic override to "standard" —
+  // that would de-escalate below the (now higher) global dial, so it must be rejected.
+  run(["set-review-mode", "--mode", "thorough"], { cwd });
+  const err = expectFail(() => run(["update-epic", "a", "--review-mode", "standard"], { cwd }));
+  assert.ok(err, "expected rejection of a de-escalating override");
+  assert.match(String(err.stderr || err.message), /de-escalate|below/);
+  // State must be unchanged by the rejected attempt.
+  assert.equal(readState(cwd).epics.find(e => e.id === "a").reviewMode, "thorough");
+
+  // An unknown mode is still rejected outright.
+  assert.ok(expectFail(() => run(["update-epic", "a", "--review-mode", "bogus"], { cwd })), "bad mode rejected");
+});
+
+test("currentReviewMode(epicId) returns the higher of the repo-global dial and the epic's override", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--title", "Epic A", "--lane", "claude-code"], { cwd });
+  run(["add-epic", "--id", "b", "--title", "Epic B", "--lane", "claude-code"], { cwd });
+
+  // Global standard, no override on either epic -> both effectively standard.
+  assert.match(run(["rules", "--epic", "a"], { cwd }), /Current mode: \*\*standard\*\*/);
+
+  // Escalate epic 'a' to thorough; epic 'b' stays at the global standard dial.
+  run(["update-epic", "a", "--review-mode", "thorough"], { cwd });
+  assert.match(run(["rules", "--epic", "a"], { cwd }), /Current mode: \*\*thorough\*\*/);
+  assert.match(run(["rules", "--epic", "b"], { cwd }), /Current mode: \*\*standard\*\*/);
+
+  // Raising the global dial past an epic's override makes the global dial win again.
+  run(["set-review-mode", "--mode", "thorough"], { cwd });
+  run(["set-review-mode", "--mode", "off"], { cwd });
+  assert.match(run(["rules", "--epic", "b"], { cwd }), /Current mode: \*\*off\*\*/);
+});
+
 test("set-gate-guard toggles the opt-in flag and rejects an invalid value", () => {
   const cwd = tmpRepo(); run(["init"], { cwd });
   assert.equal(readState(cwd).gateGuard, undefined);   // off by default, never written until set
