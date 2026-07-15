@@ -47,8 +47,194 @@
       "lane": "decision",
       "links": [],
       "reconcileNeeded": false
+    },
+    {
+      "id": "pm-plugin-improvements-2026-07-14",
+      "title": "pm plugin improvements from three dogfooding sessions (2026-07-14) — see docs/feedback/2026-07-14-pm-plugin-improvement-feedback.md",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "gate-guard-default-on-reconcile",
+      "title": "Flip gate-guard default to ON for epics with reconcileOnResume — reverses the deliberate opt-in choice, approved after real-usage feedback showed it's never been turned on",
+      "priority": "P1",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "parent": "pm-plugin-improvements-2026-07-14"
+    },
+    {
+      "id": "diffshape-minimal-detour-inference",
+      "title": "Auto-detect an unlogged minimal detour from commit/diff shape and log it without a manual /pm:detour --minimal invocation — 3 sessions converge on this, user's #1 priority",
+      "priority": "P1",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "parent": "pm-plugin-improvements-2026-07-14"
+    },
+    {
+      "id": "remove-epic-verb",
+      "title": "Add a remove-epic (or soft-delete/archive-with-reason) CLI verb — the only current recovery from a mis-registered epic is a raw git checkout",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "parent": "pm-plugin-improvements-2026-07-14"
+    },
+    {
+      "id": "fix-archived-no-change-warning",
+      "title": "Fix missing() to exclude status===archived — an already-closed epic can show an unresolvable '⚠ no change on disk' warning forever",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "parent": "pm-plugin-improvements-2026-07-14"
+    },
+    {
+      "id": "reconciler-structured-writeback",
+      "title": "Reconciler returns a structured {valid, amendments} verdict AND writes it back onto the relevant link — currently the judgment only ever lives in conversation",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "parent": "pm-plugin-improvements-2026-07-14"
+    },
+    {
+      "id": "lane-routing-config",
+      "title": "Add a real per-repo lane-routing override mechanism (state.json config) instead of requiring a CLAUDE.md prose carve-out when the generic heuristic is wrong for a repo",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "parent": "pm-plugin-improvements-2026-07-14"
+    },
+    {
+      "id": "autonomy-hierarchy-adoption-investigation",
+      "title": "Investigate why epic-level autonomy and epic-hierarchy orchestration show zero real-world usage in at least one dogfooding repo — ceremony weight vs discoverability vs genuinely not needed",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "decision",
+      "links": [],
+      "reconcileNeeded": false,
+      "parent": "pm-plugin-improvements-2026-07-14"
+    },
+    {
+      "id": "honcho-memory-string-print",
+      "title": "log-detour/resume print the exact ready-to-copy Honcho memory string (and keep a local log of what was emitted) instead of asking the agent to compose and silently one-way-write it",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "parent": "pm-plugin-improvements-2026-07-14"
+    },
+    {
+      "id": "verify-state-command",
+      "title": "Add a verify-state command that fails loudly if state.json's mtime is newer than the last render's stamp, catching an undetected hand-edit mechanically",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "parent": "pm-plugin-improvements-2026-07-14"
+    },
+    {
+      "id": "dependency-aware-standalone-ordering",
+      "title": "Extend plan-hierarchy's depends-on topological sort to top-level queued epics generally, not just parent/child hierarchies — the same starvation problem exists at the top-level queue",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "parent": "pm-plugin-improvements-2026-07-14"
+    },
+    {
+      "id": "per-epic-review-mode-override",
+      "title": "Let a single epic/detour override set-review-mode's repo-global dial to thorough without flipping the whole repo's mode",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "parent": "pm-plugin-improvements-2026-07-14"
+    },
+    {
+      "id": "epic-timestamps-and-staleness",
+      "title": "Add startedAt/completedAt timestamps to epics, and surface a staleness/days-active indicator in PROJECT.md and /pm:next — supports velocity tracking and the weekly Ship-Real-Software check",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "parent": "pm-plugin-improvements-2026-07-14"
+    },
+    {
+      "id": "category-based-preauthorization",
+      "title": "Add a category-based --preauthorize shorthand (e.g. \"category:filesystem\") to epic-level autonomy, instead of requiring every routine action to be enumerated individually",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "parent": "pm-plugin-improvements-2026-07-14"
+    },
+    {
+      "id": "incremental-notify-timing-fix",
+      "title": "Clarify the epic-level-autonomy decision rule's wording so WARN-class decisions are --notify'd incrementally as they happen, not just gathered for the end-of-epic report — a compaction-safety fix using the mechanism that already exists",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "parent": "pm-plugin-improvements-2026-07-14"
+    },
+    {
+      "id": "cross-repo-epic-dependency-investigation",
+      "title": "Investigate a mechanism for cross-repo epic dependencies — links currently only reference epics within one repo, but real cross-repo dependencies exist (e.g. a deploy epic depending on infra-playbooks conventions)",
+      "priority": "P3",
+      "status": "queued",
+      "role": "epic",
+      "lane": "decision",
+      "links": [],
+      "reconcileNeeded": false,
+      "parent": "pm-plugin-improvements-2026-07-14"
+    },
+    {
+      "id": "changelog-preview-in-sessionstart-nudge",
+      "title": "Show the top 2-3 changelog bullets inline in the SessionStart upgrade nudge, instead of requiring a separate /pm:changelog round trip to decide if upgrading is worth mid-epic churn",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "parent": "pm-plugin-improvements-2026-07-14"
     }
   ],
   "detourStack": [],
-  "pmVersion": "0.8.0"
+  "pmVersion": "0.10.0"
 }
