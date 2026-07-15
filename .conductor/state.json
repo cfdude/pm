@@ -646,6 +646,66 @@
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false
+    },
+    {
+      "id": "df-changelog-fragment-conflicts",
+      "title": "DF: every parallel hierarchy-child batch conflicts on CHANGELOG.md's shared '## [Unreleased]' header — 100% collision rate across both dogfood batches (5/6 and 2/4 merges). Adopt a changesets-style per-child fragment file (e.g. .changesets/<epic-id>.md) that each child writes instead of editing the shared CHANGELOG.md directly; the orchestrator concatenates fragments into the real CHANGELOG.md once, at release time, as the sole writer — eliminating this entire conflict class rather than resolving it by hand every batch.",
+      "priority": "P1",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "df-conflict-resolution-verification-step",
+      "title": "DF: the orchestrator resolved a merge conflict incorrectly mid-dispatch (left a stray opening '<<<<<<< HEAD' marker after removing only the closing markers) and only caught it by manually re-grepping — the tiered conflict-resolution design has no MANDATORY post-resolution verification step. Add one to the conductor skill's merge-conflict-resolution process: after every conflict resolution (self-resolved or via merge-conflict-resolver), grep for leftover '<<<<<<<'/'======='/'>>>>>>>' markers AND run a syntax check (node -c for .mjs files) before committing the merge — treat either failure as still-unresolved, not done.",
+      "priority": "P1",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "df-skill-commands-line-drift",
+      "title": "DF: SKILL.md's 'Commands' one-liner drifted from the real dispatch table again (set-lane-routing/suggest-lane and the review-mode escalation flag were missing) — the same bug class fixed once in 0.12.0's doc-drift fix, recurring because nothing mechanically enforces it. Add a test asserting every key in conductor.mjs's dispatch table appears (by subcommand name) somewhere in skills/conductor/SKILL.md, so a missed doc update fails CI instead of waiting to be caught by chance during a future merge.",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "df-live-infra-epic-session-continuity-warning",
+      "title": "DF: branch-protection-and-pr-workflow changed live GitHub repo settings mid-session and nothing in its preflight or executor report flagged that the CURRENT session's own git push would immediately start failing — discovered only when the push was rejected. Any epic whose autonomy context/preauthorization involves a live external-infra change with session-continuity impact (branch protection, required reviewers, webhook changes, etc.) should have its hierarchy-child-executor explicitly check 'does this change affect how the orchestrator itself will need to operate for the rest of this session' and surface it as a CONCERN before/at completion, not leave it to be discovered empirically.",
+      "priority": "P1",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "df-stray-render-artifacts-noise",
+      "title": "DF: PROJECT.md/.conductor/render-stamp.json show spurious uncommitted timestamp-only diffs after nearly every dispatch/render call, and an untracked .conductor/brief.txt scratch file (written by a SessionStart-style hook, never gitignored) appears repeatedly — required manual git checkout -- discarding roughly a dozen times across one session. Investigate the actual source (likely every hierarchy-child's own render() calls bumping the timestamp even when nothing else changed) and either suppress no-op re-renders more aggressively, or gitignore brief.txt if it is genuinely just a disposable session artifact.",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "df-verify-worktrees-merged-not-just-archived",
+      "title": "DF: verify-worktrees only flags a hierarchy-child worktree as orphaned when its epic status is archived — it missed the case (hit this session) where a worktree's branch is already fully merged into the current branch but the worktree itself was never removed (git branch -d then failed with 'used by worktree'). Extend verify-worktrees to also flag any hierarchy-child/worktree-agent-* worktree whose branch tip is already an ancestor of the current branch, regardless of the epic's status field.",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false
     }
   ],
   "detourStack": [],
