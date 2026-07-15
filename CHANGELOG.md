@@ -6,6 +6,21 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [Unreleased]
+
+### Changed
+
+- **Epic-level-autonomy decision rule now says "`--notify` incrementally as it happens," not
+  "record for the end-of-epic report."** The `--notify` mechanism already writes durably to
+  `state.json`'s `notifications[]` array; the prior wording implied WARN-class (c) and
+  consequential (e) decisions were only gathered in-memory for a report assembled at the end
+  of the epic, which loses them if the session is compacted or interrupted mid-epic. Fixed in
+  both `CLAUDE.md`'s rules block and the identical generated block in
+  `scripts/conductor.mjs`'s `renderRulesBlock`-equivalent. The end-of-epic report step now
+  reads back `notifications[]` rather than being the primary record. No code change —
+  `--notify`/`notifications[]` already worked this way; this is a wording fix so the documented
+  process matches the existing mechanism.
+
 ## [0.12.2] — 2026-07-15
 
 ### Added
