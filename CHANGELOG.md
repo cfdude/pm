@@ -6,6 +6,19 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- **Branch protection + PR workflow on `cfdude/pm`.** `main` now requires pull requests (no
+  direct pushes), the `test` job from `.github/workflows/ci.yml` as a required status check,
+  0 required approving reviews (solo maintainer), and squash-merge-only at the repo level.
+  Day-to-day work moves to a new `dev` branch (created from `main`'s tip); PRs merge
+  `dev` → `main`. See `CONTRIBUTING.md` for the full workflow. This is a live GitHub repo
+  settings change, not a code change — no `state.json` schema impact.
+
+---
+
 ## [0.14.0] — 2026-07-15
 
 ### Added
