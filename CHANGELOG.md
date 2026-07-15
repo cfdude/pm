@@ -46,6 +46,14 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **`startedAt`/`completedAt` timestamps on epics, and a staleness indicator.**
+  `set-active` now stamps `startedAt` (ISO string) the first time an epic goes active
+  (re-activation after a demotion does not reset it); `update-epic --status archived` stamps
+  `completedAt`. Both fields are purely additive — existing epics simply lack them until
+  touched, so no migration is needed. `PROJECT.md`'s epic table, its "Now" section, and the
+  brief's `NOW`/`NEXT UP` lines all surface `⚠ stale, Nd active` for any epic with `startedAt`
+  set, no `completedAt`, and more than 14 days elapsed — supporting velocity tracking and the
+  weekly Ship-Real-Software check.
 - **Engine version+source banner on every invocation.** `conductor.mjs` now prints
   `conductor: engine <version> @ <path>` to stderr on every run (silenceable via
   `PM_QUIET_ENGINE_BANNER=1`). Discovered live while dogfooding: `$ENGINE` resolution had
