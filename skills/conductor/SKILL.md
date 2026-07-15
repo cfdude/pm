@@ -28,13 +28,19 @@ You (Claude) are myopic across compactions. This skill is how you stop losing th
 
 ## Running the engine (resolve the path — never version-pin)
 
-When you invoke `conductor.mjs` from a Bash step, resolve it version-independently. Prefer
-`$CLAUDE_PLUGIN_ROOT`; if that env var is unset (common outside a slash-command), fall back to the
-newest installed copy. **Never** hardcode a versioned cache path like `…/pm/0.6.1/scripts/…` — it
-breaks on the next upgrade.
+When you invoke `conductor.mjs` from a Bash step, resolve it version-independently. Prefer a
+repo-local `scripts/conductor.mjs` first — if `$CLAUDE_PROJECT_DIR` (or the cwd) IS the pm plugin
+source (self-hosting: developing pm on itself), that copy is always newer than whatever's
+installed in the plugin cache, and skipping it is how a stale cached engine silently runs against
+the very changes you're testing. Otherwise prefer `$CLAUDE_PLUGIN_ROOT`; if that's also unset
+(common outside a slash-command), fall back to the newest installed copy. **Never** hardcode a
+versioned cache path like `…/pm/0.6.1/scripts/…` — it breaks on the next upgrade. Every invocation
+prints `conductor: engine <version> @ <path>` to stderr — watch it if a subcommand behaves like an
+older release; set `PM_QUIET_ENGINE_BANNER=1` to silence it once you've confirmed the source.
 
 ```bash
-ENGINE="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/scripts/conductor.mjs}"
+ENGINE="${CLAUDE_PROJECT_DIR:+$CLAUDE_PROJECT_DIR/scripts/conductor.mjs}"
+[ -f "$ENGINE" ] || ENGINE="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/scripts/conductor.mjs}"
 [ -f "$ENGINE" ] || ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1)
 node "$ENGINE" <subcommand>
 ```

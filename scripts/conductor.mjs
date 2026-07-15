@@ -1597,6 +1597,11 @@ function verifyWorktrees() {
 // ---------- dispatch ----------
 
 const cmd = process.argv[2];
+if (!process.env.PM_QUIET_ENGINE_BANNER) {
+  process.stderr.write(
+    `conductor: engine ${pluginVersion() || "unknown"} @ ${path.dirname(fileURLToPath(import.meta.url))}\n`
+  );
+}
 ({
   init,
   render,

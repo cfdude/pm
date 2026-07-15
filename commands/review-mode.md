@@ -26,7 +26,7 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" set-review-mode --mode thorou
 ```
 
 If `${CLAUDE_PLUGIN_ROOT}` is empty:
-`ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1); node "$ENGINE" set-review-mode --mode thorough`
+`ENGINE="${CLAUDE_PROJECT_DIR:+$CLAUDE_PROJECT_DIR/scripts/conductor.mjs}"; [ -f "$ENGINE" ] || ENGINE="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/scripts/conductor.mjs}"; [ -f "$ENGINE" ] || ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1); node "$ENGINE" set-review-mode --mode thorough`
 
 `--mode` must be one of `off | standard | thorough`. Re-running `set-review-mode` replaces the
 prior mode outright (unlike `set-autonomy`'s additive flags — there is only one active mode at a

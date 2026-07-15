@@ -15,7 +15,7 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" plan-hierarchy --parent <id>
 ```
 
 If `${CLAUDE_PLUGIN_ROOT}` is empty:
-`ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1); node "$ENGINE" plan-hierarchy --parent <id>`
+`ENGINE="${CLAUDE_PROJECT_DIR:+$CLAUDE_PROJECT_DIR/scripts/conductor.mjs}"; [ -f "$ENGINE" ] || ENGINE="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/scripts/conductor.mjs}"; [ -f "$ENGINE" ] || ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1); node "$ENGINE" plan-hierarchy --parent <id>`
 
 Prints `{ parent, batches: [{ batch, epics: [{ id, priority, autonomous, dependsOn }] }] }`.
 `dependsOn` is each epic's list of sibling ids (within this hierarchy) it depends on — use it to

@@ -1662,3 +1662,17 @@ test("plan-hierarchy on a parent whose only children are all archived returns an
   const out = JSON.parse(run(["plan-hierarchy", "--parent", "sprint2"], { cwd }));
   assert.deepEqual(out.batches, []);
 });
+
+test("every invocation prints the engine version and source path to stderr, so a stale cached engine is visible", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const r = runCombined(["render"], { cwd });
+  assert.match(r, /conductor: engine \S+ @ .*scripts/);
+});
+
+test("the engine banner is suppressed when PM_QUIET_ENGINE_BANNER is set", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const r = runCombined(["render"], { cwd, env: { PM_QUIET_ENGINE_BANNER: "1" } });
+  assert.doesNotMatch(r, /conductor: engine/);
+});

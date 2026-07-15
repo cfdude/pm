@@ -50,7 +50,7 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" set-tracker \
 ```
 
 If `${CLAUDE_PLUGIN_ROOT}` is empty:
-`ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1); node "$ENGINE" set-tracker …`
+`ENGINE="${CLAUDE_PROJECT_DIR:+$CLAUDE_PROJECT_DIR/scripts/conductor.mjs}"; [ -f "$ENGINE" ] || ENGINE="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/scripts/conductor.mjs}"; [ -f "$ENGINE" ] || ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1); node "$ENGINE" set-tracker …`
 
 `--intent` is repeatable; each `<status>:<target>` adds one entry to the map. Re-running
 `set-tracker` merges (only the flags you pass change). It refreshes the CLAUDE.md rules block.

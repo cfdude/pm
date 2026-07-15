@@ -20,7 +20,7 @@ anytime; idempotent. Use it when the briefing shows a "pm <old> → <new>" upgra
    ```
 
    If `${CLAUDE_PLUGIN_ROOT}` is empty:
-   `ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1); node "$ENGINE" upgrade`
+   `ENGINE="${CLAUDE_PROJECT_DIR:+$CLAUDE_PROJECT_DIR/scripts/conductor.mjs}"; [ -f "$ENGINE" ] || ENGINE="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/scripts/conductor.mjs}"; [ -f "$ENGINE" ] || ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1); node "$ENGINE" upgrade`
 
 2. **Tracker awareness (optional; only if not already set).** If `.conductor/state.json` has no
    `tracker` block AND there is a *real* signal that work is actively managed in an issue tracker
