@@ -26,7 +26,7 @@
       "id": "portfolio-architecture-consistency-scan",
       "title": "Portfolio/architecture-consistency scanning across the backlog (see docs/vision/2026-07-14-autonomy-orchestration-vision.md, section C — least-scoped of the three, needs its own brainstorm)",
       "priority": "P3",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "decision",
       "links": [
@@ -36,7 +36,8 @@
           "reason": "C presumes B's hierarchy execution exists to propagate cross-cutting decisions into"
         }
       ],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "completedAt": "2026-07-15T23:01:10.348Z"
     },
     {
       "id": "infra-runbook-preflight",
@@ -448,7 +449,7 @@
       "id": "ai-feedback-loop-github-issues",
       "title": "Skill-driven /pm:feedback command — post a bug report or feature request as a GitHub issue on cfdude/pm directly from any Claude Code session using the plugin",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -471,13 +472,14 @@
           "Decision: use gh CLI via Bash (agent-invoked, not the engine — complies with the instruction-layer law: pm never calls external systems itself). Labels: bug or enhancement based on report type. Dedup: search open issues for a near-duplicate title before creating; if found, comment on the existing issue instead of creating a new one."
         ],
         "notifications": []
-      }
+      },
+      "completedAt": "2026-07-15T23:01:10.171Z"
     },
     {
       "id": "github-issue-tracker-sync",
       "title": "GitHub issue tracker: extend set-tracker/sync so open cfdude/pm issues can be pulled into the conductor as untriaged epics, same pattern as OpenSpec/Superpowers auto-registration — closes the loop with ai-feedback-loop-github-issues",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -506,7 +508,8 @@
           "Decision: mirror the existing Jira-tracker sync pattern exactly — open GitHub issues not already mapped via externalId become new untriaged epics; priority defaults P2 unless a label maps to a different priority. Re-running sync must not create duplicate epics for the same issue (dedup by externalId)."
         ],
         "notifications": []
-      }
+      },
+      "completedAt": "2026-07-15T23:01:10.225Z"
     },
     {
       "id": "cfdude-pm-repo-governance",
@@ -533,7 +536,7 @@
       "id": "ci-test-lint-workflow",
       "title": "Add a GitHub Actions workflow on cfdude/pm running node --test (and syntax/lint checks) on every PR — CI gate before merge",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -552,18 +555,20 @@
           "Decision: Node 18.x only (this repo's stated minimum). No separate lint tool exists in this zero-dependency repo — 'lint' means a node -c syntax check on conductor.mjs and conductor.test.mjs, not a third-party linter."
         ],
         "notifications": []
-      }
+      },
+      "completedAt": "2026-07-15T23:01:10.267Z"
     },
     {
       "id": "autonomous-issue-resolution-agent",
       "title": "Research + design an autonomous issue-to-PR pipeline for cfdude/pm: a GitHub-Actions-hosted Claude agent that analyzes a validated issue, implements a fix on a branch, and opens a PR; a CI check gates that the PR genuinely came from this trusted automation (not a spoofed external PR); the user remains the final human approver/merger always. Needs its own research pass (what mechanism — an official Claude Code GitHub Action, a custom Claude API workflow, something else) before any design — substantially bigger and more novel than the other two governance items.",
       "priority": "P3",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "decision",
       "links": [],
       "reconcileNeeded": false,
-      "parent": "cfdude-pm-repo-governance"
+      "parent": "cfdude-pm-repo-governance",
+      "completedAt": "2026-07-15T23:01:10.307Z"
     },
     {
       "id": "df-stale-cache-silent-fallback",
@@ -611,6 +616,16 @@
       "links": [],
       "reconcileNeeded": false,
       "parent": "pm-plugin-improvements-2026-07-14"
+    },
+    {
+      "id": "df-github-tracker-outward-sync-unsuppressed",
+      "title": "DF: with a github-issues tracker configured for inward sync, the existing outward 'External tracker sync' rules-block section still tells the agent to auto-create a GitHub issue for any local epic lacking externalId — likely unwanted for a purely-inward github-issues tracker (a local claude-code epic shouldn't get an issue auto-filed). Needs a decision: suppress/reword the outward section when tracker.system === 'github-issues', or is bidirectional mirroring actually desired? Found by the github-issue-tracker-sync build agent, flagged as a CONCERN rather than guessed at.",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false
     }
   ],
   "detourStack": [],
