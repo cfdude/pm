@@ -10,6 +10,17 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Auto-detected minimal detours from commit diff shape.** `commit-nudge` (the
+  `PostToolUse(Bash)` hook that already fires after every `git commit`) now recognizes an
+  UNLOGGED minimal detour by its shape — a small commit (<=3 files changed) with a
+  `fix:`/`chore:` conventional-commit subject, made while no detour is active, and not
+  scoped to the currently active epic (a `fix(<active-epic-id>): ...` subject is read as
+  that epic's own work, not a stray detour) — and appends an `AUTO-DETOUR` entry to
+  `.conductor/detours.log` automatically, without waiting for `/pm:detour --minimal` to be
+  run by hand. Three separate dogfooding sessions converged on "the agent forgets to log
+  the minimal detour" as the #1 pain point; this closes that gap at the mechanism level
+  (hook-driven, not agent-remembered) rather than relying on the agent to recall the rule.
+  See `looksLikeUnloggedMinimalDetour()` / `headChangedFileCount()` in `conductor.mjs`.
 - **`honcho-memory <push|pop> <epicId> "<reason>"` subcommand.** Formats the exact
   ready-to-copy one-line Honcho memory string for a detour-stack PUSH/POP (per CLAUDE.md rule
   4), prints it to stdout, and appends a timestamped copy to the new

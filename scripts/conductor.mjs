@@ -20,7 +20,10 @@
  *   render         regenerate PROJECT.md from state.json + live tasks.md
  *   brief          SessionStart: print additionalContext JSON (DORMANT if not init'd)
  *   snapshot       PreCompact: render + write .conductor/brief.txt (DORMANT if not init'd)
- *   commit-nudge   PostToolUse(Bash): after a git commit, log detour commits + nudge
+ *   commit-nudge   PostToolUse(Bash): after a git commit, log detour commits + nudge;
+ *                  also auto-logs an AUTO-DETOUR entry when a small fix/chore commit's
+ *                  diff shape looks like an unlogged minimal detour (see
+ *                  looksLikeUnloggedMinimalDetour)
  *   sync           add any new openspec changes to state.json as "untriaged"
  *   log-detour "x" record a MINIMAL detour in detours.log (with the current git SHA)
  *   honcho-memory  <push|pop> <epicId> "<reason>" — print + log the ready-to-copy Honcho line
@@ -892,6 +895,30 @@ function snapshot() {
   process.stderr.write("conductor: snapshot written before compaction\n");
 }
 
+/** Number of files touched by HEAD (the commit that just landed), via `git diff-tree`.
+ *  Returns null (unknown — never treated as a match) if git isn't available/usable here,
+ *  e.g. not a git repo or HEAD has no parent. */
+function headChangedFileCount() {
+  try {
+    const out = execSync("git diff-tree --no-commit-id --name-only -r --root HEAD", {
+      cwd: ROOT, stdio: ["ignore", "pipe", "ignore"],
+    }).toString().trim();
+    return out ? out.split("\n").length : 0;
+  } catch { return null; }
+}
+
+/** Diff-shape heuristic for an UNLOGGED minimal detour: a small, self-contained commit
+ *  (<=3 files) whose subject uses a fix/chore conventional-commit prefix, made while no
+ *  detour is active, and that does not itself name the currently active epic (a commit
+ *  tagged to the active epic's own scope is that epic's work, not a stray detour). */
+function looksLikeUnloggedMinimalDetour(subject, activeEpicId) {
+  if (!/^(fix|chore)(\([^)]*\))?:\s/.test(subject)) return false;
+  if (activeEpicId && subject.includes(`(${activeEpicId})`)) return false;
+  const files = headChangedFileCount();
+  if (files === null || files === 0 || files > 3) return false;
+  return true;
+}
+
 function commitNudge() {
   if (!isInitialized()) return;          // DORMANT until /pm:init
   const raw = readStdin();
@@ -904,12 +931,19 @@ function commitNudge() {
 
   const state = loadState();
   const ctx = detourContext(state);
+  const m = cmd.match(/-m\s+(?:"([^"]*)"|'([^']*)'|(\S+))/);
+  const subject = (m && (m[1] || m[2] || m[3])) || "";
 
   // DETERMINISTIC: if we are inside a detour, record this commit in the trail.
+  let autoLogged = false;
   if (ctx.active) {
-    const m = cmd.match(/-m\s+(?:"([^"]*)"|'([^']*)'|(\S+))/);
-    const subject = (m && (m[1] || m[2] || m[3])) || "";
     appendDetourLog("DETOUR-COMMIT", ctx.detourId, subject);
+  } else if (looksLikeUnloggedMinimalDetour(subject, state.active)) {
+    // AUTO-DETECT: this commit's shape looks like a minimal detour nobody logged via
+    // `/pm:detour --minimal`. Log it automatically instead of relying on the agent to
+    // remember — the whole point of this heuristic.
+    appendDetourLog("AUTO-DETOUR", state.active || "-", subject);
+    autoLogged = true;
   }
   // Self-heal: if this commit archived the active epic (e.g. an OpenSpec archive),
   // clear the stale active pointer + stamp archived status so /pm:next advances.
@@ -920,6 +954,10 @@ function commitNudge() {
     ? `Commit detected during DETOUR \`${ctx.detourId}\` (logged to detours.log). ` +
       "When the detour is done: archive it, `/pm:resume` to pop the stack, and run the " +
       "RECONCILE check on the paused parent epic. Write a one-line Honcho memory on resume."
+    : autoLogged
+    ? "Commit detected. Diff shape (small, fix/chore-prefixed, unrelated to the active " +
+      "epic) looks like a MINIMAL detour, so it was auto-logged to `.conductor/detours.log` " +
+      "as an AUTO-DETOUR entry. Review it — if that's wrong, edit/remove the line."
     : "Commit detected. If this was a MINIMAL detour, run `/pm:detour --minimal \"<what>\"` " +
       "to record it. Otherwise update `.conductor/state.json` if an epic's status or stories changed.";
   process.stdout.write(JSON.stringify({

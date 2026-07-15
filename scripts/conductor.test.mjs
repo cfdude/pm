@@ -1993,3 +1993,79 @@ test("honcho-memory rejects an unknown action", () => {
   run(["init"], { cwd });
   assert.throws(() => run(["honcho-memory", "sideways", "epic-a", "reason"], { cwd }));
 });
+
+// ───────── auto-detect an unlogged minimal detour from commit/diff shape ─────────
+
+function gitRepo(cwd) {
+  execFileSync("git", ["init", "-q"], { cwd });
+  execFileSync("git", ["config", "user.email", "test@example.com"], { cwd });
+  execFileSync("git", ["config", "user.name", "Test"], { cwd });
+  // Baseline commit for whatever /pm:init already scaffolded (CLAUDE.md, .conductor/state.json,
+  // PROJECT.md), so the commit under test only reflects the files it actually touches.
+  execFileSync("git", ["add", "-A"], { cwd });
+  execFileSync("git", ["commit", "-q", "-m", "chore: baseline"], { cwd });
+}
+function commitFiles(cwd, files, message) {
+  for (const [name, content] of Object.entries(files)) {
+    fs.writeFileSync(path.join(cwd, name), content);
+  }
+  execFileSync("git", ["add", "-A"], { cwd });
+  execFileSync("git", ["commit", "-q", "-m", message], { cwd });
+}
+function detourLog(cwd) {
+  try { return fs.readFileSync(path.join(cwd, ".conductor", "detours.log"), "utf8"); }
+  catch { return ""; }
+}
+
+test("commit-nudge auto-logs a minimal detour for a small fix commit with no active detour", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd }); gitRepo(cwd);
+  commitFiles(cwd, { "a.txt": "1" }, "fix: correct off-by-one in renderer");
+  run(["commit-nudge"], { cwd, input: JSON.stringify({ tool_input: { command: 'git commit -m "fix: correct off-by-one in renderer"' } }) });
+  const log = detourLog(cwd);
+  assert.match(log, /AUTO-DETOUR/);
+  assert.match(log, /correct off-by-one in renderer/);
+});
+
+test("commit-nudge does not auto-log a large commit (more than 3 files)", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd }); gitRepo(cwd);
+  commitFiles(cwd, { "a.txt": "1", "b.txt": "1", "c.txt": "1", "d.txt": "1" }, "fix: sweeping cleanup");
+  run(["commit-nudge"], { cwd, input: JSON.stringify({ tool_input: { command: 'git commit -m "fix: sweeping cleanup"' } }) });
+  assert.doesNotMatch(detourLog(cwd), /AUTO-DETOUR/);
+});
+
+test("commit-nudge does not auto-log a commit without a fix/chore conventional-commit prefix", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd }); gitRepo(cwd);
+  commitFiles(cwd, { "a.txt": "1" }, "feat: add new widget");
+  run(["commit-nudge"], { cwd, input: JSON.stringify({ tool_input: { command: 'git commit -m "feat: add new widget"' } }) });
+  assert.doesNotMatch(detourLog(cwd), /AUTO-DETOUR/);
+});
+
+test("commit-nudge does not auto-log a commit that names the active epic (treated as the epic's own work)", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  writeState(cwd, { version: 1, active: "feat-x", detourStack: [], epics: [
+    { id: "feat-x", title: "feat-x", priority: "P1", status: "in-progress", role: "epic", lane: "claude-code", links: [], reconcileNeeded: false },
+  ]});
+  gitRepo(cwd);
+  commitFiles(cwd, { "a.txt": "1" }, "fix(feat-x): tighten validation");
+  run(["commit-nudge"], { cwd, input: JSON.stringify({ tool_input: { command: 'git commit -m "fix(feat-x): tighten validation"' } }) });
+  assert.doesNotMatch(detourLog(cwd), /AUTO-DETOUR/);
+});
+
+test("commit-nudge does not auto-log a commit already inside a detour (existing DETOUR-COMMIT path wins)", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  writeState(cwd, {
+    version: 1, active: "paused-a", detourStack: [
+      { pausedEpic: "paused-a", pausedAt: "2026-07-15T00:00:00Z", reason: "x", spawnedDetour: "detour-1", reconcileOnResume: false },
+    ],
+    epics: [
+      { id: "paused-a", title: "paused-a", priority: "P1", status: "paused", role: "epic", lane: "claude-code", links: [], reconcileNeeded: false },
+      { id: "detour-1", title: "detour-1", priority: "P1", status: "in-progress", role: "detour", lane: "claude-code", links: [], reconcileNeeded: false },
+    ],
+  });
+  gitRepo(cwd);
+  commitFiles(cwd, { "a.txt": "1" }, "fix: patch the thing");
+  run(["commit-nudge"], { cwd, input: JSON.stringify({ tool_input: { command: 'git commit -m "fix: patch the thing"' } }) });
+  const log = detourLog(cwd);
+  assert.match(log, /DETOUR-COMMIT/);
+  assert.doesNotMatch(log, /AUTO-DETOUR/);
+});
