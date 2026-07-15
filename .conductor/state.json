@@ -62,7 +62,7 @@
       "id": "gate-guard-default-on-reconcile",
       "title": "Flip gate-guard default to ON for epics with reconcileOnResume — reverses the deliberate opt-in choice, approved after real-usage feedback showed it's never been turned on",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -81,13 +81,14 @@
           "Decision: RETROACTIVE — flip applies to any epic with reconcileNeeded:true right now, not just new paused frames going forward. Accepted risk: an in-flight session could be surprised by writes suddenly blocked."
         ],
         "notifications": []
-      }
+      },
+      "completedAt": "2026-07-15T21:56:25.609Z"
     },
     {
       "id": "diffshape-minimal-detour-inference",
       "title": "Auto-detect an unlogged minimal detour from commit/diff shape and log it without a manual /pm:detour --minimal invocation — 3 sessions converge on this, user's #1 priority",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -106,7 +107,8 @@
           "Decision: AUTOMATIC PostToolUse hook on every commit (not on-demand) — highest-payoff per 3-session convergence on this as the #1 pain point. Heuristic TBD at build time (file count / line count / new-OpenSpec-proposal presence) but the trigger mechanism itself is settled: hook-driven, not agent-remembered."
         ],
         "notifications": []
-      }
+      },
+      "completedAt": "2026-07-15T21:56:25.567Z"
     },
     {
       "id": "remove-epic-verb",
@@ -168,7 +170,7 @@
       "id": "fix-archived-no-change-warning",
       "title": "Fix missing() to exclude status===archived — an already-closed epic can show an unresolvable '⚠ no change on disk' warning forever",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -181,13 +183,14 @@
           "Preflight: no destructive risk, no genuine unknown — exclude status===archived from missing()'s condition, a direct bug fix."
         ],
         "notifications": []
-      }
+      },
+      "completedAt": "2026-07-15T21:56:25.840Z"
     },
     {
       "id": "reconciler-structured-writeback",
       "title": "Reconciler returns a structured {valid, amendments} verdict AND writes it back onto the relevant link — currently the judgment only ever lives in conversation",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -206,13 +209,14 @@
           "Preflight: writes a structured verdict onto the relevant link (state.json mutation, git-recoverable, low risk). Default schema absent user override: {verdict: 'valid'|'invalidated', amendments: string[], reconciledAt: iso-timestamp} attached to the link object."
         ],
         "notifications": []
-      }
+      },
+      "completedAt": "2026-07-15T21:56:26.035Z"
     },
     {
       "id": "lane-routing-config",
       "title": "Add a real per-repo lane-routing override mechanism (state.json config) instead of requiring a CLAUDE.md prose carve-out when the generic heuristic is wrong for a repo",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -225,13 +229,14 @@
           "Preflight: adds a new optional state.json config block (e.g. laneRouting: {overrides: [...]}), no destructive risk. Default absent user override: array of {match: <glob or keyword>, lane: <lane>} rules checked before the generic heuristic."
         ],
         "notifications": []
-      }
+      },
+      "completedAt": "2026-07-15T21:56:25.957Z"
     },
     {
       "id": "autonomy-hierarchy-adoption-investigation",
       "title": "Investigate why epic-level autonomy and epic-hierarchy orchestration show zero real-world usage in at least one dogfooding repo — ceremony weight vs discoverability vs genuinely not needed",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "decision",
       "links": [],
@@ -244,13 +249,14 @@
           "Preflight: read-only investigation (grep git log/detours.log for set-autonomy/hierarchy usage), no destructive risk, no code changes."
         ],
         "notifications": []
-      }
+      },
+      "completedAt": "2026-07-15T21:56:25.648Z"
     },
     {
       "id": "honcho-memory-string-print",
       "title": "log-detour/resume print the exact ready-to-copy Honcho memory string (and keep a local log of what was emitted) instead of asking the agent to compose and silently one-way-write it",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -263,13 +269,14 @@
           "Preflight: pure string formatting + local log file (e.g. .conductor/honcho-memories.log), no network call (law-compliant), no destructive risk."
         ],
         "notifications": []
-      }
+      },
+      "completedAt": "2026-07-15T21:56:25.879Z"
     },
     {
       "id": "verify-state-command",
       "title": "Add a verify-state command that fails loudly if state.json's mtime is newer than the last render's stamp, catching an undetected hand-edit mechanically",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -288,13 +295,14 @@
           "Preflight: read-only check comparing state.json mtime vs a last-render stamp; needs a new stamp field/file written by render() to compare against — additive, no destructive risk."
         ],
         "notifications": []
-      }
+      },
+      "completedAt": "2026-07-15T21:56:26.074Z"
     },
     {
       "id": "dependency-aware-standalone-ordering",
       "title": "Extend plan-hierarchy's depends-on topological sort to top-level queued epics generally, not just parent/child hierarchies — the same starvation problem exists at the top-level queue",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -313,13 +321,14 @@
           "Decision: BEHAVIORAL — /pm:next must SKIP a starved epic whose depends-on target is still queued/unresolved, even if the starved epic is higher priority. ADDITIONALLY: when /pm:next (or the brief) picks an epic that only won because a higher-priority sibling is blocked on a dependency, it must print a concise one-line reason naming the blocking epic, not just silently pick."
         ],
         "notifications": []
-      }
+      },
+      "completedAt": "2026-07-15T21:56:25.762Z"
     },
     {
       "id": "per-epic-review-mode-override",
       "title": "Let a single epic/detour override set-review-mode's repo-global dial to thorough without flipping the whole repo's mode",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -332,13 +341,14 @@
           "Preflight: no destructive risk. Default absent user override: an epic-level override can only ESCALATE (e.g. force thorough on a standard-mode repo), never silently de-escalate below the repo's dial."
         ],
         "notifications": []
-      }
+      },
+      "completedAt": "2026-07-15T21:56:25.996Z"
     },
     {
       "id": "epic-timestamps-and-staleness",
       "title": "Add startedAt/completedAt timestamps to epics, and surface a staleness/days-active indicator in PROJECT.md and /pm:next — supports velocity tracking and the weekly Ship-Real-Software check",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -351,13 +361,14 @@
           "Preflight: adds startedAt/completedAt fields (additive, no destructive risk). Default staleness threshold absent user override: 14 days since startedAt with no completedAt = stale flag in PROJECT.md/brief."
         ],
         "notifications": []
-      }
+      },
+      "completedAt": "2026-07-15T21:56:25.800Z"
     },
     {
       "id": "category-based-preauthorization",
       "title": "Add a category-based --preauthorize shorthand (e.g. \"category:filesystem\") to epic-level autonomy, instead of requiring every routine action to be enumerated individually",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -370,13 +381,14 @@
           "Preflight: no destructive risk (additive autonomy shorthand). Default category taxonomy absent user override: filesystem, network, schema, external-api — a --preauthorize 'category:filesystem:...' expands to match any action tagged with that category by the decision rule."
         ],
         "notifications": []
-      }
+      },
+      "completedAt": "2026-07-15T21:56:25.686Z"
     },
     {
       "id": "incremental-notify-timing-fix",
       "title": "Clarify the epic-level-autonomy decision rule's wording so WARN-class decisions are --notify'd incrementally as they happen, not just gathered for the end-of-epic report — a compaction-safety fix using the mechanism that already exists",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -389,13 +401,14 @@
           "Preflight: no destructive risk, no genuine unknown — pure wording fix in the decision-rule doc/skill text: 'record incrementally as it happens' instead of 'record for the end-of-epic report'."
         ],
         "notifications": []
-      }
+      },
+      "completedAt": "2026-07-15T21:56:25.918Z"
     },
     {
       "id": "cross-repo-epic-dependency-investigation",
       "title": "Investigate a mechanism for cross-repo epic dependencies — links currently only reference epics within one repo, but real cross-repo dependencies exist (e.g. a deploy epic depending on infra-playbooks conventions)",
       "priority": "P3",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "decision",
       "links": [],
@@ -408,13 +421,14 @@
           "Preflight: read-only investigation/design-question gathering, no destructive risk, no code changes — deliverable is a scoped writeup, not a fix."
         ],
         "notifications": []
-      }
+      },
+      "completedAt": "2026-07-15T21:56:26.111Z"
     },
     {
       "id": "changelog-preview-in-sessionstart-nudge",
       "title": "Show the top 2-3 changelog bullets inline in the SessionStart upgrade nudge, instead of requiring a separate /pm:changelog round trip to decide if upgrading is worth mid-epic churn",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -427,7 +441,8 @@
           "Preflight: no destructive risk (display-only). Default scope absent user override: inline just the 'Added' bullet headlines (not full body) for versions between stamped and newest, to avoid bloating every SessionStart hook output."
         ],
         "notifications": []
-      }
+      },
+      "completedAt": "2026-07-15T21:56:25.724Z"
     },
     {
       "id": "ai-feedback-loop-github-issues",
