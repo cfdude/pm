@@ -6,6 +6,20 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- **`honcho-memory <push|pop> <epicId> "<reason>"` subcommand.** Formats the exact
+  ready-to-copy one-line Honcho memory string for a detour-stack PUSH/POP (per CLAUDE.md rule
+  4), prints it to stdout, and appends a timestamped copy to the new
+  `.conductor/honcho-memories.log`. Previously the interactive agent had to compose that
+  string itself from context on every PUSH/POP, with no engine support and no durable record
+  of what was actually sent — easy to forget or word inconsistently. The engine still never
+  calls Honcho itself (pure string formatting + local logging, staying inside the
+  instruction-layer law); `commands/detour.md`, `commands/resume.md`, and the `conductor`
+  skill's PUSH/POP protocols now call it and paste its output into the actual Honcho MCP call.
+
 ## [0.12.2] — 2026-07-15
 
 ### Added

@@ -108,8 +108,15 @@ cheap; a lost thread is the whole problem we're solving.
 4. Make the detour active with `node "$ENGINE" set-active <detour-id>`. Build it through the
    appropriate lane's workflow,
    then archive/close it.
-5. **Write a one-line Honcho memory** ("paused `<parent>` for `<detour>` — <reason>") via
-   your Honcho MCP memory/conclusion tool, so the pivot survives outside this repo.
+5. **Write a one-line Honcho memory.** Get the exact ready-to-copy string (and durably log
+   what was emitted, in case you forget to send it) via:
+   ```bash
+   node "$ENGINE" honcho-memory push <parent-epic-id> "<reason>"
+   ```
+   This prints `paused <parent> for <reason>` and appends a timestamped copy to
+   `.conductor/honcho-memories.log` — the engine only formats + logs the string (never calls
+   Honcho itself, per the instruction-layer law). Paste the printed line into your actual
+   Honcho MCP memory/conclusion tool call so the pivot survives outside this repo.
 
 ## POP protocol (leaving a detour) — the RECONCILE GATE
 
@@ -129,8 +136,13 @@ The step otherwise lost after compaction. Do not skip it.
    - **Optional hard backstop:** if this repo has `set-gate-guard on` set, a PreToolUse hook
      mechanically blocks `Edit`/`Write`/`NotebookEdit` while `reconcileNeeded` is still true —
      off by default, see `/pm:gate-guard`.
-4. **Write a one-line Honcho memory** ("resumed `<parent>` after `<detour>`; reconcile =
-   valid | amended …") via your Honcho MCP memory/conclusion tool.
+4. **Write a one-line Honcho memory.** Get the exact ready-to-copy string (and log it) via:
+   ```bash
+   node "$ENGINE" honcho-memory pop <parent-epic-id> "<detour-id>; reconcile = valid | amended …"
+   ```
+   This prints `resumed <parent>, reconciled vs <detour-id>; reconcile = valid | amended …`
+   and appends a timestamped copy to `.conductor/honcho-memories.log`. Paste the printed line
+   into your actual Honcho MCP memory/conclusion tool call.
 5. Render. State the exact next story to build.
 
 ## Choosing what's next
