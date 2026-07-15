@@ -6,6 +6,38 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.12.0] — 2026-07-15
+
+### Added
+
+- **`verify-worktrees` — orphaned hierarchy-dispatch worktree detection.** Cross-references
+  `git worktree list` against epic status: any worktree on a `hierarchy-child/<epic-id>` branch
+  whose epic is already archived (successfully merged and closed out) is flagged. Bakes worktree
+  hygiene into the plugin itself — checkable on any fresh install — rather than depending on a
+  user's personal CLAUDE.md discipline. Pure read, flags without deleting.
+- **Worktree-isolated epic-hierarchy dispatch, replacing the original "just dispatch in
+  parallel" instructions.** Discovered via the first live dogfood attempt against a real
+  hierarchy (every child touched `scripts/conductor.mjs`): concurrent children mutating shared
+  files was a real, unaddressed race. Each child now works in its own git worktree; children
+  never write `.conductor/state.json` themselves (the orchestrator is the sole writer, applied
+  once per batch); worktree branches merge back sequentially. An ordinary merge conflict is
+  never a hard stop — it's resolved via a tiered ladder (normal merge → dispatch the new
+  `agents/merge-conflict-resolver` → escalate to a stronger model/`advisor()` → commit
+  best-effort + log a follow-up epic under the same parent) — a direct, consistent application
+  of epic-level autonomy's existing decision rule, since a git-tracked conflict is always
+  recoverable via history (criterion (c), never the unconditional-stop criterion (b)).
+- **`agents/merge-conflict-resolver.md`** — a new packaged agent (mirrors `reconciler.md`'s
+  shape) dispatched to resolve a worktree-merge conflict, reporting `resolved`/`uncertain`/
+  `failed` so the orchestrator knows whether to escalate further.
+
+### Fixed
+
+- Doc drift in the conductor skill's Commands line: `remove-epic`, `plan-hierarchy`, and
+  `verify-worktrees` were all missing despite `remove-epic`/`plan-hierarchy` already having
+  shipped in prior releases.
+
+---
+
 ## [0.11.0] — 2026-07-15
 
 ### Added
