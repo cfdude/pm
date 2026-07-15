@@ -530,7 +530,26 @@
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
-      "parent": "cfdude-pm-repo-governance"
+      "parent": "cfdude-pm-repo-governance",
+      "autonomy": {
+        "level": "autonomous",
+        "preAuthorized": [
+          {
+            "action": "create a dev branch on cfdude/pm if none exists yet",
+            "grantedAt": "2026-07-15T23:03:22.935Z",
+            "reason": "matches recorded decision"
+          },
+          {
+            "action": "apply a branch-protection ruleset to main on cfdude/pm via gh api requiring PRs (no direct push), 0 required reviewers (solo maintainer), required status check = the 'test' job from .github/workflows/ci.yml, squash-merge only",
+            "grantedAt": "2026-07-15T23:03:22.936Z",
+            "reason": "matches recorded decision from user preflight"
+          }
+        ],
+        "context": [
+          "Decision (from user preflight): solo-repo defaults — require PRs into main, no required-reviewer count, required status check = the CI job named 'test' (shipped in ci-test-lint-workflow, 0.14.0), squash merge only. This is a LIVE change to the real cfdude/pm GitHub repo's settings — restorable via GitHub UI/API (turn protection off / edit the ruleset) but not git-history-reversible like a code commit; --notify this action explicitly per the WARN-class decision rule rather than only reporting it at the end."
+        ],
+        "notifications": []
+      }
     },
     {
       "id": "ci-test-lint-workflow",
