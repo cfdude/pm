@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": null,
+  "active": "df-stale-cache-silent-fallback",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -502,7 +502,7 @@
       "id": "df-stale-cache-silent-fallback",
       "title": "DF: conductor skill's $ENGINE resolution silently falls back to the installed plugin CACHE with a confusing generic 'usage:' error and no version-mismatch signal, when developing pm on itself. Hit live while dogfood-testing remove-epic: ran the documented ENGINE-resolution snippet against the 0.10.0 cached copy (predates this feature) and got the same bare usage-line a typo'd subcommand would produce, zero indication a newer engine existed one directory up in the repo being edited; only found the cause by knowingly invoking scripts/conductor.mjs directly. Any self-hosting dogfood session testing conductor.mjs changes live via the skill's own snippet hits this same silent trap. Fix ideas: prefer a conductor.mjs at CLAUDE_PROJECT_DIR/scripts over the plugin cache when it exists (repo IS the plugin source); or print engine version+source path on every invocation so staleness is visible instead of surfacing as an opaque usage error",
       "priority": "P0",
-      "status": "queued",
+      "status": "active",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
