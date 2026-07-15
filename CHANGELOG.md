@@ -6,6 +6,32 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.10.0] — 2026-07-14
+
+### Added
+
+- **`plan-hierarchy --parent <id>` — batched execution plan for a parent epic's children.**
+  Computes batches from data pm already tracks (no new persistent state): `priority` and
+  `depends-on` links between siblings drive a topological sort — children with no dependency on
+  each other land in the same batch (dispatchable in parallel), children in a dependency chain
+  land in separate, ordered batches. Each child is annotated with whether it already has
+  `autonomy.level: "autonomous"` (from epic-level autonomy), so a hierarchy dispatch never fires
+  a child that hasn't been preflighted. A dependency cycle among children is rejected outright,
+  naming the cycle path, rather than producing a bogus order.
+- **`agents/hierarchy-child-executor.md` — a packaged subagent** dispatched once per child epic
+  in a batch: front-loaded with the epic's full context and its autonomy grant, works the epic
+  to completion using its lane's normal workflow, follows epic-level autonomy's decision rule
+  for genuine stops, and returns a fixed report (`STATUS`/`DONE`/`DECISIONS`/`CONCERNS`).
+- The `conductor` skill documents the full end-to-end process: preflight every child up front
+  (reusing epic-level autonomy's scan, consolidated into one batch of questions) → `plan-hierarchy`
+  → dispatch batch by batch (parallel within a batch, sequential across batches) → one
+  consolidated end-of-hierarchy report flagging anything controversial.
+- Deferred to a later release: the fuller execution-strategy-selection framework (plain
+  subagents vs. the Workflow tool vs. other execution modes) — this release covers only
+  subagent-per-child dispatch.
+
+---
+
 ## [0.9.3] — 2026-07-14
 
 ### Fixed
