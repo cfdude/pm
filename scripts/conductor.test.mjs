@@ -709,6 +709,66 @@ test("nudge fires from newest-installed even when the running engine is old", ()
   assert.match(out, /\/pm:upgrade/);
 });
 
+test("nudge inlines top Added-bullet headlines from versions between stamped and newest", () => {
+  const cwd = tmpRepo();
+  const root = fixturePluginRoot("0.4.0", FIXTURE_CHANGELOG);
+  run(["init"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root } }); // stamps 0.4.0
+  const cache = fixtureCache(["0.4.0", "0.6.0"]);
+  const out = JSON.parse(run(["brief"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root, PM_CACHE_ROOT: cache } }))
+    .hookSpecificOutput.additionalContext;
+  assert.match(out, /pm 0\.4\.0 → 0\.6\.0 available/);
+  assert.match(out, /Feature F6 lands here\./);
+  assert.match(out, /Feature F5 lands here\./);
+  assert.doesNotMatch(out, /Feature F4 lands here\./); // at/below stamped version, excluded
+});
+
+test("nudge headlines are capped at 3 even across many in-between versions", () => {
+  const cwd = tmpRepo();
+  const changelog = `# Changelog
+
+## [0.4.0] — 2026-06-26
+### Added
+- Feature FA lands here.
+
+---
+
+## [0.3.0] — 2026-06-25
+### Added
+- Feature FB lands here.
+
+---
+
+## [0.2.0] — 2026-06-24
+### Added
+- Feature FC lands here.
+
+---
+
+## [0.1.0] — 2026-06-23
+### Added
+- Feature FD lands here.
+`;
+  const root = fixturePluginRoot("0.1.0", changelog);
+  run(["init"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root } }); // stamps 0.1.0
+  const cache = fixtureCache(["0.1.0", "0.4.0"]);
+  const out = JSON.parse(run(["brief"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root, PM_CACHE_ROOT: cache } }))
+    .hookSpecificOutput.additionalContext;
+  assert.match(out, /Feature FA lands here\./);
+  assert.match(out, /Feature FB lands here\./);
+  assert.match(out, /Feature FC lands here\./);
+  assert.doesNotMatch(out, /Feature FD lands here\./); // 4th headline, over the cap of 3
+});
+
+test("nudge has no headlines section when the plugin ships no CHANGELOG", () => {
+  const cwd = tmpRepo();
+  const root = fixturePluginRoot("0.3.0"); // no changelog file
+  run(["init"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root } });
+  const cache = fixtureCache(["0.3.0", "0.4.1"]);
+  const out = JSON.parse(run(["brief"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root, PM_CACHE_ROOT: cache } }))
+    .hookSpecificOutput.additionalContext;
+  assert.match(out, /pm 0\.3\.0 → 0\.4\.1 available/);
+});
+
 test("no nudge when stamped equals newest installed", () => {
   const cwd = tmpRepo();
   const root = fixturePluginRoot("0.4.1");

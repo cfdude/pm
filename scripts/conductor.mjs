@@ -146,6 +146,29 @@ function changelogBetween(fromVer, toVer) {
     (toVer == null || cmpVer(s.version, toVer) <= 0));
 }
 
+/** Top "Added" bullet headlines (first line of each bullet only, no continuation lines)
+ *  across CHANGELOG sections with version in (fromVer, toVer], newest-first, capped at
+ *  `limit`. Returns [] if no CHANGELOG ships or no Added bullets fall in range — never
+ *  null, so callers can splice it in unconditionally. */
+function changelogAddedHeadlines(fromVer, toVer, limit = 3) {
+  const secs = changelogBetween(fromVer, toVer);
+  if (!secs) return [];
+  const out = [];
+  for (const s of secs) {
+    if (out.length >= limit) break;
+    let inAdded = false;
+    for (const line of s.body.split("\n")) {
+      if (/^###\s+Added\b/.test(line)) { inAdded = true; continue; }
+      if (/^###\s+/.test(line)) { inAdded = false; continue; }
+      if (inAdded && /^-\s+/.test(line)) {
+        out.push(line.replace(/^-\s+/, "").trim());
+        if (out.length >= limit) break;
+      }
+    }
+  }
+  return out;
+}
+
 /** Highest pm version present in the plugin cache, or null if it can't be determined.
  *  Cache root is env-overridable for testability. Per-entry resilient: one bad
  *  plugin.json doesn't collapse the scan. */
@@ -565,12 +588,14 @@ function buildBrief(state) {
   if (newest !== null) {
     if (cmpVer(stamped, newest) < 0) {
       L.push(`⚠ pm ${stamped} → ${newest} available — run \`/reload-plugins\` (if you just updated the plugin), then \`/pm:upgrade\`.`);
+      for (const h of changelogAddedHeadlines(stamped, newest)) L.push(`   - ${h}`);
       L.push("");
     }
   } else {
     const running = pluginVersion();
     if (running && cmpVer(stamped, running) < 0) {
       L.push(`⚠ pm ${stamped} → ${running} since this repo was set up — run \`/pm:upgrade\` (CLAUDE.md rules and epic schema may need refreshing).`);
+      for (const h of changelogAddedHeadlines(stamped, running)) L.push(`   - ${h}`);
       L.push("");
     }
   }

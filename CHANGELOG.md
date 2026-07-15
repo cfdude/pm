@@ -10,6 +10,12 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **SessionStart upgrade nudge now inlines top Added-bullet headlines.** The
+  `pm X.Y.Z → A.B.C available` nudge previously named only the old/new versions, forcing a
+  separate `/pm:changelog` round trip to judge whether upgrading was worth mid-epic churn. It
+  now inlines up to 3 "Added" bullet headlines (first line only, not the full multi-line body)
+  drawn from every CHANGELOG.md section strictly between the stamped and newest version, so a
+  session can judge upgrade value inline.
 - **Category-based `--preauthorize` shorthand for epic-level autonomy.** `set-autonomy <id>
   --preauthorize "category:<filesystem|network|schema|external-api>:<reason>"` grants routine
   actions by category instead of requiring every one enumerated individually. Stored as a
