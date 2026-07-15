@@ -29,6 +29,8 @@
  *   honcho-memory  <push|pop> <epicId> "<reason>" — print + log the ready-to-copy Honcho line
  *   rules          print the CLAUDE.md rules block to stdout
  *   write-rules    insert/refresh the rules block in ./CLAUDE.md (idempotent)
+ *   verify-state   fail loudly if state.json's mtime is newer than the last render's stamp
+ *                  (a mechanical check for an undetected hand-edit)
  *
  * No external dependencies. Node 18+. OpenSpec optional (uses the filesystem).
  *
@@ -47,6 +49,7 @@ const ROOT = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 const CONDUCTOR_DIR = path.join(ROOT, ".conductor");
 const STATE_PATH = path.join(CONDUCTOR_DIR, "state.json");
 const BRIEF_PATH = path.join(CONDUCTOR_DIR, "brief.txt");
+const RENDER_STAMP_PATH = path.join(CONDUCTOR_DIR, "render-stamp.json");
 const DETOURS_LOG = path.join(CONDUCTOR_DIR, "detours.log");
 const PROJECT_MD = path.join(ROOT, "PROJECT.md");
 const CLAUDE_MD = path.join(ROOT, "CLAUDE.md");
@@ -851,12 +854,27 @@ function render() {
   const STAMP_RE = /^> Last rendered: .*$/m;
   let existing = "";
   try { existing = fs.readFileSync(PROJECT_MD, "utf8"); } catch { /* no file yet */ }
+  writeRenderStamp();
   if (existing && existing.replace(STAMP_RE, "") === content.replace(STAMP_RE, "")) {
     process.stderr.write("conductor: PROJECT.md unchanged (skipped rewrite)\n");
     return;
   }
   fs.writeFileSync(PROJECT_MD, content);
   process.stderr.write(`conductor: rendered ${PROJECT_MD}\n`);
+}
+
+/** Records when PROJECT.md was last generated FROM the current state.json content, so
+ *  `verify-state` can catch an undetected hand-edit: if state.json's mtime is newer than
+ *  this stamp, someone modified it outside the render pipeline (CLAUDE.md forbids
+ *  hand-editing state.json/PROJECT.md — the state of record must go through the engine's
+ *  subcommands so ordering/detour-stack/link invariants stay consistent). Sidecar file
+ *  (not a state.json field) so stamping never itself perturbs the content being verified. */
+function writeRenderStamp() {
+  let stateMtimeMs = null;
+  try { stateMtimeMs = fs.statSync(STATE_PATH).mtimeMs; } catch { /* no state.json yet */ }
+  const stamp = { renderedAt: new Date().toISOString(), stateMtimeMs };
+  fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
+  fs.writeFileSync(RENDER_STAMP_PATH, JSON.stringify(stamp, null, 2) + "\n");
 }
 
 // ---------- subcommands ----------
@@ -1827,6 +1845,36 @@ function verifyWorktrees() {
   process.stdout.write(JSON.stringify({ orphaned }) + "\n");
 }
 
+/** `verify-state` — mechanically catches an undetected hand-edit of state.json (CLAUDE.md
+ *  forbids hand-editing it; PROJECT.md must only ever be regenerated from it). Compares
+ *  state.json's filesystem mtime against the stamp `writeRenderStamp()` records every
+ *  render(): if state.json was modified AFTER the last recorded render, that mtime delta
+ *  is evidence something wrote to it outside `/pm:status`/the engine's subcommands. Pure
+ *  read — never modifies state.json or PROJECT.md itself. */
+function verifyState() {
+  if (!isInitialized()) { process.stderr.write("conductor: not initialized (.conductor/state.json missing) — run /pm:init\n"); process.exit(1); }
+  const stamp = readJSON(RENDER_STAMP_PATH, null);
+  if (!stamp || typeof stamp.stateMtimeMs !== "number") {
+    process.stderr.write(
+      "conductor: no render stamp found (.conductor/render-stamp.json) — state.json has never " +
+      "been rendered, so an accidental hand-edit can't be ruled out. Run `/pm:status` to render " +
+      "and establish a baseline.\n"
+    );
+    process.exit(1);
+  }
+  const currentMtimeMs = fs.statSync(STATE_PATH).mtimeMs;
+  if (currentMtimeMs > stamp.stateMtimeMs) {
+    process.stderr.write(
+      "conductor: state.json was modified AFTER the last render — this looks like an " +
+      "undetected hand-edit (CLAUDE.md forbids hand-editing state.json/PROJECT.md; the state " +
+      "of record must go through the engine's subcommands). Run `/pm:status` to re-render, " +
+      "review the diff, and reconcile before trusting PROJECT.md again.\n"
+    );
+    process.exit(1);
+  }
+  process.stderr.write("conductor: state.json matches the last render — no hand-edit detected.\n");
+}
+
 // ---------- dispatch ----------
 
 const cmd = process.argv[2];
@@ -1857,11 +1905,12 @@ if (!process.env.PM_QUIET_ENGINE_BANNER) {
   "gate-guard": gateGuardCheck,
   "plan-hierarchy": planHierarchy,
   "verify-worktrees": verifyWorktrees,
+  "verify-state": verifyState,
   upgrade,
   changelog,
   rules: () => process.stdout.write(rulesBlock(currentTracker(), currentReviewMode())),
   "write-rules": writeRules,
 }[cmd] || (() => {
-  process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|set-active|clear-active|set-tracker|set-autonomy|set-review-mode|set-gate-guard|gate-guard|plan-hierarchy|verify-worktrees|upgrade|changelog|rules|write-rules\n");
+  process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|set-active|clear-active|set-tracker|set-autonomy|set-review-mode|set-gate-guard|gate-guard|plan-hierarchy|verify-worktrees|verify-state|upgrade|changelog|rules|write-rules\n");
   process.exit(1);
 }))();

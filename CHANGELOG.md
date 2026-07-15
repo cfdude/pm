@@ -103,6 +103,13 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   brief's `NOW`/`NEXT UP` lines all surface `⚠ stale, Nd active` for any epic with `startedAt`
   set, no `completedAt`, and more than 14 days elapsed — supporting velocity tracking and the
   weekly Ship-Real-Software check.
+- **`verify-state` subcommand.** `render()` now writes `.conductor/render-stamp.json`
+  (`renderedAt` + the state.json mtime it rendered from) every time it runs. `verify-state`
+  compares state.json's current filesystem mtime against that stamp and fails loudly
+  (non-zero exit, clear stderr) if state.json was modified after the last recorded render —
+  mechanical evidence of an undetected hand-edit, which CLAUDE.md explicitly forbids
+  (state.json/PROJECT.md must only change through the engine's subcommands). Also fails
+  loudly if no stamp exists yet (state.json has never been rendered).
 - **Engine version+source banner on every invocation.** `conductor.mjs` now prints
   `conductor: engine <version> @ <path>` to stderr on every run (silenceable via
   `PM_QUIET_ENGINE_BANNER=1`). Discovered live while dogfooding: `$ENGINE` resolution had
