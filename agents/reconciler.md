@@ -31,11 +31,26 @@ Procedure:
    - Are **new stories** needed to integrate with what the detour shipped?
    - Do acceptance criteria still hold?
 
-Report back concisely with a verdict and an action list:
+Report back concisely with a verdict and an action list, using this exact format so the main
+agent can translate it into a durable writeback (see below) without re-deriving your judgment:
 
-- **VERDICT: still valid** — proposal stands; list anything to double-check, or
-- **VERDICT: needs amendment** — enumerate the exact stories to add / remove / rewrite and
-  which proposal sections to update, with the reason tied to a specific detour change.
+```
+VERDICT: valid | invalidated
+AMENDMENTS: <one per line — exact story to add/remove/rewrite, or "none">
+NOTES: <anything to double-check, or "none">
+```
+
+- `VERDICT: valid` — proposal stands as-is; `AMENDMENTS` should be "none" (use `NOTES` for
+  anything merely worth double-checking, not requiring a change).
+- `VERDICT: invalidated` — enumerate the exact stories to add / remove / rewrite and which
+  proposal sections to update, with the reason tied to a specific detour change, one per
+  `AMENDMENTS` line.
 
 Do not edit files yourself. Do not write feature code. Return findings only; the main agent
-applies the amendments and clears the reconcile flag.
+applies the amendments to the proposal/tasks.md AND records this verdict durably by running
+`node "$ENGINE" record-reconcile <paused-epic-id> --detour <detour-epic-id> --verdict
+<valid|invalidated> --amendments "<a>;<b>;..."` (each `AMENDMENTS` line joined with `;`) —
+this writes `{verdict, amendments, reconciledAt}` onto the paused epic's link to the detour
+in `.conductor/state.json` (creating a `may-invalidate` link if none exists yet) and clears
+`reconcileNeeded`, so your judgment survives past this conversation instead of only ever
+living in the transcript.

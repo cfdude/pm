@@ -2230,3 +2230,68 @@ test("suggest-lane with no laneRouting configured at all reports no override", (
   const out = JSON.parse(run(["suggest-lane", "anything"], { cwd }).trim());
   assert.equal(out.lane, null);
 });
+
+// ──────────────── reconciler structured writeback: record-reconcile ────────────────
+
+test("record-reconcile writes a structured verdict onto the paused epic's link to the detour, and clears reconcileNeeded", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "paused-epic", "--lane", "claude-code"], { cwd });
+  run(["add-epic", "--id", "detour-epic", "--lane", "claude-code"], { cwd });
+  run(["update-epic", "paused-epic", "--link", "may-invalidate:detour-epic"], { cwd });
+  let s = readState(cwd);
+  s.epics.find(e => e.id === "paused-epic").reconcileNeeded = true;
+  writeState(cwd, s);
+
+  run(["record-reconcile", "paused-epic", "--detour", "detour-epic",
+    "--verdict", "invalidated", "--amendments", "rewrite story 2;drop story 4"], { cwd });
+
+  const epic = readState(cwd).epics.find(e => e.id === "paused-epic");
+  assert.equal(epic.reconcileNeeded, false);
+  const link = epic.links.find(l => l.epic === "detour-epic");
+  assert.ok(link, "link to the detour should still exist");
+  assert.equal(link.reconciled.verdict, "invalidated");
+  assert.deepEqual(link.reconciled.amendments, ["rewrite story 2", "drop story 4"]);
+  assert.ok(link.reconciled.reconciledAt);
+  assert.match(link.reconciled.reconciledAt, /^\d{4}-\d{2}-\d{2}T/);
+});
+
+test("record-reconcile creates the link to the detour if one doesn't already exist", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "paused-epic", "--lane", "claude-code"], { cwd });
+  run(["add-epic", "--id", "detour-epic", "--lane", "claude-code"], { cwd });
+
+  run(["record-reconcile", "paused-epic", "--detour", "detour-epic", "--verdict", "valid"], { cwd });
+
+  const epic = readState(cwd).epics.find(e => e.id === "paused-epic");
+  const link = epic.links.find(l => l.epic === "detour-epic");
+  assert.ok(link, "link should be created");
+  assert.equal(link.type, "may-invalidate");
+  assert.equal(link.reconciled.verdict, "valid");
+  assert.deepEqual(link.reconciled.amendments, []);
+});
+
+test("record-reconcile rejects an unknown verdict", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "paused-epic", "--lane", "claude-code"], { cwd });
+  run(["add-epic", "--id", "detour-epic", "--lane", "claude-code"], { cwd });
+  assert.ok(expectFail(() => run(
+    ["record-reconcile", "paused-epic", "--detour", "detour-epic", "--verdict", "maybe"], { cwd })));
+});
+
+test("record-reconcile on an unknown epic id exits non-zero and writes nothing", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "detour-epic", "--lane", "claude-code"], { cwd });
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  assert.ok(expectFail(() => run(
+    ["record-reconcile", "ghost", "--detour", "detour-epic", "--verdict", "valid"], { cwd })));
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
+});
+
+test("record-reconcile on an unknown detour id exits non-zero and writes nothing", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "paused-epic", "--lane", "claude-code"], { cwd });
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  assert.ok(expectFail(() => run(
+    ["record-reconcile", "paused-epic", "--detour", "ghost-detour", "--verdict", "valid"], { cwd })));
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
+});

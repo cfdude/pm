@@ -15,11 +15,15 @@ be deliberate.
 3. **RECONCILE GATE** — if that frame had `reconcileOnResume: true`, do NOT write code yet.
    Delegate a clean-context review to the **reconciler** agent (via the Task tool): give it
    the paused epic id and the detour epic id. It re-reads the paused proposal, diffs what
-   the detour actually changed, and reports whether the proposal is still valid, plus any
-   stories to add/remove/amend.
-   - **Invalidated** → amend the OpenSpec proposal and `tasks.md` first, then clear
-     `reconcileNeeded`.
-   - **Still valid** → say so explicitly and clear `reconcileNeeded`.
+   the detour actually changed, and reports back `VERDICT: valid|invalidated` plus
+   `AMENDMENTS:` (stories to add/remove/amend, one per line).
+   - **Invalidated** → amend the OpenSpec proposal and `tasks.md` first.
+   - **Still valid** → say so explicitly.
+   - Either way, **write the verdict back durably** instead of just clearing the flag by
+     hand: `node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" record-reconcile <paused-id>
+     --detour <detour-id> --verdict <valid|invalidated> --amendments "<a>;<b>;..."`. This
+     attaches `{verdict, amendments, reconciledAt}` onto the paused epic's link to the
+     detour and clears `reconcileNeeded` in one step.
 
 4. **Write a Honcho memory** for the resume. Get the exact ready-to-copy line via:
    ```bash
