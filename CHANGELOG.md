@@ -6,6 +6,19 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- **Per-epic review-mode override (escalation-only).** `update-epic <id> --review-mode
+  off|standard|thorough` sets an epic-level override that can only ESCALATE above the
+  repo-global `set-review-mode` dial — never de-escalate below it (an attempt to set a lower
+  mode than the current global dial is rejected outright, state unchanged). `currentReviewMode`
+  now accepts an optional `epicId` and returns the effective mode for that epic: the
+  higher-ranked of the global dial and the epic's override. `rules --epic <id>` surfaces the
+  effective per-epic mode in the emitted "Current mode" line. Lets one security-sensitive epic
+  force `thorough` review without flipping an otherwise-`standard` repo's global dial.
+
 ## [0.12.2] — 2026-07-15
 
 ### Added
