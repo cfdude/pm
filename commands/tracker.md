@@ -66,3 +66,30 @@ If `${CLAUDE_PLUGIN_ROOT}` is empty:
 The brief's `TRACKER SYNC` line lists epics still needing an issue created. Transition sync is on
 you at the moment of each status change — the engine cannot see the tracker's state and will not
 fabricate transition drift.
+
+## GitHub-issues tracker: inward sync (issues → new untriaged epics)
+
+`system: github-issues` is the ONE inward-facing tracker shape: instead of (only) mirroring
+conductor epics OUT to issues, it pulls open GitHub issues IN as new untriaged epics — the same
+pattern `/pm:sync` already uses to auto-register OpenSpec changes/Superpowers plans found on
+disk. Set it with a `--repo`:
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" set-tracker --system github-issues --repo cfdude/pm
+```
+
+Once set, the CLAUDE.md rules block gains a "GitHub issue sync" section. As part of running
+`/pm:sync`:
+
+1. `gh issue list --repo <repo> --state open --json number,title,url,labels`.
+2. For each issue, check whether an epic already has that issue number as its `externalId`
+   (`/pm:epic list` or read `.conductor/state.json`) — if so, skip it. Re-running sync must never
+   create a duplicate epic for the same issue.
+3. Otherwise register it: `add-epic --status untriaged --external-id <issue-number> --external-url
+   <issue-url> --lane claude-code --title <issue-title> --priority P2`, unless the issue carries a
+   `P0`/`P1`/`P2`/`P3` label, in which case use that label's priority instead of the P2 default.
+4. `add-epic` itself rejects a duplicate `--external-id` (exits non-zero, writes nothing) as a
+   second line of defense against a stale local view producing a duplicate.
+
+The engine never calls `gh` itself — steps 1–3 are yours, the same "instruction layer, not
+integration layer" law as every other tracker.

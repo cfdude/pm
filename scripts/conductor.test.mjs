@@ -1243,6 +1243,62 @@ test("update-epic records external id/url onto an existing epic (write-back)", (
   assert.equal(e.externalUrl, "https://onvex.example/JOB-507");
 });
 
+// ────────────── github-issues tracker: inward pull (issues → untriaged epics) ──────────────
+
+test("set-tracker --system github-issues --repo stores the repo alongside system", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-tracker", "--system", "github-issues", "--repo", "cfdude/pm"], { cwd });
+  const t = readState(cwd).tracker;
+  assert.equal(t.system, "github-issues");
+  assert.equal(t.repo, "cfdude/pm");
+});
+
+test("rules block gains a GitHub issue sync section (gh issue list -> add-epic) only for a github-issues tracker", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  assert.doesNotMatch(claudeMd(cwd), /GitHub issue sync/);
+  run(["set-tracker", "--system", "github-issues", "--repo", "cfdude/pm"], { cwd });
+  const md = claudeMd(cwd);
+  assert.match(md, /GitHub issue sync/);
+  assert.match(md, /gh issue list --repo cfdude\/pm --state open/);
+  assert.match(md, /externalId/);
+  assert.match(md, /add-epic --status untriaged/);
+  assert.match(md, /--lane claude-code/);
+  assert.match(md, /--priority P2/);
+});
+
+test("a jira tracker does not get the GitHub issue sync section", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-tracker", "--system", "jira", "--project", "JOB"], { cwd });
+  assert.doesNotMatch(claudeMd(cwd), /GitHub issue sync/);
+});
+
+test("add-epic rejects a duplicate --external-id, leaving state unchanged (dedup by externalId)", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "gh-42", "--lane", "claude-code", "--status", "untriaged",
+       "--external-id", "42", "--external-url", "https://github.com/cfdude/pm/issues/42"], { cwd });
+  const before = readState(cwd).epics.length;
+  const err = expectFail(() => run(["add-epic", "--id", "gh-42-dup", "--lane", "claude-code",
+       "--status", "untriaged", "--external-id", "42",
+       "--external-url", "https://github.com/cfdude/pm/issues/42"], { cwd }));
+  assert.match(String(err.stderr || err.message), /external-id '42' already/);
+  const after = readState(cwd);
+  assert.equal(after.epics.length, before);
+  assert.ok(!after.epics.some(e => e.id === "gh-42-dup"));
+});
+
+test("update-epic's own --external-id write is unaffected by the add-epic dedup guard", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "gh-43", "--lane", "claude-code"], { cwd });
+  run(["update-epic", "gh-43", "--external-id", "43", "--external-url", "https://github.com/cfdude/pm/issues/43"], { cwd });
+  const e = readState(cwd).epics.find(x => x.id === "gh-43");
+  assert.equal(e.externalId, "43");
+});
+
 test("update-epic re-status/re-priority works; self-parent and cycle are rejected", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
