@@ -1551,6 +1551,45 @@ function changelog() {
   process.stdout.write(secs.map(s => s.body).join("\n\n") + "\n");
 }
 
+// ---------- worktree hygiene ----------
+
+/** `verify-worktrees` — cross-references `git worktree list` against epic status to catch a
+ *  hierarchy-dispatch worktree (branch `hierarchy-child/<epic-id>`, see the epic-hierarchy
+ *  orchestration design's worktree-isolation addendum) that was never cleaned up after its
+ *  epic's branch merged and the epic was archived. Pure read — flags, never deletes, since a
+ *  worktree could in principle still hold in-progress work the bookkeeping hasn't caught up
+ *  with. Bakes worktree hygiene into the plugin itself (checkable on any fresh install) rather
+ *  than depending on a user's own personal discipline/CLAUDE.md. Zero-dependency: shells out to
+ *  `git worktree list --porcelain` only; gracefully returns no orphans if that fails (e.g. this
+ *  isn't a git repo at all). */
+function verifyWorktrees() {
+  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  const state = loadState();
+  const byId = new Map(state.epics.map(e => [e.id, e]));
+  let out;
+  try {
+    out = execSync("git worktree list --porcelain", { cwd: ROOT, encoding: "utf8" });
+  } catch {
+    process.stdout.write(JSON.stringify({ orphaned: [] }) + "\n");
+    return;
+  }
+  const orphaned = [];
+  let currentPath = null;
+  for (const line of out.split("\n")) {
+    if (line.startsWith("worktree ")) { currentPath = line.slice("worktree ".length).trim(); continue; }
+    const m = line.match(/^branch refs\/heads\/hierarchy-child\/(.+)$/);
+    if (m && currentPath) {
+      const epicId = m[1];
+      const epic = byId.get(epicId);
+      if (epic && epic.status === "archived") {
+        orphaned.push({ path: currentPath, branch: `hierarchy-child/${epicId}`, epicId });
+      }
+      currentPath = null;
+    }
+  }
+  process.stdout.write(JSON.stringify({ orphaned }) + "\n");
+}
+
 // ---------- dispatch ----------
 
 const cmd = process.argv[2];
@@ -1574,11 +1613,12 @@ const cmd = process.argv[2];
   "set-gate-guard": setGateGuard,
   "gate-guard": gateGuardCheck,
   "plan-hierarchy": planHierarchy,
+  "verify-worktrees": verifyWorktrees,
   upgrade,
   changelog,
   rules: () => process.stdout.write(rulesBlock(currentTracker(), currentReviewMode())),
   "write-rules": writeRules,
 }[cmd] || (() => {
-  process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|add-epic|add-many|update-epic|remove-epic|set-active|clear-active|set-tracker|set-autonomy|set-review-mode|set-gate-guard|gate-guard|plan-hierarchy|upgrade|changelog|rules|write-rules\n");
+  process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|add-epic|add-many|update-epic|remove-epic|set-active|clear-active|set-tracker|set-autonomy|set-review-mode|set-gate-guard|gate-guard|plan-hierarchy|verify-worktrees|upgrade|changelog|rules|write-rules\n");
   process.exit(1);
 }))();

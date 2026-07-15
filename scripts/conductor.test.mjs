@@ -1582,3 +1582,62 @@ test("remove-epic requires a positional id", () => {
   run(["init"], { cwd });
   assert.ok(expectFail(() => run(["remove-epic"], { cwd })));
 });
+
+// ──────────────── verify-worktrees ────────────────
+
+function gitInitWithCommit(cwd) {
+  execFileSync("git", ["init", "-q"], { cwd });
+  execFileSync("git", ["config", "user.email", "test@example.com"], { cwd });
+  execFileSync("git", ["config", "user.name", "Test"], { cwd });
+  fs.writeFileSync(path.join(cwd, "README.md"), "# test\n");
+  execFileSync("git", ["add", "README.md"], { cwd });
+  execFileSync("git", ["commit", "-q", "-m", "init"], { cwd });
+}
+
+function addHierarchyWorktree(cwd, epicId) {
+  const branch = `hierarchy-child/${epicId}`;
+  const wtPath = fs.mkdtempSync(path.join(os.tmpdir(), "pm-wt-"));
+  fs.rmdirSync(wtPath); // git worktree add requires the target not exist yet
+  execFileSync("git", ["worktree", "add", "-b", branch, wtPath], { cwd });
+  return wtPath;
+}
+
+test("verify-worktrees reports no orphans when there are no hierarchy-child worktrees", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  gitInitWithCommit(cwd);
+  const out = JSON.parse(run(["verify-worktrees"], { cwd }));
+  assert.deepEqual(out.orphaned, []);
+});
+
+test("verify-worktrees flags a hierarchy-child worktree whose epic is already archived", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  gitInitWithCommit(cwd);
+  run(["add-epic", "--id", "done-child", "--lane", "claude-code", "--status", "archived"], { cwd });
+  const wtPath = addHierarchyWorktree(cwd, "done-child");
+  const out = JSON.parse(run(["verify-worktrees"], { cwd }));
+  assert.equal(out.orphaned.length, 1);
+  assert.equal(out.orphaned[0].epicId, "done-child");
+  assert.equal(out.orphaned[0].branch, "hierarchy-child/done-child");
+  assert.equal(fs.realpathSync(out.orphaned[0].path), fs.realpathSync(wtPath));
+  execFileSync("git", ["worktree", "remove", "--force", wtPath], { cwd });
+});
+
+test("verify-worktrees does not flag a hierarchy-child worktree whose epic is still in flight", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  gitInitWithCommit(cwd);
+  run(["add-epic", "--id", "in-flight-child", "--lane", "claude-code", "--status", "active"], { cwd });
+  const wtPath = addHierarchyWorktree(cwd, "in-flight-child");
+  const out = JSON.parse(run(["verify-worktrees"], { cwd }));
+  assert.deepEqual(out.orphaned, []);
+  execFileSync("git", ["worktree", "remove", "--force", wtPath], { cwd });
+});
+
+test("verify-worktrees returns an empty orphaned list gracefully when the cwd isn't a git repo at all", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const out = JSON.parse(run(["verify-worktrees"], { cwd }));
+  assert.deepEqual(out.orphaned, []);
+});
