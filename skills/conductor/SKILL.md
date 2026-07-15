@@ -66,8 +66,11 @@ lane-routing overrides checked before the generic heuristic (see "Lane routing o
 · `/pm:gate-guard` hard reconcile-gate backstop — ON BY DEFAULT for any epic with
 `reconcileNeeded: true` and cannot be turned off for that case; `set-gate-guard on|off` still
 exists but only gates any future generalization of the hook, not the reconcile-owed check itself
-· `/pm:tracker` make the conductor tracker-aware · `/pm:changelog` what changed since
-your version · `/pm:upgrade` refresh rules + run migrations + print the changelog delta.
+· `/pm:tracker` make the conductor tracker-aware · `/pm:feedback [bug|feature] "<summary>"`
+file a bug report or feature request for `pm` itself as a GitHub issue on `cfdude/pm` (agent-run
+`gh` calls only — dedups against open issues first, never touches the engine) ·
+`/pm:changelog` what changed since your version · `/pm:upgrade` refresh rules + run migrations
++ print the changelog delta.
 
 ## Hierarchy & external trackers
 
