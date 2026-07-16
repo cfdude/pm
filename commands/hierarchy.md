@@ -33,3 +33,10 @@ dispatch a non-autonomous child.
 `plan-hierarchy` is a pure read — it recomputes the plan fresh from `parent`, `priority`,
 `links`, and each child's `autonomy` block every time. There is no "hierarchy in progress" flag
 to get out of sync; re-running it any time reflects current reality.
+
+## Changelog entries: fragments, not CHANGELOG.md directly
+
+Dispatched children write their changelog entry to `.changesets/<epic-id>.md`, never to
+`CHANGELOG.md`'s shared `## [Unreleased]` section — that shared-header edit was a guaranteed
+merge conflict across every parallel batch. See `/pm:changesets` (and `commands/changesets.md`)
+for listing pending fragments and consolidating them into `CHANGELOG.md` once, at release time.

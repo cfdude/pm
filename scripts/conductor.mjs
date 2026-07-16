@@ -2058,6 +2058,35 @@ function verifyWorktrees() {
   process.stdout.write(JSON.stringify({ orphaned }) + "\n");
 }
 
+/** `changesets` — lists the `.changesets/<epic-id>.md` fragment files hierarchy children write
+ *  instead of editing CHANGELOG.md's shared `[Unreleased]` section directly (that shared-header
+ *  edit was a guaranteed merge conflict across parallel batches). Pure read: never deletes or
+ *  concatenates on its own — the orchestrator is the sole writer of CHANGELOG.md, same pattern as
+ *  it already being the sole writer of state.json, and does the consolidation itself at release
+ *  time (concatenate the fragment bodies into the new/`[Unreleased]` section, then delete the
+ *  consumed files). Returns `{ changesets: [{ id, path, body }] }` sorted by id, `[]` if
+ *  `.changesets/` doesn't exist or is empty — never errors on a missing directory. */
+function changesets() {
+  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  const dir = path.join(ROOT, ".changesets");
+  let entries;
+  try {
+    entries = fs.readdirSync(dir, { withFileTypes: true });
+  } catch {
+    process.stdout.write(JSON.stringify({ changesets: [] }) + "\n");
+    return;
+  }
+  const out = [];
+  for (const ent of entries) {
+    if (!ent.isFile() || !ent.name.endsWith(".md")) continue;
+    const id = ent.name.slice(0, -3);
+    const p = path.join(dir, ent.name);
+    out.push({ id, path: p, body: fs.readFileSync(p, "utf8") });
+  }
+  out.sort((a, b) => a.id.localeCompare(b.id));
+  process.stdout.write(JSON.stringify({ changesets: out }) + "\n");
+}
+
 /** `verify-state` — mechanically catches an undetected hand-edit of state.json (CLAUDE.md
  *  forbids hand-editing it; PROJECT.md must only ever be regenerated from it). Compares
  *  state.json's filesystem mtime against the stamp `writeRenderStamp()` records every
@@ -2122,6 +2151,7 @@ if (!process.env.PM_QUIET_ENGINE_BANNER) {
   "plan-hierarchy": planHierarchy,
   "verify-worktrees": verifyWorktrees,
   "verify-state": verifyState,
+  changesets,
   upgrade,
   changelog,
   rules: () => {
@@ -2131,6 +2161,6 @@ if (!process.env.PM_QUIET_ENGINE_BANNER) {
   },
   "write-rules": writeRules,
 }[cmd] || (() => {
-  process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|set-autonomy|record-reconcile|set-review-mode|set-gate-guard|gate-guard|plan-hierarchy|verify-worktrees|verify-state|upgrade|changelog|rules|write-rules\n");
+  process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|set-autonomy|record-reconcile|set-review-mode|set-gate-guard|gate-guard|plan-hierarchy|verify-worktrees|verify-state|changesets|upgrade|changelog|rules|write-rules\n");
   process.exit(1);
 }))();
