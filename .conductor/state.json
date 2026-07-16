@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": null,
+  "active": "df-autodetour-false-positive-conductor-admin-commits",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -758,11 +758,12 @@
       "id": "df-autodetour-false-positive-conductor-admin-commits",
       "title": "DF: the newly-shipped diffshape-minimal-detour-inference heuristic auto-logged a false-positive AUTO-DETOUR for a routine 'chore(pm): register epics' commit that only touched .conductor/state.json/PROJECT.md/render-stamp.json — caught live the first time it fired outside its own test suite. The heuristic (<=3 files + fix:/chore: prefix + no active detour) doesn't exclude the conductor's own bookkeeping commits, which are routine administration, not detours. Refine looksLikeUnloggedMinimalDetour() to skip commits whose changed files are entirely within the conductor's own state paths (.conductor/state.json, PROJECT.md, .conductor/render-stamp.json, CLAUDE.md's rules block) — those are pm's normal operating output, never a stray detour.",
       "priority": "P2",
-      "status": "queued",
+      "status": "active",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "startedAt": "2026-07-16T05:31:47.740Z"
     },
     {
       "id": "df-readme-stale-since-gate-guard",
