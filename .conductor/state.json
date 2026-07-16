@@ -655,7 +655,21 @@
       "role": "epic",
       "lane": "claude-code",
       "links": [],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "autonomy": {
+        "level": "autonomous",
+        "preAuthorized": [
+          {
+            "action": "introduce a .changesets/<epic-id>.md fragment-file convention for hierarchy children, plus an orchestrator concatenation step at release time",
+            "grantedAt": "2026-07-16T04:59:28.300Z",
+            "reason": "matches recorded decision, additive mechanism, no destructive risk"
+          }
+        ],
+        "context": [
+          "Decision: each hierarchy-child writes its own .changesets/<epic-id>.md fragment instead of editing CHANGELOG.md's shared [Unreleased] section directly. The orchestrator (not the engine) concatenates fragments into CHANGELOG.md once, at release time, as the sole writer -- consistent with the existing sole-writer-for-state.json pattern already used for .conductor/state.json. Document the convention in the conductor skill's epic-hierarchy-orchestration section and in the hierarchy-child-executor agent's instructions; a small engine helper to list/concatenate fragments is fine if it simplifies the release step, but is not required -- a manual cat+cleanup by the orchestrator is an acceptable MVP."
+        ],
+        "notifications": []
+      }
     },
     {
       "id": "df-conflict-resolution-verification-step",
@@ -665,7 +679,21 @@
       "role": "epic",
       "lane": "claude-code",
       "links": [],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "autonomy": {
+        "level": "autonomous",
+        "preAuthorized": [
+          {
+            "action": "add a mandatory post-resolution verification step (marker grep + node -c syntax check) to the conductor skill's merge-conflict-resolution process docs",
+            "grantedAt": "2026-07-16T04:59:28.350Z",
+            "reason": "matches recorded decision, pure doc change, no code risk"
+          }
+        ],
+        "context": [
+          "Decision: after ANY conflict resolution (self-resolved by the orchestrator, or via the merge-conflict-resolver agent), grep for leftover <<<<<<< / ======= / >>>>>>> markers AND run node -c on any touched .mjs file BEFORE committing the merge. Either failure means still-unresolved, not done -- document this as a hard step in the conductor skill's epic-hierarchy-orchestration section (the tiered conflict-resolution ladder) and in agents/merge-conflict-resolver.md's own instructions."
+        ],
+        "notifications": []
+      }
     },
     {
       "id": "df-skill-commands-line-drift",
@@ -685,7 +713,21 @@
       "role": "epic",
       "lane": "claude-code",
       "links": [],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "autonomy": {
+        "level": "autonomous",
+        "preAuthorized": [
+          {
+            "action": "add a required session-continuity check to the hierarchy-child-executor agent's instructions and the epic-level-autonomy preflight-scan section",
+            "grantedAt": "2026-07-16T04:59:28.395Z",
+            "reason": "matches recorded decision, pure doc change, no code risk"
+          }
+        ],
+        "context": [
+          "Decision: any epic whose autonomy context/preauthorization involves a live external-infra change (branch protection, required reviewers, webhook changes, API key rotation, etc.) must have its executor explicitly ask 'does this change affect how the orchestrator itself needs to operate for the REST OF THIS SESSION' and surface the answer as a CONCERN in its report BEFORE/AT completion -- not leave it to be discovered empirically (as branch-protection-and-pr-workflow's own rejected git push was). Document this as an explicit checklist item in agents/hierarchy-child-executor.md and reference it from the preflight-scan section of the conductor skill."
+        ],
+        "notifications": []
+      }
     },
     {
       "id": "df-stray-render-artifacts-noise",
