@@ -194,8 +194,20 @@ and renders `PROJECT.md`. From there:
 PM can make a project *aware* that its epics mirror to an external issue tracker, without the
 engine ever calling that tracker itself — same instruction-layer law as everything else. Works
 generically with any tracker name (`--system` isn't an enum), so **Jira**, **Linear**, and
-**GitHub Issues** are all supported today the same way; `github-issues` additionally gets
-inward sync (open issues pulled in as untriaged epics, not just outward mirroring).
+**GitHub Issues** are all supported today.
+
+**Jira and Linear (and any other `--system`) get bidirectional mirroring:** the rules block
+tells the agent to create a tracker issue for any local epic lacking `externalId`, then keep
+its status transitioning in step with the linked issue.
+
+**`github-issues` is deliberately INWARD-ONLY, not bidirectional:** open issues in the
+configured repo get pulled in as untriaged epics (`gh issue list` → `add-epic --status
+untriaged`, deduped by `externalId`), but the rules block does **not** tell the agent to
+auto-create a GitHub issue for a local epic just because a `github-issues` tracker is
+configured. Silently filing a public GitHub issue for every unmirrored claude-code epic is a
+much bigger, more consequential default than mirroring toward an internal Jira/Linear
+instance — so that outward instruction is suppressed specifically for `github-issues`, while
+Jira/Linear keep the full bidirectional behavior unchanged.
 
 Real shape, from a project actually running this in production:
 

@@ -79,21 +79,27 @@ file a bug report or feature request for `pm` itself as a GitHub issue on `cfdud
   `add-many --from <json>`. PROJECT.md indents children and rolls up `X/Y children archived`;
   NEXT UP keeps global priority order (grouping is render-only).
 - **Tracker awareness (instruction layer ONLY — never call the tracker yourself from the
-  engine):** if a `tracker` block is set (via `/pm:tracker`), the rules block + brief tell YOU
-  to mirror epics to Jira/GitHub/Linear with your own tooling — create an issue for any epic
-  lacking `externalId` then record the key with `update-epic --external-id`, and transition the
-  linked issue toward the `statusIntent` semantic target on each status change. The brief lists
-  only unmirrored epics; it never fabricates transition drift.
-- **`github-issues` tracker (inward pull, opposite direction of the mirror above):** set via
-  `set-tracker --system github-issues --repo <owner/name>`. Open issues in that repo become NEW
-  untriaged epics, same pattern as `sync`'s existing OpenSpec-change/Superpowers-plan
+  engine):** if a `tracker` block is set (via `/pm:tracker`) for **jira, linear, or any system
+  other than `github-issues`**, the rules block + brief tell YOU to mirror epics to that tracker
+  with your own tooling — create an issue for any epic lacking `externalId` then record the key
+  with `update-epic --external-id`, and transition the linked issue toward the `statusIntent`
+  semantic target on each status change. The brief lists only unmirrored epics; it never
+  fabricates transition drift. This outward mirror is bidirectional (local epic → tracker issue,
+  and status changes flow the same direction).
+- **`github-issues` tracker is INWARD-ONLY, by deliberate asymmetry with the mirror above:** set
+  via `set-tracker --system github-issues --repo <owner/name>`. Open issues in that repo become
+  NEW untriaged epics, same pattern as `sync`'s existing OpenSpec-change/Superpowers-plan
   auto-registration. As part of `/pm:sync`, the rules block tells YOU to `gh issue list --repo
   <repo> --state open --json number,title,url,labels`, skip any issue already mapped to an epic
   via `externalId` (dedup — re-running sync must never duplicate), and register the rest with
   `add-epic --status untriaged --external-id <n> --external-url <url> --lane claude-code
   --priority P2` (a `P0`/`P1`/`P2`/`P3` label overrides the P2 default). `add-epic` itself
-  rejects a duplicate `--external-id` as a second line of defense. See `commands/tracker.md` and
-  `commands/sync.md`.
+  rejects a duplicate `--external-id` as a second line of defense. Unlike jira/linear, the rules
+  block does NOT emit the outward "create an issue for an unmirrored epic" instruction when
+  `tracker.system === "github-issues"` — auto-filing a public GitHub issue for every local
+  claude-code epic just because a tracker is configured is a materially bigger, more
+  consequential default than mirroring toward an internal Jira/Linear instance, so it is
+  suppressed rather than left implicit. See `commands/tracker.md` and `commands/sync.md`.
 
 ## When something blocks progress: classify the detour FIRST
 
