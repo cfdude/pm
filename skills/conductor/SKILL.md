@@ -269,6 +269,17 @@ CLAUDE.md (see `/pm:epic` → `set-autonomy`).
    - **Genuine unknowns** — real ambiguities or missing decisions that should NOT just be
      guessed on — things needing explicit human approval or clarification before this epic could
      run start-to-finish unattended.
+   - **Session-continuity impact** — if the epic makes any live change to external
+     infrastructure (branch protection rules, credential/token rotation, webhook/API config,
+     required reviewers, etc.), the preflight questions batch presented to the user MUST include
+     a standing question: "will this change affect how the orchestrator itself operates for the
+     rest of the current session (or any future session)?" This is not optional padding — it is
+     what would have caught the real incident where `branch-protection-and-pr-workflow` applied
+     live branch-protection settings to `main` and the orchestrator's very next
+     `git push origin main` was rejected, discovered only empirically because neither the
+     preflight scan nor the executor's completion report had flagged it. The
+     `hierarchy-child-executor` agent enforces the matching check at report time — see its
+     "Required check: session-continuity impact on the orchestrator" section.
 4. Keep it SHORT and high-signal. If there is nothing destructive, say so plainly. If there is
    no genuine unknown, say so plainly. Padding the output with non-issues defeats the entire
    point — it is exactly what turns autonomous execution into a wall of blockers.
