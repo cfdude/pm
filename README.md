@@ -119,6 +119,50 @@ This plugin is distributed via the `cfdude-plugins` marketplace:
 /plugin install pm@cfdude-plugins
 ```
 
+### The Perfect Quartet
+
+PM works completely on its own — install it and `/pm:init` gives you cross-epic priority
+ordering, an explicit detour stack, and the reconcile gate, with no other plugin required.
+
+That said, PM was designed to sit **above** three companions, and each one adds something PM
+doesn't do itself:
+
+- **[OpenSpec](https://openspec.dev)** — the `openspec` lane's spec-driven proposal workflow
+  (`proposal.md` / `design.md` / `tasks.md`). PM tracks the epic; OpenSpec owns *what* gets built
+  and its durable spec record.
+- **[Superpowers](https://github.com/obra/superpowers)** — the `superpowers` lane's execution
+  discipline (brainstorming, TDD, subagent-driven development, code review). PM tracks *when*
+  and *in what order*; Superpowers drives *how well* each epic gets built.
+- **[Honcho](https://docs.honcho.dev)** — durable memory that survives outside any single
+  repo. PM's detour stack and reconcile gate are the *live working set* for one project; Honcho
+  is where a PUSH/POP memory line goes so the relationship between projects — and between
+  sessions of the same project — survives a context compaction, a new machine, or a week away.
+  Genuinely useful the moment you're juggling more than one repo PM manages.
+
+Install OpenSpec:
+
+```bash
+npm install -g @fission-ai/openspec   # or: brew install openspec
+cd your-project
+openspec init
+```
+
+Install Superpowers (available on the official Anthropic marketplace):
+
+```bash
+/plugin marketplace add anthropics/claude-plugins-official
+/plugin install superpowers@claude-plugins-official
+```
+
+> [!TIP]
+> **Honcho** is the one companion that's genuinely out of scope for a quick install block here —
+> it's a full memory service, not a Claude Code plugin. Plastic Labs offers both a hosted
+> option and self-hosted deployment; start at **[docs.honcho.dev](https://docs.honcho.dev)** for
+> current setup instructions, or go straight to the source at
+> **[github.com/plastic-labs/honcho](https://github.com/plastic-labs/honcho)**. Not required for
+> PM to work — only recommended once you want a project's detour history to outlive that
+> project's own context window.
+
 ## Quick Start
 
 ```bash
