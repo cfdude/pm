@@ -1937,6 +1937,41 @@ test("verify-worktrees returns an empty orphaned list gracefully when the cwd is
   assert.deepEqual(out.orphaned, []);
 });
 
+// ──────────────── changesets ────────────────
+
+test("changesets returns an empty list when .changesets doesn't exist", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const out = JSON.parse(run(["changesets"], { cwd }));
+  assert.deepEqual(out.changesets, []);
+});
+
+test("changesets lists fragment files sorted by epic id, with body content", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const dir = path.join(cwd, ".changesets");
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, "zeta-epic.md"), "- **Zeta thing.** Did the zeta.\n");
+  fs.writeFileSync(path.join(dir, "alpha-epic.md"), "- **Alpha thing.** Did the alpha.\n");
+  const out = JSON.parse(run(["changesets"], { cwd }));
+  assert.equal(out.changesets.length, 2);
+  assert.equal(out.changesets[0].id, "alpha-epic");
+  assert.equal(out.changesets[1].id, "zeta-epic");
+  assert.match(out.changesets[0].body, /Did the alpha/);
+});
+
+test("changesets ignores non-markdown files in .changesets", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const dir = path.join(cwd, ".changesets");
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, "epic-a.md"), "- **A thing.**\n");
+  fs.writeFileSync(path.join(dir, ".gitkeep"), "");
+  const out = JSON.parse(run(["changesets"], { cwd }));
+  assert.equal(out.changesets.length, 1);
+  assert.equal(out.changesets[0].id, "epic-a");
+});
+
 // ──────────────── verify-state ────────────────
 
 test("verify-state succeeds right after init/render (stamp matches state.json)", () => {

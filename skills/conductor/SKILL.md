@@ -349,6 +349,15 @@ not just one epic.
      after the batch (mark each merged child `archived`), not interleaved with dispatch. This is
      what makes parallel dispatch safe for the state file specifically: there's only ever one
      writer, so there's nothing to merge-conflict on `state.json` itself.
+   - **Same sole-writer pattern applies to `CHANGELOG.md`.** A child does NOT edit
+     `CHANGELOG.md`'s shared `## [Unreleased]` section directly — every parallel batch that tried
+     guaranteed a merge conflict there (100% collision rate across the first two dogfood batches:
+     N children editing the same header every time). Instead each child writes its changelog
+     entry to its own fragment file, `.changesets/<epic-id>.md`, in the same bullet format
+     `CHANGELOG.md` entries already use (a bold one-line summary, then wrapped prose). Fragments
+     never conflict with each other because each child touches only its own file. You (the
+     orchestrator) remain the sole writer of `CHANGELOG.md` and consolidate fragments at release
+     time only — see step 4.
    - **Merge each child's worktree branch back sequentially**, one at a time, even though the
      *work* happened in parallel. On an ordinary merge conflict (two children's code genuinely
      touched overlapping lines): this is NOT a stop condition — it's decision-rule item (c)
@@ -380,6 +389,14 @@ not just one epic.
    these may affect other backlog items, which is exactly the seed a future portfolio-consistency
    pass would need. The parent epic's own status is **never auto-archived** by this process —
    that stays a human call, same as epic-level autonomy never auto-closes an epic either.
+   - **Release step — consolidate `.changesets/*.md` into `CHANGELOG.md`.** Run
+     `node "$ENGINE" changesets` to list pending fragments (`{ changesets: [{ id, path, body }] }`,
+     sorted by epic id). Fold each fragment's `body` into `CHANGELOG.md`'s `[Unreleased]` section
+     (or a new version section, if this is a release), then delete the consumed fragment files
+     (`.changesets/<id>.md`) — you are the sole writer of `CHANGELOG.md`, so there is nothing to
+     merge-conflict here even though the fragments were written by parallel children. This is a
+     manual `cat`-and-edit step, not automated by the engine; `changesets` only makes the fragment
+     set visible and machine-readable so the step is mechanical rather than a guess.
 
 ## state.json reference
 

@@ -32,6 +32,14 @@ d. No context to act on — a genuine unresolved unknown, not something you can 
    supplied `context`? → STOP.
 e. Consequential and not yet reflected in your `context`? → proceed, but flag it in your report.
 
+**Changelog entries go in a fragment file, never in `CHANGELOG.md` directly.** If your epic's
+work warrants a changelog entry, write it to `.changesets/<your-epic-id>.md` (create the
+`.changesets/` directory if it doesn't exist), using the same bullet format `CHANGELOG.md`
+entries already use — a bold one-line summary, then wrapped prose. Do NOT edit `CHANGELOG.md`'s
+`## [Unreleased]` section yourself: every parallel batch that had children edit that shared
+header directly hit a guaranteed merge conflict there. The orchestrator is the sole writer of
+`CHANGELOG.md` and consolidates all pending fragments into it once, at release time.
+
 **Do not ask the orchestrating agent a question mid-run** unless you hit (b) or (d) above — the
 whole point of this dispatch is that context/approvals were already front-loaded during the
 hierarchy's preflight step. If you hit a genuine stop, that IS your report; return immediately
