@@ -53,11 +53,12 @@
       "id": "pm-plugin-improvements-2026-07-14",
       "title": "pm plugin improvements from three dogfooding sessions (2026-07-14) — see docs/feedback/2026-07-14-pm-plugin-improvement-feedback.md",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "completedAt": "2026-07-16T05:28:32.305Z"
     },
     {
       "id": "gate-guard-default-on-reconcile",
@@ -515,11 +516,12 @@
       "id": "cfdude-pm-repo-governance",
       "title": "Secure and automate the cfdude/pm GitHub repo: branch protection, CI, and (eventually) autonomous issue-to-PR resolution",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "completedAt": "2026-07-16T05:28:32.266Z"
     },
     {
       "id": "branch-protection-and-pr-workflow",
