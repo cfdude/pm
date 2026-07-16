@@ -871,6 +871,16 @@
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false
+    },
+    {
+      "id": "df-hierarchy-executor-must-check-readme-for-user-facing-changes",
+      "title": "DF: record-gate-review shipped in 0.16.0 as a genuine new user-facing subcommand, but the orchestrator's own dispatch instructions for that epic only required updating SKILL.md/agents docs, not README.md -- caught by the user, not by process. This is the README-analog of df-skill-commands-line-drift (SKILL.md's Commands line drifting from the dispatch table): nothing currently forces README.md to stay current the way SKILL.md now mechanically does. Fix: extend the same drift-detection test pattern to README.md's Commands section (or add a comparable check), AND update agents/hierarchy-child-executor.md's standing instructions to explicitly require a README.md update whenever the epic adds/changes a user-facing command, flag, or behavior -- not leave it to be inferred per-dispatch by the orchestrator writing each prompt by hand.",
+      "priority": "P1",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false
     }
   ],
   "detourStack": [],

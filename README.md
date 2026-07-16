@@ -298,6 +298,18 @@ verdict back durably via `record-reconcile` (not just into the conversation tran
 </details>
 
 <details>
+<summary><code>record-gate-review &lt;epicId&gt; --gate 1|2 --verdict pass|fail [--reviewer "&lt;note&gt;"]</code> — Record an OpenSpec gate review</summary>
+
+Writes a fresh-context reviewer's verdict durably onto an `openspec`-lane epic
+(`gateReview.gate1`/`gate2`). `update-epic --status archived` **rejects** the transition for any
+`openspec`-lane epic that doesn't already have a recorded `gateReview.gate2.verdict === "pass"` —
+Gate 2 (implementation review, before docs) is mechanically required to archive, not just
+narrated. Scoped strictly to the `openspec` lane; `superpowers`/`claude-code`/`decision`/`external`
+epics are completely unaffected.
+
+</details>
+
+<details>
 <summary><code>/pm:sync</code> — Register new proposals and plans</summary>
 
 Picks up any new OpenSpec proposals or Superpowers plans not yet tracked as epics. When a
