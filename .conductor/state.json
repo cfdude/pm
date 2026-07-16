@@ -786,6 +786,16 @@
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false
+    },
+    {
+      "id": "df-no-mechanical-openspec-gate-enforcement",
+      "title": "DF: nothing on the engine side mechanically verifies an openspec-lane epic actually passed Gate 1 (spec review) and Gate 2 (implementation review) before it's archived -- agents/hierarchy-child-executor.md only INSTRUCTS the dispatched agent to follow its lane's normal workflow, it doesn't enforce it. Discovered while answering the user's direct question 'how can I be sure an autonomous epic follows brainstorm->propose->Gate1->apply->Gate2->archive' -- confirmed via a full state.json audit that zero openspec-lane epics have EVER been registered in this repo's own self-hosted history, so this discipline has never actually been exercised by our own dogfooding either. Fix: add a mechanical check (e.g. a gateReview field or required verification-report path on openspec-lane epics, similar to Comet's verify_result/verification_report gating its own archive step) so update-epic --status archived rejects an openspec-lane epic missing gate evidence, the same class of enforcement as the reconcile-gate guard already has for detours.",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false
     }
   ],
   "detourStack": [],
