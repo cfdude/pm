@@ -370,6 +370,24 @@ not just one epic.
      git history) and **log a new follow-up epic under the same parent** describing the residual
      issue, then continue. Never tell the human "we can't merge this, you handle it" for an
      ordinary code conflict — that outcome is explicitly designed out.
+   - **🚨 MANDATORY POST-RESOLUTION VERIFICATION — applies after ANY conflict resolution on this
+     ladder, regardless of which rung resolved it (self-resolved by you the orchestrator, or via
+     `merge-conflict-resolver`, or via an escalated model/`advisor()` opinion), BEFORE committing
+     the merge:**
+     1. **Grep every touched file for leftover conflict markers** — `<<<<<<<`, `=======`,
+        `>>>>>>>`. Any hit, anywhere, on either an opening or closing marker, means the file is
+        **still unresolved** — go back and fix it. Do not assume "I removed the closing markers"
+        implies the opening marker is also gone; check both explicitly.
+     2. **For every touched `.mjs`/`.js` file, run `node -c <file>`.** A syntax error means the
+        file is **still unresolved** — go back and fix it.
+     3. Only commit the merge once both checks pass clean on every touched file. Neither check
+        is optional and neither substitutes for the other (a file can pass the syntax check while
+        still containing a marker inside a comment or string, and vice versa for non-JS files).
+     - **Why this exists:** during this repo's own 0.14.0 dogfood run, a conflict resolution
+       removed only the *closing* conflict markers and left the opening `<<<<<<< HEAD` marker in
+       place in a committed file. There was no required step that would have caught this — it was
+       only caught by chance, via a manual re-grep after the fact. This verification step exists
+       so that catch is never left to chance again.
    - Once a child's branch has merged (cleanly or via the ladder above), remove its worktree and
      delete its branch immediately — never leave it dangling. `node "$ENGINE" verify-worktrees`
      cross-references `git worktree list` against epic status and flags any `hierarchy-child/*`
