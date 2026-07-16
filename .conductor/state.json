@@ -651,7 +651,7 @@
       "id": "df-changelog-fragment-conflicts",
       "title": "DF: every parallel hierarchy-child batch conflicts on CHANGELOG.md's shared '## [Unreleased]' header — 100% collision rate across both dogfood batches (5/6 and 2/4 merges). Adopt a changesets-style per-child fragment file (e.g. .changesets/<epic-id>.md) that each child writes instead of editing the shared CHANGELOG.md directly; the orchestrator concatenates fragments into the real CHANGELOG.md once, at release time, as the sole writer — eliminating this entire conflict class rather than resolving it by hand every batch.",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -669,13 +669,14 @@
           "Decision: each hierarchy-child writes its own .changesets/<epic-id>.md fragment instead of editing CHANGELOG.md's shared [Unreleased] section directly. The orchestrator (not the engine) concatenates fragments into CHANGELOG.md once, at release time, as the sole writer -- consistent with the existing sole-writer-for-state.json pattern already used for .conductor/state.json. Document the convention in the conductor skill's epic-hierarchy-orchestration section and in the hierarchy-child-executor agent's instructions; a small engine helper to list/concatenate fragments is fine if it simplifies the release step, but is not required -- a manual cat+cleanup by the orchestrator is an acceptable MVP."
         ],
         "notifications": []
-      }
+      },
+      "completedAt": "2026-07-16T05:07:27.632Z"
     },
     {
       "id": "df-conflict-resolution-verification-step",
       "title": "DF: the orchestrator resolved a merge conflict incorrectly mid-dispatch (left a stray opening '<<<<<<< HEAD' marker after removing only the closing markers) and only caught it by manually re-grepping — the tiered conflict-resolution design has no MANDATORY post-resolution verification step. Add one to the conductor skill's merge-conflict-resolution process: after every conflict resolution (self-resolved or via merge-conflict-resolver), grep for leftover '<<<<<<<'/'======='/'>>>>>>>' markers AND run a syntax check (node -c for .mjs files) before committing the merge — treat either failure as still-unresolved, not done.",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -693,7 +694,8 @@
           "Decision: after ANY conflict resolution (self-resolved by the orchestrator, or via the merge-conflict-resolver agent), grep for leftover <<<<<<< / ======= / >>>>>>> markers AND run node -c on any touched .mjs file BEFORE committing the merge. Either failure means still-unresolved, not done -- document this as a hard step in the conductor skill's epic-hierarchy-orchestration section (the tiered conflict-resolution ladder) and in agents/merge-conflict-resolver.md's own instructions."
         ],
         "notifications": []
-      }
+      },
+      "completedAt": "2026-07-16T05:07:27.678Z"
     },
     {
       "id": "df-skill-commands-line-drift",
@@ -709,7 +711,7 @@
       "id": "df-live-infra-epic-session-continuity-warning",
       "title": "DF: branch-protection-and-pr-workflow changed live GitHub repo settings mid-session and nothing in its preflight or executor report flagged that the CURRENT session's own git push would immediately start failing — discovered only when the push was rejected. Any epic whose autonomy context/preauthorization involves a live external-infra change with session-continuity impact (branch protection, required reviewers, webhook changes, etc.) should have its hierarchy-child-executor explicitly check 'does this change affect how the orchestrator itself will need to operate for the rest of this session' and surface it as a CONCERN before/at completion, not leave it to be discovered empirically.",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -727,7 +729,8 @@
           "Decision: any epic whose autonomy context/preauthorization involves a live external-infra change (branch protection, required reviewers, webhook changes, API key rotation, etc.) must have its executor explicitly ask 'does this change affect how the orchestrator itself needs to operate for the REST OF THIS SESSION' and surface the answer as a CONCERN in its report BEFORE/AT completion -- not leave it to be discovered empirically (as branch-protection-and-pr-workflow's own rejected git push was). Document this as an explicit checklist item in agents/hierarchy-child-executor.md and reference it from the preflight-scan section of the conductor skill."
         ],
         "notifications": []
-      }
+      },
+      "completedAt": "2026-07-16T05:07:27.718Z"
     },
     {
       "id": "df-stray-render-artifacts-noise",

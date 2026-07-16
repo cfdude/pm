@@ -10,6 +10,36 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Changesets-style fragment files replace direct `CHANGELOG.md` edits for hierarchy children.**
+  Every parallel hierarchy-child batch was hitting a 100% collision rate on `CHANGELOG.md`'s
+  shared `## [Unreleased]` header — every dispatched child edited the same section, guaranteeing
+  a merge conflict on every multi-child batch. Children now write their changelog entry to
+  `.changesets/<epic-id>.md` instead (same bullet format `CHANGELOG.md` already uses: a bold
+  one-line summary, then wrapped prose). The orchestrator remains the sole writer of
+  `CHANGELOG.md` — consistent with it already being the sole writer of `.conductor/state.json` —
+  and consolidates all pending fragments into the real `[Unreleased]`/new-version section once,
+  at release time, then deletes the consumed fragment files. A new zero-dependency `changesets`
+  engine subcommand (`node conductor.mjs changesets`) lists `.changesets/*.md` fragments as
+  `{ changesets: [{ id, path, body }] }`, sorted by epic id, to make that consolidation step
+  mechanical rather than a manual `cat` + guesswork. (First real-world test, this very release:
+  zero CHANGELOG.md conflicts across 3 parallel children, versus a 100% collision rate before.)
+- **Mandatory post-resolution verification for the epic-hierarchy merge-conflict ladder.**
+  After ANY conflict resolution (self-resolved by the orchestrator, via
+  `agents/merge-conflict-resolver`, or via an escalated model/`advisor()` opinion), before the
+  merge is committed: grep every touched file for leftover `<<<<<<<`/`=======`/`>>>>>>>` markers,
+  and run `node -c` on every touched `.mjs`/`.js` file. Either failure means the file is still
+  unresolved. Closes a gap found during this repo's own 0.14.0 dogfood run, where a resolution
+  removed only the closing conflict markers and left the opening `<<<<<<< HEAD` marker in place
+  — caught only by a manual re-grep, not by any required step.
+- **Session-continuity check for live external-infra epics.** The `hierarchy-child-executor`
+  agent now has a required checklist item: before finalizing its report, if the epic's work made
+  a live change to external infrastructure the orchestrator itself depends on for the rest of the
+  session (branch protection rules, credential/token rotation, webhook/API changes, etc.), it
+  must explicitly answer "does this change affect how the orchestrator itself needs to operate
+  for the rest of this session?" in CONCERNS — even an explicit "no" is required output, not
+  silence. Fixes a real incident: `branch-protection-and-pr-workflow` applied live branch-
+  protection settings to `main`, and the orchestrator's very next `git push origin main` was
+  rejected — discovered only empirically, not flagged by that epic's own report.
 - **README.md fully revamped.** Replaces the agent-facing, all-over-the-place structure with a
   Comet-inspired layout: a real banner image, honest badges (CI/version/license only — no
   DeepWiki/CodeCov/trending until the tooling behind them actually exists), a "Why Use PM?"
