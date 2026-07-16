@@ -32,10 +32,24 @@ Procedure:
    mechanical union), note it explicitly in your report's `CONCERNS` — this is exactly the kind
    of thing a human or a stronger-model second pass should know was decided, even if you're
    confident it's right.
-5. Once every conflicted file is resolved: `git add` the resolved files and `git commit` to
-   finalize the merge (do not leave it half-resolved and unstaged). Only skip this step if your
-   `STATUS` is `uncertain` or `failed` (below) — an uncertain or failed resolution should not be
-   committed as if it were confident.
+5. **🚨 MANDATORY VERIFICATION — before you `git add`/`git commit` anything, run BOTH of these
+   checks on every file you touched, and do not report `STATUS: resolved` unless both pass clean:**
+   1. **Grep the file for leftover conflict markers** — `<<<<<<<`, `=======`, `>>>>>>>`. Any hit
+      (opening OR closing marker) means the file is still unresolved — go fix it. Do not assume
+      that removing the closing markers means the opening marker is also gone; check both
+      explicitly, every time.
+   2. **If the file is `.mjs`/`.js`, run `node -c <file>`.** A syntax error means it's still
+      unresolved — go fix it.
+   Only once every touched file passes both checks: `git add` the resolved files and `git commit`
+   to finalize the merge (do not leave it half-resolved and unstaged). Skip this commit step only
+   if your `STATUS` is `uncertain` or `failed` (below) — an uncertain or failed resolution should
+   not be committed as if it were confident.
+   - **Why this is mandatory, not a suggestion:** during this repo's own 0.14.0 dogfood run, a
+     conflict resolution removed only the *closing* conflict markers and left the opening
+     `<<<<<<< HEAD` marker in place in a committed file. Nothing required a check that would have
+     caught this — it was found only by chance, via a manual re-grep after the fact. Your
+     `STATUS: resolved` verdict must be backed by having actually run these two checks yourself,
+     not by "I edited the file and it looks right."
 
 ## When to report uncertain instead of resolving
 

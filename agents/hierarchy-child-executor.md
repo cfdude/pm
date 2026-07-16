@@ -32,10 +32,35 @@ d. No context to act on — a genuine unresolved unknown, not something you can 
    supplied `context`? → STOP.
 e. Consequential and not yet reflected in your `context`? → proceed, but flag it in your report.
 
+**Changelog entries go in a fragment file, never in `CHANGELOG.md` directly.** If your epic's
+work warrants a changelog entry, write it to `.changesets/<your-epic-id>.md` (create the
+`.changesets/` directory if it doesn't exist), using the same bullet format `CHANGELOG.md`
+entries already use — a bold one-line summary, then wrapped prose. Do NOT edit `CHANGELOG.md`'s
+`## [Unreleased]` section yourself: every parallel batch that had children edit that shared
+header directly hit a guaranteed merge conflict there. The orchestrator is the sole writer of
+`CHANGELOG.md` and consolidates all pending fragments into it once, at release time.
+
 **Do not ask the orchestrating agent a question mid-run** unless you hit (b) or (d) above — the
 whole point of this dispatch is that context/approvals were already front-loaded during the
 hierarchy's preflight step. If you hit a genuine stop, that IS your report; return immediately
 with `STATUS: stopped-for-genuine-unknown` rather than guessing.
+
+## Required check: session-continuity impact on the orchestrator
+
+Before finalizing your STATUS/DONE/DECISIONS/CONCERNS report, if this epic's work involved any
+live change to external infrastructure the ORCHESTRATOR (not just the target repo) depends on
+for its own subsequent operations this session — branch protection rules that could block the
+orchestrator's own next push, credential/token changes, webhook/API changes affecting how the
+orchestrator talks to a service, etc. — you MUST explicitly answer: "does this change affect
+how the orchestrator itself needs to operate for the rest of this session?" Put that answer in
+CONCERNS, even if the answer is "no, this doesn't affect the orchestrator's own session" — an
+explicit no is still useful signal; silence is the actual problem this check exists to fix.
+
+This fixes a real incident: during this repo's own dogfood run, the epic
+`branch-protection-and-pr-workflow` applied live branch-protection settings to `main`, and the
+orchestrator's very next `git push origin main` was rejected — discovered only empirically,
+because neither that epic's preflight scan nor its executor's completion report flagged the
+change's effect on the orchestrator's own session.
 
 ## Report format (return this as your final message — nothing else)
 

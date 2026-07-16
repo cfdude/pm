@@ -269,6 +269,17 @@ CLAUDE.md (see `/pm:epic` → `set-autonomy`).
    - **Genuine unknowns** — real ambiguities or missing decisions that should NOT just be
      guessed on — things needing explicit human approval or clarification before this epic could
      run start-to-finish unattended.
+   - **Session-continuity impact** — if the epic makes any live change to external
+     infrastructure (branch protection rules, credential/token rotation, webhook/API config,
+     required reviewers, etc.), the preflight questions batch presented to the user MUST include
+     a standing question: "will this change affect how the orchestrator itself operates for the
+     rest of the current session (or any future session)?" This is not optional padding — it is
+     what would have caught the real incident where `branch-protection-and-pr-workflow` applied
+     live branch-protection settings to `main` and the orchestrator's very next
+     `git push origin main` was rejected, discovered only empirically because neither the
+     preflight scan nor the executor's completion report had flagged it. The
+     `hierarchy-child-executor` agent enforces the matching check at report time — see its
+     "Required check: session-continuity impact on the orchestrator" section.
 4. Keep it SHORT and high-signal. If there is nothing destructive, say so plainly. If there is
    no genuine unknown, say so plainly. Padding the output with non-issues defeats the entire
    point — it is exactly what turns autonomous execution into a wall of blockers.
@@ -349,6 +360,15 @@ not just one epic.
      after the batch (mark each merged child `archived`), not interleaved with dispatch. This is
      what makes parallel dispatch safe for the state file specifically: there's only ever one
      writer, so there's nothing to merge-conflict on `state.json` itself.
+   - **Same sole-writer pattern applies to `CHANGELOG.md`.** A child does NOT edit
+     `CHANGELOG.md`'s shared `## [Unreleased]` section directly — every parallel batch that tried
+     guaranteed a merge conflict there (100% collision rate across the first two dogfood batches:
+     N children editing the same header every time). Instead each child writes its changelog
+     entry to its own fragment file, `.changesets/<epic-id>.md`, in the same bullet format
+     `CHANGELOG.md` entries already use (a bold one-line summary, then wrapped prose). Fragments
+     never conflict with each other because each child touches only its own file. You (the
+     orchestrator) remain the sole writer of `CHANGELOG.md` and consolidate fragments at release
+     time only — see step 4.
    - **Merge each child's worktree branch back sequentially**, one at a time, even though the
      *work* happened in parallel. On an ordinary merge conflict (two children's code genuinely
      touched overlapping lines): this is NOT a stop condition — it's decision-rule item (c)
@@ -361,6 +381,24 @@ not just one epic.
      git history) and **log a new follow-up epic under the same parent** describing the residual
      issue, then continue. Never tell the human "we can't merge this, you handle it" for an
      ordinary code conflict — that outcome is explicitly designed out.
+   - **🚨 MANDATORY POST-RESOLUTION VERIFICATION — applies after ANY conflict resolution on this
+     ladder, regardless of which rung resolved it (self-resolved by you the orchestrator, or via
+     `merge-conflict-resolver`, or via an escalated model/`advisor()` opinion), BEFORE committing
+     the merge:**
+     1. **Grep every touched file for leftover conflict markers** — `<<<<<<<`, `=======`,
+        `>>>>>>>`. Any hit, anywhere, on either an opening or closing marker, means the file is
+        **still unresolved** — go back and fix it. Do not assume "I removed the closing markers"
+        implies the opening marker is also gone; check both explicitly.
+     2. **For every touched `.mjs`/`.js` file, run `node -c <file>`.** A syntax error means the
+        file is **still unresolved** — go back and fix it.
+     3. Only commit the merge once both checks pass clean on every touched file. Neither check
+        is optional and neither substitutes for the other (a file can pass the syntax check while
+        still containing a marker inside a comment or string, and vice versa for non-JS files).
+     - **Why this exists:** during this repo's own 0.14.0 dogfood run, a conflict resolution
+       removed only the *closing* conflict markers and left the opening `<<<<<<< HEAD` marker in
+       place in a committed file. There was no required step that would have caught this — it was
+       only caught by chance, via a manual re-grep after the fact. This verification step exists
+       so that catch is never left to chance again.
    - Once a child's branch has merged (cleanly or via the ladder above), remove its worktree and
      delete its branch immediately — never leave it dangling. `node "$ENGINE" verify-worktrees`
      cross-references `git worktree list` against epic status and flags any `hierarchy-child/*`
@@ -380,6 +418,14 @@ not just one epic.
    these may affect other backlog items, which is exactly the seed a future portfolio-consistency
    pass would need. The parent epic's own status is **never auto-archived** by this process —
    that stays a human call, same as epic-level autonomy never auto-closes an epic either.
+   - **Release step — consolidate `.changesets/*.md` into `CHANGELOG.md`.** Run
+     `node "$ENGINE" changesets` to list pending fragments (`{ changesets: [{ id, path, body }] }`,
+     sorted by epic id). Fold each fragment's `body` into `CHANGELOG.md`'s `[Unreleased]` section
+     (or a new version section, if this is a release), then delete the consumed fragment files
+     (`.changesets/<id>.md`) — you are the sole writer of `CHANGELOG.md`, so there is nothing to
+     merge-conflict here even though the fragments were written by parallel children. This is a
+     manual `cat`-and-edit step, not automated by the engine; `changesets` only makes the fragment
+     set visible and machine-readable so the step is mechanical rather than a guess.
 
 ## state.json reference
 
