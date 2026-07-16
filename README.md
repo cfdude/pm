@@ -482,7 +482,13 @@ across the backlog.
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=cfdude/pm&type=date)](https://www.star-history.com/#cfdude/pm&Date)
+<a href="https://www.star-history.com/?type=date&repos=cfdude%2Fpm">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=cfdude/pm&type=date&theme=dark&legend=top-left&sealed_token=4X1EU7rFhQQ8LKD7ppmOfK_dPmH8T8SNBGsbYUd4JUTNhwsa5mHKztQ4ZyOphe1HW_6iQUMa2W3RKvMEbEINz3tBrF8nZ-cAWbQ-JSz8e3lzxtD6QhN2Af29fc8SGZ0GqkDS4zzknNFpzybw2u1a7RXnzd6MDT2_jEL_jLqP9TaCsNOhQ_iUbXvoLvW9" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=cfdude/pm&type=date&legend=top-left&sealed_token=4X1EU7rFhQQ8LKD7ppmOfK_dPmH8T8SNBGsbYUd4JUTNhwsa5mHKztQ4ZyOphe1HW_6iQUMa2W3RKvMEbEINz3tBrF8nZ-cAWbQ-JSz8e3lzxtD6QhN2Af29fc8SGZ0GqkDS4zzknNFpzybw2u1a7RXnzd6MDT2_jEL_jLqP9TaCsNOhQ_iUbXvoLvW9" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=cfdude/pm&type=date&legend=top-left&sealed_token=4X1EU7rFhQQ8LKD7ppmOfK_dPmH8T8SNBGsbYUd4JUTNhwsa5mHKztQ4ZyOphe1HW_6iQUMa2W3RKvMEbEINz3tBrF8nZ-cAWbQ-JSz8e3lzxtD6QhN2Af29fc8SGZ0GqkDS4zzknNFpzybw2u1a7RXnzd6MDT2_jEL_jLqP9TaCsNOhQ_iUbXvoLvW9" />
+ </picture>
+</a>
 
 ## License
 
