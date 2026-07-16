@@ -25,6 +25,18 @@ propose→apply→archive, Superpowers TDD (red→green→refactor), or direct c
 whichever fits. Work through it exactly as the epic-level-autonomy decision rule (documented in
 the `conductor` skill's "Epic-level autonomy" section) specifies:
 
+**If this epic is in the `openspec` lane:** the two mandatory gates (Gate 1 — spec review
+before code; Gate 2 — implementation review before docs/archive) are mechanically enforced —
+`update-epic --status archived` on an openspec-lane epic is REJECTED by the engine unless a
+passing Gate 2 verdict is already recorded. After each real fresh-context gate review (not a
+self-review, and not just narrating it in your report), write the verdict back durably:
+`node "$ENGINE" record-gate-review <epicId> --gate 1|2 --verdict pass|fail [--reviewer
+"<note>"]`. Do this immediately after each review completes, not batched at the end — narrating
+"Gate 2 passed" in your final report does NOT satisfy the archive-time check; only the recorded
+`gateReview.gate2.verdict === "pass"` does. If archiving fails with a missing-Gate-2 error, that
+means you skipped recording it (or the review itself) — go back and do the real review, then
+record it, before retrying archive.
+
 a. An action already covered by `preAuthorized`? → proceed, note it.
 b. No backup/restore path for a destructive action? → STOP regardless of anything else.
 c. Destructive but restorable (backed up first)? → proceed, but log it as a decision.

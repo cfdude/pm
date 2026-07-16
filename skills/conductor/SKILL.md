@@ -51,7 +51,10 @@ Below, `$ENGINE` means the path resolved this way.
 
 `/pm:init` scaffold · `/pm:status` show · `/pm:next` decide · `/pm:detour` park ·
 `/pm:resume` resume + reconcile (writes the reconciler's verdict back durably via
-`record-reconcile`) · `/pm:sync` register new proposals and plans ·
+`record-reconcile`) · `record-gate-review <id> --gate 1|2 --verdict pass|fail` records an
+openspec-lane epic's Gate 1/Gate 2 review verdict (see "OpenSpec build" below); `update-epic
+--status archived` on an openspec-lane epic requires a passing Gate 2 verdict already recorded
+· `/pm:sync` register new proposals and plans ·
 `/pm:epic add` register any epic (`--parent`, `--external-id`) · `/pm:epic` → `add-many`
 (atomic bulk create) / `update-epic` (write-back, incl. `--title`/`--link`) / `remove-epic`
 (hard-delete, `--cascade` for a parent + descendants) · **`set-active <id>` / `clear-active`**
@@ -94,6 +97,32 @@ file a bug report or feature request for `pm` itself as a GitHub issue on `cfdud
   --priority P2` (a `P0`/`P1`/`P2`/`P3` label overrides the P2 default). `add-epic` itself
   rejects a duplicate `--external-id` as a second line of defense. See `commands/tracker.md` and
   `commands/sync.md`.
+
+## OpenSpec build — the two-gate mechanical check
+
+CLAUDE.md's "OpenSpec build — TWO mandatory gates" section describes the discipline: Gate 1
+(fresh-context spec review, before code) and Gate 2 (fresh-context implementation review,
+before docs/archive). Until this mechanism existed, nothing checked that either gate actually
+happened — an epic could go straight from `apply` to `archive` on narration alone. The engine
+now enforces Gate 2 mechanically, scoped strictly to the `openspec` lane:
+
+- After a real fresh-context review, write the verdict back with `node "$ENGINE"
+  record-gate-review <epicId> --gate 1|2 --verdict pass|fail [--reviewer "<note>"]` — this
+  writes `{verdict, reviewedAt, note?}` onto `epic.gateReview.gate1`/`gate2` in
+  `.conductor/state.json`, mirroring how `record-reconcile` writes the reconciler's verdict.
+  Rejects (writes nothing) if the epic isn't in the `openspec` lane, the epic id is unknown,
+  `--gate` isn't `1`/`2`, or `--verdict` isn't `pass`/`fail`.
+- `update-epic <id> --status archived` on an `openspec`-lane epic now REQUIRES
+  `gateReview.gate2.verdict === "pass"` already recorded — if it's missing or `fail`, the
+  transition is rejected with a clear error naming what's missing, and nothing is written.
+  Gate 1 is not itself required at archive time (it gates code, which already happened
+  earlier), though recording it via the same subcommand is good practice.
+- Non-openspec-lane epics (`superpowers`/`claude-code`/`decision`/`external`) are completely
+  unaffected — they have no two-gate process and this check never runs for them.
+- An epic running under autonomy (`autonomy.level: "autonomous"`) must still call
+  `record-gate-review` after each real gate review rather than only narrating it in
+  conversation — narration alone does not satisfy the archive-time check, and there is no
+  bypass flag.
 
 ## When something blocks progress: classify the detour FIRST
 
@@ -441,7 +470,10 @@ gateGuard?    : boolean — repo-level PreToolUse guard toggle; no longer gates 
 laneRouting?  : { overrides: [{ match, lane }] } — optional per-repo lane overrides, checked
                 before the generic lane heuristic (see "Lane routing overrides" above);
                 set via set-lane-routing, looked up via suggest-lane
-epics[]       : { id, title, priority, status, role, lane, parent?, externalId?, externalUrl?, planPath?, stories[]?, links[], reconcileNeeded?, autonomy? }
+epics[]       : { id, title, priority, status, role, lane, parent?, externalId?, externalUrl?, planPath?, stories[]?, links[], reconcileNeeded?, autonomy?, gateReview? }
+gateReview?   : { gate1?: {verdict, reviewedAt, note?}, gate2?: {verdict, reviewedAt, note?} } —
+                openspec-lane only; verdict ∈ pass|fail; set via record-gate-review; `update-epic
+                --status archived` on an openspec-lane epic requires gate2.verdict === "pass"
 autonomy?     : { level: "off"|"autonomous", preAuthorized[], context[], notifications[] } — per epic
 preAuthorized[] entries are either { action, reason?, grantedAt } (exact-action grant) or
   { category, reason?, grantedAt } (category-shorthand grant, category one of
