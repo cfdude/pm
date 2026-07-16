@@ -6,6 +6,66 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.16.0] — 2026-07-16
+
+### Added
+
+- **OpenSpec's two mandatory gates are now mechanically enforced at archive time, not just
+  narrated.** Nothing previously checked that an `openspec`-lane epic actually passed Gate 1
+  (spec review, before code) and Gate 2 (implementation review, before docs) before it was
+  archived — an epic could go straight from `apply` to `archive` on narration alone. A new
+  `record-gate-review <epicId> --gate 1|2 --verdict pass|fail [--reviewer "<note>"]` subcommand
+  writes a fresh-context reviewer's verdict durably onto the epic (`gateReview.gate1`/`gate2`,
+  mirroring `record-reconcile`'s shape), and `update-epic --status archived` now REJECTS the
+  transition for any `openspec`-lane epic that doesn't already have a recorded
+  `gateReview.gate2.verdict === "pass"`. Scoped strictly to the `openspec` lane —
+  `superpowers`/`claude-code`/`decision`/`external` epics are completely unaffected, since they
+  have no two-gate process.
+- **Added a mechanical test that catches SKILL.md "Commands" drift from the real dispatch
+  table.** `conductor.test.mjs` now extracts every subcommand key from `conductor.mjs`'s
+  dispatch table and asserts each one is mentioned somewhere in `skills/conductor/SKILL.md`,
+  failing CI the next time a new subcommand ships without a doc mention (the same bug class
+  fixed once by hand in 0.12.0, now enforced instead of relying on someone remembering). Running
+  it against the current docs caught two real gaps — `snapshot` (the PreCompact-hook-only
+  re-render) and `write-rules` (the `/pm:init`/`/pm:upgrade`-only CLAUDE.md rules-block
+  refresher) were both real, invoked subcommands with no mention anywhere in SKILL.md — fixed by
+  adding a line for each to the Commands section.
+
+### Changed
+
+- **The `github-issues` tracker no longer tells the agent to auto-create a GitHub issue for
+  every unmirrored local epic.** `rulesBlock()` now suppresses the outward "External tracker
+  sync" section entirely when `tracker.system === "github-issues"`, leaving only the existing
+  inward "GitHub issue sync" section (open issues → untriaged epics) in effect. Filing a public
+  GitHub issue for any local claude-code epic just because a `github-issues` tracker is
+  configured is a materially bigger, more consequential default than mirroring toward an
+  internal Jira/Linear instance, so `github-issues` is now documented and implemented as
+  INWARD-ONLY by design. Jira, Linear, and any other tracker `--system` keep the full
+  bidirectional outward-mirror behavior unchanged.
+
+### Fixed
+
+- **`commit-nudge`'s auto-detour heuristic no longer false-positives on routine conductor
+  bookkeeping.** A commit touching only pm's own state-output files (`.conductor/state.json`,
+  `PROJECT.md`, `.conductor/render-stamp.json`) is never auto-logged as a stray minimal detour,
+  even if it matches the `fix:`/`chore:` + `<=3 files` shape — this fired 3 separate times in
+  one session (registering epics, archiving epics, granting autonomy), always on commits that
+  were routine administration, never a real detour. `CLAUDE.md` is deliberately excluded from
+  this allowlist: it's user-authored content, not purely engine-generated output, so a commit
+  touching it could still be a genuine detour.
+- **`render-stamp.json` no longer produces a spurious diff on every `render()` call when
+  nothing meaningful changed.** Root cause: `writeRenderStamp()` unconditionally rewrote
+  `.conductor/render-stamp.json` on every `render()` invocation, bumping its `renderedAt`
+  timestamp even when `state.json` (and therefore the rendered `PROJECT.md` content) hadn't
+  changed at all — producing a byte-only diff that had to be manually discarded roughly a
+  dozen times across a single dogfooding session. `verify-state` (the mechanism this stamp
+  exists for) only ever compares the recorded `stateMtimeMs` against `state.json`'s current
+  mtime; it never reads `renderedAt` back for correctness. `writeRenderStamp()` now skips the
+  rewrite entirely when the existing stamp's `stateMtimeMs` already matches `state.json`'s
+  current mtime, so the sidecar file is only ever touched when something that actually matters
+  changed. `.conductor/brief.txt` was confirmed already gitignored in this repo (a prior fix);
+  no further action was needed there.
+
 ## [0.15.0] — 2026-07-15
 
 ### Added

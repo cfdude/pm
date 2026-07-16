@@ -643,7 +643,7 @@
       "id": "df-github-tracker-outward-sync-unsuppressed",
       "title": "DF: with a github-issues tracker configured for inward sync, the existing outward 'External tracker sync' rules-block section still tells the agent to auto-create a GitHub issue for any local epic lacking externalId — likely unwanted for a purely-inward github-issues tracker (a local claude-code epic shouldn't get an issue auto-filed). Needs a decision: suppress/reword the outward section when tracker.system === 'github-issues', or is bidirectional mirroring actually desired? Found by the github-issue-tracker-sync build agent, flagged as a CONCERN rather than guessed at.",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -661,7 +661,8 @@
           "Decision: github-issues is explicitly framed in this repo as an INWARD-sync tracker (issues -> untriaged epics). A local claude-code epic with no externalId should NOT auto-get a GitHub issue filed for it just because a github-issues tracker is configured -- that's a much bigger, more consequential default (silently creating public GitHub issues) than mirroring toward an internal Jira/Linear instance. Suppress the outward 'create the issue for an unmirrored epic' instruction specifically for tracker.system === github-issues; leave the existing outward-mirror behavior fully intact for jira/linear/any other system. Document the asymmetry explicitly (inward sync only for github-issues, bidirectional for others) in the conductor skill and README's External Trackers section."
         ],
         "notifications": []
-      }
+      },
+      "completedAt": "2026-07-16T07:59:26.876Z"
     },
     {
       "id": "df-changelog-fragment-conflicts",
@@ -717,7 +718,7 @@
       "id": "df-skill-commands-line-drift",
       "title": "DF: SKILL.md's 'Commands' one-liner drifted from the real dispatch table again (set-lane-routing/suggest-lane and the review-mode escalation flag were missing) — the same bug class fixed once in 0.12.0's doc-drift fix, recurring because nothing mechanically enforces it. Add a test asserting every key in conductor.mjs's dispatch table appears (by subcommand name) somewhere in skills/conductor/SKILL.md, so a missed doc update fails CI instead of waiting to be caught by chance during a future merge.",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -735,7 +736,8 @@
           "Decision: extract the dispatch-table object's keys programmatically (read the source or refactor dispatch into an importable structure if that's cleaner) and assert each one is mentioned in SKILL.md's text. If any subcommand is legitimately internal-only (not meant to be documented, e.g. an engine helper never called directly by a user/agent), the test should allow a small explicit exclusion list rather than silently passing -- but keep that list minimal and justified inline."
         ],
         "notifications": []
-      }
+      },
+      "completedAt": "2026-07-16T07:59:26.955Z"
     },
     {
       "id": "df-live-infra-epic-session-continuity-warning",
@@ -766,7 +768,7 @@
       "id": "df-stray-render-artifacts-noise",
       "title": "DF: PROJECT.md/.conductor/render-stamp.json show spurious uncommitted timestamp-only diffs after nearly every dispatch/render call, and an untracked .conductor/brief.txt scratch file (written by a SessionStart-style hook, never gitignored) appears repeatedly — required manual git checkout -- discarding roughly a dozen times across one session. Investigate the actual source (likely every hierarchy-child's own render() calls bumping the timestamp even when nothing else changed) and either suppress no-op re-renders more aggressively, or gitignore brief.txt if it is genuinely just a disposable session artifact.",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -784,7 +786,8 @@
           "Decision: root-cause first (why does render() bump the timestamp even when the rendered markdown content is byte-identical), then fix at the source rather than just suppressing symptoms. If render() already has a 'PROJECT.md unchanged (skipped rewrite)' no-op path for PROJECT.md's content but render-stamp.json still gets rewritten unconditionally every call, that's the likely root cause -- consider skipping the render-stamp.json rewrite too when nothing changed, or accept it as an intentional 'last checked' timestamp (not content) and just document that clearly instead of trying to eliminate it. brief.txt: this repo (pm) already gitignores it as of a recent fix (df-live-infra... era commits) -- confirm that's still true and complete; if a downstream project using pm still gets an untracked brief.txt of its own, that's a separate, broader question (should /pm:init add .conductor/brief.txt to a project's own .gitignore) worth raising as a CONCERN rather than solving unprompted."
         ],
         "notifications": []
-      }
+      },
+      "completedAt": "2026-07-16T07:59:26.994Z"
     },
     {
       "id": "df-verify-worktrees-merged-not-just-archived",
@@ -833,7 +836,7 @@
       "id": "df-no-mechanical-openspec-gate-enforcement",
       "title": "DF: nothing on the engine side mechanically verifies an openspec-lane epic actually passed Gate 1 (spec review) and Gate 2 (implementation review) before it's archived -- agents/hierarchy-child-executor.md only INSTRUCTS the dispatched agent to follow its lane's normal workflow, it doesn't enforce it. Discovered while answering the user's direct question 'how can I be sure an autonomous epic follows brainstorm->propose->Gate1->apply->Gate2->archive' -- confirmed via a full state.json audit that zero openspec-lane epics have EVER been registered in this repo's own self-hosted history, so this discipline has never actually been exercised by our own dogfooding either. Fix: add a mechanical check (e.g. a gateReview field or required verification-report path on openspec-lane epics, similar to Comet's verify_result/verification_report gating its own archive step) so update-epic --status archived rejects an openspec-lane epic missing gate evidence, the same class of enforcement as the reconcile-gate guard already has for detours.",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -856,7 +859,8 @@
           "Decision: mirror Comet's verify_result/verification_report pattern, adapted to this repo's conventions (mirrors record-reconcile's shape: a dedicated subcommand writes structured evidence onto the epic, not a hand-edited field). Scope to ONLY the openspec lane -- claude-code/superpowers/decision lane epics are unaffected, since they don't have the two-gate process. Because zero openspec-lane epics currently exist in this repo, this is purely additive/forward-looking; no existing data needs migration. Exact field shape and gate names are the builder's call as long as it's enforced at update-epic time for openspec-lane epics specifically."
         ],
         "notifications": []
-      }
+      },
+      "completedAt": "2026-07-16T07:59:26.916Z"
     }
   ],
   "detourStack": [],
