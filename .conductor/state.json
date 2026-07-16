@@ -647,7 +647,21 @@
       "role": "epic",
       "lane": "claude-code",
       "links": [],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "autonomy": {
+        "level": "autonomous",
+        "preAuthorized": [
+          {
+            "action": "suppress the outward auto-create-issue instructions in the rules block specifically when tracker.system === github-issues, leave outward mirroring unchanged for jira/linear/other tracker systems",
+            "grantedAt": "2026-07-16T07:45:34.207Z",
+            "reason": "matches recorded decision"
+          }
+        ],
+        "context": [
+          "Decision: github-issues is explicitly framed in this repo as an INWARD-sync tracker (issues -> untriaged epics). A local claude-code epic with no externalId should NOT auto-get a GitHub issue filed for it just because a github-issues tracker is configured -- that's a much bigger, more consequential default (silently creating public GitHub issues) than mirroring toward an internal Jira/Linear instance. Suppress the outward 'create the issue for an unmirrored epic' instruction specifically for tracker.system === github-issues; leave the existing outward-mirror behavior fully intact for jira/linear/any other system. Document the asymmetry explicitly (inward sync only for github-issues, bidirectional for others) in the conductor skill and README's External Trackers section."
+        ],
+        "notifications": []
+      }
     },
     {
       "id": "df-changelog-fragment-conflicts",
@@ -707,7 +721,21 @@
       "role": "epic",
       "lane": "claude-code",
       "links": [],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "autonomy": {
+        "level": "autonomous",
+        "preAuthorized": [
+          {
+            "action": "add a test asserting every dispatch-table subcommand key in conductor.mjs appears somewhere in skills/conductor/SKILL.md, failing CI on drift",
+            "grantedAt": "2026-07-16T07:45:34.285Z",
+            "reason": "matches recorded decision, pure test addition, no runtime code risk"
+          }
+        ],
+        "context": [
+          "Decision: extract the dispatch-table object's keys programmatically (read the source or refactor dispatch into an importable structure if that's cleaner) and assert each one is mentioned in SKILL.md's text. If any subcommand is legitimately internal-only (not meant to be documented, e.g. an engine helper never called directly by a user/agent), the test should allow a small explicit exclusion list rather than silently passing -- but keep that list minimal and justified inline."
+        ],
+        "notifications": []
+      }
     },
     {
       "id": "df-live-infra-epic-session-continuity-warning",
@@ -742,7 +770,21 @@
       "role": "epic",
       "lane": "claude-code",
       "links": [],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "autonomy": {
+        "level": "autonomous",
+        "preAuthorized": [
+          {
+            "action": "investigate and reduce spurious PROJECT.md/render-stamp.json re-render diffs when content is unchanged; gitignore .conductor/brief.txt if it is genuinely disposable",
+            "grantedAt": "2026-07-16T07:45:34.322Z",
+            "reason": "matches recorded decision, no destructive risk"
+          }
+        ],
+        "context": [
+          "Decision: root-cause first (why does render() bump the timestamp even when the rendered markdown content is byte-identical), then fix at the source rather than just suppressing symptoms. If render() already has a 'PROJECT.md unchanged (skipped rewrite)' no-op path for PROJECT.md's content but render-stamp.json still gets rewritten unconditionally every call, that's the likely root cause -- consider skipping the render-stamp.json rewrite too when nothing changed, or accept it as an intentional 'last checked' timestamp (not content) and just document that clearly instead of trying to eliminate it. brief.txt: this repo (pm) already gitignores it as of a recent fix (df-live-infra... era commits) -- confirm that's still true and complete; if a downstream project using pm still gets an untracked brief.txt of its own, that's a separate, broader question (should /pm:init add .conductor/brief.txt to a project's own .gitignore) worth raising as a CONCERN rather than solving unprompted."
+        ],
+        "notifications": []
+      }
     },
     {
       "id": "df-verify-worktrees-merged-not-just-archived",
@@ -795,7 +837,26 @@
       "role": "epic",
       "lane": "claude-code",
       "links": [],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "autonomy": {
+        "level": "autonomous",
+        "preAuthorized": [
+          {
+            "action": "add a required gateReview field (or verification-report path) on openspec-lane epics that update-epic --status archived checks for before allowing the transition, rejecting with a clear error if missing",
+            "grantedAt": "2026-07-16T07:45:34.249Z",
+            "reason": "matches recorded decision, additive schema field, no existing data at risk since zero openspec-lane epics exist in this repo's history"
+          },
+          {
+            "action": "add a record-gate-review or similar subcommand that sets the evidence field, mirroring record-reconcile's shape",
+            "grantedAt": "2026-07-16T07:45:34.249Z",
+            "reason": "matches recorded decision"
+          }
+        ],
+        "context": [
+          "Decision: mirror Comet's verify_result/verification_report pattern, adapted to this repo's conventions (mirrors record-reconcile's shape: a dedicated subcommand writes structured evidence onto the epic, not a hand-edited field). Scope to ONLY the openspec lane -- claude-code/superpowers/decision lane epics are unaffected, since they don't have the two-gate process. Because zero openspec-lane epics currently exist in this repo, this is purely additive/forward-looking; no existing data needs migration. Exact field shape and gate names are the builder's call as long as it's enforced at update-epic time for openspec-lane epics specifically."
+        ],
+        "notifications": []
+      }
     }
   ],
   "detourStack": [],
