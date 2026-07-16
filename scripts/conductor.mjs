@@ -1537,6 +1537,21 @@ function updateEpic() {
     }
   }
 
+  // openspec-lane epics may not be archived without a passing Gate 2 (implementation review)
+  // verdict — see CLAUDE.md "OpenSpec build — TWO mandatory gates" and recordGateReview()
+  // above. Gate 1 (spec review) gates code, which already happened earlier in the workflow;
+  // only Gate 2 blocks archiving. Non-openspec-lane epics are completely unaffected.
+  if (status === "archived" && epic.lane === "openspec") {
+    const gate2 = epic.gateReview && epic.gateReview.gate2;
+    if (!gate2 || gate2.verdict !== "pass") {
+      process.stderr.write(
+        `conductor: cannot archive openspec-lane epic '${id}' — missing a passing Gate 2 ` +
+        `(implementation review) verdict. Run 'record-gate-review ${id} --gate 2 --verdict pass' ` +
+        `after a real fresh-context implementation review before archiving.\n`);
+      process.exit(1);
+    }
+  }
+
   if (str(f.title) !== undefined) epic.title = str(f.title);
   if (str(f["external-id"]) !== undefined) epic.externalId = str(f["external-id"]);
   if (str(f["external-url"]) !== undefined) epic.externalUrl = str(f["external-url"]);
@@ -1766,6 +1781,65 @@ function recordReconcile() {
   saveState(state);
   render();
   process.stderr.write(`conductor: recorded reconcile verdict '${verdict}' for '${id}' vs '${detourId}'\n`);
+}
+
+// ---------- openspec gate-review structured writeback ----------
+
+const KNOWN_GATE_NUMBERS = ["1", "2"];
+const KNOWN_GATE_VERDICTS = ["pass", "fail"];
+
+/** `record-gate-review <epicId> --gate 1|2 --verdict pass|fail [--reviewer "<note>"]` —
+ *  the durable half of the OpenSpec two-gate process (CLAUDE.md "OpenSpec build — TWO
+ *  mandatory gates": Gate 1 = spec review before code, Gate 2 = implementation review
+ *  before docs). Mirrors record-reconcile's shape: a dedicated subcommand writes structured
+ *  evidence onto the epic (`gateReview.gate1`/`gateReview.gate2`, each
+ *  `{verdict, reviewedAt, note?}`) instead of a hand-edited field, so a fresh-context
+ *  reviewer's judgment survives compaction and is visible in `.conductor/state.json`.
+ *  Scoped to the openspec lane only — rejects any other lane, an unknown epic id, or an
+ *  invalid gate/verdict value, writing nothing on any rejection. `update-epic --status
+ *  archived` requires `gate2.verdict === "pass"` for openspec-lane epics (see updateEpic());
+ *  recording gate 1 alone does not unblock archiving. Pure local state write — no external
+ *  calls, consistent with the engine's instruction-layer law. */
+function recordGateReview() {
+  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  const argv = process.argv.slice(3);
+  const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
+  const f = parseFlags(id ? argv.slice(1) : argv);
+  const gate = typeof f.gate === "string" ? f.gate : (typeof f.gate === "number" ? String(f.gate) : undefined);
+  const verdict = typeof f.verdict === "string" ? f.verdict : undefined;
+  const note = typeof f.reviewer === "string" ? f.reviewer : undefined;
+  if (!id || !gate || !verdict) {
+    process.stderr.write(
+      "usage: conductor.mjs record-gate-review <epicId> --gate 1|2 --verdict pass|fail " +
+      "[--reviewer \"<note>\"]\n");
+    process.exit(1);
+  }
+  if (!KNOWN_GATE_NUMBERS.includes(gate)) {
+    process.stderr.write(`conductor: --gate must be one of ${KNOWN_GATE_NUMBERS.join("|")}\n`);
+    process.exit(1);
+  }
+  if (!KNOWN_GATE_VERDICTS.includes(verdict)) {
+    process.stderr.write(`conductor: --verdict must be one of ${KNOWN_GATE_VERDICTS.join("|")}\n`);
+    process.exit(1);
+  }
+  const state = loadState();
+  const epic = state.epics.find(e => e.id === id);
+  if (!epic) { process.stderr.write(`conductor: epic '${id}' not found\n`); process.exit(1); }
+  if (epic.lane !== "openspec") {
+    process.stderr.write(
+      `conductor: record-gate-review only applies to openspec-lane epics ` +
+      `('${id}' is lane '${epic.lane}')\n`);
+    process.exit(1);
+  }
+
+  epic.gateReview = epic.gateReview && typeof epic.gateReview === "object" ? epic.gateReview : {};
+  const entry = { verdict, reviewedAt: new Date().toISOString() };
+  if (note !== undefined) entry.note = note;
+  epic.gateReview[`gate${gate}`] = entry;
+
+  saveState(state);
+  render();
+  process.stderr.write(`conductor: recorded gate ${gate} review '${verdict}' for '${id}'\n`);
 }
 
 // ---------- tracker ----------
@@ -2166,6 +2240,7 @@ if (!process.env.PM_QUIET_ENGINE_BANNER) {
   "suggest-lane": suggestLane,
   "set-autonomy": setAutonomy,
   "record-reconcile": recordReconcile,
+  "record-gate-review": recordGateReview,
   "set-review-mode": setReviewMode,
   "set-gate-guard": setGateGuard,
   "gate-guard": gateGuardCheck,
@@ -2182,6 +2257,6 @@ if (!process.env.PM_QUIET_ENGINE_BANNER) {
   },
   "write-rules": writeRules,
 }[cmd] || (() => {
-  process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|set-autonomy|record-reconcile|set-review-mode|set-gate-guard|gate-guard|plan-hierarchy|verify-worktrees|verify-state|changesets|upgrade|changelog|rules|write-rules\n");
+  process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|set-autonomy|record-reconcile|record-gate-review|set-review-mode|set-gate-guard|gate-guard|plan-hierarchy|verify-worktrees|verify-state|changesets|upgrade|changelog|rules|write-rules\n");
   process.exit(1);
 }))();

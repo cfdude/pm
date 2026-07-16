@@ -2476,3 +2476,102 @@ test("every dispatch-table subcommand is mentioned somewhere in skills/conductor
   assert.deepEqual(missing, [],
     `SKILL.md's Commands section (or elsewhere in the doc) is missing a mention of: ${missing.join(", ")}`);
 });
+
+// ──────────────── openspec gate enforcement: record-gate-review ────────────────
+
+test("record-gate-review writes a structured verdict for the given gate onto an openspec-lane epic", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
+
+  run(["record-gate-review", "spec-epic", "--gate", "1", "--verdict", "pass", "--reviewer", "fresh-context review of proposal.md"], { cwd });
+
+  const epic = readState(cwd).epics.find(e => e.id === "spec-epic");
+  assert.ok(epic.gateReview);
+  assert.equal(epic.gateReview.gate1.verdict, "pass");
+  assert.equal(epic.gateReview.gate1.note, "fresh-context review of proposal.md");
+  assert.ok(epic.gateReview.gate1.reviewedAt);
+  assert.match(epic.gateReview.gate1.reviewedAt, /^\d{4}-\d{2}-\d{2}T/);
+});
+
+test("record-gate-review supports gate 2 independently of gate 1", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
+
+  run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "pass"], { cwd });
+
+  const epic = readState(cwd).epics.find(e => e.id === "spec-epic");
+  assert.equal(epic.gateReview.gate2.verdict, "pass");
+  assert.equal(epic.gateReview.gate1, undefined);
+});
+
+test("record-gate-review rejects a non-openspec-lane epic", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "cc-epic", "--lane", "claude-code"], { cwd });
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  assert.ok(expectFail(() => run(
+    ["record-gate-review", "cc-epic", "--gate", "1", "--verdict", "pass"], { cwd })));
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
+});
+
+test("record-gate-review rejects an unknown epic id", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  assert.ok(expectFail(() => run(
+    ["record-gate-review", "ghost", "--gate", "1", "--verdict", "pass"], { cwd })));
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
+});
+
+test("record-gate-review rejects an invalid gate number", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  assert.ok(expectFail(() => run(
+    ["record-gate-review", "spec-epic", "--gate", "3", "--verdict", "pass"], { cwd })));
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
+});
+
+test("record-gate-review rejects an invalid verdict", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  assert.ok(expectFail(() => run(
+    ["record-gate-review", "spec-epic", "--gate", "1", "--verdict", "maybe"], { cwd })));
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
+});
+
+test("update-epic blocks archiving an openspec-lane epic without a passing gate2 review", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  assert.ok(expectFail(() => run(["update-epic", "spec-epic", "--status", "archived"], { cwd })));
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
+});
+
+test("update-epic blocks archiving an openspec-lane epic with a gate2 fail verdict", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
+  run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "fail"], { cwd });
+  assert.ok(expectFail(() => run(["update-epic", "spec-epic", "--status", "archived"], { cwd })));
+});
+
+test("update-epic allows archiving an openspec-lane epic once gate2 has a passing verdict", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
+  run(["record-gate-review", "spec-epic", "--gate", "1", "--verdict", "pass"], { cwd });
+  run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "pass"], { cwd });
+
+  run(["update-epic", "spec-epic", "--status", "archived"], { cwd });
+
+  const epic = readState(cwd).epics.find(e => e.id === "spec-epic");
+  assert.equal(epic.status, "archived");
+});
+
+test("update-epic archiving a non-openspec-lane epic is unaffected by gate-review enforcement", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "cc-epic", "--lane", "claude-code"], { cwd });
+
+  run(["update-epic", "cc-epic", "--status", "archived"], { cwd });
+
+  const epic = readState(cwd).epics.find(e => e.id === "cc-epic");
+  assert.equal(epic.status, "archived");
+});
