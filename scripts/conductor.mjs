@@ -924,6 +924,13 @@ function render() {
 function writeRenderStamp() {
   let stateMtimeMs = null;
   try { stateMtimeMs = fs.statSync(STATE_PATH).mtimeMs; } catch { /* no state.json yet */ }
+  // verify-state only ever compares stateMtimeMs (see verifyState() below) — renderedAt is
+  // informational only, nothing reads it back for correctness. So if state.json's mtime
+  // hasn't moved since the last stamp, rewriting the file would only bump renderedAt and
+  // produce a spurious byte-for-byte diff on every render() call even though nothing that
+  // matters changed. Skip the rewrite in that case.
+  const existing = readJSON(RENDER_STAMP_PATH, null);
+  if (existing && existing.stateMtimeMs === stateMtimeMs) return;
   const stamp = { renderedAt: new Date().toISOString(), stateMtimeMs };
   fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
   fs.writeFileSync(RENDER_STAMP_PATH, JSON.stringify(stamp, null, 2) + "\n");

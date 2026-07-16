@@ -109,6 +109,21 @@ test("state.json writes leave no stray tmp file behind after tmp+rename", () => 
   assert.equal(parsed.epics.find(e => e.id === "a").title, "Renamed");
 });
 
+test("render() does not rewrite render-stamp.json when state.json is unchanged", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const stampPath = path.join(cwd, ".conductor", "render-stamp.json");
+  const before = fs.readFileSync(stampPath, "utf8");
+  const beforeMtime = fs.statSync(stampPath).mtimeMs;
+  // Render again with no state.json change in between — render-stamp.json's stateMtimeMs
+  // is already correct, so the file's content (and mtime) should be left untouched.
+  run(["render"], { cwd });
+  const after = fs.readFileSync(stampPath, "utf8");
+  const afterMtime = fs.statSync(stampPath).mtimeMs;
+  assert.equal(after, before, "render-stamp.json content should be byte-identical when state.json didn't change");
+  assert.equal(afterMtime, beforeMtime, "render-stamp.json should not be rewritten (mtime unchanged) when state.json didn't change");
+});
+
 test("progress precedence: manual stories win", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
