@@ -1,0 +1,22 @@
+CONDUCTOR STATE — where we are and what's next
+
+NOW: `df-plan-hierarchy-includes-archived-children` (claude-code, epic, P0) — —
+
+NEXT UP (by priority, then lane):
+  • `df-stale-cache-silent-fallback` (P0, claude-code, queued, parent: `pm-plugin-improvements-2026-07-14`) — —
+  • `diffshape-minimal-detour-inference` (P1, claude-code, queued, parent: `pm-plugin-improvements-2026-07-14`) — —
+  • `gate-guard-default-on-reconcile` (P1, claude-code, queued, parent: `pm-plugin-improvements-2026-07-14`) — —
+  • `ai-feedback-loop-github-issues` (P2, claude-code, queued) — —
+  • `branch-protection-and-pr-workflow` (P2, claude-code, queued, parent: `cfdude-pm-repo-governance`) — —
+  (+18 more — see PROJECT.md)
+  lanes: claude-code 24 · decision 5
+
+planned: 1 — see PROJECT.md
+
+EPIC LINKS:
+  • `github-issue-tracker-sync` relates-to `ai-feedback-loop-github-issues` — issues created by the feedback loop are exactly what this syncs back in
+  • `portfolio-architecture-consistency-scan` depends-on `epic-hierarchy-orchestration` — C presumes B's hierarchy execution exists to propagate cross-cutting decisions into
+
+RULES (pm): classify detours before fixing — minimal → fix+commit then `/pm:detour --minimal`; substantial → `/pm:detour` (own proposal + PUSH). After any state change, `/pm:status`. Resume via `/pm:resume` + reconcile gate. Mirror every PUSH/POP to a one-line Honcho memory.
+
+Manage with /pm:status · /pm:next · /pm:detour · /pm:resume, or the `conductor` skill.
