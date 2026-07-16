@@ -27,15 +27,20 @@ none of those own: cross-epic **priority/ordering**, an explicit **detour stack*
 links** — including the reconcile relationship where a detour can invalidate the proposal it
 interrupted.
 
+When an epic has children, PM doubles as a **multi-agent harness**: a parent epic's children
+run as worktree-isolated, unattended agents converging their work back through sequential
+merge — not a metaphor, an actual dispatch-and-converge framework (see `/pm:hierarchy` under
+[Commands](#commands) below).
+
 ## Why Use Project Manager (PM)?
 
 Not a benchmark — real numbers pulled straight from this repo's own history, verifiable in
 `git log`:
 
-- **21 hierarchy-child epics** dispatched across two dogfooding batches via worktree-isolated,
-  unattended execution — merged back sequentially with **zero data loss** and **zero
-  unresolvable conflicts** (every conflict was mechanical: a shared CHANGELOG header, a usage
-  string — never a real logic collision).
+- **21 agents** dispatched through PM's own **multi-agent harness** across two dogfooding
+  batches — worktree-isolated, unattended, converging back through sequential merge with
+  **zero data loss** and **zero unresolvable conflicts** (every conflict was mechanical: a
+  shared CHANGELOG header, a usage string — never a real logic collision).
 - **26 releases** shipped end-to-end (spec → build → test → changelog → version bump → release)
   with the plugin managing its own backlog the entire time.
 - **189 tests**, **0 dependencies** — the entire engine (`scripts/conductor.mjs`) is Node 18+
@@ -212,14 +217,14 @@ Picks up any new OpenSpec proposals or Superpowers plans not yet tracked as epic
 </details>
 
 <details>
-<summary><code>/pm:hierarchy</code> — Run a parent epic's children as a batched, unattended hierarchy</summary>
+<summary><code>/pm:hierarchy</code> — Run a parent epic's children as a batched, unattended multi-agent harness</summary>
 
 `plan-hierarchy --parent <id>` computes execution batches from `priority` + sibling
 `depends-on` links (topological sort, cycle-rejecting). Dispatch is worktree-isolated: each
-child works in its own git worktree/branch, never writes `.conductor/state.json` itself, and
-merges back sequentially with the orchestrator as sole writer of state transitions. An
-ordinary merge conflict is never a hard stop — it resolves via a tiered ladder before ever
-reaching "ask the human."
+child runs as its own agent in its own git worktree/branch, never writes
+`.conductor/state.json` itself, and converges back sequentially with the orchestrator as sole
+writer of state transitions. An ordinary merge conflict is never a hard stop — it resolves via
+a tiered ladder before ever reaching "ask the human."
 
 </details>
 
