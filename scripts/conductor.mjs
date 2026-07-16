@@ -609,29 +609,37 @@ function rulesBlock(tracker, reviewMode) {
   if (tracker && tracker.system) {
     const sys = tracker.system;
     const scope = tracker.projectKey ? ` · ${tracker.projectKey}` : "";
-    lines.push(
-      "",
-      `## External tracker sync (${sys}${scope})`,
-      "",
-      `This repo mirrors conductor epics to **${sys}**. YOU (the interactive agent) own this sync —`,
-      `the pm plugin NEVER calls ${sys} itself. On these events, perform the matching action with`,
-      "your own tooling (MCP, connector, CLI — whatever this project uses):",
-      `- A real epic has no \`externalId\` → create the ${sys} issue, then record its key with`,
-      "  `/pm:epic` → `update-epic <id> --external-id <KEY> --external-url <url>`.",
-      "- An epic moves to a status with a `statusIntent` (e.g. active/archived) → transition the",
-      "  linked issue toward that SEMANTIC target, resolving the real workflow transition yourself.",
-      `- A parent epic → create it as a ${sys} epic and link its children.`,
-      "The SessionStart brief lists epics not yet mirrored under `TRACKER SYNC`. Status-transition",
-      "sync is your responsibility on every status change (the brief does not fabricate it).",
-      "",
-      "**Epic-level autonomy on tracker-linked epics:** before running the preflight scan on a",
-      `tracker-linked epic, pull the ${sys} issue + its child stories/subtasks with your own`,
-      "tracker tools (the same ones you use for status sync) — that IS its source, not a local",
-      "file alone. Mirror the preflight Q&A as a comment on the issue for visibility — this is a",
-      "non-authoritative echo, `.conductor/state.json` stays the sole source of truth. If the",
-      "tracker issue changes materially after the preflight snapshot, treat that as decision-rule",
-      "item (d) — mid-run drift is a new genuine unknown, not something autonomy silently absorbs.",
-    );
+    // github-issues is deliberately INWARD-only (issues -> untriaged epics, below): auto-filing
+    // a GitHub issue for every unmirrored local epic is a much bigger, more consequential
+    // default (silently creating public GitHub issues) than mirroring toward an internal
+    // Jira/Linear instance, so the outward "External tracker sync" section is suppressed
+    // entirely for this system. jira/linear/any other tracker system keeps full bidirectional
+    // outward-mirror instructions, unchanged.
+    if (sys !== "github-issues") {
+      lines.push(
+        "",
+        `## External tracker sync (${sys}${scope})`,
+        "",
+        `This repo mirrors conductor epics to **${sys}**. YOU (the interactive agent) own this sync —`,
+        `the pm plugin NEVER calls ${sys} itself. On these events, perform the matching action with`,
+        "your own tooling (MCP, connector, CLI — whatever this project uses):",
+        `- A real epic has no \`externalId\` → create the ${sys} issue, then record its key with`,
+        "  `/pm:epic` → `update-epic <id> --external-id <KEY> --external-url <url>`.",
+        "- An epic moves to a status with a `statusIntent` (e.g. active/archived) → transition the",
+        "  linked issue toward that SEMANTIC target, resolving the real workflow transition yourself.",
+        `- A parent epic → create it as a ${sys} epic and link its children.`,
+        "The SessionStart brief lists epics not yet mirrored under `TRACKER SYNC`. Status-transition",
+        "sync is your responsibility on every status change (the brief does not fabricate it).",
+        "",
+        "**Epic-level autonomy on tracker-linked epics:** before running the preflight scan on a",
+        `tracker-linked epic, pull the ${sys} issue + its child stories/subtasks with your own`,
+        "tracker tools (the same ones you use for status sync) — that IS its source, not a local",
+        "file alone. Mirror the preflight Q&A as a comment on the issue for visibility — this is a",
+        "non-authoritative echo, `.conductor/state.json` stays the sole source of truth. If the",
+        "tracker issue changes materially after the preflight snapshot, treat that as decision-rule",
+        "item (d) — mid-run drift is a new genuine unknown, not something autonomy silently absorbs.",
+      );
+    }
     if (sys === "github-issues" && tracker.repo) {
       const repo = tracker.repo;
       lines.push(

@@ -1275,6 +1275,25 @@ test("a jira tracker does not get the GitHub issue sync section", () => {
   assert.doesNotMatch(claudeMd(cwd), /GitHub issue sync/);
 });
 
+test("a github-issues tracker suppresses the outward External tracker sync section — inward-only by design", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-tracker", "--system", "github-issues", "--repo", "cfdude/pm"], { cwd });
+  const md = claudeMd(cwd);
+  assert.doesNotMatch(md, /External tracker sync/);
+  assert.doesNotMatch(md, /has no `externalId` → create the/);
+  assert.match(md, /GitHub issue sync/);
+});
+
+test("a jira tracker keeps the outward External tracker sync section fully intact — bidirectional", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-tracker", "--system", "jira", "--project", "JOB"], { cwd });
+  const md = claudeMd(cwd);
+  assert.match(md, /External tracker sync/);
+  assert.match(md, /has no `externalId` → create the/);
+});
+
 test("add-epic rejects a duplicate --external-id, leaving state unchanged (dedup by externalId)", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
