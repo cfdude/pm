@@ -109,6 +109,21 @@ test("state.json writes leave no stray tmp file behind after tmp+rename", () => 
   assert.equal(parsed.epics.find(e => e.id === "a").title, "Renamed");
 });
 
+test("render() does not rewrite render-stamp.json when state.json is unchanged", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const stampPath = path.join(cwd, ".conductor", "render-stamp.json");
+  const before = fs.readFileSync(stampPath, "utf8");
+  const beforeMtime = fs.statSync(stampPath).mtimeMs;
+  // Render again with no state.json change in between — render-stamp.json's stateMtimeMs
+  // is already correct, so the file's content (and mtime) should be left untouched.
+  run(["render"], { cwd });
+  const after = fs.readFileSync(stampPath, "utf8");
+  const afterMtime = fs.statSync(stampPath).mtimeMs;
+  assert.equal(after, before, "render-stamp.json content should be byte-identical when state.json didn't change");
+  assert.equal(afterMtime, beforeMtime, "render-stamp.json should not be rewritten (mtime unchanged) when state.json didn't change");
+});
+
 test("progress precedence: manual stories win", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
@@ -1275,6 +1290,25 @@ test("a jira tracker does not get the GitHub issue sync section", () => {
   assert.doesNotMatch(claudeMd(cwd), /GitHub issue sync/);
 });
 
+test("a github-issues tracker suppresses the outward External tracker sync section — inward-only by design", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-tracker", "--system", "github-issues", "--repo", "cfdude/pm"], { cwd });
+  const md = claudeMd(cwd);
+  assert.doesNotMatch(md, /External tracker sync/);
+  assert.doesNotMatch(md, /has no `externalId` → create the/);
+  assert.match(md, /GitHub issue sync/);
+});
+
+test("a jira tracker keeps the outward External tracker sync section fully intact — bidirectional", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-tracker", "--system", "jira", "--project", "JOB"], { cwd });
+  const md = claudeMd(cwd);
+  assert.match(md, /External tracker sync/);
+  assert.match(md, /has no `externalId` → create the/);
+});
+
 test("add-epic rejects a duplicate --external-id, leaving state unchanged (dedup by externalId)", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
@@ -1520,7 +1554,12 @@ test("brief invents no transition drift when all active epics are mirrored", () 
     epics: [{ id: "m", title: "m", priority: "P1", status: "active", role: "epic", lane: "external", externalId: "JOB-1", links: [] }]});
   const brief = parseBrief(cwd);
   assert.doesNotMatch(brief, /not yet in jira/);                       // nothing to create
-  assert.doesNotMatch(brief, /transition pending|out of sync|drift/i); // no fabricated transition drift
+  // Scope to the TRACKER SYNC block specifically — the brief's SessionStart upgrade nudge
+  // (added in 0.13.0) can legitimately inline CHANGELOG bullet text containing words like
+  // "drift" for unrelated reasons (e.g. a changelog entry about doc-drift detection), so a
+  // whole-brief search for these words is too broad and produces false positives.
+  const trackerBlock = brief.split(/\n\n/).find(b => b.startsWith("TRACKER SYNC")) || "";
+  assert.doesNotMatch(trackerBlock, /transition pending|out of sync|drift/i); // no fabricated transition drift
 });
 
 // ───────────────────────── 0.5.0: bulk creation ─────────────────────────
@@ -2405,4 +2444,139 @@ test("record-reconcile on an unknown detour id exits non-zero and writes nothing
   assert.ok(expectFail(() => run(
     ["record-reconcile", "paused-epic", "--detour", "ghost-detour", "--verdict", "valid"], { cwd })));
   assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
+});
+
+// ---------- doc drift: SKILL.md "Commands" vs the real dispatch table ----------
+
+test("every dispatch-table subcommand is mentioned somewhere in skills/conductor/SKILL.md", () => {
+  const engineSrc = fs.readFileSync(ENGINE, "utf8");
+  const dispatchMatch = engineSrc.match(/^\(\{\n([\s\S]*?)\n\}\[cmd\]/m);
+  assert.ok(dispatchMatch, "could not locate the dispatch table object in conductor.mjs — " +
+    "has the dispatch section been restructured? update this test's extraction regex");
+  const dispatchBody = dispatchMatch[1];
+
+  // Each dispatch entry key is either a bare identifier (`init,`) or a quoted string
+  // (`"set-active": setActive,`). Extract both forms.
+  const keys = new Set();
+  for (const m of dispatchBody.matchAll(/^\s*"([a-z-]+)"\s*:/gm)) keys.add(m[1]);
+  for (const m of dispatchBody.matchAll(/^\s*([a-zA-Z][\w-]*)\s*:/gm)) keys.add(m[1]);
+  for (const m of dispatchBody.matchAll(/^\s*([a-zA-Z][\w-]*),?\s*$/gm)) keys.add(m[1]);
+  assert.ok(keys.size > 10, `expected many dispatch keys, only extracted ${keys.size}: ${[...keys]}`);
+
+  // No entries are excluded: `snapshot` and `write-rules` are hook/init-only invocations
+  // (not run directly by a user/agent) but are still real, documentable subcommands, so
+  // they are asserted like everything else rather than excluded.
+  const UNDOCUMENTED_INTERNAL = new Set([
+    // (currently empty — every dispatch subcommand is expected to be mentioned in SKILL.md)
+  ]);
+
+  const skillPath = path.join(path.dirname(ENGINE), "..", "skills", "conductor", "SKILL.md");
+  const skillText = fs.readFileSync(skillPath, "utf8");
+
+  const missing = [];
+  for (const key of keys) {
+    if (UNDOCUMENTED_INTERNAL.has(key)) continue;
+    if (!skillText.includes(key)) missing.push(key);
+  }
+  assert.deepEqual(missing, [],
+    `SKILL.md's Commands section (or elsewhere in the doc) is missing a mention of: ${missing.join(", ")}`);
+});
+
+// ──────────────── openspec gate enforcement: record-gate-review ────────────────
+
+test("record-gate-review writes a structured verdict for the given gate onto an openspec-lane epic", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
+
+  run(["record-gate-review", "spec-epic", "--gate", "1", "--verdict", "pass", "--reviewer", "fresh-context review of proposal.md"], { cwd });
+
+  const epic = readState(cwd).epics.find(e => e.id === "spec-epic");
+  assert.ok(epic.gateReview);
+  assert.equal(epic.gateReview.gate1.verdict, "pass");
+  assert.equal(epic.gateReview.gate1.note, "fresh-context review of proposal.md");
+  assert.ok(epic.gateReview.gate1.reviewedAt);
+  assert.match(epic.gateReview.gate1.reviewedAt, /^\d{4}-\d{2}-\d{2}T/);
+});
+
+test("record-gate-review supports gate 2 independently of gate 1", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
+
+  run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "pass"], { cwd });
+
+  const epic = readState(cwd).epics.find(e => e.id === "spec-epic");
+  assert.equal(epic.gateReview.gate2.verdict, "pass");
+  assert.equal(epic.gateReview.gate1, undefined);
+});
+
+test("record-gate-review rejects a non-openspec-lane epic", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "cc-epic", "--lane", "claude-code"], { cwd });
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  assert.ok(expectFail(() => run(
+    ["record-gate-review", "cc-epic", "--gate", "1", "--verdict", "pass"], { cwd })));
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
+});
+
+test("record-gate-review rejects an unknown epic id", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  assert.ok(expectFail(() => run(
+    ["record-gate-review", "ghost", "--gate", "1", "--verdict", "pass"], { cwd })));
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
+});
+
+test("record-gate-review rejects an invalid gate number", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  assert.ok(expectFail(() => run(
+    ["record-gate-review", "spec-epic", "--gate", "3", "--verdict", "pass"], { cwd })));
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
+});
+
+test("record-gate-review rejects an invalid verdict", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  assert.ok(expectFail(() => run(
+    ["record-gate-review", "spec-epic", "--gate", "1", "--verdict", "maybe"], { cwd })));
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
+});
+
+test("update-epic blocks archiving an openspec-lane epic without a passing gate2 review", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  assert.ok(expectFail(() => run(["update-epic", "spec-epic", "--status", "archived"], { cwd })));
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
+});
+
+test("update-epic blocks archiving an openspec-lane epic with a gate2 fail verdict", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
+  run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "fail"], { cwd });
+  assert.ok(expectFail(() => run(["update-epic", "spec-epic", "--status", "archived"], { cwd })));
+});
+
+test("update-epic allows archiving an openspec-lane epic once gate2 has a passing verdict", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
+  run(["record-gate-review", "spec-epic", "--gate", "1", "--verdict", "pass"], { cwd });
+  run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "pass"], { cwd });
+
+  run(["update-epic", "spec-epic", "--status", "archived"], { cwd });
+
+  const epic = readState(cwd).epics.find(e => e.id === "spec-epic");
+  assert.equal(epic.status, "archived");
+});
+
+test("update-epic archiving a non-openspec-lane epic is unaffected by gate-review enforcement", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "cc-epic", "--lane", "claude-code"], { cwd });
+
+  run(["update-epic", "cc-epic", "--status", "archived"], { cwd });
+
+  const epic = readState(cwd).epics.find(e => e.id === "cc-epic");
+  assert.equal(epic.status, "archived");
 });
