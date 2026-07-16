@@ -189,6 +189,53 @@ and renders `PROJECT.md`. From there:
 | Grok Build (xAI) | 🗺️ Planned | Tracked under `multi-platform-agent-support`. |
 | `AGENTS.md`-based platforms (generic) | 🗺️ Planned | Most non-Claude-Code tools use `AGENTS.md` instead of `CLAUDE.md` for project instructions — supporting that format is the shared unlock for all of the above. |
 
+## External Trackers
+
+PM can make a project *aware* that its epics mirror to an external issue tracker, without the
+engine ever calling that tracker itself — same instruction-layer law as everything else. Works
+generically with any tracker name (`--system` isn't an enum), so **Jira**, **Linear**, and
+**GitHub Issues** are all supported today the same way; `github-issues` additionally gets
+inward sync (open issues pulled in as untriaged epics, not just outward mirroring).
+
+Real shape, from a project actually running this in production:
+
+```jsonc
+"tracker": {
+  "system": "jira",
+  "instance": "your-jira-instance",
+  "projectKey": "JOB",
+  "mechanism": "mcp",
+  "statusIntent": {
+    "untriaged": "backlog",
+    "queued": "todo",
+    "active": "in-progress",
+    "paused": "todo",
+    "planned": "backlog",
+    "archived": "done"
+  }
+}
+```
+
+`statusIntent` maps PM's lifecycle to a *semantic* target, never a literal workflow-transition
+name — the interactive agent resolves the actual transition. An epic mirrored to that tracker
+looks like:
+
+```jsonc
+{
+  "id": "job-504",
+  "title": "[JOB-504] Investigation: matching pipeline audit",
+  "status": "archived",
+  "lane": "external",
+  "externalId": "JOB-504",
+  "externalUrl": "https://your-instance.atlassian.net/browse/JOB-504"
+}
+```
+
+Configure with `/pm:tracker` — it detects signals in your project, confirms with you, and
+calls `set-tracker`. The briefing's `TRACKER SYNC` line only ever lists honestly-computable
+drift (an active-work epic missing `externalId`); it never fabricates transition state the
+engine can't actually see.
+
 ## Commands
 
 <details>
