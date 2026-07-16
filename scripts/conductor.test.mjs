@@ -1554,7 +1554,12 @@ test("brief invents no transition drift when all active epics are mirrored", () 
     epics: [{ id: "m", title: "m", priority: "P1", status: "active", role: "epic", lane: "external", externalId: "JOB-1", links: [] }]});
   const brief = parseBrief(cwd);
   assert.doesNotMatch(brief, /not yet in jira/);                       // nothing to create
-  assert.doesNotMatch(brief, /transition pending|out of sync|drift/i); // no fabricated transition drift
+  // Scope to the TRACKER SYNC block specifically — the brief's SessionStart upgrade nudge
+  // (added in 0.13.0) can legitimately inline CHANGELOG bullet text containing words like
+  // "drift" for unrelated reasons (e.g. a changelog entry about doc-drift detection), so a
+  // whole-brief search for these words is too broad and produces false positives.
+  const trackerBlock = brief.split(/\n\n/).find(b => b.startsWith("TRACKER SYNC")) || "";
+  assert.doesNotMatch(trackerBlock, /transition pending|out of sync|drift/i); // no fabricated transition drift
 });
 
 // ───────────────────────── 0.5.0: bulk creation ─────────────────────────
