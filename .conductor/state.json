@@ -721,6 +721,17 @@
       "id": "df-readme-stale-since-gate-guard",
       "title": "DF: README.md hasn't been touched since commit f77d774 (gate-guard-default-on-reconcile, first dogfood batch) — every child dispatched since then updated SKILL.md/CHANGELOG.md/command docs but none updated README.md. It's now missing plan-hierarchy, verify-worktrees, set-lane-routing/suggest-lane, verify-state, record-reconcile, honcho-memory, /pm:feedback, and the category-based --preauthorize shorthand — essentially the entire epic-hierarchy-orchestration era plus both 2026-07-15 dogfood batches. README.md is the user-facing entry point (unlike SKILL.md, which is agent-facing) and is now badly out of date. Needs a full pass bringing it current, plus the hierarchy-child-executor's standing instructions should treat README.md as a required update target alongside SKILL.md/CHANGELOG.md whenever a change is user-visible, not just agent-visible.",
       "priority": "P1",
+      "status": "archived",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "completedAt": "2026-07-16T01:52:11.686Z"
+    },
+    {
+      "id": "multi-platform-agent-support",
+      "title": "Support additional AI coding platforms beyond Claude Code: Codex, Gemini CLI, Grok Build (xAI), and generic agents.md-based platforms (most non-Claude-Code tools use AGENTS.md instead of CLAUDE.md for project instructions). Needs investigation into what pm's plugin distribution mechanism would need to look like per-platform (skills dir conventions, command registration) before scoping real work — referenced from the README's Supported Platforms table as 'Planned'.",
+      "priority": "P3",
       "status": "queued",
       "role": "epic",
       "lane": "claude-code",

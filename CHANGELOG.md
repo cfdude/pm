@@ -10,6 +10,16 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **README.md fully revamped.** Replaces the agent-facing, all-over-the-place structure with a
+  Comet-inspired layout: a real banner image, honest badges (CI/version/license only — no
+  DeepWiki/CodeCov/trending until the tooling behind them actually exists), a "Why Use PM?"
+  section built from real, verifiable repo history (not a fabricated benchmark), a genuine
+  "From Industry-Frontier Practice" write-up of the design patterns PM's architecture actually
+  mirrors, a Supported Platforms table with an honest Status column (Claude Code: Supported;
+  Codex/Gemini CLI/Grok Build/`AGENTS.md` format: Planned, tracked under
+  `multi-platform-agent-support`), collapsible `<details>` command reference instead of one
+  long flat table, and a Star History chart. Resolves `df-readme-stale-since-gate-guard`
+  (README hadn't been touched since `f77d774`, missing everything shipped since).
 - **Branch protection + PR workflow on `cfdude/pm`.** `main` now requires pull requests (no
   direct pushes), the `test` job from `.github/workflows/ci.yml` as a required status check,
   0 required approving reviews (solo maintainer), and squash-merge-only at the repo level.
