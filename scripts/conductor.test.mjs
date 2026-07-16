@@ -2244,6 +2244,26 @@ test("commit-nudge does not auto-log a commit already inside a detour (existing 
   assert.doesNotMatch(log, /AUTO-DETOUR/);
 });
 
+test("commit-nudge does not auto-log a routine conductor-bookkeeping commit touching only its own state-output files", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd }); gitRepo(cwd);
+  commitFiles(cwd, {
+    ".conductor/state.json": '{"version":1,"active":null,"detourStack":[],"epics":[]}',
+    "PROJECT.md": "# updated\n",
+  }, "chore(pm): register 3 new epics");
+  run(["commit-nudge"], { cwd, input: JSON.stringify({ tool_input: { command: 'git commit -m "chore(pm): register 3 new epics"' } }) });
+  assert.doesNotMatch(detourLog(cwd), /AUTO-DETOUR/);
+});
+
+test("commit-nudge still auto-logs a chore commit that touches a real source file alongside state.json", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd }); gitRepo(cwd);
+  commitFiles(cwd, {
+    ".conductor/state.json": '{"version":1,"active":null,"detourStack":[],"epics":[]}',
+    "some-real-file.mjs": "// fix\n",
+  }, "chore: tidy up a helper");
+  run(["commit-nudge"], { cwd, input: JSON.stringify({ tool_input: { command: 'git commit -m "chore: tidy up a helper"' } }) });
+  assert.match(detourLog(cwd), /AUTO-DETOUR/);
+});
+
 // ─────────────────── lane-routing overrides ───────────────────
 
 test("set-lane-routing --add writes a laneRouting.overrides block", () => {

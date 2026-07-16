@@ -957,17 +957,22 @@ function snapshot() {
   process.stderr.write("conductor: snapshot written before compaction\n");
 }
 
-/** Number of files touched by HEAD (the commit that just landed), via `git diff-tree`.
- *  Returns null (unknown — never treated as a match) if git isn't available/usable here,
- *  e.g. not a git repo or HEAD has no parent. */
-function headChangedFileCount() {
+
+/** Files changed by HEAD, via `git diff-tree`. Returns null if git isn't usable here. */
+function headChangedFiles() {
   try {
     const out = execSync("git diff-tree --no-commit-id --name-only -r --root HEAD", {
       cwd: ROOT, stdio: ["ignore", "pipe", "ignore"],
     }).toString().trim();
-    return out ? out.split("\n").length : 0;
+    return out ? out.split("\n") : [];
   } catch { return null; }
 }
+
+/** pm's own state-output files — routine conductor bookkeeping (registering/archiving
+ *  epics, re-rendering) touches only these, never a stray detour. CLAUDE.md is deliberately
+ *  excluded: it's user-authored content, not purely engine-generated output, so a commit
+ *  touching it could still be a real detour. */
+const CONDUCTOR_OWN_FILES = new Set([".conductor/state.json", "PROJECT.md", ".conductor/render-stamp.json"]);
 
 /** Diff-shape heuristic for an UNLOGGED minimal detour: a small, self-contained commit
  *  (<=3 files) whose subject uses a fix/chore conventional-commit prefix, made while no
@@ -976,8 +981,9 @@ function headChangedFileCount() {
 function looksLikeUnloggedMinimalDetour(subject, activeEpicId) {
   if (!/^(fix|chore)(\([^)]*\))?:\s/.test(subject)) return false;
   if (activeEpicId && subject.includes(`(${activeEpicId})`)) return false;
-  const files = headChangedFileCount();
-  if (files === null || files === 0 || files > 3) return false;
+  const files = headChangedFiles();
+  if (files === null || files.length === 0 || files.length > 3) return false;
+  if (files.every((f) => CONDUCTOR_OWN_FILES.has(f))) return false;
   return true;
 }
 
