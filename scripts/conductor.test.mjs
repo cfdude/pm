@@ -2406,3 +2406,39 @@ test("record-reconcile on an unknown detour id exits non-zero and writes nothing
     ["record-reconcile", "paused-epic", "--detour", "ghost-detour", "--verdict", "valid"], { cwd })));
   assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
 });
+
+// ---------- doc drift: SKILL.md "Commands" vs the real dispatch table ----------
+
+test("every dispatch-table subcommand is mentioned somewhere in skills/conductor/SKILL.md", () => {
+  const engineSrc = fs.readFileSync(ENGINE, "utf8");
+  const dispatchMatch = engineSrc.match(/^\(\{\n([\s\S]*?)\n\}\[cmd\]/m);
+  assert.ok(dispatchMatch, "could not locate the dispatch table object in conductor.mjs — " +
+    "has the dispatch section been restructured? update this test's extraction regex");
+  const dispatchBody = dispatchMatch[1];
+
+  // Each dispatch entry key is either a bare identifier (`init,`) or a quoted string
+  // (`"set-active": setActive,`). Extract both forms.
+  const keys = new Set();
+  for (const m of dispatchBody.matchAll(/^\s*"([a-z-]+)"\s*:/gm)) keys.add(m[1]);
+  for (const m of dispatchBody.matchAll(/^\s*([a-zA-Z][\w-]*)\s*:/gm)) keys.add(m[1]);
+  for (const m of dispatchBody.matchAll(/^\s*([a-zA-Z][\w-]*),?\s*$/gm)) keys.add(m[1]);
+  assert.ok(keys.size > 10, `expected many dispatch keys, only extracted ${keys.size}: ${[...keys]}`);
+
+  // No entries are excluded: `snapshot` and `write-rules` are hook/init-only invocations
+  // (not run directly by a user/agent) but are still real, documentable subcommands, so
+  // they are asserted like everything else rather than excluded.
+  const UNDOCUMENTED_INTERNAL = new Set([
+    // (currently empty — every dispatch subcommand is expected to be mentioned in SKILL.md)
+  ]);
+
+  const skillPath = path.join(path.dirname(ENGINE), "..", "skills", "conductor", "SKILL.md");
+  const skillText = fs.readFileSync(skillPath, "utf8");
+
+  const missing = [];
+  for (const key of keys) {
+    if (UNDOCUMENTED_INTERNAL.has(key)) continue;
+    if (!skillText.includes(key)) missing.push(key);
+  }
+  assert.deepEqual(missing, [],
+    `SKILL.md's Commands section (or elsewhere in the doc) is missing a mention of: ${missing.join(", ")}`);
+});

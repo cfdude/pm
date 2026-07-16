@@ -50,6 +50,10 @@ Below, `$ENGINE` means the path resolved this way.
 ## Commands
 
 `/pm:init` scaffold · `/pm:status` show · `/pm:next` decide · `/pm:detour` park ·
+`snapshot` (PreCompact hook only — re-renders PROJECT.md and writes `.conductor/brief.txt`
+right before the context window collapses, so nothing is lost to compaction) ·
+`write-rules` (invoked by `/pm:init`/`/pm:upgrade` — refreshes the managed rules block in
+CLAUDE.md; not meant to be run standalone) ·
 `/pm:resume` resume + reconcile (writes the reconciler's verdict back durably via
 `record-reconcile`) · `/pm:sync` register new proposals and plans ·
 `/pm:epic add` register any epic (`--parent`, `--external-id`) · `/pm:epic` → `add-many`
