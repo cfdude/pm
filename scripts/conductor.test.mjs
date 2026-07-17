@@ -2580,3 +2580,37 @@ test("update-epic archiving a non-openspec-lane epic is unaffected by gate-revie
   const epic = readState(cwd).epics.find(e => e.id === "cc-epic");
   assert.equal(epic.status, "archived");
 });
+
+// ---------- doc drift: README.md "Commands" vs the real dispatch table ----------
+
+test("every dispatch-table subcommand is mentioned somewhere in README.md", () => {
+  const engineSrc = fs.readFileSync(ENGINE, "utf8");
+  const dispatchMatch = engineSrc.match(/^\(\{\n([\s\S]*?)\n\}\[cmd\]/m);
+  assert.ok(dispatchMatch, "could not locate the dispatch table object in conductor.mjs — " +
+    "has the dispatch section been restructured? update this test's extraction regex");
+  const dispatchBody = dispatchMatch[1];
+
+  const keys = new Set();
+  for (const m of dispatchBody.matchAll(/^\s*"([a-z-]+)"\s*:/gm)) keys.add(m[1]);
+  for (const m of dispatchBody.matchAll(/^\s*([a-zA-Z][\w-]*)\s*:/gm)) keys.add(m[1]);
+  for (const m of dispatchBody.matchAll(/^\s*([a-zA-Z][\w-]*),?\s*$/gm)) keys.add(m[1]);
+  assert.ok(keys.size > 10, `expected many dispatch keys, only extracted ${keys.size}: ${[...keys]}`);
+
+  // No entries are excluded — same precedent as the SKILL.md drift test: hook/init-only
+  // subcommands (commit-nudge, snapshot, write-rules) are still real and documentable, so
+  // they're asserted like everything else rather than silently excluded.
+  const UNDOCUMENTED_INTERNAL = new Set([
+    // (currently empty — every dispatch subcommand is expected to be mentioned in README.md)
+  ]);
+
+  const readmePath = path.join(path.dirname(ENGINE), "..", "README.md");
+  const readmeText = fs.readFileSync(readmePath, "utf8");
+
+  const missing = [];
+  for (const key of keys) {
+    if (UNDOCUMENTED_INTERNAL.has(key)) continue;
+    if (!readmeText.includes(key)) missing.push(key);
+  }
+  assert.deepEqual(missing, [],
+    `README.md's Commands section (or elsewhere in the doc) is missing a mention of: ${missing.join(", ")}`);
+});

@@ -319,6 +319,12 @@ CLAUDE.md (see `/pm:epic` → `set-autonomy`).
      preflight scan nor the executor's completion report had flagged it. The
      `hierarchy-child-executor` agent enforces the matching check at report time — see its
      "Required check: session-continuity impact on the orchestrator" section.
+   - **Documentation currency** — `SKILL.md` and `README.md` drift from the real dispatch table
+     independently (two separate tests in `scripts/conductor.test.mjs` check each one; passing
+     one does not mean the other is current). Any child epic that adds/changes a user-facing
+     command, flag, or behavior must update `README.md`, not just `SKILL.md` — this bit the
+     project once already (`record-gate-review` shipped with no README mention). See
+     `hierarchy-child-executor`'s "Required: check README.md, not just SKILL.md" section.
 4. Keep it SHORT and high-signal. If there is nothing destructive, say so plainly. If there is
    no genuine unknown, say so plainly. Padding the output with non-issues defeats the entire
    point — it is exactly what turns autonomous execution into a wall of blockers.

@@ -52,6 +52,17 @@ entries already use — a bold one-line summary, then wrapped prose. Do NOT edit
 header directly hit a guaranteed merge conflict there. The orchestrator is the sole writer of
 `CHANGELOG.md` and consolidates all pending fragments into it once, at release time.
 
+**Required: check README.md, not just SKILL.md, for user-facing changes.** If your epic
+adds, removes, or changes a user-facing command, flag, or behavior — anything a person reading
+this repo would want to know about, not just an agent reading `SKILL.md` — update `README.md`
+too, in the same commit. This is not optional or a "nice to have": `record-gate-review` shipped
+in 0.16.0 as a genuine new subcommand with zero README mention, because a prior dispatch's
+instructions only required updating `SKILL.md`. `SKILL.md` and `README.md` drift from the real
+dispatch table independently and are checked by two separate tests
+(`scripts/conductor.test.mjs`) — passing one does not mean the other is current. If your change
+is purely internal (no user-facing surface — a test, an engine-internal refactor, a
+process-only doc fix), say so explicitly in DECISIONS rather than silently skipping the check.
+
 **Do not ask the orchestrating agent a question mid-run** unless you hit (b) or (d) above — the
 whole point of this dispatch is that context/approvals were already front-loaded during the
 hierarchy's preflight step. If you hit a genuine stop, that IS your report; return immediately
