@@ -283,8 +283,12 @@ Classifies the interruption as minimal or substantial before doing anything else
 
 | Flag | Behavior |
 |------|----------|
-| `--minimal "<what you fixed>"` | Fast-path: log to `.conductor/detours.log` and resume. No proposal, no stack entry. |
+| `--minimal "<what you fixed>"` | Fast-path: calls `log-detour` to append to `.conductor/detours.log` and resume. No proposal, no stack entry. |
 | _(none)_ | Substantial: PUSH the current epic onto the detour stack, spin up a new epic in the appropriate lane for the detour. |
+
+`honcho-memory <push\|pop> <epicId> "<reason>"` formats the exact ready-to-copy Honcho memory
+line for a PUSH/POP and appends a timestamped copy to `.conductor/honcho-memories.log` — the
+engine only formats and logs the string, it never calls Honcho itself.
 
 </details>
 
@@ -362,9 +366,10 @@ grep). See the `conductor` skill's "Epic-level autonomy" section for the full pr
 <details>
 <summary><code>/pm:review-mode</code> — Set this repo's review-intensity dial</summary>
 
-`off` (self-review only) · `standard` (default — one fresh-context reviewer per gate) ·
-`thorough` (two independent reviewers, adjudicated). A single epic can escalate above the
-repo's dial via `update-epic <id> --review-mode`, but never de-escalate below it.
+`set-review-mode --mode off|standard|thorough`: `off` (self-review only) · `standard`
+(default — one fresh-context reviewer per gate) · `thorough` (two independent reviewers,
+adjudicated). A single epic can escalate above the repo's dial via `update-epic <id>
+--review-mode`, but never de-escalate below it.
 
 </details>
 
@@ -415,10 +420,32 @@ version.
 <details>
 <summary><code>/pm:upgrade</code> — Upgrade this repo's conductor state/rules</summary>
 
-Refreshes the `CLAUDE.md` rules block, runs any pending migrations, re-renders `PROJECT.md`,
-and stamps the new `pmVersion`. Idempotent — safe to run more than once. Requires
-`/reload-plugins` first if you just updated the plugin (the SessionStart briefing tells you
-when).
+Refreshes the `CLAUDE.md` rules block (`write-rules`), runs any pending migrations,
+re-renders `PROJECT.md`, and stamps the new `pmVersion`. Idempotent — safe to run more than
+once. Requires `/reload-plugins` first if you just updated the plugin (the SessionStart
+briefing tells you when).
+
+</details>
+
+<details>
+<summary><code>verify-state</code> — Detect an undetected hand-edit of state.json</summary>
+
+Compares `state.json`'s filesystem mtime against the timestamp recorded at the last
+`render()`. Fails loudly (non-zero exit) if `state.json` was modified after the last render —
+mechanical evidence of a hand-edit, which is against the rules (`state.json` should only
+change through the engine's own subcommands).
+
+</details>
+
+<details>
+<summary><code>changesets</code> — List pending CHANGELOG fragment files</summary>
+
+Lists every `.changesets/*.md` fragment as `{ changesets: [{ id, path, body }] }`, sorted by
+epic id. Hierarchy children write their changelog entry to `.changesets/<epic-id>.md` instead
+of editing `CHANGELOG.md`'s shared `[Unreleased]` section directly — eliminating the merge
+conflict that section otherwise guarantees across parallel batches. The orchestrator remains
+the sole writer of `CHANGELOG.md`, consolidating pending fragments into it once at release
+time, then deleting the consumed fragment files.
 
 </details>
 
@@ -440,8 +467,8 @@ Installed to `skills/` on `/pm:init`:
 | Hook | Purpose |
 |------|---------|
 | SessionStart (startup / resume / **compact**) | Injects the briefing via `additionalContext` — the index comes back the moment context is summarized away. |
-| PreCompact | Snapshots (`render` + `.conductor/brief.txt`) right before the context window collapses. |
-| PostToolUse (`git commit`) | Nudges a state update after every commit; also auto-detects an unlogged minimal detour from commit shape. |
+| PreCompact | Calls `snapshot` (`render` + `.conductor/brief.txt`) right before the context window collapses. |
+| PostToolUse (`git commit`) | Calls `commit-nudge`: nudges a state update after every commit; also auto-detects an unlogged minimal detour from commit shape (excluding routine conductor bookkeeping commits). |
 | PreToolUse (gate-guard) | Hard-blocks `Edit`/`Write`/`NotebookEdit` while the active epic owes a reconcile — on by default, unconditional for that case. |
 
 **Agents** (`agents/`) — dispatched by name, run in a clean context:
