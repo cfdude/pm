@@ -14,7 +14,7 @@
     },
     {
       "id": "epic-hierarchy-orchestration",
-      "title": "Epic-hierarchy orchestration — run a parent epic's children unattended (see docs/vision/2026-07-14-autonomy-orchestration-vision.md, section B)",
+      "title": "Epic-hierarchy orchestration \u2014 run a parent epic's children unattended (see docs/vision/2026-07-14-autonomy-orchestration-vision.md, section B)",
       "priority": "P2",
       "status": "archived",
       "role": "epic",
@@ -24,7 +24,7 @@
     },
     {
       "id": "portfolio-architecture-consistency-scan",
-      "title": "Portfolio/architecture-consistency scanning across the backlog (see docs/vision/2026-07-14-autonomy-orchestration-vision.md, section C — least-scoped of the three, needs its own brainstorm)",
+      "title": "Portfolio/architecture-consistency scanning across the backlog (see docs/vision/2026-07-14-autonomy-orchestration-vision.md, section C \u2014 least-scoped of the three, needs its own brainstorm)",
       "priority": "P3",
       "status": "archived",
       "role": "epic",
@@ -41,7 +41,7 @@
     },
     {
       "id": "infra-runbook-preflight",
-      "title": "Wire infra-runbook preflight (~/Servers/infra-playbooks) into pm's epic/hierarchy preflight (see docs/vision/2026-07-14-autonomy-orchestration-vision.md, section D — cheapest of the three, existing convention just needs wiring)",
+      "title": "Wire infra-runbook preflight (~/Servers/infra-playbooks) into pm's epic/hierarchy preflight (see docs/vision/2026-07-14-autonomy-orchestration-vision.md, section D \u2014 cheapest of the three, existing convention just needs wiring)",
       "priority": "P2",
       "status": "archived",
       "role": "epic",
@@ -51,7 +51,7 @@
     },
     {
       "id": "pm-plugin-improvements-2026-07-14",
-      "title": "pm plugin improvements from three dogfooding sessions (2026-07-14) — see docs/feedback/2026-07-14-pm-plugin-improvement-feedback.md",
+      "title": "pm plugin improvements from three dogfooding sessions (2026-07-14) \u2014 see docs/feedback/2026-07-14-pm-plugin-improvement-feedback.md",
       "priority": "P2",
       "status": "archived",
       "role": "epic",
@@ -62,7 +62,7 @@
     },
     {
       "id": "gate-guard-default-on-reconcile",
-      "title": "Flip gate-guard default to ON for epics with reconcileOnResume — reverses the deliberate opt-in choice, approved after real-usage feedback showed it's never been turned on",
+      "title": "Flip gate-guard default to ON for epics with reconcileOnResume \u2014 reverses the deliberate opt-in choice, approved after real-usage feedback showed it's never been turned on",
       "priority": "P1",
       "status": "archived",
       "role": "epic",
@@ -80,7 +80,7 @@
           }
         ],
         "context": [
-          "Decision: RETROACTIVE — flip applies to any epic with reconcileNeeded:true right now, not just new paused frames going forward. Accepted risk: an in-flight session could be surprised by writes suddenly blocked."
+          "Decision: RETROACTIVE \u2014 flip applies to any epic with reconcileNeeded:true right now, not just new paused frames going forward. Accepted risk: an in-flight session could be surprised by writes suddenly blocked."
         ],
         "notifications": []
       },
@@ -88,7 +88,7 @@
     },
     {
       "id": "diffshape-minimal-detour-inference",
-      "title": "Auto-detect an unlogged minimal detour from commit/diff shape and log it without a manual /pm:detour --minimal invocation — 3 sessions converge on this, user's #1 priority",
+      "title": "Auto-detect an unlogged minimal detour from commit/diff shape and log it without a manual /pm:detour --minimal invocation \u2014 3 sessions converge on this, user's #1 priority",
       "priority": "P1",
       "status": "archived",
       "role": "epic",
@@ -106,7 +106,7 @@
           }
         ],
         "context": [
-          "Decision: AUTOMATIC PostToolUse hook on every commit (not on-demand) — highest-payoff per 3-session convergence on this as the #1 pain point. Heuristic TBD at build time (file count / line count / new-OpenSpec-proposal presence) but the trigger mechanism itself is settled: hook-driven, not agent-remembered."
+          "Decision: AUTOMATIC PostToolUse hook on every commit (not on-demand) \u2014 highest-payoff per 3-session convergence on this as the #1 pain point. Heuristic TBD at build time (file count / line count / new-OpenSpec-proposal presence) but the trigger mechanism itself is settled: hook-driven, not agent-remembered."
         ],
         "notifications": []
       },
@@ -114,7 +114,7 @@
     },
     {
       "id": "remove-epic-verb",
-      "title": "Add a remove-epic (or soft-delete/archive-with-reason) CLI verb — the only current recovery from a mis-registered epic is a raw git checkout",
+      "title": "Add a remove-epic (or soft-delete/archive-with-reason) CLI verb \u2014 the only current recovery from a mis-registered epic is a raw git checkout",
       "priority": "P2",
       "status": "archived",
       "role": "epic",
@@ -137,7 +137,7 @@
           }
         ],
         "context": [
-          "Decisions from preflight Q&A: (1) hard delete (splice from array) — recoverable only via git history, matching the git-checkout workaround this replaces; (2) dangling links[] in OTHER epics referencing the removed id are stripped automatically and a warning naming affected epics is printed; (3) removal of an epic with children is BLOCKED BY DEFAULT — prints a concise table (id, title, short summary) of the parent + all children — with a --cascade flag as an explicit escape hatch to remove the parent and all descendants in one go; the agent must surface this table and get explicit human confirmation before ever passing --cascade, since the engine itself has no interactive prompt"
+          "Decisions from preflight Q&A: (1) hard delete (splice from array) \u2014 recoverable only via git history, matching the git-checkout workaround this replaces; (2) dangling links[] in OTHER epics referencing the removed id are stripped automatically and a warning naming affected epics is printed; (3) removal of an epic with children is BLOCKED BY DEFAULT \u2014 prints a concise table (id, title, short summary) of the parent + all children \u2014 with a --cascade flag as an explicit escape hatch to remove the parent and all descendants in one go; the agent must surface this table and get explicit human confirmation before ever passing --cascade, since the engine itself has no interactive prompt"
         ],
         "notifications": []
       },
@@ -170,7 +170,7 @@
     },
     {
       "id": "fix-archived-no-change-warning",
-      "title": "Fix missing() to exclude status===archived — an already-closed epic can show an unresolvable '⚠ no change on disk' warning forever",
+      "title": "Fix missing() to exclude status===archived \u2014 an already-closed epic can show an unresolvable '\u26a0 no change on disk' warning forever",
       "priority": "P2",
       "status": "archived",
       "role": "epic",
@@ -182,7 +182,7 @@
         "level": "autonomous",
         "preAuthorized": [],
         "context": [
-          "Preflight: no destructive risk, no genuine unknown — exclude status===archived from missing()'s condition, a direct bug fix."
+          "Preflight: no destructive risk, no genuine unknown \u2014 exclude status===archived from missing()'s condition, a direct bug fix."
         ],
         "notifications": []
       },
@@ -190,7 +190,7 @@
     },
     {
       "id": "reconciler-structured-writeback",
-      "title": "Reconciler returns a structured {valid, amendments} verdict AND writes it back onto the relevant link — currently the judgment only ever lives in conversation",
+      "title": "Reconciler returns a structured {valid, amendments} verdict AND writes it back onto the relevant link \u2014 currently the judgment only ever lives in conversation",
       "priority": "P2",
       "status": "archived",
       "role": "epic",
@@ -236,7 +236,7 @@
     },
     {
       "id": "autonomy-hierarchy-adoption-investigation",
-      "title": "Investigate why epic-level autonomy and epic-hierarchy orchestration show zero real-world usage in at least one dogfooding repo — ceremony weight vs discoverability vs genuinely not needed",
+      "title": "Investigate why epic-level autonomy and epic-hierarchy orchestration show zero real-world usage in at least one dogfooding repo \u2014 ceremony weight vs discoverability vs genuinely not needed",
       "priority": "P2",
       "status": "archived",
       "role": "epic",
@@ -294,7 +294,7 @@
           }
         ],
         "context": [
-          "Preflight: read-only check comparing state.json mtime vs a last-render stamp; needs a new stamp field/file written by render() to compare against — additive, no destructive risk."
+          "Preflight: read-only check comparing state.json mtime vs a last-render stamp; needs a new stamp field/file written by render() to compare against \u2014 additive, no destructive risk."
         ],
         "notifications": []
       },
@@ -302,7 +302,7 @@
     },
     {
       "id": "dependency-aware-standalone-ordering",
-      "title": "Extend plan-hierarchy's depends-on topological sort to top-level queued epics generally, not just parent/child hierarchies — the same starvation problem exists at the top-level queue",
+      "title": "Extend plan-hierarchy's depends-on topological sort to top-level queued epics generally, not just parent/child hierarchies \u2014 the same starvation problem exists at the top-level queue",
       "priority": "P2",
       "status": "archived",
       "role": "epic",
@@ -320,7 +320,7 @@
           }
         ],
         "context": [
-          "Decision: BEHAVIORAL — /pm:next must SKIP a starved epic whose depends-on target is still queued/unresolved, even if the starved epic is higher priority. ADDITIONALLY: when /pm:next (or the brief) picks an epic that only won because a higher-priority sibling is blocked on a dependency, it must print a concise one-line reason naming the blocking epic, not just silently pick."
+          "Decision: BEHAVIORAL \u2014 /pm:next must SKIP a starved epic whose depends-on target is still queued/unresolved, even if the starved epic is higher priority. ADDITIONALLY: when /pm:next (or the brief) picks an epic that only won because a higher-priority sibling is blocked on a dependency, it must print a concise one-line reason naming the blocking epic, not just silently pick."
         ],
         "notifications": []
       },
@@ -348,7 +348,7 @@
     },
     {
       "id": "epic-timestamps-and-staleness",
-      "title": "Add startedAt/completedAt timestamps to epics, and surface a staleness/days-active indicator in PROJECT.md and /pm:next — supports velocity tracking and the weekly Ship-Real-Software check",
+      "title": "Add startedAt/completedAt timestamps to epics, and surface a staleness/days-active indicator in PROJECT.md and /pm:next \u2014 supports velocity tracking and the weekly Ship-Real-Software check",
       "priority": "P2",
       "status": "archived",
       "role": "epic",
@@ -380,7 +380,7 @@
         "level": "autonomous",
         "preAuthorized": [],
         "context": [
-          "Preflight: no destructive risk (additive autonomy shorthand). Default category taxonomy absent user override: filesystem, network, schema, external-api — a --preauthorize 'category:filesystem:...' expands to match any action tagged with that category by the decision rule."
+          "Preflight: no destructive risk (additive autonomy shorthand). Default category taxonomy absent user override: filesystem, network, schema, external-api \u2014 a --preauthorize 'category:filesystem:...' expands to match any action tagged with that category by the decision rule."
         ],
         "notifications": []
       },
@@ -388,7 +388,7 @@
     },
     {
       "id": "incremental-notify-timing-fix",
-      "title": "Clarify the epic-level-autonomy decision rule's wording so WARN-class decisions are --notify'd incrementally as they happen, not just gathered for the end-of-epic report — a compaction-safety fix using the mechanism that already exists",
+      "title": "Clarify the epic-level-autonomy decision rule's wording so WARN-class decisions are --notify'd incrementally as they happen, not just gathered for the end-of-epic report \u2014 a compaction-safety fix using the mechanism that already exists",
       "priority": "P2",
       "status": "archived",
       "role": "epic",
@@ -400,7 +400,7 @@
         "level": "autonomous",
         "preAuthorized": [],
         "context": [
-          "Preflight: no destructive risk, no genuine unknown — pure wording fix in the decision-rule doc/skill text: 'record incrementally as it happens' instead of 'record for the end-of-epic report'."
+          "Preflight: no destructive risk, no genuine unknown \u2014 pure wording fix in the decision-rule doc/skill text: 'record incrementally as it happens' instead of 'record for the end-of-epic report'."
         ],
         "notifications": []
       },
@@ -408,7 +408,7 @@
     },
     {
       "id": "cross-repo-epic-dependency-investigation",
-      "title": "Investigate a mechanism for cross-repo epic dependencies — links currently only reference epics within one repo, but real cross-repo dependencies exist (e.g. a deploy epic depending on infra-playbooks conventions)",
+      "title": "Investigate a mechanism for cross-repo epic dependencies \u2014 links currently only reference epics within one repo, but real cross-repo dependencies exist (e.g. a deploy epic depending on infra-playbooks conventions)",
       "priority": "P3",
       "status": "archived",
       "role": "epic",
@@ -420,7 +420,7 @@
         "level": "autonomous",
         "preAuthorized": [],
         "context": [
-          "Preflight: read-only investigation/design-question gathering, no destructive risk, no code changes — deliverable is a scoped writeup, not a fix."
+          "Preflight: read-only investigation/design-question gathering, no destructive risk, no code changes \u2014 deliverable is a scoped writeup, not a fix."
         ],
         "notifications": []
       },
@@ -448,7 +448,7 @@
     },
     {
       "id": "ai-feedback-loop-github-issues",
-      "title": "Skill-driven /pm:feedback command — post a bug report or feature request as a GitHub issue on cfdude/pm directly from any Claude Code session using the plugin",
+      "title": "Skill-driven /pm:feedback command \u2014 post a bug report or feature request as a GitHub issue on cfdude/pm directly from any Claude Code session using the plugin",
       "priority": "P2",
       "status": "archived",
       "role": "epic",
@@ -470,7 +470,7 @@
           }
         ],
         "context": [
-          "Decision: use gh CLI via Bash (agent-invoked, not the engine — complies with the instruction-layer law: pm never calls external systems itself). Labels: bug or enhancement based on report type. Dedup: search open issues for a near-duplicate title before creating; if found, comment on the existing issue instead of creating a new one."
+          "Decision: use gh CLI via Bash (agent-invoked, not the engine \u2014 complies with the instruction-layer law: pm never calls external systems itself). Labels: bug or enhancement based on report type. Dedup: search open issues for a near-duplicate title before creating; if found, comment on the existing issue instead of creating a new one."
         ],
         "notifications": []
       },
@@ -478,7 +478,7 @@
     },
     {
       "id": "github-issue-tracker-sync",
-      "title": "GitHub issue tracker: extend set-tracker/sync so open cfdude/pm issues can be pulled into the conductor as untriaged epics, same pattern as OpenSpec/Superpowers auto-registration — closes the loop with ai-feedback-loop-github-issues",
+      "title": "GitHub issue tracker: extend set-tracker/sync so open cfdude/pm issues can be pulled into the conductor as untriaged epics, same pattern as OpenSpec/Superpowers auto-registration \u2014 closes the loop with ai-feedback-loop-github-issues",
       "priority": "P2",
       "status": "archived",
       "role": "epic",
@@ -506,7 +506,7 @@
           }
         ],
         "context": [
-          "Decision: mirror the existing Jira-tracker sync pattern exactly — open GitHub issues not already mapped via externalId become new untriaged epics; priority defaults P2 unless a label maps to a different priority. Re-running sync must not create duplicate epics for the same issue (dedup by externalId)."
+          "Decision: mirror the existing Jira-tracker sync pattern exactly \u2014 open GitHub issues not already mapped via externalId become new untriaged epics; priority defaults P2 unless a label maps to a different priority. Re-running sync must not create duplicate epics for the same issue (dedup by externalId)."
         ],
         "notifications": []
       },
@@ -548,7 +548,7 @@
           }
         ],
         "context": [
-          "Decision (from user preflight): solo-repo defaults — require PRs into main, no required-reviewer count, required status check = the CI job named 'test' (shipped in ci-test-lint-workflow, 0.14.0), squash merge only. This is a LIVE change to the real cfdude/pm GitHub repo's settings — restorable via GitHub UI/API (turn protection off / edit the ruleset) but not git-history-reversible like a code commit; --notify this action explicitly per the WARN-class decision rule rather than only reporting it at the end."
+          "Decision (from user preflight): solo-repo defaults \u2014 require PRs into main, no required-reviewer count, required status check = the CI job named 'test' (shipped in ci-test-lint-workflow, 0.14.0), squash merge only. This is a LIVE change to the real cfdude/pm GitHub repo's settings \u2014 restorable via GitHub UI/API (turn protection off / edit the ruleset) but not git-history-reversible like a code commit; --notify this action explicitly per the WARN-class decision rule rather than only reporting it at the end."
         ],
         "notifications": []
       },
@@ -556,7 +556,7 @@
     },
     {
       "id": "ci-test-lint-workflow",
-      "title": "Add a GitHub Actions workflow on cfdude/pm running node --test (and syntax/lint checks) on every PR — CI gate before merge",
+      "title": "Add a GitHub Actions workflow on cfdude/pm running node --test (and syntax/lint checks) on every PR \u2014 CI gate before merge",
       "priority": "P2",
       "status": "archived",
       "role": "epic",
@@ -574,7 +574,7 @@
           }
         ],
         "context": [
-          "Decision: Node 18.x only (this repo's stated minimum). No separate lint tool exists in this zero-dependency repo — 'lint' means a node -c syntax check on conductor.mjs and conductor.test.mjs, not a third-party linter."
+          "Decision: Node 18.x only (this repo's stated minimum). No separate lint tool exists in this zero-dependency repo \u2014 'lint' means a node -c syntax check on conductor.mjs and conductor.test.mjs, not a third-party linter."
         ],
         "notifications": []
       },
@@ -582,7 +582,7 @@
     },
     {
       "id": "autonomous-issue-resolution-agent",
-      "title": "Research + design an autonomous issue-to-PR pipeline for cfdude/pm: a GitHub-Actions-hosted Claude agent that analyzes a validated issue, implements a fix on a branch, and opens a PR; a CI check gates that the PR genuinely came from this trusted automation (not a spoofed external PR); the user remains the final human approver/merger always. Needs its own research pass (what mechanism — an official Claude Code GitHub Action, a custom Claude API workflow, something else) before any design — substantially bigger and more novel than the other two governance items.",
+      "title": "Research + design an autonomous issue-to-PR pipeline for cfdude/pm: a GitHub-Actions-hosted Claude agent that analyzes a validated issue, implements a fix on a branch, and opens a PR; a CI check gates that the PR genuinely came from this trusted automation (not a spoofed external PR); the user remains the final human approver/merger always. Needs its own research pass (what mechanism \u2014 an official Claude Code GitHub Action, a custom Claude API workflow, something else) before any design \u2014 substantially bigger and more novel than the other two governance items.",
       "priority": "P3",
       "status": "archived",
       "role": "epic",
@@ -612,14 +612,14 @@
           }
         ],
         "context": [
-          "Decision: BOTH — (1) prefer repo-local scripts/conductor.mjs over plugins cache when CLAUDE_PROJECT_DIR/scripts/conductor.mjs exists (self-hosting case); (2) every invocation prints engine version+source path to stderr so staleness is visible"
+          "Decision: BOTH \u2014 (1) prefer repo-local scripts/conductor.mjs over plugins cache when CLAUDE_PROJECT_DIR/scripts/conductor.mjs exists (self-hosting case); (2) every invocation prints engine version+source path to stderr so staleness is visible"
         ],
         "notifications": []
       }
     },
     {
       "id": "df-plan-hierarchy-includes-archived-children",
-      "title": "DF: plan-hierarchy includes an already-archived child epic in its batch output instead of filtering it out — found live running plan-hierarchy --parent pm-plugin-improvements-2026-07-14 after archiving remove-epic-verb: it still appeared in batch 0 with autonomous:true, dependsOn:[], indistinguishable from real not-yet-done work. An agent following the documented dispatch process ('dispatch one hierarchy-child-executor per epic in the batch') would blindly re-dispatch already-completed work unless it manually cross-checks status first. Fix: plan-hierarchy's batch computation should exclude status===archived children (same class of bug as fix-archived-no-change-warning, different code path)",
+      "title": "DF: plan-hierarchy includes an already-archived child epic in its batch output instead of filtering it out \u2014 found live running plan-hierarchy --parent pm-plugin-improvements-2026-07-14 after archiving remove-epic-verb: it still appeared in batch 0 with autonomous:true, dependsOn:[], indistinguishable from real not-yet-done work. An agent following the documented dispatch process ('dispatch one hierarchy-child-executor per epic in the batch') would blindly re-dispatch already-completed work unless it manually cross-checks status first. Fix: plan-hierarchy's batch computation should exclude status===archived children (same class of bug as fix-archived-no-change-warning, different code path)",
       "priority": "P0",
       "status": "archived",
       "role": "epic",
@@ -630,7 +630,7 @@
     },
     {
       "id": "df-hierarchy-no-shared-file-conflict-detection",
-      "title": "DF: plan-hierarchy's all-parallel batch (16 siblings, no depends-on edges) has no notion that many children touch the SAME source file — every pm-plugin-improvements-2026-07-14 child modifies scripts/conductor.mjs, so a literal 'dispatch every epic in this batch in parallel' per the conductor skill's documented process would race N concurrent Edit/Write calls against one file. Found while about to dispatch the real 17-child batch for this session's hierarchy test — priority/depends-on scheduling alone doesn't capture this hazard; plan-hierarchy has no file/path overlap signal at all. Needs its own design (e.g. an optional touchedPaths hint per epic feeding batch computation, or per-batch worktree isolation the orchestrator forces automatically when it can't prove non-overlap)",
+      "title": "DF: plan-hierarchy's all-parallel batch (16 siblings, no depends-on edges) has no notion that many children touch the SAME source file \u2014 every pm-plugin-improvements-2026-07-14 child modifies scripts/conductor.mjs, so a literal 'dispatch every epic in this batch in parallel' per the conductor skill's documented process would race N concurrent Edit/Write calls against one file. Found while about to dispatch the real 17-child batch for this session's hierarchy test \u2014 priority/depends-on scheduling alone doesn't capture this hazard; plan-hierarchy has no file/path overlap signal at all. Needs its own design (e.g. an optional touchedPaths hint per epic feeding batch computation, or per-batch worktree isolation the orchestrator forces automatically when it can't prove non-overlap)",
       "priority": "P1",
       "status": "archived",
       "role": "epic",
@@ -641,7 +641,7 @@
     },
     {
       "id": "df-github-tracker-outward-sync-unsuppressed",
-      "title": "DF: with a github-issues tracker configured for inward sync, the existing outward 'External tracker sync' rules-block section still tells the agent to auto-create a GitHub issue for any local epic lacking externalId — likely unwanted for a purely-inward github-issues tracker (a local claude-code epic shouldn't get an issue auto-filed). Needs a decision: suppress/reword the outward section when tracker.system === 'github-issues', or is bidirectional mirroring actually desired? Found by the github-issue-tracker-sync build agent, flagged as a CONCERN rather than guessed at.",
+      "title": "DF: with a github-issues tracker configured for inward sync, the existing outward 'External tracker sync' rules-block section still tells the agent to auto-create a GitHub issue for any local epic lacking externalId \u2014 likely unwanted for a purely-inward github-issues tracker (a local claude-code epic shouldn't get an issue auto-filed). Needs a decision: suppress/reword the outward section when tracker.system === 'github-issues', or is bidirectional mirroring actually desired? Found by the github-issue-tracker-sync build agent, flagged as a CONCERN rather than guessed at.",
       "priority": "P2",
       "status": "archived",
       "role": "epic",
@@ -666,7 +666,7 @@
     },
     {
       "id": "df-changelog-fragment-conflicts",
-      "title": "DF: every parallel hierarchy-child batch conflicts on CHANGELOG.md's shared '## [Unreleased]' header — 100% collision rate across both dogfood batches (5/6 and 2/4 merges). Adopt a changesets-style per-child fragment file (e.g. .changesets/<epic-id>.md) that each child writes instead of editing the shared CHANGELOG.md directly; the orchestrator concatenates fragments into the real CHANGELOG.md once, at release time, as the sole writer — eliminating this entire conflict class rather than resolving it by hand every batch.",
+      "title": "DF: every parallel hierarchy-child batch conflicts on CHANGELOG.md's shared '## [Unreleased]' header \u2014 100% collision rate across both dogfood batches (5/6 and 2/4 merges). Adopt a changesets-style per-child fragment file (e.g. .changesets/<epic-id>.md) that each child writes instead of editing the shared CHANGELOG.md directly; the orchestrator concatenates fragments into the real CHANGELOG.md once, at release time, as the sole writer \u2014 eliminating this entire conflict class rather than resolving it by hand every batch.",
       "priority": "P1",
       "status": "archived",
       "role": "epic",
@@ -691,7 +691,7 @@
     },
     {
       "id": "df-conflict-resolution-verification-step",
-      "title": "DF: the orchestrator resolved a merge conflict incorrectly mid-dispatch (left a stray opening '<<<<<<< HEAD' marker after removing only the closing markers) and only caught it by manually re-grepping — the tiered conflict-resolution design has no MANDATORY post-resolution verification step. Add one to the conductor skill's merge-conflict-resolution process: after every conflict resolution (self-resolved or via merge-conflict-resolver), grep for leftover '<<<<<<<'/'======='/'>>>>>>>' markers AND run a syntax check (node -c for .mjs files) before committing the merge — treat either failure as still-unresolved, not done.",
+      "title": "DF: the orchestrator resolved a merge conflict incorrectly mid-dispatch (left a stray opening '<<<<<<< HEAD' marker after removing only the closing markers) and only caught it by manually re-grepping \u2014 the tiered conflict-resolution design has no MANDATORY post-resolution verification step. Add one to the conductor skill's merge-conflict-resolution process: after every conflict resolution (self-resolved or via merge-conflict-resolver), grep for leftover '<<<<<<<'/'======='/'>>>>>>>' markers AND run a syntax check (node -c for .mjs files) before committing the merge \u2014 treat either failure as still-unresolved, not done.",
       "priority": "P1",
       "status": "archived",
       "role": "epic",
@@ -716,7 +716,7 @@
     },
     {
       "id": "df-skill-commands-line-drift",
-      "title": "DF: SKILL.md's 'Commands' one-liner drifted from the real dispatch table again (set-lane-routing/suggest-lane and the review-mode escalation flag were missing) — the same bug class fixed once in 0.12.0's doc-drift fix, recurring because nothing mechanically enforces it. Add a test asserting every key in conductor.mjs's dispatch table appears (by subcommand name) somewhere in skills/conductor/SKILL.md, so a missed doc update fails CI instead of waiting to be caught by chance during a future merge.",
+      "title": "DF: SKILL.md's 'Commands' one-liner drifted from the real dispatch table again (set-lane-routing/suggest-lane and the review-mode escalation flag were missing) \u2014 the same bug class fixed once in 0.12.0's doc-drift fix, recurring because nothing mechanically enforces it. Add a test asserting every key in conductor.mjs's dispatch table appears (by subcommand name) somewhere in skills/conductor/SKILL.md, so a missed doc update fails CI instead of waiting to be caught by chance during a future merge.",
       "priority": "P2",
       "status": "archived",
       "role": "epic",
@@ -741,7 +741,7 @@
     },
     {
       "id": "df-live-infra-epic-session-continuity-warning",
-      "title": "DF: branch-protection-and-pr-workflow changed live GitHub repo settings mid-session and nothing in its preflight or executor report flagged that the CURRENT session's own git push would immediately start failing — discovered only when the push was rejected. Any epic whose autonomy context/preauthorization involves a live external-infra change with session-continuity impact (branch protection, required reviewers, webhook changes, etc.) should have its hierarchy-child-executor explicitly check 'does this change affect how the orchestrator itself will need to operate for the rest of this session' and surface it as a CONCERN before/at completion, not leave it to be discovered empirically.",
+      "title": "DF: branch-protection-and-pr-workflow changed live GitHub repo settings mid-session and nothing in its preflight or executor report flagged that the CURRENT session's own git push would immediately start failing \u2014 discovered only when the push was rejected. Any epic whose autonomy context/preauthorization involves a live external-infra change with session-continuity impact (branch protection, required reviewers, webhook changes, etc.) should have its hierarchy-child-executor explicitly check 'does this change affect how the orchestrator itself will need to operate for the rest of this session' and surface it as a CONCERN before/at completion, not leave it to be discovered empirically.",
       "priority": "P1",
       "status": "archived",
       "role": "epic",
@@ -766,7 +766,7 @@
     },
     {
       "id": "df-stray-render-artifacts-noise",
-      "title": "DF: PROJECT.md/.conductor/render-stamp.json show spurious uncommitted timestamp-only diffs after nearly every dispatch/render call, and an untracked .conductor/brief.txt scratch file (written by a SessionStart-style hook, never gitignored) appears repeatedly — required manual git checkout -- discarding roughly a dozen times across one session. Investigate the actual source (likely every hierarchy-child's own render() calls bumping the timestamp even when nothing else changed) and either suppress no-op re-renders more aggressively, or gitignore brief.txt if it is genuinely just a disposable session artifact.",
+      "title": "DF: PROJECT.md/.conductor/render-stamp.json show spurious uncommitted timestamp-only diffs after nearly every dispatch/render call, and an untracked .conductor/brief.txt scratch file (written by a SessionStart-style hook, never gitignored) appears repeatedly \u2014 required manual git checkout -- discarding roughly a dozen times across one session. Investigate the actual source (likely every hierarchy-child's own render() calls bumping the timestamp even when nothing else changed) and either suppress no-op re-renders more aggressively, or gitignore brief.txt if it is genuinely just a disposable session artifact.",
       "priority": "P2",
       "status": "archived",
       "role": "epic",
@@ -791,7 +791,7 @@
     },
     {
       "id": "df-verify-worktrees-merged-not-just-archived",
-      "title": "DF: verify-worktrees only flags a hierarchy-child worktree as orphaned when its epic status is archived — it missed the case (hit this session) where a worktree's branch is already fully merged into the current branch but the worktree itself was never removed (git branch -d then failed with 'used by worktree'). Extend verify-worktrees to also flag any hierarchy-child/worktree-agent-* worktree whose branch tip is already an ancestor of the current branch, regardless of the epic's status field.",
+      "title": "DF: verify-worktrees only flags a hierarchy-child worktree as orphaned when its epic status is archived \u2014 it missed the case (hit this session) where a worktree's branch is already fully merged into the current branch but the worktree itself was never removed (git branch -d then failed with 'used by worktree'). Extend verify-worktrees to also flag any hierarchy-child/worktree-agent-* worktree whose branch tip is already an ancestor of the current branch, regardless of the epic's status field.",
       "priority": "P2",
       "status": "queued",
       "role": "epic",
@@ -801,7 +801,7 @@
     },
     {
       "id": "df-autodetour-false-positive-conductor-admin-commits",
-      "title": "DF: the newly-shipped diffshape-minimal-detour-inference heuristic auto-logged a false-positive AUTO-DETOUR for a routine 'chore(pm): register epics' commit that only touched .conductor/state.json/PROJECT.md/render-stamp.json — caught live the first time it fired outside its own test suite. The heuristic (<=3 files + fix:/chore: prefix + no active detour) doesn't exclude the conductor's own bookkeeping commits, which are routine administration, not detours. Refine looksLikeUnloggedMinimalDetour() to skip commits whose changed files are entirely within the conductor's own state paths (.conductor/state.json, PROJECT.md, .conductor/render-stamp.json, CLAUDE.md's rules block) — those are pm's normal operating output, never a stray detour.",
+      "title": "DF: the newly-shipped diffshape-minimal-detour-inference heuristic auto-logged a false-positive AUTO-DETOUR for a routine 'chore(pm): register epics' commit that only touched .conductor/state.json/PROJECT.md/render-stamp.json \u2014 caught live the first time it fired outside its own test suite. The heuristic (<=3 files + fix:/chore: prefix + no active detour) doesn't exclude the conductor's own bookkeeping commits, which are routine administration, not detours. Refine looksLikeUnloggedMinimalDetour() to skip commits whose changed files are entirely within the conductor's own state paths (.conductor/state.json, PROJECT.md, .conductor/render-stamp.json, CLAUDE.md's rules block) \u2014 those are pm's normal operating output, never a stray detour.",
       "priority": "P2",
       "status": "archived",
       "role": "epic",
@@ -813,7 +813,7 @@
     },
     {
       "id": "df-readme-stale-since-gate-guard",
-      "title": "DF: README.md hasn't been touched since commit f77d774 (gate-guard-default-on-reconcile, first dogfood batch) — every child dispatched since then updated SKILL.md/CHANGELOG.md/command docs but none updated README.md. It's now missing plan-hierarchy, verify-worktrees, set-lane-routing/suggest-lane, verify-state, record-reconcile, honcho-memory, /pm:feedback, and the category-based --preauthorize shorthand — essentially the entire epic-hierarchy-orchestration era plus both 2026-07-15 dogfood batches. README.md is the user-facing entry point (unlike SKILL.md, which is agent-facing) and is now badly out of date. Needs a full pass bringing it current, plus the hierarchy-child-executor's standing instructions should treat README.md as a required update target alongside SKILL.md/CHANGELOG.md whenever a change is user-visible, not just agent-visible.",
+      "title": "DF: README.md hasn't been touched since commit f77d774 (gate-guard-default-on-reconcile, first dogfood batch) \u2014 every child dispatched since then updated SKILL.md/CHANGELOG.md/command docs but none updated README.md. It's now missing plan-hierarchy, verify-worktrees, set-lane-routing/suggest-lane, verify-state, record-reconcile, honcho-memory, /pm:feedback, and the category-based --preauthorize shorthand \u2014 essentially the entire epic-hierarchy-orchestration era plus both 2026-07-15 dogfood batches. README.md is the user-facing entry point (unlike SKILL.md, which is agent-facing) and is now badly out of date. Needs a full pass bringing it current, plus the hierarchy-child-executor's standing instructions should treat README.md as a required update target alongside SKILL.md/CHANGELOG.md whenever a change is user-visible, not just agent-visible.",
       "priority": "P1",
       "status": "archived",
       "role": "epic",
@@ -824,7 +824,7 @@
     },
     {
       "id": "multi-platform-agent-support",
-      "title": "Support additional AI coding platforms beyond Claude Code: Codex, Gemini CLI, Grok Build (xAI), and generic agents.md-based platforms (most non-Claude-Code tools use AGENTS.md instead of CLAUDE.md for project instructions). Needs investigation into what pm's plugin distribution mechanism would need to look like per-platform (skills dir conventions, command registration) before scoping real work — referenced from the README's Supported Platforms table as 'Planned'.",
+      "title": "Support additional AI coding platforms beyond Claude Code: Codex, Gemini CLI, Grok Build (xAI), and generic agents.md-based platforms (most non-Claude-Code tools use AGENTS.md instead of CLAUDE.md for project instructions). Needs investigation into what pm's plugin distribution mechanism would need to look like per-platform (skills dir conventions, command registration) before scoping real work \u2014 referenced from the README's Supported Platforms table as 'Planned'.",
       "priority": "P3",
       "status": "queued",
       "role": "epic",
@@ -881,6 +881,42 @@
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false
+    },
+    {
+      "id": "docs-site-cleanup",
+      "title": "Clean up the pm-plugin.dev Mintlify docs site: fix the wrong homepage title/logo, differentiate index.mdx from introduction.mdx, align branding with the README's Project Manager (PM) naming, add an Industry-Frontier-Practice-style section, and exclude repo-cruft files (AGENTS.md/README.md/LICENSE/.atlas-analysis.json) from the ingested file tree.",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "stories": [
+        {
+          "title": "Fix index.mdx frontmatter title/description (currently \"PM: Epic Tracking and Detour Stack for Claude Code\") to match the README's Project Manager (PM) branding and tagline",
+          "done": false
+        },
+        {
+          "title": "Replace docs.json logo (brand.dev auto-detected, likely wrong) with the real PM banner/logo asset; verify favicon too",
+          "done": false
+        },
+        {
+          "title": "Update docs.json site name from \"PM for Claude Code\" to match README branding (e.g. \"Project Manager (PM)\")",
+          "done": false
+        },
+        {
+          "title": "Differentiate index.mdx from introduction.mdx -- they currently duplicate the same \"why PM\" content and real-numbers table almost verbatim",
+          "done": false
+        },
+        {
+          "title": "Add an Industry-Frontier-Practice-style section/page -- exists in the README, missing entirely from the docs site",
+          "done": false
+        },
+        {
+          "title": "Confirm AGENTS.md/README.md/LICENSE/.atlas-analysis.json are not publicly reachable at a direct URL despite being excluded from nav; add to .mintignore if they are",
+          "done": false
+        }
+      ]
     }
   ],
   "detourStack": [],
