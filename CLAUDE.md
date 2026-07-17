@@ -51,6 +51,23 @@
 
 Conventional commits (`feat|fix|docs|test|chore|refactor`). Never `git commit --no-verify`.
 
+**Documentation currency — check on every PR into `main`, not just at release time.** Before
+opening (or updating) a PR into `main`, ask: does this change anything a user or agent would
+read about? If a change adds/removes a subcommand, flag, command, epic-level-autonomy behavior,
+tracker behavior, or anything else user-facing:
+- **README.md** must reflect it (Commands section, relevant guide section, etc.) — this bit us
+  once already (`record-gate-review` shipped in 0.16.0 with no README mention because the
+  dispatch instructions for that epic only required updating `SKILL.md`).
+- **The Mintlify docs site** (`pm-plugin.dev`, deployment `onvex-ai` via the Mintlify MCP) must
+  reflect it too — check the relevant page(s) under `commands/`, `concepts/`, or `guides/` and
+  update them in the same PR cycle, not as an afterthought. Use `checkout` → `read`/`search` to
+  find affected pages → `edit_page`/`write_page` → `save` (mode `pr`, since this repo's own docs
+  content lives in the separate `cfdude/pm-docs` repo Mintlify manages — leave that PR for human
+  review rather than auto-merging on the user's behalf, same as any other externally-visible
+  change).
+- A change that is genuinely internal (a test, an engine-internal refactor, a process-only doc
+  fix) does not need either — but say so explicitly rather than silently skipping the check.
+
 <!-- BEGIN pm-conductor rules (managed by /pm:init — safe to delete this block) -->
 ## PM Conductor — operating rules
 
