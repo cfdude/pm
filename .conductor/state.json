@@ -921,6 +921,46 @@
           "done": false
         }
       ]
+    },
+    {
+      "id": "df-precommit-hook-too-noisy-on-success",
+      "title": "DF: .githooks/pre-commit runs the full test suite verbosely (every test name, every pass, every conductor-engine-banner line) on every single commit, even when everything passes -- this session alone produced tens of thousands of characters of pass-line noise per commit, and once caused a genuine false alarm where a tool-output-truncation warning was misread as a real git failure when the actual issue was buried in the noise. Fix: the hook should be quiet on success (a one-line 'pre-commit: 210/210 passing' summary) and only surface full node --test output when something actually fails -- capture output to a temp file, check the exit code, and only cat the temp file's contents on non-zero exit.",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "df-engine-banner-noise-every-invocation",
+      "title": "DF: the engine version+source banner (conductor: engine X.Y.Z @ path) prints to stderr on literally every single conductor.mjs invocation, and across a long dogfooding session this meant hundreds of Bash calls each needed a 'grep -v conductor: engine' tacked on just to keep output readable -- real, constant tax, not a one-off. The banner earned its place catching the original stale-cache bug, but always-on-every-call is a much higher noise cost than the bug it prevents is likely to recur. Fix ideas: print the banner only once per process/session rather than per-invocation (hard in a CLI that's invoked fresh each time, so maybe cache a 'last-seen-version' marker file and only print when it changes from the prior invocation); or default PM_QUIET_ENGINE_BANNER=1 for any invocation where CLAUDE_PROJECT_DIR is set (i.e. self-hosting/dev context, where the stale-cache scenario the banner exists for is much less likely) and require an explicit opt-in for the noisy mode instead of opt-out.",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "df-project-md-diff-triviality-not-mechanically-checkable",
+      "title": "DF: even after df-stray-render-artifacts-noise's fix (render-stamp.json no longer rewrites unconditionally), PROJECT.md itself still produces a diff on nearly every render -- the 'Last rendered' timestamp line and the 'Recent detours' table (which rotates as new entries land) both change on every call, so a real diff always exists even when nothing epic-related actually changed. This forces manual git diff eyeballing before every 'is this safe to git checkout --' decision, and this session hit a near-miss where a legitimately-updated PROJECT.md was discarded as assumed noise, temporarily showing stale backlog state. Fix: add a render mode (or a small script) that reports whether PROJECT.md's content differs in any way OTHER than the timestamp line and detour-log rotation -- e.g. 'node conductor.mjs render --diff-summary' prints 'epic-relevant: yes/no' so the check becomes mechanical instead of eyeballing a raw diff every time.",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "df-contributing-doc-missing-direct-push-recovery",
+      "title": "DF: CONTRIBUTING.md documents the normal dev-branch-to-PR-to-squash-merge flow but not what to do when someone pushes a commit directly to a PR's base out from under it (e.g. a direct GitHub web-UI edit landing on main while a dev-branch PR is open) -- this session hit that exact scenario (PR #22, 'added light logo', merged directly) and needed an ad hoc 'git checkout dev && git rebase main && git push --force-with-lease' recovery that isn't written down anywhere. Add a short 'If main moves out from under your PR' section to CONTRIBUTING.md documenting the rebase-and-force-push recovery.",
+      "priority": "P3",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false
     }
   ],
   "detourStack": [],
