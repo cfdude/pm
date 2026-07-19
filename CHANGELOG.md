@@ -6,6 +6,21 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.18.0] — 2026-07-17
+
+### Added
+
+- **Mechanical pre-commit hook: the full test suite must pass immediately before every
+  commit, enforced, not just documented.** A genuinely failing test was committed once already
+  (0.16.0) because a prose reminder alone wasn't enough — "run the tests one more time before
+  committing" is exactly the kind of rule that gets skipped under momentum. `.githooks/pre-commit`
+  runs `node --test scripts/conductor.test.mjs` and blocks the commit on any failure. One-time
+  setup per clone: `git config core.hooksPath .githooks` (documented in `CONTRIBUTING.md`). Found
+  and fixed a real bug on first live use: git sets `GIT_DIR`/`GIT_INDEX_FILE`/etc. for hook
+  processes, which leaked into the test suite's own child `git` processes (tmp-repo fixtures),
+  causing them to operate against the outer repo's locked index instead of their own tmp dirs —
+  the hook now unsets those variables before running tests.
+
 ## [0.17.0] — 2026-07-17
 
 ### Added
