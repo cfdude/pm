@@ -93,3 +93,47 @@ Once set, the CLAUDE.md rules block gains a "GitHub issue sync" section. As part
 
 The engine never calls `gh` itself — steps 1–3 are yours, the same "instruction layer, not
 integration layer" law as every other tracker.
+
+## Primary + secondary trackers
+
+A repo can have exactly one **primary** tracker (everything above — full bidirectional mirror,
+or the inward-only `github-issues` special case) plus zero or more **secondary** trackers.
+Secondary trackers cover a different, real case: your actual dev tracker is Jira, but you also
+want to watch a GitHub repo for inbound issues — from outside contributors, or from another
+internal repo publishing cross-project notifications (e.g. a service filing a GitHub issue in a
+downstream repo to flag a breaking change) — without Jira losing its primary spot.
+
+A secondary tracker gets exactly two behaviors, both narrower than primary:
+
+1. **Inward pull** — open issues become untriaged epics, same shape as the `github-issues`
+   inward sync above, but deduped by `externalUrl` (globally unique) rather than bare
+   `externalId` (only unique within one tracker/repo — two secondary trackers can each have an
+   issue numbered `#42` without colliding).
+2. **Completion status writeback** — when an epic sourced from a secondary tracker reaches
+   `archived`, you close/transition the linked issue there too. This is new: even the primary
+   `github-issues` inward-only case never did this.
+
+A secondary tracker **never** gets outward-created issues — a new local epic, or any status
+change, never causes an issue to be created there. That's what makes it secondary.
+
+```bash
+# Add a secondary tracker (role defaults to primary, so this always needs --role secondary)
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" set-tracker --role secondary \
+  --system github-issues --repo acme/market-intelligence
+
+# A repo can have more than one
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" set-tracker --role secondary \
+  --system github-issues --repo acme/risk-engine
+
+# Remove one that's gone stale
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" set-tracker --role secondary \
+  --system github-issues --repo acme/decommissioned-repo --remove
+```
+
+Identify a secondary entry the same way you'd identify the primary tracker (`--system` plus
+`--repo` or `--project`) — re-running `set-tracker --role secondary` with a matching
+`system`+`repo`/`project` merges into the existing entry instead of adding a duplicate. `--remove`
+against a key with no match exits non-zero and changes nothing.
+
+Once configured, the CLAUDE.md rules block gains one "Secondary tracker sync" section per entry,
+in addition to (never instead of) the primary tracker's own section above.

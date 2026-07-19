@@ -248,6 +248,25 @@ calls `set-tracker`. The briefing's `TRACKER SYNC` line only ever lists honestly
 drift (an active-work epic missing `externalId`); it never fabricates transition state the
 engine can't actually see.
 
+**Primary + secondary trackers:** a repo has exactly one **primary** tracker (everything above)
+plus, optionally, one or more **secondary** trackers — for when your real dev tracker is Jira but
+you also want to watch a GitHub repo for inbound issues, e.g. from outside contributors, or from
+another internal repo publishing cross-project notifications (a service filing a GitHub issue in
+a downstream repo to flag a breaking change). A secondary tracker gets inward pull (deduped by
+`externalUrl`, which is globally unique, rather than bare `externalId`, which only has to be
+unique within one tracker/repo — two secondary trackers can each have an issue numbered `#42`
+without colliding) plus **completion status writeback**: when an epic sourced from a secondary
+tracker reaches `archived`, the agent closes the linked issue there too. It never gets
+outward-created issues — that stays exclusive to the primary tracker.
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" set-tracker --system jira --project JOB
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" set-tracker --role secondary \
+  --system github-issues --repo acme/market-intelligence
+```
+
+See `commands/tracker.md` for the full `--role`/`--remove` contract.
+
 ## Commands
 
 <details>
