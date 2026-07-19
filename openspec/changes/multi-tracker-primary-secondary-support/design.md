@@ -161,3 +161,8 @@ step for this).
   shape) would collapse Decision 2's namespace-prefixed key down to `system` alone, letting all
   entries for that system collide. Not addressed here — no such system exists among today's
   supported trackers (jira/linear/github-issues/gitlab/bitbucket); revisit if/when one is added.
+- Decision 2's upsert key omits `instance` — two secondary trackers on the same `system` +
+  `projectKey` but different `instance` (e.g. two separate Jira sites both using project key
+  `ABC`) collide into a single entry (Gate 2 finding). Not fixed here — no dual-instance setup
+  exists among today's documented users; revisit by folding `instance` into the key if/when one
+  does.

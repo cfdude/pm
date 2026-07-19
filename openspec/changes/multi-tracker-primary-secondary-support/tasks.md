@@ -75,6 +75,6 @@
 
 ## 6. Gate 2 review
 
-- [ ] 6.1 Run a fresh-context implementation review (per this repo's `standard` review mode) over
+- [x] 6.1 Run a fresh-context implementation review (per this repo's `standard` review mode) over
       the full diff before archiving; record the verdict with `record-gate-review
       multi-tracker-primary-secondary-support --gate 2 --verdict pass|fail`

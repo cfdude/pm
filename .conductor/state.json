@@ -981,10 +981,26 @@
           "verdict": "pass",
           "reviewedAt": "2026-07-19T23:17:32.441Z",
           "note": "general-purpose subagent Gate 1 review; found 1 Critical (cross-tracker externalId collision breaking dedup+writeback) and 5 Important (upsert-key namespace collision, unaddressed non-repo/projectKey tracker case, missing --remove-not-found scenario, unthreaded rulesBlock() signature change, --project-key vs --project flag inconsistency) findings, all fixed in proposal/design/specs/tasks before this pass"
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-07-19T23:39:40.827Z",
+          "note": "general-purpose subagent Gate 2 review over 40c82fb..2ca1242; found 1 Important finding (one-sided externalUrl dedup could silently drop a legitimate epic when an existing URL-less epic shares a bare externalId) and 1 Minor (upsert key omits instance, dual-Jira-instance collision) — Important fixed with a regression test (227/227 passing), Minor logged as an Open Question per resist-complexity posture"
         }
       }
+    },
+    {
+      "id": "2026-07-14-epic-hierarchy-orchestration",
+      "title": "Epic-Hierarchy Orchestration Implementation Plan",
+      "priority": "P?",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "planPath": "docs/superpowers/plans/2026-07-14-epic-hierarchy-orchestration.md",
+      "links": [],
+      "reconcileNeeded": false
     }
   ],
   "detourStack": [],
-  "pmVersion": "0.18.0"
+  "pmVersion": "0.19.0"
 }

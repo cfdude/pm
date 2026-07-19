@@ -2768,6 +2768,19 @@ test("add-epic falls back to bare externalId dedup when neither side has a URL",
   assert.deepEqual(ids, ["job-1"]);
 });
 
+test("a URL-less legacy epic never falsely blocks a genuinely distinct, URL-bearing epic sharing the same bare externalId (Gate 2 finding)", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  // Legacy epic registered with only a bare externalId, no URL.
+  run(["add-epic", "--id", "legacy-42", "--lane", "claude-code", "--external-id", "42"], { cwd });
+  // A genuinely distinct epic happens to share the bare id "42" but DOES carry a URL — must
+  // NOT be treated as a duplicate of the URL-less legacy entry.
+  run(["add-epic", "--id", "risk-42", "--lane", "claude-code", "--external-id", "42",
+       "--external-url", "https://github.com/acme/risk-engine/issues/42"], { cwd });
+  const ids = readState(cwd).epics.map(e => e.id).sort();
+  assert.deepEqual(ids, ["legacy-42", "risk-42"]);
+});
+
 // ────────────── rulesBlock(): secondary-tracker inward pull + status writeback ──────────────
 
 test("rulesBlock emits an inward-pull + status-writeback section per secondary tracker", () => {

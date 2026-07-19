@@ -1380,13 +1380,18 @@ function addEpic() {
   const externalId = str(f["external-id"]);
   const externalUrl = str(f["external-url"]);
   if (externalId !== undefined) {
-    // Dedup by externalUrl when both sides have one — a bare externalId is only unique WITHIN
+    // Dedup by externalUrl when BOTH sides have one — a bare externalId is only unique WITHIN
     // one tracker/repo (e.g. GitHub issue numbers restart at #1 per repo), so two epics sourced
-    // from different secondary trackers can legitimately share the same externalId. Fall back to
-    // the bare externalId match only when no URL is available on either side.
-    const dup = externalUrl !== undefined
-      ? state.epics.find(e => e.externalUrl !== undefined ? e.externalUrl === externalUrl : e.externalId === externalId)
-      : state.epics.find(e => e.externalUrl === undefined && e.externalId === externalId);
+    // from different secondary trackers can legitimately share the same externalId. Bare
+    // externalId is compared only when NEITHER side has a URL. When exactly one side has a URL
+    // and the other doesn't, they are never treated as a duplicate — falling back to an
+    // externalId-only comparison in that case would let a URL-less legacy epic falsely block a
+    // genuinely distinct, URL-bearing one sharing the same bare id (Gate 2 finding).
+    const dup = state.epics.find(e => {
+      if (externalUrl !== undefined && e.externalUrl !== undefined) return e.externalUrl === externalUrl;
+      if (externalUrl === undefined && e.externalUrl === undefined) return e.externalId === externalId;
+      return false;
+    });
     if (dup) {
       process.stderr.write(`conductor: epic with external-id '${externalId}' already exists ('${dup.id}') — skipped\n`);
       process.exit(1);
