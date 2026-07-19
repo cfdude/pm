@@ -1,0 +1,16 @@
+#!/bin/sh
+# Mechanical safeguard for df-orchestrator-committed-release-without-reverifying: the full
+# test suite must pass immediately before every commit, not "a few tool calls ago in the same
+# turn." This is enforced here, not just documented, because prose reminders already failed
+# once (0.16.0 was committed with a genuinely failing test in the suite).
+#
+# Git sets GIT_DIR/GIT_INDEX_FILE/GIT_WORK_TREE (and friends) for hook processes, pointing at
+# THIS repo's (currently locked, mid-commit) .git. The test suite spawns its own child `git`
+# processes against throwaway tmp-dir fixtures (tmpRepo(), addHierarchyWorktree(), etc.) — if
+# those child processes inherit this hook's git env vars, they operate on the outer repo's
+# locked index instead of their own tmp repo, and fail with cryptic "index file open failed"
+# errors that look like a test bug but are actually an environment leak. Unset them first.
+unset GIT_DIR GIT_INDEX_FILE GIT_WORK_TREE GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_PREFIX
+set -e
+cd "$(git rev-parse --show-toplevel)"
+node --test scripts/conductor.test.mjs

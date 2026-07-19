@@ -2614,3 +2614,16 @@ test("every dispatch-table subcommand is mentioned somewhere in README.md", () =
   assert.deepEqual(missing, [],
     `README.md's Commands section (or elsewhere in the doc) is missing a mention of: ${missing.join(", ")}`);
 });
+
+// ---------- pre-commit hook: mechanical test-before-commit safeguard ----------
+
+test(".githooks/pre-commit exists, is executable, and runs the full test suite", () => {
+  const hookPath = path.join(path.dirname(ENGINE), "..", ".githooks", "pre-commit");
+  assert.ok(fs.existsSync(hookPath), ".githooks/pre-commit is missing");
+  const stat = fs.statSync(hookPath);
+  assert.ok(stat.mode & 0o111, ".githooks/pre-commit is not executable");
+  const hookText = fs.readFileSync(hookPath, "utf8");
+  assert.match(hookText, /node --test scripts\/conductor\.test\.mjs/,
+    ".githooks/pre-commit does not run the full test suite");
+  assert.match(hookText, /set -e/, ".githooks/pre-commit does not fail the commit on a non-zero exit");
+});
