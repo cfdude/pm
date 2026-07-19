@@ -6,6 +6,28 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.19.0] — 2026-07-19
+
+### Added
+
+- **Support a primary tracker plus zero or more secondary trackers.** `state.tracker` is
+  unchanged and is now, implicitly, the **primary** tracker — full existing bidirectional
+  behavior (outward issue creation on new epics, `statusIntent`-driven status transitions),
+  including the `github-issues`-as-primary inward-only special case, byte-for-byte unchanged.
+  New optional `state.secondaryTrackers[]` lets a repo also watch additional trackers — e.g.
+  Jira as the real dev tracker plus a GitHub repo for inbound issues from outside contributors or
+  another internal repo publishing cross-project notifications — via `set-tracker --role
+  secondary --system <sys> --repo <repo>` (or `--project <key>`), removable with `--remove`.
+  Secondary trackers get inward pull (open issues become untriaged epics) plus a new capability
+  that didn't exist even for the old inward-only `github-issues` case: **completion status
+  writeback** — when an epic sourced from a secondary tracker reaches `archived`, the agent
+  closes the linked issue there too. Secondary trackers never receive outward-created issues;
+  that stays exclusive to the primary tracker. Dedup for both inward pull and writeback now
+  matches on `externalUrl` (globally unique) rather than bare `externalId` (only unique within
+  one tracker/repo) — fixing a latent cross-tracker collision risk (e.g. issue `#42` existing in
+  two different secondary-tracker repos) surfaced during this change's own Gate 1 review, before
+  any code shipped.
+
 ## [0.18.0] — 2026-07-17
 
 ### Added
