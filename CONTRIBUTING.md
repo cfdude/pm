@@ -22,3 +22,17 @@ Day-to-day work happens on the `dev` branch (created from `main`'s tip). The flo
    so `dev` never drifts ahead of what shipped.
 
 This mirrors the ff-only `dev`/`main` convention used elsewhere in this project's tooling.
+
+## Pre-commit hook (one-time setup)
+
+The full test suite must pass immediately before every commit — not "it passed a few tool
+calls ago in the same session." This is enforced mechanically via a checked-in git hook, not
+left to memory (a genuinely failing test was committed once already, in 0.16.0, because a
+prose reminder alone wasn't enough). One-time setup per clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+After that, `git commit` runs `.githooks/pre-commit` automatically, which runs
+`node --test scripts/conductor.test.mjs` and blocks the commit on any failure.
