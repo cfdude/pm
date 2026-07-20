@@ -741,6 +741,20 @@ function rulesBlock(tracker, reviewMode, secondaryTrackers = []) {
       "issue.",
     );
   }
+  const hasInwardPullTracker = (tracker && tracker.system === "github-issues") ||
+    (Array.isArray(secondaryTrackers) && secondaryTrackers.length > 0);
+  if (hasInwardPullTracker) {
+    lines.push(
+      "",
+      "## Sync after completing tracker-linked work",
+      "",
+      "After you close/transition a tracker-linked issue as part of completing an epic (the",
+      "writeback steps above), immediately re-sync with your tracker(s) — run `/pm:sync` — to pull",
+      "in anything new that appeared while you were heads-down. You're already doing tracker I/O",
+      "for this epic, so this is the cheapest moment to catch it; this applies whether you have one",
+      "tracker or several (primary + secondary) configured.",
+    );
+  }
   lines.push(RULES_END, "");
   return lines.join("\n");
 }
@@ -866,6 +880,23 @@ function buildBrief(state) {
     } else {
       L.push(`  ✓ all active epics are mirrored to ${tr.system}`);
     }
+    L.push("");
+  }
+
+  // Non-blocking sync nudge — any tracker (primary or secondary) configured means new issues
+  // could have appeared externally with no in-session event to surface them. Deliberately no
+  // "time since last sync": session restarts here are infrequent enough (after real chunks of
+  // work) that a bare nudge is enough — the agent decides whether it's worth the round trip.
+  const secondaryTrackers = Array.isArray(state.secondaryTrackers) ? state.secondaryTrackers : [];
+  const trackerCount = (state.tracker && state.tracker.system ? 1 : 0) + secondaryTrackers.length;
+  if (trackerCount > 0) {
+    const systems = [
+      ...(state.tracker && state.tracker.system ? [state.tracker.system] : []),
+      ...secondaryTrackers.map(st => st.system),
+    ];
+    const label = trackerCount === 1 ? "tracker" : "trackers";
+    L.push(`💡 ${trackerCount} ${label} configured (${systems.join(", ")}) — consider \`/pm:sync\` this ` +
+      "session to pull in any new issues.");
     L.push("");
   }
 
