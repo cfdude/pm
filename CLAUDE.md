@@ -62,9 +62,11 @@ tracker behavior, or anything else user-facing:
   reflect it too — check the relevant page(s) under `commands/`, `concepts/`, or `guides/` and
   update them in the same PR cycle, not as an afterthought. Use `checkout` → `read`/`search` to
   find affected pages → `edit_page`/`write_page` → `save` (mode `pr`, since this repo's own docs
-  content lives in the separate `cfdude/pm-docs` repo Mintlify manages — leave that PR for human
-  review rather than auto-merging on the user's behalf, same as any other externally-visible
-  change).
+  content lives in the separate `cfdude/pm-docs` repo Mintlify manages). **Merge that PR and get
+  it live in the same pass** — `gh pr merge --repo cfdude/pm-docs --squash` right after `save`,
+  then verify the change is actually live on `pm-plugin.dev` (a `curl`/`WebFetch` check for the
+  new content; propagation can lag ~1-2 min after merge). Standing instruction as of 2026-07-19 —
+  supersedes leaving Mintlify PRs open for manual review.
 - A change that is genuinely internal (a test, an engine-internal refactor, a process-only doc
   fix) does not need either — but say so explicitly rather than silently skipping the check.
 

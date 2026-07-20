@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "multi-tracker-primary-secondary-support",
+  "active": null,
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -970,7 +970,7 @@
       "id": "multi-tracker-primary-secondary-support",
       "title": "Support a primary + secondary external trackers (e.g. Jira primary, GitHub-issues secondary)",
       "priority": "P2",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [],
@@ -987,7 +987,8 @@
           "reviewedAt": "2026-07-19T23:39:40.827Z",
           "note": "general-purpose subagent Gate 2 review over 40c82fb..2ca1242; found 1 Important finding (one-sided externalUrl dedup could silently drop a legitimate epic when an existing URL-less epic shares a bare externalId) and 1 Minor (upsert key omits instance, dual-Jira-instance collision) — Important fixed with a regression test (227/227 passing), Minor logged as an Open Question per resist-complexity posture"
         }
-      }
+      },
+      "completedAt": "2026-07-20T01:04:54.194Z"
     },
     {
       "id": "2026-07-14-epic-hierarchy-orchestration",
