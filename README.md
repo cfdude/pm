@@ -267,6 +267,13 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" set-tracker --role secondary 
 
 See `commands/tracker.md` for the full `--role`/`--remove` contract.
 
+**Resyncing after completion:** whenever an inward-pull-capable tracker is configured (a
+`github-issues` primary, or any secondary tracker), the rules block instructs the agent to
+re-sync with its tracker(s) (`/pm:sync`) right after closing/transitioning a linked issue as part
+of completing an epic — the phrasing stays tracker-count-agnostic regardless of how many are
+configured. The SessionStart brief also nudges toward `/pm:sync` whenever any tracker exists;
+this is a non-blocking reminder only, never an automatic sync.
+
 ## Commands
 
 <details>

@@ -137,3 +137,14 @@ against a key with no match exits non-zero and changes nothing.
 
 Once configured, the CLAUDE.md rules block gains one "Secondary tracker sync" section per entry,
 in addition to (never instead of) the primary tracker's own section above.
+
+## Resyncing after completion
+
+Whenever an inward-pull-capable tracker is configured (a `github-issues` primary, or any
+secondary tracker), the rules block also gains a "Sync after completing tracker-linked work"
+section: after you close/transition a tracker-linked issue as part of completing an epic,
+re-sync with your tracker(s) (`/pm:sync`) right away — you're already doing tracker I/O for that
+epic, so this is the cheapest moment to also pull in anything new that appeared while you were
+heads-down. The instruction is phrased tracker-count-agnostic ("your tracker(s)") so it reads
+correctly whether a repo has one tracker or several. The SessionStart brief mirrors this with a
+non-blocking, one-line nudge whenever any tracker is configured — it never runs a sync itself.

@@ -119,6 +119,14 @@ file a bug report or feature request for `pm` itself as a GitHub issue on `cfdud
   linked issue there too. It NEVER gets outward-created issues — that stays exclusive to the
   primary tracker. `rulesBlock()` emits one "Secondary tracker sync" section per configured
   entry, in addition to the primary section. See `commands/tracker.md`.
+- **Resync after completion:** whenever an inward-pull-capable tracker exists (`github-issues`
+  as primary, or any secondary tracker), `rulesBlock()` also emits a "Sync after completing
+  tracker-linked work" section — after closing/transitioning a tracker-linked issue as part of
+  completing an epic, re-sync with your tracker(s) (`/pm:sync`) right away, phrased
+  tracker-count-agnostic so it holds whether one or several trackers are configured. `buildBrief()`
+  mirrors this with a one-line, non-blocking SessionStart nudge ("N tracker(s) configured — consider
+  `/pm:sync`") whenever any tracker exists — no `lastSyncedAt` tracking, just a reminder; the agent
+  decides whether it's worth the round trip that session.
 
 ## OpenSpec build — the two-gate mechanical check
 

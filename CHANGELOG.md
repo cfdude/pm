@@ -6,6 +6,23 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.20.0] — 2026-07-20
+
+### Added
+
+- **Completion-time tracker resync instruction.** When an inward-pull-capable tracker is
+  configured (a `github-issues` primary, or any secondary tracker), the CLAUDE.md rules block
+  now adds a "Sync after completing tracker-linked work" section: after closing/transitioning a
+  tracker-linked issue as part of completing an epic, re-sync with your tracker(s) (`/pm:sync`)
+  right away, since you're already doing tracker I/O for that epic. Phrased tracker-count-
+  agnostic ("your tracker(s)") so it reads correctly whether a repo has one tracker or several
+  (primary + secondary).
+- **Session-start sync nudge.** The SessionStart brief now includes a one-line, non-blocking
+  nudge — "N tracker(s) configured (...) — consider `/pm:sync` this session to pull in any new
+  issues" — whenever any tracker (primary or secondary) is configured. This is a reminder only;
+  the engine never calls a tracker itself, and the agent decides whether syncing is worth it.
+  Deliberately does not track a last-synced-at timestamp — the nudge is enough without it.
+
 ## [0.19.0] — 2026-07-19
 
 ### Added

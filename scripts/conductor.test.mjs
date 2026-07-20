@@ -2838,3 +2838,63 @@ test("jira primary + github-issues secondary coexist: primary gets bidirectional
   assert.match(rules, /External tracker sync \(jira/);
   assert.match(rules, /acme\/market-intelligence/);
 });
+
+// ────────────── completion-time resync instruction + session-start sync nudge ──────────────
+
+test("rulesBlock adds a resync-after-completion instruction when a secondary tracker is configured", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-tracker", "--role", "secondary", "--system", "github-issues",
+       "--repo", "acme/market-intelligence"], { cwd });
+  const rules = run(["rules"], { cwd });
+  assert.match(rules, /Sync after completing tracker-linked work/);
+  assert.match(rules, /\/pm:sync/);
+});
+
+test("rulesBlock adds a resync-after-completion instruction when the primary tracker is github-issues", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-tracker", "--system", "github-issues", "--repo", "cfdude/pm"], { cwd });
+  const rules = run(["rules"], { cwd });
+  assert.match(rules, /Sync after completing tracker-linked work/);
+});
+
+test("rulesBlock omits the resync instruction when the only tracker is a non-github-issues primary with no secondaries", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-tracker", "--system", "jira", "--project", "JOB"], { cwd });
+  const rules = run(["rules"], { cwd });
+  assert.doesNotMatch(rules, /Sync after completing tracker-linked work/);
+});
+
+test("rulesBlock omits the resync instruction when no tracker is configured at all", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const rules = run(["rules"], { cwd });
+  assert.doesNotMatch(rules, /Sync after completing tracker-linked work/);
+});
+
+test("SessionStart brief nudges toward /pm:sync when trackers are configured, singular phrasing for one", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-tracker", "--system", "github-issues", "--repo", "cfdude/pm"], { cwd });
+  const brief = run(["brief"], { cwd });
+  assert.match(brief, /1 tracker configured \(github-issues\) — consider `\/pm:sync`/);
+});
+
+test("SessionStart brief pluralizes and lists every system when primary + secondary trackers are configured", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-tracker", "--system", "jira", "--project", "JOB"], { cwd });
+  run(["set-tracker", "--role", "secondary", "--system", "github-issues",
+       "--repo", "acme/market-intelligence"], { cwd });
+  const brief = run(["brief"], { cwd });
+  assert.match(brief, /2 trackers configured \(jira, github-issues\) — consider `\/pm:sync`/);
+});
+
+test("SessionStart brief has no sync nudge when no tracker is configured", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const brief = run(["brief"], { cwd });
+  assert.doesNotMatch(brief, /consider `\/pm:sync` this session/);
+});
