@@ -107,6 +107,18 @@ file a bug report or feature request for `pm` itself as a GitHub issue on `cfdud
   claude-code epic just because a tracker is configured is a materially bigger, more
   consequential default than mirroring toward an internal Jira/Linear instance, so it is
   suppressed rather than left implicit. See `commands/tracker.md` and `commands/sync.md`.
+- **Primary + secondary trackers:** exactly one **primary** tracker (`state.tracker`, everything
+  above, unchanged) plus zero or more **secondary** trackers (`state.secondaryTrackers[]`), set
+  via `set-tracker --role secondary --system <sys> --repo <repo>` (or `--project <key>`), removed
+  with the same flags plus `--remove`. Re-running with a matching `system`+`repo`/`project`
+  upserts in place (namespace-prefixed key — `repo`- and `project`-keyed entries never collide
+  even if the string values match). A secondary tracker gets inward pull (same as `github-issues`
+  above, but deduped by `externalUrl` — globally unique — not bare `externalId`, since two
+  secondary trackers can each have an issue numbered the same) plus a new capability, **status
+  writeback**: when an epic sourced from a secondary tracker reaches `archived`, you close the
+  linked issue there too. It NEVER gets outward-created issues — that stays exclusive to the
+  primary tracker. `rulesBlock()` emits one "Secondary tracker sync" section per configured
+  entry, in addition to the primary section. See `commands/tracker.md`.
 
 ## OpenSpec build — the two-gate mechanical check
 

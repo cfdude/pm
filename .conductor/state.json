@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": null,
+  "active": "multi-tracker-primary-secondary-support",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -919,6 +919,10 @@
         {
           "title": "Confirm AGENTS.md/README.md/LICENSE/.atlas-analysis.json are not publicly reachable at a direct URL despite being excluded from nav; add to .mintignore if they are",
           "done": false
+        },
+        {
+          "title": "Add a Changelog page to the docs site (mirroring CHANGELOG.md) showing each version, its release date, and its bullets, so a visitor can see the latest changes without leaving the site; update it as part of the standing documentation-currency rule whenever a PR into main ships a version bump",
+          "done": false
         }
       ]
     },
@@ -961,8 +965,42 @@
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false
+    },
+    {
+      "id": "multi-tracker-primary-secondary-support",
+      "title": "Support a primary + secondary external trackers (e.g. Jira primary, GitHub-issues secondary)",
+      "priority": "P2",
+      "status": "active",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [],
+      "reconcileNeeded": false,
+      "startedAt": "2026-07-19T23:04:10.313Z",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-07-19T23:17:32.441Z",
+          "note": "general-purpose subagent Gate 1 review; found 1 Critical (cross-tracker externalId collision breaking dedup+writeback) and 5 Important (upsert-key namespace collision, unaddressed non-repo/projectKey tracker case, missing --remove-not-found scenario, unthreaded rulesBlock() signature change, --project-key vs --project flag inconsistency) findings, all fixed in proposal/design/specs/tasks before this pass"
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-07-19T23:39:40.827Z",
+          "note": "general-purpose subagent Gate 2 review over 40c82fb..2ca1242; found 1 Important finding (one-sided externalUrl dedup could silently drop a legitimate epic when an existing URL-less epic shares a bare externalId) and 1 Minor (upsert key omits instance, dual-Jira-instance collision) — Important fixed with a regression test (227/227 passing), Minor logged as an Open Question per resist-complexity posture"
+        }
+      }
+    },
+    {
+      "id": "2026-07-14-epic-hierarchy-orchestration",
+      "title": "Epic-Hierarchy Orchestration Implementation Plan",
+      "priority": "P?",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "planPath": "docs/superpowers/plans/2026-07-14-epic-hierarchy-orchestration.md",
+      "links": [],
+      "reconcileNeeded": false
     }
   ],
   "detourStack": [],
-  "pmVersion": "0.18.0"
+  "pmVersion": "0.19.0"
 }

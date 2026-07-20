@@ -496,6 +496,49 @@ function currentTracker() {
   try { const t = loadState().tracker; return t && t.system ? t : null; } catch { return null; }
 }
 
+/** state.secondaryTrackers, or [] — absent/undefined on any pre-existing state.json is a valid
+ *  "zero secondary trackers configured" state, not an error. */
+function currentSecondaryTrackers() {
+  try {
+    const st = loadState().secondaryTrackers;
+    return Array.isArray(st) ? st : [];
+  } catch { return []; }
+}
+
+/** Namespace-prefixed upsert key for a secondary tracker entry — `system:repo:<repo>` or
+ *  `system:project:<projectKey>`. A bare `system+repo`/`system+projectKey` concatenation would
+ *  let a repo-keyed entry collide with a projectKey-keyed entry sharing the same string value
+ *  (e.g. {system:"jira",projectKey:"ABC"} vs {system:"jira",repo:"ABC"}) — the namespace prefix
+ *  keeps those two shapes distinct. */
+function secondaryTrackerKey(entry) {
+  if (entry.repo) return `${entry.system}:repo:${entry.repo}`;
+  return `${entry.system}:project:${entry.projectKey}`;
+}
+
+/** Upsert `entry` into `state.secondaryTrackers` by secondaryTrackerKey(), merging onto an
+ *  existing match (only the passed-in fields change) rather than appending a duplicate. Mutates
+ *  and returns `state`. */
+function upsertSecondaryTracker(state, entry) {
+  if (!Array.isArray(state.secondaryTrackers)) state.secondaryTrackers = [];
+  const key = secondaryTrackerKey(entry);
+  const existing = state.secondaryTrackers.find(e => secondaryTrackerKey(e) === key);
+  if (existing) {
+    Object.assign(existing, entry);
+  } else {
+    state.secondaryTrackers.push(entry);
+  }
+  return state;
+}
+
+/** Remove the secondary tracker matching `entry`'s key. Returns true if something was removed. */
+function removeSecondaryTracker(state, entry) {
+  if (!Array.isArray(state.secondaryTrackers)) return false;
+  const key = secondaryTrackerKey(entry);
+  const before = state.secondaryTrackers.length;
+  state.secondaryTrackers = state.secondaryTrackers.filter(e => secondaryTrackerKey(e) !== key);
+  return state.secondaryTrackers.length < before;
+}
+
 /** The repo-global review-mode dial, defaulting to "standard" when unset or invalid. */
 function globalReviewMode(state) {
   const m = state && state.reviewMode;
@@ -519,7 +562,7 @@ function currentReviewMode(epicId) {
   } catch { return "standard"; }
 }
 
-function rulesBlock(tracker, reviewMode) {
+function rulesBlock(tracker, reviewMode, secondaryTrackers = []) {
   const mode = KNOWN_REVIEW_MODES.includes(reviewMode) ? reviewMode : "standard";
   const lines = [
     RULES_BEGIN,
@@ -663,6 +706,41 @@ function rulesBlock(tracker, reviewMode) {
       );
     }
   }
+  for (const st of Array.isArray(secondaryTrackers) ? secondaryTrackers : []) {
+    if (!st || !st.system) continue;
+    const scope = st.repo || st.projectKey || "";
+    lines.push(
+      "",
+      `## Secondary tracker sync (${st.system}${scope ? ` · ${scope}` : ""})`,
+      "",
+      `This is a SECONDARY tracker — inward pull + completion writeback only. YOU (the interactive`,
+      `agent) own this sync — the pm plugin NEVER calls ${st.system} itself. A secondary tracker`,
+      "NEVER gets outward-created issues: a new local epic, or an epic's status change, never",
+      "causes you to create or transition an issue here — that stays exclusive to the primary",
+      "tracker above (if configured).",
+      "",
+      "**Inward pull** — as part of running `/pm:sync`:",
+      ...(st.system === "github-issues" && st.repo
+        ? [`1. \`gh issue list --repo ${st.repo} --state open --json number,title,url,labels\`.`]
+        : [`1. List open issues in ${st.system}${scope ? ` (${scope})` : ""} with your own tooling.`]),
+      "2. For each issue, check whether an epic's `externalUrl` already matches that issue's URL",
+      "   (`/pm:epic list` or read `.conductor/state.json`) — if so, skip it (already mirrored;",
+      "   re-running sync must never create a duplicate epic for the same issue). Match on",
+      "   `externalUrl`, not bare `externalId` alone — issue numbers are only unique within one",
+      "   tracker/repo, not globally, so two secondary trackers can both have an issue numbered",
+      "   the same without being the same issue.",
+      "3. Otherwise register a new untriaged epic: `add-epic --status untriaged --external-id",
+      "   <issue-number> --external-url <issue-url> --lane claude-code --priority P2`, unless a",
+      "   `P0`/`P1`/`P2`/`P3` label is present on the issue, in which case use that label's",
+      "   priority instead of the P2 default. Set `--title` from the issue title.",
+      "",
+      "**Completion status writeback** — when an epic whose `externalUrl` matches this secondary",
+      `tracker's ${st.repo ? `repo (\`${st.repo}\`)` : `project (\`${st.projectKey}\`)`} transitions to`,
+      "`status: \"archived\"`, close/transition the linked issue here too, using your own",
+      "tooling — check its current state first so a re-run does not error on an already-closed",
+      "issue.",
+    );
+  }
   lines.push(RULES_END, "");
   return lines.join("\n");
 }
@@ -671,7 +749,7 @@ function writeRules() {
   let existing = "";
   try { existing = fs.readFileSync(CLAUDE_MD, "utf8"); } catch { /* no CLAUDE.md yet */ }
 
-  const block = rulesBlock(currentTracker(), currentReviewMode());
+  const block = rulesBlock(currentTracker(), currentReviewMode(), currentSecondaryTrackers());
   let next;
   if (existing.includes(RULES_BEGIN) && existing.includes(RULES_END)) {
     // refresh in place
@@ -1300,8 +1378,20 @@ function addEpic() {
     process.stderr.write(`conductor: epic '${id}' already exists\n`); process.exit(1);
   }
   const externalId = str(f["external-id"]);
+  const externalUrl = str(f["external-url"]);
   if (externalId !== undefined) {
-    const dup = state.epics.find(e => e.externalId === externalId);
+    // Dedup by externalUrl when BOTH sides have one — a bare externalId is only unique WITHIN
+    // one tracker/repo (e.g. GitHub issue numbers restart at #1 per repo), so two epics sourced
+    // from different secondary trackers can legitimately share the same externalId. Bare
+    // externalId is compared only when NEITHER side has a URL. When exactly one side has a URL
+    // and the other doesn't, they are never treated as a duplicate — falling back to an
+    // externalId-only comparison in that case would let a URL-less legacy epic falsely block a
+    // genuinely distinct, URL-bearing one sharing the same bare id (Gate 2 finding).
+    const dup = state.epics.find(e => {
+      if (externalUrl !== undefined && e.externalUrl !== undefined) return e.externalUrl === externalUrl;
+      if (externalUrl === undefined && e.externalUrl === undefined) return e.externalId === externalId;
+      return false;
+    });
     if (dup) {
       process.stderr.write(`conductor: epic with external-id '${externalId}' already exists ('${dup.id}') — skipped\n`);
       process.exit(1);
@@ -1844,14 +1934,55 @@ function recordGateReview() {
 
 // ---------- tracker ----------
 
-/** Write/merge the `tracker` block. Pure local state write — the engine NEVER
- *  contacts the tracker; it only records that one is in use so the instructions
- *  it emits (rules block + brief) can assign sync work to the interactive agent. */
+/** Write/merge the `tracker` block (role: primary, default) or upsert/remove an entry in
+ *  `state.secondaryTrackers` (role: secondary). Pure local state write — the engine NEVER
+ *  contacts the tracker; it only records that one is in use so the instructions it emits (rules
+ *  block + brief) can assign sync work to the interactive agent. */
 function setTracker() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const f = parseFlags(process.argv.slice(3));
   const str = (v) => (typeof v === "string" ? v : undefined);
   const state = loadState();
+  const role = str(f.role) || "primary";
+  if (role !== "primary" && role !== "secondary") {
+    process.stderr.write("conductor: --role must be primary or secondary\n"); process.exit(1);
+  }
+
+  if (role === "secondary") {
+    const system = str(f.system);
+    const repo = str(f.repo);
+    const projectKey = str(f.project);
+    if (!system) {
+      process.stderr.write("conductor: set-tracker --role secondary requires --system\n"); process.exit(1);
+    }
+    if (!repo && !projectKey) {
+      process.stderr.write("conductor: set-tracker --role secondary requires --repo or --project\n"); process.exit(1);
+    }
+    if (f.remove) {
+      const removed = removeSecondaryTracker(state, { system, repo, projectKey });
+      if (!removed) {
+        process.stderr.write(`conductor: no matching secondary tracker (${system}${repo ? ` ${repo}` : ` ${projectKey}`})\n`);
+        process.exit(1);
+      }
+      saveState(state);
+      writeRules();
+      render();
+      process.stderr.write(`conductor: secondary tracker removed (${system}${repo ? ` ${repo}` : ` ${projectKey}`})\n`);
+      return;
+    }
+    const entry = { system, role: "secondary" };
+    if (repo) entry.repo = repo;
+    if (projectKey) entry.projectKey = projectKey;
+    if (str(f.instance) !== undefined) entry.instance = str(f.instance);
+    if (str(f.mechanism) !== undefined) entry.mechanism = str(f.mechanism);
+    upsertSecondaryTracker(state, entry);
+    saveState(state);
+    writeRules();
+    render();
+    process.stderr.write(`conductor: secondary tracker set (${entry.system}${entry.repo ? ` ${entry.repo}` : ` ${entry.projectKey}`})\n`);
+    return;
+  }
+
   const t = { ...(state.tracker || {}) };
   if (str(f.system) !== undefined) t.system = str(f.system);
   if (str(f.instance) !== undefined) t.instance = str(f.instance);
@@ -2253,7 +2384,7 @@ if (!process.env.PM_QUIET_ENGINE_BANNER) {
   rules: () => {
     const f = parseFlags(process.argv.slice(3));
     const epicId = typeof f.epic === "string" ? f.epic : undefined;
-    process.stdout.write(rulesBlock(currentTracker(), currentReviewMode(epicId)));
+    process.stdout.write(rulesBlock(currentTracker(), currentReviewMode(epicId), currentSecondaryTrackers()));
   },
   "write-rules": writeRules,
 }[cmd] || (() => {
