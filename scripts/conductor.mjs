@@ -50,6 +50,7 @@ import {
   KNOWN_LANES, KNOWN_STATUSES, KNOWN_AUTONOMY_LEVELS, KNOWN_PREAUTHORIZE_CATEGORIES,
   KNOWN_REVIEW_MODES, REVIEW_MODE_RANK, LANE_RANK, laneRank, RULES_BEGIN, RULES_END,
 } from "./lib/constants.mjs";
+import { gitShortSha, appendDetourLog } from "./lib/git.mjs";
 import { validLink, normalizeLink, detourContext } from "./lib/links.mjs";
 import {
   activeChangeIds, planFiles, firstHeading, isArchived, reconcileArchived,
@@ -58,11 +59,6 @@ import {
 import { readJSON, readStdin, isInitialized, defaultState, loadState, saveState } from "./lib/state.mjs";
 
 // ---------- helpers ----------
-
-function gitShortSha() {
-  try { return execSync("git rev-parse --short HEAD", { cwd: ROOT, stdio: ["ignore", "pipe", "ignore"] }).toString().trim(); }
-  catch { return "-"; }
-}
 
 /** The running plugin's root dir. Env-first so tests can point at a fixture. */
 function pluginRoot() {
@@ -167,12 +163,6 @@ function cmpVer(a, b) {
 function stampVersion(state) {
   const v = pluginVersion();
   if (v) state.pmVersion = v;
-}
-
-function appendDetourLog(kind, epic, note) {
-  fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
-  const line = [new Date().toISOString(), gitShortSha(), kind, epic || "-", (note || "").replace(/\s+/g, " ").trim()].join("\t");
-  fs.appendFileSync(DETOURS_LOG, line + "\n");
 }
 
 // `autonomy` is optional per epic — absent means "off", today's behavior, unchanged.
