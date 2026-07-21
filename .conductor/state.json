@@ -793,11 +793,26 @@
       "id": "df-verify-worktrees-merged-not-just-archived",
       "title": "DF: verify-worktrees only flags a hierarchy-child worktree as orphaned when its epic status is archived — it missed the case (hit this session) where a worktree's branch is already fully merged into the current branch but the worktree itself was never removed (git branch -d then failed with 'used by worktree'). Extend verify-worktrees to also flag any hierarchy-child/worktree-agent-* worktree whose branch tip is already an ancestor of the current branch, regardless of the epic's status field.",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "autonomy": {
+        "level": "autonomous",
+        "preAuthorized": [
+          {
+            "category": "filesystem",
+            "grantedAt": "2026-07-21T06:04:40.817Z",
+            "reason": "local code/hook/doc edits only, git-reversible, no external or live-infra writes"
+          }
+        ],
+        "context": [
+          "Batch preflight (2026-07-21): destructive-risk = none; all 5 epics are local-only edits to scripts/conductor.mjs, .githooks/pre-commit, README.md, SKILL.md, scripts/conductor.test.mjs. Session-continuity: 3 of 5 (banner-noise, project-md-diff-triviality, update-epic-story-verb) modify scripts/conductor.mjs, the same file this session invokes continuously -- must run SEQUENTIALLY (one at a time, tests+merge verified before the next starts), not in parallel worktrees, precisely to avoid a mid-batch regression breaking the orchestrator's own tool. Doc currency: update-epic-story-verb and project-md-diff-triviality both add new user-facing CLI flags -- README.md + SKILL.md updates are required, not optional."
+        ],
+        "notifications": []
+      },
+      "completedAt": "2026-07-21T06:09:36.854Z"
     },
     {
       "id": "df-autodetour-false-positive-conductor-admin-commits",
@@ -942,7 +957,21 @@
       "role": "epic",
       "lane": "claude-code",
       "links": [],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "autonomy": {
+        "level": "autonomous",
+        "preAuthorized": [
+          {
+            "category": "filesystem",
+            "grantedAt": "2026-07-21T06:04:40.924Z",
+            "reason": "local code/hook/doc edits only, git-reversible, no external or live-infra writes"
+          }
+        ],
+        "context": [
+          "Batch preflight (2026-07-21): destructive-risk = none; all 5 epics are local-only edits to scripts/conductor.mjs, .githooks/pre-commit, README.md, SKILL.md, scripts/conductor.test.mjs. Session-continuity: 3 of 5 (banner-noise, project-md-diff-triviality, update-epic-story-verb) modify scripts/conductor.mjs, the same file this session invokes continuously -- must run SEQUENTIALLY (one at a time, tests+merge verified before the next starts), not in parallel worktrees, precisely to avoid a mid-batch regression breaking the orchestrator's own tool. Doc currency: update-epic-story-verb and project-md-diff-triviality both add new user-facing CLI flags -- README.md + SKILL.md updates are required, not optional."
+        ],
+        "notifications": []
+      }
     },
     {
       "id": "df-engine-banner-noise-every-invocation",
@@ -952,7 +981,22 @@
       "role": "epic",
       "lane": "claude-code",
       "links": [],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "autonomy": {
+        "level": "autonomous",
+        "preAuthorized": [
+          {
+            "category": "filesystem",
+            "grantedAt": "2026-07-21T06:04:41.024Z",
+            "reason": "local code/hook/doc edits only, git-reversible, no external or live-infra writes"
+          }
+        ],
+        "context": [
+          "Batch preflight (2026-07-21): destructive-risk = none; all 5 epics are local-only edits to scripts/conductor.mjs, .githooks/pre-commit, README.md, SKILL.md, scripts/conductor.test.mjs. Session-continuity: 3 of 5 (banner-noise, project-md-diff-triviality, update-epic-story-verb) modify scripts/conductor.mjs, the same file this session invokes continuously -- must run SEQUENTIALLY (one at a time, tests+merge verified before the next starts), not in parallel worktrees, precisely to avoid a mid-batch regression breaking the orchestrator's own tool. Doc currency: update-epic-story-verb and project-md-diff-triviality both add new user-facing CLI flags -- README.md + SKILL.md updates are required, not optional.",
+          "User-approved approach (2026-07-21): Option B -- default-quiet banner whenever CLAUDE_PROJECT_DIR is set (self-hosting/dev context), explicit opt-in env var for the noisy/original behavior. Do NOT implement Option A (a cached last-seen-version marker file) -- this repo already had a real incident (df-stale-cache-silent-fallback) from a similar cache-file approach going silently stale."
+        ],
+        "notifications": []
+      }
     },
     {
       "id": "df-project-md-diff-triviality-not-mechanically-checkable",
@@ -962,7 +1006,21 @@
       "role": "epic",
       "lane": "claude-code",
       "links": [],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "autonomy": {
+        "level": "autonomous",
+        "preAuthorized": [
+          {
+            "category": "filesystem",
+            "grantedAt": "2026-07-21T06:04:41.116Z",
+            "reason": "local code/hook/doc edits only, git-reversible, no external or live-infra writes"
+          }
+        ],
+        "context": [
+          "Batch preflight (2026-07-21): destructive-risk = none; all 5 epics are local-only edits to scripts/conductor.mjs, .githooks/pre-commit, README.md, SKILL.md, scripts/conductor.test.mjs. Session-continuity: 3 of 5 (banner-noise, project-md-diff-triviality, update-epic-story-verb) modify scripts/conductor.mjs, the same file this session invokes continuously -- must run SEQUENTIALLY (one at a time, tests+merge verified before the next starts), not in parallel worktrees, precisely to avoid a mid-batch regression breaking the orchestrator's own tool. Doc currency: update-epic-story-verb and project-md-diff-triviality both add new user-facing CLI flags -- README.md + SKILL.md updates are required, not optional."
+        ],
+        "notifications": []
+      }
     },
     {
       "id": "df-contributing-doc-missing-direct-push-recovery",
@@ -1017,7 +1075,21 @@
       "role": "epic",
       "lane": "claude-code",
       "links": [],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "autonomy": {
+        "level": "autonomous",
+        "preAuthorized": [
+          {
+            "category": "filesystem",
+            "grantedAt": "2026-07-21T06:04:41.207Z",
+            "reason": "local code/hook/doc edits only, git-reversible, no external or live-infra writes"
+          }
+        ],
+        "context": [
+          "Batch preflight (2026-07-21): destructive-risk = none; all 5 epics are local-only edits to scripts/conductor.mjs, .githooks/pre-commit, README.md, SKILL.md, scripts/conductor.test.mjs. Session-continuity: 3 of 5 (banner-noise, project-md-diff-triviality, update-epic-story-verb) modify scripts/conductor.mjs, the same file this session invokes continuously -- must run SEQUENTIALLY (one at a time, tests+merge verified before the next starts), not in parallel worktrees, precisely to avoid a mid-batch regression breaking the orchestrator's own tool. Doc currency: update-epic-story-verb and project-md-diff-triviality both add new user-facing CLI flags -- README.md + SKILL.md updates are required, not optional."
+        ],
+        "notifications": []
+      }
     },
     {
       "id": "conductor-mjs-module-split",
