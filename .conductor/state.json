@@ -1000,6 +1000,16 @@
       "planPath": "docs/superpowers/plans/2026-07-14-epic-hierarchy-orchestration.md",
       "links": [],
       "reconcileNeeded": false
+    },
+    {
+      "id": "df-update-epic-no-story-toggle-verb",
+      "title": "update-epic has no verb to toggle an inline story's done flag — forces a hand-edit of state.json that risks JSON corruption (e.g. a naive json.dump re-escaping every em dash). Add update-epic <id> --story <n> --done to close this gap; found in 6-7 separate sessions per user feedback, most recently while marking the docs-site-cleanup changelog-page story done this session.",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false
     }
   ],
   "detourStack": [],
