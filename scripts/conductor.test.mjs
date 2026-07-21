@@ -1389,6 +1389,15 @@ test("rules block always includes the Review mode section, defaulting to standar
   assert.match(out, /Current mode: \*\*standard\*\*/);
 });
 
+test("rules block always includes the Feedback section encouraging /pm:feedback adoption", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const out = run(["rules"], { cwd });
+  assert.match(out, /## Feedback/);
+  assert.match(out, /\/pm:feedback \[bug\|feature\]/);
+  assert.match(out, /want me to file this as feedback/i);
+});
+
 test("set-review-mode sets the active mode and rejects an unknown mode", () => {
   const cwd = tmpRepo(); run(["init"], { cwd });
   run(["set-review-mode", "--mode", "thorough"], { cwd });
