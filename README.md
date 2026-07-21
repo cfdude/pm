@@ -360,9 +360,16 @@ Picks up any new OpenSpec proposals or Superpowers plans not yet tracked as epic
 |------------|------|
 | `add --id X --title "…" --lane L --priority P [--status S] [--parent ID] [--external-id KEY]` | Register any epic in any lane; optionally nest under a parent or link a tracker issue. |
 | `add-many --from <path\|->` | Atomically bulk-create a parent + children from a JSON batch. |
-| `update-epic <id> [--title …] [--status …] [--parent …] [--link …] [--review-mode …]` | Write-back path — title corrections, status changes, links, per-epic review-mode escalation. |
+| `update-epic <id> [--title …] [--status …] [--parent …] [--link …] [--review-mode …] [--add-story "<title>"] [--story <n> --done]` | Write-back path — title corrections, status changes, links, per-epic review-mode escalation, inline story mutation (see below). |
 | `remove-epic <id> [--cascade]` | Hard-delete; blocked by default if it has children (`--cascade` removes descendants too). Strips dangling links elsewhere. |
 | `set-active <id>` / `clear-active` | Set/clear the top-level active epic. |
+
+**Inline story mutation** — `--add-story "<title>"` appends `{ title, done: false }` to the
+epic's inline `stories[]` (creating the array on its first inline story); `--story <n> --done`
+marks the `n`-th story done, where `n` is **1-indexed** (`--story 1` is the first story).
+Closes a recurring hand-edit-of-`state.json` risk — a naive JSON re-escape of an em dash has
+corrupted the file before. `--story <n>` currently requires `--done` (the only supported
+inline-story mutation today); both flags reject out-of-range/empty input and write nothing.
 
 </details>
 

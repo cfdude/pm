@@ -10,6 +10,13 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **`update-epic <id> --add-story "<title>"` and `update-epic <id> --story <n> --done`.**
+  Closes a recurring hand-edit-of-`state.json` risk for inline `stories[]` — the toggle gap
+  alone recurred across several sessions per user feedback, and the add gap was hit live
+  again this session. `--add-story` appends `{ title, done: false }` (creating the array on
+  its first inline story); `--story <n>` is **1-indexed** and currently requires `--done` (the
+  only supported mutation today) — both reject out-of-range/empty input and write nothing on
+  failure. Documented in README.md and `skills/conductor/SKILL.md`.
 - **`render --diff-summary`** — prints `epic-relevant: yes` or `epic-relevant: no` after
   rendering. The "Last rendered" timestamp and the "Recent detours" table (which rotates as
   new entries land) both change PROJECT.md on nearly every render even when nothing about the
