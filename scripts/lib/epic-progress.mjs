@@ -178,6 +178,8 @@ export function orderQueueWithDependencies(sorted) {
   const notes = [];
   for (const e of sorted) {
     for (const d of deps.get(e.id)) {
+      // The naive priority order already placed e ahead of its own dependency d — that's
+      // exactly the starvation case this function exists to prevent, and worth flagging.
       if (indexOf.get(e.id) < indexOf.get(d)) {
         notes.push(`epic \`${e.id}\` ready but waiting on \`${d}\``);
       }
@@ -190,6 +192,8 @@ export function orderQueueWithDependencies(sorted) {
   while (remaining.length) {
     const ready = remaining.filter(e => [...deps.get(e.id)].every(d => placed.has(d)));
     if (!ready.length) {
+      // Cycle among queued epics — not fatal for a display/selection helper; keep whatever's
+      // left in its original priority order rather than erroring out of a status render.
       ordered.push(...remaining);
       break;
     }

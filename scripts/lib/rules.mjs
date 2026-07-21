@@ -23,7 +23,10 @@ export function currentSecondaryTrackers() {
 }
 
 /** Namespace-prefixed upsert key for a secondary tracker entry — `system:repo:<repo>` or
- *  `system:project:<projectKey>`. */
+ *  `system:project:<projectKey>`. A bare `system+repo`/`system+projectKey` concatenation would
+ *  let a repo-keyed entry collide with a projectKey-keyed entry sharing the same string value
+ *  (e.g. {system:"jira",projectKey:"ABC"} vs {system:"jira",repo:"ABC"}) — the namespace prefix
+ *  keeps those two shapes distinct. */
 export function secondaryTrackerKey(entry) {
   if (entry.repo) return `${entry.system}:repo:${entry.repo}`;
   return `${entry.system}:project:${entry.projectKey}`;
@@ -61,7 +64,9 @@ export function globalReviewMode(state) {
 
 /** The active review-mode dial. With no `epicId`, this is just the repo-global dial. With an
  *  `epicId`, returns the EFFECTIVE mode for that epic: the higher-ranked of the repo-global
- *  dial and the epic's own `reviewMode` override (if any). */
+ *  dial and the epic's own `reviewMode` override (if any) — an epic override can only escalate
+ *  above the global dial, never silently de-escalate below it (enforced at write time in
+ *  updateEpic(), not here; this is just "take the max" for read time). */
 export function currentReviewMode(epicId) {
   try {
     const state = loadState();
