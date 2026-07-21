@@ -8,6 +8,18 @@ users. This is the procedure `release-checklist` and `CLAUDE.md`'s "Documentatio
 rule both point at, factored out because it fires far more often than releases do — any PR
 that changes README.md or a `commands/*.md` doc needs this too.
 
+## Before you start — is this actually a release?
+
+**If the change you're syncing includes a `.claude-plugin/plugin.json` version bump, this
+skill alone is not enough.** Check first — don't just run this procedure and call it done.
+This exact gap caused the live Changelog page to be missed for three consecutive releases in a
+row (0.21.0, 0.21.1, then 0.22.0 again) before this warning existed: it's easy to sync the
+*content* pages for a change and forget that a version bump also obligates the Changelog page
+and Introduction's Real Numbers — those live under `release-checklist`, not here, because
+they're release-specific, not general content-sync. If `plugin.json`'s version changed,
+follow `release-checklist` in full (it calls back into this skill for the mechanics); don't
+stop at this skill's steps alone.
+
 ## The procedure
 
 1. **Checkout a fresh editing session.** Always check out fresh per logical change — a stale
