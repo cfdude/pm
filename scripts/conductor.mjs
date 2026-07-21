@@ -55,45 +55,13 @@ import {
   activeChangeIds, planFiles, firstHeading, isArchived, reconcileArchived,
   countCheckboxes, epicProgress, resolveEpics, missing, orderQueueWithDependencies, bar,
 } from "./lib/epic-progress.mjs";
+import { readJSON, readStdin, isInitialized, defaultState, loadState, saveState } from "./lib/state.mjs";
 
 // ---------- helpers ----------
-
-function readJSON(p, fallback) {
-  try { return JSON.parse(fs.readFileSync(p, "utf8")); }
-  catch { return fallback; }
-}
-
-function readStdin() {
-  try { return fs.readFileSync(0, "utf8"); } catch { return ""; }
-}
-
-function isInitialized() {
-  return fs.existsSync(STATE_PATH);
-}
 
 function gitShortSha() {
   try { return execSync("git rev-parse --short HEAD", { cwd: ROOT, stdio: ["ignore", "pipe", "ignore"] }).toString().trim(); }
   catch { return "-"; }
-}
-
-function defaultState() {
-  return { version: 1, active: null, epics: [], detourStack: [] };
-}
-
-function loadState() {
-  const s = readJSON(STATE_PATH, null);
-  return s && typeof s === "object" ? { ...defaultState(), ...s } : defaultState();
-}
-
-/** Atomic write: write to a tmp file in the same directory, then rename(2) over the
- *  real path. rename is atomic on the same filesystem — a crash mid-write leaves a
- *  truncated .tmp-* file, never a truncated state.json. */
-function saveState(state) {
-  fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
-  const data = JSON.stringify(state, null, 2) + "\n";
-  const tmpPath = `${STATE_PATH}.tmp-${process.pid}-${Date.now()}`;
-  fs.writeFileSync(tmpPath, data);
-  fs.renameSync(tmpPath, STATE_PATH);
 }
 
 /** The running plugin's root dir. Env-first so tests can point at a fixture. */
