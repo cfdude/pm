@@ -8,6 +8,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.23.0] — 2026-07-21
+
 ### Added
 
 - **`update-epic <id> --add-story "<title>"` and `update-epic <id> --story <n> --done`.**
@@ -52,6 +54,18 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   worktree's `reasons` array now lists which trigger(s) fired (`epic-archived`,
   `branch-merged`, or both) — still a pure read/report function, it never deletes anything
   itself.
+
+### Changed
+
+- **`scripts/conductor.mjs` split into `scripts/lib/*.mjs` modules — no behavior change.**
+  The engine (2,537 lines, 85 functions) is now a 121-line entry point (CLI dispatch table +
+  imports) plus 20 focused `scripts/lib/*.mjs` modules, one per pre-existing section (the
+  "helpers" grab-bag split further into 6 cohesive modules: state I/O, git plumbing, plugin
+  metadata, epic progress/resolution, link validation, autonomy). Motivated by AI-agent
+  token-efficiency — editing a monolith costs a full-file read/orient regardless of change
+  size — not human-readability tech debt. Purely internal: the CLI's subcommands, flags, and
+  output are unchanged, verified by all 250 pre-existing black-box tests passing unchanged
+  throughout every step of the split.
 
 ## [0.22.0] — 2026-07-20
 
