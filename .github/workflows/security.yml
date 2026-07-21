@@ -16,14 +16,17 @@ permissions:
 jobs:
   semgrep:
     name: Semgrep SAST
-    uses: cfdude/.github/.github/workflows/security-semgrep.yml@main
+    # Pinned to a commit SHA (not @main) per the org's own pinGitHubActionDigests convention —
+    # a moving branch ref would let a compromised or unexpectedly-changed org workflow silently
+    # run in this repo's CI. Bump deliberately: re-check cfdude/.github before updating the SHA.
+    uses: cfdude/.github/.github/workflows/security-semgrep.yml@78d5710aa7aa61e40afd490b8192bd44f931759c  # main @ 2026-07-20
     permissions:
       contents: read
       security-events: write
 
   trivy:
     name: Trivy filesystem scan
-    uses: cfdude/.github/.github/workflows/security-trivy.yml@main
+    uses: cfdude/.github/.github/workflows/security-trivy.yml@78d5710aa7aa61e40afd490b8192bd44f931759c  # main @ 2026-07-20
     permissions:
       contents: read
       security-events: write
