@@ -2106,14 +2106,34 @@ test("plan-hierarchy on a parent whose only children are all archived returns an
   assert.deepEqual(out.batches, []);
 });
 
-test("every invocation prints the engine version and source path to stderr, so a stale cached engine is visible", () => {
+test("the engine banner is suppressed by default in a dev/self-hosting context (CLAUDE_PROJECT_DIR set), so it's not noise on every invocation", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
+  // run()/runCombined() always set CLAUDE_PROJECT_DIR=cwd (matching real self-hosting
+  // usage), so the default here is already the suppressed case -- see the next test for the
+  // opt-in override, and the one after for the banner's un-suppressed default elsewhere.
   const r = runCombined(["render"], { cwd });
+  assert.doesNotMatch(r, /conductor: engine/);
+});
+
+test("PM_VERBOSE_ENGINE_BANNER=1 forces the engine banner back on even when CLAUDE_PROJECT_DIR is set", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const r = runCombined(["render"], { cwd, env: { PM_VERBOSE_ENGINE_BANNER: "1" } });
   assert.match(r, /conductor: engine \S+ @ .*scripts/);
 });
 
-test("the engine banner is suppressed when PM_QUIET_ENGINE_BANNER is set", () => {
+test("the engine banner is shown by default when CLAUDE_PROJECT_DIR is NOT set (outside a dev/self-hosting context), so a stale cached engine is still visible there", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const env = { ...process.env, PM_CACHE_ROOT: EMPTY_CACHE };
+  delete env.CLAUDE_PROJECT_DIR;
+  const r = spawnSync("node", [ENGINE, "render"], { cwd, env, encoding: "utf8" });
+  const combined = (r.stdout || "") + (r.stderr || "");
+  assert.match(combined, /conductor: engine \S+ @ .*scripts/);
+});
+
+test("the engine banner stays suppressed when both CLAUDE_PROJECT_DIR and PM_QUIET_ENGINE_BANNER are set (explicit suppress, back-compat with the pre-fix default-on behavior)", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
   const r = runCombined(["render"], { cwd, env: { PM_QUIET_ENGINE_BANNER: "1" } });
