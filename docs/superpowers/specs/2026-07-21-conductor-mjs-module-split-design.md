@@ -82,21 +82,28 @@ CLI's observable behavior, subcommand names, and flags are identical before and 
 
 ## Circular imports — expected, not a bug
 
-Some section pairs call into each other: `rules.mjs`'s `writeRules()` calls
-`tracker.mjs`'s `currentTracker()`/`currentSecondaryTrackers()` and
-`review-mode.mjs`'s `currentReviewMode()`, while `tracker.mjs`, `review-mode.mjs`, and
-`migrations.mjs` all call `rules.mjs`'s `writeRules()` after a state change (to refresh
-`CLAUDE.md`'s rules block). This is a genuine circular import between `rules.mjs` and
-both `tracker.mjs`/`review-mode.mjs`.
+**Correction from an earlier pass of this design:** a first read suspected `rules.mjs` and
+`tracker.mjs`/`review-mode.mjs` were circular. A rigorous, code-verified call graph (every
+edge checked against the actual function body, not a regex guess) shows that's wrong —
+`currentTracker()`, `currentSecondaryTrackers()`, and `currentReviewMode()` already live
+inside the "rules" section itself, so `tracker.mjs`/`review-mode.mjs` calling `writeRules()`
+is one-directional. No cycle there.
 
-**This is safe and does not need to be engineered around.** Verified empirically: Node
-ESM resolves circular imports between modules whose top-level bodies only declare
-functions (never call each other at module-evaluation time) — every call in this codebase
-already happens lazily, inside a function body invoked later from the dispatch table.
-Introducing an indirection layer (e.g. a shared "rules-context" module) to avoid the
-cycle would be exactly the kind of premature abstraction this project's own
-Ship-Real-Software principles argue against — there is no real problem to solve here,
-only a shape that looks unusual on first glance.
+The **real** circular cluster is different, and larger: `render()` calls `getAutonomy()`
+(autonomy), `parseFlags()` (add-epic), and `staleMarker()` (active-pointer); all three of
+those, in turn, call `render()` back after mutating state. `buildBrief()` also calls
+`staleMarker()` (active-pointer), which is why `briefing.mjs` joins the same cluster even
+though nothing calls back into it. So **`render.mjs`, `briefing.mjs`, `active-pointer.mjs`,
+`autonomy.mjs`, and `add-epic.mjs` form one mutually-dependent group** — they must be
+extracted together, in the same implementation task, rather than one at a time, or an
+intermediate commit would have an import pointing at a file that doesn't exist yet.
+
+**This is still safe and does not need to be engineered around**, for the same reason as
+before: Node ESM resolves circular imports fine when nothing is called at module-evaluation
+time, which holds throughout this codebase (every call happens lazily, inside a function
+body invoked later from the dispatch table). The only practical consequence is a
+task-sequencing one — this cluster is one combined extraction task in the implementation
+plan, not five — not an architectural problem to solve with an indirection layer.
 
 ## Testing
 
