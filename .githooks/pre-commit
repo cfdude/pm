@@ -21,8 +21,11 @@ tmpfile=$(mktemp)
 trap 'rm -f "$tmpfile"' EXIT
 
 if node --test scripts/conductor.test.mjs >"$tmpfile" 2>&1; then
-  total=$(grep -m1 '^ℹ tests ' "$tmpfile" | awk '{print $3}')
-  passed=$(grep -m1 '^ℹ pass ' "$tmpfile" | awk '{print $3}')
+  # node --test's default reporter (and therefore this summary line's leading marker) differs
+  # by Node version: newer Node uses the "spec" reporter (ℹ) even when output isn't a TTY,
+  # older Node (e.g. the CI runner's Node 18) defaults to the "tap" reporter (#). Match both.
+  total=$(grep -m1 -E '^(ℹ|#) tests ' "$tmpfile" | awk '{print $3}')
+  passed=$(grep -m1 -E '^(ℹ|#) pass ' "$tmpfile" | awk '{print $3}')
   if [ -n "$total" ] && [ -n "$passed" ]; then
     echo "pre-commit: ${passed}/${total} passing"
   else
