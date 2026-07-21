@@ -44,35 +44,12 @@ import os from "node:os";
 import path from "node:path";
 import { execSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-
-const ROOT = process.env.CLAUDE_PROJECT_DIR || process.cwd();
-const CONDUCTOR_DIR = path.join(ROOT, ".conductor");
-const STATE_PATH = path.join(CONDUCTOR_DIR, "state.json");
-const BRIEF_PATH = path.join(CONDUCTOR_DIR, "brief.txt");
-const RENDER_STAMP_PATH = path.join(CONDUCTOR_DIR, "render-stamp.json");
-const DETOURS_LOG = path.join(CONDUCTOR_DIR, "detours.log");
-const PROJECT_MD = path.join(ROOT, "PROJECT.md");
-const CLAUDE_MD = path.join(ROOT, "CLAUDE.md");
-const CHANGES_DIR = path.join(ROOT, "openspec", "changes");
-const ARCHIVE_DIR = path.join(CHANGES_DIR, "archive");
-const PLANS_DIR = path.join(ROOT, "docs", "superpowers", "plans");
-const KNOWN_LANES = ["openspec", "superpowers", "claude-code", "decision", "external"];
-const KNOWN_STATUSES = ["untriaged", "queued", "active", "paused", "later", "blocked", "planned", "archived"];
-const KNOWN_AUTONOMY_LEVELS = ["off", "autonomous"];
-// Default category taxonomy for the `--preauthorize "category:<name>:<reason>"` shorthand —
-// see the `conductor` skill's "Epic-level autonomy" section for the matching heuristic each
-// category expands to at decision-rule time. Additive-only convention: adding a category here
-// is not a breaking change for existing preAuthorized entries.
-const KNOWN_PREAUTHORIZE_CATEGORIES = ["filesystem", "network", "schema", "external-api"];
-const KNOWN_REVIEW_MODES = ["off", "standard", "thorough"];
-/** Rank used to compare review modes so an epic-level override can only ESCALATE above the
- *  repo-global dial, never de-escalate below it — see currentReviewMode(epicId). */
-const REVIEW_MODE_RANK = { off: 0, standard: 1, thorough: 2 };
-const LANE_RANK = { openspec: 0, superpowers: 1, "claude-code": 2, decision: 3, external: 4 };
-const laneRank = (l) => (l in LANE_RANK ? LANE_RANK[l] : 9);
-
-const RULES_BEGIN = "<!-- BEGIN pm-conductor rules (managed by /pm:init — safe to delete this block) -->";
-const RULES_END = "<!-- END pm-conductor rules -->";
+import {
+  ROOT, CONDUCTOR_DIR, STATE_PATH, BRIEF_PATH, RENDER_STAMP_PATH, DETOURS_LOG,
+  PROJECT_MD, CLAUDE_MD, CHANGES_DIR, ARCHIVE_DIR, PLANS_DIR,
+  KNOWN_LANES, KNOWN_STATUSES, KNOWN_AUTONOMY_LEVELS, KNOWN_PREAUTHORIZE_CATEGORIES,
+  KNOWN_REVIEW_MODES, REVIEW_MODE_RANK, LANE_RANK, laneRank, RULES_BEGIN, RULES_END,
+} from "./lib/constants.mjs";
 
 // ---------- helpers ----------
 
