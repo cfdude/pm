@@ -2659,6 +2659,61 @@ test(".githooks/pre-commit exists, is executable, and runs the full test suite",
   assert.match(hookText, /set -e/, ".githooks/pre-commit does not fail the commit on a non-zero exit");
 });
 
+/** Copies the real .githooks/pre-commit into a fresh throwaway git repo with a stand-in
+ *  scripts/conductor.test.mjs (either passing or failing), so the hook's actual noise-control
+ *  logic (capture-to-tempfile, exit-code check, cat-only-on-failure) is exercised against the
+ *  shipped file — not a re-implementation of it — without paying the ~30s cost of the real
+ *  236-test suite for both the success and failure cases. */
+function runHookAgainstFixture(testFileBody) {
+  const cwd = tmpRepo();
+  execFileSync("git", ["init", "-q"], { cwd });
+  execFileSync("git", ["config", "user.email", "test@example.com"], { cwd });
+  execFileSync("git", ["config", "user.name", "Test"], { cwd });
+  fs.mkdirSync(path.join(cwd, "scripts"), { recursive: true });
+  fs.writeFileSync(path.join(cwd, "scripts", "conductor.test.mjs"), testFileBody);
+  fs.mkdirSync(path.join(cwd, ".githooks"), { recursive: true });
+  const realHookPath = path.join(path.dirname(ENGINE), "..", ".githooks", "pre-commit");
+  const hookDestPath = path.join(cwd, ".githooks", "pre-commit");
+  fs.copyFileSync(realHookPath, hookDestPath);
+  fs.chmodSync(hookDestPath, 0o755);
+  // Strip NODE_TEST_CONTEXT/NODE_TEST_WORKER_ID: node --test sets these on itself, and if
+  // inherited by the hook's own nested `node --test` invocation, node treats it as an
+  // already-child test-runner worker and short-circuits rather than actually running the
+  // fixture suite — a real hook invocation via `git commit` never has these set.
+  const env = { ...process.env };
+  delete env.NODE_TEST_CONTEXT;
+  delete env.NODE_TEST_WORKER_ID;
+  return spawnSync("sh", [hookDestPath], { cwd, encoding: "utf8", env });
+}
+
+test(".githooks/pre-commit is quiet on success -- one summary line, no per-test noise, no engine banner", () => {
+  const passingTests = `
+    import { test } from "node:test";
+    import assert from "node:assert/strict";
+    test("a passing test", () => { assert.ok(true); });
+    test("another passing test", () => { assert.ok(true); });
+  `;
+  const r = runHookAgainstFixture(passingTests);
+  assert.equal(r.status, 0, `expected the hook to exit 0 on a passing suite: ${r.stdout}${r.stderr}`);
+  const combined = (r.stdout || "") + (r.stderr || "");
+  assert.match(combined, /pre-commit: 2\/2 passing/, "expected a one-line N/N passing summary");
+  assert.doesNotMatch(combined, /✔/, "should not dump individual per-test pass lines on success");
+});
+
+test(".githooks/pre-commit dumps full node --test output and fails the commit when a test actually fails", () => {
+  const failingTests = `
+    import { test } from "node:test";
+    import assert from "node:assert/strict";
+    test("a passing test", () => { assert.ok(true); });
+    test("a FAILING test", () => { assert.ok(false, "boom"); });
+  `;
+  const r = runHookAgainstFixture(failingTests);
+  assert.notEqual(r.status, 0, "expected the hook to exit non-zero on a failing suite");
+  const combined = (r.stdout || "") + (r.stderr || "");
+  assert.match(combined, /a FAILING test/, "full test output (including the failure) must be dumped on failure");
+  assert.doesNotMatch(combined, /^pre-commit: \d+\/\d+ passing/m, "must not print the success summary on failure");
+});
+
 // ────────────── multi-tracker-primary-secondary-support: secondaryTrackers[] ──────────────
 
 test("set-tracker --role secondary adds a new entry to state.secondaryTrackers, tracker untouched", () => {

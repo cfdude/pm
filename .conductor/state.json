@@ -953,7 +953,7 @@
       "id": "df-precommit-hook-too-noisy-on-success",
       "title": "DF: .githooks/pre-commit runs the full test suite verbosely (every test name, every pass, every conductor-engine-banner line) on every single commit, even when everything passes -- this session alone produced tens of thousands of characters of pass-line noise per commit, and once caused a genuine false alarm where a tool-output-truncation warning was misread as a real git failure when the actual issue was buried in the noise. Fix: the hook should be quiet on success (a one-line 'pre-commit: 210/210 passing' summary) and only surface full node --test output when something actually fails -- capture output to a temp file, check the exit code, and only cat the temp file's contents on non-zero exit.",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -971,7 +971,8 @@
           "Batch preflight (2026-07-21): destructive-risk = none; all 5 epics are local-only edits to scripts/conductor.mjs, .githooks/pre-commit, README.md, SKILL.md, scripts/conductor.test.mjs. Session-continuity: 3 of 5 (banner-noise, project-md-diff-triviality, update-epic-story-verb) modify scripts/conductor.mjs, the same file this session invokes continuously -- must run SEQUENTIALLY (one at a time, tests+merge verified before the next starts), not in parallel worktrees, precisely to avoid a mid-batch regression breaking the orchestrator's own tool. Doc currency: update-epic-story-verb and project-md-diff-triviality both add new user-facing CLI flags -- README.md + SKILL.md updates are required, not optional."
         ],
         "notifications": []
-      }
+      },
+      "completedAt": "2026-07-21T06:20:07.492Z"
     },
     {
       "id": "df-engine-banner-noise-every-invocation",

@@ -10,6 +10,13 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **`.githooks/pre-commit` is now quiet on success.** It used to dump the full
+  `node --test` output (every test name, the engine banner, tens of thousands of characters)
+  on every single commit, even when everything passed — noisy enough that a genuine
+  tool-output-truncation warning was once misread as a real git failure with the actual
+  issue buried in it. Now it captures output to a temp file, checks the real exit code, and
+  prints a one-line `pre-commit: N/N passing` summary on success; the full output (and a
+  non-zero exit) only surfaces when a test actually fails.
 - **`verify-worktrees` now also flags a hierarchy-child worktree whose branch is already
   merged, not just ones whose epic status is `archived`.** Added a second, independent
   trigger — `git merge-base --is-ancestor <branch-tip> HEAD` — that fires regardless of the
