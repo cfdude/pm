@@ -1,0 +1,29 @@
+name: Security Scans
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly, so newly-disclosed CVEs are caught even when no code changes.
+    - cron: "0 6 * * 1"
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  semgrep:
+    name: Semgrep SAST
+    uses: cfdude/.github/.github/workflows/security-semgrep.yml@main
+    permissions:
+      contents: read
+      security-events: write
+
+  trivy:
+    name: Trivy filesystem scan
+    uses: cfdude/.github/.github/workflows/security-trivy.yml@main
+    permissions:
+      contents: read
+      security-events: write
