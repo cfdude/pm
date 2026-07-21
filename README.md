@@ -480,6 +480,21 @@ change through the engine's own subcommands).
 </details>
 
 <details>
+<summary><code>render --diff-summary</code> — Mechanically check whether a PROJECT.md diff is epic-relevant</summary>
+
+`node scripts/conductor.mjs render --diff-summary` prints `epic-relevant: yes` or
+`epic-relevant: no` to stdout in addition to rendering as usual. Two things change PROJECT.md
+on nearly every render even when nothing about the epics themselves changed — the
+"Last rendered" timestamp line, and the "Recent detours" table (which rotates as new entries
+land, oldest falling off its 8-row window). Eyeballing a raw `git diff PROJECT.md` to decide
+whether those are the *only* changes is error-prone; `--diff-summary` normalizes both away and
+reports whether anything else differs, so the "safe to discard this diff as noise" call
+becomes mechanical instead of a manual read. A PROJECT.md that has never been rendered before
+always reports `yes` (there's no baseline to compare against).
+
+</details>
+
+<details>
 <summary><code>changesets</code> — List pending CHANGELOG fragment files</summary>
 
 Lists every `.changesets/*.md` fragment as `{ changesets: [{ id, path, body }] }`, sorted by

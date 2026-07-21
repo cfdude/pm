@@ -2042,6 +2042,56 @@ test("changesets ignores non-markdown files in .changesets", () => {
   assert.equal(out.changesets[0].id, "epic-a");
 });
 
+// ──────────────── render --diff-summary ────────────────
+
+test("render --diff-summary reports epic-relevant: yes on the very first render (no baseline to compare against)", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd }); // init() itself renders once, establishing a PROJECT.md baseline
+  fs.rmSync(path.join(cwd, "PROJECT.md")); // remove it to simulate a genuine "no prior render"
+  const out = runCombined(["render", "--diff-summary"], { cwd });
+  assert.match(out, /epic-relevant: yes/);
+});
+
+test("render --diff-summary reports epic-relevant: no when the only diff is the 'Last rendered' timestamp", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const out = runCombined(["render", "--diff-summary"], { cwd });
+  assert.match(out, /epic-relevant: no/);
+});
+
+test("render --diff-summary reports epic-relevant: no when the only diff is Recent-detours table rotation", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code"], { cwd });
+  // Simulate detour-log rotation directly (log-detour requires a real git SHA context this
+  // fixture doesn't have) -- append rows to .conductor/detours.log, the file render() reads
+  // to build the "Recent detours" table, then re-render.
+  const logPath = path.join(cwd, ".conductor", "detours.log");
+  fs.writeFileSync(logPath, "2026-07-01T00:00:00Z\tabc1234\tminimal\ta\tfirst rotation entry\n");
+  const out1 = runCombined(["render", "--diff-summary"], { cwd });
+  assert.match(out1, /epic-relevant: no/, "first rotation: no other epic-relevant content changed");
+
+  fs.appendFileSync(logPath, "2026-07-02T00:00:00Z\tdef5678\tminimal\ta\tsecond rotation entry\n");
+  const out2 = runCombined(["render", "--diff-summary"], { cwd });
+  assert.match(out2, /epic-relevant: no/, "further rotation: still no other epic-relevant content changed");
+});
+
+test("render --diff-summary reports epic-relevant: yes when the on-disk PROJECT.md is stale relative to current state", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code"], { cwd });
+  // add-epic/update-epic/etc already auto-re-render, so PROJECT.md on disk always reflects
+  // current state.json by the time this call returns. Capture that as a "stale baseline" (as
+  // if it were the last commit), then make a real epic-relevant change, then put the stale
+  // baseline back on disk -- simulating a PROJECT.md that hasn't been re-rendered since a real
+  // state change landed, which is exactly the case `--diff-summary` needs to catch.
+  const staleBaseline = projectMd(cwd);
+  run(["add-epic", "--id", "b", "--lane", "claude-code"], { cwd }); // a real, epic-relevant change
+  fs.writeFileSync(path.join(cwd, "PROJECT.md"), staleBaseline);
+  const out = runCombined(["render", "--diff-summary"], { cwd });
+  assert.match(out, /epic-relevant: yes/);
+});
+
 // ──────────────── verify-state ────────────────
 
 test("verify-state succeeds right after init/render (stamp matches state.json)", () => {
