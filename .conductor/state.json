@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "conductor-mjs-module-split",
+  "active": null,
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -1100,12 +1100,20 @@
       "id": "conductor-mjs-module-split",
       "title": "Split scripts/conductor.mjs (83 functions, ~2,400 lines, 21 section markers) into native ES modules (scripts/lib/*.mjs), zero-dependency, entry point unchanged. Motivated by AI-agent token-efficiency, not human-readability tech debt: every edit to a monolith costs a full-file read/orient regardless of change size, and that cost compounds every session. Low refactor risk confirmed -- conductor.test.mjs is entirely black-box (shells out to the CLI via execFileSync/spawnSync, never imports internals), so internal structure is test-transparent. Needs a proper brainstorm on module boundaries before any code moves (size matches the >8h/cross-system openspec-lane threshold), not an ad hoc split.",
       "priority": "P2",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [],
       "reconcileNeeded": false,
-      "startedAt": "2026-07-21T07:33:20.197Z"
+      "startedAt": "2026-07-21T07:33:20.197Z",
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-07-21T09:59:05.886Z",
+          "note": "Final whole-branch review (opus, fresh context): all 22 tasks + 1 doc-fidelity fix reviewed against 7061d07..a4f6db7 diff. 250/250 tests pass, pluginRoot path-depth fix verified live, circular cluster confirmed exactly as designed with no extra edges, zero-dependency maintained, plugin.json version untouched as required. Ready to merge: Yes, no Critical/Important findings."
+        }
+      },
+      "completedAt": "2026-07-21T09:59:09.242Z"
     }
   ],
   "detourStack": [],
