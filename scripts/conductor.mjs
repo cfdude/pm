@@ -2419,7 +2419,15 @@ function verifyState() {
 // ---------- dispatch ----------
 
 const cmd = process.argv[2];
-if (!process.env.PM_QUIET_ENGINE_BANNER) {
+// df-engine-banner-noise-every-invocation: the banner is suppressed by default whenever
+// CLAUDE_PROJECT_DIR is set (self-hosting/dev context -- the stale-cache scenario this banner
+// exists to guard against is unlikely there) -- set PM_VERBOSE_ENGINE_BANNER=1 to force it
+// back on. PM_QUIET_ENGINE_BANNER=1 continues to work as an explicit suppress outside that
+// context too (back-compat with the pre-fix default-on behavior).
+const showEngineBanner = process.env.PM_VERBOSE_ENGINE_BANNER
+  ? true
+  : (process.env.PM_QUIET_ENGINE_BANNER || process.env.CLAUDE_PROJECT_DIR) ? false : true;
+if (showEngineBanner) {
   process.stderr.write(
     `conductor: engine ${pluginVersion() || "unknown"} @ ${path.dirname(fileURLToPath(import.meta.url))}\n`
   );

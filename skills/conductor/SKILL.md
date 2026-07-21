@@ -35,8 +35,11 @@ installed in the plugin cache, and skipping it is how a stale cached engine sile
 the very changes you're testing. Otherwise prefer `$CLAUDE_PLUGIN_ROOT`; if that's also unset
 (common outside a slash-command), fall back to the newest installed copy. **Never** hardcode a
 versioned cache path like `…/pm/0.6.1/scripts/…` — it breaks on the next upgrade. Every invocation
-prints `conductor: engine <version> @ <path>` to stderr — watch it if a subcommand behaves like an
-older release; set `PM_QUIET_ENGINE_BANNER=1` to silence it once you've confirmed the source.
+prints `conductor: engine <version> @ <path>` to stderr, EXCEPT this is suppressed by default
+whenever `$CLAUDE_PROJECT_DIR` is set (a self-hosting/dev context, where a stale-cache mismatch
+is unlikely) — set `PM_VERBOSE_ENGINE_BANNER=1` to force it back on if you need to confirm the
+source there. `PM_QUIET_ENGINE_BANNER=1` still works as an explicit suppress outside that
+context too.
 
 ```bash
 ENGINE="${CLAUDE_PROJECT_DIR:+$CLAUDE_PROJECT_DIR/scripts/conductor.mjs}"

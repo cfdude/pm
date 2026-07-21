@@ -978,7 +978,7 @@
       "id": "df-engine-banner-noise-every-invocation",
       "title": "DF: the engine version+source banner (conductor: engine X.Y.Z @ path) prints to stderr on literally every single conductor.mjs invocation, and across a long dogfooding session this meant hundreds of Bash calls each needed a 'grep -v conductor: engine' tacked on just to keep output readable -- real, constant tax, not a one-off. The banner earned its place catching the original stale-cache bug, but always-on-every-call is a much higher noise cost than the bug it prevents is likely to recur. Fix ideas: print the banner only once per process/session rather than per-invocation (hard in a CLI that's invoked fresh each time, so maybe cache a 'last-seen-version' marker file and only print when it changes from the prior invocation); or default PM_QUIET_ENGINE_BANNER=1 for any invocation where CLAUDE_PROJECT_DIR is set (i.e. self-hosting/dev context, where the stale-cache scenario the banner exists for is much less likely) and require an explicit opt-in for the noisy mode instead of opt-out.",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -997,7 +997,8 @@
           "User-approved approach (2026-07-21): Option B -- default-quiet banner whenever CLAUDE_PROJECT_DIR is set (self-hosting/dev context), explicit opt-in env var for the noisy/original behavior. Do NOT implement Option A (a cached last-seen-version marker file) -- this repo already had a real incident (df-stale-cache-silent-fallback) from a similar cache-file approach going silently stale."
         ],
         "notifications": []
-      }
+      },
+      "completedAt": "2026-07-21T06:28:09.825Z"
     },
     {
       "id": "df-project-md-diff-triviality-not-mechanically-checkable",

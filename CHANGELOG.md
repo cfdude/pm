@@ -10,6 +10,14 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **The `conductor: engine <version> @ <path>` banner no longer prints on every single
+  invocation in a self-hosting/dev context.** It's now suppressed by default whenever
+  `CLAUDE_PROJECT_DIR` is set (the stale-cache scenario the banner exists to guard against is
+  unlikely there) — set `PM_VERBOSE_ENGINE_BANNER=1` to force it back on. The existing
+  `PM_QUIET_ENGINE_BANNER=1` explicit-suppress opt-out still works unchanged outside that
+  context (e.g. as an installed plugin). Deliberately not a cached "last-seen-version" marker
+  file — this repo had a real prior incident (`df-stale-cache-silent-fallback`) from a similar
+  cache-file pattern going silently stale.
 - **`.githooks/pre-commit` is now quiet on success.** It used to dump the full
   `node --test` output (every test name, the engine banner, tens of thousands of characters)
   on every single commit, even when everything passed — noisy enough that a genuine
