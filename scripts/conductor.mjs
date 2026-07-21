@@ -72,6 +72,7 @@ import { render, normalizeForDiffSummary, writeRenderStamp } from "./lib/render.
 import { init, brief, snapshot, commitNudge, sync, logDetour, honchoMemory } from "./lib/subcommands.mjs";
 import { addMany } from "./lib/add-many.mjs";
 import { recordReconcile } from "./lib/reconciler-writeback.mjs";
+import { recordGateReview } from "./lib/gate-review-writeback.mjs";
 
 // ---------- update-epic (write-back) ----------
 
@@ -283,64 +284,6 @@ function removeEpic() {
   }
 }
 
-// ---------- openspec gate-review structured writeback ----------
-
-const KNOWN_GATE_NUMBERS = ["1", "2"];
-const KNOWN_GATE_VERDICTS = ["pass", "fail"];
-
-/** `record-gate-review <epicId> --gate 1|2 --verdict pass|fail [--reviewer "<note>"]` —
- *  the durable half of the OpenSpec two-gate process (CLAUDE.md "OpenSpec build — TWO
- *  mandatory gates": Gate 1 = spec review before code, Gate 2 = implementation review
- *  before docs). Mirrors record-reconcile's shape: a dedicated subcommand writes structured
- *  evidence onto the epic (`gateReview.gate1`/`gateReview.gate2`, each
- *  `{verdict, reviewedAt, note?}`) instead of a hand-edited field, so a fresh-context
- *  reviewer's judgment survives compaction and is visible in `.conductor/state.json`.
- *  Scoped to the openspec lane only — rejects any other lane, an unknown epic id, or an
- *  invalid gate/verdict value, writing nothing on any rejection. `update-epic --status
- *  archived` requires `gate2.verdict === "pass"` for openspec-lane epics (see updateEpic());
- *  recording gate 1 alone does not unblock archiving. Pure local state write — no external
- *  calls, consistent with the engine's instruction-layer law. */
-function recordGateReview() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
-  const argv = process.argv.slice(3);
-  const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
-  const f = parseFlags(id ? argv.slice(1) : argv);
-  const gate = typeof f.gate === "string" ? f.gate : (typeof f.gate === "number" ? String(f.gate) : undefined);
-  const verdict = typeof f.verdict === "string" ? f.verdict : undefined;
-  const note = typeof f.reviewer === "string" ? f.reviewer : undefined;
-  if (!id || !gate || !verdict) {
-    process.stderr.write(
-      "usage: conductor.mjs record-gate-review <epicId> --gate 1|2 --verdict pass|fail " +
-      "[--reviewer \"<note>\"]\n");
-    process.exit(1);
-  }
-  if (!KNOWN_GATE_NUMBERS.includes(gate)) {
-    process.stderr.write(`conductor: --gate must be one of ${KNOWN_GATE_NUMBERS.join("|")}\n`);
-    process.exit(1);
-  }
-  if (!KNOWN_GATE_VERDICTS.includes(verdict)) {
-    process.stderr.write(`conductor: --verdict must be one of ${KNOWN_GATE_VERDICTS.join("|")}\n`);
-    process.exit(1);
-  }
-  const state = loadState();
-  const epic = state.epics.find(e => e.id === id);
-  if (!epic) { process.stderr.write(`conductor: epic '${id}' not found\n`); process.exit(1); }
-  if (epic.lane !== "openspec") {
-    process.stderr.write(
-      `conductor: record-gate-review only applies to openspec-lane epics ` +
-      `('${id}' is lane '${epic.lane}')\n`);
-    process.exit(1);
-  }
-
-  epic.gateReview = epic.gateReview && typeof epic.gateReview === "object" ? epic.gateReview : {};
-  const entry = { verdict, reviewedAt: new Date().toISOString() };
-  if (note !== undefined) entry.note = note;
-  epic.gateReview[`gate${gate}`] = entry;
-
-  saveState(state);
-  render();
-  process.stderr.write(`conductor: recorded gate ${gate} review '${verdict}' for '${id}'\n`);
-}
 
 // ---------- tracker ----------
 
