@@ -148,4 +148,16 @@ Review intensity is a bounded dial, not a free-form call each time — set via
 | `thorough` | two independent fresh-context reviewers per gate; adjudicate any disagreement yourself | schema/migration changes, security-sensitive work, or anything explicitly flagged high-stakes |
 
 Current mode: **standard**.
+
+## Feedback — don't let friction stay silent
+
+If you hit a bug, a missing CLI verb, an unexpected limitation, or repeated friction
+working with this plugin — in this repo or any repo using it — don't just work around it
+and move on. File it: `/pm:feedback [bug|feature] "<summary>"` against `cfdude/pm`, or ask
+the user "want me to file this as feedback?" if you're not sure it's worth it. The failure
+mode this guards against is silent: hand-editing `.conductor/state.json` to flip a story's
+`done` flag (no CLI verb exists for it) recurred across several separate sessions before
+anyone reported it, even though `/pm:feedback` existed the whole time. A filed issue is
+cheap; an unreported recurring papercut is not — silent pain is where a product fails its
+users.
 <!-- END pm-conductor rules -->
