@@ -923,6 +923,14 @@
         {
           "title": "Add a Changelog page to the docs site (mirroring CHANGELOG.md) showing each version, its release date, and its bullets, so a visitor can see the latest changes without leaving the site; update it as part of the standing documentation-currency rule whenever a PR into main ships a version bump",
           "done": true
+        },
+        {
+          "title": "Migrate the Changelog page from plain markdown headers to Mintlify's native <Update> component -- gets an auto table-of-contents, tag filters, and (only available via <Update>) a subscribable RSS feed at /changelog/rss.xml",
+          "done": false
+        },
+        {
+          "title": "Add a docs-site page/section documenting the free-tier search MCP server already live at pm-plugin.dev/mcp -- exact connection steps per client (Claude, Claude Code, Cursor, VS Code), mirroring Mintlify's own \"Example: Connect to the Mintlify MCP server\" pattern",
+          "done": false
         }
       ]
     },
@@ -1003,7 +1011,7 @@
     },
     {
       "id": "df-update-epic-no-story-toggle-verb",
-      "title": "update-epic has no verb to toggle an inline story's done flag — forces a hand-edit of state.json that risks JSON corruption (e.g. a naive json.dump re-escaping every em dash). Add update-epic <id> --story <n> --done to close this gap; found in 6-7 separate sessions per user feedback, most recently while marking the docs-site-cleanup changelog-page story done this session.",
+      "title": "update-epic has no verbs for mutating an inline story: neither adding a new one to stories[] nor toggling an existing one's done flag. Both gaps force a hand-edit of state.json that risks JSON corruption (e.g. a naive json.dump re-escaping every em dash). Add update-epic <id> --add-story \"<title>\" and update-epic <id> --story <n> --done to close both; the toggle gap alone recurred across 6-7 sessions per user feedback, and the add gap was hit live again while adding two new stories to docs-site-cleanup this same session.",
       "priority": "P2",
       "status": "queued",
       "role": "epic",
