@@ -11,9 +11,8 @@
 - A single Claude Code plugin: `.claude-plugin/plugin.json`, `commands/`, `skills/`, `hooks/`,
   `scripts/`, `agents/` — all at the repo root (no `plugins/pm/` nesting, unlike when this lived
   inside the marketplace repo).
-- Not itself pm-conductor-managed yet (no `.conductor/state.json`) — set up with `/pm:init` if
-  you want to dogfood pm on its own development here, mirroring how `cfdude-plugins` did before
-  the extraction.
+- This repo IS pm-conductor-managed (`.conductor/state.json` tracks its own backlog) — pm
+  dogfoods itself here, mirroring how `cfdude-plugins` did before the extraction.
 
 ## The `pm` engine — hard constraints (must follow)
 
@@ -38,7 +37,12 @@
   *transformed* to remain valid, adds a `MIGRATIONS` entry keyed to the new release (additive,
   idempotent, backward-compatible — a state file written by the prior version must still load).
   `state.json` carries `pmVersion`. The user-facing update sequence for any repo using this
-  plugin is: update the plugin → `/reload-plugins` (or restart) → `/pm:upgrade` per repo.
+  plugin is: update the plugin → `/reload-plugins` (or restart) → `/pm:upgrade` per repo. The
+  full end-to-end release procedure (engine, docs, Mintlify site including the Changelog page
+  and Real Numbers, the branch dance) is the project-local `release-checklist` skill
+  (`.claude/skills/release-checklist/SKILL.md`) — repo-maintenance tooling, not part of what
+  the plugin ships to users. Follow it every time `plugin.json`'s version bumps; don't
+  re-derive the checklist from memory.
 - Engine subcommands are dispatched at the bottom of `conductor.mjs`; every new subcommand needs
   a matching command doc under `commands/` and coverage in `conductor.test.mjs`.
 - **State-transition flags are not pure functions of current state.** `reconcileNeeded` in
@@ -54,21 +58,12 @@ Conventional commits (`feat|fix|docs|test|chore|refactor`). Never `git commit --
 **Documentation currency — check on every PR into `main`, not just at release time.** Before
 opening (or updating) a PR into `main`, ask: does this change anything a user or agent would
 read about? If a change adds/removes a subcommand, flag, command, epic-level-autonomy behavior,
-tracker behavior, or anything else user-facing:
-- **README.md** must reflect it (Commands section, relevant guide section, etc.) — this bit us
-  once already (`record-gate-review` shipped in 0.16.0 with no README mention because the
-  dispatch instructions for that epic only required updating `SKILL.md`).
-- **The Mintlify docs site** (`pm-plugin.dev`, deployment `onvex-ai` via the Mintlify MCP) must
-  reflect it too — check the relevant page(s) under `commands/`, `concepts/`, or `guides/` and
-  update them in the same PR cycle, not as an afterthought. Use `checkout` → `read`/`search` to
-  find affected pages → `edit_page`/`write_page` → `save` (mode `pr`, since this repo's own docs
-  content lives in the separate `cfdude/pm-docs` repo Mintlify manages). **Merge that PR and get
-  it live in the same pass** — `gh pr merge --repo cfdude/pm-docs --squash` right after `save`,
-  then verify the change is actually live on `pm-plugin.dev` (a `curl`/`WebFetch` check for the
-  new content; propagation can lag ~1-2 min after merge). Standing instruction as of 2026-07-19 —
-  supersedes leaving Mintlify PRs open for manual review.
-- A change that is genuinely internal (a test, an engine-internal refactor, a process-only doc
-  fix) does not need either — but say so explicitly rather than silently skipping the check.
+tracker behavior, or anything else user-facing, both **README.md** and **the Mintlify docs site**
+(`pm-plugin.dev`, via the Mintlify MCP) must reflect it in the same PR cycle — follow the
+`release-checklist` skill's steps 3–8 for the exact procedure (which pages, how to merge and
+verify live, branch cleanup). A change that is genuinely internal (a test, an engine-internal
+refactor, a process-only doc fix) does not need either — but say so explicitly rather than
+silently skipping the check.
 
 <!-- BEGIN pm-conductor rules (managed by /pm:init — safe to delete this block) -->
 ## PM Conductor — operating rules
