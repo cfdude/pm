@@ -6,6 +6,19 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.21.0] — 2026-07-20
+
+### Added
+
+- **CLAUDE.md rules block gains an unconditional "Feedback" section** encouraging the agent to
+  proactively use `/pm:feedback [bug|feature] "<summary>"` (or ask the user "want me to file
+  this as feedback?") whenever it hits a bug, a missing CLI verb, or repeated friction — instead
+  of silently working around it. Motivated by a real gap: `/pm:feedback` shipped in 0.14.0 and
+  was never used once, while the friction of hand-editing `.conductor/state.json` to flip a
+  story's `done` flag (no CLI verb exists for it) recurred silently across several sessions
+  before being reported. Registered `df-update-epic-no-story-toggle-verb` as the concrete
+  backlog fix this section should have prompted sooner.
+
 ## [0.20.1] — 2026-07-20
 
 ### Added

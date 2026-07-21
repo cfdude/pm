@@ -433,6 +433,12 @@ never calls the tracker itself; it only shapes the instructions it emits for you
 searches for a near-duplicate first (comments instead of filing a new issue on a match). All
 `gh` calls are agent-invoked; the engine itself never touches GitHub.
 
+The CLAUDE.md rules block includes an unconditional "Feedback" section encouraging the agent
+to use this proactively — file a bug/limitation/friction point (or ask "want me to file this
+as feedback?") instead of silently working around it. Recurring friction that never gets
+reported is a product failure the same way a crash is; this section exists because that
+happened here for real (see `df-update-epic-no-story-toggle-verb`).
+
 </details>
 
 <details>
