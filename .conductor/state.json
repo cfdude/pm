@@ -922,7 +922,7 @@
         },
         {
           "title": "Add a Changelog page to the docs site (mirroring CHANGELOG.md) showing each version, its release date, and its bullets, so a visitor can see the latest changes without leaving the site; update it as part of the standing documentation-currency rule whenever a PR into main ships a version bump",
-          "done": false
+          "done": true
         }
       ]
     },
