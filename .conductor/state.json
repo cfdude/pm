@@ -1004,7 +1004,7 @@
       "id": "df-project-md-diff-triviality-not-mechanically-checkable",
       "title": "DF: even after df-stray-render-artifacts-noise's fix (render-stamp.json no longer rewrites unconditionally), PROJECT.md itself still produces a diff on nearly every render -- the 'Last rendered' timestamp line and the 'Recent detours' table (which rotates as new entries land) both change on every call, so a real diff always exists even when nothing epic-related actually changed. This forces manual git diff eyeballing before every 'is this safe to git checkout --' decision, and this session hit a near-miss where a legitimately-updated PROJECT.md was discarded as assumed noise, temporarily showing stale backlog state. Fix: add a render mode (or a small script) that reports whether PROJECT.md's content differs in any way OTHER than the timestamp line and detour-log rotation -- e.g. 'node conductor.mjs render --diff-summary' prints 'epic-relevant: yes/no' so the check becomes mechanical instead of eyeballing a raw diff every time.",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -1022,7 +1022,8 @@
           "Batch preflight (2026-07-21): destructive-risk = none; all 5 epics are local-only edits to scripts/conductor.mjs, .githooks/pre-commit, README.md, SKILL.md, scripts/conductor.test.mjs. Session-continuity: 3 of 5 (banner-noise, project-md-diff-triviality, update-epic-story-verb) modify scripts/conductor.mjs, the same file this session invokes continuously -- must run SEQUENTIALLY (one at a time, tests+merge verified before the next starts), not in parallel worktrees, precisely to avoid a mid-batch regression breaking the orchestrator's own tool. Doc currency: update-epic-story-verb and project-md-diff-triviality both add new user-facing CLI flags -- README.md + SKILL.md updates are required, not optional."
         ],
         "notifications": []
-      }
+      },
+      "completedAt": "2026-07-21T06:36:02.583Z"
     },
     {
       "id": "df-contributing-doc-missing-direct-push-recovery",

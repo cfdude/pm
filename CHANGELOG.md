@@ -8,6 +8,17 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **`render --diff-summary`** — prints `epic-relevant: yes` or `epic-relevant: no` after
+  rendering. The "Last rendered" timestamp and the "Recent detours" table (which rotates as
+  new entries land) both change PROJECT.md on nearly every render even when nothing about the
+  epics themselves changed, forcing manual `git diff` eyeballing before every "is this safe to
+  discard" call — and this repo hit a near-miss where a legitimately-updated PROJECT.md was
+  discarded as assumed noise. `--diff-summary` normalizes both known-trivial sources away and
+  reports whether anything else differs, making the check mechanical. A PROJECT.md that's
+  never been rendered before always reports `yes` (no baseline to compare against).
+
 ### Fixed
 
 - **The `conductor: engine <version> @ <path>` banner no longer prints on every single

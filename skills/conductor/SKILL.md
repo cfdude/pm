@@ -69,7 +69,11 @@ set the top-level active epic · `set-autonomy <id>` grant an epic broad executi
 "Epic-level autonomy" below) · `plan-hierarchy --parent <id>` batched execution plan for a
 parent's children (see "Epic-hierarchy orchestration" below) · `verify-worktrees` flag orphaned
 hierarchy-dispatch worktrees · `verify-state` fail loudly if state.json's mtime is newer than
-the last render's stamp (a mechanical check for an undetected hand-edit) · `set-review-mode` the
+the last render's stamp (a mechanical check for an undetected hand-edit) · `render --diff-summary`
+prints `epic-relevant: yes|no` — normalizes away the "Last rendered" timestamp and "Recent
+detours" table rotation (both change on nearly every render without meaning anything actually
+changed) so deciding whether a PROJECT.md diff is safe to discard as noise is mechanical
+instead of eyeballed · `set-review-mode` the
 repo's bounded review-count dial (off/standard/thorough), `update-epic <id> --review-mode`
 escalates a single epic above the repo dial · `set-lane-routing` / `suggest-lane` per-repo
 lane-routing overrides checked before the generic heuristic (see "Lane routing overrides" above)

@@ -1028,12 +1028,44 @@ function render() {
   let existing = "";
   try { existing = fs.readFileSync(PROJECT_MD, "utf8"); } catch { /* no file yet */ }
   writeRenderStamp();
+
+  const flags = parseFlags(process.argv.slice(3));
+  if (flags["diff-summary"]) {
+    // df-project-md-diff-triviality-not-mechanically-checkable: the "Last rendered" timestamp
+    // and the "Recent detours" table rotate on nearly every render even when nothing
+    // epic-relevant changed, forcing manual git-diff eyeballing before a "safe to discard"
+    // call. Report mechanically instead: no prior PROJECT.md at all is always epic-relevant
+    // (nothing to compare against); otherwise strip both known-trivial sources of diff noise
+    // before comparing.
+    const epicRelevant = !existing || normalizeForDiffSummary(existing) !== normalizeForDiffSummary(content);
+    process.stdout.write(`epic-relevant: ${epicRelevant ? "yes" : "no"}\n`);
+  }
+
   if (existing && existing.replace(STAMP_RE, "") === content.replace(STAMP_RE, "")) {
     process.stderr.write("conductor: PROJECT.md unchanged (skipped rewrite)\n");
     return;
   }
   fs.writeFileSync(PROJECT_MD, content);
   process.stderr.write(`conductor: rendered ${PROJECT_MD}\n`);
+}
+
+/** Normalizes the two sources of PROJECT.md diff noise that are never "epic-relevant" on
+ *  their own (per `df-project-md-diff-triviality-not-mechanically-checkable`): the
+ *  "Last rendered" timestamp line (changes every render) and the "## Recent detours" table
+ *  body (rotates as new entries land, oldest falls off the 8-row window). Used by
+ *  `render --diff-summary` to decide whether a PROJECT.md diff is safe to mechanically
+ *  discard as noise, instead of eyeballing raw diffs every time. */
+function normalizeForDiffSummary(content) {
+  let out = content.replace(/^> Last rendered: .*$/m, "> Last rendered: (normalized)");
+  const marker = "## Recent detours";
+  const start = out.indexOf(marker);
+  if (start !== -1) {
+    const afterHeading = start + marker.length;
+    const nextHeadingIdx = out.indexOf("\n## ", afterHeading);
+    const end = nextHeadingIdx === -1 ? out.length : nextHeadingIdx;
+    out = out.slice(0, afterHeading) + "\n(normalized)\n" + out.slice(end);
+  }
+  return out;
 }
 
 /** Records when PROJECT.md was last generated FROM the current state.json content, so
