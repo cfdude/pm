@@ -39,44 +39,24 @@
  * .conductor/state.json). This mirrors OpenSpec being dormant until `openspec init`.
  */
 
-import fs from "node:fs";
 import path from "node:path";
-import { execSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { pluginVersion } from "./lib/plugin-meta.mjs";
 import {
-  ROOT, CONDUCTOR_DIR, STATE_PATH, BRIEF_PATH, RENDER_STAMP_PATH, DETOURS_LOG,
-  PROJECT_MD, CHANGES_DIR, ARCHIVE_DIR, PLANS_DIR,
-  KNOWN_STATUSES,
-  LANE_RANK, laneRank,
-} from "./lib/constants.mjs";
-import { gitShortSha, appendDetourLog } from "./lib/git.mjs";
-import { validLink, detourContext } from "./lib/links.mjs";
-import {
-  activeChangeIds, planFiles, firstHeading, isArchived,
-  countCheckboxes, epicProgress, resolveEpics, missing, orderQueueWithDependencies, bar,
-} from "./lib/epic-progress.mjs";
-import { readJSON, readStdin, isInitialized, defaultState, loadState } from "./lib/state.mjs";
-import {
-  pluginRoot, pluginVersion, changelogSections, changelogBetween,
-  changelogAddedHeadlines,
-} from "./lib/plugin-meta.mjs";
-import {
-  currentTracker, currentSecondaryTrackers, secondaryTrackerKey, upsertSecondaryTracker,
-  removeSecondaryTracker, globalReviewMode, currentReviewMode, rulesBlock, writeRules,
+  currentTracker, currentSecondaryTrackers, currentReviewMode, rulesBlock, writeRules,
 } from "./lib/rules.mjs";
-import { activate, daysActive, staleMarker, setActive, clearActive } from "./lib/active-pointer.mjs";
-import { getAutonomy, setAutonomy } from "./lib/autonomy.mjs";
-import { parseFlags, parseLinkFlags, findCyclePath, planHierarchy, parentError, addEpic } from "./lib/add-epic.mjs";
-import { buildBrief } from "./lib/briefing.mjs";
-import { render, normalizeForDiffSummary, writeRenderStamp } from "./lib/render.mjs";
+import { setActive, clearActive } from "./lib/active-pointer.mjs";
+import { setAutonomy } from "./lib/autonomy.mjs";
+import { parseFlags, planHierarchy, addEpic } from "./lib/add-epic.mjs";
+import { render } from "./lib/render.mjs";
 import { init, brief, snapshot, commitNudge, sync, logDetour, honchoMemory } from "./lib/subcommands.mjs";
 import { addMany } from "./lib/add-many.mjs";
 import { recordReconcile } from "./lib/reconciler-writeback.mjs";
 import { recordGateReview } from "./lib/gate-review-writeback.mjs";
 import { updateEpic } from "./lib/update-epic.mjs";
-import { epicSummaryTable, removeEpic } from "./lib/remove-epic.mjs";
+import { removeEpic } from "./lib/remove-epic.mjs";
 import { setTracker } from "./lib/tracker.mjs";
-import { laneMatchTest, setLaneRouting, suggestLane } from "./lib/lane-routing.mjs";
+import { setLaneRouting, suggestLane } from "./lib/lane-routing.mjs";
 import { setReviewMode } from "./lib/review-mode.mjs";
 import { setGateGuard, gateGuardCheck } from "./lib/gate-guard.mjs";
 import { upgrade } from "./lib/migrations.mjs";
