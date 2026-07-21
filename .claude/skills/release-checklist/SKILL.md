@@ -42,69 +42,30 @@ skip straight to the branch dance at the bottom.
    NOT catch new *prose* behavior (a rules-block wording change, a new instruction section) —
    that's a human/agent judgment call every time.
 
-4. **Mintlify site — content pages** (`pm-plugin.dev`, deployment `onvex-ai`, content repo
-   `cfdude/pm-docs`). Use the Mintlify MCP, not manual git commits against `pm-docs` — `checkout`
-   opens an isolated session/branch; `read`/`search`/`list_nodes` find affected pages under
-   `commands/`, `concepts/`, or `guides/`; `edit_page`/`write_page` make the change; `save` (mode
-   `pr`) opens the PR. Mirror whatever changed in `commands/*.md`/`README.md` into the matching
-   `.mdx` page(s) — check with `search` for the old wording so nothing is missed.
+4. **Mintlify site — content pages, the Changelog page, and Introduction's "Real Numbers."**
+   Follow the `mintlify-doc-sync` skill for the mechanics (checkout, escaping gotcha, merge +
+   verify live, branch cleanup). Two release-specific additions on top of that skill's
+   procedure:
+   - **The Changelog page** (`/changelog`, under Guides) gets the new version's entry prepended
+     — same content as the `CHANGELOG.md` section just written, converted to MDX.
+   - **Introduction's "Real Numbers" table** claims to be mechanically derived — keep that true
+     every release by recomputing, never estimating:
+     ```bash
+     grep -c '^## \[' CHANGELOG.md                                    # releases shipped
+     node --test scripts/conductor.test.mjs 2>&1 | grep '^ℹ tests'    # tests in the engine
+     wc -l scripts/conductor.mjs                                      # engine LOC
+     # external dependencies is always 0 — enforced by the zero-dependency hard constraint
+     ```
+     If a metric can't be recomputed this way (e.g. a historical count with no durable log to
+     re-derive it from), don't estimate or carry it forward unverified — drop the row. A number
+     that fails the "pulled from git log" claim the section itself makes doesn't belong in it,
+     regardless of whether it was ever accurate.
 
-5. **Mintlify site — the Changelog page** (`/changelog`, under Guides). Prepend the new
-   version's entry — same content as the `CHANGELOG.md` section just written, converted to
-   MDX. **Escaping gotcha:** any bare `<placeholder>` syntax outside a backtick code span (e.g.
-   `<=3 files`, a stray `<id>` not in a code span) breaks MDX's JSX parser (`mdx_parse_failure:
-   Unexpected character` errors). Inside a single- or multi-line backtick span, `<...>` is
-   always safe — MDX never parses code-span content as JSX. Before pasting a large changelog
-   chunk into `write_page`, check for bare angle brackets:
-   ```python
-   import re
-   parts = text.split("`")
-   for i in range(0, len(parts), 2):        # even indices = outside any code span
-       for m in re.finditer(r'<[^<>\n`]+>', parts[i]):
-           print(m.group())                  # wrap each hit in backticks before pasting
-   ```
+5. **The `pm` repo's own branch dance.** Follow the `pr-workflow` skill — commit on `dev`, PR
+   into `main`, wait for CI green, squash-merge, sync both branches. Never commit a version
+   bump directly to `main` — this bit a session once already.
 
-6. **Mintlify site — Introduction's "Real Numbers" section.** This table claims to be
-   mechanically derived — keep that true every release by recomputing, never estimating:
-   ```bash
-   grep -c '^## \[' CHANGELOG.md                                    # releases shipped
-   node --test scripts/conductor.test.mjs 2>&1 | grep '^ℹ tests'    # tests in the engine
-   wc -l scripts/conductor.mjs                                      # engine LOC
-   # external dependencies is always 0 — enforced by the zero-dependency hard constraint
-   ```
-   If a metric can't be recomputed this way (e.g. a historical "N agents dispatched" count with
-   no durable log to re-derive it from), don't estimate or carry it forward unverified — drop
-   the row. A number that fails the "pulled from git log" claim the section itself makes doesn't
-   belong in it, regardless of whether it was ever accurate.
-
-7. **Merge every Mintlify PR live in the same pass — never leave it open.**
-   `gh pr merge <n> --repo cfdude/pm-docs --squash --delete-branch=false`, then verify the
-   actual content is live:
-   ```bash
-   curl -s "https://pm-plugin.dev/<page>" | grep -i "<new content marker>"
-   ```
-   Allow ~1-2 min for edge-cache propagation (Mintlify's own CDN, not anything on this user's
-   Cloudflare account) before concluding a miss is a real failure rather than lag.
-
-8. **Clean up merged Mintlify branches.** Each `checkout` creates an `admin-mcp/<slug>-<sha>`
-   branch on `pm-docs` that a squash-merge with `--delete-branch=false` leaves behind — these
-   show up as unpublished-looking "branch drafts" in the Mintlify dashboard even though their
-   content is live. After confirming a PR's content is live:
-   ```bash
-   gh api -X DELETE "repos/cfdude/pm-docs/git/refs/heads/<branch-name>"
-   ```
-
-9. **The `pm` repo's own branch dance** (`CONTRIBUTING.md`): commit on `dev`, push, open a PR
-   into `main`, wait for CI green (`Monitor`, not manual polling/sleeping), squash-merge, then
-   sync:
-   ```bash
-   git checkout main && git fetch origin && git reset --hard origin/main
-   node --test scripts/conductor.test.mjs   # confirm green post-merge too
-   git checkout dev && git reset --hard main && git push origin dev --force-with-lease
-   ```
-   Never commit a version bump directly to `main` — this bit a session once already.
-
-10. **If this repo's own `.conductor/state.json` needs a state-only update** (marking a story
+6. **If this repo's own `.conductor/state.json` needs a state-only update** (marking a story
     done, restamping `pmVersion` via `/pm:upgrade`) as a result of the release: edit with the
     `Edit` tool (a literal text replacement) rather than any script that re-parses and
     re-serializes the JSON — `json.dump`-style round-trips can silently re-escape existing

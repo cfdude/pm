@@ -60,10 +60,10 @@ opening (or updating) a PR into `main`, ask: does this change anything a user or
 read about? If a change adds/removes a subcommand, flag, command, epic-level-autonomy behavior,
 tracker behavior, or anything else user-facing, both **README.md** and **the Mintlify docs site**
 (`pm-plugin.dev`, via the Mintlify MCP) must reflect it in the same PR cycle — follow the
-`release-checklist` skill's steps 3–8 for the exact procedure (which pages, how to merge and
-verify live, branch cleanup). A change that is genuinely internal (a test, an engine-internal
-refactor, a process-only doc fix) does not need either — but say so explicitly rather than
-silently skipping the check.
+`mintlify-doc-sync` skill for the exact procedure (which pages, how to merge and verify live,
+branch cleanup). A change that is genuinely internal (a test, an engine-internal refactor, a
+process-only doc fix) does not need either — but say so explicitly rather than silently
+skipping the check.
 
 <!-- BEGIN pm-conductor rules (managed by /pm:init — safe to delete this block) -->
 ## PM Conductor — operating rules
