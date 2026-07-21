@@ -80,26 +80,10 @@ import { laneMatchTest, setLaneRouting, suggestLane } from "./lib/lane-routing.m
 import { setReviewMode } from "./lib/review-mode.mjs";
 import { setGateGuard, gateGuardCheck } from "./lib/gate-guard.mjs";
 import { upgrade } from "./lib/migrations.mjs";
+import { changelog } from "./lib/changelog.mjs";
 
 // ---------- changelog ----------
 
-/** Show CHANGELOG entries newer than a version. `--since <x.y.z>` overrides the
- *  default, which is the version stamped in this repo's state.json. On-demand
- *  companion to the delta that `upgrade` prints automatically. */
-function changelog() {
-  const f = parseFlags(process.argv.slice(3));
-  const since = typeof f.since === "string"
-    ? f.since
-    : (isInitialized() ? (loadState().pmVersion || null) : null);
-  const secs = changelogBetween(since, null);
-  if (secs === null) {
-    process.stdout.write("conductor: no CHANGELOG.md ships with this pm version\n"); return;
-  }
-  if (!secs.length) {
-    process.stdout.write(`conductor: no changelog entries newer than ${since || "(start)"}\n`); return;
-  }
-  process.stdout.write(secs.map(s => s.body).join("\n\n") + "\n");
-}
 
 // ---------- worktree hygiene ----------
 
