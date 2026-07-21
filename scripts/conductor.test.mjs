@@ -1365,6 +1365,82 @@ test("update-epic --title updates an existing epic's title, mirroring add-epic",
   assert.equal(readState(cwd).epics.find(e => e.id === "a").title, "New, corrected title");
 });
 
+// ─────────────── update-epic --add-story / --story --done (df-update-epic-no-story-toggle-verb) ───────────────
+
+test("update-epic --add-story appends { title, done: false } to a fresh stories[] array", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code"], { cwd });
+  run(["update-epic", "a", "--add-story", "First story"], { cwd });
+  const epic = readState(cwd).epics.find(e => e.id === "a");
+  assert.deepEqual(epic.stories, [{ title: "First story", done: false }]);
+});
+
+test("update-epic --add-story appends to an existing stories[] array without disturbing earlier entries", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code"], { cwd });
+  run(["update-epic", "a", "--add-story", "First story"], { cwd });
+  run(["update-epic", "a", "--add-story", "Second story"], { cwd });
+  const epic = readState(cwd).epics.find(e => e.id === "a");
+  assert.deepEqual(epic.stories, [
+    { title: "First story", done: false },
+    { title: "Second story", done: false },
+  ]);
+});
+
+test("update-epic --add-story rejects an empty/blank title and writes nothing", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code"], { cwd });
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  const err = expectFail(() => run(["update-epic", "a", "--add-story", "   "], { cwd }));
+  assert.ok(err);
+  assert.match(String(err.stderr || err.message), /non-empty title/);
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
+});
+
+test("update-epic --story <n> --done marks the n-th (1-indexed) story done, leaving others untouched", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code"], { cwd });
+  run(["update-epic", "a", "--add-story", "First story"], { cwd });
+  run(["update-epic", "a", "--add-story", "Second story"], { cwd });
+  run(["update-epic", "a", "--story", "2", "--done"], { cwd });
+  const epic = readState(cwd).epics.find(e => e.id === "a");
+  assert.deepEqual(epic.stories, [
+    { title: "First story", done: false },
+    { title: "Second story", done: true },
+  ]);
+});
+
+test("update-epic --story out of range (including 0, and beyond the array length) is rejected and writes nothing", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code"], { cwd });
+  run(["update-epic", "a", "--add-story", "Only story"], { cwd });
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  for (const bad of ["0", "2", "-1"]) {
+    const err = expectFail(() => run(["update-epic", "a", "--story", bad, "--done"], { cwd }));
+    assert.ok(err, `expected --story ${bad} to be rejected`);
+    assert.match(String(err.stderr || err.message), /out of range/);
+  }
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
+});
+
+test("update-epic --story without --done is rejected (only supported story mutation today), and --done without --story is rejected", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code"], { cwd });
+  run(["update-epic", "a", "--add-story", "Only story"], { cwd });
+  const err1 = expectFail(() => run(["update-epic", "a", "--story", "1"], { cwd }));
+  assert.ok(err1);
+  assert.match(String(err1.stderr || err1.message), /requires --done/);
+  const err2 = expectFail(() => run(["update-epic", "a", "--done"], { cwd }));
+  assert.ok(err2);
+  assert.match(String(err2.stderr || err2.message), /requires --story/);
+});
+
 test("update-epic rejects an unrecognized flag instead of silently no-op'ing, and writes nothing", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });

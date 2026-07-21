@@ -1641,7 +1641,7 @@ function clearActive() {
 // The flags update-epic recognizes. Anything else is a rejected error, not a
 // silent no-op — an unrecognized flag (e.g. a typo) used to parse, run, and
 // print "updated" with nothing actually changed.
-const UPDATE_EPIC_FLAGS = ["external-id", "external-url", "parent", "status", "priority", "title", "link", "review-mode"];
+const UPDATE_EPIC_FLAGS = ["external-id", "external-url", "parent", "status", "priority", "title", "link", "review-mode", "add-story", "story", "done"];
 
 /** Update an EXISTING epic's title/externalId/externalUrl/parent/status/priority/links.
  *  The id is POSITIONAL (parseFlags skips non-`--` tokens). Closes the tracker
@@ -1653,7 +1653,7 @@ function updateEpic() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const argv = process.argv.slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
-  if (!id) { process.stderr.write("usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--link \"<type>:<epic>[:<reason>]\"] [--review-mode off|standard|thorough]\n"); process.exit(1); }
+  if (!id) { process.stderr.write("usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--link \"<type>:<epic>[:<reason>]\"] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done]\n"); process.exit(1); }
   const f = parseFlags(argv.slice(1));
   const unknown = Object.keys(f).filter(k => !UPDATE_EPIC_FLAGS.includes(k));
   if (unknown.length) {
@@ -1702,6 +1702,32 @@ function updateEpic() {
     }
   }
 
+  // --add-story "<title>" appends { title, done: false } to the epic's inline stories[]
+  // (creating the array if this is its first inline story) -- closes the recurring
+  // hand-edit-of-state.json risk (a naive JSON re-escape of an em dash has corrupted the
+  // file before). --story <n> --done marks an existing story done; <n> is 1-indexed (the
+  // natural reading for a human-facing CLI flag: "--story 1" means the first story).
+  const addStoryTitle = str(f["add-story"]);
+  if (addStoryTitle !== undefined && !addStoryTitle.trim()) {
+    process.stderr.write("conductor: --add-story requires a non-empty title\n"); process.exit(1);
+  }
+  let storyIndex;
+  if (f.story !== undefined) {
+    if (f.done !== true) {
+      process.stderr.write("conductor: --story <n> currently requires --done (the only supported story mutation besides --add-story)\n");
+      process.exit(1);
+    }
+    const n = Number(f.story);
+    const stories = Array.isArray(epic.stories) ? epic.stories : [];
+    if (!Number.isInteger(n) || n < 1 || n > stories.length) {
+      process.stderr.write(`conductor: --story ${f.story} is out of range — '${id}' has ${stories.length} stor${stories.length === 1 ? "y" : "ies"} (1-indexed)\n`);
+      process.exit(1);
+    }
+    storyIndex = n - 1;
+  } else if (f.done === true) {
+    process.stderr.write("conductor: --done requires --story <n>\n"); process.exit(1);
+  }
+
   // openspec-lane epics may not be archived without a passing Gate 2 (implementation review)
   // verdict — see CLAUDE.md "OpenSpec build — TWO mandatory gates" and recordGateReview()
   // above. Gate 1 (spec review) gates code, which already happened earlier in the workflow;
@@ -1725,6 +1751,11 @@ function updateEpic() {
   if (str(f.priority) !== undefined) epic.priority = str(f.priority);
   if (links !== undefined) epic.links = links;
   if (reviewMode !== undefined) epic.reviewMode = reviewMode;
+  if (addStoryTitle !== undefined) {
+    if (!Array.isArray(epic.stories)) epic.stories = [];
+    epic.stories.push({ title: addStoryTitle, done: false });
+  }
+  if (storyIndex !== undefined) epic.stories[storyIndex].done = true;
 
   // Stamp completedAt the moment an epic transitions TO archived (not merely re-saved
   // while already archived) — supports velocity tracking off startedAt/completedAt.

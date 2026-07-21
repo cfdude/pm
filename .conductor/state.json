@@ -1074,7 +1074,7 @@
       "id": "df-update-epic-no-story-toggle-verb",
       "title": "update-epic has no verbs for mutating an inline story: neither adding a new one to stories[] nor toggling an existing one's done flag. Both gaps force a hand-edit of state.json that risks JSON corruption (e.g. a naive json.dump re-escaping every em dash). Add update-epic <id> --add-story \"<title>\" and update-epic <id> --story <n> --done to close both; the toggle gap alone recurred across 6-7 sessions per user feedback, and the add gap was hit live again while adding two new stories to docs-site-cleanup this same session.",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -1092,7 +1092,8 @@
           "Batch preflight (2026-07-21): destructive-risk = none; all 5 epics are local-only edits to scripts/conductor.mjs, .githooks/pre-commit, README.md, SKILL.md, scripts/conductor.test.mjs. Session-continuity: 3 of 5 (banner-noise, project-md-diff-triviality, update-epic-story-verb) modify scripts/conductor.mjs, the same file this session invokes continuously -- must run SEQUENTIALLY (one at a time, tests+merge verified before the next starts), not in parallel worktrees, precisely to avoid a mid-batch regression breaking the orchestrator's own tool. Doc currency: update-epic-story-verb and project-md-diff-triviality both add new user-facing CLI flags -- README.md + SKILL.md updates are required, not optional."
         ],
         "notifications": []
-      }
+      },
+      "completedAt": "2026-07-21T06:42:07.249Z"
     },
     {
       "id": "conductor-mjs-module-split",

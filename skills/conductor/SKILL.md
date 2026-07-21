@@ -63,7 +63,9 @@ openspec-lane epic's Gate 1/Gate 2 review verdict (see "OpenSpec build" below); 
 --status archived` on an openspec-lane epic requires a passing Gate 2 verdict already recorded
 · `/pm:sync` register new proposals and plans ·
 `/pm:epic add` register any epic (`--parent`, `--external-id`) · `/pm:epic` → `add-many`
-(atomic bulk create) / `update-epic` (write-back, incl. `--title`/`--link`) / `remove-epic`
+(atomic bulk create) / `update-epic` (write-back, incl. `--title`/`--link`/`--add-story
+"<title>"`/`--story <n> --done` [1-indexed] — closes the hand-edit-of-state.json risk for
+inline `stories[]`) / `remove-epic`
 (hard-delete, `--cascade` for a parent + descendants) · **`set-active <id>` / `clear-active`**
 set the top-level active epic · `set-autonomy <id>` grant an epic broad execution trust (see
 "Epic-level autonomy" below) · `plan-hierarchy --parent <id>` batched execution plan for a
