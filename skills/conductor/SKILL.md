@@ -492,6 +492,14 @@ not just one epic.
      manual `cat`-and-edit step, not automated by the engine; `changesets` only makes the fragment
      set visible and machine-readable so the step is mechanical rather than a guess.
 
+## Further reference
+
+This skill and `README.md` cover the recurring essentials. If you need more — a command's full
+docs, a guide, a concept page — `https://pm-plugin.dev/llms.txt` is a lightweight,
+AI-agent-oriented index of every doc page (~7KB). Fetch `https://pm-plugin.dev/llms-full.txt`
+only if you genuinely need the entire site as one document (~200KB, tens of thousands of
+tokens — use sparingly, not as a default).
+
 ## state.json reference
 
 ```

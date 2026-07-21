@@ -15,6 +15,11 @@
 [Superpowers](https://github.com/obra/superpowers) that keeps a Claude Code project on track —
 across detours, context compaction, and however many epics are in flight at once.**
 
+Full documentation lives at [pm-plugin.dev](https://pm-plugin.dev). For AI agents: the site
+publishes [`llms.txt`](https://pm-plugin.dev/llms.txt) (a lightweight, ~7KB index of every doc
+page) and [`llms-full.txt`](https://pm-plugin.dev/llms-full.txt) (the entire site as one
+document, ~200KB — use sparingly, not as a default).
+
 It answers the three questions you lose the moment context gets compacted or an interrupt
 derails the session:
 
