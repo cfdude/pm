@@ -4,6 +4,7 @@
 
 <p align="center">
   <a href="https://github.com/cfdude/pm/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/cfdude/pm/ci.yml?branch=main&style=flat-square&label=CI" /></a>
+  <a href="https://github.com/cfdude/pm/actions/workflows/security.yml"><img alt="Security" src="https://img.shields.io/github/actions/workflow/status/cfdude/pm/security.yml?branch=main&style=flat-square&label=security" /></a>
   <a href="https://github.com/cfdude/pm/blob/main/.claude-plugin/plugin.json"><img alt="version" src="https://img.shields.io/github/package-json/v/cfdude/pm?filename=.claude-plugin%2Fplugin.json&style=flat-square&label=version" /></a>
   <a href="./LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" /></a>
 </p>

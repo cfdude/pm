@@ -6,6 +6,35 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.21.1] — 2026-07-20
+
+### Added
+
+- **Security scanning via `.github/workflows/security.yml`.** Calls the two reusable
+  `workflow_call` workflows published in `cfdude/.github` — Semgrep SAST
+  (`p/javascript`/`p/typescript`/`p/secrets`/`p/security-audit`) and a Trivy filesystem scan
+  (CRITICAL/HIGH) — on push/PR to `main` and a weekly schedule, publishing SARIF results to the
+  repo's Security tab. Both are non-blocking (never fail CI) by design in the reusable
+  workflows themselves. `security-events: write` is granted explicitly in the caller since the
+  repo's default `GITHUB_TOKEN` permission is read-only.
+- **`SECURITY.md`** — vulnerability reporting instructions and a short architecture note (the
+  engine's zero-dependency, instruction-layer-only design narrows its own attack surface).
+
+### Repo settings (live GitHub changes, not code)
+
+- Attempted to enable `secret_scanning_validity_checks` and
+  `secret_scanning_non_provider_patterns` via the repo API — both accepted the request (200 OK)
+  but did not change state, most likely gated behind a GitHub Advanced Security /
+  Enterprise-tier entitlement not available on this account even though the repo is public.
+  Basic secret scanning and push protection were already enabled and are unaffected.
+- Confirmed `main`'s branch protection already covers required-status-check, required
+  signatures, admin enforcement, and no force-push/delete — no changes needed there.
+- Confirmed `delete_branch_on_merge` stays **off** — `dev` is a persistent branch reused every
+  release, not a throwaway feature branch; auto-delete would break the `pr-workflow` skill's
+  sync step.
+- Renovate (org config in `cfdude/.github`) considered and explicitly skipped for now — `pm` is
+  zero-dependency, so it would only manage the two GitHub Actions version pins in `ci.yml`.
+
 ## [0.21.0] — 2026-07-20
 
 ### Added
