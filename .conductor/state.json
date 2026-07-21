@@ -926,11 +926,11 @@
         },
         {
           "title": "Migrate the Changelog page from plain markdown headers to Mintlify's native <Update> component -- gets an auto table-of-contents, tag filters, and (only available via <Update>) a subscribable RSS feed at /changelog/rss.xml",
-          "done": false
+          "done": true
         },
         {
           "title": "Add a docs-site page/section documenting the free-tier search MCP server already live at pm-plugin.dev/mcp -- exact connection steps per client (Claude, Claude Code, Cursor, VS Code), mirroring Mintlify's own \"Example: Connect to the Mintlify MCP server\" pattern",
-          "done": false
+          "done": true
         }
       ]
     },
