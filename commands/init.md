@@ -9,9 +9,13 @@ Initialize the `pm` conductor for the current project.
    **`conductor` skill** — it is the agent-facing how-to (the mental model, lanes, statuses, the
    detour → PUSH/POP → reconcile workflow, and the `state.json` reference). This is what lets you
    drive the plugin correctly even if you've never seen this version before. For deeper human
-   reference, `${CLAUDE_PLUGIN_ROOT}/README.md` also ships with the plugin. (You do NOT need to
-   re-read these every session — the persistent CLAUDE.md rules block written below carries the
-   recurring essentials; this step is the one-time deep orientation.)
+   reference, `${CLAUDE_PLUGIN_ROOT}/README.md` also ships with the plugin. If you need more than
+   either of those covers, `https://pm-plugin.dev/llms.txt` is a lightweight, AI-agent-oriented
+   index of every doc page (~7KB) — fetch `https://pm-plugin.dev/llms-full.txt` only if you
+   genuinely need the entire site as one document (~200KB, tens of thousands of tokens; use
+   sparingly). (You do NOT need to re-read any of these every session — the persistent CLAUDE.md
+   rules block written below carries the recurring essentials; this step is the one-time deep
+   orientation.)
 
 1. Run the engine's init (it creates `.conductor/state.json`, registers existing OpenSpec
    changes as untriaged epics, and renders `PROJECT.md`):

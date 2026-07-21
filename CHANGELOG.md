@@ -6,6 +6,20 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.22.0] — 2026-07-20
+
+### Added
+
+- **On-demand AI-agent doc reference: `llms.txt`/`llms-full.txt`.** Mintlify auto-publishes both
+  at `pm-plugin.dev` — `llms.txt` is a lightweight (~7KB) index of every doc page, `llms-full.txt`
+  is the entire site as one markdown document (~200KB, tens of thousands of tokens). Referenced
+  from the one-time orientation points that already exist (`/pm:init`'s step 0, the `conductor`
+  skill's new "Further reference" section) rather than the persistent CLAUDE.md rules block —
+  same "deep orientation is on-demand, not recurring" design as pointing at README since 0.6.0.
+  `llms-full.txt` carries an explicit size/token warning at every reference point so it's never
+  reached for as a default. Also added a docs-site pointer to README.md's intro, which had no
+  link to `pm-plugin.dev` at all until now.
+
 ## [0.21.1] — 2026-07-20
 
 ### Added
