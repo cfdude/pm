@@ -50,15 +50,15 @@ import {
   LANE_RANK, laneRank,
 } from "./lib/constants.mjs";
 import { gitShortSha, appendDetourLog } from "./lib/git.mjs";
-import { validLink, normalizeLink, detourContext } from "./lib/links.mjs";
+import { validLink, detourContext } from "./lib/links.mjs";
 import {
-  activeChangeIds, planFiles, firstHeading, isArchived, reconcileArchived,
+  activeChangeIds, planFiles, firstHeading, isArchived,
   countCheckboxes, epicProgress, resolveEpics, missing, orderQueueWithDependencies, bar,
 } from "./lib/epic-progress.mjs";
-import { readJSON, readStdin, isInitialized, defaultState, loadState, saveState } from "./lib/state.mjs";
+import { readJSON, readStdin, isInitialized, defaultState, loadState } from "./lib/state.mjs";
 import {
   pluginRoot, pluginVersion, changelogSections, changelogBetween,
-  changelogAddedHeadlines, newestInstalledVersion, cmpVer, stampVersion,
+  changelogAddedHeadlines,
 } from "./lib/plugin-meta.mjs";
 import {
   currentTracker, currentSecondaryTrackers, secondaryTrackerKey, upsertSecondaryTracker,
@@ -79,69 +79,7 @@ import { setTracker } from "./lib/tracker.mjs";
 import { laneMatchTest, setLaneRouting, suggestLane } from "./lib/lane-routing.mjs";
 import { setReviewMode } from "./lib/review-mode.mjs";
 import { setGateGuard, gateGuardCheck } from "./lib/gate-guard.mjs";
-
-// ---------- migrations ----------
-
-// MIGRATIONS — APPEND-ONLY, each keyed by the release that introduced the change.
-// NEVER remove or reorder a shipped entry: a repo many versions behind replays every
-// entry whose release > its stamped version. upgrade() applies them SORTED by release,
-// so a multi-version jump (e.g. 0.2.0 → 0.5.x) runs them in the correct order regardless
-// of array position. Each apply() must be additive, idempotent, and backward-compatible.
-const MIGRATIONS = [
-  {
-    release: "0.3.0",
-    note: "stamp explicit lane on epics (lane-agnostic schema)",
-    apply(state) {
-      for (const e of state.epics) if (!e.lane) e.lane = "openspec";
-    },
-  },
-  {
-    release: "0.5.0",
-    note: "normalize links (repair colon-strings, drop unrecoverable)",
-    apply(state) {
-      for (const e of state.epics) {
-        e.links = (Array.isArray(e.links) ? e.links : []).map(normalizeLink).filter(Boolean);
-      }
-    },
-  },
-];
-
-function upgrade() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
-  const running = pluginVersion();
-  const newest = newestInstalledVersion();
-  if (running && newest && cmpVer(newest, running) > 0) {
-    process.stderr.write(
-      `conductor: this is pm ${running}, but ${newest} is installed — your session is still ` +
-      `running the old engine.\n` +
-      `Run /reload-plugins (or restart Claude Code), then /pm:upgrade again.\n` +
-      `(Running the engine directly from a checkout? Set PM_CACHE_ROOT to override.)\n`);
-    process.exit(1);
-  }
-  const state = loadState();
-  const stamped = state.pmVersion || "0.0.0";
-  let applied = 0;
-  // Apply in ascending release order (independent of array authoring order) so a
-  // repo several versions behind runs every missed migration in the correct sequence.
-  const ordered = [...MIGRATIONS].sort((a, b) => cmpVer(a.release, b.release));
-  for (const m of ordered) {
-    if (cmpVer(m.release, stamped) > 0) { m.apply(state); applied++; }
-  }
-  reconcileArchived(state);
-  stampVersion(state);
-  saveState(state);
-  writeRules();
-  render();
-  process.stderr.write(`conductor: upgraded (${applied} migration(s)), pmVersion now ${state.pmVersion || "unknown"}\n`);
-
-  // Surface WHAT the upgrade brought, not just that it happened — close the
-  // post-upgrade blindspot. Print the CHANGELOG delta for (stamped, running].
-  const delta = changelogBetween(stamped, state.pmVersion || null);
-  if (delta && delta.length) {
-    process.stdout.write(
-      `What's new in pm (since ${stamped}):\n\n` + delta.map(s => s.body).join("\n\n") + "\n");
-  }
-}
+import { upgrade } from "./lib/migrations.mjs";
 
 // ---------- changelog ----------
 
