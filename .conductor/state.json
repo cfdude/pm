@@ -905,7 +905,7 @@
       "id": "docs-site-cleanup",
       "title": "Clean up the pm-plugin.dev Mintlify docs site: fix the wrong homepage title/logo, differentiate index.mdx from introduction.mdx, align branding with the README's Project Manager (PM) naming, add an Industry-Frontier-Practice-style section, and exclude repo-cruft files (AGENTS.md/README.md/LICENSE/.atlas-analysis.json) from the ingested file tree.",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -947,7 +947,8 @@
           "title": "Add a docs-site page/section documenting the free-tier search MCP server already live at pm-plugin.dev/mcp -- exact connection steps per client (Claude, Claude Code, Cursor, VS Code), mirroring Mintlify's own \"Example: Connect to the Mintlify MCP server\" pattern",
           "done": true
         }
-      ]
+      ],
+      "completedAt": "2026-07-21T06:45:48.230Z"
     },
     {
       "id": "df-precommit-hook-too-noisy-on-success",
