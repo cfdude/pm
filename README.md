@@ -38,14 +38,13 @@ merge — not a metaphor, an actual dispatch-and-converge framework (see `/pm:hi
 Not a benchmark — real numbers pulled straight from this repo's own history, verifiable in
 `git log`:
 
-- **21 agents** dispatched through PM's own **multi-agent harness** across two dogfooding
-  batches — worktree-isolated, unattended, converging back through sequential merge with
-  **zero data loss** and **zero unresolvable conflicts** (every conflict was mechanical: a
-  shared CHANGELOG header, a usage string — never a real logic collision).
-- **26 releases** shipped end-to-end (spec → build → test → changelog → version bump → release)
+- Every multi-agent hierarchy dispatch runs **worktree-isolated**, unattended, converging back
+  through sequential merge with **zero data loss** — every conflict seen so far has been
+  mechanical (a shared CHANGELOG header, a usage string), never a real logic collision.
+- **34 releases** shipped end-to-end (spec → build → test → changelog → version bump → release)
   with the plugin managing its own backlog the entire time.
-- **189 tests**, **0 dependencies** — the entire engine (`scripts/conductor.mjs`) is Node 18+
-  built-ins only, ~2,100 lines, nothing to `npm install`.
+- **235 tests**, **0 dependencies** — the entire engine (`scripts/conductor.mjs`) is Node 18+
+  built-ins only, ~2,400 lines, nothing to `npm install`.
 - Caught its own bugs mid-flight, live: a stale-cache silent fallback, an archived-child leak in
   hierarchy planning, a false-positive auto-detour heuristic — each found by using the tool on
   itself, logged as a `DF-` finding, and fixed in the same session it was discovered.
