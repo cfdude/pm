@@ -6,6 +6,17 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.20.1] — 2026-07-20
+
+### Added
+
+- **`/pm:upgrade` now recommends adopting relevant new capabilities.** After printing the
+  changelog delta, the command's instructions tell the agent to review each `Added` headline,
+  judge whether it's an opt-in capability (a new flag/subcommand/behavior, not a bug fix or
+  automatic change) relevant to the repo's current `.conductor/state.json`, and recommend it —
+  one line, one reason, the command to run — without enabling anything itself. Instruction-only
+  change (`commands/upgrade.md`, `README.md`); no engine code or schema touched.
+
 ## [0.20.0] — 2026-07-20
 
 ### Added

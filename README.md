@@ -451,6 +451,11 @@ re-renders `PROJECT.md`, and stamps the new `pmVersion`. Idempotent — safe to 
 once. Requires `/reload-plugins` first if you just updated the plugin (the SessionStart
 briefing tells you when).
 
+After showing the changelog delta ("What's new in pm"), the agent reviews each `Added`
+headline and recommends adopting any opt-in capability that's relevant to this repo's current
+`.conductor/state.json` (e.g. secondary trackers, `thorough` review mode) — one line, one
+reason, the command to run. It never enables anything itself.
+
 </details>
 
 <details>
