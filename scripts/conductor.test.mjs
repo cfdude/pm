@@ -1967,14 +1967,36 @@ test("verify-worktrees flags a hierarchy-child worktree whose epic is already ar
   execFileSync("git", ["worktree", "remove", "--force", wtPath], { cwd });
 });
 
-test("verify-worktrees does not flag a hierarchy-child worktree whose epic is still in flight", () => {
+test("verify-worktrees does not flag a hierarchy-child worktree whose epic is still in flight and whose branch has unmerged work", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
   gitInitWithCommit(cwd);
   run(["add-epic", "--id", "in-flight-child", "--lane", "claude-code", "--status", "active"], { cwd });
   const wtPath = addHierarchyWorktree(cwd, "in-flight-child");
+  // Simulate real in-flight work: a commit on the child branch not yet merged into HEAD, so
+  // its tip is genuinely NOT an ancestor of the current branch (unlike a freshly-created
+  // worktree, whose tip trivially equals HEAD at creation time).
+  fs.writeFileSync(path.join(wtPath, "wip.txt"), "wip\n");
+  execFileSync("git", ["add", "wip.txt"], { cwd: wtPath });
+  execFileSync("git", ["commit", "-q", "-m", "wip"], { cwd: wtPath });
   const out = JSON.parse(run(["verify-worktrees"], { cwd }));
   assert.deepEqual(out.orphaned, []);
+  execFileSync("git", ["worktree", "remove", "--force", wtPath], { cwd });
+});
+
+test("verify-worktrees flags a hierarchy-child worktree whose branch is already merged into HEAD, even when the epic's status is not archived", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  gitInitWithCommit(cwd);
+  run(["add-epic", "--id", "merged-child", "--lane", "claude-code", "--status", "active"], { cwd });
+  const wtPath = addHierarchyWorktree(cwd, "merged-child");
+  // Branch tip is created directly from HEAD (no divergent commits), so it's trivially an
+  // ancestor of HEAD — mirrors the real "git branch -d failed, used by worktree" scenario
+  // where the merge already landed but the worktree/epic bookkeeping wasn't cleaned up.
+  const out = JSON.parse(run(["verify-worktrees"], { cwd }));
+  assert.equal(out.orphaned.length, 1);
+  assert.equal(out.orphaned[0].epicId, "merged-child");
+  assert.deepEqual(out.orphaned[0].reasons, ["branch-merged"]);
   execFileSync("git", ["worktree", "remove", "--force", wtPath], { cwd });
 });
 

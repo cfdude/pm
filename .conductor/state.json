@@ -793,7 +793,7 @@
       "id": "df-verify-worktrees-merged-not-just-archived",
       "title": "DF: verify-worktrees only flags a hierarchy-child worktree as orphaned when its epic status is archived — it missed the case (hit this session) where a worktree's branch is already fully merged into the current branch but the worktree itself was never removed (git branch -d then failed with 'used by worktree'). Extend verify-worktrees to also flag any hierarchy-child/worktree-agent-* worktree whose branch tip is already an ancestor of the current branch, regardless of the epic's status field.",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -811,7 +811,8 @@
           "Batch preflight (2026-07-21): destructive-risk = none; all 5 epics are local-only edits to scripts/conductor.mjs, .githooks/pre-commit, README.md, SKILL.md, scripts/conductor.test.mjs. Session-continuity: 3 of 5 (banner-noise, project-md-diff-triviality, update-epic-story-verb) modify scripts/conductor.mjs, the same file this session invokes continuously -- must run SEQUENTIALLY (one at a time, tests+merge verified before the next starts), not in parallel worktrees, precisely to avoid a mid-batch regression breaking the orchestrator's own tool. Doc currency: update-epic-story-verb and project-md-diff-triviality both add new user-facing CLI flags -- README.md + SKILL.md updates are required, not optional."
         ],
         "notifications": []
-      }
+      },
+      "completedAt": "2026-07-21T06:09:36.854Z"
     },
     {
       "id": "df-autodetour-false-positive-conductor-admin-commits",

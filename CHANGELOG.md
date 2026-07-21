@@ -6,6 +6,20 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [Unreleased]
+
+### Fixed
+
+- **`verify-worktrees` now also flags a hierarchy-child worktree whose branch is already
+  merged, not just ones whose epic status is `archived`.** Added a second, independent
+  trigger — `git merge-base --is-ancestor <branch-tip> HEAD` — that fires regardless of the
+  epic's status field. Fixes the real scenario hit this session: `git branch -d` failed with
+  "used by worktree" after a merge because the worktree was never removed, and the epic's
+  status hadn't been (or wasn't going to be) flipped to `archived` either. Each flagged
+  worktree's `reasons` array now lists which trigger(s) fired (`epic-archived`,
+  `branch-merged`, or both) — still a pure read/report function, it never deletes anything
+  itself.
+
 ## [0.22.0] — 2026-07-20
 
 ### Added

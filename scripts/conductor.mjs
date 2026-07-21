@@ -2290,15 +2290,23 @@ function changelog() {
 
 // ---------- worktree hygiene ----------
 
-/** `verify-worktrees` — cross-references `git worktree list` against epic status to catch a
+/** `verify-worktrees` — cross-references `git worktree list` against epic status (and, since
+ *  the `df-verify-worktrees-merged-not-just-archived` fix, actual merge state) to catch a
  *  hierarchy-dispatch worktree (branch `hierarchy-child/<epic-id>`, see the epic-hierarchy
  *  orchestration design's worktree-isolation addendum) that was never cleaned up after its
- *  epic's branch merged and the epic was archived. Pure read — flags, never deletes, since a
- *  worktree could in principle still hold in-progress work the bookkeeping hasn't caught up
- *  with. Bakes worktree hygiene into the plugin itself (checkable on any fresh install) rather
- *  than depending on a user's own personal discipline/CLAUDE.md. Zero-dependency: shells out to
- *  `git worktree list --porcelain` only; gracefully returns no orphans if that fails (e.g. this
- *  isn't a git repo at all). */
+ *  work landed. Two independent triggers, either one is enough to flag a worktree:
+ *    - `epic-archived` — the epic's status field says it's done (the original check).
+ *    - `branch-merged` — the worktree's branch tip is already an ancestor of the current
+ *      branch's HEAD (`git merge-base --is-ancestor`), regardless of what the epic's status
+ *      field says. This catches the case where `git branch -d` was attempted after a merge
+ *      and failed with "used by worktree" — the branch is fully merged but the worktree
+ *      itself (and often the epic's status bookkeeping) was never cleaned up.
+ *  Pure read — flags, never deletes, since a worktree could in principle still hold
+ *  in-progress work the bookkeeping hasn't caught up with. Bakes worktree hygiene into the
+ *  plugin itself (checkable on any fresh install) rather than depending on a user's own
+ *  personal discipline/CLAUDE.md. Zero-dependency: shells out to `git worktree list
+ *  --porcelain` and `git merge-base --is-ancestor` only; gracefully returns no orphans if
+ *  listing worktrees fails (e.g. this isn't a git repo at all). */
 function verifyWorktrees() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const state = loadState();
@@ -2312,19 +2320,41 @@ function verifyWorktrees() {
   }
   const orphaned = [];
   let currentPath = null;
+  let currentHead = null;
   for (const line of out.split("\n")) {
-    if (line.startsWith("worktree ")) { currentPath = line.slice("worktree ".length).trim(); continue; }
+    if (line.startsWith("worktree ")) { currentPath = line.slice("worktree ".length).trim(); currentHead = null; continue; }
+    if (line.startsWith("HEAD ")) { currentHead = line.slice("HEAD ".length).trim(); continue; }
     const m = line.match(/^branch refs\/heads\/hierarchy-child\/(.+)$/);
     if (m && currentPath) {
       const epicId = m[1];
       const epic = byId.get(epicId);
-      if (epic && epic.status === "archived") {
-        orphaned.push({ path: currentPath, branch: `hierarchy-child/${epicId}`, epicId });
+      const branch = `hierarchy-child/${epicId}`;
+      const archived = !!(epic && epic.status === "archived");
+      const merged = !!(currentHead && isAncestorOfCurrentHead(currentHead));
+      if (archived || merged) {
+        const reasons = [];
+        if (archived) reasons.push("epic-archived");
+        if (merged) reasons.push("branch-merged");
+        orphaned.push({ path: currentPath, branch, epicId, reasons });
       }
       currentPath = null;
+      currentHead = null;
     }
   }
   process.stdout.write(JSON.stringify({ orphaned }) + "\n");
+}
+
+/** True if `sha` is an ancestor of the current branch's HEAD (i.e. already merged in) —
+ *  used by `verifyWorktrees()`'s `branch-merged` trigger. Returns false (never throws) if
+ *  the check itself fails for any reason (detached/missing ref, shallow clone, etc.) so a
+ *  git-plumbing hiccup degrades to "not flagged" rather than crashing verify-worktrees. */
+function isAncestorOfCurrentHead(sha) {
+  try {
+    execSync(`git merge-base --is-ancestor ${sha} HEAD`, { cwd: ROOT, stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /** `changesets` — lists the `.changesets/<epic-id>.md` fragment files hierarchy children write
