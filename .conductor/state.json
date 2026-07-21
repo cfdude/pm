@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": null,
+  "active": "conductor-mjs-module-split",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -1100,11 +1100,12 @@
       "id": "conductor-mjs-module-split",
       "title": "Split scripts/conductor.mjs (83 functions, ~2,400 lines, 21 section markers) into native ES modules (scripts/lib/*.mjs), zero-dependency, entry point unchanged. Motivated by AI-agent token-efficiency, not human-readability tech debt: every edit to a monolith costs a full-file read/orient regardless of change size, and that cost compounds every session. Low refactor risk confirmed -- conductor.test.mjs is entirely black-box (shells out to the CLI via execFileSync/spawnSync, never imports internals), so internal structure is test-transparent. Needs a proper brainstorm on module boundaries before any code moves (size matches the >8h/cross-system openspec-lane threshold), not an ad hoc split.",
       "priority": "P2",
-      "status": "queued",
+      "status": "active",
       "role": "epic",
       "lane": "openspec",
       "links": [],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "startedAt": "2026-07-21T07:33:20.197Z"
     }
   ],
   "detourStack": [],
