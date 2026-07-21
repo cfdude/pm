@@ -1031,5 +1031,9 @@
     }
   ],
   "detourStack": [],
-  "pmVersion": "0.22.0"
+  "pmVersion": "0.22.0",
+  "tracker": {
+    "system": "github-issues",
+    "repo": "cfdude/pm"
+  }
 }

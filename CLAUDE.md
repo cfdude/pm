@@ -160,4 +160,29 @@ mode this guards against is silent: hand-editing `.conductor/state.json` to flip
 anyone reported it, even though `/pm:feedback` existed the whole time. A filed issue is
 cheap; an unreported recurring papercut is not — silent pain is where a product fails its
 users.
+
+## GitHub issue sync (cfdude/pm)
+
+This tracker is inward: open GitHub issues become conductor epics, same pattern as the
+OpenSpec/Superpowers auto-registration `sync` already does for on-disk changes/plans. The
+pm plugin NEVER calls `gh` itself — as part of running `/pm:sync`, YOU (the interactive
+agent) do:
+1. `gh issue list --repo cfdude/pm --state open --json number,title,url,labels`.
+2. For each issue, check whether an epic with that issue number as `externalId` already
+   exists (`/pm:epic list` or read `.conductor/state.json`) — if so, skip it (already
+   mirrored; re-running sync must never create a duplicate epic for the same issue).
+3. Otherwise register a new untriaged epic: `add-epic --status untriaged --external-id
+   <issue-number> --external-url <issue-url> --lane claude-code --priority P2`, unless a
+   `P0`/`P1`/`P2`/`P3` label is present on the issue, in which case use that label's
+   priority instead of the P2 default. `add-epic` itself rejects a duplicate `--external-id`
+   as a second line of defense, so a stale local view can't produce a duplicate either.
+4. Set `--title` from the issue title so the epic is legible before you triage it further.
+
+## Sync after completing tracker-linked work
+
+After you close/transition a tracker-linked issue as part of completing an epic (the
+writeback steps above), immediately re-sync with your tracker(s) — run `/pm:sync` — to pull
+in anything new that appeared while you were heads-down. You're already doing tracker I/O
+for this epic, so this is the cheapest moment to catch it; this applies whether you have one
+tracker or several (primary + secondary) configured.
 <!-- END pm-conductor rules -->
