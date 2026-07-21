@@ -13,4 +13,25 @@
 unset GIT_DIR GIT_INDEX_FILE GIT_WORK_TREE GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_PREFIX
 set -e
 cd "$(git rev-parse --show-toplevel)"
-node --test scripts/conductor.test.mjs
+
+# df-precommit-hook-too-noisy-on-success: quiet on success (one summary line); only dump the
+# full node --test output (every test name, the engine banner, etc.) when something actually
+# fails. Capture to a temp file, check the real exit code, cat the temp file only on failure.
+tmpfile=$(mktemp)
+trap 'rm -f "$tmpfile"' EXIT
+
+if node --test scripts/conductor.test.mjs >"$tmpfile" 2>&1; then
+  total=$(grep -m1 '^ℹ tests ' "$tmpfile" | awk '{print $3}')
+  passed=$(grep -m1 '^ℹ pass ' "$tmpfile" | awk '{print $3}')
+  if [ -n "$total" ] && [ -n "$passed" ]; then
+    echo "pre-commit: ${passed}/${total} passing"
+  else
+    echo "pre-commit: tests passing (summary line not found in test-runner output)"
+  fi
+  exit 0
+else
+  status=$?
+  echo "pre-commit: tests FAILED -- full output follows" >&2
+  cat "$tmpfile" >&2
+  exit "$status"
+fi
