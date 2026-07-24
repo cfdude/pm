@@ -1114,6 +1114,16 @@
         }
       },
       "completedAt": "2026-07-21T09:59:09.242Z"
+    },
+    {
+      "id": "edd-harness-agent-behavior-testing",
+      "title": "Adopt edd-harness (~/Documents/Repos/edd-harness, a generic domain-agnostic Python EDD library the user wrote) to evaluate pm-agent instruction-following behavior -- especially non-deterministic misinterpretation bugs that recur across sessions and can't be caught by a unit test. First candidate scenario: the /pm:upgrade local-command-caveat misread (fixed ad hoc in commands/upgrade.md 2026-07-23/24, but the underlying class of bug -- an agent misjudging whether ambiguous wrapped context is a real command vs passive local output -- will recur, especially once non-Claude-Code models are in scope). Needs a proper brainstorm before any code: the adapter must actually drive a real headless agent session (e.g. spawn 'claude -p' with a crafted transcript) and capture observable side effects, which is a genuinely new capability, not a quick add. Likely shape per edd-harness's own integration guide: a new evals/ dir in this repo (pm) that depends on edd-harness and owns the domain-specific corpus/adapter, since pm is the system under test. Decision-lane per this repo's routing rule since it's cross-repo, exploratory work with real design choices (adapter mechanics, corpus authoring, repo ownership, multi-model scoring) rather than a well-scoped build.",
+      "priority": "P2",
+      "status": "planned",
+      "role": "epic",
+      "lane": "decision",
+      "links": [],
+      "reconcileNeeded": false
     }
   ],
   "detourStack": [],
