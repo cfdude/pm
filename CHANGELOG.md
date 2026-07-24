@@ -8,6 +8,19 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.23.1] — 2026-07-23
+
+### Fixed
+
+- **`/pm:upgrade`'s own instructions now defend against a real misread: an agent treating the
+  command invocation itself as passive local-command output and skipping it entirely.** When
+  `/reload-plugins` and `/pm:upgrade` land in the same turn — the exact sequence this command's
+  own preamble recommends — the harness wraps that turn's local command output in a caveat meant
+  for `/reload-plugins`'s passive stdout, and an agent can over-apply that caveat to `/pm:upgrade`
+  itself. Self-inflicted by this command's own documented workflow, not fixable by controlling
+  the harness, so the command's own text now states plainly: if you're seeing these instructions,
+  the command was invoked — execute it.
+
 ## [0.23.0] — 2026-07-21
 
 ### Added
