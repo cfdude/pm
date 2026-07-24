@@ -8,6 +8,14 @@ allowed-tools: Bash, Read
 > Claude Code) **first** so this command uses the new engine. If you instead see a
 > message like "this is pm 0.4.0 but 0.4.1 is installed", that is the reload reminder —
 > the upgrade has not run yet. Reload, then come back and run `/pm:upgrade`.
+>
+> **If you're seeing this file's contents in your context right now, `/pm:upgrade` was
+> just invoked — execute it.** When `/reload-plugins` and `/pm:upgrade` land in the same
+> turn (exactly the sequence recommended above), the harness wraps that turn's local
+> command output in a caveat meant for passive stdout (e.g. `/reload-plugins`'s "Reloaded:
+> N plugins" line) — it does NOT mean this command's instructions are passive output too.
+> This file being loaded is the user's request; do not respond with "no action needed" or
+> similar and skip the steps below.
 
 Bring this repository in line with the currently-installed `pm` plugin version. Safe to run
 anytime; idempotent. Use it when the briefing shows a "pm <old> → <new>" upgrade nudge.
