@@ -37,6 +37,30 @@ git config core.hooksPath .githooks
 After that, `git commit` runs `.githooks/pre-commit` automatically, which runs
 `node --test scripts/conductor.test.mjs` and blocks the commit on any failure.
 
+## If main moves out from under your PR
+
+The normal flow above assumes every change to `main` comes through a `dev` → `main` PR. That
+can be bypassed — a direct GitHub web-UI edit landing on `main` while a `dev`-branch PR is
+still open (this happened for real: PR #22, "added light logo", was merged directly to `main`
+via the GitHub UI instead of through `dev`). When that happens, `dev` and `main` diverge, and
+your open PR's diff is no longer against `main`'s actual tip.
+
+Recover by rebasing `dev` onto the new `main` tip, then force-pushing (this repo is solo-
+maintainer, so a force-push to `dev` — never to `main`, which stays protected regardless — is
+low-risk, but still confirm nothing else is mid-flight on `dev` first):
+
+```bash
+git checkout dev
+git fetch origin
+git rebase main
+git push --force-with-lease
+```
+
+`--force-with-lease` (not a bare `--force`) refuses the push if `dev` moved on the remote since
+your last fetch, so it won't silently clobber someone else's concurrent work. If the rebase hits
+conflicts, resolve them the normal way (`git status` shows the conflicting files; fix, `git add`,
+`git rebase --continue`) before pushing.
+
 ## What you inherit when you fork this repo
 
 This repo plays two roles at once: it's the plugin's source code, and it's itself a project
