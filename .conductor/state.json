@@ -1066,12 +1066,13 @@
       "id": "2026-07-14-epic-hierarchy-orchestration",
       "title": "Epic-Hierarchy Orchestration Implementation Plan",
       "priority": "P?",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "planPath": "docs/superpowers/plans/2026-07-14-epic-hierarchy-orchestration.md",
       "links": [],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "completedAt": "2026-07-25T18:52:22.706Z"
     },
     {
       "id": "df-update-epic-no-story-toggle-verb",
