@@ -1,8 +1,16 @@
 # Design: Codex CLI platform support
 
-**Epic:** `multi-platform-agent-support` (re-scoped to Codex-first)
+**Epic:** `codex-platform-support` — child of `multi-platform-agent-support`
 **Date:** 2026-07-25
-**Depends on:** `rules-block-hardcodes-claude-slash-commands`
+**Depends on (all three must land first):** `platform-parity-mechanism`,
+`edd-harness-agent-behavior-testing`, `rules-block-hardcodes-claude-slash-commands`
+
+> This is the *fourth* child of the `multi-platform-agent-support` parent epic and is
+> deliberately sequenced last. Claude Code is the permanent base platform; every other
+> platform is held to parity with it. The three sibling epics build the machinery that
+> makes that parity enforceable — structural, procedural, and semantic — *before* a second
+> platform exists, so drift never gets an unobserved window. Each sibling gets its own
+> design doc; this one covers only the Codex port itself.
 
 ## Problem
 
@@ -121,15 +129,30 @@ as documented. That gets tested before any artifact-layout work.
 6. **Install end-to-end from the marketplace** into a clean project and verify every pm
    workflow works there.
 
-## Dependency
+## Dependencies
 
-`rulesBlock()` hardcodes Claude Code slash-command syntax (`/pm:status`,
-`/pm:detour --minimal`, and the `Manage with /pm:status · /pm:next · …` footer). On a platform
-whose command surface differs, that text instructs the agent to run commands that may not
-exist. Tracked separately as `rules-block-hardcodes-claude-slash-commands`; it must land before
-pm can honestly claim Codex support. Codex *does* have slash commands, so the fix may be a
-per-platform command-prefix rather than a full CLI-form fallback — the shape gets settled in
-that epic.
+**Claude Code is the permanent base platform.** Every capability originates there and every
+other platform is held to parity with it. Three sibling epics build the enforcement machinery
+and must land first:
+
+1. **`platform-parity-mechanism`** — the structural gate: a machine-parseable parity ledger
+   plus a CI test that fails when a Claude Code artifact has no per-platform counterpart and
+   no explicit exemption. The Codex port is done *under* this gate, so the ledger is populated
+   as the port proceeds rather than reconstructed afterward. Any capability that genuinely
+   cannot work on Codex becomes a documented exemption row with a stated reason — never a
+   silent omission.
+2. **`edd-harness-agent-behavior-testing`** — the semantic gate. A structural test can prove a
+   counterpart file exists; it can never prove the Codex version *behaves* the same. That gap
+   is closed by evaluation-driven development: author a scenario corpus, bless a **Claude Code
+   baseline**, then run the identical scenarios against Codex and compare. This ordering is
+   structurally necessary — the baseline must exist before there is anything for a Codex run
+   to be measured against.
+3. **`rules-block-hardcodes-claude-slash-commands`** — `rulesBlock()` hardcodes Claude Code
+   slash-command syntax (`/pm:status`, `/pm:detour --minimal`, the
+   `Manage with /pm:status · /pm:next · …` footer). On a platform whose command surface
+   differs, that text instructs the agent to run commands that may not exist. Codex *does*
+   have slash commands, so the fix may be a per-platform command prefix rather than a full
+   CLI-form fallback — settled in that epic.
 
 ## Out of scope
 

@@ -844,13 +844,7 @@
       "status": "active",
       "role": "epic",
       "lane": "claude-code",
-      "links": [
-        {
-          "type": "depends-on",
-          "epic": "rules-block-hardcodes-claude-slash-commands",
-          "reason": "the rules block must be able to emit non-slash-command phrasing before pm can honestly claim support on a platform without slash commands"
-        }
-      ],
+      "links": [],
       "reconcileNeeded": false,
       "startedAt": "2026-07-25T19:35:58.751Z"
     },
@@ -1128,22 +1122,62 @@
     {
       "id": "edd-harness-agent-behavior-testing",
       "title": "Adopt edd-harness (~/Documents/Repos/edd-harness, a generic domain-agnostic Python EDD library the user wrote) to evaluate pm-agent instruction-following behavior -- especially non-deterministic misinterpretation bugs that recur across sessions and can't be caught by a unit test. First candidate scenario: the /pm:upgrade local-command-caveat misread (fixed ad hoc in commands/upgrade.md 2026-07-23/24, but the underlying class of bug -- an agent misjudging whether ambiguous wrapped context is a real command vs passive local output -- will recur, especially once non-Claude-Code models are in scope). Needs a proper brainstorm before any code: the adapter must actually drive a real headless agent session (e.g. spawn 'claude -p' with a crafted transcript) and capture observable side effects, which is a genuinely new capability, not a quick add. Likely shape per edd-harness's own integration guide: a new evals/ dir in this repo (pm) that depends on edd-harness and owns the domain-specific corpus/adapter, since pm is the system under test. Decision-lane per this repo's routing rule since it's cross-repo, exploratory work with real design choices (adapter mechanics, corpus authoring, repo ownership, multi-model scoring) rather than a well-scoped build.",
-      "priority": "P2",
-      "status": "planned",
+      "priority": "P1",
+      "status": "queued",
       "role": "epic",
       "lane": "decision",
       "links": [],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "parent": "multi-platform-agent-support"
     },
     {
       "id": "rules-block-hardcodes-claude-slash-commands",
       "title": "rulesBlock() hardcodes Claude Code slash-command syntax (/pm:status, /pm:detour --minimal, /pm:resume) throughout the emitted CLAUDE.md rules text, plus the 'Manage with /pm:status · /pm:next · ...' footer. On any platform without slash commands, that text is actively misleading -- it instructs the agent to run commands that don't exist there. Needs a command-style notion so the block can emit the direct CLI form (node scripts/conductor.mjs render) instead. rulesBlock() already takes (tracker, reviewMode, secondaryTrackers) so an added parameter fits the existing signature. Prerequisite for any multi-platform support; found during the multi-platform-agent-support brainstorm.",
-      "priority": "P2",
+      "priority": "P1",
       "status": "queued",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "parent": "multi-platform-agent-support"
+    },
+    {
+      "id": "platform-parity-mechanism",
+      "title": "Build the mechanism that keeps every supported platform at parity with the Claude Code base, BEFORE any second platform exists. Three layers, mirroring how this repo already enforces documentation currency: (1) MECHANICAL -- a machine-parseable parity ledger (one markdown file with a table, OpenSpec supported-tools.md style, parsed directly by a CI test so exemptions are real config not prose) plus a conductor.test.mjs gate that enumerates Claude Code artifacts (commands/*.md, hook events in hooks/hooks.json, skills/, agents/) and FAILS CI when any lacks either a per-platform counterpart or an explicit exemption row with a reason; generic over whatever platforms the ledger lists, so it passes trivially at zero platforms and starts enforcing the moment codex is added. (2) PROCEDURAL -- a project-local skill that walks each platform directory in order, reads what changed in the Claude Code base, determines the per-platform delta, applies it, and updates the ledger; same shape as release-checklist/mintlify-doc-sync. (3) Semantic parity is explicitly NOT this epic's job -- a structural test can prove a counterpart file exists but never that it behaves the same; that gap is closed by the edd-harness sibling epic. Deliberately sequenced before codex-platform-support so the gate never has a window where drift could start unobserved.",
+      "priority": "P1",
+      "status": "queued",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [],
+      "reconcileNeeded": false,
+      "parent": "multi-platform-agent-support"
+    },
+    {
+      "id": "codex-platform-support",
+      "title": "Port pm to Codex CLI at full parity -- the first non-Claude-Code platform, deliberately done under the parity gates rather than before them. Design doc: docs/superpowers/specs/2026-07-25-codex-platform-support-design.md. Verified hands-on against Codex CLI 0.145.0 (both secondary research methods were wrong): hooks/multi_agent/skill_search are all stable+default-on, there is a Git-sourced plugin marketplace, and Codex's hook schema is near-identical to Claude Code's including hookSpecificOutput.additionalContext injection, a compact source value, and exit-code-2 blocking -- so pm's briefing-after-compaction and gate-guard port essentially intact. Architecture: per-platform dirs (.codex-plugin/ + codex/{hooks,skills,commands}/) with the existing platform-neutral scripts/ engine shared. Build order is hard-part-first: a throwaway probe proving hooks actually fire and inject before any layout work.",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "depends-on",
+          "epic": "platform-parity-mechanism",
+          "reason": "the structural parity gate and ledger must exist before the first second-platform port, so drift is caught from the first commit rather than retroactively"
+        },
+        {
+          "type": "depends-on",
+          "epic": "edd-harness-agent-behavior-testing",
+          "reason": "semantic parity is unprovable without a blessed Claude Code baseline to compare a Codex run against"
+        },
+        {
+          "type": "depends-on",
+          "epic": "rules-block-hardcodes-claude-slash-commands",
+          "reason": "the rules block must stop hardcoding Claude Code slash-command syntax before pm can honestly claim support on another platform"
+        }
+      ],
+      "reconcileNeeded": false,
+      "parent": "multi-platform-agent-support"
     }
   ],
   "detourStack": [],
