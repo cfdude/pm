@@ -1030,11 +1030,13 @@
       "id": "df-contributing-doc-missing-direct-push-recovery",
       "title": "DF: CONTRIBUTING.md documents the normal dev-branch-to-PR-to-squash-merge flow but not what to do when someone pushes a commit directly to a PR's base out from under it (e.g. a direct GitHub web-UI edit landing on main while a dev-branch PR is open) -- this session hit that exact scenario (PR #22, 'added light logo', merged directly) and needed an ad hoc 'git checkout dev && git rebase main && git push --force-with-lease' recovery that isn't written down anywhere. Add a short 'If main moves out from under your PR' section to CONTRIBUTING.md documenting the rebase-and-force-push recovery.",
       "priority": "P3",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "startedAt": "2026-07-25T18:12:08.311Z",
+      "completedAt": "2026-07-25T18:18:44.268Z"
     },
     {
       "id": "multi-tracker-primary-secondary-support",
@@ -1127,7 +1129,7 @@
     }
   ],
   "detourStack": [],
-  "pmVersion": "0.23.0",
+  "pmVersion": "0.23.1",
   "tracker": {
     "system": "github-issues",
     "repo": "cfdude/pm"
