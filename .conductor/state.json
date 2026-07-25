@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": null,
+  "active": "multi-platform-agent-support",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -841,11 +841,12 @@
       "id": "multi-platform-agent-support",
       "title": "Support additional AI coding platforms beyond Claude Code: Codex, Gemini CLI, Grok Build (xAI), and generic agents.md-based platforms (most non-Claude-Code tools use AGENTS.md instead of CLAUDE.md for project instructions). Needs investigation into what pm's plugin distribution mechanism would need to look like per-platform (skills dir conventions, command registration) before scoping real work — referenced from the README's Supported Platforms table as 'Planned'.",
       "priority": "P3",
-      "status": "queued",
+      "status": "active",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "startedAt": "2026-07-25T19:35:58.751Z"
     },
     {
       "id": "df-no-mechanical-openspec-gate-enforcement",
