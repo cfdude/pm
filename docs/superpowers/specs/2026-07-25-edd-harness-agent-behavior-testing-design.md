@@ -207,10 +207,46 @@ capture the output, or issue commands over SSH. These are contingencies — the 
 strongly preferred wherever it exists, since it is scriptable, deterministic in invocation,
 and free of UI-timing fragility.
 
-## Remaining unknown to probe first
+## Feasibility: PROVEN for Claude Code (2026-07-26)
 
-Whether `claude -p` and `codex exec` load an **installed pm plugin — hooks included** — when
-run in a scratch fixture directory, or whether the fixture must stage plugin artifacts
-explicitly. Scenarios that assert on hook-injected briefings depend on this. It is cheap to
-test and should be settled before any corpus is authored, since the answer shapes the
-adapter's fixture-setup step.
+The load-bearing unknown — whether an installed pm plugin's **hooks fire in headless mode in
+an arbitrary directory** — was probed directly and resolved positively.
+
+**Method.** A pm-initialized fixture was created in a scratch directory (`~/Documents/Repos/pm-sample`)
+with a deliberately unguessable active epic id, `canary-probe-7f3a`. A headless session was
+then asked to report the active epic **from session context only, with tools blocked**
+(`--allowedTools "NoSuchTool"`), so that reading `PROJECT.md` or `state.json` was impossible.
+
+| Run | Directory | Tools | Result |
+|---|---|---|---|
+| Test | pm-initialized fixture | blocked | `canary-probe-7f3a` |
+| Control | empty dir, no pm state | blocked | `NO_BRIEFING` |
+
+**Conclusion.** With file access removed, the only path to that id was the `SessionStart` hook
+injecting `hookSpecificOutput.additionalContext`. Claude Code plugin hooks therefore fire
+under `claude -p`, in a directory unrelated to the plugin's own repo. The control rules out
+hallucination and prompt leakage.
+
+**Consequences for the design:**
+
+- The adapter can drive genuine headless sessions; no manual staging of plugin artifacts is
+  required for Claude Code.
+- Scenarios may legitimately assert on **hook-injected behavior**, not merely on-disk state —
+  e.g. "given a briefing naming epic X as active, does the agent act on X without being told?"
+- The equivalent probe still must be run against Codex once pm is installable there; it is the
+  first step of `codex-platform-support`, not a blocker for authoring the Claude Code baseline.
+
+## Platform scope: CLI-bearing tools only
+
+Support is limited to AI coding tools that ship a real CLI — a deliberate first-class-only
+filter rather than chasing breadth. This is self-enforcing: the verification procedure above
+begins with `--help`, which a tool without a CLI fails by definition. It also keeps the
+adapter honest, since a scriptable CLI is what makes runs deterministic in invocation and free
+of UI-timing fragility.
+
+## Sandbox
+
+`~/Documents/Repos/pm-sample` is the scratch project for probes and multi-tool experiments —
+an empty, non-git directory usable as a disposable fixture target. The probe above ran there.
+It is outside the pm repo, so experiments never pollute pm's own conductor state or git
+history.
