@@ -163,16 +163,54 @@ that EDD setup is optional for contributors who are not touching an evaluated ar
   a third runner is an adapter change, not a corpus rewrite.
 - Running EDD in CI. Deferred until cost and credential handling are understood in practice.
 
-## Open questions
+## Resolved design decisions
 
-1. **Fixture realism.** How much of a real project must a fixture reproduce for a scenario to
-   be meaningful — a bare `.conductor/state.json`, or a full repo with git history (some
-   behaviors, e.g. auto-detour inference, read commit shape)?
-2. **Sample count vs. cost.** edd-harness folds across `samples` per scenario; the right number
-   is an empirical trade-off between statistical confidence and spend.
-3. **Plugin availability in a headless run.** Whether `claude -p` and `codex exec` load an
-   installed pm plugin (hooks included) in a scratch directory, or whether the fixture must
-   stage plugin artifacts explicitly. **This is the feasibility crux and should be probed
-   first**, before any corpus is authored.
-4. **Judge model separation.** edd-harness requires the judge model differ from the model under
-   test; confirm what that means when the model under test is itself an agent CLI.
+**Fixture realism — start minimal, add only what a scenario proves it needs.** A fixture sits
+between a bare `.conductor/state.json` and a full repository; reproducing a complete repo is
+more than any scenario requires. The floor is set empirically: author a couple of scenarios,
+run them on both platforms, and add realism only where a scenario cannot otherwise produce a
+meaningful result. Some behaviors will demand more than others — auto-detour inference reads
+commit *shape*, so those scenarios need real git history while most will not.
+
+**Sample count is a tuning parameter, not an open question.** Pick a per-scenario count that
+buys statistical confidence without being cost-prohibitive; `samples` is already per-scenario
+in edd-harness, so a cheap deterministic scenario and an expensive judged one need not share a
+value.
+
+**Judge model must differ from the model under test — deliberately, to avoid confirmation
+bias.** Multiple models are available; the judge is chosen to be a different one than whatever
+agent is being evaluated. This satisfies edd-harness's own constraint and, more importantly,
+prevents a model from grading its own homework.
+
+## Platform capability verification: a standing procedure
+
+Headless execution is available on every platform pm intends to support — each ships a CLI.
+Establishing *what* a given platform supports follows a fixed order, and this procedure is
+itself a deliverable, because it is the method that keeps every future platform assessment
+honest:
+
+1. **Install/update to the current CLI version.** Capability answers go stale fast.
+2. **Run `--help`** and enumerate the actual subcommands and flags available.
+3. **Consult the platform's own documentation** for hooks, plugins, skills, agents, and
+   headless/exec modes.
+4. **Probe the live binary** for anything the docs leave ambiguous.
+
+This is not theoretical. Applied to Codex CLI 0.145.0 it overturned *both* secondary research
+sources: web search claimed hooks were experimental and feature-flagged, Perplexity claimed
+they were undocumented or absent, and `codex features list` showed `hooks` **stable and
+enabled by default**. Any capability claim not verified against the installed binary should be
+treated as unconfirmed.
+
+**Fallbacks if a platform ever lacks a usable headless CLI path** (none currently does):
+drive an interactive session through a terminal emulator via AppleScript (e.g. Ghostty) and
+capture the output, or issue commands over SSH. These are contingencies — the CLI path is
+strongly preferred wherever it exists, since it is scriptable, deterministic in invocation,
+and free of UI-timing fragility.
+
+## Remaining unknown to probe first
+
+Whether `claude -p` and `codex exec` load an **installed pm plugin — hooks included** — when
+run in a scratch fixture directory, or whether the fixture must stage plugin artifacts
+explicitly. Scenarios that assert on hook-injected briefings depend on this. It is cheap to
+test and should be settled before any corpus is authored, since the answer shapes the
+adapter's fixture-setup step.
