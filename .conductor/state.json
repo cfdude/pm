@@ -1156,6 +1156,38 @@
     {
       "id": "codex-platform-support",
       "title": "Port pm to Codex CLI at full parity -- the first non-Claude-Code platform, deliberately done under the parity gates rather than before them. Design doc: docs/superpowers/specs/2026-07-25-codex-platform-support-design.md. Verified hands-on against Codex CLI 0.145.0 (both secondary research methods were wrong): hooks/multi_agent/skill_search are all stable+default-on, there is a Git-sourced plugin marketplace, and Codex's hook schema is near-identical to Claude Code's including hookSpecificOutput.additionalContext injection, a compact source value, and exit-code-2 blocking -- so pm's briefing-after-compaction and gate-guard port essentially intact. Architecture: per-platform dirs (.codex-plugin/ + codex/{hooks,skills,commands}/) with the existing platform-neutral scripts/ engine shared. Build order is hard-part-first: a throwaway probe proving hooks actually fire and inject before any layout work.",
+      "priority": "P3",
+      "status": "queued",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "depends-on",
+          "epic": "platform-parity-mechanism",
+          "reason": "the structural parity gate and ledger must exist before any second-platform port"
+        },
+        {
+          "type": "depends-on",
+          "epic": "edd-harness-agent-behavior-testing",
+          "reason": "semantic parity needs a blessed Claude Code baseline to compare against"
+        },
+        {
+          "type": "depends-on",
+          "epic": "rules-block-hardcodes-claude-slash-commands",
+          "reason": "the rules block must stop hardcoding Claude Code slash-command syntax"
+        },
+        {
+          "type": "depends-on",
+          "epic": "hermes-platform-support",
+          "reason": "Hermes goes first; the second port should reuse whatever the first one teaches about per-platform artifact layout"
+        }
+      ],
+      "reconcileNeeded": false,
+      "parent": "multi-platform-agent-support"
+    },
+    {
+      "id": "hermes-platform-support",
+      "title": "Port pm to Hermes Agent (Nous Research) -- the FIRST non-Claude-Code platform, ahead of Codex, per maintainer preference (used more actively; CLI+GUI shape is a harder, more informative test of the architecture than Codex). Verified hands-on against Hermes Agent v0.19.0 (2026.7.20, git install at ~/.hermes/hermes-agent, docs vendored locally at website/docs/): hermes CLI exposes hooks/skills/plugins/mcp/project subcommands plus -z PROMPT for headless and --accept-hooks to bypass first-use consent. THREE hook systems exist; only SHELL HOOKS fit pm (CLI+Gateway, any language so Node is fine, can block AND inject context) -- Gateway hooks are gateway-only and Plugin hooks are Python-only. Shell hooks use a stdin/stdout JSON wire protocol with hook_event_name/tool_name/tool_input/session_id/cwd, and CRUCIALLY the docs state Claude-Code-style {decision:block,reason} is accepted and normalized internally. VALID_HOOKS includes pre_tool_call, post_tool_call, pre_llm_call, on_session_start/end/finalize/reset, subagent_start/stop, pre_verify. Mapping: gate-guard->pre_tool_call (direct), commit-nudge->post_tool_call (direct). TWO OPEN DESIGN PROBLEMS: (1) context injection appears bound to pre_llm_call which fires EVERY turn, not on_session_start, so the briefing would repeat unless the hook self-dedupes on session_id (available in the payload); (2) shell hooks are declared in user-level ~/.hermes/config.yaml rather than shipped in a plugin manifest, and Hermes plugin hooks are Python-only while pm's engine is Node -- so pm likely needs a thin Python shim shelling out to conductor.mjs, or an install step that writes config.yaml entries. Also no PreCompact equivalent found. Needs its own brainstorm before implementation. hermes plugins install takes a Git URL or owner/repo, same distribution model as Claude Code and Codex, so cfdude/pm can serve all three. Bonus: 'hermes hooks test <event>' fires hooks against a synthetic payload, which may let EDD test hook scenarios far cheaper than a full agent run.",
       "priority": "P2",
       "status": "queued",
       "role": "epic",
@@ -1164,17 +1196,17 @@
         {
           "type": "depends-on",
           "epic": "platform-parity-mechanism",
-          "reason": "the structural parity gate and ledger must exist before the first second-platform port, so drift is caught from the first commit rather than retroactively"
+          "reason": "the structural parity gate and ledger must exist before the first second-platform port"
         },
         {
           "type": "depends-on",
           "epic": "edd-harness-agent-behavior-testing",
-          "reason": "semantic parity is unprovable without a blessed Claude Code baseline to compare a Codex run against"
+          "reason": "semantic parity is unprovable without a blessed Claude Code baseline to compare a Hermes run against"
         },
         {
           "type": "depends-on",
           "epic": "rules-block-hardcodes-claude-slash-commands",
-          "reason": "the rules block must stop hardcoding Claude Code slash-command syntax before pm can honestly claim support on another platform"
+          "reason": "the rules block must stop hardcoding Claude Code slash-command syntax before pm can claim Hermes support"
         }
       ],
       "reconcileNeeded": false,
