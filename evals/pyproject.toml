@@ -1,0 +1,19 @@
+[project]
+name = "pm-evals"
+version = "0.1.0"
+description = "EDD corpus for the pm plugin's agent-facing artifacts. Not shipped as part of the plugin."
+requires-python = ">=3.13"
+dependencies = [
+    "edd-harness",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+]
+
+[tool.uv.sources]
+edd-harness = { path = "../../edd-harness", editable = true }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
