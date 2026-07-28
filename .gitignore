@@ -1,2 +1,6 @@
 .DS_Store
 .conductor/brief.txt
+evals/.venv/
+evals/.edd/runs/
+evals/__pycache__/
+evals/.pytest_cache/
