@@ -139,6 +139,10 @@ PYTHONPATH=. uv run edd run corpus:SCENARIOS --model pm@claude-code --no-judge -
 PYTHONPATH=. uv run edd run corpus:SCENARIOS --model pm@claude-code --no-judge --samples 1 --baseline   # gate vs baseline
 ```
 
+⚠️ **Both `--samples 1` lines above are for fast iteration only — never bless a run produced
+by them.** See [Blessing a new baseline](#blessing-a-new-baseline) below: a bless must come
+from at least 3 samples, and `baseline.json` has no way to record that it didn't.
+
 **Each scenario sample costs roughly 45-110 seconds of wall-clock** (measured across four real
 runs), because it spawns a real headless agent session. Use `--samples 1` and `--tags` while
 iterating. This is why EDD is a deliberate gate rather than a pre-commit hook. Reported
