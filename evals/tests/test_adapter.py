@@ -126,6 +126,24 @@ def test_corrupt_state_during_observation_returns_sentinel(stubbed):
     assert "JSONDecodeError" in out["error"]
 
 
+def test_runner_returning_incomplete_dict_returns_sentinel_instead_of_raising(stubbed):
+    """A runner that returns a dict missing an expected key (e.g. a new platform
+    port that forgot `total_cost_usd`) must fail loudly via the shared guard,
+    not raise a KeyError that propagates into INDETERMINATE."""
+    expected_keys = _success_keys(stubbed)
+
+    def incomplete_runner(prompt, cwd, allowed_tools="Bash", timeout=300):
+        return {"exit_code": 0, "duration_ms": 1, "num_turns": 1}  # no total_cost_usd
+
+    stubbed.setitem(adapter.RUNNERS, "stub", incomplete_runner)
+
+    out = _invoke()  # must NOT raise
+
+    assert out["exit_code"] == adapter.INFRA_FAILURE_EXIT_CODE == -1
+    assert set(out) == expected_keys, "a failed run must be shape-identical to a good one"
+    assert "KeyError" in out["error"] and "total_cost_usd" in out["error"]
+
+
 def test_scorers_survive_a_failed_run_without_keyerror(stubbed):
     """The whole point of the shared key set: every corpus scorer must be able to
     EVALUATE (and fail) a broken run rather than raise into INDETERMINATE."""

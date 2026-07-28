@@ -92,9 +92,13 @@ jq -r '.plugins["pm@cfdude-plugins"][0].version' ~/.claude/plugins/installed_plu
 
 The committed baseline was measured against **pm 0.23.1**, which was also this repo's own
 version at the time (`jq -r .version .claude-plugin/plugin.json`). Note the consequence: the
-corpus measures the **installed marketplace plugin, not your working tree**. Editing an
-agent-facing artifact here does not change what the corpus sees until that change is installed —
-so re-install (or reload) the plugin before attributing a result to your edit.
+corpus measures a **hybrid of your working tree and the installed marketplace plugin**. Fixture
+seeding runs your working tree's own `scripts/conductor.mjs` (see `evals/fixtures.py`), so a
+`state.json` schema change, a managed `CLAUDE.md` rules-block change, or a `PROJECT.md` rendering
+change is visible immediately, uninstalled. But the agent itself only acts through the
+*installed* plugin's hooks, skill, and `/pm:` commands — so a change to any of those does not
+change what the corpus sees until it's installed. Know which half of the plugin you edited before
+attributing a result to your change.
 
 ### One-time setup
 
