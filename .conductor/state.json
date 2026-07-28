@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "edd-harness-agent-behavior-testing",
+  "active": null,
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -1123,7 +1123,7 @@
       "id": "edd-harness-agent-behavior-testing",
       "title": "Stand up an EDD harness inside pm to prove SEMANTIC parity across supported platforms -- the gate that a structural test can never provide. Uses ~/Documents/Repos/edd-harness (the maintainer's public, open-source, domain-agnostic Python EDD library). What gets evaluated: the ancillary artifacts an AGENT interprets non-deterministically -- commands/*.md, skills/conductor/SKILL.md, agents/*.md, hook-injected output, and the CLAUDE.md/AGENTS.md rules block. Explicitly NOT scripts/conductor.mjs, which is deterministic and already covered by 250 unit tests. Key design insight: pm's agent behavior is already observable because the engine IS the instrumentation -- a correctly-followed instruction leaves deterministic traces (a MINIMAL line in detours.log, a correctly-laned epic in state.json, a refreshed rules block), so most scorers are deterministic check() calls rather than paid JudgeScorers, landing the corpus on edd-harness's BLOCKING gate rather than its advisory one. Scorers encode DESIRED behavior absolutely rather than diffing platforms against each other, because two platforms failing identically is parity but still broken; parity is therefore 'every supported platform passes the same corpus'. Lives in an in-repo evals/ dir alongside the other not-shipped tooling (.claude/skills/, docs/, openspec/) so an artifact and its scenario change in ONE commit -- a separate repo would recreate the very drift problem platform-parity-mechanism exists to solve. Design doc: docs/superpowers/specs/2026-07-25-edd-harness-agent-behavior-testing-design.md",
       "priority": "P1",
-      "status": "active",
+      "status": "queued",
       "role": "epic",
       "lane": "decision",
       "links": [],
@@ -1211,6 +1211,64 @@
       ],
       "reconcileNeeded": false,
       "parent": "multi-platform-agent-support"
+    },
+    {
+      "id": "edd-observe-hardcodes-claude-md",
+      "title": "observe.py hardcodes CLAUDE.md -- a second, undeclared platform seam",
+      "priority": "P1",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "blocks",
+          "epic": "hermes-platform-support",
+          "reason": "observe.py would report rules_block_present false for any AGENTS.md platform -- a confident, wrong parity failure on the first Hermes run"
+        }
+      ],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "edd-user-memory-confound-control-run",
+      "title": "EDD baseline confound: user-scope CLAUDE.md carries the lane heuristic; needs a memory-suppressed control run",
+      "priority": "P1",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "blocks",
+          "epic": "hermes-platform-support",
+          "reason": "the Claude Code baseline cannot be trusted as a comparison target until a control run shows pm's own artifacts carry the behavior"
+        }
+      ],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "edd-measures-installed-plugin-not-worktree",
+      "title": "EDD measures the installed plugin's artifacts; baseline records no plugin version",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "blocks",
+          "epic": "hermes-platform-support",
+          "reason": "editing an evaluated artifact must be measurable before the port, and the baseline must record which plugin version it describes"
+        }
+      ],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "edd-adapter-discards-agent-stdout",
+      "title": "adapter discards agent stdout -- a failing scorer is undiagnosable without a re-run",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false
     }
   ],
   "detourStack": [],
