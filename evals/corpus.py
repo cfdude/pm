@@ -15,11 +15,6 @@ from edd_harness import Scenario, check
 
 from adapter import pm_adapter
 
-ENGINE_HINT = (
-    "Use the pm engine at ../../scripts/conductor.mjs relative to the pm repo, "
-    "or the installed pm plugin's commands."
-)
-
 LANE_ROUTING_TYPO = Scenario(
     id="lane-routing/typo-fix-is-claude-code",
     input={
@@ -35,6 +30,17 @@ LANE_ROUTING_TYPO = Scenario(
     samples=3,
     tags=("lane-routing", "deterministic"),
     scorers=[
+        check(
+            "run_succeeded",
+            lambda o: o["exit_code"] == 0,
+            reason=(
+                "A non-zero exit means the HARNESS or the agent session failed "
+                "(claude not on PATH, timeout, engine error, corrupt state) -- NOT that "
+                "the agent chose to do nothing. Without this check every other scorer "
+                "can pass vacuously on a run that never happened: `detours == []` is "
+                "trivially true when nothing ever ran."
+            ),
+        ),
         check(
             "registered_exactly_one_epic",
             lambda o: len(o["new_epics"]) == 1,

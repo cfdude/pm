@@ -73,6 +73,29 @@ Those are covered by an evaluation corpus under `evals/`, built on
 evaluates. Contributors touching only the engine, docs, or tests can skip it entirely — pm
 itself needs only Node.
 
+### Prerequisite: pm must be installed as a Claude Code plugin
+
+**This is not optional and not boilerplate — without it every run is a false alarm.** The
+corpus runs `claude -p` inside a bare `tempfile.mkdtemp()` directory. That directory contains
+no `scripts/conductor.mjs` and no `/pm:` commands; the agent can only act on pm's instructions
+because the *installed* plugin's hooks and skill reach into any directory it runs in. Skip this
+and the agent sits inert, `new_epics` comes back `[]`, several scorers FAIL, and you get a
+reported REGRESSION against a perfectly good baseline.
+
+Install pm from the marketplace (`/plugin install pm@cfdude-plugins` inside Claude Code), then
+confirm it is present and check which version you have:
+
+```bash
+jq -r '.plugins | keys[] | select(startswith("pm@"))' ~/.claude/plugins/installed_plugins.json
+jq -r '.plugins["pm@cfdude-plugins"][0].version' ~/.claude/plugins/installed_plugins.json
+```
+
+The committed baseline was measured against **pm 0.23.1**, which was also this repo's own
+version at the time (`jq -r .version .claude-plugin/plugin.json`). Note the consequence: the
+corpus measures the **installed marketplace plugin, not your working tree**. Editing an
+agent-facing artifact here does not change what the corpus sees until that change is installed —
+so re-install (or reload) the plugin before attributing a result to your edit.
+
 ### One-time setup
 
 ```bash
@@ -127,9 +150,20 @@ estimate, not billed spend.
 `evals/.edd/baseline.json` is committed on purpose — its diff is the drift review. Re-bless
 only when a behavior change is *intended*, and say why in the commit message:
 
+**Bless only from a run of at least 3 samples** (each scenario's declared `samples` count).
+`--samples 1` — as shown in the Running block above — is for fast iteration *only*; never bless
+from it. `baseline.json` records just `{kind, status}` per check, with no sample count, so a
+1-sample bless produces a git diff that is **shape-identical** to a 3-sample bless. The artifact
+whose diff *is* the drift review would silently lose its statistical power with no visible
+trace, and a flaky behavior that happens to pass once would be enshrined as expected. Drop the
+`--samples` flag entirely to use each scenario's declared count:
+
 ```bash
+PYTHONPATH=. uv run edd run corpus:SCENARIOS --model pm@claude-code --no-judge   # 3 samples
 PYTHONPATH=. uv run edd bless .edd/runs/<run>.jsonl --label "<why this is the new expected behavior>"
 ```
+
+State the sample count in the commit message, since the artifact itself cannot record it.
 
 ## What you inherit when you fork this repo
 

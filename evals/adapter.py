@@ -7,16 +7,50 @@ is invoked and observed, never imported.
 from __future__ import annotations
 
 import tempfile
+import traceback
 from pathlib import Path
 
 from fixtures import materialize
 from observe import observe
 from runners import RUNNERS
 
+# Sentinel exit code for an INFRASTRUCTURAL failure -- `claude` not on PATH, the
+# run exceeding its timeout, `node`/the pm engine erroring during fixture
+# materialization, or a corrupted state.json breaking the post-run observation.
+#
+# Why swallow rather than propagate: edd-harness maps any adapter exception to
+# INDETERMINATE, and compare.py never classifies INDETERMINATE as a regression --
+# so a propagated infra failure would exit 0 and report success from a totally
+# broken harness. Returning a well-formed dict with exit_code == -1 lets the
+# corpus's `run_succeeded` scorer FAIL loudly instead.
+INFRA_FAILURE_EXIT_CODE = -1
+
 
 def _workdir() -> Path:
     """Overridden in tests. A fresh temp dir per invocation keeps runs isolated."""
     return Path(tempfile.mkdtemp(prefix="pm-eval-"))
+
+
+def _failure(error: str) -> dict:
+    """A harness-failure observation.
+
+    MUST carry the same key set as a successful run so scorers never KeyError
+    on a broken run -- they need to evaluate (and fail) rather than raise.
+    """
+    return {
+        "active": None,
+        "epics": [],
+        "epic_ids": [],
+        "detours": [],
+        "rules_block_present": False,
+        "project_md_present": False,
+        "new_epics": [],
+        "exit_code": INFRA_FAILURE_EXIT_CODE,
+        "duration_ms": None,
+        "num_turns": None,
+        "total_cost_usd": None,
+        "error": error,
+    }
 
 
 def pm_adapter(scenario_input: dict) -> dict:
@@ -25,18 +59,29 @@ def pm_adapter(scenario_input: dict) -> dict:
     platform = scenario_input["platform"]
     allowed_tools = scenario_input.get("allowed_tools", "Bash")
 
+    # NOT inside the guard below: an unknown platform is a corpus-authoring bug,
+    # not an infrastructural failure. It should blow up in the author's face.
     if platform not in RUNNERS:
         raise KeyError(f"unknown platform {platform!r}; known: {sorted(RUNNERS)}")
 
-    project = materialize(seed, _workdir())
-    before = set(observe(project)["epic_ids"])
+    try:
+        project = materialize(seed, _workdir())
+        before = set(observe(project)["epic_ids"])
 
-    result = RUNNERS[platform](prompt, project, allowed_tools=allowed_tools)
+        result = RUNNERS[platform](prompt, project, allowed_tools=allowed_tools)
 
-    after = observe(project)
+        after = observe(project)
+    except Exception:  # noqa: BLE001 -- deliberate: see INFRA_FAILURE_EXIT_CODE
+        # Keep the diagnostic. A failing run that can't be explained is worse
+        # than no run at all.
+        return _failure(traceback.format_exc().strip())
+
     after["new_epics"] = [e for e in after["epics"] if e["id"] not in before]
     after["exit_code"] = result["exit_code"]
     after["duration_ms"] = result["duration_ms"]
     after["num_turns"] = result["num_turns"]
+    # NOTIONAL under Claude subscription auth: an equivalent-API estimate, not
+    # billed spend. Only a real API key makes this actual money.
     after["total_cost_usd"] = result["total_cost_usd"]
+    after["error"] = None
     return after
