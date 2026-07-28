@@ -1123,13 +1123,14 @@
       "id": "edd-harness-agent-behavior-testing",
       "title": "Stand up an EDD harness inside pm to prove SEMANTIC parity across supported platforms -- the gate that a structural test can never provide. Uses ~/Documents/Repos/edd-harness (the maintainer's public, open-source, domain-agnostic Python EDD library). What gets evaluated: the ancillary artifacts an AGENT interprets non-deterministically -- commands/*.md, skills/conductor/SKILL.md, agents/*.md, hook-injected output, and the CLAUDE.md/AGENTS.md rules block. Explicitly NOT scripts/conductor.mjs, which is deterministic and already covered by 250 unit tests. Key design insight: pm's agent behavior is already observable because the engine IS the instrumentation -- a correctly-followed instruction leaves deterministic traces (a MINIMAL line in detours.log, a correctly-laned epic in state.json, a refreshed rules block), so most scorers are deterministic check() calls rather than paid JudgeScorers, landing the corpus on edd-harness's BLOCKING gate rather than its advisory one. Scorers encode DESIRED behavior absolutely rather than diffing platforms against each other, because two platforms failing identically is parity but still broken; parity is therefore 'every supported platform passes the same corpus'. Lives in an in-repo evals/ dir alongside the other not-shipped tooling (.claude/skills/, docs/, openspec/) so an artifact and its scenario change in ONE commit -- a separate repo would recreate the very drift problem platform-parity-mechanism exists to solve. Design doc: docs/superpowers/specs/2026-07-25-edd-harness-agent-behavior-testing-design.md",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "decision",
       "links": [],
       "reconcileNeeded": false,
       "parent": "multi-platform-agent-support",
-      "startedAt": "2026-07-26T21:23:54.593Z"
+      "startedAt": "2026-07-26T21:23:54.593Z",
+      "completedAt": "2026-07-28T01:32:40.590Z"
     },
     {
       "id": "rules-block-hardcodes-claude-slash-commands",
