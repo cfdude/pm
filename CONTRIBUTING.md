@@ -61,6 +61,118 @@ your last fetch, so it won't silently clobber someone else's concurrent work. If
 conflicts, resolve them the normal way (`git status` shows the conflicting files; fix, `git add`,
 `git rebase --continue`) before pushing.
 
+## Running the EDD evaluation corpus (optional)
+
+pm's engine is covered by `node --test scripts/conductor.test.mjs`. That suite cannot cover
+pm's *agent-facing* artifacts — command docs, skills, the rules block, hooks — because their
+correctness is a non-deterministic judgment made by an agent, not an assertable return value.
+Those are covered by an evaluation corpus under `evals/`, built on
+[`edd-harness`](https://github.com/cfdude/edd-harness).
+
+**This setup is optional.** You only need it if you are changing an artifact the corpus
+evaluates. Contributors touching only the engine, docs, or tests can skip it entirely — pm
+itself needs only Node.
+
+### Prerequisite: pm must be installed as a Claude Code plugin
+
+**This is not optional and not boilerplate — without it every run is a false alarm.** The
+corpus runs `claude -p` inside a bare `tempfile.mkdtemp()` directory. That directory contains
+no `scripts/conductor.mjs` and no `/pm:` commands; the agent can only act on pm's instructions
+because the *installed* plugin's hooks and skill reach into any directory it runs in. Skip this
+and the agent sits inert, `new_epics` comes back `[]`, several scorers FAIL, and you get a
+reported REGRESSION against a perfectly good baseline.
+
+Install pm from the marketplace (`/plugin install pm@cfdude-plugins` inside Claude Code), then
+confirm it is present and check which version you have:
+
+```bash
+jq -r '.plugins | keys[] | select(startswith("pm@"))' ~/.claude/plugins/installed_plugins.json
+jq -r '.plugins["pm@cfdude-plugins"][0].version' ~/.claude/plugins/installed_plugins.json
+```
+
+The committed baseline was measured against **pm 0.23.1**, which was also this repo's own
+version at the time (`jq -r .version .claude-plugin/plugin.json`). Note the consequence: the
+corpus measures a **hybrid of your working tree and the installed marketplace plugin**. Fixture
+seeding runs your working tree's own `scripts/conductor.mjs` (see `evals/fixtures.py`), so a
+`state.json` schema change, a managed `CLAUDE.md` rules-block change, or a `PROJECT.md` rendering
+change is visible immediately, uninstalled. But the agent itself only acts through the
+*installed* plugin's hooks, skill, and `/pm:` commands — so a change to any of those does not
+change what the corpus sees until it's installed. Know which half of the plugin you edited before
+attributing a result to your change.
+
+### One-time setup
+
+```bash
+# 1. Python 3.13 + uv (Homebrew: brew install uv)
+uv --version
+
+# 2. Clone edd-harness as a sibling of this repo -- evals/pyproject.toml resolves it
+#    from ../../edd-harness via [tool.uv.sources], so `uv sync` will fail if this
+#    isn't done first
+git clone https://github.com/cfdude/edd-harness ../edd-harness
+
+# 3. Install the corpus's dependencies (from the repo root)
+cd evals && uv sync
+```
+
+### Judge backend (only for judge scorers)
+
+Every scorer in the current corpus is deterministic — it asserts on `.conductor` state, so it
+needs no LLM. Only a `JudgeScorer` would. If you add one and need to run it, start a local
+Ollama server:
+
+```bash
+ollama serve
+```
+
+The judge model **must differ from the model under test**, so a model never grades its own
+homework. Local models are the flat-cost default; never point the judge at a metered API key.
+
+### Running
+
+Every `edd` invocation below needs `PYTHONPATH=.` — the `edd` console-script's `sys.path[0]`
+is the venv's `bin/` directory, not the current working directory, so `corpus` (a plain
+top-level module in `evals/`) can't be imported without it. Don't drop the prefix; a bare
+`uv run edd run corpus:SCENARIOS ...` fails immediately with
+`ModuleNotFoundError: No module named 'corpus'`.
+
+```bash
+cd evals
+uv run pytest                                                                     # fast unit tests, no agent calls
+PYTHONPATH=. uv run edd run corpus:SCENARIOS --model pm@claude-code --no-judge --samples 1   # one real run
+PYTHONPATH=. uv run edd run corpus:SCENARIOS --model pm@claude-code --no-judge --samples 1 --baseline   # gate vs baseline
+```
+
+⚠️ **Both `--samples 1` lines above are for fast iteration only — never bless a run produced
+by them.** See [Blessing a new baseline](#blessing-a-new-baseline) below: a bless must come
+from at least 3 samples, and `baseline.json` has no way to record that it didn't.
+
+**Each scenario sample costs roughly 45-110 seconds of wall-clock** (measured across four real
+runs), because it spawns a real headless agent session. Use `--samples 1` and `--tags` while
+iterating. This is why EDD is a deliberate gate rather than a pre-commit hook. Reported
+`total_cost_usd` figures are **notional** under Claude subscription auth — an equivalent-API
+estimate, not billed spend.
+
+### Blessing a new baseline
+
+`evals/.edd/baseline.json` is committed on purpose — its diff is the drift review. Re-bless
+only when a behavior change is *intended*, and say why in the commit message:
+
+**Bless only from a run of at least 3 samples** (each scenario's declared `samples` count).
+`--samples 1` — as shown in the Running block above — is for fast iteration *only*; never bless
+from it. `baseline.json` records just `{kind, status}` per check, with no sample count, so a
+1-sample bless produces a git diff that is **shape-identical** to a 3-sample bless. The artifact
+whose diff *is* the drift review would silently lose its statistical power with no visible
+trace, and a flaky behavior that happens to pass once would be enshrined as expected. Drop the
+`--samples` flag entirely to use each scenario's declared count:
+
+```bash
+PYTHONPATH=. uv run edd run corpus:SCENARIOS --model pm@claude-code --no-judge   # 3 samples
+PYTHONPATH=. uv run edd bless .edd/runs/<run>.jsonl --label "<why this is the new expected behavior>"
+```
+
+State the sample count in the commit message, since the artifact itself cannot record it.
+
 ## What you inherit when you fork this repo
 
 This repo plays two roles at once: it's the plugin's source code, and it's itself a project
