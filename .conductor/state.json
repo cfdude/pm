@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": null,
+  "active": "rules-block-hardcodes-claude-slash-commands",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -1136,12 +1136,13 @@
       "id": "rules-block-hardcodes-claude-slash-commands",
       "title": "rulesBlock() hardcodes Claude Code slash-command syntax (/pm:status, /pm:detour --minimal, /pm:resume) throughout the emitted CLAUDE.md rules text, plus the 'Manage with /pm:status · /pm:next · ...' footer. On any platform without slash commands, that text is actively misleading -- it instructs the agent to run commands that don't exist there. Needs a command-style notion so the block can emit the direct CLI form (node scripts/conductor.mjs render) instead. rulesBlock() already takes (tracker, reviewMode, secondaryTrackers) so an added parameter fits the existing signature. Prerequisite for any multi-platform support; found during the multi-platform-agent-support brainstorm.",
       "priority": "P1",
-      "status": "queued",
+      "status": "active",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
-      "parent": "multi-platform-agent-support"
+      "parent": "multi-platform-agent-support",
+      "startedAt": "2026-07-29T02:28:12.027Z"
     },
     {
       "id": "platform-parity-mechanism",
@@ -1222,12 +1223,19 @@
       "lane": "claude-code",
       "links": [
         {
-          "type": "blocks",
-          "epic": "hermes-platform-support",
-          "reason": "observe.py would report rules_block_present false for any AGENTS.md platform -- a confident, wrong parity failure on the first Hermes run"
+          "type": "depends-on",
+          "epic": "rules-block-hardcodes-claude-slash-commands",
+          "reason": "observe.py correctly observes what the engine WRITES; the engine hardcodes CLAUDE.md (constants.mjs:14) and writes only there, so parameterizing observe first would abstract over a filename nothing produces"
         }
       ],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "startedAt": "2026-07-29T02:27:31.264Z",
+      "stories": [
+        {
+          "title": "fold into the rules-block epic: once the engine writes a per-platform rules-block target, update observe() to match and prove both with one eval",
+          "done": false
+        }
+      ]
     },
     {
       "id": "edd-user-memory-confound-control-run",
@@ -1292,6 +1300,38 @@
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false
+    },
+    {
+      "id": "init-detects-foreign-agent-instruction-files",
+      "title": "pm init should detect a pre-existing AGENTS.md / sol.md from a prior agent and read it before initializing",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "stories": [
+        {
+          "title": "if CLAUDE.md is absent but AGENTS.md (or sol.md) exists, read its contents -- it may dictate what belongs in CLAUDE.md, or at minimum hint how to initialize correctly in a project another agent already used",
+          "done": false
+        }
+      ]
+    },
+    {
+      "id": "rules-block-cli-fallback",
+      "title": "rules block: CLI fallback for any platform lacking slash commands or hitting a namespace collision",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "stories": [
+        {
+          "title": "deferred deliberately: a CLI fallback changes WHO the instruction addresses (slash command = the user, node scripts/conductor.mjs = the agent), which is a design fork, not just longer text",
+          "done": false
+        }
+      ]
     }
   ],
   "detourStack": [],
