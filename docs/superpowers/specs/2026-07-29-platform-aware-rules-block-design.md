@@ -71,25 +71,70 @@ question #3: Codex is flat and hyphenated.
 
 ## Design
 
-### 1. Detect the platform; write exactly one file
+### 1. The host declares itself — pm does not sniff for it
 
-Rejected: writing every target unconditionally. Claude Code does not read `AGENTS.md` and Codex
-does not read `CLAUDE.md`, so writing both leaves a dead file in most repos. A project is
+The framing that unlocked this: **pm never runs on its own.** Every engine invocation is
+triggered by a host agent, either through a hook that agent fired or a command that agent ran.
+So the question is not "what files suggest a platform" but "which agent am I running inside
+right now" — and the host can simply be made to say.
+
+pm already ships a **separate hook configuration per platform**, because each platform's format
+differs (`hooks/hooks.json` for Claude Code, an `(event, matcher, command)` triple for Hermes,
+`.codex/hooks.json` for Codex). In all three, **the command string is authored by pm**. So the
+platform is known at packaging time, not runtime:
+
+| Platform | pm-authored hook command |
+|---|---|
+| claude-code | `node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" brief --platform claude-code` |
+| hermes | `node ".../scripts/conductor.mjs" brief --platform hermes` |
+| codex | `node "${PLUGIN_ROOT}/scripts/conductor.mjs" brief --platform codex` |
+
+This is **deterministic — no heuristics, no filesystem archaeology, no marker precedence to get
+wrong.** It also scales: adding a platform means authoring its hook file with its own
+`--platform` value, which the port epic is already doing.
+
+Rejected — env-var sniffing. Claude Code does set a reliable marker (`CLAUDECODE=1`, verified in
+a live session), but Hermes does not: its shell-hook runner calls `subprocess.run` with **no
+`env=`** (`agent/shell_hooks.py:463`), so hooks inherit whatever launched Hermes and carry no
+guaranteed `HERMES_*` marker. Sniffing could therefore detect Claude Code but could not
+distinguish Hermes from Codex. It survives only as a fallback rung below.
+
+Rejected — writing every target unconditionally. Claude Code does not read `AGENTS.md` and Codex
+does not read `CLAUDE.md`, so writing both leaves a dead file in most repos, and a project is
 normally driven by one agent.
 
-Detection resolves to a single platform, and the platform resolves to a single target file.
+### 2. Resolution order, with a default that can never be silent
 
-### 2. Default to `claude-code` when detection is ambiguous or empty — and say so
+`--platform` covers every hook-driven invocation. A human running the engine directly from a
+terminal is the remaining case, so resolution is a chain:
 
-Detection has one dangerous failure mode: finding nothing and writing nothing. pm would appear
-installed while contributing no rules block at all — failing silently, which is the worst
-available outcome and the same class of bug as the precedence trap above.
+1. explicit `--platform <id>` (every pm-authored hook path)
+2. the value recorded in `state.json` (see §3)
+3. `CLAUDECODE=1` in the environment → `claude-code`
+4. **default `claude-code`** — the base platform and today's behavior
 
-Therefore: **an unresolved detection falls back to `claude-code`**, the base platform and
-today's behavior, and `init`/`upgrade` **reports the target it chose**. A visible wrong guess
-is recoverable; a silent no-op is not.
+Detection's dangerous failure is resolving to nothing and writing nothing: pm would appear
+installed while contributing no rules block, failing silently — the same class of bug as the
+precedence trap above. Hence a terminal default rather than an error, and `init`/`upgrade`
+**reports which platform and which file it chose**. A visible wrong guess is recoverable; a
+silent no-op is not.
 
-### 3. Guarantee the written file wins the platform's precedence chain
+### 3. Record the active platform in `state.json`; refresh it at session start
+
+`state.json` is already the state of record, so the active platform belongs there: **written
+once at session start, read once at session start.** That makes the choice auditable in the same
+file everything else lives in, and it survives between invocations.
+
+It also enables the case that matters most: **platform switching.** If the recorded platform is
+`claude-code` and the current session declares `hermes`, pm knows the project changed hands. It
+can then look at the artifacts the previous platform left behind and faithfully recreate the
+equivalents the new platform supports, rather than silently leaving a repo half-configured for
+an agent that is no longer driving it.
+
+Because this adds a field existing state files lack, it needs a `MIGRATIONS` entry keyed to the
+release — additive and idempotent, with a state file written by the prior version still loading.
+
+### 4. Guarantee the written file wins the platform's precedence chain
 
 For the detected platform, pm must write to the file that platform will actually consult given
 what is already on disk — not merely a file it could consult. Concretely, for Hermes, writing
@@ -104,7 +149,17 @@ Note this is per-platform, not global. Claude Code has no chain: it reads `CLAUD
 regardless of what else is present, so a stray `AGENTS.md` is simply irrelevant there. The rule
 only bites for platforms that resolve by precedence, which today means Hermes.
 
-### 4. Command syntax: namespaced slash command, per-platform form
+### 5. The block body stays platform-neutral; only command strings vary
+
+The rules-block body — detour classification, the autonomy decision rule, tracker instructions,
+the review-mode table — is platform-neutral and stays a single source of text. Nothing in it is
+Claude-Code-specific once the command strings are parameterized, and forking the body per
+platform would create exactly the drift the parity mechanism exists to prevent.
+
+**Only the command strings are per-platform.** That keeps the substitution surface as small as
+it can be: one command-form table, not N copies of the instructions.
+
+### 6. Command syntax: namespaced slash command, per-platform form
 
 The namespace is retained on every platform that supports one, because it is what prevents the
 silent collision documented above.
@@ -147,14 +202,24 @@ which is **correct today** because the engine only writes `CLAUDE.md`; parameter
 observer first would abstract over a filename nothing produces. Once the engine writes a
 per-platform target, `observe()` follows, and one eval proves both halves together.
 
+## Resolved during design
+
+The three questions that were open when this spec was first drafted are now settled and folded
+into the sections above:
+
+1. **How the platform is identified** → §1. The host declares itself via a `--platform` flag in
+   the hook command pm authors for that platform. No marker detection.
+2. **Where the choice lives** → §3. `state.json`, written and read once per session start, with
+   a `MIGRATIONS` entry. Enables the platform-switch case.
+3. **Per-platform body?** → §5. No. Body stays neutral; only command strings vary.
+
 ## Open questions for the plan
 
-1. What concrete markers identify each platform, and in what precedence? (`.claude/` vs
-   `.codex/` vs a Hermes project marker; a repo may carry several.)
-2. Does the detected target belong in `state.json` — recorded once at `init` and stable
-   thereafter — or re-detected on every `write-rules`? Recording it is more predictable and
-   makes the choice auditable; re-detecting adapts when a repo changes hands. If recorded, this
-   needs a `MIGRATIONS` entry.
-3. Does the rules block need a per-platform *body*, or only per-platform command strings? The
-   tracker/review-mode text appears platform-neutral, but this should be confirmed rather than
-   assumed.
+1. What does pm do concretely on a detected platform *switch* (§3)? Recreating the new
+   platform's artifacts is the intent, but the boundary between "pm refreshes its own managed
+   block" and "pm regenerates a whole artifact tree" belongs to the port epics, not here. This
+   spec should settle only the rules-block half and state where the line falls.
+2. Does `--platform` validate against a known list and reject an unknown value, or fall through
+   to the default? Rejecting is more honest for a typo in a hand-authored hook; falling through
+   is more forgiving. Leaning reject-with-message, consistent with how `add-epic` treats an
+   unknown `--lane`.
