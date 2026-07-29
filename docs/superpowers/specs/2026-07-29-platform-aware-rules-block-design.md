@@ -96,9 +96,13 @@ what is already on disk — not merely a file it could consult. Concretely, for 
 `CLAUDE.md` is correct only when no `HERMES.md` or `AGENTS.md` exists; otherwise the block must
 go to the file at the head of the chain.
 
-Where pm finds a foreign instruction file that outranks its target, it must not silently write
-the losing file. Options are to write the winning file instead, or to refuse and report — to be
-settled in the plan, but silence is not among them.
+**Decision: pm writes to the head of the detected platform's chain, and reports which file it
+chose and why.** Refusing to write was considered and rejected — it would leave pm
+non-functional in the repo, trading a silent failure for a loud one rather than fixing it.
+
+Note this is per-platform, not global. Claude Code has no chain: it reads `CLAUDE.md`
+regardless of what else is present, so a stray `AGENTS.md` is simply irrelevant there. The rule
+only bites for platforms that resolve by precedence, which today means Hermes.
 
 ### 4. Command syntax: namespaced slash command, per-platform form
 
