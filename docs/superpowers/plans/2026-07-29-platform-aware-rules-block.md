@@ -6,14 +6,14 @@
 
 **Architecture:** pm never runs on its own; a host agent always triggers it, through a hook whose command string pm itself authored. So the platform is passed explicitly as `--platform <id>` rather than detected. It is recorded in `state.json` (written and read once per session start), and resolves through a chain that ends in a `claude-code` default so it can never silently resolve to nothing. Two things vary per platform: the target filename (respecting each platform's instruction-file precedence chain) and the slash-command form. The block body stays a single platform-neutral source of text.
 
-**Tech Stack:** Node 18+ built-ins only (`node:fs`, `node:path`). Tests: `node --test scripts/conductor.test.mjs`.
+**Tech Stack:** Node 18+ built-ins only (`node:fs`, `node:path`). Tests: `node --test scripts/test/*.test.mjs`.
 
 **Spec:** `docs/superpowers/specs/2026-07-29-platform-aware-rules-block-design.md`
 
 ## Global Constraints
 
 - **`scripts/conductor.mjs` and `scripts/lib/*.mjs` are ZERO-DEPENDENCY.** Node 18+ built-ins only (`node:fs`, `node:path`, `node:os`, `node:child_process`, `node:url`). **Never** add an npm package or a `package.json` dependency.
-- **`node --test scripts/conductor.test.mjs` must pass — currently 250 tests, 0 failing.** `.githooks/pre-commit` runs it and blocks failing commits. **NEVER** use `git commit --no-verify`.
+- **`node --test scripts/test/*.test.mjs` must pass — currently 257 tests, 0 failing.** `.githooks/pre-commit` runs it and blocks failing commits. **NEVER** use `git commit --no-verify`.
 - **pm is an INSTRUCTION layer, never an INTEGRATION layer.** No code path may open a network connection or call an external system (Jira, GitHub, Linear). This plan adds no exceptions.
 - **Backward compatibility is mandatory.** A `state.json` written by 0.23.1 must still load. Every existing caller of `rulesBlock()` / `writeRules()` must keep working unchanged — the new parameter is optional with a `claude-code` default.
 - **Release discipline:** a feature bumps `.claude-plugin/plugin.json` `version`, adds a `CHANGELOG.md` entry, and — because this changes the `state.json` schema — adds a `MIGRATIONS` entry keyed to the new release (additive, idempotent). Current version is `0.23.1`; this ships as **`0.24.0`**.
@@ -38,7 +38,9 @@ Hermes preserves `:` in plugin command names (`name.lower().strip().lstrip("/").
 - **`scripts/lib/migrations.mjs`** (modify) — one additive `0.24.0` entry stamping `state.platform`.
 - **`scripts/conductor.mjs`** (modify) — pass the resolved platform into the `rules` subcommand.
 - **`hooks/hooks.json`** (modify) — every pm-authored Claude Code hook command declares `--platform claude-code`.
-- **`scripts/conductor.test.mjs`** (modify) — tests appended per task.
+- **`scripts/test/platform.test.mjs`** (create) — all tests for this feature. The suite lives in
+  `scripts/test/*.test.mjs` (11 files, run in parallel); a new capability gets its own file rather
+  than being appended to an existing one, which also keeps the split balanced.
 
 **Out of scope for this plan:** `evals/observe.py` (owned by the separate `edd-observe-hardcodes-claude-md` epic, which depends on this one), and the Hermes/Codex artifact trees (owned by the port epics). This plan makes the engine platform-aware; it does not add a second platform's files.
 
@@ -49,7 +51,7 @@ Hermes preserves `:` in plugin command names (`name.lower().strip().lstrip("/").
 **Files:**
 - Modify: `scripts/lib/constants.mjs:18` (after `KNOWN_LANES`)
 - Create: `scripts/lib/platform.mjs`
-- Test: `scripts/conductor.test.mjs` (append)
+- Test: `scripts/test/platform.test.mjs` (create in Task 1, append thereafter)
 
 **Interfaces:**
 - Consumes: `loadState()` / `saveState(state)` from `scripts/lib/state.mjs:25,33`; `ROOT` from `scripts/lib/constants.mjs`.
@@ -63,11 +65,22 @@ Hermes preserves `:` in plugin command names (`name.lower().strip().lstrip("/").
   - `rulesTarget(platform: string, root: string) -> string` — absolute path
   - `recordPlatform(state: object, platform: string) -> boolean` — true if it changed
 
-**Critical test-isolation hazard:** `run()` in `scripts/conductor.test.mjs:15` spreads `...process.env` into the child, so `CLAUDECODE=1` is present whenever the suite runs inside a Claude Code session. Any test asserting the *default* rung must pass `env: { CLAUDECODE: "" }` explicitly, or it will pass via the `CLAUDECODE` rung and prove nothing.
+**Critical test-isolation hazard:** `run()` in `scripts/test/helpers.mjs` spreads `...process.env` into the child, so `CLAUDECODE=1` is present whenever the suite runs inside a Claude Code session. Any test asserting the *default* rung must pass `env: { CLAUDECODE: "" }` explicitly, or it will pass via the `CLAUDECODE` rung and prove nothing.
 
 - [ ] **Step 1: Write the failing tests**
 
-Append to `scripts/conductor.test.mjs`:
+Create `scripts/test/platform.test.mjs` with the standard header, then add:
+
+```javascript
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import fs from "node:fs";
+import path from "node:path";
+import { tmpRepo, run, ENGINE, EMPTY_CACHE } from "./helpers.mjs";
+```
+
+Then the tests:
 
 ```javascript
 // ────────────── platform resolution + rules target ──────────────
@@ -112,7 +125,7 @@ test("rulesTarget returns CLAUDE.md for claude-code regardless of a stray AGENTS
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `node --test scripts/conductor.test.mjs 2>&1 | rg "^(ℹ|#) (tests|pass|fail)"`
+Run: `node --test scripts/test/*.test.mjs 2>&1 | rg "^(ℹ|#) (tests|pass|fail)"`
 Expected: `fail` is non-zero — the first two error on the unknown `--platform` flag being accepted, or on `/pm-status` never appearing.
 
 - [ ] **Step 3: Add the platform constants**
@@ -246,13 +259,13 @@ Imports to add at the top, alongside the other `./lib/*.mjs` imports: `import { 
 
 - [ ] **Step 6: Run the tests**
 
-Run: `node --test scripts/conductor.test.mjs 2>&1 | rg "^(ℹ|#) (tests|pass|fail)"`
+Run: `node --test scripts/test/*.test.mjs 2>&1 | rg "^(ℹ|#) (tests|pass|fail)"`
 Expected: `fail 0`. Tests 1, 2 and 4 pass. **Test 3 and the `/pm-status` assertion in test 1 will still fail** — `rulesBlock()` does not yet accept or use a platform. That is expected; Task 2 closes it. Confirm the *only* remaining failures are those command-form assertions.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add scripts/lib/constants.mjs scripts/lib/platform.mjs scripts/conductor.mjs scripts/conductor.test.mjs
+git add scripts/lib/constants.mjs scripts/lib/platform.mjs scripts/conductor.mjs scripts/test/platform.test.mjs
 git commit -m "feat(engine): platform constants and declared-platform resolution
 
 pm never runs on its own -- a host agent always triggers it through a hook whose
@@ -268,7 +281,7 @@ contributing nothing."
 
 **Files:**
 - Modify: `scripts/lib/rules.mjs:82` (the `rulesBlock` signature) and its 14 hardcoded `/pm:` sites
-- Test: `scripts/conductor.test.mjs` (append)
+- Test: `scripts/test/platform.test.mjs` (create in Task 1, append thereafter)
 
 **Interfaces:**
 - Consumes: `PLATFORM_COMMAND_PREFIX` from `scripts/lib/constants.mjs` (Task 1).
@@ -309,7 +322,7 @@ test("rulesBlock defaults to the claude-code command form when no platform is gi
 
 - [ ] **Step 2: Run to verify it fails**
 
-Run: `node --test scripts/conductor.test.mjs 2>&1 | rg "^(ℹ|#) (tests|pass|fail)"`
+Run: `node --test scripts/test/*.test.mjs 2>&1 | rg "^(ℹ|#) (tests|pass|fail)"`
 Expected: FAIL — `codex` output still contains `/pm:status`.
 
 - [ ] **Step 3: Add `pmCmd` and thread the platform through**
@@ -355,13 +368,13 @@ Expected: **no output.** Any remaining hit is a site you missed. (`/pm-` should 
 
 - [ ] **Step 5: Run the tests**
 
-Run: `node --test scripts/conductor.test.mjs 2>&1 | rg "^(ℹ|#) (tests|pass|fail)"`
+Run: `node --test scripts/test/*.test.mjs 2>&1 | rg "^(ℹ|#) (tests|pass|fail)"`
 Expected: `fail 0`.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add scripts/lib/rules.mjs scripts/conductor.test.mjs
+git add scripts/lib/rules.mjs scripts/test/platform.test.mjs
 git commit -m "feat(engine): per-platform command form in the rules block
 
 Body stays a single platform-neutral source of text; only the slash-command form
@@ -376,7 +389,7 @@ skips a plugin command that collides with a built-in, and it ships a built-in
 
 **Files:**
 - Modify: `scripts/lib/rules.mjs:291-310` (`writeRules`)
-- Test: `scripts/conductor.test.mjs` (append)
+- Test: `scripts/test/platform.test.mjs` (create in Task 1, append thereafter)
 
 **Interfaces:**
 - Consumes: `rulesTarget(platform, root)` and `resolvePlatform(flags, state)` from `scripts/lib/platform.mjs` (Task 1); `ROOT` from `scripts/lib/constants.mjs`.
@@ -431,7 +444,7 @@ test("the rules block refreshes in place rather than duplicating on a second wri
 
 - [ ] **Step 2: Run to verify it fails**
 
-Run: `node --test scripts/conductor.test.mjs 2>&1 | rg "^(ℹ|#) (tests|pass|fail)"`
+Run: `node --test scripts/test/*.test.mjs 2>&1 | rg "^(ℹ|#) (tests|pass|fail)"`
 Expected: FAIL — the block lands in `CLAUDE.md` for every platform.
 
 - [ ] **Step 3: Make `writeRules` platform-aware**
@@ -476,13 +489,13 @@ Add `ROOT` to the existing `constants.mjs` import. `CLAUDE_MD` is no longer used
 
 - [ ] **Step 4: Run the tests**
 
-Run: `node --test scripts/conductor.test.mjs 2>&1 | rg "^(ℹ|#) (tests|pass|fail)"`
+Run: `node --test scripts/test/*.test.mjs 2>&1 | rg "^(ℹ|#) (tests|pass|fail)"`
 Expected: `fail 0`. If an older test asserted on the literal string `CLAUDE.md` in stderr, update it to accept the new `(platform: …)` suffix — the message changed deliberately.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add scripts/lib/rules.mjs scripts/conductor.test.mjs
+git add scripts/lib/rules.mjs scripts/test/platform.test.mjs
 git commit -m "feat(engine): write the rules block where the platform will read it
 
 Hermes resolves project context first-match-wins over HERMES.md > AGENTS.md >
@@ -501,7 +514,7 @@ reports which file and platform it chose."
 - Modify: `scripts/lib/migrations.mjs:17` (add a `0.24.0` entry) and `:60`
 - Modify: `scripts/lib/tracker.mjs:42,54,81` and `scripts/lib/review-mode.mjs:27` — pass the recorded platform
 - Modify: `.claude-plugin/plugin.json` (version → `0.24.0`), `CHANGELOG.md`
-- Test: `scripts/conductor.test.mjs` (append)
+- Test: `scripts/test/platform.test.mjs` (create in Task 1, append thereafter)
 
 **Interfaces:**
 - Consumes: `resolvePlatform`, `assertKnownPlatform`, `recordPlatform` from `scripts/lib/platform.mjs`; `writeRules(platform)` from `scripts/lib/rules.mjs`.
@@ -554,7 +567,7 @@ test("upgrade stamps platform on a state file written before the field existed",
 
 - [ ] **Step 2: Run to verify it fails**
 
-Run: `node --test scripts/conductor.test.mjs 2>&1 | rg "^(ℹ|#) (tests|pass|fail)"`
+Run: `node --test scripts/test/*.test.mjs 2>&1 | rg "^(ℹ|#) (tests|pass|fail)"`
 Expected: FAIL — `state.platform` is `undefined`.
 
 - [ ] **Step 3: Add the migration entry**
@@ -676,14 +689,14 @@ Prepend to `CHANGELOG.md` (match the file's existing heading style exactly — c
 
 - [ ] **Step 6: Run the tests**
 
-Run: `node --test scripts/conductor.test.mjs 2>&1 | rg "^(ℹ|#) (tests|pass|fail)"`
+Run: `node --test scripts/test/*.test.mjs 2>&1 | rg "^(ℹ|#) (tests|pass|fail)"`
 Expected: `fail 0`.
 
 - [ ] **Step 7: Commit**
 
 ```bash
 git add scripts/lib/subcommands.mjs scripts/lib/migrations.mjs scripts/lib/tracker.mjs \
-        scripts/lib/review-mode.mjs .claude-plugin/plugin.json CHANGELOG.md scripts/conductor.test.mjs
+        scripts/lib/review-mode.mjs .claude-plugin/plugin.json CHANGELOG.md scripts/test/platform.test.mjs
 git commit -m "feat(engine): record the active platform in state.json (0.24.0)
 
 Written and read once per session start, so the choice is auditable in the state
@@ -699,7 +712,7 @@ existing repos to claude-code."
 **Files:**
 - Modify: `hooks/hooks.json` (4 command strings)
 - Modify: `README.md`, `commands/upgrade.md`, `skills/conductor/SKILL.md`
-- Test: `scripts/conductor.test.mjs` (append)
+- Test: `scripts/test/platform.test.mjs` (create in Task 1, append thereafter)
 
 **Interfaces:**
 - Consumes: the `--platform` flag from Tasks 1 and 4.
@@ -722,7 +735,7 @@ test("every pm-authored Claude Code hook command declares its platform", () => {
 
 - [ ] **Step 2: Run to verify it fails**
 
-Run: `node --test scripts/conductor.test.mjs 2>&1 | rg "^(ℹ|#) (tests|pass|fail)"`
+Run: `node --test scripts/test/*.test.mjs 2>&1 | rg "^(ℹ|#) (tests|pass|fail)"`
 Expected: FAIL — no hook command carries `--platform`.
 
 - [ ] **Step 3: Add the flag to each hook command**
@@ -737,7 +750,7 @@ Apply the same to `snapshot`, `commit-nudge`, and `gate-guard`.
 
 - [ ] **Step 4: Run the tests**
 
-Run: `node --test scripts/conductor.test.mjs 2>&1 | rg "^(ℹ|#) (tests|pass|fail)"`
+Run: `node --test scripts/test/*.test.mjs 2>&1 | rg "^(ℹ|#) (tests|pass|fail)"`
 Expected: `fail 0`.
 
 - [ ] **Step 5: Update the user-facing docs**
@@ -754,11 +767,11 @@ Find every place that needs it rather than guessing: `rg -n "CLAUDE\.md" README.
 
 - [ ] **Step 6: Verify the whole suite and commit**
 
-Run: `node --test scripts/conductor.test.mjs 2>&1 | rg "^(ℹ|#) (tests|pass|fail)"`
+Run: `node --test scripts/test/*.test.mjs 2>&1 | rg "^(ℹ|#) (tests|pass|fail)"`
 Expected: `fail 0`.
 
 ```bash
-git add hooks/hooks.json README.md commands/upgrade.md skills/conductor/SKILL.md scripts/conductor.test.mjs
+git add hooks/hooks.json README.md commands/upgrade.md skills/conductor/SKILL.md scripts/test/platform.test.mjs
 git commit -m "feat(hooks): Claude Code hooks declare --platform claude-code
 
 Closes the loop: without this the declared-platform mechanism exists but nothing
