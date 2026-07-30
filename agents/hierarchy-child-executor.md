@@ -59,7 +59,7 @@ too, in the same commit. This is not optional or a "nice to have": `record-gate-
 in 0.16.0 as a genuine new subcommand with zero README mention, because a prior dispatch's
 instructions only required updating `SKILL.md`. `SKILL.md` and `README.md` drift from the real
 dispatch table independently and are checked by two separate tests
-(`scripts/conductor.test.mjs`) — passing one does not mean the other is current. If your change
+(`scripts/test/*.test.mjs`) — passing one does not mean the other is current. If your change
 is purely internal (no user-facing surface — a test, an engine-internal refactor, a
 process-only doc fix), say so explicitly in DECISIONS rather than silently skipping the check.
 

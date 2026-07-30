@@ -7,6 +7,7 @@ import { parseFlags } from "./add-epic.mjs";
 import { writeRules } from "./rules.mjs";
 import { render } from "./render.mjs";
 import { KNOWN_REVIEW_MODES } from "./constants.mjs";
+import { resolvePlatform } from "./platform.mjs";
 
 /** `set-review-mode --mode off|standard|thorough` — the repo-level dial, mirroring Comet's
  *  review_mode: bounds how many fresh-context reviewer passes run and when, replacing an
@@ -24,7 +25,7 @@ export function setReviewMode() {
   const state = loadState();
   state.reviewMode = mode;
   saveState(state);
-  writeRules();   // refresh CLAUDE.md so the agent sees the new active mode
+  writeRules(resolvePlatform({}, state));   // refresh CLAUDE.md so the agent sees the new active mode
   render();
   process.stderr.write(`conductor: review mode is now '${mode}'\n`);
 }

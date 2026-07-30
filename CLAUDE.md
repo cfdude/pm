@@ -20,7 +20,7 @@
   `node:path`, `node:os`, `node:child_process`, `node:url`). **Never** add an npm package or a
   `package.json` dependency. If a format needs parsing, prefer JSON (native) over pulling a
   parser.
-- **Tests:** `node --test scripts/conductor.test.mjs`. All tests pass before any commit — no
+- **Tests:** `node --test scripts/test/*.test.mjs`. All tests pass before any commit — no
   exceptions, no `--no-verify`.
 - **Architectural law — `pm` is an INSTRUCTION layer, never an INTEGRATION layer.** It emits
   instructions for the interactive Claude agent to act on (the managed `CLAUDE.md` rules block,
@@ -44,7 +44,7 @@
   the plugin ships to users. Follow it every time `plugin.json`'s version bumps; don't
   re-derive the checklist from memory.
 - Engine subcommands are dispatched at the bottom of `conductor.mjs`; every new subcommand needs
-  a matching command doc under `commands/` and coverage in `conductor.test.mjs`.
+  a matching command doc under `commands/` and coverage in `scripts/test/*.test.mjs`.
 - **State-transition flags are not pure functions of current state.** `reconcileNeeded` in
   particular is set at detour-POP time and must survive until reconciliation completes — POP
   protocol removes the detour-stack frame *before* reconciliation runs, so deriving the flag
@@ -65,7 +65,7 @@ branch cleanup). A change that is genuinely internal (a test, an engine-internal
 process-only doc fix) does not need either — but say so explicitly rather than silently
 skipping the check.
 
-<!-- BEGIN pm-conductor rules (managed by /pm:init — safe to delete this block) -->
+<!-- BEGIN pm-conductor rules (managed by pm — safe to delete this block) -->
 ## PM Conductor — operating rules
 
 This repo is managed by the `pm` plugin. The conductor sits ABOVE OpenSpec and Superpowers.

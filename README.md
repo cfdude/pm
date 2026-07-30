@@ -46,11 +46,11 @@ Not a benchmark — real numbers pulled straight from this repo's own history, v
 - Every multi-agent hierarchy dispatch runs **worktree-isolated**, unattended, converging back
   through sequential merge with **zero data loss** — every conflict seen so far has been
   mechanical (a shared CHANGELOG header, a usage string), never a real logic collision.
-- **37 releases** shipped end-to-end (spec → build → test → changelog → version bump → release)
+- **38 releases** shipped end-to-end (spec → build → test → changelog → version bump → release)
   with the plugin managing its own backlog the entire time.
-- **250 tests**, **0 dependencies** — the entire engine is Node 18+ built-ins only, ~2,700 lines
-  across a 121-line `scripts/conductor.mjs` entry point and 25 `scripts/lib/*.mjs` modules,
-  nothing to `npm install`.
+- **282 tests**, **0 dependencies** — the entire engine is Node 18+ built-ins only, ~2,900 lines
+  across a 130-line `scripts/conductor.mjs` entry point and 26 `scripts/lib/*.mjs` modules,
+  nothing to `npm install`. The suite itself is split across 11 files so it runs in parallel.
 - Caught its own bugs mid-flight, live: a stale-cache silent fallback, an archived-child leak in
   hierarchy planning, a false-positive auto-detour heuristic — each found by using the tool on
   itself, logged as a `DF-` finding, and fixed in the same session it was discovered.
@@ -177,7 +177,8 @@ cd your-project
 ```
 
 `/pm:init` scaffolds `.conductor/state.json`, registers any existing OpenSpec proposals and
-Superpowers plans as epics, writes the managed rules block into your project's `CLAUDE.md`,
+Superpowers plans as epics, writes the managed rules block into your project's `CLAUDE.md`
+(or the equivalent file for a declared non-Claude-Code platform — see Supported Platforms),
 and renders `PROJECT.md`. From there:
 
 ```bash
@@ -187,10 +188,25 @@ and renders `PROJECT.md`. From there:
 
 ## Supported Platforms
 
+The host declares which platform it is via `--platform <claude-code|hermes|codex>` in the hook
+command pm authors for that platform (unrecognized values are rejected, not silently defaulted).
+The declared platform is recorded in `.conductor/state.json` by `/pm:init` and `write-rules` —
+the commands that accept the flag and (re)write the block. The read-only hooks pass it through
+without persisting, and `/pm:upgrade` does not read it either (its `0.24.0` migration stamps
+`claude-code` on repos that predate the field, rather than adopting a declared value). The
+recorded platform shapes two things: the command
+form written into the managed rules block (`/pm:status` on Claude Code and Hermes, `/pm-status`
+on Codex — Hermes keeps the `pm:` namespace because it silently skips a plugin command that
+collides with one of its built-ins, and it ships a built-in `status`), and which file the block
+is written to, first-match-wins over that platform's own project-context precedence chain
+(`CLAUDE.md` for Claude Code; `HERMES.md` > `AGENTS.md` > `CLAUDE.md` for Hermes; `AGENTS.md` for
+Codex, which cannot read `CLAUDE.md` at all).
+
 | Platform | Status | Notes |
 |----------|--------|-------|
-| Claude Code | ✅ Supported | The only platform PM runs on today — plugin commands, hooks, and skills all target it directly. |
-| Codex | 🗺️ Planned | Tracked under `multi-platform-agent-support`. |
+| Claude Code | ✅ Supported | The only platform PM actually *runs* on today — plugin commands, hooks, and skills all target it directly. |
+| Hermes | 🗺️ Rules block only | pm renders a correctly-targeted, correctly-worded rules block (`--platform hermes`) but ships no Hermes commands/hooks yet. Tracked under `multi-platform-agent-support`. |
+| Codex | 🗺️ Rules block only | Same — `--platform codex` writes `AGENTS.md` with the flat `/pm-status` command form, but no Codex prompt files ship yet. Tracked under `multi-platform-agent-support`. |
 | Gemini CLI | 🗺️ Planned | Tracked under `multi-platform-agent-support`. |
 | Grok Build (xAI) | 🗺️ Planned | Tracked under `multi-platform-agent-support`. |
 | `AGENTS.md`-based platforms (generic) | 🗺️ Planned | Most non-Claude-Code tools use `AGENTS.md` instead of `CLAUDE.md` for project instructions — supporting that format is the shared unlock for all of the above. |
@@ -286,7 +302,8 @@ this is a non-blocking reminder only, never an automatic sync.
 <summary><code>/pm:init</code> — Initialize the PM conductor in this repo</summary>
 
 Scaffolds `.conductor/state.json`, registers any existing OpenSpec proposals and Superpowers
-plans as epics, writes the managed rules block into `CLAUDE.md`, and renders `PROJECT.md`.
+plans as epics, writes the managed rules block into `CLAUDE.md` (or the file the declared
+`--platform` actually reads — see Supported Platforms), and renders `PROJECT.md`.
 Safe to run once per repo; re-running is a no-op if already initialized.
 
 </details>
@@ -465,10 +482,11 @@ version.
 <details>
 <summary><code>/pm:upgrade</code> — Upgrade this repo's conductor state/rules</summary>
 
-Refreshes the `CLAUDE.md` rules block (`write-rules`), runs any pending migrations,
-re-renders `PROJECT.md`, and stamps the new `pmVersion`. Idempotent — safe to run more than
-once. Requires `/reload-plugins` first if you just updated the plugin (the SessionStart
-briefing tells you when).
+Refreshes the managed rules block (`write-rules`) in whichever file the recorded platform
+reads, runs any pending migrations — including stamping `platform: "claude-code"` on a
+pre-0.24.0 state file that predates the field — re-renders `PROJECT.md`, and stamps the new
+`pmVersion`. Idempotent — safe to run more than once. Requires `/reload-plugins` first if you
+just updated the plugin (the SessionStart briefing tells you when).
 
 After showing the changelog delta ("What's new in pm"), the agent reviews each `Added`
 headline and recommends adopting any opt-in capability that's relevant to this repo's current
@@ -569,6 +587,9 @@ your-project/
 │   ├── detours.log          # append-only trail: timestamp · SHA · kind · epic · note
 │   └── honcho-memories.log  # ready-to-copy Honcho memory lines, timestamped
 ├── CLAUDE.md                # managed rules block (idempotent; delete to opt out)
+│                             # — AGENTS.md instead, on a platform that reads that file (see
+│                             #   Supported Platforms below); pm targets whichever file the
+│                             #   declared platform actually resolves first
 └── PROJECT.md               # generated view — never hand-edited
 
 pm/ (this repo)

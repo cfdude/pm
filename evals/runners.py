@@ -8,8 +8,28 @@ corpus and scorers stay untouched.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from pathlib import Path
+
+
+def _child_env() -> dict[str, str]:
+    """Environment for every spawned agent session.
+
+    HONCHO_ENABLED=false: honcho is a *user-scope* Claude Code plugin, so each headless
+    session this harness spawns would otherwise write machine-generated eval text into the
+    maintainer's personal memory workspace -- content with no value to a human reader, and
+    the overwhelming majority of sessions on the machine. `false` is the plugin's hard off
+    switch (isPluginEnabled() returns false and every hook exits before doing any work).
+
+    It is a per-invocation runtime override that the plugin deliberately never persists to
+    its config file, so interactive work in this same repo keeps honcho ON.
+
+    Set here rather than at the call site so that a platform runner added later (hermes,
+    codex) inherits it by construction instead of having to remember. Nested processes --
+    a session that shells out, a worktree child -- inherit it the normal way.
+    """
+    return {**os.environ, "HONCHO_ENABLED": "false"}
 
 
 def _parse_result(stdout: str) -> dict:
@@ -39,6 +59,7 @@ def run_claude_code(
             "--output-format", "json",
         ],
         cwd=str(cwd),
+        env=_child_env(),
         capture_output=True,
         text=True,
         timeout=timeout,

@@ -45,6 +45,8 @@ import { pluginVersion } from "./lib/plugin-meta.mjs";
 import {
   currentTracker, currentSecondaryTrackers, currentReviewMode, rulesBlock, writeRules,
 } from "./lib/rules.mjs";
+import { resolvePlatform, assertKnownPlatform, platformFlag, resolveAndRecordPlatform } from "./lib/platform.mjs";
+import { loadState } from "./lib/state.mjs";
 import { setActive, clearActive } from "./lib/active-pointer.mjs";
 import { setAutonomy } from "./lib/autonomy.mjs";
 import { parseFlags, planHierarchy, addEpic } from "./lib/add-epic.mjs";
@@ -112,9 +114,16 @@ if (showEngineBanner) {
   rules: () => {
     const f = parseFlags(process.argv.slice(3));
     const epicId = typeof f.epic === "string" ? f.epic : undefined;
-    process.stdout.write(rulesBlock(currentTracker(), currentReviewMode(epicId), currentSecondaryTrackers()));
+    const declared = platformFlag(process.argv.slice(3));
+    if (declared) assertKnownPlatform(declared);
+    const rulesPlatform = resolvePlatform({ platform: declared }, loadState());
+    process.stdout.write(rulesBlock(currentTracker(), currentReviewMode(epicId), currentSecondaryTrackers(), rulesPlatform));
   },
-  "write-rules": writeRules,
+  "write-rules": () => {
+    const { platform, switched } = resolveAndRecordPlatform();
+    writeRules(platform);
+    if (switched) process.stderr.write(`conductor: platform: ${platform}\n`);
+  },
 }[cmd] || (() => {
   process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|set-autonomy|record-reconcile|record-gate-review|set-review-mode|set-gate-guard|gate-guard|plan-hierarchy|verify-worktrees|verify-state|changesets|upgrade|changelog|rules|write-rules\n");
   process.exit(1);

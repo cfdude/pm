@@ -8,6 +8,7 @@ import { reconcileArchived } from "./epic-progress.mjs";
 import { writeRules } from "./rules.mjs";
 import { render } from "./render.mjs";
 import { normalizeLink } from "./links.mjs";
+import { resolvePlatform } from "./platform.mjs";
 
 // MIGRATIONS — APPEND-ONLY, each keyed by the release that introduced the change.
 // NEVER remove or reorder a shipped entry: a repo many versions behind replays every
@@ -29,6 +30,13 @@ const MIGRATIONS = [
       for (const e of state.epics) {
         e.links = (Array.isArray(e.links) ? e.links : []).map(normalizeLink).filter(Boolean);
       }
+    },
+  },
+  {
+    release: "0.24.0",
+    note: "stamp the active host platform (claude-code for every pre-existing repo)",
+    apply(state) {
+      if (!state.platform) state.platform = "claude-code";
     },
   },
 ];
@@ -57,7 +65,7 @@ export function upgrade() {
   reconcileArchived(state);
   stampVersion(state);
   saveState(state);
-  writeRules();
+  writeRules(resolvePlatform({}, state));
   render();
   process.stderr.write(`conductor: upgraded (${applied} migration(s)), pmVersion now ${state.pmVersion || "unknown"}\n`);
 

@@ -20,12 +20,33 @@ cd "$(git rev-parse --show-toplevel)"
 tmpfile=$(mktemp)
 trap 'rm -f "$tmpfile"' EXIT
 
-if node --test scripts/conductor.test.mjs >"$tmpfile" 2>&1; then
+# The suite is a GLOB of scripts/test/*.test.mjs, not one file. Two notes on that:
+#   * `node --test scripts/test` does NOT work -- on Node 26 a directory argument is treated as
+#     a module to execute, so it dies with MODULE_NOT_FOUND and reports "1 test". It exits
+#     nonzero so it can't pass silently, but don't "simplify" the glob into a directory.
+#   * The glob introduces a NEW silent-loss risk the single-file suite never had: if a file
+#     stops matching (renamed, moved, a typo in the pattern), the suite still passes -- just
+#     with fewer tests. So below we cross-check the runner's reported count against the number
+#     of test() declarations actually present in the source. A drop fails the commit.
+if node --test scripts/test/*.test.mjs >"$tmpfile" 2>&1; then
   # node --test's default reporter (and therefore this summary line's leading marker) differs
   # by Node version: newer Node uses the "spec" reporter (ℹ) even when output isn't a TTY,
   # older Node (e.g. the CI runner's Node 18) defaults to the "tap" reporter (#). Match both.
   total=$(grep -m1 -E '^(ℹ|#) tests ' "$tmpfile" | awk '{print $3}')
   passed=$(grep -m1 -E '^(ℹ|#) pass ' "$tmpfile" | awk '{print $3}')
+
+  # Self-maintaining floor: count top-level test( declarations in the files themselves. No
+  # constant to bump as tests are added -- it only fires when the runner ran FEWER than exist.
+  # -H forces the filename: prefix even when the glob matches ONE file. Plain `grep -c` omits
+  # it for a single file, so awk -F: summed field 2 of a bare number and got 0 -- the guard
+  # went blind in exactly the situation it exists to catch (a glob collapsed to one file).
+  declared=$(grep -Hc '^test(' scripts/test/*.test.mjs | awk -F: '{s+=$2} END {print s}')
+  if [ -n "$total" ] && [ -n "$declared" ] && [ "$total" -lt "$declared" ]; then
+    echo "pre-commit: ABORT -- ran ${total} tests but ${declared} are declared in scripts/test/." >&2
+    echo "pre-commit: a test file is not being picked up by the glob; the suite is passing on a subset." >&2
+    exit 1
+  fi
+
   if [ -n "$total" ] && [ -n "$passed" ]; then
     echo "pre-commit: ${passed}/${total} passing"
   else

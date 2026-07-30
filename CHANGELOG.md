@@ -8,6 +8,85 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.24.0] — 2026-07-30
+
+### Added
+
+- **Platform-aware rules block.** The managed rules block is no longer Claude-Code-only. The
+  host agent declares itself via `--platform <claude-code|hermes|codex>` in the hook command pm
+  authors for that platform, and the active platform is recorded in `.conductor/state.json`.
+- Per-platform slash-command form: `/pm:status` on Claude Code and Hermes, `/pm-status` on Codex.
+  The namespace is retained wherever supported because Hermes silently skips a plugin command
+  that collides with a built-in, and it ships a built-in `status`.
+
+### Changed
+
+- **The test suite is now `scripts/test/*.test.mjs` (11 files) instead of one
+  `scripts/conductor.test.mjs`, cutting a full run from ~118s to ~46s.** Contributor-facing: the
+  command is `node --test scripts/test/*.test.mjs`. Measured rather than guessed — one engine
+  spawn costs ~73ms and the suite makes 676 of them, so ~49s was pure `node` startup, serialized
+  in a single file on a 16-core machine; `node --test` parallelizes across *files* only. The
+  split is verbatim, verified by test-name-set equality (255 → 255).
+
+  Note `node --test scripts/test` (a **directory**) does not work — Node treats the argument as a
+  module to execute and dies with `MODULE_NOT_FOUND` while reporting "1 test". It exits non-zero
+  so it cannot pass silently, but use the glob.
+
+  Rejected: converting to in-process testing to skip `node` startup entirely. It would be faster
+  still, but would stop exercising the real CLI contract — flag parsing, exit codes, stderr text,
+  the dispatch table — which is where the bugs this suite catches actually live.
+
+- **`.githooks/pre-commit` now aborts if the suite runs fewer tests than are declared.** The glob
+  makes a partial-suite pass possible in a way the single file never did: if a file stops
+  matching, everything still goes green, just on a subset. The hook cross-checks the runner's
+  count against `grep -c '^test('` across the files — self-maintaining, with no constant to bump
+  as tests are added.
+
+### Fixed
+
+- The rules block is now written to the file the host platform will actually read. Hermes
+  resolves project context first-match-wins over `HERMES.md` > `AGENTS.md` > `CLAUDE.md`, so in a
+  repo already carrying an `AGENTS.md` the block was silently invisible — no error, just an agent
+  running without the conductor's instructions.
+
+- **The auto-detour hook no longer writes a `detours.log` entry for a commit that did not land
+  in this repo** (closes [#65](https://github.com/cfdude/pm/issues/65) and
+  [#68](https://github.com/cfdude/pm/issues/68)). `PostToolUse` fires when the Bash tool
+  *returns*, which is not the same as "a commit landed here." Three divergences were observed
+  live, each writing a false line attributed to this repo's **stale HEAD**: the commit was
+  rejected by `pre-commit` so HEAD never advanced; the commit was backgrounded (the documented
+  way to avoid an agent-harness tool timeout) and was still running; or the commit landed in a
+  *different* repo — a paired repo, a submodule, `git -C elsewhere` — leaving our HEAD untouched
+  while `gitShortSha()` and `headChangedFiles()`, which both read the pm repo, attributed it here.
+
+  Comparing subjects is subtler than it looks, and getting it wrong is worse than the original
+  bug. `git log -1 --format=%s` yields only the **first line**, while a `-m` capture spans
+  newlines and swallows the whole message — so a naive comparison suppresses every commit that
+  has a body, silently disabling the hook for the common case. The comparison is therefore
+  first-line-to-first-line, and a message the shell assembled (`-m "$(…)"`, a heredoc,
+  `-m "$MSG"`) is treated as *unverifiable* rather than mismatched, because the command string
+  holds the shell source rather than the text git received.
+
+  All three reduce to one question: does HEAD hold the commit whose subject we just parsed?
+  Comparing SHAs would need a stored baseline; the subject is already in hand. Note an
+  **exit-code check would not have been sufficient** — a backgrounded commit has no exit code
+  yet — which is why the two independently-reported issues share one fix.
+
+  The guard is deliberately three-state. Only *contradicted* (a subject was parsed, git works,
+  and HEAD disagrees) suppresses the entry. *Unverifiable* — no `-m` to parse, or git unusable
+  in this directory — keeps the previous behavior, because the archived-epic self-heal must still
+  run in a repo with no git at all.
+
+  A local `detours.log` that confidently points at the wrong commit is worse than a missing
+  line, since anything reconstructing "what happened around commit X" gets a confidently wrong
+  answer. Note the log is untracked under a common global `*.log` ignore pattern, so the damage
+  was confined to a working copy rather than repo history.
+
+### Migration
+
+- `0.24.0` stamps `platform` on existing state files, defaulting to `claude-code`. Additive and
+  idempotent; a `0.23.1` state file still loads.
+
 ## [0.23.1] — 2026-07-23
 
 ### Fixed

@@ -56,7 +56,7 @@ Below, `$ENGINE` means the path resolved this way.
 `snapshot` (PreCompact hook only — re-renders PROJECT.md and writes `.conductor/brief.txt`
 right before the context window collapses, so nothing is lost to compaction) ·
 `write-rules` (invoked by `/pm:init`/`/pm:upgrade` — refreshes the managed rules block in
-CLAUDE.md; not meant to be run standalone) ·
+CLAUDE.md, or the recorded `--platform`'s equivalent file; not meant to be run standalone) ·
 `/pm:resume` resume + reconcile (writes the reconciler's verdict back durably via
 `record-reconcile`) · `record-gate-review <id> --gate 1|2 --verdict pass|fail` records an
 openspec-lane epic's Gate 1/Gate 2 review verdict (see "OpenSpec build" below); `update-epic
@@ -260,8 +260,9 @@ Resume the **top of the detour stack** first if non-empty. Otherwise the highest
   detected), so `/pm:next` advances without hand-editing `state.json`.
 - `state.json` always wins over `PROJECT.md` — just re-render.
 
-These rules are also installed into the project's `CLAUDE.md` by `/pm:init` and re-injected
-by the SessionStart hook (so they survive compaction). Two artifacts back them up: every
+These rules are also installed into the project's `CLAUDE.md` by `/pm:init` — or `AGENTS.md`
+(or `HERMES.md`-chain equivalent) on a repo running a declared non-Claude-Code `--platform` —
+and re-injected by the SessionStart hook (so they survive compaction). Two artifacts back them up: every
 commit made while a detour is active is auto-logged to `.conductor/detours.log` by the hook
 (deterministic), and minimal detours are logged there by `log-detour` (rule-driven).
 
@@ -349,7 +350,7 @@ CLAUDE.md (see `/pm:epic` → `set-autonomy`).
      `hierarchy-child-executor` agent enforces the matching check at report time — see its
      "Required check: session-continuity impact on the orchestrator" section.
    - **Documentation currency** — `SKILL.md` and `README.md` drift from the real dispatch table
-     independently (two separate tests in `scripts/conductor.test.mjs` check each one; passing
+     independently (two separate tests in `scripts/test/*.test.mjs` check each one; passing
      one does not mean the other is current). Any child epic that adds/changes a user-facing
      command, flag, or behavior must update `README.md`, not just `SKILL.md` — this bit the
      project once already (`record-gate-review` shipped with no README mention). See

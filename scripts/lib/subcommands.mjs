@@ -15,6 +15,7 @@ import { appendDetourLog, gitShortSha } from "./git.mjs";
 import { detourContext } from "./links.mjs";
 import { activeChangeIds, firstHeading, planFiles, reconcileArchived } from "./epic-progress.mjs";
 import { ROOT, CONDUCTOR_DIR, BRIEF_PATH, PLANS_DIR } from "./constants.mjs";
+import { resolveAndRecordPlatform } from "./platform.mjs";
 
 export function init() {
   if (isInitialized()) {
@@ -25,7 +26,8 @@ export function init() {
   }
   sync(true);                 // pull in existing openspec changes + plans
   { const s = loadState(); stampVersion(s); saveState(s); }
-  writeRules();
+  const { platform } = resolveAndRecordPlatform();
+  writeRules(platform);
   render();
   process.stderr.write(
     "conductor: initialized. Triage epics in .conductor/state.json " +
@@ -61,6 +63,17 @@ export function headChangedFiles() {
   } catch { return null; }
 }
 
+/** Subject line of the commit at HEAD in the pm-managed repo, or null when git is unusable
+ *  here (not a repo yet, no commits, git missing). null means "cannot tell", which is
+ *  deliberately NOT the same answer as "no commit landed" — see commitNudge's guard. */
+export function headSubject() {
+  try {
+    return execSync("git log -1 --format=%s", {
+      cwd: ROOT, stdio: ["ignore", "pipe", "ignore"],
+    }).toString().trim();
+  } catch { return null; }
+}
+
 /** pm's own state-output files — routine conductor bookkeeping (registering/archiving
  *  epics, re-rendering) touches only these, never a stray detour. CLAUDE.md is deliberately
  *  excluded: it's user-authored content, not purely engine-generated output, so a commit
@@ -93,7 +106,48 @@ export function commitNudge() {
   const state = loadState();
   const ctx = detourContext(state);
   const m = cmd.match(/-m\s+(?:"([^"]*)"|'([^']*)'|(\S+))/);
-  const subject = (m && (m[1] || m[2] || m[3])) || "";
+  const rawSubject = (m && (m[1] || m[2] || m[3])) || "";
+
+  // `git log -1 --format=%s` yields ONLY the first line, but the `-m` capture above uses
+  // [^"]* which spans newlines and swallows the whole message body. Comparing those two
+  // directly can never match for a commit with a body -- and this repo mandates one (the
+  // Claude-Session footer), so the guard below suppressed EVERY real commit. Compare the
+  // first line with the first line.
+  const subject = rawSubject.split("\n")[0].trim();
+
+  // A message assembled by the shell -- `-m "$(cat <<'EOF' … EOF)"`, `-m "$MSG"` -- cannot be
+  // recovered from the command string: what we captured is the shell SOURCE, not the text git
+  // received. That is "cannot tell", not "does not match", so it takes the UNVERIFIABLE rung
+  // rather than being wrongly contradicted.
+  //
+  // This test is deliberately BROAD, and the breadth has a cost worth stating: a *literal*
+  // `$(` or `${` in a genuine subject -- `fix: escape ${VAR} in the template` -- also lands on
+  // the unverifiable rung, so gh#65's false-positive can still occur for that message shape.
+  // That is the correct direction to fail. A false log line is visible and reviewable; a false
+  // SUPPRESSION silently disables the hook, which is the bug this whole guard exists to avoid
+  // and which shipped once already (see the first-line comment above).
+  const shellBuilt = /\$\(|\$\{|<<-?\s*['"]?\w+/.test(rawSubject) || /^\$\w+$/.test(rawSubject);
+
+  // gh#65 / gh#68: PostToolUse fires when the Bash tool RETURNS, which is NOT the same as
+  // "a commit landed in this repo". Three observed divergences, each of which wrote a false
+  // detours.log line attributed to this repo's STALE HEAD:
+  //   * pre-commit rejected the commit          -> HEAD never advanced      (gh#65 bug 1)
+  //   * the commit was backgrounded, still running -> HEAD not advanced yet (gh#68)
+  //   * the commit landed in ANOTHER repo (paired repo, submodule, `git -C`) -> our HEAD is
+  //     untouched, but gitShortSha()/headChangedFiles() both read ROOT and so attribute
+  //     that commit to this repo                                           (gh#65 bug 2)
+  //
+  // All three reduce to one question: does HEAD in ROOT hold the commit we just parsed?
+  // Comparing SHAs would need a stored baseline; the subject is already in hand. Note an
+  // exit-code check would NOT cover the backgrounded case — there is no exit code yet.
+  //
+  // Three-state on purpose. Only CONTRADICTED (a subject was parsed, git works, and HEAD
+  // disagrees) means "no commit landed here" and goes silent. UNVERIFIABLE -- no `-m` to
+  // parse, git unusable here, or a shell-assembled message we cannot read -- keeps the
+  // previous behaviour, because the archived-epic self-heal below must still run in a repo
+  // with no git at all, and because guessing wrong here silently disables the whole hook.
+  const head = headSubject();
+  if (!shellBuilt && subject && head !== null && head !== subject) return;
 
   // DETERMINISTIC: if we are inside a detour, record this commit in the trail.
   let autoLogged = false;

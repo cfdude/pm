@@ -1136,12 +1136,14 @@
       "id": "rules-block-hardcodes-claude-slash-commands",
       "title": "rulesBlock() hardcodes Claude Code slash-command syntax (/pm:status, /pm:detour --minimal, /pm:resume) throughout the emitted CLAUDE.md rules text, plus the 'Manage with /pm:status · /pm:next · ...' footer. On any platform without slash commands, that text is actively misleading -- it instructs the agent to run commands that don't exist there. Needs a command-style notion so the block can emit the direct CLI form (node scripts/conductor.mjs render) instead. rulesBlock() already takes (tracker, reviewMode, secondaryTrackers) so an added parameter fits the existing signature. Prerequisite for any multi-platform support; found during the multi-platform-agent-support brainstorm.",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
-      "parent": "multi-platform-agent-support"
+      "parent": "multi-platform-agent-support",
+      "startedAt": "2026-07-29T02:28:12.027Z",
+      "completedAt": "2026-07-30T05:54:27.332Z"
     },
     {
       "id": "platform-parity-mechanism",
@@ -1222,12 +1224,19 @@
       "lane": "claude-code",
       "links": [
         {
-          "type": "blocks",
-          "epic": "hermes-platform-support",
-          "reason": "observe.py would report rules_block_present false for any AGENTS.md platform -- a confident, wrong parity failure on the first Hermes run"
+          "type": "depends-on",
+          "epic": "rules-block-hardcodes-claude-slash-commands",
+          "reason": "observe.py correctly observes what the engine WRITES; the engine hardcodes CLAUDE.md (constants.mjs:14) and writes only there, so parameterizing observe first would abstract over a filename nothing produces"
         }
       ],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "startedAt": "2026-07-29T02:27:31.264Z",
+      "stories": [
+        {
+          "title": "fold into the rules-block epic: once the engine writes a per-platform rules-block target, update observe() to match and prove both with one eval",
+          "done": false
+        }
+      ]
     },
     {
       "id": "edd-user-memory-confound-control-run",
@@ -1292,12 +1301,290 @@
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false
+    },
+    {
+      "id": "init-detects-foreign-agent-instruction-files",
+      "title": "pm init should detect a pre-existing AGENTS.md / sol.md from a prior agent and read it before initializing",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "stories": [
+        {
+          "title": "if CLAUDE.md is absent but AGENTS.md (or sol.md) exists, read its contents -- it may dictate what belongs in CLAUDE.md, or at minimum hint how to initialize correctly in a project another agent already used",
+          "done": false
+        }
+      ]
+    },
+    {
+      "id": "rules-block-cli-fallback",
+      "title": "rules block: CLI fallback for any platform lacking slash commands or hitting a namespace collision",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "stories": [
+        {
+          "title": "deferred deliberately: a CLI fallback changes WHO the instruction addresses (slash command = the user, node scripts/conductor.mjs = the agent), which is a design fork, not just longer text",
+          "done": false
+        }
+      ]
+    },
+    {
+      "id": "gh-64-sync-duplicate-shipped-plan",
+      "title": "sync registers a duplicate untriaged epic for a plan whose feature already shipped",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "64",
+      "externalUrl": "https://github.com/cfdude/pm/issues/64",
+      "stories": [
+        {
+          "title": "CONFIRMED remove-epic is NOT durable: identical 3 phantoms returned on the next sync ~1h later. Another session saw the same across a 2-day gap in agent-dm.",
+          "done": false
+        },
+        {
+          "title": "WORKAROUND THAT STICKS (no code change): set the phantom to --status archived instead of remove-epic. The id still exists so sync's own 'id already exists' guard fires. Verified: repeated syncs add 0.",
+          "done": false
+        },
+        {
+          "title": "prefer the tombstone/syncIgnore fix over plan-field matching for the near term: matching is blocked by #66 (no update-epic --plan) while the tombstone has no dependency; archived already IS a working tombstone",
+          "done": false
+        }
+      ]
+    },
+    {
+      "id": "gh-65-autodetour-false-positives",
+      "title": "auto-detour writes false-positive entries: no success check + no repo-scope check",
+      "priority": "P1",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "65",
+      "externalUrl": "https://github.com/cfdude/pm/issues/65",
+      "stories": [
+        {
+          "title": "bug 1: guard the write path on HEAD having advanced -- covers BOTH a pre-commit-rejected commit (#65) and a backgrounded commit not yet landed (#68). An exit-code check would NOT cover the latter.",
+          "done": true
+        },
+        {
+          "title": "bug 2: repo-scope check -- only fire when the commit's repo root matches the pm-managed repo (paired repo / submodule / git -C elsewhere)",
+          "done": false
+        },
+        {
+          "title": "closes #68 as duplicate; reporter hit it across job-search-agent + a paired repo, so it is not machine-specific",
+          "done": true
+        },
+        {
+          "title": "bug 2 is functionally covered by the SAME guard (a commit landing elsewhere leaves our HEAD subject unmatched) -- but NO explicit repo-scope check was added; decide whether belt-and-braces is wanted",
+          "done": false
+        }
+      ],
+      "startedAt": "2026-07-30T02:48:10.981Z"
+    },
+    {
+      "id": "gh-66-update-epic-missing-flags",
+      "title": "update-epic: no --lane, no --plan, undocumented valueless --link for clearing",
+      "priority": "P3",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "blocks",
+          "epic": "gh-69-sync-no-done-signal-for-plans",
+          "reason": "sync's fix wants to read each epic's plan field, but update-epic has no --plan so that field cannot be populated for existing epics"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "66",
+      "externalUrl": "https://github.com/cfdude/pm/issues/66"
+    },
+    {
+      "id": "gh-69-sync-no-done-signal-for-plans",
+      "title": "sync re-registers COMPLETED Superpowers plans as untriaged epics",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-64-sync-duplicate-shipped-plan",
+          "reason": "same root cause -- dedup keys on the plan's filename-derived id instead of a plan<->epic association, so any epic whose plan is named differently is re-registered forever"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "69",
+      "externalUrl": "https://github.com/cfdude/pm/issues/69"
+    },
+    {
+      "id": "gh-70-link-validation-gap",
+      "title": "add-epic --link silently accepts malformed format; no update-epic setter to fix it",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "70",
+      "externalUrl": "https://github.com/cfdude/pm/issues/70"
+    },
+    {
+      "id": "test-suite-perf-and-scaffolding",
+      "title": "Split the test suite for parallelism (~120s -> ~20s) and close the silent-pass holes in its scaffolding",
+      "priority": "P1",
+      "status": "archived",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "stories": [
+        {
+          "title": "MEASURED: 73ms per engine spawn x 676 run() call sites = ~49s of pure node startup, in ONE file, on 16 cores. node parallelizes across FILES only (proven: 4 files x 3s = 3.3s wall).",
+          "done": false
+        },
+        {
+          "title": "split conductor.test.mjs (3202 lines, 255 tests) into ~8-10 files along the 29 existing section markers; the 8 exported helpers already exist and nothing imports them -- the file was built to be split",
+          "done": true
+        },
+        {
+          "title": "do NOT convert to in-process imports to skip node startup: faster, but stops testing the real CLI contract, which is the point of these tests",
+          "done": true
+        },
+        {
+          "title": "SILENT-PASS HOLE: detourLog() returns '' for a missing file, so assert.doesNotMatch(detourLog(cwd),...) passes even if commit-nudge never ran -- and it exits 0 on every early return, so run() will not throw. Assert the hook EMITTED its JSON first.",
+          "done": true
+        },
+        {
+          "title": "keep the :996 self-heal test repo-less (it is the only coverage of the unverifiable branch and it caught the two-state guard bug); rename it to say so and ADD a git-repo twin for the verified path",
+          "done": true
+        },
+        {
+          "title": "audit every doesNotMatch/empty-string assertion in the suite for the same vacuous-pass shape, not just the ones added for gh#65",
+          "done": true
+        },
+        {
+          "title": "MEASURED RESULT: 118s serial -> ~46s parallel (2.6x) across 11 files. 18 files was WORSE (46s) than 11 -- runner startup overhead. Floor is the slowest file (21s); the 46-21 gap is tmpdir/spawn contention, not concurrency (--test-concurrency=16 changed nothing).",
+          "done": false
+        },
+        {
+          "title": "GLOB LANDMINE: node --test scripts/test (a DIRECTORY) does not work on Node 26 -- it treats the arg as a module, dies MODULE_NOT_FOUND, reports '1 test'. Only the shell glob works. Documented in the hook so nobody 'simplifies' it.",
+          "done": false
+        },
+        {
+          "title": "MUTATION-TESTED the guard tests: disabling the guard initially left 4 of 5 still PASSING, because gitRepo()'s baseline commit touches 4 files and looksLikeUnloggedMinimalDetour rejects >3 -- they were passing on the file-count rule, not the guard. Fixed; now 4/5 fail on mutation and the 5th is the positive control that should pass either way.",
+          "done": false
+        },
+        {
+          "title": "AUDIT RESULT: projectMd/claudeMd THROW on a missing file so they cannot be vacuous. detourLog returns '' -- 4 pre-existing bare assertions in conductor-08 hardened via nudgeAndReadLog(). REMAINING (low): 3 doesNotMatch(parseBrief(...)) can be vacuous since parseBrief returns '' on empty brief output.",
+          "done": false
+        }
+      ],
+      "startedAt": "2026-07-30T04:28:32.303Z",
+      "completedAt": "2026-07-30T05:02:31.485Z"
+    },
+    {
+      "id": "2026-07-21-conductor-mjs-module-split",
+      "title": "conductor.mjs Module Split Implementation Plan",
+      "priority": "P?",
+      "status": "archived",
+      "role": "epic",
+      "lane": "superpowers",
+      "planPath": "docs/superpowers/plans/2026-07-21-conductor-mjs-module-split.md",
+      "links": [],
+      "reconcileNeeded": false,
+      "completedAt": "2026-07-30T04:00:55.770Z"
+    },
+    {
+      "id": "2026-07-26-edd-harness-agent-behavior-testing",
+      "title": "EDD Harness for Agent Behavior Testing — Implementation Plan",
+      "priority": "P?",
+      "status": "archived",
+      "role": "epic",
+      "lane": "superpowers",
+      "planPath": "docs/superpowers/plans/2026-07-26-edd-harness-agent-behavior-testing.md",
+      "links": [],
+      "reconcileNeeded": false,
+      "completedAt": "2026-07-30T04:00:55.969Z"
+    },
+    {
+      "id": "2026-07-29-platform-aware-rules-block",
+      "title": "Platform-Aware Rules Block Implementation Plan",
+      "priority": "P?",
+      "status": "archived",
+      "role": "epic",
+      "lane": "superpowers",
+      "planPath": "docs/superpowers/plans/2026-07-29-platform-aware-rules-block.md",
+      "links": [],
+      "reconcileNeeded": false,
+      "completedAt": "2026-07-30T04:00:56.179Z"
+    },
+    {
+      "id": "platform-switch-orphans-old-rules-block",
+      "title": "a platform switch leaves the previous platform's rules block live but unmanaged",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "blocks",
+          "epic": "hermes-platform-support",
+          "reason": "a switched repo would leave stale conductor instructions in the file the previous platform read"
+        }
+      ],
+      "reconcileNeeded": false,
+      "stories": [
+        {
+          "title": "writeRules() writes only the newly-resolved target, so switching claude-code -> codex creates AGENTS.md and leaves a frozen CLAUDE.md block an agent may still read -- a STALE-INSTRUCTIONS hazard distinct from 'recreate the artifact tree'",
+          "done": false
+        },
+        {
+          "title": "unreachable today (no Hermes/Codex hooks ship, needs a hand-passed --platform), but must be resolved before either port",
+          "done": false
+        }
+      ]
+    },
+    {
+      "id": "autodetour-parser-misses-am-and-f",
+      "title": "commit-nudge's -m parser misses -am / -F / editor commits, so #65 is only closed for -m",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "stories": [
+        {
+          "title": "git commit -am \"fix: x\" parses to subject='' which short-circuits the guard; a REJECTED -am commit still writes a false DETOUR-COMMIT line while a detour is active -- the original #65 symptom",
+          "done": false
+        },
+        {
+          "title": "b2e472f's message claims 'closes #65, #68' -- true for -m only. Correct the claim or close the gap BEFORE those issues are closed upstream.",
+          "done": false
+        },
+        {
+          "title": "ALSO: an escaped quote inside a double-quoted -m truncates the capture (regex is \"([^\"]*)\"), so a genuinely landed commit is CONTRADICTED and the hook silently suppressed. Fix shape: backslash-aware capture \"((?:[^\"\\\\]|\\\\.)*)\", or treat a value ending in a backslash as unverifiable.",
+          "done": false
+        }
+      ]
     }
   ],
   "detourStack": [],
-  "pmVersion": "0.23.1",
+  "pmVersion": "0.24.0",
   "tracker": {
     "system": "github-issues",
     "repo": "cfdude/pm"
-  }
+  },
+  "platform": "claude-code"
 }
