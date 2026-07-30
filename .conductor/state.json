@@ -1277,15 +1277,15 @@
         },
         {
           "title": "RESULT n=3 under suppression: 5/5 STABLE vs the prior baseline, 0 blocking. pm's OWN artifacts carry the lane behavior -- the baseline was never an artifact of operator memory. Re-blessed under isolation. 43 turns, $5.10 notional.",
-          "done": false
+          "done": true
         },
         {
           "title": "wall-clock NOT re-measured: the run took 387.9s at load 72 on a 16-core box, which is meaningless as a benchmark. The earlier '~2x increase' stays UNVERIFIED rather than being restated as fact.",
-          "done": false
+          "done": true
         },
         {
           "title": "story 5 shipped as a SCORER (no_operator_memory_loaded), not a one-off probe -- every future run now proves isolation positively. Baseline re-blessed at 6 checks, 3/3 samples, user_memory_files_loaded=[] on all three.",
-          "done": false
+          "done": true
         }
       ],
       "startedAt": "2026-07-30T21:50:06.581Z",
