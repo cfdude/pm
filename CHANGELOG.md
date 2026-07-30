@@ -8,6 +8,23 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.25.0] — 2026-07-30
+
+### Added
+
+- **`rules-target` — a read-only query printing the absolute path of the file the resolved
+  platform's rules block belongs in**, walking that platform's first-match-wins chain. It
+  deliberately does **not** record a platform: a query must not mutate state the way
+  `write-rules` does.
+
+  It exists so tooling around pm never has to mirror `PLATFORM_RULES_CHAIN`. `evals/observe.py`
+  hardcoded `CLAUDE.md`, which 0.24.0 quietly turned into a *second* platform seam — once the
+  engine began writing a per-platform target, the observer reported `rules_block_present: false`
+  for any platform whose block lands elsewhere. That is a confident wrong answer, and it would
+  have surfaced on the first Hermes or Codex run as a parity failure that is not real. Copying
+  the chain into Python was rejected: a second copy of platform knowledge only *moves* the
+  drift instead of removing it.
+
 ## [0.24.0] — 2026-07-30
 
 ### Added
