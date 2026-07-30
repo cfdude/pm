@@ -217,3 +217,14 @@ test("an initialized repo DOES persist a platform switch (the guard must not blo
   assert.equal(state.platform, "codex",
     "guard failed closed: an initialized repo must still record the switch");
 });
+
+// ────────────── the shipping hooks actually declare their platform ──────────────
+
+test("every pm-authored Claude Code hook command declares its platform", () => {
+  const hooks = JSON.parse(fs.readFileSync(new URL("../../hooks/hooks.json", import.meta.url), "utf8"));
+  const commands = JSON.stringify(hooks).match(/conductor\.mjs\\" [a-z-]+[^"]*/g) || [];
+  assert.ok(commands.length >= 4, `expected at least 4 hook commands, found ${commands.length}`);
+  for (const c of commands) {
+    assert.match(c, /--platform claude-code/, `hook command does not declare its platform: ${c}`);
+  }
+});

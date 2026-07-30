@@ -20,8 +20,13 @@ allowed-tools: Bash, Read
 Bring this repository in line with the currently-installed `pm` plugin version. Safe to run
 anytime; idempotent. Use it when the briefing shows a "pm <old> → <new>" upgrade nudge.
 
-1. Run the engine's upgrade (applies any pending migrations, refreshes the CLAUDE.md rules
-   block, re-renders PROJECT.md, and re-stamps the recorded version):
+1. Run the engine's upgrade (applies any pending migrations, refreshes the managed rules block
+   in whichever file the recorded platform reads — `CLAUDE.md` for Claude Code, `AGENTS.md` for
+   Codex, first-match-wins over `HERMES.md` > `AGENTS.md` > `CLAUDE.md` for Hermes — re-renders
+   PROJECT.md, and re-stamps the recorded version). If this repo's `.conductor/state.json` predates
+   `0.24.0` and has no `platform` field, the migration stamps `platform: "claude-code"` — the
+   platform this repo was already running on — so the rules block keeps landing in the same file
+   it always has:
 
    ```bash
    node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" upgrade

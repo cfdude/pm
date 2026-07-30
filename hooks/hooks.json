@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs\" brief"
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs\" brief --platform claude-code"
           }
         ]
       }
@@ -19,7 +19,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs\" snapshot"
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs\" snapshot --platform claude-code"
           }
         ]
       }
@@ -31,7 +31,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs\" commit-nudge"
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs\" commit-nudge --platform claude-code"
           }
         ]
       }
@@ -43,7 +43,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs\" gate-guard"
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs\" gate-guard --platform claude-code"
           }
         ]
       }
