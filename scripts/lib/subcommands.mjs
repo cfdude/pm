@@ -61,6 +61,17 @@ export function headChangedFiles() {
   } catch { return null; }
 }
 
+/** Subject line of the commit at HEAD in the pm-managed repo, or null when git is unusable
+ *  here (not a repo yet, no commits, git missing). null means "cannot tell", which is
+ *  deliberately NOT the same answer as "no commit landed" — see commitNudge's guard. */
+export function headSubject() {
+  try {
+    return execSync("git log -1 --format=%s", {
+      cwd: ROOT, stdio: ["ignore", "pipe", "ignore"],
+    }).toString().trim();
+  } catch { return null; }
+}
+
 /** pm's own state-output files — routine conductor bookkeeping (registering/archiving
  *  epics, re-rendering) touches only these, never a stray detour. CLAUDE.md is deliberately
  *  excluded: it's user-authored content, not purely engine-generated output, so a commit
@@ -94,6 +105,26 @@ export function commitNudge() {
   const ctx = detourContext(state);
   const m = cmd.match(/-m\s+(?:"([^"]*)"|'([^']*)'|(\S+))/);
   const subject = (m && (m[1] || m[2] || m[3])) || "";
+
+  // gh#65 / gh#68: PostToolUse fires when the Bash tool RETURNS, which is NOT the same as
+  // "a commit landed in this repo". Three observed divergences, each of which wrote a false
+  // detours.log line attributed to this repo's STALE HEAD:
+  //   * pre-commit rejected the commit          -> HEAD never advanced      (gh#65 bug 1)
+  //   * the commit was backgrounded, still running -> HEAD not advanced yet (gh#68)
+  //   * the commit landed in ANOTHER repo (paired repo, submodule, `git -C`) -> our HEAD is
+  //     untouched, but gitShortSha()/headChangedFiles() both read ROOT and so attribute
+  //     that commit to this repo                                           (gh#65 bug 2)
+  //
+  // All three reduce to one question: does HEAD in ROOT hold the commit we just parsed?
+  // Comparing SHAs would need a stored baseline; the subject is already in hand. Note an
+  // exit-code check would NOT cover the backgrounded case — there is no exit code yet.
+  //
+  // Three-state on purpose. Only CONTRADICTED (a subject was parsed, git works, and HEAD
+  // disagrees) means "no commit landed here" and goes silent. UNVERIFIABLE (no `-m` to
+  // parse, or git unusable here) keeps the previous behaviour, because the archived-epic
+  // self-heal below must still run in a repo with no git at all.
+  const head = headSubject();
+  if (subject && head !== null && head !== subject) return;
 
   // DETERMINISTIC: if we are inside a detour, record this commit in the trail.
   let autoLogged = false;
