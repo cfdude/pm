@@ -4,7 +4,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { tmpRepo, run, readState, writeState, gitRepo, commitFiles, detourLog } from "./helpers.mjs";
+import { tmpRepo, run, readState, writeState, gitRepo, commitFiles, detourLog, nudgeAndReadLog } from "./helpers.mjs";
 
 // ─────────────── honcho-memory: push/pop ready-to-copy line ───────────────
 
@@ -59,15 +59,13 @@ test("commit-nudge auto-logs a minimal detour for a small fix commit with no act
 test("commit-nudge does not auto-log a large commit (more than 3 files)", () => {
   const cwd = tmpRepo(); run(["init"], { cwd }); gitRepo(cwd);
   commitFiles(cwd, { "a.txt": "1", "b.txt": "1", "c.txt": "1", "d.txt": "1" }, "fix: sweeping cleanup");
-  run(["commit-nudge"], { cwd, input: JSON.stringify({ tool_input: { command: 'git commit -m "fix: sweeping cleanup"' } }) });
-  assert.doesNotMatch(detourLog(cwd), /AUTO-DETOUR/);
+  assert.doesNotMatch(nudgeAndReadLog(cwd, 'git commit -m "fix: sweeping cleanup"'), /AUTO-DETOUR/);
 });
 
 test("commit-nudge does not auto-log a commit without a fix/chore conventional-commit prefix", () => {
   const cwd = tmpRepo(); run(["init"], { cwd }); gitRepo(cwd);
   commitFiles(cwd, { "a.txt": "1" }, "feat: add new widget");
-  run(["commit-nudge"], { cwd, input: JSON.stringify({ tool_input: { command: 'git commit -m "feat: add new widget"' } }) });
-  assert.doesNotMatch(detourLog(cwd), /AUTO-DETOUR/);
+  assert.doesNotMatch(nudgeAndReadLog(cwd, 'git commit -m "feat: add new widget"'), /AUTO-DETOUR/);
 });
 
 test("commit-nudge does not auto-log a commit that names the active epic (treated as the epic's own work)", () => {
@@ -77,8 +75,7 @@ test("commit-nudge does not auto-log a commit that names the active epic (treate
   ]});
   gitRepo(cwd);
   commitFiles(cwd, { "a.txt": "1" }, "fix(feat-x): tighten validation");
-  run(["commit-nudge"], { cwd, input: JSON.stringify({ tool_input: { command: 'git commit -m "fix(feat-x): tighten validation"' } }) });
-  assert.doesNotMatch(detourLog(cwd), /AUTO-DETOUR/);
+  assert.doesNotMatch(nudgeAndReadLog(cwd, 'git commit -m "fix(feat-x): tighten validation"'), /AUTO-DETOUR/);
 });
 
 test("commit-nudge does not auto-log a commit already inside a detour (existing DETOUR-COMMIT path wins)", () => {
@@ -106,8 +103,7 @@ test("commit-nudge does not auto-log a routine conductor-bookkeeping commit touc
     ".conductor/state.json": '{"version":1,"active":null,"detourStack":[],"epics":[]}',
     "PROJECT.md": "# updated\n",
   }, "chore(pm): register 3 new epics");
-  run(["commit-nudge"], { cwd, input: JSON.stringify({ tool_input: { command: 'git commit -m "chore(pm): register 3 new epics"' } }) });
-  assert.doesNotMatch(detourLog(cwd), /AUTO-DETOUR/);
+  assert.doesNotMatch(nudgeAndReadLog(cwd, 'git commit -m "chore(pm): register 3 new epics"'), /AUTO-DETOUR/);
 });
 
 test("commit-nudge still auto-logs a chore commit that touches a real source file alongside state.json", () => {

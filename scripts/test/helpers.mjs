@@ -201,6 +201,29 @@ export function detourLog(cwd) {
   catch { return ""; }
 }
 
+/** Run commit-nudge, assert it actually executed, then return the detour log.
+ *
+ *  Why this exists: detourLog() returns "" for a missing file, so a bare
+ *  `assert.doesNotMatch(detourLog(cwd), /AUTO-DETOUR/)` also passes when the hook never ran at
+ *  all -- an uninitialized fixture, a command string that misses the /git\s+commit/ regex, an
+ *  early return for an unrelated reason. commit-nudge exits 0 on every early return, so run()
+ *  does not throw either, and the assertion cannot tell "the rule under test rejected this
+ *  commit" from "nothing happened."
+ *
+ *  commit-nudge emits a PostToolUse context payload on every path where it ran to completion,
+ *  so requiring that payload pins the difference. Use this instead of a bare detourLog() read
+ *  whenever the ABSENCE of an entry is the thing being asserted.
+ *
+ *  Note it is deliberately NOT for the gh#65/gh#68 suppression cases: those legitimately emit
+ *  nothing, and they prove non-vacuity a different way (see assertSuppressedThenLands). */
+export function nudgeAndReadLog(cwd, command) {
+  const out = run(["commit-nudge"], { cwd, input: JSON.stringify({ tool_input: { command } }) });
+  assert.ok(out.includes("hookSpecificOutput"),
+    "commit-nudge emitted no context payload, so it did not run to completion -- any absence " +
+    `assertion against the detour log would be vacuous. Output was: ${JSON.stringify(out)}`);
+  return detourLog(cwd);
+}
+
 // ─────────────────── lane-routing overrides ───────────────────
 
 // ──────────────── reconciler structured writeback: record-reconcile ────────────────

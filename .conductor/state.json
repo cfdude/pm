@@ -1470,7 +1470,7 @@
         },
         {
           "title": "audit every doesNotMatch/empty-string assertion in the suite for the same vacuous-pass shape, not just the ones added for gh#65",
-          "done": false
+          "done": true
         },
         {
           "title": "MEASURED RESULT: 118s serial -> ~46s parallel (2.6x) across 11 files. 18 files was WORSE (46s) than 11 -- runner startup overhead. Floor is the slowest file (21s); the 46-21 gap is tmpdir/spawn contention, not concurrency (--test-concurrency=16 changed nothing).",
@@ -1482,6 +1482,10 @@
         },
         {
           "title": "MUTATION-TESTED the guard tests: disabling the guard initially left 4 of 5 still PASSING, because gitRepo()'s baseline commit touches 4 files and looksLikeUnloggedMinimalDetour rejects >3 -- they were passing on the file-count rule, not the guard. Fixed; now 4/5 fail on mutation and the 5th is the positive control that should pass either way.",
+          "done": false
+        },
+        {
+          "title": "AUDIT RESULT: projectMd/claudeMd THROW on a missing file so they cannot be vacuous. detourLog returns '' -- 4 pre-existing bare assertions in conductor-08 hardened via nudgeAndReadLog(). REMAINING (low): 3 doesNotMatch(parseBrief(...)) can be vacuous since parseBrief returns '' on empty brief output.",
           "done": false
         }
       ],
