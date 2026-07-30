@@ -8,6 +8,17 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.24.0] — 2026-07-30
+
+### Added
+
+- **Platform-aware rules block.** The managed rules block is no longer Claude-Code-only. The
+  host agent declares itself via `--platform <claude-code|hermes|codex>` in the hook command pm
+  authors for that platform, and the active platform is recorded in `.conductor/state.json`.
+- Per-platform slash-command form: `/pm:status` on Claude Code and Hermes, `/pm-status` on Codex.
+  The namespace is retained wherever supported because Hermes silently skips a plugin command
+  that collides with a built-in, and it ships a built-in `status`.
+
 ### Changed
 
 - **The test suite is now `scripts/test/*.test.mjs` (11 files) instead of one
@@ -32,6 +43,11 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   as tests are added.
 
 ### Fixed
+
+- The rules block is now written to the file the host platform will actually read. Hermes
+  resolves project context first-match-wins over `HERMES.md` > `AGENTS.md` > `CLAUDE.md`, so in a
+  repo already carrying an `AGENTS.md` the block was silently invisible — no error, just an agent
+  running without the conductor's instructions.
 
 - **The auto-detour hook no longer writes a `detours.log` entry for a commit that did not land
   in this repo** (closes [#65](https://github.com/cfdude/pm/issues/65) and
@@ -65,24 +81,6 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   line, since anything reconstructing "what happened around commit X" gets a confidently wrong
   answer. Note the log is untracked under a common global `*.log` ignore pattern, so the damage
   was confined to a working copy rather than repo history.
-
-## [0.24.0] — 2026-07-29
-
-### Added
-
-- **Platform-aware rules block.** The managed rules block is no longer Claude-Code-only. The
-  host agent declares itself via `--platform <claude-code|hermes|codex>` in the hook command pm
-  authors for that platform, and the active platform is recorded in `.conductor/state.json`.
-- Per-platform slash-command form: `/pm:status` on Claude Code and Hermes, `/pm-status` on Codex.
-  The namespace is retained wherever supported because Hermes silently skips a plugin command
-  that collides with a built-in, and it ships a built-in `status`.
-
-### Fixed
-
-- The rules block is now written to the file the host platform will actually read. Hermes
-  resolves project context first-match-wins over `HERMES.md` > `AGENTS.md` > `CLAUDE.md`, so in a
-  repo already carrying an `AGENTS.md` the block was silently invisible — no error, just an agent
-  running without the conductor's instructions.
 
 ### Migration
 
