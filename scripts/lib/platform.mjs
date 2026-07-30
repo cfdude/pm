@@ -8,7 +8,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { KNOWN_PLATFORMS, PLATFORM_RULES_CHAIN } from "./constants.mjs";
-import { loadState, saveState } from "./state.mjs";
+import { isInitialized, loadState, saveState } from "./state.mjs";
 
 /** Extract just `--platform <value>` from an argv slice.
  *
@@ -80,6 +80,14 @@ export function resolveAndRecordPlatform() {
   const state = loadState();
   const platform = resolvePlatform({ platform: declared }, state);
   const switched = recordPlatform(state, platform);
-  if (switched) saveState(state);
+  // Persist ONLY in a repo that is already conductor-managed.
+  //
+  // loadState() returns defaultState() for a missing file rather than null, so recordPlatform()
+  // always reports a change on a fresh repo and an unguarded saveState() here CREATES
+  // .conductor/state.json in a project that never ran /pm:init. That silently ends pm's
+  // dormancy: once state.json exists, isInitialized() is true and every hook activates.
+  // Verified live before this guard -- `write-rules` in an empty directory produced a state
+  // file, after which commit-nudge started firing.
+  if (switched && isInitialized()) saveState(state);
   return { platform, switched };
 }

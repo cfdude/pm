@@ -185,3 +185,35 @@ test("upgrade stamps platform on a state file written before the field existed",
   const after = JSON.parse(fs.readFileSync(p, "utf8"));
   assert.equal(after.platform, "claude-code", "the migration must be additive and default to the base platform");
 });
+
+// ── regression: pm must stay DORMANT until /pm:init ──
+// resolveAndRecordPlatform() persists the resolved platform, but loadState() returns
+// defaultState() for a missing file rather than null -- so recordPlatform() always reports a
+// change on a fresh repo, and an unguarded saveState() CREATED .conductor/state.json in a
+// project that never ran /pm:init. That silently ends dormancy: once state.json exists,
+// isInitialized() is true and every hook activates. Verified live before the guard.
+
+test("write-rules does NOT create conductor state in a repo that never ran init (dormancy)", () => {
+  const cwd = tmpRepo();                       // deliberately NOT initialized
+  run(["write-rules"], { cwd });
+  assert.ok(!fs.existsSync(path.join(cwd, ".conductor", "state.json")),
+    "write-rules must not seed .conductor/state.json -- pm is dormant until /pm:init");
+});
+
+test("commit-nudge stays dormant in a repo that never ran init", () => {
+  const cwd = tmpRepo();
+  const out = run(["commit-nudge"], { cwd, input: JSON.stringify({
+    tool_input: { command: 'git commit -m "fix: something"' } }) });
+  assert.equal(out.trim(), "",
+    "commit-nudge must emit nothing at all before /pm:init");
+  assert.ok(!fs.existsSync(path.join(cwd, ".conductor", "state.json")));
+});
+
+test("an initialized repo DOES persist a platform switch (the guard must not block the real case)", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["write-rules", "--platform", "codex"], { cwd });
+  const state = JSON.parse(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"));
+  assert.equal(state.platform, "codex",
+    "guard failed closed: an initialized repo must still record the switch");
+});
