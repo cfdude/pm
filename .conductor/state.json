@@ -1332,6 +1332,92 @@
           "done": false
         }
       ]
+    },
+    {
+      "id": "gh-64-sync-duplicate-shipped-plan",
+      "title": "sync registers a duplicate untriaged epic for a plan whose feature already shipped",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "64",
+      "externalUrl": "https://github.com/cfdude/pm/issues/64"
+    },
+    {
+      "id": "gh-65-autodetour-false-positives",
+      "title": "auto-detour writes false-positive entries: no success check + no repo-scope check",
+      "priority": "P1",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "65",
+      "externalUrl": "https://github.com/cfdude/pm/issues/65",
+      "stories": [
+        {
+          "title": "bug 1: guard the write path on HEAD having advanced -- covers BOTH a pre-commit-rejected commit (#65) and a backgrounded commit not yet landed (#68). An exit-code check would NOT cover the latter.",
+          "done": false
+        },
+        {
+          "title": "bug 2: repo-scope check -- only fire when the commit's repo root matches the pm-managed repo (paired repo / submodule / git -C elsewhere)",
+          "done": false
+        },
+        {
+          "title": "closes #68 as duplicate; reporter hit it across job-search-agent + a paired repo, so it is not machine-specific",
+          "done": false
+        }
+      ]
+    },
+    {
+      "id": "gh-66-update-epic-missing-flags",
+      "title": "update-epic: no --lane, no --plan, undocumented valueless --link for clearing",
+      "priority": "P3",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "blocks",
+          "epic": "gh-69-sync-no-done-signal-for-plans",
+          "reason": "sync's fix wants to read each epic's plan field, but update-epic has no --plan so that field cannot be populated for existing epics"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "66",
+      "externalUrl": "https://github.com/cfdude/pm/issues/66"
+    },
+    {
+      "id": "gh-69-sync-no-done-signal-for-plans",
+      "title": "sync re-registers COMPLETED Superpowers plans as untriaged epics",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-64-sync-duplicate-shipped-plan",
+          "reason": "same root cause -- dedup keys on the plan's filename-derived id instead of a plan<->epic association, so any epic whose plan is named differently is re-registered forever"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "69",
+      "externalUrl": "https://github.com/cfdude/pm/issues/69"
+    },
+    {
+      "id": "gh-70-link-validation-gap",
+      "title": "add-epic --link silently accepts malformed format; no update-epic setter to fix it",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "70",
+      "externalUrl": "https://github.com/cfdude/pm/issues/70"
     }
   ],
   "detourStack": [],
