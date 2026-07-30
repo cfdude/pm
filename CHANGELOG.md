@@ -22,11 +22,18 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 
 - **The test suite is now `scripts/test/*.test.mjs` (11 files) instead of one
-  `scripts/conductor.test.mjs`, cutting a full run from ~118s to ~46s.** Contributor-facing: the
+  `scripts/conductor.test.mjs`, so it runs in parallel.** Contributor-facing: the
   command is `node --test scripts/test/*.test.mjs`. Measured rather than guessed — one engine
   spawn costs ~73ms and the suite makes 676 of them, so ~49s was pure `node` startup, serialized
   in a single file on a 16-core machine; `node --test` parallelizes across *files* only. The
   split is verbatim, verified by test-name-set equality (255 → 255).
+
+  **How much faster depends entirely on free cores, so take a single headline number with
+  salt.** Measured on this project: an otherwise-idle 16-core workstation went ~118s → ~46s
+  (2.6×), but the *same* machine under load (~12) went ~146s → ~122s — only 1.2×, because
+  parallel execution is exactly what suffers when cores are already contended. On CI, whole-
+  workflow time went from ~52–58s to ~38–48s (~1.3×). If you are on a busy laptop or a
+  few-core runner, expect the low end.
 
   Note `node --test scripts/test` (a **directory**) does not work — Node treats the argument as a
   module to execute and dies with `MODULE_NOT_FOUND` while reporting "1 test". It exits non-zero
