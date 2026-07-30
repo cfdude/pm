@@ -190,9 +190,11 @@ and renders `PROJECT.md`. From there:
 
 The host declares which platform it is via `--platform <claude-code|hermes|codex>` in the hook
 command pm authors for that platform (unrecognized values are rejected, not silently defaulted).
-The declared platform is recorded in `.conductor/state.json` by `/pm:init`, `/pm:upgrade`, and
-`write-rules` (the commands that (re)write the block — the read-only hooks pass the flag through
-but do not persist it), and shapes two things: the command
+The declared platform is recorded in `.conductor/state.json` by `/pm:init` and `write-rules` —
+the commands that accept the flag and (re)write the block. The read-only hooks pass it through
+without persisting, and `/pm:upgrade` does not read it either (its `0.24.0` migration stamps
+`claude-code` on repos that predate the field, rather than adopting a declared value). The
+recorded platform shapes two things: the command
 form written into the managed rules block (`/pm:status` on Claude Code and Hermes, `/pm-status`
 on Codex — Hermes keeps the `pm:` namespace because it silently skips a plugin command that
 collides with one of its built-ins, and it ships a built-in `status`), and which file the block

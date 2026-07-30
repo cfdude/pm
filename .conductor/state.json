@@ -1572,6 +1572,10 @@
         {
           "title": "b2e472f's message claims 'closes #65, #68' -- true for -m only. Correct the claim or close the gap BEFORE those issues are closed upstream.",
           "done": false
+        },
+        {
+          "title": "ALSO: an escaped quote inside a double-quoted -m truncates the capture (regex is \"([^\"]*)\"), so a genuinely landed commit is CONTRADICTED and the hook silently suppressed. Fix shape: backslash-aware capture \"((?:[^\"\\\\]|\\\\.)*)\", or treat a value ending in a backslash as unverifiable.",
+          "done": false
         }
       ]
     }

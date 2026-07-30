@@ -29,7 +29,7 @@ export function platformFlag(argv) {
  *  platform that wrote NO rules block would be a silent no-op -- pm appearing installed
  *  while contributing nothing -- so the chain ends in a hard default.
  *
- *  Order: explicit flag > recorded in state > CLAUDECODE env > claude-code.
+ *  Order: explicit flag > recorded in state > claude-code.
  *  An unknown explicit value is rejected by the caller (see assertKnownPlatform), not
  *  silently ignored, because it means a hand-authored hook has a typo. */
 export function resolvePlatform(flags = {}, state = null) {

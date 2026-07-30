@@ -119,6 +119,13 @@ export function commitNudge() {
   // recovered from the command string: what we captured is the shell SOURCE, not the text git
   // received. That is "cannot tell", not "does not match", so it takes the UNVERIFIABLE rung
   // rather than being wrongly contradicted.
+  //
+  // This test is deliberately BROAD, and the breadth has a cost worth stating: a *literal*
+  // `$(` or `${` in a genuine subject -- `fix: escape ${VAR} in the template` -- also lands on
+  // the unverifiable rung, so gh#65's false-positive can still occur for that message shape.
+  // That is the correct direction to fail. A false log line is visible and reviewable; a false
+  // SUPPRESSION silently disables the hook, which is the bug this whole guard exists to avoid
+  // and which shipped once already (see the first-line comment above).
   const shellBuilt = /\$\(|\$\{|<<-?\s*['"]?\w+/.test(rawSubject) || /^\$\w+$/.test(rawSubject);
 
   // gh#65 / gh#68: PostToolUse fires when the Bash tool RETURNS, which is NOT the same as

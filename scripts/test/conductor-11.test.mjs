@@ -140,15 +140,29 @@ test("commit-nudge still logs a landed commit whose message has a BODY (C1)", ()
   assert.match(detourLog(cwd), /a landed detour with a body/);
 });
 
-test("commit-nudge treats a shell-assembled message as UNVERIFIABLE, not contradicted (C1)", () => {
+test("commit-nudge does not suppress a -F commit, which has no -m to parse at all (C1)", () => {
   const cwd = tmpRepo(); run(["init"], { cwd }); gitRepo(cwd);
   commitFiles(cwd, { "a.txt": "1" }, "fix: built by a heredoc");
-  // The command string holds the shell SOURCE, not the text git received, so the subject is
-  // unknowable. Prior behaviour (nudge, no false suppression) must be preserved.
+  // NOTE this reaches the unverifiable rung via the EMPTY-SUBJECT branch, not via shellBuilt --
+  // `-F -` has no `-m`, so the regex never matches. Named accordingly after a review found the
+  // original name ("shell-assembled message") claimed a code path this input never touches; the
+  // shellBuilt rung is covered by the `-m "$(...)"` test below.
   const out = run(["commit-nudge"], { cwd, input: JSON.stringify({
     tool_input: { command: `git commit -q -F - <<'MSG'\nfix: built by a heredoc\nMSG` } }) });
   assert.ok(out.includes("hookSpecificOutput"),
     "a message we cannot read must not silence the hook");
+});
+
+test("commit-nudge treats a heredoc-assembled -m message as UNVERIFIABLE via shellBuilt (C1)", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd }); gitRepo(cwd);
+  commitFiles(cwd, { "a.txt": "1" }, "fix: assembled by a command substitution");
+  // This IS the shellBuilt path: there is a -m, and what it captures is shell source rather
+  // than the text git received. HEAD holds a different string, so without shellBuilt this
+  // would be wrongly contradicted and the hook silenced.
+  const out = run(["commit-nudge"], { cwd, input: JSON.stringify({
+    tool_input: { command: `git commit -m "$(cat <<'EOF'\nfix: assembled by a command substitution\nEOF\n)"` } }) });
+  assert.ok(out.includes("hookSpecificOutput"),
+    "a -m whose value the shell built must take the unverifiable rung, not be contradicted");
 });
 
 test("commit-nudge treats -m \"$(...)\" as UNVERIFIABLE rather than a mismatch (C1)", () => {
