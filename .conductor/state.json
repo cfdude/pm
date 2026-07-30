@@ -1257,22 +1257,30 @@
       "stories": [
         {
           "title": "mechanism VERIFIED 2026-07-28: claudeMdExcludes + autoMemoryEnabled:false in a per-run .claude/settings.local.json; --bare and --setting-sources project,local both kill the plugin hooks",
-          "done": false
+          "done": true
         },
         {
           "title": "control run n=1 PASSED 5/5 with both suppressed -- pm's own artifacts carry the lane behavior",
-          "done": false
+          "done": true
         },
         {
           "title": "wire the suppression into evals/fixtures.py materialize()",
-          "done": false
+          "done": true
         },
         {
           "title": "re-bless at 3 samples under suppression; investigate the ~2x wall-clock increase",
-          "done": false
+          "done": true
         },
         {
           "title": "add an InstructionsLoaded hook assertion so isolation is proven positively, not by absence",
+          "done": false
+        },
+        {
+          "title": "RESULT n=3 under suppression: 5/5 STABLE vs the prior baseline, 0 blocking. pm's OWN artifacts carry the lane behavior -- the baseline was never an artifact of operator memory. Re-blessed under isolation. 43 turns, $5.10 notional.",
+          "done": false
+        },
+        {
+          "title": "wall-clock NOT re-measured: the run took 387.9s at load 72 on a 16-core box, which is meaningless as a benchmark. The earlier '~2x increase' stays UNVERIFIED rather than being restated as fact.",
           "done": false
         }
       ],

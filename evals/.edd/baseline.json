@@ -24,7 +24,7 @@
         }
       },
       "judge_model": null,
-      "label": "adds run_succeeded: the exit-code gate that makes infrastructural failure visible (3 samples)",
+      "label": null,
       "model_under_test": "pm@claude-code"
     }
   }
