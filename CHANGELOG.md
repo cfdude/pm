@@ -8,6 +8,33 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **The auto-detour hook no longer writes a `detours.log` entry for a commit that did not land
+  in this repo** (closes [#65](https://github.com/cfdude/pm/issues/65) and
+  [#68](https://github.com/cfdude/pm/issues/68)). `PostToolUse` fires when the Bash tool
+  *returns*, which is not the same as "a commit landed here." Three divergences were observed
+  live, each writing a false line attributed to this repo's **stale HEAD**: the commit was
+  rejected by `pre-commit` so HEAD never advanced; the commit was backgrounded (the documented
+  way to avoid an agent-harness tool timeout) and was still running; or the commit landed in a
+  *different* repo — a paired repo, a submodule, `git -C elsewhere` — leaving our HEAD untouched
+  while `gitShortSha()` and `headChangedFiles()`, which both read the pm repo, attributed it here.
+
+  All three reduce to one question: does HEAD hold the commit whose subject we just parsed?
+  Comparing SHAs would need a stored baseline; the subject is already in hand. Note an
+  **exit-code check would not have been sufficient** — a backgrounded commit has no exit code
+  yet — which is why the two independently-reported issues share one fix.
+
+  The guard is deliberately three-state. Only *contradicted* (a subject was parsed, git works,
+  and HEAD disagrees) suppresses the entry. *Unverifiable* — no `-m` to parse, or git unusable
+  in this directory — keeps the previous behavior, because the archived-epic self-heal must still
+  run in a repo with no git at all.
+
+  A local `detours.log` that confidently points at the wrong commit is worse than a missing
+  line, since anything reconstructing "what happened around commit X" gets a confidently wrong
+  answer. Note the log is untracked under a common global `*.log` ignore pattern, so the damage
+  was confined to a working copy rather than repo history.
+
 ## [0.23.1] — 2026-07-23
 
 ### Fixed
