@@ -1554,6 +1554,26 @@
           "done": false
         }
       ]
+    },
+    {
+      "id": "autodetour-parser-misses-am-and-f",
+      "title": "commit-nudge's -m parser misses -am / -F / editor commits, so #65 is only closed for -m",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "stories": [
+        {
+          "title": "git commit -am \"fix: x\" parses to subject='' which short-circuits the guard; a REJECTED -am commit still writes a false DETOUR-COMMIT line while a detour is active -- the original #65 symptom",
+          "done": false
+        },
+        {
+          "title": "b2e472f's message claims 'closes #65, #68' -- true for -m only. Correct the claim or close the gap BEFORE those issues are closed upstream.",
+          "done": false
+        }
+      ]
     }
   ],
   "detourStack": [],
