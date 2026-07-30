@@ -43,6 +43,14 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   *different* repo — a paired repo, a submodule, `git -C elsewhere` — leaving our HEAD untouched
   while `gitShortSha()` and `headChangedFiles()`, which both read the pm repo, attributed it here.
 
+  Comparing subjects is subtler than it looks, and getting it wrong is worse than the original
+  bug. `git log -1 --format=%s` yields only the **first line**, while a `-m` capture spans
+  newlines and swallows the whole message — so a naive comparison suppresses every commit that
+  has a body, silently disabling the hook for the common case. The comparison is therefore
+  first-line-to-first-line, and a message the shell assembled (`-m "$(…)"`, a heredoc,
+  `-m "$MSG"`) is treated as *unverifiable* rather than mismatched, because the command string
+  holds the shell source rather than the text git received.
+
   All three reduce to one question: does HEAD hold the commit whose subject we just parsed?
   Comparing SHAs would need a stored baseline; the subject is already in hand. Note an
   **exit-code check would not have been sufficient** — a backgrounded commit has no exit code
