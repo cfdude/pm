@@ -8,8 +8,15 @@ agent's prose.
 from __future__ import annotations
 
 import json
+import os
+import subprocess
 from pathlib import Path
 
+ENGINE = Path(__file__).resolve().parent.parent / "scripts" / "conductor.mjs"
+
+# Only the stable PREFIX, never the full decorated marker. The engine's own detection keys on
+# this same prefix precisely so the parenthetical can change without stranding older blocks --
+# matching the full string here would re-create that bug on the observer side.
 RULES_BEGIN = "<!-- BEGIN pm-conductor rules"
 
 
@@ -25,6 +32,37 @@ def _read_detours(path: Path) -> list[dict]:
             continue
         rows.append({"kind": parts[2], "epic": parts[3], "note": parts[4] if len(parts) > 4 else ""})
     return rows
+
+
+def _rules_target(project: Path) -> Path | None:
+    """Ask the ENGINE which file this project's rules block belongs in.
+
+    Deliberately a subprocess call rather than mirroring PLATFORM_RULES_CHAIN in Python. This
+    module used to hardcode `CLAUDE.md`, which quietly made it a SECOND platform seam: once the
+    engine started writing a per-platform target, the observer reported rules_block_present=False
+    for any platform whose block lands elsewhere -- a confident wrong answer that would surface
+    as a fake parity failure on the first non-Claude run. A Python copy of the chain would only
+    move that drift rather than remove it, so the engine stays the single source of truth.
+
+    Returns None when the engine cannot answer (not installed, not a pm project, a timeout).
+    None is "cannot tell", which the caller renders as absent rather than raising -- an eval
+    must be able to score a broken run, not crash on it.
+    """
+    try:
+        proc = subprocess.run(
+            ["node", str(ENGINE), "rules-target"],
+            cwd=project,
+            env={**os.environ, "CLAUDE_PROJECT_DIR": str(project), "PM_QUIET_ENGINE_BANNER": "1"},
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if proc.returncode != 0:
+        return None
+    out = proc.stdout.strip()          # stdout ONLY -- stderr may still carry engine chatter
+    return Path(out) if out else None
 
 
 def observe(project: Path) -> dict:
@@ -43,13 +81,20 @@ def observe(project: Path) -> dict:
         for e in state.get("epics", [])
     ]
 
-    claude_md = project / "CLAUDE.md"
+    # Where the block BELONGS for this project's recorded platform -- not a guess, and not
+    # "wherever a block happens to exist". Reporting the filename alongside the boolean makes a
+    # failure diagnosable without a re-run: "false" and "false, and we were looking at AGENTS.md"
+    # are very different findings.
+    target = _rules_target(project)
 
     return {
         "active": state.get("active"),
         "epics": epics,
         "epic_ids": [e["id"] for e in epics],
         "detours": _read_detours(project / ".conductor" / "detours.log"),
-        "rules_block_present": claude_md.exists() and RULES_BEGIN in claude_md.read_text(),
+        "rules_block_present": bool(
+            target and target.exists() and RULES_BEGIN in target.read_text()
+        ),
+        "rules_block_file": target.name if target else None,
         "project_md_present": (project / "PROJECT.md").exists(),
     }

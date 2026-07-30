@@ -244,3 +244,56 @@ test("every pm-authored Claude Code hook command declares its platform", () => {
     assert.match(c, /--platform claude-code/, `hook command does not declare its platform: ${c}`);
   }
 });
+
+// ── rules-target: expose the resolved target so consumers stop guessing it ──
+// evals/observe.py hardcoded CLAUDE.md, which made it a SECOND platform seam: the engine now
+// writes a per-platform target, so the observer reported rules_block_present=false for any
+// platform whose block lands elsewhere -- a confident wrong answer that would surface as a fake
+// parity failure on the first non-Claude run. Rather than mirror PLATFORM_RULES_CHAIN into
+// Python (a second copy that can drift, which is the same class of bug), the engine answers.
+
+test("rules-target prints the absolute path for the default platform", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const out = run(["rules-target"], { cwd, env: { CLAUDECODE: "" } }).trim();
+  assert.equal(out, path.join(cwd, "CLAUDE.md"));
+  assert.ok(path.isAbsolute(out), "must be absolute so a consumer can use it directly");
+});
+
+test("rules-target honours --platform and the per-platform chain", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  assert.equal(run(["rules-target", "--platform", "codex"], { cwd }).trim(),
+    path.join(cwd, "AGENTS.md"), "codex reads AGENTS.md and never CLAUDE.md");
+  // Clean repo: hermes gets the chain's LAST entry (most broadly compatible), not HERMES.md.
+  assert.equal(run(["rules-target", "--platform", "hermes"], { cwd }).trim(),
+    path.join(cwd, "CLAUDE.md"));
+});
+
+test("rules-target resolves first-existing-wins, so it tracks what the platform will READ", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  fs.writeFileSync(path.join(cwd, "AGENTS.md"), "# left by a prior agent\n");
+  assert.equal(run(["rules-target", "--platform", "hermes"], { cwd }).trim(),
+    path.join(cwd, "AGENTS.md"),
+    "AGENTS.md outranks CLAUDE.md in hermes' chain, so that is what it will read");
+});
+
+test("rules-target is READ-ONLY -- it must not record a platform or create state", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  run(["rules-target", "--platform", "codex"], { cwd });
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before,
+    "a query must not persist a platform switch -- only init/write-rules do that");
+});
+
+test("rules-target rejects an unknown --platform rather than defaulting", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const r = spawnSync("node", [ENGINE, "rules-target", "--platform", "nope"], {
+    cwd, env: { ...process.env, CLAUDE_PROJECT_DIR: cwd, PM_CACHE_ROOT: EMPTY_CACHE }, encoding: "utf8",
+  });
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /--platform must be one of claude-code\|hermes\|codex/);
+});

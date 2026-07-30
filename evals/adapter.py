@@ -43,6 +43,7 @@ def _failure(error: str) -> dict:
         "epic_ids": [],
         "detours": [],
         "rules_block_present": False,
+        "rules_block_file": None,
         "project_md_present": False,
         "new_epics": [],
         "exit_code": INFRA_FAILURE_EXIT_CODE,

@@ -45,8 +45,9 @@ import { pluginVersion } from "./lib/plugin-meta.mjs";
 import {
   currentTracker, currentSecondaryTrackers, currentReviewMode, rulesBlock, writeRules,
 } from "./lib/rules.mjs";
-import { resolvePlatform, assertKnownPlatform, platformFlag, resolveAndRecordPlatform } from "./lib/platform.mjs";
+import { resolvePlatform, assertKnownPlatform, platformFlag, resolveAndRecordPlatform, rulesTarget } from "./lib/platform.mjs";
 import { loadState } from "./lib/state.mjs";
+import { ROOT } from "./lib/constants.mjs";
 import { setActive, clearActive } from "./lib/active-pointer.mjs";
 import { setAutonomy } from "./lib/autonomy.mjs";
 import { parseFlags, planHierarchy, addEpic } from "./lib/add-epic.mjs";
@@ -124,7 +125,16 @@ if (showEngineBanner) {
     writeRules(platform);
     if (switched) process.stderr.write(`conductor: platform: ${platform}\n`);
   },
+  // Read-only query: which file does this platform's rules block belong in? Exists so a
+  // CONSUMER (evals/observe.py) never has to mirror PLATFORM_RULES_CHAIN -- a second copy of
+  // platform knowledge is exactly the drift this epic was filed to remove. Deliberately does
+  // NOT record the platform: a query must not mutate state the way write-rules does.
+  "rules-target": () => {
+    const declared = platformFlag(process.argv.slice(3));
+    if (declared) assertKnownPlatform(declared);
+    process.stdout.write(rulesTarget(resolvePlatform({ platform: declared }, loadState()), ROOT) + "\n");
+  },
 }[cmd] || (() => {
-  process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|set-autonomy|record-reconcile|record-gate-review|set-review-mode|set-gate-guard|gate-guard|plan-hierarchy|verify-worktrees|verify-state|changesets|upgrade|changelog|rules|write-rules\n");
+  process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|set-autonomy|record-reconcile|record-gate-review|set-review-mode|set-gate-guard|gate-guard|plan-hierarchy|verify-worktrees|verify-state|changesets|upgrade|changelog|rules|write-rules|rules-target\n");
   process.exit(1);
 }))();

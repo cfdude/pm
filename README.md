@@ -488,6 +488,11 @@ pre-0.24.0 state file that predates the field — re-renders `PROJECT.md`, and s
 `pmVersion`. Idempotent — safe to run more than once. Requires `/reload-plugins` first if you
 just updated the plugin (the SessionStart briefing tells you when).
 
+The engine also exposes `rules-target`, a read-only query printing the absolute path of the file
+the recorded platform's rules block belongs in (resolving that platform's first-match-wins
+chain). It exists so tooling around pm never has to mirror the chain — a second copy of platform
+knowledge is drift waiting to happen. Unlike `write-rules`, it records nothing.
+
 After showing the changelog delta ("What's new in pm"), the agent reviews each `Added`
 headline and recommends adopting any opt-in capability that's relevant to this repo's current
 `.conductor/state.json` (e.g. secondary trackers, `thorough` review mode) — one line, one
