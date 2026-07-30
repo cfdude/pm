@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "rules-block-hardcodes-claude-slash-commands",
+  "active": null,
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -1136,13 +1136,14 @@
       "id": "rules-block-hardcodes-claude-slash-commands",
       "title": "rulesBlock() hardcodes Claude Code slash-command syntax (/pm:status, /pm:detour --minimal, /pm:resume) throughout the emitted CLAUDE.md rules text, plus the 'Manage with /pm:status · /pm:next · ...' footer. On any platform without slash commands, that text is actively misleading -- it instructs the agent to run commands that don't exist there. Needs a command-style notion so the block can emit the direct CLI form (node scripts/conductor.mjs render) instead. rulesBlock() already takes (tracker, reviewMode, secondaryTrackers) so an added parameter fits the existing signature. Prerequisite for any multi-platform support; found during the multi-platform-agent-support brainstorm.",
       "priority": "P1",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
       "parent": "multi-platform-agent-support",
-      "startedAt": "2026-07-29T02:28:12.027Z"
+      "startedAt": "2026-07-29T02:28:12.027Z",
+      "completedAt": "2026-07-30T05:54:27.332Z"
     },
     {
       "id": "platform-parity-mechanism",
