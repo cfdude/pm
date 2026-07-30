@@ -1528,6 +1528,32 @@
       "links": [],
       "reconcileNeeded": false,
       "completedAt": "2026-07-30T04:00:56.179Z"
+    },
+    {
+      "id": "platform-switch-orphans-old-rules-block",
+      "title": "a platform switch leaves the previous platform's rules block live but unmanaged",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "blocks",
+          "epic": "hermes-platform-support",
+          "reason": "a switched repo would leave stale conductor instructions in the file the previous platform read"
+        }
+      ],
+      "reconcileNeeded": false,
+      "stories": [
+        {
+          "title": "writeRules() writes only the newly-resolved target, so switching claude-code -> codex creates AGENTS.md and leaves a frozen CLAUDE.md block an agent may still read -- a STALE-INSTRUCTIONS hazard distinct from 'recreate the artifact tree'",
+          "done": false
+        },
+        {
+          "title": "unreachable today (no Hermes/Codex hooks ship, needs a hand-passed --platform), but must be resolved before either port",
+          "done": false
+        }
+      ]
     }
   ],
   "detourStack": [],

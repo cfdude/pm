@@ -33,11 +33,21 @@ export function platformFlag(argv) {
  *  An unknown explicit value is rejected by the caller (see assertKnownPlatform), not
  *  silently ignored, because it means a hand-authored hook has a typo. */
 export function resolvePlatform(flags = {}, state = null) {
+  // An unknown flag value is IGNORED here rather than returned, symmetrically with how an
+  // unknown recorded value is ignored below. Callers run assertKnownPlatform() first so a typo
+  // in a hand-authored hook still fails loudly; this is the second line of defence, so that a
+  // caller which forgets cannot leak a garbage id into rulesTarget()/pmCmd() -- both of which
+  // would silently fall back to claude-code anyway, just less legibly.
   const flag = typeof flags.platform === "string" ? flags.platform.trim() : "";
-  if (flag) return flag;
+  if (flag && KNOWN_PLATFORMS.includes(flag)) return flag;
   const recorded = state && typeof state.platform === "string" ? state.platform.trim() : "";
   if (recorded && KNOWN_PLATFORMS.includes(recorded)) return recorded;
-  if (process.env.CLAUDECODE) return "claude-code";
+
+  // NOTE: there is deliberately no CLAUDECODE env rung. One existed and was dead code -- both
+  // its branches returned "claude-code", so it could never change an outcome, and the test that
+  // claimed to distinguish "the env rung" from "the terminal default" could not fail for the
+  // reason it stated. If a future platform ever needs env-based inference, add it as a real
+  // branch that returns something different, not as a no-op that reads like coverage.
   return "claude-code";
 }
 

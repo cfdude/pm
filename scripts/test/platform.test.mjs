@@ -30,9 +30,25 @@ test("resolvePlatform rejects an unknown --platform instead of silently defaulti
 test("resolvePlatform falls back to claude-code when nothing declares a platform", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
-  // CLAUDECODE is blanked so this exercises the terminal default, not the env rung.
+  // CLAUDECODE is blanked to prove the TERMINAL DEFAULT is doing the work. (This comment used
+  // to claim it distinguished the default from an "env rung" -- it never could, because that
+  // rung also returned "claude-code". The rung is gone; the blanking stays, so the assertion
+  // cannot be satisfied by an env var that happens to be set in the runner's environment.)
   const out = run(["rules"], { cwd, env: { CLAUDECODE: "" } });
   assert.match(out, /\/pm:status/);
+});
+
+test("an unrecognised recorded platform falls back rather than corrupting the block", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const p = path.join(cwd, ".conductor", "state.json");
+  const state = JSON.parse(fs.readFileSync(p, "utf8"));
+  state.platform = "not-a-real-platform";          // hand-edited or written by a future version
+  fs.writeFileSync(p, JSON.stringify(state, null, 2));
+
+  const out = run(["rules"], { cwd, env: { CLAUDECODE: "" } });
+  assert.match(out, /\/pm:status/, "a garbage recorded platform must resolve to the base platform");
+  assert.doesNotMatch(out, /not-a-real-platform/);
 });
 
 test("rulesTarget returns CLAUDE.md for claude-code regardless of a stray AGENTS.md", () => {
