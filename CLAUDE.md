@@ -65,7 +65,7 @@ branch cleanup). A change that is genuinely internal (a test, an engine-internal
 process-only doc fix) does not need either — but say so explicitly rather than silently
 skipping the check.
 
-<!-- BEGIN pm-conductor rules (managed by /pm:init — safe to delete this block) -->
+<!-- BEGIN pm-conductor rules (managed by pm — safe to delete this block) -->
 ## PM Conductor — operating rules
 
 This repo is managed by the `pm` plugin. The conductor sits ABOVE OpenSpec and Superpowers.
