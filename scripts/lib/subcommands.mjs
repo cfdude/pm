@@ -106,7 +106,20 @@ export function commitNudge() {
   const state = loadState();
   const ctx = detourContext(state);
   const m = cmd.match(/-m\s+(?:"([^"]*)"|'([^']*)'|(\S+))/);
-  const subject = (m && (m[1] || m[2] || m[3])) || "";
+  const rawSubject = (m && (m[1] || m[2] || m[3])) || "";
+
+  // `git log -1 --format=%s` yields ONLY the first line, but the `-m` capture above uses
+  // [^"]* which spans newlines and swallows the whole message body. Comparing those two
+  // directly can never match for a commit with a body -- and this repo mandates one (the
+  // Claude-Session footer), so the guard below suppressed EVERY real commit. Compare the
+  // first line with the first line.
+  const subject = rawSubject.split("\n")[0].trim();
+
+  // A message assembled by the shell -- `-m "$(cat <<'EOF' … EOF)"`, `-m "$MSG"` -- cannot be
+  // recovered from the command string: what we captured is the shell SOURCE, not the text git
+  // received. That is "cannot tell", not "does not match", so it takes the UNVERIFIABLE rung
+  // rather than being wrongly contradicted.
+  const shellBuilt = /\$\(|\$\{|<<-?\s*['"]?\w+/.test(rawSubject) || /^\$\w+$/.test(rawSubject);
 
   // gh#65 / gh#68: PostToolUse fires when the Bash tool RETURNS, which is NOT the same as
   // "a commit landed in this repo". Three observed divergences, each of which wrote a false
@@ -122,11 +135,12 @@ export function commitNudge() {
   // exit-code check would NOT cover the backgrounded case — there is no exit code yet.
   //
   // Three-state on purpose. Only CONTRADICTED (a subject was parsed, git works, and HEAD
-  // disagrees) means "no commit landed here" and goes silent. UNVERIFIABLE (no `-m` to
-  // parse, or git unusable here) keeps the previous behaviour, because the archived-epic
-  // self-heal below must still run in a repo with no git at all.
+  // disagrees) means "no commit landed here" and goes silent. UNVERIFIABLE -- no `-m` to
+  // parse, git unusable here, or a shell-assembled message we cannot read -- keeps the
+  // previous behaviour, because the archived-epic self-heal below must still run in a repo
+  // with no git at all, and because guessing wrong here silently disables the whole hook.
   const head = headSubject();
-  if (subject && head !== null && head !== subject) return;
+  if (!shellBuilt && subject && head !== null && head !== subject) return;
 
   // DETERMINISTIC: if we are inside a detour, record this commit in the trail.
   let autoLogged = false;

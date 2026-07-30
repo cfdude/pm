@@ -120,3 +120,50 @@ test("commit-nudge still logs a genuine landed commit (the guard must not silenc
   assert.match(detourLog(cwd), /AUTO-DETOUR/);
   assert.match(detourLog(cwd), /a real landed detour/);
 });
+
+// ── C1: every commit in this repo has a BODY, and the guard was suppressing all of them ──
+// `git log -1 --format=%s` returns only the first line, but the `-m` capture uses [^"]* which
+// spans newlines and swallows the whole message. Comparing those directly can never match for a
+// commit with a body -- so the guard silently killed commit-nudge for the common case: no
+// nudge, no DETOUR-COMMIT trail, and no archived-epic self-heal. Five task reviews missed it
+// because every positive control here used a single-line -m.
+
+test("commit-nudge still logs a landed commit whose message has a BODY (C1)", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd }); gitRepo(cwd);
+  const subject = "fix: a landed detour with a body";
+  const message = `${subject}\n\nSome explanatory body.\nClaude-Session: https://example.com/x`;
+  commitFiles(cwd, { "a.txt": "1" }, message);
+  run(["commit-nudge"], { cwd, input: JSON.stringify({
+    tool_input: { command: `git commit -m "${message}"` } }) });
+  assert.match(detourLog(cwd), /AUTO-DETOUR/,
+    "a multi-line commit message must not silently disable the hook");
+  assert.match(detourLog(cwd), /a landed detour with a body/);
+});
+
+test("commit-nudge treats a shell-assembled message as UNVERIFIABLE, not contradicted (C1)", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd }); gitRepo(cwd);
+  commitFiles(cwd, { "a.txt": "1" }, "fix: built by a heredoc");
+  // The command string holds the shell SOURCE, not the text git received, so the subject is
+  // unknowable. Prior behaviour (nudge, no false suppression) must be preserved.
+  const out = run(["commit-nudge"], { cwd, input: JSON.stringify({
+    tool_input: { command: `git commit -q -F - <<'MSG'\nfix: built by a heredoc\nMSG` } }) });
+  assert.ok(out.includes("hookSpecificOutput"),
+    "a message we cannot read must not silence the hook");
+});
+
+test("commit-nudge treats -m \"$(...)\" as UNVERIFIABLE rather than a mismatch (C1)", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd }); gitRepo(cwd);
+  commitFiles(cwd, { "a.txt": "1" }, "fix: from a subshell");
+  const out = run(["commit-nudge"], { cwd, input: JSON.stringify({
+    tool_input: { command: 'git commit -m "$(cat /tmp/msg.txt)"' } }) });
+  assert.ok(out.includes("hookSpecificOutput"),
+    "a $(...) message is shell source, not the commit subject -- must not be treated as contradicted");
+});
+
+test("a trailing space in -m does not suppress a landed commit (C1)", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd }); gitRepo(cwd);
+  commitFiles(cwd, { "a.txt": "1" }, "fix: trailing space case");
+  run(["commit-nudge"], { cwd, input: JSON.stringify({
+    tool_input: { command: 'git commit -m "fix: trailing space case "' } }) });
+  assert.match(detourLog(cwd), /AUTO-DETOUR/, "the parsed subject must be trimmed like %s is");
+});

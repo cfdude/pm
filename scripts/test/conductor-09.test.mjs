@@ -253,7 +253,10 @@ test(".githooks/pre-commit exists, is executable, and runs the full test suite",
   assert.match(hookText, /set -e/, ".githooks/pre-commit does not fail the commit on a non-zero exit");
   // The glob makes partial-suite runs possible in a way the old single file did not, so the
   // hook must cross-check the ran count against the declared count. Assert that guard exists.
-  assert.match(hookText, /grep -c '\^test\('/,
+  // -H, not bare -c: grep omits the filename: prefix when the glob matches a SINGLE file, so
+  // `awk -F: '{s+=$2}'` summed a bare number and got 0 — the guard went blind in exactly the
+  // case it exists to catch. Assert the -H is present, not merely that some grep is.
+  assert.match(hookText, /grep -Hc '\^test\('/,
     ".githooks/pre-commit does not cross-check the ran test count against the declared count");
 });
 
