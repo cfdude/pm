@@ -5,11 +5,13 @@
 // lib/tracker.mjs / lib/review-mode.mjs despite first appearances.
 
 import fs from "node:fs";
+import path from "node:path";
 import { loadState } from "./state.mjs";
 import {
-  KNOWN_REVIEW_MODES, REVIEW_MODE_RANK, RULES_BEGIN, RULES_BEGIN_PREFIX, RULES_END, CLAUDE_MD,
+  KNOWN_REVIEW_MODES, REVIEW_MODE_RANK, RULES_BEGIN, RULES_BEGIN_PREFIX, RULES_END, ROOT,
   PLATFORM_COMMAND_PREFIX,
 } from "./constants.mjs";
+import { rulesTarget } from "./platform.mjs";
 
 /** The tracker block from state, or null — used to make emitted instructions tracker-aware. */
 export function currentTracker() {
@@ -299,11 +301,20 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
   return lines.join("\n");
 }
 
-export function writeRules() {
-  let existing = "";
-  try { existing = fs.readFileSync(CLAUDE_MD, "utf8"); } catch { /* no CLAUDE.md yet */ }
+/** Write (or refresh) the managed rules block into whichever file `platform`'s precedence
+ *  chain resolves to (see rulesTarget()) -- NOT always CLAUDE.md. A repo that already has an
+ *  AGENTS.md and is driven by Hermes must get the block IN AGENTS.md: Hermes resolves project
+ *  context first-match-wins over HERMES.md > AGENTS.md > CLAUDE.md, so writing CLAUDE.md there
+ *  would be silently invisible to it. Returns the absolute path written, so callers can report
+ *  it; existing callers that ignore the return value are unaffected. */
+export function writeRules(platform = "claude-code") {
+  const target = rulesTarget(platform, ROOT);
+  const name = path.basename(target);
 
-  const block = rulesBlock(currentTracker(), currentReviewMode(), currentSecondaryTrackers());
+  let existing = "";
+  try { existing = fs.readFileSync(target, "utf8"); } catch { /* target does not exist yet */ }
+
+  const block = rulesBlock(currentTracker(), currentReviewMode(), currentSecondaryTrackers(), platform);
   let next;
   if (existing.includes(RULES_BEGIN_PREFIX) && existing.includes(RULES_END)) {
     // Refresh in place. Match from the stable PREFIX, not the full decorated RULES_BEGIN, so
@@ -311,13 +322,14 @@ export function writeRules() {
     // upgraded rather than duplicated -- see the comment on RULES_BEGIN_PREFIX.
     const re = new RegExp(`${RULES_BEGIN_PREFIX.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}[\\s\\S]*?${RULES_END.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\n?`);
     next = existing.replace(re, block);
-    process.stderr.write("conductor: refreshed rules block in CLAUDE.md\n");
+    process.stderr.write(`conductor: refreshed rules block in ${name} (platform: ${platform})\n`);
   } else if (existing.trim()) {
     next = existing.replace(/\n*$/, "\n\n") + block;
-    process.stderr.write("conductor: appended rules block to CLAUDE.md\n");
+    process.stderr.write(`conductor: appended rules block to ${name} (platform: ${platform})\n`);
   } else {
-    next = "# CLAUDE.md\n\n" + block;
-    process.stderr.write("conductor: created CLAUDE.md with rules block\n");
+    next = `# ${name}\n\n` + block;
+    process.stderr.write(`conductor: created ${name} with rules block (platform: ${platform})\n`);
   }
-  fs.writeFileSync(CLAUDE_MD, next);
+  fs.writeFileSync(target, next);
+  return target;
 }

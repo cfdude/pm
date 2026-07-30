@@ -16,7 +16,7 @@ import { detourContext } from "./links.mjs";
 import { activeChangeIds, firstHeading, planFiles, reconcileArchived } from "./epic-progress.mjs";
 import { ROOT, CONDUCTOR_DIR, BRIEF_PATH, PLANS_DIR } from "./constants.mjs";
 
-export function init() {
+export function init(platform = "claude-code") {
   if (isInitialized()) {
     process.stderr.write("conductor: already initialized (.conductor/state.json exists)\n");
   } else {
@@ -25,7 +25,7 @@ export function init() {
   }
   sync(true);                 // pull in existing openspec changes + plans
   { const s = loadState(); stampVersion(s); saveState(s); }
-  writeRules();
+  writeRules(platform);
   render();
   process.stderr.write(
     "conductor: initialized. Triage epics in .conductor/state.json " +

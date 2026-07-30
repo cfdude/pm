@@ -82,7 +82,11 @@ if (showEngineBanner) {
   );
 }
 ({
-  init,
+  init: () => {
+    const declared = platformFlag(process.argv.slice(3));
+    if (declared) assertKnownPlatform(declared);
+    init(resolvePlatform({ platform: declared }, loadState()));
+  },
   render,
   brief,
   snapshot,
@@ -119,7 +123,11 @@ if (showEngineBanner) {
     const rulesPlatform = resolvePlatform({ platform: declared }, loadState());
     process.stdout.write(rulesBlock(currentTracker(), currentReviewMode(epicId), currentSecondaryTrackers(), rulesPlatform));
   },
-  "write-rules": writeRules,
+  "write-rules": () => {
+    const declared = platformFlag(process.argv.slice(3));
+    if (declared) assertKnownPlatform(declared);
+    writeRules(resolvePlatform({ platform: declared }, loadState()));
+  },
 }[cmd] || (() => {
   process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|set-autonomy|record-reconcile|record-gate-review|set-review-mode|set-gate-guard|gate-guard|plan-hierarchy|verify-worktrees|verify-state|changesets|upgrade|changelog|rules|write-rules\n");
   process.exit(1);

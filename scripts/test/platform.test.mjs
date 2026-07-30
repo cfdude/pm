@@ -101,3 +101,46 @@ test("writeRules upgrades a block written with the OLD marker wording instead of
   assert.doesNotMatch(after, /managed by \/pm:init/,
     "the stale wording must not survive the refresh");
 });
+
+// ────────────── writeRules() targets the platform's actual precedence chain ──────────────
+
+test("hermes writes into a pre-existing AGENTS.md, which outranks CLAUDE.md in its chain", () => {
+  const cwd = tmpRepo();
+  fs.writeFileSync(path.join(cwd, "AGENTS.md"), "# pre-existing, from a prior Codex attempt\n");
+  run(["init", "--platform", "hermes"], { cwd });
+
+  const agents = fs.readFileSync(path.join(cwd, "AGENTS.md"), "utf8");
+  assert.match(agents, /BEGIN pm-conductor rules/,
+    "Hermes resolves AGENTS.md before CLAUDE.md, so the block must land there");
+  assert.match(agents, /pre-existing, from a prior Codex attempt/, "existing content is preserved");
+
+  // Writing CLAUDE.md here would be the silent-invisibility bug: Hermes would never read it.
+  if (fs.existsSync(path.join(cwd, "CLAUDE.md"))) {
+    const claude = fs.readFileSync(path.join(cwd, "CLAUDE.md"), "utf8");
+    assert.doesNotMatch(claude, /BEGIN pm-conductor rules/,
+      "the block must not go to a file Hermes will not read");
+  }
+});
+
+test("hermes with a clean repo writes CLAUDE.md, the most compatible entry in its chain", () => {
+  const cwd = tmpRepo();
+  run(["init", "--platform", "hermes"], { cwd });
+  assert.ok(fs.existsSync(path.join(cwd, "CLAUDE.md")));
+  assert.ok(!fs.existsSync(path.join(cwd, "HERMES.md")), "no Hermes-exclusive file is invented");
+});
+
+test("codex writes AGENTS.md and never CLAUDE.md, which it cannot read", () => {
+  const cwd = tmpRepo();
+  run(["init", "--platform", "codex"], { cwd });
+  const agents = fs.readFileSync(path.join(cwd, "AGENTS.md"), "utf8");
+  assert.match(agents, /BEGIN pm-conductor rules/);
+  assert.ok(!fs.existsSync(path.join(cwd, "CLAUDE.md")), "Codex does not read CLAUDE.md");
+});
+
+test("the rules block refreshes in place rather than duplicating on a second write", () => {
+  const cwd = tmpRepo();
+  run(["init", "--platform", "codex"], { cwd });
+  run(["write-rules", "--platform", "codex"], { cwd });
+  const agents = fs.readFileSync(path.join(cwd, "AGENTS.md"), "utf8");
+  assert.equal(agents.match(/BEGIN pm-conductor rules/g).length, 1);
+});
