@@ -1343,7 +1343,21 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "64",
-      "externalUrl": "https://github.com/cfdude/pm/issues/64"
+      "externalUrl": "https://github.com/cfdude/pm/issues/64",
+      "stories": [
+        {
+          "title": "CONFIRMED remove-epic is NOT durable: identical 3 phantoms returned on the next sync ~1h later. Another session saw the same across a 2-day gap in agent-dm.",
+          "done": false
+        },
+        {
+          "title": "WORKAROUND THAT STICKS (no code change): set the phantom to --status archived instead of remove-epic. The id still exists so sync's own 'id already exists' guard fires. Verified: repeated syncs add 0.",
+          "done": false
+        },
+        {
+          "title": "prefer the tombstone/syncIgnore fix over plan-field matching for the near term: matching is blocked by #66 (no update-epic --plan) while the tombstone has no dependency; archived already IS a working tombstone",
+          "done": false
+        }
+      ]
     },
     {
       "id": "gh-65-autodetour-false-positives",
@@ -1459,6 +1473,42 @@
           "done": false
         }
       ]
+    },
+    {
+      "id": "2026-07-21-conductor-mjs-module-split",
+      "title": "conductor.mjs Module Split Implementation Plan",
+      "priority": "P?",
+      "status": "archived",
+      "role": "epic",
+      "lane": "superpowers",
+      "planPath": "docs/superpowers/plans/2026-07-21-conductor-mjs-module-split.md",
+      "links": [],
+      "reconcileNeeded": false,
+      "completedAt": "2026-07-30T04:00:55.770Z"
+    },
+    {
+      "id": "2026-07-26-edd-harness-agent-behavior-testing",
+      "title": "EDD Harness for Agent Behavior Testing — Implementation Plan",
+      "priority": "P?",
+      "status": "archived",
+      "role": "epic",
+      "lane": "superpowers",
+      "planPath": "docs/superpowers/plans/2026-07-26-edd-harness-agent-behavior-testing.md",
+      "links": [],
+      "reconcileNeeded": false,
+      "completedAt": "2026-07-30T04:00:55.969Z"
+    },
+    {
+      "id": "2026-07-29-platform-aware-rules-block",
+      "title": "Platform-Aware Rules Block Implementation Plan",
+      "priority": "P?",
+      "status": "archived",
+      "role": "epic",
+      "lane": "superpowers",
+      "planPath": "docs/superpowers/plans/2026-07-29-platform-aware-rules-block.md",
+      "links": [],
+      "reconcileNeeded": false,
+      "completedAt": "2026-07-30T04:00:56.179Z"
     }
   ],
   "detourStack": [],
