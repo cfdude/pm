@@ -1219,7 +1219,7 @@
       "id": "edd-observe-hardcodes-claude-md",
       "title": "observe.py hardcodes CLAUDE.md -- a second, undeclared platform seam",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -1234,9 +1234,10 @@
       "stories": [
         {
           "title": "fold into the rules-block epic: once the engine writes a per-platform rules-block target, update observe() to match and prove both with one eval",
-          "done": false
+          "done": true
         }
-      ]
+      ],
+      "completedAt": "2026-07-30T21:21:55.677Z"
     },
     {
       "id": "edd-user-memory-confound-control-run",

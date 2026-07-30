@@ -21,3 +21,52 @@ def test_observe_is_json_serializable(tmp_path: Path):
 
     project = materialize("single-active-epic", tmp_path)
     json.dumps(observe(project))  # must not raise
+
+
+def test_observe_finds_the_block_where_a_NON_claude_platform_writes_it(tmp_path: Path):
+    """The regression this epic exists for.
+
+    observe() used to hardcode CLAUDE.md. Once the engine started writing a per-platform target,
+    that made observe a SECOND, undeclared platform seam: a codex project's block lands in
+    AGENTS.md, so the observer reported rules_block_present=False -- a confident wrong answer
+    that would surface on the first non-Claude run as a parity failure that is not real.
+
+    This test fails under the old behavior and passes now.
+    """
+    import subprocess
+    import os
+
+    project = materialize("single-active-epic", tmp_path)
+    engine = Path(__file__).resolve().parent.parent.parent / "scripts" / "conductor.mjs"
+
+    # Re-target this project at codex, exactly as a codex host would declare itself.
+    subprocess.run(
+        ["node", str(engine), "write-rules", "--platform", "codex"],
+        cwd=project,
+        env={**os.environ, "CLAUDE_PROJECT_DIR": str(project), "PM_QUIET_ENGINE_BANNER": "1"},
+        capture_output=True, text=True, check=True, timeout=60,
+    )
+
+    assert (project / "AGENTS.md").exists(), "codex's block belongs in AGENTS.md"
+
+    out = observe(project)
+
+    assert out["rules_block_file"] == "AGENTS.md", (
+        "observe must follow the platform's target, not assume CLAUDE.md"
+    )
+    assert out["rules_block_present"] is True, (
+        "the block IS present -- reporting False here is the exact bug this epic fixed"
+    )
+
+
+def test_observe_reports_cannot_tell_rather_than_crashing_outside_a_pm_project(tmp_path: Path):
+    """A broken run must be SCOREABLE, not an exception -- same principle as the adapter's
+    infrastructural-failure guard. An eval that raises cannot report a verdict."""
+    bare = tmp_path / "not-a-pm-project"
+    bare.mkdir()
+
+    out = observe(bare)
+
+    assert out["rules_block_present"] is False
+    assert out["project_md_present"] is False
+    assert out["epic_ids"] == []
