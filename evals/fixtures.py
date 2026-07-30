@@ -97,6 +97,39 @@ def _write_memory_isolation(project: Path) -> None:
         lives in user-scope settings, so pm's SessionStart hook stops firing entirely.
     """
     home = Path.home()
+    claude_dir = project / ".claude"
+    claude_dir.mkdir(parents=True, exist_ok=True)
+
+    # Positive proof, not absence-of-evidence. An InstructionsLoaded hook records every
+    # instruction file the session actually loads, with its memory_type ("User" / "Project" /
+    # "Local" / "Managed"). A scorer then asserts no User-scope file appears. Without this, the
+    # only evidence isolation worked is that the agent FAILED to recite something -- which is
+    # indistinguishable from the probe simply not landing. This session has repeatedly found
+    # assertions that could not fail; this one can.
+    # .cjs, NOT .mjs: this needs `require` and `__dirname`, and neither exists in an ES
+    # module. The first version was .mjs and threw ReferenceError -- which the catch below
+    # silently swallowed, leaving the log empty and the scorer passing vacuously. The
+    # swallow is right for production (an observability hook must never break the run it
+    # observes) but it hides authoring bugs, so a unit test pipes a real payload through
+    # this file rather than trusting it.
+    recorder = claude_dir / "record-instructions.cjs"
+    recorder.write_text(
+        "// Appends one TAB-separated `memory_type<TAB>file_path` line per instruction file\n"
+        "// loaded. Failures are swallowed on purpose: an observability hook must never be\n"
+        "// able to break the run it is observing. Covered by a test so the swallow cannot\n"
+        "// hide a broken recorder.\n"
+        "let s = '';\n"
+        "process.stdin.on('data', (d) => (s += d)).on('end', () => {\n"
+        "  try {\n"
+        "    const j = JSON.parse(s);\n"
+        "    const fs = require('node:fs');\n"
+        "    const path = require('node:path');\n"
+        "    const out = path.join(__dirname, 'instructions-loaded.log');\n"
+        "    fs.appendFileSync(out, `${j.memory_type}\\t${j.file_path}\\n`);\n"
+        "  } catch { /* observability only -- never fail the session */ }\n"
+        "});\n"
+    )
+
     settings = {
         "claudeMdExcludes": [
             str(home / ".claude" / "CLAUDE.md"),
@@ -104,9 +137,12 @@ def _write_memory_isolation(project: Path) -> None:
             str(home / ".claude" / "rules" / "**"),
         ],
         "autoMemoryEnabled": False,
+        "hooks": {
+            "InstructionsLoaded": [
+                {"hooks": [{"type": "command", "command": f'node "{recorder}"'}]}
+            ]
+        },
     }
-    claude_dir = project / ".claude"
-    claude_dir.mkdir(parents=True, exist_ok=True)
     (claude_dir / "settings.local.json").write_text(json.dumps(settings, indent=2) + "\n")
 
 

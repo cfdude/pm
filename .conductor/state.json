@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "edd-user-memory-confound-control-run",
+  "active": null,
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -1243,7 +1243,7 @@
       "id": "edd-user-memory-confound-control-run",
       "title": "EDD baseline confound: user-scope CLAUDE.md carries the lane heuristic; needs a memory-suppressed control run",
       "priority": "P1",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -1273,7 +1273,7 @@
         },
         {
           "title": "add an InstructionsLoaded hook assertion so isolation is proven positively, not by absence",
-          "done": false
+          "done": true
         },
         {
           "title": "RESULT n=3 under suppression: 5/5 STABLE vs the prior baseline, 0 blocking. pm's OWN artifacts carry the lane behavior -- the baseline was never an artifact of operator memory. Re-blessed under isolation. 43 turns, $5.10 notional.",
@@ -1282,9 +1282,14 @@
         {
           "title": "wall-clock NOT re-measured: the run took 387.9s at load 72 on a 16-core box, which is meaningless as a benchmark. The earlier '~2x increase' stays UNVERIFIED rather than being restated as fact.",
           "done": false
+        },
+        {
+          "title": "story 5 shipped as a SCORER (no_operator_memory_loaded), not a one-off probe -- every future run now proves isolation positively. Baseline re-blessed at 6 checks, 3/3 samples, user_memory_files_loaded=[] on all three.",
+          "done": false
         }
       ],
-      "startedAt": "2026-07-30T21:50:06.581Z"
+      "startedAt": "2026-07-30T21:50:06.581Z",
+      "completedAt": "2026-07-30T23:20:07.828Z"
     },
     {
       "id": "edd-measures-installed-plugin-not-worktree",
