@@ -44,6 +44,7 @@ def _failure(error: str) -> dict:
         "detours": [],
         "rules_block_present": False,
         "rules_block_file": None,
+        "user_memory_files_loaded": [],
         "project_md_present": False,
         "new_epics": [],
         "exit_code": INFRA_FAILURE_EXIT_CODE,

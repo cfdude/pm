@@ -57,6 +57,18 @@ LANE_ROUTING_TYPO = Scenario(
             reason="Registering new work must not steal the active pointer.",
         ),
         check(
+            "no_operator_memory_loaded",
+            lambda o: o["user_memory_files_loaded"] == [],
+            reason=(
+                "The corpus measures pm's ARTIFACTS. The operator's user-scope CLAUDE.md states "
+                "pm's lane heuristic verbatim, so if it loads, a pass cannot be attributed to "
+                "pm's rules block. Asserted POSITIVELY from an InstructionsLoaded hook rather "
+                "than inferred from the agent failing to recite something -- absence of evidence "
+                "is not evidence of isolation. Also asymmetric: Hermes and Codex read AGENTS.md, "
+                "so leaving this unchecked hands Claude Code an assist they never get."
+            ),
+        ),
+        check(
             "logged_no_spurious_detour",
             lambda o: o["detours"] == [],
             reason="Registering an epic is not a detour; the detour trail should stay empty.",

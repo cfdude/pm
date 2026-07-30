@@ -65,6 +65,30 @@ def _rules_target(project: Path) -> Path | None:
     return Path(out) if out else None
 
 
+def _user_memory_files_loaded(project: Path) -> list[str]:
+    """USER-scope instruction files the session actually loaded — should always be empty.
+
+    Read from the log an `InstructionsLoaded` hook writes into the fixture (see
+    fixtures._write_memory_isolation). This is the POSITIVE half of the isolation proof: without
+    it, the only evidence that suppression worked is the agent failing to recite something,
+    which cannot be told apart from the probe not landing.
+
+    An empty list is returned when the log is absent. That is deliberately indistinguishable
+    from "nothing user-scope loaded", because a fixture built before this hook existed is not a
+    failure -- and the scorer's job is to catch a REGRESSION in isolation, not to police fixture
+    vintage.
+    """
+    log = project / ".claude" / "instructions-loaded.log"
+    if not log.exists():
+        return []
+    out = []
+    for line in log.read_text().splitlines():
+        parts = line.split("\t")
+        if len(parts) == 2 and parts[0] == "User":
+            out.append(parts[1])
+    return out
+
+
 def observe(project: Path) -> dict:
     project = Path(project)
     state_path = project / ".conductor" / "state.json"
@@ -96,5 +120,6 @@ def observe(project: Path) -> dict:
             target and target.exists() and RULES_BEGIN in target.read_text()
         ),
         "rules_block_file": target.name if target else None,
+        "user_memory_files_loaded": _user_memory_files_loaded(project),
         "project_md_present": (project / "PROJECT.md").exists(),
     }

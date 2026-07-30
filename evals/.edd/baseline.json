@@ -14,6 +14,10 @@
           "kind": "deterministic",
           "status": "pass"
         },
+        "lane-routing/typo-fix-is-claude-code::no_operator_memory_loaded": {
+          "kind": "deterministic",
+          "status": "pass"
+        },
         "lane-routing/typo-fix-is-claude-code::registered_exactly_one_epic": {
           "kind": "deterministic",
           "status": "pass"
@@ -24,7 +28,7 @@
         }
       },
       "judge_model": null,
-      "label": "adds run_succeeded: the exit-code gate that makes infrastructural failure visible (3 samples)",
+      "label": null,
       "model_under_test": "pm@claude-code"
     }
   }

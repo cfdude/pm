@@ -1243,7 +1243,7 @@
       "id": "edd-user-memory-confound-control-run",
       "title": "EDD baseline confound: user-scope CLAUDE.md carries the lane heuristic; needs a memory-suppressed control run",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -1257,25 +1257,39 @@
       "stories": [
         {
           "title": "mechanism VERIFIED 2026-07-28: claudeMdExcludes + autoMemoryEnabled:false in a per-run .claude/settings.local.json; --bare and --setting-sources project,local both kill the plugin hooks",
-          "done": false
+          "done": true
         },
         {
           "title": "control run n=1 PASSED 5/5 with both suppressed -- pm's own artifacts carry the lane behavior",
-          "done": false
+          "done": true
         },
         {
           "title": "wire the suppression into evals/fixtures.py materialize()",
-          "done": false
+          "done": true
         },
         {
           "title": "re-bless at 3 samples under suppression; investigate the ~2x wall-clock increase",
-          "done": false
+          "done": true
         },
         {
           "title": "add an InstructionsLoaded hook assertion so isolation is proven positively, not by absence",
-          "done": false
+          "done": true
+        },
+        {
+          "title": "RESULT n=3 under suppression: 5/5 STABLE vs the prior baseline, 0 blocking. pm's OWN artifacts carry the lane behavior -- the baseline was never an artifact of operator memory. Re-blessed under isolation. 43 turns, $5.10 notional.",
+          "done": true
+        },
+        {
+          "title": "wall-clock NOT re-measured: the run took 387.9s at load 72 on a 16-core box, which is meaningless as a benchmark. The earlier '~2x increase' stays UNVERIFIED rather than being restated as fact.",
+          "done": true
+        },
+        {
+          "title": "story 5 shipped as a SCORER (no_operator_memory_loaded), not a one-off probe -- every future run now proves isolation positively. Baseline re-blessed at 6 checks, 3/3 samples, user_memory_files_loaded=[] on all three.",
+          "done": true
         }
-      ]
+      ],
+      "startedAt": "2026-07-30T21:50:06.581Z",
+      "completedAt": "2026-07-30T23:20:07.828Z"
     },
     {
       "id": "edd-measures-installed-plugin-not-worktree",
@@ -1365,10 +1379,16 @@
       "id": "gh-65-autodetour-false-positives",
       "title": "auto-detour writes false-positive entries: no success check + no repo-scope check",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
-      "links": [],
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "autodetour-parser-misses-am-and-f",
+          "reason": "the remaining slice (paired-repo commit with no parseable -m) is that epic's scope; issue #65 stays OPEN until it lands"
+        }
+      ],
       "reconcileNeeded": false,
       "externalId": "65",
       "externalUrl": "https://github.com/cfdude/pm/issues/65",
@@ -1379,7 +1399,7 @@
         },
         {
           "title": "bug 2: repo-scope check -- only fire when the commit's repo root matches the pm-managed repo (paired repo / submodule / git -C elsewhere)",
-          "done": false
+          "done": true
         },
         {
           "title": "closes #68 as duplicate; reporter hit it across job-search-agent + a paired repo, so it is not machine-specific",
@@ -1387,10 +1407,19 @@
         },
         {
           "title": "bug 2 is functionally covered by the SAME guard (a commit landing elsewhere leaves our HEAD subject unmatched) -- but NO explicit repo-scope check was added; decide whether belt-and-braces is wanted",
-          "done": false
+          "done": true
+        },
+        {
+          "title": "RESOLVED bug 2 WITHOUT the suggested fix: the reporter's repo-scope check (git rev-parse --show-toplevel vs pm root) would NOT work. Hook handlers run in Claude Code's cwd, and the payload's cwd is the SESSION dir, not wherever a cd inside the Bash command took the commit -- so --show-toplevel resolves to pm even when the commit landed elsewhere, reports 'same repo', and suppresses nothing. A working version would have to parse cd/git -C out of the command string.",
+          "done": true
+        },
+        {
+          "title": "The residual slice (paired-repo commit with NO parseable -m: -am, -F, editor, heredoc) is exactly what autodetour-parser-misses-am-and-f already owns, so doing this properly IS that epic. Superseded, not dropped.",
+          "done": true
         }
       ],
-      "startedAt": "2026-07-30T02:48:10.981Z"
+      "startedAt": "2026-07-30T02:48:10.981Z",
+      "completedAt": "2026-07-30T22:52:14.536Z"
     },
     {
       "id": "gh-66-update-epic-missing-flags",
