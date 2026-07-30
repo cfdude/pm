@@ -19,14 +19,14 @@ jobs:
     # Pinned to a commit SHA (not @main) per the org's own pinGitHubActionDigests convention —
     # a moving branch ref would let a compromised or unexpectedly-changed org workflow silently
     # run in this repo's CI. Bump deliberately: re-check cfdude/.github before updating the SHA.
-    uses: cfdude/.github/.github/workflows/security-semgrep.yml@8931286eb4057e4a2829325c1e04e6071ebf3ff4  # main @ 2026-07-30
+    uses: cfdude/.github/.github/workflows/security-semgrep.yml@5646bebe649298cdf4c1b1a4aa1ad3e9e1c8b9b1  # main @ 2026-07-30 (trufflehog)
     permissions:
       contents: read
       security-events: write
 
   trivy:
     name: Trivy filesystem scan
-    uses: cfdude/.github/.github/workflows/security-trivy.yml@8931286eb4057e4a2829325c1e04e6071ebf3ff4  # main @ 2026-07-30
+    uses: cfdude/.github/.github/workflows/security-trivy.yml@5646bebe649298cdf4c1b1a4aa1ad3e9e1c8b9b1  # main @ 2026-07-30 (trufflehog)
     permissions:
       contents: read
       security-events: write
