@@ -6,7 +6,9 @@
 
 import fs from "node:fs";
 import { loadState } from "./state.mjs";
-import { KNOWN_REVIEW_MODES, REVIEW_MODE_RANK, RULES_BEGIN, RULES_END, CLAUDE_MD } from "./constants.mjs";
+import {
+  KNOWN_REVIEW_MODES, REVIEW_MODE_RANK, RULES_BEGIN, RULES_END, CLAUDE_MD, PLATFORM_COMMAND_PREFIX,
+} from "./constants.mjs";
 
 /** The tracker block from state, or null — used to make emitted instructions tracker-aware. */
 export function currentTracker() {
@@ -79,7 +81,15 @@ export function currentReviewMode(epicId) {
   } catch { return "standard"; }
 }
 
-export function rulesBlock(tracker, reviewMode, secondaryTrackers = []) {
+/** The platform's invocation form for a pm command. `pmCmd("codex", "status")` -> "/pm-status".
+ *  An unrecognised platform falls back to the claude-code form rather than emitting a broken
+ *  string -- the rules block must always name SOMETHING invocable. */
+export function pmCmd(platform, name) {
+  const prefix = PLATFORM_COMMAND_PREFIX[platform] || PLATFORM_COMMAND_PREFIX["claude-code"];
+  return `${prefix}${name}`;
+}
+
+export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform = "claude-code") {
   const mode = KNOWN_REVIEW_MODES.includes(reviewMode) ? reviewMode : "standard";
   const lines = [
     RULES_BEGIN,
@@ -92,15 +102,15 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = []) {
     "",
     "1. **Detours** — when something blocks the active epic, CLASSIFY before fixing:",
     "   - *Minimal* (small, self-contained, no design ambiguity): fix → test → commit → push,",
-    "     then run `/pm:detour --minimal \"<what>\"` so it is recorded in `.conductor/detours.log`.",
+    `     then run \`${pmCmd(platform, "detour")} --minimal "<what>"\` so it is recorded in \`.conductor/detours.log\`.`,
     "     Then resume.",
-    "   - *Substantial* (own design / changes shared behavior / multi-step): run `/pm:detour`.",
+    `   - *Substantial* (own design / changes shared behavior / multi-step): run \`${pmCmd(platform, "detour")}\`.`,
     "     It becomes its own epic in the appropriate lane (OpenSpec proposal, Superpowers plan,",
     "     etc.); PUSH the current epic onto the detour stack in `.conductor/state.json` with a",
     "     concrete reason and `reconcileOnResume`.",
     "2. **State of record is `.conductor/state.json`.** After any change to epics, status,",
-    "   priority, or the detour stack, re-render with `/pm:status`. Never hand-edit `PROJECT.md`.",
-    "3. **Resuming after a detour** — use `/pm:resume`. If the popped frame had",
+    `   priority, or the detour stack, re-render with \`${pmCmd(platform, "status")}\`. Never hand-edit \`PROJECT.md\`.`,
+    `3. **Resuming after a detour** — use \`${pmCmd(platform, "resume")}\`. If the popped frame had`,
     "   `reconcileOnResume`, run the reconcile gate (reconciler agent) BEFORE writing code,",
     "   then write its verdict back durably with `record-reconcile <id> --detour <id>",
     "   --verdict valid|invalidated [--amendments \"<a>;<b>\"]` — this attaches",
@@ -111,9 +121,9 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = []) {
     "   this repo.",
     "5. **Keep `tasks.md` checkboxes truthful** — they are the source of truth for story progress.",
     "6. **Roadmap as backlog** — work you intend to do but haven't proposed yet can be",
-    "   registered now with `/pm:epic add … --status planned` (any lane). Planned epics show",
+    `   registered now with \`${pmCmd(platform, "epic")} add … --status planned\` (any lane). Planned epics show`,
     "   as ordered backlog in `PROJECT.md` and a `planned: N` count in the briefing, without a",
-    "   \"no change on disk\" warning; `/pm:sync` flips an openspec planned epic to untriaged once",
+    `   "no change on disk" warning; \`${pmCmd(platform, "sync")}\` flips an openspec planned epic to untriaged once`,
     "   its change is proposed. Have a roadmap doc? Read it in-session and load each item this way.",
     "",
     "## Epic-level autonomy",
@@ -170,11 +180,11 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = []) {
     "",
     "If you hit a bug, a missing CLI verb, an unexpected limitation, or repeated friction",
     "working with this plugin — in this repo or any repo using it — don't just work around it",
-    "and move on. File it: `/pm:feedback [bug|feature] \"<summary>\"` against `cfdude/pm`, or ask",
+    `and move on. File it: \`${pmCmd(platform, "feedback")} [bug|feature] "<summary>"\` against \`cfdude/pm\`, or ask`,
     "the user \"want me to file this as feedback?\" if you're not sure it's worth it. The failure",
     "mode this guards against is silent: hand-editing `.conductor/state.json` to flip a story's",
     "`done` flag (no CLI verb exists for it) recurred across several separate sessions before",
-    "anyone reported it, even though `/pm:feedback` existed the whole time. A filed issue is",
+    `anyone reported it, even though \`${pmCmd(platform, "feedback")}\` existed the whole time. A filed issue is`,
     "cheap; an unreported recurring papercut is not — silent pain is where a product fails its",
     "users.",
   ];
@@ -196,7 +206,7 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = []) {
         `the pm plugin NEVER calls ${sys} itself. On these events, perform the matching action with`,
         "your own tooling (MCP, connector, CLI — whatever this project uses):",
         `- A real epic has no \`externalId\` → create the ${sys} issue, then record its key with`,
-        "  `/pm:epic` → `update-epic <id> --external-id <KEY> --external-url <url>`.",
+        `  \`${pmCmd(platform, "epic")}\` → \`update-epic <id> --external-id <KEY> --external-url <url>\`.`,
         "- An epic moves to a status with a `statusIntent` (e.g. active/archived) → transition the",
         "  linked issue toward that SEMANTIC target, resolving the real workflow transition yourself.",
         `- A parent epic → create it as a ${sys} epic and link its children.`,
@@ -220,11 +230,11 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = []) {
         "",
         "This tracker is inward: open GitHub issues become conductor epics, same pattern as the",
         "OpenSpec/Superpowers auto-registration `sync` already does for on-disk changes/plans. The",
-        "pm plugin NEVER calls `gh` itself — as part of running `/pm:sync`, YOU (the interactive",
+        `pm plugin NEVER calls \`gh\` itself — as part of running \`${pmCmd(platform, "sync")}\`, YOU (the interactive`,
         "agent) do:",
         `1. \`gh issue list --repo ${repo} --state open --json number,title,url,labels\`.`,
         "2. For each issue, check whether an epic with that issue number as `externalId` already",
-        "   exists (`/pm:epic list` or read `.conductor/state.json`) — if so, skip it (already",
+        `   exists (\`${pmCmd(platform, "epic")} list\` or read \`.conductor/state.json\`) — if so, skip it (already`,
         "   mirrored; re-running sync must never create a duplicate epic for the same issue).",
         "3. Otherwise register a new untriaged epic: `add-epic --status untriaged --external-id",
         "   <issue-number> --external-url <issue-url> --lane claude-code --priority P2`, unless a",
@@ -248,12 +258,12 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = []) {
       "causes you to create or transition an issue here — that stays exclusive to the primary",
       "tracker above (if configured).",
       "",
-      "**Inward pull** — as part of running `/pm:sync`:",
+      `**Inward pull** — as part of running \`${pmCmd(platform, "sync")}\`:`,
       ...(st.system === "github-issues" && st.repo
         ? [`1. \`gh issue list --repo ${st.repo} --state open --json number,title,url,labels\`.`]
         : [`1. List open issues in ${st.system}${scope ? ` (${scope})` : ""} with your own tooling.`]),
       "2. For each issue, check whether an epic's `externalUrl` already matches that issue's URL",
-      "   (`/pm:epic list` or read `.conductor/state.json`) — if so, skip it (already mirrored;",
+      `   (\`${pmCmd(platform, "epic")} list\` or read \`.conductor/state.json\`) — if so, skip it (already mirrored;`,
       "   re-running sync must never create a duplicate epic for the same issue). Match on",
       "   `externalUrl`, not bare `externalId` alone — issue numbers are only unique within one",
       "   tracker/repo, not globally, so two secondary trackers can both have an issue numbered",
@@ -278,7 +288,7 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = []) {
       "## Sync after completing tracker-linked work",
       "",
       "After you close/transition a tracker-linked issue as part of completing an epic (the",
-      "writeback steps above), immediately re-sync with your tracker(s) — run `/pm:sync` — to pull",
+      `writeback steps above), immediately re-sync with your tracker(s) — run \`${pmCmd(platform, "sync")}\` — to pull`,
       "in anything new that appeared while you were heads-down. You're already doing tracker I/O",
       "for this epic, so this is the cheapest moment to catch it; this applies whether you have one",
       "tracker or several (primary + secondary) configured.",

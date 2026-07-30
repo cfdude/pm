@@ -45,6 +45,8 @@ import { pluginVersion } from "./lib/plugin-meta.mjs";
 import {
   currentTracker, currentSecondaryTrackers, currentReviewMode, rulesBlock, writeRules,
 } from "./lib/rules.mjs";
+import { resolvePlatform, assertKnownPlatform, platformFlag } from "./lib/platform.mjs";
+import { loadState } from "./lib/state.mjs";
 import { setActive, clearActive } from "./lib/active-pointer.mjs";
 import { setAutonomy } from "./lib/autonomy.mjs";
 import { parseFlags, planHierarchy, addEpic } from "./lib/add-epic.mjs";
@@ -112,7 +114,10 @@ if (showEngineBanner) {
   rules: () => {
     const f = parseFlags(process.argv.slice(3));
     const epicId = typeof f.epic === "string" ? f.epic : undefined;
-    process.stdout.write(rulesBlock(currentTracker(), currentReviewMode(epicId), currentSecondaryTrackers()));
+    const declared = platformFlag(process.argv.slice(3));
+    if (declared) assertKnownPlatform(declared);
+    const rulesPlatform = resolvePlatform({ platform: declared }, loadState());
+    process.stdout.write(rulesBlock(currentTracker(), currentReviewMode(epicId), currentSecondaryTrackers(), rulesPlatform));
   },
   "write-rules": writeRules,
 }[cmd] || (() => {
