@@ -8,6 +8,29 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **The test suite is now `scripts/test/*.test.mjs` (11 files) instead of one
+  `scripts/conductor.test.mjs`, cutting a full run from ~118s to ~46s.** Contributor-facing: the
+  command is `node --test scripts/test/*.test.mjs`. Measured rather than guessed — one engine
+  spawn costs ~73ms and the suite makes 676 of them, so ~49s was pure `node` startup, serialized
+  in a single file on a 16-core machine; `node --test` parallelizes across *files* only. The
+  split is verbatim, verified by test-name-set equality (255 → 255).
+
+  Note `node --test scripts/test` (a **directory**) does not work — Node treats the argument as a
+  module to execute and dies with `MODULE_NOT_FOUND` while reporting "1 test". It exits non-zero
+  so it cannot pass silently, but use the glob.
+
+  Rejected: converting to in-process testing to skip `node` startup entirely. It would be faster
+  still, but would stop exercising the real CLI contract — flag parsing, exit codes, stderr text,
+  the dispatch table — which is where the bugs this suite catches actually live.
+
+- **`.githooks/pre-commit` now aborts if the suite runs fewer tests than are declared.** The glob
+  makes a partial-suite pass possible in a way the single file never did: if a file stops
+  matching, everything still goes green, just on a subset. The hook cross-checks the runner's
+  count against `grep -c '^test('` across the files — self-maintaining, with no constant to bump
+  as tests are added.
+
 ### Fixed
 
 - **The auto-detour hook no longer writes a `detours.log` entry for a commit that did not land
