@@ -1462,11 +1462,11 @@
         },
         {
           "title": "SILENT-PASS HOLE: detourLog() returns '' for a missing file, so assert.doesNotMatch(detourLog(cwd),...) passes even if commit-nudge never ran -- and it exits 0 on every early return, so run() will not throw. Assert the hook EMITTED its JSON first.",
-          "done": false
+          "done": true
         },
         {
           "title": "keep the :996 self-heal test repo-less (it is the only coverage of the unverifiable branch and it caught the two-state guard bug); rename it to say so and ADD a git-repo twin for the verified path",
-          "done": false
+          "done": true
         },
         {
           "title": "audit every doesNotMatch/empty-string assertion in the suite for the same vacuous-pass shape, not just the ones added for gh#65",
@@ -1478,6 +1478,10 @@
         },
         {
           "title": "GLOB LANDMINE: node --test scripts/test (a DIRECTORY) does not work on Node 26 -- it treats the arg as a module, dies MODULE_NOT_FOUND, reports '1 test'. Only the shell glob works. Documented in the hook so nobody 'simplifies' it.",
+          "done": false
+        },
+        {
+          "title": "MUTATION-TESTED the guard tests: disabling the guard initially left 4 of 5 still PASSING, because gitRepo()'s baseline commit touches 4 files and looksLikeUnloggedMinimalDetour rejects >3 -- they were passing on the file-count rule, not the guard. Fixed; now 4/5 fail on mutation and the 5th is the positive control that should pass either way.",
           "done": false
         }
       ],

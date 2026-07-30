@@ -4,7 +4,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { tmpRepo, run, readState, writeState, projectMd, parseBrief, expectFail, withArchivedChange } from "./helpers.mjs";
+import { tmpRepo, run, readState, writeState, projectMd, parseBrief, expectFail, withArchivedChange, gitRepo, commitFiles } from "./helpers.mjs";
 
 // ─────────────── 0.7.0: set-active / clear-active + active↔status ───────────────
 
@@ -196,12 +196,29 @@ test("sync clears an archived active pointer and stamps archived status", () => 
   assert.equal(s.epics.find(e => e.id === "feat-x").status, "archived");
 });
 
-test("commit-nudge self-heals an archived active pointer after a git commit", () => {
+// This fixture has NO git repo, which makes it the only coverage of commit-nudge's
+// UNVERIFIABLE branch (gh#65/gh#68): headSubject() returns null, so the hook cannot tell whether
+// a commit landed and must fall through to the prior behaviour rather than going silent. Keep it
+// repo-less deliberately — a two-state guard (match / no-match) broke exactly this test, which is
+// how the three-state design was found. Its verified-path twin is the next test.
+test("commit-nudge self-heals an archived active pointer when the commit cannot be verified (no git repo)", () => {
   const cwd = tmpRepo(); run(["init"], { cwd });
   withArchivedChange(cwd, "feat-x");
   run(["commit-nudge"], { cwd, input: JSON.stringify({ tool_input: { command: 'git commit -m "archive feat-x"' } }) });
   const s = readState(cwd);
   assert.equal(s.active, null);
+  assert.equal(s.epics.find(e => e.id === "feat-x").status, "archived");
+});
+
+test("commit-nudge self-heals an archived active pointer on the VERIFIED path too (real git repo, commit landed)", () => {
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  withArchivedChange(cwd, "feat-x");
+  gitRepo(cwd);
+  // Land the commit for real so headSubject() matches and the hook takes the verified path.
+  commitFiles(cwd, { "archived.txt": "1" }, "archive feat-x");
+  run(["commit-nudge"], { cwd, input: JSON.stringify({ tool_input: { command: 'git commit -m "archive feat-x"' } }) });
+  const s = readState(cwd);
+  assert.equal(s.active, null, "self-heal must fire on the verified path, not only the unverifiable one");
   assert.equal(s.epics.find(e => e.id === "feat-x").status, "archived");
 });
 
