@@ -19,7 +19,7 @@ existed and had to be untangled after the fact.
    If you're on `main` with uncommitted work, `git checkout dev` first — working-tree changes
    carry over cleanly since `dev` and `main` share history between releases.
 
-2. **Tests green before committing.** `node --test scripts/conductor.test.mjs` — the
+2. **Tests green before committing.** `node --test scripts/test/*.test.mjs` — the
    `.githooks/pre-commit` hook re-runs this on every commit and blocks on failure, but don't
    rely on the hook alone catching a break you already know about.
 
@@ -53,7 +53,7 @@ existed and had to be untangled after the fact.
    (confirms the squash commit itself is sound, not just the pre-merge state):
    ```bash
    git checkout main && git fetch origin && git reset --hard origin/main
-   node --test scripts/conductor.test.mjs
+   node --test scripts/test/*.test.mjs
    git checkout dev && git reset --hard main && git push origin dev --force-with-lease
    ```
    `git reset --hard main` (not a plain `git merge`/`--ff-only`) is required here — after a

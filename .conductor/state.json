@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "gh-65-autodetour-false-positives",
+  "active": "test-suite-perf-and-scaffolding",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -1363,7 +1363,7 @@
       "id": "gh-65-autodetour-false-positives",
       "title": "auto-detour writes false-positive entries: no success check + no repo-scope check",
       "priority": "P1",
-      "status": "active",
+      "status": "queued",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -1442,7 +1442,7 @@
       "id": "test-suite-perf-and-scaffolding",
       "title": "Split the test suite for parallelism (~120s -> ~20s) and close the silent-pass holes in its scaffolding",
       "priority": "P1",
-      "status": "queued",
+      "status": "active",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -1454,11 +1454,11 @@
         },
         {
           "title": "split conductor.test.mjs (3202 lines, 255 tests) into ~8-10 files along the 29 existing section markers; the 8 exported helpers already exist and nothing imports them -- the file was built to be split",
-          "done": false
+          "done": true
         },
         {
           "title": "do NOT convert to in-process imports to skip node startup: faster, but stops testing the real CLI contract, which is the point of these tests",
-          "done": false
+          "done": true
         },
         {
           "title": "SILENT-PASS HOLE: detourLog() returns '' for a missing file, so assert.doesNotMatch(detourLog(cwd),...) passes even if commit-nudge never ran -- and it exits 0 on every early return, so run() will not throw. Assert the hook EMITTED its JSON first.",
@@ -1471,8 +1471,17 @@
         {
           "title": "audit every doesNotMatch/empty-string assertion in the suite for the same vacuous-pass shape, not just the ones added for gh#65",
           "done": false
+        },
+        {
+          "title": "MEASURED RESULT: 118s serial -> ~46s parallel (2.6x) across 11 files. 18 files was WORSE (46s) than 11 -- runner startup overhead. Floor is the slowest file (21s); the 46-21 gap is tmpdir/spawn contention, not concurrency (--test-concurrency=16 changed nothing).",
+          "done": false
+        },
+        {
+          "title": "GLOB LANDMINE: node --test scripts/test (a DIRECTORY) does not work on Node 26 -- it treats the arg as a module, dies MODULE_NOT_FOUND, reports '1 test'. Only the shell glob works. Documented in the hook so nobody 'simplifies' it.",
+          "done": false
         }
-      ]
+      ],
+      "startedAt": "2026-07-30T04:28:32.303Z"
     },
     {
       "id": "2026-07-21-conductor-mjs-module-split",

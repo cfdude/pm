@@ -22,7 +22,7 @@ jobs:
       - name: Syntax check
         run: |
           node -c scripts/conductor.mjs
-          node -c scripts/conductor.test.mjs
+          for f in scripts/lib/*.mjs scripts/test/*.mjs; do node -c "$f"; done
 
       - name: Run test suite
-        run: node --test scripts/conductor.test.mjs
+        run: node --test scripts/test/*.test.mjs

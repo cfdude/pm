@@ -6,7 +6,7 @@
 
 - No direct pushes to `main` — all changes land via pull request.
 - Required status check: the `test` job in `.github/workflows/ci.yml`
-  (`node --test scripts/conductor.test.mjs` plus a syntax check).
+  (`node --test scripts/test/*.test.mjs` plus a syntax check).
 - 0 required approving reviews — this is a solo-maintainer repo, so PRs merge once CI is
   green, without waiting on a second reviewer.
 - Merge method is squash-only (`allow_squash_merge: true`, `allow_merge_commit: false`,
@@ -35,7 +35,7 @@ git config core.hooksPath .githooks
 ```
 
 After that, `git commit` runs `.githooks/pre-commit` automatically, which runs
-`node --test scripts/conductor.test.mjs` and blocks the commit on any failure.
+`node --test scripts/test/*.test.mjs` and blocks the commit on any failure.
 
 ## If main moves out from under your PR
 
@@ -63,7 +63,7 @@ conflicts, resolve them the normal way (`git status` shows the conflicting files
 
 ## Running the EDD evaluation corpus (optional)
 
-pm's engine is covered by `node --test scripts/conductor.test.mjs`. That suite cannot cover
+pm's engine is covered by `node --test scripts/test/*.test.mjs`. That suite cannot cover
 pm's *agent-facing* artifacts — command docs, skills, the rules block, hooks — because their
 correctness is a non-deterministic judgment made by an agent, not an assertable return value.
 Those are covered by an evaluation corpus under `evals/`, built on

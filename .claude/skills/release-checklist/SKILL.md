@@ -22,7 +22,7 @@ skip straight to the branch dance at the bottom.
 
 ## The checklist
 
-1. **Engine + tests.** `node --test scripts/conductor.test.mjs` green, including any new tests
+1. **Engine + tests.** `node --test scripts/test/*.test.mjs` green, including any new tests
    for the change. No `--no-verify`, ever — the pre-commit hook already enforces this, but
    re-run explicitly before touching version/changelog files so a failure is caught here, not
    mid-release.
@@ -52,7 +52,7 @@ skip straight to the branch dance at the bottom.
      every release by recomputing, never estimating:
      ```bash
      grep -c '^## \[' CHANGELOG.md                                    # releases shipped
-     node --test scripts/conductor.test.mjs 2>&1 | grep '^ℹ tests'    # tests in the engine
+     node --test scripts/test/*.test.mjs 2>&1 | grep '^ℹ tests'    # tests in the engine
      wc -l scripts/conductor.mjs                                      # engine LOC
      # external dependencies is always 0 — enforced by the zero-dependency hard constraint
      ```
