@@ -7,6 +7,7 @@ import { isInitialized, loadState, saveState } from "./state.mjs";
 import { parseFlags } from "./add-epic.mjs";
 import { removeSecondaryTracker, upsertSecondaryTracker, writeRules } from "./rules.mjs";
 import { render } from "./render.mjs";
+import { resolvePlatform } from "./platform.mjs";
 
 /** Write/merge the `tracker` block (role: primary, default) or upsert/remove an entry in
  *  `state.secondaryTrackers` (role: secondary). Pure local state write — the engine NEVER
@@ -39,7 +40,7 @@ export function setTracker() {
         process.exit(1);
       }
       saveState(state);
-      writeRules();
+      writeRules(resolvePlatform({}, state));
       render();
       process.stderr.write(`conductor: secondary tracker removed (${system}${repo ? ` ${repo}` : ` ${projectKey}`})\n`);
       return;
@@ -51,7 +52,7 @@ export function setTracker() {
     if (str(f.mechanism) !== undefined) entry.mechanism = str(f.mechanism);
     upsertSecondaryTracker(state, entry);
     saveState(state);
-    writeRules();
+    writeRules(resolvePlatform({}, state));
     render();
     process.stderr.write(`conductor: secondary tracker set (${entry.system}${entry.repo ? ` ${entry.repo}` : ` ${entry.projectKey}`})\n`);
     return;
@@ -78,7 +79,7 @@ export function setTracker() {
   }
   state.tracker = t;
   saveState(state);
-  writeRules();   // refresh CLAUDE.md so the agent sees its new tracker-sync responsibility
+  writeRules(resolvePlatform({}, state));   // refresh CLAUDE.md so the agent sees its new tracker-sync responsibility
   render();
   process.stderr.write(`conductor: tracker set (${t.system}${t.projectKey ? ` ${t.projectKey}` : ""})\n`);
 }

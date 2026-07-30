@@ -45,7 +45,7 @@ import { pluginVersion } from "./lib/plugin-meta.mjs";
 import {
   currentTracker, currentSecondaryTrackers, currentReviewMode, rulesBlock, writeRules,
 } from "./lib/rules.mjs";
-import { resolvePlatform, assertKnownPlatform, platformFlag } from "./lib/platform.mjs";
+import { resolvePlatform, assertKnownPlatform, platformFlag, resolveAndRecordPlatform } from "./lib/platform.mjs";
 import { loadState } from "./lib/state.mjs";
 import { setActive, clearActive } from "./lib/active-pointer.mjs";
 import { setAutonomy } from "./lib/autonomy.mjs";
@@ -82,11 +82,7 @@ if (showEngineBanner) {
   );
 }
 ({
-  init: () => {
-    const declared = platformFlag(process.argv.slice(3));
-    if (declared) assertKnownPlatform(declared);
-    init(resolvePlatform({ platform: declared }, loadState()));
-  },
+  init,
   render,
   brief,
   snapshot,
@@ -124,9 +120,9 @@ if (showEngineBanner) {
     process.stdout.write(rulesBlock(currentTracker(), currentReviewMode(epicId), currentSecondaryTrackers(), rulesPlatform));
   },
   "write-rules": () => {
-    const declared = platformFlag(process.argv.slice(3));
-    if (declared) assertKnownPlatform(declared);
-    writeRules(resolvePlatform({ platform: declared }, loadState()));
+    const { platform, switched } = resolveAndRecordPlatform();
+    writeRules(platform);
+    if (switched) process.stderr.write(`conductor: platform: ${platform}\n`);
   },
 }[cmd] || (() => {
   process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|set-autonomy|record-reconcile|record-gate-review|set-review-mode|set-gate-guard|gate-guard|plan-hierarchy|verify-worktrees|verify-state|changesets|upgrade|changelog|rules|write-rules\n");

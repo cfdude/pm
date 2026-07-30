@@ -58,6 +58,29 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   answer. Note the log is untracked under a common global `*.log` ignore pattern, so the damage
   was confined to a working copy rather than repo history.
 
+## [0.24.0] — 2026-07-29
+
+### Added
+
+- **Platform-aware rules block.** The managed rules block is no longer Claude-Code-only. The
+  host agent declares itself via `--platform <claude-code|hermes|codex>` in the hook command pm
+  authors for that platform, and the active platform is recorded in `.conductor/state.json`.
+- Per-platform slash-command form: `/pm:status` on Claude Code and Hermes, `/pm-status` on Codex.
+  The namespace is retained wherever supported because Hermes silently skips a plugin command
+  that collides with a built-in, and it ships a built-in `status`.
+
+### Fixed
+
+- The rules block is now written to the file the host platform will actually read. Hermes
+  resolves project context first-match-wins over `HERMES.md` > `AGENTS.md` > `CLAUDE.md`, so in a
+  repo already carrying an `AGENTS.md` the block was silently invisible — no error, just an agent
+  running without the conductor's instructions.
+
+### Migration
+
+- `0.24.0` stamps `platform` on existing state files, defaulting to `claude-code`. Additive and
+  idempotent; a `0.23.1` state file still loads.
+
 ## [0.23.1] — 2026-07-23
 
 ### Fixed

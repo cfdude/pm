@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { tmpRepo, run, ENGINE, EMPTY_CACHE } from "./helpers.mjs";
+import { tmpRepo, run, runCombined, ENGINE, EMPTY_CACHE } from "./helpers.mjs";
 
 // ────────────── platform resolution + rules target ──────────────
 
@@ -143,4 +143,45 @@ test("the rules block refreshes in place rather than duplicating on a second wri
   run(["write-rules", "--platform", "codex"], { cwd });
   const agents = fs.readFileSync(path.join(cwd, "AGENTS.md"), "utf8");
   assert.equal(agents.match(/BEGIN pm-conductor rules/g).length, 1);
+});
+
+// ────────────── platform recorded in state.json ──────────────
+
+test("init records the declared platform in state.json", () => {
+  const cwd = tmpRepo();
+  run(["init", "--platform", "codex"], { cwd });
+  const state = JSON.parse(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"));
+  assert.equal(state.platform, "codex");
+});
+
+test("a later invocation with no flag reuses the recorded platform", () => {
+  const cwd = tmpRepo();
+  run(["init", "--platform", "codex"], { cwd });
+  // No --platform, and CLAUDECODE blanked: the recorded value must win over the default.
+  const out = run(["rules"], { cwd, env: { CLAUDECODE: "" } });
+  assert.match(out, /\/pm-status/, "the recorded codex platform should still apply");
+});
+
+test("a platform switch is recorded and reported, not silently ignored", () => {
+  const cwd = tmpRepo();
+  run(["init", "--platform", "claude-code"], { cwd });
+  const out = runCombined(["write-rules", "--platform", "hermes"], { cwd });
+  const state = JSON.parse(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"));
+  assert.equal(state.platform, "hermes");
+  assert.match(out, /platform: hermes/);
+});
+
+test("upgrade stamps platform on a state file written before the field existed", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const p = path.join(cwd, ".conductor", "state.json");
+  const state = JSON.parse(fs.readFileSync(p, "utf8"));
+  delete state.platform;                 // simulate a 0.23.1 state file
+  state.pmVersion = "0.23.1";
+  fs.writeFileSync(p, JSON.stringify(state, null, 2));
+
+  run(["upgrade"], { cwd });
+
+  const after = JSON.parse(fs.readFileSync(p, "utf8"));
+  assert.equal(after.platform, "claude-code", "the migration must be additive and default to the base platform");
 });

@@ -8,6 +8,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { KNOWN_PLATFORMS, PLATFORM_RULES_CHAIN } from "./constants.mjs";
+import { loadState, saveState } from "./state.mjs";
 
 /** Extract just `--platform <value>` from an argv slice.
  *
@@ -67,4 +68,18 @@ export function recordPlatform(state, platform) {
   if (state.platform === platform) return false;
   state.platform = platform;
   return true;
+}
+
+/** Resolve the platform for a top-level subcommand invocation and persist it.
+ *  Centralised because the dispatch table calls every subcommand with NO arguments, so
+ *  each entry point must read argv itself -- duplicating that logic is exactly how one of
+ *  them silently stops honouring the flag. Returns { platform, switched }. */
+export function resolveAndRecordPlatform() {
+  const declared = platformFlag(process.argv.slice(3));
+  if (declared) assertKnownPlatform(declared);
+  const state = loadState();
+  const platform = resolvePlatform({ platform: declared }, state);
+  const switched = recordPlatform(state, platform);
+  if (switched) saveState(state);
+  return { platform, switched };
 }
