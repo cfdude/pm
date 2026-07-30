@@ -58,3 +58,17 @@ export const laneRank = (l) => (l in LANE_RANK ? LANE_RANK[l] : 9);
 // platform's command form -- that lives in the block body instead, via pmCmd().
 export const RULES_BEGIN = "<!-- BEGIN pm-conductor rules (managed by pm — safe to delete this block) -->";
 export const RULES_END = "<!-- END pm-conductor rules -->";
+
+// DETECTION keys on this stable prefix, never on the full decorated RULES_BEGIN above.
+//
+// Learned the hard way: the parenthetical used to read "(managed by /pm:init …)" and changing
+// it to the platform-neutral "(managed by pm …)" meant `existing.includes(RULES_BEGIN)` no
+// longer matched a block written by any earlier version -- so writeRules() fell through to its
+// APPEND branch and produced a SECOND rules block in every existing repo on the next upgrade.
+// Verified live before the fix: 1 block in, 2 blocks out.
+//
+// Keying on the prefix makes the decoration free to change: an old block is found, replaced in
+// place, and silently upgraded to the current wording. Never tighten this back to the full
+// string, and never make it platform-dependent -- a per-platform anchor would mean a block
+// written under one platform is invisible to another, reintroducing the same duplication.
+export const RULES_BEGIN_PREFIX = "<!-- BEGIN pm-conductor rules";

@@ -71,3 +71,33 @@ test("rulesBlock defaults to the claude-code command form when no platform is gi
   const out = run(["rules"], { cwd, env: { CLAUDECODE: "" } });
   assert.match(out, /\/pm:status/);
 });
+
+// ── regression: the block ANCHOR must tolerate older decoration ──
+// The parenthetical in RULES_BEGIN changed from "(managed by /pm:init …)" to the
+// platform-neutral "(managed by pm …)". Detection used to key on the FULL string, so a block
+// written by any earlier version stopped matching and writeRules() fell through to its APPEND
+// branch -- producing a SECOND rules block in every existing repo on the next upgrade.
+// Verified live before the fix: 1 block in, 2 blocks out.
+
+test("writeRules upgrades a block written with the OLD marker wording instead of duplicating it", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const claudeMdPath = path.join(cwd, "CLAUDE.md");
+
+  // Simulate a repo last written by <= 0.23.1.
+  const asOldVersion = fs.readFileSync(claudeMdPath, "utf8")
+    .replace("(managed by pm — safe to delete this block)",
+             "(managed by /pm:init — safe to delete this block)");
+  fs.writeFileSync(claudeMdPath, asOldVersion);
+  assert.equal((asOldVersion.match(/BEGIN pm-conductor rules/g) || []).length, 1);
+
+  run(["write-rules"], { cwd });
+
+  const after = fs.readFileSync(claudeMdPath, "utf8");
+  assert.equal((after.match(/BEGIN pm-conductor rules/g) || []).length, 1,
+    "an old-marker block must be refreshed IN PLACE, never appended alongside");
+  assert.match(after, /managed by pm — safe to delete this block/,
+    "the anchor should be upgraded to the current wording");
+  assert.doesNotMatch(after, /managed by \/pm:init/,
+    "the stale wording must not survive the refresh");
+});

@@ -7,7 +7,8 @@
 import fs from "node:fs";
 import { loadState } from "./state.mjs";
 import {
-  KNOWN_REVIEW_MODES, REVIEW_MODE_RANK, RULES_BEGIN, RULES_END, CLAUDE_MD, PLATFORM_COMMAND_PREFIX,
+  KNOWN_REVIEW_MODES, REVIEW_MODE_RANK, RULES_BEGIN, RULES_BEGIN_PREFIX, RULES_END, CLAUDE_MD,
+  PLATFORM_COMMAND_PREFIX,
 } from "./constants.mjs";
 
 /** The tracker block from state, or null — used to make emitted instructions tracker-aware. */
@@ -304,9 +305,11 @@ export function writeRules() {
 
   const block = rulesBlock(currentTracker(), currentReviewMode(), currentSecondaryTrackers());
   let next;
-  if (existing.includes(RULES_BEGIN) && existing.includes(RULES_END)) {
-    // refresh in place
-    const re = new RegExp(`${RULES_BEGIN.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}[\\s\\S]*?${RULES_END.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\n?`);
+  if (existing.includes(RULES_BEGIN_PREFIX) && existing.includes(RULES_END)) {
+    // Refresh in place. Match from the stable PREFIX, not the full decorated RULES_BEGIN, so
+    // a block written by an older version (different parenthetical) is still found and
+    // upgraded rather than duplicated -- see the comment on RULES_BEGIN_PREFIX.
+    const re = new RegExp(`${RULES_BEGIN_PREFIX.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}[\\s\\S]*?${RULES_END.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\n?`);
     next = existing.replace(re, block);
     process.stderr.write("conductor: refreshed rules block in CLAUDE.md\n");
   } else if (existing.trim()) {
