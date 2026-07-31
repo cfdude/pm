@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": null,
+  "active": "platform-parity-mechanism",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -1149,12 +1149,13 @@
       "id": "platform-parity-mechanism",
       "title": "Build the mechanism that keeps every supported platform at parity with the Claude Code base, BEFORE any second platform exists. Three layers, mirroring how this repo already enforces documentation currency: (1) MECHANICAL -- a machine-parseable parity ledger (one markdown file with a table, OpenSpec supported-tools.md style, parsed directly by a CI test so exemptions are real config not prose) plus a conductor.test.mjs gate that enumerates Claude Code artifacts (commands/*.md, hook events in hooks/hooks.json, skills/, agents/) and FAILS CI when any lacks either a per-platform counterpart or an explicit exemption row with a reason; generic over whatever platforms the ledger lists, so it passes trivially at zero platforms and starts enforcing the moment codex is added. (2) PROCEDURAL -- a project-local skill that walks each platform directory in order, reads what changed in the Claude Code base, determines the per-platform delta, applies it, and updates the ledger; same shape as release-checklist/mintlify-doc-sync. (3) Semantic parity is explicitly NOT this epic's job -- a structural test can prove a counterpart file exists but never that it behaves the same; that gap is closed by the edd-harness sibling epic. Deliberately sequenced before codex-platform-support so the gate never has a window where drift could start unobserved.",
       "priority": "P1",
-      "status": "queued",
+      "status": "active",
       "role": "epic",
       "lane": "openspec",
       "links": [],
       "reconcileNeeded": false,
-      "parent": "multi-platform-agent-support"
+      "parent": "multi-platform-agent-support",
+      "startedAt": "2026-07-31T03:07:34.379Z"
     },
     {
       "id": "codex-platform-support",
@@ -1605,6 +1606,88 @@
         },
         {
           "title": "ALSO: an escaped quote inside a double-quoted -m truncates the capture (regex is \"([^\"]*)\"), so a genuinely landed commit is CONTRADICTED and the hook silently suppressed. Fix shape: backslash-aware capture \"((?:[^\"\\\\]|\\\\.)*)\", or treat a value ending in a backslash as unverifiable.",
+          "done": false
+        }
+      ]
+    },
+    {
+      "id": "edd-corpus-expansion-nondeterministic-surfaces",
+      "title": "EDD corpus covers ONE scenario; expand to the judgment-dependent surfaces where drift actually hides",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "stories": [
+        {
+          "title": "the harness existing is NOT the same as EDD being done -- corpus has 1 scenario (lane routing) against ~21 artifacts",
+          "done": false
+        },
+        {
+          "title": "inclusion criterion from the EDD design: an artifact earns a scenario when correct handling depends on agent JUDGMENT, not mechanical execution. Candidates: detour minimal-vs-substantial classification, the autonomy decision rule, the reconcile gate, hierarchy orchestration",
+          "done": false
+        },
+        {
+          "title": "each scenario must be mutation-tested -- this session found 4 of 5 guard tests passing on an unrelated rule, so a scenario that cannot fail is worse than none",
+          "done": false
+        }
+      ]
+    },
+    {
+      "id": "parity-reassessment-per-platform",
+      "title": "RECURRING: on every new platform, re-run the corpus, reassess ledger exemptions, and compare drift",
+      "priority": "P2",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "blocks",
+          "epic": "hermes-platform-support",
+          "reason": "Hermes is the first platform that must go through this reassessment, under the ledger gate"
+        }
+      ],
+      "reconcileNeeded": false,
+      "stories": [
+        {
+          "title": "not a one-time task -- re-open this on EACH platform added. Add the platform to parity-ledger.json platforms[], fill its column, run the corpus against the blessed baseline, and record what differed",
+          "done": false
+        },
+        {
+          "title": "the ledger catches FORGOTTEN capabilities; EDD catches capabilities that exist but BEHAVE differently. Both must run per platform -- neither substitutes for the other",
+          "done": false
+        }
+      ]
+    },
+    {
+      "id": "parity-propagation-skill",
+      "title": "Procedural half of the parity model: the propagation skill, written against a real port",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "stories": [
+        {
+          "title": "DEFERRED from platform-parity-mechanism on purpose: writing the procedure before any port has happened would infer steps from design docs rather than from what a port actually required",
+          "done": false
+        }
+      ]
+    },
+    {
+      "id": "parity-ledger-exemptions",
+      "title": "Ledger exemptions (capability genuinely unsupportable on a platform), designed against a real case",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "stories": [
+        {
+          "title": "DROPPED from the initial ledger deliberately: with zero exemptions the 'every exemption has a reason' assertion could never fail -- the vacuous-coverage pattern that bit this session four times. Design it when Hermes hits a real cannot-support case.",
           "done": false
         }
       ]
