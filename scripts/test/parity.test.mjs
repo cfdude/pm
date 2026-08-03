@@ -38,6 +38,15 @@ test("walkArtifacts finds nested files under the walked roots and ignores everyt
   ]);
 });
 
+test("walkArtifacts records symlinked artifacts, not just regular files", () => {
+  const dir = fixtureRepo(["commands/status.md"]);
+  fs.symlinkSync(
+    path.join(dir, "commands", "status.md"),
+    path.join(dir, "commands", "linked.md"),
+  );
+  assert.deepEqual(walkArtifacts(dir), ["commands/linked.md", "commands/status.md"]);
+});
+
 test("an artifact claimed by no capability is reported as unclaimed", () => {
   const dir = fixtureRepo(["commands/status.md", "commands/orphan.md"]);
   const ledger = {
@@ -114,10 +123,14 @@ function realLedger() {
   return JSON.parse(fs.readFileSync(path.join(REPO_ROOT, "docs", "parity-ledger.json"), "utf8"));
 }
 
-test("every shipped artifact is claimed by exactly one capability in docs/parity-ledger.json", () => {
+test("every shipped artifact is claimed by at least one capability in docs/parity-ledger.json", () => {
   const v = parityViolations(REPO_ROOT, realLedger());
   assert.deepEqual(v.unclaimed, [],
     `artifact(s) on disk that no capability claims — add them to docs/parity-ledger.json: ${v.unclaimed.join(", ")}`);
+});
+
+test("no shipped artifact is claimed by more than one capability in docs/parity-ledger.json", () => {
+  const v = parityViolations(REPO_ROOT, realLedger());
   assert.deepEqual(v.doubleClaimed, [],
     `artifact(s) claimed by more than one capability — a capability is the unit of parity, so each artifact belongs to exactly one: ${v.doubleClaimed.join(", ")}`);
 });

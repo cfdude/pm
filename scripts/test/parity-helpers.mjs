@@ -9,14 +9,18 @@ import path from "node:path";
  *  a new nested file (e.g. skills/conductor/references/foo.md) SHOULD fail until it is claimed. */
 export const PARITY_ROOTS = ["commands", "agents", "skills", "hooks", ".claude-plugin"];
 
-/** Sorted repo-relative POSIX paths of every regular file under PARITY_ROOTS. */
+/** Sorted repo-relative POSIX paths of every non-directory entry under PARITY_ROOTS — including
+ *  symlinks. fs.readdirSync uses lstat semantics, so a symlinked file is neither isFile() nor
+ *  isDirectory() true together with isFile(); it must still be recorded (a symlinked artifact
+ *  ships via git like any other file and must be claimed), so we recurse only on isDirectory()
+ *  and treat everything else as a leaf. */
 export function walkArtifacts(rootDir) {
   const found = [];
   const visit = (abs) => {
     for (const entry of fs.readdirSync(abs, { withFileTypes: true })) {
       const child = path.join(abs, entry.name);
       if (entry.isDirectory()) visit(child);
-      else if (entry.isFile()) found.push(path.relative(rootDir, child).split(path.sep).join("/"));
+      else found.push(path.relative(rootDir, child).split(path.sep).join("/"));
     }
   };
   for (const root of PARITY_ROOTS) {
