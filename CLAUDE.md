@@ -43,6 +43,14 @@
   (`.claude/skills/release-checklist/SKILL.md`) — repo-maintenance tooling, not part of what
   the plugin ships to users. Follow it every time `plugin.json`'s version bumps; don't
   re-derive the checklist from memory.
+- **Parity ledger.** Every file under `commands/`, `agents/`, `skills/`, `hooks/`, and
+  `.claude-plugin/` must be claimed by exactly one capability in `docs/parity-ledger.json`, and
+  every path it claims must exist. `scripts/test/parity.test.mjs` enforces both and fails CI
+  otherwise. Adding a command/agent/skill file means adding it to a capability in the same
+  commit — either an existing one or a new one with its `claude-code` mechanism described.
+  Unported platforms are **absent** from `platforms[]`, never present with null values; a port
+  adds itself and fills its column as it goes. See
+  `docs/superpowers/specs/2026-07-31-platform-parity-mechanism-design.md`.
 - Engine subcommands are dispatched at the bottom of `conductor.mjs`; every new subcommand needs
   a matching command doc under `commands/` and coverage in `scripts/test/*.test.mjs`.
 - **State-transition flags are not pure functions of current state.** `reconcileNeeded` in
