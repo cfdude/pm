@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "platform-parity-mechanism",
+  "active": null,
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -1149,13 +1149,21 @@
       "id": "platform-parity-mechanism",
       "title": "Build the mechanism that keeps every supported platform at parity with the Claude Code base, BEFORE any second platform exists. Three layers, mirroring how this repo already enforces documentation currency: (1) MECHANICAL -- a machine-parseable parity ledger (one markdown file with a table, OpenSpec supported-tools.md style, parsed directly by a CI test so exemptions are real config not prose) plus a conductor.test.mjs gate that enumerates Claude Code artifacts (commands/*.md, hook events in hooks/hooks.json, skills/, agents/) and FAILS CI when any lacks either a per-platform counterpart or an explicit exemption row with a reason; generic over whatever platforms the ledger lists, so it passes trivially at zero platforms and starts enforcing the moment codex is added. (2) PROCEDURAL -- a project-local skill that walks each platform directory in order, reads what changed in the Claude Code base, determines the per-platform delta, applies it, and updates the ledger; same shape as release-checklist/mintlify-doc-sync. (3) Semantic parity is explicitly NOT this epic's job -- a structural test can prove a counterpart file exists but never that it behaves the same; that gap is closed by the edd-harness sibling epic. Deliberately sequenced before codex-platform-support so the gate never has a window where drift could start unobserved.",
       "priority": "P1",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [],
       "reconcileNeeded": false,
       "parent": "multi-platform-agent-support",
-      "startedAt": "2026-07-31T03:07:34.379Z"
+      "startedAt": "2026-07-31T03:07:34.379Z",
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-08-04T00:48:57.279Z",
+          "note": "fresh-context whole-branch review (opus) over d168b1e..04c54c8: no Critical, 2 Important (symlinks skipped in walk; two assertions sharing one test) both fixed in c63efc1 and confirmed ADDRESSED by a scoped re-review; gitignore-filter fix 3cba2e9 separately re-reviewed. 301/301 on merged main 10bbef1."
+        }
+      },
+      "completedAt": "2026-08-04T00:48:57.337Z"
     },
     {
       "id": "codex-platform-support",
