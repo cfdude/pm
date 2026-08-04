@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { execFileSync } from "node:child_process";
 import { tmpRepo } from "./helpers.mjs";
 import { parityViolations, walkArtifacts } from "./parity-helpers.mjs";
 
@@ -111,6 +112,41 @@ test("a walked root that does not exist is skipped rather than throwing", () => 
     capabilities: [{ id: "briefing", artifacts: ["commands/status.md"], platforms: { "claude-code": "slash command" } }],
   };
   assert.deepEqual(parityViolations(dir, ledger), { unclaimed: [], doubleClaimed: [], missing: [] });
+});
+
+/** Like fixtureRepo(), but a real git repository: `git init`, an identity (some git commands
+ *  need one even without a commit), and a .gitignore. Used to exercise the git-ignore filtering
+ *  in walkArtifacts() — fixtureRepo()'s plain temp dirs are NOT git repos, which is exactly the
+ *  fail-open case those other fixture tests already cover. */
+function gitFixtureRepo(files, gitignore) {
+  const dir = fixtureRepo(files);
+  execFileSync("git", ["init", "-q"], { cwd: dir });
+  execFileSync("git", ["config", "--local", "user.email", "test@example.com"], { cwd: dir });
+  execFileSync("git", ["config", "--local", "user.name", "Test"], { cwd: dir });
+  if (gitignore) fs.writeFileSync(path.join(dir, ".gitignore"), gitignore);
+  return dir;
+}
+
+test("walkArtifacts excludes a git-ignored file (e.g. a macOS .DS_Store under skills/)", () => {
+  const dir = gitFixtureRepo(["commands/status.md", "commands/.DS_Store"], ".DS_Store\n");
+  assert.deepEqual(walkArtifacts(dir), ["commands/status.md"]);
+});
+
+test("walkArtifacts still returns an untracked, never-staged, not-ignored file — the anti-trap assertion", () => {
+  // This is the test that stops a future refactor from swapping `git check-ignore` for
+  // `git ls-files`: ls-files means "tracked", and this file is deliberately never staged.
+  // Filtering on tracked-ness instead of ignored-ness would make this file vanish from the
+  // walk, silently reintroducing the exact miss the parity gate exists to catch.
+  const dir = gitFixtureRepo(["commands/status.md"], ".DS_Store\n");
+  fs.writeFileSync(path.join(dir, "commands", "brand-new.md"), "# fixture\n");
+  assert.deepEqual(walkArtifacts(dir), ["commands/brand-new.md", "commands/status.md"]);
+});
+
+test("walkArtifacts fails open (returns everything) when rootDir is not a git repository", () => {
+  // fixtureRepo() dirs are plain temp dirs, not git repos — `git check-ignore` exits 128
+  // ("not a git repository") there, and the fix must not throw or drop paths in that case.
+  const dir = fixtureRepo(["commands/status.md", "commands/.DS_Store"]);
+  assert.deepEqual(walkArtifacts(dir), ["commands/.DS_Store", "commands/status.md"]);
 });
 
 // ───────────────── the gate: the real ledger against the real tree ─────────────────

@@ -45,11 +45,12 @@
   re-derive the checklist from memory.
 - **Parity ledger.** Every file under `commands/`, `agents/`, `skills/`, `hooks/`, and
   `.claude-plugin/` must be claimed by exactly one capability in `docs/parity-ledger.json`, and
-  every path it claims must exist. `scripts/test/parity.test.mjs` enforces both and fails CI
-  otherwise. Adding a command/agent/skill file means adding it to a capability in the same
-  commit — either an existing one or a new one with its `claude-code` mechanism described.
-  Unported platforms are **absent** from `platforms[]`, never present with null values; a port
-  adds itself and fills its column as it goes. See
+  every path it claims must exist. Git-ignored paths (e.g. a macOS `.DS_Store`) are skipped by
+  the walk, so local cruft can never trip this gate. `scripts/test/parity.test.mjs` enforces
+  both and fails CI otherwise. Adding a command/agent/skill file means adding it to a capability
+  in the same commit — either an existing one or a new one with its `claude-code` mechanism
+  described. Unported platforms are **absent** from `platforms[]`, never present with null
+  values; a port adds itself and fills its column as it goes. See
   `docs/superpowers/specs/2026-07-31-platform-parity-mechanism-design.md`.
 - Engine subcommands are dispatched at the bottom of `conductor.mjs`; every new subcommand needs
   a matching command doc under `commands/` and coverage in `scripts/test/*.test.mjs`.
