@@ -1,0 +1,73 @@
+{
+  "platforms": ["claude-code"],
+  "capabilities": [
+    {
+      "id": "conductor-discipline",
+      "artifacts": ["skills/conductor/SKILL.md"],
+      "platforms": { "claude-code": "skill loaded by name (skills/<name>/SKILL.md)" }
+    },
+    {
+      "id": "epic-index",
+      "artifacts": [
+        "commands/epic.md",
+        "commands/status.md",
+        "commands/next.md",
+        "commands/sync.md"
+      ],
+      "platforms": { "claude-code": "slash commands (/pm:epic, /pm:status, /pm:next, /pm:sync)" }
+    },
+    {
+      "id": "detour-lifecycle",
+      "artifacts": [
+        "commands/detour.md",
+        "commands/resume.md",
+        "commands/gate-guard.md",
+        "agents/reconciler.md"
+      ],
+      "platforms": { "claude-code": "slash commands + reconciler subagent + a PreToolUse gate-guard hook" }
+    },
+    {
+      "id": "epic-hierarchy-orchestration",
+      "artifacts": [
+        "commands/hierarchy.md",
+        "agents/hierarchy-child-executor.md",
+        "agents/merge-conflict-resolver.md"
+      ],
+      "platforms": { "claude-code": "slash command dispatching two subagents into git worktrees" }
+    },
+    {
+      "id": "repo-configuration",
+      "artifacts": [
+        "commands/tracker.md",
+        "commands/lane-routing.md",
+        "commands/review-mode.md"
+      ],
+      "platforms": { "claude-code": "slash commands writing settings into .conductor/state.json" }
+    },
+    {
+      "id": "install-and-upgrade",
+      "artifacts": [
+        "commands/init.md",
+        "commands/upgrade.md",
+        "commands/changelog.md",
+        "commands/changesets.md"
+      ],
+      "platforms": { "claude-code": "slash commands (/pm:init scaffolds; /pm:upgrade migrates and rewrites the rules block)" }
+    },
+    {
+      "id": "feedback-channel",
+      "artifacts": ["commands/feedback.md"],
+      "platforms": { "claude-code": "slash command instructing the agent to file a GitHub issue (the engine never calls gh)" }
+    },
+    {
+      "id": "session-lifecycle-hooks",
+      "artifacts": ["hooks/hooks.json"],
+      "platforms": { "claude-code": "SessionStart / PreCompact / PostToolUse hooks in hooks.json, each passing --platform claude-code" }
+    },
+    {
+      "id": "plugin-packaging",
+      "artifacts": [".claude-plugin/plugin.json"],
+      "platforms": { "claude-code": "plugin manifest consumed by the Claude Code marketplace loader" }
+    }
+  ]
+}
