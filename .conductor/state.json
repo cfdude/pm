@@ -1742,6 +1742,16 @@
         }
       ],
       "reconcileNeeded": false
+    },
+    {
+      "id": "changelog-page-too-long-archive-older-releases",
+      "title": "Mintlify changelog is 1198 lines / 40 releases on one page: keep ~10 recent in full, index the rest, archive behind evenly-sized pages (NOT calendar months — July alone is 31 of 40), and make the roll-forward mechanical so it cannot drift",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false
     }
   ],
   "detourStack": [],
