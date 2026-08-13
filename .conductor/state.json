@@ -1752,6 +1752,60 @@
       "lane": "superpowers",
       "links": [],
       "reconcileNeeded": false
+    },
+    {
+      "id": "gh-71-update-epic-positional-id",
+      "title": "update-epic: positional <id> silently accepted as --id, prints bare usage with no error message",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "71",
+      "externalUrl": "https://github.com/cfdude/pm/issues/71"
+    },
+    {
+      "id": "gh-79-epic-description-and-notes",
+      "title": "add-epic/update-epic silently discard --notes and --description; epics need a replace-in-place description AND an append-only notes trail",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "epic-session-attribution",
+          "reason": "an append-only notes trail with {at, actor, text} entries is the same structure session attribution needs -- one field serves both"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "79",
+      "externalUrl": "https://github.com/cfdude/pm/issues/79"
+    },
+    {
+      "id": "gh-80-gate-guard-refusal-applies-anyway",
+      "title": "gate-guard prints a refusal for update-epic --status archived but applies the change anyway",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "80",
+      "externalUrl": "https://github.com/cfdude/pm/issues/80"
+    },
+    {
+      "id": "gh-81-project-md-never-clean",
+      "title": "PROJECT.md is never clean: render timestamp + duplicate detour-log rows create a permanent dirty diff",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "81",
+      "externalUrl": "https://github.com/cfdude/pm/issues/81"
     }
   ],
   "detourStack": [],
