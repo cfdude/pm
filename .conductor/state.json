@@ -1700,6 +1700,48 @@
           "done": false
         }
       ]
+    },
+    {
+      "id": "state-lost-update-concurrent-sessions",
+      "title": "state.json read-modify-write has no lock: concurrent sessions silently lose each other's updates",
+      "priority": "P1",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "epic-session-attribution",
+      "title": "Record which session did the work on an epic (opaque agent-supplied identity, append-only trail)",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "cross-session-epic-assignment",
+          "reason": "attribution records who DID the work; assignment records who SHOULD -- same field family, different lifecycle"
+        }
+      ],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "cross-session-epic-assignment",
+      "title": "Assignment + claim semantics so an orchestrating session can distribute epics across executor sessions",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "depends-on",
+          "epic": "state-lost-update-concurrent-sessions",
+          "reason": "dispatch across concurrent sessions is unsafe while state.json has no read-modify-write guard -- assignment would be the feature that makes the lost-update bug routine"
+        }
+      ],
+      "reconcileNeeded": false
     }
   ],
   "detourStack": [],
