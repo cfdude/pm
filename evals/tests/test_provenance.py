@@ -133,3 +133,23 @@ def test_plugin_list_omits_plugin_dir_flag_when_none(monkeypatch, tmp_path):
 
     argv = captured["argv"]
     assert "--plugin-dir" not in argv
+
+
+def test_plugin_provenance_forwards_none_plugin_dir_unchanged_to_plugin_list(monkeypatch, tmp_path):
+    """Guards the SECOND call site on the plugin_dir path: plugin_provenance's own call into
+    plugin_list. The mutation-tested gap this closes: inserting `plugin_dir or str(REPO_ROOT)`
+    right here leaves the full suite green (Finding 1) because nothing asserted on the exact
+    value plugin_list actually received -- only on plugin_provenance's return dict, which a
+    `[]`-returning plugin_list produces identically either way. Spy on plugin_list directly and
+    assert on the recorded argument, not on a downstream effect.
+    """
+    captured = {}
+
+    def _spy(project, plugin_dir=None):
+        captured["plugin_dir"] = plugin_dir
+        return []
+
+    monkeypatch.setattr(provenance, "plugin_list", _spy)
+    provenance.plugin_provenance(tmp_path, None)
+
+    assert captured["plugin_dir"] is None

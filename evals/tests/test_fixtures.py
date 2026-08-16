@@ -122,6 +122,29 @@ def test_materialize_disables_every_enabled_user_scope_pm(tmp_path, monkeypatch)
     assert "pm@inline" not in settings["enabledPlugins"]
 
 
+def test_fixtures_pre_run_plugin_list_call_omits_plugin_dir(monkeypatch, tmp_path):
+    """Guards the THIRD call site on the plugin_dir path: _write_memory_isolation's own
+    pre-run `provenance.plugin_list(project)` call, used to enumerate installed pm's to
+    disable. This call happens before the runner's argv even exists, so it must never pass a
+    --plugin-dir -- any value here would necessarily be stale or wrong. Spy directly on
+    plugin_list and assert on the recorded argument, the same style as the observe.py and
+    provenance.py guards for the other two call sites on this path.
+    """
+    import fixtures
+    import provenance
+
+    captured = {}
+
+    def _spy(project, plugin_dir=None):
+        captured["plugin_dir"] = plugin_dir
+        return []
+
+    monkeypatch.setattr(provenance, "plugin_list", _spy)
+    fixtures.materialize("single-active-epic", tmp_path)
+
+    assert captured["plugin_dir"] is None
+
+
 def test_runner_argv_loads_the_worktree_plugin(monkeypatch, tmp_path):
     """--plugin-dir is a GLOBAL flag and must precede the -p subcommand form's arguments."""
     import runners

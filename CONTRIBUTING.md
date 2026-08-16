@@ -73,32 +73,42 @@ Those are covered by an evaluation corpus under `evals/`, built on
 evaluates. Contributors touching only the engine, docs, or tests can skip it entirely — pm
 itself needs only Node.
 
-### Prerequisite: pm must be installed as a Claude Code plugin
+### The corpus measures this worktree — no install step needed
 
-**This is not optional and not boilerplate — without it every run is a false alarm.** The
-corpus runs `claude -p` inside a bare `tempfile.mkdtemp()` directory. That directory contains
-no `scripts/conductor.mjs` and no `/pm:` commands; the agent can only act on pm's instructions
-because the *installed* plugin's hooks and skill reach into any directory it runs in. Skip this
-and the agent sits inert, `new_epics` comes back `[]`, several scorers FAIL, and you get a
-reported REGRESSION against a perfectly good baseline.
+**No plugin install is required, and installing one can only get in the way.** The corpus runs
+`claude -p` with `--plugin-dir` pointed at this worktree's own root (`evals/runners.py`), which
+loads pm's commands, skills, hooks, and rules block directly from the files on disk here — the
+same files you're editing. `--plugin-dir` *adds* a session-scope plugin; it does not remove
+anything already installed at user scope. So before each run, `evals/fixtures.py`'s fixture
+disables every enabled user-scope pm it finds (however it's named or wherever it's installed
+from) via `enabledPlugins` in the fixture's `settings.local.json`, and `evals/observe.py`
+records provenance for exactly which pm loaded — `plugin_id`, `plugin_install_path`,
+`plugin_version`, `plugin_commit`, `plugin_dirty` — so a run that somehow measured the wrong
+copy fails loudly (`plugin_id: None`) instead of silently.
 
-Install pm from the marketplace (`/plugin install pm@cfdude-plugins` inside Claude Code), then
-confirm it is present and check which version you have:
+The practical consequence: an edit to a command doc, an agent, a skill, or a hook is **live on
+the very next run** — no `/plugin install`, no version bump, no restart. If you *do* have pm
+installed from the marketplace for your own interactive use, leave it installed; the fixture
+switches it off for the duration of each corpus run and your interactive sessions are
+unaffected.
+
+If you want to confirm which commit and version the corpus is currently measuring:
 
 ```bash
-jq -r '.plugins | keys[] | select(startswith("pm@"))' ~/.claude/plugins/installed_plugins.json
-jq -r '.plugins["pm@cfdude-plugins"][0].version' ~/.claude/plugins/installed_plugins.json
+git rev-parse HEAD
+jq -r .version .claude-plugin/plugin.json
 ```
 
-The committed baseline was measured against **pm 0.23.1**, which was also this repo's own
-version at the time (`jq -r .version .claude-plugin/plugin.json`). Note the consequence: the
-corpus measures a **hybrid of your working tree and the installed marketplace plugin**. Fixture
-seeding runs your working tree's own `scripts/conductor.mjs` (see `evals/fixtures.py`), so a
-`state.json` schema change, a managed `CLAUDE.md` rules-block change, or a `PROJECT.md` rendering
-change is visible immediately, uninstalled. But the agent itself only acts through the
-*installed* plugin's hooks, skill, and `/pm:` commands — so a change to any of those does not
-change what the corpus sees until it's installed. Know which half of the plugin you edited before
-attributing a result to your change.
+**The committed `evals/.edd/baseline.json` is stale by construction.** It was blessed against
+an installed marketplace copy of pm, from before `--plugin-dir` existed — it does not describe
+this worktree and must be re-blessed before its comparisons mean anything.
+
+When you re-bless, record provenance in the label — the baseline format has no dedicated
+provenance field, so the label is the only place this survives:
+
+```bash
+uv run edd bless .edd/runs/<run>.jsonl --label "pm <version> @ <sha>"
+```
 
 ### One-time setup
 
