@@ -1865,7 +1865,7 @@
     },
     {
       "id": "conductor-skill-orient-reads-spec-inventory",
-      "title": "Orient step for openspec-lane epics must read the existing spec inventory (state the OBLIGATION, not the command — pm stays version-agnostic; OpenSpec 1.9.0 deleted the AGENTS.md that used to auto-load it)",
+      "title": "Orient for openspec-lane epics must read the inventory of ALREADY-ESTABLISHED specs (the durable capability record) — explicitly NOT the in-flight change list. State the obligation, name no command: pm stays version-agnostic. Wording MUST disambiguate the object, because OpenSpec's own generated skills surface 'openspec list --json' (changes) 10x and 'list --specs' 0x, so a vague obligation gets discharged against the wrong data",
       "priority": "P3",
       "status": "planned",
       "role": "epic",
