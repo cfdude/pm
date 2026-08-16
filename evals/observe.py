@@ -12,6 +12,8 @@ import os
 import subprocess
 from pathlib import Path
 
+from provenance import plugin_provenance
+
 ENGINE = Path(__file__).resolve().parent.parent / "scripts" / "conductor.mjs"
 
 # Only the stable PREFIX, never the full decorated marker. The engine's own detection keys on
@@ -122,4 +124,10 @@ def observe(project: Path) -> dict:
         "rules_block_file": target.name if target else None,
         "user_memory_files_loaded": _user_memory_files_loaded(project),
         "project_md_present": (project / "PROJECT.md").exists(),
+        # WHICH artifact tree this run measured. Without it a blessed baseline describes an
+        # unidentified plugin: comparing against it three releases later compares against
+        # something nobody can name. plugin_id is None unless exactly one pm was enabled, which
+        # is how the double-load case becomes a scorer failure rather than a silent average of
+        # two plugins.
+        **plugin_provenance(project),
     }

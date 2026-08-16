@@ -70,3 +70,23 @@ def test_observe_reports_cannot_tell_rather_than_crashing_outside_a_pm_project(t
     assert out["rules_block_present"] is False
     assert out["project_md_present"] is False
     assert out["epic_ids"] == []
+
+
+def test_observe_carries_plugin_provenance(tmp_path, monkeypatch):
+    """A baseline that does not say which artifact tree it described is not interpretable
+    later. These five fields are what make a blessed baseline mean something."""
+    import observe
+    import provenance
+
+    monkeypatch.setattr(provenance, "plugin_list", lambda project: [
+        {"id": "pm@inline", "scope": "session", "enabled": True,
+         "version": "0.25.0", "installPath": str(provenance.REPO_ROOT)},
+    ])
+
+    out = observe.observe(tmp_path)
+
+    assert out["plugin_id"] == "pm@inline"
+    assert out["plugin_install_path"] == str(provenance.REPO_ROOT)
+    assert out["plugin_version"] == "0.25.0"
+    assert isinstance(out["plugin_commit"], str)
+    assert isinstance(out["plugin_dirty"], bool)
