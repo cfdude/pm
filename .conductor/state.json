@@ -1846,6 +1846,22 @@
       "reconcileNeeded": false,
       "externalId": "86",
       "externalUrl": "https://github.com/cfdude/pm/issues/86"
+    },
+    {
+      "id": "edd-run-policy-when-behavior-artifacts-change",
+      "title": "Practice: run the EDD corpus when a change touches an artifact the AGENT reads (commands/agents/skills/hooks/.claude-plugin + rules.mjs), skip it for engine-internal/test-only changes; document in CLAUDE.md and consider a mechanical reminder",
+      "priority": "P2",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "depends-on",
+          "epic": "edd-corpus-expansion-nondeterministic-surfaces",
+          "reason": "a run-always policy is only worth its cost once the corpus covers more than one scenario -- today it would mostly re-prove typo-routing"
+        }
+      ],
+      "reconcileNeeded": false
     }
   ],
   "detourStack": [],
