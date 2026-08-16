@@ -99,3 +99,47 @@ def test_observe_surfaces_a_user_scope_load_so_the_scorer_can_fail(tmp_path: Pat
     assert leaked == ["/home/someone/.claude/CLAUDE.md"], (
         "a User-scope load must surface, or no_operator_memory_loaded can never fail"
     )
+
+
+def test_materialize_disables_every_enabled_user_scope_pm(tmp_path, monkeypatch):
+    """The installed pm must be switched off, or --plugin-dir yields TWO active pm plugins:
+    two SessionStart hooks, two /pm: command sets, two engines. Computed from the live
+    listing, so a differently-named marketplace is still caught."""
+    import fixtures
+    import provenance
+
+    monkeypatch.setattr(provenance, "plugin_list", lambda project: [
+        {"id": "pm@cfdude-plugins", "scope": "user", "enabled": True, "version": "0.25.0", "installPath": "/x"},
+        {"id": "pm@other", "scope": "user", "enabled": True, "version": "0.25.0", "installPath": "/y"},
+        {"id": "pm@inline", "scope": "session", "enabled": True, "version": "0.25.0", "installPath": "/z"},
+    ])
+
+    project = fixtures.materialize("single-active-epic", tmp_path)
+    settings = json.loads((project / ".claude" / "settings.local.json").read_text())
+
+    assert settings["enabledPlugins"] == {"pm@cfdude-plugins": False, "pm@other": False}
+    # session-scope pm@inline is the plugin under test — it must NOT be disabled
+    assert "pm@inline" not in settings["enabledPlugins"]
+
+
+def test_runner_argv_loads_the_worktree_plugin(monkeypatch, tmp_path):
+    """--plugin-dir is a GLOBAL flag and must precede the -p subcommand form's arguments."""
+    import runners
+    import provenance
+
+    captured = {}
+
+    class _Proc:
+        returncode = 0
+        stdout = "{}"
+
+    def _fake_run(argv, **kwargs):
+        captured["argv"] = argv
+        return _Proc()
+
+    monkeypatch.setattr(runners.subprocess, "run", _fake_run)
+    runners.run_claude_code("hi", tmp_path)
+
+    argv = captured["argv"]
+    assert "--plugin-dir" in argv, "the run must load the worktree, not the installed plugin"
+    assert argv[argv.index("--plugin-dir") + 1] == str(provenance.REPO_ROOT)

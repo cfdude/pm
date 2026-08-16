@@ -12,6 +12,8 @@ import os
 import subprocess
 from pathlib import Path
 
+from provenance import REPO_ROOT
+
 
 def _child_env() -> dict[str, str]:
     """Environment for every spawned agent session.
@@ -54,6 +56,11 @@ def run_claude_code(
     proc = subprocess.run(
         [
             "claude", "-p", prompt,
+            # The plugin under test is THIS worktree, not the copy installed in the operator's
+            # user-scope settings. Without this the harness measured a different tree than the
+            # one being edited, so editing an artifact changed nothing about the result.
+            # `--plugin-dir` ADDS rather than replaces; fixtures.py disables the installed pm.
+            "--plugin-dir", str(REPO_ROOT),
             "--allowedTools", allowed_tools,
             "--permission-mode", "acceptEdits",
             "--output-format", "json",
