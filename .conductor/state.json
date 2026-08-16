@@ -1862,6 +1862,26 @@
         }
       ],
       "reconcileNeeded": false
+    },
+    {
+      "id": "conductor-skill-orient-reads-spec-inventory",
+      "title": "Orient step for openspec-lane epics must read the existing spec inventory (state the OBLIGATION, not the command — pm stays version-agnostic; OpenSpec 1.9.0 deleted the AGENTS.md that used to auto-load it)",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "autonomy-grant-starts-at-apply-not-propose",
+      "title": "Record in the conductor skill that the autonomy grant deliberately begins at /opsx:apply, never at propose — today that boundary holds only via a parenthetical that is load-bearing by accident",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false
     }
   ],
   "detourStack": [],
