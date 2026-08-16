@@ -20,17 +20,32 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 TIMEOUT = 60
 
 
-def plugin_list(project: Path) -> list[dict]:
-    """`claude --plugin-dir <REPO_ROOT> plugin list --json`, run inside `project`.
+def plugin_list(project: Path, plugin_dir: str | None = None) -> list[dict]:
+    """`claude [--plugin-dir <plugin_dir>] plugin list --json`, run inside `project`.
+
+    `plugin_dir` MUST be the value the runner's OWN argv actually used for the session under
+    observation -- it must NEVER default to `REPO_ROOT`. A `REPO_ROOT` fallback here is exactly
+    the bug this parameter exists to fix: Task 4's live proofs showed that when this function
+    re-derived its own `--plugin-dir` from `REPO_ROOT` instead of replaying what `runners.py`
+    passed, `measured_the_worktree` passed vacuously in two of its three failure modes --
+    proof 1 (runner omits `--plugin-dir` entirely) and proof 3 (runner points `--plugin-dir` at
+    a stale copy) both still reported the true worktree, because the diagnostic re-query never
+    saw what the runner actually did. `None` here means "the caller wants a listing of
+    installed/enabled plugins without adding any session-scope one" -- it omits the flag rather
+    than substituting REPO_ROOT, so the observation reflects the real session, not a guess.
 
     Returns [] on ANY failure (claude missing, non-zero exit, unparseable output). An eval must
     be able to score a broken run rather than crash on it; [] flows through to `plugin_id: None`,
     which the scorer FAILS on -- loudly, and without an exception that would be mapped to
     INDETERMINATE and silently exit 0.
     """
+    argv = ["claude"]
+    if plugin_dir is not None:
+        argv += ["--plugin-dir", plugin_dir]
+    argv += ["plugin", "list", "--json"]
     try:
         proc = subprocess.run(
-            ["claude", "--plugin-dir", str(REPO_ROOT), "plugin", "list", "--json"],
+            argv,
             cwd=str(project),
             capture_output=True,
             text=True,
@@ -111,6 +126,10 @@ def git_provenance() -> dict:
     }
 
 
-def plugin_provenance(project: Path) -> dict:
-    """The five provenance fields every observation carries."""
-    return {**_fields_from_entries(plugin_list(project)), **git_provenance()}
+def plugin_provenance(project: Path, plugin_dir: str | None = None) -> dict:
+    """The five provenance fields every observation carries.
+
+    `plugin_dir` is forwarded to `plugin_list` untouched -- see that function's docstring for
+    why it must never default to `REPO_ROOT`.
+    """
+    return {**_fields_from_entries(plugin_list(project, plugin_dir)), **git_provenance()}

@@ -84,7 +84,10 @@ def pm_adapter(scenario_input: dict) -> dict:
 
         result = RUNNERS[platform](prompt, project, allowed_tools=allowed_tools)
 
-        after = observe(project)
+        # REPLAY the runner's own --plugin-dir, never re-derive it -- see
+        # provenance.plugin_list's docstring for why a fallback here would silently
+        # reintroduce the Task 4/5 defect.
+        after = observe(project, plugin_dir=result.get("plugin_dir"))
 
         after["new_epics"] = [e for e in after["epics"] if e["id"] not in before]
         after["exit_code"] = result["exit_code"]

@@ -78,7 +78,7 @@ def test_observe_carries_plugin_provenance(tmp_path, monkeypatch):
     import observe
     import provenance
 
-    monkeypatch.setattr(provenance, "plugin_list", lambda project: [
+    monkeypatch.setattr(provenance, "plugin_list", lambda project, plugin_dir=None: [
         {"id": "pm@inline", "scope": "session", "enabled": True,
          "version": "0.25.0", "installPath": str(provenance.REPO_ROOT)},
     ])

@@ -108,7 +108,7 @@ def test_materialize_disables_every_enabled_user_scope_pm(tmp_path, monkeypatch)
     import fixtures
     import provenance
 
-    monkeypatch.setattr(provenance, "plugin_list", lambda project: [
+    monkeypatch.setattr(provenance, "plugin_list", lambda project, plugin_dir=None: [
         {"id": "pm@cfdude-plugins", "scope": "user", "enabled": True, "version": "0.25.0", "installPath": "/x"},
         {"id": "pm@other", "scope": "user", "enabled": True, "version": "0.25.0", "installPath": "/y"},
         {"id": "pm@inline", "scope": "session", "enabled": True, "version": "0.25.0", "installPath": "/z"},
@@ -143,3 +143,22 @@ def test_runner_argv_loads_the_worktree_plugin(monkeypatch, tmp_path):
     argv = captured["argv"]
     assert "--plugin-dir" in argv, "the run must load the worktree, not the installed plugin"
     assert argv[argv.index("--plugin-dir") + 1] == str(provenance.REPO_ROOT)
+
+
+def test_run_claude_code_reports_the_plugin_dir_it_used(monkeypatch, tmp_path):
+    """The post-run observation must REPLAY this value, never re-derive its own from
+    REPO_ROOT (Task 5) -- so the runner has to report what it actually passed."""
+    import runners
+    import provenance
+
+    class _Proc:
+        returncode = 0
+        stdout = "{}"
+
+    def _fake_run(argv, **kwargs):
+        return _Proc()
+
+    monkeypatch.setattr(runners.subprocess, "run", _fake_run)
+    result = runners.run_claude_code("hi", tmp_path)
+
+    assert result["plugin_dir"] == str(provenance.REPO_ROOT)

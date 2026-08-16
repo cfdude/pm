@@ -53,14 +53,19 @@ def run_claude_code(
     allowed_tools: str = "Bash",
     timeout: int = 300,
 ) -> dict:
+    # The plugin under test is THIS worktree, not the copy installed in the operator's
+    # user-scope settings. Without this the harness measures a different tree than the one
+    # being edited, so editing an artifact changes nothing about the result. `--plugin-dir`
+    # ADDS rather than replaces; fixtures.py disables the installed pm.
+    #
+    # Captured to a local so it can be reported back below -- the post-run observation must
+    # REPLAY this exact value rather than re-deriving its own from REPO_ROOT (that decoupling
+    # was the Task 4/5 defect: a diagnostic re-query that ignores what this argv actually used).
+    plugin_dir = str(REPO_ROOT)
     proc = subprocess.run(
         [
             "claude", "-p", prompt,
-            # The plugin under test is THIS worktree, not the copy installed in the operator's
-            # user-scope settings. Without this the harness measured a different tree than the
-            # one being edited, so editing an artifact changed nothing about the result.
-            # `--plugin-dir` ADDS rather than replaces; fixtures.py disables the installed pm.
-            "--plugin-dir", str(REPO_ROOT),
+            "--plugin-dir", plugin_dir,
             "--allowedTools", allowed_tools,
             "--permission-mode", "acceptEdits",
             "--output-format", "json",
@@ -74,6 +79,7 @@ def run_claude_code(
     return {
         "exit_code": proc.returncode,
         "stdout": proc.stdout,
+        "plugin_dir": plugin_dir,
         **_parse_result(proc.stdout),
     }
 

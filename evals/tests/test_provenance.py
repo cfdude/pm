@@ -69,7 +69,7 @@ def test_plugin_fields_are_none_when_no_pm_is_enabled():
 
 
 def test_plugin_provenance_carries_exactly_the_five_documented_keys(monkeypatch, tmp_path):
-    monkeypatch.setattr(provenance, "plugin_list", lambda project: [INLINE, INSTALLED_OFF])
+    monkeypatch.setattr(provenance, "plugin_list", lambda project, plugin_dir=None: [INLINE, INSTALLED_OFF])
     out = provenance.plugin_provenance(tmp_path)
     assert set(out) == {
         "plugin_id", "plugin_install_path", "plugin_version", "plugin_commit", "plugin_dirty",
@@ -90,3 +90,46 @@ def test_git_provenance_reports_the_real_repo_and_a_boolean_dirty_flag():
     assert set(out) == {"plugin_commit", "plugin_dirty"}
     assert isinstance(out["plugin_commit"], str) and len(out["plugin_commit"]) >= 7
     assert isinstance(out["plugin_dirty"], bool)
+
+
+def test_plugin_list_includes_plugin_dir_flag_when_given_one(monkeypatch, tmp_path):
+    # Task 5: plugin_list must REPLAY the caller's plugin_dir, never re-derive its own from
+    # REPO_ROOT. Assert directly on the argv a caller-supplied value produces.
+    captured = {}
+
+    class _Proc:
+        returncode = 0
+        stdout = "[]"
+
+    def _fake_run(argv, **kwargs):
+        captured["argv"] = argv
+        return _Proc()
+
+    monkeypatch.setattr(provenance.subprocess, "run", _fake_run)
+    provenance.plugin_list(tmp_path, "/some/worktree")
+
+    argv = captured["argv"]
+    assert "--plugin-dir" in argv
+    assert argv[argv.index("--plugin-dir") + 1] == "/some/worktree"
+
+
+def test_plugin_list_omits_plugin_dir_flag_when_none(monkeypatch, tmp_path):
+    # Anti-regression test: the exact fallback that must never exist. If plugin_dir=None ever
+    # silently substitutes REPO_ROOT, this is the test that catches it -- Task 4 proved that
+    # fallback makes the measured_the_worktree scorer pass vacuously in two of three failure
+    # modes (see provenance.plugin_list's docstring).
+    captured = {}
+
+    class _Proc:
+        returncode = 0
+        stdout = "[]"
+
+    def _fake_run(argv, **kwargs):
+        captured["argv"] = argv
+        return _Proc()
+
+    monkeypatch.setattr(provenance.subprocess, "run", _fake_run)
+    provenance.plugin_list(tmp_path, None)
+
+    argv = captured["argv"]
+    assert "--plugin-dir" not in argv
