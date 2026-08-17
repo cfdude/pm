@@ -1840,13 +1840,14 @@
       "id": "gh-86-openspec-lane-silent-zero-progress",
       "title": "epic-progress: openspec lane renders 0/0 for a missing tasks.md while superpowers warns — blocks registering an OpenSpec store (D3)",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
       "externalId": "86",
-      "externalUrl": "https://github.com/cfdude/pm/issues/86"
+      "externalUrl": "https://github.com/cfdude/pm/issues/86",
+      "completedAt": "2026-08-17T06:23:41.462Z"
     },
     {
       "id": "edd-run-policy-when-behavior-artifacts-change",
@@ -1930,13 +1931,14 @@
       "id": "gh-87-sync-registers-readme-as-plans",
       "title": "sync registers directory index files (plans/README.md, specs/README.md) as epics",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
       "externalId": "87",
-      "externalUrl": "https://github.com/cfdude/pm/issues/87"
+      "externalUrl": "https://github.com/cfdude/pm/issues/87",
+      "completedAt": "2026-08-17T06:23:41.521Z"
     },
     {
       "id": "gh-88-record-where-unfinished-tasks-went",
