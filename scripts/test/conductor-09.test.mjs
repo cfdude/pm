@@ -302,3 +302,24 @@ test(".githooks/pre-commit dumps full node --test output and fails the commit wh
   assert.match(combined, /a FAILING test/, "full test output (including the failure) must be dumped on failure");
   assert.doesNotMatch(combined, /^pre-commit: \d+\/\d+ passing/m, "must not print the success summary on failure");
 });
+
+// ---------- sync must not register a directory's own index file as a plan (#87) ----------
+
+test("sync ignores README.md/INDEX.md in the plans directory — they are not plans", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const plans = path.join(cwd, "docs", "superpowers", "plans");
+  fs.mkdirSync(plans, { recursive: true });
+  // The index file, with an H1 that sync would otherwise adopt as an epic title.
+  fs.writeFileSync(path.join(plans, "README.md"), "# Superpowers Plans — Active\n\nThis directory holds only active plans.\n");
+  fs.writeFileSync(path.join(plans, "INDEX.md"), "# Index\n");
+  // A real plan alongside it, to prove the filter is not simply skipping the whole directory.
+  fs.writeFileSync(path.join(plans, "2026-01-01-real-plan.md"), "# A Real Plan\n\n- [ ] step one\n");
+
+  run(["sync"], { cwd });
+  const ids = readState(cwd).epics.map(e => e.id);
+
+  assert.ok(ids.includes("2026-01-01-real-plan"), "a genuine plan must still register");
+  assert.ok(!ids.includes("README"), `README.md registered as an epic: ${ids.join(", ")}`);
+  assert.ok(!ids.includes("INDEX"), `INDEX.md registered as an epic: ${ids.join(", ")}`);
+});

@@ -356,3 +356,49 @@ test("no nudge when stamped equals running", () => {
   const out = JSON.parse(run(["brief"], { cwd, env: { CLAUDE_PLUGIN_ROOT: root } })).hookSpecificOutput.additionalContext;
   assert.doesNotMatch(out, /since this repo was set up/);
 });
+
+// ---------- missing progress SOURCE must warn, not render an em dash (#86) ----------
+//
+// `bar()` renders an em dash for THREE different states: no source, empty source, and missing
+// source. A dangling pointer therefore hid inside the normal reading. The openspec lane never
+// warned at all; the plan lane warned even when the source was gone legitimately.
+
+test("openspec epic with a missing tasks.md warns instead of rendering an em dash", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  writeState(cwd, { version: 1, active: null, detourStack: [], epics: [
+    { id: "os", title: "os", priority: "P1", status: "queued", role: "epic", lane: "openspec", links: [] },
+  ]});
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", "os"), { recursive: true });
+  run(["render"], { cwd });
+  assert.match(projectMd(cwd), /⚠ tasks\.md missing/,
+    "a change dir with no tasks.md is indistinguishable from an empty one without this warning");
+});
+
+test("an ARCHIVED epic never warns about a missing source — archiving is when it legitimately goes away", () => {
+  // Measured on a 108-epic repo: 7 of 8 epics carrying a planPath dangled, and all 7 were
+  // archived with their plan correctly moved out of plans/. Warning there is wrong 7 times
+  // out of 8, which trains the reader to ignore the once it is right.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  writeState(cwd, { version: 1, active: null, detourStack: [], epics: [
+    { id: "sp-done", title: "sp-done", priority: "P1", status: "archived", role: "epic",
+      lane: "superpowers", planPath: "docs/superpowers/plans/moved.md", links: [] },
+    { id: "os-done", title: "os-done", priority: "P1", status: "archived", role: "epic",
+      lane: "openspec", links: [] },
+  ]});
+  run(["render"], { cwd });
+  assert.doesNotMatch(projectMd(cwd), /⚠ planPath missing/);
+  assert.doesNotMatch(projectMd(cwd), /⚠ tasks\.md missing/);
+});
+
+test("a non-archived dangling planPath still warns — the exemption is scoped to archived only", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  writeState(cwd, { version: 1, active: null, detourStack: [], epics: [
+    { id: "sp-live", title: "sp-live", priority: "P1", status: "active", role: "epic",
+      lane: "superpowers", planPath: "docs/superpowers/plans/gone.md", links: [] },
+  ]});
+  run(["render"], { cwd });
+  assert.match(projectMd(cwd), /⚠ planPath missing/);
+});

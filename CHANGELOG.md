@@ -8,6 +8,26 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.25.1] — 2026-08-17
+
+### Fixed
+
+- **A missing progress source now warns instead of rendering an em dash** (#86). `bar()` renders
+  `—` for three different states — "this epic has no progress source", "the source exists and is
+  empty", and "the source is missing" — so an openspec epic whose `changes/<id>/tasks.md` had
+  moved or been deleted was indistinguishable from healthy work with nothing ticked yet. It now
+  renders `⚠ tasks.md missing`, mirroring the plan lane's existing `⚠ planPath missing`.
+- **Archived epics no longer warn about a missing progress source.** Archiving is precisely when
+  a source legitimately goes away: OpenSpec removes `changes/<id>/`, and finished plans are moved
+  out of `docs/superpowers/plans/` (which is also how repos stop `sync` re-registering shipped
+  work). Measured on a 108-epic repo, 7 of the 8 epics carrying a `planPath` dangled and **all 7
+  were archived** — a warning wrong 7 times out of 8 trains the reader to ignore the once it is
+  right.
+- **`sync` no longer registers a plans directory's own index file as an epic** (#87).
+  `docs/superpowers/plans/README.md` became an untriaged epic titled after its H1 — observed live
+  as *"Superpowers Plans — Active"*. `readme.md`, `index.md` and `contributing.md` are excluded by
+  filename; deciding from file contents would make registration depend on heading conventions.
+
 ## [0.25.0] — 2026-07-30
 
 ### Added

@@ -16,10 +16,21 @@ export function activeChangeIds() {
   } catch { return []; }
 }
 
+/** Markdown files in PLANS_DIR that are actually PLANS.
+ *
+ *  A directory's own index file is not a plan. `README.md` (and the `INDEX`/`CONTRIBUTING`
+ *  variants that show up beside it) documents what the directory is FOR, so registering it
+ *  produces an epic titled after that file's H1 — observed live as an untriaged epic called
+ *  "Superpowers Plans — Active". Excluded by NAME rather than by content: reading inside the
+ *  file to decide would make registration depend on heading conventions, which is the
+ *  fragility this whole surface already suffers from. */
+const PLAN_INDEX_FILES = new Set(["readme.md", "index.md", "contributing.md"]);
+
 export function planFiles() {
   try {
     return fs.readdirSync(PLANS_DIR, { withFileTypes: true })
       .filter(d => d.isFile() && d.name.endsWith(".md"))
+      .filter(d => !PLAN_INDEX_FILES.has(d.name.toLowerCase()))
       .map(d => d.name);
   } catch { return []; }
 }
@@ -104,8 +115,23 @@ export function countCheckboxes(absPath) {
   return { done, total, exists };
 }
 
-/** Resolve an epic's progress by precedence: stories -> planPath -> openspec tasks.md -> none. */
+/** Resolve an epic's progress by precedence: stories -> planPath -> openspec tasks.md -> none.
+ *
+ *  A missing progress SOURCE must never be reported as an em dash, because `bar()` also renders
+ *  an em dash for "this epic legitimately has no source" and for "the source exists and is
+ *  empty". Collapsing three states into one glyph is how a dangling pointer hides: an openspec
+ *  epic whose tasks.md moved rendered exactly like a decision-lane epic that never had one.
+ *  Both branches below therefore warn, and `bar()` renders `⚠ <warn>` in PROJECT.md and the brief.
+ *
+ *  ARCHIVED epics are exempt. Archiving is precisely when a source legitimately goes away —
+ *  openspec removes `changes/<id>/`, and the documented convention for finished plans is to move
+ *  them out of `plans/` (which is also the mitigation for sync re-registering shipped plans).
+ *  Warning there fires on correct behavior: measured on one 108-epic repo, 7 of 8 epics with a
+ *  planPath dangled and ALL 7 were archived-and-moved. A warning that is wrong 7 times out of 8
+ *  trains people to ignore the one time it is right. */
 export function epicProgress(epic) {
+  // An archived epic's source is SUPPOSED to be gone; suppress rather than cry wolf.
+  const archived = epic.status === "archived";
   if (Array.isArray(epic.stories)) {
     const total = epic.stories.length;
     const done = epic.stories.filter(s => s && s.done).length;
@@ -113,11 +139,16 @@ export function epicProgress(epic) {
   }
   if (epic.planPath) {
     const c = countCheckboxes(path.join(ROOT, epic.planPath));
-    if (!c.exists) return { done: 0, total: 0, source: "plan", warn: "planPath missing" };
+    if (!c.exists) {
+      return { done: 0, total: 0, source: "plan", warn: archived ? null : "planPath missing" };
+    }
     return { done: c.done, total: c.total, source: "plan", warn: null };
   }
   if ((epic.lane || "openspec") === "openspec") {
     const c = countCheckboxes(path.join(CHANGES_DIR, epic.id, "tasks.md"));
+    if (!c.exists) {
+      return { done: 0, total: 0, source: "openspec", warn: archived ? null : "tasks.md missing" };
+    }
     return { done: c.done, total: c.total, source: "openspec", warn: null };
   }
   return { done: 0, total: 0, source: "none", warn: null };
