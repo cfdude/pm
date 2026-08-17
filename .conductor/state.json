@@ -1363,7 +1363,7 @@
     {
       "id": "gh-64-sync-duplicate-shipped-plan",
       "title": "sync registers a duplicate untriaged epic for a plan whose feature already shipped",
-      "priority": "P2",
+      "priority": "P1",
       "status": "queued",
       "role": "epic",
       "lane": "claude-code",
@@ -1453,7 +1453,7 @@
     {
       "id": "gh-69-sync-no-done-signal-for-plans",
       "title": "sync re-registers COMPLETED Superpowers plans as untriaged epics",
-      "priority": "P2",
+      "priority": "P1",
       "status": "queued",
       "role": "epic",
       "lane": "claude-code",
@@ -1773,8 +1773,8 @@
     {
       "id": "gh-79-epic-description-and-notes",
       "title": "add-epic/update-epic silently discard --notes and --description; epics need a replace-in-place description AND an append-only notes trail",
-      "priority": "P2",
-      "status": "untriaged",
+      "priority": "P1",
+      "status": "queued",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -1997,9 +1997,9 @@
       "lane": "claude-code",
       "links": [
         {
-          "type": "blocks",
-          "epic": "gh-93-verify-specs-coverage",
-          "reason": "the coverage check computes a set difference over specPath; without the field there is nothing to difference against"
+          "type": "relates-to",
+          "epic": "gh-69-sync-no-done-signal-for-plans",
+          "reason": "same missing association one artifact over -- 69 needs epic<->plan, 92 needs epic<->spec; design the field family once"
         }
       ],
       "reconcileNeeded": false,
@@ -2039,9 +2039,9 @@
       "lane": "claude-code",
       "links": [
         {
-          "type": "relates-to",
-          "epic": "gh-88-record-where-unfinished-tasks-went",
-          "reason": "both govern what archiving an epic with unfinished work must record -- design together or they become two overlapping preconditions on the same transition"
+          "type": "depends-on",
+          "epic": "gh-79-epic-description-and-notes",
+          "reason": "the archive gate fires on false positives until stories stop being the only free-text carrier -- measured: 4 epics archived with 'incomplete' stories that were completion notes"
         }
       ],
       "reconcileNeeded": false,
