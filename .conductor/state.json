@@ -1929,7 +1929,7 @@
       "id": "gh-87-sync-registers-readme-as-plans",
       "title": "sync registers directory index files (plans/README.md, specs/README.md) as epics",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "queued",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -1941,7 +1941,7 @@
       "id": "gh-88-record-where-unfinished-tasks-went",
       "title": "No way to record where unfinished tasks WENT when an epic is archived",
       "priority": "P3",
-      "status": "untriaged",
+      "status": "queued",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -1953,7 +1953,7 @@
       "id": "gh-89-delegate-discovery-to-subagents",
       "title": "Delegate discovery/reading to subagents so exploration never enters the orchestrator context",
       "priority": "P3",
-      "status": "untriaged",
+      "status": "queued",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -1965,7 +1965,7 @@
       "id": "gh-90-honor-output-style-contract",
       "title": "Honor the user's configured output style / CLAUDE.md communication contract",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "queued",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -1977,7 +1977,7 @@
       "id": "gh-91-autodetour-false-minimal-detour",
       "title": "auto-detour hook logs a MINIMAL detour for a legit commit when there is NO detour",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "queued",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -1989,10 +1989,16 @@
       "id": "gh-92-epic-specpath",
       "title": "Epics cannot record the design doc they came from (specPath), so spec-to-epic traceability is lost",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "queued",
       "role": "epic",
       "lane": "claude-code",
-      "links": [],
+      "links": [
+        {
+          "type": "blocks",
+          "epic": "gh-93-verify-specs-coverage",
+          "reason": "the coverage check computes a set difference over specPath; without the field there is nothing to difference against"
+        }
+      ],
       "reconcileNeeded": false,
       "externalId": "92",
       "externalUrl": "https://github.com/cfdude/pm/issues/92"
@@ -2001,7 +2007,7 @@
       "id": "gh-93-verify-specs-coverage",
       "title": "No way to ask which design docs have no epics — a verify-specs coverage check",
       "priority": "P3",
-      "status": "untriaged",
+      "status": "queued",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -2012,8 +2018,8 @@
     {
       "id": "gh-94-serial-detours-accepted-silently",
       "title": "Serial detours are accepted silently — the conductor should push back",
-      "priority": "P3",
-      "status": "untriaged",
+      "priority": "P2",
+      "status": "queued",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -2024,11 +2030,17 @@
     {
       "id": "gh-95-stories-optional-and-gate-nothing",
       "title": "Stories exist but are optional, uncreatable atomically, and gate nothing",
-      "priority": "P2",
-      "status": "untriaged",
+      "priority": "P1",
+      "status": "queued",
       "role": "epic",
       "lane": "claude-code",
-      "links": [],
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-88-record-where-unfinished-tasks-went",
+          "reason": "both govern what archiving an epic with unfinished work must record -- design together or they become two overlapping preconditions on the same transition"
+        }
+      ],
       "reconcileNeeded": false,
       "externalId": "95",
       "externalUrl": "https://github.com/cfdude/pm/issues/95"
