@@ -69,6 +69,18 @@ import { verifyWorktrees, changesets, verifyState } from "./lib/worktree-hygiene
 // ---------- dispatch ----------
 
 const cmd = process.argv[2];
+
+// A help flag must never have a side effect. Nothing here parsed --help, so it fell through
+// to whichever subcommand was named and was consumed as DATA: `log-detour --help` wrote a real
+// entry to .conductor/detours.log with "--help" as the detour description, and the log is
+// append-only with no verb to remove it. Handled before dispatch so every subcommand is covered
+// -- log-detour is only where the damage is visible, not where the gap is.
+const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|set-autonomy|record-reconcile|record-gate-review|set-review-mode|set-gate-guard|gate-guard|plan-hierarchy|verify-worktrees|verify-state|changesets|upgrade|changelog|rules|write-rules|rules-target\n";
+if (!cmd || process.argv.slice(2).some(a => a === "--help" || a === "-h")) {
+  process.stdout.write(USAGE);
+  process.exit(0);
+}
+
 // df-engine-banner-noise-every-invocation: the banner is suppressed by default whenever
 // CLAUDE_PROJECT_DIR is set (self-hosting/dev context -- the stale-cache scenario this banner
 // exists to guard against is unlikely there) -- set PM_VERBOSE_ENGINE_BANNER=1 to force it
@@ -135,6 +147,6 @@ if (showEngineBanner) {
     process.stdout.write(rulesTarget(resolvePlatform({ platform: declared }, loadState()), ROOT) + "\n");
   },
 }[cmd] || (() => {
-  process.stderr.write("usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|set-autonomy|record-reconcile|record-gate-review|set-review-mode|set-gate-guard|gate-guard|plan-hierarchy|verify-worktrees|verify-state|changesets|upgrade|changelog|rules|write-rules|rules-target\n");
+  process.stderr.write(USAGE);
   process.exit(1);
 }))();

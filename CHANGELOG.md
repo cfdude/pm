@@ -8,6 +8,19 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.25.2] — 2026-08-17
+
+### Fixed
+
+- **A help flag no longer has a side effect** (#98). Nothing parsed `--help`, and the usage string
+  was only reached by the dispatch fallback for an *unknown* subcommand — so on a known one,
+  `--help` fell through and was consumed as data. `log-detour --help` wrote a real row to
+  `.conductor/detours.log` with `--help` as the detour description. That log is append-only with
+  no verb to remove a row, and it is what a future session reads to reconstruct history, so the
+  entry was a false statement in the project's own record. `--help`/`-h` are now handled before
+  dispatch — covering every subcommand, not just the one where the damage was visible — and a
+  bare invocation with no subcommand prints usage and exits 0 instead of erroring.
+
 ## [0.25.1] — 2026-08-17
 
 ### Fixed

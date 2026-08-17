@@ -323,3 +323,36 @@ test("sync ignores README.md/INDEX.md in the plans directory — they are not pl
   assert.ok(!ids.includes("README"), `README.md registered as an epic: ${ids.join(", ")}`);
   assert.ok(!ids.includes("INDEX"), `INDEX.md registered as an epic: ${ids.join(", ")}`);
 });
+
+// ---------- a help flag must never have a side effect (#91 family) ----------
+
+test("--help on a mutating subcommand prints usage and writes nothing", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+
+  // log-detour is where the damage was visible: --help was consumed as the detour DESCRIPTION
+  // and appended a real MINIMAL row to an append-only log with no verb to remove it.
+  const out = run(["log-detour", "--help"], { cwd });
+  assert.match(out, /usage: conductor\.mjs/);
+
+  const logPath = path.join(cwd, ".conductor", "detours.log");
+  const logged = fs.existsSync(logPath) ? fs.readFileSync(logPath, "utf8").trim() : "";
+  assert.equal(logged, "", `--help wrote a detour entry: ${logged}`);
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before,
+    "--help must not mutate state.json either");
+});
+
+test("-h is handled the same as --help", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  assert.match(run(["log-detour", "-h"], { cwd }), /usage: conductor\.mjs/);
+  const logPath = path.join(cwd, ".conductor", "detours.log");
+  assert.ok(!fs.existsSync(logPath) || fs.readFileSync(logPath, "utf8").trim() === "");
+});
+
+test("a bare invocation with no subcommand prints usage and exits 0", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  assert.match(run([], { cwd }), /usage: conductor\.mjs/);
+});
