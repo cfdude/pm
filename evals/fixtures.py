@@ -12,7 +12,9 @@ import os
 import subprocess
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+from provenance import REPO_ROOT, installed_pm_ids
+import provenance
+
 ENGINE = REPO_ROOT / "scripts" / "conductor.mjs"
 
 # Each seed is a list of engine invocations applied after `init`.
@@ -130,6 +132,14 @@ def _write_memory_isolation(project: Path) -> None:
         "});\n"
     )
 
+    # --plugin-dir ADDS the worktree plugin; it does not replace the installed one. Leaving the
+    # installed pm enabled means two SessionStart hooks, two /pm: command sets and two engines
+    # in the same session. Computed from the live listing rather than hardcoding
+    # "pm@cfdude-plugins" -- a pm installed from a differently named marketplace must still be
+    # switched off, and if this enumeration ever misses one, observe()'s plugin_id goes None and
+    # the measured_the_worktree scorer FAILS rather than the run quietly measuring both.
+    disabled_plugins = {pid: False for pid in installed_pm_ids(provenance.plugin_list(project))}
+
     settings = {
         "claudeMdExcludes": [
             str(home / ".claude" / "CLAUDE.md"),
@@ -137,6 +147,7 @@ def _write_memory_isolation(project: Path) -> None:
             str(home / ".claude" / "rules" / "**"),
         ],
         "autoMemoryEnabled": False,
+        "enabledPlugins": disabled_plugins,
         "hooks": {
             "InstructionsLoaded": [
                 {"hooks": [{"type": "command", "command": f'node "{recorder}"'}]}

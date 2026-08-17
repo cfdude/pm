@@ -99,3 +99,89 @@ def test_observe_surfaces_a_user_scope_load_so_the_scorer_can_fail(tmp_path: Pat
     assert leaked == ["/home/someone/.claude/CLAUDE.md"], (
         "a User-scope load must surface, or no_operator_memory_loaded can never fail"
     )
+
+
+def test_materialize_disables_every_enabled_user_scope_pm(tmp_path, monkeypatch):
+    """The installed pm must be switched off, or --plugin-dir yields TWO active pm plugins:
+    two SessionStart hooks, two /pm: command sets, two engines. Computed from the live
+    listing, so a differently-named marketplace is still caught."""
+    import fixtures
+    import provenance
+
+    monkeypatch.setattr(provenance, "plugin_list", lambda project, plugin_dir=None: [
+        {"id": "pm@cfdude-plugins", "scope": "user", "enabled": True, "version": "0.25.0", "installPath": "/x"},
+        {"id": "pm@other", "scope": "user", "enabled": True, "version": "0.25.0", "installPath": "/y"},
+        {"id": "pm@inline", "scope": "session", "enabled": True, "version": "0.25.0", "installPath": "/z"},
+    ])
+
+    project = fixtures.materialize("single-active-epic", tmp_path)
+    settings = json.loads((project / ".claude" / "settings.local.json").read_text())
+
+    assert settings["enabledPlugins"] == {"pm@cfdude-plugins": False, "pm@other": False}
+    # session-scope pm@inline is the plugin under test — it must NOT be disabled
+    assert "pm@inline" not in settings["enabledPlugins"]
+
+
+def test_fixtures_pre_run_plugin_list_call_omits_plugin_dir(monkeypatch, tmp_path):
+    """Guards the THIRD call site on the plugin_dir path: _write_memory_isolation's own
+    pre-run `provenance.plugin_list(project)` call, used to enumerate installed pm's to
+    disable. This call happens before the runner's argv even exists, so it must never pass a
+    --plugin-dir -- any value here would necessarily be stale or wrong. Spy directly on
+    plugin_list and assert on the recorded argument, the same style as the observe.py and
+    provenance.py guards for the other two call sites on this path.
+    """
+    import fixtures
+    import provenance
+
+    captured = {}
+
+    def _spy(project, plugin_dir=None):
+        captured["plugin_dir"] = plugin_dir
+        return []
+
+    monkeypatch.setattr(provenance, "plugin_list", _spy)
+    fixtures.materialize("single-active-epic", tmp_path)
+
+    assert captured["plugin_dir"] is None
+
+
+def test_runner_argv_loads_the_worktree_plugin(monkeypatch, tmp_path):
+    """--plugin-dir is a GLOBAL flag and must precede the -p subcommand form's arguments."""
+    import runners
+    import provenance
+
+    captured = {}
+
+    class _Proc:
+        returncode = 0
+        stdout = "{}"
+
+    def _fake_run(argv, **kwargs):
+        captured["argv"] = argv
+        return _Proc()
+
+    monkeypatch.setattr(runners.subprocess, "run", _fake_run)
+    runners.run_claude_code("hi", tmp_path)
+
+    argv = captured["argv"]
+    assert "--plugin-dir" in argv, "the run must load the worktree, not the installed plugin"
+    assert argv[argv.index("--plugin-dir") + 1] == str(provenance.REPO_ROOT)
+
+
+def test_run_claude_code_reports_the_plugin_dir_it_used(monkeypatch, tmp_path):
+    """The post-run observation must REPLAY this value, never re-derive its own from
+    REPO_ROOT (Task 5) -- so the runner has to report what it actually passed."""
+    import runners
+    import provenance
+
+    class _Proc:
+        returncode = 0
+        stdout = "{}"
+
+    def _fake_run(argv, **kwargs):
+        return _Proc()
+
+    monkeypatch.setattr(runners.subprocess, "run", _fake_run)
+    result = runners.run_claude_code("hi", tmp_path)
+
+    assert result["plugin_dir"] == str(provenance.REPO_ROOT)

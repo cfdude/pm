@@ -14,6 +14,7 @@ from __future__ import annotations
 from edd_harness import Scenario, check
 
 from adapter import pm_adapter
+from provenance import REPO_ROOT
 
 LANE_ROUTING_TYPO = Scenario(
     id="lane-routing/typo-fix-is-claude-code",
@@ -39,6 +40,20 @@ LANE_ROUTING_TYPO = Scenario(
                 "the agent chose to do nothing. Without this check every other scorer "
                 "can pass vacuously on a run that never happened: `detours == []` is "
                 "trivially true when nothing ever ran."
+            ),
+        ),
+        check(
+            "measured_the_worktree",
+            lambda o: o["plugin_id"] == "pm@inline"
+            and o["plugin_install_path"] == str(REPO_ROOT),
+            reason=(
+                "The corpus measures the artifacts in THIS worktree. `claude -p` otherwise "
+                "loads the separately-installed pm from user-scope settings, so editing a "
+                "command doc changes nothing about the result -- the port loop this harness "
+                "exists to support silently cannot work. plugin_id is None unless exactly one "
+                "pm was enabled, so this one assertion also catches the double-load case "
+                "(--plugin-dir ADDS; the installed pm must be disabled) and the stale-copy "
+                "case (install path is whatever was passed to --plugin-dir)."
             ),
         ),
         check(

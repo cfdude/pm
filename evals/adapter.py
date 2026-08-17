@@ -46,6 +46,11 @@ def _failure(error: str) -> dict:
         "rules_block_file": None,
         "user_memory_files_loaded": [],
         "project_md_present": False,
+        "plugin_id": None,
+        "plugin_install_path": None,
+        "plugin_version": None,
+        "plugin_commit": None,
+        "plugin_dirty": None,
         "new_epics": [],
         "exit_code": INFRA_FAILURE_EXIT_CODE,
         "duration_ms": None,
@@ -79,7 +84,10 @@ def pm_adapter(scenario_input: dict) -> dict:
 
         result = RUNNERS[platform](prompt, project, allowed_tools=allowed_tools)
 
-        after = observe(project)
+        # REPLAY the runner's own --plugin-dir, never re-derive it -- see
+        # provenance.plugin_list's docstring for why a fallback here would silently
+        # reintroduce the Task 4/5 defect.
+        after = observe(project, plugin_dir=result.get("plugin_dir"))
 
         after["new_epics"] = [e for e in after["epics"] if e["id"] not in before]
         after["exit_code"] = result["exit_code"]

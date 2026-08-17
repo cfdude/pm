@@ -51,6 +51,43 @@ def test_adapter_reports_new_epics_against_the_seed(stubbed):
     assert out["exit_code"] == 0
 
 
+def test_adapter_passes_the_runners_plugin_dir_into_the_post_run_observation(stubbed, monkeypatch):
+    """Task 5's wiring: pm_adapter must REPLAY the runner's own reported plugin_dir into
+    observe(), never let observe() re-derive its own. A stub runner reports a sentinel value;
+    if the adapter ever stops threading it through, observe() would be called with the
+    wrong (or no) plugin_dir and this test would still pass silently with a hardcoded lambda --
+    so assert on the exact value observe() received."""
+    import observe as observe_module
+
+    captured = {}
+    real_observe = observe_module.observe
+
+    def _spy_observe(project, plugin_dir=None):
+        captured.setdefault("calls", []).append(plugin_dir)
+        return real_observe(project, plugin_dir=plugin_dir)
+
+    monkeypatch.setattr(adapter, "observe", _spy_observe)
+
+    def _stub_runner_with_plugin_dir(prompt, cwd, allowed_tools="Bash", timeout=300):
+        from fixtures import _engine
+
+        _engine(
+            Path(cwd),
+            ["add-epic", "--id", "agent-made-this", "--lane", "claude-code",
+             "--priority", "P3", "--title", "Created by the stub runner"],
+        )
+        return {"exit_code": 0, "stdout": "{}", "duration_ms": 1, "num_turns": 1,
+                "total_cost_usd": 0.0, "plugin_dir": "/sentinel/plugin/dir"}
+
+    stubbed.setitem(adapter.RUNNERS, "stub", _stub_runner_with_plugin_dir)
+
+    _invoke()
+
+    # First call is the pre-run `before` snapshot (no plugin_dir passed); second is the
+    # post-run observation, which must carry the runner's reported value verbatim.
+    assert captured["calls"] == [None, "/sentinel/plugin/dir"]
+
+
 def test_adapter_rejects_unknown_platform(tmp_path, monkeypatch):
     monkeypatch.setattr(adapter, "_workdir", lambda: tmp_path)
 

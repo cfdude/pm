@@ -12,6 +12,8 @@ import os
 import subprocess
 from pathlib import Path
 
+from provenance import plugin_provenance
+
 ENGINE = Path(__file__).resolve().parent.parent / "scripts" / "conductor.mjs"
 
 # Only the stable PREFIX, never the full decorated marker. The engine's own detection keys on
@@ -89,7 +91,12 @@ def _user_memory_files_loaded(project: Path) -> list[str]:
     return out
 
 
-def observe(project: Path) -> dict:
+def observe(project: Path, plugin_dir: str | None = None) -> dict:
+    """`plugin_dir`, when given, MUST be the value the runner's own argv actually used for the
+    session being observed -- see provenance.plugin_list's docstring for why. Callers that only
+    want the epic_ids (the adapter's pre-run `before` snapshot) can omit it; the post-run
+    observation must always pass the runner's reported `plugin_dir`.
+    """
     project = Path(project)
     state_path = project / ".conductor" / "state.json"
     state = json.loads(state_path.read_text()) if state_path.exists() else {}
@@ -122,4 +129,10 @@ def observe(project: Path) -> dict:
         "rules_block_file": target.name if target else None,
         "user_memory_files_loaded": _user_memory_files_loaded(project),
         "project_md_present": (project / "PROJECT.md").exists(),
+        # WHICH artifact tree this run measured. Without it a blessed baseline describes an
+        # unidentified plugin: comparing against it three releases later compares against
+        # something nobody can name. plugin_id is None unless exactly one pm was enabled, which
+        # is how the double-load case becomes a scorer failure rather than a silent average of
+        # two plugins.
+        **plugin_provenance(project, plugin_dir),
     }

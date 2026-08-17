@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "platform-parity-mechanism",
+  "active": "edd-measures-installed-plugin-not-worktree",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -1149,13 +1149,21 @@
       "id": "platform-parity-mechanism",
       "title": "Build the mechanism that keeps every supported platform at parity with the Claude Code base, BEFORE any second platform exists. Three layers, mirroring how this repo already enforces documentation currency: (1) MECHANICAL -- a machine-parseable parity ledger (one markdown file with a table, OpenSpec supported-tools.md style, parsed directly by a CI test so exemptions are real config not prose) plus a conductor.test.mjs gate that enumerates Claude Code artifacts (commands/*.md, hook events in hooks/hooks.json, skills/, agents/) and FAILS CI when any lacks either a per-platform counterpart or an explicit exemption row with a reason; generic over whatever platforms the ledger lists, so it passes trivially at zero platforms and starts enforcing the moment codex is added. (2) PROCEDURAL -- a project-local skill that walks each platform directory in order, reads what changed in the Claude Code base, determines the per-platform delta, applies it, and updates the ledger; same shape as release-checklist/mintlify-doc-sync. (3) Semantic parity is explicitly NOT this epic's job -- a structural test can prove a counterpart file exists but never that it behaves the same; that gap is closed by the edd-harness sibling epic. Deliberately sequenced before codex-platform-support so the gate never has a window where drift could start unobserved.",
       "priority": "P1",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [],
       "reconcileNeeded": false,
       "parent": "multi-platform-agent-support",
-      "startedAt": "2026-07-31T03:07:34.379Z"
+      "startedAt": "2026-07-31T03:07:34.379Z",
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-08-04T00:48:57.279Z",
+          "note": "fresh-context whole-branch review (opus) over d168b1e..04c54c8: no Critical, 2 Important (symlinks skipped in walk; two assertions sharing one test) both fixed in c63efc1 and confirmed ADDRESSED by a scoped re-review; gitignore-filter fix 3cba2e9 separately re-reviewed. 301/301 on merged main 10bbef1."
+        }
+      },
+      "completedAt": "2026-08-04T00:48:57.337Z"
     },
     {
       "id": "codex-platform-support",
@@ -1296,17 +1304,18 @@
       "id": "edd-measures-installed-plugin-not-worktree",
       "title": "EDD measures the installed plugin's artifacts; baseline records no plugin version",
       "priority": "P2",
-      "status": "queued",
+      "status": "active",
       "role": "epic",
       "lane": "claude-code",
       "links": [
         {
-          "type": "blocks",
-          "epic": "hermes-platform-support",
-          "reason": "editing an evaluated artifact must be measurable before the port, and the baseline must record which plugin version it describes"
+          "type": "relates-to",
+          "epic": "gh-86-openspec-lane-silent-zero-progress",
+          "reason": "both are honesty-of-measurement defects in the eval/render layer -- one measures the wrong artifacts, the other reports a confident wrong count"
         }
       ],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "startedAt": "2026-08-06T19:36:16.808Z"
     },
     {
       "id": "edd-adapter-discards-agent-stdout",
@@ -1691,6 +1700,230 @@
           "done": false
         }
       ]
+    },
+    {
+      "id": "state-lost-update-concurrent-sessions",
+      "title": "state.json read-modify-write has no lock: concurrent sessions silently lose each other's updates",
+      "priority": "P1",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "83",
+      "externalUrl": "https://github.com/cfdude/pm/issues/83"
+    },
+    {
+      "id": "epic-session-attribution",
+      "title": "Record which session did the work on an epic (opaque agent-supplied identity, append-only trail)",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "cross-session-epic-assignment",
+          "reason": "attribution records who DID the work; assignment records who SHOULD -- same field family, different lifecycle"
+        }
+      ],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "cross-session-epic-assignment",
+      "title": "Assignment + claim semantics so an orchestrating session can distribute epics across executor sessions",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "depends-on",
+          "epic": "state-lost-update-concurrent-sessions",
+          "reason": "dispatch across concurrent sessions is unsafe while state.json has no read-modify-write guard -- assignment would be the feature that makes the lost-update bug routine"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "84",
+      "externalUrl": "https://github.com/cfdude/pm/issues/84"
+    },
+    {
+      "id": "changelog-page-too-long-archive-older-releases",
+      "title": "Mintlify changelog is 1198 lines / 40 releases on one page: keep ~10 recent in full, index the rest, archive behind evenly-sized pages (NOT calendar months — July alone is 31 of 40), and make the roll-forward mechanical so it cannot drift",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "gh-71-update-epic-positional-id",
+      "title": "update-epic: positional <id> silently accepted as --id, prints bare usage with no error message",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "71",
+      "externalUrl": "https://github.com/cfdude/pm/issues/71"
+    },
+    {
+      "id": "gh-79-epic-description-and-notes",
+      "title": "add-epic/update-epic silently discard --notes and --description; epics need a replace-in-place description AND an append-only notes trail",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "epic-session-attribution",
+          "reason": "an append-only notes trail with {at, actor, text} entries is the same structure session attribution needs -- one field serves both"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "79",
+      "externalUrl": "https://github.com/cfdude/pm/issues/79"
+    },
+    {
+      "id": "gh-80-gate-guard-refusal-applies-anyway",
+      "title": "gate-guard prints a refusal for update-epic --status archived but applies the change anyway",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "80",
+      "externalUrl": "https://github.com/cfdude/pm/issues/80"
+    },
+    {
+      "id": "gh-81-project-md-never-clean",
+      "title": "PROJECT.md is never clean: render timestamp + duplicate detour-log rows create a permanent dirty diff",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "81",
+      "externalUrl": "https://github.com/cfdude/pm/issues/81"
+    },
+    {
+      "id": "gh-82-claude-project-dir-overrides-cwd",
+      "title": "CLAUDE_PROJECT_DIR silently overrides cwd for ROOT — any conductor call can target the wrong repo",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "82",
+      "externalUrl": "https://github.com/cfdude/pm/issues/82"
+    },
+    {
+      "id": "gh-85-document-mutating-verbs",
+      "title": "Document (or flag) which verbs mutate the working tree — render writes without warning",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "85",
+      "externalUrl": "https://github.com/cfdude/pm/issues/85"
+    },
+    {
+      "id": "gh-86-openspec-lane-silent-zero-progress",
+      "title": "epic-progress: openspec lane renders 0/0 for a missing tasks.md while superpowers warns — blocks registering an OpenSpec store (D3)",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "86",
+      "externalUrl": "https://github.com/cfdude/pm/issues/86"
+    },
+    {
+      "id": "edd-run-policy-when-behavior-artifacts-change",
+      "title": "Practice: run the EDD corpus when a change touches an artifact the AGENT reads (commands/agents/skills/hooks/.claude-plugin + rules.mjs), skip it for engine-internal/test-only changes; document in CLAUDE.md and consider a mechanical reminder",
+      "priority": "P2",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "depends-on",
+          "epic": "edd-corpus-expansion-nondeterministic-surfaces",
+          "reason": "a run-always policy is only worth its cost once the corpus covers more than one scenario -- today it would mostly re-prove typo-routing"
+        }
+      ],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "conductor-skill-orient-reads-spec-inventory",
+      "title": "Orient for openspec-lane epics must read the inventory of ALREADY-ESTABLISHED specs (the durable capability record) — explicitly NOT the in-flight change list. State the obligation, name no command: pm stays version-agnostic. Wording MUST disambiguate the object, because OpenSpec's own generated skills surface 'openspec list --json' (changes) 10x and 'list --specs' 0x, so a vague obligation gets discharged against the wrong data",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "autonomy-grant-starts-at-apply-not-propose",
+      "title": "Record in the conductor skill that the autonomy grant deliberately begins at /opsx:apply, never at propose — today that boundary holds only via a parenthetical that is load-bearing by accident",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "openspec-gate1-guard-on-apply",
+      "title": "Gate 1 is RECORDED but never GUARDED: record-gate-review writes epic.gateReview.gate1, yet nothing blocks an openspec epic entering implementation without it. The archived df-no-mechanical-openspec-gate-enforcement epic shipped only the ARCHIVE/gate2 guard (update-epic.mjs:107) and update-epic.mjs:104 deliberately exempts gate1 from archive — so the guard belongs on the transition INTO apply, not archive",
+      "priority": "P2",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "openspec-planning-completeness-instruction",
+      "title": "Before treating an openspec epic as ready to apply, pm's rules must direct the agent to confirm the change's planning is complete — stating the OBLIGATION and naming NO command (resolves the page's Tier 3 #2 vs #4 contradiction: #2 proposed baking openspec status --json / isPlanningComplete / applyRequires into pm, which is the 1.9.0-specific coupling #4 forbids and that carried pm through the upgrade unharmed)",
+      "priority": "P2",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "openspec-gate1-guard-on-apply",
+          "reason": "both gate the SAME transition (into implementation) with different evidence -- OpenSpec's planning completeness vs pm's own Gate 1 review. SUPERSESSION RISK: if the two-gate schema fork (page D2) is ever adopted, gate1 becomes an OpenSpec artifact and these two collapse into one; do not build both independently without deciding which is authoritative"
+        }
+      ],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "dehardcode-openspec-change-root-in-instructions",
+      "title": "Instruction text hardcodes openspec/changes/<id>/ in 4 locations across 3 files — agents/reconciler.md:20, agents/reconciler.md:22, skills/conductor/SKILL.md:328, commands/status.md:19. Phrase as 'the change root as OpenSpec resolves it'. NOTE: the page's original citation of scripts/lib/rules.mjs:129 is WRONG at 0.25.0 (that line holds no path literal) — do not edit it",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-86-openspec-lane-silent-zero-progress",
+          "reason": "both are store-relocation exposure -- #86 stops the render layer reporting a confident wrong count, this stops the instruction layer pointing an agent at a path that moved. Neither is urgent while openspec store list is empty on both machines"
+        }
+      ],
+      "reconcileNeeded": false
     }
   ],
   "detourStack": [],

@@ -70,3 +70,58 @@ def test_observe_reports_cannot_tell_rather_than_crashing_outside_a_pm_project(t
     assert out["rules_block_present"] is False
     assert out["project_md_present"] is False
     assert out["epic_ids"] == []
+
+
+def test_observe_carries_plugin_provenance(tmp_path, monkeypatch):
+    """A baseline that does not say which artifact tree it described is not interpretable
+    later. These five fields are what make a blessed baseline mean something."""
+    import observe
+    import provenance
+
+    monkeypatch.setattr(provenance, "plugin_list", lambda project, plugin_dir=None: [
+        {"id": "pm@inline", "scope": "session", "enabled": True,
+         "version": "0.25.0", "installPath": str(provenance.REPO_ROOT)},
+    ])
+
+    out = observe.observe(tmp_path)
+
+    assert out["plugin_id"] == "pm@inline"
+    assert out["plugin_install_path"] == str(provenance.REPO_ROOT)
+    assert out["plugin_version"] == "0.25.0"
+    assert isinstance(out["plugin_commit"], str)
+    assert isinstance(out["plugin_dirty"], bool)
+
+
+def test_observe_forwards_none_plugin_dir_unchanged_to_plugin_provenance(tmp_path, monkeypatch):
+    """Guards the FIRST call site on the plugin_dir path: observe()'s own call into
+    plugin_provenance. The mutation-tested gap this closes: inserting
+    `plugin_dir or str(REPO_ROOT)` right here leaves the full suite green (Finding 1), because
+    the existing coverage only pins argv construction inside plugin_list itself, three frames
+    away -- it never asserts on what observe() actually passes down.
+
+    Patching `provenance.plugin_provenance` would NOT catch this: observe.py does
+    `from provenance import plugin_provenance`, a module-level name binding copied at import
+    time, so the spy must replace `observe.plugin_provenance`, the name observe() actually
+    calls, not `provenance.plugin_provenance`.
+    """
+    import observe as observe_module
+
+    captured = {}
+
+    def _spy(project, plugin_dir=None):
+        captured["plugin_dir"] = plugin_dir
+        return {
+            "plugin_id": None,
+            "plugin_install_path": None,
+            "plugin_version": None,
+            "plugin_commit": None,
+            "plugin_dirty": None,
+        }
+
+    monkeypatch.setattr(observe_module, "plugin_provenance", _spy)
+
+    bare = tmp_path / "not-a-pm-project"
+    bare.mkdir()
+    observe_module.observe(bare, plugin_dir=None)
+
+    assert captured["plugin_dir"] is None
