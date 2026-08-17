@@ -16,10 +16,21 @@ export function activeChangeIds() {
   } catch { return []; }
 }
 
+/** Markdown files in PLANS_DIR that are actually PLANS.
+ *
+ *  A directory's own index file is not a plan. `README.md` (and the `INDEX`/`CONTRIBUTING`
+ *  variants that show up beside it) documents what the directory is FOR, so registering it
+ *  produces an epic titled after that file's H1 — observed live as an untriaged epic called
+ *  "Superpowers Plans — Active". Excluded by NAME rather than by content: reading inside the
+ *  file to decide would make registration depend on heading conventions, which is the
+ *  fragility this whole surface already suffers from. */
+const PLAN_INDEX_FILES = new Set(["readme.md", "index.md", "contributing.md"]);
+
 export function planFiles() {
   try {
     return fs.readdirSync(PLANS_DIR, { withFileTypes: true })
       .filter(d => d.isFile() && d.name.endsWith(".md"))
+      .filter(d => !PLAN_INDEX_FILES.has(d.name.toLowerCase()))
       .map(d => d.name);
   } catch { return []; }
 }

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "edd-measures-installed-plugin-not-worktree",
+  "active": null,
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -1304,7 +1304,7 @@
       "id": "edd-measures-installed-plugin-not-worktree",
       "title": "EDD measures the installed plugin's artifacts; baseline records no plugin version",
       "priority": "P2",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -1315,7 +1315,8 @@
         }
       ],
       "reconcileNeeded": false,
-      "startedAt": "2026-08-06T19:36:16.808Z"
+      "startedAt": "2026-08-06T19:36:16.808Z",
+      "completedAt": "2026-08-17T06:15:57.388Z"
     },
     {
       "id": "edd-adapter-discards-agent-stdout",
