@@ -1791,7 +1791,7 @@
       "id": "gh-80-gate-guard-refusal-applies-anyway",
       "title": "gate-guard prints a refusal for update-epic --status archived but applies the change anyway",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "queued",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -1839,7 +1839,7 @@
       "id": "gh-86-openspec-lane-silent-zero-progress",
       "title": "epic-progress: openspec lane renders 0/0 for a missing tasks.md while superpowers warns — blocks registering an OpenSpec store (D3)",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "queued",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -1881,6 +1881,48 @@
       "role": "epic",
       "lane": "claude-code",
       "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "openspec-gate1-guard-on-apply",
+      "title": "Gate 1 is RECORDED but never GUARDED: record-gate-review writes epic.gateReview.gate1, yet nothing blocks an openspec epic entering implementation without it. The archived df-no-mechanical-openspec-gate-enforcement epic shipped only the ARCHIVE/gate2 guard (update-epic.mjs:107) and update-epic.mjs:104 deliberately exempts gate1 from archive — so the guard belongs on the transition INTO apply, not archive",
+      "priority": "P2",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "openspec-planning-completeness-instruction",
+      "title": "Before treating an openspec epic as ready to apply, pm's rules must direct the agent to confirm the change's planning is complete — stating the OBLIGATION and naming NO command (resolves the page's Tier 3 #2 vs #4 contradiction: #2 proposed baking openspec status --json / isPlanningComplete / applyRequires into pm, which is the 1.9.0-specific coupling #4 forbids and that carried pm through the upgrade unharmed)",
+      "priority": "P2",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "openspec-gate1-guard-on-apply",
+          "reason": "both gate the SAME transition (into implementation) with different evidence -- OpenSpec's planning completeness vs pm's own Gate 1 review. SUPERSESSION RISK: if the two-gate schema fork (page D2) is ever adopted, gate1 becomes an OpenSpec artifact and these two collapse into one; do not build both independently without deciding which is authoritative"
+        }
+      ],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "dehardcode-openspec-change-root-in-instructions",
+      "title": "Instruction text hardcodes openspec/changes/<id>/ in 4 locations across 3 files — agents/reconciler.md:20, agents/reconciler.md:22, skills/conductor/SKILL.md:328, commands/status.md:19. Phrase as 'the change root as OpenSpec resolves it'. NOTE: the page's original citation of scripts/lib/rules.mjs:129 is WRONG at 0.25.0 (that line holds no path literal) — do not edit it",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-86-openspec-lane-silent-zero-progress",
+          "reason": "both are store-relocation exposure -- #86 stops the render layer reporting a confident wrong count, this stops the instruction layer pointing an agent at a path that moved. Neither is urgent while openspec store list is empty on both machines"
+        }
+      ],
       "reconcileNeeded": false
     }
   ],
