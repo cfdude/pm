@@ -82,6 +82,48 @@ recording the failure there would need the very write that is failing. It gets i
 - **The briefing surfaces it once, on threshold.** At N consecutive skips (N = 3), the brief
   carries `⚠ N state writes skipped on conflict since <ts> — a writer may be wedged`.
 
+### Rotation and ignore — required, and the existing log gets them too
+
+**House rule: any new log ships with a rotation mechanism.** This one is bounded two ways,
+and the second is the one that actually matters:
+
+1. **Truncate on a successful write** — bounds it to zero in the healthy case.
+2. **Cap at the most recent 100 entries** — bounds the *pathological* case, which is the only
+   case where the file grows at all.
+
+**Deliberately a count cap, not daily rotation.** The precedent on this machine
+(`/tmp/cross-session-hook.log`, daily with one `.prev`) is right for a log with a steady
+per-message rhythm. This one has no daily rhythm — it is empty whenever things work, and its
+growth is driven by failure *bursts*. A wedged writer or a hook loop can emit more lines in a
+minute than a normal month, and daily rotation would not bound that at all; it would just
+produce one enormous file per day. A count cap bounds it regardless of burst rate, keeps the
+most recent entries (which are the diagnostic ones), and needs no date arithmetic.
+
+**Both logs must be git-ignored, and `init` must be what does it.** Measured on this repo:
+
+```
+$ git check-ignore -v .conductor/detours.log
+/Users/robsherman/.gitignore_global:130:*.log   .conductor/detours.log
+```
+
+`.conductor/detours.log` is invisible here **only because the maintainer's personal global
+gitignore contains `*.log`**. The repo's `.gitignore` covers `.conductor/brief.txt` and nothing
+else, and `init` does not write a `.gitignore` at all — so on any machine without that global
+rule, the detour log has been showing as a permanently untracked file since it shipped. That is
+the same class as `#81` (PROJECT.md is never clean), already live, and unnoticed precisely
+because the one machine that would notice is configured not to.
+
+So this work adds, and the second half is a fix rather than a new feature:
+
+- `init` (and `upgrade`, for existing repos) appends `.conductor/write-conflicts.log` **and**
+  `.conductor/detours.log` to the project's `.gitignore`, creating it if absent and never
+  duplicating an entry that is already present.
+- A test asserts both entries exist after `init`, and that a second `init` does not duplicate
+  them.
+
+Without this, the guard's own diagnostics would dirty every user's working tree — a fix that
+ships a papercut.
+
 ### Escalate on the pattern, not on each occurrence
 
 Explicitly following the maintainer's prior experience with an error repeating every three

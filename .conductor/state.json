@@ -1710,7 +1710,13 @@
       "status": "active",
       "role": "epic",
       "lane": "claude-code",
-      "links": [],
+      "links": [
+        {
+          "type": "depends-on",
+          "epic": "gh-106-conductor-logs-never-gitignored",
+          "reason": "the conflict guard adds a second .conductor log; shipping it before the ignore gap is fixed would add a second permanently-untracked file"
+        }
+      ],
       "reconcileNeeded": false,
       "externalId": "83",
       "externalUrl": "https://github.com/cfdude/pm/issues/83",
@@ -2159,6 +2165,24 @@
       "reconcileNeeded": false,
       "externalId": "105",
       "externalUrl": "https://github.com/cfdude/pm/issues/105"
+    },
+    {
+      "id": "gh-106-conductor-logs-never-gitignored",
+      "title": "init never writes a .gitignore, so .conductor/detours.log (and brief.txt) are permanently untracked for any user lacking a global *.log rule — masked on the maintainer's machine by their own global ignore",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-81-project-md-never-clean",
+          "reason": "same class — pm generating a permanent working-tree diff; 81 is a tracked file that always differs, 106 is an untracked file that never goes away"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "106",
+      "externalUrl": "https://github.com/cfdude/pm/issues/106"
     }
   ],
   "detourStack": [],
