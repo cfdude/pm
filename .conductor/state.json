@@ -2150,7 +2150,7 @@
     },
     {
       "id": "gh-105-feedback-undeclared-gh-dependency",
-      "title": "Feedback channels: gh-when-authenticated → prefilled URL → email, with a recorded preference so declining GitHub is not re-asked. BLOCKED on mail routing — pm-plugin.dev MX points at the Mintlify docs CNAME, so bugs@ receives nothing today",
+      "title": "Feedback channels: gh-when-authenticated → prefilled URL → email to bugs@pm-plugin.dev, with a recorded preference so declining GitHub is not re-asked (mail routing verified live 2026-08-18: MX = smtp.google.com)",
       "priority": "P2",
       "status": "queued",
       "role": "epic",
