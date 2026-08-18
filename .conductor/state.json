@@ -2099,6 +2099,54 @@
       "lane": "superpowers",
       "links": [],
       "reconcileNeeded": false
+    },
+    {
+      "id": "gh-104-commit-nudge-fires-on-text-match",
+      "title": "commit-nudge fires on any Bash command whose TEXT contains 'git commit' — advisory-only false positive, no write side effects",
+      "priority": "P3",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-91-autodetour-false-minimal-detour",
+          "reason": "same hook, both false positives — 91 fires on a real commit with no detour, 104 on a non-commit"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "104",
+      "externalUrl": "https://github.com/cfdude/pm/issues/104"
+    },
+    {
+      "id": "gh-102-sync-blind-to-issue-comments",
+      "title": "sync maintains issue EXISTENCE parity but never re-reads a mirrored issue — comments filed after the mirror are invisible",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "102",
+      "externalUrl": "https://github.com/cfdude/pm/issues/102"
+    },
+    {
+      "id": "gh-103-tracker-refresh-gate-before-specs",
+      "title": "Refresh gate: re-read a tracker-linked issue before drawing up specs — a post-triage comment can supersede the ask",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "depends-on",
+          "epic": "gh-102-sync-blind-to-issue-comments",
+          "reason": "the gate needs a per-epic watermark to answer 'changed since when' precisely"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "103",
+      "externalUrl": "https://github.com/cfdude/pm/issues/103"
     }
   ],
   "detourStack": [],
