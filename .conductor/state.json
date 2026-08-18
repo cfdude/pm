@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": null,
+  "active": "state-lost-update-concurrent-sessions",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -1706,13 +1706,14 @@
       "id": "state-lost-update-concurrent-sessions",
       "title": "state.json read-modify-write has no lock: concurrent sessions silently lose each other's updates",
       "priority": "P1",
-      "status": "queued",
+      "status": "active",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
       "externalId": "83",
-      "externalUrl": "https://github.com/cfdude/pm/issues/83"
+      "externalUrl": "https://github.com/cfdude/pm/issues/83",
+      "startedAt": "2026-08-17T23:29:29.142Z"
     },
     {
       "id": "epic-session-attribution",
@@ -2047,6 +2048,36 @@
       "reconcileNeeded": false,
       "externalId": "95",
       "externalUrl": "https://github.com/cfdude/pm/issues/95"
+    },
+    {
+      "id": "gh-100-link-types-no-known-set",
+      "title": "Link types: no known-set, no validation, no discovery — only depends-on drives behaviour and resolves-blocker-for is inert",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-70-link-validation-gap",
+          "reason": "same surface — 70 is malformed-format acceptance, 100 is unknown-type acceptance; one validator closes both"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "100",
+      "externalUrl": "https://github.com/cfdude/pm/issues/100"
+    },
+    {
+      "id": "gh-101-dependency-order-blind-to-blocked",
+      "title": "Dependency ordering cannot see blocked/planned epics, so a P1 blocked by a backlog P2 surfaces no inversion",
+      "priority": "P1",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "101",
+      "externalUrl": "https://github.com/cfdude/pm/issues/101"
     }
   ],
   "detourStack": [],
