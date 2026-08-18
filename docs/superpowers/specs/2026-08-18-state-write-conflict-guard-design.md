@@ -88,16 +88,38 @@ recording the failure there would need the very write that is failing. It gets i
 and the second is the one that actually matters:
 
 1. **Truncate on a successful write** — bounds it to zero in the healthy case.
-2. **Cap at the most recent 100 entries** — bounds the *pathological* case, which is the only
-   case where the file grows at all.
+2. **Rotate at 8 KB, keeping one `.prev`** — bounds the *pathological* case, which is the only
+   case where the file grows at all. Ceiling is 16 KB total.
 
-**Deliberately a count cap, not daily rotation.** The precedent on this machine
-(`/tmp/cross-session-hook.log`, daily with one `.prev`) is right for a log with a steady
-per-message rhythm. This one has no daily rhythm — it is empty whenever things work, and its
-growth is driven by failure *bursts*. A wedged writer or a hook loop can emit more lines in a
-minute than a normal month, and daily rotation would not bound that at all; it would just
-produce one enormous file per day. A count cap bounds it regardless of burst rate, keeps the
-most recent entries (which are the diagnostic ones), and needs no date arithmetic.
+**Size-triggered, not daily, and not a count cap.**
+
+*Not daily:* the precedent on this machine (`/tmp/cross-session-hook.log`, daily with one
+`.prev`) is right for a log with a steady per-message rhythm. This one has none — it is empty
+whenever things work, and grows only in failure *bursts*. A wedged writer or a hook loop emits
+more lines in a minute than a normal month, and a daily rotation would not bound that; it would
+produce one enormous file per day.
+
+*Not a count cap* (which this spec originally proposed): enforcing "keep the most recent N
+entries" requires **reading the whole file, filtering, and rewriting it** every time the cap
+trips. A size check is `fs.statSync(path).size` — O(1), touching no content — and if the action
+on trip is wholesale rotation rather than keep-last-N, the rotation is a `rename(2)`, also O(1).
+**The mechanism then never reads the log at all**, which matters here more than it would
+elsewhere: this is the failure path of a write guard, and putting a read-modify-write on the
+path that records a failed read-modify-write is asking for the recursion.
+
+Measured to pick the number — one entry is **38 bytes**
+(`2026-08-18T22:59:29.123Z\trender\t41\t43\n`):
+
+| Cap | Entries retained | Max footprint with one `.prev` |
+|---|---|---|
+| 3 KB | ~80 | 6 KB |
+| **8 KB** | **~215** | **16 KB** |
+| 16 KB | ~430 | 32 KB |
+
+8 KB is chosen because the diagnostic question is "is a writer wedged, and since when" — that
+needs enough consecutive entries to see a pattern, not just the last few. 215 is comfortably
+more than the threshold of 3, and 16 KB total is negligible. A burst larger than that has
+already made its point in the first 215 lines.
 
 **Both logs must be git-ignored, and `init` must be what does it.** Measured on this repo:
 
@@ -143,12 +165,13 @@ Every assertion below can fail against the current engine today:
 3. **`--force` overwrites deliberately** — and only with the flag.
 4. **A hook write retries once and skips** — it does not exit non-zero and does not abort the
    hook.
-5. **Threshold warning appears at N, once** — and does *not* re-appear at N+1.
-6. **A successful write clears the counter** — the next skip starts from 1.
-7. **Backward compatibility** — a `state.json` with no `revision` loads, and its first write
+5. **Rotation trips on size, keeping one `.prev`** — a log grown past 8 KB is rotated, the previous `.prev` is replaced, and the mechanism never reads the log body.
+6. **Threshold warning appears at N, once** — and does *not* re-appear at N+1.
+7. **A successful write clears the counter** — the next skip starts from 1.
+8. **Backward compatibility** — a `state.json` with no `revision` loads, and its first write
    stamps 1.
 
-Assertion 5 is the one most likely to be written vacuously: it must assert both the appearance
+Assertion 6 is the one most likely to be written vacuously: it must assert both the appearance
 at N **and the absence** at N+1, or it passes on a warning that fires every time.
 
 ## Scope
