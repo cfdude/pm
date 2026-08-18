@@ -1435,15 +1435,15 @@
     {
       "id": "gh-66-update-epic-missing-flags",
       "title": "update-epic: no --lane, no --plan, undocumented valueless --link for clearing",
-      "priority": "P3",
+      "priority": "P1",
       "status": "queued",
       "role": "epic",
       "lane": "claude-code",
       "links": [
         {
           "type": "blocks",
-          "epic": "gh-69-sync-no-done-signal-for-plans",
-          "reason": "sync's fix wants to read each epic's plan field, but update-epic has no --plan so that field cannot be populated for existing epics"
+          "epic": "gh-64-sync-duplicate-shipped-plan",
+          "reason": "the plan-association fix needs --plan on update-epic to populate the field for existing epics; without it only new epics can be matched"
         }
       ],
       "reconcileNeeded": false,
@@ -1472,13 +1472,14 @@
       "id": "gh-70-link-validation-gap",
       "title": "add-epic --link silently accepts malformed format; no update-epic setter to fix it",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
       "externalId": "70",
-      "externalUrl": "https://github.com/cfdude/pm/issues/70"
+      "externalUrl": "https://github.com/cfdude/pm/issues/70",
+      "completedAt": "2026-08-18T15:32:31.121Z"
     },
     {
       "id": "test-suite-perf-and-scaffolding",
@@ -2078,6 +2079,26 @@
       "reconcileNeeded": false,
       "externalId": "101",
       "externalUrl": "https://github.com/cfdude/pm/issues/101"
+    },
+    {
+      "id": "2026-08-03-platform-parity-mechanism",
+      "title": "TOMBSTONE: shipped as platform-parity-mechanism (PR #78) — kept archived so sync stops re-registering the plan file",
+      "priority": "P3",
+      "status": "archived",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "2026-08-14-eval-measures-worktree",
+      "title": "TOMBSTONE: shipped as edd-measures-installed-plugin-not-worktree (PR #96) — kept archived so sync stops re-registering the plan file",
+      "priority": "P3",
+      "status": "archived",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false
     }
   ],
   "detourStack": [],
