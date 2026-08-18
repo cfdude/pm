@@ -2147,6 +2147,18 @@
       "reconcileNeeded": false,
       "externalId": "103",
       "externalUrl": "https://github.com/cfdude/pm/issues/103"
+    },
+    {
+      "id": "gh-105-feedback-undeclared-gh-dependency",
+      "title": "/pm:feedback has an undeclared dependency on the gh CLI + an authenticated GitHub account; prefilled issue URL needs neither (curl cannot avoid it — anonymous POST is 401 by design)",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "105",
+      "externalUrl": "https://github.com/cfdude/pm/issues/105"
     }
   ],
   "detourStack": [],
