@@ -2150,7 +2150,7 @@
     },
     {
       "id": "gh-105-feedback-undeclared-gh-dependency",
-      "title": "/pm:feedback has an undeclared dependency on the gh CLI + an authenticated GitHub account; prefilled issue URL needs neither (curl cannot avoid it — anonymous POST is 401 by design)",
+      "title": "Feedback channels: gh-when-authenticated → prefilled URL → email, with a recorded preference so declining GitHub is not re-asked. BLOCKED on mail routing — pm-plugin.dev MX points at the Mintlify docs CNAME, so bugs@ receives nothing today",
       "priority": "P2",
       "status": "queued",
       "role": "epic",
