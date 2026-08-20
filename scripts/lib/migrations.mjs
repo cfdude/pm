@@ -9,6 +9,7 @@ import { writeRules } from "./rules.mjs";
 import { render } from "./render.mjs";
 import { normalizeLink } from "./links.mjs";
 import { resolvePlatform } from "./platform.mjs";
+import { ensureGitignore } from "./subcommands.mjs";
 
 // MIGRATIONS — APPEND-ONLY, each keyed by the release that introduced the change.
 // NEVER remove or reorder a shipped entry: a repo many versions behind replays every
@@ -67,6 +68,7 @@ export function upgrade() {
   saveState(state);
   writeRules(resolvePlatform({}, state));
   render();
+  ensureGitignore();
   process.stderr.write(`conductor: upgraded (${applied} migration(s)), pmVersion now ${state.pmVersion || "unknown"}\n`);
 
   // Surface WHAT the upgrade brought, not just that it happened — close the

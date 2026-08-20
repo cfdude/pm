@@ -27,7 +27,7 @@ import { resolveAndRecordPlatform } from "./platform.mjs";
  *
  *  state.json, render-stamp.json and PROJECT.md stay TRACKED: they are the state of record and
  *  the generated index, and both belong in git. */
-function ensureGitignore() {
+export function ensureGitignore() {
   const wanted = [".conductor/detours.log", ".conductor/write-conflicts.log"];
   const giPath = path.join(ROOT, ".gitignore");
   let existing = "";

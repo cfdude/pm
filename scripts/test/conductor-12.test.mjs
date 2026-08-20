@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { tmpRepo, run } from "./helpers.mjs";
+import { tmpRepo, run, fixturePluginRoot } from "./helpers.mjs";
 
 // ─────────────── the revision guard ───────────────
 //
@@ -370,4 +370,19 @@ test("init preserves an existing .gitignore instead of overwriting it", async ()
   const gi = fs.readFileSync(path.join(cwd, ".gitignore"), "utf8");
   assert.match(gi, /^node_modules\/$/m, "an existing entry must survive");
   assert.match(gi, /^\.conductor\/detours\.log$/m);
+});
+
+test("upgrade backfills the gitignore entries — the documented update path, not just init", async () => {
+  // /pm:upgrade is what users are told to run on a new plugin version; nobody is told to
+  // re-run init. Wiring the backfill only to init would fix #106 for new repos and miss every
+  // existing one, which is the population the issue is about.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  fs.writeFileSync(path.join(cwd, ".gitignore"), "node_modules/\n");   // simulate a repo predating the fix
+  run(["upgrade"], { cwd, env: { CLAUDE_PLUGIN_ROOT: fixturePluginRoot("0.3.0") } });
+
+  const gi = fs.readFileSync(path.join(cwd, ".gitignore"), "utf8");
+  assert.match(gi, /^node_modules\/$/m, "the pre-existing entry must survive");
+  assert.match(gi, /^\.conductor\/detours\.log$/m);
+  assert.match(gi, /^\.conductor\/write-conflicts\.log$/m);
 });
