@@ -10,6 +10,16 @@ export const STATE_PATH = path.join(CONDUCTOR_DIR, "state.json");
 export const BRIEF_PATH = path.join(CONDUCTOR_DIR, "brief.txt");
 export const RENDER_STAMP_PATH = path.join(CONDUCTOR_DIR, "render-stamp.json");
 export const DETOURS_LOG = path.join(CONDUCTOR_DIR, "detours.log");
+export const WRITE_CONFLICTS_LOG = path.join(CONDUCTOR_DIR, "write-conflicts.log");
+// Distinct from the 1 that every validation failure already uses (14 sites in update-epic.mjs
+// alone), so an agent can tell "someone else wrote" from "you passed a bad flag" and retry
+// rather than guess.
+export const CONFLICT_EXIT_CODE = 9;
+// Size-triggered rotation, never count-based: enforcing "keep the last N entries" means
+// reading, filtering and rewriting the file, and this is the failure path of a WRITE guard.
+// statSync is O(1) and rename(2) is O(1), so the mechanism never reads the log body.
+export const CONFLICT_LOG_MAX_BYTES = 8192;
+export const CONFLICT_WARN_THRESHOLD = 3;
 export const PROJECT_MD = path.join(ROOT, "PROJECT.md");
 export const CLAUDE_MD = path.join(ROOT, "CLAUDE.md");
 export const CHANGES_DIR = path.join(ROOT, "openspec", "changes");
