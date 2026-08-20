@@ -31,11 +31,17 @@ function rotateIfNeeded() {
 }
 
 export function recordConflict({ verb, expected, found }) {
-  const { CONDUCTOR_DIR, WRITE_CONFLICTS_LOG } = getPaths();
-  fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
-  rotateIfNeeded();
-  const line = `${new Date().toISOString()}\t${verb}\t${expected}\t${found}\n`;
-  try { fs.appendFileSync(WRITE_CONFLICTS_LOG, line); } catch { /* diagnostics must never break a hook */ }
+  // Diagnostics must NEVER break the hook they are diagnosing. Every filesystem call here is
+  // guarded, mkdirSync included: this runs on a hook's failure path, so an exception converts
+  // the harmless skip we deliberately chose into the visible error we deliberately avoided —
+  // and it would fire exactly when the filesystem is already in trouble.
+  try {
+    const { CONDUCTOR_DIR, WRITE_CONFLICTS_LOG } = getPaths();
+    fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
+    rotateIfNeeded();
+    const line = `${new Date().toISOString()}\t${verb}\t${expected}\t${found}\n`;
+    fs.appendFileSync(WRITE_CONFLICTS_LOG, line);
+  } catch { /* observability only — never fail the run being observed */ }
 }
 
 /** Consecutive skips since the last successful write. Counting lines is fine here — this is

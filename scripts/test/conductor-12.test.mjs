@@ -203,3 +203,38 @@ test("state.mjs's locally computed paths agree with constants.mjs — #82 must n
   assert.ok(fs.existsSync(consts.STATE_PATH), "state.mjs must write to the path constants.mjs names");
   assert.match(fs.readFileSync(consts.STATE_PATH, "utf8"), /path-probe/);
 });
+
+test("recordConflict must never throw, even when mkdirSync fails — it runs on a hook's failure path", async () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const { recordConflict } = await freshConflicts(cwd);
+
+  const original = fs.mkdirSync;
+  try {
+    fs.mkdirSync = () => { throw new Error("EACCES: permission denied"); };
+    // This must NOT throw — diagnostics on a hook's failure path cannot become visible errors.
+    recordConflict({ verb: "render", expected: 1, found: 2 });
+    assert.ok(true, "recordConflict swallowed the mkdirSync error");
+  } finally {
+    fs.mkdirSync = original;
+  }
+});
+
+test("write-conflicts.mjs's locally computed paths agree with constants.mjs — #82 must not silently diverge them", async () => {
+  // write-conflicts.mjs computes its own paths for the same reason state.mjs does: cache-busting
+  // tests cannot refresh a statically imported constants.mjs. That duplication is behaviourally
+  // identical TODAY. #82 proposes changing ROOT resolution; without this test its fix would update
+  // constants.mjs and leave write-conflicts.mjs resolving a different root, silently.
+  const cwd = tmpRepo();
+  process.env.CLAUDE_PROJECT_DIR = cwd;
+  const bust = `?t=${Date.now()}${Math.random()}`;
+  const consts = await import(new URL("../lib/constants.mjs", import.meta.url).href + bust);
+  const { recordConflict, conflictCount } = await import(new URL("../lib/write-conflicts.mjs", import.meta.url).href + bust).then(m => ({ recordConflict: m.recordConflict, conflictCount: m.conflictCount }));
+
+  run(["init"], { cwd });
+  recordConflict({ verb: "render", expected: 1, found: 2 });
+
+  // If write-conflicts.mjs resolved a different root, the write would have landed somewhere else.
+  assert.ok(fs.existsSync(consts.WRITE_CONFLICTS_LOG), "write-conflicts.mjs must write to the path constants.mjs names");
+  assert.match(fs.readFileSync(consts.WRITE_CONFLICTS_LOG, "utf8"), /render\t1\t2/);
+});
