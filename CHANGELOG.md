@@ -8,6 +8,49 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.26.0] — 2026-08-18
+
+### Added
+
+- **`state.json` writes are now guarded against lost updates.** Two processes that both read the
+  same state and wrote it back produced a **silent** lost update: the second write won wholesale
+  and the first one's change vanished with no error. The atomic `rename(2)` already guaranteed
+  the *write*; the unguarded thing was the read-modify-write *cycle*. `loadState()` now stamps
+  the on-disk revision onto the object it returns and `saveState()` refuses a write whose
+  revision is stale. A lockfile was rejected deliberately — a session killed mid-write leaves a
+  lock held forever, whereas a revision comparison leaves nothing behind.
+- **A no-op save is a no-op.** A `saveState` whose content is unchanged (revision aside) neither
+  writes nor bumps, so re-running a command that changes nothing leaves `state.json` byte-identical.
+  This preserves two existing idempotence guarantees that the revision bump would otherwise have
+  broken, and stops rewriting an unchanged file for no reason.
+- **A conflict on an interactive verb exits `9`**, distinct from the `1` every validation failure
+  already uses, so an agent can tell "someone else wrote, retry" from "you passed a bad flag".
+- **Hook writes degrade instead of failing.** The only hook write is `reconcileArchived()`'s
+  self-heal, which re-runs on the next hook — so a conflict there is recorded and skipped rather
+  than surfaced as a mid-session error for a write that did not matter. **Three consecutive skips
+  warn once in the briefing** — and delivering that warning *consumes* it, rotating the log to
+  `.prev` so the count resets. Without that, `conflictCount()` stays pinned at the threshold once
+  contention stops, and the briefing re-warns on every SessionStart about a problem that resolved
+  days ago. Rotating rather than deleting keeps the evidence the warning cites.
+- Skips are recorded in `.conductor/write-conflicts.log`, which rotates at 8 KB keeping one
+  `.prev`. Size-triggered rather than count-based on purpose: enforcing "keep the last N" means
+  reading and rewriting the file, and this is the failure path of a *write* guard.
+
+### Fixed
+
+- **`init` now git-ignores the conductor's generated logs** (#106). `.conductor/detours.log` had
+  never been ignored by anything pm ships — it was invisible on the maintainer's machine only
+  because their personal global gitignore carries `*.log`, so every other user had carried a
+  permanently untracked file since it shipped. `state.json`, `render-stamp.json` and `PROJECT.md`
+  remain tracked; they are the state of record and the generated index. Both `init` and `upgrade`
+  perform the backfill — `/pm:upgrade` is the documented update path, so wiring it to `init`
+  alone would have fixed the issue for new repos and missed every existing one.
+
+### Compatibility
+
+- A `state.json` written by 0.25.2 has no `revision`; it loads unchanged and takes revision `1`
+  on its first write. **No migration is required.**
+
 ## [0.25.2] — 2026-08-17
 
 ### Fixed
