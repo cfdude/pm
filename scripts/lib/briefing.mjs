@@ -8,7 +8,7 @@ import { getAutonomy } from "./autonomy.mjs";
 import { staleMarker } from "./active-pointer.mjs";
 import { validLink } from "./links.mjs";
 import { KNOWN_LANES } from "./constants.mjs";
-import { conflictCount } from "./write-conflicts.mjs";
+import { conflictCount, consumeConflictWarning } from "./write-conflicts.mjs";
 import { CONFLICT_WARN_THRESHOLD } from "./constants.mjs";
 
 export function buildBrief(state) {
@@ -55,6 +55,7 @@ export function buildBrief(state) {
   // point a real signal has been made invisible.
   if (conflictCount() === CONFLICT_WARN_THRESHOLD) {
     L.push(`⚠ ${CONFLICT_WARN_THRESHOLD} state writes skipped on conflict — a writer may be wedged (.conductor/write-conflicts.log)`);
+    consumeConflictWarning();
   }
 
   if (state.detourStack.length) {

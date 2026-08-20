@@ -59,3 +59,20 @@ export function clearConflicts() {
   const { WRITE_CONFLICTS_LOG } = getPaths();
   try { fs.rmSync(WRITE_CONFLICTS_LOG, { force: true }); } catch { /* best effort */ }
 }
+
+/** Consume the warning condition: the count resets, the evidence survives.
+ *
+ *  Called when the briefing SURFACES the threshold warning. Without this, `conflictCount()`
+ *  stays pinned at the threshold once contention stops — nothing else clears it, because
+ *  clearConflicts() only runs on a successful state write and render() only writes when
+ *  reconcileArchived() has something to heal. The brief runs every SessionStart, so the
+ *  warning would re-fire every session for a problem that resolved days ago.
+ *
+ *  Rotates rather than deletes: the warning names the log file, so destroying it as we point
+ *  at it would send the reader to a path that no longer exists. */
+export function consumeConflictWarning() {
+  try {
+    const { WRITE_CONFLICTS_LOG } = getPaths();
+    fs.renameSync(WRITE_CONFLICTS_LOG, `${WRITE_CONFLICTS_LOG}.prev`);
+  } catch { /* observability only — never fail the run being observed */ }
+}

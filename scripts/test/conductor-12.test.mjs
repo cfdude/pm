@@ -274,3 +274,33 @@ test("a successful state write clears the conflict log", async () => {
   assert.ok(!fs.existsSync(path.join(cwd, ".conductor", "write-conflicts.log")),
     "any successful write must reset the consecutive-skip signal");
 });
+
+// ─────────────── consuming the warning ───────────────
+
+test("the threshold warning fires ONCE ACROSS INVOCATIONS, not once per process", async () => {
+  // conflictCount() is derived from a file, so without consuming the condition the count stays
+  // pinned at the threshold and every SessionStart re-warns — the same storm the strict-equality
+  // rule exists to prevent, arrived at from the other side.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const { recordConflict } = await freshConflicts(cwd);
+  recordConflict({ verb: "render", expected: 1, found: 2 });
+  recordConflict({ verb: "render", expected: 1, found: 3 });
+  recordConflict({ verb: "render", expected: 1, found: 4 });
+
+  assert.match(run(["brief"], { cwd }), /3 state writes skipped on conflict/);
+  assert.doesNotMatch(run(["brief"], { cwd }), /writes skipped on conflict/,
+    "a second brief must not repeat a warning already delivered");
+});
+
+test("consuming the warning preserves the evidence it points at", async () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const { recordConflict } = await freshConflicts(cwd);
+  for (const f of [2, 3, 4]) recordConflict({ verb: "render", expected: 1, found: f });
+
+  run(["brief"], { cwd });
+  const log = path.join(cwd, ".conductor", "write-conflicts.log");
+  assert.ok(!fs.existsSync(log), "the live log resets so a new pattern can accumulate");
+  assert.ok(fs.existsSync(`${log}.prev`), "but the evidence the warning cited must survive");
+});
