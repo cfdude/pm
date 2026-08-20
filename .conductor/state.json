@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "state-lost-update-concurrent-sessions",
+  "active": null,
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -1707,7 +1707,7 @@
       "id": "state-lost-update-concurrent-sessions",
       "title": "state.json read-modify-write has no lock: concurrent sessions silently lose each other's updates",
       "priority": "P1",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -1720,7 +1720,8 @@
       "reconcileNeeded": false,
       "externalId": "83",
       "externalUrl": "https://github.com/cfdude/pm/issues/83",
-      "startedAt": "2026-08-17T23:29:29.142Z"
+      "startedAt": "2026-08-17T23:29:29.142Z",
+      "completedAt": "2026-08-20T17:43:40.832Z"
     },
     {
       "id": "epic-session-attribution",
@@ -2183,6 +2184,18 @@
       "reconcileNeeded": false,
       "externalId": "106",
       "externalUrl": "https://github.com/cfdude/pm/issues/106"
+    },
+    {
+      "id": "gh-107-snapshot-consumes-warning-into-unread-file",
+      "title": "snapshot() consumes the conflict warning into .conductor/brief.txt, which nothing reads back — a warning delivered to a file no session loads",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "107",
+      "externalUrl": "https://github.com/cfdude/pm/issues/107"
     }
   ],
   "detourStack": [],
@@ -2191,5 +2204,6 @@
     "system": "github-issues",
     "repo": "cfdude/pm"
   },
-  "platform": "claude-code"
+  "platform": "claude-code",
+  "revision": 2
 }
