@@ -46,7 +46,7 @@ import {
   currentTracker, currentSecondaryTrackers, currentReviewMode, rulesBlock, writeRules,
 } from "./lib/rules.mjs";
 import { resolvePlatform, assertKnownPlatform, platformFlag, resolveAndRecordPlatform, rulesTarget } from "./lib/platform.mjs";
-import { loadState } from "./lib/state.mjs";
+import { loadState, conflictExitCode } from "./lib/state.mjs";
 import { ROOT } from "./lib/constants.mjs";
 import { setActive, clearActive } from "./lib/active-pointer.mjs";
 import { setAutonomy } from "./lib/autonomy.mjs";
@@ -94,6 +94,7 @@ if (showEngineBanner) {
     `conductor: engine ${pluginVersion() || "unknown"} @ ${path.dirname(fileURLToPath(import.meta.url))}\n`
   );
 }
+try {
 ({
   init,
   render,
@@ -150,3 +151,14 @@ if (showEngineBanner) {
   process.stderr.write(USAGE);
   process.exit(1);
 }))();
+} catch (err) {
+  // A conflict is retryable; a validation error is not. They must not share an exit code.
+  // Anything else is re-thrown UNCHANGED so a real crash keeps its stack -- swallowing it here
+  // would trade one silent failure for another.
+  const code = conflictExitCode(err);
+  if (code !== null) {
+    process.stderr.write(`conductor: ${err.message}\n`);
+    process.exit(code);
+  }
+  throw err;
+}

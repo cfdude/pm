@@ -5,6 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { recordConflict, clearConflicts } from "./write-conflicts.mjs";
+import { CONFLICT_EXIT_CODE } from "./constants.mjs";
 
 // Re-evaluate paths each time they're accessed to support cache-busting tests
 function getPaths() {
@@ -40,6 +41,15 @@ export class StateConflictError extends Error {
     this.expected = expected;
     this.found = found;
   }
+}
+
+/** The exit code a thrown error should produce, or null to re-throw.
+ *
+ *  Extracted so the mapping is testable without a hidden self-test subcommand in the shipped
+ *  CLI. A conflict is RETRYABLE and every existing validation failure already exits 1, so an
+ *  agent that cannot tell them apart cannot decide whether to retry or to fix its command. */
+export function conflictExitCode(err) {
+  return err instanceof StateConflictError ? CONFLICT_EXIT_CODE : null;
 }
 
 /** Read the revision currently on disk without parsing the whole state twice at the call site. */

@@ -319,3 +319,27 @@ test("a count ABOVE the threshold does not warn — the rule is equality, not >=
   assert.doesNotMatch(run(["brief"], { cwd }), /writes skipped on conflict/,
     "at 4 skips the equality rule must stay silent; >= would warn here");
 });
+
+// ─────────────── the distinct exit code ───────────────
+//
+// Tested as a pure predicate (conflictExitCode), not by driving the CLI end-to-end: a hidden
+// self-test subcommand purely to make that possible is a worse trade than a stated coverage
+// gap. Every existing verb already exercises the surrounding try/catch on its success path;
+// what is NOT covered end-to-end is the one line that turns this predicate's result into an
+// actual process.exit() when a real verb throws.
+
+test("a StateConflictError maps to the distinct conflict exit code", async () => {
+  const cwd = tmpRepo();
+  const { StateConflictError, conflictExitCode } = await freshState(cwd);
+  const consts = await import(new URL("../lib/constants.mjs", import.meta.url).href + `?t=${Date.now()}`);
+  assert.equal(conflictExitCode(new StateConflictError(4, 5)), consts.CONFLICT_EXIT_CODE);
+  assert.notEqual(consts.CONFLICT_EXIT_CODE, 1,
+    "sharing exit 1 with validation failures is the whole thing this avoids");
+});
+
+test("any other error maps to null so it is re-thrown with its stack intact", async () => {
+  const cwd = tmpRepo();
+  const { conflictExitCode } = await freshState(cwd);
+  assert.equal(conflictExitCode(new TypeError("bad argument")), null);
+  assert.equal(conflictExitCode(new Error("something else")), null);
+});
