@@ -290,7 +290,7 @@ test("the threshold warning fires ONCE ACROSS INVOCATIONS, not once per process"
 
   assert.match(run(["brief"], { cwd }), /3 state writes skipped on conflict/);
   assert.doesNotMatch(run(["brief"], { cwd }), /writes skipped on conflict/,
-    "a second brief must not repeat a warning already delivered");
+    "consumption rotates the log, resetting count below the threshold — a second brief must not re-warn");
 });
 
 test("consuming the warning preserves the evidence it points at", async () => {
@@ -303,4 +303,19 @@ test("consuming the warning preserves the evidence it points at", async () => {
   const log = path.join(cwd, ".conductor", "write-conflicts.log");
   assert.ok(!fs.existsSync(log), "the live log resets so a new pattern can accumulate");
   assert.ok(fs.existsSync(`${log}.prev`), "but the evidence the warning cited must survive");
+});
+
+test("a count ABOVE the threshold does not warn — the rule is equality, not >=", async () => {
+  // This is the only test that discriminates === from >=. The neighbouring "does not re-warn
+  // above it" assertion cannot: consumption rotates the log when the warning is delivered, so
+  // by the time it checks, the count has fallen back BELOW the threshold rather than risen
+  // above it, and both operators agree there. Accumulate past 3 with no brief in between so
+  // conflictCount() is genuinely 4 when the brief runs.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const { recordConflict } = await freshConflicts(cwd);
+  for (const f of [2, 3, 4, 5]) recordConflict({ verb: "render", expected: 1, found: f });
+
+  assert.doesNotMatch(run(["brief"], { cwd }), /writes skipped on conflict/,
+    "at 4 skips the equality rule must stay silent; >= would warn here");
 });
