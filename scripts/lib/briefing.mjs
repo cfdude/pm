@@ -8,6 +8,8 @@ import { getAutonomy } from "./autonomy.mjs";
 import { staleMarker } from "./active-pointer.mjs";
 import { validLink } from "./links.mjs";
 import { KNOWN_LANES } from "./constants.mjs";
+import { conflictCount } from "./write-conflicts.mjs";
+import { CONFLICT_WARN_THRESHOLD } from "./constants.mjs";
 
 export function buildBrief(state) {
   const epics = resolveEpics(state);
@@ -47,6 +49,13 @@ export function buildBrief(state) {
     L.push("NOW: (no active epic set)");
   }
   L.push("");
+
+  // Exactly-equal, not >=: warn ONCE when the pattern appears. Re-warning on every subsequent
+  // skip is the repeating-error storm that trains a reader to filter the message, at which
+  // point a real signal has been made invisible.
+  if (conflictCount() === CONFLICT_WARN_THRESHOLD) {
+    L.push(`⚠ ${CONFLICT_WARN_THRESHOLD} state writes skipped on conflict — a writer may be wedged (.conductor/write-conflicts.log)`);
+  }
 
   if (state.detourStack.length) {
     L.push(`DETOUR STACK — ${state.detourStack.length} paused (LIFO, resume top first):`);

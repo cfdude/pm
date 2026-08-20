@@ -238,3 +238,39 @@ test("write-conflicts.mjs's locally computed paths agree with constants.mjs — 
   assert.ok(fs.existsSync(consts.WRITE_CONFLICTS_LOG), "write-conflicts.mjs must write to the path constants.mjs names");
   assert.match(fs.readFileSync(consts.WRITE_CONFLICTS_LOG, "utf8"), /render\t1\t2/);
 });
+
+// ─────────────── the threshold warning ───────────────
+
+test("the brief warns ONCE at the threshold and does NOT re-warn above it", async () => {
+  // The absence half is the point. A warning that fires on every skip past the threshold is the
+  // three-minute error storm that trains a reader to filter it — which is how a real signal
+  // becomes invisible. Assert both halves or this test passes on a warning that always fires.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const { recordConflict } = await freshConflicts(cwd);
+
+  recordConflict({ verb: "render", expected: 1, found: 2 });
+  recordConflict({ verb: "render", expected: 1, found: 3 });
+  assert.doesNotMatch(run(["brief"], { cwd }), /writes skipped on conflict/,
+    "below the threshold the brief must stay quiet");
+
+  recordConflict({ verb: "render", expected: 1, found: 4 });   // now at 3
+  assert.match(run(["brief"], { cwd }), /3 state writes skipped on conflict/,
+    "at the threshold the brief must say so");
+
+  recordConflict({ verb: "render", expected: 1, found: 5 });   // now at 4
+  assert.doesNotMatch(run(["brief"], { cwd }), /writes skipped on conflict/,
+    "past the threshold it must NOT warn again until a success resets it");
+});
+
+test("a successful state write clears the conflict log", async () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const { recordConflict } = await freshConflicts(cwd);
+  recordConflict({ verb: "render", expected: 1, found: 2 });
+
+  run(["add-epic", "--id", "clears-it", "--lane", "claude-code", "--priority", "P3"], { cwd });
+
+  assert.ok(!fs.existsSync(path.join(cwd, ".conductor", "write-conflicts.log")),
+    "any successful write must reset the consecutive-skip signal");
+});

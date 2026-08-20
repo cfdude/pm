@@ -4,6 +4,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { recordConflict, clearConflicts } from "./write-conflicts.mjs";
 
 // Re-evaluate paths each time they're accessed to support cache-busting tests
 function getPaths() {
@@ -84,7 +85,10 @@ export function saveState(state, opts = {}) {
   // the guard, which is strictly worse than a documented override.
   const forced = process.argv.includes("--force");
   if (found !== expected && !forced) {
-    if (onConflict === "skip") return { ok: false, expected, found, verb };
+    if (onConflict === "skip") {
+      recordConflict({ verb, expected, found });
+      return { ok: false, expected, found, verb };
+    }
     throw new StateConflictError(expected, found);
   }
 
@@ -105,5 +109,6 @@ export function saveState(state, opts = {}) {
   fs.writeFileSync(tmpPath, data);
   fs.renameSync(tmpPath, STATE_PATH);
   state.revision = next.revision;   // keep the caller's object usable for a subsequent save
+  clearConflicts();   // consecutive skips end at the first success
   return { ok: true, revision: next.revision };
 }

@@ -15,7 +15,22 @@ import { DETOURS_LOG, PROJECT_MD, STATE_PATH, RENDER_STAMP_PATH, CONDUCTOR_DIR }
 
 export function render() {
   const state = loadState();
-  if (reconcileArchived(state)) saveState(state);
+  // The ONLY hook write. reconcileArchived() is a self-heal that re-runs on the next hook, so a
+  // conflict here costs nothing — while throwing would turn an invisible race into a visible
+  // mid-session error for a write that did not matter.
+  //
+  // RETRY ONCE, THEN SKIP (the ruling). The retry has to reload and RE-RUN the heal rather than
+  // re-attempt the same write: the in-hand state is built on a revision someone else has already
+  // superseded, so writing it again would clobber exactly what the guard exists to protect.
+  // Replay is affordable here and nowhere else — this is one call site with one pure heal, not
+  // the 24-site refactor the design deliberately excluded.
+  if (reconcileArchived(state)) {
+    const first = saveState(state, { onConflict: "skip", verb: "render" });
+    if (!first.ok) {
+      const fresh = loadState();
+      if (reconcileArchived(fresh)) saveState(fresh, { onConflict: "skip", verb: "render" });
+    }
+  }
   const epics = resolveEpics(state);
   const md = [];
 
