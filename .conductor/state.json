@@ -1363,7 +1363,7 @@
     {
       "id": "gh-64-sync-duplicate-shipped-plan",
       "title": "sync registers a duplicate untriaged epic for a plan whose feature already shipped",
-      "priority": "P2",
+      "priority": "P1",
       "status": "queued",
       "role": "epic",
       "lane": "claude-code",
@@ -1435,15 +1435,15 @@
     {
       "id": "gh-66-update-epic-missing-flags",
       "title": "update-epic: no --lane, no --plan, undocumented valueless --link for clearing",
-      "priority": "P3",
+      "priority": "P1",
       "status": "queued",
       "role": "epic",
       "lane": "claude-code",
       "links": [
         {
           "type": "blocks",
-          "epic": "gh-69-sync-no-done-signal-for-plans",
-          "reason": "sync's fix wants to read each epic's plan field, but update-epic has no --plan so that field cannot be populated for existing epics"
+          "epic": "gh-64-sync-duplicate-shipped-plan",
+          "reason": "the plan-association fix needs --plan on update-epic to populate the field for existing epics; without it only new epics can be matched"
         }
       ],
       "reconcileNeeded": false,
@@ -1453,7 +1453,7 @@
     {
       "id": "gh-69-sync-no-done-signal-for-plans",
       "title": "sync re-registers COMPLETED Superpowers plans as untriaged epics",
-      "priority": "P2",
+      "priority": "P1",
       "status": "queued",
       "role": "epic",
       "lane": "claude-code",
@@ -1472,13 +1472,14 @@
       "id": "gh-70-link-validation-gap",
       "title": "add-epic --link silently accepts malformed format; no update-epic setter to fix it",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
       "externalId": "70",
-      "externalUrl": "https://github.com/cfdude/pm/issues/70"
+      "externalUrl": "https://github.com/cfdude/pm/issues/70",
+      "completedAt": "2026-08-18T15:32:31.121Z"
     },
     {
       "id": "test-suite-perf-and-scaffolding",
@@ -1706,13 +1707,21 @@
       "id": "state-lost-update-concurrent-sessions",
       "title": "state.json read-modify-write has no lock: concurrent sessions silently lose each other's updates",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
-      "links": [],
+      "links": [
+        {
+          "type": "depends-on",
+          "epic": "gh-106-conductor-logs-never-gitignored",
+          "reason": "the conflict guard adds a second .conductor log; shipping it before the ignore gap is fixed would add a second permanently-untracked file"
+        }
+      ],
       "reconcileNeeded": false,
       "externalId": "83",
-      "externalUrl": "https://github.com/cfdude/pm/issues/83"
+      "externalUrl": "https://github.com/cfdude/pm/issues/83",
+      "startedAt": "2026-08-17T23:29:29.142Z",
+      "completedAt": "2026-08-20T17:43:40.832Z"
     },
     {
       "id": "epic-session-attribution",
@@ -1773,8 +1782,8 @@
     {
       "id": "gh-79-epic-description-and-notes",
       "title": "add-epic/update-epic silently discard --notes and --description; epics need a replace-in-place description AND an append-only notes trail",
-      "priority": "P2",
-      "status": "untriaged",
+      "priority": "P1",
+      "status": "queued",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -1997,9 +2006,9 @@
       "lane": "claude-code",
       "links": [
         {
-          "type": "blocks",
-          "epic": "gh-93-verify-specs-coverage",
-          "reason": "the coverage check computes a set difference over specPath; without the field there is nothing to difference against"
+          "type": "relates-to",
+          "epic": "gh-69-sync-no-done-signal-for-plans",
+          "reason": "same missing association one artifact over -- 69 needs epic<->plan, 92 needs epic<->spec; design the field family once"
         }
       ],
       "reconcileNeeded": false,
@@ -2039,14 +2048,154 @@
       "lane": "claude-code",
       "links": [
         {
-          "type": "relates-to",
-          "epic": "gh-88-record-where-unfinished-tasks-went",
-          "reason": "both govern what archiving an epic with unfinished work must record -- design together or they become two overlapping preconditions on the same transition"
+          "type": "depends-on",
+          "epic": "gh-79-epic-description-and-notes",
+          "reason": "the archive gate fires on false positives until stories stop being the only free-text carrier -- measured: 4 epics archived with 'incomplete' stories that were completion notes"
         }
       ],
       "reconcileNeeded": false,
       "externalId": "95",
       "externalUrl": "https://github.com/cfdude/pm/issues/95"
+    },
+    {
+      "id": "gh-100-link-types-no-known-set",
+      "title": "Link types: no known-set, no validation, no discovery — only depends-on drives behaviour and resolves-blocker-for is inert",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-70-link-validation-gap",
+          "reason": "same surface — 70 is malformed-format acceptance, 100 is unknown-type acceptance; one validator closes both"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "100",
+      "externalUrl": "https://github.com/cfdude/pm/issues/100"
+    },
+    {
+      "id": "gh-101-dependency-order-blind-to-blocked",
+      "title": "Dependency ordering cannot see blocked/planned epics, so a P1 blocked by a backlog P2 surfaces no inversion",
+      "priority": "P1",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "101",
+      "externalUrl": "https://github.com/cfdude/pm/issues/101"
+    },
+    {
+      "id": "2026-08-03-platform-parity-mechanism",
+      "title": "TOMBSTONE: shipped as platform-parity-mechanism (PR #78) — kept archived so sync stops re-registering the plan file",
+      "priority": "P3",
+      "status": "archived",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "2026-08-14-eval-measures-worktree",
+      "title": "TOMBSTONE: shipped as edd-measures-installed-plugin-not-worktree (PR #96) — kept archived so sync stops re-registering the plan file",
+      "priority": "P3",
+      "status": "archived",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "gh-104-commit-nudge-fires-on-text-match",
+      "title": "commit-nudge fires on any Bash command whose TEXT contains 'git commit' — advisory-only false positive, no write side effects",
+      "priority": "P3",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-91-autodetour-false-minimal-detour",
+          "reason": "same hook, both false positives — 91 fires on a real commit with no detour, 104 on a non-commit"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "104",
+      "externalUrl": "https://github.com/cfdude/pm/issues/104"
+    },
+    {
+      "id": "gh-102-sync-blind-to-issue-comments",
+      "title": "sync maintains issue EXISTENCE parity but never re-reads a mirrored issue — comments filed after the mirror are invisible",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "102",
+      "externalUrl": "https://github.com/cfdude/pm/issues/102"
+    },
+    {
+      "id": "gh-103-tracker-refresh-gate-before-specs",
+      "title": "Refresh gate: re-read a tracker-linked issue before drawing up specs — a post-triage comment can supersede the ask",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "depends-on",
+          "epic": "gh-102-sync-blind-to-issue-comments",
+          "reason": "the gate needs a per-epic watermark to answer 'changed since when' precisely"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "103",
+      "externalUrl": "https://github.com/cfdude/pm/issues/103"
+    },
+    {
+      "id": "gh-105-feedback-undeclared-gh-dependency",
+      "title": "Feedback channels: gh-when-authenticated → prefilled URL → email to bugs@pm-plugin.dev, with a recorded preference so declining GitHub is not re-asked (mail routing verified live 2026-08-18: MX = smtp.google.com)",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "105",
+      "externalUrl": "https://github.com/cfdude/pm/issues/105"
+    },
+    {
+      "id": "gh-106-conductor-logs-never-gitignored",
+      "title": "init never writes a .gitignore, so .conductor/detours.log (and brief.txt) are permanently untracked for any user lacking a global *.log rule — masked on the maintainer's machine by their own global ignore",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-81-project-md-never-clean",
+          "reason": "same class — pm generating a permanent working-tree diff; 81 is a tracked file that always differs, 106 is an untracked file that never goes away"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "106",
+      "externalUrl": "https://github.com/cfdude/pm/issues/106"
+    },
+    {
+      "id": "gh-107-snapshot-consumes-warning-into-unread-file",
+      "title": "snapshot() consumes the conflict warning into .conductor/brief.txt, which nothing reads back — a warning delivered to a file no session loads",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "107",
+      "externalUrl": "https://github.com/cfdude/pm/issues/107"
     }
   ],
   "detourStack": [],
@@ -2055,5 +2204,6 @@
     "system": "github-issues",
     "repo": "cfdude/pm"
   },
-  "platform": "claude-code"
+  "platform": "claude-code",
+  "revision": 2
 }
