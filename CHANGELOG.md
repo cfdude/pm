@@ -25,13 +25,26 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   broken, and stops rewriting an unchanged file for no reason.
 - **A conflict on an interactive verb exits `9`**, distinct from the `1` every validation failure
   already uses, so an agent can tell "someone else wrote, retry" from "you passed a bad flag".
-- **Hook writes degrade instead of failing.** The only hook write is `reconcileArchived()`'s
-  self-heal, which re-runs on the next hook — so a conflict there is recorded and skipped rather
-  than surfaced as a mid-session error for a write that did not matter. **Three consecutive skips
+- **`--force` overwrites deliberately, bypassing the revision check.** Read straight from
+  `argv` rather than threaded through every call site, the same shape as `platformFlag()`.
+  Without a documented override people learn to hand-edit `state.json` to get around the guard,
+  which is strictly worse than a flag that leaves a trace in the command line. A forced write's
+  new revision always advances strictly past whatever is currently on disk (not just past the
+  forcing writer's own stale read) — otherwise the forced write can land on a revision a later
+  writer already saw as `found`, and *that* writer's own next save would pass the guard and
+  silently clobber the forced change, reopening the exact lost-update window one hop removed.
+- **Hook writes degrade instead of failing.** Two hook writes exist —
+  `reconcileArchived()`'s self-heal in both `render()` (PostToolUse via `commit-nudge`,
+  PreCompact via `snapshot`, and `render` itself) and `commit-nudge`'s own self-heal call — and
+  both re-run on the next hook, so a conflict on either is recorded and skipped rather than
+  surfaced as a mid-session error for a write that did not matter. **Three consecutive skips
   warn once in the briefing** — and delivering that warning *consumes* it, rotating the log to
   `.prev` so the count resets. Without that, `conflictCount()` stays pinned at the threshold once
   contention stops, and the briefing re-warns on every SessionStart about a problem that resolved
-  days ago. Rotating rather than deleting keeps the evidence the warning cites.
+  days ago. Rotating rather than deleting keeps the evidence the warning cites. Consumption is
+  scoped to the entry points that actually *deliver* a briefing to a session (`brief`,
+  `snapshot`) — composing PROJECT.md's embedded "Briefing" section via `render()` never consumes,
+  so a warning produced and rendered in the same call is still there for the next real briefing.
 - Skips are recorded in `.conductor/write-conflicts.log`, which rotates at 8 KB keeping one
   `.prev`. Size-triggered rather than count-based on purpose: enforcing "keep the last N" means
   reading and rewriting the file, and this is the failure path of a *write* guard.

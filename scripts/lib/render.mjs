@@ -15,9 +15,12 @@ import { DETOURS_LOG, PROJECT_MD, STATE_PATH, RENDER_STAMP_PATH, CONDUCTOR_DIR }
 
 export function render() {
   const state = loadState();
-  // The ONLY hook write. reconcileArchived() is a self-heal that re-runs on the next hook, so a
-  // conflict here costs nothing — while throwing would turn an invisible race into a visible
-  // mid-session error for a write that did not matter.
+  // One of TWO hook writes (the other is commitNudge()'s own reconcileArchived() call in
+  // subcommands.mjs — this one was originally believed to be the only one, which is why that
+  // second call site shipped with the unguarded default onConflict:"throw"). reconcileArchived()
+  // is a self-heal that re-runs on the next hook, so a conflict here costs nothing — while
+  // throwing would turn an invisible race into a visible mid-session error for a write that did
+  // not matter.
   //
   // RETRY ONCE, THEN SKIP (the ruling). The retry has to reload and RE-RUN the heal rather than
   // re-attempt the same write: the in-hand state is built on a revision someone else has already
@@ -124,6 +127,9 @@ export function render() {
   md.push("## Briefing (what a fresh session sees)");
   md.push("");
   md.push("```");
+  // consume defaults to false: composing PROJECT.md is not a session ever seeing this text —
+  // only brief()/snapshot() (the entry points that actually deliver a briefing) pass
+  // consume: true. See briefing.mjs's buildBrief comment for why this distinction matters.
   md.push(buildBrief(state));
   md.push("```");
   md.push("");

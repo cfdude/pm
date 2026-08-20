@@ -11,7 +11,7 @@ import { KNOWN_LANES } from "./constants.mjs";
 import { conflictCount, consumeConflictWarning } from "./write-conflicts.mjs";
 import { CONFLICT_WARN_THRESHOLD } from "./constants.mjs";
 
-export function buildBrief(state) {
+export function buildBrief(state, { consume = false } = {}) {
   const epics = resolveEpics(state);
   const byId = Object.fromEntries(epics.map(e => [e.id, e]));
   const L = [];
@@ -53,9 +53,16 @@ export function buildBrief(state) {
   // Exactly-equal, not >=: warn ONCE when the pattern appears. Re-warning on every subsequent
   // skip is the repeating-error storm that trains a reader to filter the message, at which
   // point a real signal has been made invisible.
+  //
+  // consume defaults to false because buildBrief() is ALSO called by render() to embed the
+  // "Briefing" section into PROJECT.md — composing that document is not a session ever seeing
+  // the warning. Consuming there meant the third skip's warning was rotated away by the very
+  // render() call that produced it, so it landed once in a PROJECT.md the next render overwrites
+  // and never reached a live SessionStart brief. Only brief()/snapshot() — the entry points that
+  // actually deliver a briefing to a session — pass consume: true.
   if (conflictCount() === CONFLICT_WARN_THRESHOLD) {
     L.push(`⚠ ${CONFLICT_WARN_THRESHOLD} state writes skipped on conflict — a writer may be wedged (.conductor/write-conflicts.log)`);
-    consumeConflictWarning();
+    if (consume) consumeConflictWarning();
   }
 
   if (state.detourStack.length) {

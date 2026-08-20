@@ -60,7 +60,9 @@ export function init() {
 
 export function brief() {
   if (!isInitialized()) return;          // DORMANT until /pm:init
-  const context = buildBrief(loadState());
+  // consume: true — this IS a briefing actually reaching a session (SessionStart), so a
+  // threshold warning surfaced here must be consumed (see briefing.mjs's buildBrief comment).
+  const context = buildBrief(loadState(), { consume: true });
   process.stdout.write(JSON.stringify({
     hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: context },
   }));
@@ -71,7 +73,9 @@ export function snapshot() {
   const state = loadState();
   render();
   fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
-  fs.writeFileSync(BRIEF_PATH, buildBrief(state) + "\n");
+  // consume: true — same reasoning as brief(): this briefing is delivered (written to
+  // .conductor/brief.txt ahead of compaction), not merely composed into PROJECT.md.
+  fs.writeFileSync(BRIEF_PATH, buildBrief(state, { consume: true }) + "\n");
   process.stderr.write("conductor: snapshot written before compaction\n");
 }
 
@@ -185,7 +189,21 @@ export function commitNudge() {
   }
   // Self-heal: if this commit archived the active epic (e.g. an OpenSpec archive),
   // clear the stale active pointer + stamp archived status so /pm:next advances.
-  if (reconcileArchived(state)) saveState(state);
+  //
+  // This is a HOOK write (PostToolUse), same class as render.mjs's self-heal, and needs the
+  // same RETRY ONCE, THEN SKIP treatment: a conflict here is a self-heal that re-runs on the
+  // next hook, so losing it costs nothing — while the default onConflict:"throw" turns an
+  // invisible race into a visible mid-session exit-9 error for a write that did not matter.
+  // The retry reloads and RE-RUNS reconcileArchived rather than re-attempting the same write:
+  // the in-hand `state` is built on a revision another writer has already superseded, so
+  // writing it again would clobber exactly what the guard exists to protect.
+  if (reconcileArchived(state)) {
+    const first = saveState(state, { onConflict: "skip", verb: "commit-nudge" });
+    if (!first.ok) {
+      const fresh = loadState();
+      if (reconcileArchived(fresh)) saveState(fresh, { onConflict: "skip", verb: "commit-nudge" });
+    }
+  }
   render();
 
   const msg = ctx.active

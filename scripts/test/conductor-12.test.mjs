@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { tmpRepo, run, fixturePluginRoot } from "./helpers.mjs";
+import { tmpRepo, run, fixturePluginRoot, readState, writeState } from "./helpers.mjs";
 
 // ─────────────── the revision guard ───────────────
 //
@@ -83,6 +83,39 @@ test("--force overwrites deliberately, and ONLY with the flag", async () => {
   } finally {
     process.argv = argv;
   }
+});
+
+test("--force must never rewind the revision below what's on disk — a lost update one hop removed", async () => {
+  // A and B both read the same revision. B saves normally (revision advances by one). C loads
+  // the post-B state. A then force-writes with its STALE `expected` — if the new revision is
+  // computed as `expected + 1` instead of `max(found, expected) + 1`, A's forced write can land
+  // on the SAME revision C already saw as `found`. C's own save then reads `expected === found`,
+  // the guard passes, and C silently clobbers A's change — the exact lost update this whole
+  // guard exists to prevent, just reopened one write later. The victim (C) never forced anything.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const { loadState, saveState, StateConflictError } = await freshState(cwd);
+
+  const a = loadState();          // A and B both read the same revision
+  const b = loadState();
+
+  b.epics.push({ id: "from-b", title: "b", priority: "P1", status: "queued", role: "epic", lane: "claude-code", links: [] });
+  assert.equal(saveState(b).ok, true, "B's ordinary write must succeed");
+
+  const c = loadState();          // C loads the post-B revision
+
+  const argv = process.argv;
+  try {
+    process.argv = [...argv, "--force"];
+    a.epics.push({ id: "from-a", title: "a", priority: "P1", status: "queued", role: "epic", lane: "claude-code", links: [] });
+    assert.equal(saveState(a).ok, true, "A's forced write must succeed despite its stale revision");
+  } finally {
+    process.argv = argv;
+  }
+
+  c.epics.push({ id: "from-c", title: "c", priority: "P1", status: "queued", role: "epic", lane: "claude-code", links: [] });
+  assert.throws(() => saveState(c), StateConflictError,
+    "C's revision was superseded by A's forced write and must be refused, not silently accepted");
 });
 
 test("onConflict:skip returns false instead of throwing", async () => {
@@ -305,6 +338,24 @@ test("consuming the warning preserves the evidence it points at", async () => {
   assert.ok(fs.existsSync(`${log}.prev`), "but the evidence the warning cited must survive");
 });
 
+test("render() composing PROJECT.md must NOT consume the warning — only a DELIVERED briefing may", async () => {
+  // render() calls buildBrief() too (to embed the "Briefing" section into PROJECT.md), and
+  // render() itself runs on commit-nudge, /pm:status, init, upgrade, log-detour, set-gate-guard.
+  // If composing PROJECT.md consumed the warning, the third skip's warning would be rotated away
+  // by the very render() call that produced it — landing once in a PROJECT.md the next render
+  // overwrites, and never reaching a live SessionStart brief. Every prior threshold test in this
+  // file calls run(["brief"]) with no intervening render() and so cannot catch this.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const { recordConflict } = await freshConflicts(cwd);
+  for (const f of [2, 3, 4]) recordConflict({ verb: "render", expected: 1, found: f });   // 3 skips
+
+  run(["render"], { cwd });   // composing PROJECT.md must be a non-event for the warning
+
+  assert.match(run(["brief"], { cwd }), /3 state writes skipped on conflict/,
+    "the warning must still be there for the first briefing that actually reaches a session");
+});
+
 test("a count ABOVE the threshold does not warn — the rule is equality, not >=", async () => {
   // This is the only test that discriminates === from >=. The neighbouring "does not re-warn
   // above it" assertion cannot: consumption rotates the log when the warning is delivered, so
@@ -385,4 +436,80 @@ test("upgrade backfills the gitignore entries — the documented update path, no
   assert.match(gi, /^node_modules\/$/m, "the pre-existing entry must survive");
   assert.match(gi, /^\.conductor\/detours\.log$/m);
   assert.match(gi, /^\.conductor\/write-conflicts\.log$/m);
+});
+
+// ─────────── commit-nudge: the second hook write must degrade too ───────────
+//
+// commitNudge() (registered as the PostToolUse hook) has its OWN saveState() call for
+// reconcileArchived()'s self-heal — a second hook write the original design assumed did not
+// exist (render.mjs's was believed to be the only one). It needs the identical retry-once-
+// then-skip treatment: a conflict there is a self-heal that re-runs on the next hook, so losing
+// it costs nothing, while the default onConflict:"throw" turns an invisible race into a visible
+// exit-9 mid-session error for a write that did not matter.
+
+async function freshSubcommands(cwd) {
+  process.env.CLAUDE_PROJECT_DIR = cwd;
+  const url = new URL("../lib/subcommands.mjs", import.meta.url);
+  return import(`${url.href}?t=${Date.now()}${Math.random()}`);
+}
+
+test("commit-nudge degrades on conflict instead of throwing — the second hook write", async () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+
+  // Give commit-nudge's self-heal something to do: an active pointer at an epic that no longer
+  // exists. reconcileArchived() nulls it out, which is what makes commitNudge() attempt a save.
+  const baseline = readState(cwd);
+  baseline.active = "ghost-epic";
+  writeState(cwd, baseline);
+
+  const statePath = path.join(cwd, ".conductor", "state.json");
+  const staleContent = fs.readFileSync(statePath, "utf8");   // what commit-nudge's OWN loadState() sees
+
+  // Simulate another writer landing between commit-nudge's read and its write: bump the on-disk
+  // revision past what commit-nudge is about to compare against (the pointer stays unhealed, as
+  // an unrelated writer's change would leave it).
+  writeState(cwd, { ...baseline, revision: baseline.revision + 1 });
+
+  const { commitNudge } = await freshSubcommands(cwd);
+
+  // Intercept exactly the FIRST read of state.json (commit-nudge's own loadState()) to hand back
+  // the pre-race snapshot; every later read of it (saveState's conflict check, and the reload on
+  // retry) falls through to the real, already-bumped file on disk — reproducing the race without
+  // needing a second process.
+  const originalReadFileSync = fs.readFileSync;
+  let staleServed = false;
+  fs.readFileSync = (p, ...rest) => {
+    if (p === 0) return JSON.stringify({ tool_input: { command: 'git commit -m "chore: test"' } });
+    if (!staleServed && p === statePath) { staleServed = true; return staleContent; }
+    return originalReadFileSync(p, ...rest);
+  };
+
+  // Spy on the append that records a skip, rather than reading write-conflicts.log back after
+  // the fact: the retry's eventual SUCCESS calls clearConflicts() (by design — "a successful
+  // write must reset the consecutive-skip signal"), which deletes the log again before this
+  // test ever gets to inspect it. The append call itself is the only durable evidence.
+  const originalAppendFileSync = fs.appendFileSync;
+  const appended = [];
+  fs.appendFileSync = (p, data) => {
+    appended.push(String(data));
+    return originalAppendFileSync(p, data);
+  };
+
+  try {
+    assert.doesNotThrow(() => commitNudge(),
+      "a conflict on commit-nudge's self-heal write must degrade, not throw StateConflictError");
+  } finally {
+    fs.readFileSync = originalReadFileSync;
+    fs.appendFileSync = originalAppendFileSync;
+  }
+
+  // The first attempt's conflict must actually have been recorded — proves the retry path was
+  // genuinely exercised, not that the heal happened to succeed on the first try.
+  assert.ok(appended.some(line => line.includes("\tcommit-nudge\t")),
+    "the first attempt's conflict must be recorded against the commit-nudge verb");
+
+  // And the retry (reload + re-run the heal) must still have landed the self-heal on disk.
+  assert.equal(readState(cwd).active, null,
+    "the retry must still heal the stale active pointer despite the first attempt's conflict");
 });

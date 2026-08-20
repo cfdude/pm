@@ -78,9 +78,10 @@ export function loadState() {
  *  the lock held forever; a revision comparison leaves nothing behind.
  *
  *  opts.onConflict "throw" (default) is for interactive verbs: a human or agent is present and
- *  can re-read and re-apply. "skip" is for HOOK writes, whose only write is reconcileArchived()'s
- *  self-heal — that re-runs on the next hook, so losing it costs nothing, while hard-failing
- *  would turn an invisible race into a visible mid-session error for a write that did not matter.
+ *  can re-read and re-apply. "skip" is for HOOK writes — render.mjs's and commitNudge()'s own
+ *  reconcileArchived() self-heals — that re-run on the next hook, so losing either costs
+ *  nothing, while hard-failing would turn an invisible race into a visible mid-session error for
+ *  a write that did not matter.
  */
 export function saveState(state, opts = {}) {
   const { onConflict = "throw", verb = "unknown" } = opts;
@@ -113,7 +114,14 @@ export function saveState(state, opts = {}) {
     return { ok: true, revision: found, unchanged: true };
   }
 
-  const next = { ...state, revision: expected + 1 };
+  // Math.max(found, expected), not just expected: with --force, `expected` is the forcing
+  // writer's STALE value, and a plain `expected + 1` can land BELOW what's already on disk
+  // (found). That reopens the exact lost-update window this guard exists to close, just one
+  // hop removed: a third writer who loaded the post-`found` state now sees its own `expected`
+  // equal the forced write's (too-low) new revision, the guard passes, and the forced write's
+  // change is the one silently discarded. Always advance strictly past whichever of the two is
+  // higher so a forced write can never rewind the revision counter.
+  const next = { ...state, revision: Math.max(found, expected) + 1 };
   const data = JSON.stringify(next, null, 2) + "\n";
   const tmpPath = `${STATE_PATH}.tmp-${process.pid}-${Date.now()}`;
   fs.writeFileSync(tmpPath, data);
