@@ -343,3 +343,31 @@ test("any other error maps to null so it is re-thrown with its stack intact", as
   assert.equal(conflictExitCode(new TypeError("bad argument")), null);
   assert.equal(conflictExitCode(new Error("something else")), null);
 });
+
+// ─────────────── generated logs must not dirty the working tree ───────────────
+
+test("init writes .gitignore entries for the conductor's generated logs", async () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const gi = fs.readFileSync(path.join(cwd, ".gitignore"), "utf8");
+  assert.match(gi, /^\.conductor\/detours\.log$/m,
+    "detours.log was ignored only by the maintainer's personal global gitignore (#106)");
+  assert.match(gi, /^\.conductor\/write-conflicts\.log$/m);
+});
+
+test("init is idempotent — a second run does not duplicate the entries", async () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["init"], { cwd });
+  const lines = fs.readFileSync(path.join(cwd, ".gitignore"), "utf8").split("\n");
+  assert.equal(lines.filter(l => l === ".conductor/detours.log").length, 1);
+});
+
+test("init preserves an existing .gitignore instead of overwriting it", async () => {
+  const cwd = tmpRepo();
+  fs.writeFileSync(path.join(cwd, ".gitignore"), "node_modules/\n");
+  run(["init"], { cwd });
+  const gi = fs.readFileSync(path.join(cwd, ".gitignore"), "utf8");
+  assert.match(gi, /^node_modules\/$/m, "an existing entry must survive");
+  assert.match(gi, /^\.conductor\/detours\.log$/m);
+});

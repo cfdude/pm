@@ -17,6 +17,28 @@ import { activeChangeIds, firstHeading, planFiles, reconcileArchived } from "./e
 import { ROOT, CONDUCTOR_DIR, BRIEF_PATH, PLANS_DIR } from "./constants.mjs";
 import { resolveAndRecordPlatform } from "./platform.mjs";
 
+/** Ensure the conductor's GENERATED artifacts are git-ignored.
+ *
+ *  #106: detours.log has never been ignored by anything pm ships. It is invisible on the
+ *  maintainer's machine only because their personal ~/.gitignore_global carries `*.log`, so
+ *  every other user has had a permanently untracked file since it shipped — the same class as
+ *  #81 (PROJECT.md is never clean), and unnoticed precisely because the one person positioned
+ *  to see it is configured not to.
+ *
+ *  state.json, render-stamp.json and PROJECT.md stay TRACKED: they are the state of record and
+ *  the generated index, and both belong in git. */
+function ensureGitignore() {
+  const wanted = [".conductor/detours.log", ".conductor/write-conflicts.log"];
+  const giPath = path.join(ROOT, ".gitignore");
+  let existing = "";
+  try { existing = fs.readFileSync(giPath, "utf8"); } catch { /* absent is fine */ }
+  const have = new Set(existing.split("\n").map(l => l.trim()));
+  const missing = wanted.filter(w => !have.has(w));
+  if (missing.length === 0) return;
+  const prefix = existing && !existing.endsWith("\n") ? "\n" : "";
+  fs.appendFileSync(giPath, `${prefix}${missing.join("\n")}\n`);
+}
+
 export function init() {
   if (isInitialized()) {
     process.stderr.write("conductor: already initialized (.conductor/state.json exists)\n");
@@ -24,6 +46,7 @@ export function init() {
     saveState(defaultState());
     process.stderr.write("conductor: created .conductor/state.json\n");
   }
+  ensureGitignore();
   sync(true);                 // pull in existing openspec changes + plans
   { const s = loadState(); stampVersion(s); saveState(s); }
   const { platform } = resolveAndRecordPlatform();
