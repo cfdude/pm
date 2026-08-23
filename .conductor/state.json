@@ -2304,6 +2304,36 @@
       "reconcileNeeded": false,
       "externalId": "116",
       "externalUrl": "https://github.com/cfdude/pm/issues/116"
+    },
+    {
+      "id": "gh-117-sync-blind-to-archived-changes",
+      "title": "sync is blind to already-archived OpenSpec changes — 8 of 24 unindexed in one repo",
+      "priority": "P1",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "117",
+      "externalUrl": "https://github.com/cfdude/pm/issues/117"
+    },
+    {
+      "id": "gh-118-checkbox-signal-unreliable",
+      "title": "tasks.md checkbox state is the only progress signal and it is wrong in both directions",
+      "priority": "P1",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-95-stories-optional-and-gate-nothing",
+          "reason": "the archive gate 95 wants would be backed by a signal with 3 verified false-greens and zero true-reds in an 18-epic sample -- the gate would fire on bookkeeping tasks and stay silent on real ones"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "118",
+      "externalUrl": "https://github.com/cfdude/pm/issues/118"
     }
   ],
   "detourStack": [],
@@ -2313,5 +2343,5 @@
     "repo": "cfdude/pm"
   },
   "platform": "claude-code",
-  "revision": 13
+  "revision": 16
 }
