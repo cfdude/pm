@@ -2412,6 +2412,24 @@
       "reconcileNeeded": false,
       "externalId": "124",
       "externalUrl": "https://github.com/cfdude/pm/issues/124"
+    },
+    {
+      "id": "gh-125-release-planning-and-deliberate-exclusion",
+      "title": "pm has no concept of a release — backlog-wide triage and deliberate exclusion happen outside the tool",
+      "priority": "P1",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-119-deferrals-have-no-path-to-backlog",
+          "reason": "same missing concept -- a disposition with a reason -- at a different scope; 119 is a design-doc deferral, 125 is a release-scope exclusion, 120 is an archive outcome. Design once."
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "125",
+      "externalUrl": "https://github.com/cfdude/pm/issues/125"
     }
   ],
   "detourStack": [],
@@ -2421,5 +2439,5 @@
     "repo": "cfdude/pm"
   },
   "platform": "claude-code",
-  "revision": 23
+  "revision": 25
 }
