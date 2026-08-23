@@ -2394,6 +2394,24 @@
       "reconcileNeeded": false,
       "externalId": "123",
       "externalUrl": "https://github.com/cfdude/pm/issues/123"
+    },
+    {
+      "id": "gh-124-rules-block-emits-failing-add-epic",
+      "title": "The rules block emits an add-epic command that always fails — recipe omits the required --id",
+      "priority": "P1",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-114-lane-routing-blind-to-product",
+          "reason": "same emitted recipe -- 114 is its hardcoded lane, 124 is that it does not run at all"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "124",
+      "externalUrl": "https://github.com/cfdude/pm/issues/124"
     }
   ],
   "detourStack": [],
@@ -2403,5 +2421,5 @@
     "repo": "cfdude/pm"
   },
   "platform": "claude-code",
-  "revision": 21
+  "revision": 23
 }

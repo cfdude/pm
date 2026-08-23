@@ -232,7 +232,7 @@ Findings were routed to the live sessions that own each codebase for verificatio
 filed directly. Two replied within minutes, and both corrected this audit. Recorded in full,
 because a method whose output is never contradicted is not being checked.
 
-### Three flaws in the method
+### Five flaws in the method
 
 **1. No supersession check — produced one outright false finding.**
 
@@ -271,6 +271,40 @@ of the wrong claim before it was retracted.
 
 An artifact holds both a claim and its retraction, and reading it linearly gets the wrong answer.
 
+**4. Source cannot distinguish a *declared* constraint from an *enforced* one.**
+
+`personal-finance-paper` item 2 claimed a stale `CheckConstraint` at `models/trades.py:69` rejects
+values the column was widened to hold. The owning session queried the live database:
+
+```
+trades_criteria_set_check CHECK (criteria_set = ANY (ARRAY[
+  'SAFE','FLEX','MOMO','BOUNCE','CORE','CORE_HOLDING','LONG_TERM','DIVIDEND','GROWTH']))
+```
+
+`SELECT DISTINCT criteria_set` already returns `CORE_HOLDING`. **Nothing has ever been rejected.**
+The stale five-value list exists only in the SQLAlchemy model — model→DB drift, P3, not a live
+defect.
+
+Generalized by that session, and worth adopting as a lint on the audit's own output: **any finding
+of the form "X rejects / blocks / fails" is unverifiable from source alone when the authority lives
+in a database, an already-applied migration, or runtime config.** Such findings should be
+downgraded to *"declared vs enforced — needs a runtime check"* unless something actually queried
+the system. Its other three claims were pure source-shape and all held.
+
+**5. Pattern-matching on shape rather than reachability.**
+
+`personal-finance` item 1 claimed an ungated MI health path at `phase1_qualification.py:1069`. It is
+real as text and **unreachable as a deliberation path**: that function is `main()`, a CLI entry with
+zero callers, no scheduler entry, no registry entry, and no orchestrator command. The function that
+actually deliberates, `run_phase1_qualification`, is called from exactly one place —
+`portfolio_manager.py:834`, inside `run_full_trading_session`, which **is** gated at `:784`.
+
+The audit generalized from `main()` symmetry across the three gated sites. **The gate follows
+reachability, not shape.** A module can have an ungated `main()` and be fully gated because its
+deliberating function is only ever reached through a gated caller. The correct check is *trace the
+callers of the deliberating function*, not *check every `main()`* — which also makes the
+absent-edit test materially harder to automate than this audit assumed.
+
 ### A taxonomy class the method lacked
 
 **`promise-lost-in-translation`** — present in the proposal *and* the design, absent from
@@ -305,7 +339,25 @@ task.**
 Nothing in the headline findings — absent-edit's dominance, the prose-vs-task adoption measurement,
 and the gate-record unreliability were all established from artifacts the corrections do not touch.
 
-What it changes is the **confidence attached to individual findings**. Of six routed to owning
-sessions, two returned in minutes: four confirmed, one confirmed-but-mis-severitied, one refuted.
-Routing to the session that owns the codebase, rather than filing directly, is what produced that —
-and it should be the standing practice for any cross-repo finding.
+What it changes is the **confidence attached to individual findings**, and the honest hit rate:
+
+| | |
+|---|---|
+| Findings routed to owning sessions | **13** across 4 repos |
+| Confirmed as stated | 8 |
+| Confirmed, but wrong severity or attribution | 2 |
+| **Refuted** | **2** |
+| Not verified | 1 |
+
+All four sessions replied within minutes, and **every one of the five method flaws above came from
+a session that owns the code, not from the audit reviewing itself.** Three flaws were only findable
+with something a read-only cross-repo pass structurally cannot have: a live database, a caller
+trace, and the memory of a retraction.
+
+**Routing findings to the session that owns the codebase — rather than filing them directly — is
+what produced this, and should be the standing practice for any cross-repo finding.** Filing the
+13 directly would have put two false issues and two mis-severitied ones into other people's
+trackers, and would have surfaced none of the five flaws.
+
+One further correction: `personal-finance` has **19** openspec-lane epics, not 16. The untracked
+count of 8 was right; the epic count was not.
