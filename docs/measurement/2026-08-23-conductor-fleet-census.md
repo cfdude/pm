@@ -138,3 +138,46 @@ Repos enumerated with `fd -H -t f state.json --glob '*/.conductor/state.json'` u
 2. Baseline for the retrospective audit of the 42 ungated archives.
 3. The first row of a measurement series — the intent is to re-run this and watch the numbers
    move, and eventually to publish them rather than only cite them internally.
+
+---
+
+## Recomputed on the archive-directory denominator — 2026-08-23
+
+The lane-based count above undercounts. `lane == "openspec"` counts epics *labelled* openspec;
+it misses changes that went through the full OpenSpec workflow under another lane label, and it
+cannot see a change that was never registered at all. The physical artifact — a directory under
+`openspec/changes/archive/` — is the honest denominator for "work that went through the OpenSpec
+process".
+
+| Repo | archive dirs | openspec-lane epics | indexed | **unindexed** | gate2 |
+|---|---|---|---|---|---|
+| personal-finance-paper | 34 | 15 | 18 | **16** | 0 |
+| personal-finance | 24 | 18 | 16 | **8** | 0 |
+| job-search-agent | 9 | 2 | 2 | **7** | 1 |
+| virtual-mic | 9 | 4 | 4 | **5** | 1 |
+| agent-dm | 4 | 4 | 4 | 0 | 2 |
+| knowledge-store | 2 | 2 | 2 | 0 | 0 |
+| onvex-meetnexus-backend | 2 | 0 | 0 | **2** | 0 |
+| cfdude-plugins | 1 | 1 | 1 | 0 | 0 |
+| edd-harness-dev | 1 | 0 | 1 | 0 | 0 |
+| pm | 1 | 3 | 1 | 0 | 3 |
+| **Total** | **87** | **49** | **49** | **38** | **7** |
+
+### What the recomputation does and does not change
+
+**It does not change the gate conclusion.** Gate 2 coverage moves from **14%** (7/49, lane
+denominator) to **8%** (7/87, archive denominator). Both say the same thing: the gate is not
+systematically applied. And per #122 the numerator is unreliable in both directions anyway, so
+neither figure should be quoted as precise.
+
+**It produces a different and more useful number:**
+
+> **The conductor sees 49 of 87 archived OpenSpec changes — 56%.**
+
+That is a measurement of *pm's own coverage*, not of the gate. Nearly half the OpenSpec work done
+in these repositories is invisible to the tool whose job is to know what is in flight and what
+shipped. It is the cleanest single statement of the problem #117 describes, and it is not
+derivable from the lane-based view at all — the lane view reports 49 of 49 and looks complete.
+
+**Use the archive denominator as the baseline going forward**, so future measurements compare
+against something that does not move when a lane label is chosen differently.
