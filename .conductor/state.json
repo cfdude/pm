@@ -2286,6 +2286,24 @@
       "reconcileNeeded": false,
       "externalId": "115",
       "externalUrl": "https://github.com/cfdude/pm/issues/115"
+    },
+    {
+      "id": "gh-116-conflict-warning-missed-on-burst",
+      "title": "Write-conflict warning fires only if sampled at exactly 3 — a burst warns zero times",
+      "priority": "P1",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-115-gates-blind-to-absent-edit",
+          "reason": "the test drove the counter one step at a time -- coverage traced the intended sequence rather than the invariant, so the burst case was never exercised"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "116",
+      "externalUrl": "https://github.com/cfdude/pm/issues/116"
     }
   ],
   "detourStack": [],
@@ -2295,5 +2313,5 @@
     "repo": "cfdude/pm"
   },
   "platform": "claude-code",
-  "revision": 11
+  "revision": 13
 }
