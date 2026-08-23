@@ -2208,6 +2208,18 @@
       "reconcileNeeded": false,
       "externalId": "109",
       "externalUrl": "https://github.com/cfdude/pm/issues/109"
+    },
+    {
+      "id": "gh-110-gate2-bypassed-by-archive-hook",
+      "title": "Gate 2 enforced at the front door, bypassed by the archive hook — 7 of 49 archived openspec epics have a verdict",
+      "priority": "P0",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "110",
+      "externalUrl": "https://github.com/cfdude/pm/issues/110"
     }
   ],
   "detourStack": [],
@@ -2217,5 +2229,5 @@
     "repo": "cfdude/pm"
   },
   "platform": "claude-code",
-  "revision": 4
+  "revision": 5
 }
