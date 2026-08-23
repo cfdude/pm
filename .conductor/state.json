@@ -2268,6 +2268,24 @@
       "reconcileNeeded": false,
       "externalId": "114",
       "externalUrl": "https://github.com/cfdude/pm/issues/114"
+    },
+    {
+      "id": "gh-115-gates-blind-to-absent-edit",
+      "title": "Both gates are diff-scoped, so they are blind to the absent edit — five shipped defects share the shape",
+      "priority": "P1",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-113-gate-verdict-records-no-diff-range",
+          "reason": "Gate 2's two failure modes -- 113 is the record being unverifiable, 115 is the review being structurally scoped to miss the absent edit"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "115",
+      "externalUrl": "https://github.com/cfdude/pm/issues/115"
     }
   ],
   "detourStack": [],
@@ -2277,5 +2295,5 @@
     "repo": "cfdude/pm"
   },
   "platform": "claude-code",
-  "revision": 9
+  "revision": 11
 }
