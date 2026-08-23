@@ -2346,6 +2346,30 @@
       "reconcileNeeded": false,
       "externalId": "119",
       "externalUrl": "https://github.com/cfdude/pm/issues/119"
+    },
+    {
+      "id": "gh-120-epic-outcome-shipped-vs-killed",
+      "title": "Conductor cannot distinguish shipped from killed from abandoned",
+      "priority": "P1",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "120",
+      "externalUrl": "https://github.com/cfdude/pm/issues/120"
+    },
+    {
+      "id": "gh-121-tasks-verified-against-tree-not-commit",
+      "title": "A task can be ticked and gated green while its files were never staged",
+      "priority": "P1",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "121",
+      "externalUrl": "https://github.com/cfdude/pm/issues/121"
     }
   ],
   "detourStack": [],
@@ -2355,5 +2379,5 @@
     "repo": "cfdude/pm"
   },
   "platform": "claude-code",
-  "revision": 17
+  "revision": 19
 }
