@@ -223,3 +223,89 @@ own framing is not being run honestly.
 - **Whether long-standing deferrals are deliberate backlog or forgotten.**
 - **8 approval-routing fix classifications** in `personal-finance` rest on commit message plus
   `--stat`, not full diffs.
+
+---
+
+## Corrections from the audited sessions — 2026-08-23
+
+Findings were routed to the live sessions that own each codebase for verification rather than
+filed directly. Two replied within minutes, and both corrected this audit. Recorded in full,
+because a method whose output is never contradicted is not being checked.
+
+### Three flaws in the method
+
+**1. No supersession check — produced one outright false finding.**
+
+`job-search-agent` item 3 claimed the spec's 30-day freshness filter landed on one arm while the
+primary DB arm shipped 90 days. That was **true of the state the archived spec describes and false
+of HEAD**: a later epic (JOB-503) replaced both with a single `FRESHNESS_DAYS = 14` in
+`constants.py:14`, consumed by both arms, and the constant's own docstring documents the divergence
+as history.
+
+The audit read an archived spec against HEAD without asking whether a *later change deliberately
+moved it*. **"Spec says X, HEAD says Y" is only a defect if nothing in between intended it.** This
+flaw is systematic, not incidental — every finding derived from spec-vs-HEAD comparison shares it.
+
+**2. Severity was inferred from mechanism without measuring blast radius.**
+
+`job-search-agent` item 1's mechanism was confirmed exactly: `extract_role_tokens` strips *interior*
+separators, so `"Product/Program Manager"` → `['productprogram']`. But this audit called it a P1
+silently producing zero matches. The predicate at `agent_execution_service.py:882` is
+`AND (tok OR tok OR …)`, so **one surviving token rescues the query** — `"Front-End Engineer"` still
+matches on `engineer`. Zero matches requires *every* token to be mangled.
+
+Measured against the live dev DB by the owning session: **2,279 agents, 3,328 title strings, zero
+containing an interior separator.** Real latent defect, correctly reclassified P3, fires the moment
+someone types a slashed title. Not an outage.
+
+A confirmed mechanism is not a severity. This audit had no access to production data and asserted
+impact anyway.
+
+**3. A retracted claim inside a design doc can be ingested as fact.**
+
+`virtual-mic`'s `push-to-talk-keypress` design.md contains a "phantom-connected session" finding
+(state connected, zero established sockets) that was later **retracted in the same file** under
+"Task 4.0 RESULT" — it was a measurement artifact, since `lsof -c VirtualMic` cannot see tailnet
+sockets that Tailscale's network extension owns. Two planned tasks were cancelled on the strength
+of the wrong claim before it was retracted.
+
+An artifact holds both a claim and its retraction, and reading it linearly gets the wrong answer.
+
+### A taxonomy class the method lacked
+
+**`promise-lost-in-translation`** — present in the proposal *and* the design, absent from
+`tasks.md`, absent from the code, and never amended.
+
+Found in `job-search-agent/matching-pipeline-corrections`: the capped +10 recommendation bonus is
+promised at `proposal.md:15` and `design.md:41`, and `rg -i bonus` over the archived `tasks.md`
+returns nothing. It was **not abandoned during implementation** — it was dropped at the
+design→tasks translation, which no gate examines.
+
+This is distinct from `scope-dropped` (which presumes the work reached the task list) and it is
+probably common, because the design→tasks hop is the one transition with no review attached. It is
+also cleanly testable: **assert every requirement in a proposal or design maps to at least one
+task.**
+
+### Verifications that held
+
+- **`virtual-mic` item 1 confirmed on `main`.** Three `PeerSession` construction sites
+  (`MenuBarScene.swift:1643`, `:1785`, `:2508`), three separate `self.session =` assignments, no
+  unified adopter — including a spike-redial site at :1643 that neither the audit nor the epic's
+  own task list had accounted for. **Closed on an unmerged branch** by an `adoptSession(_:)` helper
+  with exactly one assignment: structural rather than inspectional, so a future fourth site
+  *cannot* adopt a session without going through it. That is the correct shape of a fix for this
+  class, and worth holding up as the reference example.
+- **`virtual-mic` item 3 confirmed.** The failover/climb-back gate was explicitly deferred by the
+  operator and spun out as a still-`planned` P3 epic. Zero post-archive fixes means nobody ran it.
+- **`job-search-agent` items 1 and 2 confirmed** as mechanisms, with better root causes than the
+  audit had.
+
+### What this changes
+
+Nothing in the headline findings — absent-edit's dominance, the prose-vs-task adoption measurement,
+and the gate-record unreliability were all established from artifacts the corrections do not touch.
+
+What it changes is the **confidence attached to individual findings**. Of six routed to owning
+sessions, two returned in minutes: four confirmed, one confirmed-but-mis-severitied, one refuted.
+Routing to the session that owns the codebase, rather than filing directly, is what produced that —
+and it should be the standing practice for any cross-repo finding.
