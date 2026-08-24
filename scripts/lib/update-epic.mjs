@@ -8,6 +8,7 @@ import { globalReviewMode } from "./rules.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { parentError, parseFlags, parseLinkFlags } from "./add-epic.mjs";
 import { render } from "./render.mjs";
+import { archiveGate } from "./archive-gate.mjs";
 
 // The flags update-epic recognizes. Anything else is a rejected error, not a
 // silent no-op — an unrecognized flag (e.g. a typo) used to parse, run, and
@@ -104,19 +105,13 @@ export function updateEpic() {
     process.stderr.write("conductor: --done requires --story <n>\n"); process.exit(1);
   }
 
-  // openspec-lane epics may not be archived without a passing Gate 2 (implementation review)
-  // verdict — see CLAUDE.md "OpenSpec build — TWO mandatory gates" and recordGateReview()
-  // above. Gate 1 (spec review) gates code, which already happened earlier in the workflow;
-  // only Gate 2 blocks archiving. Non-openspec-lane epics are completely unaffected.
-  if (status === "archived" && epic.lane === "openspec") {
-    const gate2 = epic.gateReview && epic.gateReview.gate2;
-    if (!gate2 || gate2.verdict !== "pass") {
-      process.stderr.write(
-        `conductor: cannot archive openspec-lane epic '${id}' — missing a passing Gate 2 ` +
-        `(implementation review) verdict. Run 'record-gate-review ${id} --gate 2 --verdict pass' ` +
-        `after a real fresh-context implementation review before archiving.\n`);
-      process.exit(1);
-    }
+  // The archive transition's conditions live in archive-gate.mjs, which every path that can
+  // leave an epic at `archived` imports. They were inline here, which is precisely how they
+  // came to bind this one path and none of the other four. The gate returns a refusal; this
+  // command owns the exit code and the stderr, as it does for every other validation above.
+  if (status === "archived") {
+    const verdict = archiveGate(epic, {});
+    if (!verdict.ok) { process.stderr.write(`conductor: ${verdict.message}\n`); process.exit(1); }
   }
 
   if (str(f.title) !== undefined) epic.title = str(f.title);

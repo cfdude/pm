@@ -453,3 +453,60 @@ test("an engine `unknown` stamp with no reason adds no disposition row", () => {
   assert.doesNotMatch(projectMd(cwd), /## Dispositions/,
     "an `unknown` stamp carrying no reason must not open a Dispositions section on its own");
 });
+
+// ─────────────── the archive gate ───────────────
+//
+// The Gate 2 refusal lived inline in update-epic.mjs, which is exactly how it came to bind
+// ONE of the five paths that can leave an epic at `status: "archived"`. It moves into a module
+// the paths import, so a rule added there binds every caller rather than whichever site the
+// implementer happened to be editing.
+
+const ARCHIVE_GATE = new URL("../lib/archive-gate.mjs", import.meta.url).href;
+
+test("update-epic holds no openspec-lane archive condition of its own", () => {
+  // The co-occurrence is what matters, not the bare string: a line that tests the openspec
+  // lane AND reads a gate verdict is the guard, wherever it is written.
+  const src = fs.readFileSync(path.join(REPO, "scripts", "lib", "update-epic.mjs"), "utf8");
+  const lines = src.split("\n");
+  const offenders = [];
+  lines.forEach((line, i) => {
+    const t = line.trim();
+    if (t.startsWith("//") || t.startsWith("*") || t.startsWith("/*")) return;
+    if (!line.includes('"openspec"')) return;
+    const window = lines.slice(Math.max(0, i - 3), i + 4).join("\n");
+    if (/gate2|gateReview/.test(window)) offenders.push(`${i + 1}: ${t}`);
+  });
+  assert.deepEqual(offenders, [],
+    "the archive gate belongs in archive-gate.mjs, which every archive path imports — an " +
+    "inline condition here binds this one path and no other");
+});
+
+test("the archive gate returns a refusal OBJECT and never exits the process itself", async () => {
+  const { archiveGate } = await import(ARCHIVE_GATE);
+  const refused = archiveGate({ id: "spec-epic", lane: "openspec" });
+  assert.equal(refused.ok, false);
+  assert.match(refused.message, /Gate 2/,
+    "the refusal must name what is missing, and it must be a value the caller can plumb — " +
+    "a gate that calls process.exit is unusable from any path that has cleanup to do");
+  assert.equal(archiveGate({ id: "spec-epic", lane: "openspec",
+    gateReview: { gate2: { verdict: "fail" } } }).ok, false);
+  assert.equal(archiveGate({ id: "spec-epic", lane: "openspec",
+    gateReview: { gate2: { verdict: "pass" } } }).ok, true);
+  assert.equal(archiveGate({ id: "cc-epic", lane: "claude-code" }).ok, true,
+    "a non-openspec-lane epic is unaffected");
+});
+
+test("the gate is reachable from update-epic, refusal text intact", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
+  const before = readState(cwd);
+  const err = expectFail(() => run(["update-epic", "spec-epic", "--status", "archived"], { cwd }));
+  assert.ok(err, "expected the archive to be refused");
+  const msg = String(err.stderr || err.message);
+  assert.match(msg, /cannot archive openspec-lane epic 'spec-epic'/,
+    "the message must still identify the epic and the lane rule that refused it");
+  assert.match(msg, /record-gate-review spec-epic --gate 2 --verdict pass/,
+    "every refusal names its remedy and the exact command");
+  assert.deepEqual(readState(cwd).epics, before.epics, "a refused archive writes nothing");
+});
