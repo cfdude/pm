@@ -151,3 +151,76 @@ export const RULES_END = "<!-- END pm-conductor rules -->";
 // string, and never make it platform-dependent -- a per-platform anchor would mean a block
 // written under one platform is invisible to another, reintroducing the same duplication.
 export const RULES_BEGIN_PREFIX = "<!-- BEGIN pm-conductor rules";
+
+// ─────────────────── tracker direction: TWO predicates, resolved once ───────────────────
+//
+// They live here because `constants.mjs` is the only module BOTH emitters already reach:
+// `briefing.mjs` does not import from `rules.mjs` and must not start (the one-directional
+// discipline the engine is built on). A helper placed anywhere only one of them can reach
+// becomes two copies, and the coherence assertion between them then passes vacuously — which
+// is exactly how this defect shipped: `rules.mjs` suppressed the outward section on a literal
+// vendor test while `briefing.mjs` gated the outward drift line on a tracker merely EXISTING,
+// so cfdude/pm received a brief demanding outward action for 29 epics under a rules block
+// carrying no outward instructions at all (#109).
+export const KNOWN_TRACKER_DIRECTIONS = ["inward", "outward", "both"];
+
+/** A tracker's resolved direction, or null when there is no tracker.
+ *
+ *  The FALLBACK is load-bearing independently of any state migration, because `/pm:upgrade`
+ *  lags the plugin update by design — a repo can run this engine for weeks before its state is
+ *  stamped. So a tracker with no recorded `direction` resolves to the behavior its vendor
+ *  produced before direction existed: `github-issues` was inward-only, everything else received
+ *  the outward mirror and never an inward pull.
+ *
+ *  A SECONDARY entry resolves `inward` whatever its vendor: the secondary role is defined as
+ *  pull-only (no outward creation is specified for it anywhere), and every secondary emits an
+ *  inward section today regardless of system. */
+export function directionOf(tracker) {
+  if (!tracker || !tracker.system) return null;
+  if (KNOWN_TRACKER_DIRECTIONS.includes(tracker.direction)) return tracker.direction;
+  if (tracker.role === "secondary") return "inward";
+  return tracker.system === "github-issues" ? "inward" : "outward";
+}
+
+/** Resolved value #1: does the outward mirror apply to this tracker? */
+export const outwardApplies = (tracker) => {
+  const d = directionOf(tracker);
+  return d === "outward" || d === "both";
+};
+
+/** The identifying scope an inward "list open items in …" step needs, or null.
+ *  `github-issues` names its scope as a `repo` and nothing else; any other system accepts a
+ *  `repo` or a `projectKey`. */
+export function trackerScope(tracker) {
+  if (!tracker || !tracker.system) return null;
+  if (tracker.system === "github-issues") return tracker.repo || null;
+  return tracker.repo || tracker.projectKey || null;
+}
+
+/** Resolved value #2: is an inward procedure EMITTABLE for this tracker?
+ *
+ *  Direction and scope are separate tests and must stay separate. A `github-issues` primary with
+ *  no `repo` emits neither section today, resolves `inward`, and under the plain rule "inward iff
+ *  direction includes inward" would gain a section it never had — carrying a `list open items in
+ *  <scope>` step with nothing to put in the placeholder, which is the unrunnable emitted command
+ *  "every command pm emits must run as written" forbids. */
+export const inwardProcedureEmittable = (tracker) => {
+  const d = directionOf(tracker);
+  return (d === "inward" || d === "both") && !!trackerScope(tracker);
+};
+
+/** Does the REPO have an inward procedure anywhere — primary or any secondary? The completion-
+ *  sync reminder, the brief's sync nudge and the brief's freshness line all key on this, so that
+ *  none of them can instruct an action the repo has no emitted procedure for. */
+export const anyInwardProcedureEmittable = (tracker, secondaryTrackers = []) =>
+  inwardProcedureEmittable(tracker) ||
+  (Array.isArray(secondaryTrackers) && secondaryTrackers.some(inwardProcedureEmittable));
+
+/** True when this tracker's inward list step can be a literal `gh issue list --repo <repo>`
+ *  invocation rather than the vendor-neutral "list open items in <system> (<scope>) with your own
+ *  tooling" phrasing. Exported so an EMITTER never has to name a vendor to choose its phrasing —
+ *  the suite's source scan fails any emitter that carries the `github-issues` literal itself,
+ *  because a vendor literal in an emitter is how the direction rule came to be applied at one of
+ *  two sites in the first place. */
+export const usesGhIssueList = (tracker) =>
+  !!tracker && tracker.system === "github-issues" && !!tracker.repo;
