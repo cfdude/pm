@@ -25,38 +25,48 @@ const UPDATE_EPIC_FLAGS_0_26_0 = [
   "link", "review-mode", "add-story", "story", "done",
 ];
 
-test("the registry's update-epic projection is set-equal to 0.26.0's UPDATE_EPIC_FLAGS literal", async () => {
+// The registry EXISTS to be grown — four capabilities in this release add flags to these
+// commands, which is the whole reason it was seeded early. So the three snapshot checks below
+// assert CONTAINMENT, not equality: every flag 0.26.0 accepted is still accepted (seeding lost
+// nothing), and a flag added on top is this release doing its job. Written as set-equality they
+// would fail on the first capability that used the chokepoint, which is not a defect the check
+// exists to catch — it is the check contradicting the design. What set-equality genuinely pinned
+// (the SEEDING commit changed no behavior) is pinned by the seeding commit's own history; from
+// here on the live guarantee is that no 0.26.0 flag was silently dropped.
+const missingFrom = (projected, snapshot) => snapshot.filter(f => !projected.includes(f));
+
+test("the registry's update-epic projection still accepts every 0.26.0 UPDATE_EPIC_FLAGS entry", async () => {
   const { EPIC_FLAGS } = await import(CONSTANTS);
   const projected = EPIC_FLAGS.filter(f => f.commands.includes("update-epic")).map(f => f.flag);
   assert.deepEqual(
-    [...projected].sort(),
-    [...UPDATE_EPIC_FLAGS_0_26_0].sort(),
-    "seeding EPIC_FLAGS must reproduce 0.26.0's update-epic flag surface exactly — no flag " +
-    "gained, none lost");
+    missingFrom(projected, UPDATE_EPIC_FLAGS_0_26_0), [],
+    "a flag update-epic accepted in 0.26.0 has been dropped from the registry");
 });
 
-test("the registry's add-epic projection is exactly the flags add-epic parsed in 0.26.0", async () => {
+test("the registry's add-epic projection still accepts every flag add-epic parsed in 0.26.0", async () => {
   const { EPIC_FLAGS } = await import(CONSTANTS);
   // add-epic had no allowlist, so its 0.26.0 surface is the set of flags its body actually
   // read out of parseFlags(): id, lane, status, title, priority, plan, parent, external-id,
   // external-url, link. Everything else parsed, exited 0 and wrote nothing (issue #79).
   const projected = EPIC_FLAGS.filter(f => f.commands.includes("add-epic")).map(f => f.flag);
   assert.deepEqual(
-    [...projected].sort(),
-    ["external-id", "external-url", "id", "lane", "link", "parent", "plan", "priority", "status", "title"],
-  );
+    missingFrom(projected,
+      ["external-id", "external-url", "id", "lane", "link", "parent", "plan", "priority", "status", "title"]),
+    [],
+    "a flag add-epic parsed in 0.26.0 has been dropped from the registry");
 });
 
-test("the registry's add-many keys are exactly the state keys add-many copied in 0.26.0", async () => {
+test("the registry's add-many keys still include every state key add-many copied in 0.26.0", async () => {
   const { EPIC_FLAGS } = await import(CONSTANTS);
   // add-many.mjs:61-70's fixed key copy, verbatim. A batch document is written in STATE keys
   // (externalId), not flag names (external-id), which is why the registry carries `key`
   // explicitly rather than deriving it from `flag`.
   const projected = EPIC_FLAGS.filter(f => f.commands.includes("add-many") && f.key).map(f => f.key);
   assert.deepEqual(
-    [...projected].sort(),
-    ["externalId", "externalUrl", "id", "lane", "links", "parent", "planPath", "priority", "status", "title"],
-  );
+    missingFrom(projected,
+      ["externalId", "externalUrl", "id", "lane", "links", "parent", "planPath", "priority", "status", "title"]),
+    [],
+    "a state key add-many copied in 0.26.0 has been dropped from the registry");
 });
 
 test("every registry entry declares a flag, a key slot and at least one accepting command", async () => {
