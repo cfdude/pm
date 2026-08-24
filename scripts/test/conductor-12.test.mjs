@@ -312,8 +312,8 @@ test("a successful state write clears the conflict log", async () => {
 
 test("the threshold warning fires ONCE ACROSS INVOCATIONS, not once per process", async () => {
   // conflictCount() is derived from a file, so without consuming the condition the count stays
-  // pinned at the threshold and every SessionStart re-warns — the same storm the strict-equality
-  // rule exists to prevent, arrived at from the other side.
+  // at or above the threshold and every SessionStart re-warns — the error storm that trains a
+  // reader to filter the message, arrived at from the other side.
   const cwd = tmpRepo();
   run(["init"], { cwd });
   const { recordConflict } = await freshConflicts(cwd);
@@ -323,7 +323,26 @@ test("the threshold warning fires ONCE ACROSS INVOCATIONS, not once per process"
 
   assert.match(run(["brief"], { cwd }), /3 state writes skipped on conflict/);
   assert.doesNotMatch(run(["brief"], { cwd }), /writes skipped on conflict/,
-    "consumption rotates the log, resetting count below the threshold — a second brief must not re-warn");
+    "consumption latches — the log and its count are left untouched, and a second brief must not re-warn");
+});
+
+test("a successful state write RE-ARMS the warning — the next episode of contention warns again", async () => {
+  // The latch must not be a one-way door. The signal of interest is CONSECUTIVE skips: a
+  // successful write ends the episode, so clearConflicts() drops the log AND the latch together.
+  // Leave the latch behind and the first episode is the only one this repo ever reports.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const { recordConflict } = await freshConflicts(cwd);
+  for (const f of [2, 3, 4]) recordConflict({ verb: "render", expected: 1, found: f });
+  assert.match(run(["brief"], { cwd }), /3 state writes skipped on conflict/, "the first episode warns");
+
+  run(["add-epic", "--id", "re-arms-it", "--lane", "claude-code", "--priority", "P3"], { cwd });
+  assert.ok(!fs.existsSync(path.join(cwd, ".conductor", "write-conflicts.latch")),
+    "a successful write must clear the latch, not just the log");
+
+  for (const f of [5, 6, 7, 8]) recordConflict({ verb: "render", expected: 2, found: f });
+  assert.match(run(["brief"], { cwd }), /4 state writes skipped on conflict/,
+    "a second episode must warn once more — and at 4 skips, which the old equality rule could never report");
 });
 
 test("consuming the warning preserves the evidence it points at — AT THE PATH IT NAMED", async () => {

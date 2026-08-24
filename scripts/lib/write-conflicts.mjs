@@ -75,10 +75,11 @@ export function conflictWarningLatched() {
   try { return fs.existsSync(WRITE_CONFLICTS_LATCH); } catch { return false; }
 }
 
-/** Consume the warning condition: the count resets, the evidence survives.
+/** Consume the warning for this EPISODE: nothing about the log moves, and the evidence stays at
+ *  the path the warning just named.
  *
  *  Called when the briefing SURFACES the threshold warning. Without this, `conflictCount()`
- *  stays pinned at the threshold once contention stops — nothing else clears it, because
+ *  stays at or above the threshold once contention stops — nothing else clears it, because
  *  clearConflicts() only runs on a successful state write and render() only writes when
  *  reconcileArchived() has something to heal. The brief runs every SessionStart, so the
  *  warning would re-fire every session for a problem that resolved days ago.
