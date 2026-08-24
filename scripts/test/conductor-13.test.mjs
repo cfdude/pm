@@ -627,3 +627,20 @@ test("the marker is read on the task LINE — never on a following line, never b
   assert.equal(progress.total, 2,
     "a marker on a FOLLOWING line excludes nothing, and being last in the file excludes nothing");
 });
+
+test("a source whose every task is excluded is still a SOURCE — no missing-source warning", () => {
+  // `exists` from countCheckboxes() stays the discriminator. Switching it to `total > 0`
+  // collapses "present and fully excluded" into "missing", which is the three-states-into-one
+  // -glyph failure the missing-source warning was added to end.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  withTasks(cwd, "ctt", [`- [x] 1 ${MARKER} archived`, `- [ ] 2 ${MARKER} closed the issues`]);
+  run(["add-epic", "--id", "ctt", "--lane", "openspec"], { cwd });
+  const { progress, outstanding } = progressIn(cwd, readState(cwd).epics.find(e => e.id === "ctt"));
+  assert.equal(progress.warn, null, "a present, readable source must never warn as missing");
+  assert.equal(progress.total, 0);
+  assert.equal(progress.excluded, 2);
+  assert.equal(outstanding, 0);
+  run(["render"], { cwd });
+  assert.doesNotMatch(projectMd(cwd), /tasks\.md missing/);
+});

@@ -151,6 +151,12 @@ export function countCheckboxes(absPath) {
  *  epic whose tasks.md moved rendered exactly like a decision-lane epic that never had one.
  *  Both branches below therefore warn, and `bar()` renders `⚠ <warn>` in PROJECT.md and the brief.
  *
+ *  `exists` from countCheckboxes() — never `total > 0` — is the missing-source discriminator.
+ *  Excluding tasks must not collapse a real source into the no-source state: an epic whose
+ *  every task carries the lifecycle marker still HAS a source, reads `0/0` legitimately, and
+ *  must not warn. A `total > 0` test would fold it back into the missing case, reintroducing
+ *  the three-states-into-one-glyph confusion the warning was added to end.
+ *
  *  ARCHIVED epics are exempt. Archiving is precisely when a source legitimately goes away —
  *  openspec removes `changes/<id>/`, and the documented convention for finished plans is to move
  *  them out of `plans/` (which is also the mitigation for sync re-registering shipped plans).
