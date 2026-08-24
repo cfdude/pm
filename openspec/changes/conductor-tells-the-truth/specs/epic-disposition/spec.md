@@ -180,11 +180,21 @@ archive time by construction, so a guard reading raw checkbox state would demand
 every fully delivered change and the release would ship a guard that refuses its own success case.
 The refusal MUST state the same count the record renders for that epic.
 
-The guard binds the **interactive archive verb** only. The **hook-driven archive heal** and the
-**archive backfill registration** — the non-interactive paths `gate-integrity` enumerates — MUST
+**The refusal MUST name BOTH remedies.** The exclusion `conductor-record` defines is marker-gated,
+so a task source authored before this release — carrying a real archive instruction with no
+`<!-- pm:lifecycle -->` declaration — still counts that item as outstanding and still refuses.
+There are therefore two correct responses to this refusal, and the message SHALL name each: record
+a `carried-to` reference where work genuinely moved to another epic, **or** add the
+`<!-- pm:lifecycle -->` declaration, quoted as that literal token, where the outstanding item is
+lifecycle bookkeeping rather than delivery. A refusal naming only the handoff steers an agent
+holding a fully delivered change toward inventing a receiver for work nobody carried anywhere,
+which is a fabricated record produced by a guard built to prevent fabricated records.
+
+The guard binds the **interactive archive verb** only. The **archive-drift heal** and the **archive
+backfill registration** — the paths `gate-integrity` enumerates that supply no disposition — MUST
 NOT be bound by it: the backfill is required to register historical changes with their unticked
-counts intact, including the one genuinely abandoned change in the audited archive, and there is no
-agent present on either path to name a receiver.
+counts intact, including the one genuinely abandoned change in the audited archive, and neither
+path receives a named receiver from anyone.
 
 #### Scenario: Archiving with outstanding work and a named receiver
 - **WHEN** an epic is archived with 3 of 81 tasks deliberately un-ticked and the agent records
@@ -197,6 +207,14 @@ agent present on either path to name a receiver.
   `outcome: delivered` with no `carried-to` reference
 - **THEN** the transition is refused, stating the same outstanding count the record renders, so the
   handoff cannot vanish silently
+
+#### Scenario: The refusal names the declaration as well as the handoff
+- **WHEN** a fully delivered change is archived through the interactive verb and its only
+  outstanding item is an un-declared archive instruction in a task source written before this
+  release
+- **THEN** the refusal names both remedies — record a `carried-to` reference, or mark the item with
+  the literal `<!-- pm:lifecycle -->` declaration — so the agent is not steered into naming a
+  receiver for work that went nowhere
 
 #### Scenario: A killed epic with every task outstanding needs no handoff
 - **WHEN** an epic is archived with `outcome: killed` and its reason, with all 47 of its tasks

@@ -41,6 +41,23 @@ it got past Gate 2 — the interactive verb by refusing a `delivered` archive wi
 verdict, the heal by recording that it bypassed the gate, and the backfill by the `unknown` outcome
 and `recordedBy: "archive-backfill"` stamp that `conductor-record` already requires of it.
 
+**Outcome invariant.** NO write that leaves an epic at `status: "archived"` — by any path, whether
+named above or added later — SHALL leave it without an `outcome`. This includes a path that archives
+an epic later in the same process run than a migration which has already stamped outcomes over the
+epics that were archived at that instant. The invariant is deliberately stated over "any write that
+produces an archived epic" rather than over the enumerated path list, and it lives under the
+requirement that claims exhaustiveness rather than under any single path's rules: an enumeration
+goes stale the moment a path is added, an ordering constraint is silently breakable by a later
+refactor, and a rule filed under one path's heading invites an implementer to read it as that path's
+business. The invariant is checkable wherever an archived epic is read.
+
+#### Scenario: No archive path leaves an epic without an outcome
+
+- **WHEN** every epic at `status: "archived"` in a repository is read, after any sequence of
+  interactive archives, drift heals, backfill registrations and migrations
+- **THEN** each carries an `outcome`, with no exception for the path or the ordering that produced
+  the transition
+
 **The Gate 2 requirement binds `outcome: delivered` only.** A change that is killed, superseded or
 abandoned has no passing Gate 2 and never will — the code was never written, or was written and
 thrown away — so demanding one would make those dispositions recordable only by fabricating a
@@ -113,14 +130,8 @@ which its own rationale names ("the first run of the backfill fills the repo's i
 findings against changes that were archived long before the conductor could have guarded them").
 
 Writing the bypass and the outcome as two independent records is what produces an archived epic
-carrying one and not the other. **Outcome invariant:** NO write that leaves an epic at
-`status: "archived"` — by any path, whether named by this capability or added later — SHALL leave it
-without an `outcome`. This includes a path that archives an epic later in the same process run than
-a migration which has already stamped outcomes over the epics that were archived at that instant.
-The invariant is deliberately stated over "any write that produces an archived epic" rather than
-over the enumerated path list: an enumeration goes stale the moment a path is added, and an ordering
-constraint is silently breakable by a later refactor, while the invariant is checkable wherever an
-archived epic is read.
+carrying one and not the other, which is why this is one write and why the outcome invariant stated
+in the requirement above binds it.
 
 #### Scenario: The archive-drift heal records the bypass and the outcome together
 
@@ -319,7 +330,8 @@ anything a required task carries.
 
 #### Scenario: An empty attribution array is not the same as an absent one
 
-- **WHEN** an epic carries an attribution array containing no hashes
+- **WHEN** an epic created under this capability — and therefore carrying the array initialized
+  empty — reaches archive with no commit yet attributed to it
 - **THEN** it asserts that no commit has been attributed, so no verdict can be shown stale by it
   and the archive is not refused on staleness grounds; the epic instead renders as `delivered` with
   no attributed commits — a distinct rendering from an epic whose array is absent, which renders as
@@ -327,13 +339,20 @@ anything a required task carries.
 
 ### Requirement: Commit attribution is written by a named flag the emitted instructions require
 
-The attribution array the staleness requirement compares against SHALL be written by a **named
-flag on an epic-mutating command** — `--attribute-commit <sha>`, accepted more than once in a
-single invocation and appending each hash in the order given — and that flag SHALL be declared in
-the single shared flag allowlist that `epic-annotation` requires, not in a second parallel list.
-The engine SHALL append exactly the hashes it is given and SHALL infer attribution from nothing
-else: not from the files a commit touches, not from an epic id appearing in a commit message, not
-from commit ordering.
+The attribution array the staleness requirement compares against SHALL be written by a **named flag
+on `update-epic`** — `--attribute-commit <sha>`, accepted more than once in a single invocation and
+appending each hash in the order given — and that flag SHALL be declared in the single shared flag
+allowlist that `epic-annotation` requires, not in a second parallel list. The engine SHALL append
+exactly the hashes it is given and SHALL infer attribution from nothing else: not from the files a
+commit touches, not from an epic id appearing in a commit message, not from commit ordering.
+
+**An epic created after this capability SHALL be created carrying the array, initialized empty.**
+That is what makes the staleness requirement's two no-attribution states distinguishable and both
+reachable: an ABSENT array means the epic predates this capability and its verdict is unverifiable,
+while an EMPTY array means the epic was created under it and nothing has been attributed yet. Were
+the array only ever created by the flag's first use, `[]` would be a state nothing could produce and
+an agent ignoring the obligation below would leave an absence indistinguishable from a pre-existing
+epic — hiding the omission behind the one case the staleness gate is required to forgive.
 
 An epic-mutating flag nobody is told to use produces an absent array on every epic, which is
 indistinguishable in the record from an epic that predates this capability. The instructions pm
@@ -351,11 +370,16 @@ finishing it.
 
 #### Scenario: The flag appends hashes and is registered once
 
-- **WHEN** the agent runs the epic-mutating command with `--attribute-commit <sha1>
-  --attribute-commit <sha2>` against an epic
+- **WHEN** the agent runs `update-epic <id> --attribute-commit <sha1> --attribute-commit <sha2>`
 - **THEN** both hashes are appended to that epic's attribution array in the order given, readable
   back from `state.json`, and the flag appears in the one shared flag allowlist rather than in a
   second list of its own
+
+#### Scenario: A newly created epic carries the array empty
+
+- **WHEN** an epic is created after this capability lands and no commit has been attributed to it
+- **THEN** it carries an attribution array holding no hashes, distinguishable in the record from an
+  epic created before this capability, which carries no array at all
 
 #### Scenario: The emitted instructions require attribution at commit time
 
@@ -440,8 +464,11 @@ requirement cites as its evidence.
   `abandoned`) nor the `archive-backfill` stamp has a progress source that exists and contains
   checkboxes, none of which are ticked
 - **THEN** the check reports the epic and its source — four epics in this repository qualify today,
-  archived at `0/17`, `0/99`, `0/37` and `0/34`, none of them carrying a passing Gate 2 and so none
-  of them `delivered` after the migration
+  archived at `0/17`, `0/99`, `0/37` and `0/34`, none carrying a passing Gate 2 and so none
+  `delivered` after the migration. Three of the four are the date-prefixed superpowers-lane
+  registrations of ids also held under the openspec lane, which the dual-lane check below reports
+  separately; the fourth, `2026-07-29-platform-aware-rules-block`, is not, so this check has a live
+  candidate that is not an artifact of another finding
 
 #### Scenario: A killed epic with no ticked tasks is not a finding
 
