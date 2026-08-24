@@ -88,6 +88,15 @@ export const EPIC_FLAGS = [
   { flag: "external-url", key: "externalUrl", commands: ["add-epic", "update-epic", "add-many"] },
   { flag: "plan", key: "planPath", commands: ["add-epic", "add-many"] },
   { flag: "link", key: "links", commands: ["add-epic", "update-epic", "add-many"], repeats: true, write: "custom" },
+  // `description` and `notes` are DISTINCT and neither substitutes for the other: a description
+  // is durable rationale (why this epic exists, what would make it worth revisiting), replaced
+  // wholesale when set again; notes are an append-only trail that reads as activity. Both are
+  // valued, and collapsing them would lose one of the two readings. `description` is a plain
+  // string, so `add-many`'s string copy carries it unchanged; `notes` deliberately is NOT an
+  // `add-many` flag — its state shape is an array of {at, actor, text} entries the batch loop
+  // would silently drop, and rejecting the key by name is the whole point of #79.
+  { flag: "description", key: "description", commands: ["add-epic", "update-epic", "add-many"] },
+  { flag: "notes", key: "notes", commands: ["add-epic", "update-epic"], write: "append" },
   { flag: "review-mode", key: "reviewMode", commands: ["update-epic"] },
   { flag: "add-story", key: "stories", commands: ["update-epic"], write: "append" },
   { flag: "story", key: null, commands: ["update-epic"], write: "custom" },

@@ -218,7 +218,7 @@ test("every add-many key the registry declares round-trips through a batch entry
     epics: [{
       id: "full", lane: "claude-code", title: "T", priority: "P1", status: "queued",
       externalId: "JOB-1", externalUrl: "https://example.test/JOB-1",
-      planPath: "docs/superpowers/plans/x.md", links: [],
+      planPath: "docs/superpowers/plans/x.md", links: [], description: "why this epic exists",
     }],
   });
   run(["add-many", "--from", batch], { cwd });
@@ -275,6 +275,10 @@ const EXERCISE = {
   "--priority": { args: ["--priority", "P1"], check: (e) => assert.equal(e.priority, "P1") },
   "--link": { args: ["--link", "blocks:other:because"], check: (e) => assert.deepEqual(e.links, [{ type: "blocks", epic: "other", reason: "because" }]) },
   "--review-mode": { args: ["--review-mode", "thorough"], check: (e) => assert.equal(e.reviewMode, "thorough") },
+  "--description": { args: ["--description", "durable rationale"], check: (e) => assert.equal(e.description, "durable rationale") },
+  // A note reads back as an ENTRY, not a string — {at, actor, text}. Asserting on the text
+  // alone would pass against an implementation that stored the raw string and lost the trail.
+  "--notes": { args: ["--notes", "an activity note"], check: (e) => assert.equal(e.notes.at(-1).text, "an activity note") },
   "--add-story": { args: ["--add-story", "a story"], check: (e) => assert.equal(e.stories.at(-1).title, "a story") },
   // --story and --done are a control PAIR: neither is invocable alone, so both are exercised
   // by the same invocation and each asserts the half it is responsible for.

@@ -62,6 +62,18 @@ export function parseLinkFlags(raw, knownEpicIds) {
   });
 }
 
+/** One `notes` entry: `{at, actor, text}`. APPEND-ONLY — every writer pushes, nothing rewrites
+ *  or drops an earlier entry, which is what keeps a note distinguishable from a `description`
+ *  (durable rationale, replaced when set again).
+ *
+ *  `actor` is RECORDED and not interpreted: a queued session-attribution capability owns what it
+ *  means. The engine has no way to know a human's identity, so every entry it writes today is
+ *  attributed to the agent that ran the command. Shared by add-epic and update-epic so the entry
+ *  shape has one definition. */
+export function noteEntry(text, actor = "agent") {
+  return { at: new Date().toISOString(), actor, text };
+}
+
 /** DFS cycle-path finder over a dependency map (id -> Set of ids it depends on), restricted
  *  to `stuckIds` (the set Kahn's algorithm couldn't place). Returns the actual cycle as an
  *  array of ids ending back at its start (e.g. ["a","b","a"]), for a debuggable error message
@@ -243,6 +255,16 @@ export function addEpic() {
     status, role: "epic", lane, links, reconcileNeeded: false,
   };
   if (str(f.plan)) epic.planPath = f.plan;
+  // A valueless `--description` / `--notes` arrives as boolean true and would otherwise be
+  // dropped by str() — exit-0-write-nothing, the exact shape of #79 the allowlist above was
+  // added to end. Refuse it instead.
+  for (const flag of ["description", "notes"]) {
+    if (f[flag] === true) {
+      process.stderr.write(`conductor: --${flag} requires a value\n`); process.exit(1);
+    }
+  }
+  if (str(f.description) !== undefined) epic.description = str(f.description);
+  if (str(f.notes) !== undefined) epic.notes = [noteEntry(str(f.notes))];
   if (parent !== undefined) epic.parent = parent;
   if (str(f["external-id"]) !== undefined) epic.externalId = str(f["external-id"]);
   if (str(f["external-url"]) !== undefined) epic.externalUrl = str(f["external-url"]);

@@ -6,7 +6,7 @@ import { KNOWN_STATUSES, KNOWN_REVIEW_MODES, REVIEW_MODE_RANK, epicFlagsFor } fr
 import { activate } from "./active-pointer.mjs";
 import { globalReviewMode } from "./rules.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
-import { parentError, parseFlags, parseLinkFlags } from "./add-epic.mjs";
+import { noteEntry, parentError, parseFlags, parseLinkFlags } from "./add-epic.mjs";
 import { render } from "./render.mjs";
 import { archiveGate } from "./archive-gate.mjs";
 
@@ -30,7 +30,7 @@ export function updateEpic() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const argv = process.argv.slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
-  if (!id) { process.stderr.write("usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--link \"<type>:<epic>[:<reason>]\"] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done]\n"); process.exit(1); }
+  if (!id) { process.stderr.write("usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--link \"<type>:<epic>[:<reason>]\"] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done] [--description D] [--notes \"<text>\"]\n"); process.exit(1); }
   const f = parseFlags(argv.slice(1));
   const unknown = Object.keys(f).filter(k => !UPDATE_EPIC_FLAGS.includes(k));
   if (unknown.length) {
@@ -79,6 +79,16 @@ export function updateEpic() {
     }
   }
 
+  // A valueless --description / --notes would be dropped by str() and exit 0 having written
+  // nothing — the #79 shape. Refuse it before any write.
+  for (const flag of ["description", "notes"]) {
+    if (f[flag] === true) {
+      process.stderr.write(`conductor: --${flag} requires a value\n`); process.exit(1);
+    }
+  }
+  const description = str(f.description);
+  const note = str(f.notes);
+
   // --add-story "<title>" appends { title, done: false } to the epic's inline stories[]
   // (creating the array if this is its first inline story) -- closes the recurring
   // hand-edit-of-state.json risk (a naive JSON re-escape of an em dash has corrupted the
@@ -122,6 +132,14 @@ export function updateEpic() {
   if (str(f.priority) !== undefined) epic.priority = str(f.priority);
   if (links !== undefined) epic.links = links;
   if (reviewMode !== undefined) epic.reviewMode = reviewMode;
+  // `--description` REPLACES (durable rationale, one value); `--notes` APPENDS (an activity
+  // trail). Writing either never touches the other, and an earlier note is never rewritten or
+  // dropped — the two readings are both wanted, so neither may be collapsed into the other.
+  if (description !== undefined) epic.description = description;
+  if (note !== undefined) {
+    if (!Array.isArray(epic.notes)) epic.notes = [];
+    epic.notes.push(noteEntry(note));
+  }
   if (addStoryTitle !== undefined) {
     if (!Array.isArray(epic.stories)) epic.stories = [];
     epic.stories.push({ title: addStoryTitle, done: false });
