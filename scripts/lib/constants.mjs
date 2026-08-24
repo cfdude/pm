@@ -49,6 +49,50 @@ export const PLATFORM_COMMAND_PREFIX = {
   codex: "/pm-",
 };
 export const KNOWN_STATUSES = ["untriaged", "queued", "active", "paused", "later", "blocked", "planned", "archived"];
+
+// ─────────────────────── the shared epic-flag registry ───────────────────────
+//
+// The ONE declaration of the flag surface the epic-writing commands share. It lives here
+// because constants.mjs is the leaf every one of them already reaches, and because four
+// separate capabilities in this release add flags to those commands: grown four times, in
+// each command's own literal, whichever landed first would reject the others' flags BY NAME
+// (an unlisted flag exits 1). Grown once, they compose.
+//
+// Per entry:
+//   flag      the CLI flag, WITHOUT the leading `--`.
+//   key       the epic's STATE key this flag writes, or null where the command consumes the
+//             flag in its own logic instead of copying a value onto a key (`--story`/`--done`
+//             are a control pair; `--add-story` appends a constructed object).
+//   commands  the commands that accept it. An open list of names rather than an enum, so a
+//             later capability can register a flag on a command this release never touched.
+//   repeats   true = accumulates into an array across repeated `--flag value` occurrences.
+//             parseFlags() reads this PER CALL (see repeatableFlags() in add-epic.mjs), so
+//             setting it here is the only edit needed to make a flag repeat.
+//   write     how the value reaches `key` — "replace" (the default), "append", or "custom"
+//             where the command owns the write entirely. Declared, not yet dispatched on:
+//             it is here so a capability adding an appending flag states the shape once.
+//
+// `key` is carried EXPLICITLY rather than derived from `flag`, because the mapping is already
+// non-identity today (`--plan` → planPath, `--link` → links, `--external-id` → externalId) and
+// any derivation rule would just be a second place to get it wrong. add-many's accepted BATCH
+// keys are exactly the `key` of every entry naming `add-many` — which is why a batch document
+// is written in state keys (`externalId`) and not flag names (`external-id`).
+export const EPIC_FLAGS = [
+  { flag: "id", key: "id", commands: ["add-epic", "add-many"] },
+  { flag: "title", key: "title", commands: ["add-epic", "update-epic", "add-many"] },
+  { flag: "lane", key: "lane", commands: ["add-epic", "add-many"] },
+  { flag: "priority", key: "priority", commands: ["add-epic", "update-epic", "add-many"] },
+  { flag: "status", key: "status", commands: ["add-epic", "update-epic", "add-many"] },
+  { flag: "parent", key: "parent", commands: ["add-epic", "update-epic", "add-many"] },
+  { flag: "external-id", key: "externalId", commands: ["add-epic", "update-epic", "add-many"] },
+  { flag: "external-url", key: "externalUrl", commands: ["add-epic", "update-epic", "add-many"] },
+  { flag: "plan", key: "planPath", commands: ["add-epic", "add-many"] },
+  { flag: "link", key: "links", commands: ["add-epic", "update-epic", "add-many"], repeats: true, write: "custom" },
+  { flag: "review-mode", key: "reviewMode", commands: ["update-epic"] },
+  { flag: "add-story", key: "stories", commands: ["update-epic"], write: "append" },
+  { flag: "story", key: null, commands: ["update-epic"], write: "custom" },
+  { flag: "done", key: null, commands: ["update-epic"], write: "custom" },
+];
 export const KNOWN_AUTONOMY_LEVELS = ["off", "autonomous"];
 // Default category taxonomy for the `--preauthorize "category:<name>:<reason>"` shorthand —
 // see the `conductor` skill's "Epic-level autonomy" section for the matching heuristic each
