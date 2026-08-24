@@ -425,7 +425,8 @@ transition, so its absence MUST surface as a reported condition, never as a refu
 
 The conductor SHALL expose a read-only integrity check over its own record, reporting each
 finding with the epic it concerns and enough detail to act on. Every check below can fail against
-today's engine on live data in this repository. A finding is reported, not repaired: none of these
+today's engine — several on live data in this repository today, the rest constructible from a
+fixture. A finding is reported, not repaired: none of these
 checks writes state, and none blocks a command other than where a requirement above says so.
 
 Two classes of archived epic are explicitly OUT of scope for the completion-shaped checks below,
@@ -438,7 +439,7 @@ reader to filter it:
 2. an epic stamped `recordedBy: "archive-backfill"`, which `conductor-record` requires to register
    with its counts intact, unticked ones included.
 
-**Every other archived epic is IN scope, including one whose `outcome` is `unknown` or absent, and
+**Every other archived epic is IN scope, including one whose `outcome` is `unknown` — the migration stamps every archived epic regardless of lane, so `absent` is not a state an archived epic reaches, and
 regardless of lane.** The exclusion is deliberately written as those two cases rather than as "any
 outcome other than `delivered`": `unknown` is the value the engine stamps when nobody was asked, and
 its reason is a path name, not an explanation of why the work did not complete — the property the
@@ -458,7 +459,7 @@ requirement cites as its evidence.
 
 #### Scenario: A gate was recorded as bookkeeping rather than as review
 
-- **WHEN** a gate verdict's `reviewedAt` falls after the merge commit for the epic's work, or
+- **WHEN** a gate verdict's `reviewedAt` falls after the epic's merge commit — defined as the **last hash in its attribution array**, and where that array is absent or empty this clause does not apply, because every other reading is either inert on all live epics or fires on essentially all of them, or
   within **60 seconds** of the `reviewedAt` of the epic's other gate verdict
 - **THEN** the check reports it as a bookkeeping signature — the audited instance recorded both
   gates 83 seconds after the squash-merge, 47 ms apart, with no notes, and 47 ms is inside the
