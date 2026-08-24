@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { execFileSync } from "node:child_process";
 import { tmpRepo, run, readState, writeState, projectMd, parseBrief, expectFail, writeBatch } from "./helpers.mjs";
 
 // ─────────────── the shared epic-flag registry (EPIC_FLAGS) ───────────────
@@ -509,4 +510,85 @@ test("the gate is reachable from update-epic, refusal text intact", () => {
   assert.match(msg, /record-gate-review spec-epic --gate 2 --verdict pass/,
     "every refusal names its remedy and the exact command");
   assert.deepEqual(readState(cwd).epics, before.epics, "a refused archive writes nothing");
+});
+
+// ─────────────── outstanding work, and the <!-- pm:lifecycle --> declaration ───────────────
+
+/** Evaluate epicProgress()/outstandingWork() for `epic` with the engine rooted at `cwd`.
+ *
+ *  A CHILD PROCESS, not a cache-busted in-process import: constants.mjs resolves ROOT once at
+ *  import time and a query string on epic-progress.mjs does not reach the constants.mjs it
+ *  imports, so an in-process reload would silently keep the FIRST root any test established
+ *  and read task sources out of this repository instead of the fixture. */
+function progressIn(cwd, epic) {
+  const src = `
+    import { epicProgress, outstandingWork } from ${JSON.stringify(new URL("../lib/epic-progress.mjs", import.meta.url).href)};
+    const epic = JSON.parse(process.env.PM_TEST_EPIC);
+    process.stdout.write(JSON.stringify({ progress: epicProgress(epic), outstanding: outstandingWork(epic) }));
+  `;
+  const out = execFileSync("node", ["--input-type=module", "-e", src], {
+    cwd, encoding: "utf8",
+    env: { ...process.env, CLAUDE_PROJECT_DIR: cwd, PM_TEST_EPIC: JSON.stringify(epic) },
+  });
+  return JSON.parse(out);
+}
+
+function withTasks(cwd, id, lines) {
+  const dir = path.join(cwd, "openspec", "changes", id);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, "tasks.md"), lines.join("\n") + "\n");
+}
+
+const MARKER = "<!-- pm:lifecycle -->";
+
+test("a declared lifecycle task leaves BOTH numerator and denominator", () => {
+  // 12 of 13 done, the thirteenth an archive instruction that cannot be ticked before the
+  // thing that ticks it. It renders 12/12 and nothing is outstanding — never 12/13 with a
+  // footnote, because a guard and a progress bar computing different numbers is how a guard
+  // comes to refuse an epic that reads as complete.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const lines = Array.from({ length: 12 }, (_, i) => `- [x] ${i + 1} did a thing`);
+  lines.push(`- [ ] 13 ${MARKER} Run \`/opsx:archive <this change>\``);
+  withTasks(cwd, "ctt", lines);
+  run(["add-epic", "--id", "ctt", "--lane", "openspec"], { cwd });
+
+  const { progress, outstanding } = progressIn(cwd, readState(cwd).epics.find(e => e.id === "ctt"));
+  assert.equal(progress.done, 12);
+  assert.equal(progress.total, 12, "the excluded task must leave the DENOMINATOR too");
+  assert.equal(progress.excluded, 1);
+  assert.equal(outstanding, 0);
+
+  run(["render"], { cwd });
+  assert.match(projectMd(cwd), /12\/12/, "the rendered bar must show the same arithmetic");
+  assert.doesNotMatch(projectMd(cwd), /12\/13/);
+});
+
+test("a marked task is excluded whether or not it is ticked", () => {
+  // 17.9 in this very change is a marked task that WILL be ticked. If exclusion depended on
+  // the checkbox state the count would move at the instant it is ticked, which is the silent
+  // drift this definition exists to prevent.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  withTasks(cwd, "ctt", [`- [x] 1 ${MARKER} archived already`, "- [ ] 2 real work"]);
+  run(["add-epic", "--id", "ctt", "--lane", "openspec"], { cwd });
+  const { progress, outstanding } = progressIn(cwd, readState(cwd).epics.find(e => e.id === "ctt"));
+  assert.deepEqual({ done: progress.done, total: progress.total, excluded: progress.excluded },
+    { done: 0, total: 1, excluded: 1 });
+  assert.equal(outstanding, 1);
+});
+
+test("excluded is always a number, including on the branches that read no file", () => {
+  // 3.5's byte-identical-count assertion compares this field across surfaces; `undefined`
+  // where one branch means zero is how two surfaces come to disagree.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const stories = progressIn(cwd, { id: "s", lane: "claude-code", stories: [{ title: "a", done: true }, { title: "b", done: false }] });
+  assert.equal(stories.progress.excluded, 0);
+  assert.equal(stories.outstanding, 1);
+  const none = progressIn(cwd, { id: "n", lane: "decision" });
+  assert.equal(none.progress.excluded, 0);
+  assert.equal(none.outstanding, 0);
+  const danglingPlan = progressIn(cwd, { id: "d", lane: "superpowers", planPath: "docs/superpowers/plans/gone.md" });
+  assert.equal(danglingPlan.progress.excluded, 0);
 });

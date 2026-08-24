@@ -101,18 +101,35 @@ export function reconcileArchived(state) {
   return changed;
 }
 
-/** Count [ ] / [x] checkboxes in a markdown file. */
+/** The one literal that declares a task to be lifecycle bookkeeping rather than delivery.
+ *  Chosen so it renders invisibly in markdown and so a test binds to it exactly. The judgment
+ *  is the AGENT's — the engine excludes exactly the tasks carrying it and infers exclusion
+ *  from nothing else. */
+export const LIFECYCLE_MARKER = "<!-- pm:lifecycle -->";
+
+/** Count [ ] / [x] checkboxes in a markdown file, excluding declared lifecycle bookkeeping.
+ *
+ *  An excluded task leaves BOTH the numerator and the denominator — `12/13` where the
+ *  thirteenth is a declared archive instruction becomes `12/12`, never `12/13` with a hidden
+ *  adjustment — so an epic's rendered progress and its outstanding-work count can never
+ *  disagree. `excluded` is reported so a caller can say how many were left out.
+ *
+ *  Exclusion does NOT depend on the checkbox state: a marked task is out whether ticked or
+ *  not. Depending on it would move the count at the instant the marked task is ticked, which
+ *  is exactly the silent drift this definition exists to prevent. */
 export function countCheckboxes(absPath) {
-  let total = 0, done = 0, exists = false;
+  let total = 0, done = 0, excluded = 0, exists = false;
   try {
     const txt = fs.readFileSync(absPath, "utf8");
     exists = true;
     for (const line of txt.split("\n")) {
       const m = line.match(/^\s*[-*]\s+\[([ xX])\]/);
-      if (m) { total++; if (m[1].toLowerCase() === "x") done++; }
+      if (!m) continue;
+      if (line.includes(LIFECYCLE_MARKER)) { excluded++; continue; }
+      total++; if (m[1].toLowerCase() === "x") done++;
     }
   } catch { /* missing file */ }
-  return { done, total, exists };
+  return { done, total, excluded, exists };
 }
 
 /** Resolve an epic's progress by precedence: stories -> planPath -> openspec tasks.md -> none.
@@ -135,23 +152,39 @@ export function epicProgress(epic) {
   if (Array.isArray(epic.stories)) {
     const total = epic.stories.length;
     const done = epic.stories.filter(s => s && s.done).length;
-    return { done, total, source: "stories", warn: null };
+    // Inline stories carry no task source and so no markers — `excluded` is 0, never
+    // undefined, so every consumer reads the same shape whichever branch produced it.
+    return { done, total, excluded: 0, source: "stories", warn: null };
   }
   if (epic.planPath) {
     const c = countCheckboxes(path.join(ROOT, epic.planPath));
     if (!c.exists) {
-      return { done: 0, total: 0, source: "plan", warn: archived ? null : "planPath missing" };
+      return { done: 0, total: 0, excluded: 0, source: "plan", warn: archived ? null : "planPath missing" };
     }
-    return { done: c.done, total: c.total, source: "plan", warn: null };
+    return { done: c.done, total: c.total, excluded: c.excluded, source: "plan", warn: null };
   }
   if ((epic.lane || "openspec") === "openspec") {
     const c = countCheckboxes(path.join(CHANGES_DIR, epic.id, "tasks.md"));
     if (!c.exists) {
-      return { done: 0, total: 0, source: "openspec", warn: archived ? null : "tasks.md missing" };
+      return { done: 0, total: 0, excluded: 0, source: "openspec", warn: archived ? null : "tasks.md missing" };
     }
-    return { done: c.done, total: c.total, source: "openspec", warn: null };
+    return { done: c.done, total: c.total, excluded: c.excluded, source: "openspec", warn: null };
   }
-  return { done: 0, total: 0, source: "none", warn: null };
+  return { done: 0, total: 0, excluded: 0, source: "none", warn: null };
+}
+
+/** THE definition of an epic's OUTSTANDING WORK, and the only counter. Every consumer keys on
+ *  it rather than counting raw checkboxes for itself — the rendered project record, the
+ *  briefing, `/pm:next`, and every guard in this release that refuses because work remains.
+ *
+ *  A thin reader over epicProgress() on purpose: the guard's number and the rendered bar come
+ *  out of the same call, so a refusal can never cite a count the record does not show. That
+ *  divergence is the defect — the archive instruction in a change's own task list is unticked
+ *  at archive time by construction, and a guard counting raw checkboxes would refuse every
+ *  correctly finished change. */
+export function outstandingWork(epic) {
+  const p = epicProgress(epic);
+  return Math.max(0, p.total - p.done);
 }
 
 /** Merge state metadata with what's actually on disk. */
