@@ -2460,6 +2460,24 @@
       "reconcileNeeded": false,
       "externalId": "127",
       "externalUrl": "https://github.com/cfdude/pm/issues/127"
+    },
+    {
+      "id": "gh-128-openspec-staleness-nudge",
+      "title": "pm never asks whether OpenSpec is current — this repo ran 1.6.0 artifacts against a 1.10.0 CLI",
+      "priority": "P1",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-123-adopt-openspec-1-9-cli-surface",
+          "reason": "same root, opposite halves — 128 is 'are we current with the tool', 123 is 'are we using what the tool now offers'"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "128",
+      "externalUrl": "https://github.com/cfdude/pm/issues/128"
     }
   ],
   "detourStack": [],
@@ -2469,5 +2487,5 @@
     "repo": "cfdude/pm"
   },
   "platform": "claude-code",
-  "revision": 28
+  "revision": 30
 }
