@@ -103,6 +103,12 @@ export const epicFlagsFor = (command) =>
  *  REPEATABLE_NON_EPIC_FLAGS in add-epic.mjs for why it is a union and not a replacement. */
 export const repeatableEpicFlags = () => EPIC_FLAGS.filter(f => f.repeats).map(f => f.flag);
 
+/** The state keys an `add-many` batch entry may carry. Derived from the same declaration, so
+ *  the bulk path cannot drift from the single-epic one. Note these are STATE keys, not flag
+ *  names — a batch document is written in `externalId`, not `--external-id`. */
+export const epicBatchKeys = () =>
+  EPIC_FLAGS.filter(f => f.commands.includes("add-many") && f.key).map(f => f.key);
+
 export const KNOWN_AUTONOMY_LEVELS = ["off", "autonomous"];
 // Default category taxonomy for the `--preauthorize "category:<name>:<reason>"` shorthand —
 // see the `conductor` skill's "Epic-level autonomy" section for the matching heuristic each

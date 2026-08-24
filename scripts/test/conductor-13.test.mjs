@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { tmpRepo, run, readState, expectFail } from "./helpers.mjs";
+import { tmpRepo, run, readState, expectFail, writeBatch } from "./helpers.mjs";
 
 // ─────────────── the shared epic-flag registry (EPIC_FLAGS) ───────────────
 //
@@ -173,4 +173,48 @@ test("add-epic never accepts an annotation flag it will not persist (#79's live 
     assert.match(JSON.stringify(epic), /why this exists/,
       "exit 0 must mean the text persisted — an exit code alone is not evidence");
   }
+});
+
+test("add-many rejects an unpersisted batch key by name and creates ZERO epics", () => {
+  // Same defect as #79 at a different input shape: add-many copied a fixed key set and
+  // dropped every other key without a word. The batch must be atomic in refusal too — the
+  // two VALID entries either side of the offender must not be created.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const batch = writeBatch(cwd, { epics: [
+    { id: "one", lane: "claude-code" },
+    { id: "two", lane: "claude-code", notes: "this key is not persisted" },
+    { id: "three", lane: "claude-code" },
+  ] });
+  const err = expectFail(() => run(["add-many", "--from", batch], { cwd }));
+  assert.ok(err, "expected non-zero exit for an unpersisted batch key");
+  const msg = String(err.stderr || err.message);
+  assert.match(msg, /notes/, "the refusal must name the offending key");
+  assert.equal(readState(cwd).epics.length, 0,
+    "a rejected batch must create none of its entries, not just skip the bad one");
+});
+
+test("every add-many key the registry declares round-trips through a batch entry", async () => {
+  // Non-vacuity: the assertion is driven by the registry projection, so a key a later
+  // capability adds to `add-many` fails here until the loop actually copies it.
+  const { EPIC_FLAGS } = await import(CONSTANTS);
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const batch = writeBatch(cwd, {
+    parent: { id: "p", lane: "claude-code" },
+    epics: [{
+      id: "full", lane: "claude-code", title: "T", priority: "P1", status: "queued",
+      externalId: "JOB-1", externalUrl: "https://example.test/JOB-1",
+      planPath: "docs/superpowers/plans/x.md", links: [],
+    }],
+  });
+  run(["add-many", "--from", batch], { cwd });
+  const epic = readState(cwd).epics.find(e => e.id === "full");
+  const batchKeys = EPIC_FLAGS.filter(f => f.commands.includes("add-many") && f.key).map(f => f.key);
+  for (const key of batchKeys) {
+    assert.ok(key in epic, `registry key '${key}' must round-trip through a batch entry`);
+  }
+  assert.equal(epic.parent, "p", "the batch's parent must still be inherited");
+  assert.equal(epic.externalId, "JOB-1");
+  assert.equal(epic.planPath, "docs/superpowers/plans/x.md");
 });
