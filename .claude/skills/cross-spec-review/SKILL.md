@@ -32,9 +32,19 @@ unreachable.
    assumptions, which are exactly what is being tested.
 2. **Give each reviewer the whole set** — every spec file, the proposal, the existing main specs
    any delta amends, and the engine. Not summaries.
-3. **Fix every Critical and Important in the SPECS before implementation starts.** A
-   contradiction discovered during apply is resolved by whoever hits it first, silently, and by
-   call order.
+3. **Adjudicate the findings — do not treat them as a mandate.** Ask the reviewer to split every
+   finding into **BLOCKS** (implementing this as written ships a defect, produces unsatisfiable
+   behavior, or leaves a check that cannot fail) and **POLISH** (correct and implementable; the
+   finding would improve the document). **Fix BLOCKS. Decline most POLISH, and say why.**
+
+   This matters more than it sounds. A cross-spec review will *always* return findings, so
+   "no findings" is not a stopping condition — you would iterate forever. **Ship Real Software:**
+   a spec is done when it is correct enough to implement without shipping a defect, not when it is
+   beyond criticism. On 0.27.0 four rounds ran because every finding was treated as work; the
+   correct stopping point was earlier.
+
+   The one thing never to defer: a contradiction. Discovered during apply, it is resolved by
+   whoever hits it first, silently, and by call order.
 4. **Re-review after fixing**, scoped to the fixes *and* to what concurrent editing broke. The
    re-review must be able to fail — on 0.27.0 it found two new Criticals the fixes introduced.
 5. **Assign one owner per seam.** When two specs share a boundary, one agent amends both. Split
@@ -91,6 +101,9 @@ concretely breaks, and which spec should own the fix. Then two sections, both re
 - **What I checked and found clean** — so coverage is legible rather than assumed.
 - **Requirements I verified can still fail today**, with the failing condition.
 
-A clean review is a valid result. Do not manufacture findings to look thorough — but do not
-report clean without the two sections above, because "clean" and "did not look" are
-indistinguishable without them.
+A report that is entirely POLISH is a valid and useful result — it means proceed. Do not
+manufacture a BLOCKS finding to look thorough, and do not report clean without the two sections
+above, because "clean" and "did not look" are indistinguishable without them.
+
+**Stopping condition:** a round whose BLOCKS list is empty, with a falsifiability table populated
+from live data. Not a round with no findings — that round does not come.
