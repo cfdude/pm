@@ -1,5 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
 import { tmpRepo, run, readState, expectFail, writeBatch } from "./helpers.mjs";
 
 // ─────────────── the shared epic-flag registry (EPIC_FLAGS) ───────────────
@@ -217,4 +219,79 @@ test("every add-many key the registry declares round-trips through a batch entry
   assert.equal(epic.parent, "p", "the batch's parent must still be inherited");
   assert.equal(epic.externalId, "JOB-1");
   assert.equal(epic.planPath, "docs/superpowers/plans/x.md");
+});
+
+// ─────────────── the flag-coverage check ───────────────
+//
+// The enumeration is read from the command's own DOCUMENTED surface at check time — its usage
+// line and its `commands/` document — and never transcribed into this file. Driving it from
+// EPIC_FLAGS would be circular: a flag a capability forgot to register is simply absent from
+// the registry, so the check would pass vacuously on exactly the omission it exists to catch.
+
+const REPO = new URL("../..", import.meta.url).pathname;
+const FLAG_RE = /--[a-z][a-z0-9-]*/g;
+
+/** The flags `update-epic`'s usage line names (update-epic.mjs:27). */
+function flagsInUsageLine() {
+  const src = fs.readFileSync(path.join(REPO, "scripts", "lib", "update-epic.mjs"), "utf8");
+  const line = src.split("\n").find(l => l.includes("usage: conductor.mjs update-epic"));
+  assert.ok(line, "update-epic must still print a usage line — the check reads its flags from it");
+  return new Set(line.match(FLAG_RE) || []);
+}
+
+/** The flags `commands/epic.md` names in update-epic's OWN section. Scoped to the section
+ *  because that file documents add-epic, add-many, remove-epic and set-active too, and their
+ *  flags are not update-epic's. */
+function flagsInCommandDoc() {
+  const doc = fs.readFileSync(path.join(REPO, "commands", "epic.md"), "utf8");
+  const start = doc.indexOf("## Write-back — `update-epic`");
+  assert.notEqual(start, -1, "commands/epic.md must still document update-epic in its own section");
+  const next = doc.indexOf("\n## ", start + 1);
+  const section = doc.slice(start, next === -1 ? doc.length : next);
+  return new Set(section.match(FLAG_RE) || []);
+}
+
+/** How to exercise each flag, and what reading it back looks like. A VALUE table is
+ *  unavoidable — `--parent` needs a real epic, `--link` a real target, `--story` an existing
+ *  story — but the enumeration driving it is the documented surface, so a documented flag with
+ *  no entry here is a hard failure naming the flag rather than a silent skip. */
+const EXERCISE = {
+  "--title": { args: ["--title", "Renamed"], check: (e) => assert.equal(e.title, "Renamed") },
+  "--external-id": { args: ["--external-id", "JOB-9"], check: (e) => assert.equal(e.externalId, "JOB-9") },
+  "--external-url": { args: ["--external-url", "https://example.test/9"], check: (e) => assert.equal(e.externalUrl, "https://example.test/9") },
+  "--parent": { args: ["--parent", "other"], check: (e) => assert.equal(e.parent, "other") },
+  "--status": { args: ["--status", "paused"], check: (e) => assert.equal(e.status, "paused") },
+  "--priority": { args: ["--priority", "P1"], check: (e) => assert.equal(e.priority, "P1") },
+  "--link": { args: ["--link", "blocks:other:because"], check: (e) => assert.deepEqual(e.links, [{ type: "blocks", epic: "other", reason: "because" }]) },
+  "--review-mode": { args: ["--review-mode", "thorough"], check: (e) => assert.equal(e.reviewMode, "thorough") },
+  "--add-story": { args: ["--add-story", "a story"], check: (e) => assert.equal(e.stories.at(-1).title, "a story") },
+  // --story and --done are a control PAIR: neither is invocable alone, so both are exercised
+  // by the same invocation and each asserts the half it is responsible for.
+  "--story": { setup: ["--add-story", "s1"], args: ["--story", "1", "--done"], check: (e) => assert.equal(e.stories[0].done, true) },
+  "--done": { setup: ["--add-story", "s1"], args: ["--story", "1", "--done"], check: (e) => assert.equal(e.stories[0].done, true) },
+};
+
+test("every DOCUMENTED update-epic flag is accepted and its value reads back from state", () => {
+  const usage = flagsInUsageLine();
+  const doc = flagsInCommandDoc();
+  assert.ok(usage.size >= 10, `the usage line yielded only ${usage.size} flags — the extractor is broken, not the command`);
+  assert.ok(doc.size >= 5, `commands/epic.md's update-epic section yielded only ${doc.size} flags`);
+  const documented = [...new Set([...usage, ...doc])].sort();
+
+  for (const flag of documented) {
+    const spec = EXERCISE[flag];
+    assert.ok(spec,
+      `documented flag ${flag} has no entry in this check's exercise table — a documented ` +
+      "flag must be invoked and read back, never skipped for being unknown here");
+
+    const cwd = tmpRepo();
+    run(["init"], { cwd });
+    run(["add-epic", "--id", "other", "--lane", "claude-code"], { cwd });
+    run(["add-epic", "--id", "subject", "--lane", "claude-code"], { cwd });
+    if (spec.setup) run(["update-epic", "subject", ...spec.setup], { cwd });
+    const err = expectFail(() => run(["update-epic", "subject", ...spec.args], { cwd }));
+    assert.equal(err, null,
+      `update-epic rejected its own documented flag ${flag}: ${err && String(err.stderr || err.message)}`);
+    spec.check(readState(cwd).epics.find(e => e.id === "subject"));
+  }
 });
