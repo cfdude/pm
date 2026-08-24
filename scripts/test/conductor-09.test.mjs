@@ -113,12 +113,16 @@ test("record-gate-review writes a structured verdict for the given gate onto an 
   const cwd = tmpRepo(); run(["init"], { cwd });
   run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
 
-  run(["record-gate-review", "spec-epic", "--gate", "1", "--verdict", "pass", "--reviewer", "fresh-context review of proposal.md"], { cwd });
+  run(["record-gate-review", "spec-epic", "--gate", "1", "--verdict", "pass",
+    "--base-sha", "aaaaaaa", "--head-sha", "bbbbbbb",
+    "--reviewer", "fresh-context review of proposal.md"], { cwd });
 
   const epic = readState(cwd).epics.find(e => e.id === "spec-epic");
   assert.ok(epic.gateReview);
   assert.equal(epic.gateReview.gate1.verdict, "pass");
-  assert.equal(epic.gateReview.gate1.note, "fresh-context review of proposal.md");
+  // `--reviewer` used to land in `note`, which is the legacy shape and is now read-only:
+  // reviewer identity is its own field so an audit over reviewers cannot pick up other prose.
+  assert.equal(epic.gateReview.gate1.reviewer, "fresh-context review of proposal.md");
   assert.ok(epic.gateReview.gate1.reviewedAt);
   assert.match(epic.gateReview.gate1.reviewedAt, /^\d{4}-\d{2}-\d{2}T/);
 });

@@ -17,11 +17,16 @@ export function recordGateReview() {
   const f = parseFlags(id ? argv.slice(1) : argv);
   const gate = typeof f.gate === "string" ? f.gate : (typeof f.gate === "number" ? String(f.gate) : undefined);
   const verdict = typeof f.verdict === "string" ? f.verdict : undefined;
-  const note = typeof f.reviewer === "string" ? f.reviewer : undefined;
+  // Evidence as FIELDS, never as prose in a note. A recorded `a..b` on an epic that later
+  // shipped `b..c` was byte-identical in the record to a review that covered everything, and
+  // reviewer identity buried in a free-text note cannot be queried apart from any other remark.
+  const reviewer = typeof f.reviewer === "string" ? f.reviewer : undefined;
+  const baseSha = typeof f["base-sha"] === "string" ? f["base-sha"] : undefined;
+  const headSha = typeof f["head-sha"] === "string" ? f["head-sha"] : undefined;
   if (!id || !gate || !verdict) {
     process.stderr.write(
       "usage: conductor.mjs record-gate-review <epicId> --gate 1|2 --verdict pass|fail " +
-      "[--reviewer \"<note>\"]\n");
+      "[--base-sha <sha>] [--head-sha <sha>] [--reviewer \"<identity>\"]\n");
     process.exit(1);
   }
   if (!KNOWN_GATE_NUMBERS.includes(gate)) {
@@ -47,7 +52,9 @@ export function recordGateReview() {
 
   epic.gateReview = epic.gateReview && typeof epic.gateReview === "object" ? epic.gateReview : {};
   const entry = { verdict, reviewedAt: new Date().toISOString() };
-  if (note !== undefined) entry.note = note;
+  if (baseSha !== undefined) entry.baseSha = baseSha;
+  if (headSha !== undefined) entry.headSha = headSha;
+  if (reviewer !== undefined) entry.reviewer = reviewer;
   epic.gateReview[`gate${gate}`] = entry;
 
   saveState(state);

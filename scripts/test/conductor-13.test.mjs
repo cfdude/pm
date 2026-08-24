@@ -823,3 +823,24 @@ test("no module under scripts/lib/ decides openspec-lane membership with a stric
     "decide openspec-lane membership through isOpenspecLane(epic), or normalize the absent " +
     "lane inline — a strict comparison silently exempts every lane-less epic");
 });
+
+// ─────────────── gate verdicts carry checkable evidence ───────────────
+//
+// `record-gate-review <id> --gate 2 --verdict pass` was one command with no evidence
+// requirement: a review of `a..b` on an epic that later shipped `b..c` is byte-identical in
+// the record to one that covered everything.
+
+test("a pass records its range and reviewer as separate FIELDS, not as prose", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
+  run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "pass",
+    "--base-sha", "d168b1e", "--head-sha", "04c54c8", "--reviewer", "fresh-context reviewer"], { cwd });
+  const g = readState(cwd).epics.find(e => e.id === "spec-epic").gateReview.gate2;
+  assert.equal(g.verdict, "pass");
+  assert.equal(g.baseSha, "d168b1e", "the reviewed range's base must be readable without parsing prose");
+  assert.equal(g.headSha, "04c54c8");
+  assert.equal(g.reviewer, "fresh-context reviewer",
+    "reviewer identity is its own field — stored in `note`, an audit query over reviewers " +
+    "cannot tell an identity from any other remark");
+});

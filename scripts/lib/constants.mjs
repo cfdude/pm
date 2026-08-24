@@ -112,6 +112,13 @@ export const EPIC_FLAGS = [
   // would silently drop, and rejecting the key by name is the whole point of #79.
   { flag: "description", key: "description", commands: ["add-epic", "update-epic", "add-many"] },
   { flag: "notes", key: "notes", commands: ["add-epic", "update-epic"], write: "append" },
+  // record-gate-review's evidence flags. They live in this registry because it is the single
+  // declaration of the flag surface every epic-WRITING command shares, and recording a verdict
+  // writes an epic. `key` is null on all three: they land nested under `gateReview.gateN`
+  // rather than on a top-level epic key, so the command owns the write.
+  { flag: "base-sha", key: null, commands: ["record-gate-review"], write: "custom" },
+  { flag: "head-sha", key: null, commands: ["record-gate-review"], write: "custom" },
+  { flag: "reviewer", key: null, commands: ["record-gate-review"], write: "custom" },
   { flag: "review-mode", key: "reviewMode", commands: ["update-epic"] },
   { flag: "add-story", key: "stories", commands: ["update-epic"], write: "append" },
   { flag: "story", key: null, commands: ["update-epic"], write: "custom" },

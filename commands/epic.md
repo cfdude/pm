@@ -146,3 +146,24 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" set-autonomy <id> \
 `--preauthorize`/`--context`/`--notify` are repeatable and additive — re-running `set-autonomy`
 APPENDS, it never clobbers prior entries. `--level` replaces (default `"off"` — today's
 behavior, unchanged). `PROJECT.md` and the session brief mark an autonomous epic with 🤖.
+
+## Record a gate verdict — `record-gate-review`
+
+An OpenSpec gate review is recorded against the epic with the evidence a later reader can
+check, as FIELDS rather than as prose in a note:
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" record-gate-review <id> \
+  --gate 1|2 --verdict pass|fail \
+  --base-sha "<a>" --head-sha "<b>" --reviewer "<identity>"
+```
+
+`--base-sha`/`--head-sha` record the commit range the review actually covered, and `--reviewer`
+records who (or what) performed it. A review of `a..b` on an epic that later shipped `b..c` used
+to be byte-identical in `state.json` to one that covered everything; recorded as fields, the two
+are distinguishable without reading prose, and the range is what later tells a covering verdict
+from a stale one.
+
+Verdicts recorded before these fields existed carry a free-text `note` instead. They load
+unchanged and are reported as carrying no checkable evidence — never deleted, never rewritten,
+never mined for a range by parsing that note.
