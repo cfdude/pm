@@ -137,3 +137,37 @@ test("an inward procedure is emittable repo-wide when ANY configured tracker has
     true, "a secondary tracker is inward by definition, so the repo has an inward procedure");
   assert.equal(anyInwardProcedureEmittable(null, []), false);
 });
+
+// ─────────── 10.2 / 10.3: set-tracker --direction, and the merge trap ───────────
+
+test("set-tracker records an explicit --direction on the primary tracker", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-tracker", "--system", "jira", "--project", "JOB", "--direction", "inward"], { cwd });
+  assert.equal(readState(cwd).tracker.direction, "inward");
+});
+
+test("an invalid --direction exits non-zero and leaves state.tracker exactly as it was", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-tracker", "--system", "jira", "--project", "JOB", "--direction", "outward"], { cwd });
+  const before = JSON.stringify(readState(cwd).tracker);
+  const err = expectFail(() => run(["set-tracker", "--direction", "sideways"], { cwd }));
+  assert.ok(err, "expected a non-zero exit for an unknown direction");
+  assert.match(String(err.stderr || err.message), /--direction/);
+  assert.equal(JSON.stringify(readState(cwd).tracker), before, "a rejected direction must write nothing");
+});
+
+test("a secondary tracker is pinned to inward — any other direction is refused", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const before = JSON.stringify(readState(cwd).secondaryTrackers);
+  const err = expectFail(() => run(
+    ["set-tracker", "--role", "secondary", "--system", "jira", "--project", "ABC", "--direction", "outward"], { cwd }));
+  assert.ok(err, "a secondary tracker may not be given an outward direction");
+  assert.equal(JSON.stringify(readState(cwd).secondaryTrackers), before,
+    "state.secondaryTrackers must be untouched by the refusal");
+  // The pinned value itself is accepted, so the refusal above is a decision and not a dead path.
+  run(["set-tracker", "--role", "secondary", "--system", "jira", "--project", "ABC", "--direction", "inward"], { cwd });
+  assert.equal(readState(cwd).secondaryTrackers[0].direction, "inward");
+});

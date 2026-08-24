@@ -8,6 +8,7 @@ import { parseFlags } from "./add-epic.mjs";
 import { removeSecondaryTracker, upsertSecondaryTracker, writeRules } from "./rules.mjs";
 import { render } from "./render.mjs";
 import { resolvePlatform } from "./platform.mjs";
+import { KNOWN_TRACKER_DIRECTIONS } from "./constants.mjs";
 
 /** Write/merge the `tracker` block (role: primary, default) or upsert/remove an entry in
  *  `state.secondaryTrackers` (role: secondary). Pure local state write — the engine NEVER
@@ -21,6 +22,24 @@ export function setTracker() {
   const role = str(f.role) || "primary";
   if (role !== "primary" && role !== "secondary") {
     process.stderr.write("conductor: --role must be primary or secondary\n"); process.exit(1);
+  }
+
+  // `direction` is EXPLICIT configuration, never inferred from the vendor's name at any site.
+  // Validated here, before either branch touches state, so a rejected value writes nothing on
+  // the primary path or the secondary one.
+  const direction = str(f.direction);
+  if (direction !== undefined && !KNOWN_TRACKER_DIRECTIONS.includes(direction)) {
+    process.stderr.write(`conductor: --direction must be one of ${KNOWN_TRACKER_DIRECTIONS.join("|")}\n`);
+    process.exit(1);
+  }
+  // A secondary tracker is PINNED to inward: the secondary role is defined as pull-only — open
+  // issues come in as untriaged epics and no outward creation is specified for it anywhere — so
+  // an outward secondary would be a direction with no procedure behind it.
+  if (role === "secondary" && direction !== undefined && direction !== "inward") {
+    process.stderr.write(
+      `conductor: a secondary tracker is inward-only — --direction '${direction}' is not available ` +
+      "for --role secondary (a secondary tracker never gets outward-created issues)\n");
+    process.exit(1);
   }
 
   if (role === "secondary") {
@@ -50,6 +69,7 @@ export function setTracker() {
     if (projectKey) entry.projectKey = projectKey;
     if (str(f.instance) !== undefined) entry.instance = str(f.instance);
     if (str(f.mechanism) !== undefined) entry.mechanism = str(f.mechanism);
+    if (direction !== undefined) entry.direction = direction;
     upsertSecondaryTracker(state, entry);
     saveState(state);
     writeRules(resolvePlatform({}, state));
@@ -64,6 +84,7 @@ export function setTracker() {
   if (str(f.project) !== undefined) t.projectKey = str(f.project);
   if (str(f.mechanism) !== undefined) t.mechanism = str(f.mechanism);
   if (str(f.repo) !== undefined) t.repo = str(f.repo);
+  if (direction !== undefined) t.direction = direction;
   if (Array.isArray(f.intent)) {
     const si = { ...(t.statusIntent || {}) };
     for (const pair of f.intent) {

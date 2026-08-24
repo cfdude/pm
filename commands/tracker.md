@@ -55,6 +55,33 @@ If `${CLAUDE_PLUGIN_ROOT}` is empty:
 `--intent` is repeatable; each `<status>:<target>` adds one entry to the map. Re-running
 `set-tracker` merges (only the flags you pass change). It refreshes the CLAUDE.md rules block.
 
+## Direction — `--direction inward|outward|both`
+
+Which way work flows between this repo and the tracker. It is **explicit configuration**, never
+inferred from the tracker's vendor name:
+
+- `inward` — open items in the tracker become untriaged conductor epics. The rules block gains an
+  inward sync section; it does **not** ask you to create issues for local epics.
+- `outward` — conductor epics are mirrored out as issues and transitioned as their status changes.
+  The rules block gains the "External tracker sync" section; nothing is pulled in.
+- `both` — both sections are emitted.
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" set-tracker --system jira --project JOB --direction inward
+```
+
+An unrecognized value exits non-zero and writes nothing. **A secondary tracker is pinned to
+`inward`** — it is pull-only by definition, so `--role secondary --direction outward` is refused.
+
+A tracker with no recorded `direction` keeps the behavior its vendor produced before direction
+existed: `github-issues` resolves to `inward`, every other system to `outward`. That fallback
+holds whether or not the repo's state has been through `/pm:upgrade`.
+
+**An inward section is only emitted when the tracker names what to read** — a `repo` for
+`github-issues`, a `repo` or a `--project` for any other system. A tracker whose direction
+includes `inward` but which names no scope gets no inward section at all, because the "list open
+items in …" step would carry an unfilled placeholder and could not be run as written.
+
 ## Your ongoing responsibilities once a tracker is set
 
 - An epic with no `externalId` → create the issue in the tracker, then record its key:
