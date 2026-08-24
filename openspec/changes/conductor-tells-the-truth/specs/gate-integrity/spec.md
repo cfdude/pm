@@ -10,7 +10,7 @@ reached `archived` with `gateReview: null`, by following the documented `/opsx:a
 
 ### Requirement: The archive transition is gated on every path that can reach it
 
-Three paths can move an epic to `status: "archived"`, and this capability SHALL name all three so
+Five paths can leave an epic at `status: "archived"`, and this capability SHALL name all five so
 that every rule about archiving binds a known set rather than whichever path an implementer
 happened to remember. These names are the ones other capabilities refer to:
 
@@ -19,7 +19,19 @@ happened to remember. These names are the ones other capabilities refer to:
   (referred to elsewhere in this release as the hook heal). The binding is the function, not any
   list of the entry points that reach it;
 - the **archive backfill registration** — `sync` registering an archived change that has no epic
-  directly at `status: "archived"`, as required by the `conductor-record` capability.
+  directly at `status: "archived"`, as required by the `conductor-record` capability;
+- the **archived-at-creation paths** — `add-epic --status archived` and an `add-many` batch entry
+  carrying `status: "archived"`. `archived` is a member of `KNOWN_STATUSES`, and both commands
+  construct the epic object inline from their input, so each produces an archived epic today with
+  no gate check and no disposition. They are two paths rather than one because they are two
+  commands with two independent construction sites, and a rule applied at one of them is exactly
+  the absent-edit class this release exists to close.
+
+**The creation paths are named here even though they perform no transition.** Nothing moves from a
+prior status, so there is no moment for a transition guard to fire — but the epic is at `archived`
+when the command returns, which is the only property every rule in this capability actually keys on.
+An enumeration that named only the paths carrying a status *transition* would leave the two paths
+that reach the same end state under no rule at all.
 
 **The heal is defined by its call sites, not by the hooks.** As of this change `reconcileArchived()`
 is invoked from four places — `upgrade`, `render`, the commit nudge, and `sync` — of which two
@@ -36,10 +48,20 @@ The heal's rules therefore do NOT turn on whether an agent is present at the cal
 already says and receives no disposition and no gate verdict from anyone at the moment it flips the
 status: nobody is asked, whether or not somebody is there.
 
-An openspec-lane epic SHALL NOT reach `archived` on any of those three paths with no record of how
-it got past Gate 2 — the interactive verb by refusing a `delivered` archive without a passing
-verdict, the heal by recording that it bypassed the gate, and the backfill by the `unknown` outcome
-and `recordedBy: "archive-backfill"` stamp that `conductor-record` already requires of it.
+An openspec-lane epic SHALL NOT reach `archived` on any of those five paths with no record of how
+it got past Gate 2, and each path SHALL carry its own arm of that rule:
+
+1. the **interactive archive verb** refuses a `delivered` archive without a passing verdict;
+2. the **archive-drift heal** records that it bypassed the gate, as the requirement below defines;
+3. the **archive backfill registration** relies on the `unknown` outcome and
+   `recordedBy: "archive-backfill"` stamp that `conductor-record` already requires of it;
+4. and 5. the **archived-at-creation paths** rely on the same stamp with their own token, as the
+   requirement below defines.
+
+Arms 3, 4 and 5 are the same argument: the `recordedBy` stamp **is** the record of how the epic
+reached `archived`, and it is written unconditionally, so nothing is left silent. Naming five paths
+and then writing a rule for three would reproduce inside this requirement the defect it exists to
+close.
 
 **Outcome invariant.** NO write that leaves an epic at `status: "archived"` — by any path, whether
 named above or added later — SHALL leave it without an `outcome`. This includes a path that archives
@@ -100,16 +122,87 @@ Silence is the defect; the transition is not.
   hook, because every rule in this capability binds the heal function itself rather than the entry
   point that reached it
 
-### Requirement: The archive-drift heal writes one record carrying both the bypass and the outcome
+### Requirement: The interactive archive verb accepts an epic that is already archived
 
-The **archive-drift heal** SHALL write a **single** record for the transition it performs:
-`gateReview.gate2` with the verdict value `ungated` — a value distinct from `pass` and `fail` —
-carrying `reviewedAt` and `recordedBy`, and in the same write an `outcome` of `unknown` that ALSO
-carries `recordedBy` as a field. On both, `recordedBy` SHALL be the single fixed literal token
-`archive-drift-heal`, so a test and a consumer bind to it exactly rather than to a description of
-the path. `reviewer` carries a reviewer's identity and MUST be absent on an `ungated` entry, so an
-audit query over `reviewer` never mixes path names with the identities of people and agents who
-actually reviewed something.
+The **interactive archive verb** SHALL accept an epic whose `status` is **already** `archived`,
+run the full archive gate on that invocation, and record the disposition the agent supplies. It MUST
+NOT refuse the call as a no-op, and MUST NOT treat "the status did not change" as grounds to skip
+the gate. Re-archiving an already-archived epic is an established shape in this engine, not an edge
+case: the completion stamp is already guarded on `!epic.completedAt` precisely because the verb can
+be run twice.
+
+**Without this, `delivered` is unrecordable on the documented path.** The workflow pm emits ends
+`/opsx:archive`, which moves the change directory on disk; the **archive-drift heal** then observes
+the move and flips the epic to `archived`, stamping `outcome: unknown` because nobody supplied a
+disposition at that moment. Every step so far is required behavior. The only remaining moment at
+which the real disposition can be recorded is a call to the interactive verb on an epic that is by
+then already `archived` — so a verb that refused that call would leave **every** openspec epic
+following the documented workflow at `outcome: unknown`, which is the 42-of-49 headline defect this
+release exists to close, reproduced in the field built to close it.
+
+**The gate's demands are evaluated against the record, not against the change directory.** By this
+point `openspec/changes/<id>/` has already moved under `archive/`, and the archive gate's inputs are
+all durable on the epic: the Gate 2 verdict and its evidence, the outstanding-work quantity
+`conductor-record` defines (which reads as zero for an archived epic whose source is gone), the
+deferral assertion, and the attribution array. An implementer who reads the gate's inputs from the
+working tree instead makes this requirement unsatisfiable — the change is not there any more — and
+the whole path goes inert.
+
+Which disposition an agent's record replaces, and which it may not, is defined by `epic-disposition`
+and is not restated here.
+
+#### Scenario: The documented archive sequence ends with the real disposition recorded
+
+- **WHEN** an agent records a passing Gate 2 with its evidence, then runs `/opsx:archive` so the
+  change directory moves on disk, then the archive-drift heal runs and flips the epic to `archived`
+  — leaving the existing passing `gate2` untouched and stamping `outcome: unknown` with
+  `recordedBy: "archive-drift-heal"` — and the agent then runs the interactive archive verb on that
+  epic with `--status archived` and `outcome: delivered`
+- **THEN** the call is accepted rather than refused for the status being unchanged, and the epic ends
+  at `outcome: delivered` carrying the agent's record, with its passing Gate 2 intact and **no**
+  `ungated` standing condition anywhere in its `gateReview` — the disposition an openspec epic
+  earns on the documented path, reachable without hand-editing `state.json`
+
+#### Scenario: The archive gate still binds the second call
+
+- **WHEN** the interactive archive verb is run with `outcome: delivered` on an epic the heal already
+  flipped to `archived` and whose `gate2` is `ungated` because no real verdict was ever recorded
+- **THEN** the call is refused exactly as it would be for an epic being archived for the first time,
+  because accepting the call is not the same as waiving the gate
+
+### Requirement: The archive-drift heal writes one record at the moment it flips a status
+
+The **archive-drift heal** SHALL write a **single** record for the transition it performs, whose
+two halves bind different sets of epics:
+
+- the **disposition half** — an `outcome` of `unknown` carrying `recordedBy` as a field — binds
+  **every lane**, because the heal flips an epic of any lane and the outcome invariant above admits
+  no lane exception;
+- the **bypass half** — `gateReview.gate2` with the verdict value `ungated`, a value distinct from
+  `pass` and `fail`, carrying `reviewedAt` and `recordedBy` — binds **openspec-lane epics only**.
+
+On both halves, `recordedBy` SHALL be the single fixed literal token `archive-drift-heal`, so a test
+and a consumer bind to it exactly rather than to a description of the path. `reviewer` carries a
+reviewer's identity and MUST be absent on an `ungated` entry, so an audit query over `reviewer`
+never mixes path names with the identities of people and agents who actually reviewed something.
+
+**The bypass half MUST NOT be written for a non-openspec-lane epic.** Gate 2 is an openspec-lane
+obligation: `record-gate-review` refuses a verdict to an epic of any other lane, so an `ungated`
+entry on a `claude-code` or `superpowers` epic would be a standing condition with **no** clearing
+path in the engine at all — strictly worse than the backfill flood the requirement below forbids,
+because that one is at least clearable in principle. The heal reaches every lane and the lanes it
+reaches most are not openspec: it is a live, reachable shape, not a hypothetical one — this
+repository holds 68 archived epics of which 65 are not openspec-lane, and the dual-lane registration
+defect deliberately left unfixed this release keeps producing superpowers-lane epics whose ids are
+date-prefixed variants of openspec ones.
+
+**The heal's openspec-lane test is a site deciding openspec-lane membership** and SHALL normalize an
+absent `lane` exactly as the three sites named in the normalization requirement below do. A lane-less
+epic renders as openspec-lane everywhere, so a strict test here would silently deny it the bypass
+record that its rendering says it owes.
+
+Splitting the halves by lane does not split the write: it remains **one** write, and an epic of any
+lane leaves the heal carrying a disposition.
 
 **The heal's outcome record carries `recordedBy`, not only a free-text reason.** `conductor-record`
 defines `recordedBy` as the general form of the stamp every path that writes a disposition the agent
@@ -141,6 +234,20 @@ in the requirement above binds it.
   carrying `recordedBy: "archive-drift-heal"` as a field — so a later reader can tell it apart from
   an epic that passed a real implementation review without parsing any prose, and no archived epic
   is left without an outcome
+
+#### Scenario: A healed non-openspec-lane epic gets a disposition and no ungated condition
+
+- **WHEN** the archive-drift heal flips a `claude-code`- or `superpowers`-lane epic to `archived`
+- **THEN** the epic carries `outcome: unknown` with `recordedBy: "archive-drift-heal"` and **no**
+  `gateReview.gate2` entry, so it is never named as an ungated archive — a lane whose epics
+  `record-gate-review` refuses a verdict could never clear such a condition, leaving it permanent
+  and unactionable on the majority of the epics this function touches
+
+#### Scenario: A healed lane-less epic is treated as openspec-lane by the heal
+
+- **WHEN** the archive-drift heal flips an epic that has no `lane` field to `archived`
+- **THEN** it receives the bypass half exactly as an epic with `lane: "openspec"` does, because the
+  heal's lane test normalizes an absent lane the same way every other openspec-lane decision does
 
 #### Scenario: The archive backfill writes no gate verdict
 
@@ -179,6 +286,59 @@ in the requirement above binds it.
   `ungated` for storage — and widening the single `--verdict` allowlist to admit `ungated` for
   storage's sake is a failure of the scenario above, not a way to satisfy it
 
+### Requirement: An epic created directly at archived is stamped, not refused
+
+The **archived-at-creation paths** SHALL leave the epic they create carrying `outcome: unknown` with
+`recordedBy` as a field, holding the fixed literal token of the path that wrote it — `add-epic` and
+`add-many` respectively. Like the archive backfill and for the identical reason, neither path SHALL
+write a `gateReview.gate2` entry: the stamp already records exactly how the epic reached `archived`,
+and an `ungated` entry would add no information while adding a permanent standing condition.
+
+**Creating at `archived` is stamped rather than refused, and the choice is evidence-led.** Refusing
+`archived` at creation would be the simpler rule, but the capability is in use: this repository's own
+suite creates archived epics at creation to exercise parent rollup and completion counting
+(`scripts/test/conductor-06.test.mjs:282`, `scripts/test/conductor-07.test.mjs:141` and `:153`), and
+the archive backfill `conductor-record` requires registers historical changes **directly** at
+`archived` by design. Registering something already finished is a real need; a refusal would remove
+it and force every caller to a two-step create-then-archive dance whose second step would then have
+to satisfy the interactive verb's full archive gate for work that finished before the epic existed.
+Stamping keeps the outcome invariant true without removing the capability.
+
+**One record carries one token.** Where the archive backfill registers through a creation path
+internally, the disposition SHALL carry `archive-backfill`, not the creation path's token: the
+backfill is the path a consumer needs to recognize — every rule elsewhere in this release that
+exempts historical registrations keys on that token — and a record carrying two stamps or the inner
+one would defeat those exemptions.
+
+The stamp binds **every lane**, matching the disposition half of the heal's write, and applies
+whether or not the epic's change exists on disk.
+
+#### Scenario: An epic created at archived carries an outcome
+
+- **WHEN** the agent runs `add-epic --id <id> --lane openspec --status archived`
+- **THEN** the created epic carries `outcome: unknown` with `recordedBy: "add-epic"` as a field and
+  no `gateReview.gate2` entry, rather than landing archived with no outcome at all
+
+#### Scenario: A batch entry created at archived carries an outcome
+
+- **WHEN** an `add-many` batch contains an entry whose `status` is `archived`
+- **THEN** that epic carries `outcome: unknown` with `recordedBy: "add-many"`, so the two creation
+  commands are distinguishable in the record and a rule applied to one is visibly absent from the
+  other
+
+#### Scenario: Creation at any other status writes no disposition
+
+- **WHEN** an epic is created at `queued`, `planned`, `active` or any other non-archived status
+- **THEN** it carries no disposition record at all, because nothing has ended and `unknown` would
+  assert a terminal disposition for work that has not terminated
+
+#### Scenario: A backfilled epic keeps the backfill's token
+
+- **WHEN** the archive backfill registers a historical archived change and its implementation
+  constructs the epic through a creation path
+- **THEN** the disposition carries `recordedBy: "archive-backfill"` and not a creation-path token,
+  so every rule that exempts historical registrations still recognizes it
+
 ### Requirement: An ungated archive is a standing condition until a real verdict supersedes it
 
 An epic carrying an `ungated` Gate 2 SHALL be named wherever the conductor reports its own
@@ -188,10 +348,13 @@ run of events that has ended and is therefore consumed once a session has seen i
 here persists in `state.json` until something changes it, and a notice that consumes would report
 it to one session and hide it from every session after.
 
-Only the archive-drift heal produces `ungated` entries. The archive backfill registration is
-forbidden above from writing a `gate2` entry at all, so no epic it registers can ever be named by
-this notice — which is what keeps a standing, unclearable condition from being asserted en masse
-against changes archived before the conductor could have guarded them.
+Only the archive-drift heal produces `ungated` entries, and only for openspec-lane epics. The
+archive backfill registration and the two archived-at-creation paths are forbidden above from
+writing a `gate2` entry at all, so no epic any of them registers can ever be named by this notice —
+which is what keeps a standing, unclearable condition from being asserted en masse against changes
+archived before the conductor could have guarded them. The heal's lane binding does the same job for
+the lanes that have no Gate 2 to record: a non-openspec-lane epic is never named by this notice,
+because it never acquires the entry.
 
 Recording a real Gate 2 verdict with evidence SHALL supersede an `ungated` entry, and that is what
 clears the notice. The superseded entry MUST remain readable, so an audit can still see that the
@@ -234,6 +397,13 @@ openspec-lane membership, not by some of them. Today the archive guard tests
 `(epic.lane || "openspec") === "openspec"`, so a lane-less epic renders as openspec-lane
 everywhere and slips the openspec-lane gate. The strict test appears at three sites — the archive
 guard, `missing()`, and `record-gate-review`'s lane refusal — and all three MUST normalize.
+
+**The rule binds every such site, including the ones this change introduces.** The archive-drift
+heal's bypass half is lane-bound by the heal requirement above, which makes it a fourth site
+deciding openspec-lane membership; it MUST normalize an absent lane like the other three. Stating
+the rule over "every site" rather than over the three that exist today is deliberate: a
+three-item list written while a fourth site is being added in the same change is the absent-edit
+class this release exists to close.
 
 #### Scenario: A lane-less epic is held to the openspec-lane archive gate
 
@@ -374,6 +544,37 @@ The obligation SHALL also cover work already in flight when this capability land
 whose commits were made before the flag existed can only acquire attribution from the agent
 finishing it.
 
+**The obligation SHALL exclude the change's own archive move.** The commit that moves
+`openspec/changes/<id>/` under `openspec/changes/archive/` — and any commit that only relocates or
+deletes a change's artifacts rather than implementing its work — is lifecycle bookkeeping, and the
+emitted text SHALL say so where it states the obligation. Without the exclusion the obligation and
+the staleness gate collide on the documented workflow: the archive move lands *after* the reviewed
+range by construction, so an agent following "attribute each commit as it is made" attributes it,
+the last hash in the array becomes a descendant of the recorded `headSha`, the verdict reads stale,
+and the archive gate refuses the very `delivered` record the interactive verb is required above to
+accept — the same trap this requirement already refuses to build by inference, reappearing through
+the flag. The exclusion is agent-declared, exactly like the `<!-- pm:lifecycle -->` marker
+`conductor-record` defines: the engine still appends precisely the hashes it is given and classifies
+nothing, so the excluded mechanisms above are untouched. Excluding the move never empties a
+populated array — it withholds one append — so an epic that attributed its delivery commits keeps
+them, and an epic whose only candidate was the move reads as empty, which is the forgiven "nothing
+attributed yet" state rather than a stale verdict.
+
+#### Scenario: The emitted obligation excludes the archive move
+
+- **WHEN** pm emits the text stating the attribution obligation
+- **THEN** that text names the change's archive move as a commit NOT to attribute, so an agent
+  following the emitted instructions cannot make an epic's own Gate 2 stale at the instant the
+  archive gate reads it
+
+#### Scenario: Archiving after the move commit is not refused as stale
+
+- **WHEN** an openspec-lane epic whose attribution array ends at its last delivery commit has its
+  change archived on disk, that move is committed, and the agent then records `outcome: delivered`
+  through the interactive archive verb
+- **THEN** the archive is not refused on staleness grounds, because the move was never attributed
+  and the recorded `headSha` is still the last hash in the array
+
 #### Scenario: The flag appends hashes and is registered once
 
 - **WHEN** the agent runs `update-epic <id> --attribute-commit <sha1> --attribute-commit <sha2>`
@@ -439,8 +640,12 @@ reader to filter it:
 2. an epic stamped `recordedBy: "archive-backfill"`, which `conductor-record` requires to register
    with its counts intact, unticked ones included.
 
-**Every other archived epic is IN scope, including one whose `outcome` is `unknown` — the migration stamps every archived epic regardless of lane, so `absent` is not a state an archived epic reaches, and
-regardless of lane.** The exclusion is deliberately written as those two cases rather than as "any
+**Every other archived epic is IN scope, including one whose `outcome` is `unknown`, and regardless
+of lane.** `absent` is not a state an archived epic reaches: the migration stamps every pre-existing
+archived epic regardless of lane, and the outcome invariant above binds every one of the five archive
+paths going forward, the two creation paths included. A check that had to handle an absent outcome
+would be handling a state no path produces.
+The exclusion is deliberately written as those two cases rather than as "any
 outcome other than `delivered`": `unknown` is the value the engine stamps when nobody was asked, and
 its reason is a path name, not an explanation of why the work did not complete — the property the
 exclusion above actually rests on. Scoping these checks to `delivered` would make them inert, which
@@ -513,9 +718,11 @@ requirement cites as its evidence.
 > Without this check the case is invisible everywhere: it gets no `ungated` entry, so the standing
 > ungated-archive notice never names it, and its outcome is honestly `unknown` because nobody
 > supplied a disposition at the transition. The heal is behaving correctly; what is missing is
-> anything that surfaces the mismatch so an agent can record the disposition the archive deserved.
-> Reporting it is the remediation path — the interactive verb records a disposition *at* the
-> transition, and that transition has already passed.
+> anything that surfaces the mismatch. The remediation is the interactive archive verb run on the
+> already-archived epic — the requirement above requires that call to be accepted, and
+> `epic-disposition` makes the agent's `delivered` replace the heal's engine stamp — so this check
+> is the finding, and that call is the fix. This is the ordinary end of the documented workflow, not
+> an exceptional repair.
 
 #### Scenario: A delivered epic with a passing Gate 2 has attributed no commits
 

@@ -40,12 +40,13 @@ not restated here.
 `unknown` is never an agent's answer. The refusal to archive without an outcome binds the
 **interactive archive verb** only — the one path where an agent supplies a disposition — and that
 path MUST also refuse `unknown` supplied by the agent, since choosing "I don't know" over a real
-disposition is the silence this capability exists to remove. The **archive-drift heal** and the
-**archive backfill registration**, the two paths `gate-integrity` names that supply no disposition,
-MUST instead have the **engine** stamp `outcome: unknown`. On both, that stamp MUST carry
+disposition is the silence this capability exists to remove. **Every other archive path
+`gate-integrity` enumerates supplies no disposition** — the **archive-drift heal**, the **archive
+backfill registration** and the two **archived-at-creation paths** — and each MUST instead have the
+**engine** stamp `outcome: unknown`. On all of them, that stamp MUST carry
 `recordedBy` — the fixed literal path token `gate-integrity` and `conductor-record` define
-(`archive-drift-heal`, `archive-backfill`) — as a **field on the disposition record**, not merely as
-the free-text reason. `conductor-record` states the general rule: any path in this release that
+(`archive-drift-heal`, `archive-backfill`, `add-epic`, `add-many`) — as a **field on the disposition
+record**, not merely as the free-text reason. `conductor-record` states the general rule: any path in this release that
 stamps an outcome the agent did not supply uses that field, precisely so a consumer keys on data
 rather than parsing prose; a heal whose outcome carried only a reason naming its path would
 reintroduce exactly the prose-parsing dependency the field exists to eliminate. The reason MAY
@@ -78,7 +79,8 @@ recorded "unknown, healed from disk".
   running the verb was asked
 
 #### Scenario: A path that supplies no disposition stamps `unknown` with `recordedBy` as a field
-- **WHEN** the archive-drift heal or the archive backfill registration archives an epic
+- **WHEN** any archive path that supplies no disposition leaves an epic at `archived` — the
+  archive-drift heal, the archive backfill registration, or either archived-at-creation path
 - **THEN** the epic carries `outcome: unknown` **and** `recordedBy` on that disposition record
   holding the fixed token for the path that wrote it, readable without parsing any free-text
   reason — rather than being refused (which would make the record contradict disk) or left with no
@@ -89,6 +91,53 @@ recorded "unknown, healed from disk".
 - **THEN** those epics load as `outcome: unknown` (stamped `delivered` by migration only where a
   passing Gate 2 verdict exists — 7 of the 49 audited), every existing behavior functions unchanged,
   and no reason is demanded retroactively
+
+### Requirement: An agent's disposition replaces an engine stamp and never another agent's
+A disposition supplied by the agent through the **interactive archive verb** SHALL replace an
+**engine-stamped** disposition already on the epic — outcome, reason and timestamp together — and
+SHALL NOT replace an **agent-supplied** one.
+
+The two are told apart by `recordedBy` and by nothing else, which is the entire reason that field is
+data rather than prose. A disposition is **engine-stamped** when `recordedBy` is present and holds
+one of the fixed literal tokens this release defines: `archive-drift-heal`, `archive-backfill`,
+`add-epic`, `add-many`, `migration`. A disposition is **agent-supplied** when `recordedBy` is
+absent — the interactive archive verb never writes that field, and no CLI flag lets an agent set it.
+The replacing record SHALL therefore carry no `recordedBy` of its own, so a record replaced once is
+not replaceable again by this rule.
+
+**This rule is what makes `delivered` recordable at all**, and it must not be inverted by mirroring
+the neighbouring never-overwrite rules. Two such rules exist in this release and both bind other
+paths: `gate-integrity` forbids the heal from overwriting an existing `gate2`, and the migration is
+forbidden from overwriting an existing `disposition`. Both are engine paths overwriting an agent's
+work. This is the opposite direction — an agent correcting a record the engine wrote because nobody
+was asked — and an implementer who generalizes those rules to this path makes `outcome: unknown`
+terminal on the documented `/opsx:archive` workflow and on all 65 migration-stamped archived epics in
+this repository, which is exactly the defect this release exists to close.
+
+The refusal in the other direction is a refusal, not a silent skip: replacing an agent's recorded
+disposition would destroy a durable judgment somebody made, and the record of *why* an epic ended is
+the thing this capability exists to preserve. Correcting a mistaken agent-supplied disposition is out
+of scope here; the refusal MUST name the recorded outcome and when it was recorded so the agent can
+see what it collided with.
+
+#### Scenario: An agent's disposition replaces the heal's stamp
+- **WHEN** the interactive archive verb records `outcome: delivered` on an epic whose disposition is
+  `{outcome: "unknown", recordedBy: "archive-drift-heal"}`
+- **THEN** the epic ends at `outcome: delivered` carrying the agent's reason and timestamp, with no
+  `recordedBy` remaining on the record, because a disposition nobody chose is exactly what an agent
+  is entitled to answer
+
+#### Scenario: An agent's disposition replaces a migration stamp
+- **WHEN** the interactive archive verb records a disposition on an archived epic whose disposition
+  is `{outcome: "unknown", recordedBy: "migration"}`
+- **THEN** the replacement is accepted, so history stamped by the upgrade is remediable rather than
+  frozen at `unknown` for every archived epic in the repository
+
+#### Scenario: An agent-supplied disposition is not replaced
+- **WHEN** the interactive archive verb records a disposition on an epic whose existing disposition
+  carries no `recordedBy`
+- **THEN** the command exits non-zero naming the recorded outcome and when it was recorded,
+  `state.json` is unchanged, and the earlier judgment survives
 
 ### Requirement: The instructions pm emits never present deletion as a way to end work
 Wherever pm emits instructions for ending an epic, a story, a deferral, or a release exclusion —
@@ -190,11 +239,11 @@ lifecycle bookkeeping rather than delivery. A refusal naming only the handoff st
 holding a fully delivered change toward inventing a receiver for work nobody carried anywhere,
 which is a fabricated record produced by a guard built to prevent fabricated records.
 
-The guard binds the **interactive archive verb** only. The **archive-drift heal** and the **archive
-backfill registration** — the paths `gate-integrity` enumerates that supply no disposition — MUST
-NOT be bound by it: the backfill is required to register historical changes with their unticked
-counts intact, including the one genuinely abandoned change in the audited archive, and neither
-path receives a named receiver from anyone.
+The guard binds the **interactive archive verb** only. Every other archive path `gate-integrity`
+enumerates — the **archive-drift heal**, the **archive backfill registration** and the two
+**archived-at-creation paths** — MUST NOT be bound by it: the backfill is required to register
+historical changes with their unticked counts intact, including the one genuinely abandoned change
+in the audited archive, and none of those paths receives a named receiver from anyone.
 
 #### Scenario: Archiving with outstanding work and a named receiver
 - **WHEN** an epic is archived with 3 of 81 tasks deliberately un-ticked and the agent records
