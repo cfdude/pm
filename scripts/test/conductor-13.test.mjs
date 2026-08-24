@@ -295,3 +295,69 @@ test("every DOCUMENTED update-epic flag is accepted and its value reads back fro
     spec.check(readState(cwd).epics.find(e => e.id === "subject"));
   }
 });
+
+// ─────────────── the disposition record ───────────────
+//
+// One shape at four scopes: an epic that ends, a declined deferral, a release exclusion, and
+// a handoff. `outcome` is NOT a flat field on the epic and never becomes a `status` value —
+// KNOWN_STATUSES is untouched.
+
+const DISPOSITION = new URL("../lib/disposition.mjs", import.meta.url).href;
+
+test("the outcome vocabulary and the engine-stamp token set are each exactly what the release defines", async () => {
+  const { KNOWN_OUTCOMES, ENGINE_STAMP_TOKENS } = await import(DISPOSITION);
+  assert.deepEqual([...KNOWN_OUTCOMES].sort(),
+    ["abandoned", "delivered", "killed", "superseded", "unknown"]);
+  // Exact, not superset: a sixth token added without a rule fails here, and so does dropping
+  // any of the five. Every exemption elsewhere in this release keys on one of these values.
+  assert.deepEqual([...ENGINE_STAMP_TOKENS].sort(),
+    ["add-epic", "add-many", "archive-backfill", "archive-drift-heal", "migration"]);
+});
+
+test("an agent-supplied disposition that is not `delivered` is rejected without a reason", async () => {
+  const { KNOWN_OUTCOMES, dispositionError, agentDisposition } = await import(DISPOSITION);
+  for (const outcome of KNOWN_OUTCOMES.filter(o => o !== "delivered")) {
+    for (const reason of [undefined, "", "   "]) {
+      const err = dispositionError({ outcome, reason });
+      assert.ok(err, `'${outcome}' with reason ${JSON.stringify(reason)} must be rejected`);
+      assert.match(err, /reason/, "the refusal must name the missing reason");
+      assert.throws(() => agentDisposition({ outcome, reason }),
+        `no record may be produced for '${outcome}' with reason ${JSON.stringify(reason)}`);
+    }
+  }
+});
+
+test("`delivered` needs no reason, and an agent's record carries no recordedBy", async () => {
+  const { dispositionError, agentDisposition } = await import(DISPOSITION);
+  assert.equal(dispositionError({ outcome: "delivered" }), null);
+  const d = agentDisposition({ outcome: "delivered" });
+  assert.equal(d.outcome, "delivered");
+  assert.ok(d.recordedAt, "a disposition records when it was recorded");
+  assert.equal("reason" in d, false, "an omitted reason must not be stored as an empty string");
+  assert.equal("recordedBy" in d, false,
+    "an agent-supplied record is defined by carrying NO recordedBy at all");
+});
+
+test("an outcome outside the vocabulary is rejected by name", async () => {
+  const { dispositionError } = await import(DISPOSITION);
+  const err = dispositionError({ outcome: "shipped", reason: "x" });
+  assert.ok(err && err.includes("shipped"), "the refusal must name the outcome it rejected");
+});
+
+test("an engine stamp carries its path token, defaults to `unknown`, and demands no reason", async () => {
+  const { ENGINE_STAMP_TOKENS, engineStamp } = await import(DISPOSITION);
+  for (const token of ENGINE_STAMP_TOKENS) {
+    const d = engineStamp(token);
+    assert.equal(d.outcome, "unknown");
+    assert.equal(d.recordedBy, token);
+    assert.ok(d.recordedAt);
+    assert.equal("reason" in d, false);
+  }
+  // The migration stamps `delivered` where a passing Gate 2 exists, and prefers the epic's
+  // existing completedAt over the migration clock — so both are parameters, not constants.
+  const m = engineStamp("migration", { outcome: "delivered", recordedAt: "2026-01-02T03:04:05.000Z" });
+  assert.equal(m.outcome, "delivered");
+  assert.equal(m.recordedAt, "2026-01-02T03:04:05.000Z");
+  assert.throws(() => engineStamp("some-new-path"),
+    "a token outside the fixed five must be rejected, not silently recorded");
+});
