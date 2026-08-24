@@ -36,10 +36,12 @@ Every number this project has published about its own effectiveness was computed
 **Epic annotation**
 
 - `description` and `notes` as first-class fields, with the CLI flags to set them. Stories are currently the only free-text carrier, which is why four epics archived with "incomplete" stories that were completion notes.
-- `update-epic` gains `--lane` and `--plan`. The **positional** id stays the correct and only
-  documented form; what changes is that a *misplaced* `--id <x>` flag is diagnosed by name instead
-  of answered with a bare usage dump (#71). Every existing `update-epic <id>` invocation — including
-  the reconcile and gate-review flows — keeps working exactly as documented.
+- `update-epic` gains `--lane` and `--plan`. The **positional** id stays the documented form; what
+  changes is that a *misplaced* `--id <x>` flag is either accepted as an alias for the positional id
+  or rejected with a message naming `--id` and showing the positional form — never answered with a
+  bare usage dump (#71). Which of the two ships is an implementation choice the spec leaves open.
+  Every existing `update-epic <id>` invocation — including the reconcile and gate-review flows —
+  keeps working exactly as documented.
 
 **Gate procedure** (instruction layer, no engine work)
 
@@ -62,7 +64,7 @@ Every number this project has published about its own effectiveness was computed
 
 ## Impact
 
-**Schema (`.conductor/state.json`) — requires a `MIGRATIONS` entry.** New fields: `outcome` and its reason, `description`, `notes`, `release`/deferral records, `tracker.direction`, `externalUpdatedAt`, `gateReview.{baseSha, headSha, reviewer}`, a state-level **archive-backfill marker** — `archiveBackfilledAt`, an ISO timestamp whose *presence* is the marker (deliberately not a watermark: nothing is compared against it, and its only job is gating the announcement, so an absent field means "not yet backfilled" and pre-existing state loads unchanged) — a **`recordedBy`** field on a disposition record naming the non-interactive path that wrote it (`archive-backfill`, the hook heal), so integrity checks key on a field rather than parsing a free-text reason, and a per-epic **array of attributed commit hashes** for staleness attribution, per the maintainer's ruling that one hash cannot represent an epic that shipped over several commits.
+**Schema (`.conductor/state.json`) — requires a `MIGRATIONS` entry.** New fields: `outcome` and its reason, `description`, `notes`, `release`/deferral records, `tracker.direction`, `externalUpdatedAt`, `gateReview.{baseSha, headSha, reviewer}`, a state-level **archive-backfill marker** — `archiveBackfilledAt`, an ISO timestamp whose *presence* is the marker (deliberately not a watermark: nothing is compared against it, and its only job is gating the announcement, so an absent field means "not yet backfilled" and pre-existing state loads unchanged) — a **`recordedBy`** field naming the non-interactive path that wrote a record (`archive-backfill`, the hook heal), so integrity checks key on a field rather than parsing a free-text reason — deliberately general, and therefore carried on **two host objects**: an epic's terminal disposition record and a gate verdict written by a non-interactive path; a per-epic **array of attributed commit hashes** for staleness attribution, per the maintainer's ruling that one hash cannot represent an epic that shipped over several commits; a **gate-verdict value distinct from pass and fail** marking an archive that bypassed the gate, plus the reviewer identity it must omit; a **handoff target** on a disposition, recording where unfinished work went; and, from the tracker side, a per-epic **refresh obligation** set at the activation transition and the **refresh-verdict record** that clears it (verdict, summary, when recorded, and the watermark it advances). Outside `state.json`, the task source gains an **agent-declared lifecycle marker** (`<!-- pm:lifecycle -->`) written onto a task line so lifecycle bookkeeping is excluded from progress only where it is declared.
 
 **Migration, as ruled by the maintainer:** `github-issues` → `inward`, every other system → `outward` (verified: a Jira tracker today receives *only* the outward section, so `both` would grant inward pull no repo has ever had). Archived openspec epics are stamped `outcome: delivered` **only** where a passing Gate 2 exists — 7 of 49 — and `unknown` otherwise. The gate enforces going forward and does not touch history.
 

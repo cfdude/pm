@@ -13,8 +13,9 @@ observes no existing repo has ever had. The reversal applies **only to trackers 
 this change ships**; existing state is governed by "A tracker with no recorded direction keeps its
 prior behavior" and by the migration, neither of which grants inward pull to any repo that did not
 already have it. It MUST be documented as a behavior change in the README and the docs site. A
-secondary tracker SHALL be pinned to `inward`; any other value is rejected, because "Secondary
-trackers never receive outward-created issues" is already a requirement of this capability.
+secondary tracker SHALL be pinned to `inward`; any other value is rejected, because this
+capability's "Secondary tracker inward pull" requirement already defines the secondary role as
+pull-only — open issues come in as untriaged epics, and no outward creation is specified for it.
 
 #### Scenario: A new primary tracker defaults to inward
 - **WHEN** the agent runs `set-tracker --system jira --instance onvex --project JOB` in a repo with
@@ -41,8 +42,12 @@ trackers never receive outward-created issues" is already a requirement of this 
 A tracker object with no `direction` field SHALL resolve to the behavior that vendor produced
 before direction existed: `github-issues` resolves to `inward`, every other system resolves to
 `outward`. This fallback MUST hold independently of any state migration, because a repo can run
-this engine version for weeks before its state is upgraded. Exactly one deliberate behavior change
-is permitted on that path — see "The sync nudge is emitted only where an inward procedure exists".
+this engine version for weeks before its state is upgraded. Exactly **two** deliberate behavior
+changes are permitted on that path, both repairs of instructions that referred to steps the same
+block never emitted: see "The sync nudge is emitted only where an inward procedure exists" and
+"The completion-sync reminder is emitted only where an inward procedure exists". Both are named
+here so an implementer comparing against the previous engine's output knows which two lines are
+expected to differ and treats any third as a regression.
 
 #### Scenario: An un-upgraded jira repo is unchanged
 - **WHEN** the rules block is emitted for `tracker: {system: "jira", projectKey: "JOB"}` with no
@@ -116,8 +121,21 @@ phrasing, not the scope-less case, which receives nothing.
 - **WHEN** the rules block is emitted for `tracker: {system: "github-issues"}` with no `repo`,
   whether it carries no `direction` at all or has been migrated to `direction: "inward"`
 - **THEN** neither an inward sync section nor an outward "External tracker sync" section is
-  present, and the block is byte-identical to the one the previous engine version emitted for that
-  same state
+  present, exactly as before this change
+
+#### Scenario: That path changes in exactly one way, and it is a repair
+- **WHEN** the same scope-less `github-issues` rules block is compared against the one the previous
+  engine version emitted
+- **THEN** the only difference is the removal of the "Sync after completing tracker-linked work"
+  reminder, which the previous version emitted for **any** `github-issues` primary regardless of
+  scope, and which referred the agent to "the writeback steps above" that the same block never
+  emitted — a dangling instruction, removed by "The completion-sync reminder is emitted only where
+  an inward procedure exists"
+
+> Byte-identity is claimed for the two **sync sections** on this path, not for the whole block. The
+> reminder's removal is a second deliberate change and is named here rather than left to be
+> discovered as a diff, because a spec that claims byte-identity while a sibling requirement
+> removes a line is a contradiction an implementer resolves silently and by call order.
 
 #### Scenario: A scope-less inward tracker of any system emits no inward section
 - **WHEN** the rules block is emitted for `{system: "jira", direction: "inward"}` with neither
@@ -245,9 +263,12 @@ is not sufficient, because it advances past items nobody read as soon as one ite
 engine SHALL NOT fetch anything to obtain this value — it stores what the agent supplies.
 
 The CLI flag that carries this value on an existing epic is a capability-introduced flag on an
-epic-mutating command, so it SHALL be registered wherever `epic-annotation`'s "An epic-mutating
-command never accepts a flag it discards" requires — that requirement owns the registration
-contract and the bulk-path mirror, and this capability does not restate it. Today
+epic-mutating command, so it SHALL be registered in the shared allowlist and mirrored onto the
+bulk-creation path exactly as `epic-annotation`'s "One shared flag allowlist, grown by every
+capability that adds a flag" requires — that requirement owns the registration contract and the
+bulk-path mirror, and this capability does not restate it. `epic-annotation`'s "Every epic-writing
+surface rejects what it will not persist" is what makes an omission a hard failure rather than a
+silent discard. Today
 `UPDATE_EPIC_FLAGS` is a literal array in `update-epic.mjs` and any flag missing from it exits
 non-zero, so an unregistered watermark flag would make every scenario below fail at the CLI rather
 than in the logic they test.

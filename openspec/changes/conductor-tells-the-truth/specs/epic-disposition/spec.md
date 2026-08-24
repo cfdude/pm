@@ -38,15 +38,25 @@ outcome the Gate 2 requirement binds, are enumerated by the `gate-integrity` cap
 not restated here.
 
 `unknown` is never an agent's answer. The refusal to archive without an outcome binds the
-**interactive archive verb** only — the one path where an agent is present to answer — and that
+**interactive archive verb** only — the one path where an agent supplies a disposition — and that
 path MUST also refuse `unknown` supplied by the agent, since choosing "I don't know" over a real
-disposition is the silence this capability exists to remove. The **hook-driven archive heal** and
-the **archive backfill registration**, the two non-interactive paths `gate-integrity` names, run
-with no agent present; on those the **engine** MUST stamp `outcome: unknown`, with the name of the
-path that performed the transition as its reason. That stamp is the engine recording that nobody
-was asked, and together with pre-existing state loading as `unknown` it is the only way the value
-is ever written. The alternative — an archived epic carrying no outcome at all — is strictly worse
-than a recorded "unknown, healed from disk".
+disposition is the silence this capability exists to remove. The **archive-drift heal** and the
+**archive backfill registration**, the two paths `gate-integrity` names that supply no disposition,
+MUST instead have the **engine** stamp `outcome: unknown`. On both, that stamp MUST carry
+`recordedBy` — the fixed literal path token `gate-integrity` and `conductor-record` define
+(`archive-drift-heal`, `archive-backfill`) — as a **field on the disposition record**, not merely as
+the free-text reason. `conductor-record` states the general rule: any path in this release that
+stamps an outcome the agent did not supply uses that field, precisely so a consumer keys on data
+rather than parsing prose; a heal whose outcome carried only a reason naming its path would
+reintroduce exactly the prose-parsing dependency the field exists to eliminate. The reason MAY
+additionally name the path for a human reader.
+
+Note that "the engine stamps it" is not a claim that nobody was at the keyboard: `gate-integrity`
+binds the heal to `reconcileArchived()` wherever invoked, and two of its call sites are interactive
+verbs. The stamp records that no disposition was supplied at the transition, which is true at all of
+them. Together with pre-existing state loading as `unknown` this is the only way the value is ever
+written. The alternative — an archived epic carrying no outcome at all — is strictly worse than a
+recorded "unknown, healed from disk".
 
 #### Scenario: Archiving a killed change preserves why it was killed
 - **WHEN** an openspec-lane epic proposed with 47 tasks is dropped before any code is written
@@ -67,10 +77,12 @@ than a recorded "unknown, healed from disk".
 - **THEN** the transition is refused, because `unknown` records that nobody was asked and an agent
   running the verb was asked
 
-#### Scenario: A non-interactive archive path stamps `unknown` with the path as its reason
-- **WHEN** the hook-driven archive heal or the archive backfill registration archives an epic
-- **THEN** the epic carries `outcome: unknown` whose reason names the path that archived it, rather
-  than being refused (which would make the record contradict disk) or left with no outcome
+#### Scenario: A path that supplies no disposition stamps `unknown` with `recordedBy` as a field
+- **WHEN** the archive-drift heal or the archive backfill registration archives an epic
+- **THEN** the epic carries `outcome: unknown` **and** `recordedBy` on that disposition record
+  holding the fixed token for the path that wrote it, readable without parsing any free-text
+  reason — rather than being refused (which would make the record contradict disk) or left with no
+  outcome
 
 #### Scenario: Pre-existing archived epics remain valid
 - **WHEN** the engine loads a `state.json` whose archived epics predate this capability

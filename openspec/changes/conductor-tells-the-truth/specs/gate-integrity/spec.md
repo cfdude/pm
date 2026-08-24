@@ -15,13 +15,31 @@ that every rule about archiving binds a known set rather than whichever path an 
 happened to remember. These names are the ones other capabilities refer to:
 
 - the **interactive archive verb** — the agent running `update-epic <id> --status archived`;
-- the **hook-driven archive heal** — the archive-drift heal that runs from the SessionStart,
-  PreCompact and PostToolUse hooks, with no agent present to answer for anything;
+- the **archive-drift heal** — the function `reconcileArchived()`, **wherever it is invoked**
+  (referred to elsewhere in this release as the hook heal). The binding is the function, not any
+  list of the entry points that reach it;
 - the **archive backfill registration** — `sync` registering an archived change that has no epic
   directly at `status: "archived"`, as required by the `conductor-record` capability.
 
-An openspec-lane epic SHALL NOT reach `archived` on any of those three with no record of how it
-got past Gate 2.
+**The heal is defined by its call sites, not by the hooks.** As of this change `reconcileArchived()`
+is invoked from four places — `upgrade`, `render`, the commit nudge, and `sync` — of which two
+(`upgrade`, `sync`) are interactive verbs an agent typed, and `render` is reachable from ordinary
+interactive verbs as well as from the SessionStart, PreCompact and PostToolUse hooks. Binding the
+heal's rules to the hook entry points would leave `render`, `sync` and `upgrade` producing archived
+epics under no rule at all — the absent-edit defect class this release exists to close, reproduced
+inside the requirement written to prevent it. Defining the heal as the function means an implementer
+who adds a fifth caller inherits every rule here without amending this spec, and an implementer
+wiring the rules to hook entry points has demonstrably not met the requirement.
+
+The heal's rules therefore do NOT turn on whether an agent is present at the call site — at
+`upgrade` and `sync` an agent plainly is. They turn on the fact that the heal reflects what disk
+already says and receives no disposition and no gate verdict from anyone at the moment it flips the
+status: nobody is asked, whether or not somebody is there.
+
+An openspec-lane epic SHALL NOT reach `archived` on any of those three paths with no record of how
+it got past Gate 2 — the interactive verb by refusing a `delivered` archive without a passing
+verdict, the heal by recording that it bypassed the gate, and the backfill by the `unknown` outcome
+and `recordedBy: "archive-backfill"` stamp that `conductor-record` already requires of it.
 
 **The Gate 2 requirement binds `outcome: delivered` only.** A change that is killed, superseded or
 abandoned has no passing Gate 2 and never will — the code was never written, or was written and
@@ -31,10 +49,10 @@ outcomes the reason the disposition already requires substitutes for the verdict
 proceeds.
 
 The interactive archive verb MUST refuse a `delivered` archive that has no passing Gate 2, writing
-nothing and exiting non-zero. The two non-interactive paths MUST still reflect what is on disk —
-disk is the source of truth for OpenSpec, and a heal that refused would make the record lie about
-reality — but each MUST record that the transition bypassed the gate. Silence is the defect; the
-transition is not.
+nothing and exiting non-zero. The archive-drift heal and the archive backfill registration MUST
+still reflect what is on disk — disk is the source of truth for OpenSpec, and a heal that refused
+would make the record lie about reality — but neither may leave the transition unaccounted for.
+Silence is the defect; the transition is not.
 
 #### Scenario: Interactive archive of a delivered epic without a passing Gate 2 is refused
 
@@ -54,35 +72,71 @@ transition is not.
 #### Scenario: Archiving the change on disk still archives the epic
 
 - **WHEN** the change directory for an openspec-lane epic appears under `openspec/changes/archive/`
-  and the hook-driven archive heal subsequently runs
+  and the archive-drift heal subsequently runs
 - **THEN** the epic's status becomes `archived`, because the record must not contradict disk
 
-### Requirement: A non-interactive archive writes one record carrying both the bypass and the outcome
+#### Scenario: The heal reached from an interactive verb is bound by the same rules
 
-The hook-driven archive heal and the archive backfill registration SHALL each write a **single**
-record for the transition they perform: `gateReview.gate2` with the verdict value `ungated` — a
-value distinct from `pass` and `fail` — carrying `reviewedAt` and `recordedBy`, the name of the
-path that performed the transition, and in the same write an `outcome` of `unknown` whose reason
-names that same path. `reviewer` carries a reviewer's identity and MUST be absent on an `ungated`
-entry, so an audit query over `reviewer` never mixes path names with the identities of people and
-agents who actually reviewed something.
+- **WHEN** `reconcileArchived()` flips an openspec-lane epic to `archived` during `sync` or
+  `upgrade` — call sites an agent reached by typing a command, not hook entry points
+- **THEN** the transition carries exactly the same records as when the same function runs from a
+  hook, because every rule in this capability binds the heal function itself rather than the entry
+  point that reached it
+
+### Requirement: The archive-drift heal writes one record carrying both the bypass and the outcome
+
+The **archive-drift heal** SHALL write a **single** record for the transition it performs:
+`gateReview.gate2` with the verdict value `ungated` — a value distinct from `pass` and `fail` —
+carrying `reviewedAt` and `recordedBy`, and in the same write an `outcome` of `unknown` that ALSO
+carries `recordedBy` as a field. On both, `recordedBy` SHALL be the single fixed literal token
+`archive-drift-heal`, so a test and a consumer bind to it exactly rather than to a description of
+the path. `reviewer` carries a reviewer's identity and MUST be absent on an `ungated` entry, so an
+audit query over `reviewer` never mixes path names with the identities of people and agents who
+actually reviewed something.
+
+**The heal's outcome record carries `recordedBy`, not only a free-text reason.** `conductor-record`
+defines `recordedBy` as the general form of the stamp every path that writes a disposition the agent
+did not supply must use, and the heal is exactly such a path; giving its outcome a prose reason alone
+would leave a consumer parsing the very prose that field exists to stop it parsing. The reason MAY
+additionally name the path for a human reader, and no consumer may depend on that prose.
+
+**The archive backfill registration SHALL NOT write a `gate2` entry at all.** Its `outcome: unknown`
+with `recordedBy: "archive-backfill"` already records precisely how the epic reached `archived`,
+so an `ungated` verdict would add no information — and it would add a permanent one. An `ungated`
+entry is a standing condition whose only clearing path is a real passing Gate 2 carrying `baseSha`
+and `headSha` (the requirement below), which for a change archived long before the conductor existed
+is either impossible or fabrication. The scale is measured, not hypothetical: this repository holds
+68 archived epics, 3 of which carry a passing Gate 2, so a backfill that wrote `ungated` per epic
+would produce an unclearable finding against essentially every archived change in the repo on its
+first run — the exact flood `conductor-record` created the `archive-backfill` stamp to prevent, and
+which its own rationale names ("the first run of the backfill fills the repo's integrity report with
+findings against changes that were archived long before the conductor could have guarded them").
 
 Writing the bypass and the outcome as two independent records is what produces an archived epic
-carrying one and not the other. **Outcome invariant:** no archive path named by this capability
-SHALL leave an epic `archived` without an `outcome` — including a path that archives an epic later
-in the same process run than a migration which has already stamped outcomes over the epics that
-were archived at that instant. This is stated as an invariant rather than as an ordering
-constraint deliberately: an ordering is silently breakable by a later refactor, while the invariant
-is checkable wherever an archived epic is read.
+carrying one and not the other. **Outcome invariant:** NO write that leaves an epic at
+`status: "archived"` — by any path, whether named by this capability or added later — SHALL leave it
+without an `outcome`. This includes a path that archives an epic later in the same process run than
+a migration which has already stamped outcomes over the epics that were archived at that instant.
+The invariant is deliberately stated over "any write that produces an archived epic" rather than
+over the enumerated path list: an enumeration goes stale the moment a path is added, and an ordering
+constraint is silently breakable by a later refactor, while the invariant is checkable wherever an
+archived epic is read.
 
-#### Scenario: A hook-driven archive records the bypass and the outcome together
+#### Scenario: The archive-drift heal records the bypass and the outcome together
 
-- **WHEN** the hook-driven archive heal archives an openspec-lane epic that has no passing Gate 2
-  verdict
+- **WHEN** the archive-drift heal archives an openspec-lane epic that has no passing Gate 2 verdict
 - **THEN** one write leaves the epic with `gateReview.gate2` at verdict `ungated`, carrying its
-  timestamp and a `recordedBy` naming that path and no `reviewer`, and with `outcome: unknown`
-  whose reason names the same path — so a later reader can tell it apart from an epic that passed a
-  real implementation review, and no archived epic is left without an outcome
+  timestamp and `recordedBy: "archive-drift-heal"` and no `reviewer`, and with `outcome: unknown`
+  carrying `recordedBy: "archive-drift-heal"` as a field — so a later reader can tell it apart from
+  an epic that passed a real implementation review without parsing any prose, and no archived epic
+  is left without an outcome
+
+#### Scenario: The archive backfill writes no gate verdict
+
+- **WHEN** the archive backfill registration registers a historical archived change as an epic
+- **THEN** the epic carries `outcome: unknown` and `recordedBy: "archive-backfill"` and NO
+  `gateReview.gate2` entry, so it is never reported as an ungated archive and never acquires a
+  standing condition that only a Gate 2 review of a long-archived change could clear
 
 #### Scenario: An epic healed to archived during an upgrade still carries an outcome
 
@@ -93,10 +147,10 @@ is checkable wherever an archived epic is read.
   landing archived with none and never being revisited because the version stamp now says the
   migration ran
 
-#### Scenario: An existing verdict is never overwritten by a non-interactive path
+#### Scenario: An existing verdict is never overwritten by the heal
 
-- **WHEN** either non-interactive path archives an openspec-lane epic that already carries a
-  recorded `gate2` verdict
+- **WHEN** the archive-drift heal archives an openspec-lane epic that already carries a recorded
+  `gate2` verdict
 - **THEN** the existing verdict is left exactly as recorded and no bypass entry replaces it
 
 #### Scenario: The bypass verdict cannot be self-certified
@@ -106,6 +160,14 @@ is checkable wherever an archived epic is read.
   verdict that means "no review happened" MUST be writable only by the engine recording that fact,
   never by the party whose work would otherwise be reviewed
 
+#### Scenario: The storable and the agent-writable verdict vocabularies stay distinct
+
+- **WHEN** the set of verdicts an agent may pass to `record-gate-review --verdict` and the set of
+  verdicts the engine may store on `gateReview.gate2` are compared
+- **THEN** they are two separate lists — `pass` and `fail` for the agent, `pass`, `fail` and
+  `ungated` for storage — and widening the single `--verdict` allowlist to admit `ungated` for
+  storage's sake is a failure of the scenario above, not a way to satisfy it
+
 ### Requirement: An ungated archive is a standing condition until a real verdict supersedes it
 
 An epic carrying an `ungated` Gate 2 SHALL be named wherever the conductor reports its own
@@ -114,6 +176,11 @@ record condition, not an episode: unlike the write-conflict contention warning �
 run of events that has ended and is therefore consumed once a session has seen it — the condition
 here persists in `state.json` until something changes it, and a notice that consumes would report
 it to one session and hide it from every session after.
+
+Only the archive-drift heal produces `ungated` entries. The archive backfill registration is
+forbidden above from writing a `gate2` entry at all, so no epic it registers can ever be named by
+this notice — which is what keeps a standing, unclearable condition from being asserted en masse
+against changes archived before the conductor could have guarded them.
 
 Recording a real Gate 2 verdict with evidence SHALL supersede an `ungated` entry, and that is what
 clears the notice. The superseded entry MUST remain readable, so an audit can still see that the
@@ -139,6 +206,14 @@ unremediable by design, which is how a standing signal becomes noise everyone fi
   `ungated`
 - **THEN** the epic stops being reported as an ungated archive, and the record still shows that it
   was archived ungated before the review happened
+
+#### Scenario: A backfilled archived epic is never named as an ungated archive
+
+- **WHEN** the integrity report and the briefing are composed in a repository where the archive
+  backfill has registered every historical archived change
+- **THEN** none of those epics is named as an ungated archive, because the backfill wrote them no
+  `gate2` entry — a report that named them would be permanent, since the only clearing path is a
+  passing Gate 2 with a commit range for work that shipped years ago
 
 ### Requirement: Every site deciding openspec-lane membership normalizes an absent lane
 
@@ -208,9 +283,13 @@ or external system is involved — and it MUST NOT refuse on commits unrelated t
 Repository `HEAD` alone is therefore not the baseline: an epic archived a week after its merge has
 a `HEAD` far past its own `headSha` through nobody's fault.
 
-**Attribution SHALL be an array of commit hashes recorded on the epic**, appended as each commit is
-attributed to that epic's work; the last entry is the endpoint a recorded `headSha` is compared
-against. Deriving attribution from **commits that touch the epic's own files** is explicitly
+**Attribution SHALL be an array of commit hashes recorded on the epic**; the last entry is the
+endpoint a recorded `headSha` is compared against. **The array is written by the named flag and the
+emitted obligation the next requirement defines** — this requirement does not leave "appended as
+each commit is attributed" to an unnamed actor, because nothing would then append and every epic
+would carry an absent array, firing the unverifiable case below universally and leaving this whole
+staleness gate permanently inert. Deriving attribution from **commits that touch the epic's own
+files** is explicitly
 EXCLUDED: archiving a change moves `openspec/changes/<id>/` into `archive/<date>-<id>/`, a commit
 that touches every file the epic owns, so under that design the archive move itself makes every
 verdict stale at the exact moment the archive gate reads it, and the gate refuses forever. Commit
@@ -242,8 +321,56 @@ anything a required task carries.
 
 - **WHEN** an epic carries an attribution array containing no hashes
 - **THEN** it asserts that no commit has been attributed, so no verdict can be shown stale by it
-  and the archive is not refused on staleness grounds; the epic instead reports as `delivered` with
-  no attributed commits, which is itself an integrity finding rather than an unverifiable verdict
+  and the archive is not refused on staleness grounds; the epic instead renders as `delivered` with
+  no attributed commits — a distinct rendering from an epic whose array is absent, which renders as
+  unverifiable
+
+### Requirement: Commit attribution is written by a named flag the emitted instructions require
+
+The attribution array the staleness requirement compares against SHALL be written by a **named
+flag on an epic-mutating command** — `--attribute-commit <sha>`, accepted more than once in a
+single invocation and appending each hash in the order given — and that flag SHALL be declared in
+the single shared flag allowlist that `epic-annotation` requires, not in a second parallel list.
+The engine SHALL append exactly the hashes it is given and SHALL infer attribution from nothing
+else: not from the files a commit touches, not from an epic id appearing in a commit message, not
+from commit ordering.
+
+An epic-mutating flag nobody is told to use produces an absent array on every epic, which is
+indistinguishable in the record from an epic that predates this capability. The instructions pm
+emits — its managed `CLAUDE.md` rules block, the `conductor` skill, and its command docs — SHALL
+therefore require the agent to attribute each commit to the epic it belongs to at the moment that
+commit is made, and SHALL name the per-task conventional commit of an OpenSpec apply loop as the
+case that always qualifies. This is the same instruction-layer obligation `conductor-record` states
+for the `<!-- pm:lifecycle -->` declaration, for the same reason and to the same shape: the engine
+emits the rule and never writes the record itself, and without the emitted rule the field is
+expressible and never exercised.
+
+The obligation SHALL also cover work already in flight when this capability lands, since an epic
+whose commits were made before the flag existed can only acquire attribution from the agent
+finishing it.
+
+#### Scenario: The flag appends hashes and is registered once
+
+- **WHEN** the agent runs the epic-mutating command with `--attribute-commit <sha1>
+  --attribute-commit <sha2>` against an epic
+- **THEN** both hashes are appended to that epic's attribution array in the order given, readable
+  back from `state.json`, and the flag appears in the one shared flag allowlist rather than in a
+  second list of its own
+
+#### Scenario: The emitted instructions require attribution at commit time
+
+- **WHEN** pm emits its managed rules block, the `conductor` skill text, or a command doc covering
+  the build loop for an openspec-lane epic
+- **THEN** that text directs the agent to attribute each commit to its epic as the commit is made,
+  naming the flag — assertable directly against the text pm emits, and covering an epic whose
+  earlier commits predate this capability
+
+#### Scenario: The engine never infers an attribution
+
+- **WHEN** a commit touches every file an epic owns, or names the epic's id in its message, and no
+  `--attribute-commit` was run for it
+- **THEN** that hash does not appear in the epic's attribution array, because the archive move
+  itself touches every file a change owns and a prose convention was measured at 3/15 adoption
 
 ### Requirement: Gate 1 is read
 
@@ -273,11 +400,23 @@ checks writes state, and none blocks a command other than where a requirement ab
 
 Two classes of archived epic are explicitly OUT of scope for the completion-shaped checks below,
 because in both the record is working rather than broken, and a check that fires on them trains a
-reader to filter it. An epic whose `outcome` is anything other than `delivered` carries a required
-reason explaining why the work did not complete — the release's own flagship case is a change
-killed at Gate 1 with 47 tasks and no code written, which is zero-ticked by construction. And an
-epic created by the archive backfill registration is required by the `conductor-record` capability
-to register with its counts intact, unticked ones included.
+reader to filter it:
+
+1. an epic whose `outcome` is `killed`, `superseded` or `abandoned` — each carries a required reason
+   explaining why the work did not complete, and the release's own flagship case is a change killed
+   at Gate 1 with 47 tasks and no code written, which is zero-ticked by construction;
+2. an epic stamped `recordedBy: "archive-backfill"`, which `conductor-record` requires to register
+   with its counts intact, unticked ones included.
+
+**Every other archived epic is IN scope, including one whose `outcome` is `unknown` or absent, and
+regardless of lane.** The exclusion is deliberately written as those two cases rather than as "any
+outcome other than `delivered`": `unknown` is the value the engine stamps when nobody was asked, and
+its reason is a path name, not an explanation of why the work did not complete — the property the
+exclusion above actually rests on. Scoping these checks to `delivered` would make them inert, which
+is measurable rather than arguable: this repository holds 68 archived epics, 3 with a passing
+Gate 2, so after the migration that stamps `delivered` only where such a verdict exists, a
+`delivered`-only zero-ticked check has zero candidates in the repository whose live data this
+requirement cites as its evidence.
 
 #### Scenario: A verdict's range does not contain the commits its note cites
 
@@ -295,13 +434,14 @@ to register with its counts intact, unticked ones included.
   gates 83 seconds after the squash-merge, 47 ms apart, with no notes, and 47 ms is inside the
   60-second bound while a spec review and an implementation review of the same change never are
 
-#### Scenario: A delivered epic is archived with zero ticked tasks
+#### Scenario: An archived epic with zero ticked tasks is reported
 
-- **WHEN** an archived epic whose `outcome` is `delivered`, and which was not created by the
-  archive backfill registration, has a progress source that exists and contains checkboxes, none of
-  which are ticked
-- **THEN** the check reports the epic and its source — four epics in this repository are archived
-  at `0/99` and `0/16`
+- **WHEN** an archived epic that carries neither an excluded outcome (`killed`, `superseded`,
+  `abandoned`) nor the `archive-backfill` stamp has a progress source that exists and contains
+  checkboxes, none of which are ticked
+- **THEN** the check reports the epic and its source — four epics in this repository qualify today,
+  archived at `0/17`, `0/99`, `0/37` and `0/34`, none of them carrying a passing Gate 2 and so none
+  of them `delivered` after the migration
 
 #### Scenario: A killed epic with no ticked tasks is not a finding
 

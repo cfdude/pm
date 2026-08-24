@@ -90,8 +90,18 @@ the valid entries in a batch that also contains an invalid one.
 ### Requirement: One shared flag allowlist, grown by every capability that adds a flag
 The flags an epic-mutating command accepts SHALL be declared in a single shared allowlist, and
 every flag that ANY capability in this release introduces for such a command SHALL be registered in
-that allowlist and mirrored onto the bulk-creation path's accepted keys within the same change.
+that allowlist. The bulk-creation path's accepted keys SHALL be **derived from that same
+allowlist** rather than maintained as a second literal, so mirroring is structural and cannot drift.
 There SHALL NOT be a second, parallel allowlist for a subset of the flags.
+
+**The enumeration used to check coverage SHALL be the command's own documented flag surface** — the
+flags named in its usage line and its `commands/` document — read at check time, never a list
+transcribed into a test. Driving the check from the allowlist itself would be circular: a flag a
+capability forgot to register is simply absent from the allowlist, so the check would pass
+vacuously on exactly the omission it exists to catch. The documented surface is external to the
+allowlist, so an unregistered flag surfaces as a documented flag the command rejects. This also
+means the enumeration cannot rot as capabilities are still adding flags: it is whatever the release
+actually shipped and documented, not a snapshot of what it was expected to ship.
 
 This is not housekeeping. The allowlist is a literal list and an unregistered flag exits non-zero
 naming itself, so whichever capability lands first rejects by name the flags the others introduce —
@@ -100,11 +110,18 @@ that omission into a hard failure. This release exists to fix the absent-edit de
 applied at one call site while an identical sibling goes untouched; shipping that defect inside the
 release that fixes it is prohibited.
 
-#### Scenario: A flag introduced by any capability is accepted by the command that owns it
-- **WHEN** an epic-mutating command is invoked once per flag with each flag that any capability in
-  this release introduces
+#### Scenario: Every documented flag is accepted by the command that owns it
+- **WHEN** an epic-mutating command is invoked once per flag with every flag its own usage line and
+  command document name — whichever capability in this release introduced it, read from the
+  documentation at check time rather than from a transcribed list
 - **THEN** every invocation is accepted and the value it carries reads back from state, and none is
   rejected as an unknown flag
+
+#### Scenario: A capability-introduced flag missing from the allowlist fails the check
+- **WHEN** a flag appears on an epic-mutating command's documented flag surface but was never
+  registered in the shared allowlist
+- **THEN** the check fails naming that flag — it is not skipped for being absent from the allowlist
+  the check is verifying
 
 #### Scenario: The bulk path accepts what the single-epic path accepts
 - **WHEN** a bulk batch document sets a field that single-epic creation accepts as a flag
@@ -112,8 +129,8 @@ release that fixes it is prohibited.
 
 #### Scenario: A flag is registered in exactly one allowlist
 - **WHEN** the flags an epic-mutating command accepts are enumerated
-- **THEN** they come from one shared list, and no flag is accepted by the command without appearing
-  in it
+- **THEN** they come from one shared list, no flag is accepted by the command without appearing in
+  it, and the bulk path's accepted keys are derived from that same list rather than restated
 
 ### Requirement: An existing epic's lane and plan association are changeable
 `update-epic` SHALL accept `--lane`, validated against the known lanes exactly as creation
