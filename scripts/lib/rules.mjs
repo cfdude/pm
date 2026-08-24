@@ -9,7 +9,7 @@ import path from "node:path";
 import { loadState } from "./state.mjs";
 import {
   KNOWN_REVIEW_MODES, REVIEW_MODE_RANK, RULES_BEGIN, RULES_BEGIN_PREFIX, RULES_END, ROOT,
-  PLATFORM_COMMAND_PREFIX,
+  PLATFORM_COMMAND_PREFIX, inwardProcedureEmittable, outwardApplies, usesGhIssueList,
 } from "./constants.mjs";
 import { rulesTarget } from "./platform.mjs";
 
@@ -194,13 +194,12 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
   if (tracker && tracker.system) {
     const sys = tracker.system;
     const scope = tracker.projectKey ? ` · ${tracker.projectKey}` : "";
-    // github-issues is deliberately INWARD-only (issues -> untriaged epics, below): auto-filing
-    // a GitHub issue for every unmirrored local epic is a much bigger, more consequential
-    // default (silently creating public GitHub issues) than mirroring toward an internal
-    // Jira/Linear instance, so the outward "External tracker sync" section is suppressed
-    // entirely for this system. jira/linear/any other tracker system keeps full bidirectional
-    // outward-mirror instructions, unchanged.
-    if (sys !== "github-issues") {
+    // DIRECTION decides this, never the vendor's name. The test that used to live here
+    // (`sys !== "github-issues"`) encoded one repo's convention as a property of a vendor, and
+    // it was applied at this emitter and not at the brief's — so a github-issues repo received a
+    // rules block with no outward instructions and a brief demanding outward action for 29
+    // epics (#109). `outwardApplies` is resolved once in constants.mjs and read by both.
+    if (outwardApplies(tracker)) {
       lines.push(
         "",
         `## External tracker sync (${sys}${scope})`,
@@ -225,7 +224,10 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
         "item (d) — mid-run drift is a new genuine unknown, not something autonomy silently absorbs.",
       );
     }
-    if (sys === "github-issues" && tracker.repo) {
+    // The inward section needs its OWN predicate, separate from direction: a tracker whose
+    // direction includes `inward` but which names no scope has nothing to put in the "list open
+    // items in …" step, and pm may not emit a command line with an unfilled placeholder.
+    if (inwardProcedureEmittable(tracker) && usesGhIssueList(tracker)) {
       const repo = tracker.repo;
       lines.push(
         "",

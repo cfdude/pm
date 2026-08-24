@@ -171,3 +171,68 @@ test("a secondary tracker is pinned to inward — any other direction is refused
   run(["set-tracker", "--role", "secondary", "--system", "jira", "--project", "ABC", "--direction", "inward"], { cwd });
   assert.equal(readState(cwd).secondaryTrackers[0].direction, "inward");
 });
+
+// ─────────── 10.4: the six governed emitters — the rules block's two sections ───────────
+//
+// The 0.26.0 rules block for each un-upgraded tracker shape is checked in under
+// scripts/test/fixtures/. `rules.mjs` has not changed since 0.24.0, so these files ARE the
+// prior release's output, not a re-derivation of it.
+
+const FIXTURES = new URL("./fixtures/", import.meta.url).pathname;
+const baseline = (name) => fs.readFileSync(path.join(FIXTURES, `rules-0.26.0-${name}.txt`), "utf8");
+
+const OUTWARD_HEADING = "## External tracker sync";
+const REMINDER_HEADING = "## Sync after completing tracker-linked work";
+
+/** The rules block a tracker shape produces, with no state migration applied. */
+function rulesFor(tracker, { secondaryTrackers } = {}) {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const state = readState(cwd);
+  if (tracker) state.tracker = tracker;
+  if (secondaryTrackers) state.secondaryTrackers = secondaryTrackers;
+  writeState(cwd, state);
+  return run(["rules"], { cwd });
+}
+
+/** Everything the block says BEFORE any tracker section — the part no direction rule may move. */
+const preTrackerPart = (block) => {
+  const i = block.indexOf("\n## External tracker sync");
+  const j = block.indexOf("\n## GitHub issue sync");
+  const k = block.indexOf("\n## Inward tracker sync");
+  const cuts = [i, j, k].filter(n => n !== -1);
+  return cuts.length ? block.slice(0, Math.min(...cuts)) : block.replace(/\n## Sync after completing[\s\S]*$/, "");
+};
+
+test("an un-upgraded jira primary is byte-identical to 0.26.0 — outward section, no inward section", () => {
+  const block = rulesFor({ system: "jira", projectKey: "JOB" });
+  assert.equal(block, baseline("jira-scoped"),
+    "a direction-less jira primary must emit exactly what 0.26.0 emitted for it");
+  assert.ok(block.includes(OUTWARD_HEADING));
+  assert.ok(!block.includes("## GitHub issue sync") && !block.includes("## Inward tracker sync"));
+});
+
+test("an un-upgraded github-issues primary with a repo keeps the inward section and no outward one", () => {
+  const block = rulesFor({ system: "github-issues", repo: "o/n" });
+  const before = baseline("github-scoped");
+  assert.equal(preTrackerPart(block), preTrackerPart(before),
+    "nothing outside the tracker sections may move on the un-upgraded github path");
+  assert.ok(!block.includes(OUTWARD_HEADING), "github-issues resolves inward — no outward section");
+  assert.ok(block.includes("## GitHub issue sync (o/n)"), "the inward section must still be emitted");
+  assert.ok(before.includes("## GitHub issue sync (o/n)") && !before.includes(OUTWARD_HEADING),
+    "the 0.26.0 baseline must show the same two facts, or this test is comparing against nothing");
+});
+
+test("direction, not the vendor name, decides which section a tracker gets", () => {
+  // The reversal the whole capability exists for: the same vendor, opposite directions.
+  const ghOutward = rulesFor({ system: "github-issues", repo: "o/n", direction: "outward" });
+  assert.ok(ghOutward.includes(OUTWARD_HEADING), "a github-issues tracker set outward DOES get the outward section");
+  assert.ok(!ghOutward.includes("## GitHub issue sync"), "and loses the inward one");
+
+  const both = rulesFor({ system: "github-issues", repo: "o/n", direction: "both" });
+  assert.ok(both.includes(OUTWARD_HEADING) && both.includes("## GitHub issue sync (o/n)"),
+    "`both` emits both sections");
+
+  const jiraOutward = rulesFor({ system: "jira", projectKey: "JOB", direction: "outward" });
+  assert.ok(jiraOutward.includes(OUTWARD_HEADING));
+});
