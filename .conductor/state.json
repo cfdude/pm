@@ -2478,6 +2478,24 @@
       "reconcileNeeded": false,
       "externalId": "128",
       "externalUrl": "https://github.com/cfdude/pm/issues/128"
+    },
+    {
+      "id": "gh-129-attribution-nudge-at-commit-time",
+      "title": "Agent obligations ship as prose and the attribution detector fires only at archive — needs a commit-time nudge",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "depends-on",
+          "epic": "gh-104-commit-nudge-fires-on-text-match",
+          "reason": "the nudge belongs in commit-nudge, which has two known false-positive modes; adding an obligation before they are fixed compounds a noisy channel"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "129",
+      "externalUrl": "https://github.com/cfdude/pm/issues/129"
     }
   ],
   "detourStack": [],
@@ -2487,5 +2505,5 @@
     "repo": "cfdude/pm"
   },
   "platform": "claude-code",
-  "revision": 30
+  "revision": 32
 }
