@@ -592,3 +592,38 @@ test("excluded is always a number, including on the branches that read no file",
   const danglingPlan = progressIn(cwd, { id: "d", lane: "superpowers", planPath: "docs/superpowers/plans/gone.md" });
   assert.equal(danglingPlan.progress.excluded, 0);
 });
+
+test("an UNDECLARED task is counted however it is worded", () => {
+  // Both of these are what a text matcher would get wrong, in the direction that matters: an
+  // undeclared bookkeeping task keeps counting (visible in the record), while a matcher would
+  // silently exclude the second one and under-report outstanding work.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  withTasks(cwd, "ctt", [
+    "- [x] 1 real work",
+    "- [ ] 2 run `/opsx:archive <this change>`",
+    "- [ ] 3 implement archiving so `/opsx:archive` moves the directory, and test it",
+  ]);
+  run(["add-epic", "--id", "ctt", "--lane", "openspec"], { cwd });
+  const { progress, outstanding } = progressIn(cwd, readState(cwd).epics.find(e => e.id === "ctt"));
+  assert.equal(progress.total, 3, "neither task may be excluded — neither carries the marker");
+  assert.equal(progress.excluded, 0);
+  assert.equal(outstanding, 2);
+});
+
+test("the marker is read on the task LINE — never on a following line, never by position", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  withTasks(cwd, "ctt", [
+    `- [ ] 1 ${MARKER} marker before the text`,
+    `- [ ] 2 marker at the end of the line ${MARKER}`,
+    "- [ ] 3 the marker below belongs to nothing",
+    `  ${MARKER}`,
+    "- [ ] 4 last task, and last in the file",
+  ]);
+  run(["add-epic", "--id", "ctt", "--lane", "openspec"], { cwd });
+  const { progress } = progressIn(cwd, readState(cwd).epics.find(e => e.id === "ctt"));
+  assert.equal(progress.excluded, 2, "exactly the two tasks whose own line carries the marker");
+  assert.equal(progress.total, 2,
+    "a marker on a FOLLOWING line excludes nothing, and being last in the file excludes nothing");
+});

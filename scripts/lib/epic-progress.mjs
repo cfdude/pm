@@ -102,9 +102,20 @@ export function reconcileArchived(state) {
 }
 
 /** The one literal that declares a task to be lifecycle bookkeeping rather than delivery.
- *  Chosen so it renders invisibly in markdown and so a test binds to it exactly. The judgment
- *  is the AGENT's — the engine excludes exactly the tasks carrying it and infers exclusion
- *  from nothing else. */
+ *  Chosen so it renders invisibly in markdown and so a test binds to it exactly.
+ *
+ *  THE JUDGMENT IS THE AGENT'S. The engine excludes exactly the tasks whose OWN LINE carries
+ *  this literal, and infers exclusion from nothing else — not a task's wording, not the
+ *  commands its text names, not its position in the file, not a marker on a following line.
+ *
+ *  The error direction is the whole argument. An undeclared bookkeeping task keeps counting as
+ *  outstanding, which is today's behavior and is visible in the rendered record. A text
+ *  matcher fails the other way: it cannot tell `run /opsx:archive <this change>` from a real
+ *  task that implements archiving, and a false exclusion silently under-reports outstanding
+ *  work — the exact over-reporting of completion this release exists to correct.
+ *
+ *  PLAN_INDEX_FILES above is this file's own precedent: it excludes against an enumerable
+ *  literal precisely to avoid reading inside a file to decide what it means. */
 export const LIFECYCLE_MARKER = "<!-- pm:lifecycle -->";
 
 /** Count [ ] / [x] checkboxes in a markdown file, excluding declared lifecycle bookkeeping.
