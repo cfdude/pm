@@ -80,3 +80,22 @@ export function engineStamp(recordedBy, { outcome = "unknown", reason, recordedA
   if (nonEmpty(reason)) record.reason = reason.trim();
   return record;
 }
+
+/** THE reader. Every consumer and every test asks for an epic's outcome here — never
+ *  `epic.outcome`, which is not a field this design ships. An epic with no disposition reads
+ *  `unknown`, which is exactly true of it: nobody recorded one. Because the reader is a single
+ *  lookup, the outcome invariant ("no write that leaves an epic archived may leave it without
+ *  an outcome") stays checkable wherever an archived epic is read. */
+export function outcomeOf(epic) {
+  const d = epic && epic.disposition;
+  return d && KNOWN_OUTCOMES.includes(d.outcome) ? d.outcome : "unknown";
+}
+
+/** THE discriminator. A disposition is engine-stamped iff `recordedBy` holds one of the fixed
+ *  five tokens; anything else — including a token some later path invented without registering
+ *  it — is not. This is the only way any consumer tells an engine stamp from an agent's
+ *  record, which is what lets an agent's disposition REPLACE a stamp nobody chose while being
+ *  refused against another agent's judgment. */
+export function isEngineStamped(disposition) {
+  return !!disposition && ENGINE_STAMP_TOKENS.includes(disposition.recordedBy);
+}

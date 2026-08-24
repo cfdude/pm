@@ -361,3 +361,46 @@ test("an engine stamp carries its path token, defaults to `unknown`, and demands
   assert.throws(() => engineStamp("some-new-path"),
     "a token outside the fixed five must be rejected, not silently recorded");
 });
+
+test("outcomeOf is the reader — an epic with no disposition reads `unknown`", async () => {
+  const { outcomeOf, agentDisposition, engineStamp } = await import(DISPOSITION);
+  assert.equal(outcomeOf({}), "unknown",
+    "an epic that predates this capability reads `unknown`, which is exactly true: nobody " +
+    "recorded a disposition");
+  assert.equal(outcomeOf({ disposition: null }), "unknown");
+  assert.equal(outcomeOf({ disposition: agentDisposition({ outcome: "killed", reason: "Gate 1" }) }), "killed");
+  assert.equal(outcomeOf({ disposition: engineStamp("migration", { outcome: "delivered" }) }), "delivered");
+});
+
+test("isEngineStamped is the ONLY way an engine stamp is told from an agent's record", async () => {
+  const { ENGINE_STAMP_TOKENS, isEngineStamped, agentDisposition } = await import(DISPOSITION);
+  assert.equal(isEngineStamped(agentDisposition({ outcome: "delivered" })), false,
+    "no recordedBy at all is what makes a record agent-supplied");
+  assert.equal(isEngineStamped(undefined), false);
+  assert.equal(isEngineStamped({ outcome: "unknown" }), false);
+  for (const token of ENGINE_STAMP_TOKENS) {
+    assert.equal(isEngineStamped({ outcome: "unknown", recordedBy: token }), true, token);
+  }
+  assert.equal(isEngineStamped({ outcome: "unknown", recordedBy: "some-later-path" }), false,
+    "a token outside the fixed five is not an engine stamp — the set is closed on purpose");
+});
+
+test("no module under scripts/lib/ reads .outcome or .recordedBy off an epic", async () => {
+  // The invariant that makes `outcome is not a flat field` enforceable rather than a comment.
+  // disposition.mjs is the one exemption, and for the stated reason: it DEFINES the readers,
+  // so isEngineStamped necessarily inspects recordedBy itself.
+  const libDir = path.join(REPO, "scripts", "lib");
+  const offenders = [];
+  for (const name of fs.readdirSync(libDir).filter(f => f.endsWith(".mjs"))) {
+    if (name === "disposition.mjs") continue;
+    const src = fs.readFileSync(path.join(libDir, name), "utf8");
+    src.split("\n").forEach((line, i) => {
+      const t = line.trim();
+      if (t.startsWith("//") || t.startsWith("*") || t.startsWith("/*")) return;  // prose, not code
+      if (/\.\s*(outcome|recordedBy)\b/.test(line)) offenders.push(`${name}:${i + 1}: ${t}`);
+    });
+  }
+  assert.deepEqual(offenders, [],
+    "read an outcome through outcomeOf(epic) and an engine stamp through " +
+    "isEngineStamped(disposition) — a direct property read is how a second definition starts");
+});
