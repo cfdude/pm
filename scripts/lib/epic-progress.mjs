@@ -136,7 +136,12 @@ export function countCheckboxes(absPath) {
     for (const line of txt.split("\n")) {
       const m = line.match(/^\s*[-*]\s+\[([ xX])\]/);
       if (!m) continue;
-      if (line.includes(LIFECYCLE_MARKER)) { excluded++; continue; }
+      // A task that DOCUMENTS the marker must not be excluded by it. Found by dogfooding:
+      // this change's own tasks.md names `<!-- pm:lifecycle -->` inside backticks on six task
+      // lines that are real delivery work, and only one line actually declares. Counting those
+      // would have under-reported outstanding work by six and made the release's own self-check
+      // pass falsely. A marker inside a code span is a mention, not a declaration.
+      if (line.replace(/`[^`]*`/g, "").includes(LIFECYCLE_MARKER)) { excluded++; continue; }
       total++; if (m[1].toLowerCase() === "x") done++;
     }
   } catch { /* missing file */ }

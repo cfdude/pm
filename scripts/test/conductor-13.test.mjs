@@ -717,3 +717,20 @@ test("all three surfaces present checkbox progress as CLAIMED completion, in one
   assert.ok(fs.readFileSync(path.join(REPO, "commands", "next.md"), "utf8").includes(CLAIMED_COMPLETION_NOTE),
     "/pm:next must carry the same wording, verbatim, so the three surfaces cannot drift");
 });
+
+test("a task that merely DOCUMENTS the marker is not excluded by it", () => {
+  const cwd = tmpRepo();
+  withTasks(cwd, "doc-mention", [
+    `- [ ] 1.1 Real delivery work whose text mentions \`${MARKER}\` inside a code span`,
+    `- [ ] 1.2 ${MARKER} Genuine bookkeeping, actually declared`,
+    "- [x] 1.3 Done",
+  ]);
+  const { progress, outstanding } = progressIn(cwd, { id: "doc-mention", lane: "openspec" });
+  // Found by dogfooding: this change's own tasks.md names the marker in backticks on six real
+  // task lines and declares on exactly one. Counting the mentions would under-report
+  // outstanding work by six and make the release's own self-check pass falsely.
+  assert.equal(progress.excluded, 1, "a backticked mention must not count as a declaration");
+  assert.equal(progress.total, 2);
+  assert.equal(progress.done, 1);
+  assert.equal(outstanding, 1);
+});
