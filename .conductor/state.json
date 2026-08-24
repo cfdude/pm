@@ -2539,7 +2539,8 @@
         "context": [
           "Scope is 20 issues across 5 lanes: 110,113,122,116,80,107 / 117,120,118,119,88 / 109,102,103,124,114 / 79,66,71 / 115,121 plus the minimum slice of 125. Specs: 59 requirements, 177 scenarios, four review rounds (5+2+4+2 findings), all BLOCKS closed.",
           "Deliberately accepted limitation, filed as #129: the two new agent obligations ship as emitted prose (~20% adoption measured) and the attribution detector fires only at archive. Do NOT add a commit-time nudge in this release — it depends on #91 and #104 being fixed first.",
-          "Out of scope and must not be pulled in: 95, 64, 69, 92, 123, 111, 112, 82. 64/69 will keep re-registering shipped plans during this work — tombstone by setting the epic archived, never remove-epic."
+          "Out of scope and must not be pulled in: 95, 64, 69, 92, 123, 111, 112, 82. 64/69 will keep re-registering shipped plans during this work — tombstone by setting the epic archived, never remove-epic.",
+          "SCOPE RULED 2026-08-23: #125 (release planning) STAYS — the release is 20 issues, group 14 builds. Asked three times, recommended keep each time, maintainer confirmed 'Keep it'. Group 14 is no longer 'cuttable': Gate 1 established it solely implements three epic-disposition requirements (spec lines 288, 304, 319), so cutting the group without cutting those requirements would ship requirements nothing implements. Do NOT cut group 14. Task 14.4 records this release's own plan against a 0.27.0 release object — that is the dogfooding test."
         ],
         "notifications": []
       }
@@ -2576,6 +2577,6 @@
     "repo": "cfdude/pm"
   },
   "platform": "claude-code",
-  "revision": 39,
+  "revision": 40,
   "reviewMode": "thorough"
 }
