@@ -236,3 +236,26 @@ test("direction, not the vendor name, decides which section a tracker gets", () 
   const jiraOutward = rulesFor({ system: "jira", projectKey: "JOB", direction: "outward" });
   assert.ok(jiraOutward.includes(OUTWARD_HEADING));
 });
+
+// ─────────── 10.5: the inward section is vendor-neutral, and dedups on externalUrl ───────────
+
+test("a scoped non-github tracker set inward gets an inward section naming its own system", () => {
+  const block = rulesFor({ system: "jira", projectKey: "JOB", direction: "inward" });
+  assert.ok(!block.includes(OUTWARD_HEADING), "an inward tracker gets no outward section");
+  assert.ok(block.includes("## Inward tracker sync (jira · JOB)"),
+    "the primary slot must emit the vendor-neutral inward section the secondary path already has");
+  assert.match(block, /List open items in jira \(JOB\) with your own tooling/);
+  assert.ok(!block.includes("gh issue list"), "no vendor-specific command for a non-github tracker");
+  assert.match(block, /externalUrl/,
+    "dedup must be instructed on externalUrl — issue numbers are unique only within one tracker");
+});
+
+test("the github inward section keeps its literal gh command and also dedups on externalUrl", () => {
+  const block = rulesFor({ system: "github-issues", repo: "o/n" });
+  assert.match(block, /gh issue list --repo o\/n --state open/);
+  assert.match(block, /externalUrl/);
+  // The 0.26.0 block instructed a bare-externalId dedup here, which collides across repos.
+  const before = baseline("github-scoped");
+  assert.ok(before.includes("that issue number as `externalId` already"),
+    "the baseline must still show the bare-externalId instruction this task replaces");
+});

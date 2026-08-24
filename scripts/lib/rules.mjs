@@ -9,7 +9,7 @@ import path from "node:path";
 import { loadState } from "./state.mjs";
 import {
   KNOWN_REVIEW_MODES, REVIEW_MODE_RANK, RULES_BEGIN, RULES_BEGIN_PREFIX, RULES_END, ROOT,
-  PLATFORM_COMMAND_PREFIX, inwardProcedureEmittable, outwardApplies, usesGhIssueList,
+  PLATFORM_COMMAND_PREFIX, inwardProcedureEmittable, outwardApplies, trackerScope, usesGhIssueList,
 } from "./constants.mjs";
 import { rulesTarget } from "./platform.mjs";
 
@@ -227,26 +227,37 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     // The inward section needs its OWN predicate, separate from direction: a tracker whose
     // direction includes `inward` but which names no scope has nothing to put in the "list open
     // items in …" step, and pm may not emit a command line with an unfilled placeholder.
-    if (inwardProcedureEmittable(tracker) && usesGhIssueList(tracker)) {
-      const repo = tracker.repo;
+    if (inwardProcedureEmittable(tracker)) {
+      // Vendor-neutral by construction. `github-issues` keeps its literal `gh issue list` step —
+      // the one system whose CLI pm can name concretely — and every other system receives the
+      // same "list open items … with your own tooling" phrasing the SECONDARY path has emitted
+      // all along. The primary slot alone lacked it, which is why an inward jira tracker could
+      // not be expressed at all.
+      const gh = usesGhIssueList(tracker);
+      const scope = trackerScope(tracker);
       lines.push(
         "",
-        `## GitHub issue sync (${repo})`,
+        gh ? `## GitHub issue sync (${scope})` : `## Inward tracker sync (${sys} · ${scope})`,
         "",
-        "This tracker is inward: open GitHub issues become conductor epics, same pattern as the",
+        `This tracker is inward: open items in ${sys} become conductor epics, same pattern as the`,
         "OpenSpec/Superpowers auto-registration `sync` already does for on-disk changes/plans. The",
-        `pm plugin NEVER calls \`gh\` itself — as part of running \`${pmCmd(platform, "sync")}\`, YOU (the interactive`,
+        `pm plugin NEVER calls ${sys} itself — as part of running \`${pmCmd(platform, "sync")}\`, YOU (the interactive`,
         "agent) do:",
-        `1. \`gh issue list --repo ${repo} --state open --json number,title,url,labels\`.`,
-        "2. For each issue, check whether an epic with that issue number as `externalId` already",
-        `   exists (\`${pmCmd(platform, "epic")} list\` or read \`.conductor/state.json\`) — if so, skip it (already`,
-        "   mirrored; re-running sync must never create a duplicate epic for the same issue).",
+        ...(gh
+          ? [`1. \`gh issue list --repo ${scope} --state open --json number,title,url,updatedAt,labels\`.`]
+          : [`1. List open items in ${sys} (${scope}) with your own tooling, reading each item's id, title, url and updated timestamp.`]),
+        "2. For each item, check whether an epic's `externalUrl` already matches that item's URL",
+        `   (\`${pmCmd(platform, "epic")} list\` or read \`.conductor/state.json\`) — if so, skip it (already`,
+        "   mirrored; re-running sync must never create a duplicate epic for the same item). Match",
+        "   on `externalUrl`, never on a bare `externalId`: item numbers are unique only within one",
+        "   tracker/repo, so two trackers can each hold an item numbered the same without those",
+        "   being the same item.",
         "3. Otherwise register a new untriaged epic: `add-epic --status untriaged --external-id",
         "   <issue-number> --external-url <issue-url> --lane claude-code --priority P2`, unless a",
-        "   `P0`/`P1`/`P2`/`P3` label is present on the issue, in which case use that label's",
+        "   `P0`/`P1`/`P2`/`P3` label is present on the item, in which case use that label's",
         "   priority instead of the P2 default. `add-epic` itself rejects a duplicate `--external-id`",
         "   as a second line of defense, so a stale local view can't produce a duplicate either.",
-        "4. Set `--title` from the issue title so the epic is legible before you triage it further.",
+        "4. Set `--title` from the item title so the epic is legible before you triage it further.",
       );
     }
   }
@@ -264,7 +275,7 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
       "tracker above (if configured).",
       "",
       `**Inward pull** — as part of running \`${pmCmd(platform, "sync")}\`:`,
-      ...(st.system === "github-issues" && st.repo
+      ...(usesGhIssueList(st)
         ? [`1. \`gh issue list --repo ${st.repo} --state open --json number,title,url,labels\`.`]
         : [`1. List open issues in ${st.system}${scope ? ` (${scope})` : ""} with your own tooling.`]),
       "2. For each issue, check whether an epic's `externalUrl` already matches that issue's URL",
