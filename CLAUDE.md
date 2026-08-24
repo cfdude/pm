@@ -158,54 +158,32 @@ Review intensity is a bounded dial, not a free-form call each time — set via
 
 Current mode: **standard**.
 
-### 🔗 Cross-spec review — mandatory whenever a release carries more than one spec
+### 🔗 Cross-spec review — invoke the skill whenever a change has 2+ specs
 
-Gate 1 and Gate 2 both take **one change** as their unit. When a release carries several
-specs — especially specs written in parallel — **nothing checks them against each other**, and
-that gap is not covered by running Gate 1 more times.
+Gate 1 and Gate 2 each take **one change artifact** as their unit, so nothing checks a release's
+specs **against each other**. Before `/opsx:apply` on any change whose `specs/` directory holds
+two or more files — and after any round of concurrent amendment — **invoke the
+`cross-spec-review` skill**. It carries the procedure, the six questions, and the two failure
+modes specific to the fixes.
 
-**Before `/opsx:apply` on any change with 2+ spec files, run a cross-spec review as its own
-pass**, with fresh-context reviewers (two under `thorough`, with different lenses — coherence
-vs. falsifiability). It asks six questions Gate 1 never asks:
+*Evidence:* on 0.27.0 that pass returned **5 Critical and 10 Important** against six specs that
+had each passed `openspec validate --strict` and would each have passed Gate 1 alone — including
+a flagship scenario that was unreachable, and a shared 11-element flag allowlist four
+capabilities all needed to grow. The re-review then found **two more Criticals introduced by the
+fixes**. Productizing it is #126.
 
-1. **Contradiction** — two specs requiring incompatible behavior of one surface.
-2. **Double ownership** — two specs claiming a behavior, so an implementer satisfies one and stops.
-3. **Unmeetable requirements** — a spec assuming a field, verb, flag or rendering that nothing
-   in the release creates.
-4. **Gaps** — something the proposal promises that fell between capabilities and landed in
-   neither. Check the "Resolves" list against actual requirements, one issue at a time.
-5. **Vocabulary forks** — one concept named two ways becomes two data models.
-6. **Shared chokepoints** — a single allowlist, enum, or dispatch table several capabilities
-   must all edit. (`UPDATE_EPIC_FLAGS` is the live example.)
+### 🐕 Dogfooding — invoke the skill when you adopt a practice or work around friction
 
-**Fix every Critical and Important in the SPECS before implementation starts.** A contradiction
-discovered during apply is resolved by whoever hits it first, silently, and by call order.
+`pm` is a project-management conductor and this repo is a project it manages, so **anything
+invented to work here is something `pm`'s users could use** — and any papercut worked around
+silently here is one every user is working around too. **Invoke the `dogfooding` skill** when you
+adopt a practice, hand-edit `.conductor/state.json`, find a command `pm` emitted that does not
+run, or catch yourself thinking *"I'll just…"* about something the tool should do. Filed as #127.
 
-*Evidence:* on 0.27.0 this pass returned **5 Critical and 10 Important** findings against six
-specs that had each passed `openspec validate --strict` and would each have passed Gate 1 alone —
-including a flagship scenario that was literally unreachable, and a shared 11-element flag
-allowlist four capabilities all needed to grow. Both reviewers converged on the same root cause,
-and it was this project's own **absent-edit** class occurring in the specs written to fix it.
-
-### 🐕 Dogfooding — every practice invented here is a product candidate
-
-`pm` is a project-management conductor, and this repo is a project managed by it. So **any
-practice, gate, or discipline invented to build pm is by definition something pm's users could
-use.** When you add one:
-
-1. Write it here, so it binds this repo now.
-2. **File it as a feature issue** (`/pm:feedback` or `gh issue create`) so it is a candidate for
-   the product, not just local habit — then register the epic.
-3. Say in the issue *why the practice was needed*, with the evidence that produced it. That
-   evidence is the strongest part of the eventual spec.
-
-The reverse is also true and easier to miss: **a papercut worked around silently here is one
-every user is also working around.** Two independent sessions hit the same broken `add-epic`
-recipe on one afternoon and each invented a workaround before either reported it.
-
-*Standing bias, measured:* a rule carried by a **required task** reached 14/14 subsequent changes
-in the audited corpus; the same rule as a **prose bullet** reached 3/15. When you add a practice,
-give it a task, not a sentence.
+**Standing bias, measured, and it applies to every rule in this file:** a rule carried by a
+**required task** reached 14/14 subsequent changes in the audited corpus; the same rule as a
+**prose bullet** reached 3/15. Prefer a skill over a paragraph, and a task over a sentence — this
+section is a pointer for exactly that reason.
 
 ## Feedback — don't let friction stay silent
 
