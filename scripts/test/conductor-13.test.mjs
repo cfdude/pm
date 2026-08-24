@@ -644,3 +644,55 @@ test("a source whose every task is excluded is still a SOURCE — no missing-sou
   run(["render"], { cwd });
   assert.doesNotMatch(projectMd(cwd), /tasks\.md missing/);
 });
+
+/** outstandingSummary() for `epic` with the engine rooted at `cwd`. Child process, for the
+ *  same reason progressIn() is one. */
+function summaryIn(cwd, epic) {
+  const src = `
+    import { outstandingSummary } from ${JSON.stringify(new URL("../lib/archive-gate.mjs", import.meta.url).href)};
+    process.stdout.write(JSON.stringify(outstandingSummary(JSON.parse(process.env.PM_TEST_EPIC))));
+  `;
+  return JSON.parse(execFileSync("node", ["--input-type=module", "-e", src], {
+    cwd, encoding: "utf8",
+    env: { ...process.env, CLAUDE_PROJECT_DIR: cwd, PM_TEST_EPIC: JSON.stringify(epic) },
+  }));
+}
+
+test("the count a guard would cite is byte-identical to the count PROJECT.md renders", () => {
+  // A guard that refuses because work remains must cite THIS count. Refusing an epic that
+  // renders as complete — because the guard counted an item the definition excludes — is the
+  // failure this shared renderer exists to make impossible.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const lines = Array.from({ length: 12 }, (_, i) => `- [x] ${i + 1} done`);
+  lines.push("- [ ] 13 still outstanding");
+  lines.push(`- [ ] 14 ${MARKER} Run \`/opsx:archive <this change>\``);
+  withTasks(cwd, "ctt", lines);
+  run(["add-epic", "--id", "ctt", "--lane", "openspec"], { cwd });
+  const epic = readState(cwd).epics.find(e => e.id === "ctt");
+
+  const summary = summaryIn(cwd, epic);
+  assert.equal(summary.outstanding, 1, "one unticked, undeclared task remains");
+  run(["render"], { cwd });
+  assert.ok(projectMd(cwd).includes(summary.claimed),
+    `PROJECT.md must render the same count a refusal would cite (${summary.claimed})`);
+  assert.ok(parseBrief(cwd).includes(summary.claimed),
+    "and so must the brief — three surfaces, one arithmetic");
+});
+
+test("no module computes outstanding work for itself", () => {
+  // The definition lives in epic-progress.mjs. A second subtraction anywhere else is how a
+  // guard and a progress bar come to disagree, which is the whole defect.
+  const libDir = path.join(REPO, "scripts", "lib");
+  const offenders = [];
+  for (const name of fs.readdirSync(libDir).filter(f => f.endsWith(".mjs"))) {
+    if (name === "epic-progress.mjs") continue;
+    fs.readFileSync(path.join(libDir, name), "utf8").split("\n").forEach((line, i) => {
+      const t = line.trim();
+      if (t.startsWith("//") || t.startsWith("*") || t.startsWith("/*")) return;
+      if (/\btotal\s*-\s*\w*\.?done\b|\.total\s*-\s*/.test(line)) offenders.push(`${name}:${i + 1}: ${t}`);
+    });
+  }
+  assert.deepEqual(offenders, [],
+    "ask outstandingWork(epic) — it is the single definition every consumer keys on");
+});

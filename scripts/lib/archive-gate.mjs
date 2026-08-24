@@ -15,6 +15,22 @@
 // READS that quantity rather than computing one of its own. Two counters is how a guard comes
 // to refuse an epic that renders as complete.
 
+import { epicProgress, outstandingWork } from "./epic-progress.mjs";
+
+/**
+ * The outstanding-work quantity a refusal cites, rendered ONCE so a guard can never name a
+ * number the record does not show. `claimed` is the very substring PROJECT.md and the brief
+ * render for the same epic, and `outstanding` is epic-progress.mjs's single definition —
+ * this module reads that quantity and deliberately computes none of its own (design § 1).
+ *
+ * Nothing refuses on work remaining yet; the handoff demand is the first caller. It lands
+ * here rather than beside it so the refusal and the record share one renderer by construction.
+ */
+export function outstandingSummary(epic) {
+  const p = epicProgress(epic);
+  return { outstanding: outstandingWork(epic), claimed: `${p.done}/${p.total}`, excluded: p.excluded };
+}
+
 /**
  * The archive transition's gate.
  *

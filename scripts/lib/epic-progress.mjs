@@ -287,6 +287,9 @@ export function orderQueueWithDependencies(sorted) {
 export function bar(p) {
   if (!p) return "—";
   if (p.warn) return `⚠ ${p.warn}`;
-  if (p.total > 0) return `${p.done}/${p.total} ${p.source === "plan" ? "tasks" : "stories"}`;
-  return "—";
+  // Declared lifecycle bookkeeping left both sides of the ratio, so say how many — otherwise
+  // a denominator that moved from 13 to 12 looks like a task went missing.
+  const lifecycle = p.excluded ? ` · ${p.excluded} lifecycle` : "";
+  if (p.total > 0) return `${p.done}/${p.total} ${p.source === "plan" ? "tasks" : "stories"}${lifecycle}`;
+  return p.excluded ? `0/0${lifecycle}` : "—";
 }
