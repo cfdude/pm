@@ -93,6 +93,12 @@ export const EPIC_FLAGS = [
   { flag: "story", key: null, commands: ["update-epic"], write: "custom" },
   { flag: "done", key: null, commands: ["update-epic"], write: "custom" },
 ];
+
+/** The flags `command` accepts, as bare names. The projection an allowlist is built from —
+ *  never a second literal. */
+export const epicFlagsFor = (command) =>
+  EPIC_FLAGS.filter(f => f.commands.includes(command)).map(f => f.flag);
+
 export const KNOWN_AUTONOMY_LEVELS = ["off", "autonomous"];
 // Default category taxonomy for the `--preauthorize "category:<name>:<reason>"` shorthand —
 // see the `conductor` skill's "Epic-level autonomy" section for the matching heuristic each

@@ -2,7 +2,7 @@
 // The update-epic write-back verb: title/status/priority/links/story mutations on an
 // existing epic. One-directional dependencies only.
 
-import { KNOWN_STATUSES, KNOWN_REVIEW_MODES, REVIEW_MODE_RANK } from "./constants.mjs";
+import { KNOWN_STATUSES, KNOWN_REVIEW_MODES, REVIEW_MODE_RANK, epicFlagsFor } from "./constants.mjs";
 import { activate } from "./active-pointer.mjs";
 import { globalReviewMode } from "./rules.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
@@ -12,7 +12,12 @@ import { render } from "./render.mjs";
 // The flags update-epic recognizes. Anything else is a rejected error, not a
 // silent no-op — an unrecognized flag (e.g. a typo) used to parse, run, and
 // print "updated" with nothing actually changed.
-export const UPDATE_EPIC_FLAGS = ["external-id", "external-url", "parent", "status", "priority", "title", "link", "review-mode", "add-story", "story", "done"];
+//
+// A PROJECTION of the shared EPIC_FLAGS registry, never a literal: this list, add-epic's and
+// add-many's all have to grow for every flag this release adds, and a literal here is exactly
+// the copy that would reject another capability's flag by name. Registering a flag on
+// `update-epic` in EPIC_FLAGS is the whole edit; nothing changes in this file.
+export const UPDATE_EPIC_FLAGS = epicFlagsFor("update-epic");
 
 /** Update an EXISTING epic's title/externalId/externalUrl/parent/status/priority/links.
  *  The id is POSITIONAL (parseFlags skips non-`--` tokens). Closes the tracker

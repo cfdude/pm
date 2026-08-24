@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { tmpRepo, run, readState, expectFail } from "./helpers.mjs";
 
 // ─────────────── the shared epic-flag registry (EPIC_FLAGS) ───────────────
 //
@@ -66,4 +67,35 @@ test("every registry entry declares a flag, a key slot and at least one acceptin
   }
   const names = EPIC_FLAGS.map(e => e.flag);
   assert.equal(new Set(names).size, names.length, "a flag must be declared exactly once");
+});
+
+test("UPDATE_EPIC_FLAGS is the registry's projection, not a literal that happens to match", async () => {
+  const { EPIC_FLAGS } = await import(CONSTANTS);
+  const { UPDATE_EPIC_FLAGS } = await import(new URL("../lib/update-epic.mjs", import.meta.url).href);
+  // Order-sensitive on purpose. The 0.26.0 literal is set-equal to the projection (1.1 pins
+  // that) but lists the flags in a different order, so ORDER is what tells "derived from the
+  // registry" apart from "a second literal that currently agrees with it".
+  assert.deepEqual(
+    UPDATE_EPIC_FLAGS,
+    EPIC_FLAGS.filter(f => f.commands.includes("update-epic")).map(f => f.flag),
+    "update-epic's allowlist must BE the registry projection — registering a flag on " +
+    "update-epic in EPIC_FLAGS must be the whole edit");
+});
+
+test("update-epic still names the offending flag AND the flags it does support", () => {
+  // The refusal message is the whole point of the allowlist: an unrecognized flag used to
+  // parse, run, and print "updated" with nothing changed. Making UPDATE_EPIC_FLAGS a
+  // projection must not quietly turn that message into a bare usage dump.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code", "--title", "Original"], { cwd });
+  const before = readState(cwd);
+  const err = expectFail(() => run(["update-epic", "a", "--bogus", "v"], { cwd }));
+  assert.ok(err, "expected non-zero exit for an unlisted flag");
+  const msg = String(err.stderr || err.message);
+  assert.match(msg, /--bogus/, "the refusal must name the flag that caused it");
+  for (const flag of ["--title", "--status", "--link", "--review-mode", "--add-story"]) {
+    assert.ok(msg.includes(flag), `the refusal must list the supported flag ${flag}`);
+  }
+  assert.deepEqual(readState(cwd).epics, before.epics, "a rejected flag must write nothing");
 });
