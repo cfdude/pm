@@ -11,6 +11,7 @@ import { staleMarker } from "./active-pointer.mjs";
 import { getAutonomy } from "./autonomy.mjs";
 import { parseFlags } from "./add-epic.mjs";
 import { validLink } from "./links.mjs";
+import { outcomeOf, recordedDispositions } from "./disposition.mjs";
 import { DETOURS_LOG, PROJECT_MD, STATE_PATH, RENDER_STAMP_PATH, CONDUCTOR_DIR } from "./constants.mjs";
 
 export function render() {
@@ -96,7 +97,10 @@ export function render() {
       progress = progress === "—" ? rollup : `${rollup} · ${progress}`;
     }
     const autonomous = getAutonomy(e).level === "autonomous" ? " 🤖" : "";
-    md.push(`| ${e.priority} | ${indent}\`${e.id}\` | ${e.lane} | ${e.role} | ${e.status}${e.reconcileNeeded ? " ⚠" : ""}${miss}${autonomous}${staleMarker(e)} | ${progress} | ${links} |`);
+    // The recorded outcome sits beside the status, never replacing it: an epic is still
+    // `archived`, and `outcome` is a distinct field rather than a new status value.
+    const outcome = e.disposition ? ` · ${outcomeOf(e)}` : "";
+    md.push(`| ${e.priority} | ${indent}\`${e.id}\` | ${e.lane} | ${e.role} | ${e.status}${outcome}${e.reconcileNeeded ? " ⚠" : ""}${miss}${autonomous}${staleMarker(e)} | ${progress} | ${links} |`);
   };
   const seen = new Set();
   const emit = (e, depth) => {
@@ -108,6 +112,24 @@ export function render() {
   for (const e of epics) if (!e.parent || !byId.has(e.parent)) emit(e, 0);
   for (const e of epics) if (!seen.has(e.id)) emit(e, 0);   // orphaned by a cycle → render flat
   md.push("");
+
+  // Dispositions carrying a judgment — the outcome, the reason and when it was recorded, read
+  // from state.json and from nothing else. An `unknown` stamp with no reason is deliberately
+  // absent: it says nothing the status column has not already said, and 66 such rows on this
+  // repository alone is how a reader learns to skip the section.
+  const dispositions = recordedDispositions(epics);
+  if (dispositions.length) {
+    md.push("## Dispositions");
+    md.push("");
+    md.push("| Epic | Outcome | Recorded | Why |");
+    md.push("|------|---------|----------|-----|");
+    for (const { epic, disposition: d } of dispositions) {
+      const why = (d.reason || "—").replace(/\|/g, "\\|");
+      const carried = d.carriedTo ? ` (carried to \`${d.carriedTo}\`)` : "";
+      md.push(`| \`${epic.id}\` | ${outcomeOf(epic)} | ${d.recordedAt || "—"} | ${why}${carried} |`);
+    }
+    md.push("");
+  }
 
   md.push("## Recent detours");
   md.push("");

@@ -99,3 +99,18 @@ export function outcomeOf(epic) {
 export function isEngineStamped(disposition) {
   return !!disposition && ENGINE_STAMP_TOKENS.includes(disposition.recordedBy);
 }
+
+/** The dispositions worth SHOWING, in epic-list order: every record carrying a judgment —
+ *  a real outcome, or a reason, or a handoff. An `unknown` stamp with no reason is excluded
+ *  because it adds nothing the status already carries, and after the 0.27.0 migration 66 of
+ *  this repository's 69 archived epics hold exactly that: a per-epic row saying "nobody
+ *  recorded a disposition" is how a reader is trained to skip the whole section. The outcome
+ *  still renders beside the status for every epic that has one.
+ *
+ *  Shared by PROJECT.md and the brief so the two can never disagree about what is shown. */
+export function recordedDispositions(epics) {
+  return (epics || [])
+    .filter(e => e && e.disposition &&
+      (outcomeOf(e) !== "unknown" || e.disposition.reason || e.disposition.carriedTo))
+    .map(e => ({ epic: e, disposition: e.disposition }));
+}

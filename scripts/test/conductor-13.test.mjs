@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { tmpRepo, run, readState, expectFail, writeBatch } from "./helpers.mjs";
+import { tmpRepo, run, readState, writeState, projectMd, parseBrief, expectFail, writeBatch } from "./helpers.mjs";
 
 // ─────────────── the shared epic-flag registry (EPIC_FLAGS) ───────────────
 //
@@ -403,4 +403,53 @@ test("no module under scripts/lib/ reads .outcome or .recordedBy off an epic", a
   assert.deepEqual(offenders, [],
     "read an outcome through outcomeOf(epic) and an engine stamp through " +
     "isEngineStamped(disposition) — a direct property read is how a second definition starts");
+});
+
+test("a recorded disposition renders in PROJECT.md and the brief from state.json alone", () => {
+  // "A change killed at Gate 1 with 47 tasks and no code written is byte-identical in
+  // state.json to one that shipped" is the defect. The reason must be readable without
+  // opening the commit that deleted the change's spec files — so it renders from the record,
+  // and no prose artifact is consulted to produce it.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  writeState(cwd, {
+    version: 1, active: null, detourStack: [],
+    epics: [{
+      id: "killed-at-gate-1", title: "Autonomous exit-path check", priority: "P1",
+      status: "archived", role: "epic", lane: "openspec", links: [],
+      disposition: {
+        outcome: "killed",
+        reason: "Gate 1 found the proposed check would invert stop-loss safety",
+        recordedAt: "2026-08-20T10:11:12.000Z",
+      },
+    }],
+  });
+  run(["render"], { cwd });
+  const md = projectMd(cwd);
+  assert.match(md, /killed/, "PROJECT.md must name the recorded outcome");
+  assert.match(md, /invert stop-loss safety/, "PROJECT.md must carry the recorded reason");
+  assert.match(md, /2026-08-20/, "PROJECT.md must say when the disposition was recorded");
+
+  const brief = parseBrief(cwd);
+  assert.match(brief, /killed/, "the brief must name the recorded outcome");
+  assert.match(brief, /invert stop-loss safety/, "the brief must carry the recorded reason");
+});
+
+test("an engine `unknown` stamp with no reason adds no disposition row", () => {
+  // 66 of this repository's archived epics will read `unknown` after the migration. A row per
+  // epic saying nothing the status column does not already say is how a reader learns to skip
+  // the section — the outcome still shows beside the status.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  writeState(cwd, {
+    version: 1, active: null, detourStack: [],
+    epics: [{
+      id: "healed", title: "Healed from disk", priority: "P2",
+      status: "archived", role: "epic", lane: "claude-code", links: [],
+      disposition: { outcome: "unknown", recordedAt: "2026-08-20T10:11:12.000Z", recordedBy: "archive-drift-heal" },
+    }],
+  });
+  run(["render"], { cwd });
+  assert.doesNotMatch(projectMd(cwd), /## Dispositions/,
+    "an `unknown` stamp carrying no reason must not open a Dispositions section on its own");
 });
