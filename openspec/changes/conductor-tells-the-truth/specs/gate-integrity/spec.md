@@ -354,6 +354,12 @@ the array only ever created by the flag's first use, `[]` would be a state nothi
 an agent ignoring the obligation below would leave an absence indistinguishable from a pre-existing
 epic — hiding the omission behind the one case the staleness gate is required to forgive.
 
+**The migration SHALL NOT add the array to an epic that already exists.** The absent/empty
+distinction above is load-bearing and unguarded otherwise: a uniformity-minded migration that
+initializes every epic to `[]` collapses the two states, and every pre-existing epic then asserts
+"created under this capability, nothing attributed" — a claim that is false for all of them and
+that silently converts the staleness gate's one forgiven case into a repo-wide false positive.
+
 An epic-mutating flag nobody is told to use produces an absent array on every epic, which is
 indistinguishable in the record from an epic that predates this capability. The instructions pm
 emits — its managed `CLAUDE.md` rules block, the `conductor` skill, and its command docs — SHALL
@@ -467,8 +473,9 @@ requirement cites as its evidence.
   archived at `0/17`, `0/99`, `0/37` and `0/34`, none carrying a passing Gate 2 and so none
   `delivered` after the migration. Three of the four are the date-prefixed superpowers-lane
   registrations of ids also held under the openspec lane, which the dual-lane check below reports
-  separately; the fourth, `2026-07-29-platform-aware-rules-block`, is not, so this check has a live
-  candidate that is not an artifact of another finding
+  separately once that check keys on the date-prefix-stripped id; the fourth,
+  `2026-07-29-platform-aware-rules-block`, is not in the collision set at all, so this check has a
+  live candidate that is not an artifact of another finding
 
 #### Scenario: A killed epic with no ticked tasks is not a finding
 
@@ -476,11 +483,45 @@ requirement cites as its evidence.
 - **THEN** the check reports nothing for it, because a recorded non-delivered disposition already
   explains the zero and is the record working as designed
 
-#### Scenario: One epic id is registered under two lanes
+#### Scenario: One change is registered under two lanes
 
-- **WHEN** the same epic id appears more than once in `state.epics` under different `lane` values
-- **THEN** the check reports every such id and the lanes it holds — four exist in this repository,
-  only one of them carrying a tombstone note
+- **WHEN** two epics whose ids are equal after stripping a leading `<YYYY-MM-DD>-` date prefix —
+  the same normalization `isArchived()` already applies to archive directory names — appear in
+  `state.epics` under different `lane` values
+- **THEN** the check reports every such pair and the lanes each holds
+
+> Identity for this check MUST be the date-prefix-stripped id, not literal equality. Measured on
+> this repository: **zero** ids collide literally, while **four changes** are registered twice —
+> `conductor-mjs-module-split` (openspec) against `2026-07-21-conductor-mjs-module-split`
+> (superpowers), and the same shape for `platform-parity-mechanism`,
+> `epic-hierarchy-orchestration` and `edd-harness-agent-behavior-testing`. A literal-equality check
+> reports none of them while claiming four exist — a check that reads as coverage and measures
+> nothing, which is the defect class this capability exists to end.
+
+#### Scenario: A heal-archived epic that did pass Gate 2 reads as unknown
+
+- **WHEN** an agent records a passing Gate 2 and then runs `/opsx:archive`, so the change moves on
+  disk and the archive-drift heal flips the status and stamps `outcome: unknown` with
+  `recordedBy: "archive-drift-heal"` while correctly leaving the existing `gate2` untouched
+- **THEN** the check reports that epic — a `delivered`-shaped record wearing an `unknown` outcome
+
+> Without this check the case is invisible everywhere: it gets no `ungated` entry, so the standing
+> ungated-archive notice never names it, and its outcome is honestly `unknown` because nobody
+> supplied a disposition at the transition. The heal is behaving correctly; what is missing is
+> anything that surfaces the mismatch so an agent can record the disposition the archive deserved.
+> Reporting it is the remediation path — the interactive verb records a disposition *at* the
+> transition, and that transition has already passed.
+
+#### Scenario: A delivered epic with a passing Gate 2 has attributed no commits
+
+- **WHEN** an epic carries `outcome: delivered` and a passing `gate2` (which requires `baseSha` and
+  `headSha`) while its attribution array is present and empty
+- **THEN** the check reports it
+
+> This is precisely the shape of *the agent ignored the `--attribute-commit` obligation*. The
+> staleness gate still behaves correctly — an empty array is not a stale verdict — so without this
+> check nothing anywhere reports an unmet emitted obligation, and the obligation becomes advisory
+> in the one way that leaves no trace.
 
 #### Scenario: An archive directory has no epic
 

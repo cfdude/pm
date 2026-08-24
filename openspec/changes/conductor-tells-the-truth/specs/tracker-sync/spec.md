@@ -43,11 +43,13 @@ A tracker object with no `direction` field SHALL resolve to the behavior that ve
 before direction existed: `github-issues` resolves to `inward`, every other system resolves to
 `outward`. This fallback MUST hold independently of any state migration, because a repo can run
 this engine version for weeks before its state is upgraded. Exactly **two** deliberate behavior
-changes are permitted on that path, both repairs of instructions that referred to steps the same
-block never emitted: see "The sync nudge is emitted only where an inward procedure exists" and
-"The completion-sync reminder is emitted only where an inward procedure exists". Both are named
-here so an implementer comparing against the previous engine's output knows which two lines are
-expected to differ and treats any third as a regression.
+changes are permitted for that tracker shape, both repairs of instructions that pointed at steps
+nothing emitted. They live on **different surfaces**: the completion-sync reminder is in the rules
+block (see "The completion-sync reminder is emitted only where an inward procedure exists"), and
+the sync nudge is in the brief (see "The sync nudge is emitted only where an inward procedure
+exists"). So the rules-block byte-identity claimed in the scenarios below is affected by the first
+and not the second. Both are named here so an implementer diffing against the previous engine's
+output knows exactly which lines are expected to differ, and treats any third as a regression.
 
 #### Scenario: An un-upgraded jira repo is unchanged
 - **WHEN** the rules block is emitted for `tracker: {system: "jira", projectKey: "JOB"}` with no
