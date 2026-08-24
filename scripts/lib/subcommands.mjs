@@ -28,7 +28,15 @@ import { resolveAndRecordPlatform } from "./platform.mjs";
  *  state.json, render-stamp.json and PROJECT.md stay TRACKED: they are the state of record and
  *  the generated index, and both belong in git. */
 export function ensureGitignore() {
-  const wanted = [".conductor/detours.log", ".conductor/write-conflicts.log"];
+  const wanted = [
+    ".conductor/detours.log",
+    ".conductor/write-conflicts.log",
+    // The contention latch is engine-written too (write-conflicts.mjs). Left out, every
+    // pm-managed repo grows a permanently untracked file the moment writes contend — #106
+    // exactly, in the release that fixes #106's sibling. upgrade() re-runs this
+    // (migrations.mjs:71), so repos initialized before the latch existed pick it up.
+    ".conductor/write-conflicts.latch",
+  ];
   const giPath = path.join(ROOT, ".gitignore");
   let existing = "";
   try { existing = fs.readFileSync(giPath, "utf8"); } catch { /* absent is fine */ }
@@ -73,9 +81,13 @@ export function snapshot() {
   const state = loadState();
   render();
   fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
-  // consume: true — same reasoning as brief(): this briefing is delivered (written to
-  // .conductor/brief.txt ahead of compaction), not merely composed into PROJECT.md.
-  fs.writeFileSync(BRIEF_PATH, buildBrief(state, { consume: true }) + "\n");
+  // NO consume — the opposite of brief(). This briefing is written to .conductor/brief.txt,
+  // which NOTHING reads back, so consuming here retired the contention warning against a reader
+  // who never existed: a PreCompact landing between the threshold crossing and the next
+  // SessionStart showed the message to no one, and compaction is routine in exactly the long
+  // sessions where sustained contention is most likely. brief() is the only delivery point that
+  // reaches a session; render() already passes no consume and stays that way.
+  fs.writeFileSync(BRIEF_PATH, buildBrief(state) + "\n");
   process.stderr.write("conductor: snapshot written before compaction\n");
 }
 

@@ -6,3 +6,4 @@ evals/__pycache__/
 evals/.pytest_cache/
 .conductor/detours.log
 .conductor/write-conflicts.log
+.conductor/write-conflicts.latch

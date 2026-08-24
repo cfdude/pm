@@ -364,6 +364,42 @@ test("consuming the warning preserves the evidence it points at — AT THE PATH 
     "the latch, not a lowered count, is what stops the warning repeating");
 });
 
+test("a PreCompact snapshot must NOT consume the warning — .conductor/brief.txt reaches no session", async () => {
+  // snapshot() writes .conductor/brief.txt ahead of compaction, and NOTHING reads that file
+  // back. Consuming there latched the warning against a reader who never existed: a PreCompact
+  // landing between the threshold crossing and the next SessionStart showed the message to no
+  // one — while compaction is routine in exactly the long sessions where sustained contention is
+  // most likely. brief() is the only delivery point that reaches a session.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const { recordConflict } = await freshConflicts(cwd);
+  for (const f of [2, 3, 4]) recordConflict({ verb: "render", expected: 1, found: f });
+
+  run(["snapshot"], { cwd });
+
+  // Premise check, not decoration: snapshot() calls render(), which can saveState() and so
+  // clearConflicts(). Without this the test could pass because the skips were wiped rather than
+  // because the warning went unconsumed.
+  const log = path.join(cwd, ".conductor", "write-conflicts.log");
+  assert.equal(fs.readFileSync(log, "utf8").split("\n").filter(Boolean).length, 3,
+    "the snapshot must not have cleared the skips this test depends on");
+  assert.ok(!fs.existsSync(path.join(cwd, ".conductor", "write-conflicts.latch")),
+    "a snapshot must not latch — no session has seen anything");
+  assert.match(fs.readFileSync(path.join(cwd, ".conductor", "brief.txt"), "utf8"),
+    /3 state writes skipped on conflict/, "the snapshot still COMPOSES the warning; it just may not consume it");
+
+  assert.match(run(["brief"], { cwd }), /3 state writes skipped on conflict/,
+    "the first briefing that actually reaches a session must still carry the warning");
+});
+
+test("init writes a .gitignore entry for the contention latch — #106 must not repeat in the release that fixes it", async () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  assert.match(fs.readFileSync(path.join(cwd, ".gitignore"), "utf8"),
+    /^\.conductor\/write-conflicts\.latch$/m,
+    "the latch is engine-generated, so every pm-managed repo would otherwise grow an untracked file");
+});
+
 test("render() composing PROJECT.md must NOT consume the warning — only a DELIVERED briefing may", async () => {
   // render() calls buildBrief() too (to embed the "Briefing" section into PROJECT.md), and
   // render() itself runs on commit-nudge, /pm:status, init, upgrade, log-detour, set-gate-guard.
