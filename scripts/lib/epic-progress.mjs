@@ -284,6 +284,15 @@ export function orderQueueWithDependencies(sorted) {
   return { ordered, notes };
 }
 
+/** The ONE wording every surface uses to say what a progress figure is. Exported rather than
+ *  written out three times so PROJECT.md, the brief and `/pm:next` cannot drift apart; the
+ *  command document carries the same literal, and a test holds all three to it.
+ *
+ *  Nothing here verifies a claim — verification is the gates' job, and any consumer treating a
+ *  progress figure as evidence of delivery is out of contract. */
+export const CLAIMED_COMPLETION_NOTE =
+  "Progress is claimed completion — ticked checkboxes, not verified delivery.";
+
 export function bar(p) {
   if (!p) return "—";
   if (p.warn) return `⚠ ${p.warn}`;

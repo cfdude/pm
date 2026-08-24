@@ -5,7 +5,7 @@
 
 import fs from "node:fs";
 import { loadState, saveState, readJSON } from "./state.mjs";
-import { reconcileArchived, resolveEpics, bar, missing } from "./epic-progress.mjs";
+import { reconcileArchived, resolveEpics, bar, missing, CLAIMED_COMPLETION_NOTE } from "./epic-progress.mjs";
 import { buildBrief } from "./briefing.mjs";
 import { staleMarker } from "./active-pointer.mjs";
 import { getAutonomy } from "./autonomy.mjs";
@@ -77,6 +77,8 @@ export function render() {
   md.push("");
 
   md.push("## Epics");
+  md.push("");
+  md.push(`> ${CLAIMED_COMPLETION_NOTE}`);
   md.push("");
   md.push("| Priority | Epic | Lane | Role | Status | Progress | Links |");
   md.push("|----------|------|------|------|--------|----------|-------|");

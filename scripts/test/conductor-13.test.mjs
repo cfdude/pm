@@ -696,3 +696,24 @@ test("no module computes outstanding work for itself", () => {
   assert.deepEqual(offenders, [],
     "ask outstandingWork(epic) — it is the single definition every consumer keys on");
 });
+
+test("all three surfaces present checkbox progress as CLAIMED completion, in one wording", async () => {
+  // Measured, not theoretical: in an 18-epic sample 3 ticked tasks hid undone work — one
+  // still defective at HEAD — and all 3 unticked boxes were non-work. The errors run toward
+  // over-reporting completion, so `12/12` must not read as evidence that the work is correct.
+  const { CLAIMED_COMPLETION_NOTE } = await import(new URL("../lib/epic-progress.mjs", import.meta.url).href);
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  withTasks(cwd, "ctt", ["- [x] 1 done", "- [x] 2 done"]);
+  run(["add-epic", "--id", "ctt", "--lane", "openspec", "--status", "active"], { cwd });
+  run(["render"], { cwd });
+
+  assert.ok(projectMd(cwd).includes(CLAIMED_COMPLETION_NOTE),
+    "PROJECT.md must say so beside the progress it renders");
+  assert.ok(parseBrief(cwd).includes(CLAIMED_COMPLETION_NOTE),
+    "the brief must say so too — a compacted session re-reads only this");
+  // /pm:next is a command document, not an engine subcommand: its output is authored by the
+  // agent following commands/next.md, so the obligation binds that text.
+  assert.ok(fs.readFileSync(path.join(REPO, "commands", "next.md"), "utf8").includes(CLAIMED_COMPLETION_NOTE),
+    "/pm:next must carry the same wording, verbatim, so the three surfaces cannot drift");
+});

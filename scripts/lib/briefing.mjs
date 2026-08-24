@@ -2,7 +2,7 @@
 // Builds the SessionStart/PreCompact briefing text. Needs lib/active-pointer.mjs's
 // staleMarker() (one-directional — active-pointer doesn't need anything back from here).
 
-import { resolveEpics, missing, orderQueueWithDependencies, bar } from "./epic-progress.mjs";
+import { resolveEpics, missing, orderQueueWithDependencies, bar, CLAIMED_COMPLETION_NOTE } from "./epic-progress.mjs";
 import { changelogAddedHeadlines, cmpVer, newestInstalledVersion, pluginVersion } from "./plugin-meta.mjs";
 import { getAutonomy } from "./autonomy.mjs";
 import { staleMarker } from "./active-pointer.mjs";
@@ -35,6 +35,7 @@ export function buildBrief(state, { consume = false } = {}) {
   }
 
   L.push("CONDUCTOR STATE — where we are and what's next");
+  L.push(CLAIMED_COMPLETION_NOTE);
   L.push("");
 
   const activeEpic = state.active ? byId[state.active] : null;
