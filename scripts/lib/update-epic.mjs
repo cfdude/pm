@@ -119,6 +119,12 @@ export function updateEpic() {
   // leave an epic at `archived` imports. They were inline here, which is precisely how they
   // came to bind this one path and none of the other four. The gate returns a refusal; this
   // command owns the exit code and the stderr, as it does for every other validation above.
+  //
+  // This command therefore holds NO lane test of its own. The one it used to hold compared
+  // `epic.lane === "openspec"` strictly, so a lane-less epic — openspec-lane on every rendered
+  // surface since resolveEpics() started normalizing it — slipped the gate entirely. The gate
+  // now decides membership through constants.mjs's isOpenspecLane, the single predicate every
+  // such site goes through.
   if (status === "archived") {
     const verdict = archiveGate(epic, {});
     if (!verdict.ok) { process.stderr.write(`conductor: ${verdict.message}\n`); process.exit(1); }

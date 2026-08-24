@@ -26,6 +26,21 @@ export const CHANGES_DIR = path.join(ROOT, "openspec", "changes");
 export const ARCHIVE_DIR = path.join(CHANGES_DIR, "archive");
 export const PLANS_DIR = path.join(ROOT, "docs", "superpowers", "plans");
 export const KNOWN_LANES = ["openspec", "superpowers", "claude-code", "decision", "external"];
+
+/** THE predicate every site deciding openspec-lane membership goes through.
+ *
+ *  An absent `lane` IS openspec — `resolveEpics()` has normalized it that way since 0.3.0, so a
+ *  lane-less epic renders as openspec-lane on every surface. Three sites nevertheless compared
+ *  strictly (`epic.lane === "openspec"`): the archive guard, `missing()`, and
+ *  `record-gate-review`'s lane refusal. The result was an epic that LOOKS openspec-lane
+ *  everywhere and slips every gate that binds the lane — including, at
+ *  `record-gate-review`, being refused the very verdict the archive gate would have demanded of
+ *  it, had that gate bound it.
+ *
+ *  Exported rather than retyped at each site so a site added later inherits the rule: the
+ *  archive-drift heal's bypass half is the fourth such site, and the suite's source scan fails a
+ *  fifth one written strict. */
+export const isOpenspecLane = (epic) => ((epic && epic.lane) || "openspec") === "openspec";
 export const KNOWN_PLATFORMS = ["claude-code", "hermes", "codex"];
 
 // Each platform's project-instruction file, in the order that platform resolves them.

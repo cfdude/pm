@@ -15,6 +15,7 @@
 // READS that quantity rather than computing one of its own. Two counters is how a guard comes
 // to refuse an epic that renders as complete.
 
+import { isOpenspecLane } from "./constants.mjs";
 import { epicProgress, outstandingWork } from "./epic-progress.mjs";
 
 /**
@@ -50,7 +51,9 @@ export function archiveGate(epic, request = {}) {
   // verdict — see CLAUDE.md "OpenSpec build — TWO mandatory gates" and recordGateReview().
   // Gate 1 (spec review) gates code, which already happened earlier in the workflow; only
   // Gate 2 blocks archiving. Non-openspec-lane epics are completely unaffected.
-  if (epic.lane === "openspec") {
+  // An ABSENT lane is openspec-lane (isOpenspecLane), so a lane-less epic is held to this
+  // gate exactly as a declared one is — it renders as openspec-lane on every surface.
+  if (isOpenspecLane(epic)) {
     const gate2 = epic.gateReview && epic.gateReview.gate2;
     if (!gate2 || gate2.verdict !== "pass") {
       return { ok: false, message:

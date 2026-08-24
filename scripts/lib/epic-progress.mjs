@@ -5,7 +5,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { ROOT, CHANGES_DIR, ARCHIVE_DIR, PLANS_DIR, laneRank } from "./constants.mjs";
+import { ROOT, CHANGES_DIR, ARCHIVE_DIR, PLANS_DIR, laneRank, isOpenspecLane } from "./constants.mjs";
 
 /** Active openspec change ids = subdirs of openspec/changes except `archive`. */
 export function activeChangeIds() {
@@ -245,7 +245,7 @@ export function resolveEpics(state) {
  *  no change on disk BY DESIGN and it must never show the warning, regardless of whether the
  *  on-disk archive-dir naming convention still matches. */
 export function missing(e) {
-  return e.lane === "openspec" && !e.present && !isArchived(e.id) &&
+  return isOpenspecLane(e) && !e.present && !isArchived(e.id) &&
     e.status !== "planned" && e.status !== "archived";
 }
 

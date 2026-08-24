@@ -748,3 +748,78 @@ test("a task that merely DOCUMENTS the marker is not excluded by it", () => {
   assert.equal(progress.done, 1);
   assert.equal(outstanding, 1);
 });
+
+// ─────────────── openspec-lane normalization: every site, not some of them ───────────────
+//
+// A lane-less epic renders as openspec-lane everywhere (resolveEpics() normalizes) and then
+// slips every gate that tests `epic.lane === "openspec"` strictly. The strict sites surviving
+// wave 1 are the archive guard (now in archive-gate.mjs), missing() and record-gate-review's
+// lane refusal; the heal's bypass-half lane test (6.8) is the fourth and consumes the same
+// predicate rather than re-deriving one.
+
+const EPIC_PROGRESS = new URL("../lib/epic-progress.mjs", import.meta.url).href;
+
+/** A state file holding one lane-less epic — a shape `add-epic` cannot produce (`--lane` is
+ *  required) and every pre-0.3.0 repo is full of. */
+function withLanelessEpic(cwd, overrides = {}) {
+  writeState(cwd, {
+    version: 1, active: null, detourStack: [],
+    epics: [{
+      id: "no-lane", title: "No lane recorded", priority: "P1",
+      status: "queued", role: "epic", links: [], reconcileNeeded: false, ...overrides,
+    }],
+  });
+}
+
+test("a lane-less epic is held to the openspec-lane archive gate", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  withLanelessEpic(cwd);
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  const err = expectFail(() => run(["update-epic", "no-lane", "--status", "archived"], { cwd }));
+  assert.ok(err, "an epic with no lane renders as openspec-lane, so the gate must bind it");
+  assert.match(String(err.stderr || err.message), /Gate 2/);
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
+});
+
+test("a lane-less epic appears in the dangling-change check", async () => {
+  // missing() is exercised as a UNIT deliberately. Every caller in the engine hands it an epic
+  // resolveEpics() has already normalized, so an end-to-end assertion cannot distinguish a
+  // strict site from a normalized one and would pass either way — a vacuous check on exactly
+  // the omission this task exists to close.
+  const { missing } = await import(EPIC_PROGRESS);
+  assert.equal(missing({ id: "no-lane", present: false, status: "queued" }), true,
+    "an epic with no lane is openspec-lane, so a missing change on disk is a dangling pointer");
+});
+
+test("a gate verdict can be recorded against a lane-less epic", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  withLanelessEpic(cwd);
+  run(["record-gate-review", "no-lane", "--gate", "2", "--verdict", "pass"], { cwd });
+  const epic = readState(cwd).epics.find(e => e.id === "no-lane");
+  assert.equal(epic.gateReview.gate2.verdict, "pass",
+    "refusing a verdict to an epic every other site treats as openspec-lane leaves it with no " +
+    "way to ever satisfy the gate that binds it");
+});
+
+test("no module under scripts/lib/ decides openspec-lane membership with a strict comparison", () => {
+  // A fifth strict site added later — 6.8's heal bypass included — fails HERE rather than
+  // passing silently, which is the whole reason the predicate is exported instead of the
+  // normalization being retyped at each site.
+  const libDir = path.join(REPO, "scripts", "lib");
+  const offenders = [];
+  for (const name of fs.readdirSync(libDir).filter(f => f.endsWith(".mjs"))) {
+    const src = fs.readFileSync(path.join(libDir, name), "utf8");
+    src.split("\n").forEach((line, i) => {
+      const t = line.trim();
+      if (t.startsWith("//") || t.startsWith("*") || t.startsWith("/*")) return;
+      if (!/[!=]==\s*"openspec"/.test(line)) return;
+      if (line.includes('|| "openspec"')) return;      // normalized inline — acceptable
+      offenders.push(`${name}:${i + 1}: ${t}`);
+    });
+  }
+  assert.deepEqual(offenders, [],
+    "decide openspec-lane membership through isOpenspecLane(epic), or normalize the absent " +
+    "lane inline — a strict comparison silently exempts every lane-less epic");
+});

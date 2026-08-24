@@ -2,6 +2,7 @@
 // Records an OpenSpec gate review's verdict durably against an epic. One-directional
 // dependencies only.
 
+import { isOpenspecLane } from "./constants.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { parseFlags } from "./add-epic.mjs";
 import { render } from "./render.mjs";
@@ -34,7 +35,10 @@ export function recordGateReview() {
   const state = loadState();
   const epic = state.epics.find(e => e.id === id);
   if (!epic) { process.stderr.write(`conductor: epic '${id}' not found\n`); process.exit(1); }
-  if (epic.lane !== "openspec") {
+  // Normalized, not strict: an epic with no lane is openspec-lane everywhere else, and
+  // refusing it a verdict here would leave it permanently unable to satisfy the archive
+  // gate that (also normalizing) binds it.
+  if (!isOpenspecLane(epic)) {
     process.stderr.write(
       `conductor: record-gate-review only applies to openspec-lane epics ` +
       `('${id}' is lane '${epic.lane}')\n`);
