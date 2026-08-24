@@ -99,6 +99,10 @@ export const EPIC_FLAGS = [
 export const epicFlagsFor = (command) =>
   EPIC_FLAGS.filter(f => f.commands.includes(command)).map(f => f.flag);
 
+/** The epic flags declared repeatable. Consumed by parseFlags()'s union — see the comment on
+ *  REPEATABLE_NON_EPIC_FLAGS in add-epic.mjs for why it is a union and not a replacement. */
+export const repeatableEpicFlags = () => EPIC_FLAGS.filter(f => f.repeats).map(f => f.flag);
+
 export const KNOWN_AUTONOMY_LEVELS = ["off", "autonomous"];
 // Default category taxonomy for the `--preauthorize "category:<name>:<reason>"` shorthand —
 // see the `conductor` skill's "Epic-level autonomy" section for the matching heuristic each

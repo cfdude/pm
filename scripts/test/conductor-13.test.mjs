@@ -99,3 +99,42 @@ test("update-epic still names the offending flag AND the flags it does support",
   }
   assert.deepEqual(readState(cwd).epics, before.epics, "a rejected flag must write nothing");
 });
+
+test("marking a flag `repeats: true` in the registry ALONE makes parseFlags accumulate it", async () => {
+  // The union's forward half: a capability makes an epic flag repeat by editing the registry
+  // and nothing else. Both imports resolve to the same module instances, so the probe pushed
+  // onto EPIC_FLAGS here is the array parseFlags reads — which only holds if the repeatable
+  // set is computed PER CALL rather than frozen at import.
+  const { EPIC_FLAGS } = await import(CONSTANTS);
+  const { parseFlags } = await import(new URL("../lib/add-epic.mjs", import.meta.url).href);
+
+  assert.equal(parseFlags(["--zz-probe", "a", "--zz-probe", "b"])["zz-probe"], "b",
+    "an unregistered flag must still OVERWRITE — otherwise this test proves nothing");
+
+  EPIC_FLAGS.push({ flag: "zz-probe", key: "zzProbe", commands: ["update-epic"], repeats: true });
+  try {
+    assert.deepEqual(parseFlags(["--zz-probe", "a", "--zz-probe", "b"])["zz-probe"], ["a", "b"],
+      "a registry entry marked `repeats: true` must accumulate, with no edit to add-epic.mjs");
+  } finally {
+    EPIC_FLAGS.pop();
+  }
+});
+
+test("set-tracker --intent still accumulates both pairs — the literal is UNIONED, not replaced", () => {
+  // parseFlags is shared engine-wide. Of the seven flags in the 0.26.0 REPEATABLE_FLAGS
+  // literal only `link` is an epic flag: `intent` is set-tracker's, `preauthorize`/`context`/
+  // `notify` are set-autonomy's, `add`/`remove` are set-lane-routing's. A registry seeded with
+  // epic flags alone would drop all six if the literal were replaced instead of unioned —
+  // silently keeping the LAST occurrence of each.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-tracker", "--system", "jira", "--project", "JOB",
+       "--intent", "active:in-progress", "--intent", "paused:todo"], { cwd });
+  assert.deepEqual(readState(cwd).tracker.statusIntent,
+    { active: "in-progress", paused: "todo" },
+    "both --intent pairs must survive");
+
+  run(["set-lane-routing", "--add", "billing-*:openspec", "--add", "hotfix:claude-code"], { cwd });
+  assert.equal(readState(cwd).laneRouting.overrides.length, 2,
+    "both --add overrides must survive");
+});

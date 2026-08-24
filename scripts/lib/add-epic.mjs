@@ -8,20 +8,35 @@
 import { activate } from "./active-pointer.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { render } from "./render.mjs";
-import { KNOWN_LANES, KNOWN_STATUSES } from "./constants.mjs";
+import { KNOWN_LANES, KNOWN_STATUSES, repeatableEpicFlags } from "./constants.mjs";
 
-// Flags that accumulate into an array across repeated `--flag value` occurrences,
-// shared by add-epic/add-many (--link), set-tracker (--intent), and set-autonomy
-// (--preauthorize/--context/--notify).
-const REPEATABLE_FLAGS = ["link", "intent", "preauthorize", "context", "notify", "add", "remove"];
+// Repeatable flags that belong to NO epic-writing command, and so cannot come from the shared
+// EPIC_FLAGS registry: --intent is set-tracker's, --preauthorize/--context/--notify are
+// set-autonomy's, --add/--remove are set-lane-routing's. parseFlags is shared by nearly every
+// subcommand, so the epic registry's repeatable entries are UNIONED with this list and never
+// substituted for it — replacing it would leave `set-tracker --intent a:b --intent c:d`
+// silently keeping only the second pair, with an exit code of 0.
+//
+// `link` is deliberately absent: it IS an epic flag, and it now carries `repeats: true` in the
+// registry, so it reaches parseFlags through the union like any flag a later capability adds.
+const REPEATABLE_NON_EPIC_FLAGS = ["intent", "preauthorize", "context", "notify", "add", "remove"];
+
+/** The full repeatable set — the non-epic list above UNIONed with every EPIC_FLAGS entry
+ *  marked `repeats: true`. Recomputed on every parseFlags() call rather than frozen at module
+ *  scope, so declaring `repeats: true` in the registry is the entire edit a capability makes;
+ *  this file never changes for it. */
+export const repeatableFlags = () =>
+  [...new Set([...REPEATABLE_NON_EPIC_FLAGS, ...repeatableEpicFlags()])];
+
 export function parseFlags(argv) {
   const o = {};
+  const repeatable = new Set(repeatableFlags());
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (!a.startsWith("--")) continue;
     const k = a.slice(2);
     const v = (argv[i + 1] !== undefined && !argv[i + 1].startsWith("--")) ? argv[++i] : true;
-    if (REPEATABLE_FLAGS.includes(k)) (o[k] || (o[k] = [])).push(v);
+    if (repeatable.has(k)) (o[k] || (o[k] = [])).push(v);
     else o[k] = v;
   }
   return o;
