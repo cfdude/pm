@@ -459,8 +459,12 @@ requirement cites as its evidence.
 
 #### Scenario: A gate was recorded as bookkeeping rather than as review
 
-- **WHEN** a gate verdict's `reviewedAt` falls after the epic's merge commit — defined as the **last hash in its attribution array**, and where that array is absent or empty this clause does not apply, because every other reading is either inert on all live epics or fires on essentially all of them, or
-  within **60 seconds** of the `reviewedAt` of the epic's other gate verdict
+- **WHEN** a gate verdict's `reviewedAt` satisfies **either** arm:
+  - it falls **after the epic's merge commit**, where the merge commit is the last hash in the
+    epic's attribution array — and where that array is absent or empty this arm does not apply,
+    because every other reading of "merge commit" is either inert on all live epics or fires on
+    essentially all of them; **or**
+  - it falls **within 60 seconds** of the `reviewedAt` of the epic's other gate verdict
 - **THEN** the check reports it as a bookkeeping signature — the audited instance recorded both
   gates 83 seconds after the squash-merge, 47 ms apart, with no notes, and 47 ms is inside the
   60-second bound while a spec review and an implementation review of the same change never are
