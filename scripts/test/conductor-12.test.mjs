@@ -326,7 +326,10 @@ test("the threshold warning fires ONCE ACROSS INVOCATIONS, not once per process"
     "consumption rotates the log, resetting count below the threshold — a second brief must not re-warn");
 });
 
-test("consuming the warning preserves the evidence it points at", async () => {
+test("consuming the warning preserves the evidence it points at — AT THE PATH IT NAMED", async () => {
+  // Consumption used to rename the log to .prev, which sent the reader the warning had just told
+  // to open `.conductor/write-conflicts.log` to a path that no longer existed. The latch replaces
+  // that entirely: the log is left exactly where it is and nothing about it moves.
   const cwd = tmpRepo();
   run(["init"], { cwd });
   const { recordConflict } = await freshConflicts(cwd);
@@ -334,8 +337,12 @@ test("consuming the warning preserves the evidence it points at", async () => {
 
   run(["brief"], { cwd });
   const log = path.join(cwd, ".conductor", "write-conflicts.log");
-  assert.ok(!fs.existsSync(log), "the live log resets so a new pattern can accumulate");
-  assert.ok(fs.existsSync(`${log}.prev`), "but the evidence the warning cited must survive");
+  assert.ok(fs.existsSync(log), "the log the warning named must still be there to open");
+  assert.equal(fs.readFileSync(log, "utf8").split("\n").filter(Boolean).length, 3,
+    "and must still hold every skip — consumption is not a rotation");
+  assert.ok(!fs.existsSync(`${log}.prev`), "consumption must not rename the log");
+  assert.ok(fs.existsSync(path.join(cwd, ".conductor", "write-conflicts.latch")),
+    "the latch, not a lowered count, is what stops the warning repeating");
 });
 
 test("render() composing PROJECT.md must NOT consume the warning — only a DELIVERED briefing may", async () => {
@@ -356,19 +363,27 @@ test("render() composing PROJECT.md must NOT consume the warning — only a DELI
     "the warning must still be there for the first briefing that actually reaches a session");
 });
 
-test("a count ABOVE the threshold does not warn — the rule is equality, not >=", async () => {
-  // This is the only test that discriminates === from >=. The neighbouring "does not re-warn
-  // above it" assertion cannot: consumption rotates the log when the warning is delivered, so
-  // by the time it checks, the count has fallen back BELOW the threshold rather than risen
-  // above it, and both operators agree there. Accumulate past 3 with no brief in between so
-  // conflictCount() is genuinely 4 when the brief runs.
+test("a BURST straight past the threshold still warns, exactly once — the count is SAMPLED, not observed", async () => {
+  // This replaces "a count ABOVE the threshold does not warn — the rule is equality, not >=".
+  // That rule was wrong for a reason strict equality could not see: conflictCount() is only READ
+  // when a briefing is composed, so the count must be exactly 3 AT THAT MOMENT. A wedged writer
+  // or a hook loop produces a BURST — verified empirically on 0.26.0, 3 skips warned and 7 did
+  // not — so mild contention warned and severe contention did not, and the warning's absence
+  // then read as evidence of health. `>=` alone is no fix either: it re-warns on every
+  // subsequent briefing, training the reader to filter exactly the message that matters. Hence
+  // once per EPISODE: warn at or above the threshold while unlatched, then latch.
+  //
+  // Drive the counter from 0 to 7 in ONE step with no briefing in between. The existing tests all
+  // step it one entry at a time, which is precisely why this shipped broken.
   const cwd = tmpRepo();
   run(["init"], { cwd });
   const { recordConflict } = await freshConflicts(cwd);
-  for (const f of [2, 3, 4, 5]) recordConflict({ verb: "render", expected: 1, found: f });
+  for (const f of [2, 3, 4, 5, 6, 7, 8]) recordConflict({ verb: "render", expected: 1, found: f });
 
+  assert.match(run(["brief"], { cwd }), /7 state writes skipped on conflict/,
+    "a burst that crossed the threshold unseen must still warn — and name the count it actually found");
   assert.doesNotMatch(run(["brief"], { cwd }), /writes skipped on conflict/,
-    "at 4 skips the equality rule must stay silent; >= would warn here");
+    "and the latch must hold it to once: without it, >= re-warns every briefing for the same episode");
 });
 
 // ─────────────── the distinct exit code ───────────────

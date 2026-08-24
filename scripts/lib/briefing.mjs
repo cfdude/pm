@@ -9,7 +9,7 @@ import { staleMarker } from "./active-pointer.mjs";
 import { validLink } from "./links.mjs";
 import { outcomeOf, recordedDispositions } from "./disposition.mjs";
 import { KNOWN_LANES } from "./constants.mjs";
-import { conflictCount, consumeConflictWarning } from "./write-conflicts.mjs";
+import { conflictCount, conflictWarningLatched, consumeConflictWarning } from "./write-conflicts.mjs";
 import { CONFLICT_WARN_THRESHOLD } from "./constants.mjs";
 
 export function buildBrief(state, { consume = false } = {}) {
@@ -52,9 +52,16 @@ export function buildBrief(state, { consume = false } = {}) {
   }
   L.push("");
 
-  // Exactly-equal, not >=: warn ONCE when the pattern appears. Re-warning on every subsequent
-  // skip is the repeating-error storm that trains a reader to filter the message, at which
-  // point a real signal has been made invisible.
+  // At-or-above the threshold, and once per EPISODE of contention — not exactly-equal, and not
+  // >= on its own. Exact equality shipped in 0.26.0 and was wrong for a reason it could not see:
+  // conflictCount() is SAMPLED, not observed — it is only read when a briefing is composed — so
+  // the warning required the count to be exactly 3 AT THAT MOMENT. A wedged writer or a hook
+  // loop produces a BURST, so 3 skips warned and 7 did not: the warning was least likely to fire
+  // in exactly the scenario it exists for, and its absence then read as evidence of health.
+  // Bare >= is the other failure: it re-warns every briefing until a successful write, which is
+  // the repeating-error storm that trains a reader to filter the message, at which point a real
+  // signal has been made invisible. So: warn while unlatched, then latch (a marker file beside
+  // the log — see write-conflicts.mjs), and let the next successful state write clear both.
   //
   // consume defaults to false because buildBrief() is ALSO called by render() to embed the
   // "Briefing" section into PROJECT.md — composing that document is not a session ever seeing
@@ -62,8 +69,12 @@ export function buildBrief(state, { consume = false } = {}) {
   // render() call that produced it, so it landed once in a PROJECT.md the next render overwrites
   // and never reached a live SessionStart brief. Only brief()/snapshot() — the entry points that
   // actually deliver a briefing to a session — pass consume: true.
-  if (conflictCount() === CONFLICT_WARN_THRESHOLD) {
-    L.push(`⚠ ${CONFLICT_WARN_THRESHOLD} state writes skipped on conflict — a writer may be wedged (.conductor/write-conflicts.log)`);
+  const skipped = conflictCount();
+  if (skipped >= CONFLICT_WARN_THRESHOLD && !conflictWarningLatched()) {
+    // Name the count actually found, never the threshold: under >= they are the same number only
+    // in the mildest case, and reporting "3" after a burst of 7 understates the very thing the
+    // reader is being told to go look at.
+    L.push(`⚠ ${skipped} state writes skipped on conflict — a writer may be wedged (.conductor/write-conflicts.log)`);
     if (consume) consumeConflictWarning();
   }
 
