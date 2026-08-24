@@ -2555,6 +2555,18 @@
       "links": [],
       "reconcileNeeded": false,
       "completedAt": "2026-08-24T01:40:39.820Z"
+    },
+    {
+      "id": "gh-130-disposition-has-no-correction-verb",
+      "title": "An agent-supplied disposition is unreplaceable — a mistyped outcome forces a state.json hand-edit",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "130",
+      "externalUrl": "https://github.com/cfdude/pm/issues/130"
     }
   ],
   "detourStack": [],
@@ -2564,6 +2576,6 @@
     "repo": "cfdude/pm"
   },
   "platform": "claude-code",
-  "revision": 38,
+  "revision": 39,
   "reviewMode": "thorough"
 }
