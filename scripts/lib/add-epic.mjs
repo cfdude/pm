@@ -8,7 +8,7 @@
 import { activate } from "./active-pointer.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { render } from "./render.mjs";
-import { KNOWN_LANES, KNOWN_STATUSES, repeatableEpicFlags } from "./constants.mjs";
+import { KNOWN_LANES, KNOWN_STATUSES, epicFlagsFor, repeatableEpicFlags } from "./constants.mjs";
 
 // Repeatable flags that belong to NO epic-writing command, and so cannot come from the shared
 // EPIC_FLAGS registry: --intent is set-tracker's, --preauthorize/--context/--notify are
@@ -177,6 +177,19 @@ export function parentError(epics, id, parent) {
 export function addEpic() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const f = parseFlags(process.argv.slice(3));
+  // add-epic's FIRST allowlist. Until now it validated no flag surface at all: parseFlags read
+  // the flags the body happened to name and dropped every other one without a word, so
+  // `--notes "<text>"` parsed, exited 0 and wrote nothing (#79). That failure is invisible and
+  // the text is unrecoverable — it destroyed the whole payload of a batch of epics registered
+  // precisely so a later session would remember why they exist. Rejected BEFORE loadState(),
+  // so a refusal cannot leave a partial write behind.
+  const known = epicFlagsFor("add-epic");
+  const unknown = Object.keys(f).filter(k => !known.includes(k));
+  if (unknown.length) {
+    process.stderr.write(`conductor: add-epic: unknown flag(s) --${unknown.join(", --")} ` +
+      `(known: ${known.map(k => `--${k}`).join(", ")})\n`);
+    process.exit(1);
+  }
   const str = (v) => (typeof v === "string" ? v : undefined); // valueless flags arrive as boolean true
   const id = str(f.id);
   if (!id || !/^[a-z0-9][a-z0-9._-]*$/.test(id)) {

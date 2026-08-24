@@ -138,3 +138,39 @@ test("set-tracker --intent still accumulates both pairs — the literal is UNION
   assert.equal(readState(cwd).laneRouting.overrides.length, 2,
     "both --add overrides must survive");
 });
+
+test("add-epic rejects an unsupported flag by name and writes nothing (#79)", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const before = readState(cwd);
+  const err = expectFail(() =>
+    run(["add-epic", "--id", "x", "--lane", "claude-code", "--bogus", "v"], { cwd }));
+  assert.ok(err, "expected non-zero exit — add-epic had no allowlist at all before this");
+  const msg = String(err.stderr || err.message);
+  assert.match(msg, /--bogus/, "the refusal must name the offending flag");
+  for (const flag of ["--id", "--lane", "--title", "--link"]) {
+    assert.ok(msg.includes(flag), `the refusal must list the supported flag ${flag}`);
+  }
+  assert.deepEqual(readState(cwd).epics, before.epics, "no epic may be created");
+});
+
+test("add-epic never accepts an annotation flag it will not persist (#79's live payload)", () => {
+  // The failure mode this closes is invisible: `--notes "<text>"` parsed, exited 0, and wrote
+  // nothing, which destroyed the entire payload of epics registered so a later session would
+  // remember why they exist. The assertion is deliberately EITHER-OR rather than "rejected",
+  // so it keeps holding once epic-annotation makes --notes a real, persisted flag.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const err = expectFail(() =>
+    run(["add-epic", "--id", "x", "--lane", "claude-code", "--notes", "why this exists"], { cwd }));
+  if (err) {
+    assert.match(String(err.stderr || err.message), /--notes/,
+      "if --notes is not supported it must be rejected BY NAME");
+    assert.equal(readState(cwd).epics.length, 0, "a rejected flag must create no epic");
+  } else {
+    const epic = readState(cwd).epics.find(e => e.id === "x");
+    assert.ok(epic, "exit 0 must mean the epic was created");
+    assert.match(JSON.stringify(epic), /why this exists/,
+      "exit 0 must mean the text persisted — an exit code alone is not evidence");
+  }
+});
