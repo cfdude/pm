@@ -2577,8 +2577,37 @@
         "a31d067",
         "34e01d9",
         "3dd4e98",
-        "3a3704b"
-      ]
+        "3a3704b",
+        "3c0962f",
+        "22b52f2",
+        "64b6e6a",
+        "79875be",
+        "5a7f78c",
+        "a98e71c",
+        "d0e9e8e",
+        "26ba192",
+        "f7fda26",
+        "59c2d22",
+        "9667e83",
+        "489809f",
+        "bd2b1e6"
+      ],
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-08-25T23:06:47.851Z",
+          "baseSha": "7829e80",
+          "headSha": "bd2b1e6",
+          "reviewer": "two independent fresh-context reviewers (review mode: thorough) — Gate 2 and Gate 2B; both returned merge-once-group-17-lands, and their BLOCKS are the group-17 tasks now complete. Re-recorded to extend the range over bd2b1e6, which the reviewers did NOT see: it is the arm-1 narrowing this epic's own integrity check surfaced while 17.2's first verdict was being written — self-reported, not covered by either review",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-08-25T22:59:38.168Z",
+            "baseSha": "7829e80",
+            "headSha": "489809f",
+            "reviewer": "two independent fresh-context reviewers (review mode: thorough) — Gate 2 and Gate 2B; both returned merge-once-group-17-lands, and their BLOCKS were fixed in group 17"
+          }
+        }
+      }
     },
     {
       "id": "2026-08-18-state-write-conflict-guard",
@@ -2663,7 +2692,7 @@
     "repo": "cfdude/pm"
   },
   "platform": "claude-code",
-  "revision": 54,
+  "revision": 69,
   "reviewMode": "thorough",
   "releases": [
     {
