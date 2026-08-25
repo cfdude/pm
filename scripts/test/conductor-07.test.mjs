@@ -212,7 +212,7 @@ test("update-epic --status archived stamps completedAt", () => {
   const cwd = tmpRepo(); run(["init"], { cwd });
   run(["add-epic", "--id", "a", "--lane", "claude-code"], { cwd });
   run(["set-active", "a"], { cwd });
-  run(["update-epic", "a", "--status", "archived"], { cwd });
+  run(["update-epic", "a", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd });
   const s = readState(cwd);
   const a = s.epics.find(e => e.id === "a");
   assert.ok(a.completedAt, "completedAt stamped");
@@ -256,7 +256,7 @@ test("a completed epic is never flagged stale, even if startedAt is old", () => 
   const cwd = tmpRepo(); run(["init"], { cwd });
   run(["add-epic", "--id", "a", "--lane", "claude-code"], { cwd });
   run(["set-active", "a"], { cwd });
-  run(["update-epic", "a", "--status", "archived"], { cwd });
+  run(["update-epic", "a", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd });
   const s = readState(cwd);
   const a = s.epics.find(e => e.id === "a");
   a.startedAt = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();

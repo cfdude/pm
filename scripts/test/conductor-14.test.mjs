@@ -10,7 +10,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
-import { ENGINE, EMPTY_CACHE, run, runCombined, readState, writeState, tmpRepo, expectFail } from "./helpers.mjs";
+import { ENGINE, EMPTY_CACHE, run, runCombined, readState, writeState, projectMd, parseBrief, tmpRepo, expectFail } from "./helpers.mjs";
 
 // ─────────────────────── group 12: epic annotation ───────────────────────
 //
@@ -183,6 +183,17 @@ const FIXTURES = new URL("./fixtures/", import.meta.url).pathname;
 const baseline = (name) => fs.readFileSync(path.join(FIXTURES, `rules-0.26.0-${name}.txt`), "utf8");
 
 const OUTWARD_HEADING = "## External tracker sync";
+const REFRESH_GATE_HEADING = "## Re-read the source before an epic becomes the work";
+
+/** A block with the always-on refresh-gate section removed.
+ *
+ *  Byte-identity against 0.26.0 is claimed for the SYNC SECTIONS on these paths — what direction
+ *  governs — not for the whole document. This release also ADDS instruction that no tracker
+ *  configuration turns on or off (the refresh gate keys on an epic's provenance, so it has
+ *  something to say in every repo). Comparing whole blocks would forbid the release from adding
+ *  any instruction at all, which is not what the direction requirement pins. */
+const stripRefreshGate = (block) =>
+  block.replace(new RegExp(`\\n*${REFRESH_GATE_HEADING}[\\s\\S]*?(?=\\n<!-- END pm-conductor rules -->)`), "");
 const REMINDER_HEADING = "## Sync after completing tracker-linked work";
 
 /** The rules block a tracker shape produces, with no state migration applied. */
@@ -207,7 +218,7 @@ const preTrackerPart = (block) => {
 
 test("an un-upgraded jira primary is byte-identical to 0.26.0 — outward section, no inward section", () => {
   const block = rulesFor({ system: "jira", projectKey: "JOB" });
-  assert.equal(block, baseline("jira-scoped"),
+  assert.equal(stripRefreshGate(block), baseline("jira-scoped"),
     "a direction-less jira primary must emit exactly what 0.26.0 emitted for it");
   assert.ok(block.includes(OUTWARD_HEADING));
   assert.ok(!block.includes("## GitHub issue sync") && !block.includes("## Inward tracker sync"));
@@ -216,7 +227,7 @@ test("an un-upgraded jira primary is byte-identical to 0.26.0 — outward sectio
 test("an un-upgraded github-issues primary with a repo keeps the inward section and no outward one", () => {
   const block = rulesFor({ system: "github-issues", repo: "o/n" });
   const before = baseline("github-scoped");
-  assert.equal(preTrackerPart(block), preTrackerPart(before),
+  assert.equal(preTrackerPart(stripRefreshGate(block)), preTrackerPart(before),
     "nothing outside the tracker sections may move on the un-upgraded github path");
   assert.ok(!block.includes(OUTWARD_HEADING), "github-issues resolves inward — no outward section");
   assert.ok(block.includes("## GitHub issue sync (o/n)"), "the inward section must still be emitted");
@@ -384,10 +395,11 @@ test("the scope-less github path changes in exactly one way, and it is the remin
   const before = baseline("github-scopeless");
   const now = rulesFor({ system: "github-issues" });
   const stripReminder = (b) => b.replace(/\n*## Sync after completing tracker-linked work[\s\S]*?(?=\n<!-- END pm-conductor rules -->)/, "");
-  assert.equal(stripReminder(now), stripReminder(before),
+  assert.equal(stripReminder(stripRefreshGate(now)), stripReminder(before),
     "with the reminder removed from both sides, the un-upgraded scope-less github block is " +
     "byte-identical to 0.26.0's — any second difference is a regression, not a repair");
-  assert.notEqual(now, before, "…and the reminder really did go, so the comparison is not vacuous");
+  assert.notEqual(stripRefreshGate(now), before,
+    "…and the reminder really did go, so the comparison is not vacuous");
 });
 
 // ─────────── 10.8: the brief's TRACKER SYNC block, governed by direction ───────────
@@ -885,4 +897,31 @@ test("an unknown verdict is refused by name", () => {
     "--external-updated-at", "2026-08-23T09:30:00Z"], { cwd }));
   assert.ok(err);
   assert.match(String(err.stderr || err.message), /unchanged\|material-change|unchanged, material-change/);
+});
+
+// ─────────── 11.4: the refresh debt survives a compaction, on both surfaces ───────────
+
+test("a tracker-linked active epic shows its refresh debt in the brief and PROJECT.md", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code", "--external-id", "7",
+       "--external-url", "https://x.test/7"], { cwd });
+  run(["set-active", "a"], { cwd });
+  assert.match(parseBrief(cwd), /refresh/i, "the brief must re-teach the debt to a compacted session");
+  assert.match(projectMd(cwd), /refresh/i, "and the rendered record must carry it too");
+});
+
+test("a local-origin active epic owes no tracker refresh and gets the local instruction", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "local", "--lane", "superpowers"], { cwd });
+  run(["set-active", "local"], { cwd });
+  const state = readState(cwd);
+  assert.ok(!state.epics.find(e => e.id === "local").trackerRefreshNeeded);
+  assert.ok(!parseBrief(cwd).match(/owes a tracker refresh/i),
+    "an epic with no external origin must not be told to re-read a tracker item");
+  // The local re-read is INSTRUCTION and records nothing in state — it lives in the rules block.
+  const rules = run(["rules"], { cwd });
+  assert.match(rules, /re-read its local source|plan document/i);
+  assert.match(rules, /nothing is recorded in state|records nothing/i);
 });

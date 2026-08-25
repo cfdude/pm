@@ -177,7 +177,7 @@ test("update-epic blocks archiving an openspec-lane epic without a passing gate2
   const cwd = tmpRepo(); run(["init"], { cwd });
   run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
   const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
-  assert.ok(expectFail(() => run(["update-epic", "spec-epic", "--status", "archived"], { cwd })));
+  assert.ok(expectFail(() => run(["update-epic", "spec-epic", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd })));
   assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
 });
 
@@ -185,7 +185,7 @@ test("update-epic blocks archiving an openspec-lane epic with a gate2 fail verdi
   const cwd = tmpRepo(); run(["init"], { cwd });
   run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
   run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "fail"], { cwd });
-  assert.ok(expectFail(() => run(["update-epic", "spec-epic", "--status", "archived"], { cwd })));
+  assert.ok(expectFail(() => run(["update-epic", "spec-epic", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd })));
 });
 
 test("update-epic allows archiving an openspec-lane epic once gate2 has a passing verdict", () => {
@@ -194,7 +194,7 @@ test("update-epic allows archiving an openspec-lane epic once gate2 has a passin
   run(["record-gate-review", "spec-epic", "--gate", "1", "--verdict", "pass", "--base-sha", "aaaaaaa", "--head-sha", "bbbbbbb"], { cwd });
   run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "pass", "--base-sha", "aaaaaaa", "--head-sha", "bbbbbbb"], { cwd });
 
-  run(["update-epic", "spec-epic", "--status", "archived"], { cwd });
+  run(["update-epic", "spec-epic", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd });
 
   const epic = readState(cwd).epics.find(e => e.id === "spec-epic");
   assert.equal(epic.status, "archived");
@@ -204,7 +204,7 @@ test("update-epic archiving a non-openspec-lane epic is unaffected by gate-revie
   const cwd = tmpRepo(); run(["init"], { cwd });
   run(["add-epic", "--id", "cc-epic", "--lane", "claude-code"], { cwd });
 
-  run(["update-epic", "cc-epic", "--status", "archived"], { cwd });
+  run(["update-epic", "cc-epic", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd });
 
   const epic = readState(cwd).epics.find(e => e.id === "cc-epic");
   assert.equal(epic.status, "archived");

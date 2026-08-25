@@ -346,6 +346,27 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
       "tracker or several (primary + secondary) configured.",
     );
   }
+  // The refresh gate — instruction, always, whether or not any tracker is configured. It keys on
+  // PROVENANCE, so it has something to say for every epic: the tracker-linked case records a
+  // verdict, the local-origin case records nothing at all.
+  lines.push(
+    "",
+    "## Re-read the source before an epic becomes the work",
+    "",
+    "An epic becoming active is the moment specs or a plan get drawn for it. Before that, re-read",
+    "what it is FOR. Which source depends on provenance, never on any tracker's direction:",
+    "- The epic has an `externalId` → re-read the LINKED ITEM (body, comments, labels, state), then",
+    "  record what you found: `record-tracker-refresh <id> --verdict unchanged|material-change",
+    "  --external-updated-at <iso> [--summary \"<what changed>\"]`. The timestamp is the tracker's",
+    "  own, never a local clock reading, and recording it clears the obligation.",
+    "- The epic has NO `externalId` → re-read its local source: its plan document, or its OpenSpec",
+    "  proposal plus its tasks. This one is instruction only — nothing is recorded in state for it,",
+    "  and `record-tracker-refresh` refuses such an epic by name rather than accepting a verdict",
+    "  about a linked item that does not exist.",
+    "An outward-mirrored epic owes the same look as an inward-born one: a linked item accumulates",
+    "third-party context regardless of which way it was born. Origin decides only whose ask wins",
+    "when the item and a local spec disagree.",
+  );
   lines.push(RULES_END, "");
   return lines.join("\n");
 }

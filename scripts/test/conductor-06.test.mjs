@@ -151,7 +151,7 @@ test("a resolved depends-on (dependency archived) does not starve the dependent 
   run(["add-epic", "--id", "done-dep", "--lane", "claude-code", "--priority", "P3"], { cwd });
   run(["add-epic", "--id", "dependent", "--lane", "claude-code", "--priority", "P0",
        "--link", "depends-on:done-dep:needs done-dep"], { cwd });
-  run(["update-epic", "done-dep", "--status", "archived"], { cwd });
+  run(["update-epic", "done-dep", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd });
   const brief = parseBrief(cwd);
   assert.doesNotMatch(brief, /ready but waiting on/);
   // dependent is now the only queued epic left (done-dep archived, excluded from NEXT UP).

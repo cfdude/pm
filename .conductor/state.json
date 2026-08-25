@@ -2568,6 +2568,18 @@
       "reconcileNeeded": false,
       "externalId": "130",
       "externalUrl": "https://github.com/cfdude/pm/issues/130"
+    },
+    {
+      "id": "gh-131-retry-half-unverified",
+      "title": "The retry half of retry-once-then-skip has no test that fails when removed",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "131",
+      "externalUrl": "https://github.com/cfdude/pm/issues/131"
     }
   ],
   "detourStack": [],
@@ -2577,6 +2589,6 @@
     "repo": "cfdude/pm"
   },
   "platform": "claude-code",
-  "revision": 40,
+  "revision": 41,
   "reviewMode": "thorough"
 }
