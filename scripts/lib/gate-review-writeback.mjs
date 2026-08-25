@@ -8,7 +8,12 @@ import { parseFlags } from "./add-epic.mjs";
 import { render } from "./render.mjs";
 
 const KNOWN_GATE_NUMBERS = ["1", "2"];
-const KNOWN_GATE_VERDICTS = ["pass", "fail"];
+/** What an AGENT may pass to `--verdict`. Exported so a test binds to the list itself rather
+ *  than transcribing it, and deliberately NOT the same list as constants.mjs's
+ *  STORABLE_GATE_VERDICTS: the engine additionally stores `ungated`, and admitting that value
+ *  here would let the party whose work would otherwise be reviewed certify that no review
+ *  happened. Two lists is the mechanism; one list with a comment is not. */
+export const KNOWN_GATE_VERDICTS = ["pass", "fail"];
 
 export function recordGateReview() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
