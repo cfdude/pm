@@ -700,3 +700,49 @@ test("issue #42 in two secondary repos registers as two DISTINCT epics", () => {
   assert.match(block, /when both sides carry one/,
     "and the block states the nuance: a URL-less legacy epic must not falsely block a distinct one");
 });
+
+// ─────────── 11.6: the refresh block is opt-out; the reconcile block is not ───────────
+
+/** Run the PreToolUse gate-guard hook and report whether it blocked (exit 2). */
+function guardBlocks(cwd) {
+  const r = spawnSync("node", [ENGINE, "gate-guard"], {
+    cwd, env: { ...process.env, CLAUDE_PROJECT_DIR: cwd, PM_CACHE_ROOT: EMPTY_CACHE },
+    encoding: "utf8", input: JSON.stringify({ tool_input: {} }),
+  });
+  return { blocked: r.status === 2, message: (r.stderr || "") };
+}
+
+function repoWithActiveEpic(extra) {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const state = readState(cwd);
+  state.epics = [{ id: "a", title: "A", priority: "P1", status: "active", role: "epic",
+    lane: "claude-code", links: [], ...extra }];
+  state.active = "a";
+  writeState(cwd, state);
+  return cwd;
+}
+
+test("the tracker-refresh block honors the gate-guard setting", () => {
+  const cwd = repoWithActiveEpic({ externalId: "7", trackerRefreshNeeded: true });
+  run(["set-gate-guard", "on"], { cwd });
+  const on = guardBlocks(cwd);
+  assert.equal(on.blocked, true, "with the guard ON, an outstanding tracker refresh blocks");
+  assert.match(on.message, /refresh/i);
+
+  run(["set-gate-guard", "off"], { cwd });
+  assert.equal(guardBlocks(cwd).blocked, false,
+    "with the guard OFF it must not block — an agent that is offline, unauthenticated, or " +
+    "facing a deleted upstream item has to be able to proceed honestly rather than record a " +
+    "blind `unchanged`");
+});
+
+test("turning the guard off does not weaken the unconditional reconcile block", () => {
+  for (const setting of ["on", "off"]) {
+    const cwd = repoWithActiveEpic({ reconcileNeeded: true });
+    run(["set-gate-guard", setting], { cwd });
+    const r = guardBlocks(cwd);
+    assert.equal(r.blocked, true, `reconcile must block with the guard ${setting}`);
+    assert.match(r.message, /reconcile/i);
+  }
+});

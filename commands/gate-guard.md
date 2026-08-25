@@ -21,11 +21,22 @@ policy was reconsidered and approved.
 reconcile-owed block — the only way past it is to actually run the reconcile gate (delegate to
 the reconciler agent per the conductor skill's POP protocol), which clears `reconcileNeeded`.
 
+## Opt-OUT for the tracker-refresh case
+
+A second check rides the same hook and behaves the opposite way: when the active epic owes a
+**tracker refresh** (it is linked to an external item and became active without that item being
+re-read), `Edit`/`Write`/`NotebookEdit` are blocked **only while `set-gate-guard on`**. Turning
+the guard off silences this one and leaves the reconcile block above untouched.
+
+The escape hatch is deliberate and not optional. An agent that is offline, unauthenticated, or
+facing a deleted upstream item has to be able to proceed honestly — a `--verdict unchanged`
+recorded blind is a worse outcome than a bypass someone can see. Clear the obligation properly
+with `record-tracker-refresh <id> --verdict unchanged|material-change --external-updated-at <iso>`.
+
 ## `set-gate-guard on|off`
 
-The repo-level `gateGuard` flag in `.conductor/state.json` still exists and is still toggled by
-this command, reserved for any future generalization of the hook to other checks. It has no
-effect on the reconcile-owed check described above.
+The repo-level `gateGuard` flag in `.conductor/state.json` is what the tracker-refresh check
+above reads. It has no effect on the reconcile-owed check, which is unconditional.
 
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" set-gate-guard on

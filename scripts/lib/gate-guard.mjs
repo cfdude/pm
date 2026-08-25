@@ -39,11 +39,29 @@ export function gateGuardCheck() {
   readStdin();                          // drain, unused — this check needs no tool_input
   const state = loadState();
   const active = state.active ? state.epics.find(e => e.id === state.active) : null;
-  if (active && active.reconcileNeeded) {
+  if (!active) return;
+  // UNCONDITIONAL. `set-gate-guard off` does not reach this case: writing source before the
+  // reconcile gate runs on a detour POP is the single highest-stakes skip, and the opt-in was
+  // never actually turned on in real usage.
+  if (active.reconcileNeeded) {
     process.stderr.write(
       `conductor: gate guard — '${active.id}' still owes a reconcile (a detour touched shared ` +
       "code). Run the reconcile gate (reconciler agent, per the conductor skill's POP protocol) " +
       "before writing source. Turn the guard off with `set-gate-guard off` if you need to bypass.\n"
+    );
+    process.exit(2);
+  }
+  // OPT-OUT, under the repo-level `gateGuard` flag — the generalization this hook's own source
+  // pre-authorized. The escape hatch is not optional here: an agent that is offline,
+  // unauthenticated, or facing a deleted upstream item must be able to proceed honestly, and a
+  // `--verdict unchanged` recorded blind is a worse outcome than an honest bypass.
+  if (state.gateGuard === true && active.trackerRefreshNeeded) {
+    process.stderr.write(
+      `conductor: gate guard — '${active.id}' owes a tracker refresh: re-read its linked item ` +
+      "(body, comments, labels, state) before drawing specs or a plan for it, then record the " +
+      "verdict with `record-tracker-refresh <id> --verdict unchanged|material-change " +
+      "--external-updated-at <iso>`. Turn the guard off with `set-gate-guard off` if you cannot " +
+      "reach the tracker — an honest bypass beats a blind `unchanged`.\n"
     );
     process.exit(2);
   }
