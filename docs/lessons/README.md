@@ -32,6 +32,7 @@ trigger fires, not before.
 | [`route-cross-repo-findings-do-not-file-them`](route-cross-repo-findings-do-not-file-them.md) | An audit or sweep produces findings about a codebase you do not own. | Route a cross-repo finding to the session that owns the code. Do not file it yourself. | — |
 | [`shared-checkout-parallel-agents`](shared-checkout-parallel-agents.md) | About to run two or more subagents that will each commit to the same git checkout. | Parallel subagents get isolated worktrees or they run serially. Never two agents committing to one checkout. | 🔔 |
 | [`slash-commands-run-the-installed-plugin`](slash-commands-run-the-installed-plugin.md) | Developing a plugin, CLI, or tool while also using that tool inside the same session. | When developing the tool itself, invoke the checkout directly (`node scripts/conductor.mjs <verb>`), never the installed slash command. | 🔔 |
+| [`worktrees-with-claude-agents`](worktrees-with-claude-agents.md) | About to run Claude agents in git worktrees, or about to kill an agent that is running a test suite in one. | Worktrees fix CORRECTNESS, not RESOURCE contention. One writing agent per machine when the suite is expensive. Always run the preflight and the postflight — scripts/wt-preflight.sh and scripts/wt-cleanup.sh. | 🔔 |
 
 ## Where the rules actually live
 
@@ -52,6 +53,7 @@ A lessons file nobody reads is a data graveyard — the same objection that made
 | `route-cross-repo-findings-do-not-file-them` | .claude/skills/dogfooding/SKILL.md |
 | `shared-checkout-parallel-agents` | subagent brief template; CLAUDE.md § Subagents & worktrees |
 | `slash-commands-run-the-installed-plugin` | subagent brief template |
+| `worktrees-with-claude-agents` | scripts/wt-preflight.sh, scripts/wt-cleanup.sh; detect matcher on worktree creation |
 
 This repo measured the difference: a rule carried by a **required task** reached **14/14** adoption
 in the audited corpus; the same rule as a **prose bullet** reached **3/15**. A lesson whose rule
