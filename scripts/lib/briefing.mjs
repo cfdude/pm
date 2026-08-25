@@ -184,12 +184,13 @@ export function buildBrief(state, { consume = false } = {}) {
     L.push("");
   }
 
-  // Non-blocking sync nudge — any tracker (primary or secondary) configured means new issues
-  // could have appeared externally with no in-session event to surface them. Deliberately no
-  // "time since last sync": session restarts here are infrequent enough (after real chunks of
-  // work) that a bare nudge is enough — the agent decides whether it's worth the round trip.
+  // Non-blocking sync nudge — only where an inward procedure is actually emittable. An
+  // outward-only tracker cannot produce new inward items, and a scope-less inward tracker names
+  // nothing to list; in both cases the rules block gives no inward procedure to run, so the
+  // nudge would instruct an action the repo has no instructions for. Deliberately no "time
+  // since last sync": session restarts here are infrequent enough that a bare nudge is enough.
   const trackerCount = (tracker ? 1 : 0) + secondaryTrackers.length;
-  if (trackerCount > 0) {
+  if (inwardHere && trackerCount > 0) {
     const systems = [...(tracker ? [tracker.system] : []), ...secondaryTrackers.map(st => st.system)];
     const label = trackerCount === 1 ? "tracker" : "trackers";
     L.push(`💡 ${trackerCount} ${label} configured (${systems.join(", ")}) — consider \`/pm:sync\` this ` +

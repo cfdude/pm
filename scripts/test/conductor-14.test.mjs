@@ -429,3 +429,21 @@ test("an un-upgraded github-issues repo stops being told to create issues it nev
   assert.ok(!rules.includes(OUTWARD_HEADING),
     "the two emitters must agree — the brief's silence matches the rules block's");
 });
+
+// ─────────── 10.9: the sync nudge (deliberate emitted-output change #2) ───────────
+
+test("the sync nudge is emitted only where an inward procedure exists", () => {
+  const outwardOnly = briefFor({ system: "jira", projectKey: "JOB", direction: "outward" });
+  assert.ok(!outwardOnly.includes("consider `/pm:sync`"),
+    "an outward-only tracker cannot produce new inward items, so there is nothing to nudge for");
+
+  const withSecondary = briefFor(
+    { system: "jira", projectKey: "JOB", direction: "outward" },
+    { secondaryTrackers: [{ system: "github-issues", repo: "a/b", role: "secondary" }] });
+  assert.match(withSecondary, /consider `\/pm:sync`/);
+
+  const scopeless = briefFor({ system: "github-issues" });
+  assert.ok(!scopeless.includes("consider `/pm:sync`"),
+    "a scope-less inward tracker names nothing to list, so the nudge instructs an action the " +
+    "repo has no procedure for");
+});
