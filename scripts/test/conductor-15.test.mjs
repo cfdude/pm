@@ -84,3 +84,44 @@ test("7.5: an un-upgraded 0.26.0 state briefs without an upgrade nudge for its o
   const brief = parseBrief(cwd);
   assert.ok(brief.includes("CONDUCTOR STATE"), "the brief must compose against un-upgraded state");
 });
+
+// ─────────────────────── 7.1: the 0.27.0 MIGRATIONS entry ───────────────────────
+//
+// One entry, keyed to the release that introduced it, applied exactly once per repo. A
+// MIGRATIONS entry is the one kind of code in this engine that cannot be corrected by shipping
+// a fix: it applies, `pmVersion` is stamped, and it never replays — so the properties asserted
+// here (it runs, it runs once, and running it twice changes nothing) are the whole safety net.
+
+const stateBytes = (cwd) => fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+
+/** Upgrade with the plugin version pinned, so a test can exercise the STAMPED-past-the-entry
+ *  case rather than only the replay case the repo's own in-flight version produces. */
+function upgradeAt(cwd, version) {
+  return runCombined(["upgrade"], { cwd, env: { CLAUDE_PLUGIN_ROOT: fixturePluginRoot(version) } });
+}
+
+test("7.1: a 0.26.0 state applies exactly one migration, and the second run is a byte-identical no-op", () => {
+  const cwd = repoAt0260();
+  const first = upgradeAt(cwd, "0.27.0");
+  assert.match(first, /upgraded \(1 migration\(s\)\)/,
+    "the 0.27.0 entry must be the one migration a 0.26.0-stamped repo is missing");
+  assert.equal(readState(cwd).pmVersion, "0.27.0");
+  const after = stateBytes(cwd);
+  const second = upgradeAt(cwd, "0.27.0");
+  assert.match(second, /upgraded \(0 migration\(s\)\)/, "a stamped repo replays nothing");
+  assert.equal(stateBytes(cwd), after,
+    "the second upgrade must be byte-identical — the no-op-save rule means even `revision` " +
+    "must not move, or PROJECT.md and state.json churn on every upgrade for no reason");
+});
+
+test("7.1: replaying the entry against its own output changes nothing", () => {
+  // The repo's own plugin.json is still at the PRIOR version while this release is in flight,
+  // so `stampVersion` leaves pmVersion behind the entry and the entry replays on every upgrade.
+  // That is the harsher test of idempotence, and it must hold too: an entry that is only
+  // idempotent because it is skipped is not idempotent.
+  const cwd = repoAt0260();
+  run(["upgrade"], { cwd });
+  const after = stateBytes(cwd);
+  run(["upgrade"], { cwd });
+  assert.equal(stateBytes(cwd), after, "applying the entry to its own output must change nothing");
+});

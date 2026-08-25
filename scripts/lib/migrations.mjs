@@ -40,6 +40,17 @@ const MIGRATIONS = [
       if (!state.platform) state.platform = "claude-code";
     },
   },
+  // 0.27.0 — the conductor-tells-the-truth release. Two stamps, one entry: the direction each
+  // existing tracker ALREADY behaves with, and a terminal outcome on every archived epic.
+  // Both are additive, both are guarded on the field being ABSENT, and neither reads anything
+  // outside `state` — a migration that consulted disk would produce a different result on a
+  // machine whose checkout is at a different commit, which is not a property a one-shot,
+  // never-replayed transformation may have.
+  {
+    release: "0.27.0",
+    note: "stamp tracker direction and every archived epic's terminal outcome",
+    apply() {},
+  },
 ];
 
 export function upgrade() {
