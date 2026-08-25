@@ -368,9 +368,11 @@ test("7.6: the rollback procedure is documented where a user upgrading will read
 
 /** A repo with `total` archived change directories, `withEpic` of which already have an epic. */
 function archiveFixture({ total, withEpic, ticked = 1, unticked = 0 } = {}) {
+  // Deliberately NOT via `init`: init syncs, and that first sync is itself the backfill run, so
+  // a fixture built on top of it would start already marked and could never exercise the
+  // first-run branch.
   const cwd = tmpRepo();
-  run(["init"], { cwd });
-  const state = readState(cwd);
+  const state = { version: 1, active: null, detourStack: [], epics: [], pmVersion: "0.26.0", platform: "claude-code" };
   for (let i = 0; i < total; i++) {
     const id = `change-${String(i).padStart(2, "0")}`;
     const dir = path.join(cwd, "openspec", "changes", "archive", `2026-08-0${(i % 9) + 1}-${id}`);
@@ -600,4 +602,62 @@ test("8.5: a backfilled epic gets no gate2 entry at all, and is never named as a
     assert.ok(!new RegExp(`ungated[^\\n]*${id}|${id}[^\\n]*ungated`).test(brief),
       `${id}: no backfilled epic is named as an ungated archive`);
   }
+});
+
+// ───────────── 8.6: archiveBackfilledAt is a PRESENCE marker ─────────────
+//
+// Registering history changes a repo's epic counts, and those counts are the input to every
+// effectiveness measurement taken from conductor state — so the run that changes them says so.
+// Nothing is ever COMPARED against the timestamp: forward-only registration derives from "this
+// archived change has no epic", and the field's only behavioral job is deciding whether a run
+// announces itself as the historical backfill.
+
+test("8.6: the first backfill announces the count and the ids, and records that it ran", () => {
+  const cwd = archiveFixture({ total: 4, withEpic: 1 });
+  assert.ok(!("archiveBackfilledAt" in readState(cwd)), "the fixture starts un-backfilled");
+  const out = runCombined(["sync"], { cwd });
+  assert.match(out, /archive backfill/i, "the historical registration announces itself");
+  assert.match(out, /\b3\b/, "the count is stated, so the change in the repo's numbers is attributable");
+  for (const id of ["change-01", "change-02", "change-03"]) {
+    assert.ok(out.includes(id), `${id}: the ids are named, not just counted`);
+  }
+  assert.ok(readState(cwd).archiveBackfilledAt, "and the marker is written");
+});
+
+test("8.6: a repo already carrying the marker registers nothing and announces nothing", () => {
+  const cwd = archiveFixture({ total: 4, withEpic: 1 });
+  runCombined(["sync"], { cwd });
+  const after = stateBytes(cwd);
+  const out = runCombined(["sync"], { cwd });
+  assert.ok(!/archive backfill/i.test(out), "history is never re-announced");
+  assert.equal(stateBytes(cwd), after, "and never re-registered");
+});
+
+test("8.6: a state file with no marker loads unchanged, backfills once, and does not repeat", () => {
+  const cwd = repoAt0260();
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", "2026-07-01-historical"), { recursive: true });
+  const before = readState(cwd);
+  assert.ok(!("archiveBackfilledAt" in before), "0.26.0 wrote no such field");
+  const first = runCombined(["sync"], { cwd });
+  assert.match(first, /archive backfill/i);
+  assert.ok(readState(cwd).epics.some(e => e.id === "historical"));
+  const second = runCombined(["sync"], { cwd });
+  assert.ok(!/archive backfill/i.test(second));
+});
+
+test("8.6: the marker is absent from defaultState, or its presence would stop marking anything", () => {
+  const src = fs.readFileSync(path.join(REPO, "scripts", "lib", "state.mjs"), "utf8");
+  assert.ok(!src.includes("archiveBackfilledAt"),
+    "defaultState() feeds loadState()'s spread, so a key seeded there is present on every " +
+    "state ever loaded — and a presence marker that is always present marks nothing");
+});
+
+test("8.6: a change archived AFTER the backfill is registered without a backfill announcement", () => {
+  const cwd = archiveFixture({ total: 2, withEpic: 0 });
+  runCombined(["sync"], { cwd });
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", "2026-08-30-archived-later"), { recursive: true });
+  const out = runCombined(["sync"], { cwd });
+  assert.ok(readState(cwd).epics.some(e => e.id === "archived-later"),
+    "forward reconciliation continues — the marker suppresses the ANNOUNCEMENT, not the work");
+  assert.ok(!/archive backfill/i.test(out), "a change archived since is new information, not history");
 });

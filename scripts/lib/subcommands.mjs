@@ -309,9 +309,26 @@ export function sync(quiet = false) {
   // Like the heal below and the two archived-at-creation paths, it supplies no disposition,
   // receives no named receiver from anyone, and reflects a record rather than a judgment — so
   // the outcome refusal, the deferral assertion and the handoff demand do not bind it.
-  backfillArchive(state);
+  // PRESENCE is the marker — nothing is ever compared against the timestamp. Read BEFORE the
+  // registration, because the registration is what decides whether there is anything to
+  // announce, and written after, so a run that registered nothing still records that history
+  // has been accounted for.
+  const firstBackfill = !("archiveBackfilledAt" in state);
+  const backfilled = backfillArchive(state);
+  if (firstBackfill) state.archiveBackfilledAt = new Date().toISOString();
   reconcileArchived(state);
   saveState(state);
+  // Said even under `quiet`, which init passes to suppress routine per-epic chatter. The
+  // historical backfill is the one thing here that MUST NOT be quiet: it alters a repo's epic
+  // counts, and those counts are the input to every effectiveness measurement taken from
+  // conductor state. A count that moved with nobody told is the silent side effect this
+  // capability is defined against.
+  if (backfilled.length) {
+    process.stderr.write(firstBackfill
+      ? `conductor: archive backfill — registered ${backfilled.length} historical archived ` +
+        `change(s) the conductor never held: ${backfilled.join(", ")}\n`
+      : `conductor: registered ${backfilled.length} newly archived change(s): ${backfilled.join(", ")}\n`);
+  }
   if (!quiet) {
     process.stderr.write(`conductor: synced (${added} new epic(s) added as untriaged)\n`);
     // What sync instructs EXTERNALLY follows direction. The engine performs none of it — it
