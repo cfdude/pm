@@ -157,6 +157,37 @@ export function deferralAssertion({ deferrals = [], declined = [], assertedAt } 
   };
 }
 
+/** Validate a RELEASE EXCLUSION — the fourth scope of the one record. Returns an error STRING
+ *  naming what is wrong, or null; never exits and never writes, exactly as dispositionError()
+ *  does, so the same rule is enforceable from a CLI verb and from a gate alike.
+ *
+ *  Same required-reason rule, applied without an `outcome`: an exclusion is a scoping call about
+ *  ONE release and never an ending, so there is no terminal outcome to name — the excluded epic
+ *  stays in the backlog. That is not a parallel shape; it is how the record already works for
+ *  the declined-deferral scope, whose entries carry `{what, reason}` and no outcome either.
+ *
+ *  The reason is what distinguishes an exclusion from an epic nobody considered. Without it the
+ *  two are indistinguishable in the record, which is the silence this capability removes — so it
+ *  is required here for every exclusion, with no `delivered`-shaped exemption to hide behind. */
+export function releaseDeferralError({ epic, reason } = {}) {
+  if (!nonEmpty(epic)) return "a release deferral must name the epic it excludes";
+  if (!nonEmpty(reason)) {
+    return "a release deferral requires a non-empty reason (--reason \"<why it was cut>\") — " +
+      "an exclusion with no reason is indistinguishable from an epic nobody considered";
+  }
+  return null;
+}
+
+/** Build a RELEASE EXCLUSION record: `{epic, reason, recordedAt}`, recorded against the
+ *  epic/release pair and stored in `state.releases[].deferred[]`. Throws on an invalid record
+ *  rather than returning a partial one — a caller that skipped releaseDeferralError() must not
+ *  be able to write an exclusion the rule forbids. */
+export function releaseDeferral({ epic, reason, recordedAt } = {}) {
+  const err = releaseDeferralError({ epic, reason });
+  if (err) throw new Error(err);
+  return { epic: epic.trim(), reason: reason.trim(), recordedAt: recordedAt || new Date().toISOString() };
+}
+
 /** The stamp a CREATION path writes for an epic created directly at `archived`.
  *
  *  `via` exists for one case and is not a general override: where the archive backfill

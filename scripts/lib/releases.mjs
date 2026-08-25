@@ -19,6 +19,7 @@ import { epicFlagsFor } from "./constants.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { parseFlags } from "./add-epic.mjs";
 import { render } from "./render.mjs";
+import { releaseDeferral, releaseDeferralError } from "./disposition.mjs";
 
 /** The flags `release` recognizes — a PROJECTION of the shared EPIC_FLAGS registry, never a
  *  second literal. Registering a flag on `release` in that registry is the whole edit. */
@@ -65,15 +66,16 @@ export function releaseSummaries(state, epics) {
 export const releaseLine = (s) =>
   `\`${s.id}\`: ${s.members} epic${s.members === 1 ? "" : "s"}, ${s.deferred.length} deferred`;
 
-/** `release <id> --intent "<prose>" [--target <t>] [--member <epicId>]…` — create or amend a
- *  release and associate epics with it. */
+/** `release <id> --intent "<prose>" [--target <t>] [--member <epicId>]… [--defer <epicId>
+ *  --reason "<why>"]` — create or amend a release, associate epics with it, and record an
+ *  exclusion with its required reason. */
 export function release() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const argv = process.argv.slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
   if (!id) {
     process.stderr.write("conductor: release requires a release id as its first POSITIONAL argument\n");
-    process.stderr.write("usage: conductor.mjs release <id> [--intent \"<what this release is for>\"] [--target <t>] [--member <epicId>]...\n");
+    process.stderr.write("usage: conductor.mjs release <id> [--intent \"<what this release is for>\"] [--target <t>] [--member <epicId>]... [--defer <epicId> --reason \"<why it was cut>\"]\n");
     process.exit(1);
   }
   const f = parseFlags(argv.slice(1));
@@ -124,9 +126,52 @@ export function release() {
     }
   }
 
-  // Validate EVERY member before writing ANY of them, so a typo in the third `--member` cannot
-  // leave the first two associated and the command reporting a failure.
-  for (const epicId of members) knownEpic(epicId).release = id;
+  // --defer: the exclusion, carrying the reason-bearing record of group 2 — the SAME required
+  // reason, validated by disposition.mjs and not by a second rule written here. An epic may not
+  // be both a member of and deferred from one release, so each write clears the other; clearing
+  // an exclusion SAYS SO on stderr, because a recorded judgment must never disappear silently.
+  const deferEpic = str(f.defer);
+  if (f.defer !== undefined && deferEpic === undefined) {
+    process.stderr.write("conductor: --defer requires an epic id\n"); process.exit(1);
+  }
+  if (deferEpic !== undefined) {
+    if (!knownEpic(deferEpic)) {
+      process.stderr.write(`conductor: --defer '${deferEpic}' is not a known epic id. Nothing was written.\n`);
+      process.exit(1);
+    }
+    if (members.includes(deferEpic)) {
+      process.stderr.write(
+        `conductor: '${deferEpic}' cannot be both a member of and deferred from '${id}' in one ` +
+        "invocation — say which one it is. Nothing was written.\n");
+      process.exit(1);
+    }
+    const derr = releaseDeferralError({ epic: deferEpic, reason: str(f.reason) });
+    if (derr) { process.stderr.write(`conductor: ${derr}\n`); process.exit(1); }
+  }
+
+  // Validate EVERY member and the deferral before writing ANY of them, so a typo in the third
+  // `--member` cannot leave the first two associated and the command reporting a failure.
+  for (const epicId of members) {
+    const wasDeferred = rel.deferred.find(d => d && d.epic === epicId);
+    if (wasDeferred) {
+      rel.deferred = rel.deferred.filter(d => !d || d.epic !== epicId);
+      process.stderr.write(
+        `conductor: '${epicId}' was deferred from '${id}' — that record is now removed ` +
+        `(it read: ${wasDeferred.reason})\n`);
+    }
+    knownEpic(epicId).release = id;
+  }
+
+  if (deferEpic !== undefined) {
+    // An excluded epic stays in the backlog. Exclusion is a scoping call about THIS release and
+    // never an ending: nothing here touches the epic's status or writes it a disposition. What
+    // it does clear is membership — an epic cannot be in a release it was cut from.
+    const epic = knownEpic(deferEpic);
+    if (epic.release === id) delete epic.release;
+    const record = releaseDeferral({ epic: deferEpic, reason: str(f.reason) });
+    const at = rel.deferred.findIndex(d => d && d.epic === deferEpic);
+    if (at === -1) rel.deferred.push(record); else rel.deferred[at] = record;
+  }
 
   saveState(state);
   render();

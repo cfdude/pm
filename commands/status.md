@@ -58,3 +58,19 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" release 0.27.0 --member <epic
   scope judgment is the thing being preserved.
 - Re-running `release <id> --intent …` amends that release in place rather than registering a
   second one.
+
+**Recording what you cut — `--defer`:**
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" release 0.27.0 --defer <epicId> --reason "<why it was cut>"
+```
+
+- **The reason is required.** It is the same reason-bearing disposition record every other
+  ending uses, at a fourth scope, and it is what distinguishes an epic deliberately excluded
+  from an epic nobody considered — leaving one queued is not an exclusion.
+- **An exclusion is not an ending.** The epic keeps its status and gets no disposition of its
+  own; it stays in the backlog because it is still work someone may do. What it does lose is
+  membership of that release — an epic cannot be in a release it was cut from.
+- Re-deferring the same epic updates its reason. Re-adding a deferred epic with `--member`
+  removes the exclusion and says on stderr what the removed record read, so a recorded judgment
+  never disappears silently.

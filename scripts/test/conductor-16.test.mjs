@@ -103,3 +103,99 @@ test("14.1 the release verb refuses what it cannot record, and writes nothing", 
   assert.match(noRelease.stderr, /9\.9\.9/);
   assert.equal(readState(cwd).epics[0].release, undefined);
 });
+
+// ─────────────────── 14.2: an exclusion is a reason-bearing record ───────────────────
+//
+// The FOURTH scope of the one disposition record, not a parallel shape: the same required-reason
+// rule, recorded against the epic/release pair. An exclusion is a scoping call about THIS
+// release and never an ending — the epic stays in the backlog, carrying no disposition of its
+// own, because it is still work someone may do.
+
+test("14.2 a deferral reason is stored against the epic/release pair and survives what happens next", () => {
+  const cwd = repoWithEpics(3);
+  run(["release", "0.27.0", "--intent", "conductor tells the truth"], { cwd });
+  run(["release", "0.27.0", "--member", "e0"], { cwd });
+  run(["release", "0.27.0", "--defer", "e1",
+    "--reason", "depends on #133 landing and on a progress signal this release is still changing"], { cwd });
+
+  const rel = readState(cwd).releases[0];
+  assert.equal(rel.deferred.length, 1);
+  assert.equal(rel.deferred[0].epic, "e1");
+  assert.match(rel.deferred[0].reason, /depends on #133 landing/);
+  assert.match(rel.deferred[0].recordedAt, /^\d{4}-\d{2}-\d{2}T/);
+
+  // Everything that happens after the call was made: the release is superseded by the next one,
+  // the excluded epic is archived elsewhere, the record is re-saved several times over. The
+  // reason is still there — that is the whole point of recording it outside a transcript.
+  run(["release", "0.28.0", "--intent", "the one after"], { cwd });
+  run(["update-epic", "e1", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd });
+  run(["render"], { cwd });
+  const after = readState(cwd).releases.find(r => r.id === "0.27.0");
+  assert.deepEqual(after.deferred, rel.deferred);
+});
+
+test("14.2 an exclusion leaves the epic in the backlog rather than ending it", () => {
+  const cwd = repoWithEpics(2);
+  run(["release", "0.27.0", "--intent", "conductor tells the truth"], { cwd });
+  run(["release", "0.27.0", "--member", "e0"], { cwd });
+  run(["release", "0.27.0", "--defer", "e0", "--reason", "cut for scope"], { cwd });
+
+  const st = readState(cwd);
+  const e0 = st.epics.find(e => e.id === "e0");
+  assert.equal(e0.status, "queued");            // still backlog, not ended
+  assert.equal(e0.disposition, undefined);      // an exclusion is not a terminal disposition
+  assert.equal(e0.release, undefined);          // and it is no longer a member of that release
+  assert.equal(st.releases[0].deferred[0].epic, "e0");
+});
+
+test("14.2 an epic nobody considered is NEITHER in the release nor deferred from it", () => {
+  const cwd = repoWithEpics(3);
+  run(["release", "0.27.0", "--intent", "conductor tells the truth"], { cwd });
+  run(["release", "0.27.0", "--member", "e0"], { cwd });
+  run(["release", "0.27.0", "--defer", "e1", "--reason", "cut for scope"], { cwd });
+
+  const st = readState(cwd);
+  const e2 = st.epics.find(e => e.id === "e2");
+  assert.equal(e2.status, "queued");
+  assert.equal(e2.release, undefined);
+  assert.equal(st.releases[0].deferred.some(d => d.epic === "e2"), false);
+});
+
+test("14.2 a deferral with no reason is refused and nothing is written", () => {
+  const cwd = repoWithEpics(1);
+  run(["release", "0.27.0", "--intent", "conductor tells the truth"], { cwd });
+  // Asserted as the REFUSAL, not merely as a non-zero exit mentioning the word "reason": with
+  // the rule disabled, the verb crashes on `reason.trim()` and node prints the offending source
+  // line, which contains the word too. A crash is not a refusal, so the message is named and a
+  // TypeError is explicitly excluded.
+  const err = expectFail(() => run(["release", "0.27.0", "--defer", "e0"], { cwd }));
+  assert.match(err.stderr, /requires a non-empty reason/);
+  assert.doesNotMatch(err.stderr, /TypeError/);
+  assert.deepEqual(readState(cwd).releases[0].deferred, []);
+  // A valueless --reason is the same silence with a flag in front of it.
+  const blank = expectFail(() => run(["release", "0.27.0", "--defer", "e0", "--reason"], { cwd }));
+  assert.match(blank.stderr, /requires a non-empty reason/);
+  assert.doesNotMatch(blank.stderr, /TypeError/);
+  assert.deepEqual(readState(cwd).releases[0].deferred, []);
+});
+
+test("14.2 re-deferring the same epic updates the reason rather than recording it twice", () => {
+  const cwd = repoWithEpics(1);
+  run(["release", "0.27.0", "--intent", "conductor tells the truth"], { cwd });
+  run(["release", "0.27.0", "--defer", "e0", "--reason", "first reading"], { cwd });
+  run(["release", "0.27.0", "--defer", "e0", "--reason", "the reason that survived"], { cwd });
+  const rel = readState(cwd).releases[0];
+  assert.equal(rel.deferred.length, 1);
+  assert.equal(rel.deferred[0].reason, "the reason that survived");
+});
+
+test("14.2 re-including a deferred epic removes the record and SAYS so — never silently", () => {
+  const cwd = repoWithEpics(1);
+  run(["release", "0.27.0", "--intent", "conductor tells the truth"], { cwd });
+  run(["release", "0.27.0", "--defer", "e0", "--reason", "cut on Tuesday"], { cwd });
+  const out = runCombined(["release", "0.27.0", "--member", "e0"], { cwd });
+  assert.match(out, /cut on Tuesday/);
+  const st = readState(cwd);
+  assert.deepEqual(st.releases[0].deferred, []);
+  assert.equal(st.epics[0].release, "0.27.0");
+});

@@ -179,7 +179,10 @@ export const EPIC_FLAGS = [
   // The interactive archive verb's disposition. `key` is `disposition` for both: they are two
   // halves of ONE record the verb builds and writes together, never two epic fields.
   { flag: "outcome", key: "disposition", commands: ["update-epic"], write: "custom" },
-  { flag: "reason", key: "disposition", commands: ["update-epic"], write: "custom" },
+  // Also `release`'s: an exclusion's reason IS a disposition reason — the same required-reason
+  // rule at a fourth scope — so it shares this entry rather than getting a second one under the
+  // same name, which epicFlagsFor() would then project twice.
+  { flag: "reason", key: "disposition", commands: ["update-epic", "release"], write: "custom" },
   // The deferral assertion. Three flags, ONE record: `--deferral` names work that moved to a
   // registered epic, `--declined-deferral` records a deliberate decline with its reason, and
   // `--no-deferrals` is the explicit "there are none" — which must be sayable, or an absence
@@ -203,6 +206,11 @@ export const EPIC_FLAGS = [
   { flag: "intent", key: null, commands: ["release"], repeats: true, write: "custom" },
   { flag: "target", key: null, commands: ["release"], write: "custom" },
   { flag: "member", key: "release", commands: ["release"], repeats: true, write: "custom" },
+  // The exclusion. `--defer <epicId> --reason "<why>"` records one epic cut from one release,
+  // so `--defer` is deliberately NOT repeatable: a repeatable `--defer` with a single `--reason`
+  // would silently attach one reason to several exclusions, which is the reason-bearing record
+  // saying something nobody wrote.
+  { flag: "defer", key: null, commands: ["release"], write: "custom" },
   { flag: "review-mode", key: "reviewMode", commands: ["update-epic"] },
   { flag: "add-story", key: "stories", commands: ["update-epic"], write: "append" },
   { flag: "story", key: null, commands: ["update-epic"], write: "custom" },
