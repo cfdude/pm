@@ -342,3 +342,31 @@ test("15.2 commit-based verification is a numbered item on every emitted surface
     assert.doesNotMatch(text, /^\s*[-*] \*\*Verify against the commit/m, `${rel} must not carry it as a bullet`);
   }
 });
+
+// ─────────────────── 15.3: the lifecycle-marker obligation ───────────────────
+//
+// The engine infers lifecycle exclusion from NOTHING — the marker is agent-declared, one fixed
+// literal on the task line. An obligation nobody is told about is a feature that is expressible
+// and never exercised, so the literal token itself has to appear in the text pm emits, in the
+// two places an agent actually reads: the rules block and the brief.
+
+test("15.3 the lifecycle-marker obligation names the literal token on both emitted surfaces", () => {
+  const cwd = repoWithEpics(1);
+  for (const [surface, text] of [["rules block", rulesText(cwd)], ["brief", parseBrief(cwd)]]) {
+    assert.match(text, /<!-- pm:lifecycle -->/, `the ${surface} must name the literal token`);
+    // AUTHORED **or amended** — a source written before this capability existed never gets the
+    // marker under an authoring-time-only rule, and those are exactly the sources whose archive
+    // task is unmarked today.
+    assert.match(text, /amend/i, `the ${surface} must cover amending an existing source`);
+    // The always-qualifying case, named so it is not a judgment call.
+    assert.match(text, /archives the change itself/i,
+      `the ${surface} must name the self-referential archive task as always qualifying`);
+  }
+});
+
+test("15.3 the conductor skill carries the same obligation with the same literal", () => {
+  const text = shipped("skills/conductor/SKILL.md");
+  assert.match(text, /<!-- pm:lifecycle -->/);
+  assert.match(text, /amend/i);
+  assert.match(numberedItems(text).join("\n"), /\*\*Declare lifecycle bookkeeping\.\*\*/);
+});

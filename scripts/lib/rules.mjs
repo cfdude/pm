@@ -137,6 +137,18 @@ export const GATE_PROCEDURE_ITEMS = [
       "   same epic.",
     ],
   },
+  {
+    title: "Declare lifecycle bookkeeping.",
+    lines: [
+      "A task that is bookkeeping about the change's own",
+      "   lifecycle rather than its work — above all the task that ARCHIVES THE CHANGE ITSELF, which",
+      "   always qualifies — carries the literal marker `<!-- pm:lifecycle -->` ON THE TASK LINE.",
+      "   The engine infers this from nothing else: not the wording, not the commands the text",
+      "   names, not the position in the file. Mark it at the moment the task source is AUTHORED",
+      "   OR AMENDED — a source written before this capability existed gets the marker the first",
+      "   time you touch it, or its archive task counts as outstanding work forever.",
+    ],
+  },
 ];
 
 /** The items, rendered as a numbered markdown list. */

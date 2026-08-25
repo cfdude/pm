@@ -262,6 +262,17 @@ export function buildBrief(state, { consume = false } = {}) {
     L.push("");
   }
 
+  // The lifecycle-marker obligation — instruction, always, and deliberately in the BRIEF as well
+  // as the rules block. The engine infers lifecycle exclusion from nothing: the marker is
+  // agent-declared, so an agent who never reads it leaves every self-referential archive task
+  // counting as outstanding work forever. Re-taught every briefing for the same reason the
+  // refresh debt is: a compaction is exactly when an obligation learned once is lost.
+  L.push("LIFECYCLE TASKS (pm): a task that is bookkeeping about the change's own lifecycle — above " +
+    "all the one that archives the change itself, which always qualifies — carries the literal " +
+    "`<!-- pm:lifecycle -->` on its task line. Mark it when the source is authored OR AMENDED; a " +
+    "source predating this capability gets the marker the first time you touch it.");
+  L.push("");
+
   // Re-injected RULES reminder — survives compaction because SessionStart re-fires (source=compact).
   L.push("RULES (pm): classify detours before fixing — minimal → fix+commit then `/pm:detour --minimal`; " +
     "substantial → `/pm:detour` (own proposal + PUSH). After any state change, `/pm:status`. " +

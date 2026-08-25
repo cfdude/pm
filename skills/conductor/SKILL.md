@@ -192,6 +192,14 @@ bullet reached 3/15.
    from its commit FAILS, even though the working tree holds the intended edit, the suite passes
    and both gates are green.
 
+3. **Declare lifecycle bookkeeping.** A task that is bookkeeping about the change's own lifecycle
+   rather than its work — above all the task that archives the change itself, which always
+   qualifies — carries the literal marker `<!-- pm:lifecycle -->` on the task line. The engine
+   infers this from nothing else: not the wording, not the commands the text names, not the
+   position in the file. Mark it when the task source is authored OR AMENDED — a source written
+   before this capability existed gets the marker the first time you touch it, or its archive task
+   counts as outstanding work forever.
+
 ## When something blocks progress: classify the detour FIRST
 
 Do not start fixing. Decide which kind this is and say so.
