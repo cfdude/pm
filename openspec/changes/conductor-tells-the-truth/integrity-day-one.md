@@ -88,7 +88,7 @@ on today's record, and each reason is checkable rather than asserted.
 
 Both are explained rather than silently absorbed.
 
-0. **Ten checks, not nine.** `dangling-epic-reference` was added during task 16.3, when
+0. **Ten checks, not nine.** `dangling-epic-reference` was added while fixing the BLOCKS that tasks 16.1 and 16.2 found, when
    `remove-epic` was found to strip only `links[]` while group 14 had added three more places the
    record holds an epic id. It is the sibling of `archive-directory-has-no-epic` — a reference that
    resolves to nothing — and reports 0 here.

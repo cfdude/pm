@@ -120,6 +120,11 @@ export const GATE_PROCEDURE_ITEMS = [
       "   appears in the diff. Both gates are diff-scoped and structurally cannot see an edit that",
       "   is absent from a file the diff never touched — the dominant defect class in this",
       "   repository's own audit, ~38 instances in one shard.",
+      "   A DATA reference is a call site too: for every field the change adds that holds another",
+      "   record's id, enumerate the places that write it, read it and REMOVE it. A deletion path",
+      "   that strips one holder and not its siblings leaves a dangling reference — the record",
+      "   rendering a pointer to something that no longer exists — and it is invisible to both",
+      "   gates for the same diff-scoped reason.",
     ],
   },
   {

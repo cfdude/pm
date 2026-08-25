@@ -201,6 +201,11 @@ bullet reached 3/15.
    does not, and justify each omission. A guard added at one call site while an identical sibling
    site is left untouched is a FINDING, not a detail: both gates are diff-scoped and structurally
    cannot see an edit absent from a file the diff never touched.
+   A DATA reference is a call site too: for every field the change adds that holds another
+   record's id, enumerate the places that write it, read it and REMOVE it. A deletion path that
+   strips one holder and not its siblings leaves a dangling reference — the record rendering a
+   pointer to something that no longer exists — and it is invisible to both gates for the same
+   diff-scoped reason.
 2. **Verify against the commit, not the working tree.** The commit is the unit of verification.
    Reading a file in the working tree is NOT verification. For every task, run
    `git show --stat <that task's sha>` and assert that every file the task claims to change
