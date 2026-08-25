@@ -93,8 +93,20 @@ export function render() {
   // resolveEpics() sort that buildBrief()/NEXT UP rely on.
   const byId = new Map(epics.map(e => [e.id, e]));
   const childrenOf = (id) => epics.filter(e => e.parent === id);
+  // The handoff renders on BOTH ends — the archiving epic shows it carried work out, the
+  // receiving epic shows what it inherited. Built from the dispositions themselves, using the
+  // existing free-form link vocabulary and no new link type.
+  const inherited = new Map();
+  for (const e of epics) {
+    const to = e.disposition && e.disposition.carriedTo;
+    if (to) inherited.set(to, [...(inherited.get(to) || []), e.id]);
+  }
   const epicRow = (e, depth) => {
-    const links = (e.links || []).filter(validLink).map(l => `${l.type}→${l.epic}`).join("; ") || "-";
+    const carriedOut = e.disposition && e.disposition.carriedTo
+      ? [`carried-to→${e.disposition.carriedTo}`] : [];
+    const carriedIn = (inherited.get(e.id) || []).map(from => `carried-from←${from}`);
+    const links = [...(e.links || []).filter(validLink).map(l => `${l.type}→${l.epic}`),
+      ...carriedOut, ...carriedIn].join("; ") || "-";
     const miss = missing(e) ? " ⚠ no change on disk" : "";
     const indent = depth > 0 ? "└─ ".repeat(depth) : "";
     const kids = childrenOf(e.id);

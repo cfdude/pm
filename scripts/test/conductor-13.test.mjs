@@ -1681,3 +1681,82 @@ test("after an upgrade, every archived epic carries a disposition RECORD, not a 
   assert.equal(archived.find(e => e.id === "judged").disposition.recordedBy, undefined,
     "an agent's judgment stays distinguishable from an engine stamp");
 });
+
+// ─────────────── staleness renders wherever a verdict is displayed ───────────────
+
+test("a stale verdict and a fresh one render differently on BOTH surfaces", () => {
+  for (const [reviewedUpTo, expectStale] of [[({ first }) => first, true], [({ second }) => second, false]]) {
+    const { cwd } = stalenessFixture({ attribute: ({ first, second }) => [first, second], reviewedUpTo });
+    run(["render"], { cwd });
+    const md = projectMd(cwd);
+    const brief = parseBrief(cwd);
+    for (const [surface, text] of [["PROJECT.md", md], ["the brief", brief]]) {
+      assert.equal(/⚠ stale/.test(text), expectStale,
+        `${surface} must mark a verdict stale iff it is — a refusal and a rendering that can ` +
+        "disagree about the same verdict is the divergence the shared predicate prevents");
+    }
+  }
+});
+
+test("the three no-attribution states each archive successfully and each render differently", () => {
+  // Collapsing any two of them into one branch fails two of these three assertions.
+  const seen = new Set();
+  const cases = [
+    ["absent", (e) => { delete e.attributedCommits; }],
+    ["empty", (e) => { e.attributedCommits = []; }],
+  ];
+  for (const [label, mutate] of cases) {
+    const cwd = tmpRepo();
+    run(["init"], { cwd });
+    const epic = {
+      id: "no-attr", title: "x", priority: "P1", status: "queued", role: "epic",
+      lane: "openspec", links: [], reconcileNeeded: false, attributedCommits: [],
+      gateReview: { gate2: { verdict: "pass", reviewedAt: "2026-08-01T00:00:00.000Z", baseSha: "aaa1111", headSha: "bbb2222" } },
+    };
+    mutate(epic);
+    writeState(cwd, { version: 1, active: null, detourStack: [], epics: [epic] });
+    run(["update-epic", "no-attr", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd });
+    assert.equal(readState(cwd).epics[0].status, "archived", `${label} must not be refused`);
+    const line = projectMd(cwd).split("\n").find(l => l.includes("bbb2222"));
+    assert.ok(line, `${label}: the verdict must render at all`);
+    seen.add(line.replace(/\s+/g, " "));
+  }
+  // Plus the git-unavailable case: a repository with no git history at all.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  writeState(cwd, { version: 1, active: null, detourStack: [], epics: [{
+    id: "no-git", title: "x", priority: "P1", status: "queued", role: "epic", lane: "openspec",
+    links: [], reconcileNeeded: false, attributedCommits: ["deadbee"],
+    gateReview: { gate2: { verdict: "pass", reviewedAt: "2026-08-01T00:00:00.000Z", baseSha: "aaa1111", headSha: "bbb2222" } },
+  }] });
+  run(["update-epic", "no-git", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd });
+  assert.equal(readState(cwd).epics[0].status, "archived",
+    "where git cannot answer, the verdict is unverifiable and the archive is not refused on " +
+    "staleness grounds — reporting that as `not stale` would claim a check that never ran");
+  assert.match(projectMd(cwd), /⚠ unverifiable/);
+  assert.equal(seen.size, 2,
+    "an absent array (unverifiable) and an empty one (nothing attributed) are different claims " +
+    "and must not collapse into one rendering");
+});
+
+// ─────────────── the handoff renders on both ends ───────────────
+
+test("both the archiving epic and the receiving epic show the relationship", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const plan = withPlan(cwd, "carrier", ["- [x] 1.1 Done", "- [ ] 1.2 Moved on"]);
+  run(["add-epic", "--id", "carrier", "--lane", "superpowers", "--plan", plan], { cwd });
+  run(["add-epic", "--id", "inheritor", "--lane", "claude-code"], { cwd });
+  run(["update-epic", "carrier", "--status", "archived", "--outcome", "delivered",
+    "--no-deferrals", "--carried-to", "inheritor", "--reason", "task 1.2 moved to inheritor"], { cwd });
+
+  const rows = projectMd(cwd).split("\n");
+  const carrierRow = rows.find(l => l.includes("`carrier`"));
+  const inheritorRow = rows.find(l => l.includes("`inheritor`"));
+  assert.match(carrierRow, /carried-to→inheritor/, "the archiving epic shows it carried work out");
+  assert.match(inheritorRow, /carried-from←carrier/, "the receiving epic shows what it inherited");
+
+  const brief = parseBrief(cwd);
+  assert.match(brief, /`carrier` carried work to `inheritor`/);
+  assert.match(brief, /`inheritor` inherited it from `carrier`/);
+});

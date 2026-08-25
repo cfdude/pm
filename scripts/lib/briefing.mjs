@@ -154,6 +154,19 @@ export function buildBrief(state, { consume = false } = {}) {
     L.push("");
   }
 
+  // Both ends of every handoff, so the epic that INHERITED work is as legible as the one that
+  // carried it out — a relationship visible from one side only is how a remainder disappears.
+  const handoffs = epics.filter(e => e.disposition && e.disposition.carriedTo);
+  if (handoffs.length) {
+    L.push("HANDOFFS (work carried out of an archived epic):");
+    for (const e of handoffs) {
+      L.push(`  • \`${e.id}\` carried work to \`${e.disposition.carriedTo}\`` +
+        `${e.disposition.reason ? ` — ${e.disposition.reason}` : ""}`);
+      L.push(`      \`${e.disposition.carriedTo}\` inherited it from \`${e.id}\``);
+    }
+    L.push("");
+  }
+
   const links = epics.flatMap(e => (e.links || []).filter(validLink).map(l => ({ from: e.id, ...l })));
   if (links.length) {
     L.push("EPIC LINKS:");
