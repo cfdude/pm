@@ -416,7 +416,12 @@ export const anyInwardProcedureEmittable = (tracker, secondaryTrackers = []) =>
  *  repos derives one id and the second registration collides with the first — the very
  *  cross-tracker collision `externalUrl` dedup exists to avoid.
  *
- *  `github-issues` shortens to `gh`, matching the ids already in use in this repository. */
+ *  `github-issues` shortens to `gh`. That abbreviation is legibility only, and is NOT a claim of
+ *  continuity with the ids already in this repository: because the scope is part of the prefix,
+ *  issue #109 on `cfdude/pm` derives `gh-cfdude-pm-109`, while the epics mirrored here before
+ *  this function existed are spelled `gh-109`. Nothing depends on the two agreeing — dedup keys
+ *  on `externalUrl` (add-epic.mjs), which is identical under either spelling, so an old-form and
+ *  a new-form registration of the same issue are still refused as one duplicate. */
 export function mirroredEpicIdPrefix(tracker) {
   if (!tracker || !tracker.system) return null;
   const scope = trackerScope(tracker);
