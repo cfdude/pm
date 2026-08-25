@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "conductor-tells-the-truth",
+  "active": null,
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -2521,7 +2521,7 @@
       "id": "conductor-tells-the-truth",
       "title": "0.27.0 — the conductor tells the truth: enforcement enforces, the record is honest, the tracker contract is directional",
       "priority": "P0",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [],
@@ -2606,8 +2606,44 @@
             "headSha": "489809f",
             "reviewer": "two independent fresh-context reviewers (review mode: thorough) — Gate 2 and Gate 2B; both returned merge-once-group-17-lands, and their BLOCKS were fixed in group 17"
           }
+        },
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-08-25T23:11:30.485Z",
+          "baseSha": "84cd1cd",
+          "headSha": "8223508",
+          "reviewer": "spec review over the planning artifacts, four rounds on 2026-08-23 — cross-spec review (5 Critical, 10 Important), two re-review rounds, round 4, then two Gate 1 BLOCKS passes (data-model, tasks); all BLOCKS closed before implementation began at 0204ce0. RECORDED RETROACTIVELY at archive time: the review happened, the verdict was never written down at the time, and reviewedAt is therefore the write date and not the review date"
         }
-      }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-25T23:12:02.877Z",
+        "reason": "0.27.0 shipped: 115 tasks, 20 issues closed, 6 capabilities, 604 tests green"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-25T23:12:02.876Z",
+        "deferrals": [
+          {
+            "epic": "gh-114-lane-routing-blind-to-product",
+            "section": "proposal.md § Partially resolves — the routing DECISION still weighs no product or milestone context"
+          },
+          {
+            "epic": "gh-66-update-epic-missing-flags",
+            "section": "proposal.md § Partially resolves — the remainder of the --link complaint, beyond what epic-annotation reaches"
+          },
+          {
+            "epic": "gh-129-attribution-nudge-at-commit-time",
+            "section": "design.md § Risks / Trade-offs — both new agent obligations ship as emitted prose and the attribution detector fires only at archive; a commit-time nudge depends on #91 and #104 first"
+          }
+        ],
+        "declined": [
+          {
+            "what": "encode deliberate intent on the four dual-lane duplicate registrations (#64/#69)",
+            "reason": "a fifth disposition scope invented with no motivating case; the new integrity check reports the pairs read-only and asserts nothing about intent"
+          }
+        ]
+      },
+      "completedAt": "2026-08-25T23:12:02.877Z"
     },
     {
       "id": "2026-08-18-state-write-conflict-guard",
@@ -2692,7 +2728,7 @@
     "repo": "cfdude/pm"
   },
   "platform": "claude-code",
-  "revision": 69,
+  "revision": 72,
   "reviewMode": "thorough",
   "releases": [
     {

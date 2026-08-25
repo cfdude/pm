@@ -216,8 +216,16 @@ test("7.3: on live data every archived epic ends with an outcome, and `delivered
   // 2026-08-23 as 69 archived of which 3 carry a passing Gate 2 — quoted as a dated snapshot
   // and asserted nowhere, because both numbers move with every release.
   assert.ok(archivedBefore.length > 0, "the live record must hold archived epics for this to measure anything");
-  assert.equal(archivedBefore.filter(e => e.disposition).length, 0,
-    "no live epic carries a disposition before the migration, so the stamp below is the migration's");
+  // PARTITIONED, never asserted at zero. "No live epic carries a disposition" was true when this
+  // was written and stopped being true the moment this release archived ITSELF with an
+  // agent-recorded `delivered` — the record becoming more complete, which is exactly the rot
+  // docs/lessons/hardcoded-live-data-claims-rot describes. What the migration actually promises
+  // is stated below as a relation over both halves: it stamps every archived epic that had NO
+  // disposition, and never touches one somebody recorded.
+  const unstamped = archivedBefore.filter(e => !e.disposition);
+  const preExisting = new Map(archivedBefore.filter(e => e.disposition)
+    .map(e => [e.id, JSON.stringify(e.disposition)]));
+  assert.ok(unstamped.length > 0, "the migration must have a population to stamp, or this measures nothing");
   const lanes = new Set(archivedBefore.map(e => e.lane || "openspec"));
   assert.ok(lanes.size > 1, "the live record must span more than one lane, or lane-agnosticism is untested here");
 
@@ -226,14 +234,20 @@ test("7.3: on live data every archived epic ends with an outcome, and `delivered
   assert.equal(archived.length, archivedBefore.length, "the migration registers and removes nothing");
   for (const e of archived) {
     assert.ok(e.disposition, `${e.id}: every archived epic carries a disposition, whatever its lane`);
+    if (preExisting.has(e.id)) {
+      assert.equal(JSON.stringify(e.disposition), preExisting.get(e.id),
+        `${e.id}: an agent-recorded disposition outranks the stamp and MUST survive the migration`);
+      continue;
+    }
     assert.equal(e.disposition.recordedBy, "migration");
     assert.equal(e.disposition.outcome, passingGate2(e) ? "delivered" : "unknown",
       `${e.id}: delivered iff a passing Gate 2 exists`);
   }
-  const delivered = archived.filter(e => e.disposition.outcome === "delivered");
-  assert.deepEqual(delivered.map(e => e.id).sort(), archived.filter(passingGate2).map(e => e.id).sort(),
+  const stamped = archived.filter(e => !preExisting.has(e.id));
+  const delivered = stamped.filter(e => e.disposition.outcome === "delivered");
+  assert.deepEqual(delivered.map(e => e.id).sort(), stamped.filter(passingGate2).map(e => e.id).sort(),
     "the delivered set IS the passing-Gate-2 set — not a superset, not a lane");
-  assert.ok(delivered.length < archived.length,
+  assert.ok(delivered.length < stamped.length,
     "if every archived epic read delivered the stamp would be claiming a review that did not happen");
 });
 
@@ -1024,11 +1038,18 @@ test("9.4: zero live candidates, and the reason each arm cannot fire is checkabl
       "have to be compared against them — the zero above must come from the comparison, not " +
       "from the arm having no population");
   }
+  // Arm 2 stated as a RELATION over however many epics hold two verdicts — the count was 1 when
+  // this was written and became 2 when this release recorded both of its own gates. Asserting the
+  // count would go red on the record becoming more complete rather than on anything being wrong.
   const twoGates = state.epics.filter(e => e.gateReview && e.gateReview.gate1 && e.gateReview.gate2);
-  assert.equal(twoGates.length, 1, "arm 2: exactly one live epic holds two gate verdicts");
-  const apart = Math.abs(Date.parse(twoGates[0].gateReview.gate1.reviewedAt) -
-    Date.parse(twoGates[0].gateReview.gate2.reviewedAt));
-  assert.ok(apart > 60_000, `and it recorded them ${Math.round(apart / 60000)} minutes apart`);
+  assert.ok(twoGates.length > 0, "arm 2: at least one live epic must hold two gate verdicts, or the arm has no population");
+  for (const e of twoGates) {
+    const apart = Math.abs(Date.parse(e.gateReview.gate1.reviewedAt) -
+      Date.parse(e.gateReview.gate2.reviewedAt));
+    assert.ok(apart > 60_000,
+      `arm 2: \`${e.id}\` recorded its two verdicts ${Math.round(apart / 1000)} s apart — a spec ` +
+      "review and an implementation review of the same change are never that close together");
+  }
 });
 
 // ───────────── 9.9: a heal-archived epic that DID pass Gate 2 reads as unknown ─────────────
@@ -1265,8 +1286,19 @@ test("9.13: an epic closed killed leaves the ungated notice — its only clearin
 // ───────────── 9.14: the day-one finding set, per check, every finding explained ─────────────
 
 test("9.14: the recorded day-one set names every check and explains every live finding", () => {
-  const doc = fs.readFileSync(path.join(REPO, "openspec", "changes",
-    "conductor-tells-the-truth", "integrity-day-one.md"), "utf8");
+  // Resolved rather than hardcoded: this change archives itself, which MOVES the document under
+  // `changes/archive/<date>-<id>/`. A literal in-flight path turns the release's own last step
+  // into a red suite — the same "the file moved and the check kept reading the old place" shape
+  // task 16.1's sweep exists to find.
+  const dayOne = [path.join(REPO, "openspec", "changes", "conductor-tells-the-truth",
+    "integrity-day-one.md"),
+    ...fs.existsSync(path.join(REPO, "openspec", "changes", "archive"))
+      ? fs.readdirSync(path.join(REPO, "openspec", "changes", "archive"))
+        .filter(d => d.endsWith("conductor-tells-the-truth"))
+        .map(d => path.join(REPO, "openspec", "changes", "archive", d, "integrity-day-one.md"))
+      : []].find(fs.existsSync);
+  assert.ok(dayOne, "the day-one record must be findable in flight OR archived — never neither");
+  const doc = fs.readFileSync(dayOne, "utf8");
   const report = runIntegrity(liveState());
   for (const { id, findings } of report) {
     assert.ok(doc.includes(id),
