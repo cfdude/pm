@@ -1,48 +1,73 @@
 # Lessons learned — development process
 
-**This lane is separate from the product backlog on purpose.**
+**A lane separate from the product backlog, on purpose.** A finding about *what the tool should do
+differently* becomes an issue and an epic — that loop works. A finding about *how we should work*
+had nowhere to go and died in conversation transcripts. This is that second lane.
 
-A finding about *what `pm` should do differently* becomes a GitHub issue and a conductor epic —
-that loop works, and this session filed 23 of them (#109–#131). A finding about *how we should
-work* has had nowhere to go, so it has lived in conversation transcripts and died there. This
-directory is that second lane.
+## How to read this directory
+
+**Read this file. Read a lesson only when its trigger matches what you are about to do.** Every
+lesson carries YAML frontmatter with `trigger`, `cost`, `rule` and `enforced_in`, so the table below
+is generated from the files and stays honest. The body is cause and detail — worth reading when the
+trigger fires, not before.
+
+`rg -l "tags:.*git" docs/lessons` finds a topic without opening anything.
+
+## The lessons
+
+| Lesson | Trigger — read it when… | Rule |
+|---|---|---|
+| [`bind-rules-to-functions-not-enumerations`](bind-rules-to-functions-not-enumerations.md) | Writing a rule, guard, or invariant that applies "at every place X happens". | Derive the call-site set mechanically (`rg` for callers) and bind the rule to the FUNCTION, not to an enumeration that goes stale the moment a caller is added. |
+| [`editing-inside-a-generated-block`](editing-inside-a-generated-block.md) | About to hand-edit a file that a tool also generates — CLAUDE.md, AGENTS.md, PROJECT.md, any managed region. | Hand-written content goes BELOW the END marker, never inside the managed block. |
+| [`git-commit-takes-the-whole-index`](git-commit-takes-the-whole-index.md) | About to commit while any other process (subagent, watcher, script) may be staging files. | Never run a bare `git commit` while another process may be staging. Use `git commit -- <paths>`, or check `git diff --cached --stat` immediately before. |
+| [`hardcoded-live-data-claims-rot`](hardcoded-live-data-claims-rot.md) | Writing a test, task, or spec whose verification names a count drawn from live data. | State verifications relatively. Quote counts as dated snapshots, never as the assertion. |
+| [`measuring-under-concurrent-writes`](measuring-under-concurrent-writes.md) | A test suite, lint run, or build goes red while background agents are writing to the tree. | Stop the writers before measuring. A red suite under concurrent writes is not evidence. |
+| [`review-findings-are-not-a-mandate`](review-findings-are-not-a-mandate.md) | A review returns findings and you are deciding what to fix before proceeding. | Split findings into BLOCKS (implementing this ships a defect) and POLISH (correct and implementable). Fix BLOCKS, decline most POLISH, say why. A contradiction is never POLISH. |
+| [`route-cross-repo-findings-do-not-file-them`](route-cross-repo-findings-do-not-file-them.md) | An audit or sweep produces findings about a codebase you do not own. | Route a cross-repo finding to the session that owns the code. Do not file it yourself. |
+| [`shared-checkout-parallel-agents`](shared-checkout-parallel-agents.md) | About to run two or more subagents that will each commit to the same git checkout. | Parallel subagents get isolated worktrees or they run serially. Never two agents committing to one checkout. |
+| [`slash-commands-run-the-installed-plugin`](slash-commands-run-the-installed-plugin.md) | Developing a plugin, CLI, or tool while also using that tool inside the same session. | When developing the tool itself, invoke the checkout directly (`node scripts/conductor.mjs <verb>`), never the installed slash command. |
+
+## Where the rules actually live
+
+A lessons file nobody reads is a data graveyard — the same objection that made the activity log
+(#111) conditional on shipping its reader. So **every lesson names where its rule is enforced**:
+
+| Lesson | Enforced in |
+|---|---|
+| `bind-rules-to-functions-not-enumerations` | required task 16.1 of this release; issue #115 |
+| `editing-inside-a-generated-block` | subagent brief template; product gap noted for pm |
+| `git-commit-takes-the-whole-index` | subagent brief template (hard constraint) |
+| `hardcoded-live-data-claims-rot` | tasks.md authoring brief |
+| `measuring-under-concurrent-writes` | habit — no mechanism |
+| `review-findings-are-not-a-mandate` | .claude/skills/cross-spec-review/SKILL.md |
+| `route-cross-repo-findings-do-not-file-them` | .claude/skills/dogfooding/SKILL.md |
+| `shared-checkout-parallel-agents` | subagent brief template; CLAUDE.md § Subagents & worktrees |
+| `slash-commands-run-the-installed-plugin` | subagent brief template |
+
+This repo measured the difference: a rule carried by a **required task** reached **14/14** adoption
+in the audited corpus; the same rule as a **prose bullet** reached **3/15**. A lesson whose rule
+lives only in prose is roughly 20% effective. Prefer a skill, a subagent brief, or a gate.
 
 ## What belongs here
 
-A lesson qualifies when **repeating the mistake would cost real time, tokens, or recovery work.**
-That is the bar. Not "something surprising happened" — *"we spent four hours and a million tokens
-recovering, and the same setup would do it again."*
+A lesson qualifies when **repeating the mistake would cost real time, tokens, or recovery work** —
+not "something surprising happened", but *"we spent four hours recovering, and the same setup would
+do it again"*. `cost` is not decoration; it is the whole argument for following the rule instead of
+rediscovering why it exists.
 
-Not here: product defects (issue + epic), one-off judgment calls, or anything already covered by
-a skill or `CLAUDE.md` — those get *updated*, not re-logged.
+Not here: product defects (issue + epic), one-off judgment calls, or anything a skill or `CLAUDE.md`
+already covers — those get **updated**, not re-logged.
 
-## The rule that makes this worth keeping
+## Adding one
 
-**Every lesson names where its rule now lives.** A lessons file nobody reads is a data graveyard —
-the same objection that made the activity log (#111) conditional on shipping its reader. So each
-entry ends with a **Rule** line pointing at the durable home: a skill, a `CLAUDE.md` section, a
-subagent brief, or a filed issue.
+One file per lesson, named for the **mechanism** rather than the date, so `rg` finds it by topic.
+Frontmatter: `lesson`, `date`, `trigger`, `cost`, `rule`, `enforced_in`, `tags`. Body: cause and
+enough detail to recognise the situation. Keep it short — the frontmatter is what gets read.
 
-And per this repo's own measurement — a rule carried by a **required task** reached **14/14**
-adoption in the audited corpus; the same rule as a **prose bullet** reached **3/15** — a lesson
-whose rule is only prose is roughly 20% effective. Prefer a skill, a brief, or a gate.
+Then regenerate the tables above.
 
-## Format
-
-One file per session or incident cluster: `YYYY-MM-DD-<slug>.md`. Inside, one section per lesson:
-
-```
-### <What went wrong, in one line>
-**Cost:** <time, tokens, recovery work — be specific, this is the whole argument>
-**Cause:** <the mechanism, not the blame>
-**Rule:** <the rule, and WHERE IT NOW LIVES>
-```
-
-Cost is not decoration. It is the reason the next person follows the rule instead of rediscovering
-why it exists.
-
-## Promotion
+## Promotion and lane-crossing
 
 A lesson that recurs across sessions has outgrown this directory — promote it into the thing that
-enforces it, and leave a pointer here. A lesson that turns out to be a *product* gap (pm could have
-prevented this) crosses lanes: file it as an issue and note the crossing.
+enforces it and leave the pointer here. A lesson that turns out to be a **product** gap (the tool
+could have prevented this) crosses lanes: file it as an issue and note the crossing.
