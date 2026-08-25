@@ -2593,6 +2593,19 @@
       "attributedCommits": [],
       "externalId": "132",
       "externalUrl": "https://github.com/cfdude/pm/issues/132"
+    },
+    {
+      "id": "gh-133-disposition-reverts-backfill-counts",
+      "title": "Recording an honest disposition on a backfilled epic silently reverts its archived task counts",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "externalId": "133",
+      "externalUrl": "https://github.com/cfdude/pm/issues/133"
     }
   ],
   "detourStack": [],
@@ -2602,6 +2615,6 @@
     "repo": "cfdude/pm"
   },
   "platform": "claude-code",
-  "revision": 42,
+  "revision": 43,
   "reviewMode": "thorough"
 }
