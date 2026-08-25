@@ -74,3 +74,17 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" release 0.27.0 --defer <epicI
 - Re-deferring the same epic updates its reason. Re-adding a deferred epic with `--member`
   removes the exclusion and says on stderr what the removed record read, so a recorded judgment
   never disappears silently.
+
+## The gate procedure — required task items
+
+Carried into every change's own task list as NUMBERED REQUIRED TASK ITEMS, never as review
+guidance. The form was measured, not guessed: across one audited repository a rule carried by a
+mandatory task section reached 14/14 subsequent changes, while the same rule written as a prose
+bullet reached 3/15.
+
+1. **Call-site completeness sweep.** For every rule, guard or invariant the change introduces or
+   modifies, enumerate ALL call sites of the thing being guarded — derived mechanically (`rg` for
+   the callers), never a list typed from memory — then state where the rule holds and where it
+   does not, and justify each omission. A guard added at one call site while an identical sibling
+   site is left untouched is a FINDING, not a detail: both gates are diff-scoped and structurally
+   cannot see an edit absent from a file the diff never touched.

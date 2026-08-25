@@ -185,15 +185,19 @@ const baseline = (name) => fs.readFileSync(path.join(FIXTURES, `rules-0.26.0-${n
 const OUTWARD_HEADING = "## External tracker sync";
 const REFRESH_GATE_HEADING = "## Re-read the source before an epic becomes the work";
 
-/** A block with the always-on refresh-gate section removed.
+const GATE_PROCEDURE_HEADING = "## The gate procedure — required task items";
+
+/** A block with the ALWAYS-ON sections removed — the ones no tracker configuration turns on or
+ *  off. Two of them now: the provenance-keyed refresh gate, and the gate procedure pm emits as
+ *  numbered required task items.
  *
  *  Byte-identity against 0.26.0 is claimed for the SYNC SECTIONS on these paths — what direction
  *  governs — not for the whole document. This release also ADDS instruction that no tracker
- *  configuration turns on or off (the refresh gate keys on an epic's provenance, so it has
- *  something to say in every repo). Comparing whole blocks would forbid the release from adding
+ *  configuration turns on or off. Comparing whole blocks would forbid the release from adding
  *  any instruction at all, which is not what the direction requirement pins. */
-const stripRefreshGate = (block) =>
-  block.replace(new RegExp(`\\n*${REFRESH_GATE_HEADING}[\\s\\S]*?(?=\\n<!-- END pm-conductor rules -->)`), "");
+const stripAlwaysOn = (block) => block
+  .replace(new RegExp(`\\n*${REFRESH_GATE_HEADING}[\\s\\S]*?(?=\\n<!-- END pm-conductor rules -->)`), "")
+  .replace(new RegExp(`${GATE_PROCEDURE_HEADING}[\\s\\S]*?(?=## )`), "");
 const REMINDER_HEADING = "## Sync after completing tracker-linked work";
 
 /** The rules block a tracker shape produces, with no state migration applied. */
@@ -218,7 +222,7 @@ const preTrackerPart = (block) => {
 
 test("an un-upgraded jira primary is byte-identical to 0.26.0 — outward section, no inward section", () => {
   const block = rulesFor({ system: "jira", projectKey: "JOB" });
-  assert.equal(stripRefreshGate(block), baseline("jira-scoped"),
+  assert.equal(stripAlwaysOn(block), baseline("jira-scoped"),
     "a direction-less jira primary must emit exactly what 0.26.0 emitted for it");
   assert.ok(block.includes(OUTWARD_HEADING));
   assert.ok(!block.includes("## GitHub issue sync") && !block.includes("## Inward tracker sync"));
@@ -227,7 +231,7 @@ test("an un-upgraded jira primary is byte-identical to 0.26.0 — outward sectio
 test("an un-upgraded github-issues primary with a repo keeps the inward section and no outward one", () => {
   const block = rulesFor({ system: "github-issues", repo: "o/n" });
   const before = baseline("github-scoped");
-  assert.equal(preTrackerPart(stripRefreshGate(block)), preTrackerPart(before),
+  assert.equal(preTrackerPart(stripAlwaysOn(block)), preTrackerPart(before),
     "nothing outside the tracker sections may move on the un-upgraded github path");
   assert.ok(!block.includes(OUTWARD_HEADING), "github-issues resolves inward — no outward section");
   assert.ok(block.includes("## GitHub issue sync (o/n)"), "the inward section must still be emitted");
@@ -395,10 +399,10 @@ test("the scope-less github path changes in exactly one way, and it is the remin
   const before = baseline("github-scopeless");
   const now = rulesFor({ system: "github-issues" });
   const stripReminder = (b) => b.replace(/\n*## Sync after completing tracker-linked work[\s\S]*?(?=\n<!-- END pm-conductor rules -->)/, "");
-  assert.equal(stripReminder(stripRefreshGate(now)), stripReminder(before),
+  assert.equal(stripReminder(stripAlwaysOn(now)), stripReminder(before),
     "with the reminder removed from both sides, the un-upgraded scope-less github block is " +
     "byte-identical to 0.26.0's — any second difference is a regression, not a repair");
-  assert.notEqual(stripRefreshGate(now), before,
+  assert.notEqual(stripAlwaysOn(now), before,
     "…and the reminder really did go, so the comparison is not vacuous");
 });
 

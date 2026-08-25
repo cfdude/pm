@@ -1,5 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
 import { tmpRepo, run, runCombined, readState, projectMd, parseBrief, expectFail } from "./helpers.mjs";
 
 // conductor-tells-the-truth, groups 14–15: release planning (#125's minimum slice) and the
@@ -255,4 +257,61 @@ test("14.3 each deferral's reason is reachable from the rendered record, not onl
   const md = projectMd(cwd);
   assert.match(md, /depends on #133 landing first/);
   assert.match(md, /`e1`/);
+});
+
+// ═══════════════ group 15: the gate procedure pm EMITS (instruction layer) ═══════════════
+//
+// pm is an instruction layer, so the emitted text IS the product and a defect in it is a
+// product defect. These bind the text pm OWNS — the managed rules block, the `conductor` skill,
+// and the command docs — because a change's own `tasks.md` is authored by the `openspec`
+// plugin, which pm neither owns nor writes.
+//
+// FORM is asserted, not just content. The measurement this release was built on: a rule carried
+// by a mandatory task section reached 14/14 adoption across subsequent changes in the audited
+// corpus; the same rule as a prose bullet reached 3/15. So every assertion below checks the item
+// is NUMBERED and REQUIRED, and fails if it is downgraded to a bullet.
+
+const REPO = new URL("../../", import.meta.url).pathname;
+const shipped = (rel) => fs.readFileSync(path.join(REPO, rel), "utf8");
+/** The four surfaces pm emits its gate procedure on. The rules block is rendered (never read
+ *  from `rules.mjs`); the other three are the files pm ships. */
+const EMITTED_DOCS = ["skills/conductor/SKILL.md", "commands/epic.md", "commands/status.md"];
+const rulesText = (cwd) => run(["rules"], { cwd });
+
+/** Every numbered item in the emitted text, as `<n>. <title>` — the FORM check. A bullet does
+ *  not appear here, which is what makes "downgraded to a bullet" a failing test rather than a
+ *  cosmetic difference. */
+const numberedItems = (text) =>
+  text.split("\n").filter(l => /^\d+\. /.test(l.trim())).map(l => l.trim());
+
+test("15.1 the emitted gate procedure carries the call-site sweep as a NUMBERED REQUIRED task item", () => {
+  const cwd = repoWithEpics(1);
+  const block = rulesText(cwd);
+  assert.match(block, /## The gate procedure — required task items/);
+  const items = numberedItems(block).join("\n");
+  assert.match(items, /\*\*Call-site completeness sweep\.\*\*/);
+  // The enumeration is named CONCRETELY — what to list, and what to say about each entry.
+  assert.match(block, /enumerate ALL call sites/i);
+  assert.match(block, /where the rule holds and where it does not/);
+  assert.match(block, /justify each omission/);
+  // Derived mechanically, never typed from memory: an enumeration that goes stale the moment a
+  // caller is added is the defect, not the remedy.
+  assert.match(block, /`rg`/);
+  // Both gates are diff-scoped, so the unedited sibling site is invisible to them — the emitted
+  // text has to say so, or the reader assumes the diff is the population.
+  assert.match(block, /diff-scoped/);
+  // NOT a prose bullet — 3/15 against 14/14 is the whole reason the form is asserted.
+  assert.doesNotMatch(block, /^\s*[-*] \*\*Call-site completeness sweep/m);
+});
+
+test("15.1 the call-site sweep is a numbered item on every emitted surface, not only the rules block", () => {
+  for (const rel of EMITTED_DOCS) {
+    const text = shipped(rel);
+    const items = numberedItems(text).join("\n");
+    assert.match(items, /\*\*Call-site completeness sweep\.\*\*/,
+      `${rel} must carry the call-site sweep as a NUMBERED item`);
+    assert.match(text, /enumerate ALL call sites/i, `${rel} must name the enumeration concretely`);
+    assert.doesNotMatch(text, /^\s*[-*] \*\*Call-site completeness sweep/m,
+      `${rel} must not carry it as a bullet`);
+  }
 });

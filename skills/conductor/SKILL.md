@@ -171,6 +171,20 @@ now enforces Gate 2 mechanically, scoped strictly to the `openspec` lane:
   conversation — narration alone does not satisfy the archive-time check, and there is no
   bypass flag.
 
+## The gate procedure — required task items
+
+Carried into every change's own task list as NUMBERED REQUIRED TASK ITEMS, never as review
+guidance. The form was measured, not guessed: across one audited repository a rule carried by a
+mandatory task section reached 14/14 subsequent changes, while the same rule written as a prose
+bullet reached 3/15.
+
+1. **Call-site completeness sweep.** For every rule, guard or invariant the change introduces or
+   modifies, enumerate ALL call sites of the thing being guarded — derived mechanically (`rg` for
+   the callers), never a list typed from memory — then state where the rule holds and where it
+   does not, and justify each omission. A guard added at one call site while an identical sibling
+   site is left untouched is a FINDING, not a detail: both gates are diff-scoped and structurally
+   cannot see an edit absent from a file the diff never touched.
+
 ## When something blocks progress: classify the detour FIRST
 
 Do not start fixing. Decide which kind this is and say so.

@@ -93,6 +93,41 @@ export function pmCmd(platform, name) {
   return `${prefix}${name}`;
 }
 
+/** The gate procedure pm EMITS — as NUMBERED REQUIRED TASK ITEMS, never as review guidance.
+ *
+ *  The form is load-bearing and it was measured, not guessed: across one audited repository a
+ *  rule carried by a mandatory task section reached 14/14 subsequent changes, while the same
+ *  rule written as a prose bullet reached 3/15. So this is a LIST that renders numbered, and the
+ *  suite fails a bullet.
+ *
+ *  Declared once here and rendered into the rules block; the `conductor` skill and the command
+ *  docs carry the same items as shipped markdown (pm cannot generate its own skill file), and
+ *  the suite asserts every surface carries each item so the copies cannot drift.
+ *
+ *  These bind the text pm OWNS. A change's own `tasks.md` is authored by the `openspec` plugin,
+ *  which pm neither owns nor writes — what pm controls is the procedure it hands the agent to
+ *  carry into that task list. */
+export const GATE_PROCEDURE_ITEMS = [
+  {
+    title: "Call-site completeness sweep.",
+    lines: [
+      "For every rule, guard or invariant this change introduces",
+      "   or modifies, enumerate ALL call sites of the thing being guarded — derived mechanically",
+      "   (`rg` for the callers), never a list typed from memory, which goes stale the moment a",
+      "   caller is added. Then state where the rule holds and where it does not, and",
+      "   justify each omission. A guard added at one call site while an identical sibling site is",
+      "   left untouched is a FINDING, not a detail: raise it even though the unedited site never",
+      "   appears in the diff. Both gates are diff-scoped and structurally cannot see an edit that",
+      "   is absent from a file the diff never touched — the dominant defect class in this",
+      "   repository's own audit, ~38 instances in one shard.",
+    ],
+  },
+];
+
+/** The items, rendered as a numbered markdown list. */
+export const gateProcedureLines = () =>
+  GATE_PROCEDURE_ITEMS.flatMap((item, i) => [`${i + 1}. **${item.title}** ${item.lines[0]}`, ...item.lines.slice(1)]);
+
 export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform = "claude-code") {
   const mode = KNOWN_REVIEW_MODES.includes(reviewMode) ? reviewMode : "standard";
   const lines = [
@@ -129,6 +164,15 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     "   as ordered backlog in `PROJECT.md` and a `planned: N` count in the briefing, without a",
     `   "no change on disk" warning; \`${pmCmd(platform, "sync")}\` flips an openspec planned epic to untriaged once`,
     "   its change is proposed. Have a roadmap doc? Read it in-session and load each item this way.",
+    "",
+    "## The gate procedure — required task items",
+    "",
+    "Every item below is a NUMBERED REQUIRED TASK ITEM in the change's own task list, carried",
+    "into both gates. They are not review guidance and must not be restated as prose bullets:",
+    "measured across one audited repository, a rule carried by a mandatory task section reached",
+    "14/14 subsequent changes, while the same rule written as a prose bullet reached 3/15.",
+    "",
+    ...gateProcedureLines(),
     "",
     "## Epic-level autonomy",
     "",
