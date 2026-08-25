@@ -1817,3 +1817,77 @@ test("the archive backfill is the ONE creation path that carries no array, delib
   assert.ok(!Object.prototype.hasOwnProperty.call(e, "attributedCommits"),
     "a backfilled epic must remain unverifiable, not assert an empty attribution");
 });
+
+// ─────────── record-gate-review's unknown-flag allowlist (#79 at a fifth site) ───────────
+//
+// `add-epic`, `update-epic`, `add-many` and `release` all reject a flag they do not support.
+// `record-gate-review` read its named flags off parseFlags and dropped the rest, so
+// `--reviewr "x"` exited 0 and wrote nothing — the silent-no-op failure #79 exists to close,
+// at the very command this release ADDED three registry entries for.
+
+/** The flags `record-gate-review`'s usage line names. Read at check time from the source, never
+ *  transcribed — a flag a capability forgot to register is absent from the allowlist, so
+ *  driving this from the allowlist itself would pass vacuously on the omission it exists to
+ *  catch. */
+function gateReviewUsageFlags() {
+  const src = fs.readFileSync(path.join(REPO, "scripts", "lib", "gate-review-writeback.mjs"), "utf8");
+  const at = src.indexOf("usage: conductor.mjs record-gate-review");
+  assert.notEqual(at, -1, "record-gate-review must still print a usage line — the check reads its flags from it");
+  const line = src.slice(at, src.indexOf("process.exit(1)", at));
+  return new Set(line.match(FLAG_RE) || []);
+}
+
+/** The flags `commands/epic.md` names in record-gate-review's OWN section. */
+function gateReviewDocFlags() {
+  const doc = fs.readFileSync(path.join(REPO, "commands", "epic.md"), "utf8");
+  const start = doc.indexOf("## Record a gate verdict — `record-gate-review`");
+  assert.notEqual(start, -1, "commands/epic.md must still document record-gate-review in its own section");
+  const next = doc.indexOf("\n## ", start + 1);
+  return new Set(doc.slice(start, next === -1 ? doc.length : next).match(FLAG_RE) || []);
+}
+
+test("record-gate-review rejects an unsupported flag by name and writes nothing", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "subject", "--lane", "openspec"], { cwd });
+  const before = JSON.stringify(readState(cwd));
+  const err = expectFail(() => run(
+    ["record-gate-review", "subject", "--gate", "2", "--verdict", "fail", "--reviewr", "a typo"], { cwd }));
+  assert.ok(err, "a misspelled flag must not exit 0 — a silent no-op is the whole defect");
+  assert.match(String(err.stderr), /reviewr/, "the refusal must NAME the offending flag");
+  assert.match(String(err.stderr), /--gate/, "the refusal must also name the flags it does support");
+  assert.equal(JSON.stringify(readState(cwd)), before, "a refused invocation must write nothing");
+});
+
+test("every DOCUMENTED record-gate-review flag is accepted and reads back from state", () => {
+  const documented = [...new Set([...gateReviewUsageFlags(), ...gateReviewDocFlags()])].sort();
+  assert.ok(documented.length >= 5,
+    `the extractors yielded only ${documented.length} flags — the extractor is broken, not the command`);
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "subject", "--lane", "openspec"], { cwd });
+  const err = expectFail(() => run(["record-gate-review", "subject",
+    "--gate", "2", "--verdict", "pass", "--base-sha", "aaa1111", "--head-sha", "bbb2222",
+    "--reviewer", "a fresh-context subagent"], { cwd }));
+  assert.equal(err, null,
+    `record-gate-review rejected its own documented flags: ${err && String(err.stderr || err.message)}`);
+  const g2 = readState(cwd).epics.find(e => e.id === "subject").gateReview.gate2;
+  assert.deepEqual(
+    { verdict: g2.verdict, baseSha: g2.baseSha, headSha: g2.headSha, reviewer: g2.reviewer },
+    { verdict: "pass", baseSha: "aaa1111", headSha: "bbb2222", reviewer: "a fresh-context subagent" });
+  // Every documented flag must be one the allowlist knows, or the allowlist would reject the
+  // command's own usage line — which is how a rejection added late breaks a working command.
+  const missing = documented.filter(f =>
+    !["--gate", "--verdict", "--base-sha", "--head-sha", "--reviewer"].includes(f));
+  assert.deepEqual(missing, [],
+    "record-gate-review documents a flag this check does not exercise — add it to the " +
+    "allowlist and to this invocation rather than letting it go unchecked");
+});
+
+test("record-gate-review's allowlist is the shared registry's projection, not a second literal", async () => {
+  const { epicFlagsFor } = await import(CONSTANTS);
+  assert.deepEqual(epicFlagsFor("record-gate-review").sort(),
+    ["base-sha", "gate", "head-sha", "reviewer", "verdict"],
+    "every flag record-gate-review accepts is declared in EPIC_FLAGS — there is no second, " +
+    "parallel allowlist for a subset of them");
+});

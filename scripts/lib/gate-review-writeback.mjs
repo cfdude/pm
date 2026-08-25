@@ -2,7 +2,7 @@
 // Records an OpenSpec gate review's verdict durably against an epic. One-directional
 // dependencies only.
 
-import { gateHasEvidence, isOpenspecLane } from "./constants.mjs";
+import { epicFlagsFor, gateHasEvidence, isOpenspecLane } from "./constants.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { parseFlags } from "./add-epic.mjs";
 import { render } from "./render.mjs";
@@ -20,6 +20,18 @@ export function recordGateReview() {
   const argv = process.argv.slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
   const f = parseFlags(id ? argv.slice(1) : argv);
+  // The allowlist, PROJECTED from the shared registry — never a literal here. Without it this
+  // command read the flags it happened to name and dropped every other one in silence, so
+  // `--reviewr "x"` exited 0 and wrote nothing: #79's exact shape at a fifth epic-mutating
+  // site, and at the very command this release added `--base-sha`/`--head-sha`/`--reviewer` to.
+  // Rejected BEFORE loadState(), so a refusal cannot leave a partial write behind.
+  const known = epicFlagsFor("record-gate-review");
+  const unknown = Object.keys(f).filter(k => !known.includes(k));
+  if (unknown.length) {
+    process.stderr.write(`conductor: record-gate-review: unknown flag(s) --${unknown.join(", --")} ` +
+      `(known: ${known.map(k => `--${k}`).join(", ")})\n`);
+    process.exit(1);
+  }
   const gate = typeof f.gate === "string" ? f.gate : (typeof f.gate === "number" ? String(f.gate) : undefined);
   const verdict = typeof f.verdict === "string" ? f.verdict : undefined;
   // Evidence as FIELDS, never as prose in a note. A recorded `a..b` on an epic that later

@@ -196,6 +196,13 @@ export const EPIC_FLAGS = [
   // response. Registered on all three surfaces because a bulk-mirrored epic that carries no
   // watermark instantly pollutes the "never re-read" count the brief reports.
   { flag: "external-updated-at", key: "externalUpdatedAt", commands: ["add-epic", "update-epic", "add-many"] },
+  // record-gate-review's CONTROL flags. Pre-existing — the command read them long before this
+  // registry existed — and registered here anyway, because an allowlist that omits the two
+  // flags every invocation carries would reject the command's own usage line. Registering them
+  // is what makes the allowlist usable at all; leaving them out would be the second, parallel
+  // list `epic-annotation` forbids, spelled as an exception instead of as an array.
+  { flag: "gate", key: null, commands: ["record-gate-review"], write: "custom" },
+  { flag: "verdict", key: null, commands: ["record-gate-review"], write: "custom" },
   // record-gate-review's evidence flags. They live in this registry because it is the single
   // declaration of the flag surface every epic-WRITING command shares, and recording a verdict
   // writes an epic. `key` is null on all three: they land nested under `gateReview.gateN`
