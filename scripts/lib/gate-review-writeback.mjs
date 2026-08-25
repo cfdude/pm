@@ -37,6 +37,23 @@ export function recordGateReview() {
     process.stderr.write(`conductor: --verdict must be one of ${KNOWN_GATE_VERDICTS.join("|")}\n`);
     process.exit(1);
   }
+  // A `pass` MUST carry the range it covered. Without it, `record-gate-review <id> --gate 2
+  // --verdict pass` is one command with no evidence requirement at all, and a review of `a..b`
+  // on an epic that later ships `b..c` is byte-identical in the record to one that covered
+  // everything. A `fail` may omit the range: there is no shipped work for it to have covered,
+  // and demanding a range would make recording a failed review harder than recording a pass.
+  if (verdict === "pass") {
+    const missingEvidence = [];
+    if (baseSha === undefined) missingEvidence.push("--base-sha");
+    if (headSha === undefined) missingEvidence.push("--head-sha");
+    if (missingEvidence.length) {
+      process.stderr.write(
+        `conductor: a 'pass' verdict requires the commit range it covered — missing ` +
+        `${missingEvidence.join(" and ")}. Record the range the reviewer actually read ` +
+        `(a 'fail' may omit it).\n`);
+      process.exit(1);
+    }
+  }
   const state = loadState();
   const epic = state.epics.find(e => e.id === id);
   if (!epic) { process.stderr.write(`conductor: epic '${id}' not found\n`); process.exit(1); }

@@ -796,7 +796,7 @@ test("a gate verdict can be recorded against a lane-less epic", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
   withLanelessEpic(cwd);
-  run(["record-gate-review", "no-lane", "--gate", "2", "--verdict", "pass"], { cwd });
+  run(["record-gate-review", "no-lane", "--gate", "2", "--verdict", "pass", "--base-sha", "aaaaaaa", "--head-sha", "bbbbbbb"], { cwd });
   const epic = readState(cwd).epics.find(e => e.id === "no-lane");
   assert.equal(epic.gateReview.gate2.verdict, "pass",
     "refusing a verdict to an epic every other site treats as openspec-lane leaves it with no " +
@@ -843,4 +843,26 @@ test("a pass records its range and reviewer as separate FIELDS, not as prose", (
   assert.equal(g.reviewer, "fresh-context reviewer",
     "reviewer identity is its own field — stored in `note`, an audit query over reviewers " +
     "cannot tell an identity from any other remark");
+});
+
+test("a pass with no recorded range is refused, naming the missing evidence", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  const err = expectFail(() => run(
+    ["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "pass", "--base-sha", "d168b1e"], { cwd }));
+  assert.ok(err, "a pass with no --head-sha claims a review of nothing checkable");
+  assert.match(String(err.stderr || err.message), /--head-sha/,
+    "the refusal must name the evidence that is missing, not just that something is");
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before,
+    "a refused verdict writes nothing");
+});
+
+test("a fail verdict may omit the range — there is no shipped work to have covered", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
+  run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "fail"], { cwd });
+  assert.equal(readState(cwd).epics.find(e => e.id === "spec-epic").gateReview.gate2.verdict, "fail");
 });
