@@ -11,7 +11,7 @@ here carries a disposition, and the scope rule's two exclusions currently exclud
 upgrade, the same checks report the same findings: the migration stamps `unknown` on every archived
 epic, and `unknown` stays in scope by design.
 
-**9 checks, 11 findings.**
+**10 checks, 11 findings.**
 
 ---
 
@@ -79,6 +79,7 @@ on today's record, and each reason is checkable rather than asserted.
 | `heal-archived-epic-passed-gate-2` | **No epic carries the `archive-drift-heal` stamp.** After the migration every pre-existing archived epic will be stamped `recordedBy: "migration"` instead, so this check is aimed at epics archived *from here on*, where the heal flips a status after a real Gate 2 was recorded. |
 | `delivered-epic-attributed-no-commits` | **No archived epic carries an attribution array at all** — the migration is forbidden from adding one, so every pre-existing epic reads *absent* (unverifiable) rather than *present and empty* (asserts nothing was attributed). The one epic with `[]` is `queued`, not delivered. |
 | `archive-directory-has-no-epic` | This repository holds exactly **one** directory under `openspec/changes/archive/` — `2026-07-19-multi-tracker-primary-secondary-support` — and it is registered. The zero comes from the directory being held, not from there being none to check. |
+| `dangling-epic-reference` | **Every epic id this record names resolves to an epic it holds.** The check reads its holders from `epicReferences()` — `links[]`, `parent`, `disposition.carriedTo`, `deferralAssertion.deferrals[]`, a release's `deferred[]`, `state.active` and both epic ids on every detour-stack frame — so the zero is measured across all of them, not across the one that was reported. It was added after the day-one measurement, alongside the `remove-epic` sweep that stopped leaving them behind; the count is a live re-measurement, not a copy. |
 | `archived-with-no-gate-2-review` | **No epic carries an `ungated` Gate 2.** Only the archive-drift heal writes that verdict, and it writes it only where an openspec-lane epic reaches `archived` with no `gate2` at all; the three epics that have a `gate2` all carry `pass`. The backfill and the two archived-at-creation paths are forbidden from writing a `gate2` entry, which is what keeps this from becoming a permanent, unclearable condition against every historical change. |
 
 ---
@@ -87,6 +88,10 @@ on today's record, and each reason is checkable rather than asserted.
 
 Both are explained rather than silently absorbed.
 
+0. **Ten checks, not nine.** `dangling-epic-reference` was added during task 16.3, when
+   `remove-epic` was found to strip only `links[]` while group 14 had added three more places the
+   record holds an epic id. It is the sibling of `archive-directory-has-no-epic` — a reference that
+   resolves to nothing — and reports 0 here.
 1. **Nine checks, not eight.** Task 9.14's enumeration lists 9.3, 9.4, 9.5, 9.6, 9.9, 9.10, 9.11 and
    9.12. The ungated-archive condition (9.13) is surfaced as an integrity **check** as well as a
    briefing notice, because `gate-integrity` requires it to be named "wherever the conductor reports
@@ -96,4 +101,5 @@ Both are explained rather than silently absorbed.
    `add-epic` seeds `attributedCommits: []` at creation, deliberately, because absent and empty are
    different claims. It changes no finding: the array is empty and the epic is `queued`.
 
-Every finding count — 5, 4, 2, and six zeros — matches the 2026-08-23 measurement.
+Every finding count — 5, 4, 2, and seven zeros — matches the 2026-08-23 measurement, the
+seventh zero being the check added after it.

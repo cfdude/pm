@@ -113,9 +113,16 @@ by design: this replaces the git-checkout workaround, it doesn't add a softer on
 node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" remove-epic <id> [--cascade]
 ```
 
-- **Dangling links are cleaned up automatically.** Any other epic's `links[]` entries that
-  reference the removed id are stripped, and the command reports which epics were affected — a
-  dangling reference is worse than a silently smaller graph.
+- **Every dangling reference is cleaned up automatically** — not just `links[]`. Any other
+  epic's `links[]` and `parent`, a disposition's `carriedTo` handoff, a deferral assertion's
+  `deferrals[]`, a release's `deferred[]` and the active pointer are all swept, and the command
+  reports where each reference was held — a dangling reference is worse than a silently smaller
+  graph. (A `deferred[]` entry left behind used to render in `PROJECT.md` as a deferral pointing
+  at nothing.) `integrity`'s `dangling-epic-reference` check reads the same declaration, so it
+  reports any that a hand-edit leaves behind.
+- **Blocked while a detour-stack frame names the epic.** A frame is control state rather than a
+  record: dropping it would discard a paused epic's resume path, and keeping it would leave
+  `/pm:resume` popping a frame that names nothing. Resume or pop the detour first.
 - **Blocked by default if the epic has any descendants** (`parent: <id>`, walked recursively —
   children, grandchildren, etc.). The command prints a short `(id, title, lane/priority/status)`
   table of the parent plus every descendant at any depth and exits non-zero — reassign or remove

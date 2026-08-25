@@ -4,6 +4,7 @@
 
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { parseFlags } from "./add-epic.mjs";
+import { epicReferences } from "./links.mjs";
 import { render } from "./render.mjs";
 
 /** Render a short (id, title, summary) table for human review — used when a removal is
@@ -17,9 +18,11 @@ export function epicSummaryTable(epics) {
 /** `remove-epic <id> [--cascade]` — hard-deletes an epic (splice from state.json;
  *  recoverable only via git history, replacing the raw `git checkout` workaround). Blocks
  *  by default if the epic has children, printing an (id, title, summary) table for human
- *  review; `--cascade` removes the epic and every descendant in one go. Any OTHER epic's
- *  `links[]` entries referencing a removed id are stripped automatically, with a warning
- *  naming the affected epics — dangling references are worse than a silently smaller graph. */
+ *  review; `--cascade` removes the epic and every descendant in one go. EVERY reference to a
+ *  removed id — declared once by epicReferences() in links.mjs, not enumerated here — is
+ *  stripped automatically with a warning naming where it was held; dangling references are
+ *  worse than a silently smaller graph. The one exception is a detour-stack frame, which is
+ *  control state rather than a record and blocks the removal instead. */
 export function removeEpic() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const argv = process.argv.slice(3);
@@ -59,23 +62,40 @@ export function removeEpic() {
   const toRemove = new Set([id]);
   if (cascade) for (const d of descendants) toRemove.add(d.id);
 
-  // Strip dangling links[] from epics that survive, and note who was affected.
+  // EVERY reference to a removed id, read from the one declaration of where the record holds
+  // them. Enumerating the holders here is what left a release's `deferred[]`, a disposition's
+  // `carriedTo` and a deferral assertion's `deferrals[]` dangling after group 14 added them:
+  // `PROJECT.md` rendered a deferral pointing at an epic that no longer existed.
+  const refs = epicReferences(state).filter(r => toRemove.has(r.epic));
+
+  // A detour frame is CONTROL state, not a record. Dropping it discards a paused epic's resume
+  // path; keeping it leaves `/pm:resume` popping a frame that names nothing. Neither is a
+  // sweep, so this refuses and says which frame holds the epic.
+  const blocking = refs.filter(r => !r.drop);
+  if (blocking.length) {
+    process.stderr.write(
+      `conductor: cannot remove ${[...toRemove].map(i => `'${i}'`).join(", ")} — still held by ` +
+      `${blocking.length} detour-stack reference(s): ` +
+      blocking.map(r => `${r.where} → \`${r.epic}\``).join("; ") + ".\n" +
+      "Resume or pop the detour first (/pm:resume), then remove.\n");
+    process.exit(1);
+  }
+
   const affected = [];
-  for (const e of state.epics) {
-    if (toRemove.has(e.id)) continue;
-    const before = (e.links || []).length;
-    e.links = (e.links || []).filter(l => !toRemove.has(l.epic));
-    if (e.links.length !== before) affected.push(e.id);
+  for (const r of refs) {
+    r.drop();
+    affected.push(r.where);
   }
 
   state.epics = state.epics.filter(e => !toRemove.has(e.id));
-  if (toRemove.has(state.active)) state.active = null;
 
   saveState(state);
   render();
   const removedIds = [...toRemove];
   process.stderr.write(`conductor: removed ${removedIds.length} epic(s): ${removedIds.join(", ")}\n`);
   if (affected.length) {
-    process.stderr.write(`conductor: stripped dangling link(s) referencing removed epic(s) from: ${affected.join(", ")}\n`);
+    process.stderr.write(
+      `conductor: stripped ${affected.length} dangling reference(s) to removed epic(s), held by: ` +
+      `${[...new Set(affected)].join(", ")}\n`);
   }
 }

@@ -1223,3 +1223,48 @@ test("9.14: the recorded day-one set names every check and explains every live f
     `${report.reduce((n, c) => n + c.findings.length, 0)} findings?\\.\\*\\*`),
     "the totals in the record must be the totals the command actually produced");
 });
+
+// ───────── dangling epic references — the class, not the one instance reported ─────────
+//
+// `remove-epic` stripped dangling `links[]` and nulled a removed `active`, and stopped there.
+// Group 14 then added THREE more places state holds an epic id — a release's `deferred[]`, an
+// archive disposition's `carriedTo`, a deferral assertion's `deferrals[]` — and none of them
+// was swept, so removing an epic a release had deferred left `PROJECT.md` rendering a deferral
+// pointing at nothing. The reference set is now declared ONCE, in links.mjs, and both the sweep
+// and the check below read it, so a fifth reference site cannot be handled by one and missed by
+// the other.
+
+const withDanglers = () => ({
+  version: 1, active: null, detourStack: [
+    { pausedEpic: "gone", reason: "for a detour", spawnedDetour: "also-gone", reconcileOnResume: true },
+  ],
+  releases: [{ id: "0.27.0", intent: "i", deferred: [{ epic: "gone", reason: "cut", recordedAt: "2026-08-01T00:00:00.000Z" }] }],
+  epics: [
+    { id: "here", title: "here", priority: "P1", status: "queued", role: "epic", lane: "claude-code",
+      links: [{ type: "depends-on", epic: "gone" }],
+      disposition: { outcome: "delivered", recordedAt: "2026-08-01T00:00:00.000Z", recordedBy: "agent", carriedTo: "gone" },
+      deferralAssertion: { deferrals: [{ epic: "gone", section: "design.md" }], declined: [], assertedAt: "2026-08-01T00:00:00.000Z" } },
+  ],
+});
+
+test("the dangling-reference check fires on constructed data, naming every holder", () => {
+  const findings = findingsFor("dangling-epic-reference", withDanglers());
+  const where = findings.map(f => f.detail).join(" | ");
+  for (const site of ["links[]", "carriedTo", "deferralAssertion", "deferred[]", "detour"]) {
+    assert.match(where, new RegExp(site.replace(/[[\]]/g, "\\$&")),
+      `a dangling reference held in ${site} must be reported — ${where}`);
+  }
+  assert.ok(findings.every(f => /gone/.test(f.detail)), "each finding names the id that does not resolve");
+});
+
+test("the dangling-reference check is silent on a record whose references all resolve", () => {
+  const st = withDanglers();
+  for (const id of ["gone", "also-gone"]) {
+    st.epics.push({ id, title: id, priority: "P1", status: "queued", role: "epic", lane: "claude-code", links: [] });
+  }
+  assert.deepEqual(findingsFor("dangling-epic-reference", st), []);
+});
+
+test("this repository's own record holds no dangling epic reference", () => {
+  assert.deepEqual(findingsFor("dangling-epic-reference", liveState()).map(f => f.detail), []);
+});

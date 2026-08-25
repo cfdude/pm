@@ -1,7 +1,8 @@
 // scripts/lib/integrity.mjs
 // READ-ONLY checks over the conductor's own record: shapes that cannot be true, reported with
 // the epic they concern and enough detail to act on. May import constants.mjs,
-// epic-progress.mjs, disposition.mjs and git.mjs — and nothing under those imports back up.
+// epic-progress.mjs, disposition.mjs, links.mjs and git.mjs — and nothing under those imports
+// back up.
 //
 // REPORTS, NEVER REPAIRS. Nothing here writes state and nothing here blocks a command. That is
 // not a stylistic preference: a check that repaired would be a second writer racing the paths
@@ -18,6 +19,7 @@ import { archivedChanges, epicProgress, strippedChangeId } from "./epic-progress
 import { gateHasEvidence, isOpenspecLane } from "./constants.mjs";
 import { commitDate, isAncestor } from "./git.mjs";
 import { isArchiveBackfilled, outcomeOf, stampedBy } from "./disposition.mjs";
+import { epicReferences } from "./links.mjs";
 
 /** The outcomes that are their own explanation. Each carries a REQUIRED reason saying why the
  *  work did not complete, so an epic holding one is a record working rather than a record
@@ -296,6 +298,24 @@ export const CHECKS = [
           " — likely cause: #64/#69, `sync` registering a finished plan file as a second epic" });
       }
       return out;
+    },
+  },
+  {
+    id: "dangling-epic-reference",
+    title: "a reference in the record that names an epic the record does not hold",
+    run(state) {
+      // The sibling of archive-directory-has-no-epic, and derived rather than enumerated: the
+      // holders come from epicReferences() in links.mjs, the same declaration `remove-epic`
+      // sweeps, so a sixth place the record holds an epic id is covered by both or by neither.
+      // The reported instance was a release deferral left behind by remove-epic; `PROJECT.md`
+      // renders one of those as a deferral pointing at nothing.
+      const held = new Set((state.epics || []).map(e => e && e.id));
+      return epicReferences(state)
+        .filter(r => !held.has(r.epic))
+        .map(r => ({ epic: r.holder || undefined, detail:
+          `${r.where} names \`${r.epic}\`, which is not an epic in this record` +
+          (r.drop ? "" : " — a detour-stack frame, so `/pm:resume` would pop a frame that " +
+            "names nothing") }));
     },
   },
 ];
