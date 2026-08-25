@@ -475,3 +475,61 @@ test("8.2: a change registered while active and archived later resolves to ONE e
   assert.equal(matches.length, 1, "the existing epic flips to archived; no second epic appears");
   assert.equal(matches[0].status, "archived");
 });
+
+// ───────────── 8.3: a backfilled epic keeps its real counts ─────────────
+//
+// `epicProgress()` returns `{done: 0, total: 0}` for an archived epic whose task source is gone,
+// and suppresses the missing-source warning — correct for an epic the conductor managed, whose
+// source legitimately moved. Applied to a backfilled epic it discards the only evidence the
+// backfill exists to preserve: a change archived with 12 of its tasks still unticked is the most
+// informative row in the whole audit, and registering it as `0/0` keeps the row and throws away
+// what makes it worth keeping.
+
+/** Register one archived change from disk with an explicit ticked/unticked split. */
+function backfilledFixture(id, { ticked, unticked }) {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const dir = path.join(cwd, "openspec", "changes", "archive", `2026-08-05-${id}`);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, "tasks.md"), "# tasks\n\n" +
+    Array.from({ length: ticked }, (_, n) => `- [x] shipped ${n}\n`).join("") +
+    Array.from({ length: unticked }, (_, n) => `- [ ] never done ${n}\n`).join(""));
+  run(["sync"], { cwd });
+  run(["render"], { cwd });
+  return cwd;
+}
+/** The PROJECT.md row for `id`, so the assertion reads the surface a human reads. */
+const rowFor = (cwd, id) => projectMd(cwd).split("\n").find(l => l.includes(`\`${id}\``));
+
+test("8.3: an abandoned change registers with its unticked count intact", () => {
+  const cwd = backfilledFixture("log-collector-not-applicable", { ticked: 23, unticked: 12 });
+  const row = rowFor(cwd, "log-collector-not-applicable");
+  assert.match(row, /23\/35/,
+    "the counts come from the ARCHIVED artifacts — `0/0` or an em dash here discards the " +
+    "evidence that 12 tasks were never done");
+  assert.ok(!/—/.test(row.split("|")[6] || ""), "and it is not an em dash");
+});
+
+test("8.3: a fully ticked archived change registers as complete and is distinguishable", () => {
+  const cwd = backfilledFixture("fully-delivered", { ticked: 21, unticked: 0 });
+  assert.match(rowFor(cwd, "fully-delivered"), /21\/21/,
+    "complete must read complete, and differently from the abandoned case");
+});
+
+test("8.3: an epic the conductor MANAGED keeps its suppressed missing-source behavior", () => {
+  // The scope of the fallback is deliberate. `archiveGate()` documents that outstanding work
+  // "reads zero for an archived epic whose source is gone", and the interactive verb's handoff
+  // demand rests on it. Reading archived artifacts for every archived epic would move that
+  // quantity under a gate written against it — a change no task in this group authorizes.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const dir = path.join(cwd, "openspec", "changes", "archive", "2026-08-05-managed-change");
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, "tasks.md"), "# tasks\n\n- [x] a\n- [ ] the archive instruction\n");
+  run(["add-epic", "--id", "managed-change", "--lane", "openspec", "--status", "archived"], { cwd });
+  run(["render"], { cwd });
+  const row = rowFor(cwd, "managed-change");
+  assert.ok(!/1\/2/.test(row),
+    "an epic registered through a creation path is not a backfilled one, and its source going " +
+    "away at archive time is the documented, suppressed case");
+});

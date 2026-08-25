@@ -6,7 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { ROOT, CHANGES_DIR, ARCHIVE_DIR, PLANS_DIR, laneRank, isOpenspecLane } from "./constants.mjs";
-import { engineStamp } from "./disposition.mjs";
+import { engineStamp, isArchiveBackfilled } from "./disposition.mjs";
 
 /** Active openspec change ids = subdirs of openspec/changes except `archive`. */
 export function activeChangeIds() {
@@ -64,6 +64,18 @@ export function archivedChanges() {
       .filter(d => d.isDirectory())
       .map(d => ({ dir: d.name, id: strippedChangeId(d.name) }));
   } catch { return []; }
+}
+
+/** Where an archived change's task source actually sits, or a path that does not exist.
+ *
+ *  `CHANGES_DIR/<id>/tasks.md` cannot exist once a change is archived — openspec MOVES the
+ *  directory — so a consumer that needs the counts has to look where the file went. Both archive
+ *  namings are tried, the same two `isArchived()` matches. */
+export function archivedTasksPath(id) {
+  const exact = path.join(ARCHIVE_DIR, id, "tasks.md");
+  if (fs.existsSync(exact)) return exact;
+  const hit = archivedChanges().find(c => c.id === strippedChangeId(id));
+  return hit ? path.join(ARCHIVE_DIR, hit.dir, "tasks.md") : exact;
 }
 
 /** Archived-change detection. OpenSpec archives a change as `archive/<YYYY-MM-DD>-<id>`,
@@ -233,6 +245,20 @@ export function epicProgress(epic) {
   if ((epic.lane || "openspec") === "openspec") {
     const c = countCheckboxes(path.join(CHANGES_DIR, epic.id, "tasks.md"));
     if (!c.exists) {
+      // A BACKFILLED epic reads its counts from the archived artifacts. It never passed through
+      // the conductor while it was in flight, so `0/0` here is not "a managed epic whose source
+      // legitimately moved" — it is the evidence being discarded at the moment it is registered.
+      // A change archived with 12 of its tasks unticked is the most informative row in an audit,
+      // and preserving the row while throwing away the counts preserves nothing.
+      //
+      // Deliberately SCOPED to the backfill rather than applied to every archived epic.
+      // `archiveGate()` documents that outstanding work "reads zero for an archived epic whose
+      // source is gone" and the interactive verb's handoff demand rests on that; reading archived
+      // artifacts for every archived epic would move a quantity out from under a gate written
+      // against it. The stamp is exactly what the spec says it is for — telling a record
+      // reconstructed from disk apart from one the conductor managed.
+      const a = isArchiveBackfilled(epic) ? countCheckboxes(archivedTasksPath(epic.id)) : { exists: false };
+      if (a.exists) return { done: a.done, total: a.total, excluded: a.excluded, source: "openspec", warn: null };
       return { done: 0, total: 0, excluded: 0, source: "openspec", warn: archived ? null : "tasks.md missing" };
     }
     return { done: c.done, total: c.total, excluded: c.excluded, source: "openspec", warn: null };

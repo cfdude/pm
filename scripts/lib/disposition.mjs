@@ -100,6 +100,18 @@ export function isEngineStamped(disposition) {
   return !!disposition && ENGINE_STAMP_TOKENS.includes(disposition.recordedBy);
 }
 
+/** Was this epic reconstructed from `openspec/changes/archive/` rather than managed?
+ *
+ *  THE reader for the backfill stamp, so every consumer of that distinction asks one question in
+ *  one place. A backfilled epic has no gate verdict, no start time, and — where the change was
+ *  abandoned — no ticked tasks; those are properties of a record rebuilt from disk, not of a
+ *  badly managed epic, and a check or a refusal keyed on any of them needs to tell the two
+ *  apart. */
+export function isArchiveBackfilled(epic) {
+  const d = epic && epic.disposition;
+  return !!d && d.recordedBy === "archive-backfill";
+}
+
 /** The dispositions worth SHOWING, in epic-list order: every record carrying a judgment —
  *  a real outcome, or a reason, or a handoff. An `unknown` stamp with no reason is excluded
  *  because it adds nothing the status already carries, and after the 0.27.0 migration 66 of
