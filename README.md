@@ -351,6 +351,19 @@ verdict back durably via `record-reconcile` (not just into the conversation tran
 </details>
 
 <details>
+<summary><code>record-tracker-refresh &lt;epicId&gt; --verdict unchanged|material-change --external-updated-at &lt;iso&gt; [--summary "&lt;what&gt;"]</code> — Record a tracker-refresh verdict</summary>
+
+Before an epic becomes the active piece of work, its source of truth gets re-read. For an epic
+linked to an external item that means the item itself (body, comments, labels, state); this verb
+records what you found. Both arguments are required, so a verdict can never be recorded without
+advancing the epic's `externalUpdatedAt` watermark — `<iso>` is the **tracker's own** updated
+timestamp, never a local clock reading. Recording clears the epic's outstanding refresh
+obligation. An epic with no `externalId` is refused by name: it re-reads its LOCAL source (plan
+document, or OpenSpec proposal plus tasks), and nothing about that is recorded in state.
+
+</details>
+
+<details>
 <summary><code>record-gate-review &lt;epicId&gt; --gate 1|2 --verdict pass|fail [--reviewer "&lt;note&gt;"]</code> — Record an OpenSpec gate review</summary>
 
 Writes a fresh-context reviewer's verdict durably onto an `openspec`-lane epic

@@ -831,3 +831,58 @@ test("provenance, never direction, decides the obligation", () => {
       `tracker-linked epic owes a re-read under ${direction}`);
   }
 });
+
+// ─────────── 11.5: recording a refresh verdict advances the watermark ───────────
+
+function linkedActiveRepo() {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code", "--external-id", "7",
+       "--external-url", "https://x.test/7"], { cwd });
+  run(["set-active", "a"], { cwd });
+  return cwd;
+}
+
+test("a material-change verdict records the judgment, advances the watermark, and clears the debt", () => {
+  const cwd = linkedActiveRepo();
+  assert.equal(readState(cwd).epics.find(e => e.id === "a").trackerRefreshNeeded, true);
+  run(["record-tracker-refresh", "a", "--verdict", "material-change",
+       "--summary", "a third party narrowed the ask", "--external-updated-at", "2026-08-23T09:30:00Z"], { cwd });
+  const e = readState(cwd).epics.find(x => x.id === "a");
+  assert.equal(e.trackerRefresh.verdict, "material-change");
+  assert.equal(e.trackerRefresh.summary, "a third party narrowed the ask");
+  assert.ok(!Number.isNaN(Date.parse(e.trackerRefresh.recordedAt)), "when it was recorded");
+  assert.equal(e.trackerRefresh.externalUpdatedAt, "2026-08-23T09:30:00Z");
+  assert.equal(e.externalUpdatedAt, "2026-08-23T09:30:00Z", "the watermark itself advances");
+  assert.ok(!e.trackerRefreshNeeded, "and the obligation is cleared");
+});
+
+test("a verdict with no watermark is refused, writing nothing", () => {
+  const cwd = linkedActiveRepo();
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  const err = expectFail(() => run(["record-tracker-refresh", "a", "--verdict", "unchanged"], { cwd }));
+  assert.ok(err, "a verdict can never be recorded without advancing the watermark");
+  assert.match(String(err.stderr || err.message), /--external-updated-at/);
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before,
+    "state.json must be byte-identical after the refusal");
+});
+
+test("a verdict on an epic with no external origin is refused, writing nothing", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "local", "--lane", "openspec"], { cwd });
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  const err = expectFail(() => run(["record-tracker-refresh", "local", "--verdict", "unchanged",
+    "--external-updated-at", "2026-08-23T09:30:00Z"], { cwd }));
+  assert.ok(err);
+  assert.match(String(err.stderr || err.message), /external/i);
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
+});
+
+test("an unknown verdict is refused by name", () => {
+  const cwd = linkedActiveRepo();
+  const err = expectFail(() => run(["record-tracker-refresh", "a", "--verdict", "probably-fine",
+    "--external-updated-at", "2026-08-23T09:30:00Z"], { cwd }));
+  assert.ok(err);
+  assert.match(String(err.stderr || err.message), /unchanged\|material-change|unchanged, material-change/);
+});

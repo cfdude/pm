@@ -64,7 +64,11 @@ Does not record a platform, unlike `write-rules`) ·
 `/pm:resume` resume + reconcile (writes the reconciler's verdict back durably via
 `record-reconcile`) · `record-gate-review <id> --gate 1|2 --verdict pass|fail` records an
 openspec-lane epic's Gate 1/Gate 2 review verdict (see "OpenSpec build" below); `update-epic
---status archived` on an openspec-lane epic requires a passing Gate 2 verdict already recorded
+--status archived` on an openspec-lane epic requires a passing Gate 2 verdict already recorded ·
+`record-tracker-refresh <id> --verdict unchanged|material-change --external-updated-at <iso>`
+records the re-read a tracker-linked epic owes before specs are drawn for it, and advances that
+epic's freshness watermark in the same write (an epic with no external id re-reads its local
+plan/proposal instead — instruction only, nothing recorded)
 · `/pm:sync` register new proposals and plans ·
 `/pm:epic add` register any epic (`--parent`, `--external-id`) · `/pm:epic` → `add-many`
 (atomic bulk create) / `update-epic` (write-back, incl. `--title`/`--link`/`--add-story

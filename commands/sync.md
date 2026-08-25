@@ -50,3 +50,31 @@ Record what you read:
 # a plain re-read during sync, no verdict owed
 node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" update-epic <id> --external-updated-at <iso>
 ```
+
+## The refresh gate — `record-tracker-refresh`
+
+Before an epic becomes the active piece of work — the point at which specs or a plan get drawn
+for it — its source of truth gets re-read. Which source depends on **provenance**, never on
+direction:
+
+- **The epic has an `externalId`** → re-read the linked item (body, comments, labels, state) and
+  record the verdict. Both arguments are required, so a verdict can never be recorded without
+  advancing the watermark:
+
+  ```bash
+  node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" record-tracker-refresh <id> \
+    --verdict unchanged|material-change --external-updated-at <iso> [--summary "<what changed>"]
+  ```
+
+  `<iso>` is the **tracker's own** updated timestamp, never a local clock reading.
+- **The epic has no `externalId`** → re-read its LOCAL source: its plan document, or its OpenSpec
+  proposal plus tasks. That is instruction only; nothing is recorded in state for it, and
+  `record-tracker-refresh` refuses such an epic by name.
+
+An outward-mirrored epic owes the same re-read as an inward-born one: a linked item accumulates
+third-party context regardless of which way it was born. Origin decides only whose ask wins when
+the item and a local spec disagree.
+
+If you cannot reach the tracker — offline, unauthenticated, upstream item deleted — turn the
+mechanical block off (`set-gate-guard off`) and say so. An honest bypass beats a blind
+`--verdict unchanged`.

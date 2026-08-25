@@ -56,6 +56,7 @@ import { init, brief, snapshot, commitNudge, sync, logDetour, honchoMemory } fro
 import { addMany } from "./lib/add-many.mjs";
 import { recordReconcile } from "./lib/reconciler-writeback.mjs";
 import { recordGateReview } from "./lib/gate-review-writeback.mjs";
+import { recordTrackerRefresh } from "./lib/tracker-refresh-writeback.mjs";
 import { updateEpic } from "./lib/update-epic.mjs";
 import { removeEpic } from "./lib/remove-epic.mjs";
 import { setTracker } from "./lib/tracker.mjs";
@@ -75,7 +76,7 @@ const cmd = process.argv[2];
 // entry to .conductor/detours.log with "--help" as the detour description, and the log is
 // append-only with no verb to remove it. Handled before dispatch so every subcommand is covered
 // -- log-detour is only where the damage is visible, not where the gap is.
-const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|set-autonomy|record-reconcile|record-gate-review|set-review-mode|set-gate-guard|gate-guard|plan-hierarchy|verify-worktrees|verify-state|changesets|upgrade|changelog|rules|write-rules|rules-target\n";
+const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|set-autonomy|record-reconcile|record-gate-review|record-tracker-refresh|set-review-mode|set-gate-guard|gate-guard|plan-hierarchy|verify-worktrees|verify-state|changesets|upgrade|changelog|rules|write-rules|rules-target\n";
 if (!cmd || process.argv.slice(2).some(a => a === "--help" || a === "-h")) {
   process.stdout.write(USAGE);
   process.exit(0);
@@ -116,6 +117,7 @@ try {
   "set-autonomy": setAutonomy,
   "record-reconcile": recordReconcile,
   "record-gate-review": recordGateReview,
+  "record-tracker-refresh": recordTrackerRefresh,
   "set-review-mode": setReviewMode,
   "set-gate-guard": setGateGuard,
   "gate-guard": gateGuardCheck,
