@@ -7,6 +7,13 @@ files were never staged, because every verification layer inspected the tree ins
 
 Run by a fresh-context reviewer against `3c0962f`. Findings fixed in `d9fba22`.
 
+> **Scope, stated so a later reader cannot mistake it.** This report covers the **103 tasks ticked
+> as of `3c0962f`**, out of 115 in the list. **Group 17's tasks are NOT covered here** — their
+> commits did not exist when this ran, and they are the release's own docs/version/archive pass.
+> Their `(files: …)` clauses were satisfied the same way, commit by commit, as each landed; the
+> per-task table below simply predates them. A report that claimed coverage it does not have
+> would be the exact defect class this change closes.
+
 ## Method
 
 The task→commit map was built by **diffing `tasks.md` across `152587b..HEAD` and recording which
