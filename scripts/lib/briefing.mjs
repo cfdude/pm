@@ -199,9 +199,18 @@ export function buildBrief(state, { consume = false } = {}) {
   if (inwardHere && neverReRead.length) {
     trackerLines.push(`  ⚠ ${neverReRead.length} tracker-linked epic(s) never re-read since mirroring — run \`/pm:sync\``);
   }
-  if (tracker && trackerLines.length) {
-    const scope = tracker.projectKey ? ` · ${tracker.projectKey}` : "";
-    L.push(`TRACKER SYNC (${tracker.system}${scope}):`);
+  // The block renders whenever it HAS something to say, not only when a PRIMARY tracker exists.
+  // Gating the whole block on `tracker` split two emitters that read the same predicate: the
+  // sync nudge below fires for a secondary-only inward repo, while the freshness line above was
+  // computed, pushed, and then silently dropped for exactly that repo. Same question, opposite
+  // answers, at two emitters — #109's shape, at the sibling of the site #109 was found at.
+  //
+  // The primary-tracker heading is unchanged byte-for-byte; only the no-primary case is new.
+  if (trackerLines.length) {
+    const label = tracker
+      ? `${tracker.system}${tracker.projectKey ? ` · ${tracker.projectKey}` : ""}`
+      : secondaryTrackers.map(st => `${st.system}${st.repo || st.projectKey ? ` · ${st.repo || st.projectKey}` : ""}`).join(", ");
+    L.push(`TRACKER SYNC (${label}):`);
     for (const line of trackerLines) L.push(line);
     L.push("");
   }

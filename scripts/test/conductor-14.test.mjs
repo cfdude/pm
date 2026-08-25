@@ -1132,3 +1132,96 @@ test("no backlog section is rendered when there is no backlog", () => {
   assert.ok(!projectMd(cwd).includes("## Backlog"),
     "an empty section is noise — it is omitted like every other conditional section");
 });
+
+// ─────────── 11.7: the freshness line — locally computable, and nothing more ───────────
+//
+// "How many linked items have NEWER remote activity" is a network call the engine is forbidden
+// to make. The honest population is the one whose content has never been read since it was
+// mirrored: an external id present, no watermark. It is emitted only where an inward procedure
+// is emittable AND the count is greater than zero.
+
+/** A repo with `n` tracker-linked epics carrying no watermark, under `tracker`/`secondaries`. */
+function neverReReadRepo(n, { tracker, secondaries } = {}) {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  for (let i = 1; i <= n; i++) {
+    run(["add-epic", "--id", `linked-${i}`, "--lane", "claude-code",
+         "--external-id", String(i), "--external-url", `https://x.test/${i}`], { cwd });
+  }
+  const state = readState(cwd);
+  if (tracker) state.tracker = tracker;
+  if (secondaries) state.secondaryTrackers = secondaries;
+  writeState(cwd, state);
+  return cwd;
+}
+
+const FRESHNESS = /(\d+) tracker-linked epic\(s\) never re-read since mirroring/;
+
+test("three never-re-read epics produce the line, and it names the count it found", () => {
+  const cwd = neverReReadRepo(3, { tracker: { system: "github-issues", repo: "o/n" } });
+  const m = parseBrief(cwd).match(FRESHNESS);
+  assert.ok(m, "an inward repo with unread linked epics must report the freshness debt");
+  assert.equal(m[1], "3", "the line names the count actually found");
+});
+
+test("the line disappears once every linked epic carries a watermark", () => {
+  const cwd = neverReReadRepo(3, { tracker: { system: "github-issues", repo: "o/n" } });
+  for (let i = 1; i <= 3; i++) {
+    run(["update-epic", `linked-${i}`, "--external-updated-at", "2026-08-23T09:30:00Z"], { cwd });
+  }
+  assert.ok(!FRESHNESS.test(parseBrief(cwd)),
+    "a watermark on every linked epic leaves nothing to report");
+});
+
+test("an outward-only repo gets no freshness line — there is no inward procedure to run", () => {
+  const cwd = neverReReadRepo(3, { tracker: { system: "jira", projectKey: "JOB", direction: "outward" } });
+  assert.ok(!FRESHNESS.test(parseBrief(cwd)));
+});
+
+test("no brief, under ANY tracker configuration, claims anything about remote activity", () => {
+  // The engine performs no network I/O and never will, so a count of items with newer remote
+  // activity is a claim it cannot support. This scans the emitted text rather than the code, so
+  // it fails on the phrasing regardless of which surface introduced it.
+  const FORBIDDEN = [
+    /remote activity/i, /newer remote/i, /newer upstream/i, /changed upstream/i,
+    /updated remotely/i, /have newer/i, /out of date in/i,
+  ];
+  const shapes = [
+    undefined,
+    { system: "github-issues", repo: "o/n" },
+    { system: "github-issues" },
+    { system: "jira", projectKey: "JOB" },
+    { system: "jira", projectKey: "JOB", direction: "inward" },
+    { system: "jira", projectKey: "JOB", direction: "both" },
+    { system: "linear", repo: "o/n", direction: "outward" },
+  ];
+  for (const tracker of shapes) {
+    const cwd = neverReReadRepo(2, { tracker });
+    const brief = parseBrief(cwd);
+    for (const re of FORBIDDEN) {
+      assert.ok(!re.test(brief),
+        `the brief for ${JSON.stringify(tracker)} claims remote knowledge (${re}) the engine cannot have`);
+    }
+  }
+});
+
+// ─────────── 10.10 (extended): the coherence matrix's secondary-only case ───────────
+//
+// Every fixture in the original matrix carries a PRIMARY tracker, which is how a split between
+// two inward-gated emitters survived it. A secondary-only repo has an emittable inward procedure
+// with `state.tracker` absent — and the sync nudge gated on `inwardHere && trackerCount > 0`
+// while the freshness line was pushed into a block rendered only `if (tracker && …)`. Same
+// predicate, opposite truth values: #109's shape at two different emitters.
+
+test("a secondary-only inward repo keeps every inward-gated emitter in agreement", () => {
+  const secondaries = [{ system: "github-issues", repo: "o/second", role: "secondary", direction: "inward" }];
+  const cwd = neverReReadRepo(3, { secondaries });
+  const brief = parseBrief(cwd);
+  const nudge = brief.includes("consider `/pm:sync`");
+  const freshness = FRESHNESS.test(brief);
+  assert.equal(nudge, freshness,
+    "the sync nudge and the freshness line read the same predicate — they cannot disagree");
+  assert.ok(nudge, "a secondary tracker with a scope DOES have an emittable inward procedure");
+  // And the rules block agrees: the secondary inward section is emitted for the same repo.
+  assert.ok(run(["rules"], { cwd }).includes("## Secondary tracker sync (github-issues · o/second)"));
+});
