@@ -2580,6 +2580,19 @@
       "reconcileNeeded": false,
       "externalId": "131",
       "externalUrl": "https://github.com/cfdude/pm/issues/131"
+    },
+    {
+      "id": "gh-132-lessons-advisor-hook",
+      "title": "Lessons need three modes — a PreToolUse advisor that surfaces a known lesson before the mistake",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "externalId": "132",
+      "externalUrl": "https://github.com/cfdude/pm/issues/132"
     }
   ],
   "detourStack": [],
@@ -2589,6 +2602,6 @@
     "repo": "cfdude/pm"
   },
   "platform": "claude-code",
-  "revision": 41,
+  "revision": 42,
   "reviewMode": "thorough"
 }
