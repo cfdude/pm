@@ -5,6 +5,7 @@ trigger: About to run two or more subagents that will each commit to the same gi
 cost: ~1M tokens, 4+ hours, one commit rewritten out of existence taking three tasks' implementations with it, three commits carrying another agent's message, ~20 wasted commit attempts, a scrambled per-task audit trail.
 rule: Parallel subagents get isolated worktrees or they run serially. Never two agents committing to one checkout.
 enforced_in: subagent brief template; CLAUDE.md § Subagents & worktrees
+detect: {"tool":"Bash","commandMatches":"git worktree add|git commit --amend"}
 tags: [git, subagents, concurrency, cost]
 ---
 

@@ -7,6 +7,32 @@ This is repo-maintenance tooling for developing `pm` itself. Its subject is **ho
 a different lane from **what the product should do** — a product gap becomes an issue and an epic;
 a process failure becomes a lesson here.
 
+## Three modes, and only one of them is reliable
+
+| Mode | When | Who initiates | Depends on |
+|---|---|---|---|
+| **Read** | Before a risky operation | You, proactively | Remembering to look |
+| **Write** | After a mistake bites | You, reactively | Noticing it was a lesson |
+| **Advise** | *Before the error, when the lesson already exists* | **The hook** | Nothing |
+
+**Read and Write both require the agent to already suspect there is something to know.** That is the
+same dependency that makes prose rules ~20% effective in this repo's own measurement (14/14 for a
+required task, 3/15 for a prose bullet). They are worth having, and they are not enough.
+
+**Advise is the only mode that fires on the situation rather than on recall.**
+`.claude/hooks/lessons-advisor.mjs` runs at `PreToolUse`, matches the pending tool call against every
+lesson's `detect:` matcher, and injects the rule. It **advises, never blocks** — same posture as pm's
+gate-guard precedent, and deliberately not a refusal.
+
+**Precision is the whole constraint.** This repo has two open issues (#91, #104) about hooks firing
+on false positives, and `epic-progress.mjs` carries the note that a warning wrong 7 times in 8 trains
+people to ignore the one time it is right. So **only 3 of 9 lessons currently carry a `detect:`
+matcher.** A lesson that cannot be matched with near-certainty stays retrieval-only — that is the
+honest outcome, not a gap to close by loosening a regex.
+
+Adding a matcher is a **frontmatter edit**, not a code change: `detect:` takes a JSON object with
+`tool`, `pathEndsWith`, `commandMatches`, `commandLacks`.
+
 ## Consulting (the common case)
 
 1. **Read `docs/lessons/README.md`.** Its table is generated from every lesson's frontmatter:

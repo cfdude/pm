@@ -56,3 +56,23 @@ anytime; idempotent. Use it when the briefing shows a "pm <old> → <new>" upgra
    an external mirror. If a `tracker` block already exists, leave it untouched.
 
 4. Show the result with `/pm:status`.
+
+## If an upgrade goes wrong — git is the rollback
+
+There is no undo verb, and there does not need to be one: `.conductor/state.json` is
+git-tracked in every repo that uses pm, so the file itself is the backup.
+
+1. **Commit `state.json` before upgrading.** A restore discards every uncommitted state change
+   since the last commit, not only the migration's.
+2. Restore it and re-render the generated view:
+
+   ```bash
+   git restore .conductor/state.json
+   ```
+
+   then `/pm:status` (PROJECT.md is generated from state — never hand-edit it back).
+3. **Rolling back state does not require rolling back the engine.** Every field this release
+   added has a documented absent-value default, so the current engine behaves identically on a
+   restored older state file; keep working while the problem is diagnosed. Rolling back the
+   *engine* is a separate, plugin-level operation — pin the marketplace source to the prior ref
+   and `/reload-plugins`.

@@ -511,6 +511,15 @@ headline and recommends adopting any opt-in capability that's relevant to this r
 `.conductor/state.json` (e.g. secondary trackers, `thorough` review mode) — one line, one
 reason, the command to run. It never enables anything itself.
 
+**If an upgrade goes wrong, git is the rollback.** `.conductor/state.json` is git-tracked, so
+commit `state.json` before upgrading (a restore discards every uncommitted state change since
+the last commit, not only the migration's), then `git restore .conductor/state.json` and
+`/pm:status` to re-render `PROJECT.md` from the restored file.
+Rolling back state does not require rolling back the engine — every added field has a
+documented absent-value default, so the current engine behaves identically on an older state
+file. Rolling back the *engine* is a separate plugin-level operation: pin the marketplace
+source to the prior ref and `/reload-plugins`.
+
 </details>
 
 <details>

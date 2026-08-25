@@ -20,19 +20,21 @@ trigger fires, not before.
 
 ## The lessons
 
-| Lesson | Trigger — read it when… | Rule |
-|---|---|---|
-| [`bind-rules-to-functions-not-enumerations`](bind-rules-to-functions-not-enumerations.md) | Writing a rule, guard, or invariant that applies "at every place X happens". | Derive the call-site set mechanically (`rg` for callers) and bind the rule to the FUNCTION, not to an enumeration that goes stale the moment a caller is added. |
-| [`editing-inside-a-generated-block`](editing-inside-a-generated-block.md) | About to hand-edit a file that a tool also generates — CLAUDE.md, AGENTS.md, PROJECT.md, any managed region. | Hand-written content goes BELOW the END marker, never inside the managed block. |
-| [`git-commit-takes-the-whole-index`](git-commit-takes-the-whole-index.md) | About to commit while any other process (subagent, watcher, script) may be staging files. | Never run a bare `git commit` while another process may be staging. Use `git commit -- <paths>`, or check `git diff --cached --stat` immediately before. |
-| [`hardcoded-live-data-claims-rot`](hardcoded-live-data-claims-rot.md) | Writing a test, task, or spec whose verification names a count drawn from live data. | State verifications relatively. Quote counts as dated snapshots, never as the assertion. |
-| [`measuring-under-concurrent-writes`](measuring-under-concurrent-writes.md) | A test suite, lint run, or build goes red while background agents are writing to the tree. | Stop the writers before measuring. A red suite under concurrent writes is not evidence. |
-| [`review-findings-are-not-a-mandate`](review-findings-are-not-a-mandate.md) | A review returns findings and you are deciding what to fix before proceeding. | Split findings into BLOCKS (implementing this ships a defect) and POLISH (correct and implementable). Fix BLOCKS, decline most POLISH, say why. A contradiction is never POLISH. |
-| [`route-cross-repo-findings-do-not-file-them`](route-cross-repo-findings-do-not-file-them.md) | An audit or sweep produces findings about a codebase you do not own. | Route a cross-repo finding to the session that owns the code. Do not file it yourself. |
-| [`shared-checkout-parallel-agents`](shared-checkout-parallel-agents.md) | About to run two or more subagents that will each commit to the same git checkout. | Parallel subagents get isolated worktrees or they run serially. Never two agents committing to one checkout. |
-| [`slash-commands-run-the-installed-plugin`](slash-commands-run-the-installed-plugin.md) | Developing a plugin, CLI, or tool while also using that tool inside the same session. | When developing the tool itself, invoke the checkout directly (`node scripts/conductor.mjs <verb>`), never the installed slash command. |
+| Lesson | Trigger — read it when… | Rule | Hook |
+|---|---|---|---|
+| [`bind-rules-to-functions-not-enumerations`](bind-rules-to-functions-not-enumerations.md) | Writing a rule, guard, or invariant that applies "at every place X happens". | Derive the call-site set mechanically (`rg` for callers) and bind the rule to the FUNCTION, not to an enumeration that goes stale the moment a caller is added. | — |
+| [`editing-inside-a-generated-block`](editing-inside-a-generated-block.md) | About to hand-edit a file that a tool also generates — CLAUDE.md, AGENTS.md, PROJECT.md, any managed region. | Hand-written content goes BELOW the END marker, never inside the managed block. | 🔔 |
+| [`git-commit-takes-the-whole-index`](git-commit-takes-the-whole-index.md) | About to commit while any other process (subagent, watcher, script) may be staging files. | Never run a bare `git commit` while another process may be staging. Use `git commit -- <paths>`, or check `git diff --cached --stat` immediately before. | — |
+| [`hardcoded-live-data-claims-rot`](hardcoded-live-data-claims-rot.md) | Writing a test, task, or spec whose verification names a count drawn from live data. | State verifications relatively. Quote counts as dated snapshots, never as the assertion. | — |
+| [`measuring-under-concurrent-writes`](measuring-under-concurrent-writes.md) | A test suite, lint run, or build goes red while background agents are writing to the tree. | Stop the writers before measuring. A red suite under concurrent writes is not evidence. | — |
+| [`review-findings-are-not-a-mandate`](review-findings-are-not-a-mandate.md) | A review returns findings and you are deciding what to fix before proceeding. | Split findings into BLOCKS (implementing this ships a defect) and POLISH (correct and implementable). Fix BLOCKS, decline most POLISH, say why. A contradiction is never POLISH. | — |
+| [`route-cross-repo-findings-do-not-file-them`](route-cross-repo-findings-do-not-file-them.md) | An audit or sweep produces findings about a codebase you do not own. | Route a cross-repo finding to the session that owns the code. Do not file it yourself. | — |
+| [`shared-checkout-parallel-agents`](shared-checkout-parallel-agents.md) | About to run two or more subagents that will each commit to the same git checkout. | Parallel subagents get isolated worktrees or they run serially. Never two agents committing to one checkout. | 🔔 |
+| [`slash-commands-run-the-installed-plugin`](slash-commands-run-the-installed-plugin.md) | Developing a plugin, CLI, or tool while also using that tool inside the same session. | When developing the tool itself, invoke the checkout directly (`node scripts/conductor.mjs <verb>`), never the installed slash command. | 🔔 |
 
 ## Where the rules actually live
+
+🔔 = carries a `detect:` matcher, so `.claude/hooks/lessons-advisor.mjs` surfaces it automatically at `PreToolUse`. The rest are retrieval-only by design — a matcher that fires wrongly is worse than none.
 
 A lessons file nobody reads is a data graveyard — the same objection that made the activity log
 (#111) conditional on shipping its reader. So **every lesson names where its rule is enforced**:

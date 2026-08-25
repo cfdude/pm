@@ -2,7 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { tmpRepo, run, runCombined, readState, writeState, projectMd, parseBrief, fixturePluginRoot } from "./helpers.mjs";
+import { execFileSync } from "node:child_process";
+import { tmpRepo, run, runCombined, readState, writeState, projectMd, parseBrief, fixturePluginRoot, gitInitWithCommit } from "./helpers.mjs";
 
 // conductor-tells-the-truth, groups 7–9: the 0.27.0 migration, the archive backfill, and the
 // read-only integrity checks. Split from conductor-13/14 for the same reason those were split
@@ -308,4 +309,51 @@ test("7.4: the interactive verb still replaces a migration stamp AFTER the migra
   assert.equal(d.recordedBy, undefined,
     "an agent's record carries no recordedBy — that is the whole discriminator, and this " +
     "assertion fails the moment the migration's never-overwrite rule leaks out of the migration");
+});
+
+// ──────────── 7.6: git is the rollback, and the documented sequence is executed ────────────
+//
+// `.conductor/state.json` is git-tracked in every repo that uses pm, so no bespoke undo verb is
+// needed — but "no verb" only works if the sequence is written down, which is why this test
+// executes the exact commands the docs give rather than a paraphrase of them.
+
+test("7.6: the documented rollback sequence restores state and re-renders from it", () => {
+  const cwd = repoAt0260();
+  gitInitWithCommit(cwd);
+  execFileSync("git", ["add", "-A"], { cwd });
+  execFileSync("git", ["commit", "-q", "-m", "chore: commit state.json before upgrading"], { cwd });
+
+  upgradeAt(cwd, "0.27.0");
+  const upgraded = readState(cwd);
+  assert.equal(upgraded.pmVersion, "0.27.0");
+  assert.ok(upgraded.epics.find(e => e.id === "shipped-change").disposition, "the migration ran");
+
+  // The documented rollback, executed verbatim.
+  execFileSync("git", ["restore", ".conductor/state.json"], { cwd });
+  run(["render"], { cwd });
+
+  const restored = readState(cwd);
+  assert.equal(restored.pmVersion, "0.26.0", "the restored file is the pre-upgrade one");
+  assert.equal(restored.epics.find(e => e.id === "shipped-change").disposition, undefined,
+    "restoring state undoes the migration's stamps");
+  assert.match(projectMd(cwd), /shipped-change/,
+    "PROJECT.md re-renders FROM the restored state — it is generated, never hand-edited");
+  // Rolling STATE back does not require rolling the ENGINE back: this render was produced by
+  // the 0.27.0 engine reading 0.26.0 state, which is the property 7.5 pins.
+  assert.ok(!projectMd(cwd).includes("## Dispositions"),
+    "the 0.27.0 engine reads the restored 0.26.0 state exactly as 0.26.0 did");
+});
+
+test("7.6: the rollback procedure is documented where a user upgrading will read it", () => {
+  const upgradeDoc = fs.readFileSync(path.join(REPO, "commands", "upgrade.md"), "utf8");
+  const readme = fs.readFileSync(path.join(REPO, "README.md"), "utf8");
+  for (const [name, text] of [["commands/upgrade.md", upgradeDoc], ["README.md", readme]]) {
+    assert.match(text, /git restore .conductor\/state\.json/,
+      `${name}: the restore command must be written out, not described`);
+    assert.match(text, /commit[^\n]*state\.json[^\n]*before/i,
+      `${name}: a restore discards every uncommitted state change, not only the migration's`);
+    assert.match(text, /rolling back state does not require rolling back the engine/i,
+      `${name}: the two directions are independent, and an operator who does not know that ` +
+      "will downgrade the plugin to undo a state change");
+  }
 });

@@ -5,6 +5,7 @@ trigger: About to hand-edit a file that a tool also generates — CLAUDE.md, AGE
 cost: Two hand-written CLAUDE.md sections (~30 lines) silently deleted by the next regeneration. Noticed only because an unrelated diff review showed 28 deletions.
 rule: Hand-written content goes BELOW the END marker, never inside the managed block.
 enforced_in: subagent brief template; product gap noted for pm
+detect: {"tool":"Edit","pathEndsWith":"CLAUDE.md"}
 tags: [generated-files, silent-loss]
 ---
 
