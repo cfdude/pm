@@ -227,7 +227,10 @@ test("rules block gains a GitHub issue sync section (gh issue list -> add-epic) 
   assert.match(md, /gh issue list --repo cfdude\/pm --state open/);
   assert.match(md, /externalId/);
   assert.match(md, /add-epic --id gh-cfdude-pm-<issue-number> .*--status untriaged/);
-  assert.match(md, /--lane claude-code/);
+  // The lane is no longer hardcoded — it comes from lane routing, with the recipe naming the
+  // source and permitting an override with a recorded reason.
+  assert.match(md, /--lane <lane>/);
+  assert.match(md, /suggest-lane/);
   assert.match(md, /--priority P2/);
 });
 

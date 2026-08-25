@@ -36,6 +36,14 @@ carries the exact steps for whichever branch applies:
 `sync` prints which of the two applies, so you never have to infer it. A secondary tracker is
 inward by definition and always contributes its own inward pull.
 
+**The registration recipe runs as written.** Its epic id is derived (`<system>-<scope>-<number>`),
+so the same item yields the same id in every repo and session and a re-run is refused as a
+duplicate rather than landing as a second epic under an invented slug. Its `<lane>` comes from
+**lane routing** (`suggest-lane "<issue-title>"`), never a fixed `claude-code` — the lane decides
+whether the work leaves any spec, plan or gate record, so hardcoding it decides that silently for
+every mirrored item. Override it when routing is wrong for a particular item, and record why:
+`update-epic <id> --notes "lane: <chosen> not <routed> — <why>"`.
+
 Record what you read:
 
 ```bash

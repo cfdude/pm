@@ -575,7 +575,10 @@ function emittedRegistration(block, { number, url, title, updatedAt }) {
     .replace(/<issue-number>/g, String(number))
     .replace(/"<issue-title>"/g, "TITLE")
     .replace(/<issue-url>/g, url)
-    .replace(/<issue-updated-at>/g, updatedAt || "2026-08-23T09:30:00Z");
+    .replace(/<issue-updated-at>/g, updatedAt || "2026-08-23T09:30:00Z")
+    // `<lane>` is a documented placeholder like the others: the recipe takes it from lane
+    // routing rather than hardcoding one, so filling it is the agent's step, not an invention.
+    .replace(/<lane>/g, "claude-code");
   return filled.trim().split(/\s+/);
 }
 
@@ -622,4 +625,30 @@ test("the derived id carries the tracker's scope, so issue #42 in two repos does
   const ids = readState(cwd).epics.filter(e => e.externalId === "42").map(e => e.id);
   assert.equal(ids.length, 2, "two distinct epics — externalId alone is not a duplicate test");
   assert.notEqual(ids[0], ids[1]);
+});
+
+// ─────────── 10.13: a mirrored item's lane comes from lane routing ───────────
+
+test("the emitted recipe takes the lane from lane routing, not a hardcoded claude-code", () => {
+  const block = rulesFor({ system: "github-issues", repo: "cfdude/pm", direction: "inward" });
+  assert.ok(!block.includes("--lane claude-code"),
+    "a hardcoded lane silently decides, for every mirrored item, whether the work leaves any " +
+    "spec, plan or gate record");
+  assert.match(block, /suggest-lane/, "the recipe must name lane routing as the source");
+  assert.match(block.replace(/\n\s+/g, " "), /record .*why|reason/i,
+    "and permit an override with a stated reason recorded on the epic");
+});
+
+test("the routed recipe still runs as written once its lane placeholder is filled", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const state = readState(cwd);
+  state.tracker = { system: "github-issues", repo: "cfdude/pm", direction: "inward" };
+  writeState(cwd, state);
+  const argv = emittedRegistration(run(["rules"], { cwd }),
+    { number: 114, url: "https://github.com/cfdude/pm/issues/114" });
+  run(argv, { cwd });
+  const epic = readState(cwd).epics.find(e => e.externalId === "114");
+  assert.ok(epic, "the recipe with a routed lane still exits zero and creates the epic");
+  assert.ok(epic.lane, "and the epic carries whatever lane routing supplied");
 });
