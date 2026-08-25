@@ -4,8 +4,10 @@
 differently* becomes an issue and an epic — that loop works. A finding about *how we should work*
 had nowhere to go and died in conversation transcripts. This is that second lane.
 
-> **Use the `lessons` skill.** It matches your situation against every lesson's `trigger` and opens
-> only what applies. This file is its index; reading the whole directory defeats the structure.
+> **Use the `lessons` skill.** It does two things: matches your situation against every lesson's
+> `trigger` and opens only what applies, **and** recognises when a new lesson has just been earned so
+> it gets written while the cost is still measurable. This file is its index; reading the whole
+> directory defeats the structure.
 
 ## How to read this directory
 
