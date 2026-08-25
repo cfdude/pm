@@ -103,6 +103,19 @@ export function stalenessMarking(epic, entry) {
  * and any cleanup it has to do. A gate that called process.exit() itself would be unusable
  * from the non-interactive paths, which must reflect what disk already says rather than die.
  *
+ * ALREADY-ARCHIVED IS NOT A NO-OP. The gate runs on an invocation whose epic is already at
+ * `archived`, and every demand below is evaluated against it. That call is the ONLY moment the
+ * documented workflow can record `delivered`: `/opsx:archive` moves the change directory, the
+ * archive-drift heal observes the move and flips the status stamping `unknown` because nobody
+ * supplied a disposition at that instant, and a gate that treated "the status did not change"
+ * as grounds to skip would leave EVERY openspec epic following the documented workflow at
+ * `unknown` — the 42-of-49 headline defect, reproduced in the field built to close it.
+ *
+ * Every input below is read from the RECORD and none from `openspec/changes/<id>/`: by that
+ * point the directory has moved under `archive/`. The Gate 2 verdict and its evidence, the
+ * outstanding-work quantity (which reads zero for an archived epic whose source is gone), the
+ * deferral assertion and the attribution array are all durable on the epic.
+ *
  * @param {object} epic     the epic as it stands BEFORE the transition.
  * @param {object} [request] what the caller is asking for at this transition — the interactive
  *                           verb supplies the agent's disposition here. Empty for now; the

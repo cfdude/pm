@@ -1542,3 +1542,142 @@ test("no flag on any command writes recordedBy", async () => {
     "recordedBy is what tells an engine stamp from an agent's judgment; an agent-writable " +
     "path for it would collapse the distinction every exemption in this release keys on");
 });
+
+// ─────────────── the verb accepts an epic that is already archived ───────────────
+
+test("the documented sequence ends with the real disposition recorded", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  withTasks(cwd, "shipped-properly", ["- [x] 1.1 Done"]);
+  run(["add-epic", "--id", "shipped-properly", "--lane", "openspec"], { cwd });
+  run(["record-gate-review", "shipped-properly", "--gate", "2", "--verdict", "pass",
+    "--base-sha", "aaa1111", "--head-sha", "bbb2222", "--reviewer", "fresh-context reviewer"], { cwd });
+
+  // /opsx:archive moves the change directory on disk...
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive"), { recursive: true });
+  fs.renameSync(path.join(cwd, "openspec", "changes", "shipped-properly"),
+    path.join(cwd, "openspec", "changes", "archive", "2026-08-24-shipped-properly"));
+  // ...the heal observes it and flips the status, stamping `unknown` because nobody was asked.
+  run(["render"], { cwd });
+  const healed = readState(cwd).epics.find(e => e.id === "shipped-properly");
+  assert.equal(healed.status, "archived");
+  assert.equal(healed.disposition.recordedBy, "archive-drift-heal");
+  assert.equal(healed.gateReview.gate2.verdict, "pass", "the real verdict survives the heal");
+
+  // ...and the agent records the real disposition on the already-archived epic.
+  run(["update-epic", "shipped-properly", "--status", "archived", "--outcome", "delivered",
+    "--no-deferrals"], { cwd });
+  const done = readState(cwd).epics.find(e => e.id === "shipped-properly");
+  assert.equal(done.disposition.outcome, "delivered",
+    "a verb that refused this call would leave EVERY openspec epic following the documented " +
+    "workflow at `unknown` — the defect this release exists to close");
+  assert.equal(done.disposition.recordedBy, undefined);
+  assert.equal(done.gateReview.gate2.verdict, "pass");
+  assert.doesNotMatch(JSON.stringify(done.gateReview), /ungated/,
+    "no ungated standing condition anywhere in gateReview");
+});
+
+test("accepting an already-archived epic is not waiving the gate", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  writeState(cwd, {
+    version: 1, active: null, detourStack: [],
+    epics: [{ id: "healed-ungated", title: "x", priority: "P1", status: "archived", role: "epic",
+      lane: "openspec", links: [], reconcileNeeded: false,
+      disposition: { outcome: "unknown", recordedAt: "2026-08-01T00:00:00.000Z", recordedBy: "archive-drift-heal" },
+      gateReview: { gate2: { verdict: "ungated", reviewedAt: "2026-08-01T00:00:00.000Z", recordedBy: "archive-drift-heal" } } }],
+  });
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  const err = expectFail(() => run(["update-epic", "healed-ungated", "--status", "archived",
+    "--outcome", "delivered", "--no-deferrals"], { cwd }));
+  assert.ok(err, "refused exactly as a first-time archive would be");
+  assert.match(String(err.stderr || err.message), /Gate 2/);
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
+});
+
+// ─────────────── the four exempt paths ───────────────
+
+test("the heal archives an epic with 12 unticked tasks, counts intact, no refusal", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const plan = withPlan(cwd, "abandoned-long-ago",
+    Array.from({ length: 12 }, (_, i) => `- [ ] ${i + 1}.1 Never finished`));
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", "2026-01-01-abandoned-long-ago"), { recursive: true });
+  writeState(cwd, {
+    version: 1, active: null, detourStack: [],
+    epics: [{ id: "abandoned-long-ago", title: "x", priority: "P2", status: "queued", role: "epic",
+      lane: "superpowers", planPath: plan, links: [], reconcileNeeded: false }],
+  });
+  run(["render"], { cwd });
+  const e = readState(cwd).epics.find(x => x.id === "abandoned-long-ago");
+  assert.equal(e.status, "archived", "the heal reflects disk; refusing would make the record lie");
+  assert.equal(e.disposition.recordedBy, "archive-drift-heal");
+  assert.equal(e.deferralAssertion, undefined, "no deferral assertion is demanded of it");
+  assert.equal(e.disposition.carriedTo, undefined, "and no handoff — nobody named a receiver");
+  assert.match(projectMd(cwd), /0\/12/, "its unticked counts survive as the evidence they are");
+});
+
+test("both archived-at-creation paths succeed with no outcome, no assertion, no handoff", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "created-archived", "--lane", "openspec", "--status", "archived"], { cwd });
+  run(["add-many", "--from", writeBatch(cwd, { epics: [{ id: "batch-archived", lane: "openspec", status: "archived" }] })], { cwd });
+  const st = readState(cwd);
+  for (const id of ["created-archived", "batch-archived"]) {
+    const e = st.epics.find(x => x.id === id);
+    assert.equal(e.status, "archived");
+    assert.equal(e.deferralAssertion, undefined);
+    assert.equal(e.disposition.outcome, "unknown");
+  }
+});
+
+// ─────────────── the outcome invariant, over the whole epic list ───────────────
+
+test("after an upgrade, every archived epic carries a disposition RECORD, not a reader default", () => {
+  // Asserting the RECORD is the point. `outcomeOf({})` returns "unknown", so an assertion that
+  // the reader is non-null would be satisfied with every stamp in this release deleted — which
+  // is exactly the check that measures nothing.
+  //
+  // The fixture is the ordering case: `migrations.mjs` runs the MIGRATIONS loop, THEN the heal,
+  // THEN stamps pmVersion. An epic the heal flips during that run is archived after the
+  // migration has already walked the list, and the migration never replays.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", "2026-08-01-healed-during-upgrade"), { recursive: true });
+  writeState(cwd, {
+    version: 1, pmVersion: "0.26.0", active: null, detourStack: [],
+    epics: [
+      { id: "healed-during-upgrade", title: "x", priority: "P1", status: "queued", role: "epic",
+        lane: "openspec", links: [], reconcileNeeded: false },
+      { id: "created-archived", title: "y", priority: "P2", status: "archived", role: "epic",
+        lane: "claude-code", links: [], reconcileNeeded: false,
+        disposition: { outcome: "unknown", recordedAt: "2026-08-01T00:00:00.000Z", recordedBy: "add-epic" } },
+      { id: "judged", title: "z", priority: "P2", status: "archived", role: "epic",
+        lane: "claude-code", links: [], reconcileNeeded: false,
+        disposition: { outcome: "killed", reason: "not worth it", recordedAt: "2026-08-02T00:00:00.000Z" } },
+    ],
+  });
+  run(["upgrade"], { cwd });
+
+  const { ENGINE_STAMP_TOKENS } = { ENGINE_STAMP_TOKENS: ["archive-drift-heal", "archive-backfill", "add-epic", "add-many", "migration"] };
+  const archived = readState(cwd).epics.filter(e => e.status === "archived");
+  assert.ok(archived.length >= 3);
+  for (const e of archived) {
+    // (a) the record itself
+    assert.equal(typeof e.disposition, "object", `${e.id} carries no disposition OBJECT`);
+    assert.ok(e.disposition && e.disposition.outcome != null, `${e.id} has no outcome`);
+    assert.ok(e.disposition.recordedAt, `${e.id} has no recordedAt`);
+    // (b) engine-stamped and agent-supplied are distinguishable without prose
+    if ("recordedBy" in e.disposition) {
+      assert.ok(ENGINE_STAMP_TOKENS.includes(e.disposition.recordedBy),
+        `${e.id} carries a recordedBy outside the fixed five`);
+    }
+  }
+  // (c) the heal-flipped epic names the heal specifically
+  const healed = archived.find(e => e.id === "healed-during-upgrade");
+  assert.equal(healed.disposition.recordedBy, "archive-drift-heal",
+    "without the heal's own stamp this epic is archived after the migration walked the list " +
+    "and is never revisited, because the version stamp now says the migration ran");
+  assert.equal(archived.find(e => e.id === "judged").disposition.recordedBy, undefined,
+    "an agent's judgment stays distinguishable from an engine stamp");
+});

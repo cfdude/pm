@@ -149,6 +149,11 @@ export function updateEpic() {
       })
     : undefined;
 
+  // Note `status === "archived"`, not "the status CHANGED to archived": an epic already at
+  // `archived` runs the full gate again on this invocation and records the disposition the
+  // agent supplies. Re-archiving is an established shape here — `completedAt` below is already
+  // guarded on `!epic.completedAt` precisely because this verb can be run twice — and it is
+  // the only moment the documented `/opsx:archive` -> heal -> record flow can say `delivered`.
   if (status === "archived") {
     const verdict = archiveGate(epic, {
       outcome: str(f.outcome), reason: str(f.reason),

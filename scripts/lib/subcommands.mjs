@@ -261,6 +261,13 @@ export function sync(quiet = false) {
     state.epics.push({ id, title, priority: "P?", status: "untriaged", role: "epic", lane: "superpowers", planPath, links: [], reconcileNeeded: false });
     known.add(id); added++;
   }
+  // EXEMPTION NOTE for the archive backfill this function will grow (group 8): registering a
+  // historical archived change must NOT go through archiveGate(). Like the heal below and the
+  // two archived-at-creation paths, it supplies no disposition, receives no named receiver from
+  // anyone, and reflects a record rather than a judgment — so the outcome refusal, the deferral
+  // assertion and the handoff demand do not bind it. It stamps `outcome: unknown` with
+  // `recordedBy: "archive-backfill"` (creationStamp's `via`, where it registers through a
+  // creation path) and writes no `gateReview.gate2` at all.
   reconcileArchived(state);
   saveState(state);
   if (!quiet) {
