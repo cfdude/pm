@@ -219,6 +219,7 @@ test("every add-many key the registry declares round-trips through a batch entry
       id: "full", lane: "claude-code", title: "T", priority: "P1", status: "queued",
       externalId: "JOB-1", externalUrl: "https://example.test/JOB-1",
       planPath: "docs/superpowers/plans/x.md", links: [], description: "why this epic exists",
+      externalUpdatedAt: "2026-08-23T09:30:00Z",
     }],
   });
   run(["add-many", "--from", batch], { cwd });
@@ -275,6 +276,7 @@ const EXERCISE = {
   "--priority": { args: ["--priority", "P1"], check: (e) => assert.equal(e.priority, "P1") },
   "--link": { args: ["--link", "blocks:other:because"], check: (e) => assert.deepEqual(e.links, [{ type: "blocks", epic: "other", reason: "because" }]) },
   "--review-mode": { args: ["--review-mode", "thorough"], check: (e) => assert.equal(e.reviewMode, "thorough") },
+  "--external-updated-at": { args: ["--external-updated-at", "2026-08-23T09:30:00Z"], check: (e) => assert.equal(e.externalUpdatedAt, "2026-08-23T09:30:00Z") },
   "--description": { args: ["--description", "durable rationale"], check: (e) => assert.equal(e.description, "durable rationale") },
   // A note reads back as an ENTRY, not a string — {at, actor, text}. Asserting on the text
   // alone would pass against an implementation that stored the raw string and lost the trail.
@@ -991,4 +993,28 @@ test("supersession preserves ANY prior entry and never nests a second level", ()
   assert.equal(g.superseded.headSha, "bbbbbbb", "the entry it replaced, whatever its verdict");
   assert.equal(g.superseded.superseded, undefined,
     "one nested record, not a chain — a growing history here is a different capability");
+});
+
+// ─────────────── Gate 1 is read ───────────────
+//
+// `gate1` was stored, documented in the `conductor` skill, and consumed by NOTHING: the sole
+// reader of `gateReview` anywhere in the engine was the archive guard's `gate2` test. A spec
+// review that never happened was indistinguishable from one that did.
+
+test("an epic carrying only a gate1 verdict is named on both surfaces, with its evidence", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "spec-only", "--lane", "openspec"], { cwd });
+  run(["record-gate-review", "spec-only", "--gate", "1", "--verdict", "pass",
+    "--base-sha", "1111111", "--head-sha", "2222222", "--reviewer", "spec reviewer"], { cwd });
+
+  const md = projectMd(cwd);
+  assert.match(md, /Gate 1/, "PROJECT.md must have somewhere to show a spec review at all");
+  assert.match(md, /1111111\.\.2222222/, "and must show the evidence it recorded");
+  assert.match(md, /spec reviewer/);
+
+  const brief = parseBrief(cwd);
+  assert.match(brief, /gate 1: pass \(1111111\.\.2222222\)/,
+    "an epic with no gate2 must still appear — filtering the section on gate2 hides exactly " +
+    "the epic whose spec review is the only one recorded");
 });

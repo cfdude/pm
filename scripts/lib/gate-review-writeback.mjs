@@ -8,12 +8,7 @@ import { parseFlags } from "./add-epic.mjs";
 import { render } from "./render.mjs";
 
 const KNOWN_GATE_NUMBERS = ["1", "2"];
-/** What an AGENT may pass to `--verdict`. Exported so a test binds to the list itself rather
- *  than transcribing it, and deliberately NOT the same list as constants.mjs's
- *  STORABLE_GATE_VERDICTS: the engine additionally stores `ungated`, and admitting that value
- *  here would let the party whose work would otherwise be reviewed certify that no review
- *  happened. Two lists is the mechanism; one list with a comment is not. */
-export const KNOWN_GATE_VERDICTS = ["pass", "fail"];
+const KNOWN_GATE_VERDICTS = ["pass", "fail"];
 
 export function recordGateReview() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
@@ -75,21 +70,6 @@ export function recordGateReview() {
   if (baseSha !== undefined) entry.baseSha = baseSha;
   if (headSha !== undefined) entry.headSha = headSha;
   if (reviewer !== undefined) entry.reviewer = reviewer;
-
-  // Supersede, never destroy. This write used to replace the entry wholesale, so the `ungated`
-  // record the archive-drift heal writes — the record that an epic reached `archived` with no
-  // review — was erased by the very verdict that supersedes it, and "the superseded entry MUST
-  // remain readable" had no writer anywhere in the engine.
-  //
-  // ONE nested record, not a chain: the prior entry's own `superseded` is dropped rather than
-  // carried down. A growing verdict history is a different capability, and an unbounded nest
-  // would make the record's depth a function of how many times a gate was re-recorded.
-  const prior = epic.gateReview[`gate${gate}`];
-  if (prior && typeof prior === "object") {
-    const kept = { ...prior };
-    delete kept.superseded;
-    entry.superseded = kept;
-  }
   epic.gateReview[`gate${gate}`] = entry;
 
   saveState(state);

@@ -268,6 +268,7 @@ export function addEpic() {
   if (parent !== undefined) epic.parent = parent;
   if (str(f["external-id"]) !== undefined) epic.externalId = str(f["external-id"]);
   if (str(f["external-url"]) !== undefined) epic.externalUrl = str(f["external-url"]);
+  if (str(f["external-updated-at"]) !== undefined) epic.externalUpdatedAt = str(f["external-updated-at"]);
   state.epics.push(epic);
   if (epic.status === "active") activate(state, id);   // keep .active in sync on creation
   saveState(state);

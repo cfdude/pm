@@ -43,6 +43,11 @@ export function addMany() {
   // word — the same invisible failure as add-epic's missing allowlist (#79), at a different
   // input shape. Rejection happens in this validation pass, BEFORE any epic is constructed, so
   // a batch containing one offender creates none of its entries.
+  //
+  // The one flag→key mapping rule the registry carries is `--external-updated-at` ↔
+  // `externalUpdatedAt`, which is why a batch document is written in STATE keys. A bulk-mirrored
+  // epic that arrived without its watermark would count as never-re-read from the moment it was
+  // created, so the bulk path has to carry the same field the single-epic path does.
   const allowedKeys = epicBatchKeys();
   const existingIds = new Set(state.epics.map(e => e.id));
   const batchIds = new Set();

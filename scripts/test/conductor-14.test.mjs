@@ -529,3 +529,36 @@ test("sync in an inward repo instructs the pull and the watermark comparison", (
   assert.match(text, /externalUrl/, "register the unmirrored ones without duplicating");
   assert.match(text, /externalUpdatedAt/, "compare each linked item's timestamp against the watermark");
 });
+
+// ─────────── 11.1: the freshness watermark ───────────
+
+test("externalUpdatedAt is accepted by every epic-writing surface and reads back", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code", "--external-id", "7",
+       "--external-url", "https://x.test/7", "--external-updated-at", "2026-08-20T10:00:00Z"], { cwd });
+  assert.equal(readState(cwd).epics.find(e => e.id === "a").externalUpdatedAt, "2026-08-20T10:00:00Z");
+
+  run(["update-epic", "a", "--external-updated-at", "2026-08-23T09:30:00Z"], { cwd });
+  assert.equal(readState(cwd).epics.find(e => e.id === "a").externalUpdatedAt, "2026-08-23T09:30:00Z");
+
+  // The bulk path carries it identically — a batch key derived from the same registry entry.
+  const batch = path.join(cwd, "batch.json");
+  fs.writeFileSync(batch, JSON.stringify({ epics: [
+    { id: "b", lane: "claude-code", externalId: "8", externalUrl: "https://x.test/8",
+      externalUpdatedAt: "2026-08-21T11:00:00Z" },
+  ] }));
+  run(["add-many", "--from", batch], { cwd });
+  assert.equal(readState(cwd).epics.find(e => e.id === "b").externalUpdatedAt, "2026-08-21T11:00:00Z");
+});
+
+test("the emitted list step contains no watermark write — listing cannot advance it", () => {
+  const block = rulesFor({ system: "github-issues", repo: "o/n", direction: "inward" });
+  const listStep = block.split("\n").find(l => l.includes("gh issue list"));
+  assert.ok(listStep, "the inward section must still emit a list step");
+  assert.ok(!listStep.includes("--external-updated-at"),
+    "the LIST step must not write a watermark — seeing an item in a list response is not " +
+    "reading it, and a list-driven stamp would erase the drift sync exists to find");
+  assert.match(block.replace(/\n\s+/g, " "), /listing alone must never advance the watermark/,
+    "and the block says so outright");
+});

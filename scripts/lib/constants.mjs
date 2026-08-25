@@ -144,6 +144,11 @@ export const EPIC_FLAGS = [
   // would silently drop, and rejecting the key by name is the whole point of #79.
   { flag: "description", key: "description", commands: ["add-epic", "update-epic", "add-many"] },
   { flag: "notes", key: "notes", commands: ["add-epic", "update-epic"], write: "append" },
+  // The tracker's OWN updated timestamp as of the last time the agent read that item's content
+  // — never a local clock reading, and never advanced by merely seeing the item in a list
+  // response. Registered on all three surfaces because a bulk-mirrored epic that carries no
+  // watermark instantly pollutes the "never re-read" count the brief reports.
+  { flag: "external-updated-at", key: "externalUpdatedAt", commands: ["add-epic", "update-epic", "add-many"] },
   // record-gate-review's evidence flags. They live in this registry because it is the single
   // declaration of the flag surface every epic-WRITING command shares, and recording a verdict
   // writes an epic. `key` is null on all three: they land nested under `gateReview.gateN`
