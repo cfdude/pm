@@ -53,6 +53,15 @@ export const gateHasEvidence = (entry) =>
 
 export const NO_GATE_EVIDENCE = "no checkable evidence";
 
+/** The verdicts that may be STORED on `gateReview.gateN`. Deliberately WIDER than the
+ *  verdicts an agent may write: `ungated` is the archive-drift heal's record that it flipped a
+ *  status with no verdict from anyone, and a verdict meaning "no review happened" must never
+ *  be writable by the party whose work would otherwise be reviewed. The agent's list is
+ *  `KNOWN_GATE_VERDICTS` in gate-review-writeback.mjs and stays `pass|fail`; widening THAT
+ *  list to admit `ungated` for storage's sake defeats the whole rule. */
+export const STORABLE_GATE_VERDICTS = ["pass", "fail", "ungated"];
+
+
 /** The ONE wording every surface uses for a recorded gate verdict, so PROJECT.md and the brief
  *  cannot drift apart. `extra` carries anything a later capability appends per verdict (the
  *  staleness marking). */

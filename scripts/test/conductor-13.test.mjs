@@ -916,3 +916,36 @@ test("no module under scripts/lib/ mines a sha or a range out of a verdict note"
     "a note is prose and stays prose — parsing a range out of one is the dependency the " +
     "baseSha/headSha fields were added to remove");
 });
+
+// ─────────────── two verdict vocabularies, deliberately distinct ───────────────
+//
+// `ungated` means "no review happened". Widening the single `--verdict` allowlist to admit it
+// for storage's sake would let the party whose work would otherwise be reviewed certify that
+// no review was needed — which is why the agent-writable list and the storable list are two
+// lists rather than one.
+
+const GATE_WRITEBACK = new URL("../lib/gate-review-writeback.mjs", import.meta.url).href;
+
+test("the agent-writable and the storable verdict vocabularies are separate lists", async () => {
+  const { KNOWN_GATE_VERDICTS } = await import(GATE_WRITEBACK);
+  const { STORABLE_GATE_VERDICTS } = await import(CONSTANTS);
+  assert.deepEqual(KNOWN_GATE_VERDICTS, ["pass", "fail"],
+    "the agent may write a verdict about a review that happened, and nothing else");
+  assert.deepEqual(STORABLE_GATE_VERDICTS, ["pass", "fail", "ungated"],
+    "the engine may additionally store `ungated` — the archive-drift heal's record that it " +
+    "flipped a status with no verdict from anyone");
+  assert.ok(!KNOWN_GATE_VERDICTS.includes("ungated"),
+    "the moment `ungated` appears in the agent's allowlist this capability is defeated");
+});
+
+test("record-gate-review refuses `ungated` and names the verdicts it accepts", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  const err = expectFail(() => run(
+    ["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "ungated"], { cwd }));
+  assert.ok(err, "a verdict meaning `no review happened` is not self-certifiable");
+  assert.match(String(err.stderr || err.message), /pass\|fail/);
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
+});
