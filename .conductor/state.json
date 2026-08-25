@@ -2566,7 +2566,15 @@
         ],
         "notifications": []
       },
-      "release": "0.27.0"
+      "release": "0.27.0",
+      "attributedCommits": [
+        "eee4f7e",
+        "70a1783",
+        "044233f",
+        "31ef0a9",
+        "d9fba22",
+        "431e8c7"
+      ]
     },
     {
       "id": "2026-08-18-state-write-conflict-guard",
@@ -2638,7 +2646,7 @@
     "repo": "cfdude/pm"
   },
   "platform": "claude-code",
-  "revision": 50,
+  "revision": 51,
   "reviewMode": "thorough",
   "releases": [
     {

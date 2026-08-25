@@ -981,11 +981,20 @@ test("9.4 arm 2: two gates 47 ms apart are reported; hours apart are not", () =>
 test("9.4: zero live candidates, and the reason each arm cannot fire is checkable", () => {
   const state = liveState();
   assert.deepEqual(findingsFor("gate-recorded-as-bookkeeping", state), []);
-  // NON-EMPTY is the discriminator, not presence: an epic created under this release carries an
-  // empty array, which asserts that nothing has been attributed to it and so names no merge
-  // commit for a verdict to post-date.
-  assert.equal(state.epics.filter(e => Array.isArray(e.attributedCommits) && e.attributedCommits.length).length, 0,
-    "arm 1: no epic has attributed a commit yet, so there is no merge commit to be after");
+  // Arm 1 needs BOTH a non-empty attribution array (which names the merge commit) and a gate
+  // verdict dated after it. Stated as a RELATION, not as a live count: the count was 0 when this
+  // was written and stopped being 0 the moment this release exercised its own attribution
+  // obligation, which is exactly the rot docs/lessons/hardcoded-live-data-claims-rot describes —
+  // the assertion went red on the record becoming MORE complete.
+  for (const e of state.epics) {
+    const attributed = Array.isArray(e.attributedCommits) ? e.attributedCommits : [];
+    if (!attributed.length) continue;
+    const gates = Object.values(e.gateReview || {}).filter(g => g && g.reviewedAt);
+    assert.deepEqual(gates.map(g => g.reviewedAt), [],
+      `arm 1: \`${e.id}\` has attributed commits, so a verdict of its own would have to be ` +
+      "compared against them — the zero above must come from the comparison, not from the " +
+      "arm having no population");
+  }
   const twoGates = state.epics.filter(e => e.gateReview && e.gateReview.gate1 && e.gateReview.gate2);
   assert.equal(twoGates.length, 1, "arm 2: exactly one live epic holds two gate verdicts");
   const apart = Math.abs(Date.parse(twoGates[0].gateReview.gate1.reviewedAt) -
