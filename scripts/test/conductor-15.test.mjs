@@ -1070,3 +1070,50 @@ test("9.10: zero live candidates, because the migration adds the array to no pre
     assert.ok(!("attributedCommits" in e), `${e.id}: every pre-existing epic reads ABSENT, not empty`);
   }
 });
+
+// ───────────── 9.11: an openspec epic archived with a passing Gate 2 and no Gate 1 ─────────────
+
+test("9.11: on live data exactly two epics are reported, and neither is excluded by the scope rule", () => {
+  const findings = findingsFor("archived-openspec-epic-with-no-gate-1", liveState());
+  assert.deepEqual(findings.map(f => f.epic).sort(), ["conductor-mjs-module-split", "platform-parity-mechanism"]);
+  // The third passing-Gate-2 epic DOES carry a gate1, which is why it is not here — read from
+  // the record rather than assumed, so the check is shown to be discriminating on live data.
+  const third = liveState().epics.find(e => e.id === "multi-tracker-primary-secondary-support");
+  assert.equal(third.gateReview.gate2.verdict, "pass");
+  assert.ok(third.gateReview.gate1, "the one passing-Gate-2 epic that IS gate-1'd must be excluded");
+});
+
+test("9.11: the archive proceeds and the missing spec review is a finding, never a refusal", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", "no-spec-review"), { recursive: true });
+  fs.writeFileSync(path.join(cwd, "openspec", "changes", "no-spec-review", "tasks.md"), "# tasks\n\n- [x] a\n");
+  run(["sync"], { cwd });
+  run(["record-gate-review", "no-spec-review", "--gate", "2", "--verdict", "pass",
+    "--base-sha", "aaaaaaa", "--head-sha", "bbbbbbb"], { cwd });
+  // The archive is ACCEPTED with no gate1 — Gate 1 gates code, and by archive time the code is
+  // written, so refusing here would demand a spec review of work that has already shipped.
+  run(["update-epic", "no-spec-review", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd });
+  assert.equal(readState(cwd).epics.find(e => e.id === "no-spec-review").status, "archived");
+  assert.match(run(["integrity"], { cwd }), /archived-openspec-epic-with-no-gate-1 — 1 finding/);
+});
+
+test("9.11: the preconditions are load-bearing — no passing Gate 2, or not openspec-lane, is not a finding", () => {
+  const epic = (id, over) => ({ id, title: id, priority: "P1", status: "archived", role: "epic",
+    lane: "openspec", links: [],
+    disposition: { outcome: "unknown", recordedAt: "2026-08-01T00:00:00.000Z", recordedBy: "migration" }, ...over });
+  const pass = { verdict: "pass", reviewedAt: "2026-08-01T00:00:00.000Z", baseSha: "aaaaaaa", headSha: "bbbbbbb" };
+  const findings = findingsFor("archived-openspec-epic-with-no-gate-1", {
+    version: 1, active: null, detourStack: [], epics: [
+      epic("passing-and-ungate1d", { gateReview: { gate2: pass } }),
+      // An `ungated` gate2 is the heal's record that NO review happened. Reporting a missing
+      // spec review there would be reporting the second half of a condition the ungated-archive
+      // notice already carries in full.
+      epic("never-reviewed-at-all", { gateReview: { gate2: { verdict: "ungated", reviewedAt: "2026-08-01T00:00:00.000Z" } } }),
+      epic("no-verdict-at-all", {}),
+      // Another lane cannot record a Gate 1 at all — `record-gate-review` refuses it — so a
+      // finding there would be a condition with no clearing path in the engine.
+      epic("wrong-lane", { lane: "superpowers", gateReview: { gate2: pass } }),
+    ] });
+  assert.deepEqual(findings.map(f => f.epic), ["passing-and-ungate1d"]);
+});

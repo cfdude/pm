@@ -15,7 +15,7 @@
 
 import { isInitialized, loadState } from "./state.mjs";
 import { epicProgress, strippedChangeId } from "./epic-progress.mjs";
-import { gateHasEvidence } from "./constants.mjs";
+import { gateHasEvidence, isOpenspecLane } from "./constants.mjs";
 import { commitDate, isAncestor } from "./git.mjs";
 import { isArchiveBackfilled, outcomeOf, stampedBy } from "./disposition.mjs";
 
@@ -139,6 +139,26 @@ export const CHECKS = [
             "recorded as delivered with a passing Gate 2 but attributed no commits — record " +
             `the range that shipped with: update-epic ${e.id} --attribute-commit <sha>` });
         }
+      }
+      return out;
+    },
+  },
+  {
+    id: "archived-openspec-epic-with-no-gate-1",
+    title: "an openspec-lane epic archived with a passing Gate 2 and no Gate 1 verdict",
+    run(state) {
+      const out = [];
+      for (const e of state.epics) {
+        if (e.status !== "archived" || !isOpenspecLane(e) || !inCompletionScope(e)) continue;
+        const gates = e.gateReview || {};
+        if (!gates.gate2 || gates.gate2.verdict !== "pass" || gates.gate1) continue;
+        // REPORTED, never refused. Gate 1 gates CODE, and by archive time the code is written —
+        // a refusal at the archive transition would be demanding a spec review of work that has
+        // already shipped, which is theatre. Reporting it is what makes a recorded Gate 1 read
+        // by anything at all.
+        out.push({ epic: e.id, detail:
+          "archived with a passing Gate 2 and no Gate 1 (spec review) verdict — the spec review " +
+          "either did not happen or was never recorded" });
       }
       return out;
     },
