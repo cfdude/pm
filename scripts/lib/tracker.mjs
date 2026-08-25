@@ -5,7 +5,7 @@
 
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { parseFlags } from "./add-epic.mjs";
-import { removeSecondaryTracker, upsertSecondaryTracker, writeRules } from "./rules.mjs";
+import { removeSecondaryTracker, secondaryTrackerKey, upsertSecondaryTracker, writeRules } from "./rules.mjs";
 import { render } from "./render.mjs";
 import { resolvePlatform } from "./platform.mjs";
 import { KNOWN_TRACKER_DIRECTIONS } from "./constants.mjs";
@@ -70,6 +70,11 @@ export function setTracker() {
     if (str(f.instance) !== undefined) entry.instance = str(f.instance);
     if (str(f.mechanism) !== undefined) entry.mechanism = str(f.mechanism);
     if (direction !== undefined) entry.direction = direction;
+    // NEW entries only — computed BEFORE the upsert merges, for the same reason the primary
+    // path computes `isNew` before its spread.
+    const existingSecondary = (Array.isArray(state.secondaryTrackers) ? state.secondaryTrackers : [])
+      .some(e => secondaryTrackerKey(e) === secondaryTrackerKey(entry));
+    if (!existingSecondary && entry.direction === undefined) entry.direction = "inward";
     upsertSecondaryTracker(state, entry);
     saveState(state);
     writeRules(resolvePlatform({}, state));
@@ -78,6 +83,12 @@ export function setTracker() {
     return;
   }
 
+  // Captured BEFORE the merge below. `t` is a spread of the EXISTING tracker, so a naive
+  // `if (!t.direction) t.direction = "inward"` placed after it would stamp `inward` onto every
+  // pre-existing direction-less jira repo the first time anyone ran `set-tracker` for any
+  // reason — silently switching OFF the outward mirroring that repo has always had. A new
+  // tracker chooses; an existing one keeps resolving exactly as it did.
+  const isNew = !(state.tracker && state.tracker.system);
   const t = { ...(state.tracker || {}) };
   if (str(f.system) !== undefined) t.system = str(f.system);
   if (str(f.instance) !== undefined) t.instance = str(f.instance);
@@ -98,6 +109,11 @@ export function setTracker() {
   if (!t.system) {
     process.stderr.write("conductor: set-tracker requires --system (e.g. jira)\n"); process.exit(1);
   }
+  // A NEW primary tracker defaults to `inward`. Deliberate, user-visible reversal for newly
+  // registered non-github trackers: creating issues in someone else's tracker is the
+  // consequential direction and must be chosen, not inherited. `set-tracker --direction
+  // outward` is the one-flag remedy.
+  if (isNew && t.direction === undefined) t.direction = "inward";
   state.tracker = t;
   saveState(state);
   writeRules(resolvePlatform({}, state));   // refresh CLAUDE.md so the agent sees its new tracker-sync responsibility

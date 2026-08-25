@@ -259,3 +259,49 @@ test("the github inward section keeps its literal gh command and also dedups on 
   assert.ok(before.includes("that issue number as `externalId` already"),
     "the baseline must still show the bare-externalId instruction this task replaces");
 });
+
+test("a NEW primary tracker defaults to inward — the consequential direction must be chosen", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-tracker", "--system", "jira", "--instance", "onvex", "--project", "JOB"], { cwd });
+  assert.equal(readState(cwd).tracker.direction, "inward");
+  const md = run(["rules"], { cwd });
+  assert.ok(!md.includes(OUTWARD_HEADING), "a newly registered tracker gets no outward section");
+  assert.ok(md.includes("## Inward tracker sync (jira · JOB)"));
+});
+
+test("merging into an EXISTING direction-less tracker never stamps a direction onto it", () => {
+  // The merge trap: `setTracker()` merges `{...(state.tracker || {})}`, so a naive
+  // `if (!t.direction) t.direction = "inward"` inside the writer would switch outward
+  // mirroring OFF for every existing jira repo the first time anyone touched its config.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const state = readState(cwd);
+  state.tracker = { system: "jira", projectKey: "JOB", instance: "onvex" };
+  writeState(cwd, state);
+  const rulesBefore = run(["rules"], { cwd });
+
+  run(["set-tracker", "--intent", "paused:todo"], { cwd });
+  const t = readState(cwd).tracker;
+  assert.ok(!("direction" in t), "no direction may be written onto a tracker that did not have one");
+  assert.deepEqual(t.statusIntent, { paused: "todo" });
+  assert.equal(t.system, "jira");
+  assert.equal(t.instance, "onvex");
+  assert.equal(run(["rules"], { cwd }), rulesBefore,
+    "the tracker must keep resolving to the same direction it resolved to before the command ran");
+});
+
+test("a NEW secondary tracker is stamped inward; merging into an existing one is not", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-tracker", "--role", "secondary", "--system", "github-issues", "--repo", "a/b"], { cwd });
+  assert.equal(readState(cwd).secondaryTrackers[0].direction, "inward");
+
+  const state = readState(cwd);
+  state.secondaryTrackers = [{ system: "jira", projectKey: "ABC", role: "secondary" }];
+  writeState(cwd, state);
+  run(["set-tracker", "--role", "secondary", "--system", "jira", "--project", "ABC", "--mechanism", "mcp"], { cwd });
+  const entry = readState(cwd).secondaryTrackers[0];
+  assert.ok(!("direction" in entry), "merging into an existing secondary entry stamps nothing");
+  assert.equal(entry.mechanism, "mcp");
+});

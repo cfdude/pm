@@ -208,7 +208,10 @@ test("primary tracker rules-block output (including github-issues-as-primary sup
 test("jira primary + github-issues secondary coexist: primary gets bidirectional sync, secondary gets inward+writeback only", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
-  run(["set-tracker", "--system", "jira", "--project", "JOB",
+  // `--direction outward` is now explicit: a NEW primary tracker defaults to `inward`, the
+  // deliberate reversal this release ships. What this test is about is the outward section's
+  // content, so it asks for the direction that section belongs to.
+  run(["set-tracker", "--system", "jira", "--project", "JOB", "--direction", "outward",
        "--intent", "active:in-progress", "--intent", "archived:done"], { cwd });
   run(["set-tracker", "--role", "secondary", "--system", "github-issues",
        "--repo", "acme/market-intelligence"], { cwd });

@@ -251,7 +251,10 @@ test("a github-issues tracker suppresses the outward External tracker sync secti
 test("a jira tracker keeps the outward External tracker sync section fully intact — bidirectional", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
-  run(["set-tracker", "--system", "jira", "--project", "JOB"], { cwd });
+  // `--direction outward` is now explicit: a NEW primary tracker defaults to `inward`, the
+  // deliberate reversal this release ships. What this test is about is the outward section's
+  // content, so it asks for the direction that section belongs to.
+  run(["set-tracker", "--system", "jira", "--project", "JOB", "--direction", "outward"], { cwd });
   const md = claudeMd(cwd);
   assert.match(md, /External tracker sync/);
   assert.match(md, /has no `externalId` → create the/);

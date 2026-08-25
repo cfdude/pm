@@ -227,7 +227,10 @@ test("rules block gains an External tracker sync section only when a tracker is 
   const cwd = tmpRepo();
   run(["init"], { cwd });
   assert.doesNotMatch(claudeMd(cwd), /External tracker sync/);     // none after a plain init
-  run(["set-tracker", "--system", "jira", "--project", "JOB"], { cwd });
+  // `--direction outward` is now explicit: a NEW primary tracker defaults to `inward`, the
+  // deliberate reversal this release ships. What this test is about is the outward section's
+  // content, so it asks for the direction that section belongs to.
+  run(["set-tracker", "--system", "jira", "--project", "JOB", "--direction", "outward"], { cwd });
   assert.match(claudeMd(cwd), /External tracker sync/);
   assert.match(claudeMd(cwd), /jira/);
 });
@@ -238,7 +241,7 @@ test("tracker-linked autonomy addendum appears only when a tracker is configured
   const noTracker = run(["rules"], { cwd });
   assert.doesNotMatch(noTracker, /Epic-level autonomy on tracker-linked epics/);
 
-  run(["set-tracker", "--system", "jira", "--project", "JOB"], { cwd });
+  run(["set-tracker", "--system", "jira", "--project", "JOB", "--direction", "outward"], { cwd });
   const withTracker = run(["rules"], { cwd });
   assert.match(withTracker, /Epic-level autonomy on tracker-linked epics/);
   assert.match(withTracker, /mid-run drift/i);
