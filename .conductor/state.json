@@ -2590,7 +2590,8 @@
         "59c2d22",
         "9667e83",
         "489809f",
-        "bd2b1e6"
+        "bd2b1e6",
+        "eb787d9"
       ],
       "gateReview": {
         "gate2": {
@@ -2728,7 +2729,7 @@
     "repo": "cfdude/pm"
   },
   "platform": "claude-code",
-  "revision": 72,
+  "revision": 73,
   "reviewMode": "thorough",
   "releases": [
     {
