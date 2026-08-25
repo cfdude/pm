@@ -49,9 +49,36 @@ const MIGRATIONS = [
   {
     release: "0.27.0",
     note: "stamp tracker direction and every archived epic's terminal outcome",
-    apply() {},
+    apply(state) {
+      stampTrackerDirection(state);
+    },
   },
 ];
+
+/** 0.27.0 — record the direction each existing tracker ALREADY behaves with.
+ *
+ *  PRESERVATION, not policy. `github-issues` was inward-only; every other primary received the
+ *  outward mirror and never an inward pull; a secondary is pull-only by definition, whatever its
+ *  vendor. `both` is the tempting answer for a non-github primary and it is wrong in the
+ *  direction that costs something — verified rather than assumed: a jira tracker receives ONLY
+ *  the outward section today (rules.mjs), and the sole inward-pull section is gated on the
+ *  vendor plus a scope. Stamping `both` would grant an inward pull no repo has ever had, and
+ *  `/pm:sync` would start registering an untriaged epic per open issue in a project nobody asked
+ *  the conductor to mirror.
+ *
+ *  Guarded on an ABSENT direction at every site, so configuration outranks inference and a
+ *  second run is a no-op. The values mirror `directionOf()`'s fallback deliberately: the
+ *  fallback is what an UN-upgraded repo resolves to, and a migration that stamped anything else
+ *  would make `/pm:upgrade` — which lags a plugin update by design — a behavior change. */
+function stampTrackerDirection(state) {
+  const t = state.tracker;
+  if (t && t.system && !t.direction) {
+    t.direction = t.system === "github-issues" ? "inward" : "outward";
+  }
+  for (const s of Array.isArray(state.secondaryTrackers) ? state.secondaryTrackers : []) {
+    if (s && s.system && !s.direction) s.direction = "inward";
+  }
+}
 
 export function upgrade() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }

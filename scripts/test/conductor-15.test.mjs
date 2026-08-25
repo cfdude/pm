@@ -125,3 +125,62 @@ test("7.1: replaying the entry against its own output changes nothing", () => {
   run(["upgrade"], { cwd });
   assert.equal(stateBytes(cwd), after, "applying the entry to its own output must change nothing");
 });
+
+// ─────────────────────── 7.2: the direction stamp preserves behavior ───────────────────────
+//
+// The stamp records what each tracker ALREADY does; it is not an opportunity to choose. The
+// wrong answer here is `both` for a pre-existing non-github primary, and it is wrong in the
+// direction that costs something: a jira repo receives only the outward section today, so
+// `both` would grant an inward pull no repo has ever had and `/pm:sync` would start registering
+// an untriaged epic per open issue in a project nobody asked the conductor to mirror.
+
+/** A repo at 0.26.0 carrying `tracker` (and optionally secondaries), with no upgrade run. */
+function repoWithTracker(tracker, secondaryTrackers) {
+  const cwd = repoAt0260();
+  const state = readState(cwd);
+  state.tracker = tracker;
+  if (secondaryTrackers) state.secondaryTrackers = secondaryTrackers;
+  writeState(cwd, state);
+  return cwd;
+}
+
+test("7.2: a jira primary is stamped outward and a github-issues primary inward", () => {
+  const jira = repoWithTracker({ system: "jira", projectKey: "JOB" });
+  upgradeAt(jira, "0.27.0");
+  assert.equal(readState(jira).tracker.direction, "outward",
+    "a jira tracker receives only the outward section today — `both` would grant an inward " +
+    "pull no repo has ever had");
+  const gh = repoWithTracker({ system: "github-issues", repo: "o/n" });
+  upgradeAt(gh, "0.27.0");
+  assert.equal(readState(gh).tracker.direction, "inward");
+});
+
+test("7.2: an explicitly configured direction is never overwritten", () => {
+  const cwd = repoWithTracker({ system: "jira", projectKey: "JOB", direction: "both" });
+  upgradeAt(cwd, "0.27.0");
+  assert.equal(readState(cwd).tracker.direction, "both",
+    "the guard is on an ABSENT direction — configuration outranks the migration's inference");
+});
+
+test("7.2: every secondary is pinned inward, and an explicit one is left alone", () => {
+  const cwd = repoWithTracker({ system: "jira", projectKey: "JOB" }, [
+    { system: "github-issues", repo: "o/n", role: "secondary" },
+    { system: "linear", projectKey: "ENG", role: "secondary", direction: "inward" },
+  ]);
+  upgradeAt(cwd, "0.27.0");
+  const s = readState(cwd);
+  assert.deepEqual(s.secondaryTrackers.map(t => t.direction), ["inward", "inward"],
+    "the secondary role is pull-only by definition, whatever the vendor");
+});
+
+test("7.2: the rules block after the upgrade is identical to the one emitted before it", () => {
+  for (const tracker of [{ system: "jira", projectKey: "JOB" }, { system: "github-issues", repo: "o/n" }]) {
+    const cwd = repoWithTracker(tracker);
+    const before = run(["rules"], { cwd });
+    upgradeAt(cwd, "0.27.0");
+    const after = run(["rules"], { cwd });
+    assert.equal(after, before,
+      `${tracker.system}: stamping the direction a tracker already resolves to must change ` +
+      "nothing a repo reads — the migration records behavior, it does not alter it");
+  }
+});
