@@ -14,7 +14,7 @@
 // capability exists to end.
 
 import { isInitialized, loadState } from "./state.mjs";
-import { epicProgress } from "./epic-progress.mjs";
+import { epicProgress, strippedChangeId } from "./epic-progress.mjs";
 import { isArchiveBackfilled, outcomeOf } from "./disposition.mjs";
 
 /** The outcomes that are their own explanation. Each carries a REQUIRED reason saying why the
@@ -68,6 +68,34 @@ export const CHECKS = [
         if (p.total > 0 && p.done === 0) {
           out.push({ epic: e.id, detail: `archived at ${p.done}/${p.total} (source: ${p.source})` });
         }
+      }
+      return out;
+    },
+  },
+  {
+    id: "change-registered-under-two-lanes",
+    title: "one change id registered as two epics under different lanes",
+    run(state) {
+      // Identity is the DATE-PREFIX-STRIPPED id, the same normalization `isArchived()` applies.
+      // Literal equality is the implementation that reads as coverage and measures nothing:
+      // measured on this repository, ZERO ids collide literally while FOUR changes are
+      // registered twice — so a literal check reports none of them while claiming four exist.
+      const groups = new Map();
+      for (const e of state.epics) {
+        const key = strippedChangeId(e.id);
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(e);
+      }
+      const out = [];
+      for (const [key, members] of groups) {
+        if (members.length < 2) continue;
+        const lanes = new Set(members.map(e => e.lane || "openspec"));
+        if (lanes.size < 2) continue;
+        // The lanes are READ, never assumed uniform: of this repository's four pairs, two hold
+        // `decision` rather than `openspec` on the un-prefixed side.
+        out.push({ epic: key, detail:
+          `registered ${members.length} times under different lanes: ` +
+          members.map(e => `\`${e.id}\` (${e.lane || "openspec"})`).join(" and ") });
       }
       return out;
     },

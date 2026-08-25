@@ -807,3 +807,34 @@ test("9.2: scoping to `delivered` would empty the candidate set on this reposito
     "the checks have candidates outside the delivered set — a `delivered`-only scope makes " +
     "every completion-shaped check below inert on the repository whose data this rule cites");
 });
+
+// ───────────── 9.6: one change registered under two lanes ─────────────
+
+test("9.6: on live data the dual-lane check reports exactly the four pairs, lanes as recorded", () => {
+  const findings = findingsFor("change-registered-under-two-lanes", liveState());
+  assert.deepEqual(findings.map(f => f.epic).sort(), [
+    "conductor-mjs-module-split", "edd-harness-agent-behavior-testing",
+    "epic-hierarchy-orchestration", "platform-parity-mechanism",
+  ]);
+  const byId = Object.fromEntries(findings.map(f => [f.epic, f.detail]));
+  // The lanes are read from state, not assumed uniform: two of the four hold `decision` on the
+  // un-prefixed side, not `openspec`.
+  assert.match(byId["conductor-mjs-module-split"], /\(openspec\)/);
+  assert.match(byId["epic-hierarchy-orchestration"], /\(decision\)/);
+  assert.match(byId["edd-harness-agent-behavior-testing"], /\(decision\)/);
+  for (const d of Object.values(byId)) assert.match(d, /\(superpowers\)/,
+    "every pair is a date-prefixed superpowers registration against an un-prefixed sibling");
+});
+
+test("9.6: literal equality would report none of them, and same-lane ids are not a finding", () => {
+  const ids = liveState().epics.map(e => e.id);
+  assert.equal(ids.length - new Set(ids).size, 0,
+    "ZERO ids collide literally — a literal-equality check reports nothing while four pairs exist");
+  const cwd = repoWithFindings([
+    { id: "same-lane", title: "a", priority: "P2", status: "queued", role: "epic", lane: "openspec", links: [] },
+    { id: "2026-08-01-same-lane", title: "b", priority: "P2", status: "queued", role: "epic", lane: "openspec", links: [] },
+  ]);
+  const out = run(["integrity"], { cwd });
+  assert.match(out, /change-registered-under-two-lanes — 0 finding/,
+    "the check is about a change held under two LANES, and asserts nothing about intent");
+});
