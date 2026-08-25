@@ -27,6 +27,7 @@ trigger fires, not before.
 | [`editing-inside-a-generated-block`](editing-inside-a-generated-block.md) | About to hand-edit a file that a tool also generates — CLAUDE.md, AGENTS.md, PROJECT.md, any managed region. | Hand-written content goes BELOW the END marker, never inside the managed block. | 🔔 |
 | [`git-commit-takes-the-whole-index`](git-commit-takes-the-whole-index.md) | About to commit while any other process (subagent, watcher, script) may be staging files. | Never run a bare `git commit` while another process may be staging. Use `git commit -- <paths>`, or check `git diff --cached --stat` immediately before. | — |
 | [`hardcoded-live-data-claims-rot`](hardcoded-live-data-claims-rot.md) | Writing a test, task, or spec whose verification names a count drawn from live data. | State verifications relatively. Quote counts as dated snapshots, never as the assertion. | — |
+| [`local-only-git-objects`](local-only-git-objects.md) | Pinning a commit hash into a test, doc, or fixture, or relying on `git` history being present in the checkout that runs it. | Derive hashes from `rev-list` at run time, never pin them; and if a test reads git history, the CI checkout must be `fetch-depth: 0`. | — |
 | [`measuring-under-concurrent-writes`](measuring-under-concurrent-writes.md) | A test suite, lint run, or build goes red while background agents are writing to the tree. | Stop the writers before measuring. A red suite under concurrent writes is not evidence. | — |
 | [`review-findings-are-not-a-mandate`](review-findings-are-not-a-mandate.md) | A review returns findings and you are deciding what to fix before proceeding. | Split findings into BLOCKS (implementing this ships a defect) and POLISH (correct and implementable). Fix BLOCKS, decline most POLISH, say why. A contradiction is never POLISH. | — |
 | [`route-cross-repo-findings-do-not-file-them`](route-cross-repo-findings-do-not-file-them.md) | An audit or sweep produces findings about a codebase you do not own. | Route a cross-repo finding to the session that owns the code. Do not file it yourself. | — |
@@ -48,6 +49,7 @@ A lessons file nobody reads is a data graveyard — the same objection that made
 | `editing-inside-a-generated-block` | subagent brief template; product gap noted for pm |
 | `git-commit-takes-the-whole-index` | subagent brief template (hard constraint) |
 | `hardcoded-live-data-claims-rot` | tasks.md authoring brief |
+| `local-only-git-objects` | scripts/test/conductor-15.test.mjs (`requireHistory`); .github/workflows/ci.yml `fetch-depth: 0` |
 | `measuring-under-concurrent-writes` | habit — no mechanism |
 | `review-findings-are-not-a-mandate` | .claude/skills/cross-spec-review/SKILL.md |
 | `route-cross-repo-findings-do-not-file-them` | .claude/skills/dogfooding/SKILL.md |

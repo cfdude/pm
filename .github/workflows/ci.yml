@@ -13,6 +13,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Full history, not the default shallow clone. Several integrity tests are evaluated
+          # against THIS repository's real git history (`git merge-base --is-ancestor` on real
+          # hashes) precisely so they cannot pass vacuously against a synthetic temp repo. Under
+          # `fetch-depth: 1` git has never seen those commits, `isAncestor` answers `null`, and
+          # the assertions fail in CI while passing locally.
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

@@ -734,7 +734,28 @@ test("9.1: every check is reported with its count, including the ones that found
 // the module directly evaluates its checks against this repository's real disk and real git.
 // Do not set process.env.CLAUDE_PROJECT_DIR anywhere in this file.
 const { runIntegrity, CHECKS } = await import("../lib/integrity.mjs");
-const { isAncestor: isAncestorHere } = await import("../lib/git.mjs");
+const { isAncestor: isAncestorHere, commitDate: commitDateHere } = await import("../lib/git.mjs");
+
+// Several checks below are evaluated against THIS repository's REAL git history, so that
+// `git merge-base --is-ancestor` actually answers rather than returning the three-valued `null`
+// a synthetic temp repo would produce.
+//
+// The hashes are DERIVED, never pinned. Five hardcoded ones shipped here first and were wrong in
+// a way that only CI could show: each was a feature-branch commit, and a squash-merge leaves
+// those unreachable from every branch — alive in the authoring clone's object store, absent from
+// every fresh clone at every fetch depth. Deriving from `rev-list --first-parent HEAD` keeps the
+// fixture real, and keeps it real after the next squash-merge. CI must still clone with
+// `fetch-depth: 0`; a shallow checkout has one commit and the guard below says so.
+const HIST = execFileSync("git",
+  ["rev-list", "--first-parent", "--abbrev=7", "--abbrev-commit", "-n", "12", "HEAD"],
+  { cwd: REPO, encoding: "utf8" }).trim().split("\n").filter(Boolean);
+const requireHistory = () => {
+  assert.ok(HIST.length >= 9,
+    `this clone has ${HIST.length} first-parent commit(s) — these fixtures need real history; ` +
+    "a shallow checkout (fetch-depth: 1) makes every ancestry answer null. Set fetch-depth: 0.");
+};
+// Newest first, so a lower index is a DESCENDANT of a higher one.
+const [H_NEWEST, , H_DESC, , H_HEAD, , H_INSIDE, , H_BASE] = HIST;
 const liveState = () => JSON.parse(fs.readFileSync(path.join(REPO, ".conductor", "state.json"), "utf8"));
 const findingsFor = (id, state) => {
   const c = runIntegrity(state).find(x => x.id === id);
@@ -882,15 +903,15 @@ test("9.7: every live dual-lane finding cites #64/#69 as the likely cause", () =
 // verdicts. The live instance the spec cites exists only as prose in a note, so it is reproduced
 // here as a fixture rather than mined from the record.
 
-const PARITY_VERDICT = {
-  verdict: "pass", baseSha: "d168b1e", headSha: "04c54c8",
-  // The real note's shape: it spells out its own range, cites two fixes made AFTER that range,
+const PARITY_VERDICT = () => ({
+  verdict: "pass", baseSha: H_BASE, headSha: H_HEAD,
+  // The real note's shape: it spells out its own range, cites two commits made AFTER that range,
   // and mentions one commit that IS inside it. `defaced` is seven hex characters and an ordinary
   // English word — the token scanner cannot tell it from a hash, and does not have to.
-  note: "fresh-context review over d168b1e..04c54c8: 2 Important both fixed in c63efc1 and " +
-    "confirmed by a scoped re-review; gitignore-filter fix 3cba2e9 separately re-reviewed; " +
-    "the reviewed baseline included 5c8f91c and nothing was defaced.",
-};
+  note: `fresh-context review over ${H_BASE}..${H_HEAD}: 2 Important both fixed in ${H_NEWEST} ` +
+    `and confirmed by a scoped re-review; gitignore-filter fix ${H_DESC} separately re-reviewed; ` +
+    `the reviewed baseline included ${H_INSIDE} and nothing was defaced.`,
+});
 const withGateVerdict = (gate2) => ({
   version: 1, active: null, detourStack: [], epics: [
     { id: "platform-parity-mechanism-fixture", title: "x", priority: "P1", status: "archived",
@@ -898,22 +919,23 @@ const withGateVerdict = (gate2) => ({
 });
 
 test("9.3: the check reports exactly the cited commits the recorded range does not reach", () => {
-  const findings = findingsFor("verdict-range-omits-cited-commits", withGateVerdict(PARITY_VERDICT));
+  requireHistory();
+  const findings = findingsFor("verdict-range-omits-cited-commits", withGateVerdict(PARITY_VERDICT()));
   assert.equal(findings.length, 1);
-  assert.match(findings[0].detail, /d168b1e\.\.04c54c8/, "the range comes from the FIELDS");
-  for (const sha of ["c63efc1", "3cba2e9"]) {
+  assert.ok(findings[0].detail.includes(`${H_BASE}..${H_HEAD}`), "the range comes from the FIELDS");
+  for (const sha of [H_NEWEST, H_DESC]) {
     assert.ok(findings[0].detail.includes(sha), `${sha} is a descendant of the range and must be reported`);
   }
-  assert.ok(!findings[0].detail.includes("5c8f91c"),
-    "5c8f91c IS an ancestor of the recorded head — reporting it would mean the ancestry logic " +
-    "is inverted or absent, and this assertion is what proves git actually answered");
+  assert.ok(!findings[0].detail.includes(H_INSIDE),
+    `${H_INSIDE} IS an ancestor of the recorded head — reporting it would mean the ancestry logic " +
+    "is inverted or absent, and this assertion is what proves git actually answered`);
   assert.ok(!findings[0].detail.includes("defaced"),
     "an ordinary word that happens to be seven hex characters answers `null` from git, and " +
     "`null` is not evidence of anything");
 });
 
 test("9.3: a verdict with no structured range is never mined for one, and none exists live", () => {
-  const legacy = { verdict: "pass", reviewedAt: "2026-08-04T00:48:57.279Z", note: PARITY_VERDICT.note };
+  const legacy = { verdict: "pass", reviewedAt: "2026-08-04T00:48:57.279Z", note: PARITY_VERDICT().note };
   assert.deepEqual(findingsFor("verdict-range-omits-cited-commits", withGateVerdict(legacy)), [],
     "parsing a range out of the note is the prose dependency the structured fields removed");
   assert.deepEqual(findingsFor("verdict-range-omits-cited-commits", liveState()), [],
@@ -924,11 +946,12 @@ test("9.3: a verdict's own recorded endpoints are never reported as commits it f
   // A range whose base is NOT an ancestor of its head — the shape a rebase leaves behind. Without
   // subtracting the FIELD values, the check reports the verdict's own base as a cited commit the
   // range does not contain, which is a nonsense finding about the record's own two hashes.
+  requireHistory();
   const reversed = {
-    verdict: "pass", baseSha: "04c54c8", headSha: "d168b1e",
-    note: "reviewed 04c54c8..d168b1e end to end",
+    verdict: "pass", baseSha: H_NEWEST, headSha: H_BASE,
+    note: `reviewed ${H_NEWEST}..${H_BASE} end to end`,
   };
-  assert.equal(isAncestorHere("04c54c8", "d168b1e"), false,
+  assert.equal(isAncestorHere(H_NEWEST, H_BASE), false,
     "the fixture only means something if git says the base is genuinely unreachable from the head");
   assert.deepEqual(findingsFor("verdict-range-omits-cited-commits", withGateVerdict(reversed)), []);
 });
@@ -940,7 +963,6 @@ test("9.3: a verdict's own recorded endpoints are never reported as commits it f
 // release, and arm 2 finds nothing because the one live epic holding two gate verdicts recorded
 // them 22 minutes apart.
 
-const { commitDate: commitDateHere } = await import("../lib/git.mjs");
 const { gateHasEvidence } = await import("../lib/constants.mjs");
 const shiftIso = (iso, ms) => new Date(Date.parse(iso) + ms).toISOString();
 const epicWithGates = (over) => ({ version: 1, active: null, detourStack: [], epics: [
@@ -948,21 +970,22 @@ const epicWithGates = (over) => ({ version: 1, active: null, detourStack: [], ep
     links: [], ...over }] });
 
 test("9.4 arm 1: a verdict dated after the epic's merge commit is reported", () => {
-  const merged = commitDateHere("04c54c8");
+  requireHistory();
+  const merged = commitDateHere(H_HEAD);
   assert.ok(merged, "the fixture reads a REAL commit date from this repository");
   // UNEVIDENCED, which is the audited shape: those verdicts predate the sha fields entirely.
   // An evidenced verdict with the same timing is exempt — see the exemption test below.
   const state = epicWithGates({
-    attributedCommits: ["d168b1e", "04c54c8"],
+    attributedCommits: [H_BASE, H_HEAD],
     gateReview: { gate2: { verdict: "pass", reviewedAt: shiftIso(merged, 83_000) } },
   });
   const findings = findingsFor("gate-recorded-as-bookkeeping", state);
   assert.equal(findings.length, 1);
-  assert.match(findings[0].detail, /after the epic's merge commit 04c54c8/);
+  assert.ok(findings[0].detail.includes(`after the epic's merge commit ${H_HEAD}`));
   // Dated BEFORE the merge is the ordinary, correct shape and reports nothing.
   const ok = epicWithGates({
-    attributedCommits: ["d168b1e", "04c54c8"],
-    gateReview: { gate2: { verdict: "pass", baseSha: "d168b1e", headSha: "04c54c8",
+    attributedCommits: [H_BASE, H_HEAD],
+    gateReview: { gate2: { verdict: "pass", baseSha: H_BASE, headSha: H_HEAD,
       reviewedAt: shiftIso(merged, -600_000) } },
   });
   assert.deepEqual(findingsFor("gate-recorded-as-bookkeeping", ok), []);
@@ -995,12 +1018,13 @@ test("9.4 arm 2: two gates 47 ms apart are reported; hours apart are not", () =>
 });
 
 test("9.4 arm 1 exempts an EVIDENCED verdict dated after the last attributed commit", () => {
+  requireHistory();
   // The shape the emitted procedure produces EVERY time it is followed: attribute each commit as
   // it is made, then record Gate 2 afterwards. Without the exemption the arm fires on compliance
   // rather than on the defect — which is how this was found, live, on this release's own epic.
   const evidenced = epicWithGates({
-    attributedCommits: ["eee4f7e"],
-    gateReview: { gate2: { verdict: "pass", baseSha: "7829e80", headSha: "eee4f7e",
+    attributedCommits: [H_HEAD],
+    gateReview: { gate2: { verdict: "pass", baseSha: H_BASE, headSha: H_HEAD,
       reviewedAt: "2036-01-01T00:00:00.000Z" } },
   });
   assert.deepEqual(findingsFor("gate-recorded-as-bookkeeping", evidenced), [],
@@ -1010,7 +1034,7 @@ test("9.4 arm 1 exempts an EVIDENCED verdict dated after the last attributed com
   // …and the arm still fires on the audited shape, which is unevidenced by construction: those
   // verdicts predate the sha fields and were written after the squash-merge with no range at all.
   const unevidenced = epicWithGates({
-    attributedCommits: ["eee4f7e"],
+    attributedCommits: [H_HEAD],
     gateReview: { gate2: { verdict: "pass", reviewedAt: "2036-01-01T00:00:00.000Z" } },
   });
   const findings = findingsFor("gate-recorded-as-bookkeeping", unevidenced);
