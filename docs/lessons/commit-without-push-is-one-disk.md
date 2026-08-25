@@ -5,7 +5,7 @@ trigger: About to dispatch a wave of agents, end a work session, or step away â€
 cost: 120 commits and four days of work existed on exactly one disk. Nothing was lost, but a disk failure, a bad reset, or a `git gc` on a detached state would have taken the entire 0.27.0 release. The user asked whether I was pushing; I was not.
 rule: Push at every wave boundary and before stepping away. A commit is durable on ONE machine; a push is the backup.
 enforced_in: wave-boundary checklist in the orchestrator's own procedure; detect matcher fires when dispatching agents
-detect: {"tool":"Bash","commandMatches":"git worktree add"}
+detect: {"tool":"Bash","commandMatches":"(^|[;&|]\\s*)git worktree add"}
 tags: [git, durability, backup, orchestration]
 ---
 

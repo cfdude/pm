@@ -47,13 +47,20 @@ process.stdin.on("end", () => {
       .filter(Boolean);
   } catch { process.exit(0); }
 
+  // Match only the command's FIRST LINE. A heredoc body, an echo, or a file being written can
+  // contain any phrase — observed live: writing a lesson whose text mentions a git command fired
+  // that lesson's own matcher, twice. The command being RUN is on line one; everything after is
+  // data. Precision is the constraint here (see #91/#104), so recall on chained commands is the
+  // deliberate trade.
+  const cmdLine = String(ti.command || "").split("\n")[0];
+
   const hits = [];
   for (const l of lessons) {
     const d = l.detect;
     if (d.tool && d.tool !== tool) continue;
     if (d.pathEndsWith && !String(ti.file_path || "").endsWith(d.pathEndsWith)) continue;
-    if (d.commandMatches && !new RegExp(d.commandMatches).test(String(ti.command || ""))) continue;
-    if (d.commandLacks && new RegExp(d.commandLacks).test(String(ti.command || ""))) continue;
+    if (d.commandMatches && !new RegExp(d.commandMatches).test(cmdLine)) continue;
+    if (d.commandLacks && new RegExp(d.commandLacks).test(cmdLine)) continue;
     hits.push(l);
   }
   if (!hits.length) process.exit(0);
