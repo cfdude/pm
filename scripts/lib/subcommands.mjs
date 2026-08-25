@@ -13,7 +13,8 @@ import { writeRules } from "./rules.mjs";
 import { buildBrief } from "./briefing.mjs";
 import { appendDetourLog, gitShortSha } from "./git.mjs";
 import { detourContext } from "./links.mjs";
-import { activeChangeIds, firstHeading, planFiles, reconcileArchived } from "./epic-progress.mjs";
+import { activeChangeIds, archivedChanges, firstHeading, planFiles, reconcileArchived, strippedChangeId } from "./epic-progress.mjs";
+import { engineStamp } from "./disposition.mjs";
 import { ROOT, CONDUCTOR_DIR, BRIEF_PATH, PLANS_DIR, anyInwardProcedureEmittable } from "./constants.mjs";
 import { resolveAndRecordPlatform } from "./platform.mjs";
 
@@ -233,6 +234,49 @@ export function commitNudge() {
   }));
 }
 
+/** Register every archived change on disk that the conductor does not already hold.
+ *
+ *  A change archived before `/pm:init` ever ran — or archived in a session where `sync` never
+ *  ran — was permanently invisible: `reconcileArchived()` only flips epics that ALREADY exist,
+ *  and `sync` only walked the active changes directory. So the record silently under-counted
+ *  exactly the work that finished, which is the reading a project-management tool exists to get
+ *  right.
+ *
+ *  Registration is `sync`'s job and stays there. A heal that registered would grow the epic list
+ *  from a read-mostly path (render, the commit hook) on every call, which is how an index comes
+ *  to change without anyone asking it to.
+ *
+ *  Returns the ids it registered, so the caller owns what is said about them.
+ */
+export function backfillArchive(state) {
+  // Identity is the DATE-PREFIX-STRIPPED id on both sides. An epic may itself carry a
+  // date-prefixed id (this repository holds four such registrations), so comparing the stripped
+  // archive id against the epic's literal id alone would miss it and register a duplicate —
+  // making this path a third way to produce the duplicates `sync` is already filed for.
+  const held = new Set();
+  for (const e of state.epics) { held.add(e.id); held.add(strippedChangeId(e.id)); }
+  const registered = [];
+  for (const { id } of archivedChanges()) {
+    if (held.has(id)) continue;
+    state.epics.push({
+      id, title: id, priority: "P?", status: "archived", role: "epic", lane: "openspec",
+      links: [], reconcileNeeded: false,
+      // The ENGINE stamps this, unconditionally and with no CLI flag that reaches it: a
+      // backfilled epic never passed through the conductor while it was in flight, and every
+      // exemption that keeps a check or a refusal from firing on it keys on this token.
+      disposition: engineStamp("archive-backfill"),
+      // Deliberately NO `gateReview.gate2`. An `ungated` entry here would be a permanent,
+      // unclearable condition against essentially every archived change — its only clearing
+      // path is a real passing Gate 2 carrying a commit range, which for a change archived
+      // before the conductor existed is either impossible or fabrication. Measured on this
+      // repository: 69 archived epics against 3 carrying a passing Gate 2.
+    });
+    held.add(id);
+    registered.push(id);
+  }
+  return registered;
+}
+
 export function sync(quiet = false) {
   const state = loadState();
   const onDiskChanges = new Set(activeChangeIds());
@@ -261,13 +305,11 @@ export function sync(quiet = false) {
     state.epics.push({ id, title, priority: "P?", status: "untriaged", role: "epic", lane: "superpowers", planPath, links: [], reconcileNeeded: false });
     known.add(id); added++;
   }
-  // EXEMPTION NOTE for the archive backfill this function will grow (group 8): registering a
-  // historical archived change must NOT go through archiveGate(). Like the heal below and the
-  // two archived-at-creation paths, it supplies no disposition, receives no named receiver from
-  // anyone, and reflects a record rather than a judgment — so the outcome refusal, the deferral
-  // assertion and the handoff demand do not bind it. It stamps `outcome: unknown` with
-  // `recordedBy: "archive-backfill"` (creationStamp's `via`, where it registers through a
-  // creation path) and writes no `gateReview.gate2` at all.
+  // EXEMPTION NOTE: registering a historical archived change does NOT go through archiveGate().
+  // Like the heal below and the two archived-at-creation paths, it supplies no disposition,
+  // receives no named receiver from anyone, and reflects a record rather than a judgment — so
+  // the outcome refusal, the deferral assertion and the handoff demand do not bind it.
+  backfillArchive(state);
   reconcileArchived(state);
   saveState(state);
   if (!quiet) {

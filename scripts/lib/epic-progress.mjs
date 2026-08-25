@@ -46,6 +46,26 @@ export function firstHeading(absPath) {
   return null;
 }
 
+/** THE normalization every archive-identity question goes through: a change archived as
+ *  `<YYYY-MM-DD>-<id>` and one archived as `<id>` are the same change.
+ *
+ *  Exported rather than repeated because three separate questions ask it — does this epic's
+ *  change sit in the archive (`isArchived`), does this archive directory already have an epic
+ *  (the backfill), and are two epics the same change under different lanes (the integrity
+ *  check). Literal equality answers all three wrongly: measured on this repository, ZERO ids
+ *  collide literally while four changes are registered twice. */
+export const strippedChangeId = (name) => String(name).replace(/^\d{4}-\d{2}-\d{2}-/, "");
+
+/** Every directory under `openspec/changes/archive/`, as `{dir, id}` — `dir` as it sits on
+ *  disk, `id` normalized. */
+export function archivedChanges() {
+  try {
+    return fs.readdirSync(ARCHIVE_DIR, { withFileTypes: true })
+      .filter(d => d.isDirectory())
+      .map(d => ({ dir: d.name, id: strippedChangeId(d.name) }));
+  } catch { return []; }
+}
+
 /** Archived-change detection. OpenSpec archives a change as `archive/<YYYY-MM-DD>-<id>`,
  *  so an exact-name check misses it. Match the exact id (older/manual) OR a date-prefixed dir. */
 export function isArchived(id) {

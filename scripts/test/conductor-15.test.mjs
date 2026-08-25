@@ -357,3 +357,67 @@ test("7.6: the rollback procedure is documented where a user upgrading will read
       "will downgrade the plugin to undo a state change");
   }
 });
+
+// ───────────── 8.1: sync reconciles openspec/changes/archive/ ─────────────
+//
+// A change archived before the conductor was initialized — or archived in a session where sync
+// never ran — was permanently invisible: `reconcileArchived()` only flips epics that already
+// exist, and `sync` only walked the ACTIVE changes directory. Registration is sync's job;
+// the heal continues to create nothing, which is the seam that keeps a read-mostly self-heal
+// from silently growing the epic list on every render.
+
+/** A repo with `total` archived change directories, `withEpic` of which already have an epic. */
+function archiveFixture({ total, withEpic, ticked = 1, unticked = 0 } = {}) {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const state = readState(cwd);
+  for (let i = 0; i < total; i++) {
+    const id = `change-${String(i).padStart(2, "0")}`;
+    const dir = path.join(cwd, "openspec", "changes", "archive", `2026-08-0${(i % 9) + 1}-${id}`);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, "tasks.md"), "# tasks\n\n" +
+      Array.from({ length: ticked }, (_, n) => `- [x] done ${n}\n`).join("") +
+      Array.from({ length: unticked }, (_, n) => `- [ ] left ${n}\n`).join(""));
+    if (i < withEpic) {
+      state.epics.push({ id, title: id, priority: "P2", status: "archived", role: "epic",
+        lane: "openspec", links: [], reconcileNeeded: false,
+        disposition: { outcome: "delivered", recordedAt: "2026-08-01T00:00:00.000Z" } });
+    }
+  }
+  writeState(cwd, state);
+  return cwd;
+}
+
+test("8.1: sync registers exactly the archived changes that have no epic, already archived", () => {
+  const cwd = archiveFixture({ total: 24, withEpic: 16 });
+  const before = readState(cwd).epics.length;
+  run(["sync"], { cwd });
+  const after = readState(cwd).epics;
+  assert.equal(after.length - before, 8, "24 archived directories, 16 already held — 8 registered");
+  const registered = after.slice(before);
+  for (const e of registered) {
+    assert.equal(e.status, "archived",
+      "an archived change registers AT archived — the conductor preserves the record without " +
+      "pretending the change was ever managed");
+    assert.equal(e.lane, "openspec");
+  }
+});
+
+test("8.1: reconcileArchived() never appends to state.epics", () => {
+  const cwd = archiveFixture({ total: 6, withEpic: 0 });
+  const before = readState(cwd).epics.length;
+  run(["render"], { cwd });   // render's only state write is the heal
+  assert.equal(readState(cwd).epics.length, before,
+    "the heal flips epics that exist and creates none — registration is sync's job, and a heal " +
+    "that registered would grow the epic list from a read-mostly path on every render");
+});
+
+test("8.1: a change archived before /pm:init ever ran is not lost", () => {
+  const cwd = tmpRepo();
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", "2026-05-01-predates-the-conductor"), { recursive: true });
+  run(["init"], { cwd });
+  const ids = readState(cwd).epics.map(e => e.id);
+  assert.ok(ids.includes("predates-the-conductor"),
+    "init syncs, and the first sync is exactly when a change archived before the conductor " +
+    "existed must be picked up — otherwise it is invisible forever");
+});
