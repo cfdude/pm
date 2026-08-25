@@ -1767,10 +1767,18 @@ test("no module creates an epic except through pushEpic() — the sink the rule 
   const libDir = path.join(REPO, "scripts", "lib");
   const offenders = [];
   for (const name of fs.readdirSync(libDir).filter(n => n.endsWith(".mjs"))) {
-    if (name === "state.mjs") continue; // the helper's own home
     const src = fs.readFileSync(path.join(libDir, name), "utf8");
-    src.split("\n").forEach((line, i) => {
-      if (/epics\.push\(/.test(line)) offenders.push(`${name}:${i + 1}`);
+    const lines = src.split("\n");
+    // state.mjs is the helper's HOME, not an exemption — a sixth creation path added there is
+    // the likeliest place to put one, so the push is allowed on exactly the line inside
+    // pushEpic() and flagged anywhere else in the same file.
+    const helperAt = name === "state.mjs"
+      ? lines.findIndex(l => l.includes("export function pushEpic("))
+      : -1;
+    lines.forEach((line, i) => {
+      if (!/epics\.push\(/.test(line)) return;
+      if (helperAt !== -1 && i > helperAt && i < helperAt + 6) return;
+      offenders.push(`${name}:${i + 1}`);
     });
   }
   assert.deepEqual(offenders, [],
