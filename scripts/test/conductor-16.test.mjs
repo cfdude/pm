@@ -418,3 +418,61 @@ test("15.4 the four emitted surfaces carry the SAME numbered items, in the same 
       `${rel} must carry the same gate-procedure items, in the same order, as the rules block`);
   }
 });
+
+// ─────────────── 15.5: no emitted surface offers removal as a way to END work ───────────────
+//
+// Deletion removes the record of projected work, which is precisely what a disposition exists to
+// preserve. The requirement binds the EMITTED TEXT, not the verb: `remove-epic` hard-deletes
+// today and stays available and ungated for what it is for — an epic registered in error, a
+// duplicate, a mistake made a minute ago — where there is no disposition to record because there
+// was no work. The failure this closes is an agent reaching for deletion because the instructions
+// it was handed offered it as a way to close something out.
+
+/** Removal, in any of the spellings the emitted surfaces use. */
+const REMOVAL = /\b(remove-epic|remove (an |the |this )?epic|delete (an |the |this )?epic|hard-delete|deleting the record)\b/i;
+/** Ending an epic, a story, a deferral or a release exclusion. */
+const ENDING = /\b(end(s|ing)? (an |the |this )?(epic|story|deferral|exclusion)|close (it |them )?out|closing out|finish(ed|ing)?|no longer doing|not doing it|abandon(ed|ing)?|kill(ed|ing)?|supersed(e|ed)|wrap(ping)? up|mark(ing)? it done)\b/i;
+/** The legitimate frame: an epic registered in error, where there is no work to disposition. */
+const IN_ERROR = /registered in error|registered by mistake|mis-registered|duplicate|never existed|carries no work|no work to record/i;
+
+const paragraphs = (text) => text.split(/\n\s*\n/);
+
+test("15.5 no emitted surface presents removing the record as a way to end work", () => {
+  const cwd = repoWithEpics(1);
+  const surfaces = [["rules block", rulesText(cwd)],
+    ...EMITTED_DOCS.map(rel => [rel, shipped(rel)]),
+    ...fs.readdirSync(path.join(REPO, "commands"))
+      .filter(f => f.endsWith(".md"))
+      .map(f => [`commands/${f}`, shipped(`commands/${f}`)])];
+  for (const [name, text] of surfaces) {
+    for (const para of paragraphs(text)) {
+      if (!REMOVAL.test(para) || !ENDING.test(para)) continue;
+      assert.ok(IN_ERROR.test(para),
+        `${name} offers removal in an ending context without framing it as an epic registered ` +
+        `in error:\n${para}`);
+    }
+  }
+});
+
+test("15.5 every emitted surface names the disposition path, with its required reason, as the way to end an epic", () => {
+  const cwd = repoWithEpics(1);
+  const surfaces = [["rules block", rulesText(cwd)], ...EMITTED_DOCS.map(rel => [rel, shipped(rel)])];
+  for (const [name, text] of surfaces) {
+    assert.match(numberedItems(text).join("\n"), /\*\*End work by recording a disposition\.\*\*/,
+      `${name} must carry the disposition path as a NUMBERED item`);
+    assert.match(text, /--outcome/, `${name} must name the flag that records the outcome`);
+    assert.match(text, /--reason/, `${name} must name the required reason`);
+    assert.match(text, /never by removing the record/i,
+      `${name} must say outright that removal is not how work ends`);
+  }
+});
+
+test("15.5 remove-epic still works, ungated, on an epic registered in error", () => {
+  const cwd = repoWithEpics(2);
+  // No stories, no gate verdict, no disposition — an epic registered a minute ago by mistake.
+  runCombined(["remove-epic", "e1"], { cwd });
+  const st = readState(cwd);
+  assert.deepEqual(st.epics.map(e => e.id), ["e0"]);
+  // And nothing about it demanded a disposition on the way out: there was no work to preserve.
+  assert.equal(st.epics[0].disposition, undefined);
+});

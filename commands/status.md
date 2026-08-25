@@ -112,3 +112,11 @@ bullet reached 3/15.
    change's artifacts rather than implementing its work, is lifecycle bookkeeping and
    MUST NOT be attributed — that move lands after the reviewed range by construction, so attributing it makes
    the epic's own Gate 2 stale at the instant the archive gate reads it.
+5. **End work by recording a disposition.** An epic, a story, a deferral or a release exclusion
+   ENDS by recording a terminal disposition carrying its required reason —
+   `update-epic <id> --status archived --outcome delivered|killed|superseded|abandoned
+   --reason "<why>"` (every outcome except `delivered` requires the reason) — and
+   never by removing the record. Deletion removes the record of projected work, which is
+   precisely what a disposition exists to preserve. `remove-epic` stays available and ungated for
+   what it is for: an epic registered in error, a duplicate, a mistake made a minute ago — where
+   there is no disposition to record because there was no work.
