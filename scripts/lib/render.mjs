@@ -133,6 +133,29 @@ export function render() {
   for (const e of epics) if (!seen.has(e.id)) emit(e, 0);   // orphaned by a cycle → render flat
   md.push("");
 
+  // Backlog — the epics registered for LATER, with their title and their rationale. The Epics
+  // table above carries an id, a lane, a status and a progress bar; it carries neither a title
+  // nor a word of why an epic exists. That is survivable for work in flight, whose reason is in
+  // the session that is doing it, and it is not survivable for backlog: an epic registered
+  // months ago against a rationale nobody wrote down is an id, and re-deciding it costs the
+  // whole judgment again. `description` is durable rationale by definition (replaced when set
+  // again, never appended to), so this is the surface it exists for.
+  //
+  // Rendered in resolveEpics() order, so it agrees with the table above rather than inventing a
+  // second ordering. Omitted entirely when there is no backlog — an empty section is noise.
+  const backlog = epics.filter(e => e.status === "later" || e.status === "planned");
+  if (backlog.length) {
+    md.push("## Backlog");
+    md.push("");
+    md.push("> Registered for later, with the rationale that justified registering it.");
+    md.push("");
+    for (const e of backlog) {
+      const why = e.description ? ` — ${e.description}` : "";
+      md.push(`- \`${e.id}\` (${e.priority}, ${e.lane}, ${e.status}) — ${e.title}${why}`);
+    }
+    md.push("");
+  }
+
   // Dispositions carrying a judgment — the outcome, the reason and when it was recorded, read
   // from state.json and from nothing else. An `unknown` stamp with no reason is deliberately
   // absent: it says nothing the status column has not already said, and 66 such rows on this

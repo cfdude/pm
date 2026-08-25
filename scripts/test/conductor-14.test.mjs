@@ -1087,3 +1087,48 @@ test("update-epic with no id in any form says the id is required positionally", 
   assert.ok(!msg.includes("--id"),
     "this case must NOT be diagnosed as a misplaced --id — the two are different mistakes");
 });
+
+// ─────────── 12.5: a backlog epic's description reaches the rendered record ───────────
+//
+// The Epics table carries an epic's id, lane, role, status, progress and links — not its title
+// and not a word of why it exists. A backlog epic registered months ago is therefore an id and
+// nothing else on the surface a human reads, and the rationale that justified registering it is
+// recoverable only by opening `.conductor/state.json`.
+
+test("a backlog epic's description is recoverable from PROJECT.md alone", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "someday-thing", "--lane", "claude-code", "--status", "later",
+       "--title", "Rework the importer",
+       "--description", "the CSV path silently drops rows over 64KB"], { cwd });
+  const md = projectMd(cwd);
+  assert.ok(md.includes("the CSV path silently drops rows over 64KB"),
+    "the rationale must be readable without opening state.json");
+  assert.ok(md.includes("Rework the importer"), "and the title alongside it");
+  assert.ok(md.includes("someday-thing"));
+});
+
+test("a planned epic is backlog too, and a described active epic is not listed there", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "road", "--lane", "superpowers", "--status", "planned",
+       "--title", "Roadmap item", "--description", "why this is on the roadmap"], { cwd });
+  run(["add-epic", "--id", "now", "--lane", "claude-code", "--status", "active",
+       "--title", "In flight", "--description", "active work, not backlog"], { cwd });
+  const md = projectMd(cwd);
+  const start = md.indexOf("## Backlog");
+  assert.notEqual(start, -1, "a backlog section must exist once there is backlog to show");
+  const next = md.indexOf("\n## ", start + 1);
+  const section = md.slice(start, next === -1 ? md.length : next);
+  assert.ok(section.includes("why this is on the roadmap"), "a planned epic belongs to the backlog");
+  assert.ok(!section.includes("active work, not backlog"),
+    "an active epic is not backlog and must not be listed there");
+});
+
+test("no backlog section is rendered when there is no backlog", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "now", "--lane", "claude-code", "--status", "queued"], { cwd });
+  assert.ok(!projectMd(cwd).includes("## Backlog"),
+    "an empty section is noise — it is omitted like every other conditional section");
+});
