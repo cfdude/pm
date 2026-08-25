@@ -305,3 +305,50 @@ test("a NEW secondary tracker is stamped inward; merging into an existing one is
   assert.ok(!("direction" in entry), "merging into an existing secondary entry stamps nothing");
   assert.equal(entry.mechanism, "mcp");
 });
+
+// ─────────── 10.6: a scope-less tracker emits no inward section, on either path ───────────
+
+test("a github-issues tracker with no repo emits neither section, migrated or not", () => {
+  for (const tracker of [{ system: "github-issues" }, { system: "github-issues", direction: "inward" }]) {
+    const block = rulesFor(tracker);
+    assert.ok(!block.includes(OUTWARD_HEADING), `outward section leaked for ${JSON.stringify(tracker)}`);
+    assert.ok(!block.includes("## GitHub issue sync") && !block.includes("## Inward tracker sync"),
+      `inward section leaked for ${JSON.stringify(tracker)}`);
+  }
+  // Same two facts in 0.26.0's output, so the assertion above is a comparison and not a wish.
+  const before = baseline("github-scopeless");
+  assert.ok(!before.includes(OUTWARD_HEADING) && !before.includes("## GitHub issue sync"));
+});
+
+test("adding a scope to a scope-less inward tracker is what turns the inward section on", () => {
+  const without = rulesFor({ system: "jira", direction: "inward" });
+  assert.ok(!without.includes("## Inward tracker sync"), "no scope, no inward section");
+  const with_ = rulesFor({ system: "jira", direction: "inward", projectKey: "JOB" });
+  assert.ok(with_.includes("## Inward tracker sync (jira · JOB)"), "a scope turns it on");
+});
+
+test("no emitted block ever names an unfilled scope placeholder, for ANY tracker shape", () => {
+  // The rule the scope test exists to protect: pm may not emit a command line it cannot run.
+  // An interpolated `undefined`/`null`, or a literal placeholder left unsubstituted, is that
+  // failure — and it is invisible unless something enumerates the shapes.
+  const systems = ["github-issues", "jira"];
+  const scopes = [{}, { repo: "o/n" }, { projectKey: "JOB" }];
+  const directions = [undefined, "inward", "outward", "both"];
+  for (const system of systems) {
+    for (const scope of scopes) {
+      for (const direction of directions) {
+        const tracker = { system, ...scope, ...(direction ? { direction } : {}) };
+        const block = rulesFor(tracker);
+        const label = JSON.stringify(tracker);
+        for (const bad of ["undefined", "<scope>", "<repo>", "<projectKey>", "( · )", "()"]) {
+          assert.ok(!block.includes(bad), `${label} emitted a block containing ${JSON.stringify(bad)}`);
+        }
+        // An inward section must never appear without the scope it needs to list against.
+        if (block.includes("## Inward tracker sync") || block.includes("## GitHub issue sync")) {
+          assert.ok(scope.repo || (system !== "github-issues" && scope.projectKey),
+            `${label} emitted an inward section with nothing to list`);
+        }
+      }
+    }
+  }
+});

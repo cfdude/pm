@@ -193,7 +193,14 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
   ];
   if (tracker && tracker.system) {
     const sys = tracker.system;
-    const scope = tracker.projectKey ? ` · ${tracker.projectKey}` : "";
+    // What the tracker names as its scope, read from the ONE definition (constants.mjs's
+    // trackerScope) rather than picked out of the tracker object here. The inward section
+    // cannot be emitted without it — a "list open items in <scope>" step with nothing to
+    // substitute is a command that cannot run as written, which is the rule this block is
+    // held to. The outward heading keeps its own projectKey-only suffix: it names the
+    // tracker for a human and has never depended on a scope being present.
+    const scope = trackerScope(tracker);
+    const outwardScopeSuffix = tracker.projectKey ? ` · ${tracker.projectKey}` : "";
     // DIRECTION decides this, never the vendor's name. The test that used to live here
     // (`sys !== "github-issues"`) encoded one repo's convention as a property of a vendor, and
     // it was applied at this emitter and not at the brief's — so a github-issues repo received a
@@ -202,7 +209,7 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     if (outwardApplies(tracker)) {
       lines.push(
         "",
-        `## External tracker sync (${sys}${scope})`,
+        `## External tracker sync (${sys}${outwardScopeSuffix})`,
         "",
         `This repo mirrors conductor epics to **${sys}**. YOU (the interactive agent) own this sync —`,
         `the pm plugin NEVER calls ${sys} itself. On these events, perform the matching action with`,
@@ -234,7 +241,6 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
       // all along. The primary slot alone lacked it, which is why an inward jira tracker could
       // not be expressed at all.
       const gh = usesGhIssueList(tracker);
-      const scope = trackerScope(tracker);
       lines.push(
         "",
         gh ? `## GitHub issue sync (${scope})` : `## Inward tracker sync (${sys} · ${scope})`,

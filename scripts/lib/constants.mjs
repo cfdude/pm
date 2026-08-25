@@ -212,7 +212,12 @@ export const outwardApplies = (tracker) => {
 
 /** The identifying scope an inward "list open items in …" step needs, or null.
  *  `github-issues` names its scope as a `repo` and nothing else; any other system accepts a
- *  `repo` or a `projectKey`. */
+ *  `repo` or a `projectKey`.
+ *
+ *  This is the SINGLE definition of "what this tracker names as its scope" — the emitter reads
+ *  it rather than picking `repo`/`projectKey` out of the tracker itself, so there is exactly one
+ *  answer to compare against `inwardProcedureEmittable`'s. Two readings of the same question is
+ *  how a section comes to be emitted with a placeholder nothing filled in. */
 export function trackerScope(tracker) {
   if (!tracker || !tracker.system) return null;
   if (tracker.system === "github-issues") return tracker.repo || null;
