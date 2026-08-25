@@ -1117,3 +1117,25 @@ test("9.11: the preconditions are load-bearing — no passing Gate 2, or not ope
     ] });
   assert.deepEqual(findings.map(f => f.epic), ["passing-and-ungate1d"]);
 });
+
+// ───────────── 9.12: an archive directory that corresponds to no epic ─────────────
+
+test("9.12: an unregistered archive directory is reported, and no epic is created for it", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", "2026-06-01-never-registered"), { recursive: true });
+  const before = readState(cwd).epics.length;
+  const out = run(["integrity"], { cwd });
+  assert.match(out, /archive-directory-has-no-epic — 1 finding/);
+  assert.match(out, /archive\/2026-06-01-never-registered/, "the DIRECTORY is named, since no epic exists to name");
+  assert.match(out, /\/pm:sync/, "registration is out of scope here and the finding says who does it");
+  assert.equal(readState(cwd).epics.length, before, "the check reports; it does not register");
+});
+
+test("9.12: zero live candidates — this repository's one archive directory is registered", () => {
+  assert.deepEqual(findingsFor("archive-directory-has-no-epic", liveState()), []);
+  const dirs = fs.readdirSync(path.join(REPO, "openspec", "changes", "archive"), { withFileTypes: true })
+    .filter(d => d.isDirectory()).map(d => d.name);
+  assert.ok(dirs.length > 0,
+    "the zero must come from every directory being held, not from there being none to check");
+});

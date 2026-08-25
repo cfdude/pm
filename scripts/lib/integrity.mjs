@@ -14,7 +14,7 @@
 // capability exists to end.
 
 import { isInitialized, loadState } from "./state.mjs";
-import { epicProgress, strippedChangeId } from "./epic-progress.mjs";
+import { archivedChanges, epicProgress, strippedChangeId } from "./epic-progress.mjs";
 import { gateHasEvidence, isOpenspecLane } from "./constants.mjs";
 import { commitDate, isAncestor } from "./git.mjs";
 import { isArchiveBackfilled, outcomeOf, stampedBy } from "./disposition.mjs";
@@ -161,6 +161,20 @@ export const CHECKS = [
           "either did not happen or was never recorded" });
       }
       return out;
+    },
+  },
+  {
+    id: "archive-directory-has-no-epic",
+    title: "a directory under openspec/changes/archive/ that corresponds to no epic",
+    run(state) {
+      const held = new Set();
+      for (const e of state.epics) { held.add(e.id); held.add(strippedChangeId(e.id)); }
+      // Registering it is explicitly OUT of scope here — that belongs to `sync`'s archive
+      // reconciliation. A check that registered would be a repair, and this module repairs
+      // nothing.
+      return archivedChanges().filter(c => !held.has(c.id)).map(c => ({ epic: null, detail:
+        `archive/${c.dir} is an archived change the conductor holds no epic for — \`/pm:sync\` ` +
+        "registers it; this check only reports it" }));
     },
   },
   {
