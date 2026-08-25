@@ -356,6 +356,14 @@ export const outwardApplies = (tracker) => {
  *  how a section comes to be emitted with a placeholder nothing filled in. */
 export function trackerScope(tracker) {
   if (!tracker || !tracker.system) return null;
+  // A SECONDARY is vendor-neutral about its scope, whatever its system: `set-tracker --role
+  // secondary` accepts `--repo` OR `--project` for every vendor and refuses an entry carrying
+  // neither. Reading only `repo` for a github-issues secondary therefore calls a REGISTERED
+  // tracker scope-less — which is how `--role secondary --system github-issues --project ABC`
+  // came to have its epic id emitted as `add-epic --id null-<issue-number>`, a command that
+  // does not run as written. The github-issues repo-only rule below governs the PRIMARY slot
+  // only, exactly as `tracker-sync` requires of the scope-lessness rule it feeds.
+  if (tracker.role === "secondary") return tracker.repo || tracker.projectKey || null;
   if (tracker.system === "github-issues") return tracker.repo || null;
   return tracker.repo || tracker.projectKey || null;
 }
@@ -372,12 +380,30 @@ export const inwardProcedureEmittable = (tracker) => {
   return (d === "inward" || d === "both") && !!trackerScope(tracker);
 };
 
+/** Is an inward procedure emittable for a SECONDARY tracker?
+ *
+ *  Deliberately NOT `inwardProcedureEmittable`. Scope-lessness governs the primary slot only —
+ *  `tracker-sync` says in as many words that the requirement "MUST NOT be generalized to them"
+ *  — because a secondary is pinned inward by definition and registration already refuses one
+ *  with neither `--repo` nor `--project`. Running a secondary through the primary's predicate
+ *  generalized it anyway, and `trackerScope` reads `repo` and ignores `projectKey` for
+ *  `github-issues`: a secondary registered as `--system github-issues --project ABC` had
+ *  rules.mjs emitting its whole sync section while the completion-sync reminder, the brief's
+ *  freshness line and `sync`'s own message all suppressed. Two emitters, same question,
+ *  opposite answers.
+ *
+ *  The test is exactly the `continue` guard the secondary emitter loop in rules.mjs applies —
+ *  `st && st.system`, i.e. "this is a registered secondary" — so the emitter and the predicate
+ *  cannot answer differently. Adding a scope test here to close that gap would BE the
+ *  generalization the spec forbids; the fix is for the predicate to follow the emitter. */
+export const secondaryInwardProcedureEmittable = (st) => !!(st && st.system);
+
 /** Does the REPO have an inward procedure anywhere — primary or any secondary? The completion-
  *  sync reminder, the brief's sync nudge and the brief's freshness line all key on this, so that
  *  none of them can instruct an action the repo has no emitted procedure for. */
 export const anyInwardProcedureEmittable = (tracker, secondaryTrackers = []) =>
   inwardProcedureEmittable(tracker) ||
-  (Array.isArray(secondaryTrackers) && secondaryTrackers.some(inwardProcedureEmittable));
+  (Array.isArray(secondaryTrackers) && secondaryTrackers.some(secondaryInwardProcedureEmittable));
 
 /** The deterministic id PREFIX for an epic mirrored from an item in this tracker. The full id
  *  is `<prefix>-<item-number>`.

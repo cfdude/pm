@@ -10,7 +10,7 @@ import { loadState } from "./state.mjs";
 import {
   KNOWN_REVIEW_MODES, REVIEW_MODE_RANK, RULES_BEGIN, RULES_BEGIN_PREFIX, RULES_END, ROOT,
   PLATFORM_COMMAND_PREFIX, anyInwardProcedureEmittable, inwardProcedureEmittable, outwardApplies,
-  mirroredEpicIdPrefix, trackerScope, usesGhIssueList,
+  mirroredEpicIdPrefix, secondaryInwardProcedureEmittable, trackerScope, usesGhIssueList,
 } from "./constants.mjs";
 import { rulesTarget } from "./platform.mjs";
 
@@ -387,9 +387,24 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
       );
     }
   }
-  for (const st of Array.isArray(secondaryTrackers) ? secondaryTrackers : []) {
-    if (!st || !st.system) continue;
-    const scope = st.repo || st.projectKey || "";
+  // SECONDARY sections are NOT governed by the scope-lessness rule that guards the primary's
+  // inward section above, and that is deliberate: `tracker-sync` says the requirement "MUST NOT
+  // be generalized to them", because a secondary is pinned inward by definition and
+  // registration already refuses one carrying neither `--repo` nor `--project`. The gate here
+  // is therefore "is this a registered secondary" and nothing more — and it is the SAME
+  // predicate `anyInwardProcedureEmittable` consumes, so this emitter and the completion-sync
+  // reminder below cannot answer the same question differently. They did: this loop's guard was
+  // written out locally while the reminder ran every secondary through the PRIMARY's predicate.
+  //
+  // The scope is read through `trackerScope` rather than re-derived as `st.repo ||
+  // st.projectKey` here. A second local reading is how the heading came to name a scope the
+  // emitted `add-epic --id` line rendered as `null`. `role` is normalized because registration
+  // stamps it and this reading depends on it — a legacy entry written without it must not fall
+  // through to the primary's vendor rule.
+  for (const raw of Array.isArray(secondaryTrackers) ? secondaryTrackers : []) {
+    if (!secondaryInwardProcedureEmittable(raw)) continue;
+    const st = { ...raw, role: "secondary" };
+    const scope = trackerScope(st) || "";
     lines.push(
       "",
       `## Secondary tracker sync (${st.system}${scope ? ` · ${scope}` : ""})`,

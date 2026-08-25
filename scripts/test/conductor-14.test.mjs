@@ -10,7 +10,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
-import { ENGINE, EMPTY_CACHE, run, runCombined, readState, writeState, projectMd, parseBrief, tmpRepo, expectFail } from "./helpers.mjs";
+import { ENGINE, EMPTY_CACHE, run, runCombined, readState, writeState, projectMd, parseBrief, tmpRepo, expectFail, claudeMd } from "./helpers.mjs";
 
 // ─────────────────────── group 12: epic annotation ───────────────────────
 //
@@ -137,6 +137,46 @@ test("an inward procedure is emittable repo-wide when ANY configured tracker has
     anyInwardProcedureEmittable(outwardPrimary, [{ system: "github-issues", repo: "a/b", role: "secondary" }]),
     true, "a secondary tracker is inward by definition, so the repo has an inward procedure");
   assert.equal(anyInwardProcedureEmittable(null, []), false);
+  // Scope-lessness governs the PRIMARY slot only — tracker-sync spec:115-117 says in as many
+  // words that the requirement "MUST NOT be generalized to them". Running a secondary through
+  // `inwardProcedureEmittable` did exactly that, and `trackerScope` reads `repo` and IGNORES
+  // `projectKey` for github-issues — so a secondary registered as
+  // `--system github-issues --project ABC` (which registration accepts) had rules.mjs emitting
+  // its whole sync section while the completion-sync reminder, the brief and sync's own
+  // message all suppressed. Two emitters, same question, opposite answers.
+  assert.equal(
+    anyInwardProcedureEmittable(null, [{ system: "github-issues", projectKey: "ABC", role: "secondary" }]),
+    true, "a REGISTERED secondary has an inward procedure — rules.mjs emits its section on " +
+    "exactly the guard `st && st.system`, and this predicate must give that same answer");
+  assert.equal(anyInwardProcedureEmittable(null, [{ projectKey: "ABC" }]), false,
+    "an entry with no system is not a registered tracker — that is rules.mjs's own `continue`");
+});
+
+test("a projectKey-scoped github-issues SECONDARY gets one answer from every emitter", () => {
+  // The whole repo-level surface, read at once: whatever the predicate says, all four emitters
+  // must say. This is #109's shape at the sibling site, so it is checked end-to-end and not
+  // only at the predicate.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-tracker", "--role", "secondary", "--system", "github-issues", "--project", "ABC"], { cwd });
+  run(["add-epic", "--id", "mirrored", "--lane", "claude-code", "--external-id", "7",
+    "--external-url", "https://example.test/ABC/7"], { cwd });
+  const rules = claudeMd(cwd);
+  assert.match(rules, /## Secondary tracker sync \(github-issues · ABC\)/,
+    "rules.mjs emits the secondary section for this repo");
+  assert.match(rules, /## Sync after completing tracker-linked work/,
+    "the completion-sync reminder must agree with the section that precedes it");
+  // "Every command pm emits must run as written": the primary's repo-only scope rule applied to
+  // a secondary made mirroredEpicIdPrefix() return null, and the recipe line the agent is told
+  // to run "as written" rendered `add-epic --id null-<issue-number>`.
+  assert.match(rules, /add-epic --id gh-abc-<issue-number>/,
+    "the emitted registration line must carry a real derived id prefix, never `null-`");
+  assert.doesNotMatch(rules, /--id null-/, "no emitted command may carry a null scope");
+  const brief = parseBrief(cwd);
+  assert.match(brief, /never re-read since mirroring/,
+    "the brief's freshness line keys on the same predicate");
+  assert.match(runCombined(["sync"], { cwd }), /inward tracker sync is YOURS/,
+    "sync's own message keys on it too");
 });
 
 // ─────────── 10.2 / 10.3: set-tracker --direction, and the merge trap ───────────
