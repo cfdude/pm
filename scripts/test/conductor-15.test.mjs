@@ -184,3 +184,76 @@ test("7.2: the rules block after the upgrade is identical to the one emitted bef
       "nothing a repo reads — the migration records behavior, it does not alter it");
   }
 });
+
+// ──────────── 7.3: every archived epic gets an outcome, regardless of lane ────────────
+//
+// Lane-scoping this is the tempting implementation and it is wrong on measured data. `delivered`
+// is claimed ONLY where a passing Gate 2 exists — the one durable piece of evidence in the
+// record that a review actually happened — and `unknown` everywhere else, which is not a hedge
+// but the true statement: nobody recorded a disposition.
+
+/** This repository's own state.json, copied into a throwaway repo so the migration can be run
+ *  against LIVE data without touching the record. Reading the live file is the point: a
+ *  migration verified only against hand-built fixtures is verified against the implementer's
+ *  own assumptions about the shapes that exist. */
+const REPO = new URL("../..", import.meta.url).pathname;
+function repoFromLiveState() {
+  const cwd = tmpRepo();
+  fs.mkdirSync(path.join(cwd, ".conductor"), { recursive: true });
+  fs.copyFileSync(path.join(REPO, ".conductor", "state.json"), path.join(cwd, ".conductor", "state.json"));
+  return cwd;
+}
+const passingGate2 = (e) => !!(e.gateReview && e.gateReview.gate2 && e.gateReview.gate2.verdict === "pass");
+
+test("7.3: on live data every archived epic ends with an outcome, and `delivered` is exactly the passing-Gate-2 set", () => {
+  const cwd = repoFromLiveState();
+  const before = readState(cwd);
+  const archivedBefore = before.epics.filter(e => e.status === "archived");
+  // Asserted RELATIVELY: the populations are read from the data, never transcribed. Measured
+  // 2026-08-23 as 69 archived of which 3 carry a passing Gate 2 — quoted as a dated snapshot
+  // and asserted nowhere, because both numbers move with every release.
+  assert.ok(archivedBefore.length > 0, "the live record must hold archived epics for this to measure anything");
+  assert.equal(archivedBefore.filter(e => e.disposition).length, 0,
+    "no live epic carries a disposition before the migration, so the stamp below is the migration's");
+  const lanes = new Set(archivedBefore.map(e => e.lane || "openspec"));
+  assert.ok(lanes.size > 1, "the live record must span more than one lane, or lane-agnosticism is untested here");
+
+  upgradeAt(cwd, "0.27.0");
+  const archived = readState(cwd).epics.filter(e => e.status === "archived");
+  assert.equal(archived.length, archivedBefore.length, "the migration registers and removes nothing");
+  for (const e of archived) {
+    assert.ok(e.disposition, `${e.id}: every archived epic carries a disposition, whatever its lane`);
+    assert.equal(e.disposition.recordedBy, "migration");
+    assert.equal(e.disposition.outcome, passingGate2(e) ? "delivered" : "unknown",
+      `${e.id}: delivered iff a passing Gate 2 exists`);
+  }
+  const delivered = archived.filter(e => e.disposition.outcome === "delivered");
+  assert.deepEqual(delivered.map(e => e.id).sort(), archived.filter(passingGate2).map(e => e.id).sort(),
+    "the delivered set IS the passing-Gate-2 set — not a superset, not a lane");
+  assert.ok(delivered.length < archived.length,
+    "if every archived epic read delivered the stamp would be claiming a review that did not happen");
+});
+
+test("7.3: the stamp reaches every lane, and recordedAt prefers the epic's own completedAt", () => {
+  const cwd = repoAt0260();
+  const state = readState(cwd);
+  state.epics.push(
+    { id: "old-decision", title: "a decision that ended", priority: "P2", status: "archived",
+      role: "epic", lane: "decision", links: [], completedAt: "2026-05-05T05:05:05.000Z" },
+    { id: "no-completion", title: "no completion timestamp", priority: "P2", status: "archived",
+      role: "epic", lane: "claude-code", links: [] });
+  writeState(cwd, state);
+  upgradeAt(cwd, "0.27.0");
+  const byId = Object.fromEntries(readState(cwd).epics.map(e => [e.id, e]));
+  assert.equal(byId["old-decision"].disposition.outcome, "unknown",
+    "a non-openspec lane has no Gate 2 to have passed, so `delivered` there would assert something unverified");
+  assert.equal(byId["old-decision"].disposition.recordedAt, "2026-05-05T05:05:05.000Z",
+    "the migration clock says when this code ran, which is not when the work ended");
+  assert.equal(byId["no-completion"].disposition.recordedBy, "migration");
+  assert.ok(byId["no-completion"].disposition.recordedAt,
+    "with no completedAt to prefer, the migration timestamp is the honest fallback");
+  // The archived openspec epic in the fixture carries a passing legacy Gate 2 verdict.
+  assert.equal(byId["shipped-change"].disposition.outcome, "delivered");
+  // A non-archived epic is not a terminal epic and gets nothing.
+  assert.equal(byId["still-queued"].disposition, undefined, "only an ENDED epic records how it ended");
+});

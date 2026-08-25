@@ -8,6 +8,7 @@ import { reconcileArchived } from "./epic-progress.mjs";
 import { writeRules } from "./rules.mjs";
 import { render } from "./render.mjs";
 import { normalizeLink } from "./links.mjs";
+import { engineStamp } from "./disposition.mjs";
 import { resolvePlatform } from "./platform.mjs";
 import { ensureGitignore } from "./subcommands.mjs";
 
@@ -51,6 +52,7 @@ const MIGRATIONS = [
     note: "stamp tracker direction and every archived epic's terminal outcome",
     apply(state) {
       stampTrackerDirection(state);
+      stampArchivedOutcomes(state);
     },
   },
 ];
@@ -77,6 +79,39 @@ function stampTrackerDirection(state) {
   }
   for (const s of Array.isArray(state.secondaryTrackers) ? state.secondaryTrackers : []) {
     if (s && s.system && !s.direction) s.direction = "inward";
+  }
+}
+
+/** 0.27.0 — give every ARCHIVED epic a terminal outcome, regardless of lane.
+ *
+ *  LANE-SCOPING THIS IS WRONG ON MEASURED DATA. Of this repository's 69 archived epics only 3
+ *  are openspec-lane (measured 2026-08-23), so stamping one lane would leave 66 archived epics
+ *  with no outcome at all — and the outcome invariant ("no write that leaves an epic archived
+ *  may leave it without an outcome") would fail on pm's own repository the instant the
+ *  migration ran.
+ *
+ *  `delivered` ONLY where a passing Gate 2 exists — the one durable piece of evidence in the
+ *  record that a review actually happened. Everywhere else `unknown`, which is not a hedge but
+ *  the true statement about those epics: nobody recorded a disposition. No non-openspec lane has
+ *  a Gate 2 to have passed, so `delivered` there would assert something unverified.
+ *
+ *  `recordedBy: "migration"` keeps this stamp distinguishable from the heal's and the backfill's,
+ *  because every rule that exempts or replaces a stamp keys on WHICH path wrote it.
+ *
+ *  `recordedAt` prefers the epic's own `completedAt`: the migration clock says when this code
+ *  ran, which is not when the work ended.
+ *
+ *  Never overwrites an existing disposition. An agent's judgment outranks a stamp nobody chose,
+ *  and re-stamping would break idempotence besides. Note the rule binds THE MIGRATION and not
+ *  the repo: the interactive archive verb still replaces a `recordedBy: "migration"` stamp, or
+ *  every epic this touches would be frozen at `unknown` forever. */
+function stampArchivedOutcomes(state) {
+  const at = new Date().toISOString();
+  for (const e of state.epics) {
+    if (e.status !== "archived" || e.disposition) continue;
+    const gate2 = e.gateReview && e.gateReview.gate2;
+    const outcome = gate2 && gate2.verdict === "pass" ? "delivered" : "unknown";
+    e.disposition = engineStamp("migration", { outcome, recordedAt: e.completedAt || at });
   }
 }
 
