@@ -107,9 +107,18 @@ export function pmCmd(platform, name) {
  *  These bind the text pm OWNS. A change's own `tasks.md` is authored by the `openspec` plugin,
  *  which pm neither owns nor writes — what pm controls is the procedure it hands the agent to
  *  carry into that task list. */
+/** The gate-procedure items, and the load-bearing claims each mirrored surface MUST carry.
+ *
+ *  `mustSay` exists because the drift guard compared TITLES only. Proven live: a mirror's body was
+ *  edited to say the OPPOSITE of the generator and the whole suite stayed green — four surfaces
+ *  carrying one rule, one fifth of it guarded. The mirrors are deliberately reworded for markdown
+ *  (only 1 of 5 bodies matches verbatim), so the guard cannot compare prose; it compares the claims
+ *  that must survive rewording. An item added without `mustSay` fails the test rather than
+ *  silently widening the gap. */
 export const GATE_PROCEDURE_ITEMS = [
   {
     title: "Call-site completeness sweep.",
+    mustSay: ["enumerate ALL call sites of the thing being guarded", "DATA reference is a call site"],
     lines: [
       "For every rule, guard or invariant this change introduces",
       "   or modifies, enumerate ALL call sites of the thing being guarded — derived mechanically",
@@ -129,6 +138,7 @@ export const GATE_PROCEDURE_ITEMS = [
   },
   {
     title: "Verify against the commit, not the working tree.",
+    mustSay: ["The commit is the unit of verification", "Reading a file in the working tree"],
     lines: [
       "The commit is the unit of verification.",
       "   Reading a file in the working tree is NOT verification. For every task, run",
@@ -144,6 +154,7 @@ export const GATE_PROCEDURE_ITEMS = [
   },
   {
     title: "Declare lifecycle bookkeeping.",
+    mustSay: ["bookkeeping about the change's own lifecycle", "OR AMENDED"],
     lines: [
       "A task that is bookkeeping about the change's own",
       "   lifecycle rather than its work — above all the task that ARCHIVES THE CHANGE ITSELF, which",
@@ -156,14 +167,19 @@ export const GATE_PROCEDURE_ITEMS = [
   },
   {
     title: "Attribute every commit to its epic.",
+    mustSay: ["only before the first attribution", "MUST NOT be attributed"],
     lines: [
       "At the moment each commit is made, record it:",
       "   `update-epic <id> --attribute-commit <sha>`. The engine infers attribution from NOTHING —",
       "   not the files a commit touches, not an epic id in a message — so an unrecorded commit is",
       "   a commit the epic's Gate 2 cannot be checked against. The per-task conventional commit of",
-      "   an OpenSpec apply loop always qualifies. Work already in flight is covered too: attribute",
-      "   the commits already made before catching up, in the order they landed, because the LAST",
-      "   entry is the endpoint a recorded Gate 2 `headSha` is compared against.",
+      "   an OpenSpec apply loop always qualifies. Work already in flight is covered too, but ONLY",
+      "   BEFORE the first attribution: catch up in the order the commits landed, then keep",
+      "   attributing forward. The array is append-only — the engine neither reorders nor",
+      "   de-duplicates it — so catching up AFTER attributing forward leaves an ancestor as the",
+      "   last entry, and the LAST entry is the endpoint a recorded Gate 2 `headSha` is compared",
+      "   against. If forward attribution has already begun, attribute forward only and say so;",
+      "   a wrong endpoint reads as a stale verdict and refuses the archive.",
       "   ONE EXCLUSION, and it is not a judgment call: the commit that moves",
       "   `openspec/changes/<id>/` under `archive/`, and any commit that only relocates or deletes a",
       "   change's artifacts rather than implementing its work, is lifecycle bookkeeping and",
@@ -174,6 +190,7 @@ export const GATE_PROCEDURE_ITEMS = [
   },
   {
     title: "End work by recording a disposition.",
+    mustSay: ["ENDS by recording a terminal disposition", "never by removing the record"],
     lines: [
       "An epic, a story, a deferral or a release",
       "   exclusion ENDS by recording a terminal disposition carrying its required reason —",

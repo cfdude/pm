@@ -489,3 +489,41 @@ test("15.5 remove-epic still works, ungated, on an epic registered in error", ()
   // And nothing about it demanded a disposition on the way out: there was no work to preserve.
   assert.equal(st.epics[0].disposition, undefined);
 });
+
+// The title guard above proves each surface LISTS the same five obligations in the same order. It
+// says nothing about what they say. Proven live: a mirror's body was edited to state the OPPOSITE
+// of the generator — "only AFTER THE LAST attribution" against "only before the first" — and the
+// whole suite stayed green. Four surfaces carry one rule and one fifth of it was guarded.
+//
+// The mirrors are deliberately reworded for markdown (only 1 of 5 bodies matches the generator
+// verbatim), so this cannot compare prose. It compares the claims that must survive rewording,
+// declared beside each item as `mustSay`.
+test("15.5: every mirrored surface carries each item's load-bearing claims, not just its title", () => {
+  const surfaces = ["commands/epic.md", "commands/status.md", "skills/conductor/SKILL.md"];
+  const norm = (s) => s.replace(/[`*_]/g, "").replace(/\s+/g, " ").trim().toLowerCase();
+
+  for (const item of GATE_PROCEDURE_ITEMS) {
+    assert.ok(Array.isArray(item.mustSay) && item.mustSay.length,
+      `${item.title} declares no mustSay — an item added without one widens the gap this test ` +
+      "exists to close, so the absence is the failure");
+    // Self-check first: a claim absent from the GENERATOR is a typo in this list, and without
+    // this the test would fail against the mirrors and send the reader to edit the wrong file.
+    // Cost me three wrong guesses before adding it.
+    const generated = norm(item.lines.join(" "));
+    for (const claim of item.mustSay) {
+      assert.ok(generated.includes(norm(claim)),
+        `"${claim}" is not in the generator's own text for "${item.title}" — fix the claim, ` +
+        "not the mirrors");
+    }
+  }
+  for (const file of surfaces) {
+    const text = norm(fs.readFileSync(path.join(REPO, file), "utf8"));
+    for (const item of GATE_PROCEDURE_ITEMS) {
+      for (const claim of item.mustSay) {
+        assert.ok(text.includes(norm(claim)),
+          `${file} is missing "${claim}" from "${item.title}" — the surfaces list the same ` +
+          "obligations, so they must also state the same thing about them");
+      }
+    }
+  }
+});
