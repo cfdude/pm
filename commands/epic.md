@@ -76,13 +76,20 @@ To change an epic that already exists (notably, to record a tracker key after cr
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" update-epic <id> \
   [--title <title>] [--external-id <KEY>] [--external-url <url>] [--parent <id>] \
-  [--status <status>] [--priority <P?>] [--link "<type>:<epic>[:<reason>]"]
+  [--status <status>] [--priority <P?>] [--link "<type>:<epic>[:<reason>]"] \
+  [--lane <lane>] [--plan <path>]
 ```
 
-The id is positional. Parent/status/link changes are validated like `add-epic` (no self-parent,
-no cycle, known status, `--link`'s epic must be a known epic id). On an unknown id, or any
-invalid flag value, it exits non-zero and writes nothing — including an unrecognized flag name,
-which used to silently no-op and print a false "updated" success.
+The id is positional. Parent/status/lane/link changes are validated like `add-epic` (no
+self-parent, no cycle, known status, known lane, `--link`'s epic must be a known epic id). On an
+unknown id, or any invalid flag value, it exits non-zero and writes nothing — including an
+unrecognized flag name, which used to silently no-op and print a false "updated" success.
+
+**`--lane` re-routes an epic in place, and `--plan` attaches a plan to one created without
+one.** Both were settable only at creation, so the sole correction for a mis-routed epic was to
+remove it and register it again — discarding its start time, its gate verdicts, its links and
+its stories along the way. Both are in-place field writes: the epic keeps its position in
+`state.epics[]` and every other field it carries.
 
 **`--link` REPLACES the epic's links wholesale**, unlike the other flags which patch a single
 field — this is the intended CLI path to fix a malformed link (recorded with a bad `add-epic

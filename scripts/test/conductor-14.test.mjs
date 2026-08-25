@@ -925,3 +925,71 @@ test("a local-origin active epic owes no tracker refresh and gets the local inst
   assert.match(rules, /re-read its local source|plan document/i);
   assert.match(rules, /nothing is recorded in state|records nothing/i);
 });
+
+// ─────────── 12.2: update-epic --lane and --plan ───────────
+//
+// A lane was settable only at creation, so a mis-routed epic could be corrected in exactly one
+// way: remove it and register it again, losing its start time, its gate verdicts, its links and
+// its stories. `--lane` is validated against KNOWN_LANES by the SAME list creation validates
+// against, so the two surfaces cannot admit different lanes.
+//
+// "list position unchanged" is read as the epic's position in `state.epics[]` — the stored list.
+// It cannot mean RENDERED order: resolveEpics() sorts by priority then laneRank then id, so
+// changing a lane necessarily moves an epic in the rendered table by construction. The stored
+// list is what an in-place field write must not disturb.
+
+test("changing a lane is an in-place field write — nothing else about the epic moves", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "first", "--lane", "claude-code"], { cwd });
+  run(["add-epic", "--id", "e1", "--lane", "openspec", "--title", "keep me"], { cwd });
+  run(["add-epic", "--id", "last", "--lane", "claude-code"], { cwd });
+  run(["update-epic", "e1", "--link", "depends-on:first", "--add-story", "s one"], { cwd });
+  run(["set-active", "e1"], { cwd });
+  run(["record-gate-review", "e1", "--gate", "1", "--verdict", "pass",
+       "--base-sha", "aaa", "--head-sha", "bbb"], { cwd });
+
+  const before = readState(cwd);
+  const idxBefore = before.epics.findIndex(e => e.id === "e1");
+  const b = before.epics[idxBefore];
+
+  run(["update-epic", "e1", "--lane", "superpowers"], { cwd });
+
+  const after = readState(cwd);
+  const idxAfter = after.epics.findIndex(e => e.id === "e1");
+  const a = after.epics[idxAfter];
+  assert.equal(a.lane, "superpowers", "the lane must actually change");
+  assert.equal(idxAfter, idxBefore, "the epic's position in state.epics[] must not move");
+  assert.equal(a.startedAt, b.startedAt, "start time must survive a lane change");
+  assert.deepEqual(a.gateReview, b.gateReview, "a recorded gate verdict must survive a lane change");
+  assert.deepEqual(a.links, b.links, "links must survive a lane change");
+  assert.deepEqual(a.stories, b.stories, "stories must survive a lane change");
+  assert.equal(a.title, "keep me");
+});
+
+test("an invalid lane exits non-zero naming the valid lanes, with the epic unchanged", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "e1", "--lane", "claude-code"], { cwd });
+  const before = readState(cwd).epics.find(e => e.id === "e1");
+  const err = expectFail(() => run(["update-epic", "e1", "--lane", "sideways"], { cwd }));
+  assert.ok(err, "an unknown lane must not exit 0");
+  const msg = String(err.stderr || err.message);
+  for (const l of ["openspec", "superpowers", "claude-code", "decision", "external"]) {
+    assert.ok(msg.includes(l), `the refusal must name '${l}' as a valid lane`);
+  }
+  assert.deepEqual(readState(cwd).epics.find(e => e.id === "e1"), before, "nothing may be written");
+});
+
+test("--plan attaches a plan to an epic created without one, and refuses a valueless flag", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "e1", "--lane", "superpowers"], { cwd });
+  assert.equal(readState(cwd).epics.find(e => e.id === "e1").planPath, undefined);
+  run(["update-epic", "e1", "--plan", "docs/superpowers/plans/p.md"], { cwd });
+  assert.equal(readState(cwd).epics.find(e => e.id === "e1").planPath, "docs/superpowers/plans/p.md");
+  // A valueless --plan arrives as boolean true; storing it would put `true` in planPath.
+  const err = expectFail(() => run(["update-epic", "e1", "--plan"], { cwd }));
+  assert.ok(err, "--plan with no value must be refused, never stored as `true`");
+  assert.equal(readState(cwd).epics.find(e => e.id === "e1").planPath, "docs/superpowers/plans/p.md");
+});

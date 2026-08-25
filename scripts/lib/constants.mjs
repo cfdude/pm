@@ -127,13 +127,18 @@ export const KNOWN_STATUSES = ["untriaged", "queued", "active", "paused", "later
 export const EPIC_FLAGS = [
   { flag: "id", key: "id", commands: ["add-epic", "add-many"] },
   { flag: "title", key: "title", commands: ["add-epic", "update-epic", "add-many"] },
-  { flag: "lane", key: "lane", commands: ["add-epic", "add-many"] },
+  // `lane` and `plan` are settable AFTER creation as well as at it. A mis-routed epic used to be
+  // correctable in exactly one way — remove it and register it again — which discards its start
+  // time, its gate verdicts, its links and its stories. Both are validated on `update-epic`
+  // against the same lists creation validates against, so the two surfaces cannot admit
+  // different values.
+  { flag: "lane", key: "lane", commands: ["add-epic", "update-epic", "add-many"] },
   { flag: "priority", key: "priority", commands: ["add-epic", "update-epic", "add-many"] },
   { flag: "status", key: "status", commands: ["add-epic", "update-epic", "add-many"] },
   { flag: "parent", key: "parent", commands: ["add-epic", "update-epic", "add-many"] },
   { flag: "external-id", key: "externalId", commands: ["add-epic", "update-epic", "add-many"] },
   { flag: "external-url", key: "externalUrl", commands: ["add-epic", "update-epic", "add-many"] },
-  { flag: "plan", key: "planPath", commands: ["add-epic", "add-many"] },
+  { flag: "plan", key: "planPath", commands: ["add-epic", "update-epic", "add-many"] },
   { flag: "link", key: "links", commands: ["add-epic", "update-epic", "add-many"], repeats: true, write: "custom" },
   // `description` and `notes` are DISTINCT and neither substitutes for the other: a description
   // is durable rationale (why this epic exists, what would make it worth revisiting), replaced

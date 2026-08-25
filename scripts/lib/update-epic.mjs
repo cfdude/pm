@@ -2,7 +2,7 @@
 // The update-epic write-back verb: title/status/priority/links/story mutations on an
 // existing epic. One-directional dependencies only.
 
-import { KNOWN_STATUSES, KNOWN_REVIEW_MODES, REVIEW_MODE_RANK, epicFlagsFor } from "./constants.mjs";
+import { KNOWN_LANES, KNOWN_STATUSES, KNOWN_REVIEW_MODES, REVIEW_MODE_RANK, epicFlagsFor } from "./constants.mjs";
 import { activate } from "./active-pointer.mjs";
 import { globalReviewMode } from "./rules.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
@@ -31,7 +31,7 @@ export function updateEpic() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const argv = process.argv.slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
-  if (!id) { process.stderr.write("usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--link \"<type>:<epic>[:<reason>]\"] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done] [--attribute-commit <sha>] [--outcome delivered|killed|superseded|abandoned] [--reason \"<why>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\"] [--declined-deferral \"<what>:<why not>\"] [--no-deferrals] [--description D] [--notes \"<text>\"] [--external-updated-at <iso>]\n"); process.exit(1); }
+  if (!id) { process.stderr.write("usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--lane openspec|superpowers|claude-code|decision|external] [--plan <path>] [--link \"<type>:<epic>[:<reason>]\"] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done] [--attribute-commit <sha>] [--outcome delivered|killed|superseded|abandoned] [--reason \"<why>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\"] [--declined-deferral \"<what>:<why not>\"] [--no-deferrals] [--description D] [--notes \"<text>\"] [--external-updated-at <iso>]\n"); process.exit(1); }
   const f = parseFlags(argv.slice(1));
   const unknown = Object.keys(f).filter(k => !UPDATE_EPIC_FLAGS.includes(k));
   if (unknown.length) {
@@ -52,6 +52,22 @@ export function updateEpic() {
   const status = str(f.status);
   if (status !== undefined && !KNOWN_STATUSES.includes(status)) {
     process.stderr.write(`conductor: --status must be one of ${KNOWN_STATUSES.join("|")}\n`); process.exit(1);
+  }
+  // --lane: re-route an epic in place. Validated against the SAME KNOWN_LANES creation validates
+  // against, so a lane addEpic() would refuse cannot arrive through this door instead. Tested on
+  // `f.lane !== undefined` rather than on the str() result, so a VALUELESS `--lane` (which
+  // parseFlags yields as boolean true) is refused by name rather than dropped by str() into an
+  // exit-0-write-nothing — the #79 shape.
+  const lane = str(f.lane);
+  if (f.lane !== undefined && (lane === undefined || !KNOWN_LANES.includes(lane))) {
+    process.stderr.write(`conductor: --lane must be one of ${KNOWN_LANES.join("|")}\n`); process.exit(1);
+  }
+  // --plan: attach (or repoint) the plan path of an epic created without one. add-epic writes
+  // `f.plan` directly, which stores boolean `true` for a valueless flag; this path refuses that
+  // instead of persisting a planPath nothing can open.
+  const planPath = str(f.plan);
+  if (f.plan !== undefined && planPath === undefined) {
+    process.stderr.write("conductor: --plan requires a value\n"); process.exit(1);
   }
   let links;
   if (f.link !== undefined) {
@@ -172,6 +188,11 @@ export function updateEpic() {
   if (str(f["external-updated-at"]) !== undefined) epic.externalUpdatedAt = str(f["external-updated-at"]);
   if (parent !== undefined) epic.parent = parent;
   if (status !== undefined) epic.status = status;
+  // In-place field writes: the epic keeps its position in `state.epics[]`, its startedAt, its
+  // gate verdicts, its links and its stories. Re-routing an epic must cost none of those — that
+  // it used to is the whole reason remove-and-re-register was the only correction available.
+  if (lane !== undefined) epic.lane = lane;
+  if (planPath !== undefined) epic.planPath = planPath;
   if (str(f.priority) !== undefined) epic.priority = str(f.priority);
   if (links !== undefined) epic.links = links;
   if (reviewMode !== undefined) epic.reviewMode = reviewMode;
