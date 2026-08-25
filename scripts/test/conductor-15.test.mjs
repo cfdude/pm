@@ -421,3 +421,57 @@ test("8.1: a change archived before /pm:init ever ran is not lost", () => {
     "init syncs, and the first sync is exactly when a change archived before the conductor " +
     "existed must be picked up — otherwise it is invisible forever");
 });
+
+// ───────────── 8.2: identity is the date-prefix-stripped change id ─────────────
+//
+// Literal equality answers this wrongly in BOTH directions: an archive directory carries a date
+// prefix its epic does not, and this repository also holds epics whose own ids carry one. Either
+// miss makes registration a third way to produce duplicate epics, alongside the over-registration
+// behaviors `sync` is already filed for.
+
+test("8.2: a date-prefixed archive directory does not duplicate its existing epic", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", "2026-08-01-port-domain-health-system"), { recursive: true });
+  run(["add-epic", "--id", "port-domain-health-system", "--lane", "openspec"], { cwd });
+  run(["sync"], { cwd });
+  const ids = readState(cwd).epics.map(e => e.id);
+  assert.deepEqual(ids.filter(id => id.endsWith("port-domain-health-system")), ["port-domain-health-system"],
+    "one change, one epic — the existing epic is used and no second one is created");
+});
+
+test("8.2: an epic whose OWN id is date-prefixed is matched too", () => {
+  // This repository holds four such registrations, so it is the live shape, not a hypothetical.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", "2026-07-21-conductor-mjs-module-split"), { recursive: true });
+  run(["add-epic", "--id", "2026-07-21-conductor-mjs-module-split", "--lane", "superpowers"], { cwd });
+  run(["sync"], { cwd });
+  assert.equal(readState(cwd).epics.filter(e => e.id.endsWith("conductor-mjs-module-split")).length, 1,
+    "comparing the stripped archive id against the epic's LITERAL id alone misses this one");
+});
+
+test("8.2: re-running sync after a backfill adds nothing and modifies nothing", () => {
+  const cwd = archiveFixture({ total: 5, withEpic: 0 });
+  run(["sync"], { cwd });
+  const after = stateBytes(cwd);
+  run(["sync"], { cwd });
+  assert.equal(stateBytes(cwd), after, "zero epics added, zero modified — byte-identical");
+});
+
+test("8.2: a change registered while active and archived later resolves to ONE epic", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", "live-change"), { recursive: true });
+  fs.writeFileSync(path.join(cwd, "openspec", "changes", "live-change", "tasks.md"), "# tasks\n\n- [x] a\n");
+  run(["sync"], { cwd });
+  assert.equal(readState(cwd).epics.filter(e => e.id === "live-change").length, 1);
+  // Now archive it the way openspec does: the directory moves under archive/ with a date prefix.
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive"), { recursive: true });
+  fs.renameSync(path.join(cwd, "openspec", "changes", "live-change"),
+    path.join(cwd, "openspec", "changes", "archive", "2026-08-20-live-change"));
+  run(["sync"], { cwd });
+  const matches = readState(cwd).epics.filter(e => e.id.endsWith("live-change"));
+  assert.equal(matches.length, 1, "the existing epic flips to archived; no second epic appears");
+  assert.equal(matches[0].status, "archived");
+});
