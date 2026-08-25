@@ -265,6 +265,12 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
         "   priority instead of the P2 default. `add-epic` itself rejects a duplicate `--external-id`",
         "   as a second line of defense, so a stale local view can't produce a duplicate either.",
         "4. Set `--title` from the item title so the epic is legible before you triage it further.",
+        "5. For every epic ALREADY linked to an item here, compare that item's tracker-side",
+        "   updated timestamp against the epic's `externalUpdatedAt` watermark, and READ the ones",
+        "   whose timestamp is newer. Record what you read with `update-epic <id>",
+        "   --external-updated-at <iso>` (or `record-tracker-refresh` when you owe a verdict) —",
+        "   seeing an item in the list response is not reading it, so listing alone must never",
+        "   advance the watermark or sync erases the drift it exists to find.",
       );
     }
   }

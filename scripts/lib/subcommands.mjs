@@ -14,7 +14,7 @@ import { buildBrief } from "./briefing.mjs";
 import { appendDetourLog, gitShortSha } from "./git.mjs";
 import { detourContext } from "./links.mjs";
 import { activeChangeIds, firstHeading, planFiles, reconcileArchived } from "./epic-progress.mjs";
-import { ROOT, CONDUCTOR_DIR, BRIEF_PATH, PLANS_DIR } from "./constants.mjs";
+import { ROOT, CONDUCTOR_DIR, BRIEF_PATH, PLANS_DIR, anyInwardProcedureEmittable } from "./constants.mjs";
 import { resolveAndRecordPlatform } from "./platform.mjs";
 
 /** Ensure the conductor's GENERATED artifacts are git-ignored.
@@ -263,7 +263,25 @@ export function sync(quiet = false) {
   }
   reconcileArchived(state);
   saveState(state);
-  if (!quiet) process.stderr.write(`conductor: synced (${added} new epic(s) added as untriaged)\n`);
+  if (!quiet) {
+    process.stderr.write(`conductor: synced (${added} new epic(s) added as untriaged)\n`);
+    // What sync instructs EXTERNALLY follows direction. The engine performs none of it — it
+    // reads no tracker and never will — but saying which branch applies is the difference
+    // between an agent doing the inward pull and an agent inventing one for a repo that has
+    // no procedure for it.
+    const tracker = state.tracker && state.tracker.system ? state.tracker : null;
+    const secondaries = Array.isArray(state.secondaryTrackers) ? state.secondaryTrackers : [];
+    if (anyInwardProcedureEmittable(tracker, secondaries)) {
+      process.stderr.write(
+        "conductor: inward tracker sync is YOURS — follow the inward sync section in the rules " +
+        "block: list open items, register the unmirrored ones, then compare each linked epic's " +
+        "`externalUpdatedAt` watermark against its item's updated timestamp and read the movers\n");
+    } else if (tracker || secondaries.length) {
+      process.stderr.write(
+        "conductor: no inward procedure is configured — registered local OpenSpec/Superpowers " +
+        "sources only; nothing was read from your tracker(s), and nothing should be\n");
+    }
+  }
 }
 
 export function logDetour() {

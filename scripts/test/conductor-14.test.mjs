@@ -9,7 +9,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { run, readState, writeState, tmpRepo, expectFail } from "./helpers.mjs";
+import { run, runCombined, readState, writeState, tmpRepo, expectFail } from "./helpers.mjs";
 
 // ─────────────────────── group 12: epic annotation ───────────────────────
 //
@@ -499,4 +499,33 @@ test("no emitter recomputes direction from system, repo or direction locally", (
     assert.ok(constants.includes(`export const ${fn}`) || constants.includes(`export function ${fn}`),
       `constants.mjs must export ${fn}`);
   }
+});
+
+// ─────────── 10.11: what /pm:sync instructs is decided by direction ───────────
+
+/** Everything `sync` tells the agent for this tracker shape: the rules block it reads plus
+ *  sync's own confirmation line. */
+function syncInstructions(tracker) {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const state = readState(cwd);
+  state.tracker = tracker;
+  writeState(cwd, state);
+  return run(["rules"], { cwd }) + "\n" + runCombined(["sync"], { cwd });
+}
+
+test("sync in an outward-only repo instructs no step that reads or lists from the tracker", () => {
+  const text = syncInstructions({ system: "jira", projectKey: "JOB", direction: "outward" });
+  for (const readStep of ["gh issue list", "List open items in", "list open items in"]) {
+    assert.ok(!text.includes(readStep), `an outward-only repo was instructed to ${readStep}`);
+  }
+  assert.match(text, /registered local OpenSpec\/Superpowers sources only/,
+    "and it says so, rather than leaving the absence to be inferred");
+});
+
+test("sync in an inward repo instructs the pull and the watermark comparison", () => {
+  const text = syncInstructions({ system: "github-issues", repo: "o/n", direction: "inward" });
+  assert.match(text, /gh issue list --repo o\/n/, "list open items");
+  assert.match(text, /externalUrl/, "register the unmirrored ones without duplicating");
+  assert.match(text, /externalUpdatedAt/, "compare each linked item's timestamp against the watermark");
 });
