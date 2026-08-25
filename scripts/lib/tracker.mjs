@@ -88,6 +88,10 @@ export function setTracker() {
   // pre-existing direction-less jira repo the first time anyone ran `set-tracker` for any
   // reason — silently switching OFF the outward mirroring that repo has always had. A new
   // tracker chooses; an existing one keeps resolving exactly as it did.
+  // The PRIMARY branch writes `state.tracker` and nothing else — it never creates or touches
+  // `state.secondaryTrackers`, which only the `--role secondary` branch above may write. The two
+  // roles share this command and nothing else; a primary write that reached into the secondary
+  // list would silently re-scope work that was deliberately kept out of the primary mirror.
   const isNew = !(state.tracker && state.tracker.system);
   const t = { ...(state.tracker || {}) };
   if (str(f.system) !== undefined) t.system = str(f.system);

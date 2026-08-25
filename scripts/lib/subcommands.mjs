@@ -274,8 +274,10 @@ export function sync(quiet = false) {
     if (anyInwardProcedureEmittable(tracker, secondaries)) {
       process.stderr.write(
         "conductor: inward tracker sync is YOURS — follow the inward sync section in the rules " +
-        "block: list open items, register the unmirrored ones, then compare each linked epic's " +
-        "`externalUpdatedAt` watermark against its item's updated timestamp and read the movers\n");
+        "block: list open items, register the unmirrored ones (matching on `externalUrl`, never " +
+        "on a bare item number — the same number in two trackers is two different items), then " +
+        "compare each linked epic's `externalUpdatedAt` watermark against its item's updated " +
+        "timestamp and read the movers\n");
     } else if (tracker || secondaries.length) {
       process.stderr.write(
         "conductor: no inward procedure is configured — registered local OpenSpec/Superpowers " +

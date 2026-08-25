@@ -9,7 +9,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { run, runCombined, readState, writeState, tmpRepo, expectFail } from "./helpers.mjs";
+import { spawnSync } from "node:child_process";
+import { ENGINE, EMPTY_CACHE, run, runCombined, readState, writeState, tmpRepo, expectFail } from "./helpers.mjs";
 
 // ─────────────────────── group 12: epic annotation ───────────────────────
 //
@@ -651,4 +652,51 @@ test("the routed recipe still runs as written once its lane placeholder is fille
   const epic = readState(cwd).epics.find(e => e.externalId === "114");
   assert.ok(epic, "the recipe with a routed lane still exits zero and creates the epic");
   assert.ok(epic.lane, "and the epic carries whatever lane routing supplied");
+});
+
+// ─────────── 10.14: the two MODIFIED tracker-sync behaviors ───────────
+
+test("setting the primary tracker merges every unnamed field and never writes secondaryTrackers", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-tracker", "--system", "jira", "--instance", "onvex", "--project", "JOB",
+       "--mechanism", "mcp", "--intent", "active:in-progress", "--direction", "outward"], { cwd });
+  run(["set-tracker", "--role", "secondary", "--system", "github-issues", "--repo", "a/b"], { cwd });
+  const before = JSON.stringify(readState(cwd).secondaryTrackers);
+
+  run(["set-tracker", "--intent", "paused:todo"], { cwd });
+  const t = readState(cwd).tracker;
+  assert.equal(t.system, "jira");
+  assert.equal(t.instance, "onvex");
+  assert.equal(t.projectKey, "JOB");
+  assert.equal(t.mechanism, "mcp");
+  assert.equal(t.direction, "outward", "an explicitly chosen direction survives a merge");
+  assert.deepEqual(t.statusIntent, { active: "in-progress", paused: "todo" });
+  assert.equal(JSON.stringify(readState(cwd).secondaryTrackers), before,
+    "the primary write must not touch state.secondaryTrackers");
+});
+
+test("issue #42 in two secondary repos registers as two DISTINCT epics", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const state = readState(cwd);
+  state.secondaryTrackers = [
+    { system: "github-issues", repo: "acme/market-intelligence", role: "secondary" },
+    { system: "github-issues", repo: "acme/risk-engine", role: "secondary" },
+  ];
+  writeState(cwd, state);
+  const block = run(["rules"], { cwd });
+  for (const [repo, url] of [
+    ["acme/market-intelligence", "https://github.com/acme/market-intelligence/issues/42"],
+    ["acme/risk-engine", "https://github.com/acme/risk-engine/issues/42"],
+  ]) {
+    const section = block.slice(block.indexOf(`## Secondary tracker sync (github-issues · ${repo}`));
+    run(emittedRegistration(section, { number: 42, url }), { cwd });
+  }
+  const mirrored = readState(cwd).epics.filter(e => e.externalId === "42");
+  assert.equal(mirrored.length, 2, "externalId alone must not read as a duplicate across trackers");
+  assert.equal(new Set(mirrored.map(e => e.id)).size, 2);
+  assert.equal(new Set(mirrored.map(e => e.externalUrl)).size, 2);
+  assert.match(block, /when both sides carry one/,
+    "and the block states the nuance: a URL-less legacy epic must not falsely block a distinct one");
 });
