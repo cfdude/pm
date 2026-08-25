@@ -4,6 +4,9 @@
 differently* becomes an issue and an epic — that loop works. A finding about *how we should work*
 had nowhere to go and died in conversation transcripts. This is that second lane.
 
+> **Use the `lessons` skill.** It matches your situation against every lesson's `trigger` and opens
+> only what applies. This file is its index; reading the whole directory defeats the structure.
+
 ## How to read this directory
 
 **Read this file. Read a lesson only when its trigger matches what you are about to do.** Every
