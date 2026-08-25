@@ -16,7 +16,7 @@
 import { isInitialized, loadState } from "./state.mjs";
 import { epicProgress, strippedChangeId } from "./epic-progress.mjs";
 import { gateHasEvidence } from "./constants.mjs";
-import { isAncestor } from "./git.mjs";
+import { commitDate, isAncestor } from "./git.mjs";
 import { isArchiveBackfilled, outcomeOf } from "./disposition.mjs";
 
 /** The outcomes that are their own explanation. Each carries a REQUIRED reason saying why the
@@ -113,6 +113,45 @@ export const CHECKS = [
             out.push({ epic: e.id, detail:
               `${gate} records ${entry.baseSha}..${entry.headSha} but its note cites commit(s) ` +
               `that range does not contain: ${uncontained.join(", ")}` });
+          }
+        }
+      }
+      return out;
+    },
+  },
+  {
+    id: "gate-recorded-as-bookkeeping",
+    title: "a gate verdict recorded as bookkeeping rather than as review",
+    run(state) {
+      const out = [];
+      for (const e of state.epics) {
+        const g1 = e.gateReview && e.gateReview.gate1;
+        const g2 = e.gateReview && e.gateReview.gate2;
+        // ARM 1 — the verdict is dated AFTER the work it reviewed had already merged. The merge
+        // commit is defined as the LAST hash in the epic's attribution array, and where that
+        // array is absent or empty this arm simply does not apply: every other reading of "the
+        // merge commit" is either inert on all live epics or fires on essentially all of them,
+        // and a check that fires on everything is a check nobody reads.
+        const attributed = Array.isArray(e.attributedCommits) ? e.attributedCommits : [];
+        const mergedAt = attributed.length ? commitDate(attributed[attributed.length - 1]) : null;
+        for (const [gate, entry] of [["gate1", g1], ["gate2", g2]]) {
+          if (!entry || !entry.reviewedAt || !mergedAt) continue;
+          if (Date.parse(entry.reviewedAt) > Date.parse(mergedAt)) {
+            out.push({ epic: e.id, detail:
+              `${gate} was recorded ${entry.reviewedAt} — after the epic's merge commit ` +
+              `${attributed[attributed.length - 1]} (${mergedAt}), so the verdict post-dates the ` +
+              "work it claims to have reviewed" });
+          }
+        }
+        // ARM 2 — two gates recorded within a minute of each other. A spec review and an
+        // implementation review of the same change are never seconds apart; the audited instance
+        // recorded both 47 ms apart, with no notes, 83 seconds after the squash-merge.
+        if (g1 && g2 && g1.reviewedAt && g2.reviewedAt) {
+          const apart = Math.abs(Date.parse(g1.reviewedAt) - Date.parse(g2.reviewedAt));
+          if (apart <= 60_000) {
+            out.push({ epic: e.id, detail:
+              `gate 1 and gate 2 were recorded ${apart} ms apart — a spec review and an ` +
+              "implementation review of the same change are never that close together" });
           }
         }
       }

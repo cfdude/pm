@@ -40,3 +40,26 @@ export function isAncestor(a, b) {
     return e && e.status === 1 ? false : null;
   }
 }
+
+/** The committer date of `sha`, as an ISO-8601 string, or null.
+ *
+ *  `null` is the same third answer `isAncestor` gives and means the same thing: git could not
+ *  answer — no repository, no git binary, or a hash this repository has never seen. A check that
+ *  compared a timestamp against a `null` date would be comparing against nothing, so every
+ *  caller treats it as "this arm does not apply" rather than as a date in 1970.
+ *
+ *  `%cI` (committer date) rather than `%aI` (author date) on purpose: a rebased or cherry-picked
+ *  commit keeps its author date from before the rebase, so an author date can sit BEFORE a
+ *  review that genuinely read the rebased code. The committer date is when the commit as it
+ *  stands came into existence, which is the quantity a review can be after.
+ *
+ *  Local only, per the engine's architectural law — this reads the object database and contacts
+ *  nothing. */
+export function commitDate(sha) {
+  if (typeof sha !== "string" || !sha) return null;
+  try {
+    const out = execFileSync("git", ["show", "-s", "--format=%cI", sha],
+      { cwd: ROOT, stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
+    return out || null;
+  } catch { return null; }
+}

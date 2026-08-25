@@ -916,3 +916,77 @@ test("9.3: a verdict's own recorded endpoints are never reported as commits it f
     "the fixture only means something if git says the base is genuinely unreachable from the head");
   assert.deepEqual(findingsFor("verdict-range-omits-cited-commits", withGateVerdict(reversed)), []);
 });
+
+// ───────────── 9.4: a gate recorded as bookkeeping rather than as review ─────────────
+//
+// Both arms are fixture-verified with ZERO live candidates, and each zero has its reason: arm 1
+// cannot apply because no epic in this repository carries an attribution array before this
+// release, and arm 2 finds nothing because the one live epic holding two gate verdicts recorded
+// them 22 minutes apart.
+
+const { commitDate: commitDateHere } = await import("../lib/git.mjs");
+const shiftIso = (iso, ms) => new Date(Date.parse(iso) + ms).toISOString();
+const epicWithGates = (over) => ({ version: 1, active: null, detourStack: [], epics: [
+  { id: "audited", title: "x", priority: "P1", status: "archived", role: "epic", lane: "openspec",
+    links: [], ...over }] });
+
+test("9.4 arm 1: a verdict dated after the epic's merge commit is reported", () => {
+  const merged = commitDateHere("04c54c8");
+  assert.ok(merged, "the fixture reads a REAL commit date from this repository");
+  const state = epicWithGates({
+    attributedCommits: ["d168b1e", "04c54c8"],
+    gateReview: { gate2: { verdict: "pass", baseSha: "d168b1e", headSha: "04c54c8",
+      reviewedAt: shiftIso(merged, 83_000) } },
+  });
+  const findings = findingsFor("gate-recorded-as-bookkeeping", state);
+  assert.equal(findings.length, 1);
+  assert.match(findings[0].detail, /after the epic's merge commit 04c54c8/);
+  // Dated BEFORE the merge is the ordinary, correct shape and reports nothing.
+  const ok = epicWithGates({
+    attributedCommits: ["d168b1e", "04c54c8"],
+    gateReview: { gate2: { verdict: "pass", baseSha: "d168b1e", headSha: "04c54c8",
+      reviewedAt: shiftIso(merged, -600_000) } },
+  });
+  assert.deepEqual(findingsFor("gate-recorded-as-bookkeeping", ok), []);
+});
+
+test("9.4 arm 1 does not apply where there is no attribution array", () => {
+  const state = epicWithGates({
+    gateReview: { gate2: { verdict: "pass", baseSha: "d168b1e", headSha: "04c54c8",
+      reviewedAt: "2036-01-01T00:00:00.000Z" } },
+  });
+  assert.deepEqual(findingsFor("gate-recorded-as-bookkeeping", state), [],
+    "with no array there is no merge commit to be after — every other reading of it is either " +
+    "inert on all live epics or fires on essentially all of them");
+});
+
+test("9.4 arm 2: two gates 47 ms apart are reported; hours apart are not", () => {
+  const close = epicWithGates({ gateReview: {
+    gate1: { verdict: "pass", reviewedAt: "2026-08-04T00:48:57.279Z" },
+    gate2: { verdict: "pass", reviewedAt: "2026-08-04T00:48:57.326Z" },
+  } });
+  const findings = findingsFor("gate-recorded-as-bookkeeping", close);
+  assert.equal(findings.length, 1);
+  assert.match(findings[0].detail, /47 ms apart/);
+  const apart = epicWithGates({ gateReview: {
+    gate1: { verdict: "pass", reviewedAt: "2026-07-19T23:17:32.441Z" },
+    gate2: { verdict: "pass", reviewedAt: "2026-07-19T23:39:40.827Z" },
+  } });
+  assert.deepEqual(findingsFor("gate-recorded-as-bookkeeping", apart), [],
+    "22 minutes apart is a spec review and an implementation review, which is the live shape");
+});
+
+test("9.4: zero live candidates, and the reason each arm cannot fire is checkable", () => {
+  const state = liveState();
+  assert.deepEqual(findingsFor("gate-recorded-as-bookkeeping", state), []);
+  // NON-EMPTY is the discriminator, not presence: an epic created under this release carries an
+  // empty array, which asserts that nothing has been attributed to it and so names no merge
+  // commit for a verdict to post-date.
+  assert.equal(state.epics.filter(e => Array.isArray(e.attributedCommits) && e.attributedCommits.length).length, 0,
+    "arm 1: no epic has attributed a commit yet, so there is no merge commit to be after");
+  const twoGates = state.epics.filter(e => e.gateReview && e.gateReview.gate1 && e.gateReview.gate2);
+  assert.equal(twoGates.length, 1, "arm 2: exactly one live epic holds two gate verdicts");
+  const apart = Math.abs(Date.parse(twoGates[0].gateReview.gate1.reviewedAt) -
+    Date.parse(twoGates[0].gateReview.gate2.reviewedAt));
+  assert.ok(apart > 60_000, `and it recorded them ${Math.round(apart / 60000)} minutes apart`);
+});
