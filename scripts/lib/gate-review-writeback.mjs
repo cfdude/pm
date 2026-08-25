@@ -75,6 +75,21 @@ export function recordGateReview() {
   if (baseSha !== undefined) entry.baseSha = baseSha;
   if (headSha !== undefined) entry.headSha = headSha;
   if (reviewer !== undefined) entry.reviewer = reviewer;
+
+  // Supersede, never destroy. This write used to replace the entry wholesale, so the `ungated`
+  // record the archive-drift heal writes — the record that an epic reached `archived` with no
+  // review — was erased by the very verdict that supersedes it, and "the superseded entry MUST
+  // remain readable" had no writer anywhere in the engine.
+  //
+  // ONE nested record, not a chain: the prior entry's own `superseded` is dropped rather than
+  // carried down. A growing verdict history is a different capability, and an unbounded nest
+  // would make the record's depth a function of how many times a gate was re-recorded.
+  const prior = epic.gateReview[`gate${gate}`];
+  if (prior && typeof prior === "object") {
+    const kept = { ...prior };
+    delete kept.superseded;
+    entry.superseded = kept;
+  }
   epic.gateReview[`gate${gate}`] = entry;
 
   saveState(state);

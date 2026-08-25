@@ -949,3 +949,46 @@ test("record-gate-review refuses `ungated` and names the verdicts it accepts", (
   assert.match(String(err.stderr || err.message), /pass\|fail/);
   assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
 });
+
+test("a real verdict supersedes the prior entry instead of destroying it", () => {
+  // The heal's `ungated` entry is the record that an epic was archived with no review. A
+  // wholesale overwrite meant the verdict that SUPERSEDES it also erased it, so
+  // "the superseded entry MUST remain readable" had no writer anywhere in the engine.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  writeState(cwd, {
+    version: 1, active: null, detourStack: [],
+    epics: [{
+      id: "healed-then-reviewed", title: "Healed, then really reviewed", priority: "P1",
+      status: "archived", role: "epic", lane: "openspec", links: [], reconcileNeeded: false,
+      gateReview: { gate2: {
+        verdict: "ungated", reviewedAt: "2026-08-01T09:00:00.000Z", recordedBy: "archive-drift-heal",
+      } },
+    }],
+  });
+  run(["record-gate-review", "healed-then-reviewed", "--gate", "2", "--verdict", "pass",
+    "--base-sha", "d168b1e", "--head-sha", "04c54c8"], { cwd });
+
+  const g = readState(cwd).epics.find(e => e.id === "healed-then-reviewed").gateReview.gate2;
+  assert.equal(g.verdict, "pass");
+  assert.equal(g.superseded.verdict, "ungated",
+    "an audit must still be able to see the epic was archived ungated before it was reviewed");
+  assert.equal(g.superseded.recordedBy, "archive-drift-heal");
+});
+
+test("supersession preserves ANY prior entry and never nests a second level", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
+  run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "fail"], { cwd });
+  run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "pass",
+    "--base-sha", "aaaaaaa", "--head-sha", "bbbbbbb"], { cwd });
+  run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "pass",
+    "--base-sha", "aaaaaaa", "--head-sha", "ccccccc"], { cwd });
+
+  const g = readState(cwd).epics.find(e => e.id === "spec-epic").gateReview.gate2;
+  assert.equal(g.headSha, "ccccccc");
+  assert.equal(g.superseded.headSha, "bbbbbbb", "the entry it replaced, whatever its verdict");
+  assert.equal(g.superseded.superseded, undefined,
+    "one nested record, not a chain — a growing history here is a different capability");
+});
