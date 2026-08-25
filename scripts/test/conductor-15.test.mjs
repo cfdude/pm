@@ -990,3 +990,55 @@ test("9.4: zero live candidates, and the reason each arm cannot fire is checkabl
     Date.parse(twoGates[0].gateReview.gate2.reviewedAt));
   assert.ok(apart > 60_000, `and it recorded them ${Math.round(apart / 60000)} minutes apart`);
 });
+
+// ───────────── 9.9: a heal-archived epic that DID pass Gate 2 reads as unknown ─────────────
+
+/** Record two gate verdicts, then move the change on disk so the heal flips the status. The
+ *  verdicts are written directly rather than through `record-gate-review` so their timestamps
+ *  can be hours apart: two CLI calls land milliseconds apart, which is the very shape the
+ *  bookkeeping check reports, and a fixture that tripped a second check could not show that
+ *  this one is the only thing reporting it. */
+function healArchivedWithGates(cwd, id) {
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", id), { recursive: true });
+  fs.writeFileSync(path.join(cwd, "openspec", "changes", id, "tasks.md"), "# tasks\n\n- [x] a\n");
+  run(["sync"], { cwd });
+  const state = readState(cwd);
+  Object.assign(state.epics.find(e => e.id === id), { gateReview: {
+    gate1: { verdict: "pass", reviewedAt: "2026-08-04T09:00:00.000Z", baseSha: "aaaaaaa", headSha: "bbbbbbb" },
+    gate2: { verdict: "pass", reviewedAt: "2026-08-04T17:00:00.000Z", baseSha: "aaaaaaa", headSha: "bbbbbbb" },
+  } });
+  writeState(cwd, state);
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive"), { recursive: true });
+  fs.renameSync(path.join(cwd, "openspec", "changes", id),
+    path.join(cwd, "openspec", "changes", "archive", `2026-08-05-${id}`));
+  run(["sync"], { cwd });
+}
+
+test("9.9: the heal-archived epic with a passing Gate 2 is reported, and nothing else reports it", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  healArchivedWithGates(cwd, "reviewed-then-archived");
+  const epic = readState(cwd).epics.find(e => e.id === "reviewed-then-archived");
+  assert.equal(epic.disposition.recordedBy, "archive-drift-heal", "the heal stamped it");
+  assert.equal(epic.gateReview.gate2.verdict, "pass", "and left the real verdict alone");
+  const out = run(["integrity"], { cwd });
+  assert.match(out, /heal-archived-epic-passed-gate-2 — 1 finding/);
+  assert.match(out, /update-epic reviewed-then-archived --status archived --outcome delivered/,
+    "the finding names the call that fixes it — the ordinary end of the documented workflow");
+  for (const line of out.split("\n").filter(l => /^[a-z-]+ — \d+ finding/.test(l))) {
+    if (line.startsWith("heal-archived-epic-passed-gate-2")) continue;
+    assert.match(line, /— 0 finding/,
+      `${line.split(" ")[0]} also fired, so this fixture cannot show that 9.9 is the only ` +
+      "surface on which the mismatch is visible");
+  }
+});
+
+test("9.9: zero live candidates, because the migration stamps `migration` and not the heal", () => {
+  assert.deepEqual(findingsFor("heal-archived-epic-passed-gate-2", liveState()), []);
+  const cwd = repoAt0260();
+  upgradeAt(cwd, "0.27.0");
+  for (const e of readState(cwd).epics.filter(x => x.status === "archived")) {
+    assert.notEqual(e.disposition.recordedBy, "archive-drift-heal",
+      `${e.id}: a pre-existing archived epic is stamped by the migration, not by the heal`);
+  }
+});

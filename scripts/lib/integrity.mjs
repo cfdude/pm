@@ -17,7 +17,7 @@ import { isInitialized, loadState } from "./state.mjs";
 import { epicProgress, strippedChangeId } from "./epic-progress.mjs";
 import { gateHasEvidence } from "./constants.mjs";
 import { commitDate, isAncestor } from "./git.mjs";
-import { isArchiveBackfilled, outcomeOf } from "./disposition.mjs";
+import { isArchiveBackfilled, outcomeOf, stampedBy } from "./disposition.mjs";
 
 /** The outcomes that are their own explanation. Each carries a REQUIRED reason saying why the
  *  work did not complete, so an epic holding one is a record working rather than a record
@@ -115,6 +115,27 @@ export const CHECKS = [
               `that range does not contain: ${uncontained.join(", ")}` });
           }
         }
+      }
+      return out;
+    },
+  },
+  {
+    id: "heal-archived-epic-passed-gate-2",
+    title: "an epic the heal archived reads `unknown` while carrying a passing Gate 2",
+    run(state) {
+      const out = [];
+      for (const e of state.epics) {
+        if (!stampedBy(e, "archive-drift-heal") || outcomeOf(e) !== "unknown") continue;
+        const gate2 = e.gateReview && e.gateReview.gate2;
+        if (!gate2 || gate2.verdict !== "pass") continue;
+        // A `delivered`-shaped record wearing an `unknown` outcome. The heal is behaving
+        // correctly — nobody supplied a disposition at the moment it flipped the status, and
+        // `unknown` says exactly that — and the epic gets no `ungated` entry either, because it
+        // already had a real verdict. So without this check the mismatch is visible nowhere.
+        out.push({ epic: e.id, detail:
+          "archived by the drift heal with a passing Gate 2 but no recorded disposition. This " +
+          "is the ordinary end of the documented workflow, and the fix is the ordinary next " +
+          `step: update-epic ${e.id} --status archived --outcome delivered --no-deferrals` });
       }
       return out;
     },

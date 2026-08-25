@@ -100,16 +100,27 @@ export function isEngineStamped(disposition) {
   return !!disposition && ENGINE_STAMP_TOKENS.includes(disposition.recordedBy);
 }
 
+/** WHICH engine path wrote this epic's disposition — asked here, never by reading the field.
+ *
+ *  Every exemption and every remediation in this release keys on the path: the integrity checks'
+ *  scope rule on `archive-backfill`, the heal-mismatch check on `archive-drift-heal`, the
+ *  migration's own stamp on `migration`. A caller naming the token it cares about is fine; a
+ *  caller reaching for `.recordedBy` is how a second definition of "engine-stamped" starts, and
+ *  the suite's source scan fails one. */
+export function stampedBy(epic, recordedBy) {
+  const d = epic && epic.disposition;
+  return !!d && d.recordedBy === recordedBy;
+}
+
 /** Was this epic reconstructed from `openspec/changes/archive/` rather than managed?
  *
- *  THE reader for the backfill stamp, so every consumer of that distinction asks one question in
- *  one place. A backfilled epic has no gate verdict, no start time, and — where the change was
- *  abandoned — no ticked tasks; those are properties of a record rebuilt from disk, not of a
- *  badly managed epic, and a check or a refusal keyed on any of them needs to tell the two
- *  apart. */
+ *  Named rather than left as a `stampedBy(e, "archive-backfill")` at each site because it is
+ *  asked from two very different places — progress resolution and the checks' scope rule — and
+ *  the QUESTION, not the token, is what those two share. A backfilled epic has no gate verdict,
+ *  no start time, and — where the change was abandoned — no ticked tasks; those are properties
+ *  of a record rebuilt from disk, not of a badly managed epic. */
 export function isArchiveBackfilled(epic) {
-  const d = epic && epic.disposition;
-  return !!d && d.recordedBy === "archive-backfill";
+  return stampedBy(epic, "archive-backfill");
 }
 
 /** The dispositions worth SHOWING, in epic-list order: every record carrying a judgment —
