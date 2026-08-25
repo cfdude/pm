@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { tmpRepo, run, runCombined, readState, writeState, projectMd, parseBrief, fixturePluginRoot, gitInitWithCommit } from "./helpers.mjs";
+import { tmpRepo, run, runCombined, readState, writeState, projectMd, parseBrief, fixturePluginRoot, gitInitWithCommit, expectFail } from "./helpers.mjs";
 
 // conductor-tells-the-truth, groups 7–9: the 0.27.0 migration, the archive backfill, and the
 // read-only integrity checks. Split from conductor-13/14 for the same reason those were split
@@ -532,4 +532,72 @@ test("8.3: an epic the conductor MANAGED keeps its suppressed missing-source beh
   assert.ok(!/1\/2/.test(row),
     "an epic registered through a creation path is not a backfilled one, and its source going " +
     "away at archive time is the documented, suppressed case");
+});
+
+// ───────────── 8.4 / 8.5: the stamp is unconditional, and no gate2 is written ─────────────
+//
+// Unconditional is the requirement, not a convenience: conditioning the stamp on task counts,
+// lane, or anything else would reintroduce the engine-side classifier this design rules out —
+// and every exemption elsewhere (the integrity checks' scope rule, the archive gate's) keys on
+// the stamp being present, so a conditioned stamp is a silent hole in all of them.
+
+/** One repo holding two backfilled changes: one fully ticked, one with 12 tasks never done. */
+function twoBackfilledChanges() {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  for (const [id, ticked, unticked] of [["fully-ticked", 9, 0], ["abandoned", 23, 12]]) {
+    const dir = path.join(cwd, "openspec", "changes", "archive", `2026-08-05-${id}`);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, "tasks.md"), "# tasks\n\n" +
+      Array.from({ length: ticked }, (_, n) => `- [x] a${n}\n`).join("") +
+      Array.from({ length: unticked }, (_, n) => `- [ ] b${n}\n`).join(""));
+  }
+  run(["sync"], { cwd });
+  return cwd;
+}
+
+test("8.4: every backfilled epic is stamped identically, complete or not", () => {
+  const cwd = twoBackfilledChanges();
+  const epics = readState(cwd).epics.filter(e => ["fully-ticked", "abandoned"].includes(e.id));
+  assert.equal(epics.length, 2);
+  for (const e of epics) {
+    assert.equal(e.disposition.outcome, "unknown",
+      `${e.id}: the backfill was never asked for a disposition, and 'unknown' says exactly that`);
+    assert.equal(e.disposition.recordedBy, "archive-backfill",
+      `${e.id}: readable as a FIELD — no consumer parses a path name out of a free-text reason`);
+  }
+  assert.deepEqual(
+    { ...epics[0].disposition, recordedAt: null }, { ...epics[1].disposition, recordedAt: null },
+    "neither epic is distinguished from the other by whether or how it was stamped");
+});
+
+test("8.4: no flag on any command writes recordedBy, and a creation path keeps its own token", () => {
+  const cwd = twoBackfilledChanges();
+  for (const argv of [["add-epic", "--id", "z", "--lane", "claude-code", "--recorded-by", "archive-backfill"],
+                      ["update-epic", "abandoned", "--recorded-by", "archive-backfill"]]) {
+    const e = expectFail(() => run(argv, { cwd }));
+    assert.ok(e, `${argv[0]} must reject --recorded-by — recordedBy is never agent-writable`);
+  }
+  // The epic-flag registry is the single declaration of that surface, so the absence is
+  // asserted there too rather than only at two command entry points.
+  const src = fs.readFileSync(path.join(REPO, "scripts", "lib", "constants.mjs"), "utf8");
+  assert.ok(!/key:\s*"recordedBy"/.test(src), "no registry entry may write the recordedBy key");
+  // An epic created directly at archived carries its OWN creation token, not the backfill's.
+  run(["add-epic", "--id", "made-archived", "--lane", "claude-code", "--status", "archived"], { cwd });
+  assert.equal(readState(cwd).epics.find(e => e.id === "made-archived").disposition.recordedBy, "add-epic");
+});
+
+test("8.5: a backfilled epic gets no gate2 entry at all, and is never named as an ungated archive", () => {
+  const cwd = twoBackfilledChanges();
+  for (const e of readState(cwd).epics.filter(x => ["fully-ticked", "abandoned"].includes(x.id))) {
+    assert.equal(e.gateReview, undefined,
+      `${e.id}: an 'ungated' entry here is a permanent, unclearable condition — its only ` +
+      "clearing path is a real passing Gate 2 with a commit range, for work that shipped " +
+      "before the conductor existed");
+  }
+  const brief = parseBrief(cwd);
+  for (const id of ["fully-ticked", "abandoned"]) {
+    assert.ok(!new RegExp(`ungated[^\\n]*${id}|${id}[^\\n]*ungated`).test(brief),
+      `${id}: no backfilled epic is named as an ungated archive`);
+  }
 });
