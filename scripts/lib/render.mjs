@@ -12,7 +12,7 @@ import { getAutonomy } from "./autonomy.mjs";
 import { parseFlags } from "./add-epic.mjs";
 import { validLink } from "./links.mjs";
 import { outcomeOf, recordedDispositions } from "./disposition.mjs";
-import { DETOURS_LOG, PROJECT_MD, STATE_PATH, RENDER_STAMP_PATH, CONDUCTOR_DIR } from "./constants.mjs";
+import { DETOURS_LOG, PROJECT_MD, STATE_PATH, RENDER_STAMP_PATH, CONDUCTOR_DIR, gateSummary } from "./constants.mjs";
 
 export function render() {
   const state = loadState();
@@ -130,6 +130,20 @@ export function render() {
       const carried = d.carriedTo ? ` (carried to \`${d.carriedTo}\`)` : "";
       md.push(`| \`${epic.id}\` | ${outcomeOf(epic)} | ${d.recordedAt || "—"} | ${why}${carried} |`);
     }
+    md.push("");
+  }
+
+  // Gate reviews, read from state.json. Before this, the ONLY consumer of `gateReview`
+  // anywhere in the engine was the archive guard reading `gate2` — a verdict was recorded,
+  // documented in the skill, and displayed nowhere, so 42 of 49 audited archives reached
+  // `archived` with nothing showing that no review had happened.
+  const gated = epics.filter(e => e.gateReview && e.gateReview.gate2);
+  if (gated.length) {
+    md.push("## Gate reviews");
+    md.push("");
+    md.push("| Epic | Gate 2 (implementation) |");
+    md.push("|------|-------------------------|");
+    for (const e of gated) md.push(`| \`${e.id}\` | ${gateSummary(e.gateReview.gate2)} |`);
     md.push("");
   }
 

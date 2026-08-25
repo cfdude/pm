@@ -2,7 +2,7 @@
 // Records an OpenSpec gate review's verdict durably against an epic. One-directional
 // dependencies only.
 
-import { isOpenspecLane } from "./constants.mjs";
+import { gateHasEvidence, isOpenspecLane } from "./constants.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { parseFlags } from "./add-epic.mjs";
 import { render } from "./render.mjs";
@@ -42,17 +42,15 @@ export function recordGateReview() {
   // on an epic that later ships `b..c` is byte-identical in the record to one that covered
   // everything. A `fail` may omit the range: there is no shipped work for it to have covered,
   // and demanding a range would make recording a failed review harder than recording a pass.
-  if (verdict === "pass") {
+  if (verdict === "pass" && !gateHasEvidence({ baseSha, headSha })) {
     const missingEvidence = [];
     if (baseSha === undefined) missingEvidence.push("--base-sha");
     if (headSha === undefined) missingEvidence.push("--head-sha");
-    if (missingEvidence.length) {
-      process.stderr.write(
-        `conductor: a 'pass' verdict requires the commit range it covered — missing ` +
-        `${missingEvidence.join(" and ")}. Record the range the reviewer actually read ` +
-        `(a 'fail' may omit it).\n`);
-      process.exit(1);
-    }
+    process.stderr.write(
+      `conductor: a 'pass' verdict requires the commit range it covered — missing ` +
+      `${missingEvidence.join(" and ")}. Record the range the reviewer actually read ` +
+      `(a 'fail' may omit it).\n`);
+    process.exit(1);
   }
   const state = loadState();
   const epic = state.epics.find(e => e.id === id);

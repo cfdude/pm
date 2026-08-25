@@ -866,3 +866,53 @@ test("a fail verdict may omit the range — there is no shipped work to have cov
   run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "fail"], { cwd });
   assert.equal(readState(cwd).epics.find(e => e.id === "spec-epic").gateReview.gate2.verdict, "fail");
 });
+
+// A verdict recorded before the evidence fields existed carries a free-text note. It stays
+// exactly as recorded — the note names shas, and mining them would rebuild the prose
+// dependency the fields exist to remove.
+
+const LEGACY_STATE = path.join(REPO, "scripts", "test", "fixtures", "state-legacy-gate-verdict.json");
+
+test("a pre-existing verdict loads, renders as carrying no checkable evidence, and is not rewritten", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const legacy = fs.readFileSync(LEGACY_STATE, "utf8");
+  fs.writeFileSync(path.join(cwd, ".conductor", "state.json"), legacy);
+  run(["render"], { cwd });
+
+  const md = projectMd(cwd);
+  assert.match(md, /no checkable evidence/,
+    "a verdict with no recorded range must be reported as unevidenced, never shown as a " +
+    "verified pass — 42 of 49 audited archives reached `archived` on exactly this shape");
+  const brief = parseBrief(cwd);
+  assert.match(brief, /no checkable evidence/);
+
+  const g = readState(cwd).epics.find(e => e.id === "platform-parity-mechanism").gateReview.gate2;
+  assert.equal(g.verdict, "pass", "the verdict is not deleted or downgraded");
+  assert.match(g.note, /d168b1e\.\.04c54c8/, "the note survives verbatim");
+  assert.equal(g.baseSha, undefined, "no range is invented for it");
+  assert.equal(g.headSha, undefined);
+});
+
+test("no module under scripts/lib/ mines a sha or a range out of a verdict note", () => {
+  const libDir = path.join(REPO, "scripts", "lib");
+  const offenders = [];
+  for (const name of fs.readdirSync(libDir).filter(f => f.endsWith(".mjs"))) {
+    const src = fs.readFileSync(path.join(libDir, name), "utf8");
+    src.split("\n").forEach((line, i) => {
+      const t = line.trim();
+      if (t.startsWith("//") || t.startsWith("*") || t.startsWith("/*")) return;
+      // A PROPERTY read — `entry.note`, `gate2.note`. The detour log also carries a local
+      // `note` variable it splits and trims (git.mjs, render.mjs's Recent-detours table), and
+      // that has nothing to do with a gate verdict; scoping to the property access is what
+      // keeps this scan pointed at the thing it is about.
+      if (!/\.note\b/.test(line)) return;
+      if (/\.(match|exec|split|search|slice|indexOf)\s*\(|RegExp|\[0-9a-f\]/.test(line)) {
+        offenders.push(`${name}:${i + 1}: ${t}`);
+      }
+    });
+  }
+  assert.deepEqual(offenders, [],
+    "a note is prose and stays prose — parsing a range out of one is the dependency the " +
+    "baseSha/headSha fields were added to remove");
+});

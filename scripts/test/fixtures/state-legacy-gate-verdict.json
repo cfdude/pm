@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "pmVersion": "0.26.0",
+  "active": null,
+  "detourStack": [],
+  "epics": [
+    {
+      "id": "platform-parity-mechanism",
+      "title": "Platform parity mechanism",
+      "priority": "P1",
+      "status": "archived",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [],
+      "reconcileNeeded": false,
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-08-01T12:00:00.000Z",
+          "note": "fresh-context review of d168b1e..04c54c8; follow-ups c63efc1 and 3cba2e9"
+        }
+      }
+    }
+  ]
+}

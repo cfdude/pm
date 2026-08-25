@@ -41,6 +41,29 @@ export const KNOWN_LANES = ["openspec", "superpowers", "claude-code", "decision"
  *  archive-drift heal's bypass half is the fourth such site, and the suite's source scan fails a
  *  fifth one written strict. */
 export const isOpenspecLane = (epic) => ((epic && epic.lane) || "openspec") === "openspec";
+
+/** A gate verdict carries CHECKABLE evidence when it records the commit range it covered.
+ *
+ *  THE definition, so the refusal that demands a range and the surfaces that report one
+ *  missing can never disagree. A verdict written before these fields existed carries a
+ *  free-text `note` instead; it loads unchanged, reports as unevidenced, and is never mined
+ *  for a range — parsing that prose is the dependency the fields were added to remove. */
+export const gateHasEvidence = (entry) =>
+  !!(entry && typeof entry.baseSha === "string" && typeof entry.headSha === "string");
+
+export const NO_GATE_EVIDENCE = "no checkable evidence";
+
+/** The ONE wording every surface uses for a recorded gate verdict, so PROJECT.md and the brief
+ *  cannot drift apart. `extra` carries anything a later capability appends per verdict (the
+ *  staleness marking). */
+export function gateSummary(entry, extra = "") {
+  if (!entry || typeof entry.verdict !== "string") return "—";
+  const range = gateHasEvidence(entry)
+    ? `${entry.baseSha}..${entry.headSha}`
+    : `⚠ ${NO_GATE_EVIDENCE}`;
+  const who = entry.reviewer ? ` · ${entry.reviewer}` : "";
+  return `${entry.verdict} (${range})${who}${extra}`;
+}
 export const KNOWN_PLATFORMS = ["claude-code", "hermes", "codex"];
 
 // Each platform's project-instruction file, in the order that platform resolves them.
