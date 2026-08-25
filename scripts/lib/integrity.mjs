@@ -15,6 +15,8 @@
 
 import { isInitialized, loadState } from "./state.mjs";
 import { epicProgress, strippedChangeId } from "./epic-progress.mjs";
+import { gateHasEvidence } from "./constants.mjs";
+import { isAncestor } from "./git.mjs";
 import { isArchiveBackfilled, outcomeOf } from "./disposition.mjs";
 
 /** The outcomes that are their own explanation. Each carries a REQUIRED reason saying why the
@@ -45,6 +47,28 @@ export function inCompletionScope(epic) {
   return true;
 }
 
+/** Are `a` and `b` the same commit written at different abbreviation lengths? */
+const sameSha = (a, b) => !!a && !!b && (a.startsWith(b) || b.startsWith(a));
+
+/** The commit hashes a verdict's NOTE cites, minus the two the verdict already records as
+ *  fields.
+ *
+ *  The range is read from `baseSha`/`headSha` and NEVER parsed out of the note — that prose
+ *  dependency is exactly what the structured fields were added to remove. The note is read only
+ *  for the hashes it MENTIONS, and the two field values are subtracted so a note that spells its
+ *  own range out ("reviewed d168b1e..04c54c8") does not report its own base as uncontained.
+ *
+ *  A hex-looking token is not necessarily a commit: an 8-digit date, or an ordinary word like
+ *  `defaced`, matches this pattern. Those are not filtered here — `isAncestor` answers `null`
+ *  for a hash this repository has never seen, and only a definite `false` is reported. The
+ *  three-valued answer is doing the filtering, deliberately, because the alternative is a
+ *  cleverer regex that would still be guessing. */
+function citedShas(entry) {
+  const note = typeof entry.note === "string" ? entry.note : "";
+  return [...new Set(note.match(/\b[0-9a-f]{7,40}\b/g) || [])]
+    .filter(sha => !sameSha(sha, entry.baseSha) && !sameSha(sha, entry.headSha));
+}
+
 /** The registry. One entry per check: a stable `id` a reader can grep for, a one-line `title`
  *  saying what shape it looks for, and `run(state)` returning findings.
  *
@@ -67,6 +91,29 @@ export const CHECKS = [
         // says nothing about any of them. `total > 0` means a real source with real checkboxes.
         if (p.total > 0 && p.done === 0) {
           out.push({ epic: e.id, detail: `archived at ${p.done}/${p.total} (source: ${p.source})` });
+        }
+      }
+      return out;
+    },
+  },
+  {
+    id: "verdict-range-omits-cited-commits",
+    title: "a gate verdict's note cites commits its recorded range does not contain",
+    run(state) {
+      const out = [];
+      for (const e of state.epics) {
+        for (const gate of ["gate1", "gate2"]) {
+          const entry = e.gateReview && e.gateReview[gate];
+          if (!entry || !gateHasEvidence(entry)) continue;
+          // Only a definite `false` — "git answered, and this commit is not reachable from the
+          // recorded head". `null` means git could not answer at all, which is not evidence of
+          // anything and must never be reported as a finding.
+          const uncontained = citedShas(entry).filter(sha => isAncestor(sha, entry.headSha) === false);
+          if (uncontained.length) {
+            out.push({ epic: e.id, detail:
+              `${gate} records ${entry.baseSha}..${entry.headSha} but its note cites commit(s) ` +
+              `that range does not contain: ${uncontained.join(", ")}` });
+          }
         }
       }
       return out;

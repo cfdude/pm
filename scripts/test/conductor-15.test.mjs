@@ -718,6 +718,7 @@ test("9.1: every check is reported with its count, including the ones that found
 // the module directly evaluates its checks against this repository's real disk and real git.
 // Do not set process.env.CLAUDE_PROJECT_DIR anywhere in this file.
 const { runIntegrity, CHECKS } = await import("../lib/integrity.mjs");
+const { isAncestor: isAncestorHere } = await import("../lib/git.mjs");
 const liveState = () => JSON.parse(fs.readFileSync(path.join(REPO, ".conductor", "state.json"), "utf8"));
 const findingsFor = (id, state) => {
   const c = runIntegrity(state).find(x => x.id === id);
@@ -850,4 +851,68 @@ test("9.7: every live dual-lane finding cites #64/#69 as the likely cause", () =
     assert.match(f.detail, /`sync` registering a finished plan file as a second epic/,
       `${f.epic}: the cause is stated, not just referenced by number`);
   }
+});
+
+// ───────────── 9.3: a verdict's range does not contain the commits its note cites ─────────────
+//
+// Evaluated against THIS repository's real git history: all the hashes below exist here, and
+// the containment computation is a real `git merge-base --is-ancestor` call. That matters
+// because `isAncestor` is three-valued — a hash git has never seen answers `null`, and `null`
+// suppresses the finding — so a test run against a temp repo would report nothing and pass for
+// entirely the wrong reason.
+//
+// ZERO live candidates today, and that is not a gap: no verdict in state.json carries structured
+// sha fields, because this release introduces them and forbids rewriting the three legacy
+// verdicts. The live instance the spec cites exists only as prose in a note, so it is reproduced
+// here as a fixture rather than mined from the record.
+
+const PARITY_VERDICT = {
+  verdict: "pass", baseSha: "d168b1e", headSha: "04c54c8",
+  // The real note's shape: it spells out its own range, cites two fixes made AFTER that range,
+  // and mentions one commit that IS inside it. `defaced` is seven hex characters and an ordinary
+  // English word — the token scanner cannot tell it from a hash, and does not have to.
+  note: "fresh-context review over d168b1e..04c54c8: 2 Important both fixed in c63efc1 and " +
+    "confirmed by a scoped re-review; gitignore-filter fix 3cba2e9 separately re-reviewed; " +
+    "the reviewed baseline included 5c8f91c and nothing was defaced.",
+};
+const withGateVerdict = (gate2) => ({
+  version: 1, active: null, detourStack: [], epics: [
+    { id: "platform-parity-mechanism-fixture", title: "x", priority: "P1", status: "archived",
+      role: "epic", lane: "openspec", links: [], gateReview: { gate2 } }],
+});
+
+test("9.3: the check reports exactly the cited commits the recorded range does not reach", () => {
+  const findings = findingsFor("verdict-range-omits-cited-commits", withGateVerdict(PARITY_VERDICT));
+  assert.equal(findings.length, 1);
+  assert.match(findings[0].detail, /d168b1e\.\.04c54c8/, "the range comes from the FIELDS");
+  for (const sha of ["c63efc1", "3cba2e9"]) {
+    assert.ok(findings[0].detail.includes(sha), `${sha} is a descendant of the range and must be reported`);
+  }
+  assert.ok(!findings[0].detail.includes("5c8f91c"),
+    "5c8f91c IS an ancestor of the recorded head — reporting it would mean the ancestry logic " +
+    "is inverted or absent, and this assertion is what proves git actually answered");
+  assert.ok(!findings[0].detail.includes("defaced"),
+    "an ordinary word that happens to be seven hex characters answers `null` from git, and " +
+    "`null` is not evidence of anything");
+});
+
+test("9.3: a verdict with no structured range is never mined for one, and none exists live", () => {
+  const legacy = { verdict: "pass", reviewedAt: "2026-08-04T00:48:57.279Z", note: PARITY_VERDICT.note };
+  assert.deepEqual(findingsFor("verdict-range-omits-cited-commits", withGateVerdict(legacy)), [],
+    "parsing a range out of the note is the prose dependency the structured fields removed");
+  assert.deepEqual(findingsFor("verdict-range-omits-cited-commits", liveState()), [],
+    "zero live candidates — no verdict in this repository carries baseSha/headSha yet");
+});
+
+test("9.3: a verdict's own recorded endpoints are never reported as commits it failed to reach", () => {
+  // A range whose base is NOT an ancestor of its head — the shape a rebase leaves behind. Without
+  // subtracting the FIELD values, the check reports the verdict's own base as a cited commit the
+  // range does not contain, which is a nonsense finding about the record's own two hashes.
+  const reversed = {
+    verdict: "pass", baseSha: "04c54c8", headSha: "d168b1e",
+    note: "reviewed 04c54c8..d168b1e end to end",
+  };
+  assert.equal(isAncestorHere("04c54c8", "d168b1e"), false,
+    "the fixture only means something if git says the base is genuinely unreachable from the head");
+  assert.deepEqual(findingsFor("verdict-range-omits-cited-commits", withGateVerdict(reversed)), []);
 });
