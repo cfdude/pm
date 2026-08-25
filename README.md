@@ -46,11 +46,11 @@ Not a benchmark — real numbers pulled straight from this repo's own history, v
 - Every multi-agent hierarchy dispatch runs **worktree-isolated**, unattended, converging back
   through sequential merge with **zero data loss** — every conflict seen so far has been
   mechanical (a shared CHANGELOG header, a usage string), never a real logic collision.
-- **39 releases** shipped end-to-end (spec → build → test → changelog → version bump → release)
+- **43 releases** shipped end-to-end (spec → build → test → changelog → version bump → release)
   with the plugin managing its own backlog the entire time.
-- **287 tests**, **0 dependencies** — the entire engine is Node 18+ built-ins only, ~2,900 lines
-  across a 140-line `scripts/conductor.mjs` entry point and 26 `scripts/lib/*.mjs` modules,
-  nothing to `npm install`. The suite itself is split across 11 files so it runs in parallel.
+- **603 tests**, **0 dependencies** — the entire engine is Node 18+ built-ins only, ~6,000 lines
+  across a 174-line `scripts/conductor.mjs` entry point and 32 `scripts/lib/*.mjs` modules,
+  nothing to `npm install`. The suite itself is split across 18 files so it runs in parallel.
 - Caught its own bugs mid-flight, live: a stale-cache silent fallback, an archived-child leak in
   hierarchy planning, a false-positive auto-detour heuristic — each found by using the tool on
   itself, logged as a `DF-` finding, and fixed in the same session it was discovered.
@@ -218,18 +218,38 @@ engine ever calling that tracker itself — same instruction-layer law as everyt
 generically with any tracker name (`--system` isn't an enum), so **Jira**, **Linear**, and
 **GitHub Issues** are all supported today.
 
-**Jira and Linear (and any other `--system`) get bidirectional mirroring:** the rules block
-tells the agent to create a tracker issue for any local epic lacking `externalId`, then keep
-its status transitioning in step with the linked issue.
+### Direction is configuration, not a vendor rule
 
-**`github-issues` is deliberately INWARD-ONLY, not bidirectional:** open issues in the
-configured repo get pulled in as untriaged epics (`gh issue list` → `add-epic --status
-untriaged`, deduped by `externalId`), but the rules block does **not** tell the agent to
-auto-create a GitHub issue for a local epic just because a `github-issues` tracker is
-configured. Silently filing a public GitHub issue for every unmirrored claude-code epic is a
-much bigger, more consequential default than mirroring toward an internal Jira/Linear
-instance — so that outward instruction is suppressed specifically for `github-issues`, while
-Jira/Linear keep the full bidirectional behavior unchanged.
+**⚠️ Behavior change in 0.27.0.** Direction used to be inferred from the vendor —
+`github-issues` was hardcoded inward-only and every other system got the outward mirror. It is
+now an explicit `direction` on the tracker entry, and that recorded value is what every emitter
+reads:
+
+| `direction` | The rules block and the brief tell the agent to… |
+|-------------|--------------------------------------------------|
+| `inward` | list open items in the tracker's scope and register the new ones with `add-epic --status untriaged` (deduped by `externalUrl`), using the deterministic `--id` the emitted recipe supplies |
+| `outward` | create a tracker issue for any local epic lacking `externalId`, then keep its status transitioning in step with the linked issue |
+| `both` | do both |
+
+**A NEW primary tracker registered without `--direction` now defaults to `inward`, whatever the
+vendor.** This is a deliberate reversal: `set-tracker --system jira --project JOB` produced the
+outward mirror in 0.26.0 and produces the inward pull in 0.27.0. Outward creation of issues in
+someone else's tracker is the consequential default and has to be chosen, not inherited. The
+one-line remedy, if outward is what you want:
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" set-tracker --system jira --direction outward
+```
+
+**Existing repos are unaffected.** `/pm:upgrade` stamps each tracker with the direction it
+already behaves with — `github-issues` primary → `inward`, any other primary → `outward`, every
+secondary → `inward` — and an explicitly set value is never overwritten, so a second upgrade is a
+no-op. A secondary tracker is pinned to `inward`; any other value is rejected, because a secondary
+is pull-plus-writeback by definition and has never created anything outward.
+
+Direction alone does not turn a section on: an inward section is emitted only when the tracker
+also names **what to read**. A `github-issues` tracker with no `repo` still emits neither section,
+because pm may not emit a command line with an unfilled placeholder.
 
 Real shape, from a project actually running this in production:
 
@@ -289,12 +309,26 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" set-tracker --role secondary 
 
 See `commands/tracker.md` for the full `--role`/`--remove` contract.
 
-**Resyncing after completion:** whenever an inward-pull-capable tracker is configured (a
-`github-issues` primary, or any secondary tracker), the rules block instructs the agent to
-re-sync with its tracker(s) (`/pm:sync`) right after closing/transitioning a linked issue as part
-of completing an epic — the phrasing stays tracker-count-agnostic regardless of how many are
-configured. The SessionStart brief also nudges toward `/pm:sync` whenever any tracker exists;
-this is a non-blocking reminder only, never an automatic sync.
+**Resyncing after completion:** where at least one configured tracker has an **emittable inward
+procedure** — direction includes `inward` *and* it names a scope to read — the rules block
+instructs the agent to re-sync (`/pm:sync`) right after closing/transitioning a linked issue as
+part of completing an epic. The phrasing stays tracker-count-agnostic regardless of how many are
+configured. The SessionStart brief nudges toward `/pm:sync` on the same condition; it is a
+non-blocking reminder, never an automatic sync.
+
+> **Changed in 0.27.0.** Both of those used to fire more widely: the reminder appeared in every
+> rules block with a tracker (citing "the writeback steps above" that the same block never
+> emitted), and the brief's nudge appeared whenever any tracker existed. An outward-only repo now
+> gets neither. If you are diffing 0.27.0's emitted output against 0.26.0's, these are two of
+> exactly three expected differences — the third is progress rendering `· N lifecycle`. Treat a
+> fourth as a regression.
+
+**Freshness and the refresh gate:** a tracker-linked epic carries `externalUpdatedAt`, the
+**tracker's own** updated timestamp as of the last time the agent actually read that item. Before
+an epic becomes the active piece of work its source of truth is re-read, and the obligation is
+cleared by `record-tracker-refresh`. The gate keys on **provenance** — does this epic have an
+external origin — never on direction: an issue filed by a third party and an epic born from a
+local spec have different sources of truth in the same repo on the same day.
 
 ## Commands
 
@@ -306,13 +340,32 @@ plans as epics, writes the managed rules block into `CLAUDE.md` (or the file the
 `--platform` actually reads — see Supported Platforms), and renders `PROJECT.md`.
 Safe to run once per repo; re-running is a no-op if already initialized.
 
+The rules block carries a **gate procedure of five numbered, required task items** — the call-site
+completeness sweep, commit-based verification, the lifecycle-marker declaration, commit
+attribution, and ending work by recording a disposition. They are numbered items rather than prose
+bullets on purpose: measured across an audit of 8 repositories, a rule carried by a mandatory task
+section reached **14/14** adoption in subsequent changes, and the same rule as a prose bullet
+reached **3/15**.
+
 </details>
 
 <details>
 <summary><code>/pm:status</code> — Show the current conductor briefing</summary>
 
 The active epic (with lane), the detour stack, the top-priority epics next up, and per-lane
-counts. Re-renders `PROJECT.md` from `.conductor/state.json` first.
+counts. Re-renders `PROJECT.md` from `.conductor/state.json` first. Also surfaces, when present:
+**ungated archives** (archived with no Gate 2 review from anyone — a standing condition, not an
+episode, so every session sees it until a real verdict supersedes it), **handoffs** from both
+ends, and each release's `N epics, M deferred`.
+
+**Progress excludes lifecycle bookkeeping.** A task that is bookkeeping about the change's own
+lifecycle — above all the task that archives the change itself, which cannot be ticked before the
+thing that ticks it — carries the literal marker `<!-- pm:lifecycle -->` on its own task line.
+The engine infers this from nothing else: not the wording, not the commands the text names, not
+the position in the file. Marked tasks render as `· N lifecycle` alongside the count (and
+`0/0 · N lifecycle` where every task is excluded), and no longer count as outstanding work at
+archive time. Mark it when the task source is authored **or amended** — a source written before
+0.27.0 gets the marker the first time you touch it.
 
 </details>
 
@@ -364,7 +417,7 @@ document, or OpenSpec proposal plus tasks), and nothing about that is recorded i
 </details>
 
 <details>
-<summary><code>record-gate-review &lt;epicId&gt; --gate 1|2 --verdict pass|fail [--reviewer "&lt;note&gt;"]</code> — Record an OpenSpec gate review</summary>
+<summary><code>record-gate-review &lt;epicId&gt; --gate 1|2 --verdict pass|fail --base-sha &lt;sha&gt; --head-sha &lt;sha&gt; [--reviewer "&lt;who&gt;"]</code> — Record an OpenSpec gate review</summary>
 
 Writes a fresh-context reviewer's verdict durably onto an `openspec`-lane epic
 (`gateReview.gate1`/`gate2`). `update-epic --status archived` **rejects** the transition for any
@@ -373,14 +426,28 @@ Gate 2 (implementation review, before docs) is mechanically required to archive,
 narrated. Scoped strictly to the `openspec` lane; `superpowers`/`claude-code`/`decision`/`external`
 epics are completely unaffected.
 
+**The verdict carries its evidence as data.** `--base-sha`/`--head-sha` record the range that was
+actually reviewed and `--reviewer` records who reviewed it, so a verdict can be checked and can go
+**stale**: if the epic later attributes commits the recorded head does not reach, the archive is
+refused by name until the range is re-reviewed or the attribution is corrected. Before 0.27.0 a
+review of `a..b` on an epic that then shipped `b..c` was byte-identical to one that covered
+everything.
+
+An archive that reached `archived` without any review at all now records **`verdict: "ungated"`**
+instead of nothing. That is a standing condition, reported by the brief and by `integrity` until a
+real passing verdict supersedes it — not an episode that a single session's briefing consumes.
+
 </details>
 
 <details>
 <summary><code>/pm:sync</code> — Register new proposals and plans</summary>
 
-Picks up any new OpenSpec proposals or Superpowers plans not yet tracked as epics. When a
-`github-issues` tracker is configured, also pulls open issues in as untriaged epics
-(deduplicated by `externalId`).
+Picks up any new OpenSpec proposals or Superpowers plans not yet tracked as epics, and
+reconciles `openspec/changes/archive/` — an archived change the conductor never knew about is
+registered as an epic already in `archived` status. That backfill is announced once and marked by
+`archiveBackfilledAt`, never a silent side effect. Where a tracker's `direction` includes `inward`
+**and** it names a scope to read, `/pm:sync` also pulls open items in as untriaged epics,
+deduplicated by `externalUrl` (globally unique) rather than bare `externalId`.
 
 </details>
 
@@ -391,7 +458,9 @@ Picks up any new OpenSpec proposals or Superpowers plans not yet tracked as epic
 |------------|------|
 | `add --id X --title "…" --lane L --priority P [--status S] [--parent ID] [--external-id KEY]` | Register any epic in any lane; optionally nest under a parent or link a tracker issue. |
 | `add-many --from <path\|->` | Atomically bulk-create a parent + children from a JSON batch. |
-| `update-epic <id> [--title …] [--status …] [--parent …] [--link …] [--review-mode …] [--add-story "<title>"] [--story <n> --done]` | Write-back path — title corrections, status changes, links, per-epic review-mode escalation, inline story mutation (see below). |
+| `update-epic <id> [--title …] [--status …] [--lane …] [--priority …] [--parent …] [--plan …] [--link …] [--clear-links] [--description "…"] [--notes "…"] [--external-id …] [--external-url …] [--external-updated-at <iso>] [--review-mode …] [--add-story "<title>"] [--story <n> --done]` | Write-back path — title corrections, status/lane/priority changes, links, free-text annotation, tracker linkage, per-epic review-mode escalation, inline story mutation (see below). |
+| `update-epic <id> --attribute-commit <sha>` | Record a commit as this epic's work. Repeatable, append-only, in landing order. The engine infers attribution from **nothing** — not the files a commit touches, not an epic id in a message — so an unattributed commit is one the epic's Gate 2 cannot be checked against. **Do not attribute the commit that moves `openspec/changes/<id>/` under `archive/`**: it lands after the reviewed range by construction and makes the epic's own Gate 2 stale at the instant the archive gate reads it. |
+| `update-epic <id> --status archived --outcome delivered\|killed\|superseded\|abandoned --reason "<why>" --no-deferrals` | **How work ends** — a terminal disposition with its reason, never deletion. Every outcome except `delivered` requires the reason. The deferral assertion is required in the *same* invocation: swap `--no-deferrals` for `--deferral "<epicId>:<section>"` where work is now held by a registered epic, or `--declined-deferral "<what>:<why not>"` where you are deliberately not doing it. Add `--carried-to <epicId> --reason "<which tasks moved>"` to hand off unfinished work. |
 | `remove-epic <id> [--cascade]` | Hard-delete; blocked by default if it has children (`--cascade` removes descendants too). Strips dangling links elsewhere. |
 | `set-active <id>` / `clear-active` | Set/clear the top-level active epic. |
 
@@ -466,6 +535,9 @@ billing always goes through openspec" needs to be a rule, not a CLAUDE.md carve-
 
 Detects signals, confirms with you, and records the tracker (Jira/GitHub/Linear) — the engine
 never calls the tracker itself; it only shapes the instructions it emits for you to act on.
+`set-tracker --direction inward|outward|both` sets which instructions those are; a **new** primary
+with no `--direction` defaults to `inward` regardless of vendor (see
+[Direction is configuration, not a vendor rule](#direction-is-configuration-not-a-vendor-rule)).
 
 </details>
 
@@ -523,14 +595,41 @@ source to the prior ref and `/reload-plugins`.
 </details>
 
 <details>
+<summary><code>release &lt;id&gt; --intent "&lt;what&gt;" [--target &lt;date&gt;] [--member &lt;epicId&gt;] [--defer &lt;epicId&gt; --reason "&lt;why&gt;"]</code> — Plan a release as a first-class object</summary>
+
+`state.releases[]` holds `{id, intent, target, deferred[]}`. Membership is recorded **one-way** as
+`epic.release`, so the release and the epic can never disagree about whether an epic is in it, and
+the engine proposes membership for nothing.
+
+`--defer <epicId> --reason "<why>"` records a **deliberate exclusion**: the epic stays in the
+backlog rather than being ended, and the reason survives the release closing. That is the same
+reason-bearing disposition record used at the other three scopes (an epic ending, a deferral in a
+design doc, a handoff), applied to release scope. `PROJECT.md` and the briefing render
+`<release>: N epics, M deferred`, with every deferral's reason reachable from `state.json`.
+
+Without it, "we deliberately cut X because Y" survives only in a conversation transcript — which
+is exactly the failure this release exists to fix.
+
+</details>
+
+<details>
 <summary><code>integrity</code> — Read-only audit of the record itself</summary>
 
 Reports records that **cannot be true**: an archived epic whose task source exists with nothing
 ticked, one change registered under two lanes (keyed on the date-prefix-stripped id), a gate
 verdict whose recorded range does not reach the commits its note cites, a gate recorded as
 bookkeeping rather than review, a `delivered` epic that attributed no commits, an archived
-openspec-lane epic with a passing Gate 2 and no Gate 1, and an archive directory no epic
+openspec-lane epic with a passing Gate 2 and no Gate 1, an epic archived with an `ungated` Gate 2
+(no review from anyone), an epic the archive-drift heal flipped that reads `outcome: unknown`
+while carrying a passing Gate 2, a dangling epic reference, and an archive directory no epic
 corresponds to.
+
+**Expect a burst of `heal-archived-epic-passed-gate-2` on your first run after upgrading.** Every
+repo that followed the documented `/opsx:archive` → heal flow lands on `outcome: unknown` rather
+than `delivered` — the migration only stamps epics already `archived` in state, and the heal flips
+the rest afterwards — so they miss it by one step. That is expected, not a bug; the finding names
+the exact remedy (`update-epic <id> --status archived --outcome delivered --no-deferrals`), and
+the archive gate lets an agent replace an engine stamp, so nothing is frozen at `unknown`.
 
 Every check is reported with its count **including the ones that found nothing**, so a check that
 measured nothing is visibly a check that ran. It writes no state, blocks no command and repairs
