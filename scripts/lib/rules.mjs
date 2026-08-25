@@ -9,7 +9,8 @@ import path from "node:path";
 import { loadState } from "./state.mjs";
 import {
   KNOWN_REVIEW_MODES, REVIEW_MODE_RANK, RULES_BEGIN, RULES_BEGIN_PREFIX, RULES_END, ROOT,
-  PLATFORM_COMMAND_PREFIX, inwardProcedureEmittable, outwardApplies, trackerScope, usesGhIssueList,
+  PLATFORM_COMMAND_PREFIX, anyInwardProcedureEmittable, inwardProcedureEmittable, outwardApplies,
+  trackerScope, usesGhIssueList,
 } from "./constants.mjs";
 import { rulesTarget } from "./platform.mjs";
 
@@ -302,9 +303,12 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
       "issue.",
     );
   }
-  const hasInwardPullTracker = (tracker && tracker.system === "github-issues") ||
-    (Array.isArray(secondaryTrackers) && secondaryTrackers.length > 0);
-  if (hasInwardPullTracker) {
+  // The reminder points the agent at "the writeback steps above", so it may only be emitted
+  // where those steps ARE above it. The test it replaced fired for ANY github-issues primary,
+  // including one with no `repo` — a block whose only inward instruction was the reminder's own
+  // reference to instructions it did not contain. This is one of exactly two deliberate
+  // emitted-output changes on the un-upgraded path, and it is a repair of a dangling pointer.
+  if (anyInwardProcedureEmittable(tracker, secondaryTrackers)) {
     lines.push(
       "",
       "## Sync after completing tracker-linked work",

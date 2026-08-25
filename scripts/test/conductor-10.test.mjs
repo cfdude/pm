@@ -240,10 +240,12 @@ test("rulesBlock adds a resync-after-completion instruction when the primary tra
   assert.match(rules, /Sync after completing tracker-linked work/);
 });
 
-test("rulesBlock omits the resync instruction when the only tracker is a non-github-issues primary with no secondaries", () => {
+test("rulesBlock omits the resync instruction when the only tracker is an outward primary with no secondaries", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
-  run(["set-tracker", "--system", "jira", "--project", "JOB"], { cwd });
+  // The reminder now keys on an emittable INWARD procedure rather than on the vendor's name:
+  // an outward-only repo re-syncs nothing inward, so there is nothing for it to point at.
+  run(["set-tracker", "--system", "jira", "--project", "JOB", "--direction", "outward"], { cwd });
   const rules = run(["rules"], { cwd });
   assert.doesNotMatch(rules, /Sync after completing tracker-linked work/);
 });

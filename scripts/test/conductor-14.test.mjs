@@ -352,3 +352,39 @@ test("no emitted block ever names an unfilled scope placeholder, for ANY tracker
     }
   }
 });
+
+// ─────────── 10.7: the completion-sync reminder (deliberate emitted-output change #1) ───────────
+
+test("the completion-sync reminder is emitted only where an inward procedure actually exists", () => {
+  const outwardOnly = rulesFor({ system: "jira", projectKey: "JOB", direction: "outward" });
+  assert.ok(!outwardOnly.includes(REMINDER_HEADING), "an outward-only repo has nothing to re-sync inward");
+
+  // The scope-less github case: today's engine emits the reminder for ANY github-issues
+  // primary and points at "the writeback steps above" that the same block never emitted.
+  const scopeless = rulesFor({ system: "github-issues" });
+  assert.ok(!scopeless.includes(REMINDER_HEADING),
+    "a scope-less inward primary gets no reminder — there is no inward procedure to point at");
+  assert.ok(baseline("github-scopeless").includes(REMINDER_HEADING),
+    "0.26.0 DID emit it here — this absence is the deliberate repair, not a no-op");
+
+  const scoped = rulesFor({ system: "github-issues", repo: "o/n" });
+  assert.ok(scoped.includes(REMINDER_HEADING), "a scoped inward primary keeps the reminder");
+  assert.ok(scoped.includes("## GitHub issue sync (o/n)"),
+    "and every writeback step the reminder references is emitted in the same block");
+
+  // A secondary tracker is inward by definition, so it earns the reminder on its own.
+  const outwardPlusSecondary = rulesFor(
+    { system: "jira", projectKey: "JOB", direction: "outward" },
+    { secondaryTrackers: [{ system: "github-issues", repo: "a/b", role: "secondary" }] });
+  assert.ok(outwardPlusSecondary.includes(REMINDER_HEADING));
+});
+
+test("the scope-less github path changes in exactly one way, and it is the reminder", () => {
+  const before = baseline("github-scopeless");
+  const now = rulesFor({ system: "github-issues" });
+  const stripReminder = (b) => b.replace(/\n*## Sync after completing tracker-linked work[\s\S]*?(?=\n<!-- END pm-conductor rules -->)/, "");
+  assert.equal(stripReminder(now), stripReminder(before),
+    "with the reminder removed from both sides, the un-upgraded scope-less github block is " +
+    "byte-identical to 0.26.0's — any second difference is a regression, not a repair");
+  assert.notEqual(now, before, "…and the reminder really did go, so the comparison is not vacuous");
+});
