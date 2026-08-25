@@ -1213,6 +1213,26 @@ test("9.13: no backfilled epic is ever named as an ungated archive", () => {
   assert.match(run(["integrity"], { cwd }), /archived-with-no-gate-2-review — 0 finding/);
 });
 
+test("9.13: an epic closed killed leaves the ungated notice — its only clearing path can never arrive", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  healArchivedUngated(cwd, "archived-then-killed");
+  assert.match(parseBrief(cwd), /UNGATED ARCHIVES/, "precondition: the heal's bypass entry is reported");
+
+  run(["update-epic", "archived-then-killed", "--status", "archived", "--outcome", "killed",
+    "--reason", "would have inverted a safety property; no code was ever written",
+    "--no-deferrals"], { cwd });
+
+  const gate2 = readState(cwd).epics.find(e => e.id === "archived-then-killed").gateReview.gate2;
+  assert.equal(gate2.verdict, "ungated",
+    "the record that this epic was archived ungated SURVIVES — the finding is scoped out, not erased");
+  assert.ok(!parseBrief(cwd).includes("UNGATED ARCHIVES"),
+    "a killed change will never acquire the passing Gate 2 that is this condition's only clearing " +
+    "path, so reporting it forever is a permanent unclearable finding");
+  assert.match(run(["integrity"], { cwd }), /archived-with-no-gate-2-review — 0 finding/,
+    "the brief and the integrity report name the same set, because both read ungatedArchives()");
+});
+
 // ───────────── 9.14: the day-one finding set, per check, every finding explained ─────────────
 
 test("9.14: the recorded day-one set names every check and explains every live finding", () => {

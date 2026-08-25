@@ -80,10 +80,19 @@ function citedShas(entry) {
  *  That is the deliberate opposite of the write-contention warning. The contention warning
  *  describes a run of events that has ENDED, so it is consumed once a session has seen it; an
  *  `ungated` verdict persists in the record until a real Gate 2 supersedes it, so a notice that
- *  consumed would report the condition to one session and hide it from every session after. */
+ *  consumed would report the condition to one session and hide it from every session after.
+ *
+ *  Scoped by `inCompletionScope`, exactly as every other completion-shaped check is. An epic the
+ *  heal flipped to `archived` and an agent then closed `killed`, `superseded` or `abandoned` will
+ *  never acquire the passing Gate 2 that is this condition's ONLY clearing path — the code was
+ *  never written, or was written and thrown away — so without the scope rule its entry is
+ *  permanent and unclearable, which is precisely the shape the backfill exclusion below it was
+ *  added to prevent. Applied HERE rather than at the check, so the report and the brief can never
+ *  name different sets. */
 export function ungatedArchives(epics) {
   return (epics || []).filter(e =>
-    e && e.gateReview && e.gateReview.gate2 && e.gateReview.gate2.verdict === "ungated");
+    e && e.gateReview && e.gateReview.gate2 && e.gateReview.gate2.verdict === "ungated" &&
+    inCompletionScope(e));
 }
 
 /** The registry. One entry per check: a stable `id` a reader can grep for, a one-line `title`
