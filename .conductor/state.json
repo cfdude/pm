@@ -1777,7 +1777,8 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "71",
-      "externalUrl": "https://github.com/cfdude/pm/issues/71"
+      "externalUrl": "https://github.com/cfdude/pm/issues/71",
+      "release": "0.27.0"
     },
     {
       "id": "gh-79-epic-description-and-notes",
@@ -1795,7 +1796,8 @@
       ],
       "reconcileNeeded": false,
       "externalId": "79",
-      "externalUrl": "https://github.com/cfdude/pm/issues/79"
+      "externalUrl": "https://github.com/cfdude/pm/issues/79",
+      "release": "0.27.0"
     },
     {
       "id": "gh-80-gate-guard-refusal-applies-anyway",
@@ -1807,7 +1809,8 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "80",
-      "externalUrl": "https://github.com/cfdude/pm/issues/80"
+      "externalUrl": "https://github.com/cfdude/pm/issues/80",
+      "release": "0.27.0"
     },
     {
       "id": "gh-81-project-md-never-clean",
@@ -1959,7 +1962,8 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "88",
-      "externalUrl": "https://github.com/cfdude/pm/issues/88"
+      "externalUrl": "https://github.com/cfdude/pm/issues/88",
+      "release": "0.27.0"
     },
     {
       "id": "gh-89-delegate-discovery-to-subagents",
@@ -2135,7 +2139,8 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "102",
-      "externalUrl": "https://github.com/cfdude/pm/issues/102"
+      "externalUrl": "https://github.com/cfdude/pm/issues/102",
+      "release": "0.27.0"
     },
     {
       "id": "gh-103-tracker-refresh-gate-before-specs",
@@ -2153,7 +2158,8 @@
       ],
       "reconcileNeeded": false,
       "externalId": "103",
-      "externalUrl": "https://github.com/cfdude/pm/issues/103"
+      "externalUrl": "https://github.com/cfdude/pm/issues/103",
+      "release": "0.27.0"
     },
     {
       "id": "gh-105-feedback-undeclared-gh-dependency",
@@ -2195,7 +2201,8 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "107",
-      "externalUrl": "https://github.com/cfdude/pm/issues/107"
+      "externalUrl": "https://github.com/cfdude/pm/issues/107",
+      "release": "0.27.0"
     },
     {
       "id": "gh-109-tracker-sync-direction",
@@ -2207,7 +2214,8 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "109",
-      "externalUrl": "https://github.com/cfdude/pm/issues/109"
+      "externalUrl": "https://github.com/cfdude/pm/issues/109",
+      "release": "0.27.0"
     },
     {
       "id": "gh-110-gate2-bypassed-by-archive-hook",
@@ -2219,7 +2227,8 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "110",
-      "externalUrl": "https://github.com/cfdude/pm/issues/110"
+      "externalUrl": "https://github.com/cfdude/pm/issues/110",
+      "release": "0.27.0"
     },
     {
       "id": "gh-111-activity-log-for-conductor-usage",
@@ -2255,7 +2264,8 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "113",
-      "externalUrl": "https://github.com/cfdude/pm/issues/113"
+      "externalUrl": "https://github.com/cfdude/pm/issues/113",
+      "release": "0.27.0"
     },
     {
       "id": "gh-114-lane-routing-blind-to-product",
@@ -2285,7 +2295,8 @@
       ],
       "reconcileNeeded": false,
       "externalId": "115",
-      "externalUrl": "https://github.com/cfdude/pm/issues/115"
+      "externalUrl": "https://github.com/cfdude/pm/issues/115",
+      "release": "0.27.0"
     },
     {
       "id": "gh-116-conflict-warning-missed-on-burst",
@@ -2303,7 +2314,8 @@
       ],
       "reconcileNeeded": false,
       "externalId": "116",
-      "externalUrl": "https://github.com/cfdude/pm/issues/116"
+      "externalUrl": "https://github.com/cfdude/pm/issues/116",
+      "release": "0.27.0"
     },
     {
       "id": "gh-117-sync-blind-to-archived-changes",
@@ -2315,7 +2327,8 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "117",
-      "externalUrl": "https://github.com/cfdude/pm/issues/117"
+      "externalUrl": "https://github.com/cfdude/pm/issues/117",
+      "release": "0.27.0"
     },
     {
       "id": "gh-118-checkbox-signal-unreliable",
@@ -2333,7 +2346,8 @@
       ],
       "reconcileNeeded": false,
       "externalId": "118",
-      "externalUrl": "https://github.com/cfdude/pm/issues/118"
+      "externalUrl": "https://github.com/cfdude/pm/issues/118",
+      "release": "0.27.0"
     },
     {
       "id": "gh-119-deferrals-have-no-path-to-backlog",
@@ -2345,7 +2359,8 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "119",
-      "externalUrl": "https://github.com/cfdude/pm/issues/119"
+      "externalUrl": "https://github.com/cfdude/pm/issues/119",
+      "release": "0.27.0"
     },
     {
       "id": "gh-120-epic-outcome-shipped-vs-killed",
@@ -2357,7 +2372,8 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "120",
-      "externalUrl": "https://github.com/cfdude/pm/issues/120"
+      "externalUrl": "https://github.com/cfdude/pm/issues/120",
+      "release": "0.27.0"
     },
     {
       "id": "gh-121-tasks-verified-against-tree-not-commit",
@@ -2369,7 +2385,8 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "121",
-      "externalUrl": "https://github.com/cfdude/pm/issues/121"
+      "externalUrl": "https://github.com/cfdude/pm/issues/121",
+      "release": "0.27.0"
     },
     {
       "id": "gh-122-gate-records-unreliable-both-ways",
@@ -2381,7 +2398,8 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "122",
-      "externalUrl": "https://github.com/cfdude/pm/issues/122"
+      "externalUrl": "https://github.com/cfdude/pm/issues/122",
+      "release": "0.27.0"
     },
     {
       "id": "gh-123-adopt-openspec-1-9-cli-surface",
@@ -2411,7 +2429,8 @@
       ],
       "reconcileNeeded": false,
       "externalId": "124",
-      "externalUrl": "https://github.com/cfdude/pm/issues/124"
+      "externalUrl": "https://github.com/cfdude/pm/issues/124",
+      "release": "0.27.0"
     },
     {
       "id": "gh-125-release-planning-and-deliberate-exclusion",
@@ -2429,7 +2448,8 @@
       ],
       "reconcileNeeded": false,
       "externalId": "125",
-      "externalUrl": "https://github.com/cfdude/pm/issues/125"
+      "externalUrl": "https://github.com/cfdude/pm/issues/125",
+      "release": "0.27.0"
     },
     {
       "id": "gh-126-release-level-cross-spec-gate",
@@ -2540,10 +2560,13 @@
           "Scope is 20 issues across 5 lanes: 110,113,122,116,80,107 / 117,120,118,119,88 / 109,102,103,124,114 / 79,66,71 / 115,121 plus the minimum slice of 125. Specs: 59 requirements, 177 scenarios, four review rounds (5+2+4+2 findings), all BLOCKS closed.",
           "Deliberately accepted limitation, filed as #129: the two new agent obligations ship as emitted prose (~20% adoption measured) and the attribution detector fires only at archive. Do NOT add a commit-time nudge in this release — it depends on #91 and #104 being fixed first.",
           "Out of scope and must not be pulled in: 95, 64, 69, 92, 123, 111, 112, 82. 64/69 will keep re-registering shipped plans during this work — tombstone by setting the epic archived, never remove-epic.",
-          "SCOPE RULED 2026-08-23: #125 (release planning) STAYS — the release is 20 issues, group 14 builds. Asked three times, recommended keep each time, maintainer confirmed 'Keep it'. Group 14 is no longer 'cuttable': Gate 1 established it solely implements three epic-disposition requirements (spec lines 288, 304, 319), so cutting the group without cutting those requirements would ship requirements nothing implements. Do NOT cut group 14. Task 14.4 records this release's own plan against a 0.27.0 release object — that is the dogfooding test."
+          "SCOPE RULED 2026-08-23: #125 (release planning) STAYS — the release is 20 issues, group 14 builds. Asked three times, recommended keep each time, maintainer confirmed 'Keep it'. Group 14 is no longer 'cuttable': Gate 1 established it solely implements three epic-disposition requirements (spec lines 288, 304, 319), so cutting the group without cutting those requirements would ship requirements nothing implements. Do NOT cut group 14. Task 14.4 records this release's own plan against a 0.27.0 release object — that is the dogfooding test.",
+          "REMINDER 1 (owed to Rob, 2026-08-25): at the END of the 0.27.0 PR — after group 16's audits, Gate 2 thorough, group 17, and the PR is open/merged — remind him to run 'claude-fix'. It was rewritten today (~/.config/zsh/70-functions.zsh, backup alongside) and is UNTESTED live. It kills all Claude Code CLI sessions, so it must wait until he is idle. ~50 orphaned project dirs are queued for it. Run 'claude-fix --dry-run' first.",
+          "REMINDER 2 (owed to Rob, 2026-08-25): AFTER the 0.27.0 PR, return to the ASYNC EXPERIMENT and plan the next batch of development with him. His proposal: pull a batch of backlog work, run it across multiple worktree agents with real logging, so the next failure is diagnosable at the moment it happens rather than after. Open question he raised: a dedicated Claude Code zsh profile excluding starship and other customizations, to rule out the environment class in one move instead of bisecting decorators. Root cause of the 2026-08-24 freeze was NEVER established — see docs/lessons/worktrees-with-claude-agents.md."
         ],
         "notifications": []
-      }
+      },
+      "release": "0.27.0"
     },
     {
       "id": "2026-08-18-state-write-conflict-guard",
@@ -2615,6 +2638,34 @@
     "repo": "cfdude/pm"
   },
   "platform": "claude-code",
-  "revision": 43,
-  "reviewMode": "thorough"
+  "revision": 50,
+  "reviewMode": "thorough",
+  "releases": [
+    {
+      "id": "0.27.0",
+      "intent": "conductor tells the truth — stop the record over-reporting completion: reason-bearing dispositions at four scopes, an archive gate that binds every path, gate verdicts with checkable evidence, tracker direction as explicit configuration, read-only integrity checks, and the gate procedure pm emits as required task items",
+      "deferred": [
+        {
+          "epic": "gh-114-lane-routing-blind-to-product",
+          "reason": "Only the call-site half ships in 0.27.0 — mirrored items are routed through suggest-lane instead of a hardcoded --lane claude-code. The primary complaint, that the routing DECISION weighs no product or milestone context, needs a layer this release does not build (design.md 'Not in this release'), so #114 stays open and is not closed when this change archives.",
+          "recordedAt": "2026-08-25T12:34:16.206Z"
+        },
+        {
+          "epic": "gh-66-update-epic-missing-flags",
+          "reason": "Partially addressed: update-epic gains --lane and --plan, and the valueless-flag refusals land. The remainder the issue raises — notably its --link complaint — is covered only to the extent epic-annotation's delta spec covers it, so the rest is deferred and #66 stays open when this change archives.",
+          "recordedAt": "2026-08-25T12:34:16.269Z"
+        },
+        {
+          "epic": "gh-64-sync-duplicate-shipped-plan",
+          "reason": "Deliberately out of 0.27.0. It is the cause of all 4 dual-lane pairs the new integrity check reports on day one here; the check reports the pair read-only and asserts nothing about intent. A 'deliberate' field would be a fifth disposition scope invented with no motivating case, so #64 remains the place that resolves it.",
+          "recordedAt": "2026-08-25T12:34:16.329Z"
+        },
+        {
+          "epic": "gh-69-sync-no-done-signal-for-plans",
+          "reason": "Deliberately out of 0.27.0 — the same known bug as #64 and the other half of the 4 dual-lane pairs the integrity check reports. Excluded for the same reason: this release reports the shape read-only rather than inventing a field to encode intent.",
+          "recordedAt": "2026-08-25T12:34:16.400Z"
+        }
+      ]
+    }
+  ]
 }
