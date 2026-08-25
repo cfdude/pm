@@ -29,6 +29,8 @@
  *   honcho-memory  <push|pop> <epicId> "<reason>" — print + log the ready-to-copy Honcho line
  *   rules          print the CLAUDE.md rules block to stdout
  *   write-rules    insert/refresh the rules block in ./CLAUDE.md (idempotent)
+ *   release        create/amend a release, and associate epics with it (membership is
+ *                  one-way: `epic.release`, at most one)
  *   integrity      READ-ONLY audit of the record itself — shapes that cannot be true
  *                  (reports; never writes state, never blocks a command)
  *   verify-state   fail loudly if state.json's mtime is newer than the last render's stamp
@@ -68,6 +70,7 @@ import { setReviewMode } from "./lib/review-mode.mjs";
 import { setGateGuard, gateGuardCheck } from "./lib/gate-guard.mjs";
 import { upgrade } from "./lib/migrations.mjs";
 import { changelog } from "./lib/changelog.mjs";
+import { release } from "./lib/releases.mjs";
 import { verifyWorktrees, changesets, verifyState } from "./lib/worktree-hygiene.mjs";
 
 // ---------- dispatch ----------
@@ -79,7 +82,7 @@ const cmd = process.argv[2];
 // entry to .conductor/detours.log with "--help" as the detour description, and the log is
 // append-only with no verb to remove it. Handled before dispatch so every subcommand is covered
 // -- log-detour is only where the damage is visible, not where the gap is.
-const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|set-autonomy|record-reconcile|record-gate-review|record-tracker-refresh|set-review-mode|set-gate-guard|gate-guard|plan-hierarchy|verify-worktrees|verify-state|integrity|changesets|upgrade|changelog|rules|write-rules|rules-target\n";
+const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|set-autonomy|record-reconcile|record-gate-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|plan-hierarchy|verify-worktrees|verify-state|integrity|changesets|upgrade|changelog|rules|write-rules|rules-target\n";
 if (!cmd || process.argv.slice(2).some(a => a === "--help" || a === "-h")) {
   process.stdout.write(USAGE);
   process.exit(0);
@@ -122,6 +125,7 @@ try {
   "record-gate-review": recordGateReview,
   "record-tracker-refresh": recordTrackerRefresh,
   "set-review-mode": setReviewMode,
+  release,
   "set-gate-guard": setGateGuard,
   "gate-guard": gateGuardCheck,
   "plan-hierarchy": planHierarchy,

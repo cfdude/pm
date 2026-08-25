@@ -190,6 +190,19 @@ export const EPIC_FLAGS = [
   // The handoff. Lands on the disposition record rather than a field of its own — "where the
   // work went" is part of how this epic ended, not a separate fact about it.
   { flag: "carried-to", key: "disposition", commands: ["update-epic"], write: "custom" },
+  // Release planning. The `release` verb writes exactly ONE epic key — `release`, the one-way
+  // membership pointer — and its other flags shape the release object itself, so they carry a
+  // null key exactly as record-gate-review's evidence flags do.
+  //
+  // `--intent` is ALREADY repeatable at the parser (it is set-tracker's flag, and parseFlags'
+  // repeatable set is a global union across every subcommand, not a per-verb list), so it
+  // arrives as an array here whatever this registry says. Declared `repeats: true` rather than
+  // left to look single-valued: a reader comparing this entry against what `parseFlags` hands
+  // the verb must not find the two disagreeing. A release has ONE intent, so the verb takes the
+  // last value — see lastStr() in releases.mjs.
+  { flag: "intent", key: null, commands: ["release"], repeats: true, write: "custom" },
+  { flag: "target", key: null, commands: ["release"], write: "custom" },
+  { flag: "member", key: "release", commands: ["release"], repeats: true, write: "custom" },
   { flag: "review-mode", key: "reviewMode", commands: ["update-epic"] },
   { flag: "add-story", key: "stories", commands: ["update-epic"], write: "append" },
   { flag: "story", key: null, commands: ["update-epic"], write: "custom" },
