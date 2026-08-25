@@ -3,8 +3,15 @@
 ## Purpose
 
 Defines how the `pm` conductor mirrors epics to external issue trackers: exactly one **primary**
-tracker (full bidirectional mirror, or the `github-issues` inward-only special case) plus zero or
-more **secondary** trackers (inward pull + completion status writeback, never outward creation).
+tracker plus zero or more **secondary** trackers.
+
+**Direction is explicit configuration, never inferred from the tracker's vendor.** Every tracker
+entry carries a `direction` — `inward`, `outward`, or `both` — and that recorded value is what
+every emitter reads to decide which sections it produces. A **primary** tracker may hold any of
+the three, and a newly registered primary with no `--direction` defaults to `inward`; a
+**secondary** tracker is pinned to `inward` (pull + completion status writeback, never outward
+creation). A tracker with no recorded `direction` keeps its prior behavior.
+
 The engine itself never calls a tracker — it only shapes instructions the interactive agent acts
 on with its own tooling.
 
