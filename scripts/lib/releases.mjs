@@ -15,7 +15,7 @@
 // One-directional dependencies only: constants → disposition → (add-epic's parseFlags, state,
 // render), the same chain update-epic.mjs walks.
 
-import { epicFlagsFor } from "./constants.mjs";
+import { epicFlagsFor, findRelease, releaseLine, releaseSummaries } from "./constants.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { parseFlags } from "./add-epic.mjs";
 import { render } from "./render.mjs";
@@ -37,34 +37,6 @@ const lastStr = (v) => {
   const all = [].concat(v === undefined ? [] : v).filter(x => typeof x === "string");
   return all.length ? str(all[all.length - 1]) : undefined;
 };
-
-/** The release named `id`, or null. THE lookup — every reader goes through it so "which
- *  release is this" has one answer. */
-export const findRelease = (state, id) =>
-  (Array.isArray(state && state.releases) ? state.releases : []).find(r => r && r.id === id) || null;
-
-/** The epics that are IN `release`, read from the one-way membership pointer. */
-export const releaseMembers = (epics, releaseId) =>
-  (epics || []).filter(e => e && e.release === releaseId);
-
-/** Every release with its two counts, in declaration order — the ONE computation PROJECT.md and
- *  the briefing both render from, so the two surfaces cannot report different numbers for the
- *  same release. `deferred` is carried whole (not just counted) because each entry's reason is
- *  what makes the exclusion legible. */
-export function releaseSummaries(state, epics) {
-  const releases = Array.isArray(state && state.releases) ? state.releases : [];
-  return releases.filter(r => r && r.id).map(r => ({
-    id: r.id,
-    intent: r.intent || "",
-    target: r.target,
-    members: releaseMembers(epics, r.id).length,
-    deferred: Array.isArray(r.deferred) ? r.deferred : [],
-  }));
-}
-
-/** The ONE wording for a release line, shared by both surfaces exactly as gateSummary() is. */
-export const releaseLine = (s) =>
-  `\`${s.id}\`: ${s.members} epic${s.members === 1 ? "" : "s"}, ${s.deferred.length} deferred`;
 
 /** `release <id> --intent "<prose>" [--target <t>] [--member <epicId>]… [--defer <epicId>
  *  --reason "<why>"]` — create or amend a release, associate epics with it, and record an

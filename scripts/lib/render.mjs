@@ -13,7 +13,7 @@ import { parseFlags } from "./add-epic.mjs";
 import { validLink } from "./links.mjs";
 import { outcomeOf, recordedDispositions } from "./disposition.mjs";
 import { stalenessMarking } from "./archive-gate.mjs";
-import { DETOURS_LOG, PROJECT_MD, STATE_PATH, RENDER_STAMP_PATH, CONDUCTOR_DIR, gateSummary } from "./constants.mjs";
+import { DETOURS_LOG, PROJECT_MD, STATE_PATH, RENDER_STAMP_PATH, CONDUCTOR_DIR, gateSummary, releaseLine, releaseSummaries } from "./constants.mjs";
 
 export function render() {
   const state = loadState();
@@ -152,6 +152,32 @@ export function render() {
     for (const e of backlog) {
       const why = e.description ? ` — ${e.description}` : "";
       md.push(`- \`${e.id}\` (${e.priority}, ${e.lane}, ${e.status}) — ${e.title}${why}`);
+    }
+    md.push("");
+  }
+
+  // Releases — what each one is for, what is in it, and what was deliberately cut, with the
+  // reason. Rendered from the SAME releaseSummaries() the briefing reads, so the two surfaces
+  // cannot report different counts for one release. Omitted entirely where no release has been
+  // declared: a repo that does not plan in releases gets no empty heading.
+  //
+  // The exclusions are enumerated here rather than only counted, because PROJECT.md is this
+  // record's enumeration surface (the Backlog and Dispositions sections above make the same
+  // choice) and a count with no reason beside it is the transcript-only judgment this exists to
+  // replace.
+  const releases = releaseSummaries(state, epics);
+  if (releases.length) {
+    md.push("## Releases");
+    md.push("");
+    md.push("> What each release is for, what is in it, and what was deliberately cut — with the reason.");
+    md.push("");
+    for (const r of releases) {
+      const target = r.target ? ` (target: ${r.target})` : "";
+      const intent = r.intent ? ` — ${r.intent}` : "";
+      md.push(`- ${releaseLine(r)}${intent}${target}`);
+      for (const d of r.deferred) {
+        md.push(`  - deferred \`${d.epic}\` — ${d.reason}${d.recordedAt ? ` (${d.recordedAt.slice(0, 10)})` : ""}`);
+      }
     }
     md.push("");
   }

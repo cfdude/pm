@@ -10,7 +10,7 @@ import { validLink } from "./links.mjs";
 import { outcomeOf, recordedDispositions } from "./disposition.mjs";
 import { stalenessMarking } from "./archive-gate.mjs";
 import { ungatedArchives } from "./integrity.mjs";
-import { KNOWN_LANES, anyInwardProcedureEmittable, gateSummary, outwardApplies } from "./constants.mjs";
+import { KNOWN_LANES, anyInwardProcedureEmittable, gateSummary, outwardApplies, releaseLine, releaseSummaries } from "./constants.mjs";
 import { conflictCount, conflictWarningLatched, consumeConflictWarning } from "./write-conflicts.mjs";
 import { CONFLICT_WARN_THRESHOLD } from "./constants.mjs";
 
@@ -121,6 +121,19 @@ export function buildBrief(state, { consume = false } = {}) {
   const plannedCount = epics.filter(e => e.status === "planned").length;
   if (plannedCount) {
     L.push(`planned: ${plannedCount} — see PROJECT.md`);
+    L.push("");
+  }
+
+  // Releases — the same releaseSummaries() PROJECT.md renders, so a release cannot read as 12
+  // epics on one surface and 11 on the other. One line each: the counts and what the release is
+  // FOR. Each exclusion's reason is enumerated in PROJECT.md and readable in state.json; a brief
+  // that recites every reason is a brief a reader learns to skip.
+  const releases = releaseSummaries(state, epics);
+  if (releases.length) {
+    L.push("RELEASES:");
+    for (const r of releases) {
+      L.push(`  • ${releaseLine(r)}${r.intent ? ` — ${r.intent}` : ""}${r.target ? ` (target: ${r.target})` : ""}`);
+    }
     L.push("");
   }
 

@@ -73,6 +73,43 @@ export function gateSummary(entry, extra = "") {
   const who = entry.reviewer ? ` · ${entry.reviewer}` : "";
   return `${entry.verdict} (${range})${who}${extra}`;
 }
+// ─────────────────────── releases: the readers both surfaces share ───────────────────────
+//
+// They live here for the same reason gateSummary() does, and the same reason the tracker
+// direction predicates do: `constants.mjs` is the ONE module both emitters already reach.
+// `briefing.mjs` may not import `render.mjs` (render imports briefing), and neither may import
+// `releases.mjs` (which imports render to re-render after a write) — a reader placed in any of
+// those becomes two copies, and two copies of "how many epics are in this release" is exactly
+// the disagreement one-way membership was chosen to make impossible.
+
+/** The release named `id`, or null. THE lookup — every reader goes through it so "which
+ *  release is this" has one answer. */
+export const findRelease = (state, id) =>
+  (Array.isArray(state && state.releases) ? state.releases : []).find(r => r && r.id === id) || null;
+
+/** The epics that are IN `release`, read from the one-way membership pointer. */
+export const releaseMembers = (epics, releaseId) =>
+  (epics || []).filter(e => e && e.release === releaseId);
+
+/** Every release with its two counts, in declaration order — the ONE computation PROJECT.md and
+ *  the briefing both render from, so the two surfaces cannot report different numbers for the
+ *  same release. `deferred` is carried whole (not just counted) because each entry's reason is
+ *  what makes the exclusion legible. */
+export function releaseSummaries(state, epics) {
+  const releases = Array.isArray(state && state.releases) ? state.releases : [];
+  return releases.filter(r => r && r.id).map(r => ({
+    id: r.id,
+    intent: r.intent || "",
+    target: r.target,
+    members: releaseMembers(epics, r.id).length,
+    deferred: Array.isArray(r.deferred) ? r.deferred : [],
+  }));
+}
+
+/** The ONE wording for a release line, shared by both surfaces exactly as gateSummary() is. */
+export const releaseLine = (s) =>
+  `\`${s.id}\`: ${s.members} epic${s.members === 1 ? "" : "s"}, ${s.deferred.length} deferred`;
+
 export const KNOWN_PLATFORMS = ["claude-code", "hermes", "codex"];
 
 // Each platform's project-instruction file, in the order that platform resolves them.

@@ -199,3 +199,60 @@ test("14.2 re-including a deferred epic removes the record and SAYS so — never
   assert.deepEqual(st.releases[0].deferred, []);
   assert.equal(st.epics[0].release, "0.27.0");
 });
+
+// ─────────────────── 14.3: a release renders on both surfaces ───────────────────
+//
+// One computation (releaseSummaries) feeding two renderers, exactly as gateSummary() feeds the
+// gate-review table and the brief's GATE REVIEWS block: PROJECT.md and the briefing cannot
+// report different counts for the same release, because there is only one count.
+
+test("14.3 a release with 12 members and 3 deferrals renders the same counts on both surfaces", () => {
+  const cwd = repoWithEpics(15);
+  run(["release", "0.27.0", "--intent", "conductor tells the truth"], { cwd });
+  for (let i = 0; i < 12; i++) run(["release", "0.27.0", "--member", `e${i}`], { cwd });
+  const reasons = {
+    e12: "depends on #133 landing first",
+    e13: "depends on a progress signal this same release is still changing",
+    e14: "no design agreed yet — a guess would be worse than an omission",
+  };
+  for (const [epic, reason] of Object.entries(reasons)) {
+    run(["release", "0.27.0", "--defer", epic, "--reason", reason], { cwd });
+  }
+  run(["render"], { cwd });
+
+  assert.match(projectMd(cwd), /`0\.27\.0`: 12 epics, 3 deferred/);
+  assert.match(parseBrief(cwd), /`0\.27\.0`: 12 epics, 3 deferred/);
+
+  // The reasons read back from the record itself — not from the surface, and not from the
+  // session that made the call.
+  const rel = readState(cwd).releases[0];
+  assert.deepEqual(Object.fromEntries(rel.deferred.map(d => [d.epic, d.reason])), reasons);
+});
+
+test("14.3 a release with no members and no exclusions still renders, and the singular is right", () => {
+  const cwd = repoWithEpics(1);
+  run(["release", "0.27.0", "--intent", "conductor tells the truth"], { cwd });
+  run(["render"], { cwd });
+  assert.match(projectMd(cwd), /`0\.27\.0`: 0 epics, 0 deferred/);
+  run(["release", "0.27.0", "--member", "e0"], { cwd });
+  run(["render"], { cwd });
+  assert.match(projectMd(cwd), /`0\.27\.0`: 1 epic, 0 deferred/);
+  assert.match(parseBrief(cwd), /`0\.27\.0`: 1 epic, 0 deferred/);
+});
+
+test("14.3 a repo with no releases renders no release section on either surface", () => {
+  const cwd = repoWithEpics(1);
+  run(["render"], { cwd });
+  assert.doesNotMatch(projectMd(cwd), /## Releases/);
+  assert.doesNotMatch(parseBrief(cwd), /RELEASES/);
+});
+
+test("14.3 each deferral's reason is reachable from the rendered record, not only from state.json", () => {
+  const cwd = repoWithEpics(2);
+  run(["release", "0.27.0", "--intent", "conductor tells the truth"], { cwd });
+  run(["release", "0.27.0", "--defer", "e1", "--reason", "depends on #133 landing first"], { cwd });
+  run(["render"], { cwd });
+  const md = projectMd(cwd);
+  assert.match(md, /depends on #133 landing first/);
+  assert.match(md, /`e1`/);
+});
