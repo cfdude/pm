@@ -1051,3 +1051,39 @@ test("the clearing form is named in update-epic's usage line and in commands/epi
   assert.ok(doc.slice(start, next === -1 ? doc.length : next).includes("--clear-links"),
     "commands/epic.md's update-epic section must name --clear-links");
 });
+
+// ─────────── 12.4: a misplaced --id is DIAGNOSED, never answered with a usage dump (#71) ───────────
+//
+// `update-epic`'s id is POSITIONAL and stays that way. `--id my-epic` therefore leaves argv[0]
+// starting with `--`, the id resolves undefined, and the command printed its whole usage line —
+// which names ~25 flags and does not mention that `--id` is the problem. Two DISTINCT
+// diagnoses now: a misplaced `--id`, and no id in any form.
+
+test("update-epic --id is diagnosed by name, not answered with a bare usage dump (#71)", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "my-epic", "--lane", "claude-code"], { cwd });
+  const err = expectFail(() => run(["update-epic", "--id", "my-epic", "--priority", "P1"], { cwd }));
+  if (err === null) {
+    // The accepted-as-an-alias branch the task also permits: it must have performed the update.
+    assert.equal(readState(cwd).epics.find(e => e.id === "my-epic").priority, "P1");
+    return;
+  }
+  const msg = String(err.stderr || err.message);
+  assert.ok(msg.includes("--id"), "the message must name --id as the problem");
+  assert.ok(msg.includes("update-epic <id>"), "and show the positional form that works");
+  assert.equal(readState(cwd).epics.find(e => e.id === "my-epic").priority, "P?",
+    "a refusal writes nothing");
+});
+
+test("update-epic with no id in any form says the id is required positionally", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const err = expectFail(() => run(["update-epic", "--priority", "P1"], { cwd }));
+  assert.ok(err, "no id at all must exit non-zero");
+  const msg = String(err.stderr || err.message);
+  assert.ok(msg.includes("update-epic <id>"), "the message must show the positional form");
+  assert.match(msg, /positional/i, "and say the id is required positionally");
+  assert.ok(!msg.includes("--id"),
+    "this case must NOT be diagnosed as a misplaced --id — the two are different mistakes");
+});

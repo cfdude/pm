@@ -31,7 +31,31 @@ export function updateEpic() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const argv = process.argv.slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
-  if (!id) { process.stderr.write("usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--lane openspec|superpowers|claude-code|decision|external] [--plan <path>] [--link \"<type>:<epic>[:<reason>]\"] [--clear-links] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done] [--attribute-commit <sha>] [--outcome delivered|killed|superseded|abandoned] [--reason \"<why>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\"] [--declined-deferral \"<what>:<why not>\"] [--no-deferrals] [--description D] [--notes \"<text>\"] [--external-updated-at <iso>]\n"); process.exit(1); }
+  // #71: `update-epic --id my-epic --priority P1` is the mistake everyone makes, because every
+  // OTHER epic-writing command takes `--id`. This one's id is POSITIONAL and stays that way —
+  // accepting `--id` as an alias would make the same argument mean two things depending on which
+  // verb you typed. So DIAGNOSE it: name the flag, show the positional form, and rewrite the
+  // exact line the caller meant. A bare usage dump naming ~25 flags answers a question nobody
+  // asked and never mentions `--id` at all, which is why the mistake kept recurring.
+  //
+  // TWO distinct diagnoses. "You put the id behind a flag" and "you gave no id at all" are
+  // different mistakes and get different messages; collapsing them back into one usage dump is
+  // the regression this guards against.
+  if (!id) {
+    const at = argv.indexOf("--id");
+    if (at !== -1) {
+      const value = argv[at + 1] !== undefined && !argv[at + 1].startsWith("--") ? argv[at + 1] : "<id>";
+      const rest = argv.filter((_, i) => i !== at && i !== at + 1);
+      process.stderr.write(
+        `conductor: update-epic takes its epic id POSITIONALLY, not as --id — write ` +
+        `\`update-epic <id> ...\`, i.e. \`update-epic ${value}${rest.length ? ` ${rest.join(" ")}` : ""}\`. ` +
+        "Nothing was written.\n");
+      process.exit(1);
+    }
+    process.stderr.write("conductor: update-epic requires an epic id as its first POSITIONAL argument\n");
+    process.stderr.write("usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--lane openspec|superpowers|claude-code|decision|external] [--plan <path>] [--link \"<type>:<epic>[:<reason>]\"] [--clear-links] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done] [--attribute-commit <sha>] [--outcome delivered|killed|superseded|abandoned] [--reason \"<why>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\"] [--declined-deferral \"<what>:<why not>\"] [--no-deferrals] [--description D] [--notes \"<text>\"] [--external-updated-at <iso>]\n");
+    process.exit(1);
+  }
   const f = parseFlags(argv.slice(1));
   const unknown = Object.keys(f).filter(k => !UPDATE_EPIC_FLAGS.includes(k));
   if (unknown.length) {
