@@ -838,3 +838,16 @@ test("9.6: literal equality would report none of them, and same-lane ids are not
   assert.match(out, /change-registered-under-two-lanes — 0 finding/,
     "the check is about a change held under two LANES, and asserts nothing about intent");
 });
+
+// ───────────── 9.7: the dual-lane finding names its known cause ─────────────
+
+test("9.7: every live dual-lane finding cites #64/#69 as the likely cause", () => {
+  const findings = findingsFor("change-registered-under-two-lanes", liveState());
+  assert.equal(findings.length, 4, "the four live pairs are the population this asserts over");
+  for (const f of findings) {
+    assert.match(f.detail, /#64\/#69/,
+      `${f.epic}: a reader handed a symptom without the known cause has to rediscover it per pair`);
+    assert.match(f.detail, /`sync` registering a finished plan file as a second epic/,
+      `${f.epic}: the cause is stated, not just referenced by number`);
+  }
+});

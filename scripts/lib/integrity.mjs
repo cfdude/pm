@@ -95,7 +95,14 @@ export const CHECKS = [
         // `decision` rather than `openspec` on the un-prefixed side.
         out.push({ epic: key, detail:
           `registered ${members.length} times under different lanes: ` +
-          members.map(e => `\`${e.id}\` (${e.lane || "openspec"})`).join(" and ") });
+          members.map(e => `\`${e.id}\` (${e.lane || "openspec"})`).join(" and ") +
+          // The known explanation, given alongside the pair. Every such pair in this repository
+          // is the same deferred bug, and a reader who has to rediscover that for each one is
+          // being handed a symptom instead of a cause. Naming it costs no new state — the
+          // alternative considered was a machine-readable `deliberate` field, which would have
+          // been a fifth disposition scope invented to quiet one check's output. When #64/#69
+          // lands, these findings disappear on their own.
+          " — likely cause: #64/#69, `sync` registering a finished plan file as a second epic" });
       }
       return out;
     },
