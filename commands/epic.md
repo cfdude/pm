@@ -80,6 +80,65 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" update-epic <id> \
   [--clear-links] [--lane <lane>] [--plan <path>]
 ```
 
+**Every flag `update-epic` accepts.** The list below is the whole surface — an unlisted flag
+exits non-zero naming itself, so a flag you cannot find here is a flag that does not exist. All
+of them are declared once in `EPIC_FLAGS` (`scripts/lib/constants.mjs`), which is also what
+`add-epic`'s and `add-many`'s surfaces are projected from, so the three can never drift apart.
+
+| Flag | Writes | Notes |
+|------|--------|-------|
+| `--title "<t>"` | `title` | |
+| `--status <s>` | `status` | validated; `archived` runs the archive gate — see below |
+| `--priority <P?>` | `priority` | |
+| `--lane <l>` | `lane` | re-routes in place |
+| `--plan <path>` | `planPath` | attaches a plan to an epic created without one |
+| `--parent <id>` | `parent` | no self-parent, no cycle |
+| `--link "<type>:<epic>[:<reason>]"` | `links` | **repeatable**; REPLACES the array wholesale |
+| `--clear-links` | `links` | empties it; may not be combined with `--link` |
+| `--description "<why>"` | `description` | durable rationale, REPLACED wholesale on each set |
+| `--notes "<what>"` | `notes` | APPEND-only trail of `{at, actor, text}`; reads as activity |
+| `--external-id <KEY>` | `externalId` | |
+| `--external-url <url>` | `externalUrl` | the globally unique dedup key |
+| `--external-updated-at <iso>` | `externalUpdatedAt` | the **tracker's own** timestamp, never a local clock |
+| `--attribute-commit <sha>` | `attributedCommits` | **repeatable**, append-only, in landing order |
+| `--outcome <o>` | `disposition` | `delivered\|killed\|superseded\|abandoned` |
+| `--reason "<why>"` | `disposition` | required for every outcome except `delivered` |
+| `--carried-to <epicId>` | `disposition` | where unfinished work went |
+| `--deferral "<epicId>:<section>"` | `deferralAssertion` | **repeatable** |
+| `--declined-deferral "<what>:<why not>"` | `deferralAssertion` | **repeatable** |
+| `--no-deferrals` | `deferralAssertion` | the explicit "there are none" |
+| `--review-mode <m>` | `reviewMode` | per-epic escalation above the repo dial |
+| `--add-story "<title>"` | `stories` | appends `{title, done: false}` |
+| `--story <n> --done` | `stories[n-1].done` | 1-indexed |
+
+`--description` and `--notes` are DISTINCT and neither substitutes for the other: a description
+says why the epic exists and what would make it worth revisiting; notes are a trail of what
+happened. Collapsing them would lose one of the two readings. Stories used to be the only
+free-text carrier an epic had, which is why four epics in the audit archived with "incomplete"
+stories that were actually completion notes.
+
+**Attribution is explicit and the engine infers it from nothing** — not the files a commit
+touches, not an epic id in a message. `--attribute-commit` repeats because `parseFlags`
+overwrites a non-repeatable flag on each occurrence, so two hashes would silently become one with
+the order that gives the array its meaning destroyed. Catch up on work already in flight ONLY
+before the first attribution, in landing order; after that, attribute forward only. The array is
+append-only and the LAST entry is what a recorded Gate 2 `headSha` is compared against, so a
+late-inserted ancestor reads as a stale verdict and refuses the archive. **Never attribute the
+commit that moves `openspec/changes/<id>/` under `archive/`.**
+
+**Ending an epic takes two halves in one invocation.** `--status archived` runs the archive gate,
+which demands a disposition (`--outcome`, plus `--reason` unless the outcome is `delivered`) AND
+a deferral assertion (`--no-deferrals`, or one or more `--deferral`/`--declined-deferral`). It
+also refuses to archive an `openspec`-lane epic as `delivered` without a passing, non-stale
+Gate 2, and demands `--carried-to <epicId> --reason "<which tasks moved>"` where outstanding work
+remains. `killed`, `superseded` and `abandoned` are exempt from the Gate 2 and handoff demands by
+design: the code was never written or was thrown away, and the required reason already answers
+where the work went.
+
+An engine-written disposition — the migration's stamp, the archive-drift heal's — may be REPLACED
+by an agent recording a real one. Another agent's recorded judgment may not; correcting a mistaken
+disposition is not something this verb does.
+
 The id is positional. Parent/status/lane/link changes are validated like `add-epic` (no
 self-parent, no cycle, known status, known lane, `--link`'s epic must be a known epic id). On an
 unknown id, or any invalid flag value, it exits non-zero and writes nothing — including an

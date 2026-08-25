@@ -14,18 +14,36 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" render
 Then read `PROJECT.md` and summarize for the user:
 - the **active** epic and its live story progress,
 - the **detour stack** (what's paused and why), flagging any ⚠ reconcile-on-resume,
-- the **next-up** queue by priority.
+- the **next-up** queue by priority,
+- **UNGATED ARCHIVES**, if any — epics archived with no Gate 2 review from anyone. This is a
+  standing condition rather than an episode: it is recomputed from `state.json` at every
+  composition and never consumed, so every session sees it until a real passing verdict
+  supersedes it. A notice that was consumed on delivery would report the condition to one session
+  and hide it from every session after.
+- **HANDOFFS**, from both ends — the epic that carried work out and the epic that inherited it.
+  A relationship visible from one side only is how a remainder disappears.
+- each **release**'s `N epics, M deferred`.
 
 Story counts are derived live from each proposal's `openspec/changes/<id>/tasks.md` — if
 they look stale, the tasks.md checkboxes are the source of truth, not the index.
+
+**Progress excludes lifecycle bookkeeping.** A task carrying the literal marker
+`<!-- pm:lifecycle -->` on its own line is bookkeeping about the change's own lifecycle rather
+than its work, and is excluded from the count — it renders as `· N lifecycle` beside the ratio,
+or `0/0 · N lifecycle` where every task is excluded. The archive task always qualifies: it
+cannot be ticked before the thing that ticks it, so it used to render as outstanding work
+forever and would now demand a handoff at archive time.
 
 ## Auditing the record itself
 
 `integrity` is a READ-ONLY audit of the conductor's own record — shapes that cannot be true: an
 archived epic with nothing ticked, one change registered under two lanes, a gate verdict that
-does not reach the commits it cites, an archive directory no epic corresponds to. It reports
-every check with its count, including the ones that found nothing, so a check that measured
-nothing is visibly a check that ran.
+does not reach the commits it cites, a gate recorded as bookkeeping rather than review, a
+`delivered` epic that attributed no commits, an archived openspec-lane epic with a passing Gate 2
+and no Gate 1, an epic archived with an `ungated` Gate 2, an epic the archive-drift heal flipped
+that reads `outcome: unknown` while carrying a passing Gate 2, a dangling epic reference, and an
+archive directory no epic corresponds to. It reports every check with its count, including the
+ones that found nothing, so a check that measured nothing is visibly a check that ran.
 
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" integrity
@@ -33,7 +51,15 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" integrity
 
 It writes no state, blocks no command, and repairs nothing. Each finding names the epic and the
 remediation is a command you run — recording a real Gate 2 verdict, recording the disposition an
-epic actually ended with, or removing a duplicate registration. Run it when the record looks
+epic actually ended with, or removing a duplicate registration.
+
+**On the first run after upgrading to 0.27.0, expect a burst of
+`heal-archived-epic-passed-gate-2`.** Every repo that followed the documented `/opsx:archive` →
+heal flow lands on `outcome: unknown` rather than `delivered`: the migration only stamps epics
+already `archived` in state, and the heal flips the rest afterwards, so they miss it by one step.
+That is expected, not a bug. Each finding carries the exact remedy —
+`update-epic <id> --status archived --outcome delivered --no-deferrals` — and the archive gate
+lets an agent replace an engine-written stamp, so nothing is frozen at `unknown`. Run it when the record looks
 wrong, before a release, or when you want to know what the numbers in `PROJECT.md` are hiding.
 
 ## Release planning — `release`

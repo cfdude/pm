@@ -15,6 +15,23 @@ New proposals are added with `status: "untriaged"` and `priority: "P?"`. Then he
 triage each: assign a priority, set its status (queued/later), and add any epic links
 (e.g. `depends-on`) to other epics. Finish with `/pm:status`.
 
+## The archive backfill — `openspec/changes/archive/`
+
+`sync` also walks `openspec/changes/archive/`. An archived change the conductor holds no epic for
+is registered as an epic **already in `archived` status**, so the record covers what a repository
+actually shipped rather than only what it happened to register while the work was in flight. The
+audit that motivated this release measured the gap: the conductor saw **49 of 87** archived
+changes across 8 repositories — 56%.
+
+The backfill is **visible, one-time and announced** — never a silent side effect. Its first run
+prints what it registered; a state-level `archiveBackfilledAt` marker records that it happened,
+and its presence alone is the marker (nothing is compared against it). A backfilled epic carries
+`recordedBy: "archive-backfill"` on its disposition and **no `gate2` entry at all**: it never
+passed through the conductor while in flight, so it has no verdict, no start time and often no
+ticked tasks. Writing an `ungated` verdict for it would assert a permanent, unclearable condition
+against every change archived before the conductor existed, and the completion-shaped integrity
+checks exclude it for the same reason.
+
 ## What sync does about your tracker(s) — decided by direction, not by vendor
 
 The engine's `sync` only scans local files (OpenSpec changes, Superpowers plans) — it never

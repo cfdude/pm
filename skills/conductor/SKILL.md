@@ -103,27 +103,32 @@ file a bug report or feature request for `pm` itself as a GitHub issue on `cfdud
   `add-many --from <json>`. PROJECT.md indents children and rolls up `X/Y children archived`;
   NEXT UP keeps global priority order (grouping is render-only).
 - **Tracker awareness (instruction layer ONLY — never call the tracker yourself from the
-  engine):** if a `tracker` block is set (via `/pm:tracker`) for **jira, linear, or any system
-  other than `github-issues`**, the rules block + brief tell YOU to mirror epics to that tracker
-  with your own tooling — create an issue for any epic lacking `externalId` then record the key
-  with `update-epic --external-id`, and transition the linked issue toward the `statusIntent`
-  semantic target on each status change. The brief lists only unmirrored epics; it never
-  fabricates transition drift. This outward mirror is bidirectional (local epic → tracker issue,
-  and status changes flow the same direction).
-- **`github-issues` tracker is INWARD-ONLY, by deliberate asymmetry with the mirror above:** set
-  via `set-tracker --system github-issues --repo <owner/name>`. Open issues in that repo become
-  NEW untriaged epics, same pattern as `sync`'s existing OpenSpec-change/Superpowers-plan
-  auto-registration. As part of `/pm:sync`, the rules block tells YOU to `gh issue list --repo
-  <repo> --state open --json number,title,url,labels`, skip any issue already mapped to an epic
-  via `externalId` (dedup — re-running sync must never duplicate), and register the rest with
-  `add-epic --status untriaged --external-id <n> --external-url <url> --lane claude-code
-  --priority P2` (a `P0`/`P1`/`P2`/`P3` label overrides the P2 default). `add-epic` itself
-  rejects a duplicate `--external-id` as a second line of defense. Unlike jira/linear, the rules
-  block does NOT emit the outward "create an issue for an unmirrored epic" instruction when
-  `tracker.system === "github-issues"` — auto-filing a public GitHub issue for every local
-  claude-code epic just because a tracker is configured is a materially bigger, more
-  consequential default than mirroring toward an internal Jira/Linear instance, so it is
-  suppressed rather than left implicit. See `commands/tracker.md` and `commands/sync.md`.
+  engine): DIRECTION decides what is emitted, never the vendor.** Every tracker carries an
+  explicit `direction` — `inward` | `outward` | `both` — set with `set-tracker --direction <d>`
+  and read by every emitter. **Do not reason from the system name.** `github-issues` is not
+  inward-only any more and `jira`/`linear` are not outward-only; before you act on a tracker,
+  read its recorded `direction` out of `.conductor/state.json`.
+  - **`outward`** — create an issue for any epic lacking `externalId`, record the key with
+    `update-epic <id> --external-id <KEY> --external-url <url>`, and transition the linked issue
+    toward the `statusIntent` semantic target on each status change. The brief lists only
+    unmirrored epics; it never fabricates transition drift.
+  - **`inward`** — as part of `/pm:sync`, list open items in the tracker's scope and register the
+    ones whose `externalUrl` matches no epic, using the recipe the rules block emits. That recipe
+    **runs as written**: it carries a derived `--id` (`<system>-<scope>-<number>`, so the same
+    item yields the same epic id in every repo and session and a re-run is refused as a duplicate
+    rather than inventing a slug), a `<lane>` from `suggest-lane` rather than a hardcoded
+    `claude-code`, and `--external-updated-at` so a freshly mirrored epic starts with a watermark.
+    A `P0`/`P1`/`P2`/`P3` label overrides the `P2` default.
+  - **An inward section is emitted only when the tracker also names a SCOPE to read** — a `repo`
+    for `github-issues`, a `repo` or `--project` for anything else. Direction alone does not turn
+    it on, because pm may not emit a command line with an unfilled placeholder.
+  - **A NEW primary tracker registered with no `--direction` defaults to `inward`, whatever the
+    vendor** — a deliberate reversal in 0.27.0. Outward creation of issues in someone else's
+    tracker is the consequential default and must be chosen. Remedy:
+    `set-tracker --system jira --direction outward`. Existing repos are unaffected; the migration
+    stamped each tracker with the direction it already behaved with.
+
+  See `commands/tracker.md` and `commands/sync.md`.
 - **Primary + secondary trackers:** exactly one **primary** tracker (`state.tracker`, everything
   above, unchanged) plus zero or more **secondary** trackers (`state.secondaryTrackers[]`), set
   via `set-tracker --role secondary --system <sys> --repo <repo>` (or `--project <key>`), removed
@@ -136,14 +141,24 @@ file a bug report or feature request for `pm` itself as a GitHub issue on `cfdud
   linked issue there too. It NEVER gets outward-created issues — that stays exclusive to the
   primary tracker. `rulesBlock()` emits one "Secondary tracker sync" section per configured
   entry, in addition to the primary section. See `commands/tracker.md`.
-- **Resync after completion:** whenever an inward-pull-capable tracker exists (`github-issues`
-  as primary, or any secondary tracker), `rulesBlock()` also emits a "Sync after completing
-  tracker-linked work" section — after closing/transitioning a tracker-linked issue as part of
-  completing an epic, re-sync with your tracker(s) (`/pm:sync`) right away, phrased
-  tracker-count-agnostic so it holds whether one or several trackers are configured. `buildBrief()`
-  mirrors this with a one-line, non-blocking SessionStart nudge ("N tracker(s) configured — consider
-  `/pm:sync`") whenever any tracker exists — no `lastSyncedAt` tracking, just a reminder; the agent
-  decides whether it's worth the round trip that session.
+- **Resync after completion:** where at least one configured tracker has an **emittable inward
+  procedure** (direction includes `inward` AND it names a scope), `rulesBlock()` also emits a
+  "Sync after completing tracker-linked work" section — after closing/transitioning a
+  tracker-linked issue as part of completing an epic, re-sync with your tracker(s) (`/pm:sync`)
+  right away, phrased tracker-count-agnostic so it holds whether one or several trackers are
+  configured. `buildBrief()` mirrors this with a one-line, non-blocking SessionStart nudge on the
+  same condition — no `lastSyncedAt` tracking, just a reminder; the agent decides whether it's
+  worth the round trip that session. Both used to fire for any tracker at all; an outward-only
+  repo now gets neither, which is deliberate.
+- **Freshness and the refresh gate:** a tracker-linked epic carries `externalUpdatedAt` — the
+  **tracker's own** updated timestamp as of the last time you actually READ that item. Seeing it
+  in a list response is not reading it; advancing the watermark from a listing erases the drift
+  the watermark exists to find. Before an epic becomes the active piece of work its source of
+  truth is re-read, and the obligation is cleared with `record-tracker-refresh <id> --verdict
+  unchanged|material-change --external-updated-at <iso> [--summary "<what>"]`. The gate keys on
+  **provenance** — does this epic have an `externalId` — never on direction: an epic with none
+  re-reads its LOCAL source (plan, or proposal plus tasks) and `record-tracker-refresh` refuses it
+  by name.
 
 ## OpenSpec build — the two-gate mechanical check
 
@@ -154,16 +169,34 @@ happened — an epic could go straight from `apply` to `archive` on narration al
 now enforces Gate 2 mechanically, scoped strictly to the `openspec` lane:
 
 - After a real fresh-context review, write the verdict back with `node "$ENGINE"
-  record-gate-review <epicId> --gate 1|2 --verdict pass|fail [--reviewer "<note>"]` — this
-  writes `{verdict, reviewedAt, note?}` onto `epic.gateReview.gate1`/`gate2` in
-  `.conductor/state.json`, mirroring how `record-reconcile` writes the reconciler's verdict.
-  Rejects (writes nothing) if the epic isn't in the `openspec` lane, the epic id is unknown,
-  `--gate` isn't `1`/`2`, or `--verdict` isn't `pass`/`fail`.
-- `update-epic <id> --status archived` on an `openspec`-lane epic now REQUIRES
-  `gateReview.gate2.verdict === "pass"` already recorded — if it's missing or `fail`, the
-  transition is rejected with a clear error naming what's missing, and nothing is written.
-  Gate 1 is not itself required at archive time (it gates code, which already happened
-  earlier), though recording it via the same subcommand is good practice.
+  record-gate-review <epicId> --gate 1|2 --verdict pass|fail --base-sha <a> --head-sha <b>
+  [--reviewer "<who>"]` — this writes `{verdict, reviewedAt, baseSha, headSha, reviewer?}` onto
+  `epic.gateReview.gate1`/`gate2` in `.conductor/state.json`, mirroring how `record-reconcile`
+  writes the reconciler's verdict. Rejects (writes nothing) if the epic isn't in the `openspec`
+  lane, the epic id is unknown, `--gate` isn't `1`/`2`, or `--verdict` isn't `pass`/`fail`.
+- **The range is evidence, and a verdict can go STALE.** `--base-sha`/`--head-sha` record what
+  was actually reviewed. If the epic later attributes commits the recorded head does not reach,
+  the archive is refused by name until the range is re-reviewed or the attribution is corrected.
+  A review of `a..b` on an epic that then shipped `b..c` used to be byte-identical to one that
+  covered everything. Pass `--head-sha` in the same abbreviated form `attributedCommits` already
+  holds — identity is tested on the raw strings first, and only then resolved through git.
+- **An archive that reached `archived` with no review records `verdict: "ungated"`** rather than
+  nothing. That is the archive-drift heal's own record of the bypass; it carries `recordedBy` and
+  no `reviewer` (a path name must never surface in an audit query over reviewers). It is a
+  STANDING condition — reported by the brief and by `integrity` at every composition, never
+  consumed — and it clears only when a real passing verdict supersedes it. The superseded entry
+  is kept, not destroyed.
+- `update-epic <id> --status archived` on an `openspec`-lane epic REQUIRES
+  `gateReview.gate2.verdict === "pass"`, non-stale, when the outcome is `delivered` — if it's
+  missing, `fail`, `ungated` or stale, the transition is rejected with a clear error naming what's
+  missing, and nothing is written. `killed`, `superseded` and `abandoned` are exempt: the code was
+  never written or was thrown away, so demanding a verdict would make those outcomes recordable
+  only by fabricating one. Gate 1 is not itself required at archive time (it gates code, which
+  already happened earlier), though recording it via the same subcommand is good practice and
+  `integrity` reports an archived openspec epic that passed Gate 2 with no Gate 1.
+- **The gate binds every path to `archived`, not just this verb.** `reconcileArchived()` — reached
+  from `upgrade`, `render`, the commit nudge and `sync` — used to flip an epic with no lane check
+  and no gate check. It now records how it bypassed instead of passing silently.
 - Non-openspec-lane epics (`superpowers`/`claude-code`/`decision`/`external`) are completely
   unaffected — they have no two-gate process and this check never runs for them.
 - An epic running under autonomy (`autonomy.level: "autonomous"`) must still call
