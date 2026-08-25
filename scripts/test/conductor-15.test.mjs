@@ -661,3 +661,52 @@ test("8.6: a change archived AFTER the backfill is registered without a backfill
     "forward reconciliation continues — the marker suppresses the ANNOUNCEMENT, not the work");
   assert.ok(!/archive backfill/i.test(out), "a change archived since is new information, not history");
 });
+
+// ───────────── 9.1: the integrity module and its read-only subcommand ─────────────
+//
+// Read-only is the whole contract. A check that repaired would be a second writer racing the
+// paths that produce the records it reads; a check that blocked would turn an audit finding
+// into an outage. And a check that finds nothing is still a check that RAN — the report says
+// so per check, because a report listing only its non-empty checks is indistinguishable from
+// one whose empty checks were quietly removed.
+
+/** A repo whose record carries at least one finding, in the shape the live record holds: a
+ *  superpowers-lane epic archived against a plan file with nothing ticked, its disposition the
+ *  `unknown` stamp the migration writes. */
+function repoWithFindings(epics = []) {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  fs.mkdirSync(path.join(cwd, "docs", "superpowers", "plans"), { recursive: true });
+  fs.writeFileSync(path.join(cwd, "docs", "superpowers", "plans", "stalled-plan.md"),
+    "# Stalled plan\n\n- [ ] a\n- [ ] b\n- [ ] c\n");
+  writeState(cwd, { version: 1, active: null, detourStack: [], platform: "claude-code", epics: [
+    { id: "stalled-plan", title: "Stalled plan", priority: "P2", status: "archived", role: "epic",
+      lane: "superpowers", planPath: "docs/superpowers/plans/stalled-plan.md", links: [],
+      disposition: { outcome: "unknown", recordedAt: "2026-08-01T00:00:00.000Z", recordedBy: "migration" } },
+    ...epics,
+  ] });
+  return cwd;
+}
+
+test("9.1: integrity leaves state.json byte-identical and blocks nothing", () => {
+  const cwd = repoWithFindings();
+  const before = stateBytes(cwd);
+  const out = run(["integrity"], { cwd });
+  assert.equal(stateBytes(cwd), before,
+    "an audit that rendered would write state on the way to telling you it writes none");
+  assert.match(out, /INTEGRITY/);
+  // It blocks nothing: an ordinary verb still succeeds against the same record.
+  run(["render"], { cwd });
+});
+
+test("9.1: every check is reported with its count, including the ones that found nothing", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const out = run(["integrity"], { cwd });
+  for (const id of ["archived-with-zero-ticked-tasks"]) {
+    assert.match(out, new RegExp(`^${id} — \\d+ finding\\(s\\)`, "m"),
+      `${id}: a check with no findings must still appear, or "the check measured nothing" is ` +
+      "indistinguishable from a check that was quietly removed");
+  }
+  assert.match(out, /0 finding\(s\) across \d+ check\(s\)/);
+});

@@ -523,6 +523,22 @@ source to the prior ref and `/reload-plugins`.
 </details>
 
 <details>
+<summary><code>integrity</code> — Read-only audit of the record itself</summary>
+
+Reports records that **cannot be true**: an archived epic whose task source exists with nothing
+ticked, one change registered under two lanes (keyed on the date-prefix-stripped id), a gate
+verdict whose recorded range does not reach the commits its note cites, a gate recorded as
+bookkeeping rather than review, a `delivered` epic that attributed no commits, an archived
+openspec-lane epic with a passing Gate 2 and no Gate 1, and an archive directory no epic
+corresponds to.
+
+Every check is reported with its count **including the ones that found nothing**, so a check that
+measured nothing is visibly a check that ran. It writes no state, blocks no command and repairs
+nothing — each finding names the epic, and the remediation is a command you run.
+
+</details>
+
+<details>
 <summary><code>verify-state</code> — Detect an undetected hand-edit of state.json</summary>
 
 Compares `state.json`'s filesystem mtime against the timestamp recorded at the last

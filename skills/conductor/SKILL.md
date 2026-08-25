@@ -267,6 +267,11 @@ Resume the **top of the detour stack** first if non-empty. Otherwise the highest
   `active` pointer and stamp `archived` automatically (OpenSpec's date-prefixed archive dirs are
   detected), so `/pm:next` advances without hand-editing `state.json`.
 - `state.json` always wins over `PROJECT.md` — just re-render.
+- Want to know what the index is HIDING? `integrity` — a read-only audit reporting records that
+  cannot be true (an archived epic with nothing ticked, one change under two lanes, a verdict
+  that does not reach the commits it cites, an archive directory with no epic). It reports every
+  check with its count including zeros, writes no state, blocks nothing and repairs nothing: each
+  finding's remediation is a command you run.
 
 These rules are also installed into the project's `CLAUDE.md` by `/pm:init` — or `AGENTS.md`
 (or `HERMES.md`-chain equivalent) on a repo running a declared non-Claude-Code `--platform` —
