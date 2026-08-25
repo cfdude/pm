@@ -710,3 +710,56 @@ test("9.1: every check is reported with its count, including the ones that found
   }
   assert.match(out, /0 finding\(s\) across \d+ check\(s\)/);
 });
+
+// ───────────── 9.5: the zero-ticked check, against live data ─────────────
+//
+// This file's own process has ROOT pointed at this repository (helpers.mjs sets
+// CLAUDE_PROJECT_DIR only in the CHILD env, and nothing here mutates the parent), so importing
+// the module directly evaluates its checks against this repository's real disk and real git.
+// Do not set process.env.CLAUDE_PROJECT_DIR anywhere in this file.
+const { runIntegrity, CHECKS } = await import("../lib/integrity.mjs");
+const liveState = () => JSON.parse(fs.readFileSync(path.join(REPO, ".conductor", "state.json"), "utf8"));
+const findingsFor = (id, state) => {
+  const c = runIntegrity(state).find(x => x.id === id);
+  assert.ok(c, `no check registered as ${id}`);
+  return c.findings;
+};
+
+test("9.5: on live data the zero-ticked check reports exactly the five identified epics", () => {
+  assert.equal(process.env.CLAUDE_PROJECT_DIR || process.cwd(), REPO.replace(/\/$/, ""),
+    "the live checks must evaluate against THIS repository, or they measure a temp directory");
+  const reported = findingsFor("archived-with-zero-ticked-tasks", liveState()).map(f => f.epic).sort();
+  // The SET, not a count. Measured 2026-08-23 at 0/17, 0/99, 0/37, 0/34 and 0/39 respectively.
+  // These five are stable only because none of the plan files under docs/superpowers/plans/
+  // carries a `<!-- pm:lifecycle -->` declaration today; a marker added later moves a count and
+  // must move this list with it.
+  assert.deepEqual(reported, [
+    "2026-07-14-epic-hierarchy-orchestration",
+    "2026-07-21-conductor-mjs-module-split",
+    "2026-07-26-edd-harness-agent-behavior-testing",
+    "2026-07-29-platform-aware-rules-block",
+    "2026-08-18-state-write-conflict-guard",
+  ].sort());
+  // Two of the five are NOT date-prefixed duplicates of an un-prefixed sibling, so this check
+  // has live candidates that are not artifacts of the dual-lane finding.
+  const strip = (id) => id.replace(/^\d{4}-\d{2}-\d{2}-/, "");
+  const others = new Set(liveState().epics.map(e => e.id));
+  const notCollisions = reported.filter(id => !others.has(strip(id)));
+  assert.deepEqual(notCollisions.sort(),
+    ["2026-07-29-platform-aware-rules-block", "2026-08-18-state-write-conflict-guard"],
+    "a check whose every finding is another check's finding measures nothing of its own");
+});
+
+test("9.5: the check is gated on total > 0, so an archived epic with no source is not a finding", () => {
+  const cwd = repoWithFindings([
+    { id: "source-long-gone", title: "x", priority: "P2", status: "archived", role: "epic",
+      lane: "openspec", links: [],
+      disposition: { outcome: "unknown", recordedAt: "2026-08-01T00:00:00.000Z", recordedBy: "migration" } },
+  ]);
+  const out = run(["integrity"], { cwd });
+  assert.match(out, /archived-with-zero-ticked-tasks — 1 finding/,
+    "the epic whose plan file exists with nothing ticked IS a finding");
+  assert.ok(!out.includes("source-long-gone"),
+    "an archived epic whose source is gone reads 0/0 — a `done === 0` test reports every one of " +
+    "them (66 of this repository's 69 archived epics) and says nothing about any of them");
+});
