@@ -1139,3 +1139,65 @@ test("9.12: zero live candidates — this repository's one archive directory is 
   assert.ok(dirs.length > 0,
     "the zero must come from every directory being held, not from there being none to check");
 });
+
+// ───────────── 9.13: the ungated-archive notice is a standing condition ─────────────
+//
+// The deliberate opposite of the write-contention warning. That warning describes a run of
+// events that has ENDED, so it is consumed once a session has seen it. An `ungated` verdict
+// persists in state.json until a real Gate 2 supersedes it, so a notice that consumed would
+// report the condition to one session and hide it from every session after.
+
+/** An epic the heal archived with no verdict from anyone — the only producer of `ungated`. */
+function healArchivedUngated(cwd, id) {
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", id), { recursive: true });
+  fs.writeFileSync(path.join(cwd, "openspec", "changes", id, "tasks.md"), "# tasks\n\n- [x] a\n");
+  run(["sync"], { cwd });
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive"), { recursive: true });
+  fs.renameSync(path.join(cwd, "openspec", "changes", id),
+    path.join(cwd, "openspec", "changes", "archive", `2026-08-05-${id}`));
+  run(["sync"], { cwd });
+}
+
+test("9.13: two consecutive briefings both name the ungated epic, and a real verdict clears it", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  healArchivedUngated(cwd, "archived-unreviewed");
+  assert.equal(readState(cwd).epics.find(e => e.id === "archived-unreviewed").gateReview.gate2.verdict, "ungated");
+
+  for (const nth of ["first", "second"]) {
+    const brief = parseBrief(cwd);
+    assert.match(brief, /UNGATED ARCHIVES/, `${nth} briefing: the condition still holds, so it is still named`);
+    assert.ok(brief.includes("archived-unreviewed"), `${nth} briefing names the epic`);
+  }
+  assert.match(run(["integrity"], { cwd }), /archived-with-no-gate-2-review — 1 finding/,
+    "the same condition is named wherever the conductor reports its own integrity");
+
+  // A real passing verdict with its commit range supersedes the bypass entry.
+  run(["record-gate-review", "archived-unreviewed", "--gate", "2", "--verdict", "pass",
+    "--base-sha", "aaaaaaa", "--head-sha", "bbbbbbb"], { cwd });
+  const third = parseBrief(cwd);
+  assert.ok(!third.includes("UNGATED ARCHIVES"), "a real verdict clears the notice");
+  const gate2 = readState(cwd).epics.find(e => e.id === "archived-unreviewed").gateReview.gate2;
+  assert.equal(gate2.verdict, "pass");
+  assert.equal(gate2.superseded.verdict, "ungated",
+    "the record that this epic was archived ungated survives the review that cleared the notice");
+});
+
+test("9.13: the notice is recomputed, never consumed — a delivered briefing does not clear it", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  healArchivedUngated(cwd, "still-ungated");
+  const before = stateBytes(cwd);
+  parseBrief(cwd);                     // brief() passes consume: true — the contention warning's flag
+  assert.equal(stateBytes(cwd), before, "delivering the notice writes nothing");
+  assert.match(parseBrief(cwd), /UNGATED ARCHIVES/);
+});
+
+test("9.13: no backfilled epic is ever named as an ungated archive", () => {
+  const cwd = twoBackfilledChanges();
+  const brief = parseBrief(cwd);
+  assert.ok(!brief.includes("UNGATED ARCHIVES"),
+    "the backfill writes no gate2 at all, which is what keeps a permanent unclearable condition " +
+    "from being asserted against every change archived before the conductor existed");
+  assert.match(run(["integrity"], { cwd }), /archived-with-no-gate-2-review — 0 finding/);
+});

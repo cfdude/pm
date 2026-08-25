@@ -23,6 +23,7 @@ trigger fires, not before.
 | Lesson | Trigger — read it when… | Rule | Hook |
 |---|---|---|---|
 | [`bind-rules-to-functions-not-enumerations`](bind-rules-to-functions-not-enumerations.md) | Writing a rule, guard, or invariant that applies "at every place X happens". | Derive the call-site set mechanically (`rg` for callers) and bind the rule to the FUNCTION, not to an enumeration that goes stale the moment a caller is added. | — |
+| [`commit-without-push-is-one-disk`](commit-without-push-is-one-disk.md) | About to dispatch a wave of agents, end a work session, or step away — and the branch is ahead of its remote. | Push at every wave boundary and before stepping away. A commit is durable on ONE machine; a push is the backup. | 🔔 |
 | [`editing-inside-a-generated-block`](editing-inside-a-generated-block.md) | About to hand-edit a file that a tool also generates — CLAUDE.md, AGENTS.md, PROJECT.md, any managed region. | Hand-written content goes BELOW the END marker, never inside the managed block. | 🔔 |
 | [`git-commit-takes-the-whole-index`](git-commit-takes-the-whole-index.md) | About to commit while any other process (subagent, watcher, script) may be staging files. | Never run a bare `git commit` while another process may be staging. Use `git commit -- <paths>`, or check `git diff --cached --stat` immediately before. | — |
 | [`hardcoded-live-data-claims-rot`](hardcoded-live-data-claims-rot.md) | Writing a test, task, or spec whose verification names a count drawn from live data. | State verifications relatively. Quote counts as dated snapshots, never as the assertion. | — |
@@ -42,6 +43,7 @@ A lessons file nobody reads is a data graveyard — the same objection that made
 | Lesson | Enforced in |
 |---|---|
 | `bind-rules-to-functions-not-enumerations` | required task 16.1 of this release; issue #115 |
+| `commit-without-push-is-one-disk` | wave-boundary checklist in the orchestrator's own procedure; detect matcher fires when dispatching agents |
 | `editing-inside-a-generated-block` | subagent brief template; product gap noted for pm |
 | `git-commit-takes-the-whole-index` | subagent brief template (hard constraint) |
 | `hardcoded-live-data-claims-rot` | tasks.md authoring brief |

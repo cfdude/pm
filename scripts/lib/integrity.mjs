@@ -69,6 +69,21 @@ function citedShas(entry) {
     .filter(sha => !sameSha(sha, entry.baseSha) && !sameSha(sha, entry.headSha));
 }
 
+/** The epics carrying an `ungated` Gate 2 — archived with no review from anyone.
+ *
+ *  THE definition, read by the integrity report AND by the briefing, so the two can never name
+ *  different sets. It is a pure function of `state.json` and is recomputed at every composition:
+ *  nothing stores it, and nothing consumes it on delivery.
+ *
+ *  That is the deliberate opposite of the write-contention warning. The contention warning
+ *  describes a run of events that has ENDED, so it is consumed once a session has seen it; an
+ *  `ungated` verdict persists in the record until a real Gate 2 supersedes it, so a notice that
+ *  consumed would report the condition to one session and hide it from every session after. */
+export function ungatedArchives(epics) {
+  return (epics || []).filter(e =>
+    e && e.gateReview && e.gateReview.gate2 && e.gateReview.gate2.verdict === "ungated");
+}
+
 /** The registry. One entry per check: a stable `id` a reader can grep for, a one-line `title`
  *  saying what shape it looks for, and `run(state)` returning findings.
  *
@@ -117,6 +132,17 @@ export const CHECKS = [
         }
       }
       return out;
+    },
+  },
+  {
+    id: "archived-with-no-gate-2-review",
+    title: "an epic archived with an `ungated` Gate 2 — no review from anyone",
+    run(state) {
+      return ungatedArchives(state.epics).map(e => ({ epic: e.id, detail:
+        "archived by the drift heal with no Gate 2 review recorded by anyone. A standing " +
+        "condition, not an episode: it holds until a real passing verdict with its commit range " +
+        `supersedes it — record-gate-review ${e.id} --gate 2 --verdict pass --base-sha <sha> ` +
+        "--head-sha <sha>" }));
     },
   },
   {

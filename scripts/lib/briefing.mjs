@@ -9,6 +9,7 @@ import { staleMarker } from "./active-pointer.mjs";
 import { validLink } from "./links.mjs";
 import { outcomeOf, recordedDispositions } from "./disposition.mjs";
 import { stalenessMarking } from "./archive-gate.mjs";
+import { ungatedArchives } from "./integrity.mjs";
 import { KNOWN_LANES, anyInwardProcedureEmittable, gateSummary, outwardApplies } from "./constants.mjs";
 import { conflictCount, conflictWarningLatched, consumeConflictWarning } from "./write-conflicts.mjs";
 import { CONFLICT_WARN_THRESHOLD } from "./constants.mjs";
@@ -151,6 +152,25 @@ export function buildBrief(state, { consume = false } = {}) {
         `gate 2: ${gateSummary(e.gateReview.gate2, stalenessMarking(e, e.gateReview.gate2))}`);
     }
     if (gated.length > NEXT_CAP) L.push(`  (+${gated.length - NEXT_CAP} more — see PROJECT.md)`);
+    L.push("");
+  }
+
+  // The UNGATED-ARCHIVE notice — recomputed from state.json at every composition and NEVER
+  // consumed on delivery. An `ungated` verdict is a standing record condition, not an episode:
+  // it persists until a real Gate 2 supersedes it, so a notice that consumed would report it to
+  // one session and hide it from every session after. That is the deliberate opposite of the
+  // contention warning above, which describes a run of events that has already ended.
+  //
+  // No epic the archive backfill or the two creation paths register can ever appear here: they
+  // are forbidden from writing a `gate2` entry at all, which is what keeps an unclearable
+  // condition from being asserted en masse against changes archived before the conductor existed.
+  const ungated = ungatedArchives(epics);
+  if (ungated.length) {
+    L.push("UNGATED ARCHIVES (archived with no Gate 2 review — clears when a real verdict supersedes it):");
+    for (const e of ungated.slice(0, NEXT_CAP)) {
+      L.push(`  ⚠ \`${e.id}\` — \`record-gate-review ${e.id} --gate 2 --verdict pass --base-sha <sha> --head-sha <sha>\``);
+    }
+    if (ungated.length > NEXT_CAP) L.push(`  (+${ungated.length - NEXT_CAP} more — see PROJECT.md)`);
     L.push("");
   }
 
