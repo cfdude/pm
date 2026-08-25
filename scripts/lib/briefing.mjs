@@ -135,11 +135,12 @@ export function buildBrief(state, { consume = false } = {}) {
 
   // Same source and the same wording as PROJECT.md's Gate reviews table (gateSummary), so a
   // verdict cannot read as evidenced on one surface and unevidenced on the other.
-  const gated = epics.filter(e => e.gateReview && e.gateReview.gate2);
+  const gated = epics.filter(e => e.gateReview && (e.gateReview.gate1 || e.gateReview.gate2));
   if (gated.length) {
     L.push("GATE REVIEWS:");
     for (const e of gated.slice(0, NEXT_CAP)) {
-      L.push(`  • \`${e.id}\` gate 2: ${gateSummary(e.gateReview.gate2)}`);
+      L.push(`  • \`${e.id}\` gate 1: ${gateSummary(e.gateReview.gate1)} · ` +
+        `gate 2: ${gateSummary(e.gateReview.gate2)}`);
     }
     if (gated.length > NEXT_CAP) L.push(`  (+${gated.length - NEXT_CAP} more — see PROJECT.md)`);
     L.push("");

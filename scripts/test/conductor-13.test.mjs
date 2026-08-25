@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { tmpRepo, run, readState, writeState, projectMd, parseBrief, expectFail, writeBatch } from "./helpers.mjs";
+import { tmpRepo, run, readState, writeState, projectMd, parseBrief, expectFail, writeBatch, gitInitWithCommit, commitFiles } from "./helpers.mjs";
 
 // ─────────────── the shared epic-flag registry (EPIC_FLAGS) ───────────────
 //
@@ -281,6 +281,7 @@ const EXERCISE = {
   // A note reads back as an ENTRY, not a string — {at, actor, text}. Asserting on the text
   // alone would pass against an implementation that stored the raw string and lost the trail.
   "--notes": { args: ["--notes", "an activity note"], check: (e) => assert.equal(e.notes.at(-1).text, "an activity note") },
+  "--attribute-commit": { args: ["--attribute-commit", "abc1234"], check: (e) => assert.deepEqual(e.attributedCommits, ["abc1234"]) },
   "--add-story": { args: ["--add-story", "a story"], check: (e) => assert.equal(e.stories.at(-1).title, "a story") },
   // --story and --done are a control PAIR: neither is invocable alone, so both are exercised
   // by the same invocation and each asserts the half it is responsible for.
@@ -346,8 +347,8 @@ test("an agent-supplied disposition that is not `delivered` is rejected without 
 
 test("`delivered` needs no reason, and an agent's record carries no recordedBy", async () => {
   const { dispositionError, agentDisposition } = await import(DISPOSITION);
-  assert.equal(dispositionError({ outcome: "delivered" }), null);
-  const d = agentDisposition({ outcome: "delivered" });
+  assert.equal(dispositionError({ outcome: "delivered", deferralAssertion: { deferrals: [], declined: [] } }), null);
+  const d = agentDisposition({ outcome: "delivered", deferralAssertion: { deferrals: [], declined: [] } });
   assert.equal(d.outcome, "delivered");
   assert.ok(d.recordedAt, "a disposition records when it was recorded");
   assert.equal("reason" in d, false, "an omitted reason must not be stored as an empty string");
@@ -386,12 +387,12 @@ test("outcomeOf is the reader — an epic with no disposition reads `unknown`", 
     "recorded a disposition");
   assert.equal(outcomeOf({ disposition: null }), "unknown");
   assert.equal(outcomeOf({ disposition: agentDisposition({ outcome: "killed", reason: "Gate 1" }) }), "killed");
-  assert.equal(outcomeOf({ disposition: engineStamp("migration", { outcome: "delivered" }) }), "delivered");
+  assert.equal(outcomeOf({ disposition: engineStamp("migration", { outcome: "delivered", deferralAssertion: { deferrals: [], declined: [] } }) }), "delivered");
 });
 
 test("isEngineStamped is the ONLY way an engine stamp is told from an agent's record", async () => {
   const { ENGINE_STAMP_TOKENS, isEngineStamped, agentDisposition } = await import(DISPOSITION);
-  assert.equal(isEngineStamped(agentDisposition({ outcome: "delivered" })), false,
+  assert.equal(isEngineStamped(agentDisposition({ outcome: "delivered", deferralAssertion: { deferrals: [], declined: [] } })), false,
     "no recordedBy at all is what makes a record agent-supplied");
   assert.equal(isEngineStamped(undefined), false);
   assert.equal(isEngineStamped({ outcome: "unknown" }), false);
@@ -414,6 +415,9 @@ test("no module under scripts/lib/ reads .outcome or .recordedBy off an epic", a
     src.split("\n").forEach((line, i) => {
       const t = line.trim();
       if (t.startsWith("//") || t.startsWith("*") || t.startsWith("/*")) return;  // prose, not code
+      // `f` is parseFlags()'s result — the CLI flags an invocation carried, not an epic. A
+      // command reading its own `--outcome` flag is not a second reader of the record.
+      if (/\bf\.\s*(outcome|recordedBy)\b/.test(line)) return;
       if (/\.\s*(outcome|recordedBy)\b/.test(line)) offenders.push(`${name}:${i + 1}: ${t}`);
     });
   }
@@ -500,16 +504,16 @@ test("update-epic holds no openspec-lane archive condition of its own", () => {
 
 test("the archive gate returns a refusal OBJECT and never exits the process itself", async () => {
   const { archiveGate } = await import(ARCHIVE_GATE);
-  const refused = archiveGate({ id: "spec-epic", lane: "openspec" });
+  const refused = archiveGate({ id: "spec-epic", lane: "openspec" }, { outcome: "delivered", deferralAssertion: { deferrals: [], declined: [] } });
   assert.equal(refused.ok, false);
   assert.match(refused.message, /Gate 2/,
     "the refusal must name what is missing, and it must be a value the caller can plumb — " +
     "a gate that calls process.exit is unusable from any path that has cleanup to do");
   assert.equal(archiveGate({ id: "spec-epic", lane: "openspec",
-    gateReview: { gate2: { verdict: "fail" } } }).ok, false);
+    gateReview: { gate2: { verdict: "fail" } } }, { outcome: "delivered", deferralAssertion: { deferrals: [], declined: [] } }).ok, false);
   assert.equal(archiveGate({ id: "spec-epic", lane: "openspec",
-    gateReview: { gate2: { verdict: "pass" } } }).ok, true);
-  assert.equal(archiveGate({ id: "cc-epic", lane: "claude-code" }).ok, true,
+    gateReview: { gate2: { verdict: "pass" } } }, { outcome: "delivered", deferralAssertion: { deferrals: [], declined: [] } }).ok, true);
+  assert.equal(archiveGate({ id: "cc-epic", lane: "claude-code" }, { outcome: "delivered", deferralAssertion: { deferrals: [], declined: [] } }).ok, true,
     "a non-openspec-lane epic is unaffected");
 });
 
@@ -518,7 +522,7 @@ test("the gate is reachable from update-epic, refusal text intact", () => {
   run(["init"], { cwd });
   run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
   const before = readState(cwd);
-  const err = expectFail(() => run(["update-epic", "spec-epic", "--status", "archived"], { cwd }));
+  const err = expectFail(() => run(["update-epic", "spec-epic", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd }));
   assert.ok(err, "expected the archive to be refused");
   const msg = String(err.stderr || err.message);
   assert.match(msg, /cannot archive openspec-lane epic 'spec-epic'/,
@@ -778,7 +782,7 @@ test("a lane-less epic is held to the openspec-lane archive gate", () => {
   run(["init"], { cwd });
   withLanelessEpic(cwd);
   const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
-  const err = expectFail(() => run(["update-epic", "no-lane", "--status", "archived"], { cwd }));
+  const err = expectFail(() => run(["update-epic", "no-lane", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd }));
   assert.ok(err, "an epic with no lane renders as openspec-lane, so the gate must bind it");
   assert.match(String(err.stderr || err.message), /Gate 2/);
   assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);

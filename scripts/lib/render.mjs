@@ -137,13 +137,20 @@ export function render() {
   // anywhere in the engine was the archive guard reading `gate2` — a verdict was recorded,
   // documented in the skill, and displayed nowhere, so 42 of 49 audited archives reached
   // `archived` with nothing showing that no review had happened.
-  const gated = epics.filter(e => e.gateReview && e.gateReview.gate2);
+  // Gate 1 is shown beside Gate 2 rather than only Gate 2. It was stored, documented in the
+  // `conductor` skill, and read by NOTHING — the sole consumer of `gateReview` anywhere in the
+  // engine was the archive guard's `gate2` test — so a spec review that never happened looked
+  // exactly like one that did. Its absence is a reported condition, never a refusal: Gate 1
+  // gates code, and by archive time the code is already written.
+  const gated = epics.filter(e => e.gateReview && (e.gateReview.gate1 || e.gateReview.gate2));
   if (gated.length) {
     md.push("## Gate reviews");
     md.push("");
-    md.push("| Epic | Gate 2 (implementation) |");
-    md.push("|------|-------------------------|");
-    for (const e of gated) md.push(`| \`${e.id}\` | ${gateSummary(e.gateReview.gate2)} |`);
+    md.push("| Epic | Gate 1 (spec) | Gate 2 (implementation) |");
+    md.push("|------|---------------|-------------------------|");
+    for (const e of gated) {
+      md.push(`| \`${e.id}\` | ${gateSummary(e.gateReview.gate1)} | ${gateSummary(e.gateReview.gate2)} |`);
+    }
     md.push("");
   }
 
