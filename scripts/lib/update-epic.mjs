@@ -9,6 +9,7 @@ import { isInitialized, loadState, saveState } from "./state.mjs";
 import { noteEntry, parentError, parseFlags, parseLinkFlags } from "./add-epic.mjs";
 import { render } from "./render.mjs";
 import { archiveGate } from "./archive-gate.mjs";
+import { deferralAssertion } from "./disposition.mjs";
 
 // The flags update-epic recognizes. Anything else is a rejected error, not a
 // silent no-op — an unrecognized flag (e.g. a typo) used to parse, run, and
@@ -30,7 +31,7 @@ export function updateEpic() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const argv = process.argv.slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
-  if (!id) { process.stderr.write("usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--link \"<type>:<epic>[:<reason>]\"] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done] [--attribute-commit <sha>] [--description D] [--notes \"<text>\"] [--external-updated-at <iso>]\n"); process.exit(1); }
+  if (!id) { process.stderr.write("usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--link \"<type>:<epic>[:<reason>]\"] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done] [--attribute-commit <sha>] [--outcome delivered|killed|superseded|abandoned] [--reason \"<why>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\"] [--declined-deferral \"<what>:<why not>\"] [--no-deferrals] [--description D] [--notes \"<text>\"] [--external-updated-at <iso>]\n"); process.exit(1); }
   const f = parseFlags(argv.slice(1));
   const unknown = Object.keys(f).filter(k => !UPDATE_EPIC_FLAGS.includes(k));
   if (unknown.length) {
@@ -134,9 +135,30 @@ export function updateEpic() {
   // surface since resolveEpics() started normalizing it — slipped the gate entirely. The gate
   // now decides membership through constants.mjs's isOpenspecLane, the single predicate every
   // such site goes through.
+  // The deferral assertion is BUILT here and validated by the gate: three flags, one record.
+  // `--no-deferrals` makes "there are none" sayable, which is the whole point — an absence is
+  // otherwise indistinguishable from never having looked.
+  const pairs = (raw, a, b) => [].concat(raw === undefined ? [] : raw)
+    .filter(v => typeof v === "string")
+    .map(v => { const i = v.indexOf(":"); return i === -1
+      ? { [a]: v.trim(), [b]: "" } : { [a]: v.slice(0, i).trim(), [b]: v.slice(i + 1).trim() }; });
+  const asserted = f.deferral !== undefined || f["declined-deferral"] !== undefined || f["no-deferrals"] === true
+    ? deferralAssertion({
+        deferrals: pairs(f.deferral, "epic", "section"),
+        declined: pairs(f["declined-deferral"], "what", "reason"),
+      })
+    : undefined;
+
   if (status === "archived") {
-    const verdict = archiveGate(epic, {});
+    const verdict = archiveGate(epic, {
+      outcome: str(f.outcome), reason: str(f.reason),
+      carriedTo: str(f["carried-to"]), deferralAssertion: asserted,
+    });
     if (!verdict.ok) { process.stderr.write(`conductor: ${verdict.message}\n`); process.exit(1); }
+    // The gate BUILDS the record and this command writes it, so the disposition an epic ends
+    // with is the one the gate validated — there is no second construction site to drift.
+    if (verdict.disposition) epic.disposition = verdict.disposition;
+    if (verdict.deferralAssertion) epic.deferralAssertion = verdict.deferralAssertion;
   }
 
   if (str(f.title) !== undefined) epic.title = str(f.title);

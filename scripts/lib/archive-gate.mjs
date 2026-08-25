@@ -17,7 +17,8 @@
 
 import { gateHasEvidence, isOpenspecLane } from "./constants.mjs";
 import { isAncestor } from "./git.mjs";
-import { epicProgress, outstandingWork } from "./epic-progress.mjs";
+import { LIFECYCLE_MARKER, epicProgress, outstandingWork } from "./epic-progress.mjs";
+import { KNOWN_OUTCOMES, agentDisposition, dispositionError, isEngineStamped, outcomeOf } from "./disposition.mjs";
 
 /**
  * The outstanding-work quantity a refusal cites, rendered ONCE so a guard can never name a
@@ -109,10 +110,78 @@ export function stalenessMarking(epic, entry) {
  *                           and the handoff demand all land in this parameter.
  * @returns {{ok: true} | {ok: false, message: string}}
  */
+/** The outcomes an AGENT may choose. `unknown` is excluded deliberately: it records that
+ *  nobody was asked, and an agent running the verb was asked — choosing "I don't know" over a
+ *  real disposition is exactly the silence this release removes. */
+export const AGENT_OUTCOMES = KNOWN_OUTCOMES.filter(o => o !== "unknown");
+
 export function archiveGate(epic, request = {}) {
+  // The interactive verb must name how the work ended. Every OTHER archive path — the
+  // archive-drift heal, the archive backfill and the two archived-at-creation paths — supplies
+  // no disposition and never reaches this function; each stamps `unknown` with its own
+  // `recordedBy` instead, because there is nobody on those paths to ask.
+  const { outcome, reason } = request;
+  if (outcome === undefined) {
+    return { ok: false, message:
+      `cannot archive '${epic.id}' — no outcome recorded. Pass --outcome ` +
+      `<${AGENT_OUTCOMES.join("|")}> (and --reason "<why>" for anything but delivered), so ` +
+      `the record says how this work ended rather than only that it stopped.` };
+  }
+  if (!AGENT_OUTCOMES.includes(outcome)) {
+    return { ok: false, message:
+      `cannot archive '${epic.id}' — --outcome '${outcome}' is not one of ` +
+      `${AGENT_OUTCOMES.join("|")}. 'unknown' records that nobody was asked, and running this ` +
+      `verb means somebody was.` };
+  }
+  const invalid = dispositionError({ outcome, reason });
+  if (invalid) return { ok: false, message: `cannot archive '${epic.id}' — ${invalid}` };
+
+  // REPLACEMENT, and its refusal. An agent's disposition replaces an ENGINE-stamped one —
+  // outcome, reason and timestamp together — because a disposition nobody chose is exactly what
+  // an agent is entitled to answer. It is REFUSED against another agent's record, which would
+  // destroy a durable judgment somebody made.
+  //
+  // This rule runs OPPOSITE to its two neighbours and must not be generalized from them: the
+  // heal may not overwrite an existing `gate2`, and the migration may not overwrite an existing
+  // `disposition`. Both are engine paths overwriting an agent's work. This is an agent
+  // correcting a record the engine wrote because nobody was asked — and without it every
+  // migration-stamped archived epic is frozen at `unknown` forever.
+  const existing = epic.disposition;
+  if (existing && !isEngineStamped(existing)) {
+    return { ok: false, message:
+      `cannot archive '${epic.id}' — it already carries an agent-recorded outcome ` +
+      `'${outcomeOf(epic)}'${existing.recordedAt ? `, recorded ${existing.recordedAt}` : ""}. ` +
+      `Replacing it would destroy a judgment somebody made; correcting a mistaken disposition ` +
+      `is not something this verb does.` };
+  }
+
+  // The DEFERRAL ASSERTION. The engine has not identified this change's deferrals and cannot,
+  // so this refusal names the MISSING ASSERTION and never a list — a message naming specific
+  // deferrals would require exactly the prose scanner this design rules out, and shipping it
+  // would make the guard's message a guess.
+  if (!epic.deferralAssertion && !request.deferralAssertion) {
+    return { ok: false, message:
+      `cannot archive '${epic.id}' — no deferral assertion recorded. Say what this change ` +
+      `deferred: --deferral "<epicId>:<artifact section>" for work now held by a registered ` +
+      `epic, --declined-deferral "<what>:<why not>" for one you are deliberately not doing, ` +
+      `or --no-deferrals if there are none. What was deferred is yours to identify; this ` +
+      `command does not read your artifacts and will not guess.` };
+  }
+
+  // openspec-lane epics may not be archived without a passing Gate 2 (implementation review)
+  // verdict — see CLAUDE.md "OpenSpec build — TWO mandatory gates" and recordGateReview().
+  // Gate 1 (spec review) gates code, which already happened earlier in the workflow; only
+  // Gate 2 blocks archiving. Non-openspec-lane epics are completely unaffected.
   // An ABSENT lane is openspec-lane (isOpenspecLane), so a lane-less epic is held to this
   // gate exactly as a declared one is — it renders as openspec-lane on every surface.
-  if (isOpenspecLane(epic)) {
+  //
+  // The Gate 2 demand binds `delivered` ONLY. A change that is killed, superseded or abandoned
+  // has no passing Gate 2 and never will — the code was never written, or was written and
+  // thrown away — so demanding one would make those dispositions recordable only by fabricating
+  // a verdict or hand-editing state.json, which are the two failures this release exists to
+  // end. For those outcomes the reason the disposition already requires substitutes for the
+  // verdict, and the archive proceeds.
+  if (isOpenspecLane(epic) && outcome === "delivered") {
     const gate2 = epic.gateReview && epic.gateReview.gate2;
     if (!gate2 || gate2.verdict !== "pass") {
       return { ok: false, message:
@@ -133,5 +202,28 @@ export function archiveGate(epic, request = {}) {
     }
   }
 
-  return { ok: true };
+  // The HANDOFF. Binds `delivered` only, for the same reason the Gate 2 demand does: killed,
+  // superseded and abandoned already carry a required reason that answers where the work went,
+  // and a change killed with every task outstanding by construction would otherwise be refused
+  // the exact archive this release exists to make recordable.
+  //
+  // Keyed on outstandingWork(), never raw checkboxes: a change's own task list carries the task
+  // instructing the agent to archive it, unticked at archive time by construction, so a guard
+  // counting raw checkbox state would demand a handoff for every fully delivered change.
+  if (outcome === "delivered" && !request.carriedTo) {
+    const summary = outstandingSummary(epic);
+    if (summary.outstanding > 0) {
+      return { ok: false, message:
+        `cannot archive '${epic.id}' as delivered — ${summary.outstanding} of ` +
+        `${summary.claimed} task(s) outstanding. Either record where the work went with ` +
+        `--carried-to <epicId> --reason "<which tasks moved>", or — if the outstanding item ` +
+        `is lifecycle bookkeeping rather than delivery — declare it in the task source by ` +
+        `putting the literal ${LIFECYCLE_MARKER} on that task's own line. Naming a receiver ` +
+        `for work nobody carried anywhere is a fabricated record.` };
+    }
+  }
+
+  return { ok: true,
+    disposition: agentDisposition({ outcome, reason, carriedTo: request.carriedTo }),
+    deferralAssertion: request.deferralAssertion };
 }

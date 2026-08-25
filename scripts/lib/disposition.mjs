@@ -114,3 +114,23 @@ export function recordedDispositions(epics) {
       (outcomeOf(e) !== "unknown" || e.disposition.reason || e.disposition.carriedTo))
     .map(e => ({ epic: e, disposition: e.disposition }));
 }
+
+/** Build the DEFERRAL ASSERTION a change records before it may be archived.
+ *
+ *  The engine cannot know what a change's deferrals are, and MUST NOT claim to: matching on
+ *  artifact prose is the same fragility PLAN_INDEX_FILES already works around, and a scanner
+ *  that missed a deferral would make the guard less trustworthy than no guard. What it can
+ *  require is an ASSERTION — including the assertion that there are none — which is why this
+ *  builder takes what the agent says and reads nothing.
+ *
+ *  `deferrals` carry provenance: the epic now holding the work and the artifact section that
+ *  named it. `declined` carry the judgment that it is not worth doing, with its reason, so a
+ *  decline is a recorded call rather than an absence indistinguishable from never looking. */
+export function deferralAssertion({ deferrals = [], declined = [], assertedAt } = {}) {
+  return {
+    assertedAt: assertedAt || new Date().toISOString(),
+    deferrals: deferrals.map(d => ({ epic: d.epic, section: d.section })),
+    declined: declined.map(d => ({ what: d.what, reason: d.reason })),
+  };
+}
+

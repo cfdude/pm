@@ -281,6 +281,15 @@ const EXERCISE = {
   // A note reads back as an ENTRY, not a string — {at, actor, text}. Asserting on the text
   // alone would pass against an implementation that stored the raw string and lost the trail.
   "--notes": { args: ["--notes", "an activity note"], check: (e) => assert.equal(e.notes.at(-1).text, "an activity note") },
+  // --outcome/--reason are consumed at the archive transition and nowhere else, so they are
+  // exercised through it; `subject` is a claude-code epic with no task source, so no Gate 2 is
+  // demanded and its outstanding work is zero.
+  "--outcome": { args: ["--status", "archived", "--outcome", "delivered", "--no-deferrals"], check: (e) => assert.equal(e.disposition.outcome, "delivered") },
+  "--reason": { args: ["--status", "archived", "--outcome", "killed", "--reason", "Gate 1 found it unsafe", "--no-deferrals"], check: (e) => assert.equal(e.disposition.reason, "Gate 1 found it unsafe") },
+  "--carried-to": { args: ["--status", "archived", "--outcome", "delivered", "--no-deferrals", "--carried-to", "other"], check: (e) => assert.equal(e.disposition.carriedTo, "other") },
+  "--no-deferrals": { args: ["--status", "archived", "--outcome", "delivered", "--no-deferrals"], check: (e) => assert.deepEqual(e.deferralAssertion.deferrals, []) },
+  "--deferral": { args: ["--status", "archived", "--outcome", "delivered", "--deferral", "other:design.md § Risks"], check: (e) => assert.deepEqual(e.deferralAssertion.deferrals, [{ epic: "other", section: "design.md § Risks" }]) },
+  "--declined-deferral": { args: ["--status", "archived", "--outcome", "delivered", "--declined-deferral", "a second zero-fall-through fix:not worth the schema"], check: (e) => assert.deepEqual(e.deferralAssertion.declined, [{ what: "a second zero-fall-through fix", reason: "not worth the schema" }]) },
   "--attribute-commit": { args: ["--attribute-commit", "abc1234"], check: (e) => assert.deepEqual(e.attributedCommits, ["abc1234"]) },
   "--add-story": { args: ["--add-story", "a story"], check: (e) => assert.equal(e.stories.at(-1).title, "a story") },
   // --story and --done are a control PAIR: neither is invocable alone, so both are exercised
@@ -1155,4 +1164,254 @@ test("attributing the archive-move commit DOES refuse it — which is why the ex
   assert.ok(err,
     "the engine classifies nothing and appends exactly what it is handed — so the obligation " +
     "pm emits has to state the exclusion, and 15.4 is where it does");
+});
+
+// ─────────────── the interactive archive verb names how the work ended ───────────────
+
+test("archiving with no --outcome is refused, naming the permitted outcomes", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "cc-epic", "--lane", "claude-code"], { cwd });
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  const err = expectFail(() => run(["update-epic", "cc-epic", "--status", "archived"], { cwd }));
+  assert.ok(err, "an epic that ends without saying how is the silence this release removes");
+  const msg = String(err.stderr || err.message);
+  for (const o of ["delivered", "killed", "superseded", "abandoned"]) assert.match(msg, new RegExp(o));
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
+});
+
+test("the agent cannot choose `unknown` — it records that nobody was asked", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "cc-epic", "--lane", "claude-code"], { cwd });
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  const err = expectFail(() => run(
+    ["update-epic", "cc-epic", "--status", "archived", "--outcome", "unknown", "--no-deferrals"], { cwd }));
+  assert.ok(err, "running the verb means somebody was asked");
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
+  assert.equal(readState(cwd).epics.find(e => e.id === "cc-epic").status, "queued");
+});
+
+test("a non-delivered outcome without a reason is refused, and delivered needs none", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "cc-epic", "--lane", "claude-code"], { cwd });
+  assert.ok(expectFail(() => run(
+    ["update-epic", "cc-epic", "--status", "archived", "--outcome", "killed", "--reason", "   ", "--no-deferrals"], { cwd })),
+    "whitespace is not a reason");
+  run(["update-epic", "cc-epic", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd });
+  const d = readState(cwd).epics.find(e => e.id === "cc-epic").disposition;
+  assert.equal(d.outcome, "delivered");
+  assert.equal(d.recordedBy, undefined,
+    "an agent's record carries no recordedBy — that field is what tells an engine stamp from " +
+    "a judgment, and it is the only thing that does");
+});
+
+test("a change killed at Gate 1 with 47 unticked tasks archives with no Gate 2 demanded", () => {
+  // The release's flagship case. Demanding a verdict here would make a killed change
+  // recordable only by fabricating a review that never happened — one of the two failures
+  // this release exists to end.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  withTasks(cwd, "killed-at-gate-1",
+    Array.from({ length: 47 }, (_, i) => `- [ ] ${i + 1}.1 Task ${i + 1}`));
+  run(["add-epic", "--id", "killed-at-gate-1", "--lane", "openspec"], { cwd });
+  run(["update-epic", "killed-at-gate-1", "--status", "archived", "--outcome", "killed", "--no-deferrals",
+    "--reason", "Gate 1 found the check would invert stop-loss safety on the autonomous exit path"], { cwd });
+
+  const e = readState(cwd).epics.find(x => x.id === "killed-at-gate-1");
+  assert.equal(e.status, "archived");
+  assert.match(e.disposition.reason, /invert stop-loss safety/,
+    "the reason must be readable without opening the commit that deleted the spec files");
+  assert.equal(e.gateReview, undefined, "no verdict is demanded, and none is invented");
+});
+
+test("a DELIVERED archive of the same epic is still refused without a passing Gate 2", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  withTasks(cwd, "shipped-maybe", ["- [x] 1.1 Done"]);
+  run(["add-epic", "--id", "shipped-maybe", "--lane", "openspec"], { cwd });
+  const err = expectFail(() => run(
+    ["update-epic", "shipped-maybe", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd }));
+  assert.ok(err, "binding the Gate 2 demand to `delivered` must not remove it from `delivered`");
+  assert.match(String(err.stderr || err.message), /Gate 2/);
+});
+
+// ─────────────── the replacement rule ───────────────
+
+/** An archived epic carrying an engine stamp, the shape every non-interactive path leaves. */
+function archivedWithStamp(cwd, recordedBy) {
+  writeState(cwd, {
+    version: 1, active: null, detourStack: [],
+    epics: [{
+      id: "healed", title: "Healed from disk", priority: "P1",
+      status: "archived", role: "epic", lane: "claude-code", links: [], reconcileNeeded: false,
+      disposition: { outcome: "unknown", recordedAt: "2026-08-01T09:00:00.000Z", recordedBy },
+    }],
+  });
+}
+
+test("an agent's disposition REPLACES an engine stamp and leaves no recordedBy behind", () => {
+  for (const token of ["archive-drift-heal", "migration"]) {
+    const cwd = tmpRepo();
+    run(["init"], { cwd });
+    archivedWithStamp(cwd, token);
+    run(["update-epic", "healed", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd });
+    const d = readState(cwd).epics.find(e => e.id === "healed").disposition;
+    assert.equal(d.outcome, "delivered", `${token} stamp must be replaceable`);
+    assert.equal(d.recordedBy, undefined,
+      "the replacing record carries no recordedBy, so a record replaced once is not " +
+      "replaceable again by this rule");
+  }
+});
+
+test("an agent-supplied disposition is REFUSED, naming what it collided with", () => {
+  // The opposite direction from the heal's and the migration's never-overwrite rules, and it
+  // must not be generalized from them: this is a judgment somebody made.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  writeState(cwd, {
+    version: 1, active: null, detourStack: [],
+    epics: [{
+      id: "judged", title: "Already judged", priority: "P1",
+      status: "archived", role: "epic", lane: "claude-code", links: [], reconcileNeeded: false,
+      disposition: { outcome: "killed", reason: "not worth it", recordedAt: "2026-08-02T10:00:00.000Z" },
+    }],
+  });
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  const err = expectFail(() => run(
+    ["update-epic", "judged", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd }));
+  assert.ok(err);
+  const msg = String(err.stderr || err.message);
+  assert.match(msg, /killed/, "the refusal names the recorded outcome");
+  assert.match(msg, /2026-08-02/, "and when it was recorded");
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
+});
+
+// ─────────────── the deferral assertion ───────────────
+
+test("the refusal names the MISSING ASSERTION and lists no deferrals of its own", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  withTasks(cwd, "has-deferrals", [
+    "- [x] 1.1 Done",
+    "- [ ] 1.2 OUT OF SCOPE HERE: the identical fix in the second code path",
+  ]);
+  run(["add-epic", "--id", "has-deferrals", "--lane", "claude-code"], { cwd });
+  const err = expectFail(() => run(
+    ["update-epic", "has-deferrals", "--status", "archived", "--outcome", "killed",
+     "--reason", "superseded by a wider change"], { cwd }));
+  assert.ok(err);
+  const msg = String(err.stderr || err.message);
+  assert.match(msg, /deferral assertion/i, "the refusal is about the missing assertion");
+  assert.doesNotMatch(msg, /second code path/,
+    "naming specific deferrals would require the prose scanner this design rules out, and " +
+    "would make the message a guess");
+});
+
+test("asserting `none` satisfies the gate and reads back as the agent's answer", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "clean", "--lane", "claude-code"], { cwd });
+  run(["update-epic", "clean", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd });
+  const a = readState(cwd).epics.find(e => e.id === "clean").deferralAssertion;
+  assert.deepEqual(a.deferrals, []);
+  assert.deepEqual(a.declined, []);
+  assert.ok(a.assertedAt,
+    "an assertion of `none` must be distinguishable from never having looked");
+});
+
+test("no module under scripts/lib/ reads a change's artifacts to identify deferrals", () => {
+  const libDir = path.join(REPO, "scripts", "lib");
+  const offenders = [];
+  for (const name of fs.readdirSync(libDir).filter(f => f.endsWith(".mjs"))) {
+    const src = fs.readFileSync(path.join(libDir, name), "utf8");
+    src.split("\n").forEach((line, i) => {
+      const t = line.trim();
+      if (t.startsWith("//") || t.startsWith("*") || t.startsWith("/*")) return;
+      if (!/defer/i.test(line)) return;
+      if (/readFileSync|readdirSync|proposal|design\.md|tasks\.md/.test(line)) {
+        offenders.push(`${name}:${i + 1}: ${t}`);
+      }
+    });
+  }
+  assert.deepEqual(offenders, [],
+    "identification is the agent's job; a scanner that missed a deferral would make the guard " +
+    "less trustworthy than no guard at all");
+});
+
+// ─────────────── the handoff ───────────────
+
+/** A superpowers-lane plan file — a progress source that is read for a NON-openspec epic, so
+ *  the handoff demand can be exercised without the Gate 2 demand firing at the same time. */
+function withPlan(cwd, id, lines) {
+  const dir = path.join(cwd, "docs", "superpowers", "plans");
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, `${id}.md`), `# ${id}\n\n` + lines.join("\n") + "\n");
+  return path.join("docs", "superpowers", "plans", `${id}.md`);
+}
+
+
+test("a delivered archive with outstanding work names BOTH remedies and the same count", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const plan = withPlan(cwd, "remainder", [
+    ...Array.from({ length: 78 }, (_, i) => `- [x] ${i + 1}.1 Done`),
+    "- [ ] 79.1 Not done",
+    "- [ ] 80.1 Not done either",
+    "- [ ] 81.1 Nor this",
+  ]);
+  run(["add-epic", "--id", "remainder", "--lane", "superpowers", "--plan", plan], { cwd });
+  run(["add-epic", "--id", "inheritor", "--lane", "claude-code"], { cwd });
+  const err = expectFail(() => run(
+    ["update-epic", "remainder", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd }));
+  assert.ok(err);
+  const msg = String(err.stderr || err.message);
+  assert.match(msg, /3 of 78\/81/, "the refusal states the same count the record renders");
+  assert.match(msg, /--carried-to/, "remedy one: say where the work went");
+  assert.ok(msg.includes(MARKER),
+    "remedy two, quoted as the literal token: declare the item as lifecycle bookkeeping. A " +
+    "refusal naming only the handoff steers an agent into inventing a receiver for work " +
+    "nobody carried anywhere");
+});
+
+test("recording where the work went lets the archive through", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const plan = withPlan(cwd, "remainder", ["- [x] 1.1 Done", "- [ ] 1.2 Moved"]);
+  run(["add-epic", "--id", "remainder", "--lane", "superpowers", "--plan", plan], { cwd });
+  run(["add-epic", "--id", "inheritor", "--lane", "claude-code"], { cwd });
+  run(["update-epic", "remainder", "--status", "archived", "--outcome", "delivered",
+    "--no-deferrals", "--carried-to", "inheritor"], { cwd });
+  const d = readState(cwd).epics.find(e => e.id === "remainder").disposition;
+  assert.equal(d.carriedTo, "inheritor");
+});
+
+test("a fully delivered change whose only unticked item is MARKED needs no handoff", () => {
+  // The guard's own success case. Counting raw checkboxes here would refuse every correctly
+  // finished change in the repository, since the archive instruction is unticked by
+  // construction at the moment the archive runs.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const plan = withPlan(cwd, "finished", [
+    "- [x] 1.1 Done",
+    `- [ ] 1.2 ${MARKER} Run /opsx:archive on this change`,
+  ]);
+  run(["add-epic", "--id", "finished", "--lane", "superpowers", "--plan", plan], { cwd });
+  run(["update-epic", "finished", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd });
+  assert.equal(readState(cwd).epics.find(e => e.id === "finished").status, "archived");
+});
+
+test("a killed epic with every task outstanding is asked for no handoff", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const plan = withPlan(cwd, "killed-whole",
+    Array.from({ length: 47 }, (_, i) => `- [ ] ${i + 1}.1 Never written`));
+  run(["add-epic", "--id", "killed-whole", "--lane", "superpowers", "--plan", plan], { cwd });
+  run(["update-epic", "killed-whole", "--status", "archived", "--outcome", "killed",
+    "--reason", "dropped at Gate 1, no code written", "--no-deferrals"], { cwd });
+  const e = readState(cwd).epics.find(x => x.id === "killed-whole");
+  assert.equal(e.status, "archived");
+  assert.equal(e.disposition.carriedTo, undefined,
+    "the recorded reason already accounts for where the work went: nowhere, and why");
 });

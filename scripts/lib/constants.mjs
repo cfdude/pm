@@ -166,6 +166,20 @@ export const EPIC_FLAGS = [
   // having silently kept only <b> — two attributed hashes becoming one, with the ORDER that
   // gives the array its meaning quietly destroyed.
   { flag: "attribute-commit", key: "attributedCommits", commands: ["update-epic"], repeats: true, write: "append" },
+  // The interactive archive verb's disposition. `key` is `disposition` for both: they are two
+  // halves of ONE record the verb builds and writes together, never two epic fields.
+  { flag: "outcome", key: "disposition", commands: ["update-epic"], write: "custom" },
+  { flag: "reason", key: "disposition", commands: ["update-epic"], write: "custom" },
+  // The deferral assertion. Three flags, ONE record: `--deferral` names work that moved to a
+  // registered epic, `--declined-deferral` records a deliberate decline with its reason, and
+  // `--no-deferrals` is the explicit "there are none" — which must be sayable, or an absence
+  // is indistinguishable from never having looked.
+  { flag: "deferral", key: "deferralAssertion", commands: ["update-epic"], repeats: true, write: "custom" },
+  { flag: "declined-deferral", key: "deferralAssertion", commands: ["update-epic"], repeats: true, write: "custom" },
+  { flag: "no-deferrals", key: "deferralAssertion", commands: ["update-epic"], write: "custom" },
+  // The handoff. Lands on the disposition record rather than a field of its own — "where the
+  // work went" is part of how this epic ended, not a separate fact about it.
+  { flag: "carried-to", key: "disposition", commands: ["update-epic"], write: "custom" },
   { flag: "review-mode", key: "reviewMode", commands: ["update-epic"] },
   { flag: "add-story", key: "stories", commands: ["update-epic"], write: "append" },
   { flag: "story", key: null, commands: ["update-epic"], write: "custom" },
