@@ -200,6 +200,18 @@ bullet reached 3/15.
    before this capability existed gets the marker the first time you touch it, or its archive task
    counts as outstanding work forever.
 
+4. **Attribute every commit to its epic.** At the moment each commit is made, record it:
+   `update-epic <id> --attribute-commit <sha>`. The engine infers attribution from nothing — not
+   the files a commit touches, not an epic id in a message — so an unrecorded commit is a commit
+   the epic's Gate 2 cannot be checked against. The per-task conventional commit of an OpenSpec
+   apply loop always qualifies, and work already in flight is covered: attribute the commits
+   already made, in the order they landed, since the last entry is the endpoint a recorded Gate 2
+   `headSha` is compared against. **One exclusion:** the commit that moves
+   `openspec/changes/<id>/` under `archive/`, and any commit that only relocates or deletes a
+   change's artifacts rather than implementing its work, is lifecycle bookkeeping and
+   MUST NOT be attributed — that move lands after the reviewed range by construction, so attributing it makes
+   the epic's own Gate 2 stale at the instant the archive gate reads it.
+
 ## When something blocks progress: classify the detour FIRST
 
 Do not start fixing. Decide which kind this is and say so.

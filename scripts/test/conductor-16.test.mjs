@@ -370,3 +370,51 @@ test("15.3 the conductor skill carries the same obligation with the same literal
   assert.match(text, /amend/i);
   assert.match(numberedItems(text).join("\n"), /\*\*Declare lifecycle bookkeeping\.\*\*/);
 });
+
+// ─────────────────── 15.4: the commit-attribution obligation ───────────────────
+//
+// Attribution is an explicit array the agent supplies and the engine infers from nothing —
+// not the files a commit touches, not an epic id in a message. So the obligation AND its one
+// exclusion have to be in the emitted text: attributing the archive-move commit makes the
+// epic's own Gate 2 stale at the instant the archive gate reads it, because that commit lands
+// after the reviewed range by construction.
+
+const ATTRIBUTION_SURFACES = ["skills/conductor/SKILL.md", "commands/epic.md"];
+
+test("15.4 every emitted surface names --attribute-commit AND names the archive move as not to attribute", () => {
+  const cwd = repoWithEpics(1);
+  const surfaces = [["rules block", rulesText(cwd)],
+    ...ATTRIBUTION_SURFACES.map(rel => [rel, shipped(rel)])];
+  for (const [name, text] of surfaces) {
+    assert.match(text, /--attribute-commit/, `${name} must name the flag`);
+    assert.match(numberedItems(text).join("\n"), /\*\*Attribute every commit to its epic\.\*\*/,
+      `${name} must carry attribution as a NUMBERED item`);
+    // The always-qualifying case: the per-task conventional commit of an apply loop.
+    assert.match(text, /per-task/i, `${name} must name the per-task commit as always qualifying`);
+    // Work already in flight — an epic whose commits were made before the obligation was read.
+    assert.match(text, /already in flight|already made/i,
+      `${name} must cover commits already made`);
+    // THE exclusion, stated in the same text rather than left to inference.
+    assert.match(text, /archive/i, `${name} must name the archive move`);
+    assert.match(text, /MUST NOT be attributed/,
+      `${name} must state the archive-move exclusion outright`);
+    assert.match(text, /stale/i, `${name} must say why: it makes the epic's own Gate 2 stale`);
+  }
+});
+
+test("15.4 the four emitted surfaces carry the SAME numbered items, in the same order", () => {
+  const cwd = repoWithEpics(1);
+  // Titles only — each surface phrases the body for its own audience, but a reader comparing
+  // "item 3" across two surfaces must find the same obligation, and an item added to one
+  // surface and forgotten on another is exactly the drift these copies risk.
+  const titles = (text) => numberedItems(text)
+    .map(l => (l.match(/^\d+\. \*\*(.+?)\*\*/) || [])[1])
+    .filter(Boolean)
+    .filter(t => /sweep|working tree|lifecycle bookkeeping|Attribute every commit/i.test(t));
+  const fromRules = titles(rulesText(cwd));
+  assert.ok(fromRules.length >= 4, "the rules block must carry all four gate-procedure items");
+  for (const rel of EMITTED_DOCS) {
+    assert.deepEqual(titles(shipped(rel)), fromRules,
+      `${rel} must carry the same gate-procedure items, in the same order, as the rules block`);
+  }
+});
