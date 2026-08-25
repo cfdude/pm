@@ -8,7 +8,7 @@ import { getAutonomy } from "./autonomy.mjs";
 import { staleMarker } from "./active-pointer.mjs";
 import { validLink } from "./links.mjs";
 import { outcomeOf, recordedDispositions } from "./disposition.mjs";
-import { KNOWN_LANES } from "./constants.mjs";
+import { KNOWN_LANES, anyInwardProcedureEmittable, gateSummary, outwardApplies } from "./constants.mjs";
 import { conflictCount, conflictWarningLatched, consumeConflictWarning } from "./write-conflicts.mjs";
 import { CONFLICT_WARN_THRESHOLD } from "./constants.mjs";
 
@@ -133,6 +133,18 @@ export function buildBrief(state, { consume = false } = {}) {
     L.push("");
   }
 
+  // Same source and the same wording as PROJECT.md's Gate reviews table (gateSummary), so a
+  // verdict cannot read as evidenced on one surface and unevidenced on the other.
+  const gated = epics.filter(e => e.gateReview && e.gateReview.gate2);
+  if (gated.length) {
+    L.push("GATE REVIEWS:");
+    for (const e of gated.slice(0, NEXT_CAP)) {
+      L.push(`  • \`${e.id}\` gate 2: ${gateSummary(e.gateReview.gate2)}`);
+    }
+    if (gated.length > NEXT_CAP) L.push(`  (+${gated.length - NEXT_CAP} more — see PROJECT.md)`);
+    L.push("");
+  }
+
   const links = epics.flatMap(e => (e.links || []).filter(validLink).map(l => ({ from: e.id, ...l })));
   if (links.length) {
     L.push("EPIC LINKS:");
@@ -140,21 +152,35 @@ export function buildBrief(state, { consume = false } = {}) {
     L.push("");
   }
 
-  // TRACKER SYNC — only when a tracker is configured, and only honestly-computable drift:
-  // active-work epics (queued/active/paused, excluding missing() ghosts) with no externalId.
-  // Status-transition sync is the agent's job (rules block), NOT fabricated here.
-  if (state.tracker && state.tracker.system) {
-    const tr = state.tracker;
-    const scope = tr.projectKey ? ` · ${tr.projectKey}` : "";
+  // TRACKER SYNC — governed by DIRECTION, not by a tracker merely existing. Gating the drift
+  // line on `state.tracker` alone is the half of #109 that lived here: a github-issues repo
+  // whose rules block carries no outward instructions was told, every session, to create issues
+  // for 29 epics. `outwardApplies` is the same resolved value rules.mjs reads, so the two
+  // emitters cannot disagree again. Status-transition sync is still the agent's job (rules
+  // block) and is NOT fabricated here.
+  const tracker = state.tracker && state.tracker.system ? state.tracker : null;
+  const secondaryTrackers = Array.isArray(state.secondaryTrackers) ? state.secondaryTrackers : [];
+  const inwardHere = anyInwardProcedureEmittable(tracker, secondaryTrackers);
+  const trackerLines = [];
+  if (tracker && outwardApplies(tracker)) {
     const unmirrored = epics.filter(e =>
       ["queued", "active", "paused"].includes(e.status) && !missing(e) && !e.externalId);
-    L.push(`TRACKER SYNC (${tr.system}${scope}):`);
-    if (unmirrored.length) {
-      L.push(`  ⚠ not yet in ${tr.system} — create issues + record keys (update-epic): ` +
-        unmirrored.map(e => `\`${e.id}\``).join(", "));
-    } else {
-      L.push(`  ✓ all active epics are mirrored to ${tr.system}`);
-    }
+    trackerLines.push(unmirrored.length
+      ? `  ⚠ not yet in ${tracker.system} — create issues + record keys (update-epic): ` +
+        unmirrored.map(e => `\`${e.id}\``).join(", ")
+      : `  ✓ all active epics are mirrored to ${tracker.system}`);
+  }
+  // Freshness — locally computable and nothing more. How many linked items have NEWER remote
+  // activity is a network call the engine is forbidden to make, so the honest population is the
+  // one whose content has never been read since it was mirrored.
+  const neverReRead = epics.filter(e => e.externalId && !e.externalUpdatedAt && !missing(e));
+  if (inwardHere && neverReRead.length) {
+    trackerLines.push(`  ⚠ ${neverReRead.length} tracker-linked epic(s) never re-read since mirroring — run \`/pm:sync\``);
+  }
+  if (tracker && trackerLines.length) {
+    const scope = tracker.projectKey ? ` · ${tracker.projectKey}` : "";
+    L.push(`TRACKER SYNC (${tracker.system}${scope}):`);
+    for (const line of trackerLines) L.push(line);
     L.push("");
   }
 
@@ -162,13 +188,9 @@ export function buildBrief(state, { consume = false } = {}) {
   // could have appeared externally with no in-session event to surface them. Deliberately no
   // "time since last sync": session restarts here are infrequent enough (after real chunks of
   // work) that a bare nudge is enough — the agent decides whether it's worth the round trip.
-  const secondaryTrackers = Array.isArray(state.secondaryTrackers) ? state.secondaryTrackers : [];
-  const trackerCount = (state.tracker && state.tracker.system ? 1 : 0) + secondaryTrackers.length;
+  const trackerCount = (tracker ? 1 : 0) + secondaryTrackers.length;
   if (trackerCount > 0) {
-    const systems = [
-      ...(state.tracker && state.tracker.system ? [state.tracker.system] : []),
-      ...secondaryTrackers.map(st => st.system),
-    ];
+    const systems = [...(tracker ? [tracker.system] : []), ...secondaryTrackers.map(st => st.system)];
     const label = trackerCount === 1 ? "tracker" : "trackers";
     L.push(`💡 ${trackerCount} ${label} configured (${systems.join(", ")}) — consider \`/pm:sync\` this ` +
       "session to pull in any new issues.");

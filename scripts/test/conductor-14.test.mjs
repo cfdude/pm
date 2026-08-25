@@ -388,3 +388,44 @@ test("the scope-less github path changes in exactly one way, and it is the remin
     "byte-identical to 0.26.0's — any second difference is a regression, not a repair");
   assert.notEqual(now, before, "…and the reminder really did go, so the comparison is not vacuous");
 });
+
+// ─────────── 10.8: the brief's TRACKER SYNC block, governed by direction ───────────
+
+/** A brief built from a fixture repo carrying `tracker` and some unmirrored queued epics. */
+function briefFor(tracker, { secondaryTrackers, epics } = {}) {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const state = readState(cwd);
+  if (tracker) state.tracker = tracker;
+  if (secondaryTrackers) state.secondaryTrackers = secondaryTrackers;
+  state.epics = epics || [
+    { id: "q1", title: "Q1", priority: "P1", status: "queued", role: "epic", lane: "claude-code", links: [] },
+    { id: "q2", title: "Q2", priority: "P1", status: "queued", role: "epic", lane: "claude-code", links: [] },
+  ];
+  writeState(cwd, state);
+  const out = run(["brief"], { cwd });
+  return out.trim() ? JSON.parse(out).hookSpecificOutput.additionalContext : "";
+}
+
+test("an inward tracker with unmirrored epics demands no outward action, and the same fixture set outward does", () => {
+  const base = { system: "github-issues", repo: "o/n" };
+  const inward = briefFor({ ...base, direction: "inward" });
+  assert.ok(!inward.includes("not yet in github-issues"),
+    "a repo whose rules block has no outward procedure must not be told to create issues");
+
+  // Presence on the IDENTICAL fixture is what proves the absence was a decision rather than a
+  // dead code path — #109's root cause was a suite whose only TRACKER SYNC tests used jira.
+  const outward = briefFor({ ...base, direction: "outward" });
+  assert.match(outward, /not yet in github-issues — create issues \+ record keys/);
+  assert.match(outward, /`q1`/);
+});
+
+test("an un-upgraded github-issues repo stops being told to create issues it never could", () => {
+  // The live bug: cfdude/pm's brief demanded outward action for 29 epics under a rules block
+  // carrying no outward instructions at all.
+  const brief = briefFor({ system: "github-issues", repo: "cfdude/pm" });
+  assert.ok(!brief.includes("not yet in github-issues"));
+  const rules = rulesFor({ system: "github-issues", repo: "cfdude/pm" });
+  assert.ok(!rules.includes(OUTWARD_HEADING),
+    "the two emitters must agree — the brief's silence matches the rules block's");
+});
