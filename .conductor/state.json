@@ -2573,7 +2573,10 @@
         "044233f",
         "31ef0a9",
         "d9fba22",
-        "431e8c7"
+        "431e8c7",
+        "a31d067",
+        "34e01d9",
+        "3dd4e98"
       ]
     },
     {
@@ -2646,7 +2649,7 @@
     "repo": "cfdude/pm"
   },
   "platform": "claude-code",
-  "revision": 51,
+  "revision": 52,
   "reviewMode": "thorough",
   "releases": [
     {
