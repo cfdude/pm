@@ -1,11 +1,13 @@
 // scripts/lib/state.mjs
-// state.json load/save — the conductor's single source of record. Depends only on
-// lib/constants.mjs.
+// state.json load/save — the conductor's single source of record, and the sink every epic
+// creation routes through. Depends only on lib/constants.mjs, lib/write-conflicts.mjs and
+// lib/disposition.mjs (all leaf modules — none of them imports state.mjs back).
 
 import fs from "node:fs";
 import path from "node:path";
 import { recordConflict, clearConflicts } from "./write-conflicts.mjs";
 import { CONFLICT_EXIT_CODE } from "./constants.mjs";
+import { isArchiveBackfilled } from "./disposition.mjs";
 
 // Re-evaluate paths each time they're accessed to support cache-busting tests
 function getPaths() {
@@ -31,6 +33,35 @@ export function isInitialized() {
 
 export function defaultState() {
   return { version: 1, active: null, epics: [], detourStack: [] };
+}
+
+/** THE sink every epic creation routes through, and the ONE site the "an epic created after
+ *  this capability carries `attributedCommits`, initialized empty" rule is bound to.
+ *
+ *  It is a function and not a convention on purpose. The rule was previously written out at
+ *  each construction site, and the enumeration went stale exactly as
+ *  docs/lessons/bind-rules-to-functions-not-enumerations predicts: `add-epic` and `add-many`
+ *  carried it, `sync`'s two registration paths did not, and neither consumer complained —
+ *  absent is FORGIVEN by the staleness gate and invisible to the integrity check, so the
+ *  omission hid behind the one case the gate is required to forgive. A sixth creation path
+ *  now cannot omit the array without routing around this function, and a source scan in
+ *  scripts/test/conductor-13.test.mjs forbids that.
+ *
+ *  The ONE exemption is derived, not passed: an epic carrying the `archive-backfill` engine
+ *  stamp genuinely predates commit attribution, so its array must stay ABSENT — absent means
+ *  "unverifiable", which is the truth about a change archived before the conductor held it.
+ *  Keyed on that token specifically and never on "has an engine stamp": the two
+ *  archived-at-creation paths in `add-epic` and `add-many` carry their own distinct tokens and
+ *  must still get `[]`.
+ *
+ *  Anything already carrying the key is left exactly as given — the migration must never
+ *  back-fill the array onto a pre-existing epic, and this function is not a back-fill either. */
+export function pushEpic(state, epic) {
+  if (!Object.prototype.hasOwnProperty.call(epic, "attributedCommits") && !isArchiveBackfilled(epic)) {
+    epic.attributedCommits = [];
+  }
+  state.epics.push(epic);
+  return epic;
 }
 
 /** Thrown when a write would clobber a newer revision than the one this caller read. */

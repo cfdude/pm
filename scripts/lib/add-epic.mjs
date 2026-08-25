@@ -6,7 +6,7 @@
 // here because that's where the "add-epic" comment section originally put them.
 
 import { activate } from "./active-pointer.mjs";
-import { isInitialized, loadState, saveState } from "./state.mjs";
+import { isInitialized, loadState, pushEpic, saveState } from "./state.mjs";
 import { render } from "./render.mjs";
 import { KNOWN_LANES, KNOWN_STATUSES, epicFlagsFor, repeatableEpicFlags } from "./constants.mjs";
 import { creationStamp } from "./disposition.mjs";
@@ -251,15 +251,12 @@ export function addEpic() {
     const perr = parentError(state.epics, id, parent);
     if (perr) { process.stderr.write(`conductor: ${perr}\n`); process.exit(1); }
   }
-  // `attributedCommits: []` at creation, ALWAYS — absent and empty are different claims. An
-  // ABSENT array means the epic predates commit attribution and its verdict is unverifiable;
-  // an EMPTY one means the epic was created under it and nothing has been attributed yet. Were
-  // the array only ever created by --attribute-commit's first use, `[]` would be a state
-  // nothing could produce, and an agent ignoring the obligation would hide behind the one case
-  // the staleness gate is required to forgive.
+  // `attributedCommits: []` is NOT written here. It is stamped by pushEpic() in state.mjs —
+  // the one sink every creation path routes through — because writing it at each construction
+  // site is precisely how `sync`'s two paths came to be missed.
   const epic = {
     id, title: str(f.title) || id, priority: str(f.priority) || "P?",
-    status, role: "epic", lane, links, reconcileNeeded: false, attributedCommits: [],
+    status, role: "epic", lane, links, reconcileNeeded: false,
   };
   // Created directly AT `archived`: stamp rather than refuse. Refusing would be the simpler
   // rule, but the capability is in use — this repository's own suite creates archived epics to
@@ -285,7 +282,7 @@ export function addEpic() {
   if (str(f["external-id"]) !== undefined) epic.externalId = str(f["external-id"]);
   if (str(f["external-url"]) !== undefined) epic.externalUrl = str(f["external-url"]);
   if (str(f["external-updated-at"]) !== undefined) epic.externalUpdatedAt = str(f["external-updated-at"]);
-  state.epics.push(epic);
+  pushEpic(state, epic);
   // keep .active in sync on creation. `freshlyRead` when this very command carried the item's
   // updated timestamp: the agent just read it, so an immediate re-read obligation would be noise.
   if (epic.status === "active") {

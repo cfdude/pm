@@ -6,7 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execSync } from "node:child_process";
-import { defaultState, isInitialized, loadState, saveState, readStdin } from "./state.mjs";
+import { defaultState, isInitialized, loadState, pushEpic, saveState, readStdin } from "./state.mjs";
 import { stampVersion } from "./plugin-meta.mjs";
 import { render } from "./render.mjs";
 import { writeRules } from "./rules.mjs";
@@ -258,7 +258,15 @@ export function backfillArchive(state) {
   const registered = [];
   for (const { id } of archivedChanges()) {
     if (held.has(id)) continue;
-    state.epics.push({
+    // Through pushEpic() like every other creation path, and exempted BY IT: the
+    // `archive-backfill` stamp below is what tells the sink to leave `attributedCommits`
+    // ABSENT. Absent is the truthful record here — this epic never passed through the
+    // conductor while it was in flight, so no verdict of its can be shown stale and none can
+    // be verified either. Do NOT "fix" this for uniformity with the other creation paths: an
+    // empty array would assert "created under commit attribution, nothing attributed yet",
+    // which is false for every backfilled change and converts the staleness gate's one
+    // forgiven case into a repo-wide false positive.
+    pushEpic(state, {
       id, title: id, priority: "P?", status: "archived", role: "epic", lane: "openspec",
       links: [], reconcileNeeded: false,
       // The ENGINE stamps this, unconditionally and with no CLI flag that reaches it: a
@@ -290,7 +298,7 @@ export function sync(quiet = false) {
   let added = 0;
   for (const id of activeChangeIds()) {
     if (!known.has(id)) {
-      state.epics.push({ id, title: id, priority: "P?", status: "untriaged", role: "epic", lane: "openspec", links: [], reconcileNeeded: false });
+      pushEpic(state, { id, title: id, priority: "P?", status: "untriaged", role: "epic", lane: "openspec", links: [], reconcileNeeded: false });
       known.add(id); added++;
     }
   }
@@ -302,7 +310,7 @@ export function sync(quiet = false) {
     }
     const planPath = path.join("docs", "superpowers", "plans", fname);
     const title = firstHeading(path.join(PLANS_DIR, fname)) || id;
-    state.epics.push({ id, title, priority: "P?", status: "untriaged", role: "epic", lane: "superpowers", planPath, links: [], reconcileNeeded: false });
+    pushEpic(state, { id, title, priority: "P?", status: "untriaged", role: "epic", lane: "superpowers", planPath, links: [], reconcileNeeded: false });
     known.add(id); added++;
   }
   // EXEMPTION NOTE: registering a historical archived change does NOT go through archiveGate().

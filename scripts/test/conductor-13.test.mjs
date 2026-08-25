@@ -1065,20 +1065,9 @@ test("two hashes in ONE invocation both land, in the order given", () => {
 
 // ─────────────── absent vs empty attribution ───────────────
 
-test("an epic created under this capability carries the array EMPTY, on both creation paths", () => {
-  const cwd = tmpRepo();
-  run(["init"], { cwd });
-  run(["add-epic", "--id", "born-here", "--lane", "openspec"], { cwd });
-  run(["add-many", "--from", writeBatch(cwd, { epics: [{ id: "batch-born", lane: "claude-code" }] })], { cwd });
-  const st = readState(cwd);
-  for (const id of ["born-here", "batch-born"]) {
-    const e = st.epics.find(x => x.id === id);
-    assert.ok(Object.prototype.hasOwnProperty.call(e, "attributedCommits"),
-      `${id} must carry the KEY — a rule applied at one of two creation sites is the absent-edit ` +
-      "class this release exists to close");
-    assert.deepEqual(e.attributedCommits, [], `${id} asserts nothing attributed yet`);
-  }
-});
+// The creation-path rule is checked at the BOTTOM of this file, derived from the source rather
+// than from a list of command names — the check that stood here enumerated `add-epic` and
+// `add-many` by name and passed while `sync`'s two paths carried nothing.
 
 test("an epic written before this capability carries NO attribution key at all", () => {
   // The distinction is load-bearing: absent means unverifiable and is forgiven by the staleness
@@ -1764,4 +1753,67 @@ test("both the archiving epic and the receiving epic show the relationship", () 
   const brief = parseBrief(cwd);
   assert.match(brief, /`carrier` carried work to `inheritor`/);
   assert.match(brief, /`inheritor` inherited it from `carrier`/);
+});
+
+// ─────────── every creation path carries the array — derived, never enumerated ───────────
+//
+// The check this replaced named `add-epic` and `add-many` in its own title ("on both creation
+// paths") while `sync` had two more that carried nothing. An enumeration transcribed into a test
+// goes stale the moment a caller is added — docs/lessons/bind-rules-to-functions-not-enumerations
+// — so the rule is bound to the FUNCTION every creation path must route through, and the
+// enumeration is derived from the source at check time.
+
+test("no module creates an epic except through pushEpic() — the sink the rule is bound to", () => {
+  const libDir = path.join(REPO, "scripts", "lib");
+  const offenders = [];
+  for (const name of fs.readdirSync(libDir).filter(n => n.endsWith(".mjs"))) {
+    if (name === "state.mjs") continue; // the helper's own home
+    const src = fs.readFileSync(path.join(libDir, name), "utf8");
+    src.split("\n").forEach((line, i) => {
+      if (/epics\.push\(/.test(line)) offenders.push(`${name}:${i + 1}`);
+    });
+  }
+  assert.deepEqual(offenders, [],
+    "a raw `epics.push(...)` bypasses pushEpic() and therefore the attributedCommits " +
+    "initialization every creation path owes — route it through pushEpic(state, epic) " +
+    `instead (found at: ${offenders.join(", ")})`);
+});
+
+test("EVERY creation path yields an epic carrying the array EMPTY — sync's two included", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "born-here", "--lane", "openspec"], { cwd });
+  run(["add-many", "--from", writeBatch(cwd, { epics: [{ id: "batch-born", lane: "claude-code" }] })], { cwd });
+  // sync's two registration paths: an on-disk OpenSpec change and a Superpowers plan. /pm:sync
+  // is the DOMINANT registration path for openspec-lane epics — exactly the lane the Gate 2 and
+  // staleness rules bind — so an omission here hides behind the one case the staleness gate is
+  // required to forgive.
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", "synced-change"), { recursive: true });
+  fs.mkdirSync(path.join(cwd, "docs", "superpowers", "plans"), { recursive: true });
+  fs.writeFileSync(path.join(cwd, "docs", "superpowers", "plans", "synced-plan.md"), "# A plan\n");
+  run(["sync"], { cwd });
+
+  const st = readState(cwd);
+  for (const id of ["born-here", "batch-born", "synced-change", "synced-plan"]) {
+    const e = st.epics.find(x => x.id === id);
+    assert.ok(e, `${id} must have been registered — the fixture, not the rule, is broken`);
+    assert.ok(Object.prototype.hasOwnProperty.call(e, "attributedCommits"),
+      `${id} must carry the KEY — a rule applied at some creation sites is the absent-edit ` +
+      "class this release exists to close");
+    assert.deepEqual(e.attributedCommits, [], `${id} asserts nothing attributed yet`);
+  }
+});
+
+test("the archive backfill is the ONE creation path that carries no array, deliberately", () => {
+  // A backfilled epic genuinely predates commit attribution: absent means unverifiable, and the
+  // staleness gate forgives it. Stamping `[]` here would assert "created under this capability,
+  // nothing attributed" — false for every one of them.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", "2026-06-25-ancient"), { recursive: true });
+  run(["sync"], { cwd });
+  const e = readState(cwd).epics.find(x => x.id === "ancient");
+  assert.ok(e, "the backfill must have registered the archived change");
+  assert.ok(!Object.prototype.hasOwnProperty.call(e, "attributedCommits"),
+    "a backfilled epic must remain unverifiable, not assert an empty attribution");
 });

@@ -6,7 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { activate } from "./active-pointer.mjs";
 import { parentError, parseFlags } from "./add-epic.mjs";
-import { isInitialized, loadState, saveState, readStdin } from "./state.mjs";
+import { isInitialized, loadState, pushEpic, saveState, readStdin } from "./state.mjs";
 import { render } from "./render.mjs";
 import { ROOT, KNOWN_LANES, KNOWN_STATUSES, epicBatchKeys } from "./constants.mjs";
 import { creationStamp } from "./disposition.mjs";
@@ -80,13 +80,11 @@ export function addMany() {
     // a batch never supplies (`role`, `reconcileNeeded`). Everything else is copied by the
     // registry loop below, so a key a later capability adds to `add-many` is persisted here
     // the moment it is declared — no second literal to forget.
-    // `attributedCommits: []` on this creation path too, for the reason add-epic.mjs states at
-    // its own construction site: absent means "predates attribution, unverifiable", empty means
-    // "created under it, nothing attributed yet", and a rule applied at one of two creation
-    // sites is exactly the absent-edit class this release exists to close.
+    // `attributedCommits: []` is stamped by pushEpic(), not here — see state.mjs. A rule
+    // written out at each construction site is a stale enumeration waiting to happen.
     const epic = {
       id: e.id, title: e.id, priority: "P?", status: "queued",
-      role: "epic", lane: e.lane, links: [], reconcileNeeded: false, attributedCommits: [],
+      role: "epic", lane: e.lane, links: [], reconcileNeeded: false,
     };
     for (const key of allowedKeys) {
       const v = e[key];
@@ -99,7 +97,7 @@ export function addMany() {
     // add-many key, so the copy loop above may or may not have set it — exactly as the
     // validation pass resolved it.
     if ((e.status || "queued") === "archived") epic.disposition = creationStamp("add-many");
-    state.epics.push(epic);
+    pushEpic(state, epic);
   }
   // Route every activation through the ONE door. add-many used to construct epics inline and
   // push them straight onto state.epics, so a batch entry at `active` status set neither the
