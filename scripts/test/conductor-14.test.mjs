@@ -562,3 +562,64 @@ test("the emitted list step contains no watermark write — listing cannot advan
   assert.match(block.replace(/\n\s+/g, " "), /listing alone must never advance the watermark/,
     "and the block says so outright");
 });
+
+// ─────────── 10.12: the emitted registration recipe runs as written ───────────
+
+/** The emitted `add-epic` recipe, turned into argv with ONLY its documented placeholders
+ *  filled in. Nothing is invented: whatever the block says is exactly what gets run. */
+function emittedRegistration(block, { number, url, title, updatedAt }) {
+  const line = block.split("\n").find(l => l.includes("`add-epic --id "));
+  assert.ok(line, "the rules block must emit an add-epic recipe carrying a derived --id");
+  const cmd = line.slice(line.indexOf("`") + 1, line.lastIndexOf("`"));
+  const filled = cmd
+    .replace(/<issue-number>/g, String(number))
+    .replace(/"<issue-title>"/g, "TITLE")
+    .replace(/<issue-url>/g, url)
+    .replace(/<issue-updated-at>/g, updatedAt || "2026-08-23T09:30:00Z");
+  return filled.trim().split(/\s+/);
+}
+
+test("the emitted registration recipe executes verbatim, and the same item yields the same id", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const state = readState(cwd);
+  state.tracker = { system: "github-issues", repo: "cfdude/pm", direction: "inward" };
+  writeState(cwd, state);
+  const block = run(["rules"], { cwd });
+  const argv = emittedRegistration(block, { number: 109, url: "https://github.com/cfdude/pm/issues/109" });
+  assert.ok(argv.includes("--id"), "the recipe must supply the required --id it used to omit");
+
+  run(argv, { cwd });                                     // exits 0 …
+  const created = readState(cwd).epics.filter(e => e.externalId === "109");
+  assert.equal(created.length, 1, "…and the epic exists");
+  const id = created[0].id;
+
+  // A second session follows the same recipe for the same item: same id, refused as a
+  // duplicate — never a second epic under a differently invented slug.
+  const err = expectFail(() => run(argv, { cwd }));
+  assert.ok(err, "the second run must be refused");
+  const after = readState(cwd).epics.filter(e => e.externalId === "109");
+  assert.equal(after.length, 1);
+  assert.equal(after[0].id, id, "the derived id is stable across runs");
+});
+
+test("the derived id carries the tracker's scope, so issue #42 in two repos does not collide", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const state = readState(cwd);
+  state.secondaryTrackers = [
+    { system: "github-issues", repo: "acme/market-intelligence", role: "secondary" },
+    { system: "github-issues", repo: "acme/risk-engine", role: "secondary" },
+  ];
+  writeState(cwd, state);
+  const block = run(["rules"], { cwd });
+  const a = emittedRegistration(block.slice(block.indexOf("## Secondary tracker sync (github-issues · acme/market-intelligence")),
+    { number: 42, url: "https://github.com/acme/market-intelligence/issues/42" });
+  const b = emittedRegistration(block.slice(block.indexOf("## Secondary tracker sync (github-issues · acme/risk-engine")),
+    { number: 42, url: "https://github.com/acme/risk-engine/issues/42" });
+  run(a, { cwd });
+  run(b, { cwd });
+  const ids = readState(cwd).epics.filter(e => e.externalId === "42").map(e => e.id);
+  assert.equal(ids.length, 2, "two distinct epics — externalId alone is not a duplicate test");
+  assert.notEqual(ids[0], ids[1]);
+});

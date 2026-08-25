@@ -226,7 +226,7 @@ test("rules block gains a GitHub issue sync section (gh issue list -> add-epic) 
   assert.match(md, /GitHub issue sync/);
   assert.match(md, /gh issue list --repo cfdude\/pm --state open/);
   assert.match(md, /externalId/);
-  assert.match(md, /add-epic --status untriaged/);
+  assert.match(md, /add-epic --id gh-cfdude-pm-<issue-number> .*--status untriaged/);
   assert.match(md, /--lane claude-code/);
   assert.match(md, /--priority P2/);
 });

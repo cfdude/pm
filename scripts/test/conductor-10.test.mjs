@@ -169,7 +169,8 @@ test("rulesBlock emits an inward-pull + status-writeback section per secondary t
   const rules = run(["rules"], { cwd });
   assert.match(rules, /acme\/market-intelligence/);
   assert.match(rules, /externalUrl/);
-  assert.match(rules, /add-epic --status untriaged/);
+  // The recipe now carries the DERIVED id it used to omit, so it runs as written.
+  assert.match(rules, /add-epic --id gh-acme-market-intelligence-<issue-number> .*--status untriaged/);
   assert.match(rules, /archived/);
   assert.match(rules, /close/i);
 });

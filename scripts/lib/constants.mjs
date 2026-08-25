@@ -156,6 +156,12 @@ export const EPIC_FLAGS = [
   { flag: "base-sha", key: null, commands: ["record-gate-review"], write: "custom" },
   { flag: "head-sha", key: null, commands: ["record-gate-review"], write: "custom" },
   { flag: "reviewer", key: null, commands: ["record-gate-review"], write: "custom" },
+  // Attribution is an EXPLICIT array of hashes the agent supplies, and the engine infers it
+  // from nothing else — not the files a commit touches, not an epic id in a commit message.
+  // Deriving it from touched files would make the archive move (which relocates every file a
+  // change owns) the last attributed commit, and every verdict stale at the exact instant the
+  // archive gate reads it.
+  { flag: "attribute-commit", key: "attributedCommits", commands: ["update-epic"], write: "append" },
   { flag: "review-mode", key: "reviewMode", commands: ["update-epic"] },
   { flag: "add-story", key: "stories", commands: ["update-epic"], write: "append" },
   { flag: "story", key: null, commands: ["update-epic"], write: "custom" },
@@ -279,6 +285,27 @@ export const inwardProcedureEmittable = (tracker) => {
 export const anyInwardProcedureEmittable = (tracker, secondaryTrackers = []) =>
   inwardProcedureEmittable(tracker) ||
   (Array.isArray(secondaryTrackers) && secondaryTrackers.some(inwardProcedureEmittable));
+
+/** The deterministic id PREFIX for an epic mirrored from an item in this tracker. The full id
+ *  is `<prefix>-<item-number>`.
+ *
+ *  Derived from what identifies the item globally — the tracker's system and its scope — so the
+ *  same external item yields the same epic id in every repo and every session. That is what lets
+ *  a re-run of the emitted recipe be REFUSED as a duplicate instead of creating a second epic
+ *  under a slug the agent invented from the title (two sessions hit exactly that the same
+ *  afternoon). The scope is load-bearing, not decoration: without it, `#42` in two different
+ *  repos derives one id and the second registration collides with the first — the very
+ *  cross-tracker collision `externalUrl` dedup exists to avoid.
+ *
+ *  `github-issues` shortens to `gh`, matching the ids already in use in this repository. */
+export function mirroredEpicIdPrefix(tracker) {
+  if (!tracker || !tracker.system) return null;
+  const scope = trackerScope(tracker);
+  if (!scope) return null;
+  const slug = (v) => String(v).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  const system = tracker.system === "github-issues" ? "gh" : slug(tracker.system);
+  return `${system}-${slug(scope)}`;
+}
 
 /** True when this tracker's inward list step can be a literal `gh issue list --repo <repo>`
  *  invocation rather than the vendor-neutral "list open items in <system> (<scope>) with your own

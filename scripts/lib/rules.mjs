@@ -10,7 +10,7 @@ import { loadState } from "./state.mjs";
 import {
   KNOWN_REVIEW_MODES, REVIEW_MODE_RANK, RULES_BEGIN, RULES_BEGIN_PREFIX, RULES_END, ROOT,
   PLATFORM_COMMAND_PREFIX, anyInwardProcedureEmittable, inwardProcedureEmittable, outwardApplies,
-  trackerScope, usesGhIssueList,
+  mirroredEpicIdPrefix, trackerScope, usesGhIssueList,
 } from "./constants.mjs";
 import { rulesTarget } from "./platform.mjs";
 
@@ -242,6 +242,7 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
       // all along. The primary slot alone lacked it, which is why an inward jira tracker could
       // not be expressed at all.
       const gh = usesGhIssueList(tracker);
+      const idPrefix = mirroredEpicIdPrefix(tracker);
       lines.push(
         "",
         gh ? `## GitHub issue sync (${scope})` : `## Inward tracker sync (${sys} · ${scope})`,
@@ -259,11 +260,14 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
         "   on `externalUrl`, never on a bare `externalId`: item numbers are unique only within one",
         "   tracker/repo, so two trackers can each hold an item numbered the same without those",
         "   being the same item.",
-        "3. Otherwise register a new untriaged epic: `add-epic --status untriaged --external-id",
-        "   <issue-number> --external-url <issue-url> --lane claude-code --priority P2`, unless a",
-        "   `P0`/`P1`/`P2`/`P3` label is present on the item, in which case use that label's",
-        "   priority instead of the P2 default. `add-epic` itself rejects a duplicate `--external-id`",
-        "   as a second line of defense, so a stale local view can't produce a duplicate either.",
+        "3. Otherwise register a new untriaged epic, running this line as written with only its",
+        "   placeholders filled in:",
+        `   \`add-epic --id ${idPrefix}-<issue-number> --title "<issue-title>" --status untriaged --external-id <issue-number> --external-url <issue-url> --external-updated-at <issue-updated-at> --lane claude-code --priority P2\``,
+        `   The id is DERIVED, never invented: \`${idPrefix}-<issue-number>\` — this tracker's`,
+        "   system and scope, then the item's own number. The same item therefore yields the same",
+        "   epic id in every repo and every session, so a second registration of it is refused as a",
+        "   duplicate instead of landing as a second epic under a different invented slug. Use a",
+        "   `P0`/`P1`/`P2`/`P3` label's priority when the item carries one, `P2` otherwise.",
         "4. Set `--title` from the item title so the epic is legible before you triage it further.",
         "5. For every epic ALREADY linked to an item here, compare that item's tracker-side",
         "   updated timestamp against the epic's `externalUpdatedAt` watermark, and READ the ones",
@@ -297,10 +301,13 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
       "   `externalUrl`, not bare `externalId` alone — issue numbers are only unique within one",
       "   tracker/repo, not globally, so two secondary trackers can both have an issue numbered",
       "   the same without being the same issue.",
-      "3. Otherwise register a new untriaged epic: `add-epic --status untriaged --external-id",
-      "   <issue-number> --external-url <issue-url> --lane claude-code --priority P2`, unless a",
-      "   `P0`/`P1`/`P2`/`P3` label is present on the issue, in which case use that label's",
-      "   priority instead of the P2 default. Set `--title` from the issue title.",
+      "3. Otherwise register a new untriaged epic, running this line as written with only its",
+      "   placeholders filled in:",
+      `   \`add-epic --id ${mirroredEpicIdPrefix(st)}-<issue-number> --title "<issue-title>" --status untriaged --external-id <issue-number> --external-url <issue-url> --external-updated-at <issue-updated-at> --lane claude-code --priority P2\``,
+      `   The id is DERIVED from this tracker's system and scope: \`${mirroredEpicIdPrefix(st)}-<issue-number>\`,`,
+      "   so the same item yields the same epic id everywhere, and issue `#42` in two different",
+      "   secondary repos derives two DISTINCT ids rather than colliding. Use a `P0`/`P1`/`P2`/`P3`",
+      "   label's priority when the issue carries one, `P2` otherwise.",
       "",
       "**Completion status writeback** — when an epic whose `externalUrl` matches this secondary",
       `tracker's ${st.repo ? `repo (\`${st.repo}\`)` : `project (\`${st.projectKey}\`)`} transitions to`,
