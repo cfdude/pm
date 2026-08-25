@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { tmpRepo, run, runCombined, readState, projectMd, parseBrief, expectFail } from "./helpers.mjs";
+import { GATE_PROCEDURE_ITEMS } from "../lib/rules.mjs";
 
 // conductor-tells-the-truth, groups 14–15: release planning (#125's minimum slice) and the
 // gate procedure pm EMITS. Split from conductor-13/14/15 for the same reason those were split
@@ -276,6 +277,7 @@ const shipped = (rel) => fs.readFileSync(path.join(REPO, rel), "utf8");
 /** The four surfaces pm emits its gate procedure on. The rules block is rendered (never read
  *  from `rules.mjs`); the other three are the files pm ships. */
 const EMITTED_DOCS = ["skills/conductor/SKILL.md", "commands/epic.md", "commands/status.md"];
+const GATE_PROCEDURE_HEADING = "## The gate procedure — required task items";
 const rulesText = (cwd) => run(["rules"], { cwd });
 
 /** Every numbered item in the emitted text, as `<n>. <title>` — the FORM check. A bullet does
@@ -404,18 +406,29 @@ test("15.4 every emitted surface names --attribute-commit AND names the archive 
 
 test("15.4 the four emitted surfaces carry the SAME numbered items, in the same order", () => {
   const cwd = repoWithEpics(1);
-  // Titles only — each surface phrases the body for its own audience, but a reader comparing
-  // "item 3" across two surfaces must find the same obligation, and an item added to one
-  // surface and forgotten on another is exactly the drift these copies risk.
-  const titles = (text) => numberedItems(text)
-    .map(l => (l.match(/^\d+\. \*\*(.+?)\*\*/) || [])[1])
-    .filter(Boolean)
-    .filter(t => /sweep|working tree|lifecycle bookkeeping|Attribute every commit/i.test(t));
-  const fromRules = titles(rulesText(cwd));
-  assert.ok(fromRules.length >= 4, "the rules block must carry all four gate-procedure items");
+  // Derived from the generator's own list, never from an enumeration typed here — an
+  // enumeration goes stale the moment an item is added, which is the defect item 1 of this very
+  // procedure forbids. Scoped to the gate-procedure SECTION so the surrounding numbered lists
+  // (the operating rules, the autonomy rules) are excluded by structure rather than by a filter
+  // that would also hide an item present on one surface and absent from the generator.
+  const expected = GATE_PROCEDURE_ITEMS.map(i => i.title);
+  const sectionTitles = (text) => {
+    const start = text.indexOf(GATE_PROCEDURE_HEADING);
+    assert.notEqual(start, -1, "every emitted surface carries the gate-procedure section");
+    const rest = text.slice(start + GATE_PROCEDURE_HEADING.length);
+    const nextHeading = rest.search(/\n## /);
+    const items = numberedItems(nextHeading === -1 ? rest : rest.slice(0, nextHeading));
+    // Contiguous from 1, per surface. "Item 3" naming the same obligation everywhere is the
+    // whole claim; a doc that skips a number breaks it while still listing the right titles.
+    assert.deepEqual(items.map(l => Number(l.match(/^(\d+)\./)[1])),
+      items.map((_, i) => i + 1), "numbered items must run 1..N with no gap");
+    return items.map(l => (l.match(/^\d+\. \*\*(.+?)\*\*/) || [])[1]).filter(Boolean);
+  };
+  assert.deepEqual(sectionTitles(rulesText(cwd)), expected,
+    "the rules block must render exactly the generator's items, in order");
   for (const rel of EMITTED_DOCS) {
-    assert.deepEqual(titles(shipped(rel)), fromRules,
-      `${rel} must carry the same gate-procedure items, in the same order, as the rules block`);
+    assert.deepEqual(sectionTitles(shipped(rel)), expected,
+      `${rel} must carry the same gate-procedure items, in the same order, as the generator`);
   }
 });
 
