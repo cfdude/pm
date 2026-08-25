@@ -185,6 +185,13 @@ bullet reached 3/15.
    site is left untouched is a FINDING, not a detail: both gates are diff-scoped and structurally
    cannot see an edit absent from a file the diff never touched.
 
+2. **Verify against the commit, not the working tree.** The commit is the unit of verification.
+   Reading a file in the working tree is NOT verification. For every task, run
+   `git show --stat <that task's sha>` and assert that every file the task claims to change
+   appears in THAT commit. A task whose claimed file is absent
+   from its commit FAILS, even though the working tree holds the intended edit, the suite passes
+   and both gates are green.
+
 ## When something blocks progress: classify the detour FIRST
 
 Do not start fixing. Decide which kind this is and say so.

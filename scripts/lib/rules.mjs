@@ -122,6 +122,21 @@ export const GATE_PROCEDURE_ITEMS = [
       "   repository's own audit, ~38 instances in one shard.",
     ],
   },
+  {
+    title: "Verify against the commit, not the working tree.",
+    lines: [
+      "The commit is the unit of verification.",
+      "   Reading a file in the working tree is NOT verification. For every task, run",
+      "   `git show --stat <that task's sha>` and assert that",
+      "   every file the task claims to change appears in THAT commit. A task whose claimed file is",
+      "   absent from its commit FAILS, even though the working tree holds the intended edit, the",
+      "   suite passes and both gates are green. Audited here: two commits each claimed to remove a",
+      "   file's code and neither staged it, because a `git add` with an explicit path list aborted",
+      "   on an already-removed path — all four verification layers were reading the working tree,",
+      "   so nothing caught it, and it recurred after being written down in a commit message in the",
+      "   same epic.",
+    ],
+  },
 ];
 
 /** The items, rendered as a numbered markdown list. */

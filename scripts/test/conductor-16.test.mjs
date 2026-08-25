@@ -315,3 +315,30 @@ test("15.1 the call-site sweep is a numbered item on every emitted surface, not 
       `${rel} must not carry it as a bullet`);
   }
 });
+
+test("15.2 the emitted gate procedure verifies against the COMMIT and says the working tree does not count", () => {
+  const cwd = repoWithEpics(1);
+  const block = rulesText(cwd);
+  const items = numberedItems(block).join("\n");
+  assert.match(items, /\*\*Verify against the commit, not the working tree\.\*\*/);
+  // The explicit statement, not merely an instruction to look at the commit: every layer that
+  // missed the audited failure was reading the working tree and believed it was verifying.
+  assert.match(block, /Reading a file in the working tree is NOT verification/);
+  assert.match(block, /git show --stat/);
+  // And the consequence, stated: a claimed file absent from its commit FAILS the task even
+  // though the tree holds the edit and the suite is green.
+  assert.match(block, /absent from its commit/);
+  assert.doesNotMatch(block, /^\s*[-*] \*\*Verify against the commit/m);
+});
+
+test("15.2 commit-based verification is a numbered item on every emitted surface", () => {
+  for (const rel of EMITTED_DOCS) {
+    const text = shipped(rel);
+    assert.match(numberedItems(text).join("\n"), /\*\*Verify against the commit, not the working tree\.\*\*/,
+      `${rel} must carry commit-based verification as a NUMBERED item`);
+    assert.match(text, /Reading a file in the working tree is NOT verification/,
+      `${rel} must state that reading the working tree is not verification`);
+    assert.match(text, /git show --stat/, `${rel} must name the command that reads the commit`);
+    assert.doesNotMatch(text, /^\s*[-*] \*\*Verify against the commit/m, `${rel} must not carry it as a bullet`);
+  }
+});
