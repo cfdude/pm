@@ -2,17 +2,24 @@
 // The update-epic write-back verb: title/status/priority/links/story mutations on an
 // existing epic. One-directional dependencies only.
 
-import { KNOWN_STATUSES, KNOWN_REVIEW_MODES, REVIEW_MODE_RANK } from "./constants.mjs";
+import { KNOWN_LANES, KNOWN_STATUSES, KNOWN_REVIEW_MODES, REVIEW_MODE_RANK, epicFlagsFor } from "./constants.mjs";
 import { activate } from "./active-pointer.mjs";
 import { globalReviewMode } from "./rules.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
-import { parentError, parseFlags, parseLinkFlags } from "./add-epic.mjs";
+import { noteEntry, parentError, parseFlags, parseLinkFlags } from "./add-epic.mjs";
 import { render } from "./render.mjs";
+import { archiveGate } from "./archive-gate.mjs";
+import { deferralAssertion } from "./disposition.mjs";
 
 // The flags update-epic recognizes. Anything else is a rejected error, not a
 // silent no-op — an unrecognized flag (e.g. a typo) used to parse, run, and
 // print "updated" with nothing actually changed.
-export const UPDATE_EPIC_FLAGS = ["external-id", "external-url", "parent", "status", "priority", "title", "link", "review-mode", "add-story", "story", "done"];
+//
+// A PROJECTION of the shared EPIC_FLAGS registry, never a literal: this list, add-epic's and
+// add-many's all have to grow for every flag this release adds, and a literal here is exactly
+// the copy that would reject another capability's flag by name. Registering a flag on
+// `update-epic` in EPIC_FLAGS is the whole edit; nothing changes in this file.
+export const UPDATE_EPIC_FLAGS = epicFlagsFor("update-epic");
 
 /** Update an EXISTING epic's title/externalId/externalUrl/parent/status/priority/links.
  *  The id is POSITIONAL (parseFlags skips non-`--` tokens). Closes the tracker
@@ -24,7 +31,31 @@ export function updateEpic() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const argv = process.argv.slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
-  if (!id) { process.stderr.write("usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--link \"<type>:<epic>[:<reason>]\"] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done]\n"); process.exit(1); }
+  // #71: `update-epic --id my-epic --priority P1` is the mistake everyone makes, because every
+  // OTHER epic-writing command takes `--id`. This one's id is POSITIONAL and stays that way —
+  // accepting `--id` as an alias would make the same argument mean two things depending on which
+  // verb you typed. So DIAGNOSE it: name the flag, show the positional form, and rewrite the
+  // exact line the caller meant. A bare usage dump naming ~25 flags answers a question nobody
+  // asked and never mentions `--id` at all, which is why the mistake kept recurring.
+  //
+  // TWO distinct diagnoses. "You put the id behind a flag" and "you gave no id at all" are
+  // different mistakes and get different messages; collapsing them back into one usage dump is
+  // the regression this guards against.
+  if (!id) {
+    const at = argv.indexOf("--id");
+    if (at !== -1) {
+      const value = argv[at + 1] !== undefined && !argv[at + 1].startsWith("--") ? argv[at + 1] : "<id>";
+      const rest = argv.filter((_, i) => i !== at && i !== at + 1);
+      process.stderr.write(
+        `conductor: update-epic takes its epic id POSITIONALLY, not as --id — write ` +
+        `\`update-epic <id> ...\`, i.e. \`update-epic ${value}${rest.length ? ` ${rest.join(" ")}` : ""}\`. ` +
+        "Nothing was written.\n");
+      process.exit(1);
+    }
+    process.stderr.write("conductor: update-epic requires an epic id as its first POSITIONAL argument\n");
+    process.stderr.write("usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--lane openspec|superpowers|claude-code|decision|external] [--plan <path>] [--link \"<type>:<epic>[:<reason>]\"] [--clear-links] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done] [--attribute-commit <sha>] [--outcome delivered|killed|superseded|abandoned] [--reason \"<why>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\"] [--declined-deferral \"<what>:<why not>\"] [--no-deferrals] [--description D] [--notes \"<text>\"] [--external-updated-at <iso>]\n");
+    process.exit(1);
+  }
   const f = parseFlags(argv.slice(1));
   const unknown = Object.keys(f).filter(k => !UPDATE_EPIC_FLAGS.includes(k));
   if (unknown.length) {
@@ -46,8 +77,44 @@ export function updateEpic() {
   if (status !== undefined && !KNOWN_STATUSES.includes(status)) {
     process.stderr.write(`conductor: --status must be one of ${KNOWN_STATUSES.join("|")}\n`); process.exit(1);
   }
+  // --lane: re-route an epic in place. Validated against the SAME KNOWN_LANES creation validates
+  // against, so a lane addEpic() would refuse cannot arrive through this door instead. Tested on
+  // `f.lane !== undefined` rather than on the str() result, so a VALUELESS `--lane` (which
+  // parseFlags yields as boolean true) is refused by name rather than dropped by str() into an
+  // exit-0-write-nothing — the #79 shape.
+  const lane = str(f.lane);
+  if (f.lane !== undefined && (lane === undefined || !KNOWN_LANES.includes(lane))) {
+    process.stderr.write(`conductor: --lane must be one of ${KNOWN_LANES.join("|")}\n`); process.exit(1);
+  }
+  // --plan: attach (or repoint) the plan path of an epic created without one. add-epic writes
+  // `f.plan` directly, which stores boolean `true` for a valueless flag; this path refuses that
+  // instead of persisting a planPath nothing can open.
+  const planPath = str(f.plan);
+  if (f.plan !== undefined && planPath === undefined) {
+    process.stderr.write("conductor: --plan requires a value\n"); process.exit(1);
+  }
+  // Clearing the links is a NAMED flag, and the valueless `--link` that used to do it by
+  // accident is refused. `--link` is repeatable, so `--link` with nothing after it parses as
+  // `[true]`; parseLinkFlags filters non-strings away and yields `[]`, which then REPLACED the
+  // array — a wipe that looks exactly like a typo and reports "updated". Both spellings now say
+  // what they mean, and the refusal names the one that clears.
   let links;
-  if (f.link !== undefined) {
+  if (f["clear-links"] !== undefined) {
+    if (f["clear-links"] !== true) {
+      process.stderr.write("conductor: --clear-links takes no value\n"); process.exit(1);
+    }
+    if (f.link !== undefined) {
+      process.stderr.write("conductor: --clear-links and --link are mutually exclusive — pass the links you want, or clear them\n");
+      process.exit(1);
+    }
+    links = [];
+  } else if (f.link !== undefined) {
+    if (!Array.isArray(f.link) || f.link.some(v => typeof v !== "string")) {
+      process.stderr.write(
+        "conductor: --link requires a \"<type>:<epic>[:<reason>]\" value — to empty an epic's " +
+        "links, say so with --clear-links\n");
+      process.exit(1);
+    }
     try {
       links = parseLinkFlags(f.link, new Set(state.epics.map(e => e.id)));
     } catch (e) {
@@ -72,6 +139,16 @@ export function updateEpic() {
       process.exit(1);
     }
   }
+
+  // A valueless --description / --notes would be dropped by str() and exit 0 having written
+  // nothing — the #79 shape. Refuse it before any write.
+  for (const flag of ["description", "notes"]) {
+    if (f[flag] === true) {
+      process.stderr.write(`conductor: --${flag} requires a value\n`); process.exit(1);
+    }
+  }
+  const description = str(f.description);
+  const note = str(f.notes);
 
   // --add-story "<title>" appends { title, done: false } to the epic's inline stories[]
   // (creating the array if this is its first inline story) -- closes the recurring
@@ -99,29 +176,82 @@ export function updateEpic() {
     process.stderr.write("conductor: --done requires --story <n>\n"); process.exit(1);
   }
 
-  // openspec-lane epics may not be archived without a passing Gate 2 (implementation review)
-  // verdict — see CLAUDE.md "OpenSpec build — TWO mandatory gates" and recordGateReview()
-  // above. Gate 1 (spec review) gates code, which already happened earlier in the workflow;
-  // only Gate 2 blocks archiving. Non-openspec-lane epics are completely unaffected.
-  if (status === "archived" && epic.lane === "openspec") {
-    const gate2 = epic.gateReview && epic.gateReview.gate2;
-    if (!gate2 || gate2.verdict !== "pass") {
-      process.stderr.write(
-        `conductor: cannot archive openspec-lane epic '${id}' — missing a passing Gate 2 ` +
-        `(implementation review) verdict. Run 'record-gate-review ${id} --gate 2 --verdict pass' ` +
-        `after a real fresh-context implementation review before archiving.\n`);
-      process.exit(1);
-    }
+  // --attribute-commit <sha>: append, in the order given, the commits this epic's work landed
+  // in. The last entry is the endpoint a recorded Gate 2 `headSha` is compared against, so the
+  // ORDER is the meaning and the engine appends exactly what it is handed.
+  const attributed = f["attribute-commit"] === undefined
+    ? [] : [].concat(f["attribute-commit"]).filter(v => typeof v === "string" && v.trim());
+  if (f["attribute-commit"] !== undefined && !attributed.length) {
+    process.stderr.write("conductor: --attribute-commit requires a commit sha\n"); process.exit(1);
+  }
+
+  // The archive transition's conditions live in archive-gate.mjs, which every path that can
+  // leave an epic at `archived` imports. They were inline here, which is precisely how they
+  // came to bind this one path and none of the other four. The gate returns a refusal; this
+  // command owns the exit code and the stderr, as it does for every other validation above.
+  //
+  // This command therefore holds NO lane test of its own. The one it used to hold compared
+  // `epic.lane === "openspec"` strictly, so a lane-less epic — openspec-lane on every rendered
+  // surface since resolveEpics() started normalizing it — slipped the gate entirely. The gate
+  // now decides membership through constants.mjs's isOpenspecLane, the single predicate every
+  // such site goes through.
+  // The deferral assertion is BUILT here and validated by the gate: three flags, one record.
+  // `--no-deferrals` makes "there are none" sayable, which is the whole point — an absence is
+  // otherwise indistinguishable from never having looked.
+  const pairs = (raw, a, b) => [].concat(raw === undefined ? [] : raw)
+    .filter(v => typeof v === "string")
+    .map(v => { const i = v.indexOf(":"); return i === -1
+      ? { [a]: v.trim(), [b]: "" } : { [a]: v.slice(0, i).trim(), [b]: v.slice(i + 1).trim() }; });
+  const asserted = f.deferral !== undefined || f["declined-deferral"] !== undefined || f["no-deferrals"] === true
+    ? deferralAssertion({
+        deferrals: pairs(f.deferral, "epic", "section"),
+        declined: pairs(f["declined-deferral"], "what", "reason"),
+      })
+    : undefined;
+
+  // Note `status === "archived"`, not "the status CHANGED to archived": an epic already at
+  // `archived` runs the full gate again on this invocation and records the disposition the
+  // agent supplies. Re-archiving is an established shape here — `completedAt` below is already
+  // guarded on `!epic.completedAt` precisely because this verb can be run twice — and it is
+  // the only moment the documented `/opsx:archive` -> heal -> record flow can say `delivered`.
+  if (status === "archived") {
+    const verdict = archiveGate(epic, {
+      outcome: str(f.outcome), reason: str(f.reason),
+      carriedTo: str(f["carried-to"]), deferralAssertion: asserted,
+    });
+    if (!verdict.ok) { process.stderr.write(`conductor: ${verdict.message}\n`); process.exit(1); }
+    // The gate BUILDS the record and this command writes it, so the disposition an epic ends
+    // with is the one the gate validated — there is no second construction site to drift.
+    if (verdict.disposition) epic.disposition = verdict.disposition;
+    if (verdict.deferralAssertion) epic.deferralAssertion = verdict.deferralAssertion;
   }
 
   if (str(f.title) !== undefined) epic.title = str(f.title);
   if (str(f["external-id"]) !== undefined) epic.externalId = str(f["external-id"]);
   if (str(f["external-url"]) !== undefined) epic.externalUrl = str(f["external-url"]);
+  if (str(f["external-updated-at"]) !== undefined) epic.externalUpdatedAt = str(f["external-updated-at"]);
   if (parent !== undefined) epic.parent = parent;
   if (status !== undefined) epic.status = status;
+  // In-place field writes: the epic keeps its position in `state.epics[]`, its startedAt, its
+  // gate verdicts, its links and its stories. Re-routing an epic must cost none of those — that
+  // it used to is the whole reason remove-and-re-register was the only correction available.
+  if (lane !== undefined) epic.lane = lane;
+  if (planPath !== undefined) epic.planPath = planPath;
   if (str(f.priority) !== undefined) epic.priority = str(f.priority);
   if (links !== undefined) epic.links = links;
   if (reviewMode !== undefined) epic.reviewMode = reviewMode;
+  if (attributed.length) {
+    if (!Array.isArray(epic.attributedCommits)) epic.attributedCommits = [];
+    epic.attributedCommits.push(...attributed.map(v => v.trim()));
+  }
+  // `--description` REPLACES (durable rationale, one value); `--notes` APPENDS (an activity
+  // trail). Writing either never touches the other, and an earlier note is never rewritten or
+  // dropped — the two readings are both wanted, so neither may be collapsed into the other.
+  if (description !== undefined) epic.description = description;
+  if (note !== undefined) {
+    if (!Array.isArray(epic.notes)) epic.notes = [];
+    epic.notes.push(noteEntry(note));
+  }
   if (addStoryTitle !== undefined) {
     if (!Array.isArray(epic.stories)) epic.stories = [];
     epic.stories.push({ title: addStoryTitle, done: false });

@@ -169,7 +169,8 @@ test("rulesBlock emits an inward-pull + status-writeback section per secondary t
   const rules = run(["rules"], { cwd });
   assert.match(rules, /acme\/market-intelligence/);
   assert.match(rules, /externalUrl/);
-  assert.match(rules, /add-epic --status untriaged/);
+  // The recipe now carries the DERIVED id it used to omit, so it runs as written.
+  assert.match(rules, /add-epic --id gh-acme-market-intelligence-<issue-number> .*--status untriaged/);
   assert.match(rules, /archived/);
   assert.match(rules, /close/i);
 });
@@ -208,7 +209,10 @@ test("primary tracker rules-block output (including github-issues-as-primary sup
 test("jira primary + github-issues secondary coexist: primary gets bidirectional sync, secondary gets inward+writeback only", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
-  run(["set-tracker", "--system", "jira", "--project", "JOB",
+  // `--direction outward` is now explicit: a NEW primary tracker defaults to `inward`, the
+  // deliberate reversal this release ships. What this test is about is the outward section's
+  // content, so it asks for the direction that section belongs to.
+  run(["set-tracker", "--system", "jira", "--project", "JOB", "--direction", "outward",
        "--intent", "active:in-progress", "--intent", "archived:done"], { cwd });
   run(["set-tracker", "--role", "secondary", "--system", "github-issues",
        "--repo", "acme/market-intelligence"], { cwd });
@@ -237,10 +241,12 @@ test("rulesBlock adds a resync-after-completion instruction when the primary tra
   assert.match(rules, /Sync after completing tracker-linked work/);
 });
 
-test("rulesBlock omits the resync instruction when the only tracker is a non-github-issues primary with no secondaries", () => {
+test("rulesBlock omits the resync instruction when the only tracker is an outward primary with no secondaries", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
-  run(["set-tracker", "--system", "jira", "--project", "JOB"], { cwd });
+  // The reminder now keys on an emittable INWARD procedure rather than on the vendor's name:
+  // an outward-only repo re-syncs nothing inward, so there is nothing for it to point at.
+  run(["set-tracker", "--system", "jira", "--project", "JOB", "--direction", "outward"], { cwd });
   const rules = run(["rules"], { cwd });
   assert.doesNotMatch(rules, /Sync after completing tracker-linked work/);
 });

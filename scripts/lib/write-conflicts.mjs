@@ -15,7 +15,10 @@ function getPaths() {
   const ROOT = process.env.CLAUDE_PROJECT_DIR || process.cwd();
   const CONDUCTOR_DIR = path.join(ROOT, ".conductor");
   const WRITE_CONFLICTS_LOG = path.join(CONDUCTOR_DIR, "write-conflicts.log");
-  return { CONDUCTOR_DIR, WRITE_CONFLICTS_LOG };
+  // The latch marker lives BESIDE the log, never in state.json — that is the file whose write
+  // just failed, which is the whole reason this module exists.
+  const WRITE_CONFLICTS_LATCH = path.join(CONDUCTOR_DIR, "write-conflicts.latch");
+  return { CONDUCTOR_DIR, WRITE_CONFLICTS_LOG, WRITE_CONFLICTS_LATCH };
 }
 
 /** Rotate when the file exceeds the cap. Deliberately SIZE-triggered and wholesale:
@@ -56,23 +59,40 @@ export function conflictCount() {
 /** Called after ANY successful state write. The signal of interest is CONSECUTIVE skips, not
  *  skips ever — without this reset a single contended afternoon would warn forever. */
 export function clearConflicts() {
-  const { WRITE_CONFLICTS_LOG } = getPaths();
+  const { WRITE_CONFLICTS_LOG, WRITE_CONFLICTS_LATCH } = getPaths();
   try { fs.rmSync(WRITE_CONFLICTS_LOG, { force: true }); } catch { /* best effort */ }
+  // The latch goes with the log: a successful write ends the episode, so the NEXT run of
+  // contention must be able to warn again. Leaving the latch behind would silence it forever.
+  try { fs.rmSync(WRITE_CONFLICTS_LATCH, { force: true }); } catch { /* best effort */ }
 }
 
-/** Consume the warning condition: the count resets, the evidence survives.
+/** Has this episode of contention already been warned about? The warning is delivered once per
+ *  EPISODE, not once per crossing of the threshold: `conflictCount()` is SAMPLED (read only when
+ *  a briefing is composed), so the count is whatever the burst left behind by the time anyone
+ *  looks. See consumeConflictWarning() for why the latch is a file rather than a lower count. */
+export function conflictWarningLatched() {
+  const { WRITE_CONFLICTS_LATCH } = getPaths();
+  try { return fs.existsSync(WRITE_CONFLICTS_LATCH); } catch { return false; }
+}
+
+/** Consume the warning for this EPISODE: nothing about the log moves, and the evidence stays at
+ *  the path the warning just named.
  *
  *  Called when the briefing SURFACES the threshold warning. Without this, `conflictCount()`
- *  stays pinned at the threshold once contention stops — nothing else clears it, because
+ *  stays at or above the threshold once contention stops — nothing else clears it, because
  *  clearConflicts() only runs on a successful state write and render() only writes when
  *  reconcileArchived() has something to heal. The brief runs every SessionStart, so the
  *  warning would re-fire every session for a problem that resolved days ago.
  *
- *  Rotates rather than deletes: the warning names the log file, so destroying it as we point
- *  at it would send the reader to a path that no longer exists. */
+ *  Sets a LATCH rather than touching the log. Suppressing the repeat by lowering the count —
+ *  rotating the log away — cannot work: it destroys the very path the warning tells the reader
+ *  to open, and it re-arms the threshold, so a run of contention that continues climbs back
+ *  through it and warns again. The latch says "this episode has been reported"; only
+ *  clearConflicts(), on a successful state write, ends the episode. */
 export function consumeConflictWarning() {
   try {
-    const { WRITE_CONFLICTS_LOG } = getPaths();
-    fs.renameSync(WRITE_CONFLICTS_LOG, `${WRITE_CONFLICTS_LOG}.prev`);
+    const { CONDUCTOR_DIR, WRITE_CONFLICTS_LATCH } = getPaths();
+    fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
+    fs.writeFileSync(WRITE_CONFLICTS_LATCH, `${new Date().toISOString()}\n`);
   } catch { /* observability only — never fail the run being observed */ }
 }

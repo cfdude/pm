@@ -226,8 +226,11 @@ test("rules block gains a GitHub issue sync section (gh issue list -> add-epic) 
   assert.match(md, /GitHub issue sync/);
   assert.match(md, /gh issue list --repo cfdude\/pm --state open/);
   assert.match(md, /externalId/);
-  assert.match(md, /add-epic --status untriaged/);
-  assert.match(md, /--lane claude-code/);
+  assert.match(md, /add-epic --id gh-cfdude-pm-<issue-number> .*--status untriaged/);
+  // The lane is no longer hardcoded — it comes from lane routing, with the recipe naming the
+  // source and permitting an override with a recorded reason.
+  assert.match(md, /--lane <lane>/);
+  assert.match(md, /suggest-lane/);
   assert.match(md, /--priority P2/);
 });
 
@@ -251,7 +254,10 @@ test("a github-issues tracker suppresses the outward External tracker sync secti
 test("a jira tracker keeps the outward External tracker sync section fully intact — bidirectional", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
-  run(["set-tracker", "--system", "jira", "--project", "JOB"], { cwd });
+  // `--direction outward` is now explicit: a NEW primary tracker defaults to `inward`, the
+  // deliberate reversal this release ships. What this test is about is the outward section's
+  // content, so it asks for the direction that section belongs to.
+  run(["set-tracker", "--system", "jira", "--project", "JOB", "--direction", "outward"], { cwd });
   const md = claudeMd(cwd);
   assert.match(md, /External tracker sync/);
   assert.match(md, /has no `externalId` → create the/);

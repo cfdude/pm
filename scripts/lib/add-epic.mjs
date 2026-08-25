@@ -6,22 +6,38 @@
 // here because that's where the "add-epic" comment section originally put them.
 
 import { activate } from "./active-pointer.mjs";
-import { isInitialized, loadState, saveState } from "./state.mjs";
+import { isInitialized, loadState, pushEpic, saveState } from "./state.mjs";
 import { render } from "./render.mjs";
-import { KNOWN_LANES, KNOWN_STATUSES } from "./constants.mjs";
+import { KNOWN_LANES, KNOWN_STATUSES, epicFlagsFor, repeatableEpicFlags } from "./constants.mjs";
+import { creationStamp } from "./disposition.mjs";
 
-// Flags that accumulate into an array across repeated `--flag value` occurrences,
-// shared by add-epic/add-many (--link), set-tracker (--intent), and set-autonomy
-// (--preauthorize/--context/--notify).
-const REPEATABLE_FLAGS = ["link", "intent", "preauthorize", "context", "notify", "add", "remove"];
+// Repeatable flags that belong to NO epic-writing command, and so cannot come from the shared
+// EPIC_FLAGS registry: --intent is set-tracker's, --preauthorize/--context/--notify are
+// set-autonomy's, --add/--remove are set-lane-routing's. parseFlags is shared by nearly every
+// subcommand, so the epic registry's repeatable entries are UNIONED with this list and never
+// substituted for it — replacing it would leave `set-tracker --intent a:b --intent c:d`
+// silently keeping only the second pair, with an exit code of 0.
+//
+// `link` is deliberately absent: it IS an epic flag, and it now carries `repeats: true` in the
+// registry, so it reaches parseFlags through the union like any flag a later capability adds.
+const REPEATABLE_NON_EPIC_FLAGS = ["intent", "preauthorize", "context", "notify", "add", "remove"];
+
+/** The full repeatable set — the non-epic list above UNIONed with every EPIC_FLAGS entry
+ *  marked `repeats: true`. Recomputed on every parseFlags() call rather than frozen at module
+ *  scope, so declaring `repeats: true` in the registry is the entire edit a capability makes;
+ *  this file never changes for it. */
+export const repeatableFlags = () =>
+  [...new Set([...REPEATABLE_NON_EPIC_FLAGS, ...repeatableEpicFlags()])];
+
 export function parseFlags(argv) {
   const o = {};
+  const repeatable = new Set(repeatableFlags());
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (!a.startsWith("--")) continue;
     const k = a.slice(2);
     const v = (argv[i + 1] !== undefined && !argv[i + 1].startsWith("--")) ? argv[++i] : true;
-    if (REPEATABLE_FLAGS.includes(k)) (o[k] || (o[k] = [])).push(v);
+    if (repeatable.has(k)) (o[k] || (o[k] = [])).push(v);
     else o[k] = v;
   }
   return o;
@@ -45,6 +61,18 @@ export function parseLinkFlags(raw, knownEpicIds) {
     const reason = rest.join(":").trim();
     return reason ? { type, epic, reason } : { type, epic };
   });
+}
+
+/** One `notes` entry: `{at, actor, text}`. APPEND-ONLY — every writer pushes, nothing rewrites
+ *  or drops an earlier entry, which is what keeps a note distinguishable from a `description`
+ *  (durable rationale, replaced when set again).
+ *
+ *  `actor` is RECORDED and not interpreted: a queued session-attribution capability owns what it
+ *  means. The engine has no way to know a human's identity, so every entry it writes today is
+ *  attributed to the agent that ran the command. Shared by add-epic and update-epic so the entry
+ *  shape has one definition. */
+export function noteEntry(text, actor = "agent") {
+  return { at: new Date().toISOString(), actor, text };
 }
 
 /** DFS cycle-path finder over a dependency map (id -> Set of ids it depends on), restricted
@@ -162,6 +190,19 @@ export function parentError(epics, id, parent) {
 export function addEpic() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const f = parseFlags(process.argv.slice(3));
+  // add-epic's FIRST allowlist. Until now it validated no flag surface at all: parseFlags read
+  // the flags the body happened to name and dropped every other one without a word, so
+  // `--notes "<text>"` parsed, exited 0 and wrote nothing (#79). That failure is invisible and
+  // the text is unrecoverable — it destroyed the whole payload of a batch of epics registered
+  // precisely so a later session would remember why they exist. Rejected BEFORE loadState(),
+  // so a refusal cannot leave a partial write behind.
+  const known = epicFlagsFor("add-epic");
+  const unknown = Object.keys(f).filter(k => !known.includes(k));
+  if (unknown.length) {
+    process.stderr.write(`conductor: add-epic: unknown flag(s) --${unknown.join(", --")} ` +
+      `(known: ${known.map(k => `--${k}`).join(", ")})\n`);
+    process.exit(1);
+  }
   const str = (v) => (typeof v === "string" ? v : undefined); // valueless flags arrive as boolean true
   const id = str(f.id);
   if (!id || !/^[a-z0-9][a-z0-9._-]*$/.test(id)) {
@@ -210,16 +251,43 @@ export function addEpic() {
     const perr = parentError(state.epics, id, parent);
     if (perr) { process.stderr.write(`conductor: ${perr}\n`); process.exit(1); }
   }
+  // `attributedCommits: []` is NOT written here. It is stamped by pushEpic() in state.mjs —
+  // the one sink every creation path routes through — because writing it at each construction
+  // site is precisely how `sync`'s two paths came to be missed.
   const epic = {
     id, title: str(f.title) || id, priority: str(f.priority) || "P?",
     status, role: "epic", lane, links, reconcileNeeded: false,
   };
+  // Created directly AT `archived`: stamp rather than refuse. Refusing would be the simpler
+  // rule, but the capability is in use — this repository's own suite creates archived epics to
+  // exercise parent rollup, and the archive backfill registers historical changes directly at
+  // `archived` by design. The stamp keeps the outcome invariant true without removing it.
+  // No `gateReview.gate2` entry, for the backfill's reason: the stamp already records exactly
+  // how the epic reached `archived`, while an `ungated` entry would add a permanent standing
+  // condition clearable only by a real Gate 2 of work that finished before the epic existed.
+  // Creation at any other status writes no disposition at all — nothing has ended.
+  if (status === "archived") epic.disposition = creationStamp("add-epic");
   if (str(f.plan)) epic.planPath = f.plan;
+  // A valueless `--description` / `--notes` arrives as boolean true and would otherwise be
+  // dropped by str() — exit-0-write-nothing, the exact shape of #79 the allowlist above was
+  // added to end. Refuse it instead.
+  for (const flag of ["description", "notes"]) {
+    if (f[flag] === true) {
+      process.stderr.write(`conductor: --${flag} requires a value\n`); process.exit(1);
+    }
+  }
+  if (str(f.description) !== undefined) epic.description = str(f.description);
+  if (str(f.notes) !== undefined) epic.notes = [noteEntry(str(f.notes))];
   if (parent !== undefined) epic.parent = parent;
   if (str(f["external-id"]) !== undefined) epic.externalId = str(f["external-id"]);
   if (str(f["external-url"]) !== undefined) epic.externalUrl = str(f["external-url"]);
-  state.epics.push(epic);
-  if (epic.status === "active") activate(state, id);   // keep .active in sync on creation
+  if (str(f["external-updated-at"]) !== undefined) epic.externalUpdatedAt = str(f["external-updated-at"]);
+  pushEpic(state, epic);
+  // keep .active in sync on creation. `freshlyRead` when this very command carried the item's
+  // updated timestamp: the agent just read it, so an immediate re-read obligation would be noise.
+  if (epic.status === "active") {
+    activate(state, id, { freshlyRead: str(f["external-updated-at"]) !== undefined });
+  }
   saveState(state);
   render();
   process.stderr.write(`conductor: added epic '${id}' (${lane}, ${status})\n`);

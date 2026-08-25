@@ -6,15 +6,16 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execSync } from "node:child_process";
-import { defaultState, isInitialized, loadState, saveState, readStdin } from "./state.mjs";
+import { defaultState, isInitialized, loadState, pushEpic, saveState, readStdin } from "./state.mjs";
 import { stampVersion } from "./plugin-meta.mjs";
 import { render } from "./render.mjs";
 import { writeRules } from "./rules.mjs";
 import { buildBrief } from "./briefing.mjs";
 import { appendDetourLog, gitShortSha } from "./git.mjs";
 import { detourContext } from "./links.mjs";
-import { activeChangeIds, firstHeading, planFiles, reconcileArchived } from "./epic-progress.mjs";
-import { ROOT, CONDUCTOR_DIR, BRIEF_PATH, PLANS_DIR } from "./constants.mjs";
+import { activeChangeIds, archivedChanges, firstHeading, planFiles, reconcileArchived, strippedChangeId } from "./epic-progress.mjs";
+import { engineStamp } from "./disposition.mjs";
+import { ROOT, CONDUCTOR_DIR, BRIEF_PATH, PLANS_DIR, anyInwardProcedureEmittable } from "./constants.mjs";
 import { resolveAndRecordPlatform } from "./platform.mjs";
 
 /** Ensure the conductor's GENERATED artifacts are git-ignored.
@@ -28,7 +29,15 @@ import { resolveAndRecordPlatform } from "./platform.mjs";
  *  state.json, render-stamp.json and PROJECT.md stay TRACKED: they are the state of record and
  *  the generated index, and both belong in git. */
 export function ensureGitignore() {
-  const wanted = [".conductor/detours.log", ".conductor/write-conflicts.log"];
+  const wanted = [
+    ".conductor/detours.log",
+    ".conductor/write-conflicts.log",
+    // The contention latch is engine-written too (write-conflicts.mjs). Left out, every
+    // pm-managed repo grows a permanently untracked file the moment writes contend — #106
+    // exactly, in the release that fixes #106's sibling. upgrade() re-runs this
+    // (migrations.mjs:71), so repos initialized before the latch existed pick it up.
+    ".conductor/write-conflicts.latch",
+  ];
   const giPath = path.join(ROOT, ".gitignore");
   let existing = "";
   try { existing = fs.readFileSync(giPath, "utf8"); } catch { /* absent is fine */ }
@@ -73,9 +82,13 @@ export function snapshot() {
   const state = loadState();
   render();
   fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
-  // consume: true — same reasoning as brief(): this briefing is delivered (written to
-  // .conductor/brief.txt ahead of compaction), not merely composed into PROJECT.md.
-  fs.writeFileSync(BRIEF_PATH, buildBrief(state, { consume: true }) + "\n");
+  // NO consume — the opposite of brief(). This briefing is written to .conductor/brief.txt,
+  // which NOTHING reads back, so consuming here retired the contention warning against a reader
+  // who never existed: a PreCompact landing between the threshold crossing and the next
+  // SessionStart showed the message to no one, and compaction is routine in exactly the long
+  // sessions where sustained contention is most likely. brief() is the only delivery point that
+  // reaches a session; render() already passes no consume and stays that way.
+  fs.writeFileSync(BRIEF_PATH, buildBrief(state) + "\n");
   process.stderr.write("conductor: snapshot written before compaction\n");
 }
 
@@ -221,6 +234,57 @@ export function commitNudge() {
   }));
 }
 
+/** Register every archived change on disk that the conductor does not already hold.
+ *
+ *  A change archived before `/pm:init` ever ran — or archived in a session where `sync` never
+ *  ran — was permanently invisible: `reconcileArchived()` only flips epics that ALREADY exist,
+ *  and `sync` only walked the active changes directory. So the record silently under-counted
+ *  exactly the work that finished, which is the reading a project-management tool exists to get
+ *  right.
+ *
+ *  Registration is `sync`'s job and stays there. A heal that registered would grow the epic list
+ *  from a read-mostly path (render, the commit hook) on every call, which is how an index comes
+ *  to change without anyone asking it to.
+ *
+ *  Returns the ids it registered, so the caller owns what is said about them.
+ */
+export function backfillArchive(state) {
+  // Identity is the DATE-PREFIX-STRIPPED id on both sides. An epic may itself carry a
+  // date-prefixed id (this repository holds four such registrations), so comparing the stripped
+  // archive id against the epic's literal id alone would miss it and register a duplicate —
+  // making this path a third way to produce the duplicates `sync` is already filed for.
+  const held = new Set();
+  for (const e of state.epics) { held.add(e.id); held.add(strippedChangeId(e.id)); }
+  const registered = [];
+  for (const { id } of archivedChanges()) {
+    if (held.has(id)) continue;
+    // Through pushEpic() like every other creation path, and exempted BY IT: the
+    // `archive-backfill` stamp below is what tells the sink to leave `attributedCommits`
+    // ABSENT. Absent is the truthful record here — this epic never passed through the
+    // conductor while it was in flight, so no verdict of its can be shown stale and none can
+    // be verified either. Do NOT "fix" this for uniformity with the other creation paths: an
+    // empty array would assert "created under commit attribution, nothing attributed yet",
+    // which is false for every backfilled change and converts the staleness gate's one
+    // forgiven case into a repo-wide false positive.
+    pushEpic(state, {
+      id, title: id, priority: "P?", status: "archived", role: "epic", lane: "openspec",
+      links: [], reconcileNeeded: false,
+      // The ENGINE stamps this, unconditionally and with no CLI flag that reaches it: a
+      // backfilled epic never passed through the conductor while it was in flight, and every
+      // exemption that keeps a check or a refusal from firing on it keys on this token.
+      disposition: engineStamp("archive-backfill"),
+      // Deliberately NO `gateReview.gate2`. An `ungated` entry here would be a permanent,
+      // unclearable condition against essentially every archived change — its only clearing
+      // path is a real passing Gate 2 carrying a commit range, which for a change archived
+      // before the conductor existed is either impossible or fabrication. Measured on this
+      // repository: 69 archived epics against 3 carrying a passing Gate 2.
+    });
+    held.add(id);
+    registered.push(id);
+  }
+  return registered;
+}
+
 export function sync(quiet = false) {
   const state = loadState();
   const onDiskChanges = new Set(activeChangeIds());
@@ -234,7 +298,7 @@ export function sync(quiet = false) {
   let added = 0;
   for (const id of activeChangeIds()) {
     if (!known.has(id)) {
-      state.epics.push({ id, title: id, priority: "P?", status: "untriaged", role: "epic", lane: "openspec", links: [], reconcileNeeded: false });
+      pushEpic(state, { id, title: id, priority: "P?", status: "untriaged", role: "epic", lane: "openspec", links: [], reconcileNeeded: false });
       known.add(id); added++;
     }
   }
@@ -246,12 +310,54 @@ export function sync(quiet = false) {
     }
     const planPath = path.join("docs", "superpowers", "plans", fname);
     const title = firstHeading(path.join(PLANS_DIR, fname)) || id;
-    state.epics.push({ id, title, priority: "P?", status: "untriaged", role: "epic", lane: "superpowers", planPath, links: [], reconcileNeeded: false });
+    pushEpic(state, { id, title, priority: "P?", status: "untriaged", role: "epic", lane: "superpowers", planPath, links: [], reconcileNeeded: false });
     known.add(id); added++;
   }
+  // EXEMPTION NOTE: registering a historical archived change does NOT go through archiveGate().
+  // Like the heal below and the two archived-at-creation paths, it supplies no disposition,
+  // receives no named receiver from anyone, and reflects a record rather than a judgment — so
+  // the outcome refusal, the deferral assertion and the handoff demand do not bind it.
+  // PRESENCE is the marker — nothing is ever compared against the timestamp. Read BEFORE the
+  // registration, because the registration is what decides whether there is anything to
+  // announce, and written after, so a run that registered nothing still records that history
+  // has been accounted for.
+  const firstBackfill = !("archiveBackfilledAt" in state);
+  const backfilled = backfillArchive(state);
+  if (firstBackfill) state.archiveBackfilledAt = new Date().toISOString();
   reconcileArchived(state);
   saveState(state);
-  if (!quiet) process.stderr.write(`conductor: synced (${added} new epic(s) added as untriaged)\n`);
+  // Said even under `quiet`, which init passes to suppress routine per-epic chatter. The
+  // historical backfill is the one thing here that MUST NOT be quiet: it alters a repo's epic
+  // counts, and those counts are the input to every effectiveness measurement taken from
+  // conductor state. A count that moved with nobody told is the silent side effect this
+  // capability is defined against.
+  if (backfilled.length) {
+    process.stderr.write(firstBackfill
+      ? `conductor: archive backfill — registered ${backfilled.length} historical archived ` +
+        `change(s) the conductor never held: ${backfilled.join(", ")}\n`
+      : `conductor: registered ${backfilled.length} newly archived change(s): ${backfilled.join(", ")}\n`);
+  }
+  if (!quiet) {
+    process.stderr.write(`conductor: synced (${added} new epic(s) added as untriaged)\n`);
+    // What sync instructs EXTERNALLY follows direction. The engine performs none of it — it
+    // reads no tracker and never will — but saying which branch applies is the difference
+    // between an agent doing the inward pull and an agent inventing one for a repo that has
+    // no procedure for it.
+    const tracker = state.tracker && state.tracker.system ? state.tracker : null;
+    const secondaries = Array.isArray(state.secondaryTrackers) ? state.secondaryTrackers : [];
+    if (anyInwardProcedureEmittable(tracker, secondaries)) {
+      process.stderr.write(
+        "conductor: inward tracker sync is YOURS — follow the inward sync section in the rules " +
+        "block: list open items, register the unmirrored ones (matching on `externalUrl`, never " +
+        "on a bare item number — the same number in two trackers is two different items), then " +
+        "compare each linked epic's `externalUpdatedAt` watermark against its item's updated " +
+        "timestamp and read the movers\n");
+    } else if (tracker || secondaries.length) {
+      process.stderr.write(
+        "conductor: no inward procedure is configured — registered local OpenSpec/Superpowers " +
+        "sources only; nothing was read from your tracker(s), and nothing should be\n");
+    }
+  }
 }
 
 export function logDetour() {

@@ -5,7 +5,8 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { ROOT, CHANGES_DIR, ARCHIVE_DIR, PLANS_DIR, laneRank } from "./constants.mjs";
+import { ROOT, CHANGES_DIR, ARCHIVE_DIR, PLANS_DIR, laneRank, isOpenspecLane } from "./constants.mjs";
+import { engineStamp, isArchiveBackfilled } from "./disposition.mjs";
 
 /** Active openspec change ids = subdirs of openspec/changes except `archive`. */
 export function activeChangeIds() {
@@ -45,6 +46,38 @@ export function firstHeading(absPath) {
   return null;
 }
 
+/** THE normalization every archive-identity question goes through: a change archived as
+ *  `<YYYY-MM-DD>-<id>` and one archived as `<id>` are the same change.
+ *
+ *  Exported rather than repeated because three separate questions ask it — does this epic's
+ *  change sit in the archive (`isArchived`), does this archive directory already have an epic
+ *  (the backfill), and are two epics the same change under different lanes (the integrity
+ *  check). Literal equality answers all three wrongly: measured on this repository, ZERO ids
+ *  collide literally while four changes are registered twice. */
+export const strippedChangeId = (name) => String(name).replace(/^\d{4}-\d{2}-\d{2}-/, "");
+
+/** Every directory under `openspec/changes/archive/`, as `{dir, id}` — `dir` as it sits on
+ *  disk, `id` normalized. */
+export function archivedChanges() {
+  try {
+    return fs.readdirSync(ARCHIVE_DIR, { withFileTypes: true })
+      .filter(d => d.isDirectory())
+      .map(d => ({ dir: d.name, id: strippedChangeId(d.name) }));
+  } catch { return []; }
+}
+
+/** Where an archived change's task source actually sits, or a path that does not exist.
+ *
+ *  `CHANGES_DIR/<id>/tasks.md` cannot exist once a change is archived — openspec MOVES the
+ *  directory — so a consumer that needs the counts has to look where the file went. Both archive
+ *  namings are tried, the same two `isArchived()` matches. */
+export function archivedTasksPath(id) {
+  const exact = path.join(ARCHIVE_DIR, id, "tasks.md");
+  if (fs.existsSync(exact)) return exact;
+  const hit = archivedChanges().find(c => c.id === strippedChangeId(id));
+  return hit ? path.join(ARCHIVE_DIR, hit.dir, "tasks.md") : exact;
+}
+
 /** Archived-change detection. OpenSpec archives a change as `archive/<YYYY-MM-DD>-<id>`,
  *  so an exact-name check misses it. Match the exact id (older/manual) OR a date-prefixed dir. */
 export function isArchived(id) {
@@ -67,7 +100,31 @@ export function isArchived(id) {
 export function reconcileArchived(state) {
   let changed = false;
   for (const e of state.epics) {
-    if (e.status !== "archived" && isArchived(e.id)) { e.status = "archived"; changed = true; }
+    if (e.status !== "archived" && isArchived(e.id)) {
+      e.status = "archived";
+      // ONE record for the transition, whose TWO HALVES BIND DIFFERENT SETS OF EPICS. Written
+      // together on purpose: two independent writes are exactly what produces an epic carrying
+      // the bypass and not the outcome.
+      //
+      // The DISPOSITION half binds EVERY LANE — the outcome invariant admits no lane
+      // exception, and this function reaches epics of every lane (65 of this repository's 68
+      // archived epics are not openspec-lane). `recordedBy` is a FIELD, not prose in the
+      // reason: a consumer keys on data, never on parsing a path name out of free text.
+      if (!e.disposition) e.disposition = engineStamp("archive-drift-heal");
+      // The BYPASS half binds OPENSPEC-LANE EPICS ONLY, through isOpenspecLane so a lane-less
+      // epic — openspec-lane on every other surface — gets the record its rendering says it
+      // owes. `record-gate-review` refuses a verdict to any other lane, so an `ungated` entry
+      // on a claude-code or superpowers epic would be a standing condition with NO clearing
+      // path in the engine at all. No `reviewer` field: that carries an identity, and an audit
+      // query over reviewers must never pick up path names.
+      if (isOpenspecLane(e) && !(e.gateReview && e.gateReview.gate2)) {
+        e.gateReview = e.gateReview && typeof e.gateReview === "object" ? e.gateReview : {};
+        e.gateReview.gate2 = {
+          verdict: "ungated", reviewedAt: new Date().toISOString(), recordedBy: "archive-drift-heal",
+        };
+      }
+      changed = true;
+    }
   }
   if (state.active) {
     const a = state.epics.find(e => e.id === state.active);
@@ -101,18 +158,51 @@ export function reconcileArchived(state) {
   return changed;
 }
 
-/** Count [ ] / [x] checkboxes in a markdown file. */
+/** The one literal that declares a task to be lifecycle bookkeeping rather than delivery.
+ *  Chosen so it renders invisibly in markdown and so a test binds to it exactly.
+ *
+ *  THE JUDGMENT IS THE AGENT'S. The engine excludes exactly the tasks whose OWN LINE carries
+ *  this literal, and infers exclusion from nothing else — not a task's wording, not the
+ *  commands its text names, not its position in the file, not a marker on a following line.
+ *
+ *  The error direction is the whole argument. An undeclared bookkeeping task keeps counting as
+ *  outstanding, which is today's behavior and is visible in the rendered record. A text
+ *  matcher fails the other way: it cannot tell `run /opsx:archive <this change>` from a real
+ *  task that implements archiving, and a false exclusion silently under-reports outstanding
+ *  work — the exact over-reporting of completion this release exists to correct.
+ *
+ *  PLAN_INDEX_FILES above is this file's own precedent: it excludes against an enumerable
+ *  literal precisely to avoid reading inside a file to decide what it means. */
+export const LIFECYCLE_MARKER = "<!-- pm:lifecycle -->";
+
+/** Count [ ] / [x] checkboxes in a markdown file, excluding declared lifecycle bookkeeping.
+ *
+ *  An excluded task leaves BOTH the numerator and the denominator — `12/13` where the
+ *  thirteenth is a declared archive instruction becomes `12/12`, never `12/13` with a hidden
+ *  adjustment — so an epic's rendered progress and its outstanding-work count can never
+ *  disagree. `excluded` is reported so a caller can say how many were left out.
+ *
+ *  Exclusion does NOT depend on the checkbox state: a marked task is out whether ticked or
+ *  not. Depending on it would move the count at the instant the marked task is ticked, which
+ *  is exactly the silent drift this definition exists to prevent. */
 export function countCheckboxes(absPath) {
-  let total = 0, done = 0, exists = false;
+  let total = 0, done = 0, excluded = 0, exists = false;
   try {
     const txt = fs.readFileSync(absPath, "utf8");
     exists = true;
     for (const line of txt.split("\n")) {
       const m = line.match(/^\s*[-*]\s+\[([ xX])\]/);
-      if (m) { total++; if (m[1].toLowerCase() === "x") done++; }
+      if (!m) continue;
+      // A task that DOCUMENTS the marker must not be excluded by it. Found by dogfooding:
+      // this change's own tasks.md names `<!-- pm:lifecycle -->` inside backticks on six task
+      // lines that are real delivery work, and only one line actually declares. Counting those
+      // would have under-reported outstanding work by six and made the release's own self-check
+      // pass falsely. A marker inside a code span is a mention, not a declaration.
+      if (line.replace(/`[^`]*`/g, "").includes(LIFECYCLE_MARKER)) { excluded++; continue; }
+      total++; if (m[1].toLowerCase() === "x") done++;
     }
   } catch { /* missing file */ }
-  return { done, total, exists };
+  return { done, total, excluded, exists };
 }
 
 /** Resolve an epic's progress by precedence: stories -> planPath -> openspec tasks.md -> none.
@@ -122,6 +212,12 @@ export function countCheckboxes(absPath) {
  *  empty". Collapsing three states into one glyph is how a dangling pointer hides: an openspec
  *  epic whose tasks.md moved rendered exactly like a decision-lane epic that never had one.
  *  Both branches below therefore warn, and `bar()` renders `⚠ <warn>` in PROJECT.md and the brief.
+ *
+ *  `exists` from countCheckboxes() — never `total > 0` — is the missing-source discriminator.
+ *  Excluding tasks must not collapse a real source into the no-source state: an epic whose
+ *  every task carries the lifecycle marker still HAS a source, reads `0/0` legitimately, and
+ *  must not warn. A `total > 0` test would fold it back into the missing case, reintroducing
+ *  the three-states-into-one-glyph confusion the warning was added to end.
  *
  *  ARCHIVED epics are exempt. Archiving is precisely when a source legitimately goes away —
  *  openspec removes `changes/<id>/`, and the documented convention for finished plans is to move
@@ -135,23 +231,53 @@ export function epicProgress(epic) {
   if (Array.isArray(epic.stories)) {
     const total = epic.stories.length;
     const done = epic.stories.filter(s => s && s.done).length;
-    return { done, total, source: "stories", warn: null };
+    // Inline stories carry no task source and so no markers — `excluded` is 0, never
+    // undefined, so every consumer reads the same shape whichever branch produced it.
+    return { done, total, excluded: 0, source: "stories", warn: null };
   }
   if (epic.planPath) {
     const c = countCheckboxes(path.join(ROOT, epic.planPath));
     if (!c.exists) {
-      return { done: 0, total: 0, source: "plan", warn: archived ? null : "planPath missing" };
+      return { done: 0, total: 0, excluded: 0, source: "plan", warn: archived ? null : "planPath missing" };
     }
-    return { done: c.done, total: c.total, source: "plan", warn: null };
+    return { done: c.done, total: c.total, excluded: c.excluded, source: "plan", warn: null };
   }
   if ((epic.lane || "openspec") === "openspec") {
     const c = countCheckboxes(path.join(CHANGES_DIR, epic.id, "tasks.md"));
     if (!c.exists) {
-      return { done: 0, total: 0, source: "openspec", warn: archived ? null : "tasks.md missing" };
+      // A BACKFILLED epic reads its counts from the archived artifacts. It never passed through
+      // the conductor while it was in flight, so `0/0` here is not "a managed epic whose source
+      // legitimately moved" — it is the evidence being discarded at the moment it is registered.
+      // A change archived with 12 of its tasks unticked is the most informative row in an audit,
+      // and preserving the row while throwing away the counts preserves nothing.
+      //
+      // Deliberately SCOPED to the backfill rather than applied to every archived epic.
+      // `archiveGate()` documents that outstanding work "reads zero for an archived epic whose
+      // source is gone" and the interactive verb's handoff demand rests on that; reading archived
+      // artifacts for every archived epic would move a quantity out from under a gate written
+      // against it. The stamp is exactly what the spec says it is for — telling a record
+      // reconstructed from disk apart from one the conductor managed.
+      const a = isArchiveBackfilled(epic) ? countCheckboxes(archivedTasksPath(epic.id)) : { exists: false };
+      if (a.exists) return { done: a.done, total: a.total, excluded: a.excluded, source: "openspec", warn: null };
+      return { done: 0, total: 0, excluded: 0, source: "openspec", warn: archived ? null : "tasks.md missing" };
     }
-    return { done: c.done, total: c.total, source: "openspec", warn: null };
+    return { done: c.done, total: c.total, excluded: c.excluded, source: "openspec", warn: null };
   }
-  return { done: 0, total: 0, source: "none", warn: null };
+  return { done: 0, total: 0, excluded: 0, source: "none", warn: null };
+}
+
+/** THE definition of an epic's OUTSTANDING WORK, and the only counter. Every consumer keys on
+ *  it rather than counting raw checkboxes for itself — the rendered project record, the
+ *  briefing, `/pm:next`, and every guard in this release that refuses because work remains.
+ *
+ *  A thin reader over epicProgress() on purpose: the guard's number and the rendered bar come
+ *  out of the same call, so a refusal can never cite a count the record does not show. That
+ *  divergence is the defect — the archive instruction in a change's own task list is unticked
+ *  at archive time by construction, and a guard counting raw checkboxes would refuse every
+ *  correctly finished change. */
+export function outstandingWork(epic) {
+  const p = epicProgress(epic);
+  return Math.max(0, p.total - p.done);
 }
 
 /** Merge state metadata with what's actually on disk. */
@@ -190,7 +316,7 @@ export function resolveEpics(state) {
  *  no change on disk BY DESIGN and it must never show the warning, regardless of whether the
  *  on-disk archive-dir naming convention still matches. */
 export function missing(e) {
-  return e.lane === "openspec" && !e.present && !isArchived(e.id) &&
+  return isOpenspecLane(e) && !e.present && !isArchived(e.id) &&
     e.status !== "planned" && e.status !== "archived";
 }
 
@@ -234,9 +360,21 @@ export function orderQueueWithDependencies(sorted) {
   return { ordered, notes };
 }
 
+/** The ONE wording every surface uses to say what a progress figure is. Exported rather than
+ *  written out three times so PROJECT.md, the brief and `/pm:next` cannot drift apart; the
+ *  command document carries the same literal, and a test holds all three to it.
+ *
+ *  Nothing here verifies a claim — verification is the gates' job, and any consumer treating a
+ *  progress figure as evidence of delivery is out of contract. */
+export const CLAIMED_COMPLETION_NOTE =
+  "Progress is claimed completion — ticked checkboxes, not verified delivery.";
+
 export function bar(p) {
   if (!p) return "—";
   if (p.warn) return `⚠ ${p.warn}`;
-  if (p.total > 0) return `${p.done}/${p.total} ${p.source === "plan" ? "tasks" : "stories"}`;
-  return "—";
+  // Declared lifecycle bookkeeping left both sides of the ratio, so say how many — otherwise
+  // a denominator that moved from 13 to 12 looks like a task went missing.
+  const lifecycle = p.excluded ? ` · ${p.excluded} lifecycle` : "";
+  if (p.total > 0) return `${p.done}/${p.total} ${p.source === "plan" ? "tasks" : "stories"}${lifecycle}`;
+  return p.excluded ? `0/0${lifecycle}` : "—";
 }

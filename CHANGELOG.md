@@ -8,6 +8,166 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.27.0] — 2026-08-25
+
+**The conductor tells the truth.** A retrospective delivery audit of 49 archived OpenSpec epics
+across 8 repositories found that the conductor's records were wrong and its guards did not fire:
+**42 of 49 epics archived with `gateReview: null`** — by following the documented `/opsx:archive`
+workflow, because Gate 2 was enforced by `update-epic` and bypassed by the archive hook — and
+`sync` never walked `openspec/changes/archive/`, so the conductor saw **49 of 87 archived changes
+(56%)**. Every number this project has published about its own effectiveness was computed from
+those records. This release makes them true: 20 issues, 6 specs, 59 requirements, 115 tasks.
+
+### Added
+
+- **`integrity` — a read-only audit of the conductor's own record.** Ten checks over
+  `state.json`, each one a shape that cannot be true: an archived epic with zero ticked tasks; a
+  gate verdict whose note cites commits its recorded range does not contain; an epic archived with
+  an `ungated` Gate 2; a `delivered` epic with a passing Gate 2 that attributed no commits; an
+  archived openspec epic with no Gate 1; an archive directory the conductor holds no epic for; an
+  epic the heal archived that reads `unknown` while carrying a passing Gate 2; a gate verdict
+  recorded as bookkeeping rather than review; one change id registered under two lanes; a dangling
+  epic reference. **It reports and never
+  repairs** — a check that repaired would be a second writer racing the paths that produce the
+  records it reads, and one that blocked would turn an audit finding into an outage. Every check
+  that finds nothing still says it ran, because "the check measured nothing" is exactly the
+  failure this release exists to end.
+- **`release` — a release is a first-class object.** `state.releases[{id, intent, target,
+  deferred[]}]`, with membership recorded one-way as `epic.release` so the two can never disagree.
+  A deliberate exclusion is recorded in `deferred[]` with its required reason and the excluded
+  epic stays in the backlog rather than being ended. `PROJECT.md` and the brief render
+  `<release>: N epics, M deferred`.
+- **`record-tracker-refresh <epicId> --verdict unchanged|material-change --external-updated-at
+  <iso> [--summary "<what>"]`** — records the verdict that clears a tracker-linked epic's refresh
+  obligation and advances its freshness watermark.
+- **Terminal dispositions with a required reason, at four scopes.** An epic ends by recording
+  `--outcome delivered|killed|superseded|abandoned --reason "<why>"`, never by deletion. The same
+  concept covers a **deferral** recorded in a design doc, a **handoff** of unfinished work
+  (`--carried-to <epicId>`), and a **release exclusion**. A change dropped at Gate 1 for a good
+  reason used to record byte-identically to one that shipped.
+- **A deferral assertion is required at archive time** — `--deferral "<epicId>:<section>"`,
+  `--declined-deferral "<what>:<why not>"`, or the explicit `--no-deferrals`. The engine does not
+  read your artifacts and will not guess; an absence you never looked for is indistinguishable
+  from an absence you confirmed.
+- **Gate verdicts carry checkable evidence.** `record-gate-review` gains `--base-sha`,
+  `--head-sha` and `--reviewer`, stored as fields. A verdict whose recorded head does not reach
+  the commits the epic attributed to itself now reads **stale** and refuses the archive. `gate1`
+  acquires a reader — it was previously stored, documented, and consumed by nothing.
+- **Commit attribution** — `update-epic <id> --attribute-commit <sha>`, repeatable and
+  append-only. The engine infers attribution from nothing: not the files a commit touches, not an
+  epic id in a message. **One exclusion:** the commit that moves `openspec/changes/<id>/` under
+  `archive/` must not be attributed, or the epic's own Gate 2 goes stale at the instant the
+  archive gate reads it.
+- **Epic annotation** — `--description` (durable rationale, replaced wholesale), `--notes`
+  (append-only trail that reads as activity), and `--clear-links` as the named way to empty the
+  links array. Stories used to be the only free-text carrier, which is why four epics archived
+  with "incomplete" stories that were actually completion notes.
+- **`sync` reconciles `openspec/changes/archive/`**, registering an unknown archived change as an
+  epic already in `archived` status. The backfill is a visible, announced, one-time action marked
+  by `archiveBackfilledAt` — never a silent side effect.
+- **The gate procedure pm emits gains five required task items**, not prose bullets: the
+  call-site completeness sweep, commit-based verification, the lifecycle-marker declaration,
+  commit attribution, and ending work by recording a disposition. Measured in the audit: a rule
+  carried by a mandatory task section reached **14/14** adoption in subsequent changes; the same
+  rule as a prose bullet reached **3/15**.
+- **`<!-- pm:lifecycle -->`** — an agent-declared marker on a task line that excludes lifecycle
+  bookkeeping from progress. A task reading "run `/opsx:archive <this change>`" cannot be ticked
+  before the thing that ticks it, and used to render as outstanding work forever.
+
+### Changed
+
+- **BREAKING — tracker `direction` replaces direction-by-vendor.** Every tracker carries
+  `inward`, `outward` or `both`, set with `set-tracker --direction <d>` and read by every
+  emitter. Direction is no longer inferred from the vendor name at any site. `rules.mjs` used to
+  suppress the outward section with a literal `sys !== "github-issues"` test while `briefing.mjs`
+  emitted outward drift gated only on a tracker existing, so a repo could receive a `CLAUDE.md`
+  with no outward instructions and a brief demanding outward action for 29 epics.
+- **BREAKING — a NEW primary tracker with no `--direction` now defaults to `inward`,
+  regardless of vendor.** This reverses today's outcome for a newly registered non-`github-issues`
+  tracker: `set-tracker --system jira …` used to produce the outward mirror section and now
+  produces the inward one. Outward creation of issues in someone else's tracker is the
+  consequential default and must be chosen, not inherited. **One-line remedy:**
+  `set-tracker --system jira --direction outward`. **Existing repos are unaffected** — the
+  migration stamps the direction each tracker already behaves with, and an un-migrated repo's
+  fallback resolves to the same values.
+- **BREAKING — the archive transition is gated on every path, not just `update-epic`.**
+  `reconcileArchived()` used to flip an epic to `archived` with no lane check and no gate check;
+  the rule now binds the function wherever it is invoked — `upgrade`, `render`, the commit nudge
+  and `sync`. An archive that today succeeds silently will either refuse, or record how it
+  bypassed (`gateReview.gate2.verdict: "ungated"`, a standing condition that clears only when a
+  real passing verdict supersedes it).
+- **BREAKING — an epic that ends carries a disposition.** An openspec-lane epic cannot be
+  archived as `delivered` without a passing, non-stale Gate 2; `killed`, `superseded` and
+  `abandoned` are exempt by design, because the code was never written or was thrown away, and
+  demanding a verdict there would make those outcomes recordable only by fabricating one.
+- **Three deliberate changes to what pm emits for existing repos.** Diffing 0.27.0 output
+  against 0.26.0 will show exactly these three and nothing else; treat a fourth as a regression.
+  1. The "Sync after completing tracker-linked work" reminder leaves the rules block where no
+     inward procedure is emitted — it used to cite "the writeback steps above" that the same
+     block never emitted.
+  2. The `N tracker(s) configured — consider /pm:sync` nudge leaves the brief for outward-only
+     repos, for the same reason.
+  3. Progress renders `· N lifecycle` where tasks are lifecycle-excluded, and `0/0 · N lifecycle`
+     where `—` used to appear if every task is excluded.
+- **`update-epic` gains `--lane` and `--plan`.** A mis-routed epic used to be correctable in
+  exactly one way — remove it and register it again — which discarded its start time, its gate
+  verdicts, its links and its stories. A misplaced `--id <x>` is now answered by name instead of
+  with a bare usage dump.
+- **The emitted inward-sync recipe runs as written.** It used to instruct `add-epic` without the
+  required `--id`; two independent sessions hit it the same afternoon and each silently invented a
+  slug. The recipe now carries a deterministic derived id, so a re-run is refused as a duplicate
+  rather than creating a second epic. Lane at mirror time comes from `suggest-lane` instead of a
+  hardcoded `--lane claude-code`.
+- **The write-conflict warning latches instead of sampling `count === 3`.** A burst past the
+  threshold between two briefings warned zero times — so the warning was least likely to fire in
+  exactly the wedged-writer scenario it exists for. `snapshot()` also stops consuming the warning
+  into a file nothing reads back.
+- **One shared flag registry.** `EPIC_FLAGS` in `constants.mjs` is the single declaration of the
+  flag surface every epic-writing command shares; `update-epic`'s allowlist, `add-epic`'s
+  repeatable set and `add-many`'s permitted keys are all projections of it.
+
+### Fixed
+
+- `#71`, `#79`, `#80`, `#88`, `#102`, `#103`, `#107`, `#109`, `#110`, `#113`, `#115`, `#116`,
+  `#117`, `#118`, `#119`, `#120`, `#121`, `#122`, `#124`, and the minimum slice of `#125`.
+- **Partially resolved and deliberately left open:** `#66` (`update-epic` gains `--lane` and
+  `--plan`; its `--link` complaint is covered only as far as `epic-annotation` reaches) and `#114`
+  (mirrored items are routed instead of hardcoded, but the routing *decision* still weighs no
+  product or milestone context). Both reasons are recorded in the `0.27.0` release object's
+  `deferred[]`, in this repository's own `state.json`.
+
+### Migration — `0.27.0`
+
+One `MIGRATIONS` entry, additive, idempotent, backward-compatible; a `state.json` written by
+0.26.0 still loads. It stamps two things and reads nothing outside `state`:
+
+| Existing | Stamped | Preserves |
+|---|---|---|
+| `github-issues` primary | `direction: inward` | inward pull; outward stays suppressed |
+| any other primary | `direction: outward` | outward create + transition; **no** inward pull is introduced |
+| any secondary entry | `direction: inward` | inward pull + completion writeback, never outward creation |
+
+Every **archived** epic is stamped with a terminal outcome regardless of lane — `delivered` only
+where a passing Gate 2 exists, `unknown` everywhere else, both carrying `recordedBy: "migration"`.
+Lane-scoping this would be wrong on measured data: of this repository's 69 archived epics only 3
+are openspec-lane, so stamping one lane would leave 66 with no outcome and the outcome invariant
+would fail on pm's own repository the instant the migration ran. An explicitly set value is never
+overwritten, so a second `/pm:upgrade` is a no-op.
+
+### Upgrading — what to expect on the first run
+
+Update the plugin → `/reload-plugins` (or restart) → `/pm:upgrade` in each repo.
+
+**Expect a burst of `heal-archived-epic-passed-gate-2` findings the first time you run
+`/pm:integrity`.** Every repo that followed the documented `/opsx:archive` → heal flow lands on
+`outcome: unknown` rather than `delivered`: the migration only stamps epics already `archived` in
+state, and the heal flips the rest *afterwards*, so they miss it by one step. Across the ~22 repos
+running pm this will be the common shape, and it is **expected, not a bug**. The integrity check
+reports each one with the exact remedy —
+`update-epic <id> --status archived --outcome delivered --no-deferrals` — and the archive gate's
+replacement rule accepts an agent correcting an engine stamp, so the fix is one command per epic
+and nothing is frozen at `unknown`.
+
 ## [0.26.0] — 2026-08-18
 
 ### Added

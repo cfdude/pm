@@ -5,13 +5,15 @@
 
 import fs from "node:fs";
 import { loadState, saveState, readJSON } from "./state.mjs";
-import { reconcileArchived, resolveEpics, bar, missing } from "./epic-progress.mjs";
+import { reconcileArchived, resolveEpics, bar, missing, CLAIMED_COMPLETION_NOTE } from "./epic-progress.mjs";
 import { buildBrief } from "./briefing.mjs";
 import { staleMarker } from "./active-pointer.mjs";
 import { getAutonomy } from "./autonomy.mjs";
 import { parseFlags } from "./add-epic.mjs";
 import { validLink } from "./links.mjs";
-import { DETOURS_LOG, PROJECT_MD, STATE_PATH, RENDER_STAMP_PATH, CONDUCTOR_DIR } from "./constants.mjs";
+import { outcomeOf, recordedDispositions } from "./disposition.mjs";
+import { stalenessMarking } from "./archive-gate.mjs";
+import { DETOURS_LOG, PROJECT_MD, STATE_PATH, RENDER_STAMP_PATH, CONDUCTOR_DIR, gateSummary, releaseLine, releaseSummaries } from "./constants.mjs";
 
 export function render() {
   const state = loadState();
@@ -55,6 +57,11 @@ export function render() {
       md.push("");
       md.push("⚠ **Reconcile pending** — re-validate this proposal before continuing.");
     }
+    if (active.trackerRefreshNeeded) {
+      md.push("");
+      md.push(`⚠ **Tracker refresh owed** — re-read \`${active.externalUrl || active.externalId}\` ` +
+        "before drawing specs or a plan, then record the verdict with `record-tracker-refresh`.");
+    }
   } else if (activeEpic && activeEpic.status === "archived") {
     md.push(`_\`${activeEpic.id}\` was archived; the active pointer clears on next \`/pm:sync\` or commit._`);
   } else {
@@ -77,6 +84,8 @@ export function render() {
 
   md.push("## Epics");
   md.push("");
+  md.push(`> ${CLAIMED_COMPLETION_NOTE}`);
+  md.push("");
   md.push("| Priority | Epic | Lane | Role | Status | Progress | Links |");
   md.push("|----------|------|------|------|--------|----------|-------|");
   // Render as a tree: roots in resolveEpics() order, each followed by its
@@ -84,8 +93,20 @@ export function render() {
   // resolveEpics() sort that buildBrief()/NEXT UP rely on.
   const byId = new Map(epics.map(e => [e.id, e]));
   const childrenOf = (id) => epics.filter(e => e.parent === id);
+  // The handoff renders on BOTH ends — the archiving epic shows it carried work out, the
+  // receiving epic shows what it inherited. Built from the dispositions themselves, using the
+  // existing free-form link vocabulary and no new link type.
+  const inherited = new Map();
+  for (const e of epics) {
+    const to = e.disposition && e.disposition.carriedTo;
+    if (to) inherited.set(to, [...(inherited.get(to) || []), e.id]);
+  }
   const epicRow = (e, depth) => {
-    const links = (e.links || []).filter(validLink).map(l => `${l.type}→${l.epic}`).join("; ") || "-";
+    const carriedOut = e.disposition && e.disposition.carriedTo
+      ? [`carried-to→${e.disposition.carriedTo}`] : [];
+    const carriedIn = (inherited.get(e.id) || []).map(from => `carried-from←${from}`);
+    const links = [...(e.links || []).filter(validLink).map(l => `${l.type}→${l.epic}`),
+      ...carriedOut, ...carriedIn].join("; ") || "-";
     const miss = missing(e) ? " ⚠ no change on disk" : "";
     const indent = depth > 0 ? "└─ ".repeat(depth) : "";
     const kids = childrenOf(e.id);
@@ -96,7 +117,10 @@ export function render() {
       progress = progress === "—" ? rollup : `${rollup} · ${progress}`;
     }
     const autonomous = getAutonomy(e).level === "autonomous" ? " 🤖" : "";
-    md.push(`| ${e.priority} | ${indent}\`${e.id}\` | ${e.lane} | ${e.role} | ${e.status}${e.reconcileNeeded ? " ⚠" : ""}${miss}${autonomous}${staleMarker(e)} | ${progress} | ${links} |`);
+    // The recorded outcome sits beside the status, never replacing it: an epic is still
+    // `archived`, and `outcome` is a distinct field rather than a new status value.
+    const outcome = e.disposition ? ` · ${outcomeOf(e)}` : "";
+    md.push(`| ${e.priority} | ${indent}\`${e.id}\` | ${e.lane} | ${e.role} | ${e.status}${outcome}${e.reconcileNeeded ? " ⚠" : ""}${miss}${autonomous}${staleMarker(e)} | ${progress} | ${links} |`);
   };
   const seen = new Set();
   const emit = (e, depth) => {
@@ -108,6 +132,99 @@ export function render() {
   for (const e of epics) if (!e.parent || !byId.has(e.parent)) emit(e, 0);
   for (const e of epics) if (!seen.has(e.id)) emit(e, 0);   // orphaned by a cycle → render flat
   md.push("");
+
+  // Backlog — the epics registered for LATER, with their title and their rationale. The Epics
+  // table above carries an id, a lane, a status and a progress bar; it carries neither a title
+  // nor a word of why an epic exists. That is survivable for work in flight, whose reason is in
+  // the session that is doing it, and it is not survivable for backlog: an epic registered
+  // months ago against a rationale nobody wrote down is an id, and re-deciding it costs the
+  // whole judgment again. `description` is durable rationale by definition (replaced when set
+  // again, never appended to), so this is the surface it exists for.
+  //
+  // Rendered in resolveEpics() order, so it agrees with the table above rather than inventing a
+  // second ordering. Omitted entirely when there is no backlog — an empty section is noise.
+  const backlog = epics.filter(e => e.status === "later" || e.status === "planned");
+  if (backlog.length) {
+    md.push("## Backlog");
+    md.push("");
+    md.push("> Registered for later, with the rationale that justified registering it.");
+    md.push("");
+    for (const e of backlog) {
+      const why = e.description ? ` — ${e.description}` : "";
+      md.push(`- \`${e.id}\` (${e.priority}, ${e.lane}, ${e.status}) — ${e.title}${why}`);
+    }
+    md.push("");
+  }
+
+  // Releases — what each one is for, what is in it, and what was deliberately cut, with the
+  // reason. Rendered from the SAME releaseSummaries() the briefing reads, so the two surfaces
+  // cannot report different counts for one release. Omitted entirely where no release has been
+  // declared: a repo that does not plan in releases gets no empty heading.
+  //
+  // The exclusions are enumerated here rather than only counted, because PROJECT.md is this
+  // record's enumeration surface (the Backlog and Dispositions sections above make the same
+  // choice) and a count with no reason beside it is the transcript-only judgment this exists to
+  // replace.
+  const releases = releaseSummaries(state, epics);
+  if (releases.length) {
+    md.push("## Releases");
+    md.push("");
+    md.push("> What each release is for, what is in it, and what was deliberately cut — with the reason.");
+    md.push("");
+    for (const r of releases) {
+      const target = r.target ? ` (target: ${r.target})` : "";
+      const intent = r.intent ? ` — ${r.intent}` : "";
+      md.push(`- ${releaseLine(r)}${intent}${target}`);
+      for (const d of r.deferred) {
+        md.push(`  - deferred \`${d.epic}\` — ${d.reason}${d.recordedAt ? ` (${d.recordedAt.slice(0, 10)})` : ""}`);
+      }
+    }
+    md.push("");
+  }
+
+  // Dispositions carrying a judgment — the outcome, the reason and when it was recorded, read
+  // from state.json and from nothing else. An `unknown` stamp with no reason is deliberately
+  // absent: it says nothing the status column has not already said, and 66 such rows on this
+  // repository alone is how a reader learns to skip the section.
+  const dispositions = recordedDispositions(epics);
+  if (dispositions.length) {
+    md.push("## Dispositions");
+    md.push("");
+    md.push("| Epic | Outcome | Recorded | Why |");
+    md.push("|------|---------|----------|-----|");
+    for (const { epic, disposition: d } of dispositions) {
+      const why = (d.reason || "—").replace(/\|/g, "\\|");
+      const carried = d.carriedTo ? ` (carried to \`${d.carriedTo}\`)` : "";
+      md.push(`| \`${epic.id}\` | ${outcomeOf(epic)} | ${d.recordedAt || "—"} | ${why}${carried} |`);
+    }
+    md.push("");
+  }
+
+  // Gate reviews, read from state.json. Before this, the ONLY consumer of `gateReview`
+  // anywhere in the engine was the archive guard reading `gate2` — a verdict was recorded,
+  // documented in the skill, and displayed nowhere, so 42 of 49 audited archives reached
+  // `archived` with nothing showing that no review had happened.
+  // Gate 1 is shown beside Gate 2 rather than only Gate 2. It was stored, documented in the
+  // `conductor` skill, and read by NOTHING — the sole consumer of `gateReview` anywhere in the
+  // engine was the archive guard's `gate2` test — so a spec review that never happened looked
+  // exactly like one that did. Its absence is a reported condition, never a refusal: Gate 1
+  // gates code, and by archive time the code is already written.
+  const gated = epics.filter(e => e.gateReview && (e.gateReview.gate1 || e.gateReview.gate2));
+  if (gated.length) {
+    md.push("## Gate reviews");
+    md.push("");
+    md.push("| Epic | Gate 1 (spec) | Gate 2 (implementation) |");
+    md.push("|------|---------------|-------------------------|");
+    for (const e of gated) {
+      // The staleness predicate is IMPORTED, never re-derived: a verdict that refuses an
+      // archive and a verdict that renders as a pass would otherwise be able to disagree.
+      // Three no-attribution states render three ways — absent is unverifiable, present-and-
+      // empty says nothing was attributed, and an unavailable git is unverifiable too.
+      md.push(`| \`${e.id}\` | ${gateSummary(e.gateReview.gate1, stalenessMarking(e, e.gateReview.gate1))} ` +
+        `| ${gateSummary(e.gateReview.gate2, stalenessMarking(e, e.gateReview.gate2))} |`);
+    }
+    md.push("");
+  }
 
   md.push("## Recent detours");
   md.push("");

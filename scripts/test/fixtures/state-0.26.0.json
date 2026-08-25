@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "active": null,
+  "epics": [
+    {
+      "id": "shipped-change",
+      "title": "A change that shipped under 0.26.0",
+      "priority": "P1",
+      "status": "archived",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [],
+      "reconcileNeeded": false,
+      "completedAt": "2026-08-01T12:00:00.000Z",
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-08-01T11:40:00.000Z",
+          "note": "fresh-context whole-branch review; no Critical, 1 Important fixed"
+        }
+      }
+    },
+    {
+      "id": "abandoned-plan",
+      "title": "A superpowers plan that stopped",
+      "priority": "P2",
+      "status": "archived",
+      "role": "epic",
+      "lane": "superpowers",
+      "planPath": "docs/superpowers/plans/abandoned-plan.md",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "still-queued",
+      "title": "Work that had not started",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "externalId": "41",
+      "externalUrl": "https://example.invalid/browse/JOB-41",
+      "links": [],
+      "reconcileNeeded": false
+    }
+  ],
+  "detourStack": [],
+  "tracker": {
+    "system": "jira",
+    "projectKey": "JOB"
+  },
+  "pmVersion": "0.26.0",
+  "platform": "claude-code"
+}

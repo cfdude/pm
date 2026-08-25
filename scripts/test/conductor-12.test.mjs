@@ -312,8 +312,8 @@ test("a successful state write clears the conflict log", async () => {
 
 test("the threshold warning fires ONCE ACROSS INVOCATIONS, not once per process", async () => {
   // conflictCount() is derived from a file, so without consuming the condition the count stays
-  // pinned at the threshold and every SessionStart re-warns — the same storm the strict-equality
-  // rule exists to prevent, arrived at from the other side.
+  // at or above the threshold and every SessionStart re-warns — the error storm that trains a
+  // reader to filter the message, arrived at from the other side.
   const cwd = tmpRepo();
   run(["init"], { cwd });
   const { recordConflict } = await freshConflicts(cwd);
@@ -323,10 +323,32 @@ test("the threshold warning fires ONCE ACROSS INVOCATIONS, not once per process"
 
   assert.match(run(["brief"], { cwd }), /3 state writes skipped on conflict/);
   assert.doesNotMatch(run(["brief"], { cwd }), /writes skipped on conflict/,
-    "consumption rotates the log, resetting count below the threshold — a second brief must not re-warn");
+    "consumption latches — the log and its count are left untouched, and a second brief must not re-warn");
 });
 
-test("consuming the warning preserves the evidence it points at", async () => {
+test("a successful state write RE-ARMS the warning — the next episode of contention warns again", async () => {
+  // The latch must not be a one-way door. The signal of interest is CONSECUTIVE skips: a
+  // successful write ends the episode, so clearConflicts() drops the log AND the latch together.
+  // Leave the latch behind and the first episode is the only one this repo ever reports.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const { recordConflict } = await freshConflicts(cwd);
+  for (const f of [2, 3, 4]) recordConflict({ verb: "render", expected: 1, found: f });
+  assert.match(run(["brief"], { cwd }), /3 state writes skipped on conflict/, "the first episode warns");
+
+  run(["add-epic", "--id", "re-arms-it", "--lane", "claude-code", "--priority", "P3"], { cwd });
+  assert.ok(!fs.existsSync(path.join(cwd, ".conductor", "write-conflicts.latch")),
+    "a successful write must clear the latch, not just the log");
+
+  for (const f of [5, 6, 7, 8]) recordConflict({ verb: "render", expected: 2, found: f });
+  assert.match(run(["brief"], { cwd }), /4 state writes skipped on conflict/,
+    "a second episode must warn once more — and at 4 skips, which the old equality rule could never report");
+});
+
+test("consuming the warning preserves the evidence it points at — AT THE PATH IT NAMED", async () => {
+  // Consumption used to rename the log to .prev, which sent the reader the warning had just told
+  // to open `.conductor/write-conflicts.log` to a path that no longer existed. The latch replaces
+  // that entirely: the log is left exactly where it is and nothing about it moves.
   const cwd = tmpRepo();
   run(["init"], { cwd });
   const { recordConflict } = await freshConflicts(cwd);
@@ -334,8 +356,48 @@ test("consuming the warning preserves the evidence it points at", async () => {
 
   run(["brief"], { cwd });
   const log = path.join(cwd, ".conductor", "write-conflicts.log");
-  assert.ok(!fs.existsSync(log), "the live log resets so a new pattern can accumulate");
-  assert.ok(fs.existsSync(`${log}.prev`), "but the evidence the warning cited must survive");
+  assert.ok(fs.existsSync(log), "the log the warning named must still be there to open");
+  assert.equal(fs.readFileSync(log, "utf8").split("\n").filter(Boolean).length, 3,
+    "and must still hold every skip — consumption is not a rotation");
+  assert.ok(!fs.existsSync(`${log}.prev`), "consumption must not rename the log");
+  assert.ok(fs.existsSync(path.join(cwd, ".conductor", "write-conflicts.latch")),
+    "the latch, not a lowered count, is what stops the warning repeating");
+});
+
+test("a PreCompact snapshot must NOT consume the warning — .conductor/brief.txt reaches no session", async () => {
+  // snapshot() writes .conductor/brief.txt ahead of compaction, and NOTHING reads that file
+  // back. Consuming there latched the warning against a reader who never existed: a PreCompact
+  // landing between the threshold crossing and the next SessionStart showed the message to no
+  // one — while compaction is routine in exactly the long sessions where sustained contention is
+  // most likely. brief() is the only delivery point that reaches a session.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const { recordConflict } = await freshConflicts(cwd);
+  for (const f of [2, 3, 4]) recordConflict({ verb: "render", expected: 1, found: f });
+
+  run(["snapshot"], { cwd });
+
+  // Premise check, not decoration: snapshot() calls render(), which can saveState() and so
+  // clearConflicts(). Without this the test could pass because the skips were wiped rather than
+  // because the warning went unconsumed.
+  const log = path.join(cwd, ".conductor", "write-conflicts.log");
+  assert.equal(fs.readFileSync(log, "utf8").split("\n").filter(Boolean).length, 3,
+    "the snapshot must not have cleared the skips this test depends on");
+  assert.ok(!fs.existsSync(path.join(cwd, ".conductor", "write-conflicts.latch")),
+    "a snapshot must not latch — no session has seen anything");
+  assert.match(fs.readFileSync(path.join(cwd, ".conductor", "brief.txt"), "utf8"),
+    /3 state writes skipped on conflict/, "the snapshot still COMPOSES the warning; it just may not consume it");
+
+  assert.match(run(["brief"], { cwd }), /3 state writes skipped on conflict/,
+    "the first briefing that actually reaches a session must still carry the warning");
+});
+
+test("init writes a .gitignore entry for the contention latch — #106 must not repeat in the release that fixes it", async () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  assert.match(fs.readFileSync(path.join(cwd, ".gitignore"), "utf8"),
+    /^\.conductor\/write-conflicts\.latch$/m,
+    "the latch is engine-generated, so every pm-managed repo would otherwise grow an untracked file");
 });
 
 test("render() composing PROJECT.md must NOT consume the warning — only a DELIVERED briefing may", async () => {
@@ -356,19 +418,27 @@ test("render() composing PROJECT.md must NOT consume the warning — only a DELI
     "the warning must still be there for the first briefing that actually reaches a session");
 });
 
-test("a count ABOVE the threshold does not warn — the rule is equality, not >=", async () => {
-  // This is the only test that discriminates === from >=. The neighbouring "does not re-warn
-  // above it" assertion cannot: consumption rotates the log when the warning is delivered, so
-  // by the time it checks, the count has fallen back BELOW the threshold rather than risen
-  // above it, and both operators agree there. Accumulate past 3 with no brief in between so
-  // conflictCount() is genuinely 4 when the brief runs.
+test("a BURST straight past the threshold still warns, exactly once — the count is SAMPLED, not observed", async () => {
+  // This replaces "a count ABOVE the threshold does not warn — the rule is equality, not >=".
+  // That rule was wrong for a reason strict equality could not see: conflictCount() is only READ
+  // when a briefing is composed, so the count must be exactly 3 AT THAT MOMENT. A wedged writer
+  // or a hook loop produces a BURST — verified empirically on 0.26.0, 3 skips warned and 7 did
+  // not — so mild contention warned and severe contention did not, and the warning's absence
+  // then read as evidence of health. `>=` alone is no fix either: it re-warns on every
+  // subsequent briefing, training the reader to filter exactly the message that matters. Hence
+  // once per EPISODE: warn at or above the threshold while unlatched, then latch.
+  //
+  // Drive the counter from 0 to 7 in ONE step with no briefing in between. The existing tests all
+  // step it one entry at a time, which is precisely why this shipped broken.
   const cwd = tmpRepo();
   run(["init"], { cwd });
   const { recordConflict } = await freshConflicts(cwd);
-  for (const f of [2, 3, 4, 5]) recordConflict({ verb: "render", expected: 1, found: f });
+  for (const f of [2, 3, 4, 5, 6, 7, 8]) recordConflict({ verb: "render", expected: 1, found: f });
 
+  assert.match(run(["brief"], { cwd }), /7 state writes skipped on conflict/,
+    "a burst that crossed the threshold unseen must still warn — and name the count it actually found");
   assert.doesNotMatch(run(["brief"], { cwd }), /writes skipped on conflict/,
-    "at 4 skips the equality rule must stay silent; >= would warn here");
+    "and the latch must hold it to once: without it, >= re-warns every briefing for the same episode");
 });
 
 // ─────────────── the distinct exit code ───────────────

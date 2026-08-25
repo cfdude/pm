@@ -156,7 +156,7 @@ Review intensity is a bounded dial, not a free-form call each time — set via
 | `standard` | one fresh-context reviewer per gate | the default: OpenSpec Gate 1/Gate 2, a Superpowers task review |
 | `thorough` | two independent fresh-context reviewers per gate; adjudicate any disagreement yourself | schema/migration changes, security-sensitive work, or anything explicitly flagged high-stakes |
 
-Current mode: **standard**.
+Current mode: **thorough**.
 
 ## Feedback — don't let friction stay silent
 
@@ -195,3 +195,30 @@ in anything new that appeared while you were heads-down. You're already doing tr
 for this epic, so this is the cheapest moment to catch it; this applies whether you have one
 tracker or several (primary + secondary) configured.
 <!-- END pm-conductor rules -->
+
+### 🔗 Cross-spec review — invoke the skill whenever a change has 2+ specs
+
+Gate 1 and Gate 2 each take **one change artifact** as their unit, so nothing checks a release's
+specs **against each other**. Before `/opsx:apply` on any change whose `specs/` directory holds
+two or more files — and after any round of concurrent amendment — **invoke the
+`cross-spec-review` skill**. It carries the procedure, the six questions, and the two failure
+modes specific to the fixes.
+
+*Evidence:* on 0.27.0 that pass returned **5 Critical and 10 Important** against six specs that
+had each passed `openspec validate --strict` and would each have passed Gate 1 alone — including
+a flagship scenario that was unreachable, and a shared 11-element flag allowlist four
+capabilities all needed to grow. The re-review then found **two more Criticals introduced by the
+fixes**. Productizing it is #126.
+
+### 🐕 Dogfooding — invoke the skill when you adopt a practice or work around friction
+
+`pm` is a project-management conductor and this repo is a project it manages, so **anything
+invented to work here is something `pm`'s users could use** — and any papercut worked around
+silently here is one every user is working around too. **Invoke the `dogfooding` skill** when you
+adopt a practice, hand-edit `.conductor/state.json`, find a command `pm` emitted that does not
+run, or catch yourself thinking *"I'll just…"* about something the tool should do. Filed as #127.
+
+**Standing bias, measured, and it applies to every rule in this file:** a rule carried by a
+**required task** reached 14/14 subsequent changes in the audited corpus; the same rule as a
+**prose bullet** reached 3/15. Prefer a skill over a paragraph, and a task over a sentence — this
+section is a pointer for exactly that reason.

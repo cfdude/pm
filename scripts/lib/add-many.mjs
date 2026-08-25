@@ -4,10 +4,12 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { activate } from "./active-pointer.mjs";
 import { parentError, parseFlags } from "./add-epic.mjs";
-import { isInitialized, loadState, saveState, readStdin } from "./state.mjs";
+import { isInitialized, loadState, pushEpic, saveState, readStdin } from "./state.mjs";
 import { render } from "./render.mjs";
-import { ROOT, KNOWN_LANES, KNOWN_STATUSES } from "./constants.mjs";
+import { ROOT, KNOWN_LANES, KNOWN_STATUSES, epicBatchKeys } from "./constants.mjs";
+import { creationStamp } from "./disposition.mjs";
 
 /** Bulk-create epics from a JSON batch `{ parent?, epics: [...] }`.
  *  Validate EVERYTHING first (id format, uniqueness vs existing AND within the
@@ -38,6 +40,17 @@ export function addMany() {
 
   const die = (msg) => { process.stderr.write(`conductor: add-many: ${msg}\n`); process.exit(1); };
 
+  // The keys a batch entry may carry, derived from the shared EPIC_FLAGS registry rather than
+  // restated here. add-many used to copy a fixed key set and drop every other key without a
+  // word — the same invisible failure as add-epic's missing allowlist (#79), at a different
+  // input shape. Rejection happens in this validation pass, BEFORE any epic is constructed, so
+  // a batch containing one offender creates none of its entries.
+  //
+  // The one flag→key mapping rule the registry carries is `--external-updated-at` ↔
+  // `externalUpdatedAt`, which is why a batch document is written in STATE keys. A bulk-mirrored
+  // epic that arrived without its watermark would count as never-re-read from the moment it was
+  // created, so the bulk path has to carry the same field the single-epic path does.
+  const allowedKeys = epicBatchKeys();
   const existingIds = new Set(state.epics.map(e => e.id));
   const batchIds = new Set();
   for (const e of incoming) {
@@ -45,6 +58,11 @@ export function addMany() {
     if (typeof id !== "string" || !/^[a-z0-9][a-z0-9._-]*$/.test(id)) die(`bad id '${id}' (format ^[a-z0-9][a-z0-9._-]*$)`);
     if (existingIds.has(id)) die(`epic '${id}' already exists`);
     if (batchIds.has(id)) die(`duplicate id '${id}' within the batch`);
+    const unknownKeys = Object.keys(e).filter(k => !allowedKeys.includes(k));
+    if (unknownKeys.length) {
+      die(`epic '${id}': unsupported key(s) ${unknownKeys.join(", ")} ` +
+        `(supported: ${allowedKeys.join(", ")})`);
+    }
     if (!e.lane || !KNOWN_LANES.includes(e.lane)) die(`epic '${id}': lane must be one of ${KNOWN_LANES.join("|")}`);
     const status = e.status || "queued";
     if (!KNOWN_STATUSES.includes(status)) die(`epic '${id}': status must be one of ${KNOWN_STATUSES.join("|")}`);
@@ -58,17 +76,37 @@ export function addMany() {
     }
   }
   for (const e of incoming) {
+    // Seeded with the defaults a batch entry may omit, plus the two fields the ENGINE owns and
+    // a batch never supplies (`role`, `reconcileNeeded`). Everything else is copied by the
+    // registry loop below, so a key a later capability adds to `add-many` is persisted here
+    // the moment it is declared — no second literal to forget.
+    // `attributedCommits: []` is stamped by pushEpic(), not here — see state.mjs. A rule
+    // written out at each construction site is a stale enumeration waiting to happen.
     const epic = {
-      id: e.id, title: typeof e.title === "string" ? e.title : e.id,
-      priority: typeof e.priority === "string" ? e.priority : "P?",
-      status: e.status || "queued", role: "epic", lane: e.lane,
-      links: Array.isArray(e.links) ? e.links : [], reconcileNeeded: false,
+      id: e.id, title: e.id, priority: "P?", status: "queued",
+      role: "epic", lane: e.lane, links: [], reconcileNeeded: false,
     };
-    if (e.parent !== undefined && e.parent !== null) epic.parent = e.parent;
-    if (typeof e.externalId === "string") epic.externalId = e.externalId;
-    if (typeof e.externalUrl === "string") epic.externalUrl = e.externalUrl;
-    if (typeof e.planPath === "string") epic.planPath = e.planPath;
-    state.epics.push(epic);
+    for (const key of allowedKeys) {
+      const v = e[key];
+      if (v === undefined || v === null) continue;
+      if (key === "links") { if (Array.isArray(v)) epic.links = v; continue; }
+      if (typeof v === "string") epic[key] = v;
+    }
+    // The second archived-at-creation path, carrying its OWN token so a rule applied to one
+    // command is visibly absent from the other. Read the RESOLVED status — `status` is an
+    // add-many key, so the copy loop above may or may not have set it — exactly as the
+    // validation pass resolved it.
+    if ((e.status || "queued") === "archived") epic.disposition = creationStamp("add-many");
+    pushEpic(state, epic);
+  }
+  // Route every activation through the ONE door. add-many used to construct epics inline and
+  // push them straight onto state.epics, so a batch entry at `active` status set neither the
+  // top-level `.active` pointer nor the demotion of any other epic still at `active` — the
+  // single-active invariant was silently skipped on this path alone, which is the absent-edit
+  // defect class this release exists to close. Done AFTER every entry is pushed so the last
+  // active entry in the batch wins and the demotion sees the whole batch.
+  for (const e of incoming) {
+    if ((e.status || "queued") === "active") activate(state, e.id);
   }
   saveState(state);
   render();

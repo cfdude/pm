@@ -151,7 +151,7 @@ test("a resolved depends-on (dependency archived) does not starve the dependent 
   run(["add-epic", "--id", "done-dep", "--lane", "claude-code", "--priority", "P3"], { cwd });
   run(["add-epic", "--id", "dependent", "--lane", "claude-code", "--priority", "P0",
        "--link", "depends-on:done-dep:needs done-dep"], { cwd });
-  run(["update-epic", "done-dep", "--status", "archived"], { cwd });
+  run(["update-epic", "done-dep", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd });
   const brief = parseBrief(cwd);
   assert.doesNotMatch(brief, /ready but waiting on/);
   // dependent is now the only queued epic left (done-dep archived, excluded from NEXT UP).
@@ -210,7 +210,8 @@ test("remove-epic strips dangling links[] from other epics and warns", () => {
   const state = readState(cwd);
   const b = state.epics.find(e => e.id === "b");
   assert.deepEqual(b.links, []);
-  assert.match(out, /stripped dangling link/);
+  assert.match(out, /stripped 1 dangling reference/);
+  assert.match(out, /links\[\]/, "the warning names WHERE the reference was held, not just who held it");
   assert.match(out, /\bb\b/);
 });
 
@@ -327,4 +328,47 @@ test("verify-worktrees returns an empty orphaned list gracefully when the cwd is
   run(["init"], { cwd });
   const out = JSON.parse(run(["verify-worktrees"], { cwd }));
   assert.deepEqual(out.orphaned, []);
+});
+
+// ---------- remove-epic: every dangling reference, not just links[] ----------
+
+test("remove-epic sweeps a release deferral, a carriedTo handoff and a deferral assertion", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "gone", "--lane", "claude-code"], { cwd });
+  run(["add-epic", "--id", "holder", "--lane", "claude-code"], { cwd });
+  run(["release", "0.27.0", "--intent", "a release"], { cwd });
+  run(["release", "0.27.0", "--defer", "gone", "--reason", "cut for time"], { cwd });
+  run(["update-epic", "holder", "--status", "archived", "--outcome", "delivered",
+    "--carried-to", "gone", "--deferral", "gone:design.md § Risks"], { cwd });
+
+  const out = runCombined(["remove-epic", "gone"], { cwd });
+  const st = readState(cwd);
+  const holder = st.epics.find(e => e.id === "holder");
+  assert.deepEqual(st.releases[0].deferred, [],
+    "a deferral naming a removed epic renders in PROJECT.md as a deferral pointing at nothing");
+  assert.equal(holder.disposition.carriedTo, undefined, "a handoff to a removed epic names nothing");
+  assert.deepEqual(holder.deferralAssertion.deferrals, [],
+    "the assertion survives; the entry naming a removed epic does not");
+  assert.match(out, /dangling/, "the sweep says what it dropped, as the links[] sweep already did");
+});
+
+test("remove-epic REFUSES while a detour frame names the epic, rather than dropping the frame", () => {
+  // The other holders are records; a detour frame is CONTROL STATE. Silently dropping it would
+  // discard a paused epic's resume path, and silently keeping it would leave `/pm:resume`
+  // popping a frame that names nothing. Neither is a sweep, so this one refuses.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const epic = (id) => ({ id, title: id, priority: "P1", status: "queued", role: "epic",
+    lane: "claude-code", links: [], reconcileNeeded: false, attributedCommits: [] });
+  // Written directly because `/pm:detour` is an INSTRUCTION-layer command — the engine has no
+  // subcommand that pushes a frame, so state is where one comes from.
+  writeState(cwd, { version: 1, active: "the-detour", detourStack: [
+    { pausedEpic: "paused-one", reason: "blocked on it", spawnedDetour: "the-detour", reconcileOnResume: true },
+  ], epics: [epic("paused-one"), epic("the-detour")] });
+  const err = expectFail(() => run(["remove-epic", "paused-one"], { cwd }));
+  assert.ok(err, "removing an epic held by a live detour frame must not silently succeed");
+  const out = String(err.stdout || "") + String(err.stderr || "");
+  assert.match(out, /detour/, "the refusal must say WHICH holder blocks it");
+  assert.ok(readState(cwd).epics.some(e => e.id === "paused-one"), "nothing was removed");
 });

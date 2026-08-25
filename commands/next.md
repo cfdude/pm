@@ -15,6 +15,10 @@ ENGINE="${CLAUDE_PROJECT_DIR:+$CLAUDE_PROJECT_DIR/scripts/conductor.mjs}"
 
 Read the current state (`node "$ENGINE" render` then `PROJECT.md`), and apply this order:
 
+> Progress is claimed completion — ticked checkboxes, not verified delivery. An epic reading `12/12` is a claim its
+> gate verdicts have not confirmed, so say so when you report progress rather than presenting
+> it as delivery.
+
 1. **If the detour stack is non-empty** → the next action is to finish/resume the TOP
    frame. If its detour epic is already archived, this is a `/pm:resume` (which triggers
    the reconcile gate). Do not start new work while a detour is unresolved.
