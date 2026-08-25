@@ -120,6 +120,30 @@ export const CHECKS = [
     },
   },
   {
+    id: "delivered-epic-attributed-no-commits",
+    title: "a delivered epic with a passing Gate 2 whose attribution array is present and empty",
+    run(state) {
+      const out = [];
+      for (const e of state.epics) {
+        if (outcomeOf(e) !== "delivered") continue;
+        const gate2 = e.gateReview && e.gateReview.gate2;
+        if (!gate2 || gate2.verdict !== "pass") continue;
+        // PRESENT AND EMPTY, never absent. Absent means the epic predates the capability and
+        // nothing can be concluded; empty means it was created under the capability and asserts
+        // that nothing was attributed to it. This is precisely the shape of "the agent ignored
+        // the --attribute-commit obligation", and without the check that unmet obligation leaves
+        // no trace anywhere — the staleness gate behaves correctly on an empty array, so it
+        // reports nothing either.
+        if (Array.isArray(e.attributedCommits) && e.attributedCommits.length === 0) {
+          out.push({ epic: e.id, detail:
+            "recorded as delivered with a passing Gate 2 but attributed no commits — record " +
+            `the range that shipped with: update-epic ${e.id} --attribute-commit <sha>` });
+        }
+      }
+      return out;
+    },
+  },
+  {
     id: "heal-archived-epic-passed-gate-2",
     title: "an epic the heal archived reads `unknown` while carrying a passing Gate 2",
     run(state) {

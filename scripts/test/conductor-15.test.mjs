@@ -1042,3 +1042,31 @@ test("9.9: zero live candidates, because the migration stamps `migration` and no
       `${e.id}: a pre-existing archived epic is stamped by the migration, not by the heal`);
   }
 });
+
+// ───────────── 9.10: a delivered epic that attributed no commits ─────────────
+
+test("9.10: the empty-array epic is reported and the absent-array epic is not", () => {
+  const delivered = { outcome: "delivered", recordedAt: "2026-08-01T00:00:00.000Z" };
+  const gate2 = { verdict: "pass", reviewedAt: "2026-08-01T00:00:00.000Z", baseSha: "aaaaaaa", headSha: "bbbbbbb" };
+  const epic = (id, over) => ({ id, title: id, priority: "P1", status: "archived", role: "epic",
+    lane: "openspec", links: [], disposition: delivered, gateReview: { gate2 }, ...over });
+  const findings = findingsFor("delivered-epic-attributed-no-commits", {
+    version: 1, active: null, detourStack: [], epics: [
+      epic("ignored-the-obligation", { attributedCommits: [] }),
+      epic("predates-the-capability", {}),
+      epic("did-attribute", { attributedCommits: ["aaaaaaa"] }),
+    ] });
+  assert.deepEqual(findings.map(f => f.epic), ["ignored-the-obligation"],
+    "absent means the epic predates the capability and nothing can be concluded; empty means it " +
+    "was created under it and asserts nothing was attributed — collapsing them is the defect");
+  assert.match(findings[0].detail, /--attribute-commit/, "the finding names the unmet obligation");
+});
+
+test("9.10: zero live candidates, because the migration adds the array to no pre-existing epic", () => {
+  assert.deepEqual(findingsFor("delivered-epic-attributed-no-commits", liveState()), []);
+  const cwd = repoAt0260();
+  upgradeAt(cwd, "0.27.0");
+  for (const e of readState(cwd).epics) {
+    assert.ok(!("attributedCommits" in e), `${e.id}: every pre-existing epic reads ABSENT, not empty`);
+  }
+});
