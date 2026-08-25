@@ -1201,3 +1201,23 @@ test("9.13: no backfilled epic is ever named as an ungated archive", () => {
     "from being asserted against every change archived before the conductor existed");
   assert.match(run(["integrity"], { cwd }), /archived-with-no-gate-2-review — 0 finding/);
 });
+
+// ───────────── 9.14: the day-one finding set, per check, every finding explained ─────────────
+
+test("9.14: the recorded day-one set names every check and explains every live finding", () => {
+  const doc = fs.readFileSync(path.join(REPO, "openspec", "changes",
+    "conductor-tells-the-truth", "integrity-day-one.md"), "utf8");
+  const report = runIntegrity(liveState());
+  for (const { id, findings } of report) {
+    assert.ok(doc.includes(id),
+      `${id}: a check missing from the day-one record is a check whose result nobody wrote down`);
+    for (const f of findings) {
+      assert.ok(!f.epic || doc.includes(f.epic),
+        `${id}/${f.epic}: every finding is EXPLAINED in the record, not counted — a finding with ` +
+        "no explanation is the counting-alone failure this task exists to end");
+    }
+  }
+  assert.match(doc, new RegExp(`\\*\\*${report.length} checks?, ` +
+    `${report.reduce((n, c) => n + c.findings.length, 0)} findings?\\.\\*\\*`),
+    "the totals in the record must be the totals the command actually produced");
+});
