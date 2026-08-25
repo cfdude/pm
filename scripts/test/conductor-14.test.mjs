@@ -746,3 +746,21 @@ test("turning the guard off does not weaken the unconditional reconcile block", 
     assert.match(r.message, /reconcile/i);
   }
 });
+
+// ─────────── 11.2 / 11.3: one activation door, and the refresh obligation behind it ───────────
+
+test("a batch entry at active status becomes the single active epic and demotes the other", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "old", "--lane", "claude-code", "--status", "active"], { cwd });
+  const batch = path.join(cwd, "b.json");
+  fs.writeFileSync(batch, JSON.stringify({ epics: [
+    { id: "fresh", lane: "claude-code", status: "active" },
+  ] }));
+  run(["add-many", "--from", batch], { cwd });
+  const s = readState(cwd);
+  assert.equal(s.active, "fresh", "add-many never called activate(), so it set no active pointer");
+  assert.equal(s.epics.find(e => e.id === "fresh").status, "active");
+  assert.equal(s.epics.find(e => e.id === "old").status, "queued",
+    "the single-active invariant binds bulk creation too");
+});

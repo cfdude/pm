@@ -4,10 +4,12 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { activate } from "./active-pointer.mjs";
 import { parentError, parseFlags } from "./add-epic.mjs";
 import { isInitialized, loadState, saveState, readStdin } from "./state.mjs";
 import { render } from "./render.mjs";
 import { ROOT, KNOWN_LANES, KNOWN_STATUSES, epicBatchKeys } from "./constants.mjs";
+import { creationStamp } from "./disposition.mjs";
 
 /** Bulk-create epics from a JSON batch `{ parent?, epics: [...] }`.
  *  Validate EVERYTHING first (id format, uniqueness vs existing AND within the
@@ -78,9 +80,13 @@ export function addMany() {
     // a batch never supplies (`role`, `reconcileNeeded`). Everything else is copied by the
     // registry loop below, so a key a later capability adds to `add-many` is persisted here
     // the moment it is declared — no second literal to forget.
+    // `attributedCommits: []` on this creation path too, for the reason add-epic.mjs states at
+    // its own construction site: absent means "predates attribution, unverifiable", empty means
+    // "created under it, nothing attributed yet", and a rule applied at one of two creation
+    // sites is exactly the absent-edit class this release exists to close.
     const epic = {
       id: e.id, title: e.id, priority: "P?", status: "queued",
-      role: "epic", lane: e.lane, links: [], reconcileNeeded: false,
+      role: "epic", lane: e.lane, links: [], reconcileNeeded: false, attributedCommits: [],
     };
     for (const key of allowedKeys) {
       const v = e[key];
@@ -88,7 +94,21 @@ export function addMany() {
       if (key === "links") { if (Array.isArray(v)) epic.links = v; continue; }
       if (typeof v === "string") epic[key] = v;
     }
+    // The second archived-at-creation path, carrying its OWN token so a rule applied to one
+    // command is visibly absent from the other. Read the RESOLVED status — `status` is an
+    // add-many key, so the copy loop above may or may not have set it — exactly as the
+    // validation pass resolved it.
+    if ((e.status || "queued") === "archived") epic.disposition = creationStamp("add-many");
     state.epics.push(epic);
+  }
+  // Route every activation through the ONE door. add-many used to construct epics inline and
+  // push them straight onto state.epics, so a batch entry at `active` status set neither the
+  // top-level `.active` pointer nor the demotion of any other epic still at `active` — the
+  // single-active invariant was silently skipped on this path alone, which is the absent-edit
+  // defect class this release exists to close. Done AFTER every entry is pushed so the last
+  // active entry in the batch wins and the demotion sees the whole batch.
+  for (const e of incoming) {
+    if ((e.status || "queued") === "active") activate(state, e.id);
   }
   saveState(state);
   render();
