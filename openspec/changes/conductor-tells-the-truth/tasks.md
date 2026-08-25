@@ -59,7 +59,24 @@
 - [x] 3.2 Add `outstandingWork(epic)` to `scripts/lib/epic-progress.mjs` beside `epicProgress()` as the single definition, and give `epicProgress()` an excluded count so the rendered bar and every guard use the same arithmetic (files: `scripts/lib/epic-progress.mjs`); verify with a 13-item source, 12 ticked, thirteenth marked — progress renders `12/12` and `outstandingWork` returns 0, not `12/13` with a footnote
 - [x] 3.3 Exclude exactly the tasks whose task LINE carries the literal `<!-- pm:lifecycle -->`, never a following line, and infer exclusion from nothing else — not wording, not the commands the text names, not file position (files: `scripts/lib/epic-progress.mjs`); verify with two tests that fail any text matcher — a task reading `run /opsx:archive <this change>` with NO marker counts normally, and a real task describing implementing archiving also counts
 - [x] 3.4 Keep `exists` from `countCheckboxes()` as the missing-source discriminator rather than `total > 0`, so a present source whose every task is excluded does not collapse into the no-progress-source state (files: `scripts/lib/epic-progress.mjs`); verify with a fixture whose every task carries the marker — no missing-source warning is emitted, and the test fails if the discriminator is switched to `total > 0`
-- [x] 3.5 Repoint every consumer of raw checkbox counts at `outstandingWork()` — `PROJECT.md` rendering, the briefing, `/pm:next`, and every guard in this release that refuses because work remains (files: `scripts/lib/render.mjs`, `scripts/lib/briefing.mjs`, `scripts/lib/subcommands.mjs`, `scripts/lib/archive-gate.mjs`); verify with a test asserting the count named in an archive refusal is byte-identical to the count `PROJECT.md` renders for the same epic
+- [x] 3.5 Repoint every consumer of raw checkbox counts at `outstandingWork()` — `PROJECT.md` rendering, the briefing, `/pm:next`, and every guard in this release that refuses because work remains (files: `scripts/lib/archive-gate.mjs`, `scripts/lib/epic-progress.mjs`); verify with a test asserting the count named in an archive refusal is byte-identical to the count `PROJECT.md` renders for the same epic, plus a source-scan test forbidding any other module from subtracting `done` from `total` for itself
+      <!-- CLAIM CORRECTED (task 16.3). This task originally also claimed `scripts/lib/render.mjs`,
+      `scripts/lib/briefing.mjs` and `scripts/lib/subcommands.mjs`; none appears in its commit
+      (`10a65fe`), and 16.2 flagged the mismatch. The INTENT is met and the work is not missing —
+      "the behaviour exists elsewhere" is the reasoning #121 exists to defeat, so this is stated as
+      evidence rather than asserted:
+      • `subcommands.mjs` was UNSATISFIABLE by construction. `/pm:next` is an instruction-layer
+        command doc with no engine subcommand at all (`rg '"next"' scripts/conductor.mjs` returns
+        nothing), so there was no consumer there to repoint.
+      • `render.mjs` and `briefing.mjs` reach the single definition TRANSITIVELY: both read
+        `resolveEpics()`, which calls `epicProgress()`, and `outstandingWork()` is a thin reader
+        over that same call (3.2, `ae6d7fe`). Repointing them at `outstandingWork()` directly would
+        be a second reading of one arithmetic, which is the defect, not the fix.
+      • What this task actually SHIPPED is the chokepoint: `outstandingSummary()` in
+        `archive-gate.mjs`, whose `claimed` string is the very substring the record renders, plus
+        the source-scan test that forbids any other module from doing the subtraction itself. That
+        scan is what makes the guarantee hold for `render.mjs` and `briefing.mjs` without either
+        file being edited. -->
 - [x] 3.6 Present checkbox-derived progress as **claimed** completion on all three surfaces — `PROJECT.md`, the briefing and `/pm:next` (files: `scripts/lib/render.mjs`, `scripts/lib/briefing.mjs`, `commands/next.md`); verify with a test asserting each of the three outputs carries the claimed-completion wording for a fully ticked epic, so `12/12` is not read as evidence of delivery
 
 ## 4. Gate verdicts — lane normalization, checkable evidence, two vocabularies
@@ -117,7 +134,15 @@
 - [x] 8.3 Read a backfilled epic's real counts from its archived artifacts rather than returning `{done:0,total:0}` the way `epicProgress()` does for an archived epic with a missing source (`epic-progress.mjs:143`, `:150`) (files: `scripts/lib/subcommands.mjs`, `scripts/lib/epic-progress.mjs`); verify with a fixture reproducing `log-collector-not-applicable` registered with 12 of its tasks unticked — its progress reflects those 12 rather than `0/0` or an em dash — and a fully ticked archived change registering as complete and distinguishable from it
 - [x] 8.4 Have the ENGINE stamp every backfilled epic unconditionally with `outcome: unknown` and `recordedBy: "archive-backfill"` on its disposition — never conditioned on task counts, lane or any other property, with no CLI flag that lets the agent apply it, and carrying that token in preference to any creation-path token where the backfill registers through a creation path (6.9) (files: `scripts/lib/subcommands.mjs`, `scripts/lib/disposition.mjs`); verify with a fixture holding one fully ticked and one 12-unticked backfilled change — both stamped identically — plus a test asserting no flag on any command writes `recordedBy`
 - [x] 8.5 Write NO `gateReview.gate2` entry on a backfilled epic at all (design §10 — an `ungated` entry there is a permanent, unclearable condition against essentially every archived change, and the ratio is what makes it unclearable: measured 2026-08-23, 69 archived epics in this repository against 3 carrying a passing Gate 2) (files: `scripts/lib/subcommands.mjs`); verify with a test asserting a backfilled epic has no `gate2` key and that the ungated-archive notice names none of them — asserted as "no backfilled epic is named", never as a count
-- [x] 8.6 Add `archiveBackfilledAt` at the state root as a PRESENCE marker — nothing is ever compared against it — so the first run announces the count and the ids it registered and writes the field, and later runs register only changes archived since with no announcement and no re-registration (files: `scripts/lib/subcommands.mjs`, `scripts/lib/state.mjs`); verify with three tests: first run announces and writes the field; a run against state already carrying it announces nothing and adds zero; a state file with no field loads unchanged, backfills once, and does not repeat
+- [x] 8.6 Add `archiveBackfilledAt` at the state root as a PRESENCE marker — nothing is ever compared against it — so the first run announces the count and the ids it registered and writes the field, and later runs register only changes archived since with no announcement and no re-registration (files: `scripts/lib/subcommands.mjs`); verify with three tests: first run announces and writes the field; a run against state already carrying it announces nothing and adds zero; a state file with no field loads unchanged, backfills once, and does not repeat
+      <!-- CLAIM CORRECTED (task 16.3). This task originally also claimed `scripts/lib/state.mjs`,
+      which appears in NO commit on this branch; `archiveBackfilledAt` lives only in
+      `subcommands.mjs`. The design is right and no `archiveBackfilledAt` write belongs in `state.mjs`: the marker
+      is a PRESENCE marker, and `defaultState()` is spread over every load
+      (`loadState()`: `{ ...defaultState(), ...s }`), so declaring it there would make the field
+      always present and collapse the presence semantics the whole task rests on — first-run and
+      later-run become indistinguishable. It is written by the one path that can know whether
+      history has been accounted for. -->
 
 ## 9. Integrity checks — read-only, six checks plus the standing notice
 

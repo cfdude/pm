@@ -36,24 +36,43 @@ For these, "the task's commit" is a **set**, not a single sha.
 
 ## 3. Orchestrator commits that absorbed agent work
 
+**Every absorbing commit is listed.** An incomplete list here is a rule that cannot be applied
+mechanically, which is the failure 16.2 found: §3 named three of them, and the files absorbed by
+the rest looked like real task files to anyone applying rule 3 as written.
+
 A bare `git commit` after a scoped `git add` commits the **whole index**, including files another
-process staged. This happened three times, in both directions:
+process staged. This happened six times, in both directions:
 
 | Commit | Absorbed |
 |---|---|
 | `d534b5e` (since split into `e876168` + `f7a1708`) | task 3.6's implementation |
 | `60b3972` (task 7.6) | `.claude/hooks/lessons-advisor.mjs`, `.claude/settings.json`, `.claude/skills/lessons/SKILL.md`, `docs/lessons/*` |
 | `e282599` (task 9.13) | `docs/lessons/README.md`, `docs/lessons/commit-without-push-is-one-disk.md` |
+| `fc6636a` (task 10.10) | `docs/lessons/README.md`, `docs/lessons/2026-08-23-parallel-agents-and-shared-state.md` (2 files) |
+| `badb5ea` (the groups 10–12 tick) | `docs/lessons/README.md` and 10 more under `docs/lessons/**` — the split of `2026-08-23-parallel-agents-and-shared-state.md` into per-mechanism lessons (11 files) |
+| `7430a00` (a `PROJECT.md` re-render) | `.claude/skills/lessons/SKILL.md`, `docs/lessons/README.md` |
 
-The absorbed files belong to the lessons lane, not to tasks 7.6 or 9.13. Only `d534b5e` was
-repaired; the other two were left rather than rewrite 13 commits of shared history.
+The absorbed files belong to the lessons lane, not to tasks 7.6, 9.13 or 10.10, and `badb5ea` and
+`7430a00` claim no implementation files of their own at all. Only `d534b5e` was repaired; the rest
+were left rather than rewrite shared history.
+
+**Not every `docs/lessons/**` commit is an absorption, and 16.2 must not treat it as one.** Three
+commits on this branch OWN the lessons files they carry — `988eb99` (the worktree preflight and
+its lesson), `955faf8` (the advisor matcher fix) and `162b03d` (the lessons skill) — and are not
+task commits under this change at all. Those three plus the five absorbing commits above that
+carry a lesson file are **all eight** commits on the branch touching `docs/lessons/**` — verified
+with `git log --format=%h $(git merge-base main dev)..dev -- 'docs/lessons/**'`. (`d534b5e` is the
+sixth absorption and absorbed an implementation file, not a lesson; it has since been split.) The
+list being complete is what lets rule 3 below be applied MECHANICALLY instead of re-derived per
+commit.
 
 ## What 16.2 should do
 
 1. **Verify by tree.** `git show --stat <sha>` against the task's `(files: …)` claim. Ignore subjects.
 2. **Accept a set of commits** for the tasks listed in §2.
-3. **Ignore the absorbed paths in §3** — `.claude/**` and `docs/lessons/**` in `60b3972` and
-   `e282599` are not those tasks' files.
+3. **Ignore the absorbed paths in §3** — `.claude/**` and `docs/lessons/**` in `60b3972`,
+   `e282599`, `fc6636a`, `badb5ea` and `7430a00` are not those tasks' files. The three
+   lessons-lane commits named there are not task commits and need no reconciliation.
 4. **Report, do not repair.** Rewriting pushed history to tidy attribution would cost more than the
    imprecision.
 5. **A task claiming no files is a finding**, not a pass — that is the vacuous half 16.2 exists to
