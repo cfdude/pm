@@ -15,7 +15,8 @@
 // READS that quantity rather than computing one of its own. Two counters is how a guard comes
 // to refuse an epic that renders as complete.
 
-import { isOpenspecLane } from "./constants.mjs";
+import { gateHasEvidence, isOpenspecLane } from "./constants.mjs";
+import { isAncestor } from "./git.mjs";
 import { epicProgress, outstandingWork } from "./epic-progress.mjs";
 
 /**
@@ -33,6 +34,68 @@ export function outstandingSummary(epic) {
 }
 
 /**
+ * How well a recorded verdict covers the work actually attributed to the epic.
+ *
+ * Four distinct answers, and collapsing any two of them is the defect:
+ *
+ *   "unverifiable"    the epic has NO attribution array (it predates the capability), or the
+ *                     verdict records no range, or git cannot answer. Nothing is known; the
+ *                     archive is not refused on staleness grounds, and the verdict is not
+ *                     silently shown as a covering pass either.
+ *   "none-attributed" the array is PRESENT and EMPTY — the epic was created under this
+ *                     capability and asserts that nothing has been attributed to it. No verdict
+ *                     can be shown stale by an empty array, so the archive is not refused; it
+ *                     renders differently from unverifiable because it is a different claim.
+ *   "stale"           the recorded `headSha` is a STRICT ANCESTOR of the last attributed
+ *                     commit: work landed after the range the reviewer read.
+ *   "fresh"           everything else, including the ordinary case where repository HEAD has
+ *                     moved far past the verdict through commits belonging to other epics.
+ *                     Repository HEAD is deliberately NOT the baseline — an epic archived a
+ *                     week after its merge would otherwise read stale through nobody's fault.
+ *
+ * `uncovered` names the attributed commits the range does not reach, so a refusal can say what
+ * is missing rather than only that something is.
+ *
+ * THE ARCHIVE MOVE IS THE CASE THIS SHAPE EXISTS TO SURVIVE. `/opsx:archive` commits a move of
+ * `openspec/changes/<id>/` under `archive/`, and that commit lands AFTER the reviewed range by
+ * construction. Attribute it and the last entry becomes a descendant of the recorded `headSha`,
+ * the verdict reads stale, and the gate refuses the very `delivered` record the interactive
+ * verb is required to accept — the documented workflow blocked by its own last step.
+ *
+ * The exclusion is AGENT-DECLARED, exactly like the `<!-- pm:lifecycle -->` marker: the emitted
+ * instructions say not to attribute the move, and this function classifies nothing. It appends
+ * no hash, inspects no commit's contents, and reads no commit message; it compares only the
+ * array it was given. Withholding that one append never empties a populated array, so an epic
+ * that attributed its delivery commits keeps them and stays fresh.
+ */
+export function gateStaleness(epic, entry) {
+  if (!entry || typeof entry.verdict !== "string") return { state: "none", uncovered: [] };
+  const attributed = epic && epic.attributedCommits;
+  if (!Array.isArray(attributed)) return { state: "unverifiable", uncovered: [] };
+  if (!attributed.length) return { state: "none-attributed", uncovered: [] };
+  if (!gateHasEvidence(entry)) return { state: "unverifiable", uncovered: [] };
+  const last = attributed[attributed.length - 1];
+  if (last === entry.headSha) return { state: "fresh", uncovered: [] };
+  const covers = isAncestor(entry.headSha, last);
+  if (covers === null) return { state: "unverifiable", uncovered: [] };
+  if (covers !== true) return { state: "fresh", uncovered: [] };
+  const uncovered = attributed.filter(c => c !== entry.headSha && isAncestor(entry.headSha, c) === true);
+  return { state: "stale", uncovered, headSha: entry.headSha };
+}
+
+/** The marking a rendered verdict carries, so PROJECT.md, the brief and any refusal describe
+ *  the same verdict the same way. Exported for render.mjs and briefing.mjs, which import it
+ *  from here rather than re-deriving staleness of their own. */
+export function stalenessMarking(epic, entry) {
+  switch (gateStaleness(epic, entry).state) {
+    case "stale": return " ⚠ stale";
+    case "unverifiable": return " ⚠ unverifiable";
+    case "none-attributed": return " · no attributed commits";
+    default: return "";
+  }
+}
+
+/**
  * The archive transition's gate.
  *
  * Returns a REFUSAL OBJECT and never exits: the caller owns its own exit code, its own stderr,
@@ -47,10 +110,6 @@ export function outstandingSummary(epic) {
  * @returns {{ok: true} | {ok: false, message: string}}
  */
 export function archiveGate(epic, request = {}) {
-  // openspec-lane epics may not be archived without a passing Gate 2 (implementation review)
-  // verdict — see CLAUDE.md "OpenSpec build — TWO mandatory gates" and recordGateReview().
-  // Gate 1 (spec review) gates code, which already happened earlier in the workflow; only
-  // Gate 2 blocks archiving. Non-openspec-lane epics are completely unaffected.
   // An ABSENT lane is openspec-lane (isOpenspecLane), so a lane-less epic is held to this
   // gate exactly as a declared one is — it renders as openspec-lane on every surface.
   if (isOpenspecLane(epic)) {
@@ -61,6 +120,18 @@ export function archiveGate(epic, request = {}) {
         `(implementation review) verdict. Run 'record-gate-review ${epic.id} --gate 2 ` +
         `--verdict pass' after a real fresh-context implementation review before archiving.` };
     }
+    // A passing verdict that does not reach the commits the epic attributed to itself did not
+    // review the code that shipped. Only "stale" refuses: an absent array, an empty one and a
+    // git that cannot answer are all reported rather than blocked (gateStaleness).
+    const staleness = gateStaleness(epic, gate2);
+    if (staleness.state === "stale") {
+      return { ok: false, message:
+        `cannot archive openspec-lane epic '${epic.id}' — its passing Gate 2 reviewed up to ` +
+        `${staleness.headSha}, which does not cover the commit(s) attributed to this epic ` +
+        `since: ${staleness.uncovered.join(", ")}. Re-review the full range and record it, or ` +
+        `correct the attribution.` };
+    }
   }
+
   return { ok: true };
 }

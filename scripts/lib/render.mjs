@@ -12,6 +12,7 @@ import { getAutonomy } from "./autonomy.mjs";
 import { parseFlags } from "./add-epic.mjs";
 import { validLink } from "./links.mjs";
 import { outcomeOf, recordedDispositions } from "./disposition.mjs";
+import { stalenessMarking } from "./archive-gate.mjs";
 import { DETOURS_LOG, PROJECT_MD, STATE_PATH, RENDER_STAMP_PATH, CONDUCTOR_DIR, gateSummary } from "./constants.mjs";
 
 export function render() {
@@ -55,6 +56,11 @@ export function render() {
     if (active.reconcileNeeded) {
       md.push("");
       md.push("⚠ **Reconcile pending** — re-validate this proposal before continuing.");
+    }
+    if (active.trackerRefreshNeeded) {
+      md.push("");
+      md.push(`⚠ **Tracker refresh owed** — re-read \`${active.externalUrl || active.externalId}\` ` +
+        "before drawing specs or a plan, then record the verdict with `record-tracker-refresh`.");
     }
   } else if (activeEpic && activeEpic.status === "archived") {
     md.push(`_\`${activeEpic.id}\` was archived; the active pointer clears on next \`/pm:sync\` or commit._`);
@@ -149,7 +155,12 @@ export function render() {
     md.push("| Epic | Gate 1 (spec) | Gate 2 (implementation) |");
     md.push("|------|---------------|-------------------------|");
     for (const e of gated) {
-      md.push(`| \`${e.id}\` | ${gateSummary(e.gateReview.gate1)} | ${gateSummary(e.gateReview.gate2)} |`);
+      // The staleness predicate is IMPORTED, never re-derived: a verdict that refuses an
+      // archive and a verdict that renders as a pass would otherwise be able to disagree.
+      // Three no-attribution states render three ways — absent is unverifiable, present-and-
+      // empty says nothing was attributed, and an unavailable git is unverifiable too.
+      md.push(`| \`${e.id}\` | ${gateSummary(e.gateReview.gate1, stalenessMarking(e, e.gateReview.gate1))} ` +
+        `| ${gateSummary(e.gateReview.gate2, stalenessMarking(e, e.gateReview.gate2))} |`);
     }
     md.push("");
   }

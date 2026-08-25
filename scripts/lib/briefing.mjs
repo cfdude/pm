@@ -8,6 +8,7 @@ import { getAutonomy } from "./autonomy.mjs";
 import { staleMarker } from "./active-pointer.mjs";
 import { validLink } from "./links.mjs";
 import { outcomeOf, recordedDispositions } from "./disposition.mjs";
+import { stalenessMarking } from "./archive-gate.mjs";
 import { KNOWN_LANES, anyInwardProcedureEmittable, gateSummary, outwardApplies } from "./constants.mjs";
 import { conflictCount, conflictWarningLatched, consumeConflictWarning } from "./write-conflicts.mjs";
 import { CONFLICT_WARN_THRESHOLD } from "./constants.mjs";
@@ -45,6 +46,13 @@ export function buildBrief(state, { consume = false } = {}) {
     L.push(`NOW: \`${active.id}\` (${active.lane}, ${active.role}, ${active.priority}${autonomous}) — ${bar(active.progress)}${staleMarker(active)}`);
     if (active.reconcileNeeded)
       L.push(`  ⚠ RECONCILE PENDING: re-validate this proposal before continuing (a detour touched shared code).`);
+    // The refresh debt is re-taught every briefing rather than remembered by the session that
+    // incurred it — a compaction is exactly when it would otherwise be lost, and it was incurred
+    // at activation, which may have been many turns ago.
+    if (active.trackerRefreshNeeded)
+      L.push(`  ⚠ TRACKER REFRESH OWED: re-read \`${active.externalUrl || active.externalId}\` ` +
+        "(body, comments, labels, state) before drawing specs or a plan, then " +
+        "`record-tracker-refresh " + active.id + " --verdict unchanged|material-change --external-updated-at <iso>`.");
   } else if (activeEpic && activeEpic.status === "archived") {
     L.push(`NOW: (no active epic — \`${activeEpic.id}\` was archived; the active pointer clears on next /pm:sync or commit)`);
   } else {
@@ -139,8 +147,8 @@ export function buildBrief(state, { consume = false } = {}) {
   if (gated.length) {
     L.push("GATE REVIEWS:");
     for (const e of gated.slice(0, NEXT_CAP)) {
-      L.push(`  • \`${e.id}\` gate 1: ${gateSummary(e.gateReview.gate1)} · ` +
-        `gate 2: ${gateSummary(e.gateReview.gate2)}`);
+      L.push(`  • \`${e.id}\` gate 1: ${gateSummary(e.gateReview.gate1, stalenessMarking(e, e.gateReview.gate1))} · ` +
+        `gate 2: ${gateSummary(e.gateReview.gate2, stalenessMarking(e, e.gateReview.gate2))}`);
     }
     if (gated.length > NEXT_CAP) L.push(`  (+${gated.length - NEXT_CAP} more — see PROJECT.md)`);
     L.push("");

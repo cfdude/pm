@@ -1078,3 +1078,81 @@ test("an epic written before this capability carries NO attribution key at all",
     "nothing may back-fill the array onto a pre-existing epic — that would convert the gate's " +
     "one forgiven case into a repo-wide false claim");
 });
+
+// ─────────────── verdict staleness ───────────────
+//
+// Repository HEAD is deliberately NOT the baseline: an epic archived a week after its merge has
+// a HEAD far past its own headSha through nobody's fault. The baseline is the LAST commit the
+// agent attributed to this epic.
+
+const headSha = (cwd) => execFileSync("git", ["rev-parse", "HEAD"], { cwd, encoding: "utf8" }).trim();
+
+/** An openspec epic with a passing Gate 2 in a real two-delivery-commit repository. */
+function stalenessFixture({ attribute, reviewedUpTo }) {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  gitInitWithCommit(cwd);
+  commitFiles(cwd, { "one.txt": "1" }, "feat: first delivery commit");
+  const first = headSha(cwd);
+  commitFiles(cwd, { "two.txt": "2" }, "feat: second delivery commit");
+  const second = headSha(cwd);
+  run(["add-epic", "--id", "shipped", "--lane", "openspec"], { cwd });
+  for (const sha of attribute({ first, second })) {
+    run(["update-epic", "shipped", "--attribute-commit", sha], { cwd });
+  }
+  run(["record-gate-review", "shipped", "--gate", "2", "--verdict", "pass",
+    "--base-sha", "HEAD~2", "--head-sha", reviewedUpTo({ first, second })], { cwd });
+  return { cwd, first, second };
+}
+
+test("a verdict whose range stops short of the attributed commits refuses the archive", () => {
+  const { cwd, first, second } = stalenessFixture({
+    attribute: ({ first, second }) => [first, second],
+    reviewedUpTo: ({ first }) => first,
+  });
+  const err = expectFail(() => run(["update-epic", "shipped", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd }));
+  assert.ok(err, "a review of a..b on an epic that shipped b..c did not review what shipped");
+  const msg = String(err.stderr || err.message);
+  assert.match(msg, new RegExp(first), "the refusal names the range the reviewer actually read");
+  assert.match(msg, new RegExp(second), "and the attributed commit it does not cover");
+  assert.equal(readState(cwd).epics.find(e => e.id === "shipped").status, "queued");
+});
+
+test("a verdict covering the last attributed commit passes, even after HEAD moves on", () => {
+  const { cwd } = stalenessFixture({
+    attribute: ({ first, second }) => [first, second],
+    reviewedUpTo: ({ second }) => second,
+  });
+  // Unrelated work lands afterwards — someone else's epic. HEAD is now far past the verdict.
+  commitFiles(cwd, { "unrelated.txt": "x" }, "chore: another epic's commit");
+  run(["update-epic", "shipped", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd });
+  assert.equal(readState(cwd).epics.find(e => e.id === "shipped").status, "archived");
+});
+
+test("the archive-move commit, left unattributed, does not make the epic's own verdict stale", () => {
+  // The trap the emitted exclusion exists to keep an agent out of, asserted against the gate:
+  // the move lands after the reviewed range by construction, so attributing it would refuse the
+  // archive at the exact moment the archive gate reads the verdict.
+  const { cwd, second } = stalenessFixture({
+    attribute: ({ first, second }) => [first, second],
+    reviewedUpTo: ({ second }) => second,
+  });
+  assert.ok(second);
+  commitFiles(cwd, { "openspec-archive-move.txt": "moved" }, "chore(opsx): archive the change");
+  run(["update-epic", "shipped", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd });
+  assert.equal(readState(cwd).epics.find(e => e.id === "shipped").status, "archived",
+    "the move was never attributed, so the recorded headSha is still the last entry");
+});
+
+test("attributing the archive-move commit DOES refuse it — which is why the exclusion is emitted", () => {
+  const { cwd } = stalenessFixture({
+    attribute: ({ first, second }) => [first, second],
+    reviewedUpTo: ({ second }) => second,
+  });
+  commitFiles(cwd, { "openspec-archive-move.txt": "moved" }, "chore(opsx): archive the change");
+  run(["update-epic", "shipped", "--attribute-commit", headSha(cwd)], { cwd });
+  const err = expectFail(() => run(["update-epic", "shipped", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd }));
+  assert.ok(err,
+    "the engine classifies nothing and appends exactly what it is handed — so the obligation " +
+    "pm emits has to state the exclusion, and 15.4 is where it does");
+});
