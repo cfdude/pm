@@ -140,6 +140,11 @@ export const EPIC_FLAGS = [
   { flag: "external-url", key: "externalUrl", commands: ["add-epic", "update-epic", "add-many"] },
   { flag: "plan", key: "planPath", commands: ["add-epic", "update-epic", "add-many"] },
   { flag: "link", key: "links", commands: ["add-epic", "update-epic", "add-many"], repeats: true, write: "custom" },
+  // Emptying the links array is its OWN named flag. `--link` replaces the array wholesale, so a
+  // VALUELESS `--link` parsed as `[true]`, was filtered to `[]` by parseLinkFlags, and silently
+  // wiped every link — the destructive reading of what looks like a typo. `--clear-links` says
+  // what it does; the valueless `--link` is now refused and points here.
+  { flag: "clear-links", key: "links", commands: ["update-epic"], write: "custom" },
   // `description` and `notes` are DISTINCT and neither substitutes for the other: a description
   // is durable rationale (why this epic exists, what would make it worth revisiting), replaced
   // wholesale when set again; notes are an append-only trail that reads as activity. Both are

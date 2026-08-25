@@ -275,6 +275,9 @@ const EXERCISE = {
   "--status": { args: ["--status", "paused"], check: (e) => assert.equal(e.status, "paused") },
   "--priority": { args: ["--priority", "P1"], check: (e) => assert.equal(e.priority, "P1") },
   "--link": { args: ["--link", "blocks:other:because"], check: (e) => assert.deepEqual(e.links, [{ type: "blocks", epic: "other", reason: "because" }]) },
+  // The setup link is load-bearing: a freshly created epic already has `links: []`, so without
+  // it this entry would pass against an implementation that did nothing at all.
+  "--clear-links": { setup: ["--link", "blocks:other:because"], args: ["--clear-links"], check: (e) => assert.deepEqual(e.links, []) },
   "--review-mode": { args: ["--review-mode", "thorough"], check: (e) => assert.equal(e.reviewMode, "thorough") },
   "--lane": { args: ["--lane", "superpowers"], check: (e) => assert.equal(e.lane, "superpowers") },
   "--plan": { args: ["--plan", "docs/superpowers/plans/p.md"], check: (e) => assert.equal(e.planPath, "docs/superpowers/plans/p.md") },

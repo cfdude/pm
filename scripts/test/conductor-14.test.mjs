@@ -993,3 +993,61 @@ test("--plan attaches a plan to an epic created without one, and refuses a value
   assert.ok(err, "--plan with no value must be refused, never stored as `true`");
   assert.equal(readState(cwd).epics.find(e => e.id === "e1").planPath, "docs/superpowers/plans/p.md");
 });
+
+// ─────────── 12.3: --clear-links, and a valueless --link that refuses ───────────
+//
+// `--link` REPLACES the links array, and a VALUELESS `--link` arrives as `[true]` (it is a
+// repeatable flag), which parseLinkFlags filters down to `[]` — so the one spelling an agent
+// reaches for to empty the array silently empties it while looking like a typo, and the one
+// spelling that says "empty it" did not exist. Clearing is now a NAMED flag; the valueless form
+// is refused.
+
+test("--clear-links empties the links and touches nothing else about the epic", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "other", "--lane", "claude-code"], { cwd });
+  run(["add-epic", "--id", "e1", "--lane", "openspec", "--title", "keep me", "--priority", "P1"], { cwd });
+  run(["update-epic", "e1", "--link", "depends-on:other", "--add-story", "s one"], { cwd });
+  run(["record-gate-review", "e1", "--gate", "2", "--verdict", "pass",
+       "--base-sha", "aaa", "--head-sha", "bbb"], { cwd });
+  run(["update-epic", "e1", "--status", "paused"], { cwd });
+  const b = readState(cwd).epics.find(e => e.id === "e1");
+  assert.equal(b.links.length, 1, "the fixture must actually have a link to clear");
+
+  run(["update-epic", "e1", "--clear-links"], { cwd });
+  const a = readState(cwd).epics.find(e => e.id === "e1");
+  assert.deepEqual(a.links, [], "--clear-links empties the array");
+  assert.equal(a.title, "keep me");
+  assert.equal(a.status, "paused");
+  assert.equal(a.priority, "P1");
+  assert.deepEqual(a.stories, b.stories);
+  assert.deepEqual(a.gateReview, b.gateReview);
+});
+
+test("--link with no value is refused rather than silently emptying the array", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "other", "--lane", "claude-code"], { cwd });
+  run(["add-epic", "--id", "e1", "--lane", "claude-code"], { cwd });
+  run(["update-epic", "e1", "--link", "depends-on:other"], { cwd });
+  const err = expectFail(() => run(["update-epic", "e1", "--link"], { cwd }));
+  assert.ok(err, "a valueless --link must exit non-zero, not empty the links");
+  const msg = String(err.stderr || err.message);
+  assert.ok(msg.includes("--link"), "the refusal must name the flag");
+  assert.ok(msg.includes("--clear-links"), "and point at the flag that DOES clear links");
+  assert.equal(readState(cwd).epics.find(e => e.id === "e1").links.length, 1,
+    "the links must survive the refusal untouched");
+});
+
+test("the clearing form is named in update-epic's usage line and in commands/epic.md", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const err = expectFail(() => run(["update-epic"], { cwd }));
+  assert.ok(String(err.stderr || err.message).includes("--clear-links"),
+    "the usage line must name --clear-links");
+  const doc = fs.readFileSync(path.join(path.dirname(ENGINE), "..", "commands", "epic.md"), "utf8");
+  const start = doc.indexOf("## Write-back — `update-epic`");
+  const next = doc.indexOf("\n## ", start + 1);
+  assert.ok(doc.slice(start, next === -1 ? doc.length : next).includes("--clear-links"),
+    "commands/epic.md's update-epic section must name --clear-links");
+});

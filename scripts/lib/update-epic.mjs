@@ -31,7 +31,7 @@ export function updateEpic() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const argv = process.argv.slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
-  if (!id) { process.stderr.write("usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--lane openspec|superpowers|claude-code|decision|external] [--plan <path>] [--link \"<type>:<epic>[:<reason>]\"] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done] [--attribute-commit <sha>] [--outcome delivered|killed|superseded|abandoned] [--reason \"<why>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\"] [--declined-deferral \"<what>:<why not>\"] [--no-deferrals] [--description D] [--notes \"<text>\"] [--external-updated-at <iso>]\n"); process.exit(1); }
+  if (!id) { process.stderr.write("usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--lane openspec|superpowers|claude-code|decision|external] [--plan <path>] [--link \"<type>:<epic>[:<reason>]\"] [--clear-links] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done] [--attribute-commit <sha>] [--outcome delivered|killed|superseded|abandoned] [--reason \"<why>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\"] [--declined-deferral \"<what>:<why not>\"] [--no-deferrals] [--description D] [--notes \"<text>\"] [--external-updated-at <iso>]\n"); process.exit(1); }
   const f = parseFlags(argv.slice(1));
   const unknown = Object.keys(f).filter(k => !UPDATE_EPIC_FLAGS.includes(k));
   if (unknown.length) {
@@ -69,8 +69,28 @@ export function updateEpic() {
   if (f.plan !== undefined && planPath === undefined) {
     process.stderr.write("conductor: --plan requires a value\n"); process.exit(1);
   }
+  // Clearing the links is a NAMED flag, and the valueless `--link` that used to do it by
+  // accident is refused. `--link` is repeatable, so `--link` with nothing after it parses as
+  // `[true]`; parseLinkFlags filters non-strings away and yields `[]`, which then REPLACED the
+  // array — a wipe that looks exactly like a typo and reports "updated". Both spellings now say
+  // what they mean, and the refusal names the one that clears.
   let links;
-  if (f.link !== undefined) {
+  if (f["clear-links"] !== undefined) {
+    if (f["clear-links"] !== true) {
+      process.stderr.write("conductor: --clear-links takes no value\n"); process.exit(1);
+    }
+    if (f.link !== undefined) {
+      process.stderr.write("conductor: --clear-links and --link are mutually exclusive — pass the links you want, or clear them\n");
+      process.exit(1);
+    }
+    links = [];
+  } else if (f.link !== undefined) {
+    if (!Array.isArray(f.link) || f.link.some(v => typeof v !== "string")) {
+      process.stderr.write(
+        "conductor: --link requires a \"<type>:<epic>[:<reason>]\" value — to empty an epic's " +
+        "links, say so with --clear-links\n");
+      process.exit(1);
+    }
     try {
       links = parseLinkFlags(f.link, new Set(state.epics.map(e => e.id)));
     } catch (e) {

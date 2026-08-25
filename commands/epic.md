@@ -77,7 +77,7 @@ To change an epic that already exists (notably, to record a tracker key after cr
 node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" update-epic <id> \
   [--title <title>] [--external-id <KEY>] [--external-url <url>] [--parent <id>] \
   [--status <status>] [--priority <P?>] [--link "<type>:<epic>[:<reason>]"] \
-  [--lane <lane>] [--plan <path>]
+  [--clear-links] [--lane <lane>] [--plan <path>]
 ```
 
 The id is positional. Parent/status/lane/link changes are validated like `add-epic` (no
@@ -96,6 +96,12 @@ field — this is the intended CLI path to fix a malformed link (recorded with a
 --link` before this validation existed, or hand-edited) without touching `state.json` directly.
 Pass every link you want the epic to have; omitting `--link` entirely leaves existing links
 untouched.
+
+**To EMPTY an epic's links, say so: `--clear-links`.** `--link` with no value used to do it by
+accident — it is a repeatable flag, so a bare `--link` parsed as one non-string element, was
+filtered away, and replaced the array with an empty one while printing "updated". That spelling
+now exits non-zero and points here. `--clear-links` takes no value and may not be combined with
+`--link`.
 
 ## Remove an epic — `remove-epic`
 
