@@ -134,3 +134,14 @@ export function deferralAssertion({ deferrals = [], declined = [], assertedAt } 
   };
 }
 
+/** The stamp a CREATION path writes for an epic created directly at `archived`.
+ *
+ *  `via` exists for one case and is not a general override: where the archive backfill
+ *  registers a historical change THROUGH a creation path, the record must carry
+ *  `archive-backfill` and not the inner creation token — every rule elsewhere in this release
+ *  that exempts historical registrations keys on that token, and a record carrying the inner
+ *  one would defeat those exemptions. One record carries one token; there is no shape that
+ *  carries two. No CLI flag reaches this: `recordedBy` is never agent-writable. */
+export function creationStamp(command, { via } = {}) {
+  return engineStamp(via || command);
+}

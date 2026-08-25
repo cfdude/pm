@@ -6,6 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { ROOT, CHANGES_DIR, ARCHIVE_DIR, PLANS_DIR, laneRank, isOpenspecLane } from "./constants.mjs";
+import { engineStamp } from "./disposition.mjs";
 
 /** Active openspec change ids = subdirs of openspec/changes except `archive`. */
 export function activeChangeIds() {
@@ -67,7 +68,31 @@ export function isArchived(id) {
 export function reconcileArchived(state) {
   let changed = false;
   for (const e of state.epics) {
-    if (e.status !== "archived" && isArchived(e.id)) { e.status = "archived"; changed = true; }
+    if (e.status !== "archived" && isArchived(e.id)) {
+      e.status = "archived";
+      // ONE record for the transition, whose TWO HALVES BIND DIFFERENT SETS OF EPICS. Written
+      // together on purpose: two independent writes are exactly what produces an epic carrying
+      // the bypass and not the outcome.
+      //
+      // The DISPOSITION half binds EVERY LANE — the outcome invariant admits no lane
+      // exception, and this function reaches epics of every lane (65 of this repository's 68
+      // archived epics are not openspec-lane). `recordedBy` is a FIELD, not prose in the
+      // reason: a consumer keys on data, never on parsing a path name out of free text.
+      if (!e.disposition) e.disposition = engineStamp("archive-drift-heal");
+      // The BYPASS half binds OPENSPEC-LANE EPICS ONLY, through isOpenspecLane so a lane-less
+      // epic — openspec-lane on every other surface — gets the record its rendering says it
+      // owes. `record-gate-review` refuses a verdict to any other lane, so an `ungated` entry
+      // on a claude-code or superpowers epic would be a standing condition with NO clearing
+      // path in the engine at all. No `reviewer` field: that carries an identity, and an audit
+      // query over reviewers must never pick up path names.
+      if (isOpenspecLane(e) && !(e.gateReview && e.gateReview.gate2)) {
+        e.gateReview = e.gateReview && typeof e.gateReview === "object" ? e.gateReview : {};
+        e.gateReview.gate2 = {
+          verdict: "ungated", reviewedAt: new Date().toISOString(), recordedBy: "archive-drift-heal",
+        };
+      }
+      changed = true;
+    }
   }
   if (state.active) {
     const a = state.epics.find(e => e.id === state.active);

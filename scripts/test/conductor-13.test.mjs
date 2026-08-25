@@ -1415,3 +1415,130 @@ test("a killed epic with every task outstanding is asked for no handoff", () => 
   assert.equal(e.disposition.carriedTo, undefined,
     "the recorded reason already accounts for where the work went: nowhere, and why");
 });
+
+// ─────────────── the archive-drift heal writes ONE record ───────────────
+//
+// The rules bind the FUNCTION, not any list of entry points: `reconcileArchived()` is reached
+// from `upgrade` (migrations.mjs), `render` (twice), the commit nudge (twice) and `sync`. Two
+// of those are interactive verbs an agent typed, so "nobody is present" is false and is not the
+// trigger — the trigger is that no disposition is supplied at the transition, which is true at
+// every one of them.
+
+/** Put an ARCHIVED change on disk for `id`, with an epic that has not been healed yet. */
+function unhealed(cwd, id, lane) {
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", `2026-08-01-${id}`), { recursive: true });
+  writeState(cwd, {
+    version: 1, active: null, detourStack: [],
+    epics: [{ id, title: id, priority: "P1", status: "queued", role: "epic",
+      links: [], reconcileNeeded: false, ...(lane === undefined ? {} : { lane }) }],
+  });
+}
+
+for (const [label, invoke] of [
+  ["render", (cwd) => run(["render"], { cwd })],
+  ["sync", (cwd) => run(["sync"], { cwd })],
+  ["upgrade", (cwd) => run(["upgrade"], { cwd })],
+  ["commit-nudge", (cwd) => run(["commit-nudge"], { cwd, input: JSON.stringify({ tool_input: { command: "git commit -m x" } }) })],
+]) {
+  test(`the heal writes an identical record from the ${label} call site`, () => {
+    const cwd = tmpRepo();
+    run(["init"], { cwd });
+    unhealed(cwd, "healed-here", "openspec");
+    invoke(cwd);
+    const e = readState(cwd).epics.find(x => x.id === "healed-here");
+    assert.equal(e.status, "archived");
+    assert.equal(e.disposition.outcome, "unknown");
+    assert.equal(e.disposition.recordedBy, "archive-drift-heal",
+      "recordedBy is a FIELD — a consumer must never parse a path name out of a free-text reason");
+    assert.ok(e.disposition.recordedAt);
+    assert.equal(e.gateReview.gate2.verdict, "ungated");
+    assert.equal(e.gateReview.gate2.recordedBy, "archive-drift-heal");
+    assert.equal(e.gateReview.gate2.reviewer, undefined,
+      "`reviewer` carries an identity; an audit over reviewers must not collect path names");
+  });
+}
+
+test("a healed superpowers-lane epic gets the disposition and NO ungated condition", () => {
+  // `record-gate-review` refuses a verdict to any non-openspec lane, so an `ungated` entry
+  // there would be a standing condition with no clearing path in the engine at all — and the
+  // lanes this function reaches most are not openspec.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  unhealed(cwd, "healed-sp", "superpowers");
+  run(["render"], { cwd });
+  const e = readState(cwd).epics.find(x => x.id === "healed-sp");
+  assert.equal(e.status, "archived");
+  assert.equal(e.disposition.recordedBy, "archive-drift-heal", "the disposition half binds every lane");
+  assert.equal(e.gateReview, undefined, "the bypass half binds openspec-lane epics only");
+});
+
+test("a healed LANE-LESS epic DOES receive the bypass half", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  unhealed(cwd, "healed-nolane", undefined);
+  run(["render"], { cwd });
+  const e = readState(cwd).epics.find(x => x.id === "healed-nolane");
+  assert.equal(e.gateReview.gate2.verdict, "ungated",
+    "a lane-less epic renders as openspec-lane everywhere, so a strict test here would deny " +
+    "it the record its own rendering says it owes");
+});
+
+test("an existing gate2 verdict is never overwritten by the heal", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", "2026-08-01-reviewed"), { recursive: true });
+  writeState(cwd, {
+    version: 1, active: null, detourStack: [],
+    epics: [{ id: "reviewed", title: "reviewed", priority: "P1", status: "queued", role: "epic",
+      lane: "openspec", links: [], reconcileNeeded: false,
+      gateReview: { gate2: { verdict: "pass", reviewedAt: "2026-07-01T00:00:00.000Z", baseSha: "aaa1111", headSha: "bbb2222" } } }],
+  });
+  run(["render"], { cwd });
+  const g = readState(cwd).epics.find(x => x.id === "reviewed").gateReview.gate2;
+  assert.equal(g.verdict, "pass", "the heal reflects disk; it does not overwrite a real review");
+  assert.equal(g.headSha, "bbb2222");
+});
+
+// ─────────────── the two archived-at-creation paths ───────────────
+
+test("add-epic --status archived stamps its own token and writes no gate2", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "born-archived", "--lane", "openspec", "--status", "archived"], { cwd });
+  const e = readState(cwd).epics.find(x => x.id === "born-archived");
+  assert.equal(e.disposition.outcome, "unknown");
+  assert.equal(e.disposition.recordedBy, "add-epic");
+  assert.equal(e.gateReview, undefined,
+    "an ungated entry here would be a permanent standing condition clearable only by a real " +
+    "Gate 2 review of work that finished before the epic existed");
+});
+
+test("an add-many batch entry at archived stamps ITS token, so neither rule hides in the other", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-many", "--from", writeBatch(cwd, { epics: [
+    { id: "batch-archived", lane: "openspec", status: "archived" },
+    { id: "batch-queued", lane: "openspec" },
+  ] })], { cwd });
+  const st = readState(cwd);
+  assert.equal(st.epics.find(x => x.id === "batch-archived").disposition.recordedBy, "add-many");
+  assert.equal(st.epics.find(x => x.id === "batch-queued").disposition, undefined,
+    "creation at any other status writes no disposition at all — nothing has ended, and " +
+    "`unknown` would assert a terminal disposition for work that has not terminated");
+});
+
+test("a backfill registering THROUGH a creation path keeps the backfill's token", async () => {
+  // Every rule elsewhere that exempts historical registrations keys on this token, so a record
+  // carrying the inner creation token would defeat those exemptions.
+  const { creationStamp } = await import(new URL("../lib/disposition.mjs", import.meta.url).href);
+  assert.equal(creationStamp("add-epic", { via: "archive-backfill" }).recordedBy, "archive-backfill");
+  assert.equal(creationStamp("add-many", { via: "archive-backfill" }).recordedBy, "archive-backfill");
+  assert.equal(creationStamp("add-epic").recordedBy, "add-epic");
+});
+
+test("no flag on any command writes recordedBy", async () => {
+  const { EPIC_FLAGS } = await import(CONSTANTS);
+  assert.deepEqual(EPIC_FLAGS.filter(f => f.key === "recordedBy"), [],
+    "recordedBy is what tells an engine stamp from an agent's judgment; an agent-writable " +
+    "path for it would collapse the distinction every exemption in this release keys on");
+});
