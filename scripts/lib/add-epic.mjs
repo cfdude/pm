@@ -9,6 +9,7 @@ import { activate } from "./active-pointer.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { render } from "./render.mjs";
 import { KNOWN_LANES, KNOWN_STATUSES, epicFlagsFor, repeatableEpicFlags } from "./constants.mjs";
+import { creationStamp } from "./disposition.mjs";
 
 // Repeatable flags that belong to NO epic-writing command, and so cannot come from the shared
 // EPIC_FLAGS registry: --intent is set-tracker's, --preauthorize/--context/--notify are
@@ -250,10 +251,25 @@ export function addEpic() {
     const perr = parentError(state.epics, id, parent);
     if (perr) { process.stderr.write(`conductor: ${perr}\n`); process.exit(1); }
   }
+  // `attributedCommits: []` at creation, ALWAYS — absent and empty are different claims. An
+  // ABSENT array means the epic predates commit attribution and its verdict is unverifiable;
+  // an EMPTY one means the epic was created under it and nothing has been attributed yet. Were
+  // the array only ever created by --attribute-commit's first use, `[]` would be a state
+  // nothing could produce, and an agent ignoring the obligation would hide behind the one case
+  // the staleness gate is required to forgive.
   const epic = {
     id, title: str(f.title) || id, priority: str(f.priority) || "P?",
-    status, role: "epic", lane, links, reconcileNeeded: false,
+    status, role: "epic", lane, links, reconcileNeeded: false, attributedCommits: [],
   };
+  // Created directly AT `archived`: stamp rather than refuse. Refusing would be the simpler
+  // rule, but the capability is in use — this repository's own suite creates archived epics to
+  // exercise parent rollup, and the archive backfill registers historical changes directly at
+  // `archived` by design. The stamp keeps the outcome invariant true without removing it.
+  // No `gateReview.gate2` entry, for the backfill's reason: the stamp already records exactly
+  // how the epic reached `archived`, while an `ungated` entry would add a permanent standing
+  // condition clearable only by a real Gate 2 of work that finished before the epic existed.
+  // Creation at any other status writes no disposition at all — nothing has ended.
+  if (status === "archived") epic.disposition = creationStamp("add-epic");
   if (str(f.plan)) epic.planPath = f.plan;
   // A valueless `--description` / `--notes` arrives as boolean true and would otherwise be
   // dropped by str() — exit-0-write-nothing, the exact shape of #79 the allowlist above was
@@ -270,7 +286,11 @@ export function addEpic() {
   if (str(f["external-url"]) !== undefined) epic.externalUrl = str(f["external-url"]);
   if (str(f["external-updated-at"]) !== undefined) epic.externalUpdatedAt = str(f["external-updated-at"]);
   state.epics.push(epic);
-  if (epic.status === "active") activate(state, id);   // keep .active in sync on creation
+  // keep .active in sync on creation. `freshlyRead` when this very command carried the item's
+  // updated timestamp: the agent just read it, so an immediate re-read obligation would be noise.
+  if (epic.status === "active") {
+    activate(state, id, { freshlyRead: str(f["external-updated-at"]) !== undefined });
+  }
   saveState(state);
   render();
   process.stderr.write(`conductor: added epic '${id}' (${lane}, ${status})\n`);

@@ -764,3 +764,70 @@ test("a batch entry at active status becomes the single active epic and demotes 
   assert.equal(s.epics.find(e => e.id === "old").status, "queued",
     "the single-active invariant binds bulk creation too");
 });
+
+test("every activation path sets the refresh obligation identically, keyed on provenance", () => {
+  const linked = { externalId: "7", externalUrl: "https://x.test/7" };
+
+  // 1. set-active
+  let cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code", "--external-id", "7",
+       "--external-url", "https://x.test/7"], { cwd });
+  run(["set-active", "a"], { cwd });
+  assert.equal(readState(cwd).epics.find(e => e.id === "a").trackerRefreshNeeded, true, "set-active");
+
+  // 2. update-epic --status active
+  cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code", "--external-id", "7",
+       "--external-url", "https://x.test/7"], { cwd });
+  run(["update-epic", "a", "--status", "active"], { cwd });
+  assert.equal(readState(cwd).epics.find(e => e.id === "a").trackerRefreshNeeded, true, "update-epic");
+
+  // 3. add-epic created active WITHOUT a fresh read
+  cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code", "--status", "active",
+       "--external-id", "7", "--external-url", "https://x.test/7"], { cwd });
+  assert.equal(readState(cwd).epics.find(e => e.id === "a").trackerRefreshNeeded, true, "add-epic");
+
+  // 4. add-many
+  cwd = tmpRepo();
+  run(["init"], { cwd });
+  const batch = path.join(cwd, "b.json");
+  fs.writeFileSync(batch, JSON.stringify({ epics: [
+    { id: "a", lane: "claude-code", status: "active", ...linked },
+  ] }));
+  run(["add-many", "--from", batch], { cwd });
+  assert.equal(readState(cwd).epics.find(e => e.id === "a").trackerRefreshNeeded, true, "add-many");
+});
+
+test("an epic created active in the same command that read the item owes nothing", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "a", "--lane", "claude-code", "--status", "active",
+       "--external-id", "7", "--external-url", "https://x.test/7",
+       "--external-updated-at", "2026-08-23T09:30:00Z"], { cwd });
+  const e = readState(cwd).epics.find(x => x.id === "a");
+  assert.ok(!e.trackerRefreshNeeded, "the agent just read the item — an immediate re-read is noise");
+});
+
+test("provenance, never direction, decides the obligation", () => {
+  // An epic with no external id owes no TRACKER refresh whatever the repo's direction is; an
+  // epic with one owes it even under `outward`, because a linked item accumulates third-party
+  // context regardless of which way it was born.
+  for (const direction of ["inward", "outward", "both"]) {
+    const cwd = tmpRepo();
+    run(["init"], { cwd });
+    run(["set-tracker", "--system", "jira", "--project", "JOB", "--direction", direction], { cwd });
+    run(["add-epic", "--id", "local", "--lane", "openspec"], { cwd });
+    run(["add-epic", "--id", "linked", "--lane", "claude-code", "--external-id", "7",
+         "--external-url", "https://x.test/7"], { cwd });
+    run(["set-active", "local"], { cwd });
+    assert.ok(!readState(cwd).epics.find(e => e.id === "local").trackerRefreshNeeded,
+      `local-origin epic owes nothing under ${direction}`);
+    run(["set-active", "linked"], { cwd });
+    assert.equal(readState(cwd).epics.find(e => e.id === "linked").trackerRefreshNeeded, true,
+      `tracker-linked epic owes a re-read under ${direction}`);
+  }
+});
