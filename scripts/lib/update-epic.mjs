@@ -30,7 +30,7 @@ export function updateEpic() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const argv = process.argv.slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
-  if (!id) { process.stderr.write("usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--link \"<type>:<epic>[:<reason>]\"] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done] [--description D] [--notes \"<text>\"] [--external-updated-at <iso>]\n"); process.exit(1); }
+  if (!id) { process.stderr.write("usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--link \"<type>:<epic>[:<reason>]\"] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done] [--attribute-commit <sha>] [--description D] [--notes \"<text>\"] [--external-updated-at <iso>]\n"); process.exit(1); }
   const f = parseFlags(argv.slice(1));
   const unknown = Object.keys(f).filter(k => !UPDATE_EPIC_FLAGS.includes(k));
   if (unknown.length) {
@@ -115,6 +115,15 @@ export function updateEpic() {
     process.stderr.write("conductor: --done requires --story <n>\n"); process.exit(1);
   }
 
+  // --attribute-commit <sha>: append, in the order given, the commits this epic's work landed
+  // in. The last entry is the endpoint a recorded Gate 2 `headSha` is compared against, so the
+  // ORDER is the meaning and the engine appends exactly what it is handed.
+  const attributed = f["attribute-commit"] === undefined
+    ? [] : [].concat(f["attribute-commit"]).filter(v => typeof v === "string" && v.trim());
+  if (f["attribute-commit"] !== undefined && !attributed.length) {
+    process.stderr.write("conductor: --attribute-commit requires a commit sha\n"); process.exit(1);
+  }
+
   // The archive transition's conditions live in archive-gate.mjs, which every path that can
   // leave an epic at `archived` imports. They were inline here, which is precisely how they
   // came to bind this one path and none of the other four. The gate returns a refusal; this
@@ -139,6 +148,10 @@ export function updateEpic() {
   if (str(f.priority) !== undefined) epic.priority = str(f.priority);
   if (links !== undefined) epic.links = links;
   if (reviewMode !== undefined) epic.reviewMode = reviewMode;
+  if (attributed.length) {
+    if (!Array.isArray(epic.attributedCommits)) epic.attributedCommits = [];
+    epic.attributedCommits.push(...attributed.map(v => v.trim()));
+  }
   // `--description` REPLACES (durable rationale, one value); `--notes` APPENDS (an activity
   // trail). Writing either never touches the other, and an earlier note is never rewritten or
   // dropped — the two readings are both wanted, so neither may be collapsed into the other.

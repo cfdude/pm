@@ -1022,3 +1022,59 @@ test("an epic carrying only a gate1 verdict is named on both surfaces, with its 
     "an epic with no gate2 must still appear — filtering the section on gate2 hides exactly " +
     "the epic whose spec review is the only one recorded");
 });
+
+// ─────────────── commit attribution ───────────────
+
+test("--attribute-commit appends a hash that reads back from state.json", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "subject", "--lane", "openspec"], { cwd });
+  run(["update-epic", "subject", "--attribute-commit", "1a2b3c4"], { cwd });
+  assert.deepEqual(readState(cwd).epics.find(e => e.id === "subject").attributedCommits, ["1a2b3c4"]);
+  run(["update-epic", "subject", "--attribute-commit", "5d6e7f8"], { cwd });
+  assert.deepEqual(readState(cwd).epics.find(e => e.id === "subject").attributedCommits,
+    ["1a2b3c4", "5d6e7f8"], "appends in the order given — the LAST entry is what a verdict's " +
+    "headSha is compared against, so order is the meaning");
+});
+
+test("two hashes in ONE invocation both land, in the order given", () => {
+  // parseFlags overwrites a non-repeatable flag on each occurrence, so without `repeats: true`
+  // this exits 0 having kept only the second — one hash where two were attributed, and the
+  // order that gives the array its meaning gone with it.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "subject", "--lane", "openspec"], { cwd });
+  run(["update-epic", "subject", "--attribute-commit", "aaa1111", "--attribute-commit", "bbb2222"], { cwd });
+  assert.deepEqual(readState(cwd).epics.find(e => e.id === "subject").attributedCommits,
+    ["aaa1111", "bbb2222"], "reports length 1 the moment the flag leaves the repeatable set");
+});
+
+// ─────────────── absent vs empty attribution ───────────────
+
+test("an epic created under this capability carries the array EMPTY, on both creation paths", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "born-here", "--lane", "openspec"], { cwd });
+  run(["add-many", "--from", writeBatch(cwd, { epics: [{ id: "batch-born", lane: "claude-code" }] })], { cwd });
+  const st = readState(cwd);
+  for (const id of ["born-here", "batch-born"]) {
+    const e = st.epics.find(x => x.id === id);
+    assert.ok(Object.prototype.hasOwnProperty.call(e, "attributedCommits"),
+      `${id} must carry the KEY — a rule applied at one of two creation sites is the absent-edit ` +
+      "class this release exists to close");
+    assert.deepEqual(e.attributedCommits, [], `${id} asserts nothing attributed yet`);
+  }
+});
+
+test("an epic written before this capability carries NO attribution key at all", () => {
+  // The distinction is load-bearing: absent means unverifiable and is forgiven by the staleness
+  // gate, empty means the agent had the obligation and did not meet it.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  fs.writeFileSync(path.join(cwd, ".conductor", "state.json"), fs.readFileSync(LEGACY_STATE, "utf8"));
+  run(["render"], { cwd });
+  const e = readState(cwd).epics.find(x => x.id === "platform-parity-mechanism");
+  assert.ok(!Object.prototype.hasOwnProperty.call(e, "attributedCommits"),
+    "nothing may back-fill the array onto a pre-existing epic — that would convert the gate's " +
+    "one forgiven case into a repo-wide false claim");
+});

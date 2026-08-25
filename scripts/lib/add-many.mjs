@@ -9,7 +9,6 @@ import { parentError, parseFlags } from "./add-epic.mjs";
 import { isInitialized, loadState, saveState, readStdin } from "./state.mjs";
 import { render } from "./render.mjs";
 import { ROOT, KNOWN_LANES, KNOWN_STATUSES, epicBatchKeys } from "./constants.mjs";
-import { creationStamp } from "./disposition.mjs";
 
 /** Bulk-create epics from a JSON batch `{ parent?, epics: [...] }`.
  *  Validate EVERYTHING first (id format, uniqueness vs existing AND within the
@@ -94,11 +93,6 @@ export function addMany() {
       if (key === "links") { if (Array.isArray(v)) epic.links = v; continue; }
       if (typeof v === "string") epic[key] = v;
     }
-    // The second archived-at-creation path, carrying its OWN token so a rule applied to one
-    // command is visibly absent from the other. Read the RESOLVED status — `status` is an
-    // add-many key, so the copy loop above may or may not have set it — exactly as the
-    // validation pass resolved it.
-    if ((e.status || "queued") === "archived") epic.disposition = creationStamp("add-many");
     state.epics.push(epic);
   }
   // Route every activation through the ONE door. add-many used to construct epics inline and

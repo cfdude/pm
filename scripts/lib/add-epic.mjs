@@ -9,7 +9,6 @@ import { activate } from "./active-pointer.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { render } from "./render.mjs";
 import { KNOWN_LANES, KNOWN_STATUSES, epicFlagsFor, repeatableEpicFlags } from "./constants.mjs";
-import { creationStamp } from "./disposition.mjs";
 
 // Repeatable flags that belong to NO epic-writing command, and so cannot come from the shared
 // EPIC_FLAGS registry: --intent is set-tracker's, --preauthorize/--context/--notify are
@@ -261,15 +260,6 @@ export function addEpic() {
     id, title: str(f.title) || id, priority: str(f.priority) || "P?",
     status, role: "epic", lane, links, reconcileNeeded: false, attributedCommits: [],
   };
-  // Created directly AT `archived`: stamp rather than refuse. Refusing would be the simpler
-  // rule, but the capability is in use — this repository's own suite creates archived epics to
-  // exercise parent rollup, and the archive backfill registers historical changes directly at
-  // `archived` by design. The stamp keeps the outcome invariant true without removing it.
-  // No `gateReview.gate2` entry, for the backfill's reason: the stamp already records exactly
-  // how the epic reached `archived`, while an `ungated` entry would add a permanent standing
-  // condition clearable only by a real Gate 2 of work that finished before the epic existed.
-  // Creation at any other status writes no disposition at all — nothing has ended.
-  if (status === "archived") epic.disposition = creationStamp("add-epic");
   if (str(f.plan)) epic.planPath = f.plan;
   // A valueless `--description` / `--notes` arrives as boolean true and would otherwise be
   // dropped by str() — exit-0-write-nothing, the exact shape of #79 the allowlist above was

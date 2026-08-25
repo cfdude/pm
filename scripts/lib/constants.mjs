@@ -161,7 +161,11 @@ export const EPIC_FLAGS = [
   // Deriving it from touched files would make the archive move (which relocates every file a
   // change owns) the last attributed commit, and every verdict stale at the exact instant the
   // archive gate reads it.
-  { flag: "attribute-commit", key: "attributedCommits", commands: ["update-epic"], write: "append" },
+  // `repeats: true` is load-bearing, not decoration: parseFlags OVERWRITES a non-repeatable
+  // flag on each occurrence, so `--attribute-commit <a> --attribute-commit <b>` would exit 0
+  // having silently kept only <b> — two attributed hashes becoming one, with the ORDER that
+  // gives the array its meaning quietly destroyed.
+  { flag: "attribute-commit", key: "attributedCommits", commands: ["update-epic"], repeats: true, write: "append" },
   { flag: "review-mode", key: "reviewMode", commands: ["update-epic"] },
   { flag: "add-story", key: "stories", commands: ["update-epic"], write: "append" },
   { flag: "story", key: null, commands: ["update-epic"], write: "custom" },
