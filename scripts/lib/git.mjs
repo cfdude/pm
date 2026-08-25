@@ -41,6 +41,30 @@ export function isAncestor(a, b) {
   }
 }
 
+/** Do `a` and `b` name the SAME commit, whatever length each is written at?
+ *
+ *  Git accepts any unambiguous prefix, so the same commit legitimately appears as `22b52f2` in one
+ *  record and `22b52f2c9d…` in another. A raw `===` says those differ, and the staleness check that
+ *  followed it then asked `isAncestor(X, X)` — which is TRUE, since a commit is its own ancestor —
+ *  and concluded the verdict was stale. A gate refusing an archive over a formatting difference is
+ *  the failure this release exists to end, so identity is resolved through git rather than assumed
+ *  from the string.
+ *
+ *  `null` when git cannot answer, the same third answer `isAncestor` gives and meaning the same
+ *  thing. Local only. */
+export function sameCommit(a, b) {
+  if (typeof a !== "string" || typeof b !== "string" || !a || !b) return null;
+  if (a === b) return true;
+  const full = (r) => {
+    try {
+      return execFileSync("git", ["rev-parse", "--verify", `${r}^{commit}`],
+        { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+    } catch { return null; }
+  };
+  const fa = full(a), fb = full(b);
+  return fa && fb ? fa === fb : null;
+}
+
 /** The committer date of `sha`, as an ISO-8601 string, or null.
  *
  *  `null` is the same third answer `isAncestor` gives and means the same thing: git could not

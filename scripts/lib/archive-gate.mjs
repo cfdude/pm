@@ -16,7 +16,7 @@
 // to refuse an epic that renders as complete.
 
 import { gateHasEvidence, isOpenspecLane } from "./constants.mjs";
-import { isAncestor } from "./git.mjs";
+import { isAncestor, sameCommit } from "./git.mjs";
 import { LIFECYCLE_MARKER, epicProgress, outstandingWork } from "./epic-progress.mjs";
 import { KNOWN_OUTCOMES, agentDisposition, dispositionError, isEngineStamped, outcomeOf } from "./disposition.mjs";
 
@@ -76,11 +76,11 @@ export function gateStaleness(epic, entry) {
   if (!attributed.length) return { state: "none-attributed", uncovered: [] };
   if (!gateHasEvidence(entry)) return { state: "unverifiable", uncovered: [] };
   const last = attributed[attributed.length - 1];
-  if (last === entry.headSha) return { state: "fresh", uncovered: [] };
+  if (sameCommit(last, entry.headSha) === true) return { state: "fresh", uncovered: [] };
   const covers = isAncestor(entry.headSha, last);
   if (covers === null) return { state: "unverifiable", uncovered: [] };
   if (covers !== true) return { state: "fresh", uncovered: [] };
-  const uncovered = attributed.filter(c => c !== entry.headSha && isAncestor(entry.headSha, c) === true);
+  const uncovered = attributed.filter(c => sameCommit(c, entry.headSha) !== true && isAncestor(entry.headSha, c) === true);
   return { state: "stale", uncovered, headSha: entry.headSha };
 }
 

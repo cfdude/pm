@@ -1277,3 +1277,4 @@ test("the dangling-reference check is silent on a record whose references all re
 test("this repository's own record holds no dangling epic reference", () => {
   assert.deepEqual(findingsFor("dangling-epic-reference", liveState()).map(f => f.detail), []);
 });
+

@@ -1899,3 +1899,30 @@ test("record-gate-review's allowlist is the shared registry's projection, not a 
     "every flag record-gate-review accepts is declared in EPIC_FLAGS — there is no second, " +
     "parallel allowlist for a subset of them");
 });
+
+// ─────────── sha identity: the same commit written at two lengths ───────────
+//
+// Found by task 16.3 while FOLLOWING this release's own attribution obligation, not by testing it.
+// `--attribute-commit` records short shas; `--head-sha` may be given long. A raw `===` calls those
+// two different commits, and the check then asks `isAncestor(X, X)` — TRUE, because a commit is
+// its own ancestor — and concludes the verdict is stale, refusing the archive over a formatting
+// difference.
+//
+// This asserts the PREDICATE, not the gate's overall verdict: an earlier draft asserted the gate
+// did not refuse "with a message matching /stale/", which passed with the fix reverted because the
+// gate refused for an unrelated reason first. A weaker assertion that happens to be true is the
+// exact defect class this release exists to end.
+test("16.3: a headSha naming the last attributed commit at another length reads FRESH", async () => {
+  const { gateStaleness } = await import(ARCHIVE_GATE);
+  const short = execFileSync("git", ["rev-parse", "--short", "HEAD"], { encoding: "utf8" }).trim();
+  const long = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+  assert.notEqual(short, long, "the fixture needs two spellings of ONE commit");
+
+  const state = gateStaleness(
+    { id: "e", lane: "openspec", attributedCommits: [short] },
+    { verdict: "pass", baseSha: short, headSha: long, reviewedAt: "2026-08-25T00:00:00.000Z" });
+
+  assert.equal(state.state, "fresh",
+    `one commit spelled two ways must read fresh, not ${state.state} — a gate that refuses an ` +
+    "archive over sha formatting is worse than no gate");
+});
