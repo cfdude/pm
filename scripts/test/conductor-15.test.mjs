@@ -257,3 +257,55 @@ test("7.3: the stamp reaches every lane, and recordedAt prefers the epic's own c
   // A non-archived epic is not a terminal epic and gets nothing.
   assert.equal(byId["still-queued"].disposition, undefined, "only an ENDED epic records how it ended");
 });
+
+// ──────────── 7.4: the three things the migration must NOT do ────────────
+//
+// Each binds THE MIGRATION and nothing else. The disposition clause in particular must not be
+// generalized into a repo-wide never-overwrite rule: that would freeze every migration-stamped
+// epic at `unknown` forever, since the interactive verb's whole purpose is to replace a record
+// nobody chose.
+
+test("7.4: the migration adds no attribution array to a pre-existing epic", () => {
+  const cwd = repoAt0260();
+  upgradeAt(cwd, "0.27.0");
+  for (const e of readState(cwd).epics) {
+    assert.ok(!("attributedCommits" in e),
+      `${e.id}: the KEY must be absent, not an empty array. Absent means the epic predates ` +
+      "the capability and is unverifiable; an empty array means it was created under the " +
+      "capability and asserts that nothing was attributed. A uniformity-minded [] converts " +
+      "the staleness gate's one forgiven case into a repo-wide false claim.");
+  }
+});
+
+test("7.4: the migration never writes the archive-backfill marker", () => {
+  const cwd = repoAt0260();
+  upgradeAt(cwd, "0.27.0");
+  assert.ok(!("archiveBackfilledAt" in readState(cwd)),
+    "the backfill is a deliberate, announced action — a migration side effect would suppress " +
+    "the announcement of a registration run that never happened");
+});
+
+test("7.4: the migration leaves an agent-recorded disposition untouched", () => {
+  const cwd = repoAt0260();
+  const state = readState(cwd);
+  const judged = state.epics.find(e => e.id === "abandoned-plan");
+  judged.disposition = { outcome: "killed", reason: "the approach was wrong", recordedAt: "2026-06-01T00:00:00.000Z" };
+  writeState(cwd, state);
+  upgradeAt(cwd, "0.27.0");
+  const after = readState(cwd).epics.find(e => e.id === "abandoned-plan");
+  assert.deepEqual(after.disposition,
+    { outcome: "killed", reason: "the approach was wrong", recordedAt: "2026-06-01T00:00:00.000Z" },
+    "a judgment somebody made outranks a stamp — and re-stamping would break idempotence besides");
+});
+
+test("7.4: the interactive verb still replaces a migration stamp AFTER the migration has run", () => {
+  const cwd = repoAt0260();
+  upgradeAt(cwd, "0.27.0");
+  assert.equal(readState(cwd).epics.find(e => e.id === "shipped-change").disposition.recordedBy, "migration");
+  run(["update-epic", "shipped-change", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd });
+  const d = readState(cwd).epics.find(e => e.id === "shipped-change").disposition;
+  assert.equal(d.outcome, "delivered");
+  assert.equal(d.recordedBy, undefined,
+    "an agent's record carries no recordedBy — that is the whole discriminator, and this " +
+    "assertion fails the moment the migration's never-overwrite rule leaks out of the migration");
+});
