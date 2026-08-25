@@ -15,6 +15,35 @@
 
 import { isInitialized, loadState } from "./state.mjs";
 import { epicProgress } from "./epic-progress.mjs";
+import { isArchiveBackfilled, outcomeOf } from "./disposition.mjs";
+
+/** The outcomes that are their own explanation. Each carries a REQUIRED reason saying why the
+ *  work did not complete, so an epic holding one is a record working rather than a record
+ *  broken — the release's own flagship case is a change killed at Gate 1 with 47 tasks and no
+ *  code written, which is zero-ticked by construction. */
+const EXPLAINED_OUTCOMES = ["killed", "superseded", "abandoned"];
+
+/** THE scope rule for the completion-shaped checks. Exactly two exclusions and nothing else.
+ *
+ *  `unknown` STAYS IN SCOPE, and that is the whole design. It is the value the engine stamps
+ *  when nobody was asked, and its reason is a path name rather than an explanation of why the
+ *  work did not complete — which is the property the two exclusions above actually rest on.
+ *
+ *  Scoping these checks to `delivered` instead would make them INERT, and that is measurable
+ *  rather than arguable: this repository holds 69 archived epics and 3 carrying a passing
+ *  Gate 2 (measured 2026-08-23), so after the migration that stamps `delivered` only where such
+ *  a verdict exists, a `delivered`-only zero-ticked check has zero candidates in the very
+ *  repository whose live data this rule cites as its evidence. */
+export function inCompletionScope(epic) {
+  if (EXPLAINED_OUTCOMES.includes(outcomeOf(epic))) return false;
+  // A backfilled epic never passed through the conductor while it was in flight: it has no gate
+  // verdict, no start time and — where the change was abandoned — no ticked tasks. Those are
+  // properties of a record rebuilt from disk, not of a badly managed epic, and without this
+  // exclusion the backfill's first run fills the report with findings against changes archived
+  // long before the conductor could have guarded them.
+  if (isArchiveBackfilled(epic)) return false;
+  return true;
+}
 
 /** The registry. One entry per check: a stable `id` a reader can grep for, a one-line `title`
  *  saying what shape it looks for, and `run(state)` returning findings.
@@ -30,7 +59,7 @@ export const CHECKS = [
     run(state) {
       const out = [];
       for (const e of state.epics) {
-        if (e.status !== "archived") continue;
+        if (e.status !== "archived" || !inCompletionScope(e)) continue;
         const p = epicProgress(e);
         // Gated on `total > 0`, NEVER on `done === 0`. epicProgress() returns `{done: 0,
         // total: 0}` for an archived epic whose source is gone — the ordinary case for most of

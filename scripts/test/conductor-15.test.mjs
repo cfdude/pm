@@ -763,3 +763,47 @@ test("9.5: the check is gated on total > 0, so an archived epic with no source i
     "an archived epic whose source is gone reads 0/0 — a `done === 0` test reports every one of " +
     "them (66 of this repository's 69 archived epics) and says nothing about any of them");
 });
+
+// ───────────── 9.2: the scope rule for the completion-shaped checks ─────────────
+//
+// Two exclusions and nothing else. `unknown` stays IN scope, because it is the value the engine
+// stamps when nobody was asked — its reason is a path name, not an explanation of why the work
+// did not complete, which is the property the two exclusions actually rest on.
+
+test("9.2: a killed 47-task epic with everything unticked is not a finding; an unknown one is", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  fs.mkdirSync(path.join(cwd, "docs", "superpowers", "plans"), { recursive: true });
+  const plan = "# p\n\n" + Array.from({ length: 47 }, (_, n) => `- [ ] t${n}\n`).join("");
+  for (const id of ["killed-at-gate-1", "nobody-recorded-one", "registered-from-the-archive"]) {
+    fs.writeFileSync(path.join(cwd, "docs", "superpowers", "plans", `${id}.md`), plan);
+  }
+  const epic = (id, disposition) => ({ id, title: id, priority: "P2", status: "archived",
+    role: "epic", lane: "superpowers", planPath: `docs/superpowers/plans/${id}.md`, links: [], disposition });
+  writeState(cwd, { version: 1, active: null, detourStack: [], platform: "claude-code", epics: [
+    epic("killed-at-gate-1", { outcome: "killed", reason: "no code was ever written", recordedAt: "2026-08-01T00:00:00.000Z" }),
+    epic("nobody-recorded-one", { outcome: "unknown", recordedAt: "2026-08-01T00:00:00.000Z", recordedBy: "migration" }),
+    epic("registered-from-the-archive", { outcome: "unknown", recordedAt: "2026-08-01T00:00:00.000Z", recordedBy: "archive-backfill" }),
+  ] });
+  const out = run(["integrity"], { cwd });
+  assert.ok(!out.includes("killed-at-gate-1"),
+    "a recorded non-delivered disposition already explains the zero — that is the record working");
+  assert.ok(!out.includes("registered-from-the-archive"),
+    "a backfilled epic's unticked tasks are a property of a record rebuilt from disk");
+  assert.ok(out.includes("nobody-recorded-one"),
+    "`unknown` is not an explanation of why the work did not complete, so it stays in scope");
+});
+
+test("9.2: scoping to `delivered` would empty the candidate set on this repository", () => {
+  const state = liveState();
+  const archived = state.epics.filter(e => e.status === "archived");
+  // After the migration, `delivered` is exactly the archived epics carrying a passing Gate 2.
+  const deliverable = archived.filter(e => e.gateReview && e.gateReview.gate2 && e.gateReview.gate2.verdict === "pass");
+  assert.ok(deliverable.length > 0 && deliverable.length < archived.length,
+    "the delivered set must be a STRICT subset of the archived set, or this proves nothing");
+  const ids = new Set(deliverable.map(e => e.id));
+  const outside = findingsFor("archived-with-zero-ticked-tasks", state).filter(f => !ids.has(f.epic));
+  assert.ok(outside.length > 0,
+    "the checks have candidates outside the delivered set — a `delivered`-only scope makes " +
+    "every completion-shaped check below inert on the repository whose data this rule cites");
+});
