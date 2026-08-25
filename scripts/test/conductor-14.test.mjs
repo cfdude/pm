@@ -447,3 +447,56 @@ test("the sync nudge is emitted only where an inward procedure exists", () => {
     "a scope-less inward tracker names nothing to list, so the nudge instructs an action the " +
     "repo has no procedure for");
 });
+
+// ─────────── 10.10: the emitter-coherence matrix ───────────
+
+test("rules block and brief agree about outward action for every direction and system", () => {
+  for (const system of ["github-issues", "jira"]) {
+    const scope = system === "github-issues" ? { repo: "o/n" } : { projectKey: "JOB" };
+    for (const direction of ["inward", "outward", "both"]) {
+      const tracker = { system, ...scope, direction };
+      const rulesOutward = rulesFor(tracker).includes(OUTWARD_HEADING);
+      const briefOutward = briefFor(tracker).includes("create issues + record keys");
+      assert.equal(rulesOutward, briefOutward,
+        `${JSON.stringify(tracker)}: rules block outward=${rulesOutward}, brief outward=${briefOutward}`);
+    }
+  }
+});
+
+test("the scope-less case makes every inward-dependent emitter false together", () => {
+  const tracker = { system: "github-issues" };            // direction resolves inward, no scope
+  const block = rulesFor(tracker);
+  const brief = briefFor(tracker);
+  assert.ok(!block.includes("## GitHub issue sync") && !block.includes("## Inward tracker sync"),
+    "no inward section");
+  assert.ok(!brief.includes("never re-read since mirroring"), "no freshness line");
+  assert.ok(!brief.includes("consider `/pm:sync`"), "no sync nudge");
+  assert.ok(!block.includes(REMINDER_HEADING), "no completion-sync reminder");
+  assert.ok(!block.includes("gh issue list"), "and /pm:sync is instructed to read nothing external");
+});
+
+test("no emitter recomputes direction from system, repo or direction locally", () => {
+  // The structural half of the fix. #109 was not a wrong line — it was the SAME question
+  // answered in two places, so the two answers drifted. Every emitter now reads the resolved
+  // values from constants.mjs; an emitter that names the vendor or reads `.direction` itself is
+  // a second answer waiting to disagree with the first.
+  const LIB = new URL("../lib/", import.meta.url).pathname;
+  const EMITTERS = ["rules.mjs", "briefing.mjs", "subcommands.mjs", "render.mjs"];
+  for (const name of EMITTERS) {
+    const src = fs.readFileSync(path.join(LIB, name), "utf8");
+    const code = src.split("\n")
+      .filter(l => !l.trim().startsWith("//") && !l.trim().startsWith("*") && !l.trim().startsWith("/*"))
+      .join("\n");
+    assert.ok(!code.includes('"github-issues"'),
+      `${name} names the github-issues vendor in code — phrasing goes through usesGhIssueList, ` +
+      "and section choice through outwardApplies/inwardProcedureEmittable");
+    assert.ok(!/\.direction\b/.test(code),
+      `${name} reads a tracker's .direction itself — direction resolves in constants.mjs only`);
+  }
+  // Non-vacuity: the predicates the emitters must be using really are exported from there.
+  const constants = fs.readFileSync(path.join(LIB, "constants.mjs"), "utf8");
+  for (const fn of ["outwardApplies", "inwardProcedureEmittable", "anyInwardProcedureEmittable", "usesGhIssueList"]) {
+    assert.ok(constants.includes(`export const ${fn}`) || constants.includes(`export function ${fn}`),
+      `constants.mjs must export ${fn}`);
+  }
+});
