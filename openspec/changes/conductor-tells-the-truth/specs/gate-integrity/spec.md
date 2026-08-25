@@ -665,14 +665,35 @@ requirement cites as its evidence.
 #### Scenario: A gate was recorded as bookkeeping rather than as review
 
 - **WHEN** a gate verdict's `reviewedAt` satisfies **either** arm:
-  - it falls **after the epic's merge commit**, where the merge commit is the last hash in the
-    epic's attribution array — and where that array is absent or empty this arm does not apply,
-    because every other reading of "merge commit" is either inert on all live epics or fires on
-    essentially all of them; **or**
+  - the verdict carries **no checkable evidence** (no `baseSha`/`headSha`) **and** falls **after
+    the epic's merge commit**, where the merge commit is the last hash in the epic's attribution
+    array — and where that array is absent or empty this arm does not apply, because every other
+    reading of "merge commit" is either inert on all live epics or fires on essentially all of
+    them; **or**
   - it falls **within 60 seconds** of the `reviewedAt` of the epic's other gate verdict
 - **THEN** the check reports it as a bookkeeping signature — the audited instance recorded both
   gates 83 seconds after the squash-merge, 47 ms apart, with no notes, and 47 ms is inside the
   60-second bound while a spec review and an implementation review of the same change never are
+
+**Arm 1's evidence exemption is load-bearing, and it was found by this change reporting itself.**
+Two obligations this same release ships — attribute each commit *at the moment it is made*, and
+record Gate 2 *after* the implementation — together guarantee `reviewedAt >
+commitDate(last attributed)` for **every correctly run gate**. Without the exemption the arm
+therefore fires on compliance rather than on the defect, which is strictly worse than not shipping
+it: measured live the first time this repository satisfied both obligations, the arm reported its
+own honest verdict. The audited instances the arm exists for are unevidenced by construction —
+they predate the sha fields and were written 83 seconds after a squash-merge with no notes and no
+range — so exempting an evidenced verdict removes the false positive without weakening the signal.
+Whether an evidenced verdict's range actually REACHES the attributed commits is a different
+question, answered by the staleness gate and refused at the archive, never guessed at here.
+
+#### Scenario: An evidenced verdict recorded after the last attributed commit is not a finding
+
+- **WHEN** an epic's attribution array is non-empty and its Gate 2 records `baseSha`/`headSha` and
+  a `reviewedAt` later than the last attributed commit's date — the shape the emitted procedure
+  produces every time it is followed
+- **THEN** the check reports nothing for it, because a verdict that states the range it covered and
+  is dated after the last commit in that range is what a real review looks like
 
 #### Scenario: An archived epic with zero ticked tasks is reported
 

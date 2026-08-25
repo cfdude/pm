@@ -927,6 +927,7 @@ test("9.3: a verdict's own recorded endpoints are never reported as commits it f
 // them 22 minutes apart.
 
 const { commitDate: commitDateHere } = await import("../lib/git.mjs");
+const { gateHasEvidence } = await import("../lib/constants.mjs");
 const shiftIso = (iso, ms) => new Date(Date.parse(iso) + ms).toISOString();
 const epicWithGates = (over) => ({ version: 1, active: null, detourStack: [], epics: [
   { id: "audited", title: "x", priority: "P1", status: "archived", role: "epic", lane: "openspec",
@@ -935,10 +936,11 @@ const epicWithGates = (over) => ({ version: 1, active: null, detourStack: [], ep
 test("9.4 arm 1: a verdict dated after the epic's merge commit is reported", () => {
   const merged = commitDateHere("04c54c8");
   assert.ok(merged, "the fixture reads a REAL commit date from this repository");
+  // UNEVIDENCED, which is the audited shape: those verdicts predate the sha fields entirely.
+  // An evidenced verdict with the same timing is exempt — see the exemption test below.
   const state = epicWithGates({
     attributedCommits: ["d168b1e", "04c54c8"],
-    gateReview: { gate2: { verdict: "pass", baseSha: "d168b1e", headSha: "04c54c8",
-      reviewedAt: shiftIso(merged, 83_000) } },
+    gateReview: { gate2: { verdict: "pass", reviewedAt: shiftIso(merged, 83_000) } },
   });
   const findings = findingsFor("gate-recorded-as-bookkeeping", state);
   assert.equal(findings.length, 1);
@@ -978,22 +980,49 @@ test("9.4 arm 2: two gates 47 ms apart are reported; hours apart are not", () =>
     "22 minutes apart is a spec review and an implementation review, which is the live shape");
 });
 
+test("9.4 arm 1 exempts an EVIDENCED verdict dated after the last attributed commit", () => {
+  // The shape the emitted procedure produces EVERY time it is followed: attribute each commit as
+  // it is made, then record Gate 2 afterwards. Without the exemption the arm fires on compliance
+  // rather than on the defect — which is how this was found, live, on this release's own epic.
+  const evidenced = epicWithGates({
+    attributedCommits: ["eee4f7e"],
+    gateReview: { gate2: { verdict: "pass", baseSha: "7829e80", headSha: "eee4f7e",
+      reviewedAt: "2036-01-01T00:00:00.000Z" } },
+  });
+  assert.deepEqual(findingsFor("gate-recorded-as-bookkeeping", evidenced), [],
+    "a verdict that states the range it covered, dated after the last commit in that range, is " +
+    "what a real review looks like — not a bookkeeping signature");
+
+  // …and the arm still fires on the audited shape, which is unevidenced by construction: those
+  // verdicts predate the sha fields and were written after the squash-merge with no range at all.
+  const unevidenced = epicWithGates({
+    attributedCommits: ["eee4f7e"],
+    gateReview: { gate2: { verdict: "pass", reviewedAt: "2036-01-01T00:00:00.000Z" } },
+  });
+  const findings = findingsFor("gate-recorded-as-bookkeeping", unevidenced);
+  assert.equal(findings.length, 1, "the signal the arm exists for is unchanged");
+  assert.match(findings[0].detail, /post-dates the work it claims to have reviewed/);
+});
+
 test("9.4: zero live candidates, and the reason each arm cannot fire is checkable", () => {
   const state = liveState();
   assert.deepEqual(findingsFor("gate-recorded-as-bookkeeping", state), []);
-  // Arm 1 needs BOTH a non-empty attribution array (which names the merge commit) and a gate
-  // verdict dated after it. Stated as a RELATION, not as a live count: the count was 0 when this
-  // was written and stopped being 0 the moment this release exercised its own attribution
-  // obligation, which is exactly the rot docs/lessons/hardcoded-live-data-claims-rot describes —
-  // the assertion went red on the record becoming MORE complete.
+  // Arm 1 needs THREE things: a non-empty attribution array (which names the merge commit), an
+  // UNEVIDENCED gate verdict, and a `reviewedAt` after that commit. Stated as a RELATION, not as
+  // a live count — the count was 0 when this was first written and the population appeared the
+  // moment this release exercised its own attribution and gate obligations, which is exactly the
+  // rot docs/lessons/hardcoded-live-data-claims-rot describes. What it exposed was a defect in
+  // the arm, not in the record: every verdict recorded by the procedure this release ships is
+  // dated after the last commit it covers, so the un-narrowed arm reported compliance.
   for (const e of state.epics) {
     const attributed = Array.isArray(e.attributedCommits) ? e.attributedCommits : [];
     if (!attributed.length) continue;
-    const gates = Object.values(e.gateReview || {}).filter(g => g && g.reviewedAt);
-    assert.deepEqual(gates.map(g => g.reviewedAt), [],
-      `arm 1: \`${e.id}\` has attributed commits, so a verdict of its own would have to be ` +
-      "compared against them — the zero above must come from the comparison, not from the " +
-      "arm having no population");
+    const unevidenced = Object.values(e.gateReview || {})
+      .filter(g => g && g.reviewedAt && !gateHasEvidence(g));
+    assert.deepEqual(unevidenced.map(g => g.reviewedAt), [],
+      `arm 1: \`${e.id}\` has attributed commits, so an unevidenced verdict of its own would ` +
+      "have to be compared against them — the zero above must come from the comparison, not " +
+      "from the arm having no population");
   }
   const twoGates = state.epics.filter(e => e.gateReview && e.gateReview.gate1 && e.gateReview.gate2);
   assert.equal(twoGates.length, 1, "arm 2: exactly one live epic holds two gate verdicts");

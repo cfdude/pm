@@ -243,15 +243,28 @@ export const CHECKS = [
       for (const e of state.epics) {
         const g1 = e.gateReview && e.gateReview.gate1;
         const g2 = e.gateReview && e.gateReview.gate2;
-        // ARM 1 — the verdict is dated AFTER the work it reviewed had already merged. The merge
-        // commit is defined as the LAST hash in the epic's attribution array, and where that
-        // array is absent or empty this arm simply does not apply: every other reading of "the
-        // merge commit" is either inert on all live epics or fires on essentially all of them,
-        // and a check that fires on everything is a check nobody reads.
+        // ARM 1 — an UNEVIDENCED verdict dated AFTER the work it reviewed had already merged.
+        // The merge commit is defined as the LAST hash in the epic's attribution array, and
+        // where that array is absent or empty this arm simply does not apply: every other
+        // reading of "the merge commit" is either inert on all live epics or fires on
+        // essentially all of them, and a check that fires on everything is a check nobody reads.
+        //
+        // A verdict CARRYING checkable evidence is exempt, and that exemption is what keeps this
+        // arm from firing on compliance. This release's own two obligations — "attribute each
+        // commit at the moment it is made" and "record Gate 2 after the implementation, before
+        // docs" — TOGETHER GUARANTEE `reviewedAt > commitDate(last attributed)` for every
+        // correctly run gate. Measured on this repository the moment it exercised both: the arm
+        // reported its own honest verdict. The audited instances this arm exists for are
+        // unevidenced by construction — they predate the sha fields and were written 83 seconds
+        // after a squash-merge with no notes and no range — while a verdict that records
+        // `baseSha..headSha` states what it covered, and being dated after the last commit it
+        // names is what a real review looks like rather than a bookkeeping signature. Whether
+        // that recorded range actually REACHES the attributed commits is a different question,
+        // answered by gateStaleness() and refused at the archive gate, not guessed at here.
         const attributed = Array.isArray(e.attributedCommits) ? e.attributedCommits : [];
         const mergedAt = attributed.length ? commitDate(attributed[attributed.length - 1]) : null;
         for (const [gate, entry] of [["gate1", g1], ["gate2", g2]]) {
-          if (!entry || !entry.reviewedAt || !mergedAt) continue;
+          if (!entry || !entry.reviewedAt || !mergedAt || gateHasEvidence(entry)) continue;
           if (Date.parse(entry.reviewedAt) > Date.parse(mergedAt)) {
             out.push({ epic: e.id, detail:
               `${gate} was recorded ${entry.reviewedAt} — after the epic's merge commit ` +
