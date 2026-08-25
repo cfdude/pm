@@ -527,3 +527,44 @@ test("15.5: every mirrored surface carries each item's load-bearing claims, not 
     }
   }
 });
+
+// ─────── 15.6: item 5's emitted archive command runs exactly as written ───────
+//
+// "Every command pm emits must run as written" is this release's own standard (tracker-sync).
+// Item 5 used to emit the disposition half ALONE, while the archive gate demands a deferral
+// assertion in the SAME invocation — so an agent complying verbatim was refused and had to
+// correct pm's own instruction to get past it. The refusal self-corrects, which is exactly why
+// nothing caught it: the command was wrong and the outcome was still right.
+
+test("15.6 item 5's emitted archive command executes verbatim, with no flag left to discover", () => {
+  const cwd = repoWithEpics(1);
+  const line = rulesText(cwd).split("\n").find(l => l.includes("`update-epic <id> --status archived"));
+  assert.ok(line, "the archive command must be emitted on ONE line inside ONE pair of backticks — " +
+    "a command split across two lines cannot be copied and run");
+  const cmd = line.slice(line.indexOf("`") + 1, line.lastIndexOf("`"));
+  // Only the documented placeholders and the documented alternation are filled. Nothing is
+  // added: whatever the block says is exactly what gets run.
+  const argv = cmd
+    .replace(/<id>/g, "e0")
+    .replace(/delivered\|killed\|superseded\|abandoned/g, "delivered")
+    .replace(/"<why>"/g, "shipped-in-full")
+    .trim().split(/\s+/);
+  run(argv, { cwd });                                  // exits 0 …
+  const e0 = readState(cwd).epics.find(e => e.id === "e0");
+  assert.equal(e0.status, "archived");
+  assert.equal(e0.disposition.outcome, "delivered");
+  assert.deepEqual(e0.deferralAssertion.deferrals, [],
+    "…and the deferral assertion the gate demands was carried by the same invocation");
+});
+
+test("15.6 every emitted surface names all three deferral-assertion flags, not just the default", () => {
+  const cwd = repoWithEpics(1);
+  const surfaces = [["rules block", rulesText(cwd)], ...EMITTED_DOCS.map(rel => [rel, shipped(rel)])];
+  for (const [name, text] of surfaces) {
+    for (const flag of ["--no-deferrals", "--deferral", "--declined-deferral"]) {
+      assert.ok(text.includes(flag),
+        `${name} must name ${flag} — emitting only one of the three teaches the assertion as a ` +
+        "formality rather than as the claim it is");
+    }
+  }
+});

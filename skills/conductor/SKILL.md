@@ -222,10 +222,16 @@ bullet reached 3/15.
    the epic's own Gate 2 stale at the instant the archive gate reads it.
 
 5. **End work by recording a disposition.** An epic, a story, a deferral or a release exclusion
-   ENDS by recording a terminal disposition carrying its required reason —
-   `update-epic <id> --status archived --outcome delivered|killed|superseded|abandoned
-   --reason "<why>"` (every outcome except `delivered` requires the reason) — and
-   never by removing the record. Deletion removes the record of projected work, which is
+   ENDS by recording a terminal disposition carrying its required reason, and
+   never by removing the record. The archive verb takes TWO halves in ONE invocation — the
+   disposition AND a deferral assertion — because the gate refuses either half alone:
+   `update-epic <id> --status archived --outcome delivered|killed|superseded|abandoned --reason "<why>" --no-deferrals`
+   (every outcome except `delivered` requires the reason). `--no-deferrals` is the explicit
+   "there are none" and is a claim, not a default — swap it for `--deferral
+   "<epicId>:<artifact section>"` where work is now held by a registered epic, or
+   `--declined-deferral "<what>:<why not>"` where you are deliberately not doing it; both
+   repeat, and the engine will not read your artifacts to guess.
+   Deletion removes the record of projected work, which is
    precisely what a disposition exists to preserve. `remove-epic` stays available and ungated for
    what it is for: an epic registered in error, a duplicate, a mistake made a minute ago — where
    there is no disposition to record because there was no work.
