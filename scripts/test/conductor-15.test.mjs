@@ -200,10 +200,33 @@ test("7.2: the rules block after the upgrade is identical to the one emitted bef
  *  migration verified only against hand-built fixtures is verified against the implementer's
  *  own assumptions about the shapes that exist. */
 const REPO = new URL("../..", import.meta.url).pathname;
+/** The release before the one whose migration this test exercises. */
+const PRE_MIGRATION_VERSION = "0.26.0";
+/** The live record with the migration's OWN stamps peeled back off — the pre-migration shape,
+ *  reconstructed rather than invented.
+ *
+ *  Copying live state verbatim worked exactly once. The moment `/pm:upgrade` ran on this
+ *  repository the migration stamped all 69 unstamped archived epics, the population this test
+ *  needs fell to zero, and the test began asserting "this measures nothing" — permanently, since
+ *  no later run can un-stamp them. A live-data fixture whose precondition the operation under
+ *  test destroys is a test with a single-use fuse.
+ *
+ *  Removing only `recordedBy: "migration"` dispositions is faithful, not a fabrication: that
+ *  field exists precisely so a later rule can tell an engine-written stamp from a recorded
+ *  judgment. Agent-recorded dispositions are left in place, so the other half of what this test
+ *  asserts — that the migration never overwrites one — keeps a real population too. */
 function repoFromLiveState() {
   const cwd = tmpRepo();
   fs.mkdirSync(path.join(cwd, ".conductor"), { recursive: true });
-  fs.copyFileSync(path.join(REPO, ".conductor", "state.json"), path.join(cwd, ".conductor", "state.json"));
+  const live = JSON.parse(fs.readFileSync(path.join(REPO, ".conductor", "state.json"), "utf8"));
+  for (const e of live.epics) {
+    if (e.disposition && e.disposition.recordedBy === "migration") delete e.disposition;
+  }
+  // The version stamp is half the reconstruction. MIGRATIONS are keyed to the release that
+  // introduced them and run once; with `pmVersion` already at 0.27.0 the migration is correctly
+  // a no-op and nothing would be stamped no matter how many dispositions were peeled off.
+  live.pmVersion = PRE_MIGRATION_VERSION;
+  fs.writeFileSync(path.join(cwd, ".conductor", "state.json"), JSON.stringify(live, null, 2));
   return cwd;
 }
 const passingGate2 = (e) => !!(e.gateReview && e.gateReview.gate2 && e.gateReview.gate2.verdict === "pass");

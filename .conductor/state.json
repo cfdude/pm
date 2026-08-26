@@ -10,7 +10,12 @@
       "role": "epic",
       "lane": "claude-code",
       "links": [],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-08-26T22:39:16.528Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "epic-hierarchy-orchestration",
@@ -20,7 +25,12 @@
       "role": "epic",
       "lane": "decision",
       "links": [],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-08-26T22:39:16.528Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "portfolio-architecture-consistency-scan",
@@ -37,7 +47,12 @@
         }
       ],
       "reconcileNeeded": false,
-      "completedAt": "2026-07-15T23:01:10.348Z"
+      "completedAt": "2026-07-15T23:01:10.348Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T23:01:10.348Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "infra-runbook-preflight",
@@ -47,7 +62,12 @@
       "role": "epic",
       "lane": "decision",
       "links": [],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-08-26T22:39:16.528Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "pm-plugin-improvements-2026-07-14",
@@ -58,7 +78,12 @@
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
-      "completedAt": "2026-07-16T05:28:32.305Z"
+      "completedAt": "2026-07-16T05:28:32.305Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-16T05:28:32.305Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "gate-guard-default-on-reconcile",
@@ -84,7 +109,12 @@
         ],
         "notifications": []
       },
-      "completedAt": "2026-07-15T21:56:25.609Z"
+      "completedAt": "2026-07-15T21:56:25.609Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T21:56:25.609Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "diffshape-minimal-detour-inference",
@@ -110,7 +140,12 @@
         ],
         "notifications": []
       },
-      "completedAt": "2026-07-15T21:56:25.567Z"
+      "completedAt": "2026-07-15T21:56:25.567Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T21:56:25.567Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "remove-epic-verb",
@@ -166,7 +201,12 @@
           "title": "Fresh-context code review (standard review mode)",
           "done": false
         }
-      ]
+      ],
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-08-26T22:39:16.528Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "fix-archived-no-change-warning",
@@ -186,7 +226,12 @@
         ],
         "notifications": []
       },
-      "completedAt": "2026-07-15T21:56:25.840Z"
+      "completedAt": "2026-07-15T21:56:25.840Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T21:56:25.840Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "reconciler-structured-writeback",
@@ -212,7 +257,12 @@
         ],
         "notifications": []
       },
-      "completedAt": "2026-07-15T21:56:26.035Z"
+      "completedAt": "2026-07-15T21:56:26.035Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T21:56:26.035Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "lane-routing-config",
@@ -232,7 +282,12 @@
         ],
         "notifications": []
       },
-      "completedAt": "2026-07-15T21:56:25.957Z"
+      "completedAt": "2026-07-15T21:56:25.957Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T21:56:25.957Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "autonomy-hierarchy-adoption-investigation",
@@ -252,7 +307,12 @@
         ],
         "notifications": []
       },
-      "completedAt": "2026-07-15T21:56:25.648Z"
+      "completedAt": "2026-07-15T21:56:25.648Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T21:56:25.648Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "honcho-memory-string-print",
@@ -272,7 +332,12 @@
         ],
         "notifications": []
       },
-      "completedAt": "2026-07-15T21:56:25.879Z"
+      "completedAt": "2026-07-15T21:56:25.879Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T21:56:25.879Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "verify-state-command",
@@ -298,7 +363,12 @@
         ],
         "notifications": []
       },
-      "completedAt": "2026-07-15T21:56:26.074Z"
+      "completedAt": "2026-07-15T21:56:26.074Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T21:56:26.074Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "dependency-aware-standalone-ordering",
@@ -324,7 +394,12 @@
         ],
         "notifications": []
       },
-      "completedAt": "2026-07-15T21:56:25.762Z"
+      "completedAt": "2026-07-15T21:56:25.762Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T21:56:25.762Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "per-epic-review-mode-override",
@@ -344,7 +419,12 @@
         ],
         "notifications": []
       },
-      "completedAt": "2026-07-15T21:56:25.996Z"
+      "completedAt": "2026-07-15T21:56:25.996Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T21:56:25.996Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "epic-timestamps-and-staleness",
@@ -364,7 +444,12 @@
         ],
         "notifications": []
       },
-      "completedAt": "2026-07-15T21:56:25.800Z"
+      "completedAt": "2026-07-15T21:56:25.800Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T21:56:25.800Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "category-based-preauthorization",
@@ -384,7 +469,12 @@
         ],
         "notifications": []
       },
-      "completedAt": "2026-07-15T21:56:25.686Z"
+      "completedAt": "2026-07-15T21:56:25.686Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T21:56:25.686Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "incremental-notify-timing-fix",
@@ -404,7 +494,12 @@
         ],
         "notifications": []
       },
-      "completedAt": "2026-07-15T21:56:25.918Z"
+      "completedAt": "2026-07-15T21:56:25.918Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T21:56:25.918Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "cross-repo-epic-dependency-investigation",
@@ -424,7 +519,12 @@
         ],
         "notifications": []
       },
-      "completedAt": "2026-07-15T21:56:26.111Z"
+      "completedAt": "2026-07-15T21:56:26.111Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T21:56:26.111Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "changelog-preview-in-sessionstart-nudge",
@@ -444,7 +544,12 @@
         ],
         "notifications": []
       },
-      "completedAt": "2026-07-15T21:56:25.724Z"
+      "completedAt": "2026-07-15T21:56:25.724Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T21:56:25.724Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "ai-feedback-loop-github-issues",
@@ -474,7 +579,12 @@
         ],
         "notifications": []
       },
-      "completedAt": "2026-07-15T23:01:10.171Z"
+      "completedAt": "2026-07-15T23:01:10.171Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T23:01:10.171Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "github-issue-tracker-sync",
@@ -510,7 +620,12 @@
         ],
         "notifications": []
       },
-      "completedAt": "2026-07-15T23:01:10.225Z"
+      "completedAt": "2026-07-15T23:01:10.225Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T23:01:10.225Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "cfdude-pm-repo-governance",
@@ -521,7 +636,12 @@
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
-      "completedAt": "2026-07-16T05:28:32.266Z"
+      "completedAt": "2026-07-16T05:28:32.266Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-16T05:28:32.266Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "branch-protection-and-pr-workflow",
@@ -552,7 +672,12 @@
         ],
         "notifications": []
       },
-      "completedAt": "2026-07-15T23:06:28.073Z"
+      "completedAt": "2026-07-15T23:06:28.073Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T23:06:28.073Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "ci-test-lint-workflow",
@@ -578,7 +703,12 @@
         ],
         "notifications": []
       },
-      "completedAt": "2026-07-15T23:01:10.267Z"
+      "completedAt": "2026-07-15T23:01:10.267Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T23:01:10.267Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "autonomous-issue-resolution-agent",
@@ -590,7 +720,12 @@
       "links": [],
       "reconcileNeeded": false,
       "parent": "cfdude-pm-repo-governance",
-      "completedAt": "2026-07-15T23:01:10.307Z"
+      "completedAt": "2026-07-15T23:01:10.307Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T23:01:10.307Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "df-stale-cache-silent-fallback",
@@ -615,6 +750,11 @@
           "Decision: BOTH — (1) prefer repo-local scripts/conductor.mjs over plugins cache when CLAUDE_PROJECT_DIR/scripts/conductor.mjs exists (self-hosting case); (2) every invocation prints engine version+source path to stderr so staleness is visible"
         ],
         "notifications": []
+      },
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-08-26T22:39:16.528Z",
+        "recordedBy": "migration"
       }
     },
     {
@@ -626,7 +766,12 @@
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
-      "parent": "pm-plugin-improvements-2026-07-14"
+      "parent": "pm-plugin-improvements-2026-07-14",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-08-26T22:39:16.528Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "df-hierarchy-no-shared-file-conflict-detection",
@@ -637,7 +782,12 @@
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
-      "parent": "pm-plugin-improvements-2026-07-14"
+      "parent": "pm-plugin-improvements-2026-07-14",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-08-26T22:39:16.528Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "df-github-tracker-outward-sync-unsuppressed",
@@ -662,7 +812,12 @@
         ],
         "notifications": []
       },
-      "completedAt": "2026-07-16T07:59:26.876Z"
+      "completedAt": "2026-07-16T07:59:26.876Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-16T07:59:26.876Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "df-changelog-fragment-conflicts",
@@ -687,7 +842,12 @@
         ],
         "notifications": []
       },
-      "completedAt": "2026-07-16T05:07:27.632Z"
+      "completedAt": "2026-07-16T05:07:27.632Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-16T05:07:27.632Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "df-conflict-resolution-verification-step",
@@ -712,7 +872,12 @@
         ],
         "notifications": []
       },
-      "completedAt": "2026-07-16T05:07:27.678Z"
+      "completedAt": "2026-07-16T05:07:27.678Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-16T05:07:27.678Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "df-skill-commands-line-drift",
@@ -737,7 +902,12 @@
         ],
         "notifications": []
       },
-      "completedAt": "2026-07-16T07:59:26.955Z"
+      "completedAt": "2026-07-16T07:59:26.955Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-16T07:59:26.955Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "df-live-infra-epic-session-continuity-warning",
@@ -762,7 +932,12 @@
         ],
         "notifications": []
       },
-      "completedAt": "2026-07-16T05:07:27.718Z"
+      "completedAt": "2026-07-16T05:07:27.718Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-16T05:07:27.718Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "df-stray-render-artifacts-noise",
@@ -787,7 +962,12 @@
         ],
         "notifications": []
       },
-      "completedAt": "2026-07-16T07:59:26.994Z"
+      "completedAt": "2026-07-16T07:59:26.994Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-16T07:59:26.994Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "df-verify-worktrees-merged-not-just-archived",
@@ -812,7 +992,12 @@
         ],
         "notifications": []
       },
-      "completedAt": "2026-07-21T06:09:36.854Z"
+      "completedAt": "2026-07-21T06:09:36.854Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-21T06:09:36.854Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "df-autodetour-false-positive-conductor-admin-commits",
@@ -824,7 +1009,12 @@
       "links": [],
       "reconcileNeeded": false,
       "startedAt": "2026-07-16T05:31:47.740Z",
-      "completedAt": "2026-07-16T05:35:43.440Z"
+      "completedAt": "2026-07-16T05:35:43.440Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-16T05:35:43.440Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "df-readme-stale-since-gate-guard",
@@ -835,7 +1025,12 @@
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
-      "completedAt": "2026-07-16T01:52:11.686Z"
+      "completedAt": "2026-07-16T01:52:11.686Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-16T01:52:11.686Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "multi-platform-agent-support",
@@ -876,7 +1071,12 @@
         ],
         "notifications": []
       },
-      "completedAt": "2026-07-16T07:59:26.916Z"
+      "completedAt": "2026-07-16T07:59:26.916Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-16T07:59:26.916Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "df-orchestrator-committed-release-without-reverifying",
@@ -888,7 +1088,12 @@
       "links": [],
       "reconcileNeeded": false,
       "startedAt": "2026-07-19T20:41:48.423Z",
-      "completedAt": "2026-07-19T20:46:53.640Z"
+      "completedAt": "2026-07-19T20:46:53.640Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-19T20:46:53.640Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "df-hierarchy-executor-must-check-readme-for-user-facing-changes",
@@ -900,7 +1105,12 @@
       "links": [],
       "reconcileNeeded": false,
       "startedAt": "2026-07-17T06:56:36.616Z",
-      "completedAt": "2026-07-17T07:04:32.571Z"
+      "completedAt": "2026-07-17T07:04:32.571Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-17T07:04:32.571Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "docs-site-cleanup",
@@ -949,7 +1159,12 @@
           "done": true
         }
       ],
-      "completedAt": "2026-07-21T06:45:48.230Z"
+      "completedAt": "2026-07-21T06:45:48.230Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-21T06:45:48.230Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "df-precommit-hook-too-noisy-on-success",
@@ -974,7 +1189,12 @@
         ],
         "notifications": []
       },
-      "completedAt": "2026-07-21T06:20:07.492Z"
+      "completedAt": "2026-07-21T06:20:07.492Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-21T06:20:07.492Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "df-engine-banner-noise-every-invocation",
@@ -1000,7 +1220,12 @@
         ],
         "notifications": []
       },
-      "completedAt": "2026-07-21T06:28:09.825Z"
+      "completedAt": "2026-07-21T06:28:09.825Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-21T06:28:09.825Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "df-project-md-diff-triviality-not-mechanically-checkable",
@@ -1025,7 +1250,12 @@
         ],
         "notifications": []
       },
-      "completedAt": "2026-07-21T06:36:02.583Z"
+      "completedAt": "2026-07-21T06:36:02.583Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-21T06:36:02.583Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "df-contributing-doc-missing-direct-push-recovery",
@@ -1037,7 +1267,12 @@
       "links": [],
       "reconcileNeeded": false,
       "startedAt": "2026-07-25T18:12:08.311Z",
-      "completedAt": "2026-07-25T18:18:44.268Z"
+      "completedAt": "2026-07-25T18:18:44.268Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-25T18:18:44.268Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "multi-tracker-primary-secondary-support",
@@ -1061,7 +1296,12 @@
           "note": "general-purpose subagent Gate 2 review over 40c82fb..2ca1242; found 1 Important finding (one-sided externalUrl dedup could silently drop a legitimate epic when an existing URL-less epic shares a bare externalId) and 1 Minor (upsert key omits instance, dual-Jira-instance collision) — Important fixed with a regression test (227/227 passing), Minor logged as an Open Question per resist-complexity posture"
         }
       },
-      "completedAt": "2026-07-20T01:04:54.194Z"
+      "completedAt": "2026-07-20T01:04:54.194Z",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-07-20T01:04:54.194Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "2026-07-14-epic-hierarchy-orchestration",
@@ -1073,7 +1313,12 @@
       "planPath": "docs/superpowers/plans/2026-07-14-epic-hierarchy-orchestration.md",
       "links": [],
       "reconcileNeeded": false,
-      "completedAt": "2026-07-25T18:52:22.706Z"
+      "completedAt": "2026-07-25T18:52:22.706Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-25T18:52:22.706Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "df-update-epic-no-story-toggle-verb",
@@ -1098,7 +1343,12 @@
         ],
         "notifications": []
       },
-      "completedAt": "2026-07-21T06:42:07.249Z"
+      "completedAt": "2026-07-21T06:42:07.249Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-21T06:42:07.249Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "conductor-mjs-module-split",
@@ -1117,7 +1367,12 @@
           "note": "Final whole-branch review (opus, fresh context): all 22 tasks + 1 doc-fidelity fix reviewed against 7061d07..a4f6db7 diff. 250/250 tests pass, pluginRoot path-depth fix verified live, circular cluster confirmed exactly as designed with no extra edges, zero-dependency maintained, plugin.json version untouched as required. Ready to merge: Yes, no Critical/Important findings."
         }
       },
-      "completedAt": "2026-07-21T09:59:09.242Z"
+      "completedAt": "2026-07-21T09:59:09.242Z",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-07-21T09:59:09.242Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "edd-harness-agent-behavior-testing",
@@ -1130,7 +1385,12 @@
       "reconcileNeeded": false,
       "parent": "multi-platform-agent-support",
       "startedAt": "2026-07-26T21:23:54.593Z",
-      "completedAt": "2026-07-28T01:32:40.590Z"
+      "completedAt": "2026-07-28T01:32:40.590Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-28T01:32:40.590Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "rules-block-hardcodes-claude-slash-commands",
@@ -1143,7 +1403,12 @@
       "reconcileNeeded": false,
       "parent": "multi-platform-agent-support",
       "startedAt": "2026-07-29T02:28:12.027Z",
-      "completedAt": "2026-07-30T05:54:27.332Z"
+      "completedAt": "2026-07-30T05:54:27.332Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-30T05:54:27.332Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "platform-parity-mechanism",
@@ -1163,7 +1428,12 @@
           "note": "fresh-context whole-branch review (opus) over d168b1e..04c54c8: no Critical, 2 Important (symlinks skipped in walk; two assertions sharing one test) both fixed in c63efc1 and confirmed ADDRESSED by a scoped re-review; gitignore-filter fix 3cba2e9 separately re-reviewed. 301/301 on merged main 10bbef1."
         }
       },
-      "completedAt": "2026-08-04T00:48:57.337Z"
+      "completedAt": "2026-08-04T00:48:57.337Z",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-04T00:48:57.337Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "codex-platform-support",
@@ -1246,7 +1516,12 @@
           "done": true
         }
       ],
-      "completedAt": "2026-07-30T21:21:55.677Z"
+      "completedAt": "2026-07-30T21:21:55.677Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-30T21:21:55.677Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "edd-user-memory-confound-control-run",
@@ -1298,7 +1573,12 @@
         }
       ],
       "startedAt": "2026-07-30T21:50:06.581Z",
-      "completedAt": "2026-07-30T23:20:07.828Z"
+      "completedAt": "2026-07-30T23:20:07.828Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-30T23:20:07.828Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "edd-measures-installed-plugin-not-worktree",
@@ -1316,7 +1596,12 @@
       ],
       "reconcileNeeded": false,
       "startedAt": "2026-08-06T19:36:16.808Z",
-      "completedAt": "2026-08-17T06:15:57.388Z"
+      "completedAt": "2026-08-17T06:15:57.388Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-08-17T06:15:57.388Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "edd-adapter-discards-agent-stdout",
@@ -1430,7 +1715,12 @@
         }
       ],
       "startedAt": "2026-07-30T02:48:10.981Z",
-      "completedAt": "2026-07-30T22:52:14.536Z"
+      "completedAt": "2026-07-30T22:52:14.536Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-30T22:52:14.536Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "gh-66-update-epic-missing-flags",
@@ -1479,7 +1769,12 @@
       "reconcileNeeded": false,
       "externalId": "70",
       "externalUrl": "https://github.com/cfdude/pm/issues/70",
-      "completedAt": "2026-08-18T15:32:31.121Z"
+      "completedAt": "2026-08-18T15:32:31.121Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-08-18T15:32:31.121Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "test-suite-perf-and-scaffolding",
@@ -1533,7 +1828,12 @@
         }
       ],
       "startedAt": "2026-07-30T04:28:32.303Z",
-      "completedAt": "2026-07-30T05:02:31.485Z"
+      "completedAt": "2026-07-30T05:02:31.485Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-30T05:02:31.485Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "2026-07-21-conductor-mjs-module-split",
@@ -1545,7 +1845,12 @@
       "planPath": "docs/superpowers/plans/2026-07-21-conductor-mjs-module-split.md",
       "links": [],
       "reconcileNeeded": false,
-      "completedAt": "2026-07-30T04:00:55.770Z"
+      "completedAt": "2026-07-30T04:00:55.770Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-30T04:00:55.770Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "2026-07-26-edd-harness-agent-behavior-testing",
@@ -1557,7 +1862,12 @@
       "planPath": "docs/superpowers/plans/2026-07-26-edd-harness-agent-behavior-testing.md",
       "links": [],
       "reconcileNeeded": false,
-      "completedAt": "2026-07-30T04:00:55.969Z"
+      "completedAt": "2026-07-30T04:00:55.969Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-30T04:00:55.969Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "2026-07-29-platform-aware-rules-block",
@@ -1569,7 +1879,12 @@
       "planPath": "docs/superpowers/plans/2026-07-29-platform-aware-rules-block.md",
       "links": [],
       "reconcileNeeded": false,
-      "completedAt": "2026-07-30T04:00:56.179Z"
+      "completedAt": "2026-07-30T04:00:56.179Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-30T04:00:56.179Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "platform-switch-orphans-old-rules-block",
@@ -1721,7 +2036,12 @@
       "externalId": "83",
       "externalUrl": "https://github.com/cfdude/pm/issues/83",
       "startedAt": "2026-08-17T23:29:29.142Z",
-      "completedAt": "2026-08-20T17:43:40.832Z"
+      "completedAt": "2026-08-20T17:43:40.832Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-08-20T17:43:40.832Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "epic-session-attribution",
@@ -1892,7 +2212,12 @@
       "reconcileNeeded": false,
       "externalId": "86",
       "externalUrl": "https://github.com/cfdude/pm/issues/86",
-      "completedAt": "2026-08-17T06:23:41.462Z"
+      "completedAt": "2026-08-17T06:23:41.462Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-08-17T06:23:41.462Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "edd-run-policy-when-behavior-artifacts-change",
@@ -1983,7 +2308,12 @@
       "reconcileNeeded": false,
       "externalId": "87",
       "externalUrl": "https://github.com/cfdude/pm/issues/87",
-      "completedAt": "2026-08-17T06:23:41.521Z"
+      "completedAt": "2026-08-17T06:23:41.521Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-08-17T06:23:41.521Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "gh-88-record-where-unfinished-tasks-went",
@@ -2143,7 +2473,12 @@
       "role": "epic",
       "lane": "superpowers",
       "links": [],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-08-26T22:39:16.528Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "2026-08-14-eval-measures-worktree",
@@ -2153,7 +2488,12 @@
       "role": "epic",
       "lane": "superpowers",
       "links": [],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-08-26T22:39:16.528Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "gh-104-commit-nudge-fires-on-text-match",
@@ -2875,7 +3215,12 @@
       "planPath": "docs/superpowers/plans/2026-08-18-state-write-conflict-guard.md",
       "links": [],
       "reconcileNeeded": false,
-      "completedAt": "2026-08-24T01:40:39.820Z"
+      "completedAt": "2026-08-24T01:40:39.820Z",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-08-24T01:40:39.820Z",
+        "recordedBy": "migration"
+      }
     },
     {
       "id": "gh-130-disposition-has-no-correction-verb",
@@ -2974,13 +3319,14 @@
     }
   ],
   "detourStack": [],
-  "pmVersion": "0.26.0",
+  "pmVersion": "0.27.0",
   "tracker": {
     "system": "github-issues",
-    "repo": "cfdude/pm"
+    "repo": "cfdude/pm",
+    "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 96,
+  "revision": 97,
   "reviewMode": "thorough",
   "releases": [
     {
