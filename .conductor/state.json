@@ -1771,20 +1771,31 @@
       "id": "gh-71-update-epic-positional-id",
       "title": "update-epic: positional <id> silently accepted as --id, prints bare usage with no error message",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
       "externalId": "71",
       "externalUrl": "https://github.com/cfdude/pm/issues/71",
-      "release": "0.27.0"
+      "release": "0.27.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-26T21:22:39.653Z",
+        "reason": "shipped in 0.27.0 (conductor-tells-the-truth, 543a38f); tracker issue closed"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-26T21:22:39.652Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-26T21:22:39.653Z"
     },
     {
       "id": "gh-79-epic-description-and-notes",
       "title": "add-epic/update-epic silently discard --notes and --description; epics need a replace-in-place description AND an append-only notes trail",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -1797,20 +1808,42 @@
       "reconcileNeeded": false,
       "externalId": "79",
       "externalUrl": "https://github.com/cfdude/pm/issues/79",
-      "release": "0.27.0"
+      "release": "0.27.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-26T21:22:41.261Z",
+        "reason": "shipped in 0.27.0 (conductor-tells-the-truth, 543a38f); tracker issue closed"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-26T21:22:41.260Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-26T21:22:41.261Z"
     },
     {
       "id": "gh-80-gate-guard-refusal-applies-anyway",
       "title": "gate-guard prints a refusal for update-epic --status archived but applies the change anyway",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
       "externalId": "80",
       "externalUrl": "https://github.com/cfdude/pm/issues/80",
-      "release": "0.27.0"
+      "release": "0.27.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-26T21:22:42.876Z",
+        "reason": "shipped in 0.27.0 (conductor-tells-the-truth, 543a38f); tracker issue closed"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-26T21:22:42.876Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-26T21:22:42.876Z"
     },
     {
       "id": "gh-81-project-md-never-clean",
@@ -1956,14 +1989,25 @@
       "id": "gh-88-record-where-unfinished-tasks-went",
       "title": "No way to record where unfinished tasks WENT when an epic is archived",
       "priority": "P3",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
       "externalId": "88",
       "externalUrl": "https://github.com/cfdude/pm/issues/88",
-      "release": "0.27.0"
+      "release": "0.27.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-26T21:22:44.467Z",
+        "reason": "shipped in 0.27.0 (conductor-tells-the-truth, 543a38f); tracker issue closed"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-26T21:22:44.466Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-26T21:22:44.467Z"
     },
     {
       "id": "gh-89-delegate-discovery-to-subagents",
@@ -2133,20 +2177,31 @@
       "id": "gh-102-sync-blind-to-issue-comments",
       "title": "sync maintains issue EXISTENCE parity but never re-reads a mirrored issue — comments filed after the mirror are invisible",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
       "externalId": "102",
       "externalUrl": "https://github.com/cfdude/pm/issues/102",
-      "release": "0.27.0"
+      "release": "0.27.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-26T21:22:46.061Z",
+        "reason": "shipped in 0.27.0 (conductor-tells-the-truth, 543a38f); tracker issue closed"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-26T21:22:46.061Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-26T21:22:46.061Z"
     },
     {
       "id": "gh-103-tracker-refresh-gate-before-specs",
       "title": "Refresh gate: re-read a tracker-linked issue before drawing up specs — a post-triage comment can supersede the ask",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -2159,7 +2214,18 @@
       "reconcileNeeded": false,
       "externalId": "103",
       "externalUrl": "https://github.com/cfdude/pm/issues/103",
-      "release": "0.27.0"
+      "release": "0.27.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-26T21:22:47.586Z",
+        "reason": "shipped in 0.27.0 (conductor-tells-the-truth, 543a38f); tracker issue closed"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-26T21:22:47.585Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-26T21:22:47.586Z"
     },
     {
       "id": "gh-105-feedback-undeclared-gh-dependency",
@@ -2195,40 +2261,72 @@
       "id": "gh-107-snapshot-consumes-warning-into-unread-file",
       "title": "snapshot() consumes the conflict warning into .conductor/brief.txt, which nothing reads back — a warning delivered to a file no session loads",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
       "externalId": "107",
       "externalUrl": "https://github.com/cfdude/pm/issues/107",
-      "release": "0.27.0"
+      "release": "0.27.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-26T21:22:49.143Z",
+        "reason": "shipped in 0.27.0 (conductor-tells-the-truth, 543a38f); tracker issue closed"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-26T21:22:49.142Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-26T21:22:49.143Z"
     },
     {
       "id": "gh-109-tracker-sync-direction",
       "title": "TRACKER SYNC block pushes epics out to an inward-only github-issues tracker",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
       "externalId": "109",
       "externalUrl": "https://github.com/cfdude/pm/issues/109",
-      "release": "0.27.0"
+      "release": "0.27.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-26T21:22:50.755Z",
+        "reason": "shipped in 0.27.0 (conductor-tells-the-truth, 543a38f); tracker issue closed"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-26T21:22:50.755Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-26T21:22:50.755Z"
     },
     {
       "id": "gh-110-gate2-bypassed-by-archive-hook",
       "title": "Gate 2 enforced at the front door, bypassed by the archive hook — 7 of 49 archived openspec epics have a verdict",
       "priority": "P0",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
       "externalId": "110",
       "externalUrl": "https://github.com/cfdude/pm/issues/110",
-      "release": "0.27.0"
+      "release": "0.27.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-26T21:22:25.567Z"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-26T21:22:25.567Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-26T21:22:25.567Z"
     },
     {
       "id": "gh-111-activity-log-for-conductor-usage",
@@ -2258,14 +2356,25 @@
       "id": "gh-113-gate-verdict-records-no-diff-range",
       "title": "A Gate 2 verdict records no diff range, so it cannot be checked or go stale",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
       "externalId": "113",
       "externalUrl": "https://github.com/cfdude/pm/issues/113",
-      "release": "0.27.0"
+      "release": "0.27.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-26T21:22:52.332Z",
+        "reason": "shipped in 0.27.0 (conductor-tells-the-truth, 543a38f); tracker issue closed"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-26T21:22:52.331Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-26T21:22:52.332Z"
     },
     {
       "id": "gh-114-lane-routing-blind-to-product",
@@ -2283,7 +2392,7 @@
       "id": "gh-115-gates-blind-to-absent-edit",
       "title": "Both gates are diff-scoped, so they are blind to the absent edit — five shipped defects share the shape",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -2296,13 +2405,24 @@
       "reconcileNeeded": false,
       "externalId": "115",
       "externalUrl": "https://github.com/cfdude/pm/issues/115",
-      "release": "0.27.0"
+      "release": "0.27.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-26T21:22:53.938Z",
+        "reason": "shipped in 0.27.0 (conductor-tells-the-truth, 543a38f); tracker issue closed"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-26T21:22:53.937Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-26T21:22:53.938Z"
     },
     {
       "id": "gh-116-conflict-warning-missed-on-burst",
       "title": "Write-conflict warning fires only if sampled at exactly 3 — a burst warns zero times",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -2315,26 +2435,48 @@
       "reconcileNeeded": false,
       "externalId": "116",
       "externalUrl": "https://github.com/cfdude/pm/issues/116",
-      "release": "0.27.0"
+      "release": "0.27.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-26T21:22:55.526Z",
+        "reason": "shipped in 0.27.0 (conductor-tells-the-truth, 543a38f); tracker issue closed"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-26T21:22:55.526Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-26T21:22:55.526Z"
     },
     {
       "id": "gh-117-sync-blind-to-archived-changes",
       "title": "sync is blind to already-archived OpenSpec changes — 8 of 24 unindexed in one repo",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
       "externalId": "117",
       "externalUrl": "https://github.com/cfdude/pm/issues/117",
-      "release": "0.27.0"
+      "release": "0.27.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-26T21:22:57.278Z",
+        "reason": "shipped in 0.27.0 (conductor-tells-the-truth, 543a38f); tracker issue closed"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-26T21:22:57.277Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-26T21:22:57.278Z"
     },
     {
       "id": "gh-118-checkbox-signal-unreliable",
       "title": "tasks.md checkbox state is the only progress signal and it is wrong in both directions",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -2347,59 +2489,114 @@
       "reconcileNeeded": false,
       "externalId": "118",
       "externalUrl": "https://github.com/cfdude/pm/issues/118",
-      "release": "0.27.0"
+      "release": "0.27.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-26T21:22:58.874Z",
+        "reason": "shipped in 0.27.0 (conductor-tells-the-truth, 543a38f); tracker issue closed"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-26T21:22:58.874Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-26T21:22:58.874Z"
     },
     {
       "id": "gh-119-deferrals-have-no-path-to-backlog",
       "title": "A deferral recorded in a design doc has no path into the backlog — 3 of 3 repos left follow-ups live for months",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
       "externalId": "119",
       "externalUrl": "https://github.com/cfdude/pm/issues/119",
-      "release": "0.27.0"
+      "release": "0.27.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-26T21:23:00.412Z",
+        "reason": "shipped in 0.27.0 (conductor-tells-the-truth, 543a38f); tracker issue closed"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-26T21:23:00.412Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-26T21:23:00.412Z"
     },
     {
       "id": "gh-120-epic-outcome-shipped-vs-killed",
       "title": "Conductor cannot distinguish shipped from killed from abandoned",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
       "externalId": "120",
       "externalUrl": "https://github.com/cfdude/pm/issues/120",
-      "release": "0.27.0"
+      "release": "0.27.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-26T21:23:01.965Z",
+        "reason": "shipped in 0.27.0 (conductor-tells-the-truth, 543a38f); tracker issue closed"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-26T21:23:01.965Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-26T21:23:01.965Z"
     },
     {
       "id": "gh-121-tasks-verified-against-tree-not-commit",
       "title": "A task can be ticked and gated green while its files were never staged",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
       "externalId": "121",
       "externalUrl": "https://github.com/cfdude/pm/issues/121",
-      "release": "0.27.0"
+      "release": "0.27.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-26T21:23:03.515Z",
+        "reason": "shipped in 0.27.0 (conductor-tells-the-truth, 543a38f); tracker issue closed"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-26T21:23:03.515Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-26T21:23:03.515Z"
     },
     {
       "id": "gh-122-gate-records-unreliable-both-ways",
       "title": "gateReview records are unreliable in both directions — the 14% coverage metric is unsound",
       "priority": "P0",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
       "externalId": "122",
       "externalUrl": "https://github.com/cfdude/pm/issues/122",
-      "release": "0.27.0"
+      "release": "0.27.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-26T21:23:05.092Z",
+        "reason": "shipped in 0.27.0 (conductor-tells-the-truth, 543a38f); tracker issue closed"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-26T21:23:05.092Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-26T21:23:05.092Z"
     },
     {
       "id": "gh-123-adopt-openspec-1-9-cli-surface",
@@ -2417,7 +2614,7 @@
       "id": "gh-124-rules-block-emits-failing-add-epic",
       "title": "The rules block emits an add-epic command that always fails — recipe omits the required --id",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -2430,13 +2627,24 @@
       "reconcileNeeded": false,
       "externalId": "124",
       "externalUrl": "https://github.com/cfdude/pm/issues/124",
-      "release": "0.27.0"
+      "release": "0.27.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-26T21:23:06.660Z",
+        "reason": "shipped in 0.27.0 (conductor-tells-the-truth, 543a38f); tracker issue closed"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-26T21:23:06.660Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-26T21:23:06.660Z"
     },
     {
       "id": "gh-125-release-planning-and-deliberate-exclusion",
       "title": "pm has no concept of a release — backlog-wide triage and deliberate exclusion happen outside the tool",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -2449,7 +2657,18 @@
       "reconcileNeeded": false,
       "externalId": "125",
       "externalUrl": "https://github.com/cfdude/pm/issues/125",
-      "release": "0.27.0"
+      "release": "0.27.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-26T21:23:08.290Z",
+        "reason": "shipped in 0.27.0 (conductor-tells-the-truth, 543a38f); tracker issue closed"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-26T21:23:08.289Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-26T21:23:08.290Z"
     },
     {
       "id": "gh-126-release-level-cross-spec-gate",
@@ -2729,7 +2948,7 @@
     "repo": "cfdude/pm"
   },
   "platform": "claude-code",
-  "revision": 73,
+  "revision": 93,
   "reviewMode": "thorough",
   "releases": [
     {
