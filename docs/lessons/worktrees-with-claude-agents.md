@@ -31,6 +31,12 @@ start. The isolation was perfect and irrelevant.
 Post-hoc process counts cannot recover the state at freeze time. **That is the real finding:** this
 class of failure is undiagnosable after the fact, so the fix is instrumentation, not theory.
 
+**Revised 2026-08-26 — a candidate now exists, and it is not worktrees.** A denied macOS TCC prompt
+on `~/Documents` reproduced every symptom above on this machine: `getcwd()` denied tree-wide, git
+unable to touch a lock, and a process blocked with no output while an unanswered prompt sits on
+screen. See [[tcc-denial-breaks-getcwd]]. Unproven for this incident — nothing recorded whether a
+prompt was pending — so the procedure below stands, but probe permissions before blaming worktrees.
+
 **Why worktrees are implicated even without proof.** Worktree work is exactly the git activity most
 likely to leave a stale `index.lock` when a process is killed — and every shell afterwards that
 touches git state inherits the block. Whatever the trigger, the recovery cost lands on worktrees.
