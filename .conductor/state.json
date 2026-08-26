@@ -2939,6 +2939,38 @@
       "externalId": "134",
       "externalUrl": "https://github.com/cfdude/pm/issues/134",
       "attributedCommits": []
+    },
+    {
+      "id": "gh-137-release-completion-cascade",
+      "title": "A release ships and its member epics stay queued — nothing closes an epic when its tracker issue closes",
+      "priority": "P1",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-130-disposition-has-no-correction-verb",
+          "reason": "the 20-epic backfill produced a second instance — one disposition recorded without a reason and no verb to correct it"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "137",
+      "externalUrl": "https://github.com/cfdude/pm/issues/137",
+      "attributedCommits": []
+    },
+    {
+      "id": "gh-136-add-epic-notes-discarded",
+      "title": "add-epic --notes is silently discarded (accepted, never persisted)",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "136",
+      "externalUrl": "https://github.com/cfdude/pm/issues/136",
+      "attributedCommits": []
     }
   ],
   "detourStack": [],
@@ -2948,7 +2980,7 @@
     "repo": "cfdude/pm"
   },
   "platform": "claude-code",
-  "revision": 93,
+  "revision": 96,
   "reviewMode": "thorough",
   "releases": [
     {
