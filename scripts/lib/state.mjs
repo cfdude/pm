@@ -74,6 +74,42 @@ export class StateConflictError extends Error {
   }
 }
 
+/** Thrown when a write REPORTED SUCCESS and the value is not on disk afterwards.
+ *
+ *  A distinct class from StateConflictError, because they call for opposite responses: a
+ *  conflict is retryable and expected, and this is neither. */
+export class StatePersistError extends Error {
+  constructor(reason, verb) {
+    super(`state.json write reported success but did not persist (verb: ${verb}) — ${reason}`);
+    this.name = "StatePersistError";
+    this.reason = reason;
+    this.verb = verb;
+  }
+}
+
+/** Why a post-write read-back is a failure, or `null` when it is not.
+ *
+ *  Extracted rather than inlined so every branch is testable without a hidden self-test
+ *  subcommand in the shipped CLI — the same reason conflictExitCode() above is a function.
+ *
+ *  The NEWER-revision branch is what makes an otherwise-noisy guard usable. Two writers
+ *  interleave routinely here (a hook-driven render, a second agent): A renames, B loads and
+ *  writes, A reads back B's bytes. A's write landed and was legitimately superseded, and calling
+ *  that "your write did not persist" would turn a benign race into an error — precisely the
+ *  outcome saveState's `onConflict: "skip"` policy exists to avoid. Only a mismatch at the
+ *  revision this write itself just published means the bytes never arrived. */
+export function persistFailure({ expectedBytes, diskBytes, expectedRevision, diskRevision }) {
+  if (diskBytes === expectedBytes) return null;
+  if (Number.isInteger(diskRevision) && Number.isInteger(expectedRevision) && diskRevision > expectedRevision) {
+    return null;
+  }
+  if (diskBytes === null || diskBytes === undefined) {
+    return "the file could not be read back at all";
+  }
+  return `the file on disk does not match what was written at revision ${expectedRevision} ` +
+    `(disk revision ${diskRevision === null || diskRevision === undefined ? "unreadable" : diskRevision})`;
+}
+
 /** The exit code a thrown error should produce, or null to re-throw.
  *
  *  Extracted so the mapping is testable without a hidden self-test subcommand in the shipped
@@ -81,6 +117,15 @@ export class StateConflictError extends Error {
  *  agent that cannot tell them apart cannot decide whether to retry or to fix its command. */
 export function conflictExitCode(err) {
   return err instanceof StateConflictError ? CONFLICT_EXIT_CODE : null;
+}
+
+/** The `revision` a state.json TEXT carries, or null when the text is missing or unparseable. */
+function revisionOfText(text) {
+  if (typeof text !== "string") return null;
+  try {
+    const s = JSON.parse(text);
+    return s && typeof s === "object" && Number.isInteger(s.revision) ? s.revision : null;
+  } catch { return null; }
 }
 
 /** Read the revision currently on disk without parsing the whole state twice at the call site. */
@@ -157,6 +202,31 @@ export function saveState(state, opts = {}) {
   const tmpPath = `${STATE_PATH}.tmp-${process.pid}-${Date.now()}`;
   fs.writeFileSync(tmpPath, data);
   fs.renameSync(tmpPath, STATE_PATH);
+
+  // READ BACK WHAT WE JUST WROTE. #140: `update-epic --attribute-commit` reported success for
+  // four commits and the array read `[]` afterwards. This is scoped to the WRITE PATH rather
+  // than to that one flag on purpose — "reported success for a write that did not persist" is
+  // not a property of a flag, and every verb in this engine ends by calling this function, so a
+  // guard bound here covers the twenty-odd of them for one file read. Cost: one readFileSync of
+  // a file the OS just wrote and still holds in cache.
+  //
+  // HONEST SCOPE, because the temptation to overstate it is the whole reason #140 was hard to
+  // read: in the filed incident the working tree DID hold all four values afterwards. This does
+  // not close that incident, whose loss was at `git commit` time and whose mechanism remains
+  // unestablished. It closes the class the engine could not previously distinguish.
+  let diskBytes = null;
+  try { diskBytes = fs.readFileSync(STATE_PATH, "utf8"); } catch { diskBytes = null; }
+  const why = persistFailure({
+    expectedBytes: data, diskBytes,
+    expectedRevision: next.revision, diskRevision: revisionOfText(diskBytes),
+  });
+  // THROWN, never skipped, and deliberately not routed through the onConflict policy: a
+  // revision conflict has a documented benign reading ("someone else's write superseded a write
+  // that did not matter"), and persistFailure() has already handed that reading back as `null`.
+  // What is left has no benign reading — the bytes this process wrote are not on disk and
+  // nothing newer explains it — and silence there is the defect being fixed.
+  if (why) throw new StatePersistError(why, verb);
+
   state.revision = next.revision;   // keep the caller's object usable for a subsequent save
   clearConflicts();   // consecutive skips end at the first success
   return { ok: true, revision: next.revision };

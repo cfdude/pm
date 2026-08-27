@@ -126,6 +126,13 @@ append-only and the LAST entry is what a recorded Gate 2 `headSha` is compared a
 late-inserted ancestor reads as a stale verdict and refuses the archive. **Never attribute the
 commit that moves `openspec/changes/<id>/` under `archive/`.**
 
+**`--attribute-commit` reads back what it wrote before it says `updated`.** If the sha is not in
+`.conductor/state.json` when the command ends, it exits **1** and names the shas that are not
+there instead of reporting success — because a verb that reports success for a write nobody can
+find is worse than one that fails. `state.json`'s write path verifies its own bytes too, so this
+holds for every verb; `--attribute-commit` checks again at the END of the command, after the
+render that follows the save has had its own turn at the file.
+
 **Ending an epic takes two halves in one invocation.** `--status archived` runs the archive gate,
 which demands a disposition (`--outcome`, plus `--reason` unless the outcome is `delivered`) AND
 a deferral assertion (`--no-deferrals`, or one or more `--deferral`/`--declined-deferral`). It
