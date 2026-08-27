@@ -3033,7 +3033,12 @@
         "recordedAt": "2026-08-27T04:53:21.046Z",
         "externalUpdatedAt": "2026-08-23T23:48:36Z"
       },
-      "externalUpdatedAt": "2026-08-23T23:48:36Z"
+      "externalUpdatedAt": "2026-08-23T23:48:36Z",
+      "attributedCommits": [
+        "da80942",
+        "c4ecddd",
+        "0f0a9ff"
+      ]
     },
     {
       "id": "gh-127-dogfooding-practices-as-product",
@@ -3389,7 +3394,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 107,
+  "revision": 110,
   "reviewMode": "thorough",
   "releases": [
     {
