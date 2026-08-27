@@ -41,6 +41,25 @@ is unlikely) — set `PM_VERBOSE_ENGINE_BANNER=1` to force it back on if you nee
 source there. `PM_QUIET_ENGINE_BANNER=1` still works as an explicit suppress outside that
 context too.
 
+**Developing pm itself?** The engine can enforce that same preference for the callers that cannot
+run the snippet below: `hooks/hooks.json` invokes it through `$CLAUDE_PLUGIN_ROOT` with no chance
+to resolve anything. Export `PM_ENGINE_DELEGATION=/abs/path/to/your/pm/checkout` and an installed
+engine running in **that** tree hands the whole invocation off to its `scripts/conductor.mjs`
+before doing any work.
+
+It is **opt-in, and it names one path, deliberately**. Those four hooks fire in every project on
+the machine, so anything a project could write about itself — a `.claude-plugin/plugin.json`
+saying `"name": "pm"` is two lines — could be forged by a hostile repo to get its own code run.
+A bare on/off flag would have the same problem in practice, since it gets exported in a shell
+profile and is then set everywhere; a path names your checkout and matches nothing else.
+
+Two caveats. It only exists once the *installed* plugin carries the release that added it, so
+keep resolving `$ENGINE` as below rather than relying on it. And it makes the engine you TYPE
+non-authoritative: with it set, running a worktree's `scripts/conductor.mjs` while
+`$CLAUDE_PROJECT_DIR` points at the main checkout runs the **main checkout's** engine, because
+the project dir decides. In a repo that works in worktrees as much as this one, that is worth
+knowing before you debug a change that seems not to take.
+
 ```bash
 ENGINE="${CLAUDE_PROJECT_DIR:+$CLAUDE_PROJECT_DIR/scripts/conductor.mjs}"
 [ -f "$ENGINE" ] || ENGINE="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/scripts/conductor.mjs}"

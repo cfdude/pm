@@ -55,7 +55,7 @@ A lessons file nobody reads is a data graveyard — the same objection that made
 | `review-findings-are-not-a-mandate` | .claude/skills/cross-spec-review/SKILL.md |
 | `route-cross-repo-findings-do-not-file-them` | .claude/skills/dogfooding/SKILL.md |
 | `shared-checkout-parallel-agents` | subagent brief template; CLAUDE.md § Subagents & worktrees |
-| `slash-commands-run-the-installed-plugin` | subagent brief template |
+| `slash-commands-run-the-installed-plugin` | subagent brief template; conductor.mjs self-hosting handoff (bootstrap-limited) |
 | `tcc-denial-breaks-getcwd` | habit — the four-probe table in the lesson |
 | `worktrees-with-claude-agents` | scripts/wt-preflight.sh, scripts/wt-cleanup.sh; detect matcher on worktree creation |
 

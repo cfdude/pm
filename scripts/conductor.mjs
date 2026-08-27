@@ -74,6 +74,23 @@ import { upgrade } from "./lib/migrations.mjs";
 import { changelog } from "./lib/changelog.mjs";
 import { release, recordCrossSpecReview } from "./lib/releases.mjs";
 import { verifyWorktrees, changesets, verifyState } from "./lib/worktree-hygiene.mjs";
+import { delegateToCheckout } from "./lib/self-hosting.mjs";
+
+// ---------- self-hosting handoff (gh-134) ----------
+//
+// hooks.json and every command doc invoke this engine through ${CLAUDE_PLUGIN_ROOT} — the
+// INSTALLED plugin. When the project being worked in IS a pm checkout, that engine is behind
+// the working tree and renders PROJECT.md as it looked a release ago, unprompted, on every
+// commit. Hand off to the checkout's engine before ANY other work: before the banner, before
+// --help, before dispatch, so the delegated process owns the whole invocation and nothing is
+// printed twice.
+//
+// OPT-IN ONLY, via PM_ENGINE_DELEGATION naming the checkout's absolute path. This is the single
+// place the engine can execute code it did not ship, and the four hooks reach it in every
+// project on the machine — see the trust-boundary note at the top of lib/self-hosting.mjs
+// before loosening the condition.
+const delegated = delegateToCheckout({ selfPath: fileURLToPath(import.meta.url) });
+if (delegated !== null) process.exit(delegated);
 
 // ---------- dispatch ----------
 
