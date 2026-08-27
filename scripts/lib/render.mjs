@@ -176,7 +176,13 @@ export function render() {
     md.push("");
     for (const e of backlog) {
       const why = e.description ? ` — ${e.description}` : "";
-      md.push(`- \`${e.id}\` (${e.priority}, ${e.lane}, ${e.status}) — ${e.title}${why}`);
+      // The lift renders HERE too, in the same `P2 → P1` form the Epics table uses. The backlog
+      // is precisely where a reader goes to ask "what should I pull forward", and showing the
+      // merit priority alone on the one line written for that question — while the table three
+      // sections up says the epic sorts as P1 — is the same fact told two ways.
+      const prio = e.effectivePriority && e.effectivePriority !== e.priority
+        ? `${e.priority} → ${e.effectivePriority}` : e.priority;
+      md.push(`- \`${e.id}\` (${prio}, ${e.lane}, ${e.status}) — ${e.title}${why}`);
     }
     md.push("");
   }

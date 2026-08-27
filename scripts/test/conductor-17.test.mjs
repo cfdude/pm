@@ -35,6 +35,18 @@ test("a planned blocker inherits the effective priority of the queued epic that 
   assert.doesNotMatch(md, /\| P1 → P1 \| `goal`/, "an epic whose effective priority equals its merit must render one value");
 });
 
+test("the Backlog section shows the lift too — it is the line a reader scans for what to pull forward", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "blocker", "--lane", "claude-code", "--priority", "P2", "--status", "planned",
+       "--title", "The means"], { cwd });
+  run(["add-epic", "--id", "goal", "--lane", "claude-code", "--priority", "P1",
+       "--link", "depends-on:blocker:needed"], { cwd });
+  const backlog = projectMd(cwd).split("## Backlog")[1];
+  assert.match(backlog, /`blocker` \(P2 → P1, claude-code, planned\)/,
+    "the merit-only reading would tell the same fact two ways on two surfaces");
+});
+
 test("effective priority is never written back to state.json", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });

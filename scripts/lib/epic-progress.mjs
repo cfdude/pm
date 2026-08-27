@@ -360,8 +360,16 @@ export function missing(e) {
  *  top-level queued/untriaged epics generally — the same starvation problem exists there: a
  *  higher-priority epic with an unresolved `depends-on` link to another still-queued epic would
  *  otherwise be listed (and picked by /pm:next) ahead of the very dependency it's waiting on.
- *  `sorted` is a priority-then-lane-then-id-ordered list (resolveEpics()'s existing sort,
- *  already filtered to queued/untriaged + not-missing). Returns `{ ordered, notes }`. */
+ *  `sorted` is a list in resolveEpics()'s order — effective priority, then merit priority, then
+ *  manual rank, then lane, then id — already filtered to queued/untriaged + not-missing.
+ *  Returns `{ ordered, notes }`.
+ *
+ *  This pass is DEPENDENCY-AWARE ONLY WITHIN THE SET IT IS HANDED, which is queued/untriaged.
+ *  An edge pointing at any other status is invisible here BY CONSTRUCTION and is the province
+ *  of lib/dependency-order.mjs — effective priority (which reorders the whole record) and
+ *  `dependencyNotes()` (which names the inversion). Do not widen this function's input to fix
+ *  that: `planned`/`later` epics staying out of NEXT UP is a deliberate membership contract
+ *  with tests behind it. */
 export function orderQueueWithDependencies(sorted) {
   const ids = new Set(sorted.map(e => e.id));
   const deps = new Map(sorted.map(e => [e.id, new Set(
