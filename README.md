@@ -440,6 +440,36 @@ real passing verdict supersedes it — not an episode that a single session's br
 </details>
 
 <details>
+<summary><code>record-cross-spec-review &lt;releaseId&gt; --verdict pass|fail [--reviewer "&lt;who&gt;"]</code> — Record the release-scope cross-spec review</summary>
+
+Gate 1 and Gate 2 each take **one change** as their unit, so nothing above them asked whether a
+release's specs **agree with each other**. `/pm:cross-spec-review` runs that review — the six
+questions (contradiction, double ownership, unmeetable requirements, gaps, vocabulary forks,
+shared chokepoints), with BLOCKS/POLISH adjudication — and this verb records its verdict on the
+release.
+
+**The engine derives the evidence.** It enumerates the release's spec set from disk across its
+member changes and stores a SHA-256 per file it read; an agent never supplies the list, because a
+list typed by the party being reviewed goes stale in exactly the way this gate exists to catch. A
+spec **added** to the release afterwards, or a reviewed spec **amended**, marks the verdict
+`⚠ stale` on `PROJECT.md` and the session brief; a spec the engine cannot read reads
+`⚠ unverifiable` and a `pass` is refused rather than recorded against absent evidence. The record
+is keyed change-relative, so the `/opsx:archive` move never reads as staleness, and re-recording
+supersedes the prior verdict while keeping it readable.
+
+The gate applies at **two or more spec files counted flat** across the release, so one change
+carrying six specs qualifies exactly as six changes carrying one each do; below that the verb
+refuses, because Gate 1 covers a single spec completely. A multi-spec release with **no** verdict
+renders `⚠ no cross-spec review (N specs)` — silence and "reviewed and clean" must not look the
+same.
+
+*Measured on this plugin's own 0.27.0:* six specs that had each passed `openspec validate
+--strict` and would each have passed Gate 1 alone returned **5 Critical and 10 Important** when
+reviewed as a set.
+
+</details>
+
+<details>
 <summary><code>/pm:sync</code> — Register new proposals and plans</summary>
 
 Picks up any new OpenSpec proposals or Superpowers plans not yet tracked as epics, and

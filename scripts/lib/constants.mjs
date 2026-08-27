@@ -202,14 +202,19 @@ export const EPIC_FLAGS = [
   // is what makes the allowlist usable at all; leaving them out would be the second, parallel
   // list `epic-annotation` forbids, spelled as an exception instead of as an array.
   { flag: "gate", key: null, commands: ["record-gate-review"], write: "custom" },
-  { flag: "verdict", key: null, commands: ["record-gate-review"], write: "custom" },
+  // `verdict` and `reviewer` are SHARED with record-cross-spec-review, the RELEASE-scope gate:
+  // registered by adding a command name to the entry that already exists, never by giving that
+  // verb a literal list of its own. This is the registry doing the job it was built for — a
+  // shared allowlist four capabilities each needed to grow was one of the five Criticals that
+  // motivated the release gate, and growing it here costs one array element.
+  { flag: "verdict", key: null, commands: ["record-gate-review", "record-cross-spec-review"], write: "custom" },
   // record-gate-review's evidence flags. They live in this registry because it is the single
   // declaration of the flag surface every epic-WRITING command shares, and recording a verdict
   // writes an epic. `key` is null on all three: they land nested under `gateReview.gateN`
   // rather than on a top-level epic key, so the command owns the write.
   { flag: "base-sha", key: null, commands: ["record-gate-review"], write: "custom" },
   { flag: "head-sha", key: null, commands: ["record-gate-review"], write: "custom" },
-  { flag: "reviewer", key: null, commands: ["record-gate-review"], write: "custom" },
+  { flag: "reviewer", key: null, commands: ["record-gate-review", "record-cross-spec-review"], write: "custom" },
   // Attribution is an EXPLICIT array of hashes the agent supplies, and the engine infers it
   // from nothing else — not the files a commit touches, not an epic id in a commit message.
   // Deriving it from touched files would make the archive move (which relocates every file a

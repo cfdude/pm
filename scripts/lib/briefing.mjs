@@ -11,6 +11,7 @@ import { outcomeOf, recordedDispositions } from "./disposition.mjs";
 import { stalenessMarking } from "./archive-gate.mjs";
 import { ungatedArchives } from "./integrity.mjs";
 import { KNOWN_LANES, anyInwardProcedureEmittable, gateSummary, outwardApplies, releaseLine, releaseSummaries } from "./constants.mjs";
+import { crossSpecLine } from "./cross-spec-review.mjs";
 import { conflictCount, conflictWarningLatched, consumeConflictWarning } from "./write-conflicts.mjs";
 import { CONFLICT_WARN_THRESHOLD } from "./constants.mjs";
 import { openspecCurrencyLines } from "./tool-currency.mjs";
@@ -146,7 +147,7 @@ export function buildBrief(state, { consume = false } = {}) {
   if (releases.length) {
     L.push("RELEASES:");
     for (const r of releases) {
-      L.push(`  • ${releaseLine(r)}${r.intent ? ` — ${r.intent}` : ""}${r.target ? ` (target: ${r.target})` : ""}`);
+      L.push(`  • ${releaseLine(r)}${crossSpecLine(state, epics, r.id)}${r.intent ? ` — ${r.intent}` : ""}${r.target ? ` (target: ${r.target})` : ""}`);
     }
     L.push("");
   }
