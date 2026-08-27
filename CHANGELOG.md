@@ -8,6 +8,104 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.29.0] — 2026-08-27
+
+### Added
+
+- **Effective priority — dependency ordering that can finally see the backlog (gh#101).** An
+  epic's *effective* priority is now the best of its own and every epic that transitively
+  `depends-on` it, computed over the whole record instead of only the `queued`/`untriaged` set.
+  A `planned` P2 that a `queued` P1 needs sorts as P1 and renders `P2 → P1` in PROJECT.md — P2
+  on merit, P1 because a P1 needs it. Computed and never written back, so nothing is
+  hand-maintained, the merit priority stays legible (you can still tell the goal from the
+  means), and deprioritising the dependent drops the lift with it. An ARCHIVED dependent lifts
+  nothing.
+- **`DEPENDENCY WARNINGS` in the brief and `## Dependency warnings` in PROJECT.md.** One line per
+  inversion, naming both endpoints, both statuses, why it is a problem and the effective priority
+  the blocker now carries — so "the highest-priority thing is unstartable, here is what to pull
+  forward" is a decision the record forces rather than one a human has to find by reading the
+  link list by eye. Both surfaces render the same lines: `/pm:next` reads PROJECT.md, not the
+  brief, so a warning that lived only in the brief would be absent from the surface the
+  next-up decision is actually made from.
+- **A `blocked` epic with no `depends-on` link is now reported.** `blocked` was otherwise a dead
+  end — an epic could sit in it indefinitely with nothing recording what it waits on. Derived
+  from `depends-on` rather than a new `blockedBy` field: one mechanism, not two.
+
+- **`reorder <id> <id> …` — manual rank for genuine ties (gh#101).** Places the epics of ONE
+  priority band top to bottom, rewriting ranks dense `1..N` on every call. It is the only writer
+  of `rank`, and it takes the whole band and refuses a partial one, so contiguity holds by
+  construction rather than being checked afterwards — which is also why there is no per-epic
+  `--rank` flag (one-at-a-time reordering is tedious and racy). Rank is the LAST sort key:
+  dependencies → priority → rank. It breaks the tie that previously fell through to alphabetical
+  order and never outranks a dependency or a priority. Unranked epics are legal and sort after
+  every ranked one; `update-epic --priority` clears a rank on a real band change, with a notice.
+
+- **`triage "<ask>"` — intake screening against the whole backlog** (#112). The conductor
+  accepted work but never triaged it: `add-epic` validated the id, lane and priority, refused a
+  duplicate `externalId`, and appended. That dedup is identity-based — same id, or the same
+  `externalUrl` — so it stops `/pm:sync` mirroring an issue twice and does nothing about the same
+  ask arriving under a different name. Measured in this repo: `integrity`'s
+  `change-registered-under-two-lanes` reports four live pairs that are one change registered
+  twice under different lanes and names, and identity dedup found none of them.
+
+  The new read-only verb returns the existing epics that share **distinctive** vocabulary with an
+  ask — weighted so words the whole backlog uses count for almost nothing and rare words count
+  for a lot — each carrying the shared tokens that put it there and a `superseded` flag, plus the
+  lane this repo's routing picks and the backlog's current shape. `commands/triage.md`,
+  `/pm:triage`.
+
+- **`declined` terminal outcome.** An ask that is considered and turned down is now recordable:
+  `update-epic <id> --status archived --outcome declined --reason "<why not>" --no-deferrals`.
+  Declining by never registering the ask destroyed the record that anybody considered it — the
+  same objection that made every other ending recordable. It is an **outcome, not a status**:
+  `archived` already means terminal, so no status-driven behavior changes anywhere in the engine.
+  It requires a reason like every non-`delivered` outcome, and because it is not `delivered` the
+  archive gate's Gate 2 demand and handoff demand pass it by (no code was written). A declined
+  epic is also out of the completion-shaped integrity checks' scope, for the same reason `killed`
+  and `abandoned` are.
+
+- **`supersedes` link type**, documented in the epic-schema vocabulary and surfaced by `triage`:
+  a candidate that some other epic already supersedes is flagged, so a fourth ask is never
+  consolidated into an epic that is already dead.
+
+- **An always-on `## Intake` section in the emitted rules block**, carrying the four-step intake
+  procedure. It applies to every path that registers an epic — the tracker-sync procedures,
+  `/pm:epic add`, and a roadmap document read in-session — and says explicitly that it is not a
+  substitute for the sync procedures' `externalUrl` check, nor they for it.
+
+**Where the line is drawn.** `pm` is an instruction layer, so the engine computes a **candidate
+set** and never a **verdict**: it emits `verdict: null`, labels no candidate a duplicate, and
+makes no claim that two asks are the same. Which epics share distinctive vocabulary, which lane
+the repo's routing picks, what the backlog looks like as a set, and which candidates are already
+superseded are mechanical. Whether an ask is the same ask, whether the lane is right, where it
+sits against what is in flight, and whether to consolidate, decline or register are judgment, and
+they belong to the agent — prompted by the emitted Intake procedure.
+
+- **`integrity` check `recorded-sha-the-repository-cannot-resolve`** (#142). The shas in
+  `attributedCommits` and in a gate verdict's `baseSha`/`headSha` *are* the evidence — "a reviewer
+  read this range" is checkable only while the range exists. A squash-merge leaves every commit on
+  the merged branch reachable from no ref and the next `git gc` deletes them (default
+  `gc.pruneExpire`: two weeks); measured on `cfdude/pm` right after 0.28.0 merged, **36 recorded
+  shas, 0 reachable from any ref**, with every existing check green. Two arms, because the reports
+  are different: **orphaned** (in the object store, reachable from nothing — recoverable *now*
+  with `git tag`, gone at the next `gc`) and **already gone** (unrecoverable locally). The
+  already-gone arm is gated on a probe — if the clone resolves *none* of the record's shas it says
+  nothing, because a fresh, shallow or single-ref clone lacks that history rather than having
+  destroyed it.
+- **`git.mjs`: `objectExists(sha)` and `reachableFromAnyRef(sha)`** — local, argv-array
+  `execFileSync`, no network, matching the module's existing contract.
+
+### Fixed
+
+- **`update-epic --attribute-commit` now reads back what it wrote** and exits 1 naming the shas
+  that are not in `.conductor/state.json` when the command ends, instead of printing `updated`
+  (#140). The check runs at the END of the command, after the `render()` that follows the save has
+  had its own turn at the file.
+- **Every `state.json` write verifies its own bytes reached the disk.** `saveState()` re-reads
+  after `rename(2)` and throws `StatePersistError` when the file does not hold what it just wrote.
+  A *newer* revision on disk is a supersession, not a failure, so this does not fire on the benign
+  interleave the existing revision guard already handles.
+
 ## [0.28.0] — 2026-08-27
 
 ### Added
