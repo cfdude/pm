@@ -20,6 +20,9 @@ import { isInitialized, loadState, saveState } from "./state.mjs";
 import { parseFlags } from "./add-epic.mjs";
 import { render } from "./render.mjs";
 import { releaseDeferral, releaseDeferralError } from "./disposition.mjs";
+import {
+  CROSS_SPEC_MIN_SPECS, KNOWN_CROSS_SPEC_VERDICTS, crossSpecRequired, releaseSpecFiles, specDigest,
+} from "./cross-spec-review.mjs";
 
 /** The flags `release` recognizes — a PROJECTION of the shared EPIC_FLAGS registry, never a
  *  second literal. Registering a flag on `release` in that registry is the whole edit. */
@@ -148,4 +151,111 @@ export function release() {
   saveState(state);
   render();
   process.stderr.write(`conductor: release '${id}' — ${releaseLine(releaseSummaries(state, state.epics).find(s => s.id === id))}\n`);
+}
+
+// ─────────────────── the RELEASE-scope review gate (gh#126) ───────────────────
+
+/** The flags `record-cross-spec-review` recognizes — the same PROJECTION of the shared
+ *  EPIC_FLAGS registry every other verb's allowlist is, never a second literal. Registering this
+ *  verb on the two entries `record-gate-review` already declares was the whole edit. */
+export const CROSS_SPEC_FLAGS = epicFlagsFor("record-cross-spec-review");
+
+/**
+ * `record-cross-spec-review <releaseId> --verdict pass|fail [--reviewer "<identity>"]`
+ *
+ * Records the RELEASE-scope review's verdict: do these specs agree with each other? Gate 1 and
+ * Gate 2 each take one CHANGE as their unit, so nothing above them asked the cross-document
+ * question until this verb existed.
+ *
+ * The EVIDENCE is engine-derived and never agent-asserted. The verb enumerates the release's
+ * spec set from disk and hashes each file it read; a spec list supplied by the party being
+ * reviewed is a list typed from memory, and it goes stale the moment a capability is added —
+ * which is the exact staleness this record exists to detect.
+ *
+ * pm stays an INSTRUCTION layer here: nothing in this verb performs a review, dispatches a
+ * reviewer or reads a spec's prose. It records what a reviewer concluded, with evidence a later
+ * reader can check.
+ */
+export function recordCrossSpecReview() {
+  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  const argv = process.argv.slice(3);
+  const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
+  const f = parseFlags(id ? argv.slice(1) : argv);
+  // Rejected BEFORE loadState(), so a refusal cannot leave a partial write behind.
+  const unknown = Object.keys(f).filter(k => !CROSS_SPEC_FLAGS.includes(k));
+  if (unknown.length) {
+    process.stderr.write(`conductor: record-cross-spec-review: unknown flag(s) --${unknown.join(", --")} ` +
+      `(known: ${CROSS_SPEC_FLAGS.map(k => `--${k}`).join(", ")})\n`);
+    process.exit(1);
+  }
+  const verdict = typeof f.verdict === "string" ? f.verdict : undefined;
+  const reviewer = typeof f.reviewer === "string" ? f.reviewer : undefined;
+  if (!id || !verdict) {
+    process.stderr.write(
+      "usage: conductor.mjs record-cross-spec-review <releaseId> --verdict pass|fail " +
+      "[--reviewer \"<identity>\"]\n");
+    process.exit(1);
+  }
+  if (!KNOWN_CROSS_SPEC_VERDICTS.includes(verdict)) {
+    process.stderr.write(`conductor: --verdict must be one of ${KNOWN_CROSS_SPEC_VERDICTS.join("|")}\n`);
+    process.exit(1);
+  }
+
+  const state = loadState();
+  const rel = findRelease(state, id);
+  if (!rel) {
+    process.stderr.write(
+      `conductor: release '${id}' does not exist — create it first with ` +
+      `\`release ${id} --intent "<what this release is for>"\`. Nothing was written.\n`);
+    process.exit(1);
+  }
+
+  const specs = releaseSpecFiles(state, state.epics, id);
+  // Below the threshold the gate does not apply, and a verdict about a question nobody needed to
+  // ask is a record that reads as coverage. Refused rather than stored: Gate 1 covers a single
+  // spec completely.
+  if (!crossSpecRequired(specs)) {
+    process.stderr.write(
+      `conductor: release '${id}' has ${specs.length} spec file(s) — the cross-spec gate applies ` +
+      `at ${CROSS_SPEC_MIN_SPECS} or more, and Gate 1 covers a single spec completely. ` +
+      `Nothing was written.\n`);
+    process.exit(1);
+  }
+
+  const recorded = [];
+  const unreadable = [];
+  for (const s of specs) {
+    const sha256 = specDigest(s.abs);
+    if (sha256 === null) unreadable.push(s.key); else recorded.push({ key: s.key, sha256 });
+  }
+  // A `pass` MUST carry evidence for every spec in the set, exactly as a passing gate verdict
+  // must carry the range it covered. A digest the engine could not compute is a spec whose later
+  // amendment would be undetectable, so the pass it licenses is unfalsifiable. A `fail` may be
+  // recorded regardless: there is nothing for it to have covered.
+  if (verdict === "pass" && unreadable.length) {
+    process.stderr.write(
+      `conductor: cannot record a 'pass' for '${id}' — these spec file(s) could not be read, so ` +
+      `no digest covers them and a later amendment would be undetectable: ${unreadable.join(", ")}\n`);
+    process.exit(1);
+  }
+
+  const entry = { verdict, reviewedAt: new Date().toISOString(), specs: recorded };
+  if (reviewer !== undefined) entry.reviewer = reviewer;
+  // Supersede, never destroy — the same shape record-gate-review uses and for the same reason: a
+  // review that was re-run must stay readable. ONE nested level; the prior entry's own
+  // `superseded` is dropped rather than chained, or the record's depth becomes a function of how
+  // many rounds ran (four ran on 0.27.0).
+  const prior = rel.crossSpecReview;
+  if (prior && typeof prior === "object") {
+    const kept = { ...prior };
+    delete kept.superseded;
+    entry.superseded = kept;
+  }
+  rel.crossSpecReview = entry;
+
+  saveState(state);
+  render();
+  process.stderr.write(
+    `conductor: recorded cross-spec review '${verdict}' for release '${id}' ` +
+    `(${recorded.length} spec${recorded.length === 1 ? "" : "s"})\n`);
 }

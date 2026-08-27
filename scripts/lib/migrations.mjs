@@ -11,6 +11,7 @@ import { normalizeLink } from "./links.mjs";
 import { engineStamp } from "./disposition.mjs";
 import { resolvePlatform } from "./platform.mjs";
 import { ensureGitignore } from "./subcommands.mjs";
+import { openspecCurrencyLines } from "./tool-currency.mjs";
 
 // MIGRATIONS — APPEND-ONLY, each keyed by the release that introduced the change.
 // NEVER remove or reorder a shipped entry: a repo many versions behind replays every
@@ -151,4 +152,14 @@ export function upgrade() {
     process.stdout.write(
       `What's new in pm (since ${stamped}):\n\n` + delta.map(s => s.body).join("\n\n") + "\n");
   }
+
+  // gh#128 — "is this repo current with pm?" is the question this verb exists to answer, and it
+  // is exactly the question nothing asks about the OpenSpec CLI. Same emitter as the brief, so
+  // the two surfaces cannot report the same drift differently. NOT a MIGRATIONS entry: nothing
+  // in `state.json` changes and there is nothing to transform — this is a READ of the working
+  // tree, reported. A migration that consulted disk would produce different results on machines
+  // whose checkouts sit at different commits, which is the one property a one-shot,
+  // never-replayed transformation may not have.
+  const openspecLines = openspecCurrencyLines();
+  for (const l of openspecLines) process.stderr.write(l + "\n");
 }
