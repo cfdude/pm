@@ -23,6 +23,7 @@
 import { isInitialized, loadState } from "./state.mjs";
 import { parseFlags } from "./add-epic.mjs";
 import { laneSuggestion } from "./lane-routing.mjs";
+import { supersededEpics } from "./links.mjs";
 
 /** Words shorter than this carry no discriminating power and appear everywhere ("of", "to",
  *  "id", "pm"). A length floor is mechanical; a curated stopword list would be a second thing
@@ -111,12 +112,10 @@ export function candidateSet(epics, ask, { limit = 5 } = {}) {
 
   // An epic superseded by another is already dead. Consolidating a fourth ask INTO it is the
   // mistake worth flagging, and it is mechanical: some other epic holds `supersedes: <this>`.
-  const superseded = new Set();
-  for (const e of list) {
-    for (const l of Array.isArray(e.links) ? e.links : []) {
-      if (l && l.type === "supersedes" && typeof l.epic === "string") superseded.add(l.epic);
-    }
-  }
+  // Read from links.mjs's ONE declaration, which `integrity`'s superseded-epic-never-ended check
+  // also reads — a second local derivation would let the two surfaces disagree about which epics
+  // are dead.
+  const superseded = supersededEpics(list);
 
   const out = [];
   for (const e of list) {
