@@ -41,9 +41,18 @@ archived epic with nothing ticked, one change registered under two lanes, a gate
 does not reach the commits it cites, a gate recorded as bookkeeping rather than review, a
 `delivered` epic that attributed no commits, an archived openspec-lane epic with a passing Gate 2
 and no Gate 1, an epic archived with an `ungated` Gate 2, an epic the archive-drift heal flipped
-that reads `outcome: unknown` while carrying a passing Gate 2, a dangling epic reference, and an
-archive directory no epic corresponds to. It reports every check with its count, including the
-ones that found nothing, so a check that measured nothing is visibly a check that ran.
+that reads `outcome: unknown` while carrying a passing Gate 2, a dangling epic reference, an
+archive directory no epic corresponds to, and a recorded commit sha this repository can no longer
+resolve. It reports every check with its count, including the ones that found nothing, so a check
+that measured nothing is visibly a check that ran.
+
+`recorded-sha-the-repository-cannot-resolve` is the one with a deadline. A squash-merge orphans
+every commit on the merged branch — they are reachable from no ref and the next `git gc` deletes
+them (default `gc.pruneExpire`: two weeks) — which silently turns every `attributedCommits` entry
+and every gate verdict's `baseSha`/`headSha` into a sentence about commits nobody can look at.
+The check separates **orphaned** (still in the object store, recoverable now with `git tag`) from
+**already gone**, and stays silent in a clone that resolves none of the record at all, because a
+fresh, shallow or single-ref clone legitimately lacks that history and is not a disaster.
 
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" integrity

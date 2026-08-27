@@ -651,8 +651,17 @@ verdict whose recorded range does not reach the commits its note cites, a gate r
 bookkeeping rather than review, a `delivered` epic that attributed no commits, an archived
 openspec-lane epic with a passing Gate 2 and no Gate 1, an epic archived with an `ungated` Gate 2
 (no review from anyone), an epic the archive-drift heal flipped that reads `outcome: unknown`
-while carrying a passing Gate 2, a dangling epic reference, and an archive directory no epic
-corresponds to.
+while carrying a passing Gate 2, a dangling epic reference, an archive directory no epic
+corresponds to, and **a recorded commit sha this repository can no longer resolve**.
+
+**That last one has a deadline.** The shas in `attributedCommits` and in a gate verdict's
+`baseSha`/`headSha` *are* the evidence — "a reviewer read this range" is only checkable while the
+range exists. A squash-merge leaves every commit on the merged branch reachable from no ref, and
+the next `git gc` deletes them (default `gc.pruneExpire`: two weeks); measured on this repo right
+after a release, 36 recorded shas were reachable from nothing while every check stayed green. The
+check separates **orphaned** — still in the object store, recoverable *now* with `git tag` — from
+**already gone**, and reports nothing at all in a clone that resolves none of the record, because
+a fresh, shallow or single-ref clone lacks that history rather than having destroyed it.
 
 **Expect a burst of `heal-archived-epic-passed-gate-2` on your first run after upgrading.** Every
 repo that followed the documented `/opsx:archive` → heal flow lands on `outcome: unknown` rather
