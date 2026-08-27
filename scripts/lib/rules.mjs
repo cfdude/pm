@@ -190,7 +190,10 @@ export const GATE_PROCEDURE_ITEMS = [
   },
   {
     title: "Review a release's specs against each other.",
-    mustSay: ["two or more spec files", "record-cross-spec-review"],
+    // The third claim is the load-bearing one: the trigger and the verb name would both survive
+    // a mirror whose adjudication rule had been deleted or reversed, which is the exact hole
+    // `mustSay` was added to close.
+    mustSay: ["two or more spec files", "record-cross-spec-review", "A contradiction is never POLISH"],
     lines: [
       "Gate 1 and Gate 2 each take ONE CHANGE",
       "   as their unit, so nothing above them asks whether a release's specs AGREE. Before",
