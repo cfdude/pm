@@ -14,6 +14,7 @@ import { validLink } from "./links.mjs";
 import { outcomeOf, recordedDispositions } from "./disposition.mjs";
 import { stalenessMarking } from "./archive-gate.mjs";
 import { DETOURS_LOG, PROJECT_MD, STATE_PATH, RENDER_STAMP_PATH, CONDUCTOR_DIR, gateSummary, releaseLine, releaseSummaries } from "./constants.mjs";
+import { crossSpecLine } from "./cross-spec-review.mjs";
 
 export function render() {
   const state = loadState();
@@ -174,7 +175,7 @@ export function render() {
     for (const r of releases) {
       const target = r.target ? ` (target: ${r.target})` : "";
       const intent = r.intent ? ` — ${r.intent}` : "";
-      md.push(`- ${releaseLine(r)}${intent}${target}`);
+      md.push(`- ${releaseLine(r)}${crossSpecLine(state, epics, r.id)}${intent}${target}`);
       for (const d of r.deferred) {
         md.push(`  - deferred \`${d.epic}\` — ${d.reason}${d.recordedAt ? ` (${d.recordedAt.slice(0, 10)})` : ""}`);
       }

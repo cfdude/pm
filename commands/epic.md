@@ -293,7 +293,24 @@ bullet reached 3/15.
    change's artifacts rather than implementing its work, is lifecycle bookkeeping and
    MUST NOT be attributed — that move lands after the reviewed range by construction, so attributing it makes
    the epic's own Gate 2 stale at the instant the archive gate reads it.
-5. **End work by recording a disposition.** An epic, a story, a deferral or a release exclusion
+5. **Review a release's specs against each other.** Gate 1 and Gate 2 each take ONE CHANGE as
+   their unit, so nothing above them asks whether a release's specs AGREE. Before `/opsx:apply`
+   on any release holding **two or more spec files** — counted FLAT across its member changes, so
+   one change carrying six specs qualifies — and again after any round of concurrent amendment,
+   dispatch FRESH-CONTEXT reviewers at the release's whole spec set (one under `standard`, two
+   with different lenses under `thorough`) and ask the six questions: contradiction, double
+   ownership, unmeetable requirements, gaps against the proposal's Resolves list, vocabulary
+   forks, and shared chokepoints. Split every finding into BLOCKS and POLISH, fix the BLOCKS,
+   decline most POLISH and say why — a review of a large document always returns something, so
+   "no findings" is not a stopping condition. A contradiction is never POLISH. Then record the
+   verdict: `record-cross-spec-review <releaseId> --verdict pass|fail --reviewer "<identity>"`.
+   The engine enumerates the spec set from disk and hashes it, so a spec ADDED to the release
+   afterwards — or a reviewed spec amended — marks the verdict stale on every surface; a set you
+   assert instead would go stale in exactly the way this gate exists to catch. Measured here:
+   this pass returned 5 Critical and 10 Important against six specs that had each passed
+   `openspec validate --strict` and would each have passed Gate 1 alone, including a flagship
+   scenario that was unreachable.
+6. **End work by recording a disposition.** An epic, a story, a deferral or a release exclusion
    ENDS by recording a terminal disposition carrying its required reason, and
    never by removing the record. The archive verb takes TWO halves in ONE invocation — the
    disposition AND a deferral assertion — because the gate refuses either half alone:
