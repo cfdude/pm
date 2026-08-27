@@ -15,8 +15,22 @@
 // (outcomeOf), not about a flat field.
 
 /** The terminal outcomes. `unknown` is never an agent's answer — it records that nobody was
- *  asked, which is why only the engine ever writes it (see engineStamp). */
-export const KNOWN_OUTCOMES = ["delivered", "killed", "superseded", "abandoned", "unknown"];
+ *  asked, which is why only the engine ever writes it (see engineStamp).
+ *
+ *  `declined` is the INTAKE end (gh-112): an ask that was considered and not taken on. It is an
+ *  outcome and deliberately not a status, because nothing about it needs a new status-driven
+ *  behavior — a declined ask is terminal, `archived` already says terminal, and every rule that
+ *  reads a status stays exactly as it was. What it needs is a RECORD, and this vocabulary is
+ *  where the record lives. Without it, declining means never registering the ask at all, which
+ *  destroys the evidence that anyone considered it — the same objection that made every other
+ *  ending recordable. "Declined" is already this codebase's word for that judgment: a deferral
+ *  assertion's `declined[]` entries carry `{what, reason}` for exactly the same reason.
+ *
+ *  It inherits the required-reason rule below with no exemption of its own (a decline with no
+ *  reason is indistinguishable from an ask nobody looked at), and it is NOT `delivered`, so the
+ *  Gate 2 demand and the handoff demand in archive-gate.mjs both pass it by — correctly: no code
+ *  was written, so there is no implementation to review and no outstanding work to hand over. */
+export const KNOWN_OUTCOMES = ["delivered", "killed", "superseded", "abandoned", "declined", "unknown"];
 
 /** The fixed literal path tokens `recordedBy` may hold. A disposition is ENGINE-STAMPED when
  *  it carries one of these and AGENT-SUPPLIED when it carries no `recordedBy` at all; nothing

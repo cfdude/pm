@@ -24,8 +24,11 @@ import { epicReferences } from "./links.mjs";
 /** The outcomes that are their own explanation. Each carries a REQUIRED reason saying why the
  *  work did not complete, so an epic holding one is a record working rather than a record
  *  broken — the release's own flagship case is a change killed at Gate 1 with 47 tasks and no
- *  code written, which is zero-ticked by construction. */
-const EXPLAINED_OUTCOMES = ["killed", "superseded", "abandoned"];
+ *  code written, which is zero-ticked by construction. `declined` is the extreme of the same
+ *  shape: an ask turned down at intake was never worked at all, so leaving it in scope would
+ *  make every recorded decline a permanent finding — which is how a team learns to stop
+ *  recording them, and the record goes silent again. */
+const EXPLAINED_OUTCOMES = ["killed", "superseded", "abandoned", "declined"];
 
 /** THE scope rule for the completion-shaped checks. Exactly two exclusions and nothing else.
  *

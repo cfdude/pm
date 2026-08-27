@@ -338,8 +338,11 @@ const DISPOSITION = new URL("../lib/disposition.mjs", import.meta.url).href;
 
 test("the outcome vocabulary and the engine-stamp token set are each exactly what the release defines", async () => {
   const { KNOWN_OUTCOMES, ENGINE_STAMP_TOKENS } = await import(DISPOSITION);
+  // `declined` (gh-112) is the intake end: an ask considered and not taken on. Added to the
+  // vocabulary rather than to KNOWN_STATUSES, so no status-driven behavior changes — and named
+  // here because this assertion is EXACT: a seventh outcome added without a rule fails it.
   assert.deepEqual([...KNOWN_OUTCOMES].sort(),
-    ["abandoned", "delivered", "killed", "superseded", "unknown"]);
+    ["abandoned", "declined", "delivered", "killed", "superseded", "unknown"]);
   // Exact, not superset: a sixth token added without a rule fails here, and so does dropping
   // any of the five. Every exemption elsewhere in this release keys on one of these values.
   assert.deepEqual([...ENGINE_STAMP_TOKENS].sort(),

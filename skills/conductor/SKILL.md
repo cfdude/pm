@@ -72,6 +72,7 @@ Below, `$ENGINE` means the path resolved this way.
 ## Commands
 
 `/pm:init` scaffold · `/pm:status` show · `/pm:next` decide · `/pm:detour` park ·
+`/pm:triage` screen an incoming ask against the whole backlog before registering it ·
 `snapshot` (PreCompact hook only — re-renders PROJECT.md and writes `.conductor/brief.txt`
 right before the context window collapses, so nothing is lost to compaction) ·
 `write-rules` (invoked by `/pm:init`/`/pm:upgrade` — refreshes the managed rules block in
@@ -294,7 +295,7 @@ bullet reached 3/15.
    ENDS by recording a terminal disposition carrying its required reason, and
    never by removing the record. The archive verb takes TWO halves in ONE invocation — the
    disposition AND a deferral assertion — because the gate refuses either half alone:
-   `update-epic <id> --status archived --outcome delivered|killed|superseded|abandoned --reason "<why>" --no-deferrals`
+   `update-epic <id> --status archived --outcome delivered|killed|superseded|abandoned|declined --reason "<why>" --no-deferrals`
    (every outcome except `delivered` requires the reason). `--no-deferrals` is the explicit
    "there are none" and is a claim, not a default — swap it for `--deferral
    "<epicId>:<artifact section>"` where work is now held by a registered epic, or
@@ -412,6 +413,70 @@ These rules are also installed into the project's `CLAUDE.md` by `/pm:init` — 
 and re-injected by the SessionStart hook (so they survive compaction). Two artifacts back them up: every
 commit made while a detour is active is auto-logged to `.conductor/detours.log` by the hook
 (deterministic), and minimal detours are logged there by `log-detour` (rule-driven).
+
+## Intake — triage an ask BEFORE it becomes an epic
+
+The conductor has always ACCEPTED work; it has not TRIAGED it. `add-epic` validates the id, the
+lane and the priority, refuses a duplicate `externalId`, and appends — that is the entire
+admission process, and its dedup is **identity-based**: same id, or the same `externalUrl`. That
+catches a re-run of `/pm:sync` and nothing else. It cannot see that the same ask has already been
+registered under a different name.
+
+The ask is the ONLY moment the whole backlog is cheap to consider. After registration nothing
+ever re-reads it as a set. *Measured in `pm`'s own repository: `integrity`'s
+`change-registered-under-two-lanes` reports four live pairs that are one change registered twice
+under different lanes and different names — identity dedup found none of them.*
+
+**1. Get the candidate set mechanically.**
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" triage "<the ask, in its own words>" [--limit N]
+```
+
+Read-only. Returns JSON: `candidates` (existing epics sharing distinctive vocabulary, each with
+the `shared` tokens that put it there and a `superseded` flag), `lane` (this repo's `suggest-lane`
+answer, carried along so intake is one call), `backlog` (counts by status + the active epic), and
+`verdict: null`.
+
+**2. READ the candidates.** Not the scores — the epics. Vocabulary the whole backlog uses counts
+for almost nothing in the ranking and rare vocabulary counts for a lot, so the list is short and
+worth opening. A high score with unrelated intent is a miss; a low score on an epic whose
+description turns out to cover the ask is a hit.
+
+**`verdict` is always `null`, and that is the design.** `pm` is an instruction layer. The engine
+computes what is WORTH READING and never decides:
+
+| Mechanical — the engine's | Judgment — yours |
+|---|---|
+| which epics share distinctive vocabulary | whether one of them is **the same ask** |
+| which lane the repo's routing picks | whether that lane is right here |
+| what the backlog looks like as a set | where this sits against what is in flight |
+| which candidates are already superseded | consolidate, decline, or register |
+
+**3. Record the relationship** rather than leaving it in the conversation —
+`--link "relates-to:<id>:<why>"`, or `--link "supersedes:<id>:<why>"` plus
+`update-epic <old> --status archived --outcome superseded --reason "replaced by <new>"
+--no-deferrals`. A consolidation that leaves both epics open has consolidated nothing, and a
+candidate already flagged `superseded: true` is dead — never consolidate into it.
+
+**4. Say no out loud when the answer is no.** Not every ask should be taken on. Declining by
+never registering it destroys the record that anybody considered it — the same objection that
+made every other ending recordable. Register it, then:
+
+```bash
+update-epic <id> --status archived --outcome declined --reason "<why not>" --no-deferrals
+```
+
+Two commands deliberately: creating an epic directly at `--status archived` stamps an ENGINE
+record carrying no reason, which is exactly the silence this step exists to remove. `declined` is
+a terminal **outcome**, not a status — `archived` already means terminal, so no status-driven
+behavior changes. It requires a reason like every non-`delivered` outcome, and because it is not
+`delivered` the archive gate's Gate 2 demand and handoff demand both pass it by (no code was
+written, so there is nothing to review and nothing to hand over).
+
+Triage and the tracker-sync `externalUrl` check are **not substitutes for each other**: the URL
+match answers *"have I already mirrored THIS item"*, triage answers *"is this ask already in the
+backlog under another name"*. Run both.
 
 ## Importing an existing roadmap
 
@@ -687,7 +752,10 @@ priority ∈ P0 | P1 | P2 | P3 | P?
 parent        : id of another epic — single-parent tree (validated: exists, no self/cycle)
 externalId/externalUrl : link to a tracker issue (system comes from the tracker block)
 tracker.statusIntent   : { <conductor-status>: "<semantic target>" } — NOT a literal transition
-link.type ∈ resolves-blocker-for | may-invalidate | depends-on | relates-to
+link.type ∈ resolves-blocker-for | may-invalidate | depends-on | relates-to | supersedes
+               (`supersedes` = this epic REPLACES that one — recorded at intake when triage
+                finds the same ask already registered; end the superseded epic with
+                `--outcome superseded` in the same breath, or the consolidation is only half done)
 planPath      : repo-relative path to a markdown plan (progress source for superpowers lane)
 stories[]     : [{ title, done }] — inline progress (highest-priority source)
 ```

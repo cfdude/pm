@@ -226,10 +226,12 @@ const OUTWARD_HEADING = "## External tracker sync";
 const REFRESH_GATE_HEADING = "## Re-read the source before an epic becomes the work";
 
 const GATE_PROCEDURE_HEADING = "## The gate procedure — required task items";
+const INTAKE_HEADING = "## Intake — triage an ask against the whole backlog BEFORE registering it";
 
 /** A block with the ALWAYS-ON sections removed — the ones no tracker configuration turns on or
- *  off. Two of them now: the provenance-keyed refresh gate, and the gate procedure pm emits as
- *  numbered required task items.
+ *  off. Three of them now: the provenance-keyed refresh gate, the gate procedure pm emits as
+ *  numbered required task items, and the intake procedure (gh-112), which fires when an ask
+ *  arrives and is therefore governed by no tracker configuration either.
  *
  *  Byte-identity against 0.26.0 is claimed for the SYNC SECTIONS on these paths — what direction
  *  governs — not for the whole document. This release also ADDS instruction that no tracker
@@ -237,7 +239,8 @@ const GATE_PROCEDURE_HEADING = "## The gate procedure — required task items";
  *  any instruction at all, which is not what the direction requirement pins. */
 const stripAlwaysOn = (block) => block
   .replace(new RegExp(`\\n*${REFRESH_GATE_HEADING}[\\s\\S]*?(?=\\n<!-- END pm-conductor rules -->)`), "")
-  .replace(new RegExp(`${GATE_PROCEDURE_HEADING}[\\s\\S]*?(?=## )`), "");
+  .replace(new RegExp(`${GATE_PROCEDURE_HEADING}[\\s\\S]*?(?=## )`), "")
+  .replace(new RegExp(`${INTAKE_HEADING}[\\s\\S]*?(?=## )`), "");
 const REMINDER_HEADING = "## Sync after completing tracker-linked work";
 
 /** The rules block a tracker shape produces, with no state migration applied. */
