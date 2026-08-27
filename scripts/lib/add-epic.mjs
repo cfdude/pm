@@ -10,6 +10,7 @@ import { isInitialized, loadState, pushEpic, saveState } from "./state.mjs";
 import { render } from "./render.mjs";
 import { KNOWN_LANES, KNOWN_STATUSES, epicFlagsFor, repeatableEpicFlags } from "./constants.mjs";
 import { creationStamp } from "./disposition.mjs";
+import { rankOf } from "./epic-progress.mjs";
 
 // Repeatable flags that belong to NO epic-writing command, and so cannot come from the shared
 // EPIC_FLAGS registry: --intent is set-tracker's, --preauthorize/--context/--notify are
@@ -150,7 +151,19 @@ export function planHierarchy() {
         `conductor: plan-hierarchy: dependency cycle among children of '${parent}': ${cycle.join(" -> ")}\n`);
       process.exit(1);
     }
-    ready.sort((a, b) => ((rank[a.priority] ?? 9) - (rank[b.priority] ?? 9)) || a.id.localeCompare(b.id));
+    // Manual rank applies HERE too, not only in resolveEpics()'s comparator. This is the same
+    // question — how do two epics that tie on priority order? — and it fell through to
+    // `id.localeCompare` in exactly the same way, so honouring rank at one site and not the
+    // other would make a deliberate order hold in PROJECT.md and vanish in a hierarchy batch.
+    // Found by sweeping every `rank` call site rather than by the diff, which never touched
+    // this file.
+    //
+    // EFFECTIVE priority is deliberately NOT applied here: the batching above is already a
+    // topological sort over sibling `depends-on` edges, so within a batch the members are
+    // mutually independent by construction and there is no inversion left for inherited
+    // priority to fix. Applying it would reorder epics against a constraint already satisfied.
+    ready.sort((a, b) => ((rank[a.priority] ?? 9) - (rank[b.priority] ?? 9)) ||
+      (rankOf(a) - rankOf(b)) || a.id.localeCompare(b.id));
     batches.push(ready);
     for (const e of ready) placed.add(e.id);
   }

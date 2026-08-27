@@ -8,7 +8,19 @@
 // pre-existing topological sort and prove nothing.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { run, tmpRepo, parseBrief, projectMd, readState } from "./helpers.mjs";
+import { run, tmpRepo, parseBrief, projectMd, readState, expectFail } from "./helpers.mjs";
+
+/** Two epics that share a priority AND a lane, whose intended order is the REVERSE of
+ *  alphabetical. Both halves matter: sharing the lane makes laneRank a no-op, and reversing
+ *  alphabetical order means `id.localeCompare` — the tie-break rank exists to replace — cannot
+ *  produce the expected answer on its own. A fixture missing either half passes against the
+ *  pre-existing sort and proves nothing. */
+function tiedBand(cwd) {
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "alpha", "--lane", "claude-code", "--priority", "P1"], { cwd });
+  run(["add-epic", "--id", "bravo", "--lane", "claude-code", "--priority", "P1"], { cwd });
+  return cwd;
+}
 
 // ──────── effective priority — computed over the depends-on closure, never stored ────────
 
@@ -161,4 +173,131 @@ test("a `blocked` epic whose only depends-on is ARCHIVED records nothing live �
   run(["update-epic", "dep", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd });
   const brief = parseBrief(cwd);
   assert.match(brief, /`stuck` is `blocked` with no `depends-on` link/);
+});
+
+// ──────── manual rank — the LAST key, and the only writer is `reorder` ────────
+
+test("without a rank, two tied epics still sort alphabetically — the arbitrary order this replaces", () => {
+  const cwd = tiedBand(tmpRepo());
+  const md = projectMd(cwd);
+  assert.ok(md.indexOf("`alpha`") < md.indexOf("`bravo`"));
+});
+
+test("reorder places tied epics in the given order, against alphabetical", () => {
+  const cwd = tiedBand(tmpRepo());
+  run(["reorder", "bravo", "alpha"], { cwd });
+  const md = projectMd(cwd);
+  assert.ok(md.indexOf("`bravo`") < md.indexOf("`alpha`"),
+    "an explicit rank must beat id.localeCompare");
+});
+
+test("reorder normalises to dense 1..N on every write", () => {
+  const cwd = tiedBand(tmpRepo());
+  run(["reorder", "bravo", "alpha"], { cwd });
+  const st = readState(cwd);
+  assert.equal(st.epics.find(e => e.id === "bravo").rank, 1);
+  assert.equal(st.epics.find(e => e.id === "alpha").rank, 2);
+});
+
+test("rank is the LAST key — it never outranks priority, and never outranks a dependency", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "alpha", "--lane", "claude-code", "--priority", "P0"], { cwd });
+  run(["add-epic", "--id", "bravo", "--lane", "claude-code", "--priority", "P0"], { cwd });
+  run(["reorder", "bravo", "alpha"], { cwd });
+  // A P1 ranked first in its own band must not climb above a P0.
+  run(["add-epic", "--id", "charlie", "--lane", "claude-code", "--priority", "P1"], { cwd });
+  run(["reorder", "charlie"], { cwd });
+  const md = projectMd(cwd);
+  assert.ok(md.indexOf("`bravo`") < md.indexOf("`charlie`"), "rank must not lift a P1 over a P0");
+  assert.ok(md.indexOf("`alpha`") < md.indexOf("`charlie`"), "rank must not lift a P1 over a P0");
+  // …and a dependency still wins over rank: `bravo` is ranked ahead of `alpha`, but if it
+  // depends on `alpha` the topological pass in NEXT UP puts `alpha` first anyway.
+  run(["update-epic", "bravo", "--link", "depends-on:alpha:needs alpha first"], { cwd });
+  const brief = parseBrief(cwd);
+  assert.ok(brief.indexOf("`alpha`") < brief.indexOf("`bravo`"),
+    "a rank that outranked a dependency would just re-create the inversion with a number defending it");
+});
+
+test("an UNRANKED epic sorts after every ranked one in its band", () => {
+  const cwd = tiedBand(tmpRepo());
+  run(["add-epic", "--id", "aaa-later", "--lane", "claude-code", "--priority", "P1"], { cwd });
+  run(["reorder", "bravo", "alpha", "aaa-later"], { cwd });
+  // Now add a fourth, unranked, whose id sorts FIRST alphabetically.
+  run(["add-epic", "--id", "aaa-new", "--lane", "claude-code", "--priority", "P1"], { cwd });
+  const md = projectMd(cwd);
+  assert.ok(md.indexOf("`aaa-later`") < md.indexOf("`aaa-new`"),
+    "a newly registered epic must not jump the ranked prefix just because its id sorts first");
+});
+
+test("reorder refuses a band it was not given in full, and names what is missing", () => {
+  const cwd = tiedBand(tmpRepo());
+  const err = expectFail(() => run(["reorder", "bravo"], { cwd }));
+  assert.ok(err, "an incomplete band must be refused");
+  assert.match(String(err.stderr), /alpha/, "the refusal must name the epic that was left out");
+  assert.equal(readState(cwd).epics.find(e => e.id === "bravo").rank, undefined,
+    "a refused reorder writes nothing");
+});
+
+test("reorder refuses ids from two different priority bands", () => {
+  const cwd = tiedBand(tmpRepo());
+  run(["add-epic", "--id", "charlie", "--lane", "claude-code", "--priority", "P2"], { cwd });
+  assert.ok(expectFail(() => run(["reorder", "alpha", "bravo", "charlie"], { cwd })));
+});
+
+test("reorder refuses a duplicate id, an unknown id, and an archived id", () => {
+  const cwd = tiedBand(tmpRepo());
+  assert.ok(expectFail(() => run(["reorder", "alpha", "alpha", "bravo"], { cwd })));
+  assert.ok(expectFail(() => run(["reorder", "alpha", "bravo", "ghost"], { cwd })));
+  run(["update-epic", "alpha", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd });
+  assert.ok(expectFail(() => run(["reorder", "alpha", "bravo"], { cwd })),
+    "an archived epic is not part of any band — ranking it would be ranking finished work");
+  run(["reorder", "bravo"], { cwd });   // the band is now just `bravo`
+  assert.equal(readState(cwd).epics.find(e => e.id === "bravo").rank, 1);
+});
+
+test("reorder with no ids is refused rather than silently clearing the band", () => {
+  const cwd = tiedBand(tmpRepo());
+  assert.ok(expectFail(() => run(["reorder"], { cwd })));
+});
+
+test("changing an epic's priority CLEARS its rank — a placement among peers is meaningless among new ones", () => {
+  const cwd = tiedBand(tmpRepo());
+  run(["reorder", "bravo", "alpha"], { cwd });
+  run(["update-epic", "bravo", "--priority", "P2"], { cwd });
+  const st = readState(cwd);
+  assert.equal(st.epics.find(e => e.id === "bravo").rank, undefined,
+    "a rank carried into another band would collide with that band's own numbering");
+  assert.equal(st.epics.find(e => e.id === "alpha").rank, 2, "the band it LEFT is untouched");
+});
+
+test("re-stating the SAME priority does not clear a rank", () => {
+  const cwd = tiedBand(tmpRepo());
+  run(["reorder", "bravo", "alpha"], { cwd });
+  run(["update-epic", "bravo", "--priority", "P1", "--title", "still P1"], { cwd });
+  assert.equal(readState(cwd).epics.find(e => e.id === "bravo").rank, 1);
+});
+
+// The SIBLING call site the diff never touched. `plan-hierarchy` asks the same question —
+// how do two epics that tie on priority order? — and answered it with `id.localeCompare` in
+// exactly the same way. A rank that held in PROJECT.md and vanished in a hierarchy batch would
+// be a deliberate order the tool honours on one surface and discards on another.
+test("plan-hierarchy orders a batch by rank too, not just alphabetically", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "par", "--lane", "claude-code", "--priority", "P1"], { cwd });
+  run(["add-epic", "--id", "alpha", "--lane", "claude-code", "--priority", "P1", "--parent", "par"], { cwd });
+  run(["add-epic", "--id", "bravo", "--lane", "claude-code", "--priority", "P1", "--parent", "par"], { cwd });
+  run(["reorder", "par", "bravo", "alpha"], { cwd });
+  const plan = JSON.parse(run(["plan-hierarchy", "--parent", "par"], { cwd }));
+  const batch0 = plan.batches[0].epics.map(e => e.id);
+  assert.deepEqual(batch0, ["bravo", "alpha"],
+    "an explicit rank must beat id.localeCompare inside a hierarchy batch as well");
+});
+
+test("rank is optional — a state.json written before it existed loads and renders unchanged", () => {
+  const cwd = tiedBand(tmpRepo());
+  const st = readState(cwd);
+  assert.ok(st.epics.every(e => e.rank === undefined), "rank is absent until reorder writes it");
+  assert.match(projectMd(cwd), /`alpha`/);
 });

@@ -699,7 +699,11 @@ detourStack[] : { pausedEpic, pausedAt, reason, spawnedDetour, reconcileOnResume
 status   ∈ active | paused | queued | later | blocked | archived | untriaged | planned
 role     ∈ epic | detour
 lane     ∈ openspec | superpowers | claude-code | decision | external   (default: openspec)
-priority ∈ P0 | P1 | P2 | P3 | P?
+priority ∈ P0 | P1 | P2 | P3 | P?   — MERIT priority, the only one stored
+rank?         : manual placement WITHIN one priority band, dense 1..N. Written ONLY by
+                `reorder <id> <id> …` (which takes the whole band and refuses a partial one);
+                cleared by `update-epic --priority` on a real band change. Absent is legal and
+                sorts after every ranked epic. LAST sort key: dependencies → priority → rank.
 parent        : id of another epic — single-parent tree (validated: exists, no self/cycle)
 externalId/externalUrl : link to a tracker issue (system comes from the tracker block)
 tracker.statusIntent   : { <conductor-status>: "<semantic target>" } — NOT a literal transition

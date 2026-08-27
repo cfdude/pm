@@ -64,6 +64,7 @@ import { recordReconcile } from "./lib/reconciler-writeback.mjs";
 import { recordGateReview } from "./lib/gate-review-writeback.mjs";
 import { recordTrackerRefresh } from "./lib/tracker-refresh-writeback.mjs";
 import { updateEpic } from "./lib/update-epic.mjs";
+import { reorder } from "./lib/rank.mjs";
 import { integrity } from "./lib/integrity.mjs";
 import { removeEpic } from "./lib/remove-epic.mjs";
 import { setTracker } from "./lib/tracker.mjs";
@@ -101,7 +102,7 @@ const cmd = process.argv[2];
 // entry to .conductor/detours.log with "--help" as the detour description, and the log is
 // append-only with no verb to remove it. Handled before dispatch so every subcommand is covered
 // -- log-detour is only where the damage is visible, not where the gap is.
-const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|plan-hierarchy|verify-worktrees|verify-state|integrity|changesets|upgrade|changelog|rules|write-rules|rules-target\n";
+const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|plan-hierarchy|verify-worktrees|verify-state|integrity|changesets|upgrade|changelog|rules|write-rules|rules-target\n";
 if (!cmd || process.argv.slice(2).some(a => a === "--help" || a === "-h")) {
   process.stdout.write(USAGE);
   process.exit(0);
@@ -134,6 +135,7 @@ try {
   "add-many": addMany,
   "update-epic": updateEpic,
   "remove-epic": removeEpic,
+  reorder,
   "set-active": setActive,
   "clear-active": clearActive,
   "set-tracker": setTracker,

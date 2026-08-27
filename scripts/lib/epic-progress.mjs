@@ -287,6 +287,18 @@ export function outstandingWork(epic) {
   return Math.max(0, p.total - p.done);
 }
 
+/** An epic's MANUAL RANK as a sort key — placement among equals within one priority band.
+ *  Unranked (absent, non-integer, or non-positive) is Infinity, so it sorts AFTER every ranked
+ *  epic in its band rather than before it: a newly registered epic must not jump a deliberately
+ *  ordered prefix just because its id happens to sort first, and an unranked record orders
+ *  exactly as it did before rank existed.
+ *
+ *  Defined here rather than in lib/rank.mjs — which owns the WRITE side, the `reorder` verb and
+ *  the invariant's full statement — so the key and the comparator that consumes it sit in one
+ *  file and cannot drift apart. rank.mjs is also a leaf on the render path, and importing it
+ *  here would close a cycle. */
+export const rankOf = (e) => (Number.isInteger(e && e.rank) && e.rank > 0 ? e.rank : Infinity);
+
 /** Merge state metadata with what's actually on disk. */
 export function resolveEpics(state) {
   const onDisk = new Set(activeChangeIds());
@@ -323,6 +335,11 @@ export function resolveEpics(state) {
     // a no-op and this is byte-for-byte the previous ordering.
     (priorityRank(a.effectivePriority) - priorityRank(b.effectivePriority)) ||
     (priorityRank(a.priority) - priorityRank(b.priority)) ||
+    // MANUAL RANK, and it sits here — after both priorities, before lane. A human's explicit
+    // placement among equals should beat a mechanical lane heuristic; it must never beat a
+    // dependency or a priority, which is what putting it any higher would do. Unranked is
+    // Infinity, so with nothing ranked this key is a no-op and the ordering is unchanged.
+    (rankOf(a) - rankOf(b)) ||
     (laneRank(a.lane) - laneRank(b.lane)) ||
     a.id.localeCompare(b.id));
   return out;
