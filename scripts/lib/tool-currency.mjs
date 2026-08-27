@@ -130,6 +130,16 @@ export function projectOpenspecVersion() {
  *  `null` is treated as the untracked case by the emitter, deliberately: not being able to
  *  confirm a diff will exist is not grounds to promise one.
  *
+ *  THE PATHSPEC AND THE OUTPUT ARE BOTH cwd-RELATIVE, AND THAT IS THE POINT. `git ls-files`
+ *  walks UP to find a repository, so a pm-managed project nested inside a larger repo queries
+ *  the enclosing repo's index. Measured, not assumed: with a cwd-relative pathspec the match is
+ *  confined to files under ROOT and the printed paths are relative to ROOT, so an enclosing
+ *  repo's own `.claude/skills/openspec-…` can never be mistaken for this project's. Do NOT
+ *  "harden" this with `--full-name` or by resolving against `rev-parse --show-toplevel`: that
+ *  breaks both nested cases at once — reporting a nested-but-tracked project as untracked, and,
+ *  worse, an ignored project as tracked, which promises a diff the run will not produce.
+ *  scripts/test/tool-currency.test.mjs pins both directions.
+ *
  *  Local git plumbing only — `ls-files` reads the index and contacts nothing. */
 export function generatedArtifactsTracked() {
   try {

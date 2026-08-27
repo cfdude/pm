@@ -199,6 +199,46 @@ test("gh#128: tracked artifacts get REVIEW-THE-DIFF", () => {
   assert.match(brief, /git diff/);
 });
 
+test("gh#128: tracked-ness is scoped to THIS project, not to an enclosing repository", () => {
+  // `git ls-files` walks UP to find a repository, so a pm-managed project nested inside a larger
+  // repo queries that repo's index. Measured rather than assumed: with a cwd-relative pathspec
+  // both the match and the output stay cwd-relative, so an enclosing repo's own
+  // `.claude/skills/openspec-…` can never be mistaken for this project's.
+  //
+  // Pinned as a test because the tempting "hardening" — switching to `--full-name`, or resolving
+  // paths against `rev-parse --show-toplevel` — would BREAK both halves below: it would report
+  // the nested-but-tracked project as untracked, and the ignored project as tracked.
+  const parent = tmpRepo();
+  execFileSync("git", ["init", "-q"], { cwd: parent });
+  execFileSync("git", ["config", "user.email", "t@e.com"], { cwd: parent });
+  execFileSync("git", ["config", "user.name", "T"], { cwd: parent });
+  fs.mkdirSync(path.join(parent, ".claude", "skills", "openspec-parent"), { recursive: true });
+  fs.writeFileSync(path.join(parent, ".claude", "skills", "openspec-parent", "SKILL.md"),
+    '---\nmetadata:\n  generatedBy: "1.10.0"\n---\n');
+
+  // (a) nested and TRACKED by the enclosing repo → the diff is real.
+  const tracked = path.join(parent, "tracked-project");
+  fs.mkdirSync(tracked, { recursive: true });
+  run(["init"], { cwd: tracked });
+  withOpenspecArtifacts(tracked, { stamps: ["1.6.0"] });
+  execFileSync("git", ["add", "-A"], { cwd: parent });
+  execFileSync("git", ["commit", "-q", "-m", "baseline"], { cwd: parent });
+  assert.match(parseBrief(tracked, { env: { PM_OPENSPEC_VERSION: "1.10.0" } }), /git diff/);
+
+  // (b) nested and IGNORED by the enclosing repo → no diff, even though the PARENT tracks its
+  //     own `.claude/skills/openspec-parent`. This is the half that a repo-root-relative
+  //     comparison gets wrong, and it is the dangerous direction: it would promise a diff that
+  //     the run will not produce, and the user's local skill edits would vanish.
+  const ignored = path.join(parent, "ignored-project");
+  fs.mkdirSync(ignored, { recursive: true });
+  run(["init"], { cwd: ignored });
+  withOpenspecArtifacts(ignored, { stamps: ["1.6.0"] });
+  fs.appendFileSync(path.join(parent, ".gitignore"), "ignored-project/\n");
+  const brief = parseBrief(ignored, { env: { PM_OPENSPEC_VERSION: "1.10.0" } });
+  assert.match(brief, /aside/i);
+  assert.doesNotMatch(brief, /git diff/);
+});
+
 test("gh#128: the nudge always says pm will not run it", () => {
   // The architectural law, stated where the user reads it: pm emits the instruction, the user
   // runs the terminal command, exactly as with `openspec init`.
