@@ -3434,6 +3434,25 @@
       "externalId": "140",
       "externalUrl": "https://github.com/cfdude/pm/issues/140",
       "attributedCommits": []
+    },
+    {
+      "id": "gh-142-recorded-sha-unreachable",
+      "title": "Nothing notices when a recorded sha becomes unreachable — a squash-merge silently turns every gate verdict unverifiable",
+      "priority": "P1",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-140-attribution-write-not-persisted",
+          "reason": "same field, opposite halves of its lifecycle — 140 is the write not landing, 142 is what landed not surviving"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "142",
+      "externalUrl": "https://github.com/cfdude/pm/issues/142",
+      "attributedCommits": []
     }
   ],
   "detourStack": [],
@@ -3444,7 +3463,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 118,
+  "revision": 120,
   "reviewMode": "thorough",
   "releases": [
     {

@@ -17,7 +17,17 @@ Day-to-day work happens on the `dev` branch (created from `main`'s tip). The flo
 1. Branch from `dev` (or work directly on `dev`) for a change.
 2. Push, open a PR from `dev` → `main`.
 3. Wait for the `test` CI check to go green.
-4. Squash-merge the PR.
+4. **Tag the pre-squash tip and push the tag**, then squash-merge:
+   ```bash
+   git tag presquash/pr-<n> "$(gh pr view <n> --repo cfdude/pm --json headRefOid --jq .headRefOid)"
+   git push origin presquash/pr-<n>
+   ```
+   A squash-merge collapses the branch into one commit on `main` whose only parent is `main`'s
+   previous tip, so every commit on the branch becomes reachable from nothing and is deleted by
+   the next `git gc` — default prune expiry, two weeks. `.conductor/state.json` records commit
+   shas (`attributedCommits`, and gate verdicts' `baseSha`/`headSha`), so orphaning them leaves
+   a record that still reads fine while being unverifiable by anyone. One ref prevents it and
+   nothing about `main`'s history changes. See `docs/lessons/squash-merge-orphans-the-evidence.md`.
 5. Fast-forward `dev` back onto `main` (`git checkout dev && git merge --ff-only main && git push`)
    so `dev` never drifts ahead of what shipped.
 
