@@ -3070,7 +3070,11 @@
         "recordedAt": "2026-08-27T04:53:22.474Z",
         "externalUpdatedAt": "2026-08-24T01:20:29Z"
       },
-      "externalUpdatedAt": "2026-08-24T01:20:29Z"
+      "externalUpdatedAt": "2026-08-24T01:20:29Z",
+      "attributedCommits": [
+        "5275746",
+        "66e6b0a"
+      ]
     },
     {
       "id": "gh-129-attribution-nudge-at-commit-time",
@@ -3356,6 +3360,25 @@
       "externalId": "138",
       "externalUrl": "https://github.com/cfdude/pm/issues/138",
       "attributedCommits": []
+    },
+    {
+      "id": "gh-139-command-doc-engine-fallback-ungated",
+      "title": "The command docs' engine fallback runs $CLAUDE_PROJECT_DIR/scripts/conductor.mjs with no check that the project is pm",
+      "priority": "P1",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-134-hooks-run-the-installed-plugin",
+          "reason": "same shape, 14 ungated copies — gating the engine without these leaves the idea behind in every command doc"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "139",
+      "externalUrl": "https://github.com/cfdude/pm/issues/139",
+      "attributedCommits": []
     }
   ],
   "detourStack": [],
@@ -3366,7 +3389,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 103,
+  "revision": 107,
   "reviewMode": "thorough",
   "releases": [
     {
