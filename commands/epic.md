@@ -126,6 +126,13 @@ append-only and the LAST entry is what a recorded Gate 2 `headSha` is compared a
 late-inserted ancestor reads as a stale verdict and refuses the archive. **Never attribute the
 commit that moves `openspec/changes/<id>/` under `archive/`.**
 
+**`--attribute-commit` reads back what it wrote before it says `updated`.** If the sha is not in
+`.conductor/state.json` when the command ends, it exits **1** and names the shas that are not
+there instead of reporting success — because a verb that reports success for a write nobody can
+find is worse than one that fails. `state.json`'s write path verifies its own bytes too, so this
+holds for every verb; `--attribute-commit` checks again at the END of the command, after the
+render that follows the save has had its own turn at the file.
+
 **Ending an epic takes two halves in one invocation.** `--status archived` runs the archive gate,
 which demands a disposition (`--outcome`, plus `--reason` unless the outcome is `delivered`) AND
 a deferral assertion (`--no-deferrals`, or one or more `--deferral`/`--declined-deferral`). It
@@ -150,6 +157,15 @@ remove it and register it again — discarding its start time, its gate verdicts
 its stories along the way. Both are in-place field writes: the epic keeps its position in
 `state.epics[]` and every other field it carries.
 
+> [!WARNING]
+> **`--link` REPLACES the whole links array. It does not append.** Adding one `depends-on` edge
+> to an epic that already has links means passing **every** link that epic should end up with,
+> in one invocation — read its current `links[]` first (`/pm:epic list`, or `.conductor/state.json`).
+> Three separate `update-epic --link` calls, each adding one edge, silently dropped seven
+> existing annotation edges; they were recovered from git, which is not a recovery path that
+> always exists. This bites hardest doing exactly what gh#101 asks for — wiring up dependency
+> edges in bulk.
+
 **`--link` REPLACES the epic's links wholesale**, unlike the other flags which patch a single
 field — this is the intended CLI path to fix a malformed link (recorded with a bad `add-epic
 --link` before this validation existed, or hand-edited) without touching `state.json` directly.
@@ -161,6 +177,42 @@ accident — it is a repeatable flag, so a bare `--link` parsed as one non-strin
 filtered away, and replaced the array with an empty one while printing "updated". That spelling
 now exits non-zero and points here. `--clear-links` takes no value and may not be combined with
 `--link`.
+
+## Order equals by hand — `reorder`
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" reorder <id> <id> <id>
+```
+
+Sets the **manual rank** of one whole priority band: the ids you pass, in the order you want
+them, top to bottom. Ranks are rewritten dense `1..N` on every call.
+
+**Rank is the LAST sort key.** The layering is `dependencies (hard constraint) → priority
+(merit) → rank (tie-break)`. Its job is the tie that today falls through to alphabetical order —
+three undifferentiated P1s sorting by id reads as if it meant something, and it does not. A rank
+that outranked a dependency would just re-create the starvation inversion with a number
+defending it, and one that outranked priority would make the priority field decorative.
+
+**It takes the WHOLE band and refuses a partial one.** That is what keeps the numbering
+contiguous by construction rather than checked afterwards, and it is why there is no per-epic
+`--rank` flag: one-at-a-time reordering is tedious, and racy — two agents each setting one rank
+produce a numbering neither chose. A refusal names exactly which epics were left out.
+
+Also refused, writing nothing: a duplicate id, an unknown id, an archived id (ranking finished
+work orders a band nobody reads), ids spanning two priority bands, and an empty invocation.
+
+Around the edges:
+
+- **A newly registered epic has no rank** and sorts *after* every ranked epic in its band — it
+  does not jump a deliberate order because its id happens to sort first. Re-run `reorder` to
+  place it.
+- **`update-epic --priority` clears the epic's rank** (with a notice on stderr) when the band
+  actually changes. A placement among one band's peers is meaningless among another's, and
+  carrying the number across would collide with the destination band's own numbering.
+- **`remove-epic` leaves a gap** in the numbering. Harmless — a gap changes no ordering — and the
+  next `reorder` closes it.
+- `rank` is not `order`: `order` sequences stories *inside* an epic. Different container,
+  different question.
 
 ## Remove an epic — `remove-epic`
 
@@ -314,7 +366,7 @@ bullet reached 3/15.
    ENDS by recording a terminal disposition carrying its required reason, and
    never by removing the record. The archive verb takes TWO halves in ONE invocation — the
    disposition AND a deferral assertion — because the gate refuses either half alone:
-   `update-epic <id> --status archived --outcome delivered|killed|superseded|abandoned --reason "<why>" --no-deferrals`
+   `update-epic <id> --status archived --outcome delivered|killed|superseded|abandoned|declined --reason "<why>" --no-deferrals`
    (every outcome except `delivered` requires the reason). `--no-deferrals` is the explicit
    "there are none" and is a claim, not a default — swap it for `--deferral
    "<epicId>:<artifact section>"` where work is now held by a registered epic, or

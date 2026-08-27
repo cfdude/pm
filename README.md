@@ -376,6 +376,14 @@ Resumes the top of the detour stack if non-empty; otherwise picks the highest-pr
 `queued` epic (P0→P3), skipping anything starved on an unresolved `depends-on` link and
 naming the blocker when it does.
 
+Reads `## Dependency warnings` first. A blocker does not have to be in the queue to be
+named: an epic's **effective priority** is the best of its own and every epic that
+transitively `depends-on` it, so a `planned` P2 that a `queued` P1 needs renders `P2 → P1`
+and is called out by name. Computed, never stored — the merit priority stays legible, and
+deprioritising the dependent drops the lift with it. An epic waiting on something outside the
+queue is reported as unworkable rather than offered, which forces the decision (*pull the
+dependency forward, or descope the epic waiting on it*) that otherwise just stalls.
+
 </details>
 
 <details>
@@ -492,6 +500,7 @@ deduplicated by `externalUrl` (globally unique) rather than bare `externalId`.
 | `update-epic <id> --attribute-commit <sha>` | Record a commit as this epic's work. Repeatable, append-only, in landing order. The engine infers attribution from **nothing** — not the files a commit touches, not an epic id in a message — so an unattributed commit is one the epic's Gate 2 cannot be checked against. **Do not attribute the commit that moves `openspec/changes/<id>/` under `archive/`**: it lands after the reviewed range by construction and makes the epic's own Gate 2 stale at the instant the archive gate reads it. |
 | `update-epic <id> --status archived --outcome delivered\|killed\|superseded\|abandoned --reason "<why>" --no-deferrals` | **How work ends** — a terminal disposition with its reason, never deletion. Every outcome except `delivered` requires the reason. The deferral assertion is required in the *same* invocation: swap `--no-deferrals` for `--deferral "<epicId>:<section>"` where work is now held by a registered epic, or `--declined-deferral "<what>:<why not>"` where you are deliberately not doing it. Add `--carried-to <epicId> --reason "<which tasks moved>"` to hand off unfinished work. |
 | `remove-epic <id> [--cascade]` | Hard-delete; blocked by default if it has children (`--cascade` removes descendants too). Strips dangling links elsewhere. |
+| `reorder <id> <id> …` | **Manual rank** — place the epics of ONE priority band, top to bottom, in the order given. Ranks are rewritten dense `1..N` on every call, and this is the only thing that writes `rank`. Takes the whole band and refuses a partial one, so the numbering stays contiguous by construction; unranked epics sort after every ranked one. Rank is the LAST sort key (dependencies → priority → **rank**) — it breaks ties that today fall through to alphabetical order, and never outranks a dependency or a priority. `update-epic --priority` clears an epic's rank, since a placement among one band's peers means nothing among another's. |
 | `set-active <id>` / `clear-active` | Set/clear the top-level active epic. |
 
 **Inline story mutation** — `--add-story "<title>"` appends `{ title, done: false }` to the
@@ -547,6 +556,24 @@ adjudicated). A single epic can escalate above the repo's dial via `update-epic 
 A hard `PreToolUse` guard blocking `Edit`/`Write`/`NotebookEdit` while the active epic still
 owes a reconcile — **on by default and unconditional** for that specific case; `set-gate-guard
 off` no longer bypasses it.
+
+</details>
+
+<details>
+<summary><code>/pm:triage</code> — Screen an incoming ask against the whole backlog</summary>
+
+`triage "<the ask>"` runs BEFORE `add-epic`. The dedup the conductor already had is
+identity-based — same id, or the same `externalUrl` — which stops `/pm:sync` mirroring an issue
+twice and does nothing about *the same ask arriving under a different name*. This returns the
+existing epics that share **distinctive** vocabulary with the ask (each with the shared words
+that put it there, and a flag for the ones already superseded), the lane this repo's routing
+picks, and the backlog's current shape.
+
+It emits `verdict: null` and means it: the engine computes what is worth READING and never
+decides whether two asks are the same — that is judgment, and judgment is the agent's. Record
+what you conclude with `--link "supersedes:<id>:<why>"`, or end an ask you are turning down with
+`update-epic <id> --status archived --outcome declined --reason "<why not>" --no-deferrals` —
+because declining by never registering the ask destroys the record that anyone considered it.
 
 </details>
 
@@ -651,8 +678,17 @@ verdict whose recorded range does not reach the commits its note cites, a gate r
 bookkeeping rather than review, a `delivered` epic that attributed no commits, an archived
 openspec-lane epic with a passing Gate 2 and no Gate 1, an epic archived with an `ungated` Gate 2
 (no review from anyone), an epic the archive-drift heal flipped that reads `outcome: unknown`
-while carrying a passing Gate 2, a dangling epic reference, and an archive directory no epic
-corresponds to.
+while carrying a passing Gate 2, a dangling epic reference, an archive directory no epic
+corresponds to, and **a recorded commit sha this repository can no longer resolve**.
+
+**That last one has a deadline.** The shas in `attributedCommits` and in a gate verdict's
+`baseSha`/`headSha` *are* the evidence — "a reviewer read this range" is only checkable while the
+range exists. A squash-merge leaves every commit on the merged branch reachable from no ref, and
+the next `git gc` deletes them (default `gc.pruneExpire`: two weeks); measured on this repo right
+after a release, 36 recorded shas were reachable from nothing while every check stayed green. The
+check separates **orphaned** — still in the object store, recoverable *now* with `git tag` — from
+**already gone**, and reports nothing at all in a clone that resolves none of the record, because
+a fresh, shallow or single-ref clone lacks that history rather than having destroyed it.
 
 **Expect a burst of `heal-archived-epic-passed-gate-2` on your first run after upgrading.** Every
 repo that followed the documented `/opsx:archive` → heal flow lands on `outcome: unknown` rather

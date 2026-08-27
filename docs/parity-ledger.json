@@ -12,9 +12,10 @@
         "commands/epic.md",
         "commands/status.md",
         "commands/next.md",
-        "commands/sync.md"
+        "commands/sync.md",
+        "commands/triage.md"
       ],
-      "platforms": { "claude-code": "slash commands (/pm:epic, /pm:status, /pm:next, /pm:sync)" }
+      "platforms": { "claude-code": "slash commands (/pm:epic, /pm:status, /pm:next, /pm:sync, /pm:triage)" }
     },
     {
       "id": "detour-lifecycle",

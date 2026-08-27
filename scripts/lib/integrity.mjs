@@ -17,15 +17,18 @@
 import { isInitialized, loadState } from "./state.mjs";
 import { archivedChanges, epicProgress, strippedChangeId } from "./epic-progress.mjs";
 import { gateHasEvidence, isOpenspecLane } from "./constants.mjs";
-import { commitDate, isAncestor } from "./git.mjs";
+import { commitDate, isAncestor, objectExists, reachableFromAnyRef } from "./git.mjs";
 import { isArchiveBackfilled, outcomeOf, stampedBy } from "./disposition.mjs";
 import { epicReferences } from "./links.mjs";
 
 /** The outcomes that are their own explanation. Each carries a REQUIRED reason saying why the
  *  work did not complete, so an epic holding one is a record working rather than a record
  *  broken — the release's own flagship case is a change killed at Gate 1 with 47 tasks and no
- *  code written, which is zero-ticked by construction. */
-const EXPLAINED_OUTCOMES = ["killed", "superseded", "abandoned"];
+ *  code written, which is zero-ticked by construction. `declined` is the extreme of the same
+ *  shape: an ask turned down at intake was never worked at all, so leaving it in scope would
+ *  make every recorded decline a permanent finding — which is how a team learns to stop
+ *  recording them, and the record goes silent again. */
+const EXPLAINED_OUTCOMES = ["killed", "superseded", "abandoned", "declined"];
 
 /** THE scope rule for the completion-shaped checks. Exactly two exclusions and nothing else.
  *
@@ -69,6 +72,38 @@ function citedShas(entry) {
   const note = typeof entry.note === "string" ? entry.note : "";
   return [...new Set(note.match(/\b[0-9a-f]{7,40}\b/g) || [])]
     .filter(sha => !sameSha(sha, entry.baseSha) && !sameSha(sha, entry.headSha));
+}
+
+/** Every commit sha this record holds, each with the epic and the FIELD that holds it.
+ *
+ *  DERIVED from a mechanical sweep of the writers, not typed from memory: `rg "baseSha|headSha|
+ *  attributedCommits" scripts/lib` finds exactly two holders — `attributedCommits[]` (written by
+ *  update-epic's `--attribute-commit`, seeded by state.mjs's pushEpic) and a gate verdict's
+ *  `baseSha`/`headSha` (written by gate-review-writeback.mjs). A third holder added later must
+ *  be added HERE, and the check below then covers it for free; a check that enumerated only the
+ *  attribution array would leave every gate verdict's range — the half that makes a verdict
+ *  checkable at all — unwatched.
+ *
+ *  The `where` is carried because a finding that says only "a sha is gone" makes the reader go
+ *  find which field held it. */
+export function recordedShas(state) {
+  const out = [];
+  const push = (epic, where, sha) => {
+    if (typeof sha === "string" && sha.trim()) out.push({ epic, where, sha: sha.trim() });
+  };
+  for (const e of state.epics || []) {
+    if (!e) continue;
+    for (const sha of Array.isArray(e.attributedCommits) ? e.attributedCommits : []) {
+      push(e.id, "attributedCommits", sha);
+    }
+    for (const gate of ["gate1", "gate2"]) {
+      const entry = e.gateReview && e.gateReview[gate];
+      if (!entry) continue;
+      push(e.id, `${gate}.baseSha`, entry.baseSha);
+      push(e.id, `${gate}.headSha`, entry.headSha);
+    }
+  }
+  return out;
 }
 
 /** The epics carrying an `ungated` Gate 2 — archived with no review from anyone.
@@ -338,6 +373,103 @@ export const CHECKS = [
           `${r.where} names \`${r.epic}\`, which is not an epic in this record` +
           (r.drop ? "" : " — a detour-stack frame, so `/pm:resume` would pop a frame that " +
             "names nothing") }));
+    },
+  },
+  {
+    id: "recorded-sha-the-repository-cannot-resolve",
+    title: "a recorded commit sha this repository can no longer resolve — orphaned, or already gone",
+    /** The recorded shas ARE the evidence: a Gate 2 verdict means "a reviewer read this range",
+     *  and the range is the only thing that makes the claim checkable or lets it go stale. A
+     *  squash-merge — the only merge method this repository permits, and a common one everywhere
+     *  — produces one commit whose sole parent is the target branch's previous tip, leaving every
+     *  commit on the merged branch a parent of nothing, reachable from no ref, and deleted by the
+     *  next `git gc` (default `gc.pruneExpire`: two weeks). Measured on cfdude/pm immediately
+     *  after 0.28.0 merged: 36 recorded shas, 0 reachable from any ref, 36 still in the object
+     *  store. Every check was green throughout.
+     *
+     *  THE EXISTING CHECKS ARE NOT WRONG, and this one does not change them. `isAncestor()` is
+     *  three-valued and `null` — "git could not answer" — is never a finding, because silence IS
+     *  the correct answer to "is this one commit outside the range". It is the wrong answer to
+     *  "can this record be verified at all any more", and only the first question was being
+     *  asked. This check asks the second, from the object store and the ref graph rather than
+     *  from ancestry, so nothing here can make an ancestry check start reporting `null` as
+     *  failure.
+     *
+     *  TWO ARMS, because recoverable-now and already-gone are different reports:
+     *
+     *  ARM 1 — ORPHANED. The object is in the store and no ref contains it. Unambiguous: a fresh
+     *  clone cannot produce this shape, because a clone transfers only reachable objects. Urgent
+     *  and actionable — `git tag` it and it is saved; wait for `gc` and it is not.
+     *
+     *  ARM 2 — ABSENT. The object is not here at all. Ambiguous by construction: "destroyed
+     *  here" and "this clone never had it" are the same observation. So it is gated on the PROBE
+     *  below rather than reported on sight.
+     *
+     *  THE PROBE — does this clone hold this record's history at all? If it resolves NONE of the
+     *  recorded shas, arm 2 says nothing. That is the population-level reading of exactly the
+     *  `null` isAncestor() returns per sha: not "the evidence was destroyed" but "this clone
+     *  cannot answer for this record". It is what every fresh, shallow or single-ref clone of a
+     *  squash-merging repository looks like — including this repo's own CI checkout, where all
+     *  35 recorded shas live only on `presquash/*` tags — and #142's own words are that a fresh
+     *  clone must not be reported as a disaster.
+     *
+     *  Scoped to THE RECORD'S OWN SHAS rather than to "any historical sha" (#142's suggested
+     *  probe). A `HEAD~20` probe passes in any full clone of one branch, so it would report all
+     *  35 of this repository's shas as destroyed in CI, where they are merely absent.
+     *
+     *  TWO THINGS THIS DELIBERATELY DOES NOT DO, decided rather than assumed:
+     *  - An authoring clone where `gc` has already taken EVERY recorded sha resolves none of
+     *    them, so the probe silences arm 2 and the report is quiet at the worst moment. That is
+     *    undecidable locally — nothing distinguishes it from a fresh clone — and the alternative
+     *    is a false alarm on every CI run. The recoverable window is covered by arm 1, which is
+     *    where a fix is still possible; this is the cost of not crying wolf.
+     *  - The probe is ALL-OR-NOTHING, so it is a cliff: the first time exactly one recorded sha
+     *    resolves in an otherwise history-less clone, arm 2 reports every other one. If this
+     *    check ever fires en masse in CI, that is the cause — not a mass deletion.
+     */
+    run(state) {
+      const records = recordedShas(state);
+      if (!records.length) return [];
+      // One pair of git calls per DISTINCT sha, not per record: the same commit is routinely
+      // both attributed and named as a verdict's head.
+      const seen = new Map();
+      for (const { sha } of records) {
+        if (seen.has(sha)) continue;
+        const exists = objectExists(sha);
+        seen.set(sha, { exists, reachable: exists && reachableFromAnyRef(sha) });
+      }
+      const resolvable = [...seen.values()].filter(s => s.exists).length;
+      // epic -> arm -> [record]
+      const grouped = new Map();
+      for (const r of records) {
+        const s = seen.get(r.sha);
+        if (s.exists && s.reachable) continue;
+        const arm = s.exists ? "orphaned" : "absent";
+        if (arm === "absent" && resolvable === 0) continue;   // THE PROBE
+        if (!grouped.has(r.epic)) grouped.set(r.epic, { orphaned: [], absent: [] });
+        grouped.get(r.epic)[arm].push(r);
+      }
+      const cite = (list) => [...new Set(list.map(r => `${r.where} \`${r.sha.slice(0, 7)}\``))].join(", ");
+      const out = [];
+      for (const [epic, arms] of grouped) {
+        if (arms.orphaned.length) {
+          out.push({ epic, detail:
+            `${arms.orphaned.length} recorded sha(s) are still in this repository's object store ` +
+            "but reachable from NO ref — the shape a squash-merge leaves behind. RECOVERABLE " +
+            "NOW and deleted by the next `git gc` (default `gc.pruneExpire`: two weeks), after " +
+            "which the range this epic's gate verdict names can never be reviewed again. Tag " +
+            `them while they exist: \`git tag presquash/<name> <sha>\`. ${cite(arms.orphaned)}` });
+        }
+        if (arms.absent.length) {
+          out.push({ epic, detail:
+            `${arms.absent.length} recorded sha(s) this repository cannot resolve at all — the ` +
+            "object is gone from here, and this clone demonstrably holds the rest of this " +
+            "record's history, so it was not merely never fetched. The evidence for what these " +
+            "records claim is unrecoverable locally; a fork, another clone or the PR record is " +
+            `the only place left to look. ${cite(arms.absent)}` });
+        }
+      }
+      return out;
     },
   },
 ];

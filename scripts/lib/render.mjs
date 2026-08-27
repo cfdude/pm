@@ -15,6 +15,7 @@ import { outcomeOf, recordedDispositions } from "./disposition.mjs";
 import { stalenessMarking } from "./archive-gate.mjs";
 import { DETOURS_LOG, PROJECT_MD, STATE_PATH, RENDER_STAMP_PATH, CONDUCTOR_DIR, gateSummary, releaseLine, releaseSummaries } from "./constants.mjs";
 import { crossSpecLine } from "./cross-spec-review.mjs";
+import { dependencyNotes } from "./dependency-order.mjs";
 
 export function render() {
   const state = loadState();
@@ -121,7 +122,13 @@ export function render() {
     // The recorded outcome sits beside the status, never replacing it: an epic is still
     // `archived`, and `outcome` is a distinct field rather than a new status value.
     const outcome = e.disposition ? ` · ${outcomeOf(e)}` : "";
-    md.push(`| ${e.priority} | ${indent}\`${e.id}\` | ${e.lane} | ${e.role} | ${e.status}${outcome}${e.reconcileNeeded ? " ⚠" : ""}${miss}${autonomous}${staleMarker(e)} | ${progress} | ${links} |`);
+    // Merit priority, then the INHERITED one where they differ — `P2 → P1` says "P2 on merit,
+    // sorts as P1 because a P1 needs it". Rendering only the effective value would destroy the
+    // legibility the computed-not-stored design exists to preserve: you could no longer tell the
+    // goal from the means. Identical values render once, so the arrow itself is the signal.
+    const prio = e.effectivePriority && e.effectivePriority !== e.priority
+      ? `${e.priority} → ${e.effectivePriority}` : e.priority;
+    md.push(`| ${prio} | ${indent}\`${e.id}\` | ${e.lane} | ${e.role} | ${e.status}${outcome}${e.reconcileNeeded ? " ⚠" : ""}${miss}${autonomous}${staleMarker(e)} | ${progress} | ${links} |`);
   };
   const seen = new Set();
   const emit = (e, depth) => {
@@ -133,6 +140,23 @@ export function render() {
   for (const e of epics) if (!e.parent || !byId.has(e.parent)) emit(e, 0);
   for (const e of epics) if (!seen.has(e.id)) emit(e, 0);   // orphaned by a cycle → render flat
   md.push("");
+
+  // Dependency warnings — the SAME lines the brief carries, and they have to be HERE as well.
+  // `/pm:next` is a command DOCUMENT, not engine code: it instructs the agent to read PROJECT.md
+  // and take "the highest-priority epic with status queued". It shares no code with buildBrief(),
+  // so a warning that lived only in the brief would be absent from the one surface the next-up
+  // decision is actually made from. Omitted when there is nothing to say — silence and
+  // "reviewed and clean" must never look the same, and an always-present empty heading is how
+  // they come to.
+  const depNotes = dependencyNotes(epics);
+  if (depNotes.length) {
+    md.push("## Dependency warnings");
+    md.push("");
+    md.push("> An epic cannot be started until what it waits on moves. Pull the dependency forward, or descope the epic waiting on it.");
+    md.push("");
+    for (const n of depNotes) md.push(`- ⚠ ${n}`);
+    md.push("");
+  }
 
   // Backlog — the epics registered for LATER, with their title and their rationale. The Epics
   // table above carries an id, a lane, a status and a progress bar; it carries neither a title
@@ -152,7 +176,13 @@ export function render() {
     md.push("");
     for (const e of backlog) {
       const why = e.description ? ` — ${e.description}` : "";
-      md.push(`- \`${e.id}\` (${e.priority}, ${e.lane}, ${e.status}) — ${e.title}${why}`);
+      // The lift renders HERE too, in the same `P2 → P1` form the Epics table uses. The backlog
+      // is precisely where a reader goes to ask "what should I pull forward", and showing the
+      // merit priority alone on the one line written for that question — while the table three
+      // sections up says the epic sorts as P1 — is the same fact told two ways.
+      const prio = e.effectivePriority && e.effectivePriority !== e.priority
+        ? `${e.priority} → ${e.effectivePriority}` : e.priority;
+      md.push(`- \`${e.id}\` (${prio}, ${e.lane}, ${e.status}) — ${e.title}${why}`);
     }
     md.push("");
   }

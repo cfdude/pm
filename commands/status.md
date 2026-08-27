@@ -14,7 +14,14 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" render
 Then read `PROJECT.md` and summarize for the user:
 - the **active** epic and its live story progress,
 - the **detour stack** (what's paused and why), flagging any ⚠ reconcile-on-resume,
-- the **next-up** queue by priority,
+- the **next-up** queue by priority — reading the **effective** priority where the Priority
+  column shows `P2 → P1` (P2 on merit, sorting as P1 because a P1 depends on it),
+- **DEPENDENCY WARNINGS**, if any — an epic that cannot be started, what it waits on, and that
+  dependency's status. Report these BEFORE the queue: an epic named on the left of one of them
+  is not workable however high its priority, and the decision it forces (pull the dependency
+  forward, or descope the epic waiting on it) is the point. A `blocked` epic with no
+  `depends-on` link is listed here too — `blocked` otherwise records nothing about what it
+  waits on.
 - **UNGATED ARCHIVES**, if any — epics archived with no Gate 2 review from anyone. This is a
   standing condition rather than an episode: it is recomputed from `state.json` at every
   composition and never consumed, so every session sees it until a real passing verdict
@@ -41,9 +48,18 @@ archived epic with nothing ticked, one change registered under two lanes, a gate
 does not reach the commits it cites, a gate recorded as bookkeeping rather than review, a
 `delivered` epic that attributed no commits, an archived openspec-lane epic with a passing Gate 2
 and no Gate 1, an epic archived with an `ungated` Gate 2, an epic the archive-drift heal flipped
-that reads `outcome: unknown` while carrying a passing Gate 2, a dangling epic reference, and an
-archive directory no epic corresponds to. It reports every check with its count, including the
-ones that found nothing, so a check that measured nothing is visibly a check that ran.
+that reads `outcome: unknown` while carrying a passing Gate 2, a dangling epic reference, an
+archive directory no epic corresponds to, and a recorded commit sha this repository can no longer
+resolve. It reports every check with its count, including the ones that found nothing, so a check
+that measured nothing is visibly a check that ran.
+
+`recorded-sha-the-repository-cannot-resolve` is the one with a deadline. A squash-merge orphans
+every commit on the merged branch — they are reachable from no ref and the next `git gc` deletes
+them (default `gc.pruneExpire`: two weeks) — which silently turns every `attributedCommits` entry
+and every gate verdict's `baseSha`/`headSha` into a sentence about commits nobody can look at.
+The check separates **orphaned** (still in the object store, recoverable now with `git tag`) from
+**already gone**, and stays silent in a clone that resolves none of the record at all, because a
+fresh, shallow or single-ref clone legitimately lacks that history and is not a disaster.
 
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" integrity
@@ -168,7 +184,7 @@ bullet reached 3/15.
    ENDS by recording a terminal disposition carrying its required reason, and
    never by removing the record. The archive verb takes TWO halves in ONE invocation — the
    disposition AND a deferral assertion — because the gate refuses either half alone:
-   `update-epic <id> --status archived --outcome delivered|killed|superseded|abandoned --reason "<why>" --no-deferrals`
+   `update-epic <id> --status archived --outcome delivered|killed|superseded|abandoned|declined --reason "<why>" --no-deferrals`
    (every outcome except `delivered` requires the reason). `--no-deferrals` is the explicit
    "there are none" and is a claim, not a default — swap it for `--deferral
    "<epicId>:<artifact section>"` where work is now held by a registered epic, or

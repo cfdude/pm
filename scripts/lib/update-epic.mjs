@@ -8,7 +8,7 @@ import { globalReviewMode } from "./rules.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { noteEntry, parentError, parseFlags, parseLinkFlags } from "./add-epic.mjs";
 import { render } from "./render.mjs";
-import { archiveGate } from "./archive-gate.mjs";
+import { archiveGate, AGENT_OUTCOMES } from "./archive-gate.mjs";
 import { deferralAssertion } from "./disposition.mjs";
 
 // The flags update-epic recognizes. Anything else is a rejected error, not a
@@ -20,6 +20,26 @@ import { deferralAssertion } from "./disposition.mjs";
 // the copy that would reject another capability's flag by name. Registering a flag on
 // `update-epic` in EPIC_FLAGS is the whole edit; nothing changes in this file.
 export const UPDATE_EPIC_FLAGS = epicFlagsFor("update-epic");
+
+/** Which of `shas` are NOT in `state`'s record of epic `id` — read from a state loaded FROM DISK,
+ *  never from the in-memory object the command has been mutating.
+ *
+ *  #140: four `--attribute-commit` invocations reported success and the arrays read `[]`
+ *  afterwards. saveState() now verifies its own bytes reached the disk, and that covers every
+ *  verb — but this command does not END at saveState(): render() runs afterwards and writes
+ *  again (its reconcileArchived() self-heal saves a state it re-loaded). #140's first candidate
+ *  mechanism is exactly that shape — "a later engine invocation re-serialising state.json from a
+ *  copy read before the attribution" — and a guard inside saveState structurally cannot see a
+ *  write that happens after it returns. So the claim this command prints is checked against the
+ *  disk at the moment the command makes it, which is the only moment that matters to a caller.
+ *
+ *  An absent epic or an absent array counts as everything missing: both mean the record does not
+ *  hold what the caller was told it holds. */
+export function missingAttributions(state, id, shas) {
+  const epic = (state.epics || []).find(e => e && e.id === id);
+  const held = new Set(Array.isArray(epic && epic.attributedCommits) ? epic.attributedCommits : []);
+  return shas.filter(sha => !held.has(sha));
+}
 
 /** Update an EXISTING epic's title/externalId/externalUrl/parent/status/priority/links.
  *  The id is POSITIONAL (parseFlags skips non-`--` tokens). Closes the tracker
@@ -53,7 +73,7 @@ export function updateEpic() {
       process.exit(1);
     }
     process.stderr.write("conductor: update-epic requires an epic id as its first POSITIONAL argument\n");
-    process.stderr.write("usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--lane openspec|superpowers|claude-code|decision|external] [--plan <path>] [--link \"<type>:<epic>[:<reason>]\"] [--clear-links] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done] [--attribute-commit <sha>] [--outcome delivered|killed|superseded|abandoned] [--reason \"<why>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\"] [--declined-deferral \"<what>:<why not>\"] [--no-deferrals] [--description D] [--notes \"<text>\"] [--external-updated-at <iso>]\n");
+    process.stderr.write(`usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--lane openspec|superpowers|claude-code|decision|external] [--plan <path>] [--link \"<type>:<epic>[:<reason>]\"] [--clear-links] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done] [--attribute-commit <sha>] [--outcome ${AGENT_OUTCOMES.join("|")}] [--reason \"<why>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\"] [--declined-deferral \"<what>:<why not>\"] [--no-deferrals] [--description D] [--notes \"<text>\"] [--external-updated-at <iso>]\n`);
     process.exit(1);
   }
   const f = parseFlags(argv.slice(1));
@@ -237,7 +257,23 @@ export function updateEpic() {
   // it used to is the whole reason remove-and-re-register was the only correction available.
   if (lane !== undefined) epic.lane = lane;
   if (planPath !== undefined) epic.planPath = planPath;
-  if (str(f.priority) !== undefined) epic.priority = str(f.priority);
+  // A manual `rank` is a placement among ONE band's peers, so it does not survive a move to
+  // another band — it would collide with that band's own 1..N numbering, and the number would
+  // claim a position nobody chose in a set nobody compared. Cleared on a REAL band change only:
+  // re-stating the priority an epic already has changes nothing and must not silently discard a
+  // deliberate order. Announced on stderr rather than done silently — this is the one place
+  // anything but `reorder` touches the field, and an unannounced clear is indistinguishable
+  // from the rank never having been set. See lib/rank.mjs for the invariant.
+  const newPriority = str(f.priority);
+  if (newPriority !== undefined) {
+    if (newPriority !== epic.priority && epic.rank !== undefined) {
+      process.stderr.write(`conductor: cleared \`${epic.id}\`'s rank (${epic.rank}) — it was a ` +
+        `placement among ${epic.priority} epics, and this moves it to ${newPriority}. ` +
+        `Re-run \`reorder\` on the ${newPriority} band to place it.\n`);
+      delete epic.rank;
+    }
+    epic.priority = newPriority;
+  }
   if (links !== undefined) epic.links = links;
   if (reviewMode !== undefined) epic.reviewMode = reviewMode;
   if (attributed.length) {
@@ -268,5 +304,22 @@ export function updateEpic() {
 
   saveState(state);
   render();
+
+  // The success message is printed only after the record on disk is READ BACK and confirmed to
+  // hold what this invocation claims to have written. Everything above verifies its own write;
+  // this verifies the COMMAND, after render() has had its turn at the file too.
+  if (attributed.length) {
+    const wrote = attributed.map(v => v.trim());
+    const missing = missingAttributions(loadState(), id, wrote);
+    if (missing.length) {
+      process.stderr.write(
+        `conductor: --attribute-commit wrote ${wrote.join(", ")} to '${id}' and ` +
+        `${missing.join(", ")} ${missing.length === 1 ? "is" : "are"} NOT in .conductor/state.json ` +
+        "afterwards. NOTHING has been recorded for those commits — do not treat this epic's " +
+        "attribution as current. Re-run the attribution, then verify with `git show` against the " +
+        "COMMIT rather than against the working tree.\n");
+      process.exit(1);
+    }
+  }
   process.stderr.write(`conductor: updated '${id}'\n`);
 }

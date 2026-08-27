@@ -117,10 +117,18 @@ test("later/blocked epics are excluded from NEXT UP but still appear in the lane
     { id: "stuck", title: "stuck", priority: "P0", status: "blocked", role: "epic", lane: "claude-code", links: [] },
   ]});
   const brief = parseBrief(cwd);
-  assert.match(brief, /`ready`/);
-  assert.doesNotMatch(brief, /`deferred`/);
-  assert.doesNotMatch(brief, /`stuck`/);
+  // Scoped to the NEXT UP block, not the whole brief. The contract under test is MEMBERSHIP of
+  // the actionable queue; a whole-document `doesNotMatch` also asserted that a `blocked` epic is
+  // NAMED NOWHERE, which is a different and much stronger claim — and a wrong one (gh#101): a
+  // `blocked` epic with nothing recording what it waits on is precisely what has to be said out
+  // loud, and it was said nowhere for exactly as long as this assertion held.
+  const nextUp = brief.split("NEXT UP")[1].split("\n\n")[0];
+  assert.match(nextUp, /`ready`/);
+  assert.doesNotMatch(nextUp, /`deferred`/);
+  assert.doesNotMatch(nextUp, /`stuck`/);
   assert.match(brief, /lanes: claude-code 3/);   // rollup counts all three, unlike planned
+  // The other half of the same contract: excluded from the queue, still named by the record.
+  assert.match(brief, /`stuck` is `blocked` with no `depends-on` link/);
 });
 
 test("add-epic rejects an unknown --status", () => {

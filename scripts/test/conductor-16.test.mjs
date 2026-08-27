@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { tmpRepo, run, runCombined, readState, projectMd, parseBrief, expectFail } from "./helpers.mjs";
 import { GATE_PROCEDURE_ITEMS } from "../lib/rules.mjs";
+import { AGENT_OUTCOMES } from "../lib/archive-gate.mjs";
 
 // conductor-tells-the-truth, groups 14–15: release planning (#125's minimum slice) and the
 // gate procedure pm EMITS. Split from conductor-13/14/15 for the same reason those were split
@@ -546,7 +547,10 @@ test("15.6 item 5's emitted archive command executes verbatim, with no flag left
   // added: whatever the block says is exactly what gets run.
   const argv = cmd
     .replace(/<id>/g, "e0")
-    .replace(/delivered\|killed\|superseded\|abandoned/g, "delivered")
+    // DERIVED from the vocabulary, never re-typed: the emitted alternation grows whenever an
+    // outcome is added (gh-112 added `declined`), and a literal here silently stops matching —
+    // the alternation then survives into argv and the command fails on an unknown outcome.
+    .replace(new RegExp(AGENT_OUTCOMES.join("\\|"), "g"), "delivered")
     .replace(/"<why>"/g, "shipped-in-full")
     .trim().split(/\s+/);
   run(argv, { cwd });                                  // exits 0 …
