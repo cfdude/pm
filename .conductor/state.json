@@ -3014,7 +3014,7 @@
       "id": "gh-126-release-level-cross-spec-gate",
       "title": "pm has per-change gates and no per-release gate — cross-spec review found 5 Criticals per-spec review cannot",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -3038,7 +3038,18 @@
         "da80942",
         "c4ecddd",
         "0f0a9ff"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-27T16:47:17.753Z",
+        "reason": "shipped in 0.28.0 (6234f32): record-cross-spec-review, /pm:cross-spec-review, engine-enumerated spec set with per-file hashes, four-state staleness"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-27T16:47:17.753Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-27T16:47:17.753Z"
     },
     {
       "id": "gh-127-dogfooding-practices-as-product",
@@ -3056,7 +3067,7 @@
       "id": "gh-128-openspec-staleness-nudge",
       "title": "pm never asks whether OpenSpec is current — this repo ran 1.6.0 artifacts against a 1.10.0 CLI",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -3079,7 +3090,18 @@
       "attributedCommits": [
         "5275746",
         "66e6b0a"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-27T16:47:20.535Z",
+        "reason": "shipped in 0.28.0 (6234f32): one shared emitter feeding both the brief and /pm:upgrade; holds mid-change rather than suppressing; adapts to whether a diff will exist"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-27T16:47:20.535Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-27T16:47:20.535Z"
     },
     {
       "id": "gh-129-attribution-nudge-at-commit-time",
@@ -3299,7 +3321,7 @@
       "id": "gh-134-hooks-run-the-installed-plugin",
       "title": "The commit hook runs the INSTALLED plugin, rewriting PROJECT.md with stale output on every commit",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -3317,7 +3339,18 @@
         "recordedAt": "2026-08-27T04:53:23.882Z",
         "externalUpdatedAt": "2026-08-25T14:08:28Z"
       },
-      "externalUpdatedAt": "2026-08-25T14:08:28Z"
+      "externalUpdatedAt": "2026-08-25T14:08:28Z",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-27T16:47:22.171Z",
+        "reason": "shipped in 0.28.0 (6234f32) behind PM_ENGINE_DELEGATION, an opt-in naming one checkout; labelled a contributor necessity and documented in CONTRIBUTING.md and the README"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-27T16:47:22.170Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-27T16:47:22.171Z"
     },
     {
       "id": "gh-137-release-completion-cascade",
@@ -3411,7 +3444,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 115,
+  "revision": 118,
   "reviewMode": "thorough",
   "releases": [
     {
