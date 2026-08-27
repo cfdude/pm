@@ -21,6 +21,26 @@ import { deferralAssertion } from "./disposition.mjs";
 // `update-epic` in EPIC_FLAGS is the whole edit; nothing changes in this file.
 export const UPDATE_EPIC_FLAGS = epicFlagsFor("update-epic");
 
+/** Which of `shas` are NOT in `state`'s record of epic `id` — read from a state loaded FROM DISK,
+ *  never from the in-memory object the command has been mutating.
+ *
+ *  #140: four `--attribute-commit` invocations reported success and the arrays read `[]`
+ *  afterwards. saveState() now verifies its own bytes reached the disk, and that covers every
+ *  verb — but this command does not END at saveState(): render() runs afterwards and writes
+ *  again (its reconcileArchived() self-heal saves a state it re-loaded). #140's first candidate
+ *  mechanism is exactly that shape — "a later engine invocation re-serialising state.json from a
+ *  copy read before the attribution" — and a guard inside saveState structurally cannot see a
+ *  write that happens after it returns. So the claim this command prints is checked against the
+ *  disk at the moment the command makes it, which is the only moment that matters to a caller.
+ *
+ *  An absent epic or an absent array counts as everything missing: both mean the record does not
+ *  hold what the caller was told it holds. */
+export function missingAttributions(state, id, shas) {
+  const epic = (state.epics || []).find(e => e && e.id === id);
+  const held = new Set(Array.isArray(epic && epic.attributedCommits) ? epic.attributedCommits : []);
+  return shas.filter(sha => !held.has(sha));
+}
+
 /** Update an EXISTING epic's title/externalId/externalUrl/parent/status/priority/links.
  *  The id is POSITIONAL (parseFlags skips non-`--` tokens). Closes the tracker
  *  sync loop: after the agent creates an issue it records the key here.
@@ -268,5 +288,22 @@ export function updateEpic() {
 
   saveState(state);
   render();
+
+  // The success message is printed only after the record on disk is READ BACK and confirmed to
+  // hold what this invocation claims to have written. Everything above verifies its own write;
+  // this verifies the COMMAND, after render() has had its turn at the file too.
+  if (attributed.length) {
+    const wrote = attributed.map(v => v.trim());
+    const missing = missingAttributions(loadState(), id, wrote);
+    if (missing.length) {
+      process.stderr.write(
+        `conductor: --attribute-commit wrote ${wrote.join(", ")} to '${id}' and ` +
+        `${missing.join(", ")} ${missing.length === 1 ? "is" : "are"} NOT in .conductor/state.json ` +
+        "afterwards. NOTHING has been recorded for those commits — do not treat this epic's " +
+        "attribution as current. Re-run the attribution, then verify with `git show` against the " +
+        "COMMIT rather than against the working tree.\n");
+      process.exit(1);
+    }
+  }
   process.stderr.write(`conductor: updated '${id}'\n`);
 }

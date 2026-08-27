@@ -87,3 +87,48 @@ export function commitDate(sha) {
     return out || null;
   } catch { return null; }
 }
+
+/** Does this repository's object database currently hold `sha` as a commit?
+ *
+ *  `rev-parse --verify <sha>^{commit}` rather than `cat-file -e`, matching sameCommit()'s idiom
+ *  above: peeling to `^{commit}` makes a tag or a blob whose name happens to be spelled here
+ *  answer false rather than true.
+ *
+ *  This is deliberately TWO-valued, and that is not a departure from isAncestor()'s three. It
+ *  answers a question about THIS repository's object store — "do you have it" — which has no
+ *  cannot-answer case: no git and no repository both mean this repository holds nothing, which
+ *  is `false` and is true. What is genuinely unknowable is the INTERPRETATION of a `false`
+ *  ("destroyed here" vs "a clone that never had it"), and that judgment is made from the
+ *  population of answers rather than from any one of them — see the
+ *  recorded-sha-the-repository-cannot-resolve check in integrity.mjs.
+ *
+ *  execFileSync with an argv array, never a shell string: these values reach us from
+ *  `state.json`. Local only — reads the object database and contacts nothing. */
+export function objectExists(sha) {
+  if (typeof sha !== "string" || !sha) return false;
+  try {
+    execFileSync("git", ["rev-parse", "--verify", "--quiet", `${sha}^{commit}`],
+      { cwd: ROOT, stdio: ["ignore", "ignore", "ignore"] });
+    return true;
+  } catch { return false; }
+}
+
+/** Is `sha` reachable from ANY ref — a branch, a tag, a remote-tracking ref, a note?
+ *
+ *  This is the question a squash-merge answers "no" to for every commit on the merged branch,
+ *  while the objects themselves survive in the authoring clone until `git gc` prunes them
+ *  (default `gc.pruneExpire`: two weeks). `for-each-ref` lists neither `HEAD` nor the reflog,
+ *  which is exactly right: a commit kept alive only by a reflog entry is a commit on its way out.
+ *
+ *  Two-valued for the same reason objectExists() is, and callers only ever ask it about a sha
+ *  objectExists() has already confirmed — so "git could not answer" and "no ref contains it"
+ *  cannot both be live at that point. Local only. */
+export function reachableFromAnyRef(sha) {
+  if (typeof sha !== "string" || !sha) return false;
+  try {
+    const out = execFileSync("git",
+      ["for-each-ref", "--contains", sha, "--count=1", "--format=%(refname)"],
+      { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+    return out.length > 0;
+  } catch { return false; }
+}
