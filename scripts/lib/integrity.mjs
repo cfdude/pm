@@ -16,7 +16,7 @@
 
 import { isInitialized, loadState } from "./state.mjs";
 import { archivedChanges, epicProgress, strippedChangeId } from "./epic-progress.mjs";
-import { gateHasEvidence, isOpenspecLane } from "./constants.mjs";
+import { gateHasEvidence, isOpenspecLane, releaseMembers } from "./constants.mjs";
 import { commitDate, isAncestor, objectExists, reachableFromAnyRef } from "./git.mjs";
 import { isArchiveBackfilled, outcomeOf, stampedBy } from "./disposition.mjs";
 import { epicReferences } from "./links.mjs";
@@ -373,6 +373,71 @@ export const CHECKS = [
           `${r.where} names \`${r.epic}\`, which is not an epic in this record` +
           (r.drop ? "" : " — a detour-stack frame, so `/pm:resume` would pop a frame that " +
             "names nothing") }));
+    },
+  },
+  {
+    id: "delivered-release-epic-left-open",
+    title: "an epic still open in a release that has already delivered, and was not deliberately cut",
+    /** gh-137. 0.27.0 shipped, its parent epic archived `delivered`, and all TWENTY member epics
+     *  stayed `queued` with no disposition — after which `next` recommended two P0s that had
+     *  shipped hours earlier, in the release the conductor had itself just recorded as delivered.
+     *  The record over-reporting REMAINING work, which is the exact inverse of the defect the
+     *  release was named for. Three signals were in `state.json` at that moment and nothing read
+     *  one of them.
+     *
+     *  WHAT "THE RELEASE HAS DELIVERED" MEANS HERE, and it is a CHOICE rather than a derivation:
+     *  a release object carries no parent pointer and no delivery marker — `id`, `intent`,
+     *  `target`, `deferred[]`, `crossSpecReview` and nothing else — so "the release's parent epic
+     *  is delivered" is not a question this schema can be asked. The reading is therefore
+     *  MEMBER-DERIVED: at least one member carries a `delivered` disposition. Nothing new is
+     *  recorded for it, which is the point — the act that reliably happens at the end of a
+     *  release is archiving the change that shipped it, and a marker an agent must remember to
+     *  set is the same class of forgetting that produced the defect.
+     *
+     *  THE IN-FLIGHT GUARD is what keeps that reading from becoming noise. A release whose
+     *  members ship one at a time would otherwise be reported from the moment the FIRST one
+     *  landed, with every legitimately-queued sibling named as a finding — gh-138's failure
+     *  exactly: an inflated count is how a true warning gets ignored. So a release holding any
+     *  `active` or `paused` member is silent: work is in flight there and the ending has not
+     *  come yet. It is a heuristic and it is stated as one — a repo that never marks an epic
+     *  `active` gets this check firing mid-release, and the two remedies it prints are both
+     *  correct answers in that case anyway.
+     *
+     *  THE EXCLUSION HALF — `deferred[]` — is honoured because the release object ALREADY
+     *  distinguishes "cut on purpose" from "shipped", and consuming only one half of that
+     *  distinction is the whole shape of the bug. Note what it defends against: the `--defer`
+     *  verb DELETES `epic.release` when it records an exclusion, so a deferred epic is not a
+     *  member and the ordinary CLI path can never reach this filter. It is reachable from a
+     *  HAND-EDITED state — which this repository's own history has repeatedly produced — and
+     *  from any future writer that records an exclusion without clearing membership. Reported
+     *  as a guard against the record, not against the verb.
+     *
+     *  SCOPED AWAY FROM TERMINAL EPICS BY CONSTRUCTION (gh-138): the only epic this can report
+     *  is one whose status is NOT `archived`. The condition it detects IS "work ended and the
+     *  record does not say so", so every finding is by definition work that can still be acted
+     *  on, and discharging one removes it. `inCompletionScope` is deliberately NOT applied —
+     *  that rule exempts epics whose ENDING is already explained, and an epic reported here has
+     *  no ending recorded at all. */
+    run(state) {
+      const out = [];
+      for (const rel of Array.isArray(state.releases) ? state.releases : []) {
+        if (!rel || !rel.id) continue;
+        const members = releaseMembers(state.epics, rel.id);
+        if (!members.some(e => outcomeOf(e) === "delivered")) continue;
+        if (members.some(e => e.status === "active" || e.status === "paused")) continue;
+        const cut = new Set((Array.isArray(rel.deferred) ? rel.deferred : [])
+          .map(d => d && d.epic).filter(Boolean));
+        for (const e of members) {
+          if (e.status === "archived" || cut.has(e.id)) continue;
+          out.push({ epic: e.id, detail:
+            `still \`${e.status}\` in release \`${rel.id}\`, which has already delivered — and ` +
+            "it is not in that release's deferred[], so the record says neither that it shipped " +
+            "nor that it was cut. Give it the ending it actually had: " +
+            `update-epic ${e.id} --status archived --outcome delivered --no-deferrals — or, if ` +
+            `it was cut, record that instead: release ${rel.id} --defer ${e.id} --reason "<why>"` });
+        }
+      }
+      return out;
     },
   },
   {
