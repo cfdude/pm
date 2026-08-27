@@ -3394,7 +3394,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 110,
+  "revision": 111,
   "reviewMode": "thorough",
   "releases": [
     {
@@ -3421,7 +3421,38 @@
           "reason": "Deliberately out of 0.27.0 — the same known bug as #64 and the other half of the 4 dual-lane pairs the integrity check reports. Excluded for the same reason: this release reports the shape read-only rather than inventing a field to encode intent.",
           "recordedAt": "2026-08-25T12:34:16.400Z"
         }
-      ]
+      ],
+      "crossSpecReview": {
+        "verdict": "pass",
+        "reviewedAt": "2026-08-27T05:55:26.133Z",
+        "specs": [
+          {
+            "key": "conductor-tells-the-truth/specs/conductor-record/spec.md",
+            "sha256": "1389a06e58139ae658618d5b488a3454d728569aa3632a350e04a5e94ca49c11"
+          },
+          {
+            "key": "conductor-tells-the-truth/specs/epic-annotation/spec.md",
+            "sha256": "b746ce6ce0ceefa2e96702bfcd28740001dbba9aeb32fac7dfeee8d311a593cd"
+          },
+          {
+            "key": "conductor-tells-the-truth/specs/epic-disposition/spec.md",
+            "sha256": "de27c3ff85479e08ad8158ccfd8020cecb865348797f202cd403d53846e65e40"
+          },
+          {
+            "key": "conductor-tells-the-truth/specs/gate-integrity/spec.md",
+            "sha256": "0a4a3b9d943b73bf302beec0565c52915fb3f40df3d4817ab8b684c5dae07708"
+          },
+          {
+            "key": "conductor-tells-the-truth/specs/state-write-guard/spec.md",
+            "sha256": "937a62a05dcf820bac900e8e06847ef30226df4d954550cfc226dcfb3fd57265"
+          },
+          {
+            "key": "conductor-tells-the-truth/specs/tracker-sync/spec.md",
+            "sha256": "561301f73dab1df019598e65e168ae153e930627c7534034f78c73002ed12b62"
+          }
+        ],
+        "reviewer": "two independent fresh-context lenses, 2026-08-23 — RECORDED RETROACTIVELY: the review ran by hand before /opsx:apply and returned 5 Critical + 10 Important; all Critical closed and re-reviewed twice, the second round finding 2 more introduced by the fixes. The verb did not exist at the time, so this date is the write date, not the review date"
+      }
     }
   ],
   "archiveBackfilledAt": "2026-08-27T04:52:42.658Z"

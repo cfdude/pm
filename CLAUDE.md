@@ -301,19 +301,26 @@ third-party context regardless of which way it was born. Origin decides only who
 when the item and a local spec disagree.
 <!-- END pm-conductor rules -->
 
-### 🔗 Cross-spec review — invoke the skill whenever a change has 2+ specs
+### 🔗 Cross-spec review — now a shipped gate, not a repo practice
 
-Gate 1 and Gate 2 each take **one change artifact** as their unit, so nothing checks a release's
-specs **against each other**. Before `/opsx:apply` on any change whose `specs/` directory holds
-two or more files — and after any round of concurrent amendment — **invoke the
-`cross-spec-review` skill**. It carries the procedure, the six questions, and the two failure
-modes specific to the fixes.
+**#126 landed it in the product.** The procedure lives in the shipped `skills/cross-spec-review/`
+skill and in the emitted rules block as a NUMBERED REQUIRED TASK ITEM — the form this repo
+measured at 14/14 adoption against 3/15 for a prose bullet. The old `.claude/skills/` copy is now
+a stub redirecting there, so repo practice and product cannot drift apart.
+
+**Invoke the `cross-spec-review` skill** before `/opsx:apply` on any release holding two or more
+spec files, and after any round of concurrent amendment. Record the outcome:
+`record-cross-spec-review <releaseId> --verdict pass|fail --reviewer "<who>"`. The engine
+enumerates the spec set from disk and hashes each file it read, so the verdict goes stale on its
+own when a spec is added or amended — a release-scope staleness a change-scoped gate structurally
+cannot see. A multi-spec release with no verdict renders `⚠ no cross-spec review (N specs)`,
+because silence and "reviewed and clean" must never look the same.
 
 *Evidence:* on 0.27.0 that pass returned **5 Critical and 10 Important** against six specs that
 had each passed `openspec validate --strict` and would each have passed Gate 1 alone — including
 a flagship scenario that was unreachable, and a shared 11-element flag allowlist four
 capabilities all needed to grow. The re-review then found **two more Criticals introduced by the
-fixes**. Productizing it is #126.
+fixes**. That verdict is now recorded against the `0.27.0` release object, marked retroactive.
 
 ### 🐕 Dogfooding — invoke the skill when you adopt a practice or work around friction
 
