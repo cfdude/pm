@@ -35,12 +35,14 @@ function repoAt0260() {
 
 const REFRESH_GATE_HEADING = "## Re-read the source before an epic becomes the work";
 const GATE_PROCEDURE_HEADING = "## The gate procedure — required task items";
-/** The block minus the ALWAYS-ON sections this release adds — the refresh gate and the emitted
- *  gate procedure — see conductor-14's identical helper for why byte-identity is claimed for the
- *  tracker sections and not for the whole document. */
+const INTAKE_HEADING = "## Intake — triage an ask against the whole backlog BEFORE registering it";
+/** The block minus the ALWAYS-ON sections this release adds — the refresh gate, the emitted
+ *  gate procedure and the intake procedure — see conductor-14's identical helper for why
+ *  byte-identity is claimed for the tracker sections and not for the whole document. */
 const stripAlwaysOn = (block) => block
   .replace(new RegExp(`\\n*${REFRESH_GATE_HEADING}[\\s\\S]*?(?=\\n<!-- END pm-conductor rules -->)`), "")
-  .replace(new RegExp(`${GATE_PROCEDURE_HEADING}[\\s\\S]*?(?=## )`), "");
+  .replace(new RegExp(`${GATE_PROCEDURE_HEADING}[\\s\\S]*?(?=## )`), "")
+  .replace(new RegExp(`${INTAKE_HEADING}[\\s\\S]*?(?=## )`), "");
 
 test("7.5: the checked-in 0.26.0 state carries none of this release's fields", () => {
   const raw = fs.readFileSync(STATE_0_26_0, "utf8");

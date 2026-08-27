@@ -25,6 +25,10 @@
  *                  diff shape looks like an unlogged minimal detour (see
  *                  looksLikeUnloggedMinimalDetour)
  *   sync           add any new openspec changes to state.json as "untriaged"
+ *   triage         INTAKE: the mechanical half of admitting an ask — a candidate set of
+ *                  existing epics sharing distinctive vocabulary with it, the repo's lane
+ *                  suggestion, and the backlog's shape. Emits `verdict: null`: whether two
+ *                  asks are the SAME ask is judgment, and judgment is the agent's.
  *   log-detour "x" record a MINIMAL detour in detours.log (with the current git SHA)
  *   honcho-memory  <push|pop> <epicId> "<reason>" — print + log the ready-to-copy Honcho line
  *   rules          print the CLAUDE.md rules block to stdout
@@ -68,6 +72,7 @@ import { integrity } from "./lib/integrity.mjs";
 import { removeEpic } from "./lib/remove-epic.mjs";
 import { setTracker } from "./lib/tracker.mjs";
 import { setLaneRouting, suggestLane } from "./lib/lane-routing.mjs";
+import { triage } from "./lib/triage.mjs";
 import { setReviewMode } from "./lib/review-mode.mjs";
 import { setGateGuard, gateGuardCheck } from "./lib/gate-guard.mjs";
 import { upgrade } from "./lib/migrations.mjs";
@@ -101,7 +106,7 @@ const cmd = process.argv[2];
 // entry to .conductor/detours.log with "--help" as the detour description, and the log is
 // append-only with no verb to remove it. Handled before dispatch so every subcommand is covered
 // -- log-detour is only where the damage is visible, not where the gap is.
-const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|plan-hierarchy|verify-worktrees|verify-state|integrity|changesets|upgrade|changelog|rules|write-rules|rules-target\n";
+const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|plan-hierarchy|verify-worktrees|verify-state|integrity|changesets|upgrade|changelog|rules|write-rules|rules-target\n";
 if (!cmd || process.argv.slice(2).some(a => a === "--help" || a === "-h")) {
   process.stdout.write(USAGE);
   process.exit(0);
@@ -139,6 +144,7 @@ try {
   "set-tracker": setTracker,
   "set-lane-routing": setLaneRouting,
   "suggest-lane": suggestLane,
+  triage,
   "set-autonomy": setAutonomy,
   "record-reconcile": recordReconcile,
   "record-gate-review": recordGateReview,

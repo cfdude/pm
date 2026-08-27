@@ -64,6 +64,17 @@ export function setLaneRouting() {
   process.stderr.write(`conductor: lane routing has ${lr.overrides.length} override(s)\n`);
 }
 
+/** The repo's lane-routing answer for one piece of free text, as data: `{lane, matched}`, with
+ *  `lane: null` where no override matched. Extracted from suggestLane() so a SECOND consumer —
+ *  intake triage, which needs the same answer alongside its candidate set — reads it through one
+ *  function instead of re-walking `overrides` with its own copy of the first-match-wins rule. */
+export function laneSuggestion(state, text) {
+  for (const o of ((state && state.laneRouting) || {}).overrides || []) {
+    if (laneMatchTest(o.match, text)) return { lane: o.lane, matched: o.match };
+  }
+  return { lane: null, matched: null };
+}
+
 /** `suggest-lane "<free text>"` — checks the repo's `laneRouting.overrides` (in order,
  *  first match wins) against a proposed epic's title/description BEFORE the generic
  *  lane heuristic is applied. Prints `{lane, matched}` as JSON; `lane: null` means no
@@ -75,13 +86,5 @@ export function suggestLane() {
   if (typeof text !== "string" || !text.length) {
     process.stderr.write("usage: conductor.mjs suggest-lane \"<free text>\"\n"); process.exit(1);
   }
-  const state = loadState();
-  const overrides = ((state.laneRouting || {}).overrides || []);
-  for (const o of overrides) {
-    if (laneMatchTest(o.match, text)) {
-      process.stdout.write(JSON.stringify({ lane: o.lane, matched: o.match }) + "\n");
-      return;
-    }
-  }
-  process.stdout.write(JSON.stringify({ lane: null, matched: null }) + "\n");
+  process.stdout.write(JSON.stringify(laneSuggestion(loadState(), text)) + "\n");
 }
