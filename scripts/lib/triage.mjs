@@ -34,6 +34,11 @@ const COMMON_TOKEN_MAX_SHARE = 0.5;
 /** …but only once the backlog is big enough for a share to be evidence rather than an accident. */
 const COMMON_TOKEN_MIN_EPICS = 8;
 
+/** The flags `triage` accepts. A local list rather than an EPIC_FLAGS entry because triage is a
+ *  READ and writes no epic — but an allowlist all the same, for the reason every other verb has
+ *  one: a flag nobody validates is a flag silently dropped. */
+const TRIAGE_FLAGS = ["limit"];
+
 /** Split free text into comparable tokens. Everything that is not a letter or digit is a
  *  separator, so `2026-07-14-epic-hierarchy-orchestration`, `conductor.mjs Module Split` and
  *  "Epic-Hierarchy Orchestration" all reduce to the same vocabulary — which is the whole point:
@@ -156,7 +161,33 @@ export function triage() {
     process.stderr.write("usage: conductor.mjs triage \"<free text>\" [--limit N]\n"); process.exit(1);
   }
   const f = parseFlags(process.argv.slice(4));
-  const limit = Number.isFinite(Number(f.limit)) && Number(f.limit) > 0 ? Math.floor(Number(f.limit)) : 5;
+  // The same allowlist discipline every epic-writing verb here already has. `triage` writes
+  // nothing, so `--limit` correctly stays OUT of the shared EPIC_FLAGS registry — but "not in the
+  // registry" is not "needs no allowlist": parseFlags reads whatever it is handed and the body
+  // reads only what it names, so an unrecognized flag is dropped in silence and the caller gets a
+  // confident answer to a question they did not ask.
+  const unknown = Object.keys(f).filter(k => !TRIAGE_FLAGS.includes(k));
+  if (unknown.length) {
+    process.stderr.write(`conductor: triage: unknown flag(s) --${unknown.join(", --")} ` +
+      `(known: ${TRIAGE_FLAGS.map(k => `--${k}`).join(", ")})\n`);
+    process.exit(1);
+  }
+  // REFUSED, never coerced. A valueless `--limit` arrives from parseFlags as boolean `true`, and
+  // `Number(true)` is 1 — a coercing read answers with exactly ONE candidate and exits 0, which
+  // is the #79 shape: plausible output, wrong result, no way to notice. `--limit abc` is the same
+  // failure with a different value. A wrong bound on a recall device silently hides the twin the
+  // whole command exists to surface, so it must not have a permissive reading.
+  let limit = 5;
+  if (f.limit !== undefined) {
+    const n = typeof f.limit === "string" ? Number(f.limit) : NaN;
+    if (!Number.isInteger(n) || n <= 0) {
+      process.stderr.write(
+        `conductor: triage: --limit must be a positive integer (got ` +
+        `${f.limit === true ? "no value" : JSON.stringify(f.limit)})\n`);
+      process.exit(1);
+    }
+    limit = n;
+  }
   const state = loadState();
   const epics = Array.isArray(state.epics) ? state.epics : [];
 

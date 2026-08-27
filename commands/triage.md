@@ -23,7 +23,10 @@ different names. Identity dedup found none of them; a human reading the backlog 
 node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" triage "<the ask, in its own words>"
 ```
 
-Optional: `--limit N` (default 5) bounds how many candidates come back.
+Optional: `--limit N` (default 5) bounds how many candidates come back. It must be a positive
+integer — a valueless or non-numeric `--limit` is refused rather than coerced, and any other
+flag is rejected by name. A wrong bound on a recall device silently hides the twin the whole
+command exists to surface.
 
 Read-only — it writes nothing and re-renders nothing. It prints one JSON object:
 

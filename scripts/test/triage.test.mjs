@@ -178,6 +178,30 @@ test("a candidate already superseded by another epic says so", () => {
   assert.equal(byId["new-thing"].superseded, false);
 });
 
+test("a --limit that is not a positive integer is REFUSED, never coerced", () => {
+  const cwd = repoWith(LIVE_PAIRS);
+  // A valueless flag arrives from parseFlags as boolean `true`, and `Number(true)` is 1 — so a
+  // coercing read answers with exactly ONE candidate: exit 0, plausible output, wrong result,
+  // invisible. That is #79's shape, and `add-epic` already refuses a valueless `--description`
+  // for it. `--limit abc` is the same failure wearing a different value.
+  for (const argv of [["--limit"], ["--limit", "abc"], ["--limit", "0"], ["--limit", "-3"]]) {
+    const out = runCombined(["triage", "Epic-Hierarchy Orchestration Implementation Plan", ...argv], { cwd });
+    assert.match(out, /--limit/, `\`triage … ${argv.join(" ")}\` must name the flag it refused — got ${out}`);
+    assert.doesNotMatch(out, /"candidates"/,
+      `\`triage … ${argv.join(" ")}\` must not answer at all — a wrong bound is worse than a refusal`);
+  }
+  assert.equal(triage(cwd, "Epic-Hierarchy Orchestration Implementation Plan", "--limit", "3")
+    .candidates.length <= 3, true, "a real limit still works, so the refusal above is a decision");
+});
+
+test("triage rejects an unknown flag by name instead of ignoring it", () => {
+  const cwd = repoWith(LIVE_PAIRS);
+  const out = runCombined(["triage", "an ask", "--min-score", "0.4"], { cwd });
+  assert.match(out, /min-score/, "the refusal must name the flag that was not understood");
+  assert.match(out, /--limit/, "…and name what IS accepted, so the caller can fix it in one step");
+  assert.doesNotMatch(out, /"candidates"/, "a silently dropped flag is a silently wrong answer");
+});
+
 test("triage refuses an empty ask and an uninitialized repo rather than answering", () => {
   const cwd = repoWith([{ id: "alpha", title: "a" }]);
   assert.match(runCombined(["triage"], { cwd }), /usage/);
