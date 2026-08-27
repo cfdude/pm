@@ -278,3 +278,41 @@ test("gh-137: an outward-only repo is instructed to close no epic — it reads n
     "the step hangs off the list the inward pull performs; a repo that lists nothing cannot run " +
     "it, and emitting it would point at a step that is not there");
 });
+
+// ─────────── the replay — the exact record gh-137 was filed from ───────────
+//
+// The live-data test above proves the check is SILENT today, which is the right answer and also
+// the weakest possible evidence: a check that returned [] unconditionally would pass it. This
+// one rebuilds the moment the issue was filed from the same live record — every `gh-*` member of
+// 0.27.0 back to `queued` with its disposition removed, exactly the twenty hand-run `update-epic`
+// calls undone — and asserts the check names all twenty. Nothing is written: the mutation is on
+// a parsed copy.
+
+test("gh-137: replayed against the record as it stood when the issue was filed, the check names all twenty", () => {
+  const st = liveState();
+  let reverted = 0;
+  for (const e of st.epics) {
+    if (e.release === "0.27.0" && e.id.startsWith("gh-")) {
+      e.status = "queued";
+      delete e.disposition;
+      reverted++;
+    }
+  }
+  assert.equal(reverted, 20,
+    `0.27.0 held twenty tracker-mirrored members when #137 was filed — found ${reverted}. If this ` +
+    "moved, the replay is no longer replaying the issue and the number below means nothing.");
+  const findings = findingsFor("delivered-release-epic-left-open", st);
+  assert.equal(findings.length, 20,
+    "all twenty, which is what the issue says the engine could have known and did not");
+  // The change that shipped the release is still archived `delivered` in the replay — it is what
+  // makes the release read as delivered — so it must not be among them.
+  assert.ok(!findings.some(f => f.epic === "conductor-tells-the-truth"),
+    "the delivered member is the SIGNAL, never a finding");
+  // And the four cut on purpose stay out, by both routes: they are in deferred[] and `--defer`
+  // already cleared their membership pointer.
+  for (const cut of ["gh-114-lane-routing-blind-to-product", "gh-66-update-epic-missing-flags",
+    "gh-64-sync-duplicate-shipped-plan", "gh-69-sync-no-done-signal-for-plans"]) {
+    assert.ok(!findings.some(f => f.epic === cut),
+      `${cut} was deliberately cut from 0.27.0 and must never be reported as unfinished bookkeeping`);
+  }
+});
