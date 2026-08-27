@@ -3306,7 +3306,11 @@
       "reconcileNeeded": false,
       "externalId": "134",
       "externalUrl": "https://github.com/cfdude/pm/issues/134",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "17f8665",
+        "dc62cc9",
+        "56c50ab"
+      ],
       "trackerRefresh": {
         "verdict": "unchanged",
         "summary": "read in full before dispatching its agent; body matches the epic and rules out fixing it by having the hook write less",
@@ -3394,7 +3398,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 111,
+  "revision": 114,
   "reviewMode": "thorough",
   "releases": [
     {
