@@ -21,3 +21,16 @@ discarded it by hand.
 
 Same root as the reverse case: a project running instruction files four minor versions behind the
 CLI that generates them.
+
+**Fixed in the engine, not in the entry points.** `conductor.mjs` now hands the whole invocation
+off to `<project>/scripts/conductor.mjs` when the project it is running in is itself a `pm`
+checkout — both `scripts/conductor.mjs` and a `.claude-plugin/plugin.json` naming `pm` must be
+present, so the hooks that fire in *every* project cannot be talked into executing a stranger's
+code. One handoff at startup covers all 19 entry points at once: the 4 hooks and the 15 command
+docs. `PM_NO_ENGINE_DELEGATION=1` opts out.
+
+**The rule above still stands, for two reasons.** First, bootstrap: the handoff only exists once
+the *installed* plugin carries the release that added it, so while developing the release that
+ships a fix, the installed engine is still the one without it. Second, the handoff is a safety
+net for the hooks nobody invokes — it is not a licence to invoke `/pm:*` by hand while developing
+the tool. Keep running `node scripts/conductor.mjs <verb>` from the checkout.
