@@ -34,6 +34,7 @@ trigger fires, not before.
 | [`shared-checkout-parallel-agents`](shared-checkout-parallel-agents.md) | About to run two or more subagents that will each commit to the same git checkout. | Parallel subagents get isolated worktrees or they run serially. Never two agents committing to one checkout. | 🔔 |
 | [`slash-commands-run-the-installed-plugin`](slash-commands-run-the-installed-plugin.md) | Developing a plugin, CLI, or tool while also using that tool inside the same session. | When developing the tool itself, invoke the checkout directly (`node scripts/conductor.mjs <verb>`), never the installed slash command. | 🔔 |
 | [`tcc-denial-breaks-getcwd`](tcc-denial-breaks-getcwd.md) | Tooling fails everywhere under one directory tree — `EPERM`/`uv_cwd`, "getcwd: cannot access parent directories", a shell hanging at startup — while single file reads still work. | Probe `getcwd` and directory-listing at each level before blaming the tool. A macOS TCC denial breaks every process needing an absolute path under the folder, and the responsible app is the one parented to launchd — usually tmux. | — |
+| [`who-can-operate-the-switch`](who-can-operate-the-switch.md) | A review says a change is unsafe and you are about to gate it, or you are adding a control something outside the tool's reach must set. | Ask who can operate the switch and how many people benefit. A gate the product can never turn on is a feature it cannot deliver; when the beneficiary is the developer, it belongs in the repo, not the shipped artifact. | — |
 | [`worktrees-with-claude-agents`](worktrees-with-claude-agents.md) | About to run Claude agents in git worktrees, or about to kill an agent that is running a test suite in one. | Worktrees fix CORRECTNESS, not RESOURCE contention. One writing agent per machine when the suite is expensive. Always run the preflight and the postflight — scripts/wt-preflight.sh and scripts/wt-cleanup.sh. | 🔔 |
 
 ## Where the rules actually live
@@ -57,6 +58,7 @@ A lessons file nobody reads is a data graveyard — the same objection that made
 | `shared-checkout-parallel-agents` | subagent brief template; CLAUDE.md § Subagents & worktrees |
 | `slash-commands-run-the-installed-plugin` | subagent brief template; conductor.mjs self-hosting handoff (bootstrap-limited) |
 | `tcc-denial-breaks-getcwd` | habit — the four-probe table in the lesson |
+| `who-can-operate-the-switch` | habit — the three questions in the lesson |
 | `worktrees-with-claude-agents` | scripts/wt-preflight.sh, scripts/wt-cleanup.sh; detect matcher on worktree creation |
 
 This repo measured the difference: a rule carried by a **required task** reached **14/14** adoption
