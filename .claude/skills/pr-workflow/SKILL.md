@@ -43,13 +43,36 @@ existed and had to be untangled after the fact.
    echo "CI settled"
    ```
 
-5. **Squash-merge once green** (never `--delete-branch` — `dev` is persistent, not a
+5. **Tag the pre-squash tip BEFORE merging, and push the tag.** This step is not optional and
+   not bookkeeping — skipping it destroys evidence:
+   ```bash
+   git tag presquash/pr-<n> "$(gh pr view <n> --repo cfdude/pm --json headRefOid --jq .headRefOid)"
+   git push origin "presquash/pr-<n>"
+   ```
+   A squash-merge collapses every commit on the branch into ONE commit on `main` whose only
+   parent is `main`'s previous tip. The branch's own commits become reachable from **nothing**.
+   They survive in the local object store until the next `git gc` — default prune expiry is two
+   weeks — and then they are gone, from every clone, permanently.
+
+   That matters here specifically because **`.conductor/state.json` records commit shas**:
+   `attributedCommits` on every epic, and `baseSha`/`headSha` on every gate verdict. Those are
+   the entire evidence base for "this Gate 2 reviewed that range." Orphan the commits and the
+   record still *reads* fine while being unverifiable by anyone, on any machine — the exact
+   failure mode 0.27.0 was built to eliminate, reintroduced by the merge step. Measured on this
+   repo: **36 recorded shas, all of them orphaned**, recovered only because `gc` had not yet run.
+
+   The tag makes the whole range reachable forever, costs one ref, and changes nothing about
+   `main`'s linear history. Do it before the merge, while `gh pr view` can still tell you the
+   head — after the branch is deleted the head oid is still on the PR record, but there is no
+   reason to rely on that.
+
+6. **Squash-merge once green** (never `--delete-branch` — `dev` is persistent, not a
    throwaway feature branch):
    ```bash
    gh pr merge <n> --repo cfdude/pm --squash --delete-branch=false
    ```
 
-6. **Sync both local branches to the new `main` tip, and re-verify tests post-merge**
+7. **Sync both local branches to the new `main` tip, and re-verify tests post-merge**
    (confirms the squash commit itself is sound, not just the pre-merge state):
    ```bash
    git checkout main && git fetch origin && git reset --hard origin/main
@@ -59,6 +82,27 @@ existed and had to be untangled after the fact.
    `git reset --hard main` (not a plain `git merge`/`--ff-only`) is required here — after a
    squash-merge, `dev`'s and `main`'s histories have diverged (the squash commit has no common
    ancestor with `dev`'s pre-squash commits), so a fast-forward fails with "diverging branches."
+
+8. **Verify every recorded sha is still reachable.** One command; it is the check the tag
+   exists to satisfy, and running it is how you find out the tag step was missed:
+   ```bash
+   python3 - <<'EOF'
+   import json, subprocess
+   st = json.load(open(".conductor/state.json"))
+   shas = [(e["id"], s) for e in st["epics"] for s in (e.get("attributedCommits") or [])]
+   shas += [(f'{e["id"]} {g}.{k}', v[k])
+            for e in st["epics"] for g in ("gate1", "gate2")
+            for v in [(e.get("gateReview") or {}).get(g) or {}]
+            for k in ("baseSha", "headSha") if v.get(k)]
+   bad = [(i, s) for i, s in shas
+          if not subprocess.run(["git", "for-each-ref", "--contains", s],
+                                capture_output=True, text=True).stdout.strip()]
+   print(f"{len(shas)} recorded shas, {len(bad)} unreachable")
+   for i, s in bad: print("  UNREACHABLE", i, s)
+   EOF
+   ```
+   Anything unreachable is recoverable **only** until the next `gc`. Recover it from the PR
+   record — `gh pr list --state merged --json number,headRefOid` — and tag it now, not later.
 
 ## When this doesn't apply
 
