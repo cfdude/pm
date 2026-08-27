@@ -7,3 +7,4 @@ evals/.pytest_cache/
 .conductor/detours.log
 .conductor/write-conflicts.log
 .conductor/write-conflicts.latch
+.conductor/agent-logs/

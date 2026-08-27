@@ -41,6 +41,25 @@ is unlikely) — set `PM_VERBOSE_ENGINE_BANNER=1` to force it back on if you nee
 source there. `PM_QUIET_ENGINE_BANNER=1` still works as an explicit suppress outside that
 context too.
 
+**Developing pm itself?** The engine can enforce that same preference for the callers that cannot
+run the snippet below: `hooks/hooks.json` invokes it through `$CLAUDE_PLUGIN_ROOT` with no chance
+to resolve anything. Export `PM_ENGINE_DELEGATION=/abs/path/to/your/pm/checkout` and an installed
+engine running in **that** tree hands the whole invocation off to its `scripts/conductor.mjs`
+before doing any work.
+
+It is **opt-in, and it names one path, deliberately**. Those four hooks fire in every project on
+the machine, so anything a project could write about itself — a `.claude-plugin/plugin.json`
+saying `"name": "pm"` is two lines — could be forged by a hostile repo to get its own code run.
+A bare on/off flag would have the same problem in practice, since it gets exported in a shell
+profile and is then set everywhere; a path names your checkout and matches nothing else.
+
+Two caveats. It only exists once the *installed* plugin carries the release that added it, so
+keep resolving `$ENGINE` as below rather than relying on it. And it makes the engine you TYPE
+non-authoritative: with it set, running a worktree's `scripts/conductor.mjs` while
+`$CLAUDE_PROJECT_DIR` points at the main checkout runs the **main checkout's** engine, because
+the project dir decides. In a repo that works in worktrees as much as this one, that is worth
+knowing before you debug a change that seems not to take.
+
 ```bash
 ENGINE="${CLAUDE_PROJECT_DIR:+$CLAUDE_PROJECT_DIR/scripts/conductor.mjs}"
 [ -f "$ENGINE" ] || ENGINE="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/scripts/conductor.mjs}"
@@ -254,7 +273,24 @@ bullet reached 3/15.
    MUST NOT be attributed — that move lands after the reviewed range by construction, so attributing it makes
    the epic's own Gate 2 stale at the instant the archive gate reads it.
 
-5. **End work by recording a disposition.** An epic, a story, a deferral or a release exclusion
+5. **Review a release's specs against each other.** Gate 1 and Gate 2 each take ONE CHANGE as
+   their unit, so nothing above them asks whether a release's specs AGREE. Before `/opsx:apply`
+   on any release holding **two or more spec files** — counted FLAT across its member changes, so
+   one change carrying six specs qualifies — and again after any round of concurrent amendment,
+   dispatch FRESH-CONTEXT reviewers at the release's whole spec set (one under `standard`, two
+   with different lenses under `thorough`) and ask the six questions: contradiction, double
+   ownership, unmeetable requirements, gaps against the proposal's Resolves list, vocabulary
+   forks, and shared chokepoints. Split every finding into BLOCKS and POLISH, fix the BLOCKS,
+   decline most POLISH and say why — a review of a large document always returns something, so
+   "no findings" is not a stopping condition. A contradiction is never POLISH. Then record the
+   verdict: `record-cross-spec-review <releaseId> --verdict pass|fail --reviewer "<identity>"`.
+   The engine enumerates the spec set from disk and hashes it, so a spec ADDED to the release
+   afterwards — or a reviewed spec amended — marks the verdict stale on every surface; a set you
+   assert instead would go stale in exactly the way this gate exists to catch. Measured here:
+   this pass returned 5 Critical and 10 Important against six specs that had each passed
+   `openspec validate --strict` and would each have passed Gate 1 alone, including a flagship
+   scenario that was unreachable.
+6. **End work by recording a disposition.** An epic, a story, a deferral or a release exclusion
    ENDS by recording a terminal disposition carrying its required reason, and
    never by removing the record. The archive verb takes TWO halves in ONE invocation — the
    disposition AND a deferral assertion — because the gate refuses either half alone:

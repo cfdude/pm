@@ -440,6 +440,36 @@ real passing verdict supersedes it — not an episode that a single session's br
 </details>
 
 <details>
+<summary><code>record-cross-spec-review &lt;releaseId&gt; --verdict pass|fail [--reviewer "&lt;who&gt;"]</code> — Record the release-scope cross-spec review</summary>
+
+Gate 1 and Gate 2 each take **one change** as their unit, so nothing above them asked whether a
+release's specs **agree with each other**. `/pm:cross-spec-review` runs that review — the six
+questions (contradiction, double ownership, unmeetable requirements, gaps, vocabulary forks,
+shared chokepoints), with BLOCKS/POLISH adjudication — and this verb records its verdict on the
+release.
+
+**The engine derives the evidence.** It enumerates the release's spec set from disk across its
+member changes and stores a SHA-256 per file it read; an agent never supplies the list, because a
+list typed by the party being reviewed goes stale in exactly the way this gate exists to catch. A
+spec **added** to the release afterwards, or a reviewed spec **amended**, marks the verdict
+`⚠ stale` on `PROJECT.md` and the session brief; a spec the engine cannot read reads
+`⚠ unverifiable` and a `pass` is refused rather than recorded against absent evidence. The record
+is keyed change-relative, so the `/opsx:archive` move never reads as staleness, and re-recording
+supersedes the prior verdict while keeping it readable.
+
+The gate applies at **two or more spec files counted flat** across the release, so one change
+carrying six specs qualifies exactly as six changes carrying one each do; below that the verb
+refuses, because Gate 1 covers a single spec completely. A multi-spec release with **no** verdict
+renders `⚠ no cross-spec review (N specs)` — silence and "reviewed and clean" must not look the
+same.
+
+*Measured on this plugin's own 0.27.0:* six specs that had each passed `openspec validate
+--strict` and would each have passed Gate 1 alone returned **5 Critical and 10 Important** when
+reviewed as a set.
+
+</details>
+
+<details>
 <summary><code>/pm:sync</code> — Register new proposals and plans</summary>
 
 Picks up any new OpenSpec proposals or Superpowers plans not yet tracked as epics, and
@@ -696,6 +726,32 @@ Installed to `skills/` on `/pm:init`:
 | PostToolUse (`git commit`) | Calls `commit-nudge`: nudges a state update after every commit; also auto-detects an unlogged minimal detour from commit shape (excluding routine conductor bookkeeping commits). |
 | PreToolUse (gate-guard) | Hard-blocks `Edit`/`Write`/`NotebookEdit` while the active epic owes a reconcile — on by default, unconditional for that case. |
 
+**Tool currency.** `pm` and `superpowers` are plugins that update themselves, but **OpenSpec is a
+CLI you upgrade by hand** — and `openspec update`, which regenerates the per-project instruction
+files, slash commands and skills the whole OpenSpec lane runs on, is a *separate* manual
+per-project step. So a machine can sit on OpenSpec 1.10 while a project still runs 1.6's generated
+artifacts, indefinitely, with nothing saying so. (Measured in this repo: four minor versions
+stale, while actively running an OpenSpec change.)
+
+The session brief and `/pm:upgrade` now both report that drift, from one shared emitter so the two
+can never disagree. Three things about how it behaves:
+
+- **`pm` never runs `openspec update`.** It emits the instruction and you run the terminal
+  command, exactly as with `openspec init` — a source scan in the test suite fails the build if
+  any engine file ever passes the `openspec` binary an argv other than `--version`.
+- **It holds rather than suppressing itself mid-change.** `openspec update` rewrites the
+  instruction files an in-flight change is being authored against, so with an active change the
+  drift is still reported but the imperative becomes *hold until `<change>` is archived*.
+  Suppressing outright would silence it permanently in any repo that usually has a change open —
+  which is precisely how the drift above accumulated unseen.
+- **It tells you whether a diff will exist.** Where the generated files are git-tracked,
+  `git diff` after the run *is* your review; where they are not, it says to copy them aside
+  first, because the rewrite destroys local edits to `.claude/skills/openspec-…` with no diff and
+  no trace.
+
+Either version being undeterminable is reported as *cannot tell*, never as stale, and nothing is
+spawned at all unless the repo has an `openspec/` directory and a readable generated stamp.
+
 **Agents** (`agents/`) — dispatched by name, run in a clean context:
 
 | Agent | Purpose |
@@ -750,6 +806,22 @@ pm/ (this repo)
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the dev/main branch workflow, PR requirements, and
 CI gate. See [CHANGELOG.md](CHANGELOG.md) for version history.
+
+**Contributing to pm itself requires one-time setup that pm's own users do not need.** This
+repository is managed by the plugin it ships, so pm's hooks would otherwise run the *installed*
+engine against your *checkout* — rewriting the tracked `PROJECT.md` with output a release out of
+date, on every commit. Export `PM_ENGINE_DELEGATION` naming your checkout, in your shell profile:
+
+```sh
+export PM_ENGINE_DELEGATION="$HOME/path/to/your/pm/checkout"
+```
+
+It lives outside the repository because a plugin cannot write your shell profile — which is
+precisely what makes it a trustworthy authorization. Full explanation, and how to verify it took,
+in [CONTRIBUTING.md](CONTRIBUTING.md#developing-pm-with-pm-required-one-time-setup).
+
+**If you are a pm *user*, there is nothing here for you to configure.** Unset is the default and
+the correct state; the installed plugin runs its own engine, as it should.
 
 ## Roadmap
 

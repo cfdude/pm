@@ -31,6 +31,8 @@
  *   write-rules    insert/refresh the rules block in ./CLAUDE.md (idempotent)
  *   release        create/amend a release, and associate epics with it (membership is
  *                  one-way: `epic.release`, at most one)
+ *   record-cross-spec-review  record the RELEASE-scope review verdict — do this release's specs
+ *                  agree WITH EACH OTHER? (Gate 1/Gate 2 each take one CHANGE as their unit)
  *   integrity      READ-ONLY audit of the record itself — shapes that cannot be true
  *                  (reports; never writes state, never blocks a command)
  *   verify-state   fail loudly if state.json's mtime is newer than the last render's stamp
@@ -70,8 +72,25 @@ import { setReviewMode } from "./lib/review-mode.mjs";
 import { setGateGuard, gateGuardCheck } from "./lib/gate-guard.mjs";
 import { upgrade } from "./lib/migrations.mjs";
 import { changelog } from "./lib/changelog.mjs";
-import { release } from "./lib/releases.mjs";
+import { release, recordCrossSpecReview } from "./lib/releases.mjs";
 import { verifyWorktrees, changesets, verifyState } from "./lib/worktree-hygiene.mjs";
+import { delegateToCheckout } from "./lib/self-hosting.mjs";
+
+// ---------- self-hosting handoff (gh-134) ----------
+//
+// hooks.json and every command doc invoke this engine through ${CLAUDE_PLUGIN_ROOT} — the
+// INSTALLED plugin. When the project being worked in IS a pm checkout, that engine is behind
+// the working tree and renders PROJECT.md as it looked a release ago, unprompted, on every
+// commit. Hand off to the checkout's engine before ANY other work: before the banner, before
+// --help, before dispatch, so the delegated process owns the whole invocation and nothing is
+// printed twice.
+//
+// OPT-IN ONLY, via PM_ENGINE_DELEGATION naming the checkout's absolute path. This is the single
+// place the engine can execute code it did not ship, and the four hooks reach it in every
+// project on the machine — see the trust-boundary note at the top of lib/self-hosting.mjs
+// before loosening the condition.
+const delegated = delegateToCheckout({ selfPath: fileURLToPath(import.meta.url) });
+if (delegated !== null) process.exit(delegated);
 
 // ---------- dispatch ----------
 
@@ -82,7 +101,7 @@ const cmd = process.argv[2];
 // entry to .conductor/detours.log with "--help" as the detour description, and the log is
 // append-only with no verb to remove it. Handled before dispatch so every subcommand is covered
 // -- log-detour is only where the damage is visible, not where the gap is.
-const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|set-autonomy|record-reconcile|record-gate-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|plan-hierarchy|verify-worktrees|verify-state|integrity|changesets|upgrade|changelog|rules|write-rules|rules-target\n";
+const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|plan-hierarchy|verify-worktrees|verify-state|integrity|changesets|upgrade|changelog|rules|write-rules|rules-target\n";
 if (!cmd || process.argv.slice(2).some(a => a === "--help" || a === "-h")) {
   process.stdout.write(USAGE);
   process.exit(0);
@@ -123,6 +142,7 @@ try {
   "set-autonomy": setAutonomy,
   "record-reconcile": recordReconcile,
   "record-gate-review": recordGateReview,
+  "record-cross-spec-review": recordCrossSpecReview,
   "record-tracker-refresh": recordTrackerRefresh,
   "set-review-mode": setReviewMode,
   release,

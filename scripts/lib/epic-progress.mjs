@@ -57,10 +57,16 @@ export function firstHeading(absPath) {
 export const strippedChangeId = (name) => String(name).replace(/^\d{4}-\d{2}-\d{2}-/, "");
 
 /** Every directory under `openspec/changes/archive/`, as `{dir, id}` — `dir` as it sits on
- *  disk, `id` normalized. */
-export function archivedChanges() {
+ *  disk, `id` normalized.
+ *
+ *  `dir` defaults to the process-wide ARCHIVE_DIR, which is resolved once at module load from
+ *  `CLAUDE_PROJECT_DIR || cwd`. The parameter exists so a caller that already knows the repo
+ *  root can pass it (cross-spec-review.mjs enumerates a release's specs under a root a test may
+ *  supply) — WITHOUT that caller re-deriving the date-prefix naming rule, which is the one thing
+ *  a second archive reader must never do. */
+export function archivedChanges(dir = ARCHIVE_DIR) {
   try {
-    return fs.readdirSync(ARCHIVE_DIR, { withFileTypes: true })
+    return fs.readdirSync(dir, { withFileTypes: true })
       .filter(d => d.isDirectory())
       .map(d => ({ dir: d.name, id: strippedChangeId(d.name) }));
   } catch { return []; }

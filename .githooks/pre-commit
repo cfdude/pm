@@ -28,6 +28,35 @@ trap 'rm -f "$tmpfile"' EXIT
 #     stops matching (renamed, moved, a typo in the pattern), the suite still passes -- just
 #     with fewer tests. So below we cross-check the runner's reported count against the number
 #     of test() declarations actually present in the source. A drop fails the commit.
+# CONCURRENCY. Several agents working in separate worktrees of this repo each fire this hook,
+# and each run is a ~75s 604-test suite with --test-isolation=process. Overlapping them is the
+# exact machine load under which a previous two-agent run wedged the machine. Worktrees share
+# one common git dir, so a lock there is a lock across all of them.
+#
+# mkdir is the atomic primitive: it succeeds for exactly one caller and fails for the rest, with
+# no read-then-write window. macOS ships no flock(1), and a lockfile written with > is not atomic.
+LOCKDIR="$(git rev-parse --git-common-dir)/pm-suite.lock"
+waited=0
+while ! mkdir "$LOCKDIR" 2>/dev/null; do
+  # A lock whose owner is gone is stale — a killed agent must not block every later commit.
+  owner=$(cat "$LOCKDIR/pid" 2>/dev/null || echo "")
+  if [ -n "$owner" ] && ! kill -0 "$owner" 2>/dev/null; then
+    echo "pre-commit: clearing a suite lock held by dead pid $owner" >&2
+    rm -rf "$LOCKDIR"; continue
+  fi
+  if [ "$waited" -eq 0 ]; then echo "pre-commit: another worktree is running the suite — waiting" >&2; fi
+  sleep 3; waited=$((waited + 3))
+  # Ceiling well above one suite run. Hitting it means something is wrong, and a commit that
+  # waits forever is worse than one that says so.
+  if [ "$waited" -ge 600 ]; then
+    echo "pre-commit: ABORT -- waited ${waited}s for the suite lock at $LOCKDIR" >&2
+    exit 1
+  fi
+done
+echo $$ > "$LOCKDIR/pid"
+trap 'rm -f "$tmpfile"; rm -rf "$LOCKDIR"' EXIT
+[ "$waited" -gt 0 ] && echo "pre-commit: acquired the suite lock after ${waited}s"
+
 if node --test scripts/test/*.test.mjs >"$tmpfile" 2>&1; then
   # node --test's default reporter (and therefore this summary line's leading marker) differs
   # by Node version: newer Node uses the "spec" reporter (ℹ) even when output isn't a TTY,

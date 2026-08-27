@@ -25,8 +25,14 @@ fi
 
 # 3. Never start on top of an orphan; an orphaned worktree can stop Claude Code from starting.
 git -C "$REPO" worktree prune
+# A CAP, not a ban. This refused on any existing worktree, citing the outage as its evidence;
+# that outage's leading explanation is now a denied macOS TCC prompt, not concurrency
+# (docs/lessons/tcc-denial-breaks-getcwd.md), so a blanket ban is stricter than the evidence
+# supports. What genuinely does not scale is the suite, and that is now serialized by a lock in
+# .githooks/pre-commit rather than by forbidding a second tree. Override with WT_MAX.
 n=$(git -C "$REPO" worktree list | wc -l | tr -d ' ')
-[ "$n" -gt 1 ] && fail "$((n-1)) worktree(s) already exist — run scripts/wt-cleanup.sh first."
+existing=$((n - 1))
+[ "$existing" -ge "${WT_MAX:-3}" ] && fail "$existing worktree(s) already exist, cap is ${WT_MAX:-3} — run scripts/wt-cleanup.sh first."
 
 printf '\033[32mOK:\033[0m clean to create a worktree.\n'
 git -C "$REPO" worktree list
