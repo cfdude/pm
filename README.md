@@ -376,6 +376,14 @@ Resumes the top of the detour stack if non-empty; otherwise picks the highest-pr
 `queued` epic (P0→P3), skipping anything starved on an unresolved `depends-on` link and
 naming the blocker when it does.
 
+Reads `## Dependency warnings` first. A blocker does not have to be in the queue to be
+named: an epic's **effective priority** is the best of its own and every epic that
+transitively `depends-on` it, so a `planned` P2 that a `queued` P1 needs renders `P2 → P1`
+and is called out by name. Computed, never stored — the merit priority stays legible, and
+deprioritising the dependent drops the lift with it. An epic waiting on something outside the
+queue is reported as unworkable rather than offered, which forces the decision (*pull the
+dependency forward, or descope the epic waiting on it*) that otherwise just stalls.
+
 </details>
 
 <details>

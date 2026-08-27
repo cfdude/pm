@@ -7,6 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { ROOT, CHANGES_DIR, ARCHIVE_DIR, PLANS_DIR, laneRank, isOpenspecLane } from "./constants.mjs";
 import { engineStamp, isArchiveBackfilled } from "./disposition.mjs";
+import { effectivePriorityOf, priorityRank } from "./dependency-order.mjs";
 
 /** Active openspec change ids = subdirs of openspec/changes except `archive`. */
 export function activeChangeIds() {
@@ -307,9 +308,21 @@ export function resolveEpics(state) {
         status: isArchived(e.id) ? "archived" : e.status, present: false });
     }
   }
-  const rank = { P0: 0, P1: 1, P2: 2, P3: 3, "P?": 9 };
+  // EFFECTIVE priority, attached here and nowhere else. resolveEpics() is the ONE place the
+  // whole record is assembled, and it has exactly two consumers — render() and buildBrief() —
+  // so computing the closure here is what stops PROJECT.md and the brief from being able to
+  // disagree about what outranks what. It is attached to the RESOLVED copy (`{...meta}`), never
+  // to `state.epics`, so nothing reaches state.json: the merit priority stays the only stored
+  // one, and the derived one cannot go stale. See lib/dependency-order.mjs.
+  const eff = effectivePriorityOf(out);
+  for (const e of out) e.effectivePriority = eff.get(e.id) || e.priority;
   out.sort((a, b) =>
-    ((rank[a.priority] ?? 9) - (rank[b.priority] ?? 9)) ||
+    // Dependencies first (as inherited priority), MERIT second — so a lifted blocker leads the
+    // band it was pulled into, while two epics with the same effective priority still order by
+    // what they are worth on their own. With no depends-on edges in the record the first key is
+    // a no-op and this is byte-for-byte the previous ordering.
+    (priorityRank(a.effectivePriority) - priorityRank(b.effectivePriority)) ||
+    (priorityRank(a.priority) - priorityRank(b.priority)) ||
     (laneRank(a.lane) - laneRank(b.lane)) ||
     a.id.localeCompare(b.id));
   return out;

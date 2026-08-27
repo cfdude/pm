@@ -12,6 +12,7 @@ import { stalenessMarking } from "./archive-gate.mjs";
 import { ungatedArchives } from "./integrity.mjs";
 import { KNOWN_LANES, anyInwardProcedureEmittable, gateSummary, outwardApplies, releaseLine, releaseSummaries } from "./constants.mjs";
 import { crossSpecLine } from "./cross-spec-review.mjs";
+import { dependencyNotes } from "./dependency-order.mjs";
 import { conflictCount, conflictWarningLatched, consumeConflictWarning } from "./write-conflicts.mjs";
 import { CONFLICT_WARN_THRESHOLD } from "./constants.mjs";
 import { openspecCurrencyLines } from "./tool-currency.mjs";
@@ -130,6 +131,17 @@ export function buildBrief(state, { consume = false } = {}) {
     const ordered = KNOWN_LANES.filter(l => counts[l]).map(l => `${l} ${counts[l]}`);
     const unknown = Object.keys(counts).filter(l => !KNOWN_LANES.includes(l)).sort().map(l => `${l} ${counts[l]}`);
     L.push(`  lanes: ${[...ordered, ...unknown].join(" · ")}`);
+    L.push("");
+  }
+
+  // DEPENDENCY WARNINGS — deliberately OUTSIDE the `if (queued.length)` block above. The
+  // inversion this reports is at its worst precisely when NEXT UP is empty or when neither
+  // endpoint is in it: a P1 that cannot be started and a blocker nothing schedules. Nesting it
+  // under the queue would hide it in exactly that case. Same lines PROJECT.md renders.
+  const depNotes = dependencyNotes(epics);
+  if (depNotes.length) {
+    L.push("DEPENDENCY WARNINGS (an epic cannot be started until what it waits on moves):");
+    for (const n of depNotes) L.push(`  ⚠ ${n}`);
     L.push("");
   }
 

@@ -150,6 +150,15 @@ remove it and register it again — discarding its start time, its gate verdicts
 its stories along the way. Both are in-place field writes: the epic keeps its position in
 `state.epics[]` and every other field it carries.
 
+> [!WARNING]
+> **`--link` REPLACES the whole links array. It does not append.** Adding one `depends-on` edge
+> to an epic that already has links means passing **every** link that epic should end up with,
+> in one invocation — read its current `links[]` first (`/pm:epic list`, or `.conductor/state.json`).
+> Three separate `update-epic --link` calls, each adding one edge, silently dropped seven
+> existing annotation edges; they were recovered from git, which is not a recovery path that
+> always exists. This bites hardest doing exactly what gh#101 asks for — wiring up dependency
+> edges in bulk.
+
 **`--link` REPLACES the epic's links wholesale**, unlike the other flags which patch a single
 field — this is the intended CLI path to fix a malformed link (recorded with a bad `add-epic
 --link` before this validation existed, or hand-edited) without touching `state.json` directly.

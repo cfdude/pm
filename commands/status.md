@@ -14,7 +14,14 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" render
 Then read `PROJECT.md` and summarize for the user:
 - the **active** epic and its live story progress,
 - the **detour stack** (what's paused and why), flagging any ⚠ reconcile-on-resume,
-- the **next-up** queue by priority,
+- the **next-up** queue by priority — reading the **effective** priority where the Priority
+  column shows `P2 → P1` (P2 on merit, sorting as P1 because a P1 depends on it),
+- **DEPENDENCY WARNINGS**, if any — an epic that cannot be started, what it waits on, and that
+  dependency's status. Report these BEFORE the queue: an epic named on the left of one of them
+  is not workable however high its priority, and the decision it forces (pull the dependency
+  forward, or descope the epic waiting on it) is the point. A `blocked` epic with no
+  `depends-on` link is listed here too — `blocked` otherwise records nothing about what it
+  waits on.
 - **UNGATED ARCHIVES**, if any — epics archived with no Gate 2 review from anyone. This is a
   standing condition rather than an episode: it is recomputed from `state.json` at every
   composition and never consumed, so every session sees it until a real passing verdict
