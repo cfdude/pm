@@ -3026,7 +3026,14 @@
       ],
       "reconcileNeeded": false,
       "externalId": "126",
-      "externalUrl": "https://github.com/cfdude/pm/issues/126"
+      "externalUrl": "https://github.com/cfdude/pm/issues/126",
+      "trackerRefresh": {
+        "verdict": "unchanged",
+        "summary": "read in full before dispatching its agent; body matches the epic — six-question release gate, needs the 0.27.0 release object",
+        "recordedAt": "2026-08-27T04:53:21.046Z",
+        "externalUpdatedAt": "2026-08-23T23:48:36Z"
+      },
+      "externalUpdatedAt": "2026-08-23T23:48:36Z"
     },
     {
       "id": "gh-127-dogfooding-practices-as-product",
@@ -3056,7 +3063,14 @@
       ],
       "reconcileNeeded": false,
       "externalId": "128",
-      "externalUrl": "https://github.com/cfdude/pm/issues/128"
+      "externalUrl": "https://github.com/cfdude/pm/issues/128",
+      "trackerRefresh": {
+        "verdict": "unchanged",
+        "summary": "read in full before dispatching its agent; body matches the epic and names two open decisions (no nudge mid-change, diff not optional)",
+        "recordedAt": "2026-08-27T04:53:22.474Z",
+        "externalUpdatedAt": "2026-08-24T01:20:29Z"
+      },
+      "externalUpdatedAt": "2026-08-24T01:20:29Z"
     },
     {
       "id": "gh-129-attribution-nudge-at-commit-time",
@@ -3283,7 +3297,14 @@
       "reconcileNeeded": false,
       "externalId": "134",
       "externalUrl": "https://github.com/cfdude/pm/issues/134",
-      "attributedCommits": []
+      "attributedCommits": [],
+      "trackerRefresh": {
+        "verdict": "unchanged",
+        "summary": "read in full before dispatching its agent; body matches the epic and rules out fixing it by having the hook write less",
+        "recordedAt": "2026-08-27T04:53:23.882Z",
+        "externalUpdatedAt": "2026-08-25T14:08:28Z"
+      },
+      "externalUpdatedAt": "2026-08-25T14:08:28Z"
     },
     {
       "id": "gh-137-release-completion-cascade",
@@ -3316,6 +3337,25 @@
       "externalId": "136",
       "externalUrl": "https://github.com/cfdude/pm/issues/136",
       "attributedCommits": []
+    },
+    {
+      "id": "gh-138-refresh-warning-counts-terminal-epics",
+      "title": "The never-re-read warning counts epics whose work can never happen — half its number is archived or closed",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-103-tracker-refresh-gate-before-specs",
+          "reason": "103 built the watermark and its warning; 138 is that warning counting epics with no work left to inform"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "138",
+      "externalUrl": "https://github.com/cfdude/pm/issues/138",
+      "attributedCommits": []
     }
   ],
   "detourStack": [],
@@ -3326,7 +3366,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 97,
+  "revision": 103,
   "reviewMode": "thorough",
   "releases": [
     {
@@ -3355,5 +3395,6 @@
         }
       ]
     }
-  ]
+  ],
+  "archiveBackfilledAt": "2026-08-27T04:52:42.658Z"
 }
