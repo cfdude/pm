@@ -2463,7 +2463,12 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "101",
-      "externalUrl": "https://github.com/cfdude/pm/issues/101"
+      "externalUrl": "https://github.com/cfdude/pm/issues/101",
+      "attributedCommits": [
+        "9df34c5",
+        "ee795d8",
+        "eb53f7e"
+      ]
     },
     {
       "id": "2026-08-03-platform-parity-mechanism",
@@ -2690,7 +2695,11 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "112",
-      "externalUrl": "https://github.com/cfdude/pm/issues/112"
+      "externalUrl": "https://github.com/cfdude/pm/issues/112",
+      "attributedCommits": [
+        "f15e061",
+        "a62e587"
+      ]
     },
     {
       "id": "gh-113-gate-verdict-records-no-diff-range",
@@ -3433,7 +3442,9 @@
       "reconcileNeeded": false,
       "externalId": "140",
       "externalUrl": "https://github.com/cfdude/pm/issues/140",
-      "attributedCommits": []
+      "attributedCommits": [
+        "8a203e1"
+      ]
     },
     {
       "id": "gh-142-recorded-sha-unreachable",
@@ -3452,7 +3463,9 @@
       "reconcileNeeded": false,
       "externalId": "142",
       "externalUrl": "https://github.com/cfdude/pm/issues/142",
-      "attributedCommits": []
+      "attributedCommits": [
+        "820f055"
+      ]
     }
   ],
   "detourStack": [],
@@ -3463,7 +3476,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 121,
+  "revision": 128,
   "reviewMode": "thorough",
   "releases": [
     {
