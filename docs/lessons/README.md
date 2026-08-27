@@ -86,4 +86,3 @@ Then regenerate the tables above.
 A lesson that recurs across sessions has outgrown this directory — promote it into the thing that
 enforces it and leave the pointer here. A lesson that turns out to be a **product** gap (the tool
 could have prevented this) crosses lanes: file it as an issue and note the crossing.
-# lock probe 1787806055
