@@ -93,6 +93,49 @@ export function pmCmd(platform, name) {
   return `${prefix}${name}`;
 }
 
+/** THE RECIPROCAL of the registration step, emitted into EVERY inward procedure (gh-137).
+ *
+ *  An inward sync creates an epic from an item and, until this step existed, never ended one.
+ *  0.27.0 shipped, all twenty of its member issues were closed on the tracker, and all twenty
+ *  conductor epics stayed `queued` with no disposition — after which `next` recommended two P0s
+ *  that had shipped hours earlier. The signal was in the sync response the agent was already
+ *  reading: the list is of OPEN items, so an epic linked to an item that is not in it has an item
+ *  that is no longer open.
+ *
+ *  PROPOSE, NEVER WRITE, and that is the whole reason this is instruction rather than engine.
+ *  The outcome and its required reason are a judgment about what happened to the work — shipped,
+ *  killed, replaced, abandoned — and pm may not infer one. An engine-written `delivered` would
+ *  also be exactly the unreplaceable, provenance-free disposition gh-130 is about.
+ *
+ *  ABSENCE FROM THE LIST IS NOT PROOF. An item can be missing because it was deleted,
+ *  transferred, moved out of the queried scope, or simply not returned; so the item is READ
+ *  before anything is proposed. That read is the same one step 5 asks for, which is why the two
+ *  sit together.
+ *
+ *  ALREADY-ARCHIVED EPICS ARE EXCLUDED BY NAME (gh-138). Half of that issue's 59-epic warning is
+ *  work that can never happen — archived, or linked to a closed item — and a step that asked the
+ *  agent to revisit an ended epic would be adding to precisely the count that makes a true
+ *  warning read as a chore nobody starts.
+ *
+ *  Emitted from ONE declaration into BOTH inward emitters — the primary's inward section and the
+ *  secondary loop. Written inline in one of them, the other is the identical sibling site a
+ *  diff-scoped review structurally cannot see. */
+function closedItemStep(platform, sys, n = 6) {
+  return [
+    `${n}. For every epic linked to an item HERE that did NOT appear in the open list you just`,
+    "   read, that item is no longer open — the reciprocal of step 2, and the half that ends an",
+    "   epic rather than creating one. Absence from an open-item list is not proof on its own (an",
+    "   item can be deleted, transferred or moved out of this scope), so READ THE ITEM first.",
+    "   Then, where the epic's status is not already `archived`, PROPOSE its disposition to the",
+    "   user and let them confirm it — never write one unasked:",
+    "   `update-epic <id> --status archived --outcome delivered|killed|superseded|abandoned|declined --reason \"<why>\" --no-deferrals`.",
+    `   WHICH outcome it is, and the reason that goes with it, is a judgment about what happened`,
+    `   to the work; ${sys} closing an item does not say which one and pm will not guess. An epic`,
+    "   that is already `archived` owes nothing here — it ended, and a record that ended does not",
+    `   need a second ending. Then re-render with \`${pmCmd(platform, "status")}\`.`,
+  ];
+}
+
 /** The gate procedure pm EMITS — as NUMBERED REQUIRED TASK ITEMS, never as review guidance.
  *
  *  The form is load-bearing and it was measured, not guessed: across one audited repository a
@@ -489,6 +532,7 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
         "   --external-updated-at <iso>` (or `record-tracker-refresh` when you owe a verdict) —",
         "   seeing an item in the list response is not reading it, so listing alone must never",
         "   advance the watermark or sync erases the drift it exists to find.",
+        ...closedItemStep(platform, sys),
       );
     }
   }
@@ -543,6 +587,7 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
       "   so the same item yields the same epic id everywhere, and issue `#42` in two different",
       "   secondary repos derives two DISTINCT ids rather than colliding. Use a `P0`/`P1`/`P2`/`P3`",
       "   label's priority when the issue carries one, `P2` otherwise.",
+      ...closedItemStep(platform, st.system, 4),
       "",
       "**Completion status writeback** — when an epic whose `externalUrl` matches this secondary",
       `tracker's ${st.repo ? `repo (\`${st.repo}\`)` : `project (\`${st.projectKey}\`)`} transitions to`,

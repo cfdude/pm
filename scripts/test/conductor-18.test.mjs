@@ -12,7 +12,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { tmpRepo, run, readState } from "./helpers.mjs";
+import { tmpRepo, run, readState, writeState } from "./helpers.mjs";
 
 const REPO = new URL("../..", import.meta.url).pathname;
 const { runIntegrity } = await import("../lib/integrity.mjs");
@@ -208,4 +208,73 @@ test("gh-137/gh-112: both checks appear in the report even when they find nothin
       `${id}: a check that measured nothing must still say it ran`);
   }
   assert.ok(readState(cwd), "integrity writes no state");
+});
+
+// ─────────── the instruction half — sync proposes the disposition for a closed item ───────────
+//
+// The ENGINE may not ask a tracker anything (pm is an instruction layer, never an integration
+// layer), so the half of gh-137 that needs tracker state belongs in the emitted procedure the
+// agent already runs. Sync lists OPEN items; an epic linked to an item that is not in that list
+// has an item that is no longer open. That is the reciprocal of the registration step, and it
+// was missing: sync could create an epic from an item and never close one.
+//
+// PROPOSING, never writing. The outcome and its required reason are a judgment about what
+// happened to the work; an engine-inferred `delivered` would be exactly the unreplaceable,
+// provenance-free disposition gh-130 is about.
+
+const rulesWith = (tracker, secondaryTrackers) => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const state = readState(cwd);
+  if (tracker) state.tracker = tracker;
+  if (secondaryTrackers) state.secondaryTrackers = secondaryTrackers;
+  writeState(cwd, state);
+  return run(["rules"], { cwd });
+};
+
+const flat = (s) => s.replace(/\n\s*/g, " ");
+
+/** BOTH inward emitters, derived from the sweep rather than typed: `rg "Inward tracker sync|
+ *  GitHub issue sync|Secondary tracker sync" scripts/lib/rules.mjs` finds exactly two blocks that
+ *  emit a "list open items" procedure — the primary's inward section and the secondary loop. A
+ *  step added to one and not the other is the diff-scoped omission the gate procedure names. */
+const INWARD_EMITTERS = [
+  ["primary · github-issues", () => rulesWith({ system: "github-issues", repo: "o/n", direction: "inward" })],
+  ["primary · jira", () => rulesWith({ system: "jira", projectKey: "JOB", direction: "inward" })],
+  ["secondary", () => rulesWith({ system: "github-issues", repo: "o/n", direction: "outward" },
+    [{ system: "github-issues", repo: "o/second", role: "secondary" }])],
+];
+
+for (const [name, emit] of INWARD_EMITTERS) {
+  test(`gh-137: ${name} — the inward procedure closes the loop on an item that is no longer open`, () => {
+    const block = flat(emit());
+    assert.match(block, /no longer open/,
+      "an epic linked to an item absent from the open list is the signal nothing consumed");
+    assert.match(block, /--outcome delivered\|killed\|superseded\|abandoned/,
+      "the proposal names the vocabulary the disposition must come from");
+    assert.match(block, /PROPOSE/,
+      "proposing, not writing — the outcome and its reason are the agent's judgment, and an " +
+      "engine-inferred disposition is unreplaceable (gh-130)");
+  });
+
+  test(`gh-137: ${name} — the procedure does not treat absence from the list as proof`, () => {
+    const block = flat(emit());
+    assert.match(block, /read the item/i,
+      "absence from an open-item list also covers a deleted, transferred or out-of-scope item, " +
+      "so the item itself is read before anything is proposed");
+  });
+
+  test(`gh-137: ${name} — only a NON-TERMINAL epic is proposed for (gh-138)`, () => {
+    const block = flat(emit());
+    assert.match(block, /already `archived`/,
+      "an epic that has ended owes nothing here — gh-138's count is half work that can never " +
+      "happen, and this step must not add to it");
+  });
+}
+
+test("gh-137: an outward-only repo is instructed to close no epic — it reads no list", () => {
+  const block = flat(rulesWith({ system: "jira", projectKey: "JOB", direction: "outward" }));
+  assert.doesNotMatch(block, /no longer open/,
+    "the step hangs off the list the inward pull performs; a repo that lists nothing cannot run " +
+    "it, and emitting it would point at a step that is not there");
 });
