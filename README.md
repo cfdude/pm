@@ -726,6 +726,32 @@ Installed to `skills/` on `/pm:init`:
 | PostToolUse (`git commit`) | Calls `commit-nudge`: nudges a state update after every commit; also auto-detects an unlogged minimal detour from commit shape (excluding routine conductor bookkeeping commits). |
 | PreToolUse (gate-guard) | Hard-blocks `Edit`/`Write`/`NotebookEdit` while the active epic owes a reconcile — on by default, unconditional for that case. |
 
+**Tool currency.** `pm` and `superpowers` are plugins that update themselves, but **OpenSpec is a
+CLI you upgrade by hand** — and `openspec update`, which regenerates the per-project instruction
+files, slash commands and skills the whole OpenSpec lane runs on, is a *separate* manual
+per-project step. So a machine can sit on OpenSpec 1.10 while a project still runs 1.6's generated
+artifacts, indefinitely, with nothing saying so. (Measured in this repo: four minor versions
+stale, while actively running an OpenSpec change.)
+
+The session brief and `/pm:upgrade` now both report that drift, from one shared emitter so the two
+can never disagree. Three things about how it behaves:
+
+- **`pm` never runs `openspec update`.** It emits the instruction and you run the terminal
+  command, exactly as with `openspec init` — a source scan in the test suite fails the build if
+  any engine file ever passes the `openspec` binary an argv other than `--version`.
+- **It holds rather than suppressing itself mid-change.** `openspec update` rewrites the
+  instruction files an in-flight change is being authored against, so with an active change the
+  drift is still reported but the imperative becomes *hold until `<change>` is archived*.
+  Suppressing outright would silence it permanently in any repo that usually has a change open —
+  which is precisely how the drift above accumulated unseen.
+- **It tells you whether a diff will exist.** Where the generated files are git-tracked,
+  `git diff` after the run *is* your review; where they are not, it says to copy them aside
+  first, because the rewrite destroys local edits to `.claude/skills/openspec-…` with no diff and
+  no trace.
+
+Either version being undeterminable is reported as *cannot tell*, never as stale, and nothing is
+spawned at all unless the repo has an `openspec/` directory and a readable generated stamp.
+
 **Agents** (`agents/`) — dispatched by name, run in a clean context:
 
 | Agent | Purpose |

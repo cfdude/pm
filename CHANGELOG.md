@@ -8,6 +8,95 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.28.0] — 2026-08-27
+
+### Added
+
+- **A release-scope review gate** (#126). pm's gate vocabulary was per CHANGE — Gate 1 reviews one
+  change's artifacts, Gate 2 its implementation — so nothing asked whether a release's specs agree
+  WITH EACH OTHER. On 0.27.0 that question returned 5 Critical and 10 Important against six specs
+  that had each passed `openspec validate --strict` and would each have passed Gate 1 alone,
+  including a flagship scenario that was unreachable and a shared flag allowlist four capabilities
+  all needed to grow.
+  - New subcommand `record-cross-spec-review <releaseId> --verdict pass|fail [--reviewer "<who>"]`
+    records the verdict on `state.releases[].crossSpecReview`. The **engine** enumerates the
+    release's spec set from disk and stores a SHA-256 per file it read — an agent never supplies
+    the list, because a spec list typed by the party being reviewed goes stale in exactly the way
+    this gate exists to catch.
+  - A spec **added** to the release after the verdict, or a reviewed spec **amended**, marks it
+    `⚠ stale` on PROJECT.md and the session brief; an unreadable spec reads `⚠ unverifiable` and a
+    `pass` is refused rather than recorded against evidence that does not exist. The record is
+    keyed change-relative, so the `/opsx:archive` move never reads as staleness. Re-recording
+    supersedes the prior verdict and keeps it readable, one nested level.
+  - The gate applies at **two or more spec files counted flat** across a release's member changes,
+    so one change carrying six specs qualifies exactly as six changes carrying one each do. Below
+    it the verb refuses: Gate 1 covers a single spec completely.
+  - A multi-spec release with no verdict at all renders `⚠ no cross-spec review (N specs)` —
+    silence would be indistinguishable from "reviewed and clean".
+  - New slash command `/pm:cross-spec-review` carries the procedure, the six questions
+    (contradiction, double ownership, unmeetable requirements, gaps, vocabulary forks, shared
+    chokepoints) and the BLOCKS/POLISH adjudication, and the rules block now emits it as a
+    **numbered required task item** alongside the other five.
+  - The `review-mode` dial covers it: `standard` gets one fresh-context reviewer, `thorough` two
+    with different lenses (coherence/contradiction, falsifiability/dependency-order).
+
+No migration: `crossSpecReview` is a purely additive optional field on the release object that
+shipped in 0.27.0, and a state file written by the prior version loads unchanged.
+
+- **OpenSpec currency check (gh#128)** — `pm` and `superpowers` are plugins that auto-update, but
+  OpenSpec is a CLI the user upgrades by hand, and `openspec update` — which regenerates the
+  per-project instruction files, slash commands and skills the whole OpenSpec lane runs on — is a
+  separate manual per-project step that nothing anywhere asked about. Measured in pm's own
+  repository: four minor versions stale (1.6.0 artifacts against a 1.10.0 CLI) while actively
+  running an OpenSpec change, with two upstream slash commands its agents could not know existed.
+  The SessionStart/PreCompact brief and `/pm:upgrade` now both report the drift, from one shared
+  emitter so the two surfaces cannot disagree.
+  - The project's generated version is read from the `generatedBy` stamp in the frontmatter of
+    each `SKILL.md` under a `.claude/skills/openspec-…` directory; where they disagree after a
+    partial update, the **oldest** governs, because that is the text the agent is actually reading.
+  - The installed CLI version comes from a read-only `openspec --version`. **`pm` never runs
+    `openspec update`** — it emits the instruction and the user runs the terminal command, exactly
+    as with `openspec init`. A source scan in the suite fails the build if any engine file ever
+    passes the `openspec` binary an argv other than `--version`.
+  - Either version being undeterminable is **cannot-tell**, never stale — the same third answer
+    `git.mjs`'s `isAncestor()` gives. Nothing is spawned at all unless the repo has an `openspec/`
+    directory *and* a readable generated stamp.
+  - **The nudge holds mid-change rather than suppressing itself.** `openspec update` rewrites the
+    instruction files an in-flight change is being authored against, so with an active change the
+    drift is still reported but the imperative becomes "hold until `<change>` is archived".
+    Suppressing outright would silence it permanently in any repo that usually has a change open —
+    which is exactly how the measured drift accumulated unseen.
+  - **The review instruction adapts to whether a diff will exist.** Where the generated files are
+    git-tracked, `git diff` after the run *is* the review; where they are not tracked (or that
+    cannot be confirmed), the nudge says to copy them aside first, because the rewrite would
+    otherwise destroy local edits to `.claude/skills/openspec-…` with no trace and no diff.
+    Tracked-ness is scoped to THIS project even when it is nested inside a larger repository —
+    `git ls-files` walks up, but a cwd-relative pathspec keeps both the match and the printed
+    paths under the project root, so an enclosing repo's own `openspec-…` skills are never
+    mistaken for this project's. Pinned by a test in both directions.
+
+No `state.json` schema change and therefore no `MIGRATIONS` entry: this is a read of the working
+tree, reported.
+
+### Fixed
+
+- **Developing `pm` no longer runs a stale engine.** Every entry point the plugin ships —
+  `hooks/hooks.json` and each `commands/*.md` — invokes the engine through
+  `${CLAUDE_PLUGIN_ROOT}`, which resolves to the *installed* plugin rather than the checkout
+  being edited. Export `PM_ENGINE_DELEGATION=/abs/path/to/your/pm/checkout` and the engine
+  hands the whole invocation off to `<checkout>/scripts/conductor.mjs` before doing any work,
+  so the `PostToolUse` commit hook stops re-rendering the tracked `PROJECT.md` with output a
+  release behind the working tree. The handoff repoints `CLAUDE_PLUGIN_ROOT` at the checkout,
+  propagates the child's exit code (the `gate-guard` `PreToolUse` hook blocks by exit code),
+  and falls back to running in place if it cannot start. (#134)
+
+  It is **opt-in**, and the opt-in names one absolute path, because this decision is evaluated
+  in **every project on the machine** — initialized or not, by four hooks, on roughly every
+  turn — and it decides whether to execute code the *project* supplies. Nothing readable from
+  inside a repository can enable it: a `.claude-plugin/plugin.json` naming `pm` is two lines a
+  hostile repo writes, so it authorizes nothing and only ever acts as a sanity check on a path
+  the user already named. Unset, which is the default, no handoff is considered at all.
+
 ## [0.27.0] — 2026-08-25
 
 **The conductor tells the truth.** A retrospective delivery audit of 49 archived OpenSpec epics
