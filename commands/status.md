@@ -49,9 +49,18 @@ does not reach the commits it cites, a gate recorded as bookkeeping rather than 
 `delivered` epic that attributed no commits, an archived openspec-lane epic with a passing Gate 2
 and no Gate 1, an epic archived with an `ungated` Gate 2, an epic the archive-drift heal flipped
 that reads `outcome: unknown` while carrying a passing Gate 2, a dangling epic reference, an
-archive directory no epic corresponds to, and a recorded commit sha this repository can no longer
-resolve. It reports every check with its count, including the ones that found nothing, so a check
-that measured nothing is visibly a check that ran.
+archive directory no epic corresponds to, a recorded commit sha this repository can no longer
+resolve, an epic still open in a release that has already delivered, and an epic another epic
+declares it supersedes that never ended. It reports every check with its count, including the
+ones that found nothing, so a check that measured nothing is visibly a check that ran.
+
+`delivered-release-epic-left-open` is the one that catches a release closing out. A release
+object carries no delivery marker, so "the release delivered" is read from its members — at
+least one carrying a `delivered` disposition, and none `active` or `paused`, so a staged release
+in flight stays silent. Anything left non-terminal that the release's own `deferred[]` does not
+name is reported: the record says neither that it shipped nor that it was cut. That is #137,
+where 0.27.0 shipped with all twenty of its member epics still `queued` and `next` then
+recommended two P0s that had shipped hours earlier.
 
 `recorded-sha-the-repository-cannot-resolve` is the one with a deadline. A squash-merge orphans
 every commit on the merged branch — they are reachable from no ref and the next `git gc` deletes
