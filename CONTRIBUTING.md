@@ -37,6 +37,56 @@ git config core.hooksPath .githooks
 After that, `git commit` runs `.githooks/pre-commit` automatically, which runs
 `node --test scripts/test/*.test.mjs` and blocks the commit on any failure.
 
+## Developing pm with pm (required one-time setup)
+
+**This repository is managed by the plugin it ships.** That is deliberate — pm dogfoods itself —
+and it creates one problem you have to solve before your first commit, or you will fight it the
+way this project's maintainer fought it for a whole release.
+
+### The problem
+
+Every hook and slash command pm ships invokes the engine through `${CLAUDE_PLUGIN_ROOT}`, which
+resolves to the **installed** plugin in `~/.claude/plugins/cache/`. When the project you are
+working in *is* pm, that engine is behind your working tree. Its `PostToolUse` hook then fires on
+every commit and rewrites the tracked `PROJECT.md` using an engine that predates your change —
+silently reverting rendering your branch just added, and staging it as an apparent regression if
+you use a broad `git add`.
+
+Nothing warns you. The hook is not something you invoke, so there is nothing to doubt.
+
+### The fix — one environment variable, set once
+
+```sh
+# in ~/.zshrc, ~/.config/zsh/40-env.zsh, ~/.bashrc — wherever your shell reads
+export PM_ENGINE_DELEGATION="$HOME/path/to/your/pm/checkout"
+```
+
+With it set, the installed engine hands off to **your checkout's** engine for that one tree, so
+hooks and slash commands run the code you are editing.
+
+**It must live outside the repository, and that is not an oversight.** A plugin's reach ends at
+the project it is invoked in; it cannot write your shell profile. That boundary is exactly what
+makes the variable trustworthy: the value names one checkout and is compared by `realpath`, so
+authorization comes from your environment, which a repository cannot reach. A bare `=1` would
+authorize the handoff in every project that shell ever opens — do not substitute one.
+
+If you prefer per-project configuration, `.claude/settings.json`'s `env` block is worth testing
+for your setup; whether it reaches plugin hook subprocesses has not been measured here.
+
+### Who needs this
+
+**Contributors to pm, and nobody else.** If you *use* pm on your own projects, you never set this
+and should not: without it the installed plugin runs its own engine, which is the correct
+behaviour. There is no configuration for pm's users to do — this whole section is a consequence
+of pm being the thing under development.
+
+Verify it took, from your checkout:
+
+```sh
+PM_VERBOSE_ENGINE_BANNER=1 node scripts/conductor.mjs status | head -1
+# → conductor: engine <version> @ /your/checkout/scripts
+```
+
 ## If main moves out from under your PR
 
 The normal flow above assumes every change to `main` comes through a `dev` → `main` PR. That

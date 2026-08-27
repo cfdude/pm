@@ -781,6 +781,22 @@ pm/ (this repo)
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the dev/main branch workflow, PR requirements, and
 CI gate. See [CHANGELOG.md](CHANGELOG.md) for version history.
 
+**Contributing to pm itself requires one-time setup that pm's own users do not need.** This
+repository is managed by the plugin it ships, so pm's hooks would otherwise run the *installed*
+engine against your *checkout* — rewriting the tracked `PROJECT.md` with output a release out of
+date, on every commit. Export `PM_ENGINE_DELEGATION` naming your checkout, in your shell profile:
+
+```sh
+export PM_ENGINE_DELEGATION="$HOME/path/to/your/pm/checkout"
+```
+
+It lives outside the repository because a plugin cannot write your shell profile — which is
+precisely what makes it a trustworthy authorization. Full explanation, and how to verify it took,
+in [CONTRIBUTING.md](CONTRIBUTING.md#developing-pm-with-pm-required-one-time-setup).
+
+**If you are a pm *user*, there is nothing here for you to configure.** Unset is the default and
+the correct state; the installed plugin runs its own engine, as it should.
+
 ## Roadmap
 
 Tracked in this repo's own conductor backlog (`PROJECT.md`) rather than a separate board —

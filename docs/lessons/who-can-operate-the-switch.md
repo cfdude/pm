@@ -1,52 +1,52 @@
 ---
 lesson: who-can-operate-the-switch
 date: 2026-08-27
-trigger: A review says a change is unsafe and you are about to gate it, OR you are adding a control, flag, or opt-in that something outside the tool's reach has to set.
-cost: A full build-review-rework cycle across two agent runs, ~350k tokens, plus a security-critical code path added to a shipped engine that only its own developer could ever enable.
-rule: Before gating, ask who can operate the switch and how many people benefit. A plugin cannot set an env var, a shell profile, or a global config — so a gate living there is a gate the product can never turn on. When the beneficiary population is the developer, the fix belongs in the repo, not in the shipped artifact.
-enforced_in: habit — the three questions below; no mechanism
-tags: [security, boundaries, review, scope]
+trigger: You are about to describe a change as a security problem, OR you are adding a control that something outside the tool's reach has to set.
+cost: An argument that ran three rounds and nearly deleted a working feature. The maintainer had to say "I don't think I got a straight answer" before the actual question — who needs this? — got answered in one sentence.
+rule: A plugin's reach ends at the project it runs in. A control living outside that boundary is therefore a CONTRIBUTOR requirement by definition — document it in CONTRIBUTING.md and the README, do not treat it as a defect. And name the audience before naming the risk: "developers of this tool need X" is a different conversation from "this is a security issue."
+enforced_in: CONTRIBUTING.md § Developing pm with pm; README.md § Development
+tags: [security, boundaries, communication, scope, oss]
 ---
 
-**Cause.** A review finds a real hole and proposes a gate. The gate is sound in isolation, so it
-gets built. Nobody asks the two questions that decide whether the *feature* should exist:
+**Cause.** A real bug got a real fix, a review found a real hole in the fix, and the fix's fix was
+a sound gate. Every step was defensible. What went wrong was the *framing*: the gate was presented
+as a security matter, so a bounded question about contributor tooling got argued as a question
+about product safety. Three rounds later the maintainer asked plainly — *do I need this personally,
+as the developer of this project?* — and the answer was one sentence that had never been said.
 
-1. **Who can operate the switch?** A plugin's reach ends at the project it is invoked in. It
-   cannot write your `~/.config/zsh`, your env, or your global config. A control that lives in any
-   of those can be set by a human, on one machine, by hand — never by the product, for anyone.
-2. **Who benefits?** Count them. If the answer is "the person developing this tool", the change is
-   developer tooling and belongs in that repo's own configuration, not in the artifact every user
-   installs.
+**The one sentence.** *You, and only you — because you are developing the tool.* Everything else
+followed from it, and none of it was in dispute once it was said.
 
-A third question follows from the first two, and it is the one most often skipped: **is "remove
-it" on the table?** A finding says a change is *unsafe*. It does not say the change is *worth
-making*. Gating is one response; deleting is another, and it is the cheaper one whenever the
-beneficiary population is one person.
+**Why the boundary makes this a documentation task, not a defect.** A plugin is installed into a
+host and invoked on a project. It cannot write your shell profile, your environment, or your global
+config; it can only influence the project it is running in. So a control that must live outside the
+project can never be set by the product for anybody — which sounds like an argument for deleting
+it, and is not. It is an argument about **who the control is for**:
 
-**Worked example.** pm's hooks invoke `${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs` — the
-INSTALLED plugin. Developing pm therefore ran an engine a release behind the working tree, which
-rewrote a tracked file with stale output on every commit. Real pain, a whole release of it.
+- Needed by ordinary users → the product cannot deliver it. Redesign or drop it.
+- Needed by people **developing the product** → correct and expected. Developers configure their
+  own environment; that is what a development environment is. It belongs in **CONTRIBUTING.md**
+  and in the README's contributor section, labelled as required setup that users do not need.
 
-The fix made the engine hand off to the checkout's engine. A fresh-context review then proved —
-by running it — that any directory containing `.claude-plugin/plugin.json` with `{"name":"pm"}`
-and a `scripts/conductor.mjs` got code execution on session start. Real hole; the manifest check
-was a file the untrusted side writes.
+This is free and open source. Shipping a developer tool in the product is fine, and other
+contributors will need the same setup. What is not fine is shipping it undocumented, where the
+only person who knows it exists is the person who wrote it.
 
-The rework gated it behind `PM_ENGINE_DELEGATION=<absolute path>`, matched by realpath. Sound.
-Also, as the maintainer pointed out immediately: **the plugin can never set that variable.** Only
-a human editing a shell profile can. So every user's engine gained a security-critical code path
-evaluated on every invocation, for a feature exactly one person on earth could enable.
+**Worked example.** pm's hooks invoke `${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs` — the INSTALLED
+plugin. Developing pm therefore ran an engine a release behind the working tree, rewriting a
+tracked file with stale output on every commit, for a whole release. The fix handed off to the
+checkout's engine; a fresh-context review proved by running it that any directory with a
+`.claude-plugin/plugin.json` naming `pm` and a `scripts/conductor.mjs` then got code execution at
+session start. The gate — `PM_ENGINE_DELEGATION=<absolute path>`, matched by realpath — closes it.
+The vulnerability was real and the gate is sound. **The feature was kept.** What changed was that
+it got labelled a developer necessity and written into CONTRIBUTING.md and the README.
 
-**What should have happened.** The project owns `.claude/settings.json`. Repointing
-`CLAUDE_PLUGIN_ROOT` there — project-scoped, checked into the repo, no shipped code, no new
-surface for anyone — is the shape to test *before* building anything into the engine.
+**The tell, and what to do with it.** You are writing documentation that tells someone to export a
+variable or edit a dotfile to use a feature the product ships. That is not automatically a smell —
+it is a *question*: who is that someone? If the answer is "a user", the design is wrong. If the
+answer is "a contributor", the docs are missing. Answer the question before proposing a fix.
 
-**What this is NOT.** It is not "security findings are theater." The vulnerability was real and
-reproduced twice, and the gate does protect against it. The error was upstream of the gate: a
-convenience feature was allowed into the shipped artifact without anyone counting its users. Say
-that distinction out loud when pushing back, or the pushback reads as dismissing the finding.
-
-**The tell.** You are writing documentation that tells a user to export something, edit a dotfile,
-or change a global config in order to use a feature the product ships. That instruction is the
-product admitting it cannot deliver the feature itself. See [[review-findings-are-not-a-mandate]] —
-same family: a finding is an input to a decision, not the decision.
+**What this is NOT.** Not "security findings are theater." The finding was correct, reproduced
+twice, and the gate stayed. Do not let a framing correction read as dismissing the finding —
+see [[review-findings-are-not-a-mandate]]: a finding is an input to a decision, and the decision
+still has to be made on its own terms.
