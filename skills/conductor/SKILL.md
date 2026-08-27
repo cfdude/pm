@@ -41,6 +41,14 @@ is unlikely) — set `PM_VERBOSE_ENGINE_BANNER=1` to force it back on if you nee
 source there. `PM_QUIET_ENGINE_BANNER=1` still works as an explicit suppress outside that
 context too.
 
+The engine now enforces that same preference itself, for the callers that cannot run the snippet
+below: `hooks/hooks.json` invokes it through `$CLAUDE_PLUGIN_ROOT` with no chance to resolve
+anything, so an installed engine that finds itself running against a pm checkout — both
+`scripts/conductor.mjs` and a `.claude-plugin/plugin.json` naming `pm` present in the project dir
+— hands the whole invocation off to that checkout's engine before doing any work. Set
+`PM_NO_ENGINE_DELEGATION=1` to opt out. This only exists once the *installed* plugin carries the
+release that added it, so keep resolving `$ENGINE` as below rather than relying on it.
+
 ```bash
 ENGINE="${CLAUDE_PROJECT_DIR:+$CLAUDE_PROJECT_DIR/scripts/conductor.mjs}"
 [ -f "$ENGINE" ] || ENGINE="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/scripts/conductor.mjs}"

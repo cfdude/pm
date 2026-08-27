@@ -4,7 +4,7 @@ date: 2026-08-23
 trigger: Developing a plugin, CLI, or tool while also using that tool in the same session — including any HOOK it installs, which fires without being invoked.
 cost: `/pm:status` ran the installed 0.26.0 engine and rewrote a generated file with output predating the worktree's changes — which a broad `git add` would then commit as an apparent regression.
 rule: When developing the tool itself, invoke the checkout directly (`node scripts/conductor.mjs <verb>`), never the installed slash command.
-enforced_in: subagent brief template
+enforced_in: subagent brief template; conductor.mjs self-hosting handoff (bootstrap-limited)
 detect: {"tool":"Bash","commandMatches":"(^|[;&|]\\s*)/pm:"}
 tags: [tooling, generated-files, self-hosting]
 ---
