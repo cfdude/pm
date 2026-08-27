@@ -82,6 +82,11 @@ import { delegateToCheckout } from "./lib/self-hosting.mjs";
 // commit. Hand off to the checkout's engine before ANY other work: before the banner, before
 // --help, before dispatch, so the delegated process owns the whole invocation and nothing is
 // printed twice.
+//
+// OPT-IN ONLY, via PM_ENGINE_DELEGATION naming the checkout's absolute path. This is the single
+// place the engine can execute code it did not ship, and the four hooks reach it in every
+// project on the machine — see the trust-boundary note at the top of lib/self-hosting.mjs
+// before loosening the condition.
 const delegated = delegateToCheckout({ selfPath: fileURLToPath(import.meta.url) });
 if (delegated !== null) process.exit(delegated);
 

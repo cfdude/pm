@@ -27,6 +27,27 @@ instructions the interactive Claude Code agent acts on with its own tooling. Thi
 narrows the engine's own attack surface; most of what a security report would concern is either
 in that instruction-shaping logic or in how a consuming repo's agent acts on it.
 
+### The one place the engine executes code it did not ship
+
+`pm` installs four hooks — `SessionStart`, `PreToolUse`, `PostToolUse`, `PreCompact` — which run
+in **every** project on the machine, initialized or not, whether or not that project has ever run
+`/pm:init`. With one exception, everything they execute ships with the plugin.
+
+The exception is the self-hosting handoff (`scripts/lib/self-hosting.mjs`): so that developing
+`pm` does not run an engine a release behind the checkout, the installed engine can re-exec
+`<project>/scripts/conductor.mjs`. Because that is project-supplied code, the decision to do it
+is **opt-in and comes solely from the environment**: it happens only when
+`PM_ENGINE_DELEGATION` is set to an absolute path that resolves to the same tree as the project
+being run in. Unset — the default, and what every ordinary user sees — no handoff is ever
+considered.
+
+Nothing readable from inside a repository can enable this. In particular the presence of
+`scripts/conductor.mjs`, or a `.claude-plugin/plugin.json` naming `pm`, grants nothing: those are
+sanity checks applied *after* authorization, on a path the user has already named, and they are
+not a credential — a repository can write both. Any change that lets a project's own contents
+influence whether its code is executed is a vulnerability in this file's terms, and is worth
+reporting even if it looks like a convenience.
+
 ## Automated scanning
 
 This repository runs Semgrep (SAST) and Trivy (filesystem vulnerability scanning) on every push
