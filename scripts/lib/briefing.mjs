@@ -13,6 +13,7 @@ import { ungatedArchives } from "./integrity.mjs";
 import { KNOWN_LANES, anyInwardProcedureEmittable, gateSummary, outwardApplies, releaseLine, releaseSummaries } from "./constants.mjs";
 import { conflictCount, conflictWarningLatched, consumeConflictWarning } from "./write-conflicts.mjs";
 import { CONFLICT_WARN_THRESHOLD } from "./constants.mjs";
+import { openspecCurrencyLines } from "./tool-currency.mjs";
 
 export function buildBrief(state, { consume = false } = {}) {
   const epics = resolveEpics(state);
@@ -34,6 +35,19 @@ export function buildBrief(state, { consume = false } = {}) {
       for (const h of changelogAddedHeadlines(stamped, running)) L.push(`   - ${h}`);
       L.push("");
     }
+  }
+
+  // gh#128 — the SAME question the block above asks, for a tool that cannot answer it itself.
+  // pm is a plugin and auto-updates; OpenSpec is a CLI the user upgrades by hand, and
+  // `openspec update` is a further manual per-project step nothing anywhere asks about. Sits
+  // here, immediately after pm's own version nudge, because it is the same class of finding and
+  // because a reader who scrolls past the top of a brief never sees a currency warning at all.
+  // Emits nothing (and spawns nothing) unless this repo has an `openspec/` directory AND a
+  // readable generated stamp — see tool-currency.mjs's guard-ordering note.
+  const openspecLines = openspecCurrencyLines();
+  if (openspecLines.length) {
+    for (const l of openspecLines) L.push(l);
+    L.push("");
   }
 
   L.push("CONDUCTOR STATE — where we are and what's next");
