@@ -122,6 +122,11 @@ file a bug report or feature request for `pm` itself as a GitHub issue on `cfdud
   (validated: parent exists, no self/cycle) or bulk-create a parent + children atomically with
   `add-many --from <json>`. PROJECT.md indents children and rolls up `X/Y children archived`;
   NEXT UP keeps global priority order (grouping is render-only).
+- **Effective priority (computed, never stored):** an epic's effective priority is the best of
+  its own and every epic that transitively `depends-on` it. A `planned` P2 that a `queued` P1
+  needs sorts as P1 and renders `P2 → P1`; the merit priority stays visible, so you can still
+  tell the goal from the means. An ARCHIVED dependent lifts nothing — a satisfied dependency has
+  nothing left to unblock. Deprioritise the dependent and the lift drops with it.
 - **Tracker awareness (instruction layer ONLY — never call the tracker yourself from the
   engine): DIRECTION decides what is emitted, never the vendor.** Every tracker carries an
   explicit `direction` — `inward` | `outward` | `both` — set with `set-tracker --direction <d>`
@@ -389,6 +394,14 @@ The step otherwise lost after compaction. Do not skip it.
 Resume the **top of the detour stack** first if non-empty. Otherwise the highest-priority
 `queued` epic (P0→P3). Surface ties to the user.
 
+**Read `## Dependency warnings` in PROJECT.md first** (and the brief's `DEPENDENCY WARNINGS`
+block — same lines). An epic named on the left of one of those lines is not workable, whatever
+its priority: name the dependency, state its status and effective priority, and put the choice
+to the user — *pull the dependency forward, or descope the epic waiting on it*. That is the
+whole value; the alternative is a stall nothing asks about. A `blocked` epic with no
+`depends-on` link is reported there too, because `blocked` otherwise records nothing about what
+it waits on.
+
 ## Keeping the index honest (non-blocking enforcement)
 
 - After completing stories: tick `tasks.md` checkboxes (OpenSpec), then render.
@@ -486,7 +499,10 @@ does **not** parse roadmap files automatically.
 1. Read the roadmap file; list the items for the user to confirm.
 2. For each item: `/pm:epic add --id <slug> --title "…" --lane <lane> --priority P2 --status planned`
    - Choose lane: `openspec` | `superpowers` | `claude-code` | `decision` | `external`
-3. `planned` items appear in PROJECT.md but are excluded from NEXT UP and lanes rollup.
+3. `planned` items appear in PROJECT.md but are excluded from NEXT UP and lanes rollup. They are
+   still NAMED: a `planned` epic something queued `depends-on` carries the dependent's effective
+   priority and is called out under `## Dependency warnings`. Not scheduled and not nameable are
+   different claims — promoting it to `queued` stays a decision you make.
 4. When you create an OpenSpec change for a `planned` epic and run `/pm:sync`, it
    auto-transitions to `untriaged` and enters the normal triage flow.
 5. Triage the backlog: set priorities, promote items to `queued` as work becomes ready.
@@ -748,7 +764,11 @@ detourStack[] : { pausedEpic, pausedAt, reason, spawnedDetour, reconcileOnResume
 status   ∈ active | paused | queued | later | blocked | archived | untriaged | planned
 role     ∈ epic | detour
 lane     ∈ openspec | superpowers | claude-code | decision | external   (default: openspec)
-priority ∈ P0 | P1 | P2 | P3 | P?
+priority ∈ P0 | P1 | P2 | P3 | P?   — MERIT priority, the only one stored
+rank?         : manual placement WITHIN one priority band, dense 1..N. Written ONLY by
+                `reorder <id> <id> …` (which takes the whole band and refuses a partial one);
+                cleared by `update-epic --priority` on a real band change. Absent is legal and
+                sorts after every ranked epic. LAST sort key: dependencies → priority → rank.
 parent        : id of another epic — single-parent tree (validated: exists, no self/cycle)
 externalId/externalUrl : link to a tracker issue (system comes from the tracker block)
 tracker.statusIntent   : { <conductor-status>: "<semantic target>" } — NOT a literal transition

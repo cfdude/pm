@@ -257,7 +257,23 @@ export function updateEpic() {
   // it used to is the whole reason remove-and-re-register was the only correction available.
   if (lane !== undefined) epic.lane = lane;
   if (planPath !== undefined) epic.planPath = planPath;
-  if (str(f.priority) !== undefined) epic.priority = str(f.priority);
+  // A manual `rank` is a placement among ONE band's peers, so it does not survive a move to
+  // another band — it would collide with that band's own 1..N numbering, and the number would
+  // claim a position nobody chose in a set nobody compared. Cleared on a REAL band change only:
+  // re-stating the priority an epic already has changes nothing and must not silently discard a
+  // deliberate order. Announced on stderr rather than done silently — this is the one place
+  // anything but `reorder` touches the field, and an unannounced clear is indistinguishable
+  // from the rank never having been set. See lib/rank.mjs for the invariant.
+  const newPriority = str(f.priority);
+  if (newPriority !== undefined) {
+    if (newPriority !== epic.priority && epic.rank !== undefined) {
+      process.stderr.write(`conductor: cleared \`${epic.id}\`'s rank (${epic.rank}) — it was a ` +
+        `placement among ${epic.priority} epics, and this moves it to ${newPriority}. ` +
+        `Re-run \`reorder\` on the ${newPriority} band to place it.\n`);
+      delete epic.rank;
+    }
+    epic.priority = newPriority;
+  }
   if (links !== undefined) epic.links = links;
   if (reviewMode !== undefined) epic.reviewMode = reviewMode;
   if (attributed.length) {

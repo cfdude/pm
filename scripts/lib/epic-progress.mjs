@@ -7,6 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { ROOT, CHANGES_DIR, ARCHIVE_DIR, PLANS_DIR, laneRank, isOpenspecLane } from "./constants.mjs";
 import { engineStamp, isArchiveBackfilled } from "./disposition.mjs";
+import { effectivePriorityOf, priorityRank } from "./dependency-order.mjs";
 
 /** Active openspec change ids = subdirs of openspec/changes except `archive`. */
 export function activeChangeIds() {
@@ -286,6 +287,18 @@ export function outstandingWork(epic) {
   return Math.max(0, p.total - p.done);
 }
 
+/** An epic's MANUAL RANK as a sort key — placement among equals within one priority band.
+ *  Unranked (absent, non-integer, or non-positive) is Infinity, so it sorts AFTER every ranked
+ *  epic in its band rather than before it: a newly registered epic must not jump a deliberately
+ *  ordered prefix just because its id happens to sort first, and an unranked record orders
+ *  exactly as it did before rank existed.
+ *
+ *  Defined here rather than in lib/rank.mjs — which owns the WRITE side, the `reorder` verb and
+ *  the invariant's full statement — so the key and the comparator that consumes it sit in one
+ *  file and cannot drift apart. rank.mjs is also a leaf on the render path, and importing it
+ *  here would close a cycle. */
+export const rankOf = (e) => (Number.isInteger(e && e.rank) && e.rank > 0 ? e.rank : Infinity);
+
 /** Merge state metadata with what's actually on disk. */
 export function resolveEpics(state) {
   const onDisk = new Set(activeChangeIds());
@@ -307,9 +320,26 @@ export function resolveEpics(state) {
         status: isArchived(e.id) ? "archived" : e.status, present: false });
     }
   }
-  const rank = { P0: 0, P1: 1, P2: 2, P3: 3, "P?": 9 };
+  // EFFECTIVE priority, attached here and nowhere else. resolveEpics() is the ONE place the
+  // whole record is assembled, and it has exactly two consumers — render() and buildBrief() —
+  // so computing the closure here is what stops PROJECT.md and the brief from being able to
+  // disagree about what outranks what. It is attached to the RESOLVED copy (`{...meta}`), never
+  // to `state.epics`, so nothing reaches state.json: the merit priority stays the only stored
+  // one, and the derived one cannot go stale. See lib/dependency-order.mjs.
+  const eff = effectivePriorityOf(out);
+  for (const e of out) e.effectivePriority = eff.get(e.id) || e.priority;
   out.sort((a, b) =>
-    ((rank[a.priority] ?? 9) - (rank[b.priority] ?? 9)) ||
+    // Dependencies first (as inherited priority), MERIT second — so a lifted blocker leads the
+    // band it was pulled into, while two epics with the same effective priority still order by
+    // what they are worth on their own. With no depends-on edges in the record the first key is
+    // a no-op and this is byte-for-byte the previous ordering.
+    (priorityRank(a.effectivePriority) - priorityRank(b.effectivePriority)) ||
+    (priorityRank(a.priority) - priorityRank(b.priority)) ||
+    // MANUAL RANK, and it sits here — after both priorities, before lane. A human's explicit
+    // placement among equals should beat a mechanical lane heuristic; it must never beat a
+    // dependency or a priority, which is what putting it any higher would do. Unranked is
+    // Infinity, so with nothing ranked this key is a no-op and the ordering is unchanged.
+    (rankOf(a) - rankOf(b)) ||
     (laneRank(a.lane) - laneRank(b.lane)) ||
     a.id.localeCompare(b.id));
   return out;
@@ -330,8 +360,16 @@ export function missing(e) {
  *  top-level queued/untriaged epics generally — the same starvation problem exists there: a
  *  higher-priority epic with an unresolved `depends-on` link to another still-queued epic would
  *  otherwise be listed (and picked by /pm:next) ahead of the very dependency it's waiting on.
- *  `sorted` is a priority-then-lane-then-id-ordered list (resolveEpics()'s existing sort,
- *  already filtered to queued/untriaged + not-missing). Returns `{ ordered, notes }`. */
+ *  `sorted` is a list in resolveEpics()'s order — effective priority, then merit priority, then
+ *  manual rank, then lane, then id — already filtered to queued/untriaged + not-missing.
+ *  Returns `{ ordered, notes }`.
+ *
+ *  This pass is DEPENDENCY-AWARE ONLY WITHIN THE SET IT IS HANDED, which is queued/untriaged.
+ *  An edge pointing at any other status is invisible here BY CONSTRUCTION and is the province
+ *  of lib/dependency-order.mjs — effective priority (which reorders the whole record) and
+ *  `dependencyNotes()` (which names the inversion). Do not widen this function's input to fix
+ *  that: `planned`/`later` epics staying out of NEXT UP is a deliberate membership contract
+ *  with tests behind it. */
 export function orderQueueWithDependencies(sorted) {
   const ids = new Set(sorted.map(e => e.id));
   const deps = new Map(sorted.map(e => [e.id, new Set(

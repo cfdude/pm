@@ -376,6 +376,14 @@ Resumes the top of the detour stack if non-empty; otherwise picks the highest-pr
 `queued` epic (P0→P3), skipping anything starved on an unresolved `depends-on` link and
 naming the blocker when it does.
 
+Reads `## Dependency warnings` first. A blocker does not have to be in the queue to be
+named: an epic's **effective priority** is the best of its own and every epic that
+transitively `depends-on` it, so a `planned` P2 that a `queued` P1 needs renders `P2 → P1`
+and is called out by name. Computed, never stored — the merit priority stays legible, and
+deprioritising the dependent drops the lift with it. An epic waiting on something outside the
+queue is reported as unworkable rather than offered, which forces the decision (*pull the
+dependency forward, or descope the epic waiting on it*) that otherwise just stalls.
+
 </details>
 
 <details>
@@ -492,6 +500,7 @@ deduplicated by `externalUrl` (globally unique) rather than bare `externalId`.
 | `update-epic <id> --attribute-commit <sha>` | Record a commit as this epic's work. Repeatable, append-only, in landing order. The engine infers attribution from **nothing** — not the files a commit touches, not an epic id in a message — so an unattributed commit is one the epic's Gate 2 cannot be checked against. **Do not attribute the commit that moves `openspec/changes/<id>/` under `archive/`**: it lands after the reviewed range by construction and makes the epic's own Gate 2 stale at the instant the archive gate reads it. |
 | `update-epic <id> --status archived --outcome delivered\|killed\|superseded\|abandoned --reason "<why>" --no-deferrals` | **How work ends** — a terminal disposition with its reason, never deletion. Every outcome except `delivered` requires the reason. The deferral assertion is required in the *same* invocation: swap `--no-deferrals` for `--deferral "<epicId>:<section>"` where work is now held by a registered epic, or `--declined-deferral "<what>:<why not>"` where you are deliberately not doing it. Add `--carried-to <epicId> --reason "<which tasks moved>"` to hand off unfinished work. |
 | `remove-epic <id> [--cascade]` | Hard-delete; blocked by default if it has children (`--cascade` removes descendants too). Strips dangling links elsewhere. |
+| `reorder <id> <id> …` | **Manual rank** — place the epics of ONE priority band, top to bottom, in the order given. Ranks are rewritten dense `1..N` on every call, and this is the only thing that writes `rank`. Takes the whole band and refuses a partial one, so the numbering stays contiguous by construction; unranked epics sort after every ranked one. Rank is the LAST sort key (dependencies → priority → **rank**) — it breaks ties that today fall through to alphabetical order, and never outranks a dependency or a priority. `update-epic --priority` clears an epic's rank, since a placement among one band's peers means nothing among another's. |
 | `set-active <id>` / `clear-active` | Set/clear the top-level active epic. |
 
 **Inline story mutation** — `--add-story "<title>"` appends `{ title, done: false }` to the
