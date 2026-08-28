@@ -2457,7 +2457,7 @@
       "id": "gh-101-dependency-order-blind-to-blocked",
       "title": "Dependency ordering cannot see blocked/planned epics, so a P1 blocked by a backlog P2 surfaces no inversion",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -2468,7 +2468,18 @@
         "9df34c5",
         "ee795d8",
         "eb53f7e"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-27T23:19:11.691Z",
+        "reason": "shipped in 0.29.0 (2a42688): effective priority over the depends-on closure, dependency warnings in both surfaces, reorder for manual rank"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-27T23:19:11.690Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-27T23:19:11.691Z"
     },
     {
       "id": "2026-08-03-platform-parity-mechanism",
@@ -2689,7 +2700,7 @@
       "id": "gh-112-backlog-triage-at-intake",
       "title": "The conductor accepts work; it does not triage it",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -2699,7 +2710,18 @@
       "attributedCommits": [
         "f15e061",
         "a62e587"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-27T23:19:14.972Z",
+        "reason": "shipped in 0.29.0 (2a42688): triage emits a candidate set and never a verdict; IDF over the backlog itself; declined as a terminal outcome"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-27T23:19:14.971Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-27T23:19:14.972Z"
     },
     {
       "id": "gh-113-gate-verdict-records-no-diff-range",
@@ -3378,7 +3400,13 @@
       "reconcileNeeded": false,
       "externalId": "137",
       "externalUrl": "https://github.com/cfdude/pm/issues/137",
-      "attributedCommits": []
+      "attributedCommits": [
+        "6aac753",
+        "ddda66d",
+        "e3c0f37",
+        "0bce014",
+        "9382183"
+      ]
     },
     {
       "id": "gh-136-add-epic-notes-discarded",
@@ -3429,13 +3457,17 @@
       "reconcileNeeded": false,
       "externalId": "139",
       "externalUrl": "https://github.com/cfdude/pm/issues/139",
-      "attributedCommits": []
+      "attributedCommits": [
+        "48a4c76",
+        "567f4e2",
+        "278b344"
+      ]
     },
     {
       "id": "gh-140-attribution-write-not-persisted",
       "title": "An epic's attributedCommits silently did not reach the commit that claimed to record it",
       "priority": "P1",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -3444,13 +3476,24 @@
       "externalUrl": "https://github.com/cfdude/pm/issues/140",
       "attributedCommits": [
         "8a203e1"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-27T23:19:17.925Z",
+        "reason": "shipped in 0.29.0 (2a42688): saveState and update-epic both read back from disk. Root cause of the filed incident remains unestablished; what closed is the class the engine could not distinguish"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-27T23:19:17.924Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-27T23:19:17.925Z"
     },
     {
       "id": "gh-142-recorded-sha-unreachable",
       "title": "Nothing notices when a recorded sha becomes unreachable — a squash-merge silently turns every gate verdict unverifiable",
       "priority": "P1",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -3465,7 +3508,18 @@
       "externalUrl": "https://github.com/cfdude/pm/issues/142",
       "attributedCommits": [
         "820f055"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-27T23:19:20.493Z",
+        "reason": "shipped in 0.29.0 (2a42688): integrity check distinguishing orphaned from absent, probe-gated so a shallow CI clone is not reported as a disaster"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-27T23:19:20.492Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-27T23:19:20.493Z"
     }
   ],
   "detourStack": [],
@@ -3476,7 +3530,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 128,
+  "revision": 140,
   "reviewMode": "thorough",
   "releases": [
     {

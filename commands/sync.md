@@ -9,7 +9,7 @@ Pull any OpenSpec changes that aren't yet tracked into the conductor.
 node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" sync
 ```
 (If `${CLAUDE_PLUGIN_ROOT}` is empty:
-`ENGINE="${CLAUDE_PROJECT_DIR:+$CLAUDE_PROJECT_DIR/scripts/conductor.mjs}"; [ -f "$ENGINE" ] || ENGINE="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/scripts/conductor.mjs}"; [ -f "$ENGINE" ] || ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1); node "$ENGINE" sync`)
+`ENGINE="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/scripts/conductor.mjs}"; [ -f "$ENGINE" ] || ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1); node "$ENGINE" sync`)
 
 New proposals are added with `status: "untriaged"` and `priority: "P?"`. Then help the user
 triage each: assign a priority, set its status (queued/later), and add any epic links
@@ -46,7 +46,14 @@ carries the exact steps for whichever branch applies:
   `externalUrl` does not already match an epic, then compare each ALREADY-linked epic's
   `externalUpdatedAt` watermark against its item's tracker-side updated timestamp and read the
   ones that moved. Seeing an item in a list response is **not** reading it — listing must never
-  advance a watermark, or sync erases the drift it exists to find.
+  advance a watermark, or sync erases the drift it exists to find. Then run the **reciprocal**
+  step: an epic linked to an item that did NOT appear in the open list has an item that is no
+  longer open. Read that item (absence from a list also covers deleted, transferred and
+  out-of-scope), and where the epic is not already `archived`, **propose** its disposition —
+  never write one unasked. Which outcome it is, and the reason with it, is a judgment about what
+  happened to the work; a closed item does not say which one and pm will not guess. Without this
+  half, sync can create an epic from an item and never end one: 0.27.0 shipped, all twenty of
+  its member issues closed, and all twenty epics stayed `queued` (#137).
 - **Outward only** (or a tracker that names no scope): read nothing external. `sync` registers
   local OpenSpec/Superpowers sources and stops. Its confirmation line says so.
 
