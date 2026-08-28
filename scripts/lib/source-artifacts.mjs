@@ -87,14 +87,22 @@ export function syncIgnoredArtifacts(state) {
  *  was leaving an `archived` epic behind, which works today only because the dedup keys on id
  *  EXISTENCE rather than status — but `remove-epic` exists for an epic registered in error,
  *  where there is no work and so no disposition to record, and a tombstone epic would be a
- *  disposition-shaped record of nothing. */
+ *  disposition-shaped record of nothing.
+ *
+ *  `removedEpic` is deliberately NOT registered in epicReferences() (links.mjs), which declares
+ *  every place the record holds a LIVE epic id for the removal sweep and the
+ *  `dangling-epic-reference` check to read. This one is HISTORICAL by construction — it names
+ *  the epic whose removal created the tombstone, so it dangles the instant it is written and
+ *  always will. Registering it would make every tombstone a permanent finding and have the
+ *  sweep strip the provenance that is the entry's whole point. The name says which kind it is;
+ *  nothing renders it or resolves it. */
 export function ignoreArtifact(state, p, { epic, reason } = {}) {
   const norm = normalizeArtifactPath(p);
   if (!norm) return false;
   if (!Array.isArray(state.syncIgnore)) state.syncIgnore = [];
   if (state.syncIgnore.some(i => normalizeArtifactPath(i && typeof i === "object" ? i.path : i) === norm)) return false;
   const entry = { path: norm, at: new Date().toISOString() };
-  if (epic) entry.epic = epic;
+  if (epic) entry.removedEpic = epic;
   if (reason) entry.reason = reason;
   state.syncIgnore.push(entry);
   return true;

@@ -245,6 +245,12 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" remove-epic <id> [--cascade]
   the blocked attempt printed and get explicit confirmation. The engine has no interactive
   prompt of its own; that confirmation step is the agent's job, not the CLI's.
 - If the removed epic was `.active`, the pointer is cleared automatically.
+- **A removal now survives the next `sync`.** Removing an epic that claimed a source artifact
+  (its `planPath`) records a `syncIgnore` tombstone for that path, over the whole `--cascade` set
+  and not just the named epic — previously `remove-epic` bought you only until the next sync,
+  which re-registered byte-identical ids within the hour. The tombstone is inspectable in
+  `.conductor/state.json` and reversible by the action that contradicts it: attaching that
+  artifact to an epic (`update-epic <id> --plan <path>`) clears it.
 
 ## Set the active epic — `set-active` / `clear-active`
 

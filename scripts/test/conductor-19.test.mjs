@@ -65,18 +65,26 @@ test("gh-64: the claim is status-blind — an ARCHIVED epic's plan is not re-off
   const cwd = tmpRepo();
   const p = withPlan(cwd, "2026-08-03-platform-parity-mechanism.md");
   seed(cwd, [epic({ id: "platform-parity-mechanism", status: "archived", lane: "openspec", planPath: p })]);
-  run(["sync"], { cwd });
+  const out = runCombined(["sync"], { cwd });
   assert.deepEqual(ids(cwd), ["platform-parity-mechanism"],
     "a shipped plan must stop being re-offered — the done-signal #69 asks for");
+  // WHICH rung answered is the assertion, not merely that nothing was registered. This fixture
+  // uses the real live pair, whose names also satisfy the date-prefix rung — so without this,
+  // deleting the claim check entirely leaves the test green. Found by mutation-testing the
+  // helper: it survived here while failing three other tests.
+  assert.match(out, /claimed by epic 'platform-parity-mechanism'/,
+    "the CLAIM must be what suppressed it — a name match is the fallback, not the mechanism");
 });
 
 test("gh-64: the claim is lane-blind — a decision-lane epic may hold a superpowers plan", () => {
   const cwd = tmpRepo();
   const p = withPlan(cwd, "2026-07-14-epic-hierarchy-orchestration.md");
   seed(cwd, [epic({ id: "epic-hierarchy-orchestration", lane: "decision", planPath: p })]);
-  run(["sync"], { cwd });
+  const out = runCombined(["sync"], { cwd });
   assert.deepEqual(ids(cwd), ["epic-hierarchy-orchestration"],
     "two of this repo's four live dual-lane pairs hold `decision` on the un-prefixed side");
+  assert.match(out, /claimed by epic 'epic-hierarchy-orchestration'/,
+    "same reason as the status-blind case — pin the rung, not just the outcome");
 });
 
 test("a plan no epic claims is still registered — the ladder must not suppress real backlog", () => {
@@ -88,6 +96,31 @@ test("a plan no epic claims is still registered — the ladder must not suppress
   assert.ok(e, "an unclaimed, unmatched plan is real backlog and must register");
   assert.equal(e.planPath, rel("2026-08-01-genuinely-new.md"));
   assert.equal(e.lane, "superpowers");
+});
+
+test("a claim spelled './docs/...' is the same artifact as 'docs/...'", () => {
+  const cwd = tmpRepo();
+  withPlan(cwd, "2026-08-20-leading-dot.md");
+  // Nothing stops an operator typing the path with a `./` prefix (tab-completion produces it),
+  // and `update-epic --plan` stores whatever it is given. Two spellings of one file reading as
+  // two artifacts puts the phantom straight back — the same bug through the front door.
+  // Caught by mutation-testing normalizeArtifactPath to the identity function: it SURVIVED the
+  // suite as first written.
+  seed(cwd, [epic({ id: "dotted", planPath: "./docs/superpowers/plans/2026-08-20-leading-dot.md" })]);
+  const out = runCombined(["sync"], { cwd });
+  assert.deepEqual(ids(cwd), ["dotted"]);
+  assert.match(out, /claimed by epic 'dotted'/);
+});
+
+test("a tombstone written with one spelling suppresses the other", () => {
+  const cwd = tmpRepo();
+  const p = withPlan(cwd, "2026-08-21-dotted-phantom.md");
+  seed(cwd, [epic({ id: "2026-08-21-dotted-phantom", planPath: `./${p}` })]);
+  run(["remove-epic", "2026-08-21-dotted-phantom"], { cwd });
+  assert.deepEqual(readState(cwd).syncIgnore.map(i => i.path), [p],
+    "the tombstone is stored normalized, or sync's lookup misses it");
+  run(["sync"], { cwd });
+  assert.deepEqual(ids(cwd), []);
 });
 
 // ─────────── rung 4: the recovery path for epics registered before `--plan` existed ───────────
@@ -192,6 +225,22 @@ test("add-many clears a tombstone on a batch entry's planPath", () => {
 });
 
 // ─────────── back-compat: nothing existing must be transformed ───────────
+
+test("a tombstone's removedEpic is historical and must not be reported as a dangling reference", async () => {
+  const cwd = tmpRepo();
+  const p = withPlan(cwd, "2026-08-22-gone.md");
+  seed(cwd, [epic({ id: "2026-08-22-gone", planPath: p })]);
+  run(["remove-epic", "2026-08-22-gone"], { cwd });
+  const st = readState(cwd);
+  assert.equal(st.syncIgnore[0].removedEpic, "2026-08-22-gone", "provenance is the entry's point");
+  // It dangles by construction — the epic is gone, that is WHY the tombstone exists. Registering
+  // it in epicReferences() would make every tombstone a permanent finding and have remove-epic's
+  // own sweep strip the provenance. This pins that decision so a later maintainer who adds it
+  // fails here rather than in a user's briefing.
+  const { runIntegrity } = await import("../lib/integrity.mjs");
+  const dangling = runIntegrity(st).find(c => c.id === "dangling-epic-reference");
+  assert.deepEqual(dangling.findings, []);
+});
 
 // ─────────── the family: #92's specPath must fit this shape, not invent a second one ───────────
 

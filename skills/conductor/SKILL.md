@@ -790,6 +790,13 @@ link.type ∈ resolves-blocker-for | may-invalidate | depends-on | relates-to | 
                (`supersedes` = this epic REPLACES that one — recorded at intake when triage
                 finds the same ask already registered; end the superseded epic with
                 `--outcome superseded` in the same breath, or the consolidation is only half done)
-planPath      : repo-relative path to a markdown plan (progress source for superpowers lane)
+planPath      : repo-relative path to a markdown plan (progress source for superpowers lane,
+                and the epic↔plan ASSOCIATION `sync` dedups on — a plan some epic claims is
+                never registered a second time, whatever the epic's id, lane or status)
+syncIgnore[]  : [{ path, at, removedEpic?, reason? }] — source artifacts `sync` must not
+                register. Written by the removal verb so a removal survives the next sync;
+                cleared by attaching that artifact to an epic (`update-epic --plan <path>`).
+                `removedEpic` is HISTORICAL and dangles by construction — never swept, never
+                reported as a dangling reference. Absent means empty; no migration.
 stories[]     : [{ title, done }] — inline progress (highest-priority source)
 ```
