@@ -16,7 +16,7 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" changesets
 ```
 
 If `${CLAUDE_PLUGIN_ROOT}` is empty:
-`ENGINE="${CLAUDE_PROJECT_DIR:+$CLAUDE_PROJECT_DIR/scripts/conductor.mjs}"; [ -f "$ENGINE" ] || ENGINE="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/scripts/conductor.mjs}"; [ -f "$ENGINE" ] || ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1); node "$ENGINE" changesets`
+`ENGINE="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/scripts/conductor.mjs}"; [ -f "$ENGINE" ] || ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1); node "$ENGINE" changesets`
 
 Prints `{ changesets: [{ id, path, body }] }`, sorted by epic id. `[]` if `.changesets/` doesn't
 exist or is empty — never errors on a missing directory.

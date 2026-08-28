@@ -48,6 +48,22 @@ not a credential — a repository can write both. Any change that lets a project
 influence whether its code is executed is a vulnerability in this file's terms, and is worth
 reporting even if it looks like a convenience.
 
+### The instruction surfaces the agent acts on
+
+The engine is not the only thing that can name a path for `node` to run. `commands/*.md`,
+`skills/`, `agents/` and `hooks/` are instructions an interactive agent executes, so an engine
+path written there is executed just as surely as one the engine computes. Through 0.29.0
+fourteen of those files resolved the engine from `$CLAUDE_PROJECT_DIR` on nothing but an `-f`
+test, which handed any project carrying a `scripts/conductor.mjs` a `node` invocation whenever a
+user typed a `/pm:*` command (#139). That arm is gone: the shipped surfaces now resolve the
+engine only from the plugin — `$CLAUDE_PLUGIN_ROOT`, else the newest copy in
+`~/.claude/plugins/cache/` — and `scripts/test/engine-resolution.test.mjs` fails CI if any file
+under those directories reintroduces either resolution shape it matches: the
+`${CLAUDE_PROJECT_DIR:+…}` expansion that shipped, or a direct
+`$CLAUDE_PROJECT_DIR/scripts/conductor.mjs`. It is a regression guard against the pattern that
+appeared, not a proof that no indirection could express the same idea — a report of one that
+slips past it is welcome.
+
 ## Automated scanning
 
 This repository runs Semgrep (SAST) and Trivy (filesystem vulnerability scanning) on every push
