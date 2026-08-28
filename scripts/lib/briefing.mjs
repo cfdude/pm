@@ -255,7 +255,32 @@ export function buildBrief(state, { consume = false } = {}) {
   // Freshness — locally computable and nothing more. How many linked items have NEWER remote
   // activity is a network call the engine is forbidden to make, so the honest population is the
   // one whose content has never been read since it was mirrored.
-  const neverReRead = epics.filter(e => e.externalId && !e.externalUpdatedAt && !missing(e));
+  //
+  // SCOPED AWAY FROM TERMINAL EPICS (gh-138), and the reading of "terminal" is `status ===
+  // "archived"` — the same one 0.30.0's `superseded-epic-never-ended` and
+  // `delivered-release-epic-left-open` use, because a user who learns the rule at one surface
+  // must not be surprised at another. Measured when gh-138 was filed: of 59 counted here, 29
+  // were archived or had an already-closed item, twenty of them epics 0.27.0 had DELIVERED. Half
+  // the number was work that can never happen, and the remedy the line names provably could not
+  // clear it — `/pm:sync` reads OPEN items, and an epic that ended has no open item to read. An
+  // inflated count is how a true warning gets ignored, and an ignored warning enforces nothing.
+  //
+  // THE ARCHIVE DISPOSITION IS THE DISCHARGE — deliberately, rather than a terminal watermark.
+  // The obligation is "re-read the linked item before the epic becomes the work"; an epic that
+  // ended never becomes the work again, whatever its outcome. rules.mjs's `closedItemStep()`
+  // already ships that semantics in the instruction half — "An epic that is already `archived`
+  // owes nothing here — it ended, and a record that ended does not need a second ending" — so
+  // counting those epics was the engine contradicting text it emits. A terminal watermark would
+  // be a SECOND mechanism for what the disposition already accomplishes, with its own writer,
+  // its own verb and its own staleness story.
+  //
+  // `inCompletionScope` is deliberately NOT applied, and for a DIFFERENT reason than the two
+  // 0.30.0 checks give: those exempt epics whose ending is already explained, whereas here every
+  // ending discharges regardless of outcome or provenance. Applying it would re-include exactly
+  // the `killed`/`superseded`/`abandoned`/`declined` and archive-backfilled epics — the inverse
+  // of the fix. `later` and `planned` stay in scope: they can still become work.
+  const neverReRead = epics.filter(e =>
+    e.externalId && !e.externalUpdatedAt && !missing(e) && e.status !== "archived");
   if (inwardHere && neverReRead.length) {
     trackerLines.push(`  ⚠ ${neverReRead.length} tracker-linked epic(s) never re-read since mirroring — run \`/pm:sync\``);
   }

@@ -198,6 +198,16 @@ file a bug report or feature request for `pm` itself as a GitHub issue on `cfdud
   **provenance** — does this epic have an `externalId` — never on direction: an epic with none
   re-reads its LOCAL source (plan, or proposal plus tasks) and `record-tracker-refresh` refuses it
   by name.
+- **The brief's freshness line counts only epics that can still become work.** `⚠ N
+  tracker-linked epic(s) never re-read since mirroring` excludes every `archived` epic: the
+  ARCHIVE DISPOSITION discharges the refresh obligation outright, whatever the outcome, because
+  work that ended never becomes the work again. Nothing needs a terminal watermark. The closed
+  half is the agent's, not the engine's — the engine cannot know an item is closed without
+  integration it must never do, so the inward-sync step that reads the open list is what turns
+  "item no longer open" into a proposed disposition, and the disposition is what clears the
+  count. Measured on this repo when the behavior was filed as a bug: 59 counted, 29 of them
+  ended or closed, and `/pm:sync` — the action the line names — provably could not clear those
+  29, because an epic that ended has no open item to read.
 
 ## OpenSpec build — the two-gate mechanical check
 
