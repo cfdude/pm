@@ -220,6 +220,7 @@ test("every add-many key the registry declares round-trips through a batch entry
       externalId: "JOB-1", externalUrl: "https://example.test/JOB-1",
       planPath: "docs/superpowers/plans/x.md", links: [], description: "why this epic exists",
       externalUpdatedAt: "2026-08-23T09:30:00Z",
+      stories: ["a milestone", { title: "one already behind us", done: true }],
     }],
   });
   run(["add-many", "--from", batch], { cwd });
@@ -301,6 +302,19 @@ const EXERCISE = {
   // by the same invocation and each asserts the half it is responsible for.
   "--story": { setup: ["--add-story", "s1"], args: ["--story", "1", "--done"], check: (e) => assert.equal(e.stories[0].done, true) },
   "--done": { setup: ["--add-story", "s1"], args: ["--story", "1", "--done"], check: (e) => assert.equal(e.stories[0].done, true) },
+  // --wont-do is the second half of --story's mutation pair. The row must SURVIVE, so this
+  // asserts the title is still there alongside the disposition — a check on the disposition
+  // alone would pass against an implementation that dropped the story and appended a record.
+  "--wont-do": {
+    setup: ["--add-story", "s1"],
+    args: ["--story", "1", "--wont-do", "descoped by the release cut"],
+    check: (e) => {
+      assert.equal(e.stories[0].title, "s1");
+      assert.equal(e.stories[0].done, false);
+      assert.equal(e.stories[0].disposition.state, "wont-do");
+      assert.equal(e.stories[0].disposition.reason, "descoped by the release cut");
+    },
+  },
 };
 
 test("every DOCUMENTED update-epic flag is accepted and its value reads back from state", () => {

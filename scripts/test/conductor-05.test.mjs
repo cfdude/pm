@@ -69,14 +69,17 @@ test("update-epic --story out of range (including 0, and beyond the array length
   assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
 });
 
-test("update-epic --story without --done is rejected (only supported story mutation today), and --done without --story is rejected", () => {
+// gh#95 amended this contract: `--story <n>` now takes TWO mutations, `--done` and
+// `--wont-do "<reason>"`, so the refusal names both rather than "--done" alone.
+test("update-epic --story without a mutation is rejected naming both, and --done without --story is rejected", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
   run(["add-epic", "--id", "a", "--lane", "claude-code"], { cwd });
   run(["update-epic", "a", "--add-story", "Only story"], { cwd });
   const err1 = expectFail(() => run(["update-epic", "a", "--story", "1"], { cwd }));
   assert.ok(err1);
-  assert.match(String(err1.stderr || err1.message), /requires --done/);
+  assert.match(String(err1.stderr || err1.message), /requires a mutation/);
+  assert.match(String(err1.stderr || err1.message), /--done/);
   const err2 = expectFail(() => run(["update-epic", "a", "--done"], { cwd }));
   assert.ok(err2);
   assert.match(String(err2.stderr || err2.message), /requires --story/);

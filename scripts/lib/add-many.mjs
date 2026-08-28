@@ -5,7 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { activate } from "./active-pointer.mjs";
-import { parentError, parseFlags } from "./add-epic.mjs";
+import { newStory, parentError, parseFlags } from "./add-epic.mjs";
 import { isInitialized, loadState, pushEpic, saveState, readStdin } from "./state.mjs";
 import { render } from "./render.mjs";
 import { ROOT, KNOWN_LANES, KNOWN_STATUSES, epicBatchKeys } from "./constants.mjs";
@@ -63,6 +63,25 @@ export function addMany() {
       die(`epic '${id}': unsupported key(s) ${unknownKeys.join(", ")} ` +
         `(supported: ${allowedKeys.join(", ")})`);
     }
+    // `stories` is the first ARRAY-valued batch key that is not `links`, and the copy loop below
+    // takes only strings — so without this it would be accepted by the allowlist and then
+    // silently dropped, which is the exit-0-write-nothing shape twice over. Validated in THIS
+    // pass, before any epic is constructed, so a batch with one bad story creates nothing.
+    //
+    // Two accepted element shapes, because a plan being registered may already have milestones
+    // behind it: a plain title string, or `{title, done?}`. Anything else is refused by name.
+    if (e.stories !== undefined) {
+      if (!Array.isArray(e.stories)) die(`epic '${id}': stories must be an array of titles or {title, done} objects`);
+      for (const s of e.stories) {
+        const title = typeof s === "string" ? s : (s && typeof s.title === "string" ? s.title : undefined);
+        if (title === undefined || !title.trim()) {
+          die(`epic '${id}': every entry in stories needs a non-empty title (got ${JSON.stringify(s)})`);
+        }
+        if (s && typeof s === "object" && s.done !== undefined && typeof s.done !== "boolean") {
+          die(`epic '${id}': story '${title}' has a non-boolean done`);
+        }
+      }
+    }
     if (!e.lane || !KNOWN_LANES.includes(e.lane)) die(`epic '${id}': lane must be one of ${KNOWN_LANES.join("|")}`);
     const status = e.status || "queued";
     if (!KNOWN_STATUSES.includes(status)) die(`epic '${id}': status must be one of ${KNOWN_STATUSES.join("|")}`);
@@ -90,6 +109,13 @@ export function addMany() {
       const v = e[key];
       if (v === undefined || v === null) continue;
       if (key === "links") { if (Array.isArray(v)) epic.links = v; continue; }
+      // Normalized through newStory() rather than copied verbatim: a batch may write a bare
+      // title string, and every other writer produces `{title, done}`. One row shape, one
+      // constructor — see newStory() in add-epic.mjs. Validated above, so this cannot throw.
+      if (key === "stories") {
+        epic.stories = v.map(s => (typeof s === "string" ? newStory(s) : newStory(s.title, s.done)));
+        continue;
+      }
       if (typeof v === "string") epic[key] = v;
     }
     // The second archived-at-creation path, carrying its OWN token so a rule applied to one

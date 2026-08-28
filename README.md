@@ -514,21 +514,39 @@ sync; attaching that plan to an epic clears it. Attach the plan
 
 | Subcommand | Does |
 |------------|------|
-| `add --id X --title "…" --lane L --priority P [--status S] [--parent ID] [--external-id KEY]` | Register any epic in any lane; optionally nest under a parent or link a tracker issue. |
-| `add-many --from <path\|->` | Atomically bulk-create a parent + children from a JSON batch. |
-| `update-epic <id> [--title …] [--status …] [--lane …] [--priority …] [--parent …] [--plan …] [--link …] [--clear-links] [--description "…"] [--notes "…"] [--external-id …] [--external-url …] [--external-updated-at <iso>] [--review-mode …] [--add-story "<title>"] [--story <n> --done]` | Write-back path — title corrections, status/lane/priority changes, links, free-text annotation, tracker linkage, per-epic review-mode escalation, inline story mutation (see below). |
+| `add --id X --title "…" --lane L --priority P [--status S] [--parent ID] [--external-id KEY] [--add-story "<milestone>" …]` | Register any epic in any lane; optionally nest under a parent or link a tracker issue. `--add-story` is **repeatable**, so a plan's milestones land in the same write as the epic instead of one `update-epic` call at a time afterwards. |
+| `add-many --from <path\|->` | Atomically bulk-create a parent + children from a JSON batch. Each entry may carry a `stories` array — plain titles, or `{"title": "…", "done": true}` — validated in the same up-front pass, so a blank title refuses the whole batch. |
+| `update-epic <id> [--title …] [--status …] [--lane …] [--priority …] [--parent …] [--plan …] [--link …] [--clear-links] [--description "…"] [--notes "…"] [--external-id …] [--external-url …] [--external-updated-at <iso>] [--review-mode …] [--add-story "<title>"] [--story <n> --done\|--wont-do "<reason>"]` | Write-back path — title corrections, status/lane/priority changes, links, free-text annotation, tracker linkage, per-epic review-mode escalation, inline story mutation (see below). |
 | `update-epic <id> --attribute-commit <sha>` | Record a commit as this epic's work. Repeatable, append-only, in landing order. The engine infers attribution from **nothing** — not the files a commit touches, not an epic id in a message — so an unattributed commit is one the epic's Gate 2 cannot be checked against. **Do not attribute the commit that moves `openspec/changes/<id>/` under `archive/`**: it lands after the reviewed range by construction and makes the epic's own Gate 2 stale at the instant the archive gate reads it. |
 | `update-epic <id> --status archived --outcome delivered\|killed\|superseded\|abandoned --reason "<why>" --no-deferrals` | **How work ends** — a terminal disposition with its reason, never deletion. Every outcome except `delivered` requires the reason. The deferral assertion is required in the *same* invocation: swap `--no-deferrals` for `--deferral "<epicId>:<section>"` where work is now held by a registered epic, or `--declined-deferral "<what>:<why not>"` where you are deliberately not doing it. Add `--carried-to <epicId> --reason "<which tasks moved>"` to hand off unfinished work. |
 | `remove-epic <id> [--cascade]` | Hard-delete; blocked by default if it has children (`--cascade` removes descendants too). Strips dangling links elsewhere. |
 | `reorder <id> <id> …` | **Manual rank** — place the epics of ONE priority band, top to bottom, in the order given. Ranks are rewritten dense `1..N` on every call, and this is the only thing that writes `rank`. Takes the whole band and refuses a partial one, so the numbering stays contiguous by construction; unranked epics sort after every ranked one. Rank is the LAST sort key (dependencies → priority → **rank**) — it breaks ties that today fall through to alphabetical order, and never outranks a dependency or a priority. `update-epic --priority` clears an epic's rank, since a placement among one band's peers means nothing among another's. |
 | `set-active <id>` / `clear-active` | Set/clear the top-level active epic. |
 
-**Inline story mutation** — `--add-story "<title>"` appends `{ title, done: false }` to the
-epic's inline `stories[]` (creating the array on its first inline story); `--story <n> --done`
-marks the `n`-th story done, where `n` is **1-indexed** (`--story 1` is the first story).
-Closes a recurring hand-edit-of-`state.json` risk — a naive JSON re-escape of an em dash has
-corrupted the file before. `--story <n>` currently requires `--done` (the only supported
-inline-story mutation today); both flags reject out-of-range/empty input and write nothing.
+**Inline story mutation** — `--add-story "<title>"` (repeatable, and available on `add-epic`
+and `add-many` too) appends `{ title, done: false }` to the epic's inline `stories[]`;
+`--story <n> --done` marks the `n`-th story done, where `n` is **1-indexed** (`--story 1` is
+the first story). Closes a recurring hand-edit-of-`state.json` risk — a naive JSON re-escape of
+an em dash has corrupted the file before. Every flag rejects out-of-range/empty input and
+writes nothing.
+
+**`--story <n> --wont-do "<reason>"` — the third state a checklist needs.** A story's `done`
+boolean holds two states and the record needs three: open, completed, and *deliberately not
+being done*. Deletion is not the third state — removing the row destroys the evidence that the
+work was ever projected — so the row and its title always survive and only the terminal state
+differs. The reason is **required**: a terminal state with no recorded why reproduces the
+original problem one level down. A disposed story leaves **both** sides of the progress ratio,
+exactly as a `<!-- pm:lifecycle -->` task does (`3/3 stories · 2 disposed`), and a recorded
+disposition is never silently replaced.
+
+This adds **no new archive refusal.** The archive gate already refuses `--outcome delivered`
+while any work is outstanding, and inline stories are the *first* progress source it reads — so
+an epic with an unticked story has been blocked since that gate shipped. What was missing was an
+honest way past it: the refusal's other remedy, the `<!-- pm:lifecycle -->` marker, cannot be
+written on an inline story at all (there is no task source), which left only `--carried-to` —
+naming a receiving epic for work that was *dropped* rather than moved, i.e. the fabricated
+record that refusal itself warns against. On a stories epic the refusal now names the
+outstanding stories first and offers `--wont-do` second, because the block is the reminder.
 
 </details>
 

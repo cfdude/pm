@@ -18,7 +18,7 @@
 import { gateHasEvidence, isOpenspecLane } from "./constants.mjs";
 import { isAncestor, sameCommit } from "./git.mjs";
 import { LIFECYCLE_MARKER, epicProgress, outstandingWork } from "./epic-progress.mjs";
-import { KNOWN_OUTCOMES, agentDisposition, dispositionError, isEngineStamped, outcomeOf } from "./disposition.mjs";
+import { KNOWN_OUTCOMES, agentDisposition, dispositionError, isEngineStamped, isStoryDisposed, outcomeOf } from "./disposition.mjs";
 
 /**
  * The outstanding-work quantity a refusal cites, rendered ONCE so a guard can never name a
@@ -31,7 +31,27 @@ import { KNOWN_OUTCOMES, agentDisposition, dispositionError, isEngineStamped, ou
  */
 export function outstandingSummary(epic) {
   const p = epicProgress(epic);
-  return { outstanding: outstandingWork(epic), claimed: `${p.done}/${p.total}`, excluded: p.excluded };
+  return {
+    outstanding: outstandingWork(epic), claimed: `${p.done}/${p.total}`, excluded: p.excluded,
+    source: p.source,
+    // The outstanding items BY NAME, and only where the record actually holds them: inline
+    // stories live on the epic, so an archived epic can still be told what it left behind. The
+    // checkbox sources cannot answer — by archive time `openspec/changes/<id>/` has moved and a
+    // plan file may have moved too — so `items` is empty there rather than guessed at.
+    items: p.source === "stories" ? outstandingStories(epic) : [],
+  };
+}
+
+/** The undone, undisposed stories of `epic`, carrying the 1-INDEXED position `--story <n>`
+ *  takes — so a refusal can name the story AND the exact command that answers it. Numbering is
+ *  over the FULL array, disposed rows included, because that is what `--story <n>` indexes;
+ *  renumbering around the ones already answered would print numbers that address the wrong row. */
+export function outstandingStories(epic) {
+  if (!Array.isArray(epic && epic.stories)) return [];
+  return epic.stories
+    .map((s, i) => ({ n: i + 1, title: s && s.title, story: s }))
+    .filter(x => x.story && !x.story.done && !isStoryDisposed(x.story))
+    .map(({ n, title }) => ({ n, title }));
 }
 
 /**
@@ -226,12 +246,34 @@ export function archiveGate(epic, request = {}) {
   if (outcome === "delivered" && !request.carriedTo) {
     const summary = outstandingSummary(epic);
     if (summary.outstanding > 0) {
+      // THE BLOCK IS THE REMINDER, so the unfinished work leads and the ways past it come
+      // second. A refusal that opened with "record a disposition to proceed" would present
+      // disposal as the normal route and get work disposed of that should have been done —
+      // a completion prompt turned into a paperwork step, which is worse than no gate.
+      //
+      // Only the STORIES source can name them: those rows are on the epic and survive archiving.
+      // A checkbox source cannot be read here at all — by this point `openspec/changes/<id>/`
+      // has moved — so it keeps the unnamed form rather than guessing at titles.
+      const named = summary.items.length
+        ? ` The outstanding stor${summary.items.length === 1 ? "y is" : "ies are"}:\n` +
+          summary.items.map(i => `  [ ] ${i.n}. ${i.title}`).join("\n") + "\n"
+        : " ";
+      // The REMEDY IS PER SOURCE, and offering the wrong one is a dead end the caller cannot
+      // detect: an inline story has no task source, so `<!-- pm:lifecycle -->` has nowhere to
+      // be written and the only key was `--carried-to`, naming a receiver for work that was
+      // dropped rather than moved — the fabricated record this very message warns against.
+      const remedy = summary.source === "stories"
+        ? `Finish them, or record what happened to each: --story <n> --done (it shipped) or ` +
+          `--story <n> --wont-do "<reason>" (it will not be done, and why — the row and its ` +
+          `reason stay on the record). If the whole remainder moved to another epic, ` +
+          `--carried-to <epicId> --reason "<which stories moved>" instead.`
+        : `Either record where the work went with --carried-to <epicId> --reason "<which tasks ` +
+          `moved>", or — if the outstanding item is lifecycle bookkeeping rather than delivery ` +
+          `— declare it in the task source by putting the literal ${LIFECYCLE_MARKER} on that ` +
+          `task's own line.`;
       return { ok: false, message:
         `cannot archive '${epic.id}' as delivered — ${summary.outstanding} of ` +
-        `${summary.claimed} task(s) outstanding. Either record where the work went with ` +
-        `--carried-to <epicId> --reason "<which tasks moved>", or — if the outstanding item ` +
-        `is lifecycle bookkeeping rather than delivery — declare it in the task source by ` +
-        `putting the literal ${LIFECYCLE_MARKER} on that task's own line. Naming a receiver ` +
+        `${summary.claimed} task(s) outstanding.${named}${remedy} Naming a receiver ` +
         `for work nobody carried anywhere is a fabricated record.` };
     }
   }
