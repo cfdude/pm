@@ -33,7 +33,9 @@ When you invoke `conductor.mjs` from a Bash step, resolve it version-independent
 newest installed copy. **Never** resolve it out of the PROJECT — `$CLAUDE_PROJECT_DIR` names a
 directory whose contents the project itself writes, so a `-f` test there is a promise to run
 whatever file happens to sit at `scripts/conductor.mjs` in whatever repo you opened. Self-hosting
-does not need it; the paragraph below is how the checkout's engine wins. **Never** hardcode a
+does not need it; the paragraph below is how the checkout's engine wins — and note that there the
+project dir is only the *comparand*, checked by realpath against a path your environment supplied,
+never the thing granting the authority. **Never** hardcode a
 versioned cache path like `…/pm/0.6.1/scripts/…` — it breaks on the next upgrade. Every invocation
 prints `conductor: engine <version> @ <path>` to stderr, EXCEPT this is suppressed by default
 whenever `$CLAUDE_PROJECT_DIR` is set (a self-hosting/dev context, where a stale-cache mismatch

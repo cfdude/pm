@@ -58,7 +58,11 @@ test, which handed any project carrying a `scripts/conductor.mjs` a `node` invoc
 user typed a `/pm:*` command (#139). That arm is gone: the shipped surfaces now resolve the
 engine only from the plugin — `$CLAUDE_PLUGIN_ROOT`, else the newest copy in
 `~/.claude/plugins/cache/` — and `scripts/test/engine-resolution.test.mjs` fails CI if any file
-under those directories reintroduces a project-directory engine path.
+under those directories reintroduces either resolution shape it matches: the
+`${CLAUDE_PROJECT_DIR:+…}` expansion that shipped, or a direct
+`$CLAUDE_PROJECT_DIR/scripts/conductor.mjs`. It is a regression guard against the pattern that
+appeared, not a proof that no indirection could express the same idea — a report of one that
+slips past it is welcome.
 
 ## Automated scanning
 
