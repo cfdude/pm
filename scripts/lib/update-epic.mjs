@@ -10,6 +10,7 @@ import { noteEntry, parentError, parseFlags, parseLinkFlags } from "./add-epic.m
 import { render } from "./render.mjs";
 import { archiveGate, AGENT_OUTCOMES } from "./archive-gate.mjs";
 import { deferralAssertion } from "./disposition.mjs";
+import { claimArtifacts } from "./source-artifacts.mjs";
 
 // The flags update-epic recognizes. Anything else is a rejected error, not a
 // silent no-op — an unrecognized flag (e.g. a typo) used to parse, run, and
@@ -257,6 +258,14 @@ export function updateEpic() {
   // it used to is the whole reason remove-and-re-register was the only correction available.
   if (lane !== undefined) epic.lane = lane;
   if (planPath !== undefined) epic.planPath = planPath;
+  // The ONE claim site outside pushEpic(): every other way an epic comes to hold a source
+  // artifact is a creation, and creation routes through that sink. Attaching an artifact says
+  // it is real work, so any sync-ignore tombstone saying it is not must go — the record must
+  // not hold two opposite claims about one file, and this is the un-ignore path (derived from
+  // an action the operator already takes, rather than a new verb nobody would find).
+  for (const p of claimArtifacts(state, epic)) {
+    process.stderr.write(`conductor: cleared the sync-ignore tombstone on '${p}' — \`${epic.id}\` now claims it\n`);
+  }
   // A manual `rank` is a placement among ONE band's peers, so it does not survive a move to
   // another band — it would collide with that band's own 1..N numbering, and the number would
   // claim a position nobody chose in a set nobody compared. Cleared on a REAL band change only:
