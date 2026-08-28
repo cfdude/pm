@@ -20,7 +20,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { tmpRepo, run, runCombined, readState, projectMd, parseBrief, expectFail, writeBatch } from "./helpers.mjs";
+import { tmpRepo, run, runCombined, readState, writeState, projectMd, parseBrief, expectFail, writeBatch } from "./helpers.mjs";
 
 const stateFile = (cwd) => path.join(cwd, ".conductor", "state.json");
 const epicOf = (cwd, id) => readState(cwd).epics.find(e => e.id === id);
@@ -278,4 +278,61 @@ test("update-epic's usage line and commands/epic.md both name --wont-do", () => 
   const doc = fs.readFileSync(path.join(path.dirname(new URL(import.meta.url).pathname), "..", "..", "commands", "epic.md"), "utf8");
   assert.match(doc, /--wont-do/);
   assert.match(doc, /--add-story/);
+});
+
+// ───────── gate-guard: an epic that has ENDED must not still block writes (sibling of #95) ─────────
+//
+// Raised by another agent this round and verified against the code: `state.active` can name an
+// ARCHIVED epic for a stretch, and the codebase already says so out loud — render.mjs:68 prints
+// "`<id>` was archived; the active pointer clears on next `/pm:sync` or commit". render.mjs:53
+// and briefing.mjs:60 both filter that case at the point they resolve the pointer to an epic.
+// gate-guard.mjs was the THIRD reader and the only one that did not, so an ended epic could keep
+// mechanically blocking Edit/Write/NotebookEdit through PreToolUse — and `set-gate-guard off`
+// deliberately does not reach the reconcile case, so there was no way out but a hand-edit.
+//
+// The ordinary CLI path does not produce it (update-epic clears `state.active` on archive). A
+// hand-edited state does, and this repo produces hand-edited state.
+//
+// BOTH DIRECTIONS ARE ASSERTED. This edits a hook that BLOCKS WRITES: an error the other way
+// stops the guard firing when it should, which is worse than the defect being fixed.
+
+const guardState = (over) => ({
+  version: 1, active: "a", detourStack: [], epics: [{
+    id: "a", title: "a", priority: "P1", role: "epic", lane: "claude-code", links: [],
+    status: "active", reconcileNeeded: false, ...over,
+  }],
+});
+
+test("gate-guard does NOT block on an ARCHIVED active epic that still carries reconcileNeeded", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  writeState(cwd, guardState({ status: "archived", reconcileNeeded: true }));
+  run(["gate-guard"], { cwd, input: "{}" });   // must not throw
+});
+
+test("gate-guard does NOT block on an ARCHIVED active epic that still owes a tracker refresh", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  writeState(cwd, { ...guardState({ status: "archived", trackerRefreshNeeded: true }), gateGuard: true });
+  run(["gate-guard"], { cwd, input: "{}" });   // must not throw
+});
+
+test("gate-guard STILL blocks a LIVE active epic that owes a reconcile — the fix must not disarm it", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  for (const status of ["active", "paused", "queued", "blocked"]) {
+    writeState(cwd, guardState({ status, reconcileNeeded: true }));
+    const err = expectFail(() => run(["gate-guard"], { cwd, input: "{}" }));
+    assert.ok(err, `expected a block for a live epic at status '${status}'`);
+    assert.match(String(err.stderr || err.message), /still owes a reconcile/);
+  }
+});
+
+test("gate-guard STILL blocks a LIVE active epic that owes a tracker refresh", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  writeState(cwd, { ...guardState({ trackerRefreshNeeded: true }), gateGuard: true });
+  const err = expectFail(() => run(["gate-guard"], { cwd, input: "{}" }));
+  assert.ok(err);
+  assert.match(String(err.stderr || err.message), /owes a tracker refresh/);
 });
