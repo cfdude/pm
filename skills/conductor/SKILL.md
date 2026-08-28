@@ -95,10 +95,12 @@ records the re-read a tracker-linked epic owes before specs are drawn for it, an
 epic's freshness watermark in the same write (an epic with no external id re-reads its local
 plan/proposal instead — instruction only, nothing recorded)
 · `/pm:sync` register new proposals and plans ·
-`/pm:epic add` register any epic (`--parent`, `--external-id`) · `/pm:epic` → `add-many`
-(atomic bulk create) / `update-epic` (write-back, incl. `--title`/`--link`/`--add-story
-"<title>"`/`--story <n> --done` [1-indexed] — closes the hand-edit-of-state.json risk for
-inline `stories[]`) / `remove-epic`
+`/pm:epic add` register any epic (`--parent`, `--external-id`, repeatable `--add-story
+"<milestone>"` so a plan's milestones land in the SAME write) · `/pm:epic` → `add-many`
+(atomic bulk create, each entry taking a `stories` array) / `update-epic` (write-back, incl.
+`--title`/`--link`/`--add-story "<title>"`/`--story <n> --done` [1-indexed] / `--story <n>
+--wont-do "<reason>"` — closes the hand-edit-of-state.json risk for inline `stories[]`) /
+`remove-epic`
 (hard-delete, `--cascade` for a parent + descendants) · **`set-active <id>` / `clear-active`**
 set the top-level active epic · `set-autonomy <id>` grant an epic broad execution trust (see
 "Epic-level autonomy" below) · `plan-hierarchy --parent <id>` batched execution plan for a
@@ -791,5 +793,12 @@ link.type ∈ resolves-blocker-for | may-invalidate | depends-on | relates-to | 
                 finds the same ask already registered; end the superseded epic with
                 `--outcome superseded` in the same breath, or the consolidation is only half done)
 planPath      : repo-relative path to a markdown plan (progress source for superpowers lane)
-stories[]     : [{ title, done }] — inline progress (highest-priority source)
+stories[]     : [{ title, done, disposition? }] — inline progress (highest-priority source).
+                `disposition` = { state: "wont-do", reason, recordedAt } — the THIRD state a
+                checklist needs: not open, not completed, deliberately not being done. The row
+                and its reason always survive (deletion would destroy the record that the work
+                was ever projected); a disposed story leaves BOTH sides of the ratio, exactly as
+                a `<!-- pm:lifecycle -->` task does, so it renders `3/3 stories · 2 disposed`.
+                Write it with `update-epic <id> --story <n> --wont-do "<reason>"`; the reason is
+                required and a recorded disposition is never silently replaced.
 ```

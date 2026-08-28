@@ -76,6 +76,34 @@ export function noteEntry(text, actor = "agent") {
   return { at: new Date().toISOString(), actor, text };
 }
 
+/** One inline story: `{title, done}`. The ONE constructor, so `add-epic`, `update-epic` and
+ *  `add-many` cannot come to write three subtly different row shapes — which is exactly how
+ *  `add-many` ended up unable to carry stories at all while the other two could. */
+export function newStory(title, done = false) {
+  return { title: title.trim(), done: !!done };
+}
+
+/** Parse the repeatable `--add-story` flag into validated titles.
+ *
+ *  `--add-story` is declared `repeats: true`, so parseFlags always hands it an ARRAY — but a
+ *  VALUELESS `--add-story` arrives inside that array as boolean `true`, which is the
+ *  exit-0-write-nothing shape (#79) if it is quietly filtered away. Every non-string and every
+ *  blank title is therefore REFUSED by throwing, and the caller turns that into its own
+ *  refusal before any state is loaded or written.
+ *
+ *  Returns [] when the flag is absent, so a caller can test `.length` and leave `stories`
+ *  entirely ABSENT from an epic that declared none — an empty array would read as "this epic
+ *  has milestones and they are all missing", which is a different claim. */
+export function parseStoryFlags(raw) {
+  const list = raw === undefined ? [] : (Array.isArray(raw) ? raw : [raw]);
+  return list.map(v => {
+    if (typeof v !== "string" || !v.trim()) {
+      throw new Error("--add-story requires a non-empty title");
+    }
+    return newStory(v);
+  });
+}
+
 /** DFS cycle-path finder over a dependency map (id -> Set of ids it depends on), restricted
  *  to `stuckIds` (the set Kahn's algorithm couldn't place). Returns the actual cycle as an
  *  array of ids ending back at its start (e.g. ["a","b","a"]), for a debuggable error message
@@ -217,6 +245,13 @@ export function addEpic() {
     process.exit(1);
   }
   const str = (v) => (typeof v === "string" ? v : undefined); // valueless flags arrive as boolean true
+  // Stories are parsed BEFORE loadState(), with the id and lane checks, so a bad title refuses
+  // the whole registration rather than creating a story-less epic somebody then has to notice.
+  // This is complaint 2 of gh#95: a plan's milestones land in the SAME write as the epic, not
+  // one `update-epic` call at a time afterwards.
+  let stories;
+  try { stories = parseStoryFlags(f["add-story"]); }
+  catch (e) { process.stderr.write(`conductor: ${e.message}\n`); process.exit(1); }
   const id = str(f.id);
   if (!id || !/^[a-z0-9][a-z0-9._-]*$/.test(id)) {
     process.stderr.write("conductor: --id required, format ^[a-z0-9][a-z0-9._-]*$\n"); process.exit(1);
@@ -289,6 +324,9 @@ export function addEpic() {
       process.stderr.write(`conductor: --${flag} requires a value\n`); process.exit(1);
     }
   }
+  // Absent, not empty: an epic that declared no milestones carries no `stories` key at all, so
+  // epicProgress() falls through to its planPath/tasks.md precedence exactly as before.
+  if (stories.length) epic.stories = stories;
   if (str(f.description) !== undefined) epic.description = str(f.description);
   if (str(f.notes) !== undefined) epic.notes = [noteEntry(str(f.notes))];
   if (parent !== undefined) epic.parent = parent;

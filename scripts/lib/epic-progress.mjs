@@ -6,7 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { ROOT, CHANGES_DIR, ARCHIVE_DIR, PLANS_DIR, laneRank, isOpenspecLane } from "./constants.mjs";
-import { engineStamp, isArchiveBackfilled } from "./disposition.mjs";
+import { engineStamp, isArchiveBackfilled, isStoryDisposed } from "./disposition.mjs";
 import { effectivePriorityOf, priorityRank } from "./dependency-order.mjs";
 
 /** Active openspec change ids = subdirs of openspec/changes except `archive`. */
@@ -236,11 +236,19 @@ export function epicProgress(epic) {
   // An archived epic's source is SUPPOSED to be gone; suppress rather than cry wolf.
   const archived = epic.status === "archived";
   if (Array.isArray(epic.stories)) {
-    const total = epic.stories.length;
-    const done = epic.stories.filter(s => s && s.done).length;
-    // Inline stories carry no task source and so no markers — `excluded` is 0, never
-    // undefined, so every consumer reads the same shape whichever branch produced it.
-    return { done, total, excluded: 0, source: "stories", warn: null };
+    // A DISPOSED story leaves BOTH sides of the ratio, exactly as a `<!-- pm:lifecycle -->`
+    // task does in countCheckboxes() (which `continue`s before `total++`). Three renderings
+    // were possible and two of them are wrong: counting a dropped story as `done` would claim
+    // completion for work nobody did, and counting it as outstanding would leave the archive
+    // gate refusing forever with no honest key. Excluding it says what happened — the work is
+    // not outstanding AND was not delivered — and the reason stays on the row either way.
+    const counted = epic.stories.filter(s => s && !isStoryDisposed(s));
+    const excluded = epic.stories.length - counted.length;
+    const total = counted.length;
+    const done = counted.filter(s => s.done).length;
+    // `excludedLabel` exists because bar() would otherwise call these "lifecycle", which is a
+    // different declaration made by a different mechanism in a different place.
+    return { done, total, excluded, excludedLabel: "disposed", source: "stories", warn: null };
   }
   if (epic.planPath) {
     const c = countCheckboxes(path.join(ROOT, epic.planPath));
@@ -417,8 +425,12 @@ export function bar(p) {
   if (!p) return "—";
   if (p.warn) return `⚠ ${p.warn}`;
   // Declared lifecycle bookkeeping left both sides of the ratio, so say how many — otherwise
-  // a denominator that moved from 13 to 12 looks like a task went missing.
-  const lifecycle = p.excluded ? ` · ${p.excluded} lifecycle` : "";
+  // a denominator that moved from 13 to 12 looks like a task went missing. `excludedLabel`
+  // names WHICH declaration removed them: a checkbox source says "lifecycle" (the
+  // `<!-- pm:lifecycle -->` marker) and an inline story says "disposed" (a recorded --wont-do).
+  // Defaulted here rather than required, so a progress object built before this field existed
+  // renders exactly as it always did.
+  const lifecycle = p.excluded ? ` · ${p.excluded} ${p.excludedLabel || "lifecycle"}` : "";
   if (p.total > 0) return `${p.done}/${p.total} ${p.source === "plan" ? "tasks" : "stories"}${lifecycle}`;
   return p.excluded ? `0/0${lifecycle}` : "—";
 }

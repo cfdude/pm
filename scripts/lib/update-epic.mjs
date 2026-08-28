@@ -6,10 +6,10 @@ import { KNOWN_LANES, KNOWN_STATUSES, KNOWN_REVIEW_MODES, REVIEW_MODE_RANK, epic
 import { activate } from "./active-pointer.mjs";
 import { globalReviewMode } from "./rules.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
-import { noteEntry, parentError, parseFlags, parseLinkFlags } from "./add-epic.mjs";
+import { noteEntry, parentError, parseFlags, parseLinkFlags, parseStoryFlags } from "./add-epic.mjs";
 import { render } from "./render.mjs";
 import { archiveGate, AGENT_OUTCOMES } from "./archive-gate.mjs";
-import { deferralAssertion } from "./disposition.mjs";
+import { deferralAssertion, isStoryDisposed, storyDisposition, storyDispositionError } from "./disposition.mjs";
 
 // The flags update-epic recognizes. Anything else is a rejected error, not a
 // silent no-op — an unrecognized flag (e.g. a typo) used to parse, run, and
@@ -73,7 +73,7 @@ export function updateEpic() {
       process.exit(1);
     }
     process.stderr.write("conductor: update-epic requires an epic id as its first POSITIONAL argument\n");
-    process.stderr.write(`usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--lane openspec|superpowers|claude-code|decision|external] [--plan <path>] [--link \"<type>:<epic>[:<reason>]\"] [--clear-links] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done] [--attribute-commit <sha>] [--outcome ${AGENT_OUTCOMES.join("|")}] [--reason \"<why>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\"] [--declined-deferral \"<what>:<why not>\"] [--no-deferrals] [--description D] [--notes \"<text>\"] [--external-updated-at <iso>]\n`);
+    process.stderr.write(`usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--lane openspec|superpowers|claude-code|decision|external] [--plan <path>] [--link \"<type>:<epic>[:<reason>]\"] [--clear-links] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done|--wont-do "<reason>"] [--attribute-commit <sha>] [--outcome ${AGENT_OUTCOMES.join("|")}] [--reason \"<why>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\"] [--declined-deferral \"<what>:<why not>\"] [--no-deferrals] [--description D] [--notes \"<text>\"] [--external-updated-at <iso>]\n`);
     process.exit(1);
   }
   const f = parseFlags(argv.slice(1));
@@ -175,15 +175,35 @@ export function updateEpic() {
   // hand-edit-of-state.json risk (a naive JSON re-escape of an em dash has corrupted the
   // file before). --story <n> --done marks an existing story done; <n> is 1-indexed (the
   // natural reading for a human-facing CLI flag: "--story 1" means the first story).
-  const addStoryTitle = str(f["add-story"]);
-  if (addStoryTitle !== undefined && !addStoryTitle.trim()) {
-    process.stderr.write("conductor: --add-story requires a non-empty title\n"); process.exit(1);
-  }
-  let storyIndex;
+  // `--add-story` is repeatable as of gh#95, so it arrives as an ARRAY and is parsed by the
+  // same helper add-epic uses — one validation rule, not two that drift.
+  let addedStories;
+  try { addedStories = parseStoryFlags(f["add-story"]); }
+  catch (e) { process.stderr.write(`conductor: ${e.message}\n`); process.exit(1); }
+
+  // `--story <n>` now takes TWO mutations: `--done` (it shipped) and `--wont-do "<reason>"`
+  // (it will not be done, and here is why). The second is the honest key to the archive gate's
+  // pre-existing handoff refusal, whose other remedy — the `<!-- pm:lifecycle -->` marker —
+  // cannot be applied to an inline story at all, there being no task source to write it in.
+  const wontDo = f["wont-do"];
+  let storyIndex, storyMutation;
   if (f.story !== undefined) {
-    if (f.done !== true) {
-      process.stderr.write("conductor: --story <n> currently requires --done (the only supported story mutation besides --add-story)\n");
+    const asked = [f.done === true ? "done" : null, wontDo !== undefined ? "wont-do" : null].filter(Boolean);
+    if (asked.length === 0) {
+      process.stderr.write("conductor: --story <n> requires a mutation — --done (it shipped) or --wont-do \"<reason>\" (it will not be done, and why)\n");
       process.exit(1);
+    }
+    if (asked.length > 1) {
+      process.stderr.write("conductor: --done and --wont-do are mutually exclusive — a story either shipped or it did not\n");
+      process.exit(1);
+    }
+    storyMutation = asked[0];
+    // The reason is validated BEFORE the range check reads state, so a valueless `--wont-do`
+    // (which parseFlags yields as boolean `true`) is refused by its own rule and never falls
+    // through str() into an exit-0-write-nothing.
+    if (storyMutation === "wont-do") {
+      const err = storyDispositionError({ state: "wont-do", reason: typeof wontDo === "string" ? wontDo : "" });
+      if (err) { process.stderr.write(`conductor: ${err}\n`); process.exit(1); }
     }
     const n = Number(f.story);
     const stories = Array.isArray(epic.stories) ? epic.stories : [];
@@ -192,8 +212,26 @@ export function updateEpic() {
       process.exit(1);
     }
     storyIndex = n - 1;
+    // The REPLACEMENT RULE, one level down from archiveGate()'s refusal to overwrite an
+    // agent-recorded epic disposition, and for the same reason: a recorded terminal judgment is
+    // somebody's decision and this verb does not silently destroy it. Correcting a mistaken
+    // story disposition is deliberately not something this command does.
+    const target = stories[storyIndex];
+    if (isStoryDisposed(target)) {
+      process.stderr.write(
+        `conductor: story ${n} of '${id}' already carries a recorded disposition ` +
+        `('${target.disposition.state}': ${target.disposition.reason}). Replacing it would ` +
+        "destroy a judgment somebody made.\n");
+      process.exit(1);
+    }
+    if (storyMutation === "wont-do" && target.done) {
+      process.stderr.write(`conductor: story ${n} of '${id}' is already done — work that shipped cannot be dropped\n`);
+      process.exit(1);
+    }
   } else if (f.done === true) {
     process.stderr.write("conductor: --done requires --story <n>\n"); process.exit(1);
+  } else if (wontDo !== undefined) {
+    process.stderr.write("conductor: --wont-do requires --story <n>\n"); process.exit(1);
   }
 
   // --attribute-commit <sha>: append, in the order given, the commits this epic's work landed
@@ -288,11 +326,17 @@ export function updateEpic() {
     if (!Array.isArray(epic.notes)) epic.notes = [];
     epic.notes.push(noteEntry(note));
   }
-  if (addStoryTitle !== undefined) {
+  if (addedStories.length) {
     if (!Array.isArray(epic.stories)) epic.stories = [];
-    epic.stories.push({ title: addStoryTitle, done: false });
+    epic.stories.push(...addedStories);
   }
-  if (storyIndex !== undefined) epic.stories[storyIndex].done = true;
+  if (storyIndex !== undefined) {
+    // The ROW SURVIVES in both branches. Deletion is never the answer to "this will not be
+    // done": removing it destroys the record that the work was ever projected, which is exactly
+    // the history an archived epic's reader needs.
+    if (storyMutation === "done") epic.stories[storyIndex].done = true;
+    else epic.stories[storyIndex].disposition = storyDisposition({ state: "wont-do", reason: wontDo });
+  }
 
   // Stamp completedAt the moment an epic transitions TO archived (not merely re-saved
   // while already archived) — supports velocity tracking off startedAt/completedAt.
