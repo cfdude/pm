@@ -330,6 +330,16 @@ cleared by `record-tracker-refresh`. The gate keys on **provenance** — does th
 external origin — never on direction: an issue filed by a third party and an epic born from a
 local spec have different sources of truth in the same repo on the same day.
 
+The brief's freshness line — `⚠ N tracker-linked epic(s) never re-read since mirroring` — counts
+only epics that can still become work: every `archived` epic is excluded, because the **archive
+disposition discharges the refresh obligation outright**, whatever the outcome. There is no
+terminal watermark to record. The closed half stays the agent's: the engine cannot know a tracker
+item is closed without integration it must never do, so the inward-sync step that already reads
+the open list is what proposes a disposition for an epic whose item is no longer open — and that
+disposition is what clears the count. Measured on this repository when the old behavior was filed
+as a bug: 59 counted, 29 of them already ended or closed, and `/pm:sync` — the action the line
+names — could not clear those 29, because an epic that ended has no open item to read.
+
 ## Commands
 
 <details>
