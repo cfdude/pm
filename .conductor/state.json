@@ -3457,7 +3457,11 @@
       "reconcileNeeded": false,
       "externalId": "139",
       "externalUrl": "https://github.com/cfdude/pm/issues/139",
-      "attributedCommits": []
+      "attributedCommits": [
+        "48a4c76",
+        "567f4e2",
+        "278b344"
+      ]
     },
     {
       "id": "gh-140-attribution-write-not-persisted",
@@ -3526,7 +3530,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 137,
+  "revision": 140,
   "reviewMode": "thorough",
   "releases": [
     {
