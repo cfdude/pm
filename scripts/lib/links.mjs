@@ -85,7 +85,13 @@ export function detourContext(state) {
  *
  *  `parent` is included even though `remove-epic` handles it structurally (block-or-cascade):
  *  the integrity check has no such structure behind it, and a hand-edited state can dangle a
- *  parent like anything else. */
+ *  parent like anything else.
+ *
+ *  DELIBERATELY ABSENT: `state.syncIgnore[].removedEpic`. That id is HISTORICAL — it names the
+ *  epic whose removal wrote the tombstone, so it dangles from the moment it is written and
+ *  always will. Sweeping it would strip the provenance the entry exists to carry, and reporting
+ *  it would make every tombstone a permanent finding. See ignoreArtifact() in
+ *  source-artifacts.mjs. */
 export function epicReferences(state) {
   const refs = [];
   const add = (holder, where, epic, drop) => { if (typeof epic === "string" && epic) refs.push({ holder, where, epic, drop }); };

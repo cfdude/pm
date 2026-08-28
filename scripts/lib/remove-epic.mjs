@@ -5,6 +5,7 @@
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { parseFlags } from "./add-epic.mjs";
 import { epicReferences } from "./links.mjs";
+import { tombstoneArtifacts } from "./source-artifacts.mjs";
 import { render } from "./render.mjs";
 
 /** Render a short (id, title, summary) table for human review — used when a removal is
@@ -87,6 +88,16 @@ export function removeEpic() {
     affected.push(r.where);
   }
 
+  // A removal has to survive the NEXT SYNC, not merely the session. `remove-epic` used to be
+  // durable only until `sync` ran again — byte-identical ids came straight back within the
+  // hour, because the dedup keyed on the plan's filename and nothing recorded that a human had
+  // just said no. Tombstone every source artifact every removed epic claimed, taking the whole
+  // removal set so `--cascade` cannot record the named epic's plan and leave its descendants'
+  // registerable. Reversible by the action that contradicts it: attaching the artifact to an
+  // epic clears the tombstone (see claimArtifacts).
+  const tombstoned = tombstoneArtifacts(
+    state, state.epics.filter(e => toRemove.has(e.id)), "removed by remove-epic");
+
   state.epics = state.epics.filter(e => !toRemove.has(e.id));
 
   saveState(state);
@@ -97,5 +108,11 @@ export function removeEpic() {
     process.stderr.write(
       `conductor: stripped ${affected.length} dangling reference(s) to removed epic(s), held by: ` +
       `${[...new Set(affected)].join(", ")}\n`);
+  }
+  if (tombstoned.length) {
+    process.stderr.write(
+      `conductor: recorded ${tombstoned.length} sync-ignore tombstone(s) so sync will not ` +
+      `re-register the removed epic(s)' source artifact(s): ${tombstoned.join(", ")}. ` +
+      "Attach one to an epic (`update-epic <id> --plan <path>`) to un-ignore it.\n");
   }
 }

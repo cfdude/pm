@@ -8,6 +8,7 @@ import path from "node:path";
 import { recordConflict, clearConflicts } from "./write-conflicts.mjs";
 import { CONFLICT_EXIT_CODE } from "./constants.mjs";
 import { isArchiveBackfilled } from "./disposition.mjs";
+import { claimArtifacts } from "./source-artifacts.mjs";
 
 // Re-evaluate paths each time they're accessed to support cache-busting tests
 function getPaths() {
@@ -55,11 +56,21 @@ export function defaultState() {
  *  must still get `[]`.
  *
  *  Anything already carrying the key is left exactly as given — the migration must never
- *  back-fill the array onto a pre-existing epic, and this function is not a back-fill either. */
+ *  back-fill the array onto a pre-existing epic, and this function is not a back-fill either.
+ *
+ *  It also clears any sync-ignore tombstone on a source artifact the new epic claims: claiming
+ *  an artifact says it is real work, which contradicts a tombstone saying it is not, and the
+ *  record must not hold two opposite claims about one file. Done HERE for the same reason the
+ *  array is — `add-epic`, `add-many` and `sync` are three construction sites, and a rule
+ *  written out at each of them is a stale enumeration waiting for a fourth. `update-epic` does
+ *  not route through here and calls claimArtifacts() itself; those two are the only ways an
+ *  epic comes to claim an artifact. NOTE the body below is kept tight on purpose — a source
+ *  scan in conductor-13 allows the raw push only within a few lines of this signature. */
 export function pushEpic(state, epic) {
   if (!Object.prototype.hasOwnProperty.call(epic, "attributedCommits") && !isArchiveBackfilled(epic)) {
     epic.attributedCommits = [];
   }
+  claimArtifacts(state, epic);
   state.epics.push(epic);
   return epic;
 }

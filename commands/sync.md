@@ -15,6 +15,31 @@ New proposals are added with `status: "untriaged"` and `priority: "P?"`. Then he
 triage each: assign a priority, set its status (queued/later), and add any epic links
 (e.g. `depends-on`) to other epics. Finish with `/pm:status`.
 
+## Superpowers plans — what stops one being registered twice
+
+A plan file is matched to an epic by a recorded **association**, never by its filename. Plan
+filenames carry a date prefix and epic ids do not, so a filename match fired only by luck — and
+every other epic's plan was re-registered as a fresh untriaged epic on every sync, forever
+(#64/#69). `sync` now decides in this order, per plan file:
+
+1. **Some epic's `planPath` claims it** → skipped, naming that epic. This is status-blind and
+   lane-blind on purpose: an archived epic still holds its `planPath`, so a shipped plan stops
+   being offered as new work without anyone inferring completion from checkbox counts.
+2. **A plan named exactly like an existing epic id** → skipped, as before.
+3. **A sync-ignore tombstone on that path** → skipped. `remove-epic` writes one, so a removal
+   survives the next sync instead of lasting only until it.
+4. **An epic whose id is the plan id minus its date prefix** → skipped, and both exits are
+   printed: associate it (`update-epic <epic> --plan <path>`) if it IS that epic's plan, or
+   register it as distinct work (`add-epic --id <plan-id> --lane superpowers --plan <path>`) if
+   it is not. `sync` reports this one; it never picks for you, because the match is a name
+   collision and pointing an epic's progress source at an unrelated plan would read `0/N`
+   forever.
+5. **Otherwise** → registered as an untriaged `superpowers` epic, as before.
+
+**Attach the plan and rung 1 does the rest.** `update-epic <id> --plan <path>` is the durable
+answer for an epic registered before the association existed; it also clears any tombstone on
+that path, since claiming an artifact says it is real work.
+
 ## The archive backfill — `openspec/changes/archive/`
 
 `sync` also walks `openspec/changes/archive/`. An archived change the conductor holds no epic for
