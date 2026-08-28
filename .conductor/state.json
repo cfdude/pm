@@ -2439,7 +2439,11 @@
       ],
       "reconcileNeeded": false,
       "externalId": "95",
-      "externalUrl": "https://github.com/cfdude/pm/issues/95"
+      "externalUrl": "https://github.com/cfdude/pm/issues/95",
+      "attributedCommits": [
+        "6be3c2f",
+        "c1caaf0"
+      ]
     },
     {
       "id": "gh-100-link-types-no-known-set",
@@ -3561,7 +3565,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 148,
+  "revision": 150,
   "reviewMode": "thorough",
   "releases": [
     {
