@@ -3387,7 +3387,7 @@
       "id": "gh-137-release-completion-cascade",
       "title": "A release ships and its member epics stay queued — nothing closes an epic when its tracker issue closes",
       "priority": "P1",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -3406,7 +3406,18 @@
         "e3c0f37",
         "0bce014",
         "9382183"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-28T00:35:28.728Z",
+        "reason": "shipped in 0.30.0 (32c940f): integrity check plus a sync step that PROPOSES the disposition; the batch --release verb was deliberately declined and the reasoning recorded"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-28T00:35:28.727Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-28T00:35:28.728Z"
     },
     {
       "id": "gh-136-add-epic-notes-discarded",
@@ -3444,7 +3455,7 @@
       "id": "gh-139-command-doc-engine-fallback-ungated",
       "title": "The command docs' engine fallback runs $CLAUDE_PROJECT_DIR/scripts/conductor.mjs with no check that the project is pm",
       "priority": "P1",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -3461,7 +3472,18 @@
         "48a4c76",
         "567f4e2",
         "278b344"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-28T00:35:30.204Z",
+        "reason": "shipped in 0.30.0 (32c940f): the CLAUDE_PROJECT_DIR arm deleted across 15 sites rather than gated, with a CI guard over every shipped instruction surface"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-28T00:35:30.204Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-28T00:35:30.204Z"
     },
     {
       "id": "gh-140-attribution-write-not-persisted",
@@ -3530,7 +3552,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 140,
+  "revision": 142,
   "reviewMode": "thorough",
   "releases": [
     {
