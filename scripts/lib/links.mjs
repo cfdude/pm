@@ -24,6 +24,37 @@ export function normalizeLink(l) {
   return null;
 }
 
+/** THE set of epic ids some OTHER epic declares it supersedes — one declaration, read by
+ *  `triage`'s candidate scorer and by the `superseded-epic-never-ended` integrity check.
+ *
+ *  Declared here for the same reason `epicReferences()` is: two copies of "who is superseded"
+ *  drift, and the two consumers then disagree about which epics are already dead. `triage` marks
+ *  a candidate `superseded: true` so an agent does not consolidate a fourth ask into a corpse;
+ *  the check reports that same corpse still carrying a non-terminal status. Those must be the
+ *  same set or one surface is telling an agent an epic is dead while the other says it is live
+ *  work.
+ *
+ *  Direction is FIXED and asymmetric: the link lives on the epic that REPLACES, naming the epic
+ *  replaced (`--link "supersedes:<id>:<why>"`), so the ids collected here are the replaced ones.
+ *  Reading it the other way round would report every consolidation's survivor.
+ *
+ *  Returns a MAP from the replaced id to the FIRST epic declaring it — not a Set — so a consumer
+ *  that must name the replacement does not walk the links a second time to find it. `.has()` is
+ *  the membership test either way, which is all `triage` asks of it. First-declarer wins where
+ *  two epics both claim to supersede one: naming one of them is what a finding needs, and
+ *  "which of several consolidations is the real one" is a judgment no engine should invent. */
+export function supersededEpics(epics) {
+  const out = new Map();
+  for (const e of Array.isArray(epics) ? epics : []) {
+    for (const l of e && Array.isArray(e.links) ? e.links : []) {
+      if (l && l.type === "supersedes" && typeof l.epic === "string" && !out.has(l.epic)) {
+        out.set(l.epic, e.id);
+      }
+    }
+  }
+  return out;
+}
+
 /** Is the project currently inside a detour? (active epic is a detour, or stack non-empty) */
 export function detourContext(state) {
   if (state.detourStack && state.detourStack.length) {

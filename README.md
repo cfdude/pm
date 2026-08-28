@@ -679,7 +679,18 @@ bookkeeping rather than review, a `delivered` epic that attributed no commits, a
 openspec-lane epic with a passing Gate 2 and no Gate 1, an epic archived with an `ungated` Gate 2
 (no review from anyone), an epic the archive-drift heal flipped that reads `outcome: unknown`
 while carrying a passing Gate 2, a dangling epic reference, an archive directory no epic
-corresponds to, and **a recorded commit sha this repository can no longer resolve**.
+corresponds to, **a recorded commit sha this repository can no longer resolve**, an epic still
+open in a release that has already delivered, and an epic another epic declares it supersedes
+that never ended.
+
+**The release one closes a real loop.** A release object carries no delivery marker, so "this
+release delivered" is read from its members: at least one holds a `delivered` disposition, and
+none is `active` or `paused` — a staged release still in flight stays silent. Every member left
+non-terminal that the release's own `deferred[]` does not name is reported, because the record
+says neither that it shipped nor that it was cut. That is the shape of #137: 0.27.0 shipped, all
+twenty of its member epics stayed `queued`, and `next` recommended two P0s that had shipped hours
+earlier. Both new checks report only epics whose status is non-terminal, so neither can add a
+finding for work that has already ended.
 
 **That last one has a deadline.** The shas in `attributedCommits` and in a gate verdict's
 `baseSha`/`headSha` *are* the evidence — "a reviewer read this range" is only checkable while the

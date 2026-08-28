@@ -144,6 +144,15 @@ file a bug report or feature request for `pm` itself as a GitHub issue on `cfdud
     rather than inventing a slug), a `<lane>` from `suggest-lane` rather than a hardcoded
     `claude-code`, and `--external-updated-at` so a freshly mirrored epic starts with a watermark.
     A `P0`/`P1`/`P2`/`P3` label overrides the `P2` default.
+    The pull has a **reciprocal half**: the list is of OPEN items, so an epic linked to an item
+    that is not in it has an item that is no longer open. Read that item — absence from a list
+    also covers deleted, transferred and out-of-scope — and where the epic is not already
+    `archived`, PROPOSE its disposition rather than writing one. The outcome and its required
+    reason are a judgment about what happened to the work, and an engine-inferred one would be
+    unreplaceable (#130). Without this half, sync creates epics from items and never ends one:
+    0.27.0 shipped with all twenty member issues closed and all twenty epics still `queued`
+    (#137). The engine's half of the same defect is the `delivered-release-epic-left-open`
+    integrity check, which needs no tracker at all.
   - **An inward section is emitted only when the tracker also names a SCOPE to read** — a `repo`
     for `github-issues`, a `repo` or `--project` for anything else. Direction alone does not turn
     it on, because pm may not emit a command line with an unfilled placeholder.
