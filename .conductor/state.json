@@ -1669,6 +1669,12 @@
           "title": "prefer the tombstone/syncIgnore fix over plan-field matching for the near term: matching is blocked by #66 (no update-epic --plan) while the tombstone has no dependency; archived already IS a working tombstone",
           "done": false
         }
+      ],
+      "attributedCommits": [
+        "7c3f128",
+        "794e280",
+        "518aeed",
+        "3e26bfd"
       ]
     },
     {
@@ -3449,7 +3455,10 @@
       "reconcileNeeded": false,
       "externalId": "138",
       "externalUrl": "https://github.com/cfdude/pm/issues/138",
-      "attributedCommits": []
+      "attributedCommits": [
+        "370b130",
+        "6b66df5"
+      ]
     },
     {
       "id": "gh-139-command-doc-engine-fallback-ungated",
@@ -3552,7 +3561,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 142,
+  "revision": 148,
   "reviewMode": "thorough",
   "releases": [
     {
