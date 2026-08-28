@@ -28,12 +28,12 @@ You (Claude) are myopic across compactions. This skill is how you stop losing th
 
 ## Running the engine (resolve the path — never version-pin)
 
-When you invoke `conductor.mjs` from a Bash step, resolve it version-independently. Prefer a
-repo-local `scripts/conductor.mjs` first — if `$CLAUDE_PROJECT_DIR` (or the cwd) IS the pm plugin
-source (self-hosting: developing pm on itself), that copy is always newer than whatever's
-installed in the plugin cache, and skipping it is how a stale cached engine silently runs against
-the very changes you're testing. Otherwise prefer `$CLAUDE_PLUGIN_ROOT`; if that's also unset
-(common outside a slash-command), fall back to the newest installed copy. **Never** hardcode a
+When you invoke `conductor.mjs` from a Bash step, resolve it version-independently: prefer
+`$CLAUDE_PLUGIN_ROOT`, and if that's unset (common outside a slash-command) fall back to the
+newest installed copy. **Never** resolve it out of the PROJECT — `$CLAUDE_PROJECT_DIR` names a
+directory whose contents the project itself writes, so a `-f` test there is a promise to run
+whatever file happens to sit at `scripts/conductor.mjs` in whatever repo you opened. Self-hosting
+does not need it; the paragraph below is how the checkout's engine wins. **Never** hardcode a
 versioned cache path like `…/pm/0.6.1/scripts/…` — it breaks on the next upgrade. Every invocation
 prints `conductor: engine <version> @ <path>` to stderr, EXCEPT this is suppressed by default
 whenever `$CLAUDE_PROJECT_DIR` is set (a self-hosting/dev context, where a stale-cache mismatch
@@ -41,11 +41,12 @@ is unlikely) — set `PM_VERBOSE_ENGINE_BANNER=1` to force it back on if you nee
 source there. `PM_QUIET_ENGINE_BANNER=1` still works as an explicit suppress outside that
 context too.
 
-**Developing pm itself?** The engine can enforce that same preference for the callers that cannot
-run the snippet below: `hooks/hooks.json` invokes it through `$CLAUDE_PLUGIN_ROOT` with no chance
-to resolve anything. Export `PM_ENGINE_DELEGATION=/abs/path/to/your/pm/checkout` and an installed
-engine running in **that** tree hands the whole invocation off to its `scripts/conductor.mjs`
-before doing any work.
+**Developing pm itself?** This is how the checkout's engine wins, for every caller at once —
+including `hooks/hooks.json`, which invokes the engine through `$CLAUDE_PLUGIN_ROOT` with no
+chance to resolve anything. Export `PM_ENGINE_DELEGATION=/abs/path/to/your/pm/checkout` and an
+installed engine running in **that** tree hands the whole invocation off to its
+`scripts/conductor.mjs` before doing any work. It is contributor setup, documented in
+CONTRIBUTING.md and the README — ordinary users never set it and never need to.
 
 It is **opt-in, and it names one path, deliberately**. Those four hooks fire in every project on
 the machine, so anything a project could write about itself — a `.claude-plugin/plugin.json`
@@ -53,16 +54,18 @@ saying `"name": "pm"` is two lines — could be forged by a hostile repo to get 
 A bare on/off flag would have the same problem in practice, since it gets exported in a shell
 profile and is then set everywhere; a path names your checkout and matches nothing else.
 
-Two caveats. It only exists once the *installed* plugin carries the release that added it, so
-keep resolving `$ENGINE` as below rather than relying on it. And it makes the engine you TYPE
-non-authoritative: with it set, running a worktree's `scripts/conductor.mjs` while
-`$CLAUDE_PROJECT_DIR` points at the main checkout runs the **main checkout's** engine, because
-the project dir decides. In a repo that works in worktrees as much as this one, that is worth
-knowing before you debug a change that seems not to take.
+Two caveats. It only exists once the *installed* plugin carries the release that added it, and
+the snippet below will not cover for it — resolving the engine out of the project directory is
+how that used to be papered over, and gh-139 deleted that arm because it executed
+project-supplied code on nothing but a `-f` test. While developing a release the installed
+plugin does not yet carry, run `node scripts/conductor.mjs <verb>` from the checkout directly.
+And it makes the engine you TYPE non-authoritative: with it set, running a worktree's
+`scripts/conductor.mjs` while `$CLAUDE_PROJECT_DIR` points at the main checkout runs the
+**main checkout's** engine, because the project dir decides. In a repo that works in worktrees
+as much as this one, that is worth knowing before you debug a change that seems not to take.
 
 ```bash
-ENGINE="${CLAUDE_PROJECT_DIR:+$CLAUDE_PROJECT_DIR/scripts/conductor.mjs}"
-[ -f "$ENGINE" ] || ENGINE="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/scripts/conductor.mjs}"
+ENGINE="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/scripts/conductor.mjs}"
 [ -f "$ENGINE" ] || ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1)
 node "$ENGINE" <subcommand>
 ```
