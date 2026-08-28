@@ -3400,7 +3400,13 @@
       "reconcileNeeded": false,
       "externalId": "137",
       "externalUrl": "https://github.com/cfdude/pm/issues/137",
-      "attributedCommits": []
+      "attributedCommits": [
+        "6aac753",
+        "ddda66d",
+        "e3c0f37",
+        "0bce014",
+        "9382183"
+      ]
     },
     {
       "id": "gh-136-add-epic-notes-discarded",
@@ -3520,7 +3526,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 132,
+  "revision": 137,
   "reviewMode": "thorough",
   "releases": [
     {
