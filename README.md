@@ -487,6 +487,16 @@ registered as an epic already in `archived` status. That backfill is announced o
 **and** it names a scope to read, `/pm:sync` also pulls open items in as untriaged epics,
 deduplicated by `externalUrl` (globally unique) rather than bare `externalId`.
 
+A **plan file is matched to its epic by association, not by filename**. Plan filenames carry a
+date prefix and epic ids do not, so a filename match fired only by luck and every other epic's
+plan came back as a fresh untriaged epic on every sync, forever. `/pm:sync` now skips a plan some
+epic's `planPath` claims — whatever that epic's id, lane or status, so a shipped plan stops being
+re-offered without inferring completion from anything — and where a plan matches an existing epic
+id minus its date prefix, it registers nothing and prints both exits (associate it, or register
+it as distinct work). `remove-epic` leaves a `syncIgnore` tombstone so a removal survives the next
+sync; attaching that plan to an epic clears it. Attach the plan
+(`/pm:epic update <id> --plan <path>`) and the association does the rest.
+
 </details>
 
 <details>
