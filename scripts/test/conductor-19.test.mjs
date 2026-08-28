@@ -152,6 +152,23 @@ test("the name-match rung never fires when some epic already claims the plan", (
     "an existing claim is the answer; instructing a second association would create a fork");
 });
 
+test("the name-match rung never offers an epic that already claims a DIFFERENT plan", () => {
+  const cwd = tmpRepo();
+  const first = withPlan(cwd, "2026-08-01-recurring-audit.md");
+  withPlan(cwd, "2026-09-01-recurring-audit.md");
+  // Two date-prefixed plans sharing a stem — the reachable case. Rung 1 fires only when THIS
+  // plan is claimed, so an epic holding the OTHER one still matched by name, and the emitted
+  // instruction would have repointed its progress source at this file, silently discarding a
+  // recorded association. It falls through to registration instead: a visible epic a human can
+  // remove beats a silent overwrite of a real association.
+  seed(cwd, [epic({ id: "2026-08-01-recurring-audit", planPath: first })]);
+  const out = runCombined(["sync"], { cwd });
+  assert.doesNotMatch(out, /update-epic 2026-08-01-recurring-audit --plan/,
+    "never instruct an operator to overwrite an association the record already holds");
+  assert.ok(ids(cwd).includes("2026-09-01-recurring-audit"),
+    "and do not suppress it either — an epic that already claims something answers nothing about this plan");
+});
+
 // ─────────── rung 3: the tombstone — removal that survives the next sync ───────────
 
 test("gh-64: remove-epic tombstones the removed epic's plan, and sync does not resurrect it", () => {

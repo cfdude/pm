@@ -14,7 +14,7 @@ import { buildBrief } from "./briefing.mjs";
 import { appendDetourLog, gitShortSha } from "./git.mjs";
 import { detourContext } from "./links.mjs";
 import { activeChangeIds, archivedChanges, firstHeading, planFiles, reconcileArchived, strippedChangeId } from "./epic-progress.mjs";
-import { claimedSourceArtifacts, normalizeArtifactPath, syncIgnoredArtifacts } from "./source-artifacts.mjs";
+import { claimedSourceArtifacts, epicSourceArtifacts, normalizeArtifactPath, syncIgnoredArtifacts } from "./source-artifacts.mjs";
 import { engineStamp } from "./disposition.mjs";
 import { ROOT, CONDUCTOR_DIR, BRIEF_PATH, PLANS_DIR, anyInwardProcedureEmittable } from "./constants.mjs";
 import { resolveAndRecordPlatform } from "./platform.mjs";
@@ -351,7 +351,15 @@ export function sync(quiet = false) {
     //    unrelated plan would point that epic's progress source at the wrong file and read
     //    `0/N` forever. Registering nothing is the conservative half — a plan named after an
     //    existing epic minus its date prefix is, on all evidence, that epic's plan.
-    const near = state.epics.find(e => e.id !== id && strippedChangeId(e.id) === strippedChangeId(id));
+    //    The candidate must claim NO source artifact of its own. Rung 1 only fires when THIS
+    //    plan is claimed, so an epic already holding a DIFFERENT plan still matches by name —
+    //    and the instruction would then repoint that epic's progress source at this file,
+    //    silently discarding a recorded association. Reachable with two date-prefixed plans
+    //    sharing a stem: `2026-08-01-x.md` registers, then `2026-09-01-x.md` matches it. An
+    //    epic that already claims something falls through to registration instead: a visible
+    //    epic a human can remove beats a silent overwrite of a real association.
+    const near = state.epics.find(e =>
+      e.id !== id && strippedChangeId(e.id) === strippedChangeId(id) && !epicSourceArtifacts(e).length);
     if (near) {
       if (!quiet) process.stderr.write(
         `conductor: sync skipped plan '${fname}' — epic '${near.id}' has the same name without ` +
