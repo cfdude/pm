@@ -148,6 +148,24 @@ test("28.2 an unparseable detect: is skipped without taking the other lessons do
   assert.doesNotMatch(out, /never seen/);
 });
 
+test("28.2 a malformed REGEX in a matcher is that lesson's problem, not the corpus's", () => {
+  const cwd = initRepo();
+  // `detect:` parses fine as JSON; the regex inside it does not compile. Reachable from any
+  // repo's frontmatter, and the failure would land on a hook that fires on every tool call.
+  lesson(cwd, "bad-regex", {
+    detect: '{"tool":"Bash","commandMatches":"["}', rule: "never seen",
+  });
+  lesson(cwd, "editing-inside-a-generated-block", EDIT_CLAUDE_MD);
+  const r = engine(["lesson-advice"], {
+    cwd, input: JSON.stringify({ tool_name: "Bash", tool_input: { command: "git status" } }),
+  });
+  assert.equal(r.status, 0, "a bad regex must not crash the hook");
+  assert.equal(r.stdout.trim(), "");
+  // And the rest of the corpus is untouched by it.
+  assert.match(advice(cwd, { tool_name: "Edit", tool_input: { file_path: "/x/CLAUDE.md" } }),
+    /BELOW the END marker/);
+});
+
 // ─────────────────── 28.3: dormancy — silent where it has no business speaking ─────────────
 
 test("28.3 dormant in a repo with no docs/lessons/ directory", () => {
@@ -280,6 +298,17 @@ test("28.6 the item names all three destinations of the fork, on every emitted s
     assert.match(flat, /docs\/lessons\//, `${name} must name the lessons destination`);
     assert.match(flat, /a workaround produces working output/i,
       `${name} must say why the friction direction is the one that gets missed`);
+  }
+});
+
+test("28.6 no `{{pm:…}}` placeholder survives into the rendered block, on any platform", () => {
+  const cwd = initRepo();
+  // The placeholder is new machinery with a silent failure mode: a typo'd name renders
+  // LITERALLY into the rules block and nothing else notices. platform.test.mjs catches the
+  // resolved-to-the-wrong-form case; this catches the never-resolved-at-all case.
+  for (const platform of ["claude-code", "codex", "hermes"]) {
+    assert.doesNotMatch(run(["rules", "--platform", platform], { cwd }), /\{\{/,
+      `an unresolved placeholder reached the ${platform} block`);
   }
 });
 
