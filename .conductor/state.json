@@ -30,7 +30,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-08-26T22:39:16.528Z",
         "recordedBy": "migration"
-      }
+      },
+      "specPath": "docs/superpowers/specs/2026-07-14-epic-hierarchy-orchestration-design.md"
     },
     {
       "id": "portfolio-architecture-consistency-scan",
@@ -1318,7 +1319,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-25T18:52:22.706Z",
         "recordedBy": "migration"
-      }
+      },
+      "specPath": "docs/superpowers/specs/2026-07-14-epic-hierarchy-orchestration-design.md"
     },
     {
       "id": "df-update-epic-no-story-toggle-verb",
@@ -1372,7 +1374,8 @@
         "outcome": "delivered",
         "recordedAt": "2026-07-21T09:59:09.242Z",
         "recordedBy": "migration"
-      }
+      },
+      "specPath": "docs/superpowers/specs/2026-07-21-conductor-mjs-module-split-design.md"
     },
     {
       "id": "edd-harness-agent-behavior-testing",
@@ -1390,7 +1393,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-28T01:32:40.590Z",
         "recordedBy": "migration"
-      }
+      },
+      "specPath": "docs/superpowers/specs/2026-07-25-edd-harness-agent-behavior-testing-design.md"
     },
     {
       "id": "rules-block-hardcodes-claude-slash-commands",
@@ -1433,7 +1437,8 @@
         "outcome": "delivered",
         "recordedAt": "2026-08-04T00:48:57.337Z",
         "recordedBy": "migration"
-      }
+      },
+      "specPath": "docs/superpowers/specs/2026-07-31-platform-parity-mechanism-design.md"
     },
     {
       "id": "codex-platform-support",
@@ -1465,7 +1470,8 @@
         }
       ],
       "reconcileNeeded": false,
-      "parent": "multi-platform-agent-support"
+      "parent": "multi-platform-agent-support",
+      "specPath": "docs/superpowers/specs/2026-07-25-codex-platform-support-design.md"
     },
     {
       "id": "hermes-platform-support",
@@ -1899,7 +1905,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-30T04:00:55.770Z",
         "recordedBy": "migration"
-      }
+      },
+      "specPath": "docs/superpowers/specs/2026-07-21-conductor-mjs-module-split-design.md"
     },
     {
       "id": "2026-07-26-edd-harness-agent-behavior-testing",
@@ -1916,7 +1923,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-30T04:00:55.969Z",
         "recordedBy": "migration"
-      }
+      },
+      "specPath": "docs/superpowers/specs/2026-07-25-edd-harness-agent-behavior-testing-design.md"
     },
     {
       "id": "2026-07-29-platform-aware-rules-block",
@@ -1933,7 +1941,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-30T04:00:56.179Z",
         "recordedBy": "migration"
-      }
+      },
+      "specPath": "docs/superpowers/specs/2026-07-29-platform-aware-rules-block-design.md"
     },
     {
       "id": "platform-switch-orphans-old-rules-block",
@@ -2120,7 +2129,8 @@
           "reason": "attribution records who DID the work; assignment records who SHOULD -- same field family, different lifecycle"
         }
       ],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "specPath": "docs/superpowers/specs/2026-08-23-cross-repo-orchestration-design.md"
     },
     {
       "id": "cross-session-epic-assignment",
@@ -2138,7 +2148,8 @@
       ],
       "reconcileNeeded": false,
       "externalId": "84",
-      "externalUrl": "https://github.com/cfdude/pm/issues/84"
+      "externalUrl": "https://github.com/cfdude/pm/issues/84",
+      "specPath": "docs/superpowers/specs/2026-08-23-cross-repo-orchestration-design.md"
     },
     {
       "id": "changelog-page-too-long-archive-older-releases",
@@ -2250,7 +2261,8 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "82",
-      "externalUrl": "https://github.com/cfdude/pm/issues/82"
+      "externalUrl": "https://github.com/cfdude/pm/issues/82",
+      "specPath": "docs/superpowers/specs/2026-08-23-cross-repo-orchestration-design.md"
     },
     {
       "id": "gh-85-document-mutating-verbs",
@@ -2613,7 +2625,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-08-26T22:39:16.528Z",
         "recordedBy": "migration"
-      }
+      },
+      "specPath": "docs/superpowers/specs/2026-07-31-platform-parity-mechanism-design.md"
     },
     {
       "id": "2026-08-14-eval-measures-worktree",
@@ -2628,7 +2641,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-08-26T22:39:16.528Z",
         "recordedBy": "migration"
-      }
+      },
+      "specPath": "docs/superpowers/specs/2026-08-07-eval-measures-worktree-design.md"
     },
     {
       "id": "gh-104-commit-nudge-fires-on-text-match",
@@ -2685,7 +2699,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-26T21:22:46.061Z"
+      "completedAt": "2026-08-26T21:22:46.061Z",
+      "specPath": "docs/superpowers/specs/2026-08-23-tracker-direction-and-freshness-design.md"
     },
     {
       "id": "gh-103-tracker-refresh-gate-before-specs",
@@ -2715,7 +2730,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-26T21:22:47.586Z"
+      "completedAt": "2026-08-26T21:22:47.586Z",
+      "specPath": "docs/superpowers/specs/2026-08-23-tracker-direction-and-freshness-design.md"
     },
     {
       "id": "gh-105-feedback-undeclared-gh-dependency",
@@ -2793,7 +2809,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-26T21:22:50.755Z"
+      "completedAt": "2026-08-26T21:22:50.755Z",
+      "specPath": "docs/superpowers/specs/2026-08-23-tracker-direction-and-freshness-design.md"
     },
     {
       "id": "gh-110-gate2-bypassed-by-archive-hook",
@@ -3436,7 +3453,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-08-24T01:40:39.820Z",
         "recordedBy": "migration"
-      }
+      },
+      "specPath": "docs/superpowers/specs/2026-08-18-state-write-conflict-guard-design.md"
     },
     {
       "id": "gh-130-disposition-has-no-correction-verb",
@@ -3735,7 +3753,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 181,
+  "revision": 199,
   "reviewMode": "thorough",
   "releases": [
     {
