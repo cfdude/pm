@@ -28,7 +28,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { tmpRepo, run, runCombined, readState, expectFail } from "./helpers.mjs";
+import { tmpRepo, run, runCombined, readState, writeState, expectFail } from "./helpers.mjs";
 
 const CONSTANTS = new URL("../lib/constants.mjs", import.meta.url).href;
 const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -281,6 +281,24 @@ test("gh-152: VERB_FLAGS' valueless rows are a short closed list", async () => {
   ], "a flag marked valueless is EXEMPT from the guard — widening this list silently reopens #152");
 });
 
+test("gh-152: a flag repeatable ONLY in VERB_FLAGS still repeats at the parser", () => {
+  // MUTATION SURVIVOR (152-i). parseFlags' repeatable set is global across subcommands and is
+  // now a projection of BOTH tables; narrowing it back to EPIC_FLAGS passed every other test
+  // here, because `--intent` happens to live in EPIC_FLAGS too. The flags that would silently
+  // break are the ones only VERB_FLAGS declares — `--preauthorize`, `--context`, `--notify`,
+  // `--add` — where a non-repeatable read OVERWRITES on each occurrence and the command exits 0
+  // having kept only the last. That is the exact failure the old hand-written
+  // REPEATABLE_NON_EPIC_FLAGS list existed to prevent, so replacing it needs this test.
+  const cwd = sweepRepo();
+  run(["set-autonomy", "e1", "--preauthorize", "rm -rf build:disposable", "--preauthorize",
+    "drop table:recreated by the migration", "--context", "one", "--context", "two"], { cwd });
+  const a = readState(cwd).epics.find(e => e.id === "e1").autonomy;
+  assert.equal(a.preAuthorized.length, 2, "both --preauthorize grants must land, not just the last");
+  assert.equal(a.context.length, 2, "both --context notes must land");
+  run(["set-lane-routing", "--add", "cache:claude-code", "--add", "schema:openspec"], { cwd });
+  assert.equal(readState(cwd).laneRouting.overrides.length, 2, "both --add overrides must land");
+});
+
 test("gh-152: `--remove` is value-bearing on set-lane-routing and valueless on set-tracker", async () => {
   // The reason rows are SCOPED rather than global: the same spelling is a match string on one
   // verb and a boolean on the other. A single global row for `--remove` would have to pick one,
@@ -381,6 +399,51 @@ test("gh-151: push-detour validates what only the engine can — the guarantees 
     assert.match(String(err.stderr || err.message), re);
   }
   assert.equal(stateOf(cwd), before, "not one refusal may leave a write behind");
+});
+
+test("gh-151: an ABSENT --reason is refused, not just a valueless one", () => {
+  // MUTATION SURVIVOR (151-j). requireFlagValues() skips a flag that is not present at all, so
+  // it catches `--reason` with nothing after it and `--reason "   "` and NOT `--reason` omitted
+  // entirely — which would have pushed a frame carrying `reason: ""`, the empty deferral reason
+  // this verb exists to make impossible. Only the usage guard covers that case, and nothing
+  // exercised it.
+  const cwd = detourRepo();
+  const before = stateOf(cwd);
+  const err = expectFail(() =>
+    run(["push-detour", "parent", "--detour", "fixit", "--reconcile"], { cwd }));
+  assert.ok(err, "push-detour with no --reason at all must be refused");
+  assert.match(String(err.stderr || err.message), /--reason "<why>"/);
+  assert.equal(stateOf(cwd), before, "a reasonless push must write nothing");
+});
+
+test("gh-151: a HAND-WRITTEN legacy frame still resumes with its reconcile obligation", () => {
+  // MUTATION SURVIVOR (151-l), and the back-compat claim this change makes: a frame written by
+  // the old hand-edit protocol loads unchanged, because its shape does not change.
+  //
+  // Dropping pop-detour's `reconcileNeeded` write passed every other test here, because
+  // push-detour had ALREADY set the flag at push time and reconcileArchived() leaves it alone
+  // while the epic is `state.active`. A HAND-WRITTEN frame has no such history — the flag lives
+  // only on the frame — so the pop-side write is the one thing standing between a legacy frame
+  // and a resumed epic that silently owes no reconcile. Seeded directly, which is the only way
+  // to represent a state this engine's own verbs would never produce.
+  const cwd = detourRepo();
+  const s = readState(cwd);
+  s.epics.find(e => e.id === "parent").status = "paused";
+  s.epics.find(e => e.id === "fixit").status = "archived";
+  s.active = "fixit";
+  s.detourStack = [{
+    pausedEpic: "parent", pausedAt: "2026-08-01T00:00:00.000Z",
+    reason: "hand-written by the old protocol", spawnedDetour: "fixit", reconcileOnResume: true,
+  }];
+  writeState(cwd, s);
+
+  runCombined(["pop-detour"], { cwd });
+  assert.equal(readState(cwd).epics.find(e => e.id === "parent").reconcileNeeded, true,
+    "a legacy frame's reconcileOnResume must become the resumed epic's reconcileNeeded");
+  run(["render"], { cwd });
+  assert.equal(readState(cwd).epics.find(e => e.id === "parent").reconcileNeeded, true,
+    "…and survive the self-heal, exactly as a verb-written frame's does");
+  assert.equal(readState(cwd).detourStack.length, 0);
 });
 
 test("gh-151: an archived epic cannot be paused, and an archived detour cannot be pushed to", () => {
