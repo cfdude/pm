@@ -481,6 +481,46 @@ The step otherwise lost after compaction. Do not skip it.
    into your actual Honcho MCP memory/conclusion tool call.
 5. Render. State the exact next story to build.
 
+## Reporting — pm owns what is recorded and what is said; you own how you say it
+
+A plugin must not have a house style that outranks the user's. Users configure verbosity and
+format deliberately, once, globally, and user instructions outrank a plugin's preferences. But
+pm's shapes are not uniformly cosmetic, so "defer to the user" applied flat would delete
+obligations — the same failure pointed the other way. The line is **content vs container**.
+
+A user configures theirs in one of two places, and pm honours both: an **output style**, or a
+**communication contract** written into their CLAUDE.md.
+
+| Band | Examples | Bends to the user's output style / communication contract? |
+|---|---|---|
+| **Recorded** | `--outcome`/`--reason`, `--no-deferrals`, gate verdicts, `--attribute-commit`, `--notify`, `record-reconcile`, `record-cross-spec-review` | **No** — these are writes to `.conductor/state.json`, not sentences |
+| **Parsed** | `hierarchy-child-executor`'s `STATUS/DONE/DECISIONS/CONCERNS`; `merge-conflict-resolver`'s `STATUS/FILES/RESOLUTION_SUMMARY/CONCERNS`; `reconciler`'s `VERDICT/AMENDMENTS/NOTES` | **No** — a wire format between agents. The prose INSIDE a field is ordinary writing and does |
+| **Narrated** | the consolidated end-of-hierarchy report, the end-of-epic autonomy report, the preflight question batch, gate summaries, `/pm:status` narration, `/pm:next`'s recommendation | **Yes** — this is presentation, and it follows the user |
+
+Everything in the **Narrated** row renders in the user's shape when they have one. pm's own
+headings are a default for a user who has configured none — never a style that outranks one, and
+two competing formats in one session is the defect.
+
+**Scope.** This governs how you REPORT, never what the rest of this skill instructs you to DO. A
+brevity contract shortens prose; it does not authorise skipping a required task item, a gate, or
+a recorded disposition.
+
+**Map the content into their shape; never drop it to fit.** Reshaping is always allowed, omitting
+never. Where the user's shape has no slot for something pm requires — the `notifications[]`
+read-back, the explicit *"are you OK with these?"* checkpoint, the deferral list, a blocked child,
+a `CONCERNS` line worth flagging — add a slot rather than drop the element.
+
+**Why the Parsed band cannot bend.** The orchestrator branches on `STATUS` to decide whether to
+start the next batch, escalates on `STATUS: uncertain`, and transcribes `VERDICT` straight into
+`record-reconcile`, whose value space the engine enforces one hop later. A reshaped field name is
+a report nobody reads back.
+
+**CLAUDE.md is the only channel that reaches a subagent.** A subagent inherits every level of the
+CLAUDE.md hierarchy the main conversation loads, `~/.claude/CLAUDE.md` included; an **output style
+applies to the main conversation only** and does not reach one. So a user's contract that lives
+only in an output style never arrives at a `hierarchy-child-executor` or the `reconciler` — carry
+it into the dispatch prompt yourself, or the child cannot honour a preference it was never given.
+
 ## Delegate discovery — your context is the scarce resource
 
 **If you do not already know the file path, do not go looking yourself.** A subagent's transcript

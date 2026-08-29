@@ -404,6 +404,67 @@ export const intakeLines = (platform = "claude-code") => [
   "answers \"is this ask already in the backlog under another name\". Run both.",
 ];
 
+/** The REPORTING section (gh-90) — where pm's own reporting shape gives way to the user's, and
+ *  where it does not. ALWAYS ON: no tracker configuration turns it on or off.
+ *
+ *  A plugin must not have a house style that outranks the user's. The platform's own precedence
+ *  says user instructions outrank a skill's preferences, and a user configures verbosity and
+ *  format deliberately, once, globally. But pm's shapes are not uniformly cosmetic, so "defer to
+ *  the user" applied flat would delete obligations — which is the same failure the issue reports,
+ *  pointed the other way. The line drawn here is CONTENT vs CONTAINER:
+ *
+ *    RECORDED   — engine writes (`--outcome`/`--reason`, `--no-deferrals`, gate verdicts,
+ *                 `--attribute-commit`, `--notify`, `record-reconcile`). Not communication at
+ *                 all, so no communication contract reaches them.
+ *    PARSED     — a report another AGENT reads back: the child executor's STATUS block (the
+ *                 orchestrator branches on `STATUS`), the merge-conflict-resolver's, and the
+ *                 reconciler's `VERDICT`, whose value space `record-reconcile` enforces one hop
+ *                 later. A wire format between agents, not prose for a human.
+ *    NARRATED   — everything a human reads. This is presentation, and it follows the user.
+ *
+ *  Plus the inheritance rule, which decides what actually reaches a dispatched child: subagents
+ *  inherit the CLAUDE.md hierarchy the main conversation loads, `~/.claude/CLAUDE.md` included;
+ *  output styles apply to the main conversation ONLY. Without saying this out loud an implementer
+ *  reasonably assumes the output style covers the children, and they keep ignoring it. */
+export const reportingLines = (platform = "claude-code") => [
+  "## Reporting — pm owns what is recorded and what is said; you own how you say it",
+  "",
+  "This section governs how you REPORT. It never governs what the sections above instruct you to",
+  "DO: a brevity contract shortens prose, it does not authorise skipping a required task item, a",
+  "gate, or a recorded disposition.",
+  "",
+  "1. **A recorded fact is not output, and no contract shortens it.** `--outcome` and its",
+  "   `--reason`, `--no-deferrals` or the deferrals it stands in for, a gate verdict,",
+  "   `--attribute-commit`, `--notify`, `record-reconcile`, `record-cross-spec-review` — these",
+  "   are WRITES to `.conductor/state.json`, not sentences. Applying a communication preference",
+  "   to one is data loss, not brevity.",
+  "2. **A report another AGENT reads back is a wire format and does not bend.** The",
+  "   `hierarchy-child-executor`'s `STATUS/DONE/DECISIONS/CONCERNS` block, the",
+  "   `merge-conflict-resolver`'s, and the `reconciler`'s `VERDICT/AMENDMENTS/NOTES`: the",
+  "   orchestrator branches on `STATUS`, and `VERDICT`'s value space is enforced by",
+  "   `record-reconcile` one hop later. Keep those field names and that order exactly. The PROSE",
+  "   INSIDE a field is ordinary writing and follows item 3 like anything else.",
+  "3. **Everything a HUMAN reads follows the user's contract, not pm's.** The consolidated",
+  "   end-of-hierarchy report, the end-of-epic autonomy report, the preflight question batch, a",
+  `   gate summary, \`${pmCmd(platform, "status")}\` narration, \`${pmCmd(platform, "next")}\`'s recommendation. If the user`,
+  "   has an output style, or a communication contract in their CLAUDE.md, render pm's",
+  "   human-facing output in THAT shape. pm's headings are a DEFAULT for a user who has",
+  "   configured none — not a house style that outranks one. Two competing formats in one",
+  "   session is the defect.",
+  "4. **Map the content into their shape; never drop it to fit.** Reshaping is always allowed;",
+  "   omitting is never. Where the user's shape has no slot for something pm requires — the",
+  "   `notifications[]` read-back, the explicit \"are you OK with these?\" checkpoint, the",
+  "   deferral list, a blocked child, a `CONCERNS` line worth flagging — ADD a slot rather than",
+  "   drop the element. Silently deleting an obligation to fit a terse contract is the same",
+  "   failure as imposing pm's format over theirs, pointed the other way.",
+  "5. **CLAUDE.md is the only channel that reaches a subagent.** A subagent inherits every level",
+  "   of the CLAUDE.md hierarchy the main conversation loads, `~/.claude/CLAUDE.md` included; an",
+  "   OUTPUT STYLE applies to the main conversation ONLY and does not reach one. So when you",
+  "   dispatch a `hierarchy-child-executor` or the `reconciler` and the user's contract lives",
+  "   only in an output style, carry it into the dispatch prompt yourself — otherwise the child",
+  "   cannot honour a preference it was never given.",
+];
+
 // #105: `gh` and an authenticated GitHub account are an UNDECLARED dependency of the emitted
 // `gh issue list` step. THE one declaration of the preflight, so the PRIMARY and SECONDARY
 // inward sections cannot come to state it differently — or state it at one site and not the
@@ -496,6 +557,8 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     ...gateProcedureLines(platform),
     "",
     ...intakeLines(platform),
+    "",
+    ...reportingLines(platform),
     "",
     "## Epic-level autonomy",
     "",

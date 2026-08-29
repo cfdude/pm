@@ -37,6 +37,7 @@ const REFRESH_GATE_HEADING = "## Re-read the source before an epic becomes the w
 const GATE_PROCEDURE_HEADING = "## The gate procedure — required task items";
 const INTAKE_HEADING = "## Intake — triage an ask against the whole backlog BEFORE registering it";
 const OPERATING_RULES_HEADING = "## PM Conductor — operating rules";
+const REPORTING_HEADING = "## Reporting — pm owns what is recorded and what is said; you own how you say it";
 /** The block minus the ALWAYS-ON sections — the numbered operating rules, the refresh gate, the
  *  emitted gate procedure and the intake procedure — see conductor-14's identical helper for why
  *  byte-identity is claimed for the tracker sections and not for the whole document, and for why
@@ -45,7 +46,11 @@ const stripAlwaysOn = (block) => block
   .replace(new RegExp(`\\n*${REFRESH_GATE_HEADING}[\\s\\S]*?(?=\\n<!-- END pm-conductor rules -->)`), "")
   .replace(new RegExp(`${OPERATING_RULES_HEADING}[\\s\\S]*?(?=## )`), "")
   .replace(new RegExp(`${GATE_PROCEDURE_HEADING}[\\s\\S]*?(?=## )`), "")
-  .replace(new RegExp(`${INTAKE_HEADING}[\\s\\S]*?(?=## )`), "");
+  .replace(new RegExp(`${INTAKE_HEADING}[\\s\\S]*?(?=## )`), "")
+  // gh-90 adds the reporting section: always-on for the same reason, and stripped for the same
+  // reason — no tracker configuration turns it on, off, or into something else, and pinning it
+  // byte-for-byte against 0.26.0 would forbid the release from adding it at all.
+  .replace(new RegExp(`${REPORTING_HEADING}[\\s\\S]*?(?=## )`), "");
 
 test("7.5: the checked-in 0.26.0 state carries none of this release's fields", () => {
   const raw = fs.readFileSync(STATE_0_26_0, "utf8");

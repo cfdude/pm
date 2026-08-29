@@ -1056,6 +1056,28 @@ Installed to `skills/` on `/pm:init`:
 | `lessons` | Keeping a repository's PROCESS knowledge where it fires on the situation rather than on recall — the `docs/lessons/` shape, the frontmatter contract, and the capture half. Its `detect:` matchers are what the `lesson-advice` `PreToolUse` hook fires on. pm ships the mechanism, never the corpus. Triggers on "lessons learned," "have we hit this before," "that cost us." |
 | `dogfooding` | Routing what the work taught you instead of leaving it in the transcript: a practice you adopted becomes a registered candidate with its evidence attached, and a workaround you invented for tooling friction becomes a filed bug. Triggers on "should this be in the product," "I had to work around," "there's no verb for this." |
 
+## Reporting — pm does not have a house style
+
+You configure verbosity and format deliberately, once, globally — in an **output style**, or as a
+**communication contract** in your CLAUDE.md. A plugin re-imposing its own defeats that, so pm's
+reporting shapes are split three ways and only one of them is pm's to keep.
+
+| Band | What it is | Follows your contract? |
+|---|---|---|
+| **Recorded** | `--outcome`/`--reason`, `--no-deferrals`, gate verdicts, `--attribute-commit`, `--notify`, `record-reconcile` | **No** — these are writes to `.conductor/state.json`, not sentences. A communication preference applied to a record is data loss, not brevity. |
+| **Parsed** | `hierarchy-child-executor`'s `STATUS/DONE/DECISIONS/CONCERNS`, `merge-conflict-resolver`'s, `reconciler`'s `VERDICT/AMENDMENTS/NOTES` | **No** — a wire format between agents. The orchestrator branches on `STATUS`; a reshaped field name is a report nobody reads back. The prose *inside* a field does follow your contract. |
+| **Narrated** | the consolidated end-of-hierarchy report, the end-of-epic autonomy report, the preflight question batch, gate summaries, `/pm:status` narration, `/pm:next`'s recommendation | **Yes.** pm's headings are a default for a user who has configured none — not a style that outranks one. |
+
+Reshaping is always allowed; omitting never is. Where your shape has no slot for something pm
+requires — the `notifications[]` read-back, the "are you OK with these?" checkpoint, the deferral
+list — pm's instruction is to add a slot, not to drop the element.
+
+**One inheritance detail decides what actually reaches a dispatched child.** A subagent inherits
+every level of the CLAUDE.md hierarchy the main conversation loads, `~/.claude/CLAUDE.md`
+included; an **output style applies to the main conversation only** and does not reach one. So a
+contract that lives only in an output style never arrives at a child executor or the reconciler —
+put it in CLAUDE.md if you want the whole hierarchy to honour it.
+
 ## Guard & Automation
 
 <details>

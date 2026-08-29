@@ -69,5 +69,11 @@ RESOLUTION_SUMMARY: <what you did and why, concretely, or your partial analysis 
 CONCERNS: <any judgment call worth a second look, or "none">
 ```
 
-Do not narrate your process beyond this report. If `STATUS: resolved`, the merge commit must
+Do not narrate your process beyond this report.
+
+**These field names and their order are a wire format, not a style, so they do NOT bend to a
+user's output style or CLAUDE.md communication contract** — the orchestrator branches on
+`STATUS: uncertain` to decide whether to escalate, and a reshaped field name is a report nobody
+reads back. The prose inside each field is ordinary writing and follows that contract like
+anything else. If `STATUS: resolved`, the merge commit must
 already exist by the time you report back — the orchestrator does not re-attempt it for you.

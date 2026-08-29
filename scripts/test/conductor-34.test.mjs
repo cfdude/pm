@@ -237,3 +237,108 @@ test("34.3 the hierarchy preflight — the heaviest inline read — is dispatche
   assert.ok(skill.includes(norm("about depth, not about who performs it")),
     "the skill must say the full-read requirement is about depth, not about who performs it");
 });
+
+// ───────────── 34.4 (#90): pm's reporting shape yields to the user's, where it is presentation ─────────────
+//
+// The naive fix is wrong in an interesting way, so the split matters more than the deference. A
+// sweep of every prescribed shape in the shipped surfaces (`rg` for report templates, then a
+// search for each one's CONSUMER) puts them in three bands:
+//
+//   RECORDED — engine writes. Not communication at all, so no communication contract reaches
+//              them; "be brief" applied to a disposition's --reason is data loss.
+//   PARSED   — a report another AGENT reads back. The orchestrator branches on `STATUS`, escalates
+//              on `STATUS: uncertain`, and transcribes `VERDICT` into `record-reconcile`, whose
+//              value space lib/reconciler-writeback.mjs enforces one hop later.
+//   NARRATED — everything a human reads. Presentation, and it follows the user.
+//
+// Both halves are guarded below, because either one alone is the defect: deference without the
+// carve-outs deletes obligations, and carve-outs without deference is the house style the issue
+// was filed about.
+
+const REPORTING_HEADING = "## Reporting — pm owns what is recorded and what is said; you own how you say it";
+
+test("34.4 the emitted block carries the reporting split as its own numbered section", () => {
+  const block = rulesText(initRepo());
+  assert.ok(block.includes(REPORTING_HEADING),
+    "reporting must be a section of its own, not a sentence inside another");
+  const start = block.indexOf(REPORTING_HEADING);
+  const rest = block.slice(start + REPORTING_HEADING.length);
+  const cut = rest.search(/\n## /);
+  const section = cut === -1 ? rest : rest.slice(0, cut);
+  const items = numberedItems(section);
+  assert.ok(items.length >= 5, "the split is carried as numbered items, not prose bullets");
+  assert.deepEqual(items.map(l => Number(l.match(/^(\d+)\./)[1])), items.map((_, i) => i + 1),
+    "the reporting items must run 1..N with no gap");
+});
+
+test("34.4 human-facing output defers to the user, and pm says its own headings are only a default", () => {
+  const surfaces = [
+    ["rules block", rulesText(initRepo())],
+    ["skills/conductor/SKILL.md", shipped("skills/conductor/SKILL.md")],
+    ["README.md", shipped("README.md")],
+  ];
+  for (const [name, text] of surfaces) {
+    const t = norm(text);
+    assert.ok(t.includes(norm("output style")) && t.includes(norm("communication contract")),
+      `${name} must name both channels a user configures — an output style and a CLAUDE.md contract`);
+    assert.ok(t.includes(norm("a default for a user who has")) || t.includes(norm("is a default, not a")),
+      `${name} must say pm's headings are a DEFAULT, not a style that outranks the user's`);
+  }
+  // And the two command docs that literally prescribe a human-read shape say so at the shape.
+  for (const rel of ["commands/status.md", "commands/next.md"]) {
+    assert.ok(norm(shipped(rel)).includes(norm("a default, not a house style")),
+      `${rel} prescribes a human-facing shape and must mark it as a default, not a house style`);
+  }
+});
+
+test("34.4 the carve-outs are stated, so 'defer to the user' cannot delete an obligation", () => {
+  const t = norm(rulesText(initRepo()));
+  // Scope: this governs REPORTING, never DOING. Without it a brevity contract reads as licence to
+  // skip a gate — the same failure the issue reports, pointed the other way.
+  assert.ok(t.includes(norm("governs how you REPORT")),
+    "the section must scope itself to reporting, never to what the other sections instruct");
+  assert.ok(t.includes(norm("does not authorise skipping a required task item")),
+    "it must say outright that a brevity contract does not excuse a required task item or a gate");
+  // RECORDED band: a write is not a sentence.
+  assert.ok(t.includes(norm("not sentences")) && t.includes(norm("data loss, not brevity")),
+    "the recorded band must be named as writes, with the consequence of shortening one");
+  // PARSED band: field names are a wire format.
+  assert.ok(t.includes(norm("wire format")) && t.includes(norm("STATUS/DONE/DECISIONS/CONCERNS")),
+    "the parsed band must name the machine-read blocks and say they do not bend");
+  // The mapping mechanic: reshape, never drop.
+  assert.ok(t.includes(norm("Reshaping is always allowed")) && t.includes(norm("ADD a slot")),
+    "it must say to add a slot for a required element the user's shape has no room for, not drop it");
+});
+
+test("34.4 the inheritance rule is stated wherever a subagent's contract is decided", () => {
+  // Per the sub-agents docs: CLAUDE.md reaches a subagent, an output style does not. Without this
+  // an implementer reasonably assumes the output style covers the children, and they keep
+  // ignoring it — which is the issue's second ask, and it is invisible without being said.
+  const surfaces = [
+    ["rules block", rulesText(initRepo())],
+    ["skills/conductor/SKILL.md", shipped("skills/conductor/SKILL.md")],
+    ["README.md", shipped("README.md")],
+  ];
+  for (const [name, text] of surfaces) {
+    const t = norm(text);
+    assert.ok(t.includes(norm("applies to the main conversation")),
+      `${name} must say an output style applies to the main conversation only`);
+    assert.ok(t.includes(norm("~/.claude/CLAUDE.md")),
+      `${name} must say the whole CLAUDE.md hierarchy, including the user-level file, is inherited`);
+  }
+});
+
+test("34.4 each dispatched agent's own file says its report block does not bend", () => {
+  for (const rel of ["agents/hierarchy-child-executor.md", "agents/merge-conflict-resolver.md",
+    "agents/reconciler.md"]) {
+    const t = norm(shipped(rel));
+    assert.ok(t.includes(norm("wire format, not a style")),
+      `${rel} must say its report block is a wire format, not a style — the agent reads THIS file, ` +
+      "not the orchestrator's copy of the rule");
+    assert.ok(t.includes(norm("do NOT bend to a user's output style")),
+      `${rel} must name what it does not bend to`);
+    // …and that the prose inside the fields is ordinary writing, or the carve-out swallows the rule.
+    assert.ok(t.includes(norm("prose inside")),
+      `${rel} must say the prose inside a field DOES follow the user's contract`);
+  }
+});

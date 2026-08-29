@@ -11,7 +11,10 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" render
 (If `${CLAUDE_PLUGIN_ROOT}` is empty:
 `ENGINE="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/scripts/conductor.mjs}"; [ -f "$ENGINE" ] || ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1); node "$ENGINE" render`)
 
-Then read `PROJECT.md` and summarize for the user:
+Then read `PROJECT.md` and summarize for the user. **The shape below is a default, not a house
+style** — if the user has an output style or a communication contract in their CLAUDE.md, render
+this summary in THAT shape. What must survive the reshaping is the CONTENT and the ordering
+constraint, not the headings: reshape freely, drop nothing.
 - the **active** epic and its live story progress,
 - the **detour stack** (what's paused and why), flagging any ⚠ reconcile-on-resume,
 - the **next-up** queue by priority — reading the **effective** priority where the Priority
