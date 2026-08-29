@@ -525,6 +525,32 @@ tombstones it identically, naming `--spec` in the un-ignore instruction.
 | `reorder <id> <id> …` | **Manual rank** — place the epics of ONE priority band, top to bottom, in the order given. Ranks are rewritten dense `1..N` on every call, and this is the only thing that writes `rank`. Takes the whole band and refuses a partial one, so the numbering stays contiguous by construction; unranked epics sort after every ranked one. Rank is the LAST sort key (dependencies → priority → **rank**) — it breaks ties that today fall through to alphabetical order, and never outranks a dependency or a priority. `update-epic --priority` clears an epic's rank, since a placement among one band's peers means nothing among another's. |
 | `set-active <id>` / `clear-active` | Set/clear the top-level active epic. |
 
+**Link types are a closed vocabulary, and only two of them do anything.** `--link
+"<type>:<epic>[:<reason>]"` validates both halves — an unknown `<type>` is refused with the
+valid set, because a typo used to be stored silently and then copied as precedent by the next
+agent reading `state.json`.
+
+| Type | What it does |
+|---|---|
+| `depends-on` | **Read by the engine** — orders the queue so a blocker is listed, and picked by `/pm:next`, before the epic waiting on it. |
+| `supersedes` | **Read by the engine** — marks the named epic replaced, for `/pm:triage` and for `integrity`. Lives on the epic that replaces. |
+| `may-invalidate` | Protocol state written at a detour PUSH; carries the reconcile verdict. Nothing switches on the type. |
+| `relates-to` · `blocks` · `resolves-blocker-for` | Annotation only — recorded for a reader, read by no behaviour. |
+
+`resolves-blocker-for` is **not** a synonym for `depends-on`: the detour protocol puts it on the
+detour naming the parent, so the equivalent `depends-on` edge points the other way. Links already
+stored under some other type still load and still render — validation is on write only — and
+`integrity`'s `link-of-unknown-type` check reports each one instead of guessing a repair.
+
+**A flag with no value is refused, on every command that accepts it.** `--clear-links`,
+`--no-deferrals` and `--done` are the three flags that legitimately carry none; every other flag
+exits non-zero when its value is missing or blank, rather than writing the epic with the field
+quietly absent. The rule lives on the shared flag registry rather than in each command — so
+`add-epic`, `update-epic`, `add-many`, `record-gate-review`, `record-cross-spec-review` and
+`release` cannot answer it three different ways, which is exactly what they used to do:
+`add-epic --plan` with no value exited 0 and created the epic with no plan attached, while
+`update-epic --plan` refused the identical mistake a minute later.
+
 **Inline story mutation** — `--add-story "<title>"` (repeatable, and available on `add-epic`
 and `add-many` too) appends `{ title, done: false }` to the epic's inline `stories[]`;
 `--story <n> --done` marks the `n`-th story done, where `n` is **1-indexed** (`--story 1` is
@@ -788,7 +814,7 @@ Scanning a specs directory would not have helped: that yields one epic per docum
 when chunk 1 ships.
 
 ```bash
-node scripts/conductor.mjs verify-specs [--root <path>]
+node scripts/conductor.mjs verify-specs [--root <path>] [--headers]
 ```
 
 Prints, for every `.md` file under the root (recursively, minus `README`/`INDEX`/`CONTRIBUTING`),
@@ -806,6 +832,18 @@ than reporting zero uncovered — silence and clean must never look the same.
 Enumerating what a design implies stays with the agent, which is reading the document anyway;
 `add-many` is the atomic fan-out (one write, N chunks, all naming the same `specPath`) and the
 engine computes only the difference.
+
+**`--headers` — the epics a document already names.** Most design documents open with a header
+that already says which epics they are for (`**Epic:** \`gh-82-…\` · **Relates:** \`…\``).
+`verify-specs --headers` reads those headers and prints, for every **uncovered** document, the
+ids it names and the `update-epic <id> --spec <path>` line that would attach each one. It
+**proposes and never applies** — the same split `triage` uses for asks: mechanical candidate set,
+your verdict. A header id that names no epic in the record is reported as a finding, from covered
+documents too. The parse is label-agnostic and region-bounded: any `**Anything:**` line in the
+leading metadata block opens it, the first blank line ends it, and backtick-quoted tokens
+matching the epic-id format are the candidates, each carrying its label verbatim. It exists
+because deriving the association from FILENAMES placed 8 of this repository's 10 documents and
+structurally could not place the other two — the many-to-one cases `specPath` is for.
 
 </details>
 
@@ -856,7 +894,7 @@ that used to be safe fails CI rather than someone else's checkout.
 
 | Effect | Verbs |
 |--------|-------|
-| **read-only** — safe against a repo you do not own | `brief` · `changelog` · `changesets` · `gate-guard` · `integrity` · `plan-hierarchy` · `rules` · `rules-target` · `suggest-lane` · `triage` · `verify-specs` · `verify-state` · `verify-worktrees` |
+| **read-only** — safe against a repo you do not own | `brief` · `changelog` · `changesets` · `gate-guard` · `integrity` · `lesson-advice` · `plan-hierarchy` · `rules` · `rules-target` · `suggest-lane` · `triage` · `verify-specs` · `verify-state` · `verify-worktrees` |
 | **mutates** — writes `state.json`, `PROJECT.md`, `CLAUDE.md`, or a `.conductor/` log | everything else, including `render`, `snapshot`, `sync`, `commit-nudge`, `upgrade`, `write-rules`, and every `add-`/`update-`/`set-`/`record-` verb |
 
 Want the current state without touching anything? Use **`brief`**, not `render`.
@@ -878,6 +916,9 @@ Installed to `skills/` on `/pm:init`:
 | Skill | Description |
 |-------|-------------|
 | `conductor` | The full discipline — detour classification, PUSH/POP, the reconcile gate, epic-level autonomy's preflight scan, epic-hierarchy orchestration. Triggers on "what were we working on," "this is broken, fix it first," "park this," "resume." |
+| `cross-spec-review` | The release-scope gate: do this release's specs AGREE with each other? Gate 1 and Gate 2 each take one change as their unit and structurally cannot find a contradiction between two of them. Triggers on "cross-spec review," "do the specs agree," "review the specs together." |
+| `lessons` | Keeping a repository's PROCESS knowledge where it fires on the situation rather than on recall — the `docs/lessons/` shape, the frontmatter contract, and the capture half. Its `detect:` matchers are what the `lesson-advice` `PreToolUse` hook fires on. pm ships the mechanism, never the corpus. Triggers on "lessons learned," "have we hit this before," "that cost us." |
+| `dogfooding` | Routing what the work taught you instead of leaving it in the transcript: a practice you adopted becomes a registered candidate with its evidence attached, and a workaround you invented for tooling friction becomes a filed bug. Triggers on "should this be in the product," "I had to work around," "there's no verb for this." |
 
 ## Guard & Automation
 
@@ -892,6 +933,7 @@ Installed to `skills/` on `/pm:init`:
 | PreCompact | Calls `snapshot` (`render` + `.conductor/brief.txt`) right before the context window collapses. |
 | PostToolUse (every `Bash` call) | Calls `commit-nudge`. It OBSERVES the repository rather than reading the command text: it keeps a HEAD watermark (`.conductor/commit-watch.json`, git-ignored) and speaks only when HEAD has moved AND `git reflog` says the move was a commit. So `-m`, `-am`, `-F`, an editor commit and a commit made inside a script are all noticed, while a command that merely *mentions* `git commit` — a `grep`, a heredoc, an `echo` — a rejected commit, a commit that landed in another repo, and a `checkout`/`reset` are all silent. Then it nudges a state update, and auto-detects an unlogged minimal detour from commit shape (only while an epic is active, and excluding routine conductor bookkeeping commits). On an **observed** commit it also names the exact `update-epic <id> --attribute-commit <sha>` for the epic that commit belongs to — the detour epic while a detour is live, never the paused parent — so the per-commit attribution obligation is prompted while it is still actionable rather than only checked at the archive gate. The prompt is louder while the epic's `attributedCommits` is still empty (the last moment the catch-up-in-order rule is available) and one line thereafter, and it is absent entirely where the engine would be guessing: no active epic, an epic with no attribution array, or an unobserved commit. |
 | PreToolUse (gate-guard) | Hard-blocks `Edit`/`Write`/`NotebookEdit` while the active epic owes a reconcile — on by default, unconditional for that case. |
+| PreToolUse (lesson advisor) | Calls `lesson-advice` on `Bash`/`Edit`/`Write`/`NotebookEdit`. Matches the pending tool call against every `docs/lessons/*.md` entry that declares a `detect:` matcher in its frontmatter, and injects that lesson's `rule` **before** the mistake. **Advisory only — it never blocks and always exits 0**, which is why it is a separate entry from the gate guard. Silent in a project with no `docs/lessons/`, and dormant until `/pm:init`. Precision is the constraint, not coverage: a lesson that cannot be matched with near-certainty carries no `detect:` and stays retrieval-only, and only the command's **first line** is matched, so a heredoc body or an `echo` that merely names a command is data rather than a trigger. Adding a matcher is a frontmatter edit, never a code change. |
 
 **Tool currency.** `pm` and `superpowers` are plugins that update themselves, but **OpenSpec is a
 CLI you upgrade by hand** — and `openspec update`, which regenerates the per-project instruction

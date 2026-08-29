@@ -13,7 +13,7 @@ import { writeRules } from "./rules.mjs";
 import { buildBrief } from "./briefing.mjs";
 import { appendDetourLog, gitShortSha } from "./git.mjs";
 import { observeCommit } from "./commit-watch.mjs";
-import { detourContext } from "./links.mjs";
+import { deferralHistory, deferralNote, detourContext } from "./links.mjs";
 import { activeChangeIds, archivedChanges, firstHeading, planFiles, reconcileArchived, strippedChangeId } from "./epic-progress.mjs";
 import { claimedSourceArtifacts, epicSourceArtifacts, normalizeArtifactPath, syncIgnoredArtifacts } from "./source-artifacts.mjs";
 import { ARCHIVE_BACKFILL, engineStamp } from "./disposition.mjs";
@@ -674,4 +674,16 @@ export function honchoMemory() {
   fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
   fs.appendFileSync(HONCHO_MEMORIES_LOG, `${new Date().toISOString()}\t${line}\n`);
   process.stdout.write(line + "\n");
+
+  // gh#94, at the closest thing to the moment of deferral the engine is invited to. The
+  // substantial-detour PUSH is a hand-edit of state.json (commands/detour.md step 2), so there
+  // is no `push-detour` verb to gate; this verb runs at step 3, immediately after, and is the
+  // one place the engine is handed the paused epic's id. That makes a DISCLOSURE possible and a
+  // gate impossible — which is the honest shape anyway: it states what the record holds and
+  // asks for nothing. Silent on a first deferral, and on stderr, because stdout is a line the
+  // agent pastes into Honcho verbatim.
+  if (action === "push") {
+    const note = deferralNote(deferralHistory(loadState(), epicId));
+    if (note) process.stderr.write(`conductor: \`${epicId}\` — ${note}\n`);
+  }
 }

@@ -93,7 +93,7 @@ wrong, before a release, or when you want to know what the numbers in `PROJECT.m
 epics drawn from them?** It became answerable when epics gained `--spec` — see `/pm:epic`.
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" verify-specs [--root <path>]
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" verify-specs [--root <path>] [--headers]
 ```
 
 It prints, for every `.md` file under the root (recursively, minus `README`/`INDEX`/
@@ -120,6 +120,39 @@ registered, author an `add-many` batch whose entries each carry its `specPath` (
 shows the shape). Where it implies none, it has already told you what it is. `syncIgnore`
 tombstones are not consulted — `specPath` is many-to-one, so a tombstone left by removing one of
 six epics must not make the document read as deliberately uncovered while five still cover it.
+
+### `--headers` — the epics a document already names
+
+Most design documents open with a header that already says which epics they are for:
+
+```
+**Epic:** `gh-82-claude-project-dir-overrides-cwd` (P2, untriaged) · **Issue:** cfdude/pm#82
+**Relates:** `cross-session-epic-assignment` (#84, planned) · `epic-session-attribution` (planned)
+```
+
+`verify-specs --headers` reads those headers and prints, for every **uncovered** document, the
+epic ids it names and the `update-epic <id> --spec <path>` line that would attach each one. It
+**proposes and never applies** — the same split `/pm:triage` uses for asks: mechanical candidate
+set, your verdict. The engine does not decide that a document and an epic belong together, and a
+header is prose an author can typo, so nothing here writes state.
+
+It reads a document's **body**, which the bare report deliberately does not — which is why it is
+its own arm rather than always-on output.
+
+**The parse is label-agnostic and region-bounded.** Any `**Anything:**` line in the leading
+metadata block opens it; the first blank line ends it; backtick-quoted tokens matching the epic-id
+format are the candidates, and the label each one appeared under is reported verbatim so you can
+tell "this document is about it" from "it is related". Keying on a fixed list of labels was tried
+and rejected: it dropped three real ids filed under `**Depends on (all three must land first):**`.
+
+**A header id that names no epic is a finding, not inventory** — a stale header, a removed epic,
+or a typo — and it is reported for **covered** documents too. A document whose first named epic
+shipped can still name a second that never existed.
+
+Why it exists: deriving the association from FILENAMES placed 8 of this repository's 10 documents
+and structurally could not place the other two — `tracker-direction-and-freshness-design.md`
+covers three epics whose ids share no stem with the filename. Those many-to-one cases are exactly
+what `specPath` is for, and the header had the answer written down the whole time.
 
 ## Release planning — `release`
 
@@ -237,3 +270,29 @@ bullet reached 3/15.
    precisely what a disposition exists to preserve. `remove-epic` stays available and ungated for
    what it is for: an epic registered in error, a duplicate, a mistake made a minute ago — where
    there is no disposition to record because there was no work.
+7. **Route what the work taught you.** A change teaches three kinds of thing and each has a
+   different destination. Route them BEFORE the change closes, while the evidence is still
+   recoverable. Nothing above this asks, so silence here reads as "nothing was learned" rather
+   than "nobody looked", and the two are indistinguishable afterwards.
+   A **practice, gate or discipline** you adopted to get this change done: register it as an
+   epic, and file it with the tracker as well when it belongs to a product other people use.
+   **The evidence goes with it** — what went wrong that made the practice necessary, with
+   numbers. That evidence is the strongest part of the eventual spec and it is unrecoverable
+   later; a practice registered without it reads as a preference.
+   **Friction in the tooling** that you routed around: file it — `/pm:feedback [bug|feature]
+   "<summary>"` for `pm` itself, and wherever it is tracked for anything else. **This is the
+   direction that gets missed**, and the reason is mechanical: a workaround produces working
+   output, so nothing looks broken and nothing prompts. Hand-editing a file a tool owns because
+   no verb exists for it, a command the tool EMITTED that did not run as written, a convention
+   you invented that the tool should have supplied, anything you did twice by hand that it could
+   have done once — each of those is a filing, not a footnote. Measured: two sessions hit one
+   broken recipe in an afternoon, each invented a workaround, neither reported it until asked.
+   A **process failure** — how we work, rather than what the tool should do: a lesson file in
+   `docs/lessons/`, carrying its `trigger` written as the situation BEFORE the mistake, a
+   concrete `cost`, and `enforced_in` naming where its rule actually binds. Give it a `detect:`
+   matcher only where the situation is recognisable with near-certainty — the `lesson-advice`
+   hook fires on that matcher before the next mistake, and a hook that is wrong 7 times in 8
+   trains everyone to ignore the one time it is right, so a lesson that cannot be matched
+   precisely stays retrieval-only.
+   Name which of the three it is out loud. A process lesson filed as a feature request never
+   gets built, and a product gap written down as a lesson never gets fixed.

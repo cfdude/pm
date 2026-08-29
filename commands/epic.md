@@ -15,11 +15,31 @@ form a cycle. Use `--external-id`/`--external-url` to link the epic to an issue 
 external tracker (see `/pm:tracker`). The matching engine flags are added to the `add-epic`
 invocation.
 
-`--link "<type>:<epic>[:<reason>]"` (repeatable) is validated, not just parsed: `<epic>` must be
-an already-known epic id, and the string must split into at least `type` and `epic`. A malformed
-value (wrong segment order, a typo'd epic id) is rejected with a clear error instead of being
-silently stored as a garbage link object — this used to succeed silently, which is how a bad
+`--link "<type>:<epic>[:<reason>]"` (repeatable) is validated, not just parsed: **both halves**.
+`<epic>` must be an already-known epic id, the string must split into at least `type` and
+`epic`, and `<type>` must be one of the known link types below. A malformed value (wrong segment
+order, a typo'd epic id, a typo'd type) is rejected with a clear error instead of being silently
+stored as a garbage or inert link object — this used to succeed silently, which is how a bad
 link could end up in `state.json` with no CLI path to fix it.
+
+**The link-type vocabulary.** There are six, and they are not equal — only two change what the
+engine does, so pick by what you want to happen, not by what reads best:
+
+| Type | What it does |
+|---|---|
+| `depends-on` | **Read.** Orders the queue: a blocker is listed (and picked by `/pm:next`) before the epic waiting on it. This is the one to reach for when work is genuinely blocked. |
+| `supersedes` | **Read.** Marks the named epic as replaced — `/pm:triage` will not consolidate a new ask into it, and `integrity` reports it if it never ended. Lives on the epic that REPLACES, naming the one replaced. |
+| `may-invalidate` | Protocol state the engine writes at a detour PUSH; `record-reconcile` hangs the reconcile verdict on it. Nothing switches on the type. |
+| `relates-to` · `blocks` · `resolves-blocker-for` | **Annotation only.** They record a relationship for a reader; no engine behaviour reads them. |
+
+`resolves-blocker-for` is deliberately **not** a synonym for `depends-on`: the detour protocol
+puts it on the *detour*, naming the parent it unblocks, so recording it as `depends-on` would
+say the detour depends on the epic it is unblocking — an inverted edge the queue sorter would
+act on. If you want ordering, put `depends-on` on the epic that is waiting.
+
+Links already in a record with some other type (written before this validation existed) still
+load and still render — validation is on write only. `integrity`'s `link-of-unknown-type` check
+reports each one so it can be corrected deliberately rather than rewritten by a guess.
 
 `--spec <path>` records the **design document** this epic's work was drawn from. It is
 provenance and nothing else — no progress is read from it, no scan registers epics from it —
@@ -28,6 +48,15 @@ enumerates N chunks, and every one of those epics carries the same `--spec`. Tha
 what makes "which design documents have no epic?" answerable at all; ask it with
 `verify-specs` (see `/pm:status`). `--plan` and `--spec` are independent: an epic may carry
 either, both, or neither.
+
+**Every value-bearing flag is REFUSED when its value is missing or blank, on every command that
+accepts it** — `add-epic`, `update-epic`, `record-gate-review`, `record-cross-spec-review` and
+`release` alike, plus the equivalent key in an `add-many` batch document. `--clear-links`,
+`--no-deferrals` and `--done` are the three flags that legitimately carry no value; everything
+else exits non-zero rather than writing the epic with the field quietly absent. The rule lives on
+the shared flag registry, not in each command, so a flag added tomorrow inherits it. Before this,
+`add-epic --plan` with no value exited 0 and created the epic with no plan attached while
+`update-epic --plan` refused the identical mistake a minute later.
 
 1. Parse the user's request into: id (kebab-case), title, lane (one of
    openspec|superpowers|claude-code|decision|external), priority (P0–P3, default P?),
@@ -508,3 +537,29 @@ bullet reached 3/15.
    precisely what a disposition exists to preserve. `remove-epic` stays available and ungated for
    what it is for: an epic registered in error, a duplicate, a mistake made a minute ago — where
    there is no disposition to record because there was no work.
+7. **Route what the work taught you.** A change teaches three kinds of thing and each has a
+   different destination. Route them BEFORE the change closes, while the evidence is still
+   recoverable. Nothing above this asks, so silence here reads as "nothing was learned" rather
+   than "nobody looked", and the two are indistinguishable afterwards.
+   A **practice, gate or discipline** you adopted to get this change done: register it as an
+   epic, and file it with the tracker as well when it belongs to a product other people use.
+   **The evidence goes with it** — what went wrong that made the practice necessary, with
+   numbers. That evidence is the strongest part of the eventual spec and it is unrecoverable
+   later; a practice registered without it reads as a preference.
+   **Friction in the tooling** that you routed around: file it — `/pm:feedback [bug|feature]
+   "<summary>"` for `pm` itself, and wherever it is tracked for anything else. **This is the
+   direction that gets missed**, and the reason is mechanical: a workaround produces working
+   output, so nothing looks broken and nothing prompts. Hand-editing a file a tool owns because
+   no verb exists for it, a command the tool EMITTED that did not run as written, a convention
+   you invented that the tool should have supplied, anything you did twice by hand that it could
+   have done once — each of those is a filing, not a footnote. Measured: two sessions hit one
+   broken recipe in an afternoon, each invented a workaround, neither reported it until asked.
+   A **process failure** — how we work, rather than what the tool should do: a lesson file in
+   `docs/lessons/`, carrying its `trigger` written as the situation BEFORE the mistake, a
+   concrete `cost`, and `enforced_in` naming where its rule actually binds. Give it a `detect:`
+   matcher only where the situation is recognisable with near-certainty — the `lesson-advice`
+   hook fires on that matcher before the next mistake, and a hook that is wrong 7 times in 8
+   trains everyone to ignore the one time it is right, so a lesson that cannot be matched
+   precisely stays retrieval-only.
+   Name which of the three it is out loud. A process lesson filed as a feature request never
+   gets built, and a product gap written down as a lesson never gets fixed.

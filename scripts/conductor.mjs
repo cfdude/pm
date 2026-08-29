@@ -88,6 +88,7 @@ import { setLaneRouting, suggestLane } from "./lib/lane-routing.mjs";
 import { triage } from "./lib/triage.mjs";
 import { setReviewMode } from "./lib/review-mode.mjs";
 import { setGateGuard, gateGuardCheck } from "./lib/gate-guard.mjs";
+import { lessonAdvice } from "./lib/lessons.mjs";
 import { upgrade } from "./lib/migrations.mjs";
 import { changelog } from "./lib/changelog.mjs";
 import { release, recordCrossSpecReview } from "./lib/releases.mjs";
@@ -120,7 +121,7 @@ const cmd = process.argv[2];
 // entry to .conductor/detours.log with "--help" as the detour description, and the log is
 // append-only with no verb to remove it. Handled before dispatch so every subcommand is covered
 // -- log-detour is only where the damage is visible, not where the gap is.
-const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|plan-hierarchy|verify-worktrees|verify-state|verify-specs|integrity|changesets|upgrade|changelog|rules|write-rules|rules-target\n";
+const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|verify-worktrees|verify-state|verify-specs|integrity|changesets|upgrade|changelog|rules|write-rules|rules-target\n";
 if (!cmd || process.argv.slice(2).some(a => a === "--help" || a === "-h")) {
   process.stdout.write(USAGE);
   process.exit(0);
@@ -180,6 +181,7 @@ try {
   release,
   "set-gate-guard": setGateGuard,
   "gate-guard": gateGuardCheck,
+  "lesson-advice": lessonAdvice,
   "plan-hierarchy": planHierarchy,
   "verify-worktrees": verifyWorktrees,
   "verify-state": verifyState,

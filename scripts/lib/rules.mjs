@@ -279,11 +279,60 @@ export const GATE_PROCEDURE_ITEMS = [
       "   minute ago — where there is no disposition to record because there was no work.",
     ],
   },
+  {
+    // gh-127 + gh-132. Both issues are the same move in two directions, and both were filed
+    // about a practice that stayed in one repository. The fork is the whole content: the moment
+    // of recognition is shared, the destinations are not, and mis-routing buries the finding
+    // either way. A required task rather than a prose bullet for the reason this section states
+    // out loud — 14/14 against 3/15, and #127 asks for the task form by name.
+    title: "Route what the work taught you.",
+    mustSay: ["a workaround produces working output", "the evidence goes with it",
+      "docs/lessons/", "wrong 7 times in 8"],
+    lines: [
+      "A change teaches three kinds of thing and each has a",
+      "   different destination. Route them BEFORE the change closes, while the evidence is still",
+      "   recoverable. Nothing above this asks, so silence here reads as \"nothing was learned\"",
+      "   rather than \"nobody looked\", and the two are indistinguishable afterwards.",
+      "   A PRACTICE, GATE OR DISCIPLINE you adopted to get this change done: register it as an",
+      "   epic, and file it with the tracker as well when it belongs to a product other people",
+      "   use. The evidence goes with it — what went wrong that made the practice necessary,",
+      "   with numbers. That evidence is the strongest part of the eventual spec and it is",
+      "   unrecoverable later; a practice registered without it reads as a preference.",
+      "   FRICTION IN THE TOOLING that you routed around: file it — `{{pm:feedback}} [bug|feature]",
+      "   \"<summary>\"` for pm itself, and wherever it is tracked for anything else. THIS IS THE",
+      "   DIRECTION THAT GETS MISSED, and the reason is mechanical: a workaround produces working",
+      "   output, so nothing looks broken and nothing prompts. Hand-editing a file a tool owns",
+      "   because no verb exists for it, a command the tool EMITTED that did not run as written,",
+      "   a convention you invented that the tool should have supplied, anything you did twice by",
+      "   hand that it could have done once — each of those is a filing, not a footnote. Measured:",
+      "   two sessions hit one broken recipe in an afternoon, each invented a workaround, neither",
+      "   reported it until asked.",
+      "   A PROCESS FAILURE — how we work, rather than what the tool should do: a lesson file in",
+      "   `docs/lessons/`, carrying its `trigger` written as the situation BEFORE the mistake, a",
+      "   concrete `cost`, and `enforced_in` naming where its rule actually binds. Give it a",
+      "   `detect:` matcher only where the situation is recognisable with near-certainty — the",
+      "   `lesson-advice` hook fires on that matcher before the next mistake, and a hook that is",
+      "   wrong 7 times in 8 trains everyone to ignore the one time it is right, so a lesson that",
+      "   cannot be matched precisely stays retrieval-only.",
+      "   Name which of the three it is out loud. A process lesson filed as a feature request",
+      "   never gets built, and a product gap written down as a lesson never gets fixed.",
+    ],
+  },
 ];
 
-/** The items, rendered as a numbered markdown list. */
-export const gateProcedureLines = () =>
-  GATE_PROCEDURE_ITEMS.flatMap((item, i) => [`${i + 1}. **${item.title}** ${item.lines[0]}`, ...item.lines.slice(1)]);
+/** The items, rendered as a numbered markdown list, in the PLATFORM's command form.
+ *
+ *  An item's `lines` are stored with `{{pm:<name>}}` wherever a pm slash command is named, and
+ *  the placeholder is resolved here through pmCmd(). Hardcoding `/pm:feedback` would leak the
+ *  Claude Code namespaced form into the codex block, which reaches its commands as prompt-file
+ *  stems (`/pm-feedback`) and would be handed a command it cannot run. Kept as a placeholder in
+ *  a STRING rather than making `lines` a function of platform, so the mustSay self-check can go
+ *  on reading `item.lines` directly. */
+export const gateProcedureLines = (platform = "claude-code") => {
+  const resolve = (s) => s.replace(/\{\{pm:([a-z-]+)\}\}/g, (_, name) => pmCmd(platform, name));
+  return GATE_PROCEDURE_ITEMS.flatMap((item, i) =>
+    [`${i + 1}. **${item.title}** ${resolve(item.lines[0])}`, ...item.lines.slice(1).map(resolve)]);
+};
 
 /** The INTAKE section (gh-112) — the numbered procedure that runs when an ask arrives, before
  *  it becomes a row. ALWAYS ON: it is governed by no tracker configuration, because it applies
@@ -390,7 +439,7 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     "measured across one audited repository, a rule carried by a mandatory task section reached",
     "14/14 subsequent changes, while the same rule written as a prose bullet reached 3/15.",
     "",
-    ...gateProcedureLines(),
+    ...gateProcedureLines(platform),
     "",
     ...intakeLines(platform),
     "",

@@ -41,7 +41,7 @@ trigger fires, not before.
 
 ## Where the rules actually live
 
-🔔 = carries a `detect:` matcher, so `.claude/hooks/lessons-advisor.mjs` surfaces it automatically at `PreToolUse`. The rest are retrieval-only by design — a matcher that fires wrongly is worse than none.
+🔔 = carries a `detect:` matcher, so pm's `lesson-advice` `PreToolUse` hook surfaces it automatically. The rest are retrieval-only by design — a matcher that fires wrongly is worse than none.
 
 A lessons file nobody reads is a data graveyard — the same objection that made the activity log
 (#111) conditional on shipping its reader. So **every lesson names where its rule is enforced**:

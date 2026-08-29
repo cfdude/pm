@@ -142,10 +142,19 @@ test("add-epic rejects a valueless --id and writes nothing", () => {
   assert.equal(readState(cwd).epics.length, 0);
 });
 
-test("add-epic tolerates a valueless --link without crashing", () => {
+// gh-149 CHANGED THIS. It used to assert that add-epic TOLERATED a valueless `--link` — created
+// the epic, links silently `[]` — while `update-epic --link` with no value was refused and told
+// you `--clear-links` is the flag that empties. Same flag, same registry row, two behaviours;
+// that asymmetry is what #149 decided, strictly, on every surface. What the old test was really
+// protecting — that the parse does not CRASH — is asserted here as a clean refusal, which is a
+// stronger claim than "did not throw".
+test("add-epic refuses a valueless --link, with update-epic's wording, and creates no epic", () => {
   const cwd = tmpRepo(); run(["init"], { cwd });
-  run(["add-epic", "--id", "y", "--lane", "claude-code", "--link"], { cwd }); // must not throw
-  assert.deepEqual(readState(cwd).epics.find(e => e.id === "y").links, []);
+  const err = expectFail(() => run(["add-epic", "--id", "y", "--lane", "claude-code", "--link"], { cwd }));
+  assert.ok(err, "a valueless --link used to create the epic with links silently []");
+  assert.doesNotMatch(String(err.stderr || err.message), /TypeError/, "refused, not crashed");
+  assert.match(String(err.stderr || err.message), /--clear-links/);
+  assert.equal(readState(cwd).epics.length, 0);
 });
 
 test("ACCEPTANCE: 30 lane-tagged epics, zero OpenSpec changes", () => {

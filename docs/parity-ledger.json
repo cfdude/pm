@@ -54,6 +54,16 @@
       "platforms": { "claude-code": "slash command (/pm:cross-spec-review) driving the release-scope review, recorded via `record-cross-spec-review`" }
     },
     {
+      "id": "process-lessons",
+      "artifacts": ["skills/lessons/SKILL.md"],
+      "platforms": { "claude-code": "skill loaded by name, plus the `lesson-advice` PreToolUse hook in hooks.json which surfaces a docs/lessons/ entry whose `detect:` matcher matches the pending tool call (advisory; never blocks)" }
+    },
+    {
+      "id": "practice-capture",
+      "artifacts": ["skills/dogfooding/SKILL.md"],
+      "platforms": { "claude-code": "skill loaded by name; the rule it carries is also emitted into the managed rules block as a numbered required task item" }
+    },
+    {
       "id": "install-and-upgrade",
       "artifacts": [
         "commands/init.md",

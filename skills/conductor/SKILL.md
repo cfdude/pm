@@ -124,6 +124,10 @@ lane-routing overrides checked before the generic heuristic (see "Lane routing o
 · `/pm:gate-guard` hard reconcile-gate backstop — ON BY DEFAULT for any epic with
 `reconcileNeeded: true` and cannot be turned off for that case; `set-gate-guard on|off` still
 exists but only gates any future generalization of the hook, not the reconcile-owed check itself
+· `lesson-advice` the PreToolUse LESSON ADVISOR (hook-invoked; you never run it by hand) — it
+matches the pending tool call against every `docs/lessons/*.md` entry carrying a `detect:`
+matcher and injects that lesson's rule BEFORE the mistake. Advisory only: it never blocks and
+always exits 0, unlike the gate guard above. See the `lessons` skill for the corpus shape
 · `/pm:tracker` make the conductor tracker-aware · `/pm:feedback [bug|feature] "<summary>"`
 file a bug report or feature request for `pm` itself against `cfdude/pm` — writes the report to
 `.conductor/feedback/` first, then `gh issue create` when `gh` is installed AND authenticated
@@ -345,6 +349,32 @@ bullet reached 3/15.
    precisely what a disposition exists to preserve. `remove-epic` stays available and ungated for
    what it is for: an epic registered in error, a duplicate, a mistake made a minute ago — where
    there is no disposition to record because there was no work.
+7. **Route what the work taught you.** A change teaches three kinds of thing and each has a
+   different destination. Route them BEFORE the change closes, while the evidence is still
+   recoverable. Nothing above this asks, so silence here reads as "nothing was learned" rather
+   than "nobody looked", and the two are indistinguishable afterwards.
+   A **practice, gate or discipline** you adopted to get this change done: register it as an
+   epic, and file it with the tracker as well when it belongs to a product other people use.
+   **The evidence goes with it** — what went wrong that made the practice necessary, with
+   numbers. That evidence is the strongest part of the eventual spec and it is unrecoverable
+   later; a practice registered without it reads as a preference.
+   **Friction in the tooling** that you routed around: file it — `/pm:feedback [bug|feature]
+   "<summary>"` for `pm` itself, and wherever it is tracked for anything else. **This is the
+   direction that gets missed**, and the reason is mechanical: a workaround produces working
+   output, so nothing looks broken and nothing prompts. Hand-editing a file a tool owns because
+   no verb exists for it, a command the tool EMITTED that did not run as written, a convention
+   you invented that the tool should have supplied, anything you did twice by hand that it could
+   have done once — each of those is a filing, not a footnote. Measured: two sessions hit one
+   broken recipe in an afternoon, each invented a workaround, neither reported it until asked.
+   A **process failure** — how we work, rather than what the tool should do: a lesson file in
+   `docs/lessons/`, carrying its `trigger` written as the situation BEFORE the mistake, a
+   concrete `cost`, and `enforced_in` naming where its rule actually binds. Give it a `detect:`
+   matcher only where the situation is recognisable with near-certainty — the `lesson-advice`
+   hook fires on that matcher before the next mistake, and a hook that is wrong 7 times in 8
+   trains everyone to ignore the one time it is right, so a lesson that cannot be matched
+   precisely stays retrieval-only.
+   Name which of the three it is out loud. A process lesson filed as a feature request never
+   gets built, and a product gap written down as a lesson never gets fixed.
 
 ## When something blocks progress: classify the detour FIRST
 

@@ -8,6 +8,61 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.34.0] — 2026-08-29
+
+### Added
+
+- **Link types are a closed vocabulary now** (#100). `--link "<type>:<epic>[:<reason>]"` validated
+  the epic half and not the type half, so `depends_on` or `realtes-to` was stored silently, ignored
+  by every consumer forever, and then copied as precedent by the next agent reading `state.json`.
+  `KNOWN_LINK_TYPES` is declared in `lib/links.mjs` in three honest bands — types the engine
+  **reads** (`depends-on` orders the queue, `supersedes` drives triage and integrity), protocol
+  state it **writes** (`may-invalidate`), and **annotation only** (`relates-to`, `blocks`,
+  `resolves-blocker-for`) — and an unknown type is refused at every write path (`add-epic`,
+  `update-epic`, and an `add-many` batch's `links` array) with a message naming the whole set and
+  the way out. `update-epic`'s usage line, `README.md` and `/pm:epic` now publish the vocabulary
+  rather than only the syntax.
+- **`integrity` reports a stored link whose type nothing knows** — `link-of-unknown-type`. Records
+  written before the vocabulary existed still load and still render; validation is on WRITE only,
+  so an old state file can never become unloadable. Nothing is rewritten: `resolves-blocker-for`
+  is deliberately not an alias for `depends-on` (the detour protocol puts it on the detour naming
+  the parent, so the equivalent dependency edge points the other way, and a "repair" would invert
+  a queue-ordering edge).
+- **The detour stack says how long a pause has run and how often it has recurred** (#94). The
+  brief's existing DETOUR STACK block now carries `paused 11d · 3rd deferral of this epic (detours
+  recorded: …)`, and `honcho-memory push` discloses the same on stderr at the point of deferral.
+  Derived from the record (`may-invalidate` links plus live frames), not a stored counter.
+
+- **The `lessons` skill and the `lesson-advice` PreToolUse advisor** (#132). A project's process
+  knowledge is only consulted by someone who already suspects there is something to know — which
+  is the same recall dependency this repo measured at roughly 20% effective (14/14 for a rule
+  carried by a required task, 3/15 for the same rule as a prose bullet). The advisor is the mode
+  that needs no recall: it matches the pending tool call against every `docs/lessons/*.md` entry
+  declaring a `detect:` matcher in its frontmatter and injects that lesson's `rule` **before** the
+  mistake. Registered in `hooks/hooks.json` as its own `PreToolUse` entry — separate from the gate
+  guard, and with a wider `Bash|Edit|Write|NotebookEdit` matcher, because half the matchable
+  lessons match on a *command*. **Advisory only: it never blocks and always exits 0.** Dormant
+  until `/pm:init`, and silent in any project with no `docs/lessons/`.
+
+  *Precision is the constraint, not coverage.* A lesson that cannot be matched with near-certainty
+  carries no `detect:` and stays retrieval-only, and only the command's **first line** is matched,
+  so a heredoc body or an `echo` that merely names a command is data rather than a trigger —
+  observed live here, a lesson's own text firing its own matcher twice. Adding a matcher is a
+  frontmatter edit, never a code change. **pm ships the mechanism and never the corpus:** which
+  lessons a repository holds, and what counts as one, stays the repo's and the agent's judgment.
+
+- **The `dogfooding` skill** (#127) — the two directions nobody travels. A practice invented to
+  get the work done becomes a registered candidate improvement *with its evidence attached*; a
+  workaround invented for a tool's friction becomes a filed bug. The second direction is the one
+  that gets missed, and the reason is mechanical: a workaround produces working output, so nothing
+  looks broken and nothing prompts.
+
+- **A seventh numbered required task item in the emitted gate procedure: "Route what the work
+  taught you."** It names the three-way fork — a practice goes to the backlog, tooling friction
+  goes to `/pm:feedback`, a process failure goes to `docs/lessons/` — because mis-routing buries
+  the finding in either direction. A required task rather than a prose bullet on this repo's own
+  measurement, which is what #127 asked for by name.
+
 ## [0.33.0] — 2026-08-29
 
 ### Added

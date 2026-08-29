@@ -34,6 +34,20 @@ export const PLANS_DIR = path.join(ROOT, "docs", "superpowers", "plans");
 export const SPECS_DIR = path.join(ROOT, "docs", "superpowers", "specs");
 export const KNOWN_LANES = ["openspec", "superpowers", "claude-code", "decision", "external"];
 
+/** The `--link` vocabulary. It lives HERE, beside every other `KNOWN_*`, because gh#100 was
+ *  filed after running `rg 'KNOWN_[A-Z_]+ =' constants.mjs` and getting every enumerated set
+ *  except this one — in a repo an agent reads code before fetching a website, so the set has to
+ *  land where attention already is.
+ *
+ *  This is the FLAT list and nothing more. Which types the engine READS, which it WRITES as
+ *  protocol state, and which are annotation-only are declared in lib/links.mjs next to the
+ *  consumer files that read each one — that adjacency is what makes the vocabulary drift-proof
+ *  instead of a second enumeration, and conductor-29 asserts the bands' union is exactly this
+ *  array, so the two cannot come apart. */
+export const KNOWN_LINK_TYPES = [
+  "depends-on", "supersedes", "may-invalidate", "relates-to", "blocks", "resolves-blocker-for",
+];
+
 /** THE predicate every site deciding openspec-lane membership goes through.
  *
  *  An absent `lane` IS openspec — `resolveEpics()` has normalized it that way since 0.3.0, so a
@@ -162,6 +176,24 @@ export const KNOWN_STATUSES = ["untriaged", "queued", "active", "paused", "later
 //   write     how the value reaches `key` — "replace" (the default), "append", or "custom"
 //             where the command owns the write entirely. Declared, not yet dispatched on:
 //             it is here so a capability adding an appending flag states the shape once.
+//   valueless true = this flag is a BOOLEAN and legitimately carries no value. Absent (the
+//             default) means the flag is VALUE-BEARING, and every write surface refuses a
+//             valueless or blank occurrence of it — see requireFlagValues() in add-epic.mjs.
+//             This is the #149 rule, and it lives HERE rather than in each command because
+//             every command previously carried its own hand-written list of the flags it
+//             happened to check: `add-epic` checked three, `update-epic` checked four,
+//             `record-gate-review` checked none. Same flag, same row, three behaviours.
+//             DELIBERATELY one-directional: a value-bearing flag refuses a missing value, and
+//             a `valueless` flag is merely EXEMPT — `--done true` is not made an error here,
+//             because tightening that is a second behaviour change and belongs to its own
+//             change (the precedent `--spec` set, which is why #149 exists as its own issue).
+//             The discriminator is this marker and never `key`: ten value-bearing rows carry
+//             `key: null` because the command owns the write.
+//   requires  the phrase completing "conductor: --<flag> requires ___" when the value is
+//             missing. Defaults to "a value". Carried on the ROW so a bespoke refusal one
+//             command grew — `--link` pointing at `--clear-links`, `--wont-do` demanding a
+//             reason — reaches EVERY command that accepts the flag, instead of being a second
+//             behaviour on a second surface. That asymmetry is the whole subject of #149.
 //
 // `key` is carried EXPLICITLY rather than derived from `flag`, because the mapping is already
 // non-identity today (`--plan` → planPath, `--link` → links, `--external-id` → externalId) and
@@ -190,12 +222,13 @@ export const EPIC_FLAGS = [
   // unfixable. Nothing infers progress from it; see EPIC_SOURCE_ARTIFACTS in
   // lib/source-artifacts.mjs for the family it joins.
   { flag: "spec", key: "specPath", commands: ["add-epic", "update-epic", "add-many"] },
-  { flag: "link", key: "links", commands: ["add-epic", "update-epic", "add-many"], repeats: true, write: "custom" },
+  { flag: "link", key: "links", commands: ["add-epic", "update-epic", "add-many"], repeats: true, write: "custom",
+    requires: "a \"<type>:<epic>[:<reason>]\" value — to empty an epic's links, say so with --clear-links" },
   // Emptying the links array is its OWN named flag. `--link` replaces the array wholesale, so a
   // VALUELESS `--link` parsed as `[true]`, was filtered to `[]` by parseLinkFlags, and silently
   // wiped every link — the destructive reading of what looks like a typo. `--clear-links` says
   // what it does; the valueless `--link` is now refused and points here.
-  { flag: "clear-links", key: "links", commands: ["update-epic"], write: "custom" },
+  { flag: "clear-links", key: "links", commands: ["update-epic"], write: "custom", valueless: true },
   // `description` and `notes` are DISTINCT and neither substitutes for the other: a description
   // is durable rationale (why this epic exists, what would make it worth revisiting), replaced
   // wholesale when set again; notes are an append-only trail that reads as activity. Both are
@@ -245,14 +278,15 @@ export const EPIC_FLAGS = [
   // Also `release`'s: an exclusion's reason IS a disposition reason — the same required-reason
   // rule at a fourth scope — so it shares this entry rather than getting a second one under the
   // same name, which epicFlagsFor() would then project twice.
-  { flag: "reason", key: "disposition", commands: ["update-epic", "release"], write: "custom" },
+  { flag: "reason", key: "disposition", commands: ["update-epic", "release"], write: "custom",
+    requires: "a non-empty reason" },
   // The deferral assertion. Three flags, ONE record: `--deferral` names work that moved to a
   // registered epic, `--declined-deferral` records a deliberate decline with its reason, and
   // `--no-deferrals` is the explicit "there are none" — which must be sayable, or an absence
   // is indistinguishable from never having looked.
   { flag: "deferral", key: "deferralAssertion", commands: ["update-epic"], repeats: true, write: "custom" },
   { flag: "declined-deferral", key: "deferralAssertion", commands: ["update-epic"], repeats: true, write: "custom" },
-  { flag: "no-deferrals", key: "deferralAssertion", commands: ["update-epic"], write: "custom" },
+  { flag: "no-deferrals", key: "deferralAssertion", commands: ["update-epic"], write: "custom", valueless: true },
   // The handoff. Lands on the disposition record rather than a field of its own — "where the
   // work went" is part of how this epic ended, not a separate fact about it.
   { flag: "carried-to", key: "disposition", commands: ["update-epic"], write: "custom" },
@@ -292,15 +326,16 @@ export const EPIC_FLAGS = [
   // It reaches parseFlags through repeatableEpicFlags()'s union, so no parser edit is needed —
   // but it also changes `--add-story`'s parsed shape from a string to an array on the
   // pre-existing `update-epic` path, which is why both writers read it through one helper.
-  { flag: "add-story", key: "stories", commands: ["add-epic", "update-epic", "add-many"], repeats: true, write: "append" },
+  { flag: "add-story", key: "stories", commands: ["add-epic", "update-epic", "add-many"], repeats: true, write: "append",
+    requires: "a non-empty title" },
   { flag: "story", key: null, commands: ["update-epic"], write: "custom" },
-  { flag: "done", key: null, commands: ["update-epic"], write: "custom" },
+  { flag: "done", key: null, commands: ["update-epic"], write: "custom", valueless: true },
   // The story-level TERMINAL DISPOSITION. `--story <n> --wont-do "<reason>"` keeps the row and
   // records why it will never be done, which is the only honest key to the archive gate's
   // pre-existing handoff refusal for work that was DROPPED rather than carried anywhere. It is
   // a control flag paired with `--story`, so its `key` is null exactly as `--done`'s is; the
   // write lands inside `stories[n-1].disposition`, not on a top-level epic key.
-  { flag: "wont-do", key: null, commands: ["update-epic"], write: "custom" },
+  { flag: "wont-do", key: null, commands: ["update-epic"], write: "custom", requires: "a reason" },
 ];
 
 /** The flags `command` accepts, as bare names. The projection an allowlist is built from —
@@ -311,6 +346,19 @@ export const epicFlagsFor = (command) =>
 /** The epic flags declared repeatable. Consumed by parseFlags()'s union — see the comment on
  *  REPEATABLE_NON_EPIC_FLAGS in add-epic.mjs for why it is a union and not a replacement. */
 export const repeatableEpicFlags = () => EPIC_FLAGS.filter(f => f.repeats).map(f => f.flag);
+
+/** Every command any EPIC_FLAGS row names. Derived, never listed: the #149 guard has to be
+ *  applied at EVERY write surface, and a surface enumerated by hand is the surface nobody
+ *  remembers — `add-many` in the issue's own words, and `record-gate-review`, which checked no
+ *  flag for a value at all and let a valueless `--reviewer` exit 0 with the field absent. */
+export const epicFlagCommands = () => [...new Set(EPIC_FLAGS.flatMap(f => f.commands))];
+
+/** The rows `command` accepts that REQUIRE a value, with the phrase each one's refusal ends in.
+ *  The projection every write surface's guard reads — never a second literal, which is the
+ *  defect #149 reports. */
+export const valueBearingFlagsFor = (command) =>
+  EPIC_FLAGS.filter(f => f.commands.includes(command) && !f.valueless)
+    .map(f => ({ flag: f.flag, requires: f.requires || "a value" }));
 
 /** The state keys an `add-many` batch entry may carry. Derived from the same declaration, so
  *  the bulk path cannot drift from the single-epic one. Note these are STATE keys, not flag
