@@ -185,7 +185,7 @@ measured across one audited repository, a rule carried by a mandatory task secti
    exclusion ENDS by recording a terminal disposition carrying its required reason, and
    never by removing the record. The archive verb takes TWO halves in ONE invocation — the
    disposition AND a deferral assertion — because the gate refuses either half alone:
-   `update-epic <id> --status archived --outcome delivered|killed|superseded|abandoned --reason "<why>" --no-deferrals`
+   `update-epic <id> --status archived --outcome delivered|killed|superseded|abandoned|declined --reason "<why>" --no-deferrals`
    (every outcome except `delivered` requires the reason). `--no-deferrals` is the explicit
    "there are none" and is a claim, not a default — swap it for `--deferral
    "<epicId>:<artifact section>"` where work is now held by a registered epic, or
@@ -195,6 +195,41 @@ measured across one audited repository, a rule carried by a mandatory task secti
    precisely what a disposition exists to preserve. `remove-epic` stays available and
    ungated for what it is for: an epic registered in error, a duplicate, a mistake made a
    minute ago — where there is no disposition to record because there was no work.
+
+## Intake — triage an ask against the whole backlog BEFORE registering it
+
+The ask is the ONLY moment the whole backlog is cheap to consider: after registration nothing
+ever re-reads it as a set, so an ask that duplicates existing work in another shape becomes a
+permanent second epic. The dedup that already exists is IDENTITY-based — same id, or the same
+`externalUrl` — which catches a re-run of sync and nothing else. Measured in this plugin's own
+repository: four live pairs are one change registered twice under different lanes and
+different names, and identity dedup found none of them.
+
+1. **Get the candidate set mechanically.** Before any `add-epic`, run
+   `/pm:triage "<the ask, in its own words>"`. It returns the existing epics that share
+   distinctive vocabulary with the ask (each with the shared tokens that put it there), the
+   lane this repo's routing picks, and the backlog's current shape. It returns
+   `verdict: null` and that is not a placeholder: the engine computes what is WORTH READING
+   and never decides. Nothing about a lexical overlap is a claim that two asks are the same.
+2. **READ the candidates — do not skim the scores.** Open each one that could plausibly be
+   the same work. A high score with unrelated intent is a miss; a low score on an epic whose
+   description turns out to cover the ask is a hit. This is the judgment the surface exists
+   to make cheap, and it is yours.
+3. **Record the relationship you found**, rather than leaving it in the conversation:
+   `add-epic … --link "relates-to:<id>:<why>"` where the two asks inform each other;
+   `--link "supersedes:<id>:<why>"` where this ask REPLACES an existing epic — then end the
+   superseded one with its own disposition (`--outcome superseded --reason "<what replaced
+   it>"`), because a consolidation that leaves both epics open has consolidated nothing.
+   A candidate `triage` marks `superseded: true` is already dead — do not consolidate into it.
+4. **Say no out loud when the answer is no.** Not every ask should be taken on, and declining
+   by never registering it destroys the record that anybody considered it. Register it, then
+   `update-epic <id> --status archived --outcome declined --reason "<why not>" --no-deferrals`.
+   Two commands, deliberately: creating an epic directly at `archived` stamps an engine record
+   carrying no reason, which is the silence this step removes.
+
+**This is not a substitute for the identity dedup in the sync procedures below, and they are
+not a substitute for it.** A URL match answers "have I already mirrored THIS item"; triage
+answers "is this ask already in the backlog under another name". Run both.
 
 ## Epic-level autonomy
 
@@ -293,6 +328,17 @@ agent) do:
    --external-updated-at <iso>` (or `record-tracker-refresh` when you owe a verdict) —
    seeing an item in the list response is not reading it, so listing alone must never
    advance the watermark or sync erases the drift it exists to find.
+6. For every epic linked to an item HERE that did NOT appear in the open list you just
+   read, that item is no longer open — the reciprocal of step 2, and the half that ends an
+   epic rather than creating one. Absence from an open-item list is not proof on its own (an
+   item can be deleted, transferred or moved out of this scope), so READ THE ITEM first.
+   Then, where the epic's status is not already `archived`, PROPOSE its disposition to the
+   user and let them confirm it — never write one unasked:
+   `update-epic <id> --status archived --outcome delivered|killed|superseded|abandoned|declined --reason "<why>" --no-deferrals`.
+   WHICH outcome it is, and the reason that goes with it, is a judgment about what happened
+   to the work; github-issues closing an item does not say which one and pm will not guess. An epic
+   that is already `archived` owes nothing here — it ended, and a record that ended does not
+   need a second ending. Then re-render with `/pm:status`.
 
 ## Sync after completing tracker-linked work
 

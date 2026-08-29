@@ -19,6 +19,7 @@ import { claimedSourceArtifacts, epicSourceArtifacts, normalizeArtifactPath, syn
 import { ARCHIVE_BACKFILL, engineStamp } from "./disposition.mjs";
 import { ROOT, CONDUCTOR_DIR, BRIEF_PATH, PLANS_DIR, anyInwardProcedureEmittable } from "./constants.mjs";
 import { resolveAndRecordPlatform } from "./platform.mjs";
+import { saveHookHeal } from "./hook-write.mjs";
 
 /** Ensure the conductor's GENERATED artifacts are git-ignored.
  *
@@ -132,6 +133,19 @@ const CONDUCTOR_OWN_FILES = new Set([
   ".conductor/commit-watch.json",
 ]);
 
+/** Does this file list consist ENTIRELY of pm's own generated output?
+ *
+ *  `false` for an empty list and for `null` (headChangedFiles()'s "git cannot answer"): both mean
+ *  "cannot tell this is bookkeeping", and the safe direction is to keep logging. A false log row
+ *  is visible and reviewable; a false SUPPRESSION silently disables the trail.
+ *
+ *  Shared by BOTH commit-nudge branches on purpose (gh#81). It lived inline in the AUTO-DETOUR
+ *  branch only, which is why the DETOUR-COMMIT branch went on logging the conductor's own
+ *  re-render commits — a sibling call site the diff that added it never touched. */
+export function isConductorOwnFiles(files) {
+  return Array.isArray(files) && files.length > 0 && files.every((f) => CONDUCTOR_OWN_FILES.has(f));
+}
+
 /** Diff-shape heuristic for an UNLOGGED minimal detour: a small, self-contained commit
  *  (<=3 files) whose subject uses a fix/chore conventional-commit prefix, made while no
  *  detour is active, and that does not itself name the currently active epic (a commit
@@ -143,15 +157,20 @@ export function looksLikeUnloggedMinimalDetour(subject, activeEpicId) {
   // human to hand-clean detours.log, the exact hand-editing pm exists to remove. Observed twice
   // in one session on `/pm:upgrade`'s own `chore(pm): upgrade conductor to <ver>` commit.
   //
-  // Only THIS branch needs the guard. The sibling DETOUR-COMMIT branch at the call site is gated
-  // on detourContext(state).active, which is the strictly stronger condition — a live detour
-  // frame implies a paused epic — so the asymmetry is deliberate, not an omission.
+  // Only THIS branch needs the ACTIVE-EPIC guard, and that asymmetry alone is the deliberate
+  // one: the sibling DETOUR-COMMIT branch is gated on detourContext(state).active, the strictly
+  // stronger condition — a live detour frame implies a paused epic.
+  //
+  // The BOOKKEEPING guard below (isConductorOwnFiles) was a different story, and this comment
+  // used to be read as covering it too. It was an omission, not a design: gh#81's commit loop is
+  // the DETOUR-COMMIT branch logging pm's own `chore(pm): re-render PROJECT.md` commits. It now
+  // guards both call sites — do not re-inline it here.
   if (!activeEpicId) return false;
   if (!/^(fix|chore)(\([^)]*\))?:\s/.test(subject)) return false;
   if (activeEpicId && subject.includes(`(${activeEpicId})`)) return false;
   const files = headChangedFiles();
   if (files === null || files.length === 0 || files.length > 3) return false;
-  if (files.every((f) => CONDUCTOR_OWN_FILES.has(f))) return false;
+  if (isConductorOwnFiles(files)) return false;
   return true;
 }
 
@@ -182,8 +201,107 @@ export function commitNudge() {
     : unverifiableSubject(cmd);
   if (subject === null) return;              // unverifiable rung, and the old heuristic said no
 
+  // gh#129 — the commit-TIME half of the attribution obligation, and ONLY on the observed rung.
+  // On the unverifiable rung `obs.head` can be a perfectly real sha while nothing is known to
+  // have landed (no watermark yet, reflogs off, HEAD unreadable): naming it there would be
+  // gh#104 in a new costume, asserting a commit the repository never confirmed — against an
+  // APPEND-ONLY array whose last entry is the Gate 2 endpoint. Absence of the clause is the
+  // degradation, and it costs nothing.
+  const attribution = obs.verdict === "landed" ? attributionNudge(state, ctx, obs.head) : null;
+
   // ── everything below is shared by both rungs ──
-  runNudge(state, ctx, subject);
+  runNudge(state, ctx, subject, attribution);
+}
+
+/** The epic a commit that just landed belongs to, or null wherever the engine would have to
+ *  GUESS. Guessing is the one thing this must not do: the emitted rule says attribution is
+ *  inferred from NOTHING, and `attributedCommits` is append-only — the engine neither reorders
+ *  nor de-duplicates it — so a wrongly-named epic is not a papercut, it is a permanent wrong
+ *  Gate 2 endpoint on an epic nobody will think to re-check.
+ *
+ *  NOT `state.active`. While a detour is live `state.active` still names the PAUSED PARENT
+ *  (links.mjs `detourContext`) while the commits being made are the detour's work, so the
+ *  parent is exactly the wrong answer during the one period the hook fires most.
+ *
+ *  The id is RESOLVED against `state.epics` rather than interpolated: `detourContext` falls back
+ *  to `state.active` and then to the literal `"-"` for a frame naming no spawned detour, and a
+ *  nudge reading `update-epic - --attribute-commit …` is a command that cannot run. */
+function attributionTarget(state, ctx) {
+  const id = ctx.active ? ctx.detourId : state.active;
+  // RESOLUTION IS THE ONLY GUARD, deliberately. Explicit `!id` and `id === "-"` checks read as
+  // defence but are strictly redundant here — neither `null` nor `"-"` names an epic — and a
+  // redundant guard is one no mutation can kill, which is how a file grows branches nobody can
+  // verify. One lookup covers "no active epic", detourContext's `state.active` fallback, and its
+  // literal `"-"` fallback alike.
+  const epic = (state.epics || []).find(e => e.id === id);
+  if (!epic) return null;
+  // ABSENT is not empty, and the difference is the whole exemption. pushEpic() deliberately
+  // leaves `attributedCommits` OFF an archive-backfilled epic (state.mjs) because that epic
+  // never passed through the conductor while it was in flight; the staleness gate reads the
+  // same absence as "unverifiable" and forgives it. Nudging there would demand attribution for
+  // work that predates the capability — turning the gate's one forgiven case into a per-commit
+  // false positive, which is precisely how a channel stops being read.
+  if (!Array.isArray(epic.attributedCommits)) return null;
+  return epic;
+}
+
+/** gh#129 — one clause, appended to the advisory commit-nudge ALREADY emits on a real commit.
+ *
+ *  The obligation ("record it at the moment each commit is made") was checked only at the
+ *  archive gate, which is after the commits were made, often across sessions, and after the
+ *  ordering rule may already have been violated irrecoverably. This moves the DETECTOR to the
+ *  moment the finding is still actionable, and moves nothing else: no new hook, no new file, no
+ *  new state, no new flag, and no engine-held epic→sha mapping (which would owe a pruning story
+ *  for detours, resets, rebases, dropped branches and the archive move — five false-nag modes on
+ *  a channel that only just became trustworthy).
+ *
+ *  SELF-EXTINGUISHING WITHOUT ANY BOOKKEEPING OF ITS OWN: the escalated form keys on
+ *  `attributedCommits.length === 0`, which is state the AGENT wrote. Attribute once and the
+ *  loud form is gone for the life of the epic. That empty array is also the only state in which
+ *  item 4's catch-up rule is still available — after the first append, catching up would leave
+ *  an ancestor as the last entry — so the escalation lands at the one moment it changes the
+ *  outcome rather than on every commit forever.
+ *
+ *  NOISE BUDGET, stated plainly: this is willing to be ignored on the steady-state rung. One
+ *  short sentence per real commit under an active epic, on a message that already prints, is
+ *  what it spends; if a reader skims past it the cost is what today already costs. What it must
+ *  never do is fire when no commit landed, or name the wrong epic or the wrong sha. */
+function attributionNudge(state, ctx, sha) {
+  // `observeCommit()` documents `""` (unborn HEAD) and `null` (git cannot answer) as real return
+  // values for `head`. Neither can reach here today — `landed` implies a reflog-confirmed commit
+  // — but that coupling lives in another module, and an empty sha would emit a command that
+  // silently appends nothing to an append-only array. Stated exception: no test kills this
+  // guard, because nothing in the current engine can reach it.
+  if (!sha || typeof sha !== "string") return null;
+  const epic = attributionTarget(state, ctx);
+  if (!epic) return null;
+  // No "already attributed?" check, deliberately: `verdict: "landed"` means this sha is where
+  // HEAD moved TO since the last observation, so it is being announced for the first time by
+  // construction. A guard for it would be a branch no test can reach — and unreachable guards
+  // are how a file accumulates behaviour nobody can verify.
+
+  const cmd = `update-epic ${epic.id} --attribute-commit ${sha}`;
+  // The exclusion travels WITH the command, because this nudge is the surface most likely to be
+  // obeyed reflexively and the archive move is the one commit obeying it would damage: it lands
+  // after the reviewed range by construction, so attributing it makes the epic's own Gate 2 read
+  // stale at the instant the archive gate checks it. The engine states the rule and classifies
+  // NOTHING — it reads no commit message and inspects no commit's contents, exactly as
+  // archive-gate.mjs's own exclusion does.
+  const exclusion =
+    "ONE exclusion: a commit that only moves or deletes a change's artifacts — the " +
+    "`/opsx:archive` move above all — is lifecycle bookkeeping and must NOT be attributed; it " +
+    "lands after the reviewed range, so attributing it makes this epic's own Gate 2 read stale.";
+
+  if (epic.attributedCommits.length === 0) {
+    return `ATTRIBUTION — \`${epic.id}\` has attributed no commits yet, so this is the last ` +
+      "moment its catch-up rule is available: attribute every commit of this epic's work that " +
+      "already landed, IN THE ORDER THEY LANDED, and then this one — " +
+      `\`${cmd}\`. The array is append-only and its LAST entry is the endpoint a Gate 2 ` +
+      "`headSha` is compared against, so catching up after attributing forward is not " +
+      `recoverable. ${exclusion}`;
+  }
+  return `ATTRIBUTION — record this commit against its epic now, before the next one: ` +
+    `\`${cmd}\`. ${exclusion}`;
 }
 
 /** The pre-observation heuristic, kept intact for the UNVERIFIABLE rung only: no git, no
@@ -249,19 +367,32 @@ function unverifiableSubject(cmd) {
 /** Log the commit, self-heal an archived active pointer, re-render, and emit the advisory.
  *  Reached only once a commit is believed to have landed — by observation, or by the fallback
  *  heuristic above. */
-function runNudge(state, ctx, subject) {
+function runNudge(state, ctx, subject, attribution = null) {
   // DETERMINISTIC: if we are inside a detour, record this commit in the trail.
   let autoLogged = false;
+  let detourLogged = false;
   if (ctx.active) {
-    appendDetourLog("DETOUR-COMMIT", ctx.detourId, subject);
+    // gh#81 — THE LOOP. Committing a file this hook regenerates used to append a row describing
+    // that commit; the row changed PROJECT.md's "Recent detours" table; the re-render dirtied the
+    // tree again; committing THAT appended another row. Measured in the field: 8 rows for 4 real
+    // commits, several describing commits whose only content was re-rendering the file the row
+    // lives in, and `git status` never clean in any session.
+    //
+    // A commit touching ONLY pm's own generated output is bookkeeping, not detour work — there is
+    // nothing about it a reader of the trail needs. The same predicate has always guarded the
+    // AUTO-DETOUR branch; it was simply never applied here.
+    detourLogged = !isConductorOwnFiles(headChangedFiles())
+      && appendDetourLog("DETOUR-COMMIT", ctx.detourId, subject);
   } else if (looksLikeUnloggedMinimalDetour(subject, state.active)) {
     // AUTO-DETECT: this commit's shape looks like a minimal detour nobody logged via
     // `/pm:detour --minimal`. Log it automatically instead of relying on the agent to
     // remember — the whole point of this heuristic.
     // No `|| "-"` fallback any more: looksLikeUnloggedMinimalDetour refuses without an active
     // epic (gh#91), so the placeholder that used to stand in for one can no longer be reached.
-    appendDetourLog("AUTO-DETOUR", state.active, subject);
-    autoLogged = true;
+    // The return value, not an unconditional true: a re-fire of the hook for a sha already in the
+    // trail writes nothing (gh#81's dedupe), and announcing "logged automatically" for a row that
+    // does not exist is the plugin reporting one thing while doing another.
+    autoLogged = appendDetourLog("AUTO-DETOUR", state.active, subject);
   }
   // Self-heal: if this commit archived the active epic (e.g. an OpenSpec archive),
   // clear the stale active pointer + stamp archived status so /pm:next advances.
@@ -270,20 +401,24 @@ function runNudge(state, ctx, subject) {
   // same RETRY ONCE, THEN SKIP treatment: a conflict here is a self-heal that re-runs on the
   // next hook, so losing it costs nothing — while the default onConflict:"throw" turns an
   // invisible race into a visible mid-session exit-9 error for a write that did not matter.
-  // The retry reloads and RE-RUNS reconcileArchived rather than re-attempting the same write:
-  // the in-hand `state` is built on a revision another writer has already superseded, so
-  // writing it again would clobber exactly what the guard exists to protect.
+  // The policy itself is lib/hook-write.mjs's saveHookHeal() — SHARED with render.mjs, not
+  // copied from it (#131). This site is also the one that cannot be verified end to end:
+  // render() is called two lines below and its heal is idempotent, so from outside a single
+  // invocation the retry running and the retry being absent are indistinguishable — identical
+  // final state, identical revision, identical conflict log. That cover is what let the retry
+  // go untested at both sites for six releases, so a source scan in conductor-25 binds this
+  // site to the shared policy instead.
   if (reconcileArchived(state)) {
-    const first = saveState(state, { onConflict: "skip", verb: "commit-nudge" });
-    if (!first.ok) {
-      const fresh = loadState();
-      if (reconcileArchived(fresh)) saveState(fresh, { onConflict: "skip", verb: "commit-nudge" });
-    }
+    saveHookHeal({ state, verb: "commit-nudge", heal: reconcileArchived });
   }
   render();
 
   const msg = ctx.active
-    ? `Commit detected during DETOUR \`${ctx.detourId}\` (logged to detours.log). ` +
+    // "(logged to detours.log)" is now a CLAIM about what just happened, so it is conditional:
+    // a bookkeeping-only commit, or a re-fire for a sha already in the trail, writes no row, and
+    // saying otherwise would send the agent looking for a line that is not there.
+    ? `Commit detected during DETOUR \`${ctx.detourId}\`` +
+      (detourLogged ? " (logged to detours.log)" : " (bookkeeping only — not added to the detour trail)") + ". " +
       "When the detour is done: archive it, `/pm:resume` to pop the stack, and run the " +
       "RECONCILE check on the paused parent epic. Write a one-line Honcho memory on resume."
     : autoLogged
@@ -292,8 +427,14 @@ function runNudge(state, ctx, subject) {
       "as an AUTO-DETOUR entry. Review it — if that's wrong, edit/remove the line."
     : "Commit detected. If this was a MINIMAL detour, run `/pm:detour --minimal \"<what>\"` " +
       "to record it. Otherwise update `.conductor/state.json` if an epic's status or stories changed.";
+  // The attribution clause is a SECOND paragraph, never a longer first one: the three messages
+  // above are about the DETOUR record and are decided by different inputs, so splicing the two
+  // obligations into one sentence would make each harder to act on than either alone.
   process.stdout.write(JSON.stringify({
-    hookSpecificOutput: { hookEventName: "PostToolUse", additionalContext: msg },
+    hookSpecificOutput: {
+      hookEventName: "PostToolUse",
+      additionalContext: attribution ? `${msg}\n\n${attribution}` : msg,
+    },
   }));
 }
 

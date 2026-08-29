@@ -30,7 +30,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-08-26T22:39:16.528Z",
         "recordedBy": "migration"
-      }
+      },
+      "specPath": "docs/superpowers/specs/2026-07-14-epic-hierarchy-orchestration-design.md"
     },
     {
       "id": "portfolio-architecture-consistency-scan",
@@ -1318,7 +1319,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-25T18:52:22.706Z",
         "recordedBy": "migration"
-      }
+      },
+      "specPath": "docs/superpowers/specs/2026-07-14-epic-hierarchy-orchestration-design.md"
     },
     {
       "id": "df-update-epic-no-story-toggle-verb",
@@ -1372,7 +1374,8 @@
         "outcome": "delivered",
         "recordedAt": "2026-07-21T09:59:09.242Z",
         "recordedBy": "migration"
-      }
+      },
+      "specPath": "docs/superpowers/specs/2026-07-21-conductor-mjs-module-split-design.md"
     },
     {
       "id": "edd-harness-agent-behavior-testing",
@@ -1390,7 +1393,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-28T01:32:40.590Z",
         "recordedBy": "migration"
-      }
+      },
+      "specPath": "docs/superpowers/specs/2026-07-25-edd-harness-agent-behavior-testing-design.md"
     },
     {
       "id": "rules-block-hardcodes-claude-slash-commands",
@@ -1433,7 +1437,8 @@
         "outcome": "delivered",
         "recordedAt": "2026-08-04T00:48:57.337Z",
         "recordedBy": "migration"
-      }
+      },
+      "specPath": "docs/superpowers/specs/2026-07-31-platform-parity-mechanism-design.md"
     },
     {
       "id": "codex-platform-support",
@@ -1465,7 +1470,8 @@
         }
       ],
       "reconcileNeeded": false,
-      "parent": "multi-platform-agent-support"
+      "parent": "multi-platform-agent-support",
+      "specPath": "docs/superpowers/specs/2026-07-25-codex-platform-support-design.md"
     },
     {
       "id": "hermes-platform-support",
@@ -1899,7 +1905,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-30T04:00:55.770Z",
         "recordedBy": "migration"
-      }
+      },
+      "specPath": "docs/superpowers/specs/2026-07-21-conductor-mjs-module-split-design.md"
     },
     {
       "id": "2026-07-26-edd-harness-agent-behavior-testing",
@@ -1916,7 +1923,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-30T04:00:55.969Z",
         "recordedBy": "migration"
-      }
+      },
+      "specPath": "docs/superpowers/specs/2026-07-25-edd-harness-agent-behavior-testing-design.md"
     },
     {
       "id": "2026-07-29-platform-aware-rules-block",
@@ -1933,7 +1941,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-30T04:00:56.179Z",
         "recordedBy": "migration"
-      }
+      },
+      "specPath": "docs/superpowers/specs/2026-07-29-platform-aware-rules-block-design.md"
     },
     {
       "id": "platform-switch-orphans-old-rules-block",
@@ -2120,7 +2129,8 @@
           "reason": "attribution records who DID the work; assignment records who SHOULD -- same field family, different lifecycle"
         }
       ],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "specPath": "docs/superpowers/specs/2026-08-23-cross-repo-orchestration-design.md"
     },
     {
       "id": "cross-session-epic-assignment",
@@ -2138,7 +2148,8 @@
       ],
       "reconcileNeeded": false,
       "externalId": "84",
-      "externalUrl": "https://github.com/cfdude/pm/issues/84"
+      "externalUrl": "https://github.com/cfdude/pm/issues/84",
+      "specPath": "docs/superpowers/specs/2026-08-23-cross-repo-orchestration-design.md"
     },
     {
       "id": "changelog-page-too-long-archive-older-releases",
@@ -2238,7 +2249,12 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "81",
-      "externalUrl": "https://github.com/cfdude/pm/issues/81"
+      "externalUrl": "https://github.com/cfdude/pm/issues/81",
+      "attributedCommits": [
+        "72241fb",
+        "4f10b89",
+        "b342023"
+      ]
     },
     {
       "id": "gh-82-claude-project-dir-overrides-cwd",
@@ -2250,7 +2266,11 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "82",
-      "externalUrl": "https://github.com/cfdude/pm/issues/82"
+      "externalUrl": "https://github.com/cfdude/pm/issues/82",
+      "specPath": "docs/superpowers/specs/2026-08-23-cross-repo-orchestration-design.md",
+      "attributedCommits": [
+        "6a3506e"
+      ]
     },
     {
       "id": "gh-85-document-mutating-verbs",
@@ -2262,7 +2282,11 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "85",
-      "externalUrl": "https://github.com/cfdude/pm/issues/85"
+      "externalUrl": "https://github.com/cfdude/pm/issues/85",
+      "attributedCommits": [
+        "66b71fd",
+        "ca8144b"
+      ]
     },
     {
       "id": "gh-86-openspec-lane-silent-zero-progress",
@@ -2430,7 +2454,7 @@
       "id": "gh-91-autodetour-false-minimal-detour",
       "title": "auto-detour hook logs a MINIMAL detour for a legit commit when there is NO detour",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -2439,13 +2463,24 @@
       "externalUrl": "https://github.com/cfdude/pm/issues/91",
       "attributedCommits": [
         "45bb85b"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T06:57:07.922Z",
+        "reason": "shipped in 0.32.0 (9334b0e): no active epic means no work to detour from, so nothing is logged"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T06:57:07.921Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T06:57:07.922Z"
     },
     {
       "id": "gh-92-epic-specpath",
       "title": "Epics cannot record the design doc they came from (specPath), so spec-to-epic traceability is lost",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -2462,19 +2497,41 @@
         "8bdf7f9",
         "6a53823",
         "3db944f"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T06:57:00.173Z",
+        "reason": "shipped in 0.32.0 (9334b0e): specPath plus verify-specs; the field-family table absorbed it, and the guard that claimed to prove that was itself found vacuous"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T06:57:00.172Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T06:57:00.173Z"
     },
     {
       "id": "gh-93-verify-specs-coverage",
       "title": "No way to ask which design docs have no epics — a verify-specs coverage check",
       "priority": "P3",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
       "externalId": "93",
-      "externalUrl": "https://github.com/cfdude/pm/issues/93"
+      "externalUrl": "https://github.com/cfdude/pm/issues/93",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T06:57:01.719Z",
+        "reason": "shipped in 0.32.0 (9334b0e): verify-specs ships as a listing verb, not an integrity check — an uncovered design doc can legitimately be true"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T06:57:01.718Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T06:57:01.719Z"
     },
     {
       "id": "gh-94-serial-detours-accepted-silently",
@@ -2580,7 +2637,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-08-26T22:39:16.528Z",
         "recordedBy": "migration"
-      }
+      },
+      "specPath": "docs/superpowers/specs/2026-07-31-platform-parity-mechanism-design.md"
     },
     {
       "id": "2026-08-14-eval-measures-worktree",
@@ -2595,13 +2653,14 @@
         "outcome": "unknown",
         "recordedAt": "2026-08-26T22:39:16.528Z",
         "recordedBy": "migration"
-      }
+      },
+      "specPath": "docs/superpowers/specs/2026-08-07-eval-measures-worktree-design.md"
     },
     {
       "id": "gh-104-commit-nudge-fires-on-text-match",
       "title": "commit-nudge fires on any Bash command whose TEXT contains 'git commit' — advisory-only false positive, no write side effects",
       "priority": "P3",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -2617,7 +2676,18 @@
       "attributedCommits": [
         "45bb85b",
         "2ed5929"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T06:57:06.318Z",
+        "reason": "shipped in 0.32.0 (9334b0e): the hook observes a HEAD watermark and the reflog instead of parsing the command text"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T06:57:06.317Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T06:57:06.318Z"
     },
     {
       "id": "gh-102-sync-blind-to-issue-comments",
@@ -2641,7 +2711,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-26T21:22:46.061Z"
+      "completedAt": "2026-08-26T21:22:46.061Z",
+      "specPath": "docs/superpowers/specs/2026-08-23-tracker-direction-and-freshness-design.md"
     },
     {
       "id": "gh-103-tracker-refresh-gate-before-specs",
@@ -2671,7 +2742,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-26T21:22:47.586Z"
+      "completedAt": "2026-08-26T21:22:47.586Z",
+      "specPath": "docs/superpowers/specs/2026-08-23-tracker-direction-and-freshness-design.md"
     },
     {
       "id": "gh-105-feedback-undeclared-gh-dependency",
@@ -2683,7 +2755,10 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "105",
-      "externalUrl": "https://github.com/cfdude/pm/issues/105"
+      "externalUrl": "https://github.com/cfdude/pm/issues/105",
+      "attributedCommits": [
+        "bcff31c"
+      ]
     },
     {
       "id": "gh-106-conductor-logs-never-gitignored",
@@ -2749,7 +2824,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-26T21:22:50.755Z"
+      "completedAt": "2026-08-26T21:22:50.755Z",
+      "specPath": "docs/superpowers/specs/2026-08-23-tracker-direction-and-freshness-design.md"
     },
     {
       "id": "gh-110-gate2-bypassed-by-archive-hook",
@@ -3188,7 +3264,14 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "127",
-      "externalUrl": "https://github.com/cfdude/pm/issues/127"
+      "externalUrl": "https://github.com/cfdude/pm/issues/127",
+      "notes": [
+        {
+          "at": "2026-08-29T07:27:00.158Z",
+          "actor": "agent",
+          "text": "Triaged 2026-08-29: NOT satisfied. The dogfooding skill exists only at .claude/skills/dogfooding (repo practice, unshipped) and 'dogfood' appears twice in this repo's CLAUDE.md and ZERO times in scripts/lib/rules.mjs — so the rule reaches exactly one repo, which is the asymmetry the issue is about. The fix has a precedent: #126 moved cross-spec-review from .claude/skills/ into skills/ AND into the emitted rules block as a numbered required task item. Do the same here; the issue's own design constraint says task-not-prose (14/14 vs 3/15)."
+        }
+      ]
     },
     {
       "id": "gh-128-openspec-staleness-nudge",
@@ -3246,7 +3329,10 @@
       ],
       "reconcileNeeded": false,
       "externalId": "129",
-      "externalUrl": "https://github.com/cfdude/pm/issues/129"
+      "externalUrl": "https://github.com/cfdude/pm/issues/129",
+      "attributedCommits": [
+        "1fd2018"
+      ]
     },
     {
       "id": "conductor-tells-the-truth",
@@ -3392,13 +3478,14 @@
         "outcome": "unknown",
         "recordedAt": "2026-08-24T01:40:39.820Z",
         "recordedBy": "migration"
-      }
+      },
+      "specPath": "docs/superpowers/specs/2026-08-18-state-write-conflict-guard-design.md"
     },
     {
       "id": "gh-130-disposition-has-no-correction-verb",
       "title": "An agent-supplied disposition is unreplaceable — a mistyped outcome forces a state.json hand-edit",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -3408,7 +3495,18 @@
       "attributedCommits": [
         "6012879",
         "a754258"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T06:57:03.194Z",
+        "reason": "shipped in 0.32.0 (9334b0e): --correct-disposition: deliberate, self-describing, non-destructive; the prior record survives under superseded"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T06:57:03.193Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T06:57:03.194Z"
     },
     {
       "id": "gh-131-retry-half-unverified",
@@ -3420,7 +3518,10 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "131",
-      "externalUrl": "https://github.com/cfdude/pm/issues/131"
+      "externalUrl": "https://github.com/cfdude/pm/issues/131",
+      "attributedCommits": [
+        "c355f4c"
+      ]
     },
     {
       "id": "gh-132-lessons-advisor-hook",
@@ -3439,7 +3540,7 @@
       "id": "gh-133-disposition-reverts-backfill-counts",
       "title": "Recording an honest disposition on a backfilled epic silently reverts its archived task counts",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -3449,7 +3550,18 @@
         "a754258"
       ],
       "externalId": "133",
-      "externalUrl": "https://github.com/cfdude/pm/issues/133"
+      "externalUrl": "https://github.com/cfdude/pm/issues/133",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T06:57:04.757Z",
+        "reason": "shipped in 0.32.0 (9334b0e): root cause was provenance living in the one field an agent overwrites; registeredBy now lives on the epic"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T06:57:04.756Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T06:57:04.757Z"
     },
     {
       "id": "gh-134-hooks-run-the-installed-plugin",
@@ -3533,7 +3645,9 @@
       "reconcileNeeded": false,
       "externalId": "136",
       "externalUrl": "https://github.com/cfdude/pm/issues/136",
-      "attributedCommits": []
+      "attributedCommits": [
+        "c6a516e"
+      ]
     },
     {
       "id": "gh-138-refresh-warning-counts-terminal-epics",
@@ -3659,17 +3773,55 @@
         "declined": []
       },
       "completedAt": "2026-08-27T23:19:20.493Z"
+    },
+    {
+      "id": "gh-148-propose-spec-association-from-header",
+      "title": "Design documents already name their epics in a header — the specPath association could be proposed, not hand-backfilled",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-92-epic-specpath",
+          "reason": "92 shipped the field; this makes it cheap to populate for a repo that already has design documents"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "148",
+      "externalUrl": "https://github.com/cfdude/pm/issues/148",
+      "attributedCommits": []
+    },
+    {
+      "id": "gh-149-add-epic-drops-valueless-flag",
+      "title": "add-epic silently drops a valueless flag that update-epic refuses — the same mistake succeeds on one surface and fails on the other",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-136-add-epic-notes-discarded",
+          "reason": "same shape — a write surface accepting a flag it does not act on; fix them in the shared declaration together"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "149",
+      "externalUrl": "https://github.com/cfdude/pm/issues/149",
+      "attributedCommits": []
     }
   ],
   "detourStack": [],
-  "pmVersion": "0.28.0",
+  "pmVersion": "0.32.0",
   "tracker": {
     "system": "github-issues",
     "repo": "cfdude/pm",
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 174,
+  "revision": 212,
   "reviewMode": "thorough",
   "releases": [
     {

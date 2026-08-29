@@ -2,6 +2,7 @@
 // Shared path/enum constants for the conductor engine. No dependencies on any other
 // lib module — every other module may import from here.
 
+import fs from "node:fs";
 import path from "node:path";
 
 export const ROOT = process.env.CLAUDE_PROJECT_DIR || process.cwd();
@@ -480,3 +481,74 @@ export function mirroredEpicIdPrefix(tracker) {
  *  two sites in the first place. */
 export const usesGhIssueList = (tracker) =>
   !!tracker && tracker.system === "github-issues" && !!tracker.repo;
+
+// ─────────────────────── gh#82 — is ROOT the repository the caller is in? ───────────────────────
+//
+// `ROOT` above prefers CLAUDE_PROJECT_DIR over the cwd, and everything the engine touches hangs
+// off it: `.conductor/`, `state.json`, `PROJECT.md`, `CLAUDE.md`, `openspec/changes/`. When that
+// variable is stale or points elsewhere, `add-epic` files into another repo's backlog and
+// `write-rules` rewrites another repo's managed rules block — with no error and no line of output
+// naming the repository that was written.
+//
+// The precedence is NOT changed here, deliberately. It is load-bearing: hooks and slash commands
+// resolve the project through it, 0.28.0's self-hosting handoff resolves the checkout through it,
+// and the maintainer's cross-repo orchestration targets a sibling conductor with it. Refusing
+// would break a supported pattern; the defect is that a redirect is INDISTINGUISHABLE from a local
+// run in the output, so the fix is to make it distinguishable. This guard only observes.
+//
+// A first-class `--project-dir` flag (the tracker's "better" suggestion) is deliberately NOT part
+// of this: the frozen `path.join(ROOT, …)` constants above are computed at module load, before any
+// dispatcher could parse a flag, so it needs a re-exec or argv-parsing inside this module. That is
+// the issue's separate "(b) missing feature", not this defect.
+
+/** Is `ROOT` a DIFFERENT repository from the one the caller is standing in, or merely a different
+ *  path to the same project?  Returns `{ target, cwd }` for the former, `null` otherwise.
+ *
+ *  Three conditions, and each rules out a case where warning would be a nuisance:
+ *
+ *  1. CLAUDE_PROJECT_DIR is set at all — with it unset, ROOT *is* the cwd and there is no
+ *     redirect to report.
+ *  2. It resolves to a different directory. Through `realpathSync`, never a string compare: on
+ *     macOS the harness (and every fixture under `os.tmpdir()`) carries `/var/folders/…` while
+ *     `process.cwd()` reports the physical `/private/var/folders/…`, so a string compare calls
+ *     one directory two and fires this warning on every invocation in a symlinked checkout.
+ *  3. The cwd has a `.conductor/` OF ITS OWN. This is the discriminator, and it is what separates
+ *     "I meant this repo, the harness meant that one" from every legitimate use. Running the
+ *     engine from a subdirectory (`pm/scripts/`) is routine and silent, because a subdirectory has
+ *     no conductor. Pointing the engine at a project from a neutral directory — the test harness,
+ *     `evals/fixtures.py`, an orchestrator that avoids `cd` — is silent for the same reason. Only
+ *     when TWO initialized projects are in play, and the one being written is not the one you are
+ *     standing in, is there a choice that could have gone the other way.
+ *
+ *  A git WORKTREE of the same repository does trip this, and that is correct rather than
+ *  collateral: a worktree has its own checkout of `.conductor/state.json`, so writing the main
+ *  checkout's copy from inside a worktree changes a different file than the one on screen. */
+export function rootDivergence({ env = process.env, cwd = process.cwd() } = {}) {
+  const declared = env.CLAUDE_PROJECT_DIR;
+  if (!declared) return null;
+  // A path that does not exist cannot be realpath'd; resolve() still normalizes it, and a
+  // non-existent target is a divergence worth reporting rather than a reason to fall silent.
+  const real = (p) => { try { return fs.realpathSync(p); } catch { return path.resolve(p); } };
+  const target = real(declared);
+  const here = real(cwd);
+  if (target === here) return null;
+  if (!fs.existsSync(path.join(here, ".conductor"))) return null;
+  return { target, cwd: here };
+}
+
+/** Emit the divergence warning, once, naming BOTH repositories. Returns what it reported, or null.
+ *
+ *  Unconditional by design — NOT gated on PM_QUIET_ENGINE_BANNER or on CLAUDE_PROJECT_DIR being
+ *  absent. The engine banner is suppressed whenever CLAUDE_PROJECT_DIR is set, which means the
+ *  single condition that redirects every write is also the condition that makes the engine
+ *  quietest. A safety line that inherits that is no safety line. */
+export function warnRootDivergence(stream = process.stderr) {
+  const d = rootDivergence();
+  if (!d) return null;
+  stream.write(
+    `conductor: ⚠ WRITING A DIFFERENT REPOSITORY — CLAUDE_PROJECT_DIR points at ${d.target}\n` +
+    `conductor:   You are in ${d.cwd}, which has a conductor of its own. Every path this ` +
+    `command reads or writes belongs to ${d.target}. Unset CLAUDE_PROJECT_DIR to act here instead.\n`
+  );
+  return d;
+}
