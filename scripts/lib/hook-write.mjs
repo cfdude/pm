@@ -22,6 +22,10 @@
 
 import { loadState, saveState } from "./state.mjs";
 
+/** The real write both hook sites use: skip on conflict, tagged with the calling verb so the
+ *  sidecar names which hook lost the race. */
+const hookSave = (verb) => (s) => saveState(s, { onConflict: "skip", verb });
+
 /** Apply a hook's self-heal to state.json under the RETRY ONCE, THEN SKIP policy.
  *
  *  The caller has already run its heal against `state`; this owns only the write.
@@ -54,7 +58,3 @@ export function saveHookHeal({ state, verb, heal, load = loadState, save = hookS
   const second = save(fresh);
   return { ok: !!(second && second.ok), retried: true };
 }
-
-/** The real write both hook sites use: skip on conflict, tagged with the calling verb so the
- *  sidecar names which hook lost the race. */
-const hookSave = (verb) => (s) => saveState(s, { onConflict: "skip", verb });

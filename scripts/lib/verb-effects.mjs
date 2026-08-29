@@ -48,7 +48,12 @@ export const VERB_EFFECTS = {
   "suggest-lane": { effect: "read-only", exercise: ["a caching bug"], note: "returns the routed lane for a title" },
   triage: { effect: "read-only", exercise: ["a caching bug in the renderer"], note: "candidate duplicates + lane suggestion; emits verdict:null and registers nothing" },
   "verify-specs": { effect: "read-only", exercise: [], note: "design-document coverage inventory" },
-  "verify-state": { effect: "read-only", exercise: [], note: "compares state.json's mtime against the render stamp; exits non-zero on drift and writes nothing" },
+  // The ONE exercised verb that is SUPPOSED to exit non-zero — its whole job is to fail on
+  // drift, and the behavioural check runs it against a repo with a render pending. Declared
+  // rather than special-cased in the test, so "this verb fails by design" and "this verb
+  // crashed before it ran" stay distinguishable: a crash writes nothing either, and a check
+  // that accepted any non-zero exit would prove nothing for the other twelve.
+  "verify-state": { effect: "read-only", exercise: [], expectsFailure: true, note: "compares state.json's mtime against the render stamp; exits non-zero on drift and writes nothing" },
   "verify-worktrees": { effect: "read-only", exercise: [], note: "reports stale git worktrees" },
 
   // ─────────────── mutates: never call these against a repo you are only inspecting ───────────────

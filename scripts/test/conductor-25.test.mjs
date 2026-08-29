@@ -403,7 +403,11 @@ function treeHash(dir) {
 
 /** A repo with a render PENDING: state.json has moved since PROJECT.md was generated. Without
  *  this the check would be weak in the direction that matters — `render` writes nothing at all
- *  when there is nothing to render, so a settled repo cannot tell a read-only verb from it. */
+ *  when there is nothing to render, so a settled repo cannot tell a read-only verb from it.
+ *
+ *  `active` is set for the same reason: `gate-guard` returns immediately when no epic is active,
+ *  so a fixture without one would exercise a two-line early return and then report the verb as a
+ *  verified read-only. */
 function repoWithPendingRender() {
   const cwd = tmpRepo();
   run(["init"], { cwd });
@@ -413,6 +417,7 @@ function repoWithPendingRender() {
     id: "pending", title: "registered without a render", priority: "P1", status: "queued",
     role: "epic", lane: "claude-code", links: [], reconcileNeeded: false, attributedCommits: [],
   });
+  state.active = "p";
   writeState(cwd, state);
   return cwd;
 }
@@ -429,9 +434,21 @@ test("gh-85: every verb declared read-only leaves the working tree byte- and mti
     const cwd = repoWithPendingRender();
     const before = treeHash(cwd);
     // stdin is closed for the hook verbs that read it, so they see an empty payload rather than
-    // hanging on the runner's inherited stdin. A non-zero exit is fine — `verify-state` is
-    // SUPPOSED to fail against a pending render, and failing is not writing.
-    expectFail(() => run([verb, ...decl.exercise], { cwd, input: "" }));
+    // hanging on the runner's inherited stdin.
+    const err = expectFail(() => run([verb, ...decl.exercise], { cwd, input: "" }));
+    // "Nothing moved" proves nothing about a verb that never RAN: a process that died on startup
+    // writes nothing either. That is the "the check reported nothing / could the check report
+    // anything" row of docs/lessons/a-guard-can-check-the-wrong-half.md, and without this
+    // assertion a broken argument parser would turn ten verified claims into decoration. Only
+    // `verify-state` may exit non-zero, because failing on drift is its entire job — and it
+    // DECLARES that rather than being special-cased by name here.
+    if (!decl.expectsFailure) {
+      assert.equal(err, null,
+        `'${verb}' exited non-zero, so it did not run and "the tree did not move" proves ` +
+        `nothing: ${err && String(err.stderr || err.message)}`);
+    } else {
+      assert.ok(err, `'${verb}' declares expectsFailure but exited 0 — the declaration is stale`);
+    }
     assert.equal(treeHash(cwd), before,
       `'${verb}' is declared read-only but touched the working tree — either the write is a bug ` +
       "or lib/verb-effects.mjs is now lying to callers that trust it");
