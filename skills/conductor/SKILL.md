@@ -304,7 +304,13 @@ bullet reached 3/15.
    infers this from nothing else: not the wording, not the commands the text names, not the
    position in the file. Mark it when the task source is authored OR AMENDED — a source written
    before this capability existed gets the marker the first time you touch it, or its archive task
-   counts as outstanding work forever.
+   counts as outstanding work forever. The marker is pm's alone and it collides with an upstream
+   lint: `openspec validate --archived` knows nothing about it, counts raw checkboxes, and
+   therefore FAILS every correctly archived pm change — reporting `1 incomplete task` against the
+   same file pm reports complete with `· N lifecycle`. Its own help text offers it for pre-commit
+   linting; do NOT wire it into a pm-managed repo. Nothing clears that failure: ticking the archive
+   task would be a false record and dropping the marker would break pm's own archive gate. Ignoring
+   a marked line upstream is the clean fix and it is not pm's to make.
 
 4. **Attribute every commit to its epic.** At the moment each commit is made, record it:
    `update-epic <id> --attribute-commit <sha>`. The engine infers attribution from nothing — not

@@ -377,6 +377,16 @@ the position in the file. Marked tasks render as `· N lifecycle` alongside the 
 archive time. Mark it when the task source is authored **or amended** — a source written before
 0.27.0 gets the marker the first time you touch it.
 
+> **`openspec validate --archived` collides with the marker.**
+> Do NOT wire it into a pm-managed repo.
+> The marker is pm's alone: that lint counts raw checkboxes, knows nothing about the
+> marker, and therefore **fails every correctly archived pm change** — reporting `1 incomplete
+> task` against the same file pm reports complete with `· N lifecycle`. Its own help text offers
+> it for pre-commit linting, and nothing clears the failure: ticking the archive task would be a
+> false record, and dropping the marker would break pm's archive gate. Ignoring a marked line
+> upstream is the clean fix and it is not pm's to make. Tracked as
+> [#154](https://github.com/cfdude/pm/issues/154).
+
 </details>
 
 <details>

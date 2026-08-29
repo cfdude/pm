@@ -197,7 +197,8 @@ export const GATE_PROCEDURE_ITEMS = [
   },
   {
     title: "Declare lifecycle bookkeeping.",
-    mustSay: ["bookkeeping about the change's own lifecycle", "OR AMENDED"],
+    mustSay: ["bookkeeping about the change's own lifecycle", "OR AMENDED",
+      "openspec validate --archived", "do NOT wire it into a pm-managed repo"],
     lines: [
       "A task that is bookkeeping about the change's own",
       "   lifecycle rather than its work — above all the task that ARCHIVES THE CHANGE ITSELF, which",
@@ -206,6 +207,13 @@ export const GATE_PROCEDURE_ITEMS = [
       "   names, not the position in the file. Mark it at the moment the task source is AUTHORED",
       "   OR AMENDED — a source written before this capability existed gets the marker the first",
       "   time you touch it, or its archive task counts as outstanding work forever.",
+      "   The marker is pm's alone and it COLLIDES with an upstream lint: \`openspec validate",
+      "   --archived\` knows nothing about it, counts raw checkboxes, and therefore FAILS every",
+      "   correctly archived pm change — reporting \`1 incomplete task\` against the same file pm",
+      "   reports complete with \`· N lifecycle\`. Its own help text offers it for pre-commit",
+      "   linting; do NOT wire it into a pm-managed repo. Nothing clears that failure: ticking the",
+      "   archive task would be a false record and dropping the marker would break pm's own archive",
+      "   gate. Ignoring a marked line upstream is the clean fix and it is not pm's to make.",
     ],
   },
   {
