@@ -377,6 +377,16 @@ the position in the file. Marked tasks render as `· N lifecycle` alongside the 
 archive time. Mark it when the task source is authored **or amended** — a source written before
 0.27.0 gets the marker the first time you touch it.
 
+> **`openspec validate --archived` collides with the marker.**
+> Do NOT wire it into a pm-managed repo.
+> The marker is pm's alone: that lint counts raw checkboxes, knows nothing about the
+> marker, and therefore **fails every correctly archived pm change** — reporting `1 incomplete
+> task` against the same file pm reports complete with `· N lifecycle`. Its own help text offers
+> it for pre-commit linting, and nothing clears the failure: ticking the archive task would be a
+> false record, and dropping the marker would break pm's archive gate. Ignoring a marked line
+> upstream is the clean fix and it is not pm's to make. Tracked as
+> [#154](https://github.com/cfdude/pm/issues/154).
+
 </details>
 
 <details>
@@ -615,6 +625,13 @@ child runs as its own agent in its own git worktree/branch, never writes
 writer of state transitions. An ordinary merge conflict is never a hard stop — it resolves via
 a tiered ladder before ever reaching "ask the human."
 
+**Discovery is dispatched too, not just the work.** The preflight scan is a full read of each
+child's entire source, so running it inline for N children spends N whole documents of the
+orchestrator's context before the first child is dispatched — and a subagent's transcript never
+enters the parent's, only its report does. One subagent per child; same rule for any open-ended
+search the run needs. The full-read requirement is unchanged: it is about depth, not about who
+performs it.
+
 </details>
 
 <details>
@@ -677,6 +694,15 @@ because declining by never registering the ask destroys the record that anyone c
 keyword/glob rules checked before the generic lane heuristic — for when "anything touching
 billing always goes through openspec" needs to be a rule, not a CLAUDE.md carve-out.
 `suggest-lane "<free text>"` looks one up.
+
+**It is an input, not an answer.** Routing reads THE ASK — words, size, the overrides recorded
+here — and nothing else; it cannot ask whether the work serves something the project already
+committed to, because pm holds no milestone or product context to weigh. So the tie-break is
+asymmetric: `claude-code` means no spec, no plan, no gate and no stories, over-processing costs
+hours and under-processing costs the record permanently, and an unresolved routing question
+therefore resolves **away** from `claude-code`, never into it. Departing from the suggestion is
+expected — record why on the epic (`update-epic <id> --notes "lane: <chosen> not <routed> —
+<why>"`), which every path that registers an epic now asks for, not just the mirrored ones.
 
 </details>
 
@@ -1029,6 +1055,28 @@ Installed to `skills/` on `/pm:init`:
 | `cross-spec-review` | The release-scope gate: do this release's specs AGREE with each other? Gate 1 and Gate 2 each take one change as their unit and structurally cannot find a contradiction between two of them. Triggers on "cross-spec review," "do the specs agree," "review the specs together." |
 | `lessons` | Keeping a repository's PROCESS knowledge where it fires on the situation rather than on recall — the `docs/lessons/` shape, the frontmatter contract, and the capture half. Its `detect:` matchers are what the `lesson-advice` `PreToolUse` hook fires on. pm ships the mechanism, never the corpus. Triggers on "lessons learned," "have we hit this before," "that cost us." |
 | `dogfooding` | Routing what the work taught you instead of leaving it in the transcript: a practice you adopted becomes a registered candidate with its evidence attached, and a workaround you invented for tooling friction becomes a filed bug. Triggers on "should this be in the product," "I had to work around," "there's no verb for this." |
+
+## Reporting — pm does not have a house style
+
+You configure verbosity and format deliberately, once, globally — in an **output style**, or as a
+**communication contract** in your CLAUDE.md. A plugin re-imposing its own defeats that, so pm's
+reporting shapes are split three ways and only one of them is pm's to keep.
+
+| Band | What it is | Follows your contract? |
+|---|---|---|
+| **Recorded** | `--outcome`/`--reason`, `--no-deferrals`, gate verdicts, `--attribute-commit`, `--notify`, `record-reconcile` | **No** — these are writes to `.conductor/state.json`, not sentences. A communication preference applied to a record is data loss, not brevity. |
+| **Parsed** | `hierarchy-child-executor`'s `STATUS/DONE/DECISIONS/CONCERNS`, `merge-conflict-resolver`'s, `reconciler`'s `VERDICT/AMENDMENTS/NOTES` | **No** — a wire format between agents. The orchestrator branches on `STATUS`; a reshaped field name is a report nobody reads back. The prose *inside* a field does follow your contract. |
+| **Narrated** | the consolidated end-of-hierarchy report, the end-of-epic autonomy report, the preflight question batch, gate summaries, `/pm:status` narration, `/pm:next`'s recommendation | **Yes.** pm's headings are a default for a user who has configured none — not a style that outranks one. |
+
+Reshaping is always allowed; omitting never is. Where your shape has no slot for something pm
+requires — the `notifications[]` read-back, the "are you OK with these?" checkpoint, the deferral
+list — pm's instruction is to add a slot, not to drop the element.
+
+**One inheritance detail decides what actually reaches a dispatched child.** A subagent inherits
+every level of the CLAUDE.md hierarchy the main conversation loads, `~/.claude/CLAUDE.md`
+included; an **output style applies to the main conversation only** and does not reach one. So a
+contract that lives only in an output style never arrives at a child executor or the reconciler —
+put it in CLAUDE.md if you want the whole hierarchy to honour it.
 
 ## Guard & Automation
 

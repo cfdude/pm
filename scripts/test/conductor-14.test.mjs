@@ -244,6 +244,7 @@ const INTAKE_HEADING = "## Intake — triage an ask against the whole backlog BE
  *  configuration turns on or off. Comparing whole blocks would forbid the release from adding
  *  any instruction at all, which is not what the direction requirement pins. */
 const OPERATING_RULES_HEADING = "## PM Conductor — operating rules";
+const REPORTING_HEADING = "## Reporting — pm owns what is recorded and what is said; you own how you say it";
 const stripAlwaysOn = (block) => block
   .replace(new RegExp(`\\n*${REFRESH_GATE_HEADING}[\\s\\S]*?(?=\\n<!-- END pm-conductor rules -->)`), "")
   // The numbered operating rules are always-on for the same reason the three sections below are:
@@ -256,7 +257,11 @@ const stripAlwaysOn = (block) => block
   // the gate-procedure heading, which the next replace then removes in turn.
   .replace(new RegExp(`${OPERATING_RULES_HEADING}[\\s\\S]*?(?=## )`), "")
   .replace(new RegExp(`${GATE_PROCEDURE_HEADING}[\\s\\S]*?(?=## )`), "")
-  .replace(new RegExp(`${INTAKE_HEADING}[\\s\\S]*?(?=## )`), "");
+  .replace(new RegExp(`${INTAKE_HEADING}[\\s\\S]*?(?=## )`), "")
+  // gh-90 adds the reporting section: always-on for the same reason, and stripped for the same
+  // reason — no tracker configuration turns it on, off, or into something else, and pinning it
+  // byte-for-byte against 0.26.0 would forbid the release from adding it at all.
+  .replace(new RegExp(`${REPORTING_HEADING}[\\s\\S]*?(?=## )`), "");
 const REMINDER_HEADING = "## Sync after completing tracker-linked work";
 
 /** The rules block a tracker shape produces, with no state migration applied. */

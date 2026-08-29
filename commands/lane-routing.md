@@ -47,5 +47,17 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" suggest-lane "add a brand-new
 Overrides are checked in the order they were added; the first match wins. `lane: null` means
 nothing matched — apply the documented generic heuristic as usual.
 
+**`suggest-lane` is an input, not an answer.** It reads THE ASK and nothing else: the words, the
+size, the overrides recorded here. It cannot ask what a person would ask — whether this work
+SERVES something the project already committed to — because pm holds no milestone or product
+context to weigh, and the engine will not invent one.
+
+**The tie-break is asymmetric.** `claude-code` means no spec, no plan, no gate and no stories —
+right for a genuine sub-2-hour tweak, and the reason a misrouted epic leaves no record of what it
+was FOR. Over-processing costs hours; under-processing costs the record permanently. So an
+unresolved routing question resolves AWAY from `claude-code`, never into it. When you register in
+a lane other than the one this returned, say why on the epic:
+`update-epic <id> --notes "lane: <chosen> not <routed> — <why>"`.
+
 If `${CLAUDE_PLUGIN_ROOT}` is empty:
 `ENGINE="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/scripts/conductor.mjs}"; [ -f "$ENGINE" ] || ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1); node "$ENGINE" suggest-lane "…"`

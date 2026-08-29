@@ -197,7 +197,8 @@ export const GATE_PROCEDURE_ITEMS = [
   },
   {
     title: "Declare lifecycle bookkeeping.",
-    mustSay: ["bookkeeping about the change's own lifecycle", "OR AMENDED"],
+    mustSay: ["bookkeeping about the change's own lifecycle", "OR AMENDED",
+      "openspec validate --archived", "do NOT wire it into a pm-managed repo"],
     lines: [
       "A task that is bookkeeping about the change's own",
       "   lifecycle rather than its work — above all the task that ARCHIVES THE CHANGE ITSELF, which",
@@ -206,6 +207,13 @@ export const GATE_PROCEDURE_ITEMS = [
       "   names, not the position in the file. Mark it at the moment the task source is AUTHORED",
       "   OR AMENDED — a source written before this capability existed gets the marker the first",
       "   time you touch it, or its archive task counts as outstanding work forever.",
+      "   The marker is pm's alone and it COLLIDES with an upstream lint: \`openspec validate",
+      "   --archived\` knows nothing about it, counts raw checkboxes, and therefore FAILS every",
+      "   correctly archived pm change — reporting \`1 incomplete task\` against the same file pm",
+      "   reports complete with \`· N lifecycle\`. Its own help text offers it for pre-commit",
+      "   linting; do NOT wire it into a pm-managed repo. Nothing clears that failure: ticking the",
+      "   archive task would be a false record and dropping the marker would break pm's own archive",
+      "   gate. Ignoring a marked line upstream is the clean fix and it is not pm's to make.",
     ],
   },
   {
@@ -370,7 +378,22 @@ export const intakeLines = (platform = "claude-code") => [
   "   superseded one with its own disposition (`--outcome superseded --reason \"<what replaced",
   "   it>\"`), because a consolidation that leaves both epics open has consolidated nothing.",
   "   A candidate `triage` marks `superseded: true` is already dead — do not consolidate into it.",
-  "4. **Say no out loud when the answer is no.** Not every ask should be taken on, and declining",
+  "4. **Decide the lane; do not inherit it.** `triage` already ran `suggest-lane` for you and",
+  "   its answer reads THE ASK — the words, the size, this repo's `laneRouting` overrides — and",
+  "   nothing else. It cannot ask what a person would ask, whether this work SERVES something",
+  "   already committed to, because pm holds no milestone or product context to weigh and the",
+  "   engine will not invent one. The suggestion is an input; the lane is your call.",
+  "   THE TIE-BREAK IS ASYMMETRIC, and it is not a matter of taste. `claude-code` means no spec,",
+  "   no plan, no gate and no stories — right for a genuine sub-2-hour tweak, and the reason a",
+  "   misrouted epic leaves no record of what it was FOR. Over-processing costs hours;",
+  "   under-processing costs the record permanently, and nothing later can reconstruct it. So an",
+  "   unresolved routing question resolves AWAY from `claude-code`, never into it.",
+  "   Whenever you register in a lane other than the one routing suggested, say why on the epic:",
+  "   `update-epic <id> --notes \"lane: <chosen> not <routed> — <why>\"`. The tracker-sync",
+  "   procedures below already demand that line; it binds every path that registers an epic,",
+  "   this one included. Measured in pm's OWN repository, not necessarily yours: 83% of epics sat",
+  "   in `claude-code`, 51 of them already archived, none carrying an artifact link.",
+  "5. **Say no out loud when the answer is no.** Not every ask should be taken on, and declining",
   "   by never registering it destroys the record that anybody considered it. Register it, then",
   "   `update-epic <id> --status archived --outcome declined --reason \"<why not>\" --no-deferrals`.",
   "   Two commands, deliberately: creating an epic directly at `archived` stamps an engine record",
@@ -379,6 +402,67 @@ export const intakeLines = (platform = "claude-code") => [
   "**This is not a substitute for the identity dedup in the sync procedures below, and they are",
   "not a substitute for it.** A URL match answers \"have I already mirrored THIS item\"; triage",
   "answers \"is this ask already in the backlog under another name\". Run both.",
+];
+
+/** The REPORTING section (gh-90) — where pm's own reporting shape gives way to the user's, and
+ *  where it does not. ALWAYS ON: no tracker configuration turns it on or off.
+ *
+ *  A plugin must not have a house style that outranks the user's. The platform's own precedence
+ *  says user instructions outrank a skill's preferences, and a user configures verbosity and
+ *  format deliberately, once, globally. But pm's shapes are not uniformly cosmetic, so "defer to
+ *  the user" applied flat would delete obligations — which is the same failure the issue reports,
+ *  pointed the other way. The line drawn here is CONTENT vs CONTAINER:
+ *
+ *    RECORDED   — engine writes (`--outcome`/`--reason`, `--no-deferrals`, gate verdicts,
+ *                 `--attribute-commit`, `--notify`, `record-reconcile`). Not communication at
+ *                 all, so no communication contract reaches them.
+ *    PARSED     — a report another AGENT reads back: the child executor's STATUS block (the
+ *                 orchestrator branches on `STATUS`), the merge-conflict-resolver's, and the
+ *                 reconciler's `VERDICT`, whose value space `record-reconcile` enforces one hop
+ *                 later. A wire format between agents, not prose for a human.
+ *    NARRATED   — everything a human reads. This is presentation, and it follows the user.
+ *
+ *  Plus the inheritance rule, which decides what actually reaches a dispatched child: subagents
+ *  inherit the CLAUDE.md hierarchy the main conversation loads, `~/.claude/CLAUDE.md` included;
+ *  output styles apply to the main conversation ONLY. Without saying this out loud an implementer
+ *  reasonably assumes the output style covers the children, and they keep ignoring it. */
+export const reportingLines = (platform = "claude-code") => [
+  "## Reporting — pm owns what is recorded and what is said; you own how you say it",
+  "",
+  "This section governs how you REPORT. It never governs what the sections above instruct you to",
+  "DO: a brevity contract shortens prose, it does not authorise skipping a required task item, a",
+  "gate, or a recorded disposition.",
+  "",
+  "1. **A recorded fact is not output, and no contract shortens it.** `--outcome` and its",
+  "   `--reason`, `--no-deferrals` or the deferrals it stands in for, a gate verdict,",
+  "   `--attribute-commit`, `--notify`, `record-reconcile`, `record-cross-spec-review` — these",
+  "   are WRITES to `.conductor/state.json`, not sentences. Applying a communication preference",
+  "   to one is data loss, not brevity.",
+  "2. **A report another AGENT reads back is a wire format and does not bend.** The",
+  "   `hierarchy-child-executor`'s `STATUS/DONE/DECISIONS/CONCERNS` block, the",
+  "   `merge-conflict-resolver`'s, and the `reconciler`'s `VERDICT/AMENDMENTS/NOTES`: the",
+  "   orchestrator branches on `STATUS`, and `VERDICT`'s value space is enforced by",
+  "   `record-reconcile` one hop later. Keep those field names and that order exactly. The PROSE",
+  "   INSIDE a field is ordinary writing and follows item 3 like anything else.",
+  "3. **Everything a HUMAN reads follows the user's contract, not pm's.** The consolidated",
+  "   end-of-hierarchy report, the end-of-epic autonomy report, the preflight question batch, a",
+  `   gate summary, \`${pmCmd(platform, "status")}\` narration, \`${pmCmd(platform, "next")}\`'s recommendation. If the user`,
+  "   has an output style, or a communication contract in their CLAUDE.md, render pm's",
+  "   human-facing output in THAT shape. pm's headings are a DEFAULT for a user who has",
+  "   configured none — not a house style that outranks one. Two competing formats in one",
+  "   session is the defect.",
+  "4. **Map the content into their shape; never drop it to fit.** Reshaping is always allowed;",
+  "   omitting is never. Where the user's shape has no slot for something pm requires — the",
+  "   `notifications[]` read-back, the explicit \"are you OK with these?\" checkpoint, the",
+  "   deferral list, a blocked child, a `CONCERNS` line worth flagging — ADD a slot rather than",
+  "   drop the element. Silently deleting an obligation to fit a terse contract is the same",
+  "   failure as imposing pm's format over theirs, pointed the other way.",
+  "5. **CLAUDE.md is the only channel that reaches a subagent.** A subagent inherits every level",
+  "   of the CLAUDE.md hierarchy the main conversation loads, `~/.claude/CLAUDE.md` included; an",
+  "   OUTPUT STYLE applies to the main conversation ONLY and does not reach one. So when you",
+  "   dispatch a `hierarchy-child-executor` or the `reconciler` and the user's contract lives",
+  "   only in an output style, carry it into the dispatch prompt yourself — otherwise the child",
+  "   cannot honour a preference it was never given.",
 ];
 
 // #105: `gh` and an authenticated GitHub account are an UNDECLARED dependency of the emitted
@@ -445,6 +529,23 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     "   as ordered backlog in `PROJECT.md` and a `planned: N` count in the briefing, without a",
     `   "no change on disk" warning; \`${pmCmd(platform, "sync")}\` flips an openspec planned epic to untriaged once`,
     "   its change is proposed. Have a roadmap doc? Read it in-session and load each item this way.",
+    "7. **Delegate discovery. If you do not already know the file path, do not go looking",
+    "   yourself.** A subagent's transcript never enters yours — only its final report does — so",
+    "   an open-ended read costs a conclusion instead of a transcript when it is delegated.",
+    "   \"Where is X handled\", \"does a spec for this already exist\", \"what does this epic touch\",",
+    "   \"what did the last three changes here do\": dispatch an `Explore` or `general-purpose`",
+    "   subagent and use what it concludes. Reserve an INLINE read for the narrow case where you",
+    "   already know the exact file and want one value out of it.",
+    "   This binds the ORCHESTRATING agent, which is the half that has no such rule: a dispatched",
+    "   child is already told to return a fixed report and not to narrate. It binds hardest across",
+    "   a hierarchy run or a multi-epic backlog, where your context survives many epics and is",
+    "   therefore the scarce resource — discovery you perform inline is paid for once per epic and",
+    "   never reclaimed.",
+    "   DELEGATING NEVER WEAKENS A FULL-READ REQUIREMENT. Where this instruction demands the whole",
+    "   document — the epic-level-autonomy preflight scan, and re-reading an epic's source before",
+    "   it becomes the work — the subagent reads the whole document and returns the finding. What",
+    "   is forbidden is substituting a keyword grep for a full read, and that is forbidden",
+    "   whoever performs it.",
     "",
     "## The gate procedure — required task items",
     "",
@@ -456,6 +557,8 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     ...gateProcedureLines(platform),
     "",
     ...intakeLines(platform),
+    "",
+    ...reportingLines(platform),
     "",
     "## Epic-level autonomy",
     "",
