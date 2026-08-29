@@ -108,6 +108,15 @@ export function epicReferences(state) {
     if (e.disposition && typeof e.disposition === "object") {
       add(e.id, `epic \`${e.id}\` disposition.carriedTo`, e.disposition.carriedTo,
         () => { delete e.disposition.carriedTo; });
+      // The SUPERSEDED record a correction keeps (#130) holds an epic id too, and a historical
+      // record is not exempt from the sweep: a superseded disposition rendering a pointer to an
+      // epic that no longer exists is exactly the dangling reference this enumeration exists to
+      // catch. One level deep by construction — a correction never nests further.
+      const prior = e.disposition.superseded;
+      if (prior && typeof prior === "object") {
+        add(e.id, `epic \`${e.id}\` disposition.superseded.carriedTo`, prior.carriedTo,
+          () => { delete prior.carriedTo; });
+      }
     }
     const da = e.deferralAssertion;
     for (const d of da && Array.isArray(da.deferrals) ? [...da.deferrals] : []) {

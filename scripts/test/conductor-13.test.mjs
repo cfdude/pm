@@ -295,6 +295,20 @@ const EXERCISE = {
   "--outcome": { args: ["--status", "archived", "--outcome", "delivered", "--no-deferrals"], check: (e) => assert.equal(e.disposition.outcome, "delivered") },
   "--reason": { args: ["--status", "archived", "--outcome", "killed", "--reason", "Gate 1 found it unsafe", "--no-deferrals"], check: (e) => assert.equal(e.disposition.reason, "Gate 1 found it unsafe") },
   "--carried-to": { args: ["--status", "archived", "--outcome", "delivered", "--no-deferrals", "--carried-to", "other"], check: (e) => assert.equal(e.disposition.carriedTo, "other") },
+  // --correct-disposition needs a PRIOR agent-recorded disposition to correct, so the setup
+  // records one first. The check asserts BOTH halves — the new outcome and the survival of the
+  // one it superseded — because a check on the new outcome alone would pass against an
+  // implementation that simply overwrote the record, which is the thing this flag must not do.
+  "--correct-disposition": {
+    setup: ["--status", "archived", "--outcome", "delivered", "--no-deferrals"],
+    args: ["--status", "archived", "--outcome", "killed", "--reason", "nothing shipped",
+      "--correct-disposition", "delivered was a typo"],
+    check: (e) => {
+      assert.equal(e.disposition.outcome, "killed");
+      assert.equal(e.disposition.correction, "delivered was a typo");
+      assert.equal(e.disposition.superseded.outcome, "delivered");
+    },
+  },
   "--no-deferrals": { args: ["--status", "archived", "--outcome", "delivered", "--no-deferrals"], check: (e) => assert.deepEqual(e.deferralAssertion.deferrals, []) },
   "--deferral": { args: ["--status", "archived", "--outcome", "delivered", "--deferral", "other:design.md § Risks"], check: (e) => assert.deepEqual(e.deferralAssertion.deferrals, [{ epic: "other", section: "design.md § Risks" }]) },
   "--declined-deferral": { args: ["--status", "archived", "--outcome", "delivered", "--declined-deferral", "a second zero-fall-through fix:not worth the schema"], check: (e) => assert.deepEqual(e.deferralAssertion.declined, [{ what: "a second zero-fall-through fix", reason: "not worth the schema" }]) },

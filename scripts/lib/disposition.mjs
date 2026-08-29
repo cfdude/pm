@@ -63,11 +63,54 @@ export function dispositionError({ outcome, reason } = {}) {
   return null;
 }
 
+/** Validate a CORRECTION of an already-recorded agent disposition (#130). Returns an error
+ *  STRING or null, on the same never-exits-never-writes contract as dispositionError().
+ *
+ *  WHAT MAKES A CORRECTION LEGITIMATE. The engine cannot gate on WHO: an agent record carries
+ *  no identity by construction (`recordedBy` is never agent-writable, and absence is precisely
+ *  what marks a record as an agent's), so "only the agent who recorded it may correct it" is
+ *  unenforceable rather than strict. What it CAN require is that the correction be
+ *  DELIBERATE — never reachable by re-running the ordinary verb, which still refuses —
+ *  SELF-DESCRIBING — the flag's value is why the recorded record was wrong — and
+ *  NON-DESTRUCTIVE — the prior record survives verbatim and renders, so a correction is
+ *  distinguishable from an original by anyone reading afterwards. That is disclosure rather
+ *  than authority, and it is the same trade `record-gate-review` already makes.
+ *
+ *  A correction has NOTHING to do when the record is engine-stamped: the ordinary path already
+ *  replaces those, and accepting the flag there would file an ordinary record as a correction —
+ *  a superseded entry saying a judgment was made where none was. Refused rather than ignored.
+ *
+ *  Deliberately NOT time-boxed, and deliberately not narrowed to "only a missing required
+ *  field". A window makes truth a function of when somebody looked — a wrong `delivered`
+ *  noticed next week is exactly as false as one noticed in the same minute — and the
+ *  headline case (`delivered` typed where `superseded` was meant) is a whole wrong outcome,
+ *  not an absent field. */
+export function correctionError({ prior, reason } = {}) {
+  if (!prior || isEngineStamped(prior)) {
+    return "there is no agent-recorded disposition to correct — an engine stamp is replaced by " +
+      "recording an outcome the ordinary way, and an epic with no disposition has nothing to " +
+      "supersede";
+  }
+  if (!nonEmpty(reason)) {
+    return "--correct-disposition requires a reason saying why the recorded disposition was wrong";
+  }
+  return null;
+}
+
 /** Build an AGENT-supplied disposition record — one carrying no `recordedBy`, so it is not
  *  replaceable by the replacement rule that lets an agent overwrite an engine stamp.
  *  Throws on an invalid record rather than returning a partial one: a caller that skipped
- *  dispositionError() must not be able to write a record the vocabulary forbids. */
-export function agentDisposition({ outcome, reason, carriedTo, recordedAt } = {}) {
+ *  dispositionError() must not be able to write a record the vocabulary forbids.
+ *
+ *  `corrects` — `{prior, reason}` — makes this record a CORRECTION of `prior`: the prior record
+ *  is kept verbatim under `superseded` and the reason it was wrong is kept beside it. Only a
+ *  caller that has passed correctionError() may supply it, and this builder re-validates.
+ *
+ *  ONE nested record, not a chain: the prior's own `superseded` is dropped rather than carried
+ *  down, exactly as recordGateReview() caps its nest — an unbounded nest would make the
+ *  record's depth a function of how many times it was re-recorded. The prior's own
+ *  `correction` string IS kept, so a second correction still says what the first one fixed. */
+export function agentDisposition({ outcome, reason, carriedTo, recordedAt, corrects } = {}) {
   const err = dispositionError({ outcome, reason });
   if (err) throw new Error(err);
   const record = { outcome, recordedAt: recordedAt || new Date().toISOString() };
@@ -75,7 +118,30 @@ export function agentDisposition({ outcome, reason, carriedTo, recordedAt } = {}
   // an empty string says "one was supplied and it was blank".
   if (nonEmpty(reason)) record.reason = reason.trim();
   if (nonEmpty(carriedTo)) record.carriedTo = carriedTo;
+  if (corrects) {
+    const cerr = correctionError(corrects);
+    if (cerr) throw new Error(cerr);
+    record.correction = corrects.reason.trim();
+    const kept = { ...corrects.prior };
+    delete kept.superseded;
+    record.superseded = kept;
+  }
   return record;
+}
+
+/** The marking a corrected disposition carries wherever an outcome is shown, so PROJECT.md and
+ *  the brief describe one the same way. If the only trace of a correction were nested JSON,
+ *  "supersede" would be "overwrite" for every human reader — which is the half of the
+ *  requirement a record shape alone cannot meet. */
+export function correctionMarking(disposition) {
+  const prior = disposition && disposition.superseded;
+  return prior ? ` · corrected (was ${prior.outcome || "unknown"})` : "";
+}
+
+/** WHY a corrected disposition was corrected, rendered beside the reason it now carries. */
+export function correctionNote(disposition) {
+  const why = disposition && disposition.correction;
+  return nonEmpty(why) ? ` — corrected: ${why}` : "";
 }
 
 /** Build an ENGINE stamp — the record a path writes when no disposition was supplied at the
@@ -126,15 +192,37 @@ export function stampedBy(epic, recordedBy) {
   return !!d && d.recordedBy === recordedBy;
 }
 
+/** The epic-level REGISTRATION provenance: which engine path created this epic RECORD.
+ *
+ *  Distinct from `disposition.recordedBy`, which says who recorded how the work ENDED, and the
+ *  distinction is the whole of #133. Backfill-ness was read off the disposition — a record the
+ *  interactive verb REPLACES WHOLESALE with an agent's own, carrying no `recordedBy` by design —
+ *  so an agent recording an honest outcome on a backfilled epic silently erased the fact that
+ *  the epic had been reconstructed from disk, and its archived task counts reverted to `—`.
+ *  Recording the truth destroyed the evidence.
+ *
+ *  Registration and disposition are two different lifecycles and now live on two different
+ *  hosts, which is exactly why `recordedBy` was put on two host objects in the first place.
+ *  Nothing writes this but a creation path, no CLI flag reaches it, and no disposition write
+ *  touches it. Today `backfillArchive()` is its only writer; a second writer means stating what
+ *  its token exempts, the same closed-set discipline ENGINE_STAMP_TOKENS carries. */
+export const ARCHIVE_BACKFILL = "archive-backfill";
+
 /** Was this epic reconstructed from `openspec/changes/archive/` rather than managed?
  *
- *  Named rather than left as a `stampedBy(e, "archive-backfill")` at each site because it is
- *  asked from two very different places — progress resolution and the checks' scope rule — and
- *  the QUESTION, not the token, is what those two share. A backfilled epic has no gate verdict,
- *  no start time, and — where the change was abandoned — no ticked tasks; those are properties
- *  of a record rebuilt from disk, not of a badly managed epic. */
+ *  Named rather than left as a field read at each site because it is asked from three very
+ *  different places — progress resolution, the creation sink's attribution seeding and the
+ *  integrity checks' scope rule — and the QUESTION, not the token, is what those share. A
+ *  backfilled epic has no gate verdict, no start time, and — where the change was abandoned —
+ *  no ticked tasks; those are properties of a record rebuilt from disk, not of a badly managed
+ *  epic.
+ *
+ *  Reads the EPIC's `registeredBy` and NOT the disposition stamp. Repos written before 0.32.0
+ *  carry the provenance only on the disposition; the 0.32.0 migration LIFTS it onto the epic
+ *  rather than this reader consulting both — two fields answering one question is the second
+ *  definition the suite's source scan exists to prevent. */
 export function isArchiveBackfilled(epic) {
-  return stampedBy(epic, "archive-backfill");
+  return !!epic && epic.registeredBy === ARCHIVE_BACKFILL;
 }
 
 /** The dispositions worth SHOWING, in epic-list order: every record carrying a judgment —

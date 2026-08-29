@@ -7,7 +7,7 @@ import { changelogAddedHeadlines, cmpVer, newestInstalledVersion, pluginVersion 
 import { getAutonomy } from "./autonomy.mjs";
 import { staleMarker } from "./active-pointer.mjs";
 import { validLink } from "./links.mjs";
-import { outcomeOf, recordedDispositions } from "./disposition.mjs";
+import { correctionMarking, correctionNote, outcomeOf, recordedDispositions } from "./disposition.mjs";
 import { stalenessMarking } from "./archive-gate.mjs";
 import { ungatedArchives } from "./integrity.mjs";
 import { KNOWN_LANES, anyInwardProcedureEmittable, gateSummary, outwardApplies, releaseLine, releaseSummaries } from "./constants.mjs";
@@ -174,7 +174,7 @@ export function buildBrief(state, { consume = false } = {}) {
       const when = d.recordedAt ? ` (${d.recordedAt.slice(0, 10)})` : "";
       const why = d.reason ? ` — ${d.reason}` : "";
       const carried = d.carriedTo ? ` — carried to \`${d.carriedTo}\`` : "";
-      L.push(`  • \`${epic.id}\` — ${outcomeOf(epic)}${when}${why}${carried}`);
+      L.push(`  • \`${epic.id}\` — ${outcomeOf(epic)}${correctionMarking(d)}${when}${why}${carried}${correctionNote(d)}`);
     }
     if (dispositions.length > NEXT_CAP) {
       L.push(`  (+${dispositions.length - NEXT_CAP} more — see PROJECT.md)`);

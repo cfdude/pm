@@ -8,7 +8,7 @@ import { reconcileArchived } from "./epic-progress.mjs";
 import { writeRules } from "./rules.mjs";
 import { render } from "./render.mjs";
 import { normalizeLink } from "./links.mjs";
-import { engineStamp } from "./disposition.mjs";
+import { ARCHIVE_BACKFILL, engineStamp, stampedBy } from "./disposition.mjs";
 import { resolvePlatform } from "./platform.mjs";
 import { ensureGitignore } from "./subcommands.mjs";
 import { openspecCurrencyLines } from "./tool-currency.mjs";
@@ -54,6 +54,18 @@ const MIGRATIONS = [
     apply(state) {
       stampTrackerDirection(state);
       stampArchivedOutcomes(state);
+    },
+  },
+  // 0.32.0 — #133. Registration provenance moves OFF the disposition and ONTO the epic. Every
+  // repo written before this carries `archive-backfill` only on the disposition record, and the
+  // reader now asks the epic — so the fact has to be lifted or those epics stop being
+  // recognized as backfilled the moment they are read. A TRANSFORM of existing data, which is
+  // why this is a migration and not merely an added optional field.
+  {
+    release: "0.32.0",
+    note: "lift archive-backfill registration provenance from the disposition onto the epic",
+    apply(state) {
+      liftBackfillProvenance(state);
     },
   },
 ];
@@ -113,6 +125,40 @@ function stampArchivedOutcomes(state) {
     const gate2 = e.gateReview && e.gateReview.gate2;
     const outcome = gate2 && gate2.verdict === "pass" ? "delivered" : "unknown";
     e.disposition = engineStamp("migration", { outcome, recordedAt: e.completedAt || at });
+  }
+}
+
+/** 0.32.0 — #133. Move `archive-backfill` registration provenance from the DISPOSITION record
+ *  onto the EPIC, where a later disposition write cannot destroy it.
+ *
+ *  The defect it repairs: `isArchiveBackfilled()` asked the disposition who registered the
+ *  epic, and the interactive archive verb REPLACES the disposition wholesale with an agent's
+ *  own — which by design carries no `recordedBy`. So an agent doing exactly the right thing
+ *  (recording an honest `abandoned` on a change that was abandoned) silently un-backfilled the
+ *  epic and reverted its archived task counts to `—`. Recording the truth destroyed the
+ *  evidence, and the better an agent behaved the worse the record got.
+ *
+ *  Scoped to the BACKFILL's own token and no other. `add-epic`, `add-many` and `migration` are
+ *  creation/stamping paths too, but nothing exempts anything on them — every backfill exemption
+ *  in the engine keys on this one token, and lifting the others would invent a field value with
+ *  no rule attached, which is the silent hole ENGINE_STAMP_TOKENS' closed set exists to prevent.
+ *
+ *  Guarded on an ABSENT `registeredBy`, so it is idempotent and a repo that has already been
+ *  lifted (or an epic the backfill registered under 0.32.0+) is untouched. Reads only `state`:
+ *  a migration that consulted disk would produce a different result on a machine whose checkout
+ *  sits at a different commit.
+ *
+ *  It cannot recover an epic whose disposition was ALREADY overwritten before this shipped —
+ *  nothing in `state` still holds that fact. Such an epic keeps rendering `—`, exactly as it
+ *  does today; re-running `sync` will not re-register it either, because the row still exists.
+ *  That is the bug's residue, not a new one, and it is bounded: the counts are on disk and a
+ *  reader can still open the archived `tasks.md`. */
+function liftBackfillProvenance(state) {
+  for (const e of state.epics) {
+    // Asked through stampedBy(), never by reading the field: a direct `.recordedBy` read is
+    // how a second definition of "engine-stamped" starts, and the suite's source scan fails one.
+    if (e.registeredBy) continue;
+    if (stampedBy(e, ARCHIVE_BACKFILL)) e.registeredBy = ARCHIVE_BACKFILL;
   }
 }
 

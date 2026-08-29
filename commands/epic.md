@@ -146,6 +146,7 @@ of them are declared once in `EPIC_FLAGS` (`scripts/lib/constants.mjs`), which i
 | `--outcome <o>` | `disposition` | `delivered\|killed\|superseded\|abandoned` |
 | `--reason "<why>"` | `disposition` | required for every outcome except `delivered` |
 | `--carried-to <epicId>` | `disposition` | where unfinished work went |
+| `--correct-disposition "<why the recorded one was wrong>"` | `disposition` | corrects an agent-recorded disposition; keeps the prior one under `superseded` |
 | `--deferral "<epicId>:<section>"` | `deferralAssertion` | **repeatable** |
 | `--declined-deferral "<what>:<why not>"` | `deferralAssertion` | **repeatable** |
 | `--no-deferrals` | `deferralAssertion` | the explicit "there are none" |
@@ -186,8 +187,39 @@ design: the code was never written or was thrown away, and the required reason a
 where the work went.
 
 An engine-written disposition — the migration's stamp, the archive-drift heal's — may be REPLACED
-by an agent recording a real one. Another agent's recorded judgment may not; correcting a mistaken
-disposition is not something this verb does.
+by an agent recording a real one. Another agent's recorded judgment may not: re-running the verb
+is refused, because replacing a judgment somebody made is exactly what a disposition exists to
+prevent.
+
+**A wrong record is corrected, never overwritten.** `--correct-disposition "<why the recorded one
+was wrong>"` is the one way past that refusal, and it costs three things rather than none:
+
+- It is **deliberate** — never reachable by re-running the ordinary verb, and refused outright
+  when there is no agent-recorded disposition to correct (an engine stamp is replaced the
+  ordinary way; an epic with no disposition has nothing to supersede).
+- It is **self-describing** — the flag's value IS the justification, required by the flag's own
+  shape, and it is kept on the record.
+- It is **non-destructive** — the prior record survives verbatim under `superseded`, and every
+  surface renders `· corrected (was <prior outcome>)` beside the new one, so a correction is
+  distinguishable from an original by anyone reading afterwards. One level deep, exactly as
+  `record-gate-review` caps its own nest: the prior record's own `superseded` is dropped, its
+  `correction` string kept.
+
+That is disclosure rather than authority, and it is deliberate. The engine cannot gate on WHO
+corrects: an agent's record carries no identity by construction — absence of `recordedBy` is
+what marks a record as an agent's — so "only the agent who recorded it may correct it" would be
+unenforceable rather than strict. What it can require is that a correction leave evidence that a
+correction happened. It is also not time-boxed: a wrong `delivered` noticed next week is exactly
+as false as one noticed in the same minute, and the alternative — no verb at all — is a
+hand-edit of `.conductor/state.json`, on the terminal record.
+
+```bash
+update-epic <id> --status archived --outcome <the one you meant> --reason "<why>" \
+  --correct-disposition "<why the recorded one was wrong>"
+```
+
+Every other archive demand still applies to a correction: the required reason, the Gate 2
+demand, the handoff demand, and the deferral assertion (already-recorded assertions satisfy it).
 
 The id is positional. Parent/status/lane/link changes are validated like `add-epic` (no
 self-parent, no cycle, known status, known lane, `--link`'s epic must be a known epic id). On an
@@ -312,7 +344,8 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" remove-epic <id> [--cascade]
 ```
 
 - **Every dangling reference is cleaned up automatically** — not just `links[]`. Any other
-  epic's `links[]` and `parent`, a disposition's `carriedTo` handoff, a deferral assertion's
+  epic's `links[]` and `parent`, a disposition's `carriedTo` handoff (including the one on a prior
+  record a correction kept), a deferral assertion's
   `deferrals[]`, a release's `deferred[]` and the active pointer are all swept, and the command
   reports where each reference was held — a dangling reference is worse than a silently smaller
   graph. (A `deferred[]` entry left behind used to render in `PROJECT.md` as a deferral pointing

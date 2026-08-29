@@ -15,7 +15,7 @@ import { appendDetourLog, gitShortSha } from "./git.mjs";
 import { detourContext } from "./links.mjs";
 import { activeChangeIds, archivedChanges, firstHeading, planFiles, reconcileArchived, strippedChangeId } from "./epic-progress.mjs";
 import { claimedSourceArtifacts, epicSourceArtifacts, normalizeArtifactPath, syncIgnoredArtifacts } from "./source-artifacts.mjs";
-import { engineStamp } from "./disposition.mjs";
+import { ARCHIVE_BACKFILL, engineStamp } from "./disposition.mjs";
 import { ROOT, CONDUCTOR_DIR, BRIEF_PATH, PLANS_DIR, anyInwardProcedureEmittable } from "./constants.mjs";
 import { resolveAndRecordPlatform } from "./platform.mjs";
 
@@ -270,6 +270,11 @@ export function backfillArchive(state) {
     pushEpic(state, {
       id, title: id, priority: "P?", status: "archived", role: "epic", lane: "openspec",
       links: [], reconcileNeeded: false,
+      // The REGISTRATION provenance, on the epic itself. It is what every backfill exemption
+      // now keys on, and it lives here rather than on the disposition because a disposition is
+      // replaced wholesale the moment an agent records a real outcome — which used to take the
+      // epic's archived task counts with it (#133).
+      registeredBy: ARCHIVE_BACKFILL,
       // The ENGINE stamps this, unconditionally and with no CLI flag that reaches it: a
       // backfilled epic never passed through the conductor while it was in flight, and every
       // exemption that keeps a check or a refusal from firing on it keys on this token.
