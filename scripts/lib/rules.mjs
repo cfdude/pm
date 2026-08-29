@@ -332,6 +332,20 @@ export const intakeLines = (platform = "claude-code") => [
   "answers \"is this ask already in the backlog under another name\". Run both.",
 ];
 
+// #105: `gh` and an authenticated GitHub account are an UNDECLARED dependency of the emitted
+// `gh issue list` step. THE one declaration of the preflight, so the PRIMARY and SECONDARY
+// inward sections cannot come to state it differently — or state it at one site and not the
+// other, which is how the direction rule went wrong here before. Unlike `/pm:feedback`, which
+// files OUTWARD and has credential-free fallbacks (a prefilled issue form, email), an inward
+// sync is a READ of the tracker and has none: anonymous listing is not available, so the honest
+// instruction is to say the step cannot run rather than to report a clean sync nobody performed.
+const GH_PREFLIGHT =
+  "   Preflight, BEFORE running that line: this step needs the `gh` CLI **and** an authenticated " +
+  "GitHub account — `command -v gh` and `gh auth status`. If either is missing, say so, name " +
+  "what to install or authenticate, and STOP this section; an inward sync is a READ and has no " +
+  "credential-free substitute, so reporting a clean sync you could not perform is worse than " +
+  "reporting that you could not perform it.";
+
 export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform = "claude-code") {
   const mode = KNOWN_REVIEW_MODES.includes(reviewMode) ? reviewMode : "standard";
   const lines = [
@@ -502,7 +516,7 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
         `pm plugin NEVER calls ${sys} itself — as part of running \`${pmCmd(platform, "sync")}\`, YOU (the interactive`,
         "agent) do:",
         ...(gh
-          ? [`1. \`gh issue list --repo ${scope} --state open --json number,title,url,updatedAt,labels\`.`]
+          ? [`1. \`gh issue list --repo ${scope} --state open --json number,title,url,updatedAt,labels\`.`, GH_PREFLIGHT]
           : [`1. List open items in ${sys} (${scope}) with your own tooling, reading each item's id, title, url and updated timestamp.`]),
         "2. For each item, check whether an epic's `externalUrl` already matches that item's URL",
         `   (\`${pmCmd(platform, "epic")} list\` or read \`.conductor/state.json\`) — if so, skip it (already`,
@@ -566,7 +580,7 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
       "",
       `**Inward pull** — as part of running \`${pmCmd(platform, "sync")}\`:`,
       ...(usesGhIssueList(st)
-        ? [`1. \`gh issue list --repo ${st.repo} --state open --json number,title,url,labels\`.`]
+        ? [`1. \`gh issue list --repo ${st.repo} --state open --json number,title,url,labels\`.`, GH_PREFLIGHT]
         : [`1. List open issues in ${st.system}${scope ? ` (${scope})` : ""} with your own tooling.`]),
       "2. For each issue, check whether an epic's `externalUrl` already matches that issue's URL",
       `   (\`${pmCmd(platform, "epic")} list\` or read \`.conductor/state.json\`) — if so, skip it (already mirrored;`,

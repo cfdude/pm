@@ -130,6 +130,12 @@ Once set, the CLAUDE.md rules block gains a "GitHub issue sync" section. As part
 `/pm:sync`:
 
 1. `gh issue list --repo <repo> --state open --json number,title,url,labels`.
+   - **Preflight first (#105):** this step needs the `gh` CLI **and** an authenticated
+     GitHub account — `command -v gh` and `gh auth status`. Neither is a pm dependency, so
+     check rather than assume. If either is missing, say so, name what to install or
+     authenticate, and stop the section. An inward sync is a READ of the tracker and has no
+     credential-free substitute (anonymous listing is not available), so reporting a clean
+     sync you could not perform is the failure mode to avoid.
 2. For each issue, check whether an epic already carries that item's `externalUrl` — if so, skip
    it. Re-running sync must never create a duplicate epic for the same issue. `externalUrl` is
    globally unique; a bare `externalId` is only unique within one tracker/repo.

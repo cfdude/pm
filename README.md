@@ -641,9 +641,30 @@ with no `--direction` defaults to `inward` regardless of vendor (see
 <details>
 <summary><code>/pm:feedback</code> — File a bug report or feature request</summary>
 
-`/pm:feedback [bug|feature] "<summary>"` posts directly as a GitHub issue on `cfdude/pm` —
-searches for a near-duplicate first (comments instead of filing a new issue on a match). All
-`gh` calls are agent-invoked; the engine itself never touches GitHub.
+`/pm:feedback [bug|feature] "<summary>"` gets a bug report or feature request to `cfdude/pm`
+through whichever of three channels the machine can actually use. All calls are agent-invoked;
+the engine itself never touches GitHub.
+
+**`gh` and an authenticated GitHub account are an OPTIONAL dependency, not a requirement** (#105).
+The report is written to `.conductor/feedback/` **first**, on every path, so nothing is lost when
+a channel fails. Then, in order of least friction:
+
+| # | Channel | Needs | Notes |
+|---|---------|-------|-------|
+| 1 | `gh issue create` | `gh` installed **and** `gh auth status` clean | Preferred whenever available — no browser, no login, and it dedups against open issues first |
+| 2 | Prefilled `issues/new?title=…&body=…` URL | a browser | No credential touches the plugin, and the issue is attributed to whoever hit the bug. ~6 KB URL ceiling ≈ **~3 KB of raw body**; longer reports are truncated with a pointer to the local file |
+| 3 | `bugs@pm-plugin.dev` | an email client | For users who don't have — or don't want — a GitHub account, so declining GitHub never means losing the feedback |
+
+Both checks are run before any `gh` call, and a missing one is "this channel is unavailable"
+rather than an error. `curl` is not a substitute for channel 1: anonymous issue creation returns
+HTTP 401, and a PAT is strictly worse than `gh` (same account requirement, hand-managed token).
+The dependency was never on the CLI — it is on holding a GitHub credential at all.
+
+The inward **tracker sync** (`/pm:sync` against a `github-issues` tracker) also needs `gh` plus
+an authenticated account, and unlike feedback it has no credential-free fallback: listing issues
+is a read, and anonymous listing is not available. The emitted rules block now states that
+preflight and tells the agent to STOP that section rather than report a sync it could not
+perform.
 
 The CLAUDE.md rules block includes an unconditional "Feedback" section encouraging the agent
 to use this proactively — file a bug/limitation/friction point (or ask "want me to file this
@@ -824,6 +845,31 @@ the sole writer of `CHANGELOG.md`, consolidating pending fragments into it once 
 time, then deleting the consumed fragment files.
 
 </details>
+
+### Which verbs mutate the working tree
+
+Reach for a `render` to "just look at" another repo's backlog and you dirty it. There is now a
+stated contract, declared in `scripts/lib/verb-effects.mjs` and enforced by the test suite —
+completeness against the engine's own dispatch table, plus a real run of every read-only verb
+with the whole repo hashed by content **and** mtime before and after. A write added to a verb
+that used to be safe fails CI rather than someone else's checkout.
+
+| Effect | Verbs |
+|--------|-------|
+| **read-only** — safe against a repo you do not own | `brief` · `changelog` · `changesets` · `gate-guard` · `integrity` · `plan-hierarchy` · `rules` · `rules-target` · `suggest-lane` · `triage` · `verify-specs` · `verify-state` · `verify-worktrees` |
+| **mutates** — writes `state.json`, `PROJECT.md`, `CLAUDE.md`, or a `.conductor/` log | everything else, including `render`, `snapshot`, `sync`, `commit-nudge`, `upgrade`, `write-rules`, and every `add-`/`update-`/`set-`/`record-` verb |
+
+Want the current state without touching anything? Use **`brief`**, not `render`.
+
+`render` is `mutates` even though it is idempotent when nothing changed: since the `PROJECT.md`
+-is-never-clean fix it skips both writes when the content would be identical, but with anything
+to render it rewrites `PROJECT.md` and `.conductor/render-stamp.json`. Idempotent-when-nothing-
+changed is not read-only.
+
+A `--read-only` enforcement flag was considered and declined: it would have to be threaded
+through or sniffed from argv at forty verbs, and it asks a caller to trust that the flag was
+wired up. The CI-time behavioural check gives the same guarantee — a doc that cannot drift —
+without shipping anything.
 
 ## Skills
 

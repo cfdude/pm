@@ -49,6 +49,11 @@
  *                  from it, plus the epics naming a document that is not on disk. An
  *                  uncovered document is INVENTORY, not a finding — see lib/verify-specs.mjs
  *
+ * WHICH OF THESE MUTATE THE WORKING TREE is declared in lib/verb-effects.mjs — read-only vs
+ * mutates, per verb, with the read-only half behaviourally verified by the suite (#85).
+ * `brief` is the read; `render` writes PROJECT.md and the render stamp whenever there is
+ * anything to render, so it is not the verb to reach for when inspecting a repo you do not own.
+ *
  * No external dependencies. Node 18+. OpenSpec optional (uses the filesystem).
  *
  * The plugin's hooks run in EVERY project at user scope, so brief/snapshot/
