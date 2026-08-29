@@ -2744,7 +2744,13 @@
       "release": "0.27.0",
       "disposition": {
         "outcome": "delivered",
-        "recordedAt": "2026-08-26T21:22:25.567Z"
+        "recordedAt": "2026-08-29T05:14:20.134Z",
+        "reason": "shipped in 0.27.0 (543a38f): Gate 2 was enforced at the front door and bypassed by the archive hook — 42 of 49 archived openspec epics carried gateReview: null. The gate now binds every path that can reach archived, including the drift heal reached from upgrade, render, commit-nudge and sync",
+        "correction": "recorded with --outcome but no --reason, which the verb permits for delivered — so the one epic that named the release's central defect carried no provenance while all 19 of its siblings did. Caught within minutes and uncorrectable until #130 shipped; this repo's own record was the test case",
+        "superseded": {
+          "outcome": "delivered",
+          "recordedAt": "2026-08-26T21:22:25.567Z"
+        }
       },
       "deferralAssertion": {
         "assertedAt": "2026-08-26T21:22:25.567Z",
@@ -3377,7 +3383,11 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "130",
-      "externalUrl": "https://github.com/cfdude/pm/issues/130"
+      "externalUrl": "https://github.com/cfdude/pm/issues/130",
+      "attributedCommits": [
+        "6012879",
+        "a754258"
+      ]
     },
     {
       "id": "gh-131-retry-half-unverified",
@@ -3635,7 +3645,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 161,
+  "revision": 164,
   "reviewMode": "thorough",
   "releases": [
     {
