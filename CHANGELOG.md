@@ -8,6 +8,66 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.36.0] — 2026-08-29
+
+### Added
+
+- **Delegate discovery, so exploration never enters the orchestrating agent's context** (#89). A
+  subagent's transcript never enters the parent's — only its final report does — so delegating an
+  open-ended read cuts orchestrator context and user-visible scrollback at the same time,
+  independent of any output-style setting. A call-site sweep of the shipped surfaces found
+  delegation already instructed for review (both gates, cross-spec, reconciler), execution
+  (`hierarchy-child-executor`) and conflict resolution (`merge-conflict-resolver`) — and for
+  discovery, nowhere, while the orchestrator was told to read/scan/grep inline at ~25 sites. It
+  lands as **operating rule 7** in the emitted rules block and as a numbered step in
+  hierarchy-orchestration, where the cost concentrates: the preflight scan is a full read of every
+  child's entire source, so it is now one subagent per child rather than N whole documents in the
+  orchestrator's context. Not a gate-procedure item, deliberately — every member of that list is a
+  per-change record-correctness obligation carried into `tasks.md`, and this is a per-action habit
+  that cannot be ticked. Delegating never weakens a full-read requirement: substituting a keyword
+  grep for a full read stays forbidden whoever performs it, and the suite guards that sentence.
+
+- **pm no longer imposes a house style over the user's** (#90). A user configures verbosity and
+  format deliberately, once, globally — in an output style, or as a communication contract in
+  CLAUDE.md — and a plugin re-imposing its own defeats that. But pm's shapes are not uniformly
+  cosmetic, so the new `## Reporting` section draws the line as **content vs container** in three
+  bands. **Recorded** (`--outcome`/`--reason`, `--no-deferrals`, gate verdicts,
+  `--attribute-commit`, `--notify`, `record-reconcile`) does not bend: these are writes to
+  `.conductor/state.json`, not sentences, and shortening one is data loss. **Parsed** does not
+  bend: `STATUS/DONE/DECISIONS/CONCERNS`, `STATUS/FILES/RESOLUTION_SUMMARY/CONCERNS` and
+  `VERDICT/AMENDMENTS/NOTES` are a wire format between agents — the orchestrator branches on
+  `STATUS` and transcribes `VERDICT` into a verb whose value space the engine enforces — though
+  the prose *inside* each field is ordinary writing and does follow the contract. **Narrated**
+  follows the user: the consolidated end-of-hierarchy report, the end-of-epic autonomy report, the
+  preflight question batch, gate summaries, `/pm:status` narration, `/pm:next`'s recommendation.
+  Reshaping is always allowed and omitting never is — where the user's shape has no slot for a
+  required element, add a slot rather than drop it. And the inheritance rule is now stated
+  outright, because it decides what actually reaches a child: a subagent inherits the whole
+  CLAUDE.md hierarchy including `~/.claude/CLAUDE.md`, while an output style applies to the main
+  conversation only. Each dispatched agent's own file now says its report block does not bend, so
+  the agent reading that file learns it there rather than from the orchestrator's copy.
+
+### Fixed
+
+- **`openspec validate --archived` collides with the `<!-- pm:lifecycle -->` marker, and pm now
+  says so where the marker is documented** (#154). That command counts raw checkboxes and knows
+  nothing about the marker, so it fails every correctly archived pm change — the task that archives
+  the change is unticked at archive time by construction, and there is no ticking it. Its own help
+  text offers it for pre-commit linting, which is how a repo acquires a hook that can never go
+  green: ticking the archive task would be a false record and dropping the marker would break pm's
+  archive gate. Fixing someone else's lint is not pm's to do; the warning now rides gate-procedure
+  item 3's `mustSay`, so every emitted surface and the README carry it and a reworded mirror cannot
+  drop it silently.
+
+- **78 lines of `skills/conductor/SKILL.md` destroyed in 0.31.0 are restored.** A bad splice fused
+  the tail of the merge-verification rationale to the middle of the `state.json` field list;
+  everything between was gone — the worktree-cleanup rule, the `STATUS: blocked` handling,
+  hierarchy-orchestration step 4 (the consolidated end-of-hierarchy report and the changesets
+  release step), `## Further reference`, and the head of the `state.json` reference including its
+  opening code fence. The file carried an odd number of fences for four releases. Recovered
+  verbatim; one restored line was stale and is corrected against the engine rather than reinstated
+  (`link.type` now lists all six of `KNOWN_LINK_TYPES`).
+
 ## [0.35.0] — 2026-08-29
 
 ## [0.34.0] — 2026-08-29

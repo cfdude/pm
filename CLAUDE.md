@@ -88,11 +88,21 @@ plan, or a manual list). Follow these rules:
      Then resume.
    - *Substantial* (own design / changes shared behavior / multi-step): run `/pm:detour`.
      It becomes its own epic in the appropriate lane (OpenSpec proposal, Superpowers plan,
-     etc.); PUSH the current epic onto the detour stack in `.conductor/state.json` with a
-     concrete reason and `reconcileOnResume`.
+     etc.). Register that epic FIRST, then PUSH the current one onto the detour stack with
+     `push-detour <parent> --detour <new-id> --reason "<why>" (--reconcile | --no-reconcile)`.
+     NEVER hand-edit `.conductor/state.json` to push or pop a frame. The verb IS the
+     transition, and it is what supplies the validation, the write-conflict guard, the
+     read-back verification and the Honcho line a hand-edit has none of. Exactly one of the
+     two reconcile flags is REQUIRED and there is no default: whether the detour can
+     invalidate the paused epic's plan is a judgment, and a default makes an absent decision
+     look like a considered one. Say `--reconcile` unless you are certain the detour touches
+     nothing the paused epic depends on.
 2. **State of record is `.conductor/state.json`.** After any change to epics, status,
    priority, or the detour stack, re-render with `/pm:status`. Never hand-edit `PROJECT.md`.
-3. **Resuming after a detour** — use `/pm:resume`. If the popped frame had
+3. **Resuming after a detour** — use `/pm:resume`, which pops the frame with
+   `pop-detour [<paused-id>]` — again a verb, never a hand-edit. It removes the frame,
+   resumes the epic and writes `reconcileNeeded` in the SAME write, which is what makes the
+   obligation survive the frame's removal. If the popped frame had
    `reconcileOnResume`, run the reconcile gate (reconciler agent) BEFORE writing code,
    then write its verdict back durably with `record-reconcile <id> --detour <id>
    --verdict valid|invalidated [--amendments "<a>;<b>"]` — this attaches
@@ -100,7 +110,11 @@ plan, or a manual list). Follow these rules:
    clears `reconcileNeeded`, instead of the judgment only ever living in conversation.
 4. **Honcho** — on every PUSH and POP, also write a one-line memory to Honcho
    ("paused X for Y" / "resumed X, reconciled vs Y") so the relationship survives outside
-   this repo.
+   this repo. `push-detour` prints the PUSH line for you and logs it to
+   `.conductor/honcho-memories.log`; paste it into your Honcho tool call. `pop-detour` prints
+   the POP line only when nothing needs reconciling — with a gate armed, "reconciled vs Y" is
+   not yet true, so emit it with `honcho-memory pop <id> "<detour>; reconcile = …"` after the
+   verdict. The engine formats and logs; it never calls Honcho itself.
 5. **Keep `tasks.md` checkboxes truthful** — they are the source of truth for story progress.
 6. **Roadmap as backlog** — work you intend to do but haven't proposed yet can be
    registered now with `/pm:epic add … --status planned` (any lane). Planned epics show

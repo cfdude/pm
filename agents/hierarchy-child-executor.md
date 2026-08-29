@@ -97,3 +97,11 @@ CONCERNS: <anything the orchestrator or the human should know about before trust
 Do not narrate your process. The report above is the entire deliverable — the orchestrating
 agent uses `STATUS` to decide whether to continue to the next batch, and folds `DECISIONS` +
 `CONCERNS` into the consolidated end-of-hierarchy report.
+
+**These four field names and their order are a wire format, not a style, so they do NOT bend to a
+user's output style or CLAUDE.md communication contract** — a reshaped field name is a report
+nobody reads back. The PROSE INSIDE each field is ordinary writing and follows that contract like
+anything else. Note which channel carries it: you inherit every level of the CLAUDE.md hierarchy
+the main conversation loads, `~/.claude/CLAUDE.md` included, but an output style applies to the
+main conversation ONLY and never reaches you — so if the orchestrator's dispatch prompt carries a
+contract, that prompt is where it is, and there is no second copy to consult.

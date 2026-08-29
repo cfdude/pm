@@ -304,7 +304,13 @@ bullet reached 3/15.
    infers this from nothing else: not the wording, not the commands the text names, not the
    position in the file. Mark it when the task source is authored OR AMENDED — a source written
    before this capability existed gets the marker the first time you touch it, or its archive task
-   counts as outstanding work forever.
+   counts as outstanding work forever. The marker is pm's alone and it collides with an upstream
+   lint: `openspec validate --archived` knows nothing about it, counts raw checkboxes, and
+   therefore FAILS every correctly archived pm change — reporting `1 incomplete task` against the
+   same file pm reports complete with `· N lifecycle`. Its own help text offers it for pre-commit
+   linting; do NOT wire it into a pm-managed repo. Nothing clears that failure: ticking the archive
+   task would be a false record and dropping the marker would break pm's own archive gate. Ignoring
+   a marked line upstream is the clean fix and it is not pm's to make.
 
 4. **Attribute every commit to its epic.** At the moment each commit is made, record it:
    `update-epic <id> --attribute-commit <sha>`. The engine infers attribution from nothing — not
@@ -475,6 +481,71 @@ The step otherwise lost after compaction. Do not skip it.
    into your actual Honcho MCP memory/conclusion tool call.
 5. Render. State the exact next story to build.
 
+## Reporting — pm owns what is recorded and what is said; you own how you say it
+
+A plugin must not have a house style that outranks the user's. Users configure verbosity and
+format deliberately, once, globally, and user instructions outrank a plugin's preferences. But
+pm's shapes are not uniformly cosmetic, so "defer to the user" applied flat would delete
+obligations — the same failure pointed the other way. The line is **content vs container**.
+
+A user configures theirs in one of two places, and pm honours both: an **output style**, or a
+**communication contract** written into their CLAUDE.md.
+
+| Band | Examples | Bends to the user's output style / communication contract? |
+|---|---|---|
+| **Recorded** | `--outcome`/`--reason`, `--no-deferrals`, gate verdicts, `--attribute-commit`, `--notify`, `record-reconcile`, `record-cross-spec-review` | **No** — these are writes to `.conductor/state.json`, not sentences |
+| **Parsed** | `hierarchy-child-executor`'s `STATUS/DONE/DECISIONS/CONCERNS`; `merge-conflict-resolver`'s `STATUS/FILES/RESOLUTION_SUMMARY/CONCERNS`; `reconciler`'s `VERDICT/AMENDMENTS/NOTES` | **No** — a wire format between agents. The prose INSIDE a field is ordinary writing and does |
+| **Narrated** | the consolidated end-of-hierarchy report, the end-of-epic autonomy report, the preflight question batch, gate summaries, `/pm:status` narration, `/pm:next`'s recommendation | **Yes** — this is presentation, and it follows the user |
+
+Everything in the **Narrated** row renders in the user's shape when they have one. pm's own
+headings are a default for a user who has configured none — never a style that outranks one, and
+two competing formats in one session is the defect.
+
+**Scope.** This governs how you REPORT, never what the rest of this skill instructs you to DO. A
+brevity contract shortens prose; it does not authorise skipping a required task item, a gate, or
+a recorded disposition.
+
+**Map the content into their shape; never drop it to fit.** Reshaping is always allowed, omitting
+never. Where the user's shape has no slot for something pm requires — the `notifications[]`
+read-back, the explicit *"are you OK with these?"* checkpoint, the deferral list, a blocked child,
+a `CONCERNS` line worth flagging — add a slot rather than drop the element.
+
+**Why the Parsed band cannot bend.** The orchestrator branches on `STATUS` to decide whether to
+start the next batch, escalates on `STATUS: uncertain`, and transcribes `VERDICT` straight into
+`record-reconcile`, whose value space the engine enforces one hop later. A reshaped field name is
+a report nobody reads back.
+
+**CLAUDE.md is the only channel that reaches a subagent.** A subagent inherits every level of the
+CLAUDE.md hierarchy the main conversation loads, `~/.claude/CLAUDE.md` included; an **output style
+applies to the main conversation only** and does not reach one. So a user's contract that lives
+only in an output style never arrives at a `hierarchy-child-executor` or the `reconciler` — carry
+it into the dispatch prompt yourself, or the child cannot honour a preference it was never given.
+
+## Delegate discovery — your context is the scarce resource
+
+**If you do not already know the file path, do not go looking yourself.** A subagent's transcript
+never enters yours; only its final report does. So an open-ended read costs you a conclusion
+instead of a transcript the moment it is delegated — a structural saving, independent of any
+output-style or verbosity setting.
+
+| The question | Where it goes |
+|---|---|
+| "where is X handled", "does a spec for this already exist", "what does this epic touch", "what did the last three changes here do" | an `Explore` or `general-purpose` subagent; use its conclusion |
+| "what is on line 40 of the file I am editing", "what does this epic's `lane` say" | read it inline — you already know the path |
+
+**This binds YOU, the orchestrating agent.** It is the half with no such rule today: a dispatched
+`hierarchy-child-executor` is already told to return a fixed report and not to narrate its
+process, and pm already delegates review, execution and conflict resolution. Discovery was the one
+category left inline. It binds hardest across a hierarchy run or a multi-epic backlog, where your
+context survives many epics and is therefore the scarce resource — discovery you perform inline is
+paid for once per epic and never reclaimed.
+
+**Delegating never weakens a full-read requirement.** Two places below demand the WHOLE document —
+the epic-level-autonomy preflight scan, and re-reading an epic's source before it becomes the
+work. Delegating those means the subagent reads the whole document and returns the finding. What
+is forbidden is substituting a keyword grep for a full read, and that is forbidden whoever
+performs it.
+
 ## Choosing what's next
 
 Resume the **top of the detour stack** first if non-empty. Otherwise the highest-priority
@@ -589,7 +660,34 @@ computes what is WORTH READING and never decides:
 --no-deferrals`. A consolidation that leaves both epics open has consolidated nothing, and a
 candidate already flagged `superseded: true` is dead — never consolidate into it.
 
-**4. Say no out loud when the answer is no.** Not every ask should be taken on. Declining by
+**4. Decide the lane; do not inherit it.** `triage` already ran `suggest-lane` for you, and its
+answer reads THE ASK — the words, the size, this repo's `laneRouting` overrides — and nothing
+else. It cannot ask what a person would ask, whether this work SERVES something already committed
+to, because pm holds no milestone or product context to weigh and the engine will not invent one.
+The suggestion is an input; the lane is your call.
+
+**The tie-break is asymmetric**, and it is not a matter of taste. `claude-code` means no spec, no
+plan, no gate and no stories — right for a genuine sub-2-hour tweak, and the reason a misrouted
+epic leaves no record of what it was FOR. Over-processing costs hours; under-processing costs the
+record permanently, and nothing later can reconstruct it. So an unresolved routing question
+resolves AWAY from `claude-code`, never into it. Whenever you register in a lane other than the
+one routing suggested, say why on the epic:
+
+```bash
+update-epic <id> --notes "lane: <chosen> not <routed> — <why>"
+```
+
+The tracker-sync procedures already demand that line. It binds every path that registers an epic —
+manual `epic add`, a roadmap read in-session, and intake — not only the mirrored ones. *Measured
+in `pm`'s own repository: 83% of epics sat in `claude-code`, 51 of them already archived, none
+carrying an artifact link.*
+
+**What is NOT solved.** Weighing an ask against a milestone the project committed to needs a
+product layer pm does not have. This step makes the decision deliberate and its departures
+recorded; it does not make the routing itself smarter. Tracked as
+[#114](https://github.com/cfdude/pm/issues/114).
+
+**5. Say no out loud when the answer is no.** Not every ask should be taken on. Declining by
 never registering it destroys the record that anybody considered it — the same objection that
 made every other ending recordable. Register it, then:
 
@@ -753,8 +851,14 @@ not just one epic.
 
 **The process:**
 
-1. **Preflight EVERY child up front, not one at a time.** Run the epic-level-autonomy preflight
-   scan (above) against every child of the parent. Consolidate all findings into ONE batch of
+1. **Preflight EVERY child up front, not one at a time — and DISPATCH each scan rather than
+   running it in your own context.** The preflight is a full read of each child's entire source
+   (proposal + design + tasks + every spec, or the whole plan), so running it inline for N
+   children spends N full documents of your context before the first child is dispatched, and
+   never gets it back. Send one subagent per child, ask it for the preflight scan's sections
+   against that child's full source, and consolidate what comes back. The full-read requirement
+   is unchanged — it is about depth, not about who performs it; a keyword grep is no more
+   acceptable from a subagent than from you. Consolidate all findings into ONE batch of
    questions presented to the user — across the whole hierarchy, not per-child. Record answers
    per child exactly as epic-level autonomy already works: `set-autonomy <child-id>
    --preauthorize "<action>:<reason>"` / `--context "<note>"`, then `set-autonomy <child-id>
@@ -815,7 +919,87 @@ not just one epic.
         is optional and neither substitutes for the other (a file can pass the syntax check while
         still containing a marker inside a comment or string, and vice versa for non-JS files).
      - **Why this exists:** during this repo's own 0.14.0 dogfood run, a conflict resolution
-       removed only the *closing* conflict markers and left the opening `planPath      : repo-relative path to a markdown plan (progress source for superpowers lane,
+       removed only the *closing* conflict markers and left the opening `<<<<<<< HEAD` marker in
+       place in a committed file. There was no required step that would have caught this — it was
+       only caught by chance, via a manual re-grep after the fact. This verification step exists
+       so that catch is never left to chance again.
+   - Once a child's branch has merged (cleanly or via the ladder above), remove its worktree and
+     delete its branch immediately — never leave it dangling. `node "$ENGINE" verify-worktrees`
+     cross-references `git worktree list` against epic status and flags any `hierarchy-child/*`
+     worktree whose epic is already archived but wasn't cleaned up; run it after a batch if you're
+     ever unsure everything was torn down correctly.
+   - A dispatch reporting `STATUS: blocked` — check every later epic's `dependsOn` list
+     (transitively, since a dependency chain can be more than one hop) for the blocked child's
+     id; do not advance any batch containing an epic that depends on it, directly or
+     transitively. Batches with no such dependency may still proceed. Flag the blocked child for
+     the human in the end-of-hierarchy report; do not auto-retry it.
+   - A dispatch reporting `STATUS: stopped-for-genuine-unknown` — this is decision-rule item (d)
+     firing correctly, not a bug. Surface it to the human now, same as a single-epic stop would.
+4. **After all batches, write ONE consolidated end-of-hierarchy report:** what was asked (the
+   step-1 preflight batch), what was done (fold in every dispatch's `DONE`), every `DECISIONS`
+   entry across the whole hierarchy, any follow-up epics logged from unresolvable merge conflicts,
+   and an explicit **controversial** flag on anything from `CONCERNS` or a WARN-class decision —
+   these may affect other backlog items, which is exactly the seed a future portfolio-consistency
+   pass would need. The parent epic's own status is **never auto-archived** by this process —
+   that stays a human call, same as epic-level autonomy never auto-closes an epic either.
+   - **Release step — consolidate `.changesets/*.md` into `CHANGELOG.md`.** Run
+     `node "$ENGINE" changesets` to list pending fragments (`{ changesets: [{ id, path, body }] }`,
+     sorted by epic id). Fold each fragment's `body` into `CHANGELOG.md`'s `[Unreleased]` section
+     (or a new version section, if this is a release), then delete the consumed fragment files
+     (`.changesets/<id>.md`) — you are the sole writer of `CHANGELOG.md`, so there is nothing to
+     merge-conflict here even though the fragments were written by parallel children. This is a
+     manual `cat`-and-edit step, not automated by the engine; `changesets` only makes the fragment
+     set visible and machine-readable so the step is mechanical rather than a guess.
+
+## Further reference
+
+This skill and `README.md` cover the recurring essentials. If you need more — a command's full
+docs, a guide, a concept page — `https://pm-plugin.dev/llms.txt` is a lightweight,
+AI-agent-oriented index of every doc page (~7KB). Fetch `https://pm-plugin.dev/llms-full.txt`
+only if you genuinely need the entire site as one document (~200KB, tens of thousands of
+tokens — use sparingly, not as a default).
+
+## state.json reference
+
+```
+active        : "<epic-id>" | null
+pmVersion     : "<semver>" — release that last touched this repo (set by init/upgrade)
+tracker?      : { system, instance?, projectKey?, mechanism?, repo?, statusIntent? }  — optional;
+                opt-in. `repo` (`owner/name`) is used by the `github-issues` inward-pull shape.
+reviewMode?   : "off" | "standard" | "thorough" — repo-level dial (default "standard" if unset)
+gateGuard?    : boolean — repo-level PreToolUse guard toggle; no longer gates the
+                reconcile-owed check (that blocks unconditionally whenever
+                reconcileNeeded is true) — reserved for any future generalization
+laneRouting?  : { overrides: [{ match, lane }] } — optional per-repo lane overrides, checked
+                before the generic lane heuristic (see "Lane routing overrides" above);
+                set via set-lane-routing, looked up via suggest-lane
+epics[]       : { id, title, priority, status, role, lane, parent?, externalId?, externalUrl?, planPath?, stories[]?, links[], reconcileNeeded?, autonomy?, gateReview? }
+gateReview?   : { gate1?: {verdict, reviewedAt, note?}, gate2?: {verdict, reviewedAt, note?} } —
+                openspec-lane only; verdict ∈ pass|fail; set via record-gate-review; `update-epic
+                --status archived` on an openspec-lane epic requires gate2.verdict === "pass"
+autonomy?     : { level: "off"|"autonomous", preAuthorized[], context[], notifications[] } — per epic
+preAuthorized[] entries are either { action, reason?, grantedAt } (exact-action grant) or
+  { category, reason?, grantedAt } (category-shorthand grant, category one of
+  filesystem|network|schema|external-api) — never both on the same entry
+detourStack[] : { pausedEpic, pausedAt, reason, spawnedDetour, reconcileOnResume }
+status   ∈ active | paused | queued | later | blocked | archived | untriaged | planned
+role     ∈ epic | detour
+lane     ∈ openspec | superpowers | claude-code | decision | external   (default: openspec)
+priority ∈ P0 | P1 | P2 | P3 | P?   — MERIT priority, the only one stored
+rank?         : manual placement WITHIN one priority band, dense 1..N. Written ONLY by
+                `reorder <id> <id> …` (which takes the whole band and refuses a partial one);
+                cleared by `update-epic --priority` on a real band change. Absent is legal and
+                sorts after every ranked epic. LAST sort key: dependencies → priority → rank.
+parent        : id of another epic — single-parent tree (validated: exists, no self/cycle)
+externalId/externalUrl : link to a tracker issue (system comes from the tracker block)
+tracker.statusIntent   : { <conductor-status>: "<semantic target>" } — NOT a literal transition
+link.type ∈ depends-on | supersedes | may-invalidate | relates-to | blocks | resolves-blocker-for
+               (the CLOSED vocabulary — `KNOWN_LINK_TYPES` in lib/constants.mjs; anything else
+                is refused at write time)
+               (`supersedes` = this epic REPLACES that one — recorded at intake when triage
+                finds the same ask already registered; end the superseded epic with
+                `--outcome superseded` in the same breath, or the consolidation is only half done)
+planPath      : repo-relative path to a markdown plan (progress source for superpowers lane,
                 and the epic↔plan ASSOCIATION `sync` dedups on — a plan some epic claims is
                 never registered a second time, whatever the epic's id, lane or status)
 specPath      : repo-relative path to the DESIGN DOCUMENT this epic's work was drawn from

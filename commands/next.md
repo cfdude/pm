@@ -55,4 +55,7 @@ node "$ENGINE" set-active <epic-id>
 demotes any previously-active epic), so the briefing's "NOW" line is correct. `clear-active` drops
 the pointer.
 
-End with a single, concrete recommendation: "Next: \<epic\> — \<the specific story/phase\>."
+Follow the user's own output style or CLAUDE.md communication contract if they have one — the
+line below is a default, not a house style, and what has to survive is the recommendation itself
+(one epic, one specific story/phase), not this wording. End with a single, concrete
+recommendation: "Next: \<epic\> — \<the specific story/phase\>."

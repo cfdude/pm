@@ -11,7 +11,10 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" render
 (If `${CLAUDE_PLUGIN_ROOT}` is empty:
 `ENGINE="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/scripts/conductor.mjs}"; [ -f "$ENGINE" ] || ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1); node "$ENGINE" render`)
 
-Then read `PROJECT.md` and summarize for the user:
+Then read `PROJECT.md` and summarize for the user. **The shape below is a default, not a house
+style** — if the user has an output style or a communication contract in their CLAUDE.md, render
+this summary in THAT shape. What must survive the reshaping is the CONTENT and the ordering
+constraint, not the headings: reshape freely, drop nothing.
 - the **active** epic and its live story progress,
 - the **detour stack** (what's paused and why), flagging any ⚠ reconcile-on-resume,
 - the **next-up** queue by priority — reading the **effective** priority where the Priority
@@ -223,7 +226,13 @@ bullet reached 3/15.
    infers this from nothing else: not the wording, not the commands the text names, not the
    position in the file. Mark it when the task source is authored OR AMENDED — a source written
    before this capability existed gets the marker the first time you touch it, or its archive task
-   counts as outstanding work forever.
+   counts as outstanding work forever. The marker is pm's alone and it collides with an upstream
+   lint: `openspec validate --archived` knows nothing about it, counts raw checkboxes, and
+   therefore FAILS every correctly archived pm change — reporting `1 incomplete task` against the
+   same file pm reports complete with `· N lifecycle`. Its own help text offers it for pre-commit
+   linting; do NOT wire it into a pm-managed repo. Nothing clears that failure: ticking the archive
+   task would be a false record and dropping the marker would break pm's own archive gate. Ignoring
+   a marked line upstream is the clean fix and it is not pm's to make.
 4. **Attribute every commit to its epic.** At the moment each commit is made, record it:
    `update-epic <id> --attribute-commit <sha>`. The engine infers attribution from nothing — not
    the files a commit touches, not an epic id in a message — so an unrecorded commit is a commit

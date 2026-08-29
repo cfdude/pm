@@ -40,6 +40,13 @@ AMENDMENTS: <one per line — exact story to add/remove/rewrite, or "none">
 NOTES: <anything to double-check, or "none">
 ```
 
+**These three field names and their order are a wire format, not a style, so they do NOT bend to
+a user's output style or CLAUDE.md communication contract** — the main agent transcribes `VERDICT`
+straight into `record-reconcile --verdict`, whose value space the engine enforces, and joins your
+`AMENDMENTS` lines with `;`. The prose inside each field is ordinary writing and follows that
+contract like anything else. (An output style applies to the main conversation only and never
+reaches you; the CLAUDE.md hierarchy does.)
+
 - `VERDICT: valid` — proposal stands as-is; `AMENDMENTS` should be "none" (use `NOTES` for
   anything merely worth double-checking, not requiring a change).
 - `VERDICT: invalidated` — enumerate the exact stories to add / remove / rewrite and which
