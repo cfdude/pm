@@ -75,6 +75,17 @@ is the same thing without a plan printed first.
    "requires confirmation": this engine is driven by agents and hooks, so a prompt on stdin would
    hang rather than confirm. `--dry-run` spells the same thing explicitly.
 
+## Known edges, stated rather than discovered
+
+- **The out-of-band list is a bounded sample; the count is exact.** The span between the log's
+  earliest and latest revision is set by a number a hand-edit chooses, so listing every element
+  would make a report about a pathological record pathological itself. `missingCount` is the
+  number; `missing` holds the first 50.
+- **A valueless flag before the epic id eats it.** `claim --steal e1 --session x` refuses with the
+  usage line, because the shared flag parser takes the token after any flag as its value. That is
+  this engine's behaviour for every valueless flag (`--done`, `--no-deferrals`, `--clear-links`),
+  not something new here — put the positional first: `claim e1 --session x --steal`.
+
 ## What it does not do
 
 - **Nothing is recorded retroactively.** Turning it on today says nothing about yesterday. The

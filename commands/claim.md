@@ -103,6 +103,13 @@ matters because a stale claim is by construction left by a session that is no lo
 ask. It reports two shapes: an expired claim (ordinary — how a dead session looks) and a claim
 on an archived epic (a record that cannot be true).
 
+## One edge worth knowing
+
+`claim --steal e1 --session x` refuses with the usage line: the shared flag parser takes the token
+after any flag as its value, so `--steal` swallows `e1`. That is this engine's behaviour for every
+valueless flag (`--done`, `--no-deferrals`, `--clear-links`), not something new here. Put the
+positional first — `claim e1 --session x --steal` — which is the order every usage line shows.
+
 ## Per-session accountability
 
 `owners` answers the present. The claim's `session` and `claimedAt` also give an after-the-fact

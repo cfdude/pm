@@ -93,6 +93,10 @@ export function segmentStart(name) {
   return Number.isFinite(t) ? t : null;
 }
 
+/** How many unaccounted revisions the report LISTS. The count is always exact; this bounds only
+ *  the sample, in both the text report and `--json`. */
+export const OUT_OF_BAND_SAMPLE = 50;
+
 const HOUR = 3_600_000;
 const hrs = (ms) => `${(ms / HOUR).toFixed(1)}h`;
 function median(ns) {
@@ -109,7 +113,8 @@ export function buildReport(events, { currentRevision = null, malformed = 0 } = 
     from: events.length ? events[0].at : null,
     to: events.length ? events[events.length - 1].at : null,
     pickup: [], detours: { push: 0, pop: 0, byEpic: {} },
-    lanes: {}, reroutes: [], gates: [], outOfBand: { covered: 0, missing: [], afterLast: 0 },
+    lanes: {}, reroutes: [], gates: [],
+    outOfBand: { covered: 0, missing: [], missingCount: 0, afterLast: 0 },
     sessions: {},
   };
 
@@ -166,7 +171,16 @@ export function buildReport(events, { currentRevision = null, malformed = 0 } = 
   }
   r.outOfBand.covered = covered.size;
   if (maxRev !== null) {
-    for (let v = minFrom + 1; v <= maxRev; v++) if (!covered.has(v)) r.outOfBand.missing.push(v);
+    // COUNT everything, LIST a bounded sample. The span between the log's earliest `fromRevision`
+    // and its latest `revision` is attacker-shaped input in the ordinary sense: a hand-edit that
+    // sets `revision` to a large number makes the span large, and this is the one loop whose
+    // length that number controls. `--json` would then emit the whole array, so a report about a
+    // pathological record must not itself be pathological. The count stays exact.
+    for (let v = minFrom + 1; v <= maxRev; v++) {
+      if (covered.has(v)) continue;
+      r.outOfBand.missingCount++;
+      if (r.outOfBand.missing.length < OUT_OF_BAND_SAMPLE) r.outOfBand.missing.push(v);
+    }
     // Revisions past the last recorded event. These are the ones that matter most in practice:
     // a hand-edit made just now, or the whole window before logging was switched on.
     if (Number.isInteger(currentRevision) && currentRevision > maxRev) {
@@ -223,13 +237,14 @@ export function formatReport(r, { enabled = true, dir = activityDir() } = {}) {
   L.push("");
 
   L.push("OUT-OF-BAND WRITES — state.json revisions no engine verb accounts for");
-  const total = r.outOfBand.missing.length + r.outOfBand.afterLast;
+  const total = r.outOfBand.missingCount + r.outOfBand.afterLast;
   if (!total) {
     L.push(`  none. ${r.outOfBand.covered} revision(s) covered by recorded events.`);
   } else {
-    if (r.outOfBand.missing.length) {
-      L.push(`  ${r.outOfBand.missing.length} revision(s) INSIDE the logged window are unaccounted for: ` +
-        r.outOfBand.missing.slice(0, 20).join(", ") + (r.outOfBand.missing.length > 20 ? ", …" : ""));
+    if (r.outOfBand.missingCount) {
+      L.push(`  ${r.outOfBand.missingCount} revision(s) INSIDE the logged window are unaccounted for: ` +
+        r.outOfBand.missing.join(", ") +
+        (r.outOfBand.missingCount > r.outOfBand.missing.length ? ", …" : ""));
     }
     if (r.outOfBand.afterLast) {
       L.push(`  ${r.outOfBand.afterLast} revision(s) AFTER the last recorded event.`);

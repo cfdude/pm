@@ -595,9 +595,27 @@ test("gh-111: a HAND-EDIT to state.json IS reported — #110, as a query instead
   run(["update-epic", "e1", "--title", "after the edit"], { cwd });
 
   const j = JSON.parse(run(["activity", "--json"], { cwd }));
-  assert.ok(j.outOfBand.missing.length >= 3,
-    `three unaccounted revisions must be reported, got ${JSON.stringify(j.outOfBand.missing)}`);
+  assert.ok(j.outOfBand.missingCount >= 3,
+    `three unaccounted revisions must be reported, got ${JSON.stringify(j.outOfBand)}`);
   assert.match(run(["activity"], { cwd }), /unaccounted for/);
+});
+
+test("gh-111: a pathological revision jump is COUNTED exactly and LISTED in bounded form", async () => {
+  // The span between the log's earliest fromRevision and its latest revision is controlled by a
+  // number a hand-edit can set. That makes this the one loop whose length untrusted input picks,
+  // and `--json` would otherwise emit every element — a report about a pathological record must
+  // not itself be pathological.
+  const { buildReport, formatReport, OUT_OF_BAND_SAMPLE } = await import(AREPORT);
+  const ev = (fromRevision, revision) => ({
+    at: "2026-01-01T00:00:00.000Z", kind: "state-write", verb: "v", fromRevision, revision });
+  const r = buildReport([ev(0, 1), ev(500_000, 500_001)]);
+  assert.equal(r.outOfBand.missingCount, 499_999, "the COUNT must stay exact");
+  assert.equal(r.outOfBand.missing.length, OUT_OF_BAND_SAMPLE, "the LIST must not");
+  // Asserted through the SHIPPED formatter, never a copy of it in the test — a re-implementation
+  // here would keep passing after the real one changed.
+  const text = formatReport(r);
+  assert.match(text, /499999 revision\(s\) INSIDE the logged window are unaccounted for/);
+  assert.match(text, /, …/, "and it must say the list is a sample");
 });
 
 test("gh-111: revisions after the last recorded event are reported separately", () => {
