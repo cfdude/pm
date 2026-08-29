@@ -2576,7 +2576,10 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "94",
-      "externalUrl": "https://github.com/cfdude/pm/issues/94"
+      "externalUrl": "https://github.com/cfdude/pm/issues/94",
+      "attributedCommits": [
+        "c0f5b09"
+      ]
     },
     {
       "id": "gh-95-stories-optional-and-gate-nothing",
@@ -2627,7 +2630,11 @@
       ],
       "reconcileNeeded": false,
       "externalId": "100",
-      "externalUrl": "https://github.com/cfdude/pm/issues/100"
+      "externalUrl": "https://github.com/cfdude/pm/issues/100",
+      "attributedCommits": [
+        "c0f5b09",
+        "43dca98"
+      ]
     },
     {
       "id": "gh-101-dependency-order-blind-to-blocked",
@@ -3888,6 +3895,25 @@
       "externalId": "149",
       "externalUrl": "https://github.com/cfdude/pm/issues/149",
       "attributedCommits": []
+    },
+    {
+      "id": "gh-151-no-push-detour-verb",
+      "title": "The substantial-detour PUSH is a documented hand-edit of state.json — the engine is absent at the one moment a deferral is decided",
+      "priority": "P1",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-94-serial-detours-accepted-silently",
+          "reason": "94's gate cannot be built until the engine is present at PUSH; 94 shipped its visibility half and declined the gate for this reason"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "151",
+      "externalUrl": "https://github.com/cfdude/pm/issues/151",
+      "attributedCommits": []
     }
   ],
   "detourStack": [],
@@ -3898,7 +3924,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 220,
+  "revision": 224,
   "reviewMode": "thorough",
   "releases": [
     {
