@@ -1649,7 +1649,7 @@
       "id": "gh-64-sync-duplicate-shipped-plan",
       "title": "sync registers a duplicate untriaged epic for a plan whose feature already shipped",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -1659,15 +1659,25 @@
       "stories": [
         {
           "title": "CONFIRMED remove-epic is NOT durable: identical 3 phantoms returned on the next sync ~1h later. Another session saw the same across a 2-day gap in agent-dm.",
-          "done": false
+          "done": false,
+          "disposition": {
+            "state": "wont-do",
+            "reason": "a research FINDING, not projected work — it recorded that remove-epic was not durable, which the tombstone shipped in this release now fixes. The finding stays on the record; there is nothing left to do about it",
+            "recordedAt": "2026-08-29T01:57:05.895Z"
+          }
         },
         {
           "title": "WORKAROUND THAT STICKS (no code change): set the phantom to --status archived instead of remove-epic. The id still exists so sync's own 'id already exists' guard fires. Verified: repeated syncs add 0.",
-          "done": false
+          "done": false,
+          "disposition": {
+            "state": "wont-do",
+            "reason": "a WORKAROUND for the defect, obsolete the moment the defect was fixed: archiving a phantom to borrow sync's id guard is no longer needed now that removal writes a real tombstone",
+            "recordedAt": "2026-08-29T01:57:07.609Z"
+          }
         },
         {
           "title": "prefer the tombstone/syncIgnore fix over plan-field matching for the near term: matching is blocked by #66 (no update-epic --plan) while the tombstone has no dependency; archived already IS a working tombstone",
-          "done": false
+          "done": true
         }
       ],
       "attributedCommits": [
@@ -1675,7 +1685,18 @@
         "794e280",
         "518aeed",
         "3e26bfd"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T01:57:09.323Z",
+        "reason": "shipped in 0.31.0 (64b1adc): a five-rung ladder keyed on a real epic<->plan association, with a tombstone so a removal survives the next sync"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T01:57:09.323Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T01:57:09.323Z"
     },
     {
       "id": "gh-65-autodetour-false-positives",
@@ -1732,7 +1753,7 @@
       "id": "gh-66-update-epic-missing-flags",
       "title": "update-epic: no --lane, no --plan, undocumented valueless --link for clearing",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -1744,13 +1765,24 @@
       ],
       "reconcileNeeded": false,
       "externalId": "66",
-      "externalUrl": "https://github.com/cfdude/pm/issues/66"
+      "externalUrl": "https://github.com/cfdude/pm/issues/66",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T01:56:33.852Z",
+        "reason": "shipped in 0.31.0 (64b1adc): --lane and --plan land as in-place writes; a test now fails CI if any source-artifact field is settable at creation but not on the update surfaces"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T01:56:33.851Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T01:56:33.852Z"
     },
     {
       "id": "gh-69-sync-no-done-signal-for-plans",
       "title": "sync re-registers COMPLETED Superpowers plans as untriaged epics",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -1762,7 +1794,18 @@
       ],
       "reconcileNeeded": false,
       "externalId": "69",
-      "externalUrl": "https://github.com/cfdude/pm/issues/69"
+      "externalUrl": "https://github.com/cfdude/pm/issues/69",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T01:56:35.618Z",
+        "reason": "shipped in 0.31.0 (64b1adc): rung 1 is the done-signal — a claimed plan is skipped status- and lane-blind, with no completion heuristic"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T01:56:35.617Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T01:56:35.618Z"
     },
     {
       "id": "gh-70-link-validation-gap",
@@ -1922,7 +1965,7 @@
       "id": "autodetour-parser-misses-am-and-f",
       "title": "commit-nudge's -m parser misses -am / -F / editor commits, so #65 is only closed for -m",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -1930,17 +1973,31 @@
       "stories": [
         {
           "title": "git commit -am \"fix: x\" parses to subject='' which short-circuits the guard; a REJECTED -am commit still writes a false DETOUR-COMMIT line while a detour is active -- the original #65 symptom",
-          "done": false
+          "done": true
         },
         {
           "title": "b2e472f's message claims 'closes #65, #68' -- true for -m only. Correct the claim or close the gap BEFORE those issues are closed upstream.",
-          "done": false
+          "done": true
         },
         {
           "title": "ALSO: an escaped quote inside a double-quoted -m truncates the capture (regex is \"([^\"]*)\"), so a genuinely landed commit is CONTRADICTED and the hook silently suppressed. Fix shape: backslash-aware capture \"((?:[^\"\\\\]|\\\\.)*)\", or treat a value ending in a backslash as unverifiable.",
-          "done": false
+          "done": true
         }
-      ]
+      ],
+      "attributedCommits": [
+        "45bb85b"
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T05:18:40.665Z",
+        "reason": "closed by observation-based commit-nudge in 0.32.0: a HEAD watermark plus reflog classification is flag-form-blind, so -am, -F, editor commits and forms git has not invented yet are covered by construction rather than by three pattern patches"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T05:18:40.664Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T05:18:40.665Z"
     },
     {
       "id": "edd-corpus-expansion-nondeterministic-surfaces",
@@ -2379,7 +2436,10 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "91",
-      "externalUrl": "https://github.com/cfdude/pm/issues/91"
+      "externalUrl": "https://github.com/cfdude/pm/issues/91",
+      "attributedCommits": [
+        "45bb85b"
+      ]
     },
     {
       "id": "gh-92-epic-specpath",
@@ -2397,7 +2457,12 @@
       ],
       "reconcileNeeded": false,
       "externalId": "92",
-      "externalUrl": "https://github.com/cfdude/pm/issues/92"
+      "externalUrl": "https://github.com/cfdude/pm/issues/92",
+      "attributedCommits": [
+        "8bdf7f9",
+        "6a53823",
+        "3db944f"
+      ]
     },
     {
       "id": "gh-93-verify-specs-coverage",
@@ -2427,7 +2492,7 @@
       "id": "gh-95-stories-optional-and-gate-nothing",
       "title": "Stories exist but are optional, uncreatable atomically, and gate nothing",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -2443,7 +2508,18 @@
       "attributedCommits": [
         "6be3c2f",
         "c1caaf0"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T01:56:37.297Z",
+        "reason": "shipped in 0.31.0 (64b1adc): atomic --add-story and --story <n> --wont-do. NO new refusal: the measurement showed the gate already existed and its remedy was the defect. Mandatory stories declined on 0/148 adoption of the free-text carriers"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T01:56:37.297Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T01:56:37.298Z"
     },
     {
       "id": "gh-100-link-types-no-known-set",
@@ -2537,7 +2613,11 @@
       ],
       "reconcileNeeded": false,
       "externalId": "104",
-      "externalUrl": "https://github.com/cfdude/pm/issues/104"
+      "externalUrl": "https://github.com/cfdude/pm/issues/104",
+      "attributedCommits": [
+        "45bb85b",
+        "2ed5929"
+      ]
     },
     {
       "id": "gh-102-sync-blind-to-issue-comments",
@@ -2685,7 +2765,13 @@
       "release": "0.27.0",
       "disposition": {
         "outcome": "delivered",
-        "recordedAt": "2026-08-26T21:22:25.567Z"
+        "recordedAt": "2026-08-29T05:14:20.134Z",
+        "reason": "shipped in 0.27.0 (543a38f): Gate 2 was enforced at the front door and bypassed by the archive hook — 42 of 49 archived openspec epics carried gateReview: null. The gate now binds every path that can reach archived, including the drift heal reached from upgrade, render, commit-nudge and sync",
+        "correction": "recorded with --outcome but no --reason, which the verb permits for delivered — so the one epic that named the release's central defect carried no provenance while all 19 of its siblings did. Caught within minutes and uncorrectable until #130 shipped; this repo's own record was the test case",
+        "superseded": {
+          "outcome": "delivered",
+          "recordedAt": "2026-08-26T21:22:25.567Z"
+        }
       },
       "deferralAssertion": {
         "assertedAt": "2026-08-26T21:22:25.567Z",
@@ -3318,7 +3404,11 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "130",
-      "externalUrl": "https://github.com/cfdude/pm/issues/130"
+      "externalUrl": "https://github.com/cfdude/pm/issues/130",
+      "attributedCommits": [
+        "6012879",
+        "a754258"
+      ]
     },
     {
       "id": "gh-131-retry-half-unverified",
@@ -3354,7 +3444,10 @@
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "6012879",
+        "a754258"
+      ],
       "externalId": "133",
       "externalUrl": "https://github.com/cfdude/pm/issues/133"
     },
@@ -3446,7 +3539,7 @@
       "id": "gh-138-refresh-warning-counts-terminal-epics",
       "title": "The never-re-read warning counts epics whose work can never happen — half its number is archived or closed",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -3462,7 +3555,18 @@
       "attributedCommits": [
         "370b130",
         "6b66df5"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T01:56:38.923Z",
+        "reason": "shipped in 0.31.0 (64b1adc): the count excludes epics that have ended, 60 -> 31 here; the disposition discharges the obligation rather than a second terminal watermark"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T01:56:38.923Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T01:56:38.923Z"
     },
     {
       "id": "gh-139-command-doc-engine-fallback-ungated",
@@ -3565,7 +3669,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 150,
+  "revision": 174,
   "reviewMode": "thorough",
   "releases": [
     {

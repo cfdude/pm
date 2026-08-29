@@ -11,7 +11,7 @@ import { staleMarker } from "./active-pointer.mjs";
 import { getAutonomy } from "./autonomy.mjs";
 import { parseFlags } from "./add-epic.mjs";
 import { validLink } from "./links.mjs";
-import { outcomeOf, recordedDispositions } from "./disposition.mjs";
+import { correctionMarking, correctionNote, outcomeOf, recordedDispositions } from "./disposition.mjs";
 import { stalenessMarking } from "./archive-gate.mjs";
 import { DETOURS_LOG, PROJECT_MD, STATE_PATH, RENDER_STAMP_PATH, CONDUCTOR_DIR, gateSummary, releaseLine, releaseSummaries } from "./constants.mjs";
 import { crossSpecLine } from "./cross-spec-review.mjs";
@@ -121,7 +121,7 @@ export function render() {
     const autonomous = getAutonomy(e).level === "autonomous" ? " 🤖" : "";
     // The recorded outcome sits beside the status, never replacing it: an epic is still
     // `archived`, and `outcome` is a distinct field rather than a new status value.
-    const outcome = e.disposition ? ` · ${outcomeOf(e)}` : "";
+    const outcome = e.disposition ? ` · ${outcomeOf(e)}${correctionMarking(e.disposition)}` : "";
     // Merit priority, then the INHERITED one where they differ — `P2 → P1` says "P2 on merit,
     // sorts as P1 because a P1 needs it". Rendering only the effective value would destroy the
     // legibility the computed-not-stored design exists to preserve: you could no longer tell the
@@ -226,7 +226,7 @@ export function render() {
     for (const { epic, disposition: d } of dispositions) {
       const why = (d.reason || "—").replace(/\|/g, "\\|");
       const carried = d.carriedTo ? ` (carried to \`${d.carriedTo}\`)` : "";
-      md.push(`| \`${epic.id}\` | ${outcomeOf(epic)} | ${d.recordedAt || "—"} | ${why}${carried} |`);
+      md.push(`| \`${epic.id}\` | ${outcomeOf(epic)}${correctionMarking(d)} | ${d.recordedAt || "—"} | ${why}${carried}${correctionNote(d)} |`);
     }
     md.push("");
   }

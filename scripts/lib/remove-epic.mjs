@@ -110,9 +110,16 @@ export function removeEpic() {
       `${[...new Set(affected)].join(", ")}\n`);
   }
   if (tombstoned.length) {
+    // The un-ignore instruction names the flag that writes the field the path CAME FROM. It was
+    // `--plan` unconditionally, which was right while the source-artifact family held one row
+    // and wrong the moment it held two: telling an operator to re-attach a design document as a
+    // plan points an epic's progress source at a file with no checkboxes.
+    const how = [...new Set(tombstoned.map(t => t.flag))]
+      .map(flag => `\`update-epic <id> --${flag} <path>\``).join(" or ");
     process.stderr.write(
       `conductor: recorded ${tombstoned.length} sync-ignore tombstone(s) so sync will not ` +
-      `re-register the removed epic(s)' source artifact(s): ${tombstoned.join(", ")}. ` +
-      "Attach one to an epic (`update-epic <id> --plan <path>`) to un-ignore it.\n");
+      `re-register the removed epic(s)' source artifact(s): ` +
+      `${tombstoned.map(t => t.path).join(", ")}. ` +
+      `Attach one to an epic (${how}) to un-ignore it.\n`);
   }
 }

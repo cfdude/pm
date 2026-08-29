@@ -8,3 +8,4 @@ evals/.pytest_cache/
 .conductor/write-conflicts.log
 .conductor/write-conflicts.latch
 .conductor/agent-logs/
+.conductor/commit-watch.json

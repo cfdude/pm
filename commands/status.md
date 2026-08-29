@@ -87,6 +87,40 @@ That is expected, not a bug. Each finding carries the exact remedy —
 lets an agent replace an engine-written stamp, so nothing is frozen at `unknown`. Run it when the record looks
 wrong, before a release, or when you want to know what the numbers in `PROJECT.md` are hiding.
 
+## Spec coverage — `verify-specs`
+
+`verify-specs` answers a different question from `integrity`: **which design documents have no
+epics drawn from them?** It became answerable when epics gained `--spec` — see `/pm:epic`.
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" verify-specs [--root <path>]
+```
+
+It prints, for every `.md` file under the root (recursively, minus `README`/`INDEX`/
+`CONTRIBUTING`), how many epics claim it and which ones; then the other half of the difference —
+epics whose `specPath` names a document that is not on disk. It writes no state, repairs
+nothing, and always exits 0.
+
+**It is deliberately NOT an `integrity` check, and the distinction is the point.** `integrity`
+reports shapes that *cannot* be true. A design document with no epic *can* be true and usually
+is: a note, a reference, an abandoned sketch. A check that filed every one of them as a finding
+would be the noise #138 removed from the plan-freshness warning — wrong 7 times out of 8 — and a
+report people learn to skip is worse than no report. So this one prints an **inventory**, uses
+none of `integrity`'s finding vocabulary, and is a verb you run when you want the question
+answered rather than something that speaks at you on every `/pm:status`.
+
+**The root is a default, not an assumption.** With no `--root` it looks in
+`docs/superpowers/specs/`. If that directory does not exist it says **no spec root** and checks
+nothing, which reads differently from "checked, everything covered" on purpose — a repository
+that keeps its designs elsewhere must not get a confidently empty report. Point it at them:
+`verify-specs --root docs/design`.
+
+**Uncovered means look once, not fix.** Read the document; where it implies work nobody
+registered, author an `add-many` batch whose entries each carry its `specPath` (`/pm:epic`
+shows the shape). Where it implies none, it has already told you what it is. `syncIgnore`
+tombstones are not consulted — `specPath` is many-to-one, so a tombstone left by removing one of
+six epics must not make the document read as deliberately uncovered while five still cover it.
+
 ## Release planning — `release`
 
 A release is a named grouping of epics the agent declares: an id, intent prose, an optional

@@ -74,7 +74,7 @@ export function updateEpic() {
       process.exit(1);
     }
     process.stderr.write("conductor: update-epic requires an epic id as its first POSITIONAL argument\n");
-    process.stderr.write(`usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--lane openspec|superpowers|claude-code|decision|external] [--plan <path>] [--link \"<type>:<epic>[:<reason>]\"] [--clear-links] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done|--wont-do "<reason>"] [--attribute-commit <sha>] [--outcome ${AGENT_OUTCOMES.join("|")}] [--reason \"<why>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\"] [--declined-deferral \"<what>:<why not>\"] [--no-deferrals] [--description D] [--notes \"<text>\"] [--external-updated-at <iso>]\n`);
+    process.stderr.write(`usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--lane openspec|superpowers|claude-code|decision|external] [--plan <path>] [--spec <path>] [--link \"<type>:<epic>[:<reason>]\"] [--clear-links] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done|--wont-do "<reason>"] [--attribute-commit <sha>] [--outcome ${AGENT_OUTCOMES.join("|")}] [--reason \"<why>\"] [--correct-disposition \"<why the recorded one was wrong>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\"] [--declined-deferral \"<what>:<why not>\"] [--no-deferrals] [--description D] [--notes \"<text>\"] [--external-updated-at <iso>]\n`);
     process.exit(1);
   }
   const f = parseFlags(argv.slice(1));
@@ -113,6 +113,14 @@ export function updateEpic() {
   const planPath = str(f.plan);
   if (f.plan !== undefined && planPath === undefined) {
     process.stderr.write("conductor: --plan requires a value\n"); process.exit(1);
+  }
+  // --spec: attach (or repoint) the DESIGN DOCUMENT an epic's work was drawn from (#92). The
+  // sibling of --plan, and written by its own explicit line for the same reason: the EPIC_FLAGS
+  // row makes this command ACCEPT the flag, and nothing in the registry copies a value onto a
+  // key. Registering the row and stopping there is the exit-0-write-nothing shape of #79.
+  const specPath = str(f.spec);
+  if (f.spec !== undefined && specPath === undefined) {
+    process.stderr.write("conductor: --spec requires a value\n"); process.exit(1);
   }
   // Clearing the links is a NAMED flag, and the valueless `--link` that used to do it by
   // accident is refused. `--link` is repeatable, so `--link` with nothing after it parses as
@@ -268,6 +276,31 @@ export function updateEpic() {
       })
     : undefined;
 
+  // `--correct-disposition "<why the recorded one was wrong>"`: the ONE way past the refusal
+  // that protects an agent-recorded disposition (#130). Two refusals before any write, both
+  // #79's shape:
+  //   1. VALUELESS — parseFlags yields boolean `true`, str() drops it, and the correction would
+  //      be silently downgraded to an ordinary (refused) archive with a confusing message.
+  //   2. UNREACHABLE — the whole disposition block below sits inside `status === "archived"`,
+  //      so `--correct-disposition` alone parses, writes nothing, exits 0 and prints "updated".
+  //      Diagnosed by name rather than dropped.
+  const correction = str(f["correct-disposition"]);
+  if (f["correct-disposition"] !== undefined) {
+    if (correction === undefined) {
+      process.stderr.write(
+        "conductor: --correct-disposition requires a reason saying why the recorded disposition " +
+        "was wrong — it is kept on the record beside the one it supersedes\n");
+      process.exit(1);
+    }
+    if (status !== "archived") {
+      process.stderr.write(
+        "conductor: --correct-disposition corrects a recorded disposition, which only happens " +
+        "at the archive transition — pass --status archived together with the --outcome (and " +
+        "--reason) you meant to record. Nothing was written.\n");
+      process.exit(1);
+    }
+  }
+
   // Note `status === "archived"`, not "the status CHANGED to archived": an epic already at
   // `archived` runs the full gate again on this invocation and records the disposition the
   // agent supplies. Re-archiving is an established shape here — `completedAt` below is already
@@ -276,7 +309,7 @@ export function updateEpic() {
   if (status === "archived") {
     const verdict = archiveGate(epic, {
       outcome: str(f.outcome), reason: str(f.reason),
-      carriedTo: str(f["carried-to"]), deferralAssertion: asserted,
+      carriedTo: str(f["carried-to"]), deferralAssertion: asserted, correction,
     });
     if (!verdict.ok) { process.stderr.write(`conductor: ${verdict.message}\n`); process.exit(1); }
     // The gate BUILDS the record and this command writes it, so the disposition an epic ends
@@ -296,6 +329,7 @@ export function updateEpic() {
   // it used to is the whole reason remove-and-re-register was the only correction available.
   if (lane !== undefined) epic.lane = lane;
   if (planPath !== undefined) epic.planPath = planPath;
+  if (specPath !== undefined) epic.specPath = specPath;
   // The ONE claim site outside pushEpic(): every other way an epic comes to hold a source
   // artifact is a creation, and creation routes through that sink. Attaching an artifact says
   // it is real work, so any sync-ignore tombstone saying it is not must go — the record must

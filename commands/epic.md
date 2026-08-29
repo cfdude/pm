@@ -6,7 +6,7 @@ allowed-tools: Bash, Read
 Register an epic in a non-OpenSpec lane (superpowers, claude-code, decision, external) —
 for work that is correctly routed away from OpenSpec but still belongs in the system of record.
 
-Usage: `/pm:epic add <id> "<title>" <lane> [priority] [--status <untriaged|queued|active|paused|planned|archived>] [--parent <id>] [--external-id <KEY>] [--external-url <url>] [--plan <path>] [--link type:epic:reason]`
+Usage: `/pm:epic add <id> "<title>" <lane> [priority] [--status <untriaged|queued|active|paused|planned|archived>] [--parent <id>] [--external-id <KEY>] [--external-url <url>] [--plan <path>] [--spec <path>] [--link type:epic:reason]`
 
 Use `--status planned` for roadmap work you intend to do but haven't proposed/scaffolded yet
 (default status is `queued`). Use `--parent <id>` to nest this epic under an existing parent
@@ -21,6 +21,14 @@ value (wrong segment order, a typo'd epic id) is rejected with a clear error ins
 silently stored as a garbage link object — this used to succeed silently, which is how a bad
 link could end up in `state.json` with no CLI path to fix it.
 
+`--spec <path>` records the **design document** this epic's work was drawn from. It is
+provenance and nothing else — no progress is read from it, no scan registers epics from it —
+and it is deliberately **many-to-one**: a design too large for a single implementation plan
+enumerates N chunks, and every one of those epics carries the same `--spec`. That association is
+what makes "which design documents have no epic?" answerable at all; ask it with
+`verify-specs` (see `/pm:status`). `--plan` and `--spec` are independent: an epic may carry
+either, both, or neither.
+
 1. Parse the user's request into: id (kebab-case), title, lane (one of
    openspec|superpowers|claude-code|decision|external), priority (P0–P3, default P?),
    optional parent, optional external id/url, optional plan path, optional links.
@@ -32,7 +40,8 @@ link could end up in `state.json` with no CLI path to fix it.
      --id "<id>" --title "<title>" --lane "<lane>" --priority "<P?>" \
      [--status "<status>"] [--parent "<parent-id>"] \
      [--external-id "<KEY>"] [--external-url "<url>"] \
-     [--plan "<docs/superpowers/plans/...md>"] [--link "blocks:<id>:<reason>"] \
+     [--plan "<docs/superpowers/plans/...md>"] [--spec "<docs/superpowers/specs/...md>"] \
+     [--link "blocks:<id>:<reason>"] \
      [--add-story "<milestone>" --add-story "<milestone>" …]
    ```
 
@@ -77,6 +86,29 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" add-many --from /path/to/batc
 - **`stories`** is an array of plain titles, or `{"title": "...", "done": true}` objects where a
   milestone is already behind you. Validated in the same up-front pass as everything else — a
   blank title or a non-boolean `done` refuses the whole batch and creates nothing.
+- **`specPath` is the design-document fan-out.** A batch is written in **state keys**, not flag
+  names, so the key is `specPath` (as `planPath` is, and `externalId` rather than
+  `external-id`). This is the shape a design too large for one implementation plan needs: one
+  atomic write registering every chunk it enumerated, each entry naming the same document.
+
+```json
+{
+  "parent": { "id": "mi-dev-to-prod", "title": "Dev→prod workflow", "lane": "superpowers",
+              "specPath": "docs/superpowers/specs/2026-08-05-mi-dev-to-prod-workflow-design.md" },
+  "epics": [
+    { "id": "chunk-1-promotion", "lane": "superpowers", "priority": "P1",
+      "specPath": "docs/superpowers/specs/2026-08-05-mi-dev-to-prod-workflow-design.md" },
+    { "id": "chunk-2-rollback", "lane": "superpowers", "priority": "P2",
+      "specPath": "docs/superpowers/specs/2026-08-05-mi-dev-to-prod-workflow-design.md" }
+  ]
+}
+```
+
+  **Enumerating the chunks is YOURS, not the engine's.** Nothing reads inside a design document
+  to find the work it implies — heading conventions vary too much for that to be reliable, and
+  23 of 125 deferred items in the survey behind this capability sat under no heading at all. You
+  are reading the design anyway; author the batch. The engine's only job is the set difference
+  afterwards, which `verify-specs` reports.
 
 ## Write-back — `update-epic`
 
@@ -86,7 +118,7 @@ To change an epic that already exists (notably, to record a tracker key after cr
 node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" update-epic <id> \
   [--title <title>] [--external-id <KEY>] [--external-url <url>] [--parent <id>] \
   [--status <status>] [--priority <P?>] [--link "<type>:<epic>[:<reason>]"] \
-  [--clear-links] [--lane <lane>] [--plan <path>]
+  [--clear-links] [--lane <lane>] [--plan <path>] [--spec <path>]
 ```
 
 **Every flag `update-epic` accepts.** The list below is the whole surface — an unlisted flag
@@ -101,6 +133,7 @@ of them are declared once in `EPIC_FLAGS` (`scripts/lib/constants.mjs`), which i
 | `--priority <P?>` | `priority` | |
 | `--lane <l>` | `lane` | re-routes in place |
 | `--plan <path>` | `planPath` | attaches a plan to an epic created without one |
+| `--spec <path>` | `specPath` | the DESIGN DOCUMENT this epic's work was drawn from — provenance only, **many-to-one** |
 | `--parent <id>` | `parent` | no self-parent, no cycle |
 | `--link "<type>:<epic>[:<reason>]"` | `links` | **repeatable**; REPLACES the array wholesale |
 | `--clear-links` | `links` | empties it; may not be combined with `--link` |
@@ -113,6 +146,7 @@ of them are declared once in `EPIC_FLAGS` (`scripts/lib/constants.mjs`), which i
 | `--outcome <o>` | `disposition` | `delivered\|killed\|superseded\|abandoned` |
 | `--reason "<why>"` | `disposition` | required for every outcome except `delivered` |
 | `--carried-to <epicId>` | `disposition` | where unfinished work went |
+| `--correct-disposition "<why the recorded one was wrong>"` | `disposition` | corrects an agent-recorded disposition; keeps the prior one under `superseded` |
 | `--deferral "<epicId>:<section>"` | `deferralAssertion` | **repeatable** |
 | `--declined-deferral "<what>:<why not>"` | `deferralAssertion` | **repeatable** |
 | `--no-deferrals` | `deferralAssertion` | the explicit "there are none" |
@@ -153,8 +187,39 @@ design: the code was never written or was thrown away, and the required reason a
 where the work went.
 
 An engine-written disposition — the migration's stamp, the archive-drift heal's — may be REPLACED
-by an agent recording a real one. Another agent's recorded judgment may not; correcting a mistaken
-disposition is not something this verb does.
+by an agent recording a real one. Another agent's recorded judgment may not: re-running the verb
+is refused, because replacing a judgment somebody made is exactly what a disposition exists to
+prevent.
+
+**A wrong record is corrected, never overwritten.** `--correct-disposition "<why the recorded one
+was wrong>"` is the one way past that refusal, and it costs three things rather than none:
+
+- It is **deliberate** — never reachable by re-running the ordinary verb, and refused outright
+  when there is no agent-recorded disposition to correct (an engine stamp is replaced the
+  ordinary way; an epic with no disposition has nothing to supersede).
+- It is **self-describing** — the flag's value IS the justification, required by the flag's own
+  shape, and it is kept on the record.
+- It is **non-destructive** — the prior record survives verbatim under `superseded`, and every
+  surface renders `· corrected (was <prior outcome>)` beside the new one, so a correction is
+  distinguishable from an original by anyone reading afterwards. One level deep, exactly as
+  `record-gate-review` caps its own nest: the prior record's own `superseded` is dropped, its
+  `correction` string kept.
+
+That is disclosure rather than authority, and it is deliberate. The engine cannot gate on WHO
+corrects: an agent's record carries no identity by construction — absence of `recordedBy` is
+what marks a record as an agent's — so "only the agent who recorded it may correct it" would be
+unenforceable rather than strict. What it can require is that a correction leave evidence that a
+correction happened. It is also not time-boxed: a wrong `delivered` noticed next week is exactly
+as false as one noticed in the same minute, and the alternative — no verb at all — is a
+hand-edit of `.conductor/state.json`, on the terminal record.
+
+```bash
+update-epic <id> --status archived --outcome <the one you meant> --reason "<why>" \
+  --correct-disposition "<why the recorded one was wrong>"
+```
+
+Every other archive demand still applies to a correction: the required reason, the Gate 2
+demand, the handoff demand, and the deferral assertion (already-recorded assertions satisfy it).
 
 The id is positional. Parent/status/lane/link changes are validated like `add-epic` (no
 self-parent, no cycle, known status, known lane, `--link`'s epic must be a known epic id). On an
@@ -279,7 +344,8 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" remove-epic <id> [--cascade]
 ```
 
 - **Every dangling reference is cleaned up automatically** — not just `links[]`. Any other
-  epic's `links[]` and `parent`, a disposition's `carriedTo` handoff, a deferral assertion's
+  epic's `links[]` and `parent`, a disposition's `carriedTo` handoff (including the one on a prior
+  record a correction kept), a deferral assertion's
   `deferrals[]`, a release's `deferred[]` and the active pointer are all swept, and the command
   reports where each reference was held — a dangling reference is worse than a silently smaller
   graph. (A `deferred[]` entry left behind used to render in `PROJECT.md` as a deferral pointing
@@ -300,11 +366,17 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" remove-epic <id> [--cascade]
   prompt of its own; that confirmation step is the agent's job, not the CLI's.
 - If the removed epic was `.active`, the pointer is cleared automatically.
 - **A removal now survives the next `sync`.** Removing an epic that claimed a source artifact
-  (its `planPath`) records a `syncIgnore` tombstone for that path, over the whole `--cascade` set
-  and not just the named epic — previously `remove-epic` bought you only until the next sync,
-  which re-registered byte-identical ids within the hour. The tombstone is inspectable in
-  `.conductor/state.json` and reversible by the action that contradicts it: attaching that
-  artifact to an epic (`update-epic <id> --plan <path>`) clears it.
+  (its `planPath` or its `specPath`) records a `syncIgnore` tombstone for that path, over the
+  whole `--cascade` set and not just the named epic — previously `remove-epic` bought you only
+  until the next sync, which re-registered byte-identical ids within the hour. The tombstone is
+  inspectable in `.conductor/state.json` and reversible by the action that contradicts it:
+  attaching that artifact to an epic (`update-epic <id> --plan <path>`, or `--spec` for a design
+  document) clears it. The message names the flag for the field the path came from.
+- **A `specPath` tombstone is inert, and deliberately so.** `sync` scans changes and plans, never
+  a spec root, so nothing would re-register a design document anyway; and `verify-specs` does not
+  read `syncIgnore`, because `specPath` is many-to-one — removing one of six epics drawn from a
+  design must not make that design read as deliberately uncovered while five epics still cover
+  it.
 
 ## Set the active epic — `set-active` / `clear-active`
 

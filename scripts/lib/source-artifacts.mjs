@@ -30,7 +30,13 @@
  */
 export const EPIC_SOURCE_ARTIFACTS = [
   { key: "planPath", flag: "plan", label: "plan" },
-  // #92 (epic↔spec association) adds: { key: "specPath", flag: "spec", label: "spec" }
+  // #92 (epic↔spec association). The row above is ONE-TO-ONE in practice — a plan produces an
+  // epic — and this one is deliberately MANY-TO-ONE: a design document too large for a single
+  // implementation plan enumerates N chunks, every one of which names this same path. That is
+  // the whole missing concept #92 reports, and it is why `artifactClaimants()` exists below
+  // beside the first-claimant-wins map: "which epic claims this?" and "how many epics cover
+  // this?" are different questions and only the second one is #93's.
+  { key: "specPath", flag: "spec", label: "spec" },
 ];
 
 /** One artifact path, in the single form every comparison uses: repo-relative, forward slashes,
@@ -55,11 +61,30 @@ export function normalizeArtifactPath(p) {
  */
 export function claimedSourceArtifacts(state) {
   const out = new Map();
+  for (const [p, claims] of artifactClaimants(state)) out.set(p, claims[0]);
+  return out;
+}
+
+/** Every source-artifact path any epic claims → EVERY epic that claims it, in registration order.
+ *
+ *  The COUNTING enumerator, and the reason it is a second function rather than a widening of
+ *  claimedSourceArtifacts(): that map answers "name an epic that claims this", which is all a
+ *  sync skip message needs, and it discards every claimant after the first. `specPath` is
+ *  many-to-one by construction (#92: one design document, six implementation chunks), so
+ *  "how many epics cover this document?" — #93's entire question — is unanswerable from a
+ *  first-wins map. Deriving the first-wins map FROM this one is what keeps the two from
+ *  drifting: there is one walk of the family table, not two.
+ *
+ *  Status-blind and lane-blind for the same reasons documented on claimedSourceArtifacts():
+ *  an archived epic for chunk 1 IS coverage of chunk 1, and a coverage report that only
+ *  believed live epics would call a finished design uncovered. */
+export function artifactClaimants(state) {
+  const out = new Map();
   for (const e of (state && state.epics) || []) {
     if (!e || typeof e !== "object") continue;
-    for (const { key, label } of EPIC_SOURCE_ARTIFACTS) {
-      const p = normalizeArtifactPath(e[key]);
-      if (p && !out.has(p)) out.set(p, { epic: e.id, key, label });
+    for (const { path: p, key, label } of epicSourceArtifacts(e)) {
+      if (!out.has(p)) out.set(p, []);
+      out.get(p).push({ epic: e.id, key, label });
     }
   }
   return out;
@@ -128,9 +153,9 @@ export function unignoreArtifact(state, p) {
  *  by neither — never by one of them. */
 export function epicSourceArtifacts(epic) {
   const out = [];
-  for (const { key, label } of EPIC_SOURCE_ARTIFACTS) {
+  for (const { key, flag, label } of EPIC_SOURCE_ARTIFACTS) {
     const p = normalizeArtifactPath(epic && epic[key]);
-    if (p) out.push({ path: p, key, label });
+    if (p) out.push({ path: p, key, flag, label });
   }
   return out;
 }
@@ -146,15 +171,21 @@ export function claimArtifacts(state, epic) {
   return cleared;
 }
 
-/** Tombstone every artifact these epics claim, because they are being removed. Returns the
- *  paths recorded. Takes the LIST, not one epic, so `remove-epic --cascade` cannot cover the
- *  named epic and leave its descendants' artifacts registerable — the absent-sibling-edit
- *  defect this repository audits itself for. */
+/** Tombstone every artifact these epics claim, because they are being removed. Takes the LIST,
+ *  not one epic, so `remove-epic --cascade` cannot cover the named epic and leave its
+ *  descendants' artifacts registerable — the absent-sibling-edit defect this repository audits
+ *  itself for.
+ *
+ *  Returns `{path, flag}` per recorded artifact rather than a bare path, because the caller's
+ *  message is an INSTRUCTION — "attach it to an epic to un-ignore it" — and an instruction has
+ *  to name the flag that writes THAT field. It said `--plan` unconditionally while the family
+ *  held one row; the second row made it wrong, and a caller that has to remember which field a
+ *  path came from is the enumeration this module exists to remove. */
 export function tombstoneArtifacts(state, epics, reason) {
   const recorded = [];
   for (const e of epics) {
-    for (const { path: p } of epicSourceArtifacts(e)) {
-      if (ignoreArtifact(state, p, { epic: e.id, reason })) recorded.push(p);
+    for (const { path: p, flag } of epicSourceArtifacts(e)) {
+      if (ignoreArtifact(state, p, { epic: e.id, reason })) recorded.push({ path: p, flag });
     }
   }
   return recorded;

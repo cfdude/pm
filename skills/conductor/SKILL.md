@@ -446,6 +446,12 @@ it waits on.
   that does not reach the commits it cites, an archive directory with no epic). It reports every
   check with its count including zeros, writes no state, blocks nothing and repairs nothing: each
   finding's remediation is a command you run.
+- Want to know which DESIGN DOCUMENTS have no epics? `verify-specs` — a read-only inventory of
+  every `.md` under a spec root (default `docs/superpowers/specs/`, `--root` to point elsewhere)
+  with the epics claiming each, plus the epics naming a document that is not on disk. Uncovered
+  is INVENTORY, not a finding: a note or an abandoned sketch legitimately has no epic, so it
+  never speaks up on its own — you run it. Where a document does imply unregistered work, author
+  an `add-many` batch whose entries each carry its `specPath`.
 
 These rules are also installed into the project's `CLAUDE.md` by `/pm:init` — or `AGENTS.md`
 (or `HERMES.md`-chain equivalent) on a repo running a declared non-Claude-Code `--platform` —
@@ -727,9 +733,15 @@ not just one epic.
        removed only the *closing* conflict markers and left the opening `planPath      : repo-relative path to a markdown plan (progress source for superpowers lane,
                 and the epic↔plan ASSOCIATION `sync` dedups on — a plan some epic claims is
                 never registered a second time, whatever the epic's id, lane or status)
+specPath      : repo-relative path to the DESIGN DOCUMENT this epic's work was drawn from
+                (`--spec`, on add-epic/update-epic/add-many). Provenance only — no progress is
+                read from it and no scan registers epics from it — and MANY-TO-ONE by design:
+                a design too large for one plan yields N epics all naming the same document.
+                `verify-specs` reports the coverage that association makes answerable.
 syncIgnore[]  : [{ path, at, removedEpic?, reason? }] — source artifacts `sync` must not
                 register. Written by the removal verb so a removal survives the next sync;
-                cleared by attaching that artifact to an epic (`update-epic --plan <path>`).
+                cleared by attaching that artifact to an epic (`update-epic --plan <path>`,
+                or `--spec` for a design document — the message names the right flag).
                 `removedEpic` is HISTORICAL and dangles by construction — never swept, never
                 reported as a dangling reference. Absent means empty; no migration.
 stories[]     : [{ title, done, disposition? }] — inline progress (highest-priority source).

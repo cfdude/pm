@@ -8,6 +8,98 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.32.0] — 2026-08-27
+
+### Added
+
+- **An epic can record the design document it came from — `--spec` → `specPath` (#92).** Settable
+  on `add-epic`, `update-epic` and as a `specPath` key in an `add-many` batch, so the association
+  is reachable for epics that already exist and not only at creation. Provenance only: no progress
+  is read from it and no scan registers epics from it. It joins `planPath` in the
+  `EPIC_SOURCE_ARTIFACTS` family and therefore inherits `sync`'s claim check, tombstone clearing
+  on claim, and the `remove-epic` tombstone sweep — but it is deliberately **many-to-one**, which
+  `planPath` is not: a design too large for one implementation plan enumerates N chunks and every
+  one of those epics names the same document. That was the missing concept behind a Tier-2 design
+  whose six chunks produced exactly one epic, the other five being found by hand 11 days later
+  after they had blocked every release in between. Scanning a specs directory would not have
+  fixed it — that yields one epic per document, which closes when chunk 1 ships.
+- **`verify-specs` — which design documents have no epics? (#93).** A read-only inventory:
+  for every `.md` file under a spec root (default `docs/superpowers/specs/`, recursive, minus
+  `README`/`INDEX`/`CONTRIBUTING`; `--root <path>` to point elsewhere) it prints how many epics
+  claim it and which ones, then the other half of the set difference — the epics whose `specPath`
+  names a document that is not on disk. Coverage is status-blind, so an archived epic for chunk 1
+  still counts as coverage of chunk 1. It writes no state, repairs nothing, and always exits 0.
+
+  **Deliberately not an `integrity` check.** `integrity`'s unit is a shape that *cannot* be true;
+  a design document with no epic *can* be true and usually is — a note, a reference, an abandoned
+  sketch. Reporting every one as a defect is the noise that got the plan-freshness warning cut
+  back in 0.30.x (it was wrong 7 times out of 8), so this is its own verb in the `verify-*`
+  family, uses none of `integrity`'s finding vocabulary, and never speaks up on its own. An
+  absent root reports **no spec root** rather than zero uncovered: silence and clean must never
+  look the same. Enumerating what a design implies stays with the agent — heading conventions
+  vary too much to parse, and 23 of the 125 deferred items in the survey behind this sat under no
+  heading at all — so the agent authors the `add-many` batch and the engine computes only the
+  difference.
+
+### Fixed
+
+- **A command that merely *mentions* `git commit` no longer nudges (#104).** The `PostToolUse`
+  hook decided a commit had happened by testing the Bash command's TEXT against
+  `/git\s+commit/`, so an `rg` for the phrase, a heredoc writing commit-convention docs, or an
+  `echo` produced an advisory asserting a commit that never happened — repeated noise arguing for
+  bookkeeping in response to an event that did not occur. It now watches HEAD: a small
+  git-ignored watermark (`.conductor/commit-watch.json`) records where HEAD was on **every**
+  Bash call, and the hook speaks only when HEAD has moved AND `git reflog` says the move was a
+  commit (`commit:`, `commit (initial):`, `commit (amend):` — a `checkout`, `reset`, `merge`,
+  `rebase` or `pull` moves a pointer at objects that already existed and is silent).
+- **No AUTO-DETOUR is logged when there is no active epic (#91).** A detour is by definition an
+  interruption of an active epic; with none there was nothing to detour FROM, and the entry
+  carried an empty epic field (`AUTO-DETOUR\t-\t…`) describing an interruption that never
+  happened — then asked the human to hand-clean `detours.log`, the exact hand-editing pm exists
+  to remove. Observed twice in one session against `/pm:upgrade`'s own
+  `chore(pm): upgrade conductor to <ver>` commit. The sibling `DETOUR-COMMIT` branch needed no
+  change: it is already gated on a live detour frame, which is strictly stronger.
+- **Every commit FORM is now noticed, because none of them is parsed.** `git commit -am`,
+  `-F file`, a heredoc, an editor commit with no message flag at all, and a message carrying an
+  escaped quote were each invisible to the `-m "([^"]*)"` capture. The first four produced an
+  empty subject that short-circuited the landed-check — so a REJECTED `-am` commit still wrote a
+  false `DETOUR-COMMIT` line, gh#65's original symptom surviving in a flag form — and the last
+  truncated at the first `\"`, which HEAD then CONTRADICTED, silently suppressing a commit that
+  genuinely landed. On the observed path the subject now comes from the commit itself, so this
+  closes as a class rather than one flag at a time, including flags git has not invented yet.
+
+- **#130 — a mistyped disposition had no correction verb.** An agent-recorded disposition was
+  unreplaceable, so recording `delivered` where `superseded` was meant (or attaching the wrong
+  reason) left hand-editing `.conductor/state.json` as the only route — on the *terminal* record
+  of what happened to a piece of work. `update-epic <id> --status archived --outcome <o>
+  --correct-disposition "<why the recorded one was wrong>"` now corrects it. The ordinary verb
+  still refuses, and its refusal now names the correction route instead of being a dead end.
+
+  A correction is **deliberate** (never reachable by re-running the ordinary verb; refused when
+  there is no agent-recorded disposition to correct), **self-describing** (the flag's value is the
+  justification and is kept on the record as `disposition.correction`), and **non-destructive**
+  (the prior record survives verbatim under `disposition.superseded`, one level deep, exactly as
+  `record-gate-review` caps its own nest). PROJECT.md and the brief render
+  `· corrected (was <prior outcome>)` beside the new outcome, so a correction is distinguishable
+  from an original by anyone reading afterwards. The superseded record's `carriedTo` joins the
+  dangling-epic-reference sweep like every other holder of an epic id.
+
+- **#133 — recording an honest disposition on a backfilled epic reverted its archived task
+  counts.** `isArchiveBackfilled()` asked the DISPOSITION record who registered the epic
+  (`recordedBy: "archive-backfill"`), but the interactive verb replaces the disposition wholesale
+  with an agent's own, which carries no `recordedBy` by design. Registration provenance therefore
+  lived inside the one field whose entire contract is that an agent overwrites it — so a change
+  registered at `2/3` rendered `—` the moment somebody recorded the truth about it. Registration
+  provenance now lives on the EPIC as `registeredBy`, orthogonal to the disposition and untouched
+  by any disposition write.
+
+- **`remove-epic`'s tombstone message named the wrong flag.** It said
+  `update-epic <id> --plan <path>` unconditionally, which was correct while the source-artifact
+  family held one row and wrong the moment it held two — telling an operator to re-attach a design
+  document as a *plan* points that epic's progress source at a file with no checkboxes.
+  `tombstoneArtifacts()` now returns each recorded artifact with the flag that writes its field,
+  and the message names it.
+
 ## [0.31.0] — 2026-08-27
 
 ### Added

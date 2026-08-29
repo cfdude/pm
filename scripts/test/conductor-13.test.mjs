@@ -218,7 +218,8 @@ test("every add-many key the registry declares round-trips through a batch entry
     epics: [{
       id: "full", lane: "claude-code", title: "T", priority: "P1", status: "queued",
       externalId: "JOB-1", externalUrl: "https://example.test/JOB-1",
-      planPath: "docs/superpowers/plans/x.md", links: [], description: "why this epic exists",
+      planPath: "docs/superpowers/plans/x.md", specPath: "docs/superpowers/specs/x-design.md",
+      links: [], description: "why this epic exists",
       externalUpdatedAt: "2026-08-23T09:30:00Z",
       stories: ["a milestone", { title: "one already behind us", done: true }],
     }],
@@ -282,6 +283,7 @@ const EXERCISE = {
   "--review-mode": { args: ["--review-mode", "thorough"], check: (e) => assert.equal(e.reviewMode, "thorough") },
   "--lane": { args: ["--lane", "superpowers"], check: (e) => assert.equal(e.lane, "superpowers") },
   "--plan": { args: ["--plan", "docs/superpowers/plans/p.md"], check: (e) => assert.equal(e.planPath, "docs/superpowers/plans/p.md") },
+  "--spec": { args: ["--spec", "docs/superpowers/specs/d.md"], check: (e) => assert.equal(e.specPath, "docs/superpowers/specs/d.md") },
   "--external-updated-at": { args: ["--external-updated-at", "2026-08-23T09:30:00Z"], check: (e) => assert.equal(e.externalUpdatedAt, "2026-08-23T09:30:00Z") },
   "--description": { args: ["--description", "durable rationale"], check: (e) => assert.equal(e.description, "durable rationale") },
   // A note reads back as an ENTRY, not a string — {at, actor, text}. Asserting on the text
@@ -293,6 +295,20 @@ const EXERCISE = {
   "--outcome": { args: ["--status", "archived", "--outcome", "delivered", "--no-deferrals"], check: (e) => assert.equal(e.disposition.outcome, "delivered") },
   "--reason": { args: ["--status", "archived", "--outcome", "killed", "--reason", "Gate 1 found it unsafe", "--no-deferrals"], check: (e) => assert.equal(e.disposition.reason, "Gate 1 found it unsafe") },
   "--carried-to": { args: ["--status", "archived", "--outcome", "delivered", "--no-deferrals", "--carried-to", "other"], check: (e) => assert.equal(e.disposition.carriedTo, "other") },
+  // --correct-disposition needs a PRIOR agent-recorded disposition to correct, so the setup
+  // records one first. The check asserts BOTH halves — the new outcome and the survival of the
+  // one it superseded — because a check on the new outcome alone would pass against an
+  // implementation that simply overwrote the record, which is the thing this flag must not do.
+  "--correct-disposition": {
+    setup: ["--status", "archived", "--outcome", "delivered", "--no-deferrals"],
+    args: ["--status", "archived", "--outcome", "killed", "--reason", "nothing shipped",
+      "--correct-disposition", "delivered was a typo"],
+    check: (e) => {
+      assert.equal(e.disposition.outcome, "killed");
+      assert.equal(e.disposition.correction, "delivered was a typo");
+      assert.equal(e.disposition.superseded.outcome, "delivered");
+    },
+  },
   "--no-deferrals": { args: ["--status", "archived", "--outcome", "delivered", "--no-deferrals"], check: (e) => assert.deepEqual(e.deferralAssertion.deferrals, []) },
   "--deferral": { args: ["--status", "archived", "--outcome", "delivered", "--deferral", "other:design.md § Risks"], check: (e) => assert.deepEqual(e.deferralAssertion.deferrals, [{ epic: "other", section: "design.md § Risks" }]) },
   "--declined-deferral": { args: ["--status", "archived", "--outcome", "delivered", "--declined-deferral", "a second zero-fall-through fix:not worth the schema"], check: (e) => assert.deepEqual(e.deferralAssertion.declined, [{ what: "a second zero-fall-through fix", reason: "not worth the schema" }]) },
