@@ -196,6 +196,21 @@ export function commitFiles(cwd, files, message) {
   execFileSync("git", ["add", "-A"], { cwd });
   execFileSync("git", ["commit", "-q", "-m", message], { cwd });
 }
+/** State with an ACTIVE epic and no detour — the precondition of the AUTO-DETOUR heuristic.
+ *
+ *  gh#91: a detour is an interruption of an active epic, so with none there is nothing to detour
+ *  FROM and nothing is logged. Every auto-detour fixture therefore has to set one, INCLUDING the
+ *  negative ones: without an active epic they pass because the gh#91 guard refuses, never
+ *  reaching the diff-shape rule each of them claims to be testing.
+ *
+ *  Call it BEFORE gitRepo(), so the state lands in the baseline commit and the commit under test
+ *  still touches only the files it names. */
+export function autoDetourState(cwd, id = "epic-a") {
+  writeState(cwd, {
+    version: 1, active: id, detourStack: [],
+    epics: [{ id, title: id, priority: "P1", status: "in-progress", role: "epic", lane: "claude-code", links: [], reconcileNeeded: false }],
+  });
+}
 export function detourLog(cwd) {
   try { return fs.readFileSync(path.join(cwd, ".conductor", "detours.log"), "utf8"); }
   catch { return ""; }

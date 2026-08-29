@@ -12,6 +12,7 @@ import { render } from "./render.mjs";
 import { writeRules } from "./rules.mjs";
 import { buildBrief } from "./briefing.mjs";
 import { appendDetourLog, gitShortSha } from "./git.mjs";
+import { observeCommit } from "./commit-watch.mjs";
 import { detourContext } from "./links.mjs";
 import { activeChangeIds, archivedChanges, firstHeading, planFiles, reconcileArchived, strippedChangeId } from "./epic-progress.mjs";
 import { claimedSourceArtifacts, epicSourceArtifacts, normalizeArtifactPath, syncIgnoredArtifacts } from "./source-artifacts.mjs";
@@ -38,6 +39,10 @@ export function ensureGitignore() {
     // exactly, in the release that fixes #106's sibling. upgrade() re-runs this
     // (migrations.mjs:71), so repos initialized before the latch existed pick it up.
     ".conductor/write-conflicts.latch",
+    // The commit-nudge HEAD watermark (commit-watch.mjs). Engine-written on every Bash tool
+    // call and per-checkout by nature — a worktree has its own HEAD — so tracking it would be
+    // a merge conflict per commit as well as #106's untracked-file complaint.
+    ".conductor/commit-watch.json",
   ];
   const giPath = path.join(ROOT, ".gitignore");
   let existing = "";
@@ -119,13 +124,29 @@ export function headSubject() {
  *  epics, re-rendering) touches only these, never a stray detour. CLAUDE.md is deliberately
  *  excluded: it's user-authored content, not purely engine-generated output, so a commit
  *  touching it could still be a real detour. */
-const CONDUCTOR_OWN_FILES = new Set([".conductor/state.json", "PROJECT.md", ".conductor/render-stamp.json"]);
+const CONDUCTOR_OWN_FILES = new Set([
+  ".conductor/state.json", "PROJECT.md", ".conductor/render-stamp.json",
+  // Belt-and-braces: ensureGitignore() ignores the watermark, so it cannot normally appear in a
+  // diff. It can in a repo that force-added it before the ignore existed, and a bookkeeping-only
+  // commit must not stop looking like bookkeeping because an engine-written cache rode along.
+  ".conductor/commit-watch.json",
+]);
 
 /** Diff-shape heuristic for an UNLOGGED minimal detour: a small, self-contained commit
  *  (<=3 files) whose subject uses a fix/chore conventional-commit prefix, made while no
  *  detour is active, and that does not itself name the currently active epic (a commit
  *  tagged to the active epic's own scope is that epic's work, not a stray detour). */
 export function looksLikeUnloggedMinimalDetour(subject, activeEpicId) {
+  // gh#91: a detour is BY DEFINITION an interruption of an active epic. With no active epic
+  // there is nothing to detour FROM, and the entry this used to write carried an empty epic
+  // field (`AUTO-DETOUR\t-\t…`) describing an interruption that never happened — then asked the
+  // human to hand-clean detours.log, the exact hand-editing pm exists to remove. Observed twice
+  // in one session on `/pm:upgrade`'s own `chore(pm): upgrade conductor to <ver>` commit.
+  //
+  // Only THIS branch needs the guard. The sibling DETOUR-COMMIT branch at the call site is gated
+  // on detourContext(state).active, which is the strictly stronger condition — a live detour
+  // frame implies a paused epic — so the asymmetry is deliberate, not an omission.
+  if (!activeEpicId) return false;
   if (!/^(fix|chore)(\([^)]*\))?:\s/.test(subject)) return false;
   if (activeEpicId && subject.includes(`(${activeEpicId})`)) return false;
   const files = headChangedFiles();
@@ -142,12 +163,49 @@ export function commitNudge() {
     const j = JSON.parse(raw);
     cmd = j?.tool_input?.command || j?.tool_input?.cmd || "";
   } catch { /* ignore */ }
-  if (!/git\s+commit/.test(cmd)) return; // only react to commits
+  // OBSERVE FIRST, and unconditionally. observeCommit() records where HEAD is on EVERY
+  // invocation — including this one, whatever it decides — so the watermark tracks HEAD rather
+  // than tracking "the last command that mentioned a commit". Gating the observation behind the
+  // text check below would leave a `git checkout` invisible to the watermark, and would make
+  // gh#104's own repro (`echo "… git commit …"`) the only thing that ever primed it.
+  const obs = observeCommit();
+  if (obs.verdict === "no-commit") return;   // HEAD says nothing landed here. Assert nothing.
 
   const state = loadState();
   const ctx = detourContext(state);
-  const m = cmd.match(/-m\s+(?:"([^"]*)"|'([^']*)'|(\S+))/);
-  const rawSubject = (m && (m[1] || m[2] || m[3])) || "";
+
+  // The observed path needs no parser at all: the subject comes from the commit itself, which is
+  // what closes `-am` / `-F` / editor commits / escaped quotes as a class rather than one flag
+  // form at a time.
+  const subject = obs.verdict === "landed"
+    ? (headSubject() || "")
+    : unverifiableSubject(cmd);
+  if (subject === null) return;              // unverifiable rung, and the old heuristic said no
+
+  // ── everything below is shared by both rungs ──
+  runNudge(state, ctx, subject);
+}
+
+/** The pre-observation heuristic, kept intact for the UNVERIFIABLE rung only: no git, no
+ *  repository, reflogs disabled, or no watermark recorded yet (the first hook run in a repo).
+ *  Returns the subject to act on, or null for "do not nudge".
+ *
+ *  Keeping it matters for one behaviour that must not be lost: commit-nudge's archived-epic
+ *  self-heal has to run in a repo with no git at all, where nothing can ever be observed. */
+function unverifiableSubject(cmd) {
+  if (!/git\s+commit/.test(cmd)) return null;
+
+  // `-m`, and also `-am` / `-qm` / any bundled short-flag cluster ending in m: the old
+  // `-m\s+` capture matched none of those, so `git commit -am "…"` parsed to "" and slipped past
+  // the guard below on the empty-subject short-circuit — a REJECTED -am commit still wrote a
+  // false DETOUR-COMMIT line, which is gh#65's original symptom surviving in a flag form.
+  // `--amend` cannot match: the cluster must be followed by whitespace immediately after its m.
+  const m = cmd.match(/(?:^|\s)--?[A-Za-z]*m\s+(?:"((?:[^"\\]|\\.)*)"|'([^']*)'|(\S+))/);
+  // Backslash-aware capture, then unescaped: `[^"]*` truncated at the first \" inside a
+  // double-quoted message, so `-m "fix: say \"hi\""` captured `fix: say \` — which HEAD then
+  // CONTRADICTS, silently suppressing a commit that genuinely landed. Only \ " $ and ` are
+  // special inside shell double quotes, so those are the escapes to undo.
+  const rawSubject = (m && (m[1] ?? m[2] ?? m[3]) || "").replace(/\\(["\\$`])/g, "$1");
 
   // `git log -1 --format=%s` yields ONLY the first line, but the `-m` capture above uses
   // [^"]* which spans newlines and swallows the whole message body. Comparing those two
@@ -178,18 +236,20 @@ export function commitNudge() {
   //     untouched, but gitShortSha()/headChangedFiles() both read ROOT and so attribute
   //     that commit to this repo                                           (gh#65 bug 2)
   //
-  // All three reduce to one question: does HEAD in ROOT hold the commit we just parsed?
-  // Comparing SHAs would need a stored baseline; the subject is already in hand. Note an
-  // exit-code check would NOT cover the backgrounded case — there is no exit code yet.
-  //
-  // Three-state on purpose. Only CONTRADICTED (a subject was parsed, git works, and HEAD
-  // disagrees) means "no commit landed here" and goes silent. UNVERIFIABLE -- no `-m` to
-  // parse, git unusable here, or a shell-assembled message we cannot read -- keeps the
-  // previous behaviour, because the archived-epic self-heal below must still run in a repo
-  // with no git at all, and because guessing wrong here silently disables the whole hook.
+  // observeCommit() now answers all three directly and without a subject — this subject-vs-HEAD
+  // comparison is what is left for the rung where nothing can be observed. It stays a
+  // SUPPRESSION-ONLY test: only CONTRADICTED (a subject was parsed, git works here, and HEAD
+  // disagrees) goes silent. A subject we could not read is "cannot tell", which keeps the old
+  // behaviour, because guessing wrong here silently disables the whole hook.
   const head = headSubject();
-  if (!shellBuilt && subject && head !== null && head !== subject) return;
+  if (!shellBuilt && subject && head !== null && head !== subject) return null;
+  return subject;
+}
 
+/** Log the commit, self-heal an archived active pointer, re-render, and emit the advisory.
+ *  Reached only once a commit is believed to have landed — by observation, or by the fallback
+ *  heuristic above. */
+function runNudge(state, ctx, subject) {
   // DETERMINISTIC: if we are inside a detour, record this commit in the trail.
   let autoLogged = false;
   if (ctx.active) {
@@ -198,7 +258,9 @@ export function commitNudge() {
     // AUTO-DETECT: this commit's shape looks like a minimal detour nobody logged via
     // `/pm:detour --minimal`. Log it automatically instead of relying on the agent to
     // remember — the whole point of this heuristic.
-    appendDetourLog("AUTO-DETOUR", state.active || "-", subject);
+    // No `|| "-"` fallback any more: looksLikeUnloggedMinimalDetour refuses without an active
+    // epic (gh#91), so the placeholder that used to stand in for one can no longer be reached.
+    appendDetourLog("AUTO-DETOUR", state.active, subject);
     autoLogged = true;
   }
   // Self-heal: if this commit archived the active epic (e.g. an OpenSpec archive),

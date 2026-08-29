@@ -26,7 +26,7 @@
     ],
     "PostToolUse": [
       {
-        "comment": "PM CONDUCTOR: After a git commit, re-render the index and nudge to update epic status / pop a finished detour. Non-blocking.",
+        "comment": "PM CONDUCTOR: Fires on EVERY Bash call by design — commit-nudge decides whether a commit happened by OBSERVING the repo (a HEAD watermark plus the reflog action), not by reading the command text, so it must see every call to keep the watermark truthful. It re-renders the index and nudges to update epic status / pop a finished detour only when a commit actually landed. Non-blocking, and silent in projects that have not run /pm:init.",
         "matcher": "Bash",
         "hooks": [
           {
