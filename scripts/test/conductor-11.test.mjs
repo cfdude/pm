@@ -4,7 +4,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { tmpRepo, run, writeState, gitRepo, commitFiles, detourLog } from "./helpers.mjs";
+import { tmpRepo, run, writeState, gitRepo, commitFiles, detourLog, autoDetourState } from "./helpers.mjs";
 
 // ───────── gh#65 / gh#68: the auto-detour hook must confirm a commit actually landed HERE ─────────
 // PostToolUse fires when the Bash tool RETURNS, which is not the same as "a commit landed in
@@ -30,7 +30,15 @@ import { tmpRepo, run, writeState, gitRepo, commitFiles, detourLog } from "./hel
  *  assertions were therefore passing on the file-count rule, not on the guard at all.
  *
  *  So: first make HEAD genuinely auto-log-eligible (one file, chore-prefixed), and only then
- *  assert suppression. Finally land the real subject to prove the fixture can log. */
+ *  assert suppression. Finally land the real subject to prove the fixture can log.
+ *
+ *  Two later additions this fixture now also depends on. (1) autoDetourState() at each call
+ *  site: gh#91 made an ACTIVE EPIC a precondition of AUTO-DETOUR, so without one the positive
+ *  control cannot log and the negative assertion goes back to being vacuous. (2) The two
+ *  invocations exercise DIFFERENT rungs of commit-nudge, deliberately: the first runs before any
+ *  HEAD watermark exists, so it is the cold-start fallback (subject-vs-HEAD parsing) suppressing
+ *  the entry; the second runs with the watermark this call recorded, so it is observation
+ *  (HEAD moved + the reflog says commit) that lets the real commit through. */
 function assertSuppressedThenLands(cwd, command, subject) {
   // Make HEAD auto-log ELIGIBLE with a subject different from the one under test, so that
   // without the guard the hook really would write a (wrong) entry.
@@ -48,7 +56,7 @@ function assertSuppressedThenLands(cwd, command, subject) {
 }
 
 test("commit-nudge does not log when the commit was rejected and never landed (gh#65)", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd }); gitRepo(cwd);
+  const cwd = tmpRepo(); run(["init"], { cwd }); autoDetourState(cwd); gitRepo(cwd);
   // HEAD is "chore: baseline". The rejected commit never became an object.
   assertSuppressedThenLands(cwd,
     'git commit -m "fix: rejected by pre-commit, never landed"',
@@ -56,7 +64,7 @@ test("commit-nudge does not log when the commit was rejected and never landed (g
 });
 
 test("commit-nudge does not log when the commit is still running in the background (gh#68)", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd }); gitRepo(cwd);
+  const cwd = tmpRepo(); run(["init"], { cwd }); autoDetourState(cwd); gitRepo(cwd);
   // Same observable state as a rejected commit: the hook fires while `git commit` is still
   // running, so HEAD has not advanced yet and still holds "chore: baseline".
   assertSuppressedThenLands(cwd,
@@ -65,7 +73,7 @@ test("commit-nudge does not log when the commit is still running in the backgrou
 });
 
 test("commit-nudge does not attribute a commit that landed in a DIFFERENT repo (gh#65 bug 2)", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd }); gitRepo(cwd);
+  const cwd = tmpRepo(); run(["init"], { cwd }); autoDetourState(cwd); gitRepo(cwd);
   // A separate repo standing in for a paired repo / submodule. Note gitRepo() cannot be used
   // here: it assumes /pm:init already scaffolded files, and its baseline commit throws
   // ("nothing to commit") in the empty dir tmpRepo() returns.
@@ -113,7 +121,7 @@ test("commit-nudge does not log a DETOUR-COMMIT when the commit never landed (gh
 });
 
 test("commit-nudge still logs a genuine landed commit (the guard must not silence the real case)", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd }); gitRepo(cwd);
+  const cwd = tmpRepo(); run(["init"], { cwd }); autoDetourState(cwd); gitRepo(cwd);
   commitFiles(cwd, { "a.txt": "1" }, "fix: a real landed detour");
   run(["commit-nudge"], { cwd, input: JSON.stringify({
     tool_input: { command: 'git commit -m "fix: a real landed detour"' } }) });
@@ -129,7 +137,7 @@ test("commit-nudge still logs a genuine landed commit (the guard must not silenc
 // because every positive control here used a single-line -m.
 
 test("commit-nudge still logs a landed commit whose message has a BODY (C1)", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd }); gitRepo(cwd);
+  const cwd = tmpRepo(); run(["init"], { cwd }); autoDetourState(cwd); gitRepo(cwd);
   const subject = "fix: a landed detour with a body";
   const message = `${subject}\n\nSome explanatory body.\nClaude-Session: https://example.com/x`;
   commitFiles(cwd, { "a.txt": "1" }, message);
@@ -141,7 +149,7 @@ test("commit-nudge still logs a landed commit whose message has a BODY (C1)", ()
 });
 
 test("commit-nudge does not suppress a -F commit, which has no -m to parse at all (C1)", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd }); gitRepo(cwd);
+  const cwd = tmpRepo(); run(["init"], { cwd }); autoDetourState(cwd); gitRepo(cwd);
   commitFiles(cwd, { "a.txt": "1" }, "fix: built by a heredoc");
   // NOTE this reaches the unverifiable rung via the EMPTY-SUBJECT branch, not via shellBuilt --
   // `-F -` has no `-m`, so the regex never matches. Named accordingly after a review found the
@@ -154,7 +162,7 @@ test("commit-nudge does not suppress a -F commit, which has no -m to parse at al
 });
 
 test("commit-nudge treats a heredoc-assembled -m message as UNVERIFIABLE via shellBuilt (C1)", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd }); gitRepo(cwd);
+  const cwd = tmpRepo(); run(["init"], { cwd }); autoDetourState(cwd); gitRepo(cwd);
   commitFiles(cwd, { "a.txt": "1" }, "fix: assembled by a command substitution");
   // This IS the shellBuilt path: there is a -m, and what it captures is shell source rather
   // than the text git received. HEAD holds a different string, so without shellBuilt this
@@ -166,7 +174,7 @@ test("commit-nudge treats a heredoc-assembled -m message as UNVERIFIABLE via she
 });
 
 test("commit-nudge treats -m \"$(...)\" as UNVERIFIABLE rather than a mismatch (C1)", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd }); gitRepo(cwd);
+  const cwd = tmpRepo(); run(["init"], { cwd }); autoDetourState(cwd); gitRepo(cwd);
   commitFiles(cwd, { "a.txt": "1" }, "fix: from a subshell");
   const out = run(["commit-nudge"], { cwd, input: JSON.stringify({
     tool_input: { command: 'git commit -m "$(cat /tmp/msg.txt)"' } }) });
@@ -175,7 +183,7 @@ test("commit-nudge treats -m \"$(...)\" as UNVERIFIABLE rather than a mismatch (
 });
 
 test("a trailing space in -m does not suppress a landed commit (C1)", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd }); gitRepo(cwd);
+  const cwd = tmpRepo(); run(["init"], { cwd }); autoDetourState(cwd); gitRepo(cwd);
   commitFiles(cwd, { "a.txt": "1" }, "fix: trailing space case");
   run(["commit-nudge"], { cwd, input: JSON.stringify({
     tool_input: { command: 'git commit -m "fix: trailing space case "' } }) });

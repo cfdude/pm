@@ -4,7 +4,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { tmpRepo, run, readState, writeState, gitRepo, commitFiles, detourLog, nudgeAndReadLog } from "./helpers.mjs";
+import { tmpRepo, run, readState, writeState, gitRepo, commitFiles, detourLog, nudgeAndReadLog, autoDetourState } from "./helpers.mjs";
 
 // ─────────────── honcho-memory: push/pop ready-to-copy line ───────────────
 
@@ -48,7 +48,7 @@ test("honcho-memory rejects an unknown action", () => {
 });
 
 test("commit-nudge auto-logs a minimal detour for a small fix commit with no active detour", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd }); gitRepo(cwd);
+  const cwd = tmpRepo(); run(["init"], { cwd }); autoDetourState(cwd); gitRepo(cwd);
   commitFiles(cwd, { "a.txt": "1" }, "fix: correct off-by-one in renderer");
   run(["commit-nudge"], { cwd, input: JSON.stringify({ tool_input: { command: 'git commit -m "fix: correct off-by-one in renderer"' } }) });
   const log = detourLog(cwd);
@@ -57,13 +57,13 @@ test("commit-nudge auto-logs a minimal detour for a small fix commit with no act
 });
 
 test("commit-nudge does not auto-log a large commit (more than 3 files)", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd }); gitRepo(cwd);
+  const cwd = tmpRepo(); run(["init"], { cwd }); autoDetourState(cwd); gitRepo(cwd);
   commitFiles(cwd, { "a.txt": "1", "b.txt": "1", "c.txt": "1", "d.txt": "1" }, "fix: sweeping cleanup");
   assert.doesNotMatch(nudgeAndReadLog(cwd, 'git commit -m "fix: sweeping cleanup"'), /AUTO-DETOUR/);
 });
 
 test("commit-nudge does not auto-log a commit without a fix/chore conventional-commit prefix", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd }); gitRepo(cwd);
+  const cwd = tmpRepo(); run(["init"], { cwd }); autoDetourState(cwd); gitRepo(cwd);
   commitFiles(cwd, { "a.txt": "1" }, "feat: add new widget");
   assert.doesNotMatch(nudgeAndReadLog(cwd, 'git commit -m "feat: add new widget"'), /AUTO-DETOUR/);
 });
@@ -98,18 +98,30 @@ test("commit-nudge does not auto-log a commit already inside a detour (existing 
 });
 
 test("commit-nudge does not auto-log a routine conductor-bookkeeping commit touching only its own state-output files", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd }); gitRepo(cwd);
+  const cwd = tmpRepo(); run(["init"], { cwd }); autoDetourState(cwd); gitRepo(cwd);
   commitFiles(cwd, {
-    ".conductor/state.json": '{"version":1,"active":null,"detourStack":[],"epics":[]}',
+    // Keeps the ACTIVE epic autoDetourState() set: the committed content is what the hook then
+    // reads back, and gh#91 refuses to auto-log without one — so `active: null` here would make
+    // both of these tests pass on the gh#91 guard rather than on the file-set rule they name.
+    ".conductor/state.json": JSON.stringify({
+      version: 1, active: "epic-a", detourStack: [],
+      epics: [{ id: "epic-a", title: "epic-a", priority: "P1", status: "in-progress", role: "epic", lane: "claude-code", links: [], reconcileNeeded: false }],
+    }),
     "PROJECT.md": "# updated\n",
   }, "chore(pm): register 3 new epics");
   assert.doesNotMatch(nudgeAndReadLog(cwd, 'git commit -m "chore(pm): register 3 new epics"'), /AUTO-DETOUR/);
 });
 
 test("commit-nudge still auto-logs a chore commit that touches a real source file alongside state.json", () => {
-  const cwd = tmpRepo(); run(["init"], { cwd }); gitRepo(cwd);
+  const cwd = tmpRepo(); run(["init"], { cwd }); autoDetourState(cwd); gitRepo(cwd);
   commitFiles(cwd, {
-    ".conductor/state.json": '{"version":1,"active":null,"detourStack":[],"epics":[]}',
+    // Keeps the ACTIVE epic autoDetourState() set: the committed content is what the hook then
+    // reads back, and gh#91 refuses to auto-log without one — so `active: null` here would make
+    // both of these tests pass on the gh#91 guard rather than on the file-set rule they name.
+    ".conductor/state.json": JSON.stringify({
+      version: 1, active: "epic-a", detourStack: [],
+      epics: [{ id: "epic-a", title: "epic-a", priority: "P1", status: "in-progress", role: "epic", lane: "claude-code", links: [], reconcileNeeded: false }],
+    }),
     "some-real-file.mjs": "// fix\n",
   }, "chore: tidy up a helper");
   run(["commit-nudge"], { cwd, input: JSON.stringify({ tool_input: { command: 'git commit -m "chore: tidy up a helper"' } }) });
