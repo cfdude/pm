@@ -118,8 +118,10 @@ lane-routing overrides checked before the generic heuristic (see "Lane routing o
 `reconcileNeeded: true` and cannot be turned off for that case; `set-gate-guard on|off` still
 exists but only gates any future generalization of the hook, not the reconcile-owed check itself
 · `/pm:tracker` make the conductor tracker-aware · `/pm:feedback [bug|feature] "<summary>"`
-file a bug report or feature request for `pm` itself as a GitHub issue on `cfdude/pm` (agent-run
-`gh` calls only — dedups against open issues first, never touches the engine) ·
+file a bug report or feature request for `pm` itself against `cfdude/pm` — writes the report to
+`.conductor/feedback/` first, then `gh issue create` when `gh` is installed AND authenticated
+(deduping against open issues), else a prefilled `issues/new` URL, else `bugs@pm-plugin.dev`;
+`gh` is an OPTIONAL dependency and the command checks for it rather than assuming it (#105) ·
 `/pm:changelog` what changed since your version · `/pm:upgrade` refresh rules + run migrations
 + print the changelog delta.
 

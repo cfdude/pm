@@ -260,3 +260,74 @@ test("gh-131: BOTH hook-write sites reach the shared policy — neither re-imple
       "not be re-implemented at the call site");
   }
 });
+
+// ─────────────────── gh-105: the undeclared `gh` + GitHub-account dependency ───────────────────
+//
+// `/pm:feedback` and the emitted inward tracker-sync step both shell out to `gh`, and neither the
+// README, the install instructions nor the command doc said so. It works for the maintainer — gh
+// installed, logged in, tracker repo their own — and none of those hold for a general user, who
+// gets a bare shell error that explains nothing.
+//
+// The two halves are fixed DIFFERENTLY and deliberately:
+//   * feedback is OUTWARD and has credential-free fallbacks — a prefilled `issues/new` URL needs
+//     no token, no CLI and no account, and attributes the issue to whoever hit the bug;
+//   * inward SYNC is a READ, and anonymous listing does not exist. The only honest fix there is
+//     to declare the dependency and refuse the section rather than report a sync nobody ran.
+// Fixing one and leaving the other is the absent-edit class, so both are asserted here.
+
+test("gh-105: the emitted `gh issue list` step declares its preflight — PRIMARY tracker", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-tracker", "--system", "github-issues", "--repo", "acme/widgets", "--direction", "inward"], { cwd });
+  const out = run(["rules"], { cwd });
+  assert.match(out, /gh issue list --repo acme\/widgets/, "the vendor step must still be emitted");
+  assert.match(out, /command -v gh/, "the emitted step must name the `gh` presence check");
+  assert.match(out, /gh auth status/, "…and the authentication check — installed but logged out is a distinct failure");
+  assert.match(out, /STOP this section/,
+    "an unavailable dependency must stop the section, never silently produce an empty sync");
+});
+
+test("gh-105: the SECONDARY tracker's `gh issue list` step carries the SAME preflight", () => {
+  // The sibling site. It is emitted by a different loop from a different predicate, which is
+  // exactly how a rule lands at one of two sites and looks complete in the diff.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-tracker", "--system", "jira", "--project", "PM", "--direction", "outward"], { cwd });
+  run(["set-tracker", "--system", "github-issues", "--repo", "acme/widgets", "--role", "secondary"], { cwd });
+  const out = run(["rules"], { cwd });
+  const secondary = out.slice(out.indexOf("## Secondary tracker sync"));
+  assert.ok(secondary.length > 200, "the secondary section must still be emitted");
+  assert.match(secondary, /gh issue list --repo acme\/widgets/);
+  assert.match(secondary, /command -v gh/,
+    "the secondary inward step needs the same preflight — the dependency does not depend on the tracker's role");
+  assert.match(secondary, /gh auth status/);
+});
+
+test("gh-105: a non-GitHub tracker gets NO gh preflight — the declaration is vendor-scoped", () => {
+  // Non-vacuity in the other direction: a check that matched everything would pass against an
+  // implementation that pasted the preflight into the vendor-neutral phrasing too.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["set-tracker", "--system", "jira", "--project", "PM", "--direction", "inward"], { cwd });
+  const out = run(["rules"], { cwd });
+  assert.doesNotMatch(out, /command -v gh/,
+    "a jira tracker must not be told to preflight a GitHub CLI it never uses");
+});
+
+test("gh-105: commands/feedback.md declares the dependency and all three channels", () => {
+  const doc = fs.readFileSync(path.join(REPO, "commands", "feedback.md"), "utf8");
+  for (const [what, re] of [
+    ["the presence check", /command -v gh/],
+    ["the auth check", /gh auth status/],
+    ["the local file written before any channel", /\.conductor\/feedback/],
+    ["the prefilled issue form", /issues\/new\?title=/],
+    ["the measured URL ceiling", /~3 ?KB/],
+    ["the email channel", /bugs@pm-plugin\.dev/],
+  ]) {
+    assert.match(doc, re, `commands/feedback.md must document ${what} — it is the whole of #105`);
+  }
+  // The ORDER is the maintainer's ruling and the reverse of the issue body's first proposal:
+  // gh-when-available is preferred, not merely faster.
+  assert.ok(doc.indexOf("command -v gh") < doc.indexOf("issues/new?title="),
+    "the `gh` channel is documented BEFORE the prefilled URL — it is the preferred path when available");
+});

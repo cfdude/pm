@@ -641,9 +641,30 @@ with no `--direction` defaults to `inward` regardless of vendor (see
 <details>
 <summary><code>/pm:feedback</code> — File a bug report or feature request</summary>
 
-`/pm:feedback [bug|feature] "<summary>"` posts directly as a GitHub issue on `cfdude/pm` —
-searches for a near-duplicate first (comments instead of filing a new issue on a match). All
-`gh` calls are agent-invoked; the engine itself never touches GitHub.
+`/pm:feedback [bug|feature] "<summary>"` gets a bug report or feature request to `cfdude/pm`
+through whichever of three channels the machine can actually use. All calls are agent-invoked;
+the engine itself never touches GitHub.
+
+**`gh` and an authenticated GitHub account are an OPTIONAL dependency, not a requirement** (#105).
+The report is written to `.conductor/feedback/` **first**, on every path, so nothing is lost when
+a channel fails. Then, in order of least friction:
+
+| # | Channel | Needs | Notes |
+|---|---------|-------|-------|
+| 1 | `gh issue create` | `gh` installed **and** `gh auth status` clean | Preferred whenever available — no browser, no login, and it dedups against open issues first |
+| 2 | Prefilled `issues/new?title=…&body=…` URL | a browser | No credential touches the plugin, and the issue is attributed to whoever hit the bug. ~6 KB URL ceiling ≈ **~3 KB of raw body**; longer reports are truncated with a pointer to the local file |
+| 3 | `bugs@pm-plugin.dev` | an email client | For users who don't have — or don't want — a GitHub account, so declining GitHub never means losing the feedback |
+
+Both checks are run before any `gh` call, and a missing one is "this channel is unavailable"
+rather than an error. `curl` is not a substitute for channel 1: anonymous issue creation returns
+HTTP 401, and a PAT is strictly worse than `gh` (same account requirement, hand-managed token).
+The dependency was never on the CLI — it is on holding a GitHub credential at all.
+
+The inward **tracker sync** (`/pm:sync` against a `github-issues` tracker) also needs `gh` plus
+an authenticated account, and unlike feedback it has no credential-free fallback: listing issues
+is a read, and anonymous listing is not available. The emitted rules block now states that
+preflight and tells the agent to STOP that section rather than report a sync it could not
+perform.
 
 The CLAUDE.md rules block includes an unconditional "Feedback" section encouraging the agent
 to use this proactively — file a bug/limitation/friction point (or ask "want me to file this
