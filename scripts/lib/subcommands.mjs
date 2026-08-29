@@ -19,6 +19,7 @@ import { claimedSourceArtifacts, epicSourceArtifacts, normalizeArtifactPath, syn
 import { ARCHIVE_BACKFILL, engineStamp } from "./disposition.mjs";
 import { ROOT, CONDUCTOR_DIR, BRIEF_PATH, PLANS_DIR, anyInwardProcedureEmittable } from "./constants.mjs";
 import { resolveAndRecordPlatform } from "./platform.mjs";
+import { saveHookHeal } from "./hook-write.mjs";
 
 /** Ensure the conductor's GENERATED artifacts are git-ignored.
  *
@@ -270,15 +271,15 @@ function runNudge(state, ctx, subject) {
   // same RETRY ONCE, THEN SKIP treatment: a conflict here is a self-heal that re-runs on the
   // next hook, so losing it costs nothing — while the default onConflict:"throw" turns an
   // invisible race into a visible mid-session exit-9 error for a write that did not matter.
-  // The retry reloads and RE-RUNS reconcileArchived rather than re-attempting the same write:
-  // the in-hand `state` is built on a revision another writer has already superseded, so
-  // writing it again would clobber exactly what the guard exists to protect.
+  // The policy itself is lib/hook-write.mjs's saveHookHeal() — SHARED with render.mjs, not
+  // copied from it (#131). This site is also the one that cannot be verified end to end:
+  // render() is called two lines below and its heal is idempotent, so from outside a single
+  // invocation the retry running and the retry being absent are indistinguishable — identical
+  // final state, identical revision, identical conflict log. That cover is what let the retry
+  // go untested at both sites for six releases, so a source scan in conductor-25 binds this
+  // site to the shared policy instead.
   if (reconcileArchived(state)) {
-    const first = saveState(state, { onConflict: "skip", verb: "commit-nudge" });
-    if (!first.ok) {
-      const fresh = loadState();
-      if (reconcileArchived(fresh)) saveState(fresh, { onConflict: "skip", verb: "commit-nudge" });
-    }
+    saveHookHeal({ state, verb: "commit-nudge", heal: reconcileArchived });
   }
   render();
 

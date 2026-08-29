@@ -4,7 +4,8 @@
 // lib/add-epic.mjs (parseFlags) -- see the design doc.
 
 import fs from "node:fs";
-import { loadState, saveState, readJSON } from "./state.mjs";
+import { loadState, readJSON } from "./state.mjs";
+import { saveHookHeal } from "./hook-write.mjs";
 import { reconcileArchived, resolveEpics, bar, missing, CLAIMED_COMPLETION_NOTE } from "./epic-progress.mjs";
 import { buildBrief } from "./briefing.mjs";
 import { staleMarker } from "./active-pointer.mjs";
@@ -26,17 +27,13 @@ export function render() {
   // throwing would turn an invisible race into a visible mid-session error for a write that did
   // not matter.
   //
-  // RETRY ONCE, THEN SKIP (the ruling). The retry has to reload and RE-RUN the heal rather than
-  // re-attempt the same write: the in-hand state is built on a revision someone else has already
-  // superseded, so writing it again would clobber exactly what the guard exists to protect.
-  // Replay is affordable here and nowhere else — this is one call site with one pure heal, not
-  // the 24-site refactor the design deliberately excluded.
+  // RETRY ONCE, THEN SKIP (the ruling) now lives in lib/hook-write.mjs and is SHARED with the
+  // other site rather than copied into it. #131: the retry was five lines duplicated here and in
+  // commitNudge(), and deleting it from both left all 856 tests green — a later hook's
+  // idempotent heal covers for it, so nothing observed the loss. One function with its own unit
+  // tests, plus a source scan binding both sites to it, is what makes the recovery provable.
   if (reconcileArchived(state)) {
-    const first = saveState(state, { onConflict: "skip", verb: "render" });
-    if (!first.ok) {
-      const fresh = loadState();
-      if (reconcileArchived(fresh)) saveState(fresh, { onConflict: "skip", verb: "render" });
-    }
+    saveHookHeal({ state, verb: "render", heal: reconcileArchived });
   }
   const epics = resolveEpics(state);
   const md = [];
