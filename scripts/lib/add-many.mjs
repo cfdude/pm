@@ -83,6 +83,24 @@ export function addMany() {
         }
       }
     }
+    // #149 at THIS surface. add-many takes no epic flags on argv — its flag surface is the
+    // batch document's KEYS — so the valueless-flag rule arrives here as "a key present with a
+    // value nothing can use". The copy loop below reads `if (typeof v === "string")` and drops
+    // everything else without a word, which is byte-identical to the drop `add-epic --plan`
+    // performed: `{"planPath": true}` and `{"title": "  "}` both exited 0 with the field absent
+    // or unusable. Refused in THIS validation pass, before any epic is constructed, so a batch
+    // with one offender creates none of its entries.
+    //
+    // `links` and `stories` are exempt BY NAME: they are array-valued by design and each has its
+    // own validation (`stories` immediately above, `links` in the copy loop). Naming them is
+    // deliberate — a future array-valued key not listed here is caught by this rule rather than
+    // silently dropped, which is the direction the mistake should fail in.
+    for (const k of Object.keys(e)) {
+      if (!allowedKeys.includes(k) || k === "links" || k === "stories") continue;
+      if (typeof e[k] !== "string" || !e[k].trim()) {
+        die(`epic '${id}': ${k} must be a non-empty string (got ${JSON.stringify(e[k])})`);
+      }
+    }
     if (!e.lane || !KNOWN_LANES.includes(e.lane)) die(`epic '${id}': lane must be one of ${KNOWN_LANES.join("|")}`);
     const status = e.status || "queued";
     if (!KNOWN_STATUSES.includes(status)) die(`epic '${id}': status must be one of ${KNOWN_STATUSES.join("|")}`);

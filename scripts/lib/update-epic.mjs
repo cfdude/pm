@@ -6,7 +6,7 @@ import { KNOWN_LANES, KNOWN_STATUSES, KNOWN_REVIEW_MODES, REVIEW_MODE_RANK, epic
 import { activate } from "./active-pointer.mjs";
 import { globalReviewMode } from "./rules.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
-import { noteEntry, parentError, parseFlags, parseLinkFlags, parseStoryFlags } from "./add-epic.mjs";
+import { noteEntry, parentError, parseFlags, parseLinkFlags, parseStoryFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
 import { archiveGate, AGENT_OUTCOMES } from "./archive-gate.mjs";
 import { deferralAssertion, isStoryDisposed, storyDisposition, storyDispositionError } from "./disposition.mjs";
@@ -85,6 +85,12 @@ export function updateEpic() {
       `(known: ${UPDATE_EPIC_FLAGS.map(k => `--${k}`).join(", ")})\n`);
     process.exit(1);
   }
+  // #149 — every value-bearing flag this command accepts must carry a usable value, read from
+  // the shared registry. It replaces the per-flag checks this command had grown for `--plan`,
+  // `--spec`, `--description` and `--notes` — four of the value-bearing flags it accepts;
+  // `--outcome`, `--reason`, `--carried-to`, `--base-sha` and the rest were never checked here
+  // at all. Before loadState(), so a refusal can leave no partial write.
+  requireFlagValues("update-epic", f);
   const str = (v) => (typeof v === "string" ? v : undefined);
   const state = loadState();
   const epic = state.epics.find(e => e.id === id);
@@ -108,21 +114,13 @@ export function updateEpic() {
   if (f.lane !== undefined && (lane === undefined || !KNOWN_LANES.includes(lane))) {
     process.stderr.write(`conductor: --lane must be one of ${KNOWN_LANES.join("|")}\n`); process.exit(1);
   }
-  // --plan: attach (or repoint) the plan path of an epic created without one. add-epic writes
-  // `f.plan` directly, which stores boolean `true` for a valueless flag; this path refuses that
-  // instead of persisting a planPath nothing can open.
+  // --plan / --spec: attach (or repoint) the plan, and the DESIGN DOCUMENT an epic's work was
+  // drawn from (#92). Written by their own explicit lines because the EPIC_FLAGS row makes this
+  // command ACCEPT the flag and nothing in the registry copies a value onto a key — registering
+  // a row and stopping there is the exit-0-write-nothing shape of #79. Their valueless refusals
+  // moved to requireFlagValues() above, which covers every flag rather than these two.
   const planPath = str(f.plan);
-  if (f.plan !== undefined && planPath === undefined) {
-    process.stderr.write("conductor: --plan requires a value\n"); process.exit(1);
-  }
-  // --spec: attach (or repoint) the DESIGN DOCUMENT an epic's work was drawn from (#92). The
-  // sibling of --plan, and written by its own explicit line for the same reason: the EPIC_FLAGS
-  // row makes this command ACCEPT the flag, and nothing in the registry copies a value onto a
-  // key. Registering the row and stopping there is the exit-0-write-nothing shape of #79.
   const specPath = str(f.spec);
-  if (f.spec !== undefined && specPath === undefined) {
-    process.stderr.write("conductor: --spec requires a value\n"); process.exit(1);
-  }
   // Clearing the links is a NAMED flag, and the valueless `--link` that used to do it by
   // accident is refused. `--link` is repeatable, so `--link` with nothing after it parses as
   // `[true]`; parseLinkFlags filters non-strings away and yields `[]`, which then REPLACED the
@@ -139,12 +137,11 @@ export function updateEpic() {
     }
     links = [];
   } else if (f.link !== undefined) {
-    if (!Array.isArray(f.link) || f.link.some(v => typeof v !== "string")) {
-      process.stderr.write(
-        "conductor: --link requires a \"<type>:<epic>[:<reason>]\" value — to empty an epic's " +
-        "links, say so with --clear-links\n");
-      process.exit(1);
-    }
+    // The "--link requires a value, and --clear-links is the one that empties" refusal that
+    // stood here now lives on the `--link` ROW in EPIC_FLAGS, as its `requires` phrase, and
+    // fires from requireFlagValues() above. Same words, and now on `add-epic` too — which
+    // accepted a valueless `--link`, filtered it to `[]` and created the epic. Keeping a second
+    // copy here would be unreachable code asserting a rule the registry already carries.
     try {
       links = parseLinkFlags(f.link, new Set(state.epics.map(e => e.id)));
     } catch (e) {
@@ -170,13 +167,7 @@ export function updateEpic() {
     }
   }
 
-  // A valueless --description / --notes would be dropped by str() and exit 0 having written
-  // nothing — the #79 shape. Refuse it before any write.
-  for (const flag of ["description", "notes"]) {
-    if (f[flag] === true) {
-      process.stderr.write(`conductor: --${flag} requires a value\n`); process.exit(1);
-    }
-  }
+  // The valueless --description / --notes loop that stood here is requireFlagValues()' job now.
   const description = str(f.description);
   const note = str(f.notes);
 

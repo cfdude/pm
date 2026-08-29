@@ -49,6 +49,15 @@ what makes "which design documents have no epic?" answerable at all; ask it with
 `verify-specs` (see `/pm:status`). `--plan` and `--spec` are independent: an epic may carry
 either, both, or neither.
 
+**Every value-bearing flag is REFUSED when its value is missing or blank, on every command that
+accepts it** — `add-epic`, `update-epic`, `record-gate-review`, `record-cross-spec-review` and
+`release` alike, plus the equivalent key in an `add-many` batch document. `--clear-links`,
+`--no-deferrals` and `--done` are the three flags that legitimately carry no value; everything
+else exits non-zero rather than writing the epic with the field quietly absent. The rule lives on
+the shared flag registry, not in each command, so a flag added tomorrow inherits it. Before this,
+`add-epic --plan` with no value exited 0 and created the epic with no plan attached while
+`update-epic --plan` refused the identical mistake a minute later.
+
 1. Parse the user's request into: id (kebab-case), title, lane (one of
    openspec|superpowers|claude-code|decision|external), priority (P0–P3, default P?),
    optional parent, optional external id/url, optional plan path, optional links.

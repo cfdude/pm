@@ -17,7 +17,7 @@
 
 import { epicFlagsFor, findRelease, releaseLine, releaseSummaries } from "./constants.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
-import { parseFlags } from "./add-epic.mjs";
+import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
 import { releaseDeferral, releaseDeferralError } from "./disposition.mjs";
 import {
@@ -60,6 +60,10 @@ export function release() {
       `(known: ${RELEASE_FLAGS.map(k => `--${k}`).join(", ")})\n`);
     process.exit(1);
   }
+  // #149 — one rule for every value-bearing flag, from the registry. A valueless `--target` or
+  // `--member` was dropped by str()/lastStr() and the release was written without it; only
+  // `--reason` had a check of its own, and only because a deferral demands one.
+  requireFlagValues("release", f);
 
   const state = loadState();
   if (!Array.isArray(state.releases)) state.releases = [];
@@ -188,6 +192,9 @@ export function recordCrossSpecReview() {
       `(known: ${CROSS_SPEC_FLAGS.map(k => `--${k}`).join(", ")})\n`);
     process.exit(1);
   }
+  // #149 — the fifth write surface. A valueless `--reviewer` recorded the cross-spec verdict
+  // with no reviewer identity at all, which is exactly what that field exists to prevent.
+  requireFlagValues("record-cross-spec-review", f);
   const verdict = typeof f.verdict === "string" ? f.verdict : undefined;
   const reviewer = typeof f.reviewer === "string" ? f.reviewer : undefined;
   if (!id || !verdict) {

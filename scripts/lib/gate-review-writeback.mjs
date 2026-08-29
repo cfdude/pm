@@ -4,7 +4,7 @@
 
 import { epicFlagsFor, gateHasEvidence, isOpenspecLane } from "./constants.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
-import { parseFlags } from "./add-epic.mjs";
+import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
 
 const KNOWN_GATE_NUMBERS = ["1", "2"];
@@ -32,6 +32,10 @@ export function recordGateReview() {
       `(known: ${known.map(k => `--${k}`).join(", ")})\n`);
     process.exit(1);
   }
+  // #149 — this command checked NO flag for a value, so a valueless `--reviewer` (and a blank
+  // `--base-sha`) exited 0 with the evidence field simply absent from the recorded verdict.
+  // One rule, read from the same registry the allowlist above is projected from.
+  requireFlagValues("record-gate-review", f);
   const gate = typeof f.gate === "string" ? f.gate : (typeof f.gate === "number" ? String(f.gate) : undefined);
   const verdict = typeof f.verdict === "string" ? f.verdict : undefined;
   // Evidence as FIELDS, never as prose in a note. A recorded `a..b` on an epic that later
