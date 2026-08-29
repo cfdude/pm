@@ -3,7 +3,7 @@
 // link to the detour that may have invalidated it. One-directional dependencies only.
 
 import { isInitialized, loadState, saveState } from "./state.mjs";
-import { parseFlags } from "./add-epic.mjs";
+import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
 
 const KNOWN_RECONCILE_VERDICTS = ["valid", "invalidated"];
@@ -13,6 +13,7 @@ export function recordReconcile() {
   const argv = process.argv.slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
   const f = parseFlags(id ? argv.slice(1) : argv);
+  requireFlagValues("record-reconcile", f);
   const detourId = typeof f.detour === "string" ? f.detour : undefined;
   const verdict = typeof f.verdict === "string" ? f.verdict : undefined;
   if (!id || !detourId || !verdict) {

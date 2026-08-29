@@ -404,11 +404,38 @@ Classifies the interruption as minimal or substantial before doing anything else
 | Flag | Behavior |
 |------|----------|
 | `--minimal "<what you fixed>"` | Fast-path: calls `log-detour` to append to `.conductor/detours.log` and resume. No proposal, no stack entry. |
-| _(none)_ | Substantial: PUSH the current epic onto the detour stack, spin up a new epic in the appropriate lane for the detour. |
+| _(none)_ | Substantial: register a new epic in the appropriate lane for the detour, then PUSH the current one onto the detour stack with `push-detour`. |
+
+**`push-detour` and `pop-detour` are verbs, not hand-edits.** Until 0.35.0 the substantial
+detour's PUSH and POP were a documented hand-edit of `.conductor/state.json` — the state of
+record's most consequential transition performed by the one mechanism the rules block tells
+every agent never to use, with none of the engine's guarantees applied to it.
+
+```bash
+push-detour <parent-epic-id> --detour <detour-epic-id> --reason "<why>" (--reconcile | --no-reconcile)
+pop-detour [<paused-epic-id>]
+```
+
+`push-detour` validates that both epics exist and neither has ended, requires a non-empty reason,
+writes the frame with `reconcileOnResume`, records both protocol links (detour
+`resolves-blocker-for` parent; parent `may-invalidate` detour), activates the detour, and emits
+the Honcho line — all in ONE guarded write, so it inherits the write-conflict guard and the
+read-back verification. **Exactly one of `--reconcile` / `--no-reconcile` is required and there
+is no default**: whether the detour can invalidate the paused epic's plan is a judgment, and a
+default would make an absent decision look like a considered one.
+
+`pop-detour` removes the top frame, resumes the epic, and writes `reconcileNeeded` in the *same*
+write — the frame is gone before reconciliation runs, so a second write would let the
+archive-drift self-heal clear the obligation. The optional epic id is an assertion, not a
+selector: the stack is LIFO, so naming an epic that is not on top is refused. It emits the POP
+Honcho line only when nothing needs reconciling, because "reconciled vs X" is not true until the
+verdict exists.
 
 `honcho-memory <push\|pop> <epicId> "<reason>"` formats the exact ready-to-copy Honcho memory
 line for a PUSH/POP and appends a timestamped copy to `.conductor/honcho-memories.log` — the
-engine only formats and logs the string, it never calls Honcho itself.
+engine only formats and logs the string, it never calls Honcho itself. The detour verbs call it
+for you; it remains available for a pivot recorded after the fact, and for the POP line after a
+reconcile verdict.
 
 </details>
 
@@ -802,6 +829,89 @@ nothing — each finding names the epic, and the remediation is a command you ru
 </details>
 
 <details>
+<summary><code>claim</code> / <code>unclaim</code> / <code>owners</code> — Who owns this epic, and is this repo quiescent?</summary>
+
+For multi-session and multi-repo work. An orchestrator dispatching epics into a sibling repo's
+conductor needs to know whether a session is mid-operation there before it writes, and needs to
+tell *in progress* from *abandoned when a session died*. `state.json` could answer neither.
+
+```bash
+node scripts/conductor.mjs claim   <epic-id> --session <name> [--ttl <minutes>] [--steal]
+node scripts/conductor.mjs claim   --repo    --session <name> [--ttl <minutes>] [--steal]
+node scripts/conductor.mjs unclaim <epic-id> --session <name> [--steal]
+node scripts/conductor.mjs owners  [--json]
+```
+
+`--session` is required; `PM_SESSION` supplies it, and an explicit flag outranks the environment.
+
+**It is advisory, and that word is load-bearing.** `claim` and `unclaim` are the *only* verbs that
+refuse because of a claim — everything else writes to a claimed epic exactly as before. When two
+sessions both claim, the second is told who holds it and until when and **exits non-zero having
+written nothing**; there is no silent-corruption reading because it is not a write. The real
+write race is handled separately, by `state.json`'s revision guard, which `--steal` does not
+touch. A marker nobody honours is worse than none, so exactly one surface refuses: the one whose
+whole job is coordination.
+
+**What expires a claim** is its own stated TTL, recorded on the claim (default 120 min for an
+epic, 30 for the repo marker). Deliberately a TTL rather than a heartbeat: a heartbeat nothing
+beats is `claimedAt` in a costume, and it makes staleness wrong in both directions. Re-claiming as
+the same session extends it. Claiming over an expired claim needs no `--steal` and reports the
+takeover; archiving an epic clears its claim.
+
+**What reports a stale one:** `owners` when asked, and `integrity`'s `advisory-claim-shape` check
+when nobody thinks to ask — which matters, because a stale claim is by construction left by a
+session that is no longer there to ask. `owners` is behaviourally verified read-only, so an
+orchestrator can point it at a repo it does not own.
+
+The repo-level "some session is mid-operation here" marker lives in a git-ignored sidecar,
+`.conductor/session-claim.json`, not in `state.json` — it answers *is it safe to write to
+`state.json`*, so putting it in the file it is worried about would invert its purpose. Release it
+when you are done touching the conductor, which is strictly later than when the work is done.
+
+</details>
+
+<details>
+<summary><code>activity</code> / <code>set-activity-log</code> / <code>purge-logs</code> — What did this conductor actually do?</summary>
+
+`state.json` is a snapshot of the present. It cannot answer a single question about *how* a
+project got there. **Off by default**; on in the maintainer's repos.
+
+```bash
+node scripts/conductor.mjs set-activity-log on|off
+node scripts/conductor.mjs activity [--since <iso>] [--epic <id>] [--json]
+node scripts/conductor.mjs purge-logs [--kind activity|conflicts|detours|all] [--keep <n>] \
+                                      [--over <size>] [--older-than <days>] [--dry-run] [--yes]
+```
+
+**The reader ships with the writer — that was the condition, not a nicety.** A log nothing reads
+is a data graveyard: write-path complexity, rotation, retention and a purge CLI all paid
+immediately, for a benefit that stays speculative. So every section `activity` prints answers a
+question the feature was filed to answer — time to pickup, detour frequency, lane distribution and
+re-routes, gate verdicts in sequence, and **out-of-band writes**.
+
+That last one is why it earns its overhead. Every event carries the `state.json` revision **range**
+it covers, so a revision the file reached that no event accounts for is a write the engine did not
+make — a hand-edit. That is a gate defeated silently, previously discoverable only by `jq` across
+15 repos, turned into a query. (The range, not a single number, is load-bearing: `update-epic`
+saves twice, and a single-number event would report every ordinary write as a hand-edit.)
+
+Events are **derived** by diffing `state.json` across one invocation, from a single point in the
+engine's dispatch — not emitted by hand from each of the ~25 verbs that write state. A list of emit
+sites typed from memory goes stale the moment a verb is added, and a verb that forgot to emit would
+be invisible in exactly the log built to find invisible things. It is registered on
+`process.on("exit")`, because one mutating verb writes state and then calls `process.exit()`.
+
+Sized rather than guessed: **128 KB segments** (≈680 events ≈ 37k tokens — a segment must be fully
+readable in one pass), named `activity-<ISO start>.log` so retention and `--since` are answerable
+from the filename without opening a file, and **1 GB total per project**, oldest first, pruned at
+the rotation boundary only. `.conductor/activity/` is git-ignored by `init` and by `upgrade`.
+
+`purge-logs` refuses to guess twice: with no selector it removes nothing, and without `--yes` it
+prints the plan and removes nothing.
+
+</details>
+
+<details>
 <summary><code>verify-specs</code> — Which design documents have no epics?</summary>
 
 An epic can record the **design document** its work was drawn from: `--spec <path>` →
@@ -894,7 +1004,7 @@ that used to be safe fails CI rather than someone else's checkout.
 
 | Effect | Verbs |
 |--------|-------|
-| **read-only** — safe against a repo you do not own | `brief` · `changelog` · `changesets` · `gate-guard` · `integrity` · `lesson-advice` · `plan-hierarchy` · `rules` · `rules-target` · `suggest-lane` · `triage` · `verify-specs` · `verify-state` · `verify-worktrees` |
+| **read-only** — safe against a repo you do not own | `activity` · `brief` · `changelog` · `changesets` · `gate-guard` · `integrity` · `lesson-advice` · `owners` · `plan-hierarchy` · `rules` · `rules-target` · `suggest-lane` · `triage` · `verify-specs` · `verify-state` · `verify-worktrees` |
 | **mutates** — writes `state.json`, `PROJECT.md`, `CLAUDE.md`, or a `.conductor/` log | everything else, including `render`, `snapshot`, `sync`, `commit-nudge`, `upgrade`, `write-rules`, and every `add-`/`update-`/`set-`/`record-` verb |
 
 Want the current state without touching anything? Use **`brief`**, not `render`.

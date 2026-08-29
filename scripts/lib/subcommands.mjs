@@ -44,6 +44,16 @@ export function ensureGitignore() {
     // call and per-checkout by nature — a worktree has its own HEAD — so tracking it would be
     // a merge conflict per commit as well as #106's untracked-file complaint.
     ".conductor/commit-watch.json",
+    // #84's repo-level quiescence marker (claims.mjs). Per-checkout and per-session by nature —
+    // it says "THIS session is mid-operation in THIS working tree" — so committing it would
+    // publish one machine's transient state to everybody, on top of #106's untracked-file
+    // complaint. upgrade() re-runs this (migrations.mjs), so repos initialized before the
+    // marker existed pick it up without a MIGRATIONS entry.
+    ".conductor/session-claim.json",
+    // #111's activity segments. The whole DIRECTORY, not a glob of segment names: the names are
+    // timestamped, so a per-file entry would need one line per segment forever. Same #106 rule —
+    // engine-written, per-checkout, and useless to anyone but this working tree.
+    ".conductor/activity/",
   ];
   const giPath = path.join(ROOT, ".gitignore");
   let existing = "";
@@ -652,6 +662,21 @@ export function honchoMemoryLine(action, epicId, reason) {
   throw new Error(`honchoMemoryLine: unknown action '${action}' (expected 'push' or 'pop')`);
 }
 
+/** Format one memory line, append a timestamped copy to `.conductor/honcho-memories.log`, and
+ *  print it to stdout for the agent to paste into its actual Honcho MCP call. Returns the line.
+ *
+ *  Extracted so `push-detour` and `pop-detour` (lib/detour-stack.mjs) emit the memory as part of
+ *  the transition instead of leaving it as a separate step the agent has to remember — #151's
+ *  "emit the Honcho line rather than asking for it". The log path is module-private here on
+ *  purpose: two writers appending to one file must not each carry their own copy of where it is. */
+export function appendHonchoMemory(action, epicId, reason) {
+  const line = honchoMemoryLine(action, epicId, reason);
+  fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
+  fs.appendFileSync(HONCHO_MEMORIES_LOG, `${new Date().toISOString()}\t${line}\n`);
+  process.stdout.write(line + "\n");
+  return line;
+}
+
 /** `honcho-memory <push|pop> <epicId> "<reason>"` — prints the ready-to-copy Honcho memory
  *  line to stdout (for the interactive agent to paste into its actual Honcho MCP call) AND
  *  appends a timestamped copy to `.conductor/honcho-memories.log`, so there's a durable local
@@ -664,24 +689,19 @@ export function honchoMemory() {
     process.stderr.write("usage: conductor.mjs honcho-memory <push|pop> <epicId> \"<reason>\"\n");
     process.exit(1);
   }
-  let line;
   try {
-    line = honchoMemoryLine(action, epicId, reason);
+    appendHonchoMemory(action, epicId, reason);
   } catch (e) {
     process.stderr.write(`conductor: ${e.message}\n`);
     process.exit(1);
   }
-  fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
-  fs.appendFileSync(HONCHO_MEMORIES_LOG, `${new Date().toISOString()}\t${line}\n`);
-  process.stdout.write(line + "\n");
 
-  // gh#94, at the closest thing to the moment of deferral the engine is invited to. The
-  // substantial-detour PUSH is a hand-edit of state.json (commands/detour.md step 2), so there
-  // is no `push-detour` verb to gate; this verb runs at step 3, immediately after, and is the
-  // one place the engine is handed the paused epic's id. That makes a DISCLOSURE possible and a
-  // gate impossible — which is the honest shape anyway: it states what the record holds and
-  // asks for nothing. Silent on a first deferral, and on stderr, because stdout is a line the
-  // agent pastes into Honcho verbatim.
+  // gh#94's disclosure. `push-detour` (lib/detour-stack.mjs) now emits this at the moment of the
+  // deferral itself, which is where it belongs; this verb keeps it because it stays available on
+  // its own — for a pivot recorded after the fact, or by an agent still following the old
+  // protocol. It states what the record holds and asks for nothing: a gate here would fire after
+  // the decision was already made. Silent on a first deferral, and on stderr, because stdout is
+  // a line the agent pastes into Honcho verbatim.
   if (action === "push") {
     const note = deferralNote(deferralHistory(loadState(), epicId));
     if (note) process.stderr.write(`conductor: \`${epicId}\` — ${note}\n`);

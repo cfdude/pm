@@ -108,7 +108,11 @@ plan/proposal instead — instruction only, nothing recorded)
 `--title`/`--link`/`--add-story "<title>"`/`--story <n> --done` [1-indexed] / `--story <n>
 --wont-do "<reason>"` — closes the hand-edit-of-state.json risk for inline `stories[]`) /
 `remove-epic`
-(hard-delete, `--cascade` for a parent + descendants) · **`set-active <id>` / `clear-active`**
+(hard-delete, `--cascade` for a parent + descendants) ·
+**`push-detour <parent> --detour <id> --reason "<why>" (--reconcile | --no-reconcile)` /
+`pop-detour [<paused-id>]`** the substantial detour's PUSH and POP — verbs since 0.35.0, where
+both used to be a documented hand-edit of `state.json` (see "PUSH protocol" / "POP protocol")
+· **`set-active <id>` / `clear-active`**
 set the top-level active epic · `set-autonomy <id>` grant an epic broad execution trust (see
 "Epic-level autonomy" below) · `plan-hierarchy --parent <id>` batched execution plan for a
 parent's children (see "Epic-hierarchy orchestration" below) · `verify-worktrees` flag orphaned
@@ -394,41 +398,56 @@ cheap; a lost thread is the whole problem we're solving.
 
 ## PUSH protocol (entering a substantial detour)
 
+**`push-detour` is the transition. Never hand-edit `.conductor/state.json` to push a frame** —
+this protocol used to say to, and none of the engine's guarantees applied to it: no validation
+that either epic exists or is live, no non-empty reason, no deliberate `reconcileOnResume`, no
+write-conflict guard, no read-back verification, no record that it happened.
+
 1. Make the current epic's progress source reflect reality; commit so nothing is uncommitted.
-2. In `.conductor/state.json`: set the current epic `status: "paused"`; push a frame onto
-   `detourStack`:
-   ```json
-   { "pausedEpic": "<current>", "pausedAt": "<iso>", "reason": "<why, concretely>",
-     "spawnedDetour": "<new-epic-id>", "reconcileOnResume": true }
-   ```
-   Set `reconcileOnResume: true` whenever the detour will touch code/behavior the paused
-   epic depends on (default true unless certain it won't).
-3. Add the detour as an epic (`role: "detour"`, `lane` = appropriate lane, usually `P0`)
-   with links: detour `resolves-blocker-for` parent; parent `may-invalidate` detour.
-   Use `/pm:epic add` or edit `state.json` directly.
-4. Make the detour active with `node "$ENGINE" set-active <detour-id>`. Build it through the
-   appropriate lane's workflow,
-   then archive/close it.
-5. **Write a one-line Honcho memory.** Get the exact ready-to-copy string (and durably log
-   what was emitted, in case you forget to send it) via:
+2. Register the detour as an epic FIRST — a frame cannot name work that does not exist yet.
+   `/pm:epic add`, or:
    ```bash
-   node "$ENGINE" honcho-memory push <parent-epic-id> "<reason>"
+   node "$ENGINE" add-epic --id <new-id> --title "<what it is>" \
+     --lane <openspec|superpowers|claude-code> --priority P0
    ```
-   This prints `paused <parent> for <reason>` and appends a timestamped copy to
-   `.conductor/honcho-memories.log` — the engine only formats + logs the string (never calls
-   Honcho itself, per the instruction-layer law). Paste the printed line into your actual
-   Honcho MCP memory/conclusion tool call so the pivot survives outside this repo.
+3. Push:
+   ```bash
+   node "$ENGINE" push-detour <parent-epic-id> --detour <new-id> \
+     --reason "<why, concretely>" (--reconcile | --no-reconcile)
+   ```
+   In ONE guarded write this sets the parent to `paused`, pushes the frame
+   (`pausedEpic` / `pausedAt` / `reason` / `spawnedDetour` / `reconcileOnResume`), records both
+   protocol links (detour `resolves-blocker-for` parent; parent `may-invalidate` detour), makes
+   the detour active, and re-renders.
+
+   **Exactly one of `--reconcile` / `--no-reconcile` is required, and there is no default.**
+   Whether the detour can invalidate the paused epic's plan is a judgment; a default would make
+   an absent decision look like a considered one, on the one flag whose documented property is
+   that it must survive until reconciliation completes. Say `--reconcile` unless you are certain
+   the detour touches nothing the paused epic depends on.
+4. Build the detour through the appropriate lane's workflow, then archive/close it.
+5. **Paste the Honcho memory.** `push-detour` printed `paused <parent> for <reason>` on stdout
+   and appended a timestamped copy to `.conductor/honcho-memories.log` — the engine only formats
+   and logs the string, never calling Honcho itself, per the instruction-layer law. Paste the
+   printed line into your actual Honcho MCP memory/conclusion tool call so the pivot survives
+   outside this repo. (`honcho-memory push <parent-epic-id> "<reason>"` remains available for a
+   pivot you are recording after the fact.)
 
 ## POP protocol (leaving a detour) — the RECONCILE GATE
 
 The step otherwise lost after compaction. Do not skip it.
 
 1. Confirm the detour epic is archived and committed/deployed.
-2. Before popping the frame: if it has `reconcileOnResume: true`, set `reconcileNeeded: true`
-   on the paused epic in `.conductor/state.json` (a hand-edited field, like the frame itself) —
-   the frame is about to be removed, so this is the only place that obligation survives. Then
-   pop the frame and `node "$ENGINE" set-active <paused-id>` to make the paused epic active
-   again.
+2. Pop with the verb — **not a hand-edit**, for the reasons PUSH gives above:
+   ```bash
+   node "$ENGINE" pop-detour [<paused-epic-id>]
+   ```
+   It removes the top frame, resumes the paused epic (`status: "active"`, `active` pointing at
+   it), and — where the frame had `reconcileOnResume` — writes `reconcileNeeded: true` in the
+   SAME write. That ordering is load-bearing: POP removes the frame before reconciliation runs,
+   so a separate write would let the archive-drift self-heal clear the obligation it had just
+   created. The optional epic id is an ASSERTION, not a selector — the stack is LIFO, so naming
+   an epic that is not on top is refused rather than popping a different one.
 3. If `reconcileOnResume` was true, RECONCILE before writing code: delegate to the
    **reconciler** agent with the paused id + detour id. It re-reads the paused proposal,
    diffs what the detour shipped, and reports back `VERDICT: valid|invalidated` +
@@ -445,7 +464,9 @@ The step otherwise lost after compaction. Do not skip it.
    - **Hard backstop (on by default):** a PreToolUse hook mechanically blocks
      `Edit`/`Write`/`NotebookEdit` while `reconcileNeeded` is still true on the active epic —
      this is unconditional, regardless of the repo's `gateGuard` setting; see `/pm:gate-guard`.
-4. **Write a one-line Honcho memory.** Get the exact ready-to-copy string (and log it) via:
+4. **Write a one-line Honcho memory.** With a reconcile gate armed, `pop-detour` deliberately
+   emitted none — `resumed X, reconciled vs Y` is not true until step 3's verdict exists. Get the
+   exact ready-to-copy string (and log it) via:
    ```bash
    node "$ENGINE" honcho-memory pop <parent-epic-id> "<detour-id>; reconcile = valid | amended …"
    ```
@@ -491,6 +512,24 @@ it waits on.
   is INVENTORY, not a finding: a note or an abandoned sketch legitimately has no epic, so it
   never speaks up on its own — you run it. Where a document does imply unregistered work, author
   an `add-many` batch whose entries each carry its `specPath`.
+- Working alongside ANOTHER SESSION, or dispatching into a sibling repo's conductor? `claim <id>
+  --session <name>` records who owns an epic and until when; `unclaim <id> --session <name>`
+  hands it back (named `unclaim` because `release` already means a version here); `owners` reports
+  who holds what and how stale, and is behaviourally verified read-only so you can point it at a
+  repo you do not own. `claim --repo` sets a repo-level "I am mid-operation here" marker in a
+  git-ignored sidecar — release it when you are done touching the CONDUCTOR, which is strictly
+  later than when the work is done, because a review routinely files follow-up stories.
+  **It is advisory.** `claim`/`unclaim` are the only verbs that refuse because of a claim;
+  everything else writes to a claimed epic exactly as before. A claim expires on its own stated
+  TTL, so a session that died mid-epic shows as STALE rather than owning the work forever, and
+  `integrity`'s `advisory-claim-shape` check reports one without being asked.
+- Want to know HOW this project got here, not just where it is? `set-activity-log on` starts an
+  append-only record of conductor state transitions, and `activity` reads it back — time an epic
+  waited before it went active, detour frequency, lane choices and re-routes, gate verdicts in
+  sequence, and **out-of-band writes**: `state.json` revisions no engine verb accounts for, which
+  is what a hand-edit looks like from the record's side. Off by default; it records nothing
+  retroactively, so turning it on says nothing about yesterday. `purge-logs` is the manual
+  cleanup — it removes nothing without a selector, and nothing without `--yes`.
 
 These rules are also installed into the project's `CLAUDE.md` by `/pm:init` — or `AGENTS.md`
 (or `HERMES.md`-chain equivalent) on a repo running a declared non-Claude-Code `--platform` —

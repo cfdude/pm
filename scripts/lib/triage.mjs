@@ -21,7 +21,7 @@
 // never missing the twin, which costs a duplicate epic.
 
 import { isInitialized, loadState } from "./state.mjs";
-import { parseFlags } from "./add-epic.mjs";
+import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { laneSuggestion } from "./lane-routing.mjs";
 import { supersededEpics } from "./links.mjs";
 
@@ -160,6 +160,7 @@ export function triage() {
     process.stderr.write("usage: conductor.mjs triage \"<free text>\" [--limit N]\n"); process.exit(1);
   }
   const f = parseFlags(process.argv.slice(4));
+  requireFlagValues("triage", f);
   // The same allowlist discipline every epic-writing verb here already has. `triage` writes
   // nothing, so `--limit` correctly stays OUT of the shared EPIC_FLAGS registry — but "not in the
   // registry" is not "needs no allowlist": parseFlags reads whatever it is handed and the body

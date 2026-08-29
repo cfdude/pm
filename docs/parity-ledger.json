@@ -79,6 +79,16 @@
       "platforms": { "claude-code": "slash command instructing the agent to file a GitHub issue (the engine never calls gh)" }
     },
     {
+      "id": "session-coordination",
+      "artifacts": ["commands/claim.md"],
+      "platforms": { "claude-code": "slash command wrapping the claim / unclaim / owners verbs — advisory epic and repo-level ownership markers for multi-session work" }
+    },
+    {
+      "id": "activity-log",
+      "artifacts": ["commands/activity.md"],
+      "platforms": { "claude-code": "slash command wrapping set-activity-log / activity / purge-logs — an opt-in append-only record of conductor state transitions, plus the reader that answers for it" }
+    },
+    {
       "id": "session-lifecycle-hooks",
       "artifacts": ["hooks/hooks.json"],
       "platforms": { "claude-code": "SessionStart / PreCompact / PostToolUse hooks in hooks.json, each passing --platform claude-code" }

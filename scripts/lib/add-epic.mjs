@@ -8,28 +8,23 @@
 import { activate } from "./active-pointer.mjs";
 import { isInitialized, loadState, pushEpic, saveState } from "./state.mjs";
 import { render } from "./render.mjs";
-import { KNOWN_LANES, KNOWN_STATUSES, epicFlagsFor, repeatableEpicFlags, valueBearingFlagsFor } from "./constants.mjs";
+import { KNOWN_LANES, KNOWN_STATUSES, epicFlagsFor, flagsFor, repeatableFlagNames, valueBearingFlagsFor } from "./constants.mjs";
 import { isKnownLinkType, unknownLinkTypeMessage, linkTypeVocabulary } from "./links.mjs";
 import { creationStamp } from "./disposition.mjs";
 import { rankOf } from "./epic-progress.mjs";
 
-// Repeatable flags that belong to NO epic-writing command, and so cannot come from the shared
-// EPIC_FLAGS registry: --intent is set-tracker's, --preauthorize/--context/--notify are
-// set-autonomy's, --add/--remove are set-lane-routing's. parseFlags is shared by nearly every
-// subcommand, so the epic registry's repeatable entries are UNIONED with this list and never
-// substituted for it — replacing it would leave `set-tracker --intent a:b --intent c:d`
-// silently keeping only the second pair, with an exit code of 0.
-//
-// `link` is deliberately absent: it IS an epic flag, and it now carries `repeats: true` in the
-// registry, so it reaches parseFlags through the union like any flag a later capability adds.
-const REPEATABLE_NON_EPIC_FLAGS = ["intent", "preauthorize", "context", "notify", "add", "remove"];
-
-/** The full repeatable set — the non-epic list above UNIONed with every EPIC_FLAGS entry
- *  marked `repeats: true`. Recomputed on every parseFlags() call rather than frozen at module
- *  scope, so declaring `repeats: true` in the registry is the entire edit a capability makes;
- *  this file never changes for it. */
-export const repeatableFlags = () =>
-  [...new Set([...REPEATABLE_NON_EPIC_FLAGS, ...repeatableEpicFlags()])];
+/** The full repeatable set, read from BOTH flag tables — see repeatableFlagNames() in
+ *  constants.mjs. Recomputed on every parseFlags() call rather than frozen at module scope, so
+ *  declaring `repeats: true` on a row is the entire edit a capability makes; this file never
+ *  changes for it.
+ *
+ *  It used to be that union taken against a HAND-WRITTEN list here — `["intent", "preauthorize",
+ *  "context", "notify", "add", "remove"]` — because those six belong to `set-tracker`,
+ *  `set-autonomy` and `set-lane-routing`, which the epic registry does not name. #152 gave those
+ *  verbs rows of their own, so the list is now the projection it was always standing in for. It
+ *  is still a UNION over both tables and never one of them: `set-tracker --intent a:b --intent
+ *  c:d` silently keeping only the second pair, exit code 0, is what a narrowing here costs. */
+export const repeatableFlags = () => repeatableFlagNames();
 
 export function parseFlags(argv) {
   const o = {};
@@ -90,6 +85,31 @@ export function valuelessFlagError(command, f) {
 export function requireFlagValues(command, f) {
   const err = valuelessFlagError(command, f);
   if (err) { process.stderr.write(err + "\n"); process.exit(1); }
+}
+
+/** The OTHER half of the flag rule: "is this flag known on this verb at all", refused by name.
+ *
+ *  Companion to requireFlagValues(), and the two answer different questions from different
+ *  projections — `flagsFor()` for known-ness, `valueBearingFlagsFor()` for value-ness — which is
+ *  why neither may be answered with the other's list.
+ *
+ *  IT LIVES HERE because the value rule does. The three read-only verbs #84/#111 added arrived
+ *  with two of the three carrying a hand-written copy of this loop and the third carrying
+ *  nothing at all — `activity --bogus` printed the report and exited 0, so a typo silently
+ *  answered a different question from the one asked. A verb reads its declared values through a
+ *  COMPUTED accessor (`f[name]`), which conductor-31's region scanner cannot see, so the
+ *  allowlist is the only thing standing between an undeclared flag and silence on those verbs.
+ *
+ *  Only the three verbs that had a check (or needed one) call it today; the older bespoke
+ *  `unknown flag(s)` checks on add-epic, update-epic, release, triage and the rest are a
+ *  separate, wider consolidation and are deliberately not touched here. */
+export function requireKnownFlags(command, argv) {
+  for (const a of argv) {
+    if (!a.startsWith("--")) continue;
+    if (flagsFor(command).includes(a.slice(2))) continue;
+    process.stderr.write(`conductor: unknown flag ${a} for ${command}\n`);
+    process.exit(1);
+  }
 }
 
 /** Parse `--link "<type>:<epic>[:<reason>]"` strings into validated {type,epic,reason?}
@@ -209,6 +229,7 @@ export function findCyclePath(stuckIds, deps) {
 export function planHierarchy() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const f = parseFlags(process.argv.slice(3));
+  requireFlagValues("plan-hierarchy", f);
   const parent = typeof f.parent === "string" ? f.parent : undefined;
   if (!parent) { process.stderr.write("usage: conductor.mjs plan-hierarchy --parent <id>\n"); process.exit(1); }
   const state = loadState();

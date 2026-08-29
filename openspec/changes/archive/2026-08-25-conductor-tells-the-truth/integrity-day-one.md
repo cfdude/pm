@@ -11,12 +11,13 @@ here carries a disposition, and the scope rule's two exclusions currently exclud
 upgrade, the same checks report the same findings: the migration stamps `unknown` on every archived
 epic, and `unknown` stays in scope by design.
 
-**14 checks, 11 findings.**
+**15 checks, 11 findings.**
 
 **Re-measured 2026-08-27** when `recorded-sha-the-repository-cannot-resolve` was added for #142,
 and again when `delivered-release-epic-left-open` was added for #137 and
 `superseded-epic-never-ended` alongside it (gh-112's deferred follow-up).
-**Re-measured 2026-08-29** when `link-of-unknown-type` was added for #100. The count of checks
+**Re-measured 2026-08-29** when `link-of-unknown-type` was added for #100, and again when
+`advisory-claim-shape` was added for #84 — see its section at the end. The count of checks
 moved; no finding did.
 The count of checks moved; no finding did. This document is the living record of what the audit
 reports, not a snapshot of one afternoon — a check added later that nobody wrote down here is a
@@ -118,5 +119,24 @@ Every finding count — 5, 4, 2, and ten zeros — matches the 2026-08-23 measur
 zero is `dangling-epic-reference`, added while fixing what tasks 16.1/16.2 found; the eighth is
 `recorded-sha-the-repository-cannot-resolve`, added on 2026-08-27 for #142; the ninth and tenth are
 `delivered-release-epic-left-open` and `superseded-epic-never-ended`, added on 2026-08-27 for #137;
-the eleventh is `link-of-unknown-type`, added on 2026-08-29 for #100.
+the eleventh is `link-of-unknown-type`, added on 2026-08-29 for #100; the twelfth is
+`advisory-claim-shape`, added on 2026-08-29 for #84.
 None existed on 2026-08-23 and none changes a finding.
+
+## `advisory-claim-shape` — 0 findings
+
+Added 2026-08-29 with #84's advisory claim. Two shapes, and they are deliberately distinguished
+rather than merged into one "bad claim" finding:
+
+- **an EXPIRED claim** — the claim's own `ttlMinutes` has elapsed since `claimedAt`. This is
+  ordinary, and it is exactly how a session that died mid-epic looks. Taking it over is a plain
+  `claim` with no `--steal`.
+- **a claim on an ARCHIVED epic** — a record that cannot be true. `update-epic --status archived`
+  clears the claim, so one that survives was hand-edited or written by a state file older than
+  that rule, and it renders as live ownership of work that has ended.
+
+Zero here because the capability is new and this repository holds no claims. That is not a
+vacuous zero: the check RAN, which is the distinction this whole document exists to preserve.
+The reason it is an `integrity` check at all is that `owners` only answers when someone thinks to
+ask, and a stale claim is by construction left behind by a session that is no longer there to
+ask.
