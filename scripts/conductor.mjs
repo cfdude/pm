@@ -41,6 +41,10 @@
  *                  (reports; never writes state, never blocks a command)
  *   verify-state   fail loudly if state.json's mtime is newer than the last render's stamp
  *                  (a mechanical check for an undetected hand-edit)
+ *   verify-specs   READ-ONLY inventory: for every design document under a root (default
+ *                  docs/superpowers/specs, override with --root), how many epics were drawn
+ *                  from it, plus the epics naming a document that is not on disk. An
+ *                  uncovered document is INVENTORY, not a finding — see lib/verify-specs.mjs
  *
  * No external dependencies. Node 18+. OpenSpec optional (uses the filesystem).
  *
@@ -80,6 +84,7 @@ import { upgrade } from "./lib/migrations.mjs";
 import { changelog } from "./lib/changelog.mjs";
 import { release, recordCrossSpecReview } from "./lib/releases.mjs";
 import { verifyWorktrees, changesets, verifyState } from "./lib/worktree-hygiene.mjs";
+import { verifySpecs } from "./lib/verify-specs.mjs";
 import { delegateToCheckout } from "./lib/self-hosting.mjs";
 
 // ---------- self-hosting handoff (gh-134) ----------
@@ -107,7 +112,7 @@ const cmd = process.argv[2];
 // entry to .conductor/detours.log with "--help" as the detour description, and the log is
 // append-only with no verb to remove it. Handled before dispatch so every subcommand is covered
 // -- log-detour is only where the damage is visible, not where the gap is.
-const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|plan-hierarchy|verify-worktrees|verify-state|integrity|changesets|upgrade|changelog|rules|write-rules|rules-target\n";
+const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|plan-hierarchy|verify-worktrees|verify-state|verify-specs|integrity|changesets|upgrade|changelog|rules|write-rules|rules-target\n";
 if (!cmd || process.argv.slice(2).some(a => a === "--help" || a === "-h")) {
   process.stdout.write(USAGE);
   process.exit(0);
@@ -159,6 +164,7 @@ try {
   "plan-hierarchy": planHierarchy,
   "verify-worktrees": verifyWorktrees,
   "verify-state": verifyState,
+  "verify-specs": verifySpecs,
   integrity,
   changesets,
   upgrade,

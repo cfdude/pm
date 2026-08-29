@@ -316,10 +316,22 @@ export function addEpic() {
   // Creation at any other status writes no disposition at all — nothing has ended.
   if (status === "archived") epic.disposition = creationStamp("add-epic");
   if (str(f.plan)) epic.planPath = f.plan;
+  // #92's design document. Written HERE and not by the EPIC_FLAGS row, which is the whole
+  // finding: the registry decides which flags this command ACCEPTS, and every field it stores
+  // is copied by an explicit line. Registering `--spec` without this one would have it parse,
+  // pass the allowlist and vanish — exit-0-write-nothing, and the family's parity test would
+  // stay green because it checks registration, not the write.
+  if (str(f.spec)) epic.specPath = str(f.spec);
   // A valueless `--description` / `--notes` arrives as boolean true and would otherwise be
   // dropped by str() — exit-0-write-nothing, the exact shape of #79 the allowlist above was
   // added to end. Refuse it instead.
-  for (const flag of ["description", "notes"]) {
+  //
+  // `--spec` is refused the same way, and `--plan` deliberately is NOT changed to match:
+  // add-epic has silently dropped a valueless `--plan` since it shipped while `update-epic`
+  // refuses one, and tightening a flag in use is a behaviour change that belongs to its own
+  // change rather than riding along with a new field. The asymmetry is recorded here so the
+  // next reader sees a decision rather than an oversight.
+  for (const flag of ["description", "notes", "spec"]) {
     if (f[flag] === true) {
       process.stderr.write(`conductor: --${flag} requires a value\n`); process.exit(1);
     }
