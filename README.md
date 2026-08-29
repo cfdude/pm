@@ -505,7 +505,9 @@ re-offered without inferring completion from anything — and where a plan match
 id minus its date prefix, it registers nothing and prints both exits (associate it, or register
 it as distinct work). `remove-epic` leaves a `syncIgnore` tombstone so a removal survives the next
 sync; attaching that plan to an epic clears it. Attach the plan
-(`/pm:epic update <id> --plan <path>`) and the association does the rest.
+(`/pm:epic update <id> --plan <path>`) and the association does the rest. `specPath` (`--spec`)
+is the same family one artifact over — the design document an epic came from — and a removal
+tombstones it identically, naming `--spec` in the un-ignore instruction.
 
 </details>
 
@@ -749,6 +751,40 @@ the archive gate lets an agent replace an engine stamp, so nothing is frozen at 
 Every check is reported with its count **including the ones that found nothing**, so a check that
 measured nothing is visibly a check that ran. It writes no state, blocks no command and repairs
 nothing — each finding names the epic, and the remediation is a command you run.
+
+</details>
+
+<details>
+<summary><code>verify-specs</code> — Which design documents have no epics?</summary>
+
+An epic can record the **design document** its work was drawn from: `--spec <path>` →
+`specPath`, on `add-epic`, `update-epic` and as a `specPath` key in an `add-many` batch. It is
+provenance only — nothing reads progress from it and no scan registers epics from it — and it is
+deliberately **many-to-one**, which is the concept that was missing. A Tier-2 design enumerating
+six implementation chunks produced exactly one epic, because only that chunk also got a plan
+file; the other five were found by hand 11 days later, having blocked every release in between.
+Scanning a specs directory would not have helped: that yields one epic per document, which closes
+when chunk 1 ships.
+
+```bash
+node scripts/conductor.mjs verify-specs [--root <path>]
+```
+
+Prints, for every `.md` file under the root (recursively, minus `README`/`INDEX`/`CONTRIBUTING`),
+how many epics claim it and which ones — then the other half of the set difference, the epics
+whose `specPath` names a document that is not on disk. Coverage is status-blind: an archived epic
+for chunk 1 *is* coverage of chunk 1.
+
+**It is not an `integrity` check, on purpose.** `integrity` reports shapes that cannot be true; a
+document with no epic can be true and usually is — a note, a reference, an abandoned sketch.
+Filing every one as a finding is the noise that got the plan-freshness warning cut back (wrong 7
+times out of 8), so this prints an **inventory** with none of `integrity`'s finding vocabulary,
+always exits 0, and stays out of the session brief. An absent root says **no spec root** rather
+than reporting zero uncovered — silence and clean must never look the same.
+
+Enumerating what a design implies stays with the agent, which is reading the document anyway;
+`add-many` is the atomic fan-out (one write, N chunks, all naming the same `specPath`) and the
+engine computes only the difference.
 
 </details>
 
