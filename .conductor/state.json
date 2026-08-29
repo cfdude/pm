@@ -2440,7 +2440,12 @@
       ],
       "reconcileNeeded": false,
       "externalId": "92",
-      "externalUrl": "https://github.com/cfdude/pm/issues/92"
+      "externalUrl": "https://github.com/cfdude/pm/issues/92",
+      "attributedCommits": [
+        "8bdf7f9",
+        "6a53823",
+        "3db944f"
+      ]
     },
     {
       "id": "gh-93-verify-specs-coverage",
@@ -3630,7 +3635,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 158,
+  "revision": 161,
   "reviewMode": "thorough",
   "releases": [
     {

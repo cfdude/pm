@@ -22,6 +22,7 @@ trigger fires, not before.
 
 | Lesson | Trigger — read it when… | Rule | Hook |
 |---|---|---|---|
+| [`a-guard-can-check-the-wrong-half`](a-guard-can-check-the-wrong-half.md) | About to rely on an existing test as proof a behaviour holds — especially a guard written recently, by you or a teammate. | A guard proves the half it asserts, not the half it is named for. Neuter the behaviour and watch THAT test fail before trusting it. | — |
 | [`bind-rules-to-functions-not-enumerations`](bind-rules-to-functions-not-enumerations.md) | Writing a rule, guard, or invariant that applies "at every place X happens". | Derive the call-site set mechanically (`rg` for callers) and bind the rule to the FUNCTION, not to an enumeration that goes stale the moment a caller is added. | — |
 | [`commit-without-push-is-one-disk`](commit-without-push-is-one-disk.md) | About to dispatch a wave of agents, end a work session, or step away — and the branch is ahead of its remote. | Push at every wave boundary and before stepping away. A commit is durable on ONE machine; a push is the backup. | 🔔 |
 | [`editing-inside-a-generated-block`](editing-inside-a-generated-block.md) | About to hand-edit a file that a tool also generates — CLAUDE.md, AGENTS.md, PROJECT.md, any managed region. | Hand-written content goes BELOW the END marker, never inside the managed block. | 🔔 |
@@ -47,6 +48,7 @@ A lessons file nobody reads is a data graveyard — the same objection that made
 
 | Lesson | Enforced in |
 |---|---|
+| `a-guard-can-check-the-wrong-half` | habit — the neuter-before-trust step |
 | `bind-rules-to-functions-not-enumerations` | required task 16.1 of this release; issue #115 |
 | `commit-without-push-is-one-disk` | wave-boundary checklist in the orchestrator's own procedure; detect matcher fires when dispatching agents |
 | `editing-inside-a-generated-block` | subagent brief template; product gap noted for pm |
