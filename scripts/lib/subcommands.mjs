@@ -132,6 +132,19 @@ const CONDUCTOR_OWN_FILES = new Set([
   ".conductor/commit-watch.json",
 ]);
 
+/** Does this file list consist ENTIRELY of pm's own generated output?
+ *
+ *  `false` for an empty list and for `null` (headChangedFiles()'s "git cannot answer"): both mean
+ *  "cannot tell this is bookkeeping", and the safe direction is to keep logging. A false log row
+ *  is visible and reviewable; a false SUPPRESSION silently disables the trail.
+ *
+ *  Shared by BOTH commit-nudge branches on purpose (gh#81). It lived inline in the AUTO-DETOUR
+ *  branch only, which is why the DETOUR-COMMIT branch went on logging the conductor's own
+ *  re-render commits — a sibling call site the diff that added it never touched. */
+export function isConductorOwnFiles(files) {
+  return Array.isArray(files) && files.length > 0 && files.every((f) => CONDUCTOR_OWN_FILES.has(f));
+}
+
 /** Diff-shape heuristic for an UNLOGGED minimal detour: a small, self-contained commit
  *  (<=3 files) whose subject uses a fix/chore conventional-commit prefix, made while no
  *  detour is active, and that does not itself name the currently active epic (a commit
@@ -143,15 +156,20 @@ export function looksLikeUnloggedMinimalDetour(subject, activeEpicId) {
   // human to hand-clean detours.log, the exact hand-editing pm exists to remove. Observed twice
   // in one session on `/pm:upgrade`'s own `chore(pm): upgrade conductor to <ver>` commit.
   //
-  // Only THIS branch needs the guard. The sibling DETOUR-COMMIT branch at the call site is gated
-  // on detourContext(state).active, which is the strictly stronger condition — a live detour
-  // frame implies a paused epic — so the asymmetry is deliberate, not an omission.
+  // Only THIS branch needs the ACTIVE-EPIC guard, and that asymmetry alone is the deliberate
+  // one: the sibling DETOUR-COMMIT branch is gated on detourContext(state).active, the strictly
+  // stronger condition — a live detour frame implies a paused epic.
+  //
+  // The BOOKKEEPING guard below (isConductorOwnFiles) was a different story, and this comment
+  // used to be read as covering it too. It was an omission, not a design: gh#81's commit loop is
+  // the DETOUR-COMMIT branch logging pm's own `chore(pm): re-render PROJECT.md` commits. It now
+  // guards both call sites — do not re-inline it here.
   if (!activeEpicId) return false;
   if (!/^(fix|chore)(\([^)]*\))?:\s/.test(subject)) return false;
   if (activeEpicId && subject.includes(`(${activeEpicId})`)) return false;
   const files = headChangedFiles();
   if (files === null || files.length === 0 || files.length > 3) return false;
-  if (files.every((f) => CONDUCTOR_OWN_FILES.has(f))) return false;
+  if (isConductorOwnFiles(files)) return false;
   return true;
 }
 
@@ -252,16 +270,29 @@ function unverifiableSubject(cmd) {
 function runNudge(state, ctx, subject) {
   // DETERMINISTIC: if we are inside a detour, record this commit in the trail.
   let autoLogged = false;
+  let detourLogged = false;
   if (ctx.active) {
-    appendDetourLog("DETOUR-COMMIT", ctx.detourId, subject);
+    // gh#81 — THE LOOP. Committing a file this hook regenerates used to append a row describing
+    // that commit; the row changed PROJECT.md's "Recent detours" table; the re-render dirtied the
+    // tree again; committing THAT appended another row. Measured in the field: 8 rows for 4 real
+    // commits, several describing commits whose only content was re-rendering the file the row
+    // lives in, and `git status` never clean in any session.
+    //
+    // A commit touching ONLY pm's own generated output is bookkeeping, not detour work — there is
+    // nothing about it a reader of the trail needs. The same predicate has always guarded the
+    // AUTO-DETOUR branch; it was simply never applied here.
+    detourLogged = !isConductorOwnFiles(headChangedFiles())
+      && appendDetourLog("DETOUR-COMMIT", ctx.detourId, subject);
   } else if (looksLikeUnloggedMinimalDetour(subject, state.active)) {
     // AUTO-DETECT: this commit's shape looks like a minimal detour nobody logged via
     // `/pm:detour --minimal`. Log it automatically instead of relying on the agent to
     // remember — the whole point of this heuristic.
     // No `|| "-"` fallback any more: looksLikeUnloggedMinimalDetour refuses without an active
     // epic (gh#91), so the placeholder that used to stand in for one can no longer be reached.
-    appendDetourLog("AUTO-DETOUR", state.active, subject);
-    autoLogged = true;
+    // The return value, not an unconditional true: a re-fire of the hook for a sha already in the
+    // trail writes nothing (gh#81's dedupe), and announcing "logged automatically" for a row that
+    // does not exist is the plugin reporting one thing while doing another.
+    autoLogged = appendDetourLog("AUTO-DETOUR", state.active, subject);
   }
   // Self-heal: if this commit archived the active epic (e.g. an OpenSpec archive),
   // clear the stale active pointer + stamp archived status so /pm:next advances.
@@ -283,7 +314,11 @@ function runNudge(state, ctx, subject) {
   render();
 
   const msg = ctx.active
-    ? `Commit detected during DETOUR \`${ctx.detourId}\` (logged to detours.log). ` +
+    // "(logged to detours.log)" is now a CLAIM about what just happened, so it is conditional:
+    // a bookkeeping-only commit, or a re-fire for a sha already in the trail, writes no row, and
+    // saying otherwise would send the agent looking for a line that is not there.
+    ? `Commit detected during DETOUR \`${ctx.detourId}\`` +
+      (detourLogged ? " (logged to detours.log)" : " (bookkeeping only — not added to the detour trail)") + ". " +
       "When the detour is done: archive it, `/pm:resume` to pop the stack, and run the " +
       "RECONCILE check on the paused parent epic. Write a one-line Honcho memory on resume."
     : autoLogged

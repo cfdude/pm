@@ -11,10 +11,46 @@ export function gitShortSha() {
   catch { return "-"; }
 }
 
+/** Kinds whose IDENTITY is the commit they describe, so a second row for the same sha is a
+ *  duplicate by definition rather than a second event (gh#81: one repo held 8 rows for 4 distinct
+ *  shas, one sha three times, twice with an empty note).
+ *
+ *  MINIMAL is deliberately absent and the distinction is the whole rule. A MINIMAL row records
+ *  what the agent DECLARED via `/pm:detour --minimal`, not what git observed: two genuine minimal
+ *  detours fixed between one pair of commits share a HEAD and are two real events. Deduping them
+ *  would delete a record, which is the opposite of what this is for. */
+const COMMIT_DERIVED_KINDS = new Set(["DETOUR-COMMIT", "AUTO-DETOUR"]);
+
+/** Is (sha, kind) already in the log?  Reads the file whole — it is small, append-only, and
+ *  render() already reads it whole on every render, so this adds no new order of cost. */
+function alreadyLogged(kind, sha) {
+  let body;
+  try { body = fs.readFileSync(DETOURS_LOG, "utf8"); } catch { return false; }
+  for (const line of body.split("\n")) {
+    if (!line) continue;
+    const [, s, k] = line.split("\t");
+    if (s === sha && k === kind) return true;
+  }
+  return false;
+}
+
+/** Append a row to the detour trail. Returns whether a row was actually written, so a caller
+ *  never announces "logged to detours.log" for a row that was suppressed as a duplicate.
+ *
+ *  gh#81: the observed rung (commit-watch.mjs) already refuses to fire twice for one HEAD, but
+ *  the UNVERIFIABLE rung — no reflog, no baseline yet, a read-only checkout that cannot persist
+ *  the watermark — has no such memory and re-logs the same commit on every hook invocation. The
+ *  log is the wrong place to depend on an upstream guard: dedupe where the row is written, so
+ *  every rung inherits it. */
 export function appendDetourLog(kind, epic, note) {
   fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
-  const line = [new Date().toISOString(), gitShortSha(), kind, epic || "-", (note || "").replace(/\s+/g, " ").trim()].join("\t");
+  const sha = gitShortSha();
+  // sha "-" is gitShortSha()'s "cannot tell" (no git, no repository, no commits yet), NOT a
+  // commit identity. Collapsing on it would fold every unrelated row in a git-less repo into one.
+  if (COMMIT_DERIVED_KINDS.has(kind) && sha !== "-" && alreadyLogged(kind, sha)) return false;
+  const line = [new Date().toISOString(), sha, kind, epic || "-", (note || "").replace(/\s+/g, " ").trim()].join("\t");
   fs.appendFileSync(DETOURS_LOG, line + "\n");
+  return true;
 }
 
 /** Is commit `a` an ancestor of commit `b`?  true | false | null.
