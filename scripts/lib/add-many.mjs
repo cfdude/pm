@@ -5,7 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { activate } from "./active-pointer.mjs";
-import { newStory, parentError, parseFlags } from "./add-epic.mjs";
+import { newStory, parentError, parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { isInitialized, loadState, pushEpic, saveState, readStdin } from "./state.mjs";
 import { render } from "./render.mjs";
 import { ROOT, KNOWN_LANES, KNOWN_STATUSES, epicBatchKeys } from "./constants.mjs";
@@ -20,6 +20,7 @@ import { isKnownLinkType, KNOWN_LINK_TYPES } from "./links.mjs";
 export function addMany() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const f = parseFlags(process.argv.slice(3));
+  requireFlagValues("add-many", f);
   const from = typeof f.from === "string" ? f.from : undefined;
   if (!from) { process.stderr.write("usage: conductor.mjs add-many --from <path|->\n"); process.exit(1); }
   let raw;

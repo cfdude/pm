@@ -404,11 +404,38 @@ Classifies the interruption as minimal or substantial before doing anything else
 | Flag | Behavior |
 |------|----------|
 | `--minimal "<what you fixed>"` | Fast-path: calls `log-detour` to append to `.conductor/detours.log` and resume. No proposal, no stack entry. |
-| _(none)_ | Substantial: PUSH the current epic onto the detour stack, spin up a new epic in the appropriate lane for the detour. |
+| _(none)_ | Substantial: register a new epic in the appropriate lane for the detour, then PUSH the current one onto the detour stack with `push-detour`. |
+
+**`push-detour` and `pop-detour` are verbs, not hand-edits.** Until 0.35.0 the substantial
+detour's PUSH and POP were a documented hand-edit of `.conductor/state.json` — the state of
+record's most consequential transition performed by the one mechanism the rules block tells
+every agent never to use, with none of the engine's guarantees applied to it.
+
+```bash
+push-detour <parent-epic-id> --detour <detour-epic-id> --reason "<why>" (--reconcile | --no-reconcile)
+pop-detour [<paused-epic-id>]
+```
+
+`push-detour` validates that both epics exist and neither has ended, requires a non-empty reason,
+writes the frame with `reconcileOnResume`, records both protocol links (detour
+`resolves-blocker-for` parent; parent `may-invalidate` detour), activates the detour, and emits
+the Honcho line — all in ONE guarded write, so it inherits the write-conflict guard and the
+read-back verification. **Exactly one of `--reconcile` / `--no-reconcile` is required and there
+is no default**: whether the detour can invalidate the paused epic's plan is a judgment, and a
+default would make an absent decision look like a considered one.
+
+`pop-detour` removes the top frame, resumes the epic, and writes `reconcileNeeded` in the *same*
+write — the frame is gone before reconciliation runs, so a second write would let the
+archive-drift self-heal clear the obligation. The optional epic id is an assertion, not a
+selector: the stack is LIFO, so naming an epic that is not on top is refused. It emits the POP
+Honcho line only when nothing needs reconciling, because "reconciled vs X" is not true until the
+verdict exists.
 
 `honcho-memory <push\|pop> <epicId> "<reason>"` formats the exact ready-to-copy Honcho memory
 line for a PUSH/POP and appends a timestamped copy to `.conductor/honcho-memories.log` — the
-engine only formats and logs the string, it never calls Honcho itself.
+engine only formats and logs the string, it never calls Honcho itself. The detour verbs call it
+for you; it remains available for a pivot recorded after the fact, and for the POP line after a
+reconcile verdict.
 
 </details>
 

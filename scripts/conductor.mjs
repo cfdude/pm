@@ -33,6 +33,13 @@
  *                  suggestion, and the backlog's shape. Emits `verdict: null`: whether two
  *                  asks are the SAME ask is judgment, and judgment is the agent's.
  *   log-detour "x" record a MINIMAL detour in detours.log (with the current git SHA)
+ *   push-detour    the SUBSTANTIAL detour's PUSH, as a verb rather than the hand-edit of
+ *                  state.json it used to be: pauses the parent, pushes the frame, writes both
+ *                  protocol links, activates the detour and emits the Honcho line — one guarded
+ *                  write, so it inherits the conflict guard and the read-back verification
+ *   pop-detour     the matching POP. Removes the top frame, resumes the epic, and writes
+ *                  `reconcileNeeded` in the SAME write — the frame is gone before reconciliation
+ *                  runs, so a second write would let the self-heal clear the obligation
  *   honcho-memory  <push|pop> <epicId> "<reason>" — print + log the ready-to-copy Honcho line
  *   rules          print the CLAUDE.md rules block to stdout
  *   write-rules    insert/refresh the rules block in ./CLAUDE.md (idempotent)
@@ -72,9 +79,10 @@ import { loadState, conflictExitCode } from "./lib/state.mjs";
 import { ROOT, warnRootDivergence } from "./lib/constants.mjs";
 import { setActive, clearActive } from "./lib/active-pointer.mjs";
 import { setAutonomy } from "./lib/autonomy.mjs";
-import { parseFlags, planHierarchy, addEpic } from "./lib/add-epic.mjs";
+import { parseFlags, planHierarchy, addEpic, requireFlagValues } from "./lib/add-epic.mjs";
 import { render } from "./lib/render.mjs";
 import { init, brief, snapshot, commitNudge, sync, logDetour, honchoMemory } from "./lib/subcommands.mjs";
+import { pushDetour, popDetour } from "./lib/detour-stack.mjs";
 import { addMany } from "./lib/add-many.mjs";
 import { recordReconcile } from "./lib/reconciler-writeback.mjs";
 import { recordGateReview } from "./lib/gate-review-writeback.mjs";
@@ -121,7 +129,7 @@ const cmd = process.argv[2];
 // entry to .conductor/detours.log with "--help" as the detour description, and the log is
 // append-only with no verb to remove it. Handled before dispatch so every subcommand is covered
 // -- log-detour is only where the damage is visible, not where the gap is.
-const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|verify-worktrees|verify-state|verify-specs|integrity|changesets|upgrade|changelog|rules|write-rules|rules-target\n";
+const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|push-detour|pop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|verify-worktrees|verify-state|verify-specs|integrity|changesets|upgrade|changelog|rules|write-rules|rules-target\n";
 if (!cmd || process.argv.slice(2).some(a => a === "--help" || a === "-h")) {
   process.stdout.write(USAGE);
   process.exit(0);
@@ -160,6 +168,8 @@ try {
   "commit-nudge": commitNudge,
   sync: () => sync(false),
   "log-detour": logDetour,
+  "push-detour": pushDetour,
+  "pop-detour": popDetour,
   "honcho-memory": honchoMemory,
   "add-epic": addEpic,
   "add-many": addMany,
@@ -192,6 +202,7 @@ try {
   changelog,
   rules: () => {
     const f = parseFlags(process.argv.slice(3));
+    requireFlagValues("rules", f);
     const epicId = typeof f.epic === "string" ? f.epic : undefined;
     const declared = platformFlag(process.argv.slice(3));
     if (declared) assertKnownPlatform(declared);
@@ -199,6 +210,11 @@ try {
     process.stdout.write(rulesBlock(currentTracker(), currentReviewMode(epicId), currentSecondaryTrackers(), rulesPlatform));
   },
   "write-rules": () => {
+    // #152: `--platform` is read straight off argv by platformFlag(), which treats a valueless
+    // occurrence as absent — so `write-rules --platform` silently wrote the RECORDED platform's
+    // rules block while looking answered. Parsed and checked here for that reason alone; the
+    // resolution below is unchanged.
+    requireFlagValues("write-rules", parseFlags(process.argv.slice(3)));
     const { platform, switched } = resolveAndRecordPlatform();
     writeRules(platform);
     if (switched) process.stderr.write(`conductor: platform: ${platform}\n`);
@@ -208,6 +224,7 @@ try {
   // platform knowledge is exactly the drift this epic was filed to remove. Deliberately does
   // NOT record the platform: a query must not mutate state the way write-rules does.
   "rules-target": () => {
+    requireFlagValues("rules-target", parseFlags(process.argv.slice(3)));
     const declared = platformFlag(process.argv.slice(3));
     if (declared) assertKnownPlatform(declared);
     process.stdout.write(rulesTarget(resolvePlatform({ platform: declared }, loadState()), ROOT) + "\n");

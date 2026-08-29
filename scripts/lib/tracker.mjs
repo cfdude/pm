@@ -4,7 +4,7 @@
 // corrected circular-imports section (this is NOT circular).
 
 import { isInitialized, loadState, saveState } from "./state.mjs";
-import { parseFlags } from "./add-epic.mjs";
+import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { removeSecondaryTracker, secondaryTrackerKey, upsertSecondaryTracker, writeRules } from "./rules.mjs";
 import { render } from "./render.mjs";
 import { resolvePlatform } from "./platform.mjs";
@@ -17,6 +17,7 @@ import { KNOWN_TRACKER_DIRECTIONS } from "./constants.mjs";
 export function setTracker() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const f = parseFlags(process.argv.slice(3));
+  requireFlagValues("set-tracker", f);
   const str = (v) => (typeof v === "string" ? v : undefined);
   const state = loadState();
   const role = str(f.role) || "primary";

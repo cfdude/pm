@@ -64,6 +64,12 @@ export const VERB_EFFECTS = {
   "commit-nudge": { effect: "mutates", writes: ".conductor/commit-watch.json, .conductor/detours.log, state.json's archived-epic self-heal, plus render()'s writes" },
   sync: { effect: "mutates", writes: "state.json — registers newly-found openspec changes and plans as untriaged epics" },
   "log-detour": { effect: "mutates", writes: ".conductor/detours.log (append-only)" },
+  // #151. The substantial-detour PUSH and POP were a documented HAND-EDIT of state.json until
+  // these existed, so they are `mutates` in the strongest sense: they are the transition, not a
+  // record of one. Both go through saveState()'s normal path, so they inherit the write-conflict
+  // guard and 0.32.0's read-back verification the hand-edit never had.
+  "push-detour": { effect: "mutates", writes: "state.json (the paused epic's status, the detour-stack frame, both protocol links and the active pointer), .conductor/honcho-memories.log, plus render()'s writes" },
+  "pop-detour": { effect: "mutates", writes: "state.json (the popped frame, the resumed epic's status and reconcileNeeded, and the active pointer), .conductor/honcho-memories.log, plus render()'s writes" },
   "honcho-memory": { effect: "mutates", writes: ".conductor/honcho-memories.log (append-only)" },
   "add-epic": { effect: "mutates", writes: "state.json, plus render()'s writes" },
   "add-many": { effect: "mutates", writes: "state.json, plus render()'s writes" },

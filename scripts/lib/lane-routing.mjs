@@ -3,7 +3,7 @@
 // lane heuristic. One-directional dependencies only.
 
 import { isInitialized, loadState, saveState } from "./state.mjs";
-import { parseFlags } from "./add-epic.mjs";
+import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
 import { KNOWN_LANES } from "./constants.mjs";
 
@@ -30,6 +30,7 @@ export function laneMatchTest(match, text) {
 export function setLaneRouting() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const f = parseFlags(process.argv.slice(3));
+  requireFlagValues("set-lane-routing", f);
   const state = loadState();
   const lr = { overrides: [...((state.laneRouting || {}).overrides || [])] };
 

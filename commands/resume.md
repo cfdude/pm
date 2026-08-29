@@ -9,8 +9,17 @@ be deliberate.
 1. Confirm the detour epic is **archived** and its work is committed/deployed. If not, it's
    not time to resume — finish the detour first.
 
-2. **Pop** the top frame from `.conductor/state.json` `detourStack`. Set the paused epic's
-   `status` back to `active` and set `active` to it.
+2. **Pop** — `pop-detour` does it, in one guarded write. **Do not hand-edit
+   `.conductor/state.json`**; this used to say to, and it had the same missing guarantees the
+   PUSH hand-edit did.
+   ```bash
+   node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" pop-detour [<paused-epic-id>]
+   ```
+   It removes the top frame, sets the paused epic's `status` back to `active`, points `active`
+   at it, and — where the frame had `reconcileOnResume` — writes `reconcileNeeded: true` in the
+   *same* write, which is what makes the obligation survive the frame's removal. The optional
+   epic id is an ASSERTION, not a selector: the stack is LIFO, so naming an epic that is not on
+   top is refused rather than popping a different one.
 
 3. **RECONCILE GATE** — if that frame had `reconcileOnResume: true`, do NOT write code yet.
    Delegate a clean-context review to the **reconciler** agent (via the Task tool): give it
@@ -25,7 +34,9 @@ be deliberate.
      attaches `{verdict, amendments, reconciledAt}` onto the paused epic's link to the
      detour and clears `reconcileNeeded` in one step.
 
-4. **Write a Honcho memory** for the resume. Get the exact ready-to-copy line via:
+4. **Write a Honcho memory** for the resume. Where the frame carried `reconcileOnResume`,
+   `pop-detour` deliberately did NOT emit one — `resumed X, reconciled vs Y` is not true until
+   the verdict in step 3 exists. Get the exact ready-to-copy line now via:
    ```bash
    node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" honcho-memory pop <parent-epic-id> "<detour-id>; reconcile = valid | amended: …"
    ```
