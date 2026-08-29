@@ -4001,7 +4001,11 @@
       "reconcileNeeded": false,
       "externalId": "151",
       "externalUrl": "https://github.com/cfdude/pm/issues/151",
-      "attributedCommits": []
+      "attributedCommits": [
+        "f5a788e",
+        "c96e5eb",
+        "c5d83b9"
+      ]
     },
     {
       "id": "gh-152-flag-value-rule-outside-epic-flags",
@@ -4020,7 +4024,9 @@
       "reconcileNeeded": false,
       "externalId": "152",
       "externalUrl": "https://github.com/cfdude/pm/issues/152",
-      "attributedCommits": []
+      "attributedCommits": [
+        "f5a788e"
+      ]
     },
     {
       "id": "gh-154-openspec-validate-lifecycle-collision",
@@ -4050,7 +4056,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 240,
+  "revision": 244,
   "reviewMode": "thorough",
   "releases": [
     {
