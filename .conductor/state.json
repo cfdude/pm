@@ -2485,7 +2485,10 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "89",
-      "externalUrl": "https://github.com/cfdude/pm/issues/89"
+      "externalUrl": "https://github.com/cfdude/pm/issues/89",
+      "attributedCommits": [
+        "f936d08"
+      ]
     },
     {
       "id": "gh-90-honor-output-style-contract",
@@ -2497,7 +2500,10 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "90",
-      "externalUrl": "https://github.com/cfdude/pm/issues/90"
+      "externalUrl": "https://github.com/cfdude/pm/issues/90",
+      "attributedCommits": [
+        "ec3780d"
+      ]
     },
     {
       "id": "gh-91-autodetour-false-minimal-detour",
@@ -3034,7 +3040,10 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "114",
-      "externalUrl": "https://github.com/cfdude/pm/issues/114"
+      "externalUrl": "https://github.com/cfdude/pm/issues/114",
+      "attributedCommits": [
+        "e8f6c40"
+      ]
     },
     {
       "id": "gh-115-gates-blind-to-absent-edit",
@@ -4099,7 +4108,24 @@
       "reconcileNeeded": false,
       "externalId": "154",
       "externalUrl": "https://github.com/cfdude/pm/issues/154",
-      "attributedCommits": []
+      "attributedCommits": [
+        "2e43374"
+      ]
+    },
+    {
+      "id": "gh-156-shipped-markdown-structural-check",
+      "title": "A shipped skill was silently truncated in 0.31.0 and no check noticed for four releases",
+      "priority": "P1",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "156",
+      "externalUrl": "https://github.com/cfdude/pm/issues/156",
+      "attributedCommits": [
+        "94cd7d1"
+      ]
     }
   ],
   "detourStack": [],
@@ -4110,7 +4136,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 255,
+  "revision": 261,
   "reviewMode": "thorough",
   "releases": [
     {
