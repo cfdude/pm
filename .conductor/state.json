@@ -3743,6 +3743,44 @@
         "declined": []
       },
       "completedAt": "2026-08-27T23:19:20.493Z"
+    },
+    {
+      "id": "gh-148-propose-spec-association-from-header",
+      "title": "Design documents already name their epics in a header — the specPath association could be proposed, not hand-backfilled",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-92-epic-specpath",
+          "reason": "92 shipped the field; this makes it cheap to populate for a repo that already has design documents"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "148",
+      "externalUrl": "https://github.com/cfdude/pm/issues/148",
+      "attributedCommits": []
+    },
+    {
+      "id": "gh-149-add-epic-drops-valueless-flag",
+      "title": "add-epic silently drops a valueless flag that update-epic refuses — the same mistake succeeds on one surface and fails on the other",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-136-add-epic-notes-discarded",
+          "reason": "same shape — a write surface accepting a flag it does not act on; fix them in the shared declaration together"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "149",
+      "externalUrl": "https://github.com/cfdude/pm/issues/149",
+      "attributedCommits": []
     }
   ],
   "detourStack": [],
@@ -3753,7 +3791,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 199,
+  "revision": 201,
   "reviewMode": "thorough",
   "releases": [
     {
