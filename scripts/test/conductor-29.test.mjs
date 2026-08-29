@@ -12,6 +12,7 @@ import {
   KNOWN_LINK_TYPES, LINK_TYPES_READ, LINK_TYPES_WRITTEN, LINK_TYPES_ANNOTATION,
   isKnownLinkType, deferralHistory, ordinal,
 } from "../lib/links.mjs";
+import { KNOWN_LINK_TYPES as KNOWN_FROM_CONSTANTS } from "../lib/constants.mjs";
 
 const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
@@ -37,17 +38,15 @@ test("KNOWN_LINK_TYPES is the union of the three bands, with no duplicates", () 
   assert.ok(!isKnownLinkType("depends_on"));
 });
 
-test("`rg KNOWN_ constants.mjs` finds the link-type set, or the pointer to where it lives", () => {
-  // gh#100 asks for the constant in constants.mjs because that is where an agent already greps
-  // — "in a repo, an agent reads code before fetching a website". It is NOT declared there:
-  // constants.mjs's first line is "No dependencies on any other lib module", and the bands name
-  // the consumer files that read each type, which is link knowledge. A re-export would have made
-  // constants depend on links and inverted the leaf. So constants carries a pointer that answers
-  // the same grep, and this test keeps the pointer truthful.
+test("gh#100's own reproduction — `rg 'KNOWN_[A-Z_]+ =' constants.mjs` — now includes link types", () => {
+  // The issue was filed after running exactly this and getting every enumerated set EXCEPT link
+  // types. The assertion is the grep, not the export: a re-export or a pointer comment would
+  // satisfy an import while leaving the issue's own reproduction still failing.
   const src = fs.readFileSync(path.join(REPO, "scripts", "lib", "constants.mjs"), "utf8");
-  const line = src.split("\n").find(l => l.includes("KNOWN_LINK_TYPES"));
-  assert.ok(line, "constants.mjs no longer mentions KNOWN_LINK_TYPES — the grep an agent runs comes back empty");
-  assert.match(line, /links\.mjs/, "the pointer does not say where the set actually lives");
+  const declared = [...src.matchAll(/^export const (KNOWN_[A-Z_]+) =/gm)].map(m => m[1]);
+  assert.ok(declared.includes("KNOWN_LINK_TYPES"),
+    `constants.mjs declares ${declared.join(", ")} — the set gh#100 went looking for is not among them`);
+  assert.equal(KNOWN_FROM_CONSTANTS, KNOWN_LINK_TYPES, "links.mjs re-exports a COPY, which would drift");
 });
 
 // The drift guard. The set above is an enumeration, and

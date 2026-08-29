@@ -1,6 +1,10 @@
 // scripts/lib/links.mjs
 // Epic-link validation/normalization, detour-context detection, and THE declaration of every
-// place the record holds an epic id. Pure functions, no dependencies on any other lib module.
+// place the record holds an epic id. Pure functions; the ONE import is constants.mjs, the
+// designated root every module may read from — the flat KNOWN_LINK_TYPES lives there so
+// `rg 'KNOWN_[A-Z_]+ =' constants.mjs` answers the question gh#100 was filed after asking.
+
+import { KNOWN_LINK_TYPES } from "./constants.mjs";
 
 /** THE link-type vocabulary, in three honest bands — gh#100.
  *
@@ -48,11 +52,10 @@ export const LINK_TYPES_WRITTEN = [
  *  same reason: it would silently change meaning, not repair a typo. */
 export const LINK_TYPES_ANNOTATION = ["relates-to", "blocks", "resolves-blocker-for"];
 
-export const KNOWN_LINK_TYPES = [
-  ...LINK_TYPES_READ.map(t => t.type),
-  ...LINK_TYPES_WRITTEN.map(t => t.type),
-  ...LINK_TYPES_ANNOTATION,
-];
+/** Re-exported so a consumer needing the vocabulary AND the bands has one import, and so the
+ *  band declarations above and the flat set stay one concept with one name. The array itself is
+ *  declared in constants.mjs; conductor-29 asserts the bands' union equals it. */
+export { KNOWN_LINK_TYPES };
 
 export function isKnownLinkType(t) {
   return typeof t === "string" && KNOWN_LINK_TYPES.includes(t);
