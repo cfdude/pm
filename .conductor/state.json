@@ -2430,7 +2430,7 @@
       "id": "gh-91-autodetour-false-minimal-detour",
       "title": "auto-detour hook logs a MINIMAL detour for a legit commit when there is NO detour",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -2439,13 +2439,24 @@
       "externalUrl": "https://github.com/cfdude/pm/issues/91",
       "attributedCommits": [
         "45bb85b"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T06:57:07.922Z",
+        "reason": "shipped in 0.32.0 (9334b0e): no active epic means no work to detour from, so nothing is logged"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T06:57:07.921Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T06:57:07.922Z"
     },
     {
       "id": "gh-92-epic-specpath",
       "title": "Epics cannot record the design doc they came from (specPath), so spec-to-epic traceability is lost",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -2462,19 +2473,41 @@
         "8bdf7f9",
         "6a53823",
         "3db944f"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T06:57:00.173Z",
+        "reason": "shipped in 0.32.0 (9334b0e): specPath plus verify-specs; the field-family table absorbed it, and the guard that claimed to prove that was itself found vacuous"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T06:57:00.172Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T06:57:00.173Z"
     },
     {
       "id": "gh-93-verify-specs-coverage",
       "title": "No way to ask which design docs have no epics — a verify-specs coverage check",
       "priority": "P3",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
       "externalId": "93",
-      "externalUrl": "https://github.com/cfdude/pm/issues/93"
+      "externalUrl": "https://github.com/cfdude/pm/issues/93",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T06:57:01.719Z",
+        "reason": "shipped in 0.32.0 (9334b0e): verify-specs ships as a listing verb, not an integrity check — an uncovered design doc can legitimately be true"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T06:57:01.718Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T06:57:01.719Z"
     },
     {
       "id": "gh-94-serial-detours-accepted-silently",
@@ -2601,7 +2634,7 @@
       "id": "gh-104-commit-nudge-fires-on-text-match",
       "title": "commit-nudge fires on any Bash command whose TEXT contains 'git commit' — advisory-only false positive, no write side effects",
       "priority": "P3",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -2617,7 +2650,18 @@
       "attributedCommits": [
         "45bb85b",
         "2ed5929"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T06:57:06.318Z",
+        "reason": "shipped in 0.32.0 (9334b0e): the hook observes a HEAD watermark and the reflog instead of parsing the command text"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T06:57:06.317Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T06:57:06.318Z"
     },
     {
       "id": "gh-102-sync-blind-to-issue-comments",
@@ -3398,7 +3442,7 @@
       "id": "gh-130-disposition-has-no-correction-verb",
       "title": "An agent-supplied disposition is unreplaceable — a mistyped outcome forces a state.json hand-edit",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -3408,7 +3452,18 @@
       "attributedCommits": [
         "6012879",
         "a754258"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T06:57:03.194Z",
+        "reason": "shipped in 0.32.0 (9334b0e): --correct-disposition: deliberate, self-describing, non-destructive; the prior record survives under superseded"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T06:57:03.193Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T06:57:03.194Z"
     },
     {
       "id": "gh-131-retry-half-unverified",
@@ -3439,7 +3494,7 @@
       "id": "gh-133-disposition-reverts-backfill-counts",
       "title": "Recording an honest disposition on a backfilled epic silently reverts its archived task counts",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -3449,7 +3504,18 @@
         "a754258"
       ],
       "externalId": "133",
-      "externalUrl": "https://github.com/cfdude/pm/issues/133"
+      "externalUrl": "https://github.com/cfdude/pm/issues/133",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T06:57:04.757Z",
+        "reason": "shipped in 0.32.0 (9334b0e): root cause was provenance living in the one field an agent overwrites; registeredBy now lives on the epic"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T06:57:04.756Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T06:57:04.757Z"
     },
     {
       "id": "gh-134-hooks-run-the-installed-plugin",
@@ -3662,14 +3728,14 @@
     }
   ],
   "detourStack": [],
-  "pmVersion": "0.28.0",
+  "pmVersion": "0.32.0",
   "tracker": {
     "system": "github-issues",
     "repo": "cfdude/pm",
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 174,
+  "revision": 181,
   "reviewMode": "thorough",
   "releases": [
     {
