@@ -2136,7 +2136,7 @@
       "id": "cross-session-epic-assignment",
       "title": "Assignment + claim semantics so an orchestrating session can distribute epics across executor sessions",
       "priority": "P3",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -2154,7 +2154,18 @@
         "55653e3",
         "5182782",
         "b8e910b"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T13:31:47.624Z",
+        "reason": "shipped in 0.35.0 (1896ce1): claim/unclaim/owners — advisory with exactly one refusing surface, a stated TTL, and --steal rather than --force"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T13:31:47.624Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T13:31:47.624Z"
     },
     {
       "id": "changelog-page-too-long-archive-older-releases",
@@ -2938,7 +2949,7 @@
       "id": "gh-111-activity-log-for-conductor-usage",
       "title": "Optional activity log — pm records nothing about its own use",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -2949,7 +2960,18 @@
         "dba7f4f",
         "e13b7da",
         "b8e910b"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T13:31:49.146Z",
+        "reason": "shipped in 0.35.0 (1896ce1): an activity log that ships with its reader; turns the hand-edit question from a jq sweep into a query"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T13:31:49.145Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T13:31:49.146Z"
     },
     {
       "id": "gh-112-backlog-triage-at-intake",
@@ -3998,7 +4020,7 @@
       "id": "gh-151-no-push-detour-verb",
       "title": "The substantial-detour PUSH is a documented hand-edit of state.json — the engine is absent at the one moment a deferral is decided",
       "priority": "P1",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -4015,13 +4037,24 @@
         "f5a788e",
         "c96e5eb",
         "c5d83b9"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T13:31:44.532Z",
+        "reason": "shipped in 0.35.0 (1896ce1): push-detour and pop-detour; POP needed it more — as two writes the reconcile obligation is destroyed by the heal meant to preserve it"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T13:31:44.531Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T13:31:44.532Z"
     },
     {
       "id": "gh-152-flag-value-rule-outside-epic-flags",
       "title": "Seven verbs outside EPIC_FLAGS each invented their own answer to a valueless flag",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -4036,7 +4069,18 @@
       "externalUrl": "https://github.com/cfdude/pm/issues/152",
       "attributedCommits": [
         "f5a788e"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T13:31:46.072Z",
+        "reason": "shipped in 0.35.0 (1896ce1): the rule binds to the dispatch table, with a verb-level guard reading conductor.mjs's own dispatch object"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T13:31:46.072Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T13:31:46.072Z"
     },
     {
       "id": "gh-154-openspec-validate-lifecycle-collision",
@@ -4059,14 +4103,14 @@
     }
   ],
   "detourStack": [],
-  "pmVersion": "0.34.0",
+  "pmVersion": "0.35.0",
   "tracker": {
     "system": "github-issues",
     "repo": "cfdude/pm",
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 250,
+  "revision": 255,
   "reviewMode": "thorough",
   "releases": [
     {
