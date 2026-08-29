@@ -3329,7 +3329,10 @@
       ],
       "reconcileNeeded": false,
       "externalId": "129",
-      "externalUrl": "https://github.com/cfdude/pm/issues/129"
+      "externalUrl": "https://github.com/cfdude/pm/issues/129",
+      "attributedCommits": [
+        "1fd2018"
+      ]
     },
     {
       "id": "conductor-tells-the-truth",
@@ -3818,7 +3821,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 211,
+  "revision": 212,
   "reviewMode": "thorough",
   "releases": [
     {
