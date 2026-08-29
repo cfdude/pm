@@ -261,6 +261,23 @@ test("gh-93: an epic naming a document that is not on disk is reported — the o
     "an epic whose document exists must not appear in the dangling arm");
 });
 
+test("gh-93: the dangling arm reports the NORMALIZED path, not the spelling the epic happens to hold", () => {
+  // Caught by mutation testing, not by writing it down first: dropping normalizeArtifactPath()
+  // from this arm survived the whole suite, because `path.join(ROOT, "./x")` resolves either
+  // way and the covered-document case therefore never notices. What it changes is the path the
+  // report PRINTS — `./docs/…` here and `docs/…` in the coverage arm above, two spellings of
+  // one document in one report, which is precisely the confusion the normal form exists to end.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  withSpec(cwd, "present.md");
+  writeState(cwd, { version: 1, active: null, detourStack: [], epics: [
+    epic({ id: "e1", specPath: "./docs/superpowers/specs/gone.md" }),
+  ] });
+  const arm = run(["verify-specs"], { cwd }).split("not on disk")[1] || "";
+  assert.match(arm, /→ docs\/superpowers\/specs\/gone\.md/);
+  assert.doesNotMatch(arm, /→ \.\//);
+});
+
 test("gh-93: a dangling planPath is NOT reported here — that noise is #138's, already removed", () => {
   // 7 of 8 epics carrying a planPath in this repository dangled, and all 7 were archived and
   // moved. epicProgress() exempts exactly that case; re-reporting it from a second surface
