@@ -1965,7 +1965,7 @@
       "id": "autodetour-parser-misses-am-and-f",
       "title": "commit-nudge's -m parser misses -am / -F / editor commits, so #65 is only closed for -m",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -1973,17 +1973,31 @@
       "stories": [
         {
           "title": "git commit -am \"fix: x\" parses to subject='' which short-circuits the guard; a REJECTED -am commit still writes a false DETOUR-COMMIT line while a detour is active -- the original #65 symptom",
-          "done": false
+          "done": true
         },
         {
           "title": "b2e472f's message claims 'closes #65, #68' -- true for -m only. Correct the claim or close the gap BEFORE those issues are closed upstream.",
-          "done": false
+          "done": true
         },
         {
           "title": "ALSO: an escaped quote inside a double-quoted -m truncates the capture (regex is \"([^\"]*)\"), so a genuinely landed commit is CONTRADICTED and the hook silently suppressed. Fix shape: backslash-aware capture \"((?:[^\"\\\\]|\\\\.)*)\", or treat a value ending in a backslash as unverifiable.",
-          "done": false
+          "done": true
         }
-      ]
+      ],
+      "attributedCommits": [
+        "45bb85b"
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T05:18:40.665Z",
+        "reason": "closed by observation-based commit-nudge in 0.32.0: a HEAD watermark plus reflog classification is flag-form-blind, so -am, -F, editor commits and forms git has not invented yet are covered by construction rather than by three pattern patches"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T05:18:40.664Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T05:18:40.665Z"
     },
     {
       "id": "edd-corpus-expansion-nondeterministic-surfaces",
@@ -2422,7 +2436,10 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "91",
-      "externalUrl": "https://github.com/cfdude/pm/issues/91"
+      "externalUrl": "https://github.com/cfdude/pm/issues/91",
+      "attributedCommits": [
+        "45bb85b"
+      ]
     },
     {
       "id": "gh-92-epic-specpath",
@@ -2596,7 +2613,11 @@
       ],
       "reconcileNeeded": false,
       "externalId": "104",
-      "externalUrl": "https://github.com/cfdude/pm/issues/104"
+      "externalUrl": "https://github.com/cfdude/pm/issues/104",
+      "attributedCommits": [
+        "45bb85b",
+        "2ed5929"
+      ]
     },
     {
       "id": "gh-102-sync-blind-to-issue-comments",
@@ -3423,7 +3444,10 @@
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "6012879",
+        "a754258"
+      ],
       "externalId": "133",
       "externalUrl": "https://github.com/cfdude/pm/issues/133"
     },
@@ -3645,7 +3669,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 164,
+  "revision": 174,
   "reviewMode": "thorough",
   "releases": [
     {
