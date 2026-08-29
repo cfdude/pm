@@ -10,6 +10,7 @@ import { isInitialized, loadState, pushEpic, saveState, readStdin } from "./stat
 import { render } from "./render.mjs";
 import { ROOT, KNOWN_LANES, KNOWN_STATUSES, epicBatchKeys } from "./constants.mjs";
 import { creationStamp } from "./disposition.mjs";
+import { isKnownLinkType, KNOWN_LINK_TYPES } from "./links.mjs";
 
 /** Bulk-create epics from a JSON batch `{ parent?, epics: [...] }`.
  *  Validate EVERYTHING first (id format, uniqueness vs existing AND within the
@@ -85,6 +86,18 @@ export function addMany() {
     if (!e.lane || !KNOWN_LANES.includes(e.lane)) die(`epic '${id}': lane must be one of ${KNOWN_LANES.join("|")}`);
     const status = e.status || "queued";
     if (!KNOWN_STATUSES.includes(status)) die(`epic '${id}': status must be one of ${KNOWN_STATUSES.join("|")}`);
+    // The SIBLING write path. `--link` reaches the store through parseLinkFlags for add-epic and
+    // update-epic; a batch entry's `links` is a JSON array copied verbatim by the registry loop
+    // below, so a rule added only at parseLinkFlags would hold at two of three write paths and
+    // be silently absent here — the defect class this repo's own audit calls the dominant one.
+    // Type only: the EPIC half is still unvalidated on this path (a pre-existing gap from #70,
+    // and a batch may legitimately link to an epic created later in the same batch), which is
+    // its own issue rather than something to widen here.
+    for (const l of Array.isArray(e.links) ? e.links : []) {
+      if (l && typeof l.type === "string" && !isKnownLinkType(l.type)) {
+        die(`epic '${id}': link type '${l.type}' is not one of ${KNOWN_LINK_TYPES.join("|")}`);
+      }
+    }
     batchIds.add(id);
   }
   const projected = [...state.epics, ...incoming.map(e => ({ id: e.id, parent: e.parent }))];

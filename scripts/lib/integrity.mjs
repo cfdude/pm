@@ -19,7 +19,7 @@ import { archivedChanges, epicProgress, strippedChangeId } from "./epic-progress
 import { gateHasEvidence, isOpenspecLane, releaseMembers } from "./constants.mjs";
 import { commitDate, isAncestor, objectExists, reachableFromAnyRef } from "./git.mjs";
 import { isArchiveBackfilled, outcomeOf, stampedBy } from "./disposition.mjs";
-import { epicReferences, supersededEpics } from "./links.mjs";
+import { epicReferences, isKnownLinkType, isRenderableLink, KNOWN_LINK_TYPES, supersededEpics } from "./links.mjs";
 
 /** The outcomes that are their own explanation. Each carries a REQUIRED reason saying why the
  *  work did not complete, so an epic holding one is a record working rather than a record
@@ -353,6 +353,29 @@ export const CHECKS = [
           // been a fifth disposition scope invented to quiet one check's output. When #64/#69
           // lands, these findings disappear on their own.
           " — likely cause: #64/#69, `sync` registering a finished plan file as a second epic" });
+      }
+      return out;
+    },
+  },
+  {
+    id: "link-of-unknown-type",
+    title: "a stored link whose type nothing in the engine knows — an edge that reads as a relationship and is not one",
+    run(state) {
+      // gh#100's other half. `--link` now refuses an unknown type on WRITE, but records written
+      // before that hold them, and the read paths must keep accepting those or an existing state
+      // file stops loading (see isRenderableLink() in links.mjs). Reporting is therefore the
+      // ONLY correct treatment: a repair would have to guess which type was meant, and
+      // `resolves-blocker-for`→`depends-on` — the guess that looks most obvious — points the
+      // opposite way and would corrupt queue ordering.
+      const out = [];
+      for (const e of state.epics || []) {
+        for (const l of (e && Array.isArray(e.links) ? e.links : [])) {
+          if (!isRenderableLink(l) || isKnownLinkType(l.type)) continue;
+          out.push({ epic: e.id, detail:
+            `link \`${l.type}→${l.epic}\` — '${l.type}' is not one of ${KNOWN_LINK_TYPES.join(", ")}, ` +
+            "so every consumer that switches on the type ignores it. Fix it with " +
+            `\`update-epic ${e.id} --link\` (which replaces the whole array — pass every link you want kept).` });
+        }
       }
       return out;
     },

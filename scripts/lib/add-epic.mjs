@@ -9,6 +9,7 @@ import { activate } from "./active-pointer.mjs";
 import { isInitialized, loadState, pushEpic, saveState } from "./state.mjs";
 import { render } from "./render.mjs";
 import { KNOWN_LANES, KNOWN_STATUSES, epicFlagsFor, repeatableEpicFlags } from "./constants.mjs";
+import { isKnownLinkType, unknownLinkTypeMessage, linkTypeVocabulary } from "./links.mjs";
 import { creationStamp } from "./disposition.mjs";
 import { rankOf } from "./epic-progress.mjs";
 
@@ -49,15 +50,30 @@ export function parseFlags(argv) {
  *  real known epic id) by THROWING, instead of the prior behavior of silently storing a
  *  garbage link object — a typo like "type:related:epic:..." used to parse successfully
  *  (type="type", epic="related") because nothing checked that "related" was a real epic.
- *  Shared by add-epic and update-epic. */
+ *  Shared by add-epic and update-epic.
+ *
+ *  BOTH halves are checked now (gh#100). #70 shipped the epic half; the type half was the
+ *  vocabulary it did not have, so `--link "depends_on:x"` stored an edge that every consumer
+ *  ignores forever and that the next agent copies as precedent. This is the ONE write path —
+ *  add-epic, update-epic and add-many all reach the store through here — which is why the check
+ *  lives at the shared function rather than at each verb. The read paths deliberately stay
+ *  permissive; see isRenderableLink() in links.mjs for why. */
 export function parseLinkFlags(raw, knownEpicIds) {
   return (raw || []).filter(s => typeof s === "string").map(s => {
     const [type, epic, ...rest] = s.split(":");
     if (!type || !epic) {
       throw new Error(`bad --link '${s}': expected "<type>:<epic>[:<reason>]"`);
     }
+    // ORDER IS DELIBERATE: the epic half first. A value that mis-split (#70's regression,
+    // `type:related:epic:...`, which parses as type="type" epic="related") is best diagnosed by
+    // the half that reveals the mis-split — "'related' is not a known epic id" points at the
+    // structure, where "'type' is not a known link type" would send the reader off to fix a
+    // vocabulary they never got wrong.
     if (!knownEpicIds.has(epic)) {
       throw new Error(`bad --link '${s}': '${epic}' is not a known epic id`);
+    }
+    if (!isKnownLinkType(type)) {
+      throw new Error(unknownLinkTypeMessage(s, type));
     }
     const reason = rest.join(":").trim();
     return reason ? { type, epic, reason } : { type, epic };

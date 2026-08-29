@@ -34,6 +34,13 @@ export const PLANS_DIR = path.join(ROOT, "docs", "superpowers", "plans");
 export const SPECS_DIR = path.join(ROOT, "docs", "superpowers", "specs");
 export const KNOWN_LANES = ["openspec", "superpowers", "claude-code", "decision", "external"];
 
+// KNOWN_LINK_TYPES — the `--link` vocabulary — is declared in lib/links.mjs, not here, and this
+// pointer exists so the `rg 'KNOWN_[A-Z_]+' constants.mjs` that gh#100 was filed after does not
+// come back empty. It stays there for two reasons: this file's first line is "No dependencies on
+// any other lib module" (a re-export would make constants depend on links and invert the leaf),
+// and each type is declared next to the consumer files that read it, which is what makes the set
+// drift-proof rather than a second enumeration. conductor-29 keeps this line honest.
+
 /** THE predicate every site deciding openspec-lane membership goes through.
  *
  *  An absent `lane` IS openspec — `resolveEpics()` has normalized it that way since 0.3.0, so a

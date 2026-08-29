@@ -6,7 +6,7 @@ import { resolveEpics, missing, orderQueueWithDependencies, bar, CLAIMED_COMPLET
 import { changelogAddedHeadlines, cmpVer, newestInstalledVersion, pluginVersion } from "./plugin-meta.mjs";
 import { getAutonomy } from "./autonomy.mjs";
 import { staleMarker } from "./active-pointer.mjs";
-import { validLink } from "./links.mjs";
+import { isRenderableLink, deferralHistory, deferralNote, daysSince } from "./links.mjs";
 import { correctionMarking, correctionNote, outcomeOf, recordedDispositions } from "./disposition.mjs";
 import { stalenessMarking } from "./archive-gate.mjs";
 import { ungatedArchives } from "./integrity.mjs";
@@ -108,6 +108,17 @@ export function buildBrief(state, { consume = false } = {}) {
     for (let i = state.detourStack.length - 1; i >= 0; i--) {
       const f = state.detourStack[i];
       L.push(`  ⤷ paused \`${f.pausedEpic}\` — ${f.reason}`);
+      // gh#94, the visibility half. Elapsed time and recurrence are stated as FACTS with no
+      // marker and no imperative: a detour is the mechanism working, and nothing in this
+      // repository's record supports a threshold (see deferralHistory() in links.mjs). It also
+      // rides an existing CONDITIONAL block — a line that only appears when a stack exists is
+      // not a line anybody learns to scroll past.
+      const history = deferralHistory(state, f.pausedEpic);
+      const days = daysSince(f.pausedAt);
+      const note = deferralNote(history);
+      if (days !== null || note) {
+        L.push(`      ${[days === null ? null : `paused ${days}d`, note].filter(Boolean).join(" · ")}`);
+      }
       if (f.spawnedDetour) L.push(`      detour in flight: \`${f.spawnedDetour}\``);
       if (f.reconcileOnResume)
         L.push(`      ⚠ ON RESUME: re-validate \`${f.pausedEpic}\` against \`${f.spawnedDetour}\`'s changes BEFORE coding.`);
@@ -227,7 +238,7 @@ export function buildBrief(state, { consume = false } = {}) {
     L.push("");
   }
 
-  const links = epics.flatMap(e => (e.links || []).filter(validLink).map(l => ({ from: e.id, ...l })));
+  const links = epics.flatMap(e => (e.links || []).filter(isRenderableLink).map(l => ({ from: e.id, ...l })));
   if (links.length) {
     L.push("EPIC LINKS:");
     for (const l of links) L.push(`  • \`${l.from}\` ${l.type} \`${l.epic}\`${l.reason ? ` — ${l.reason}` : ""}`);

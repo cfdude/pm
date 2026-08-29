@@ -11,7 +11,7 @@ import { buildBrief } from "./briefing.mjs";
 import { staleMarker } from "./active-pointer.mjs";
 import { getAutonomy } from "./autonomy.mjs";
 import { parseFlags } from "./add-epic.mjs";
-import { validLink } from "./links.mjs";
+import { isRenderableLink } from "./links.mjs";
 import { correctionMarking, correctionNote, outcomeOf, recordedDispositions } from "./disposition.mjs";
 import { stalenessMarking } from "./archive-gate.mjs";
 import { DETOURS_LOG, PROJECT_MD, STATE_PATH, RENDER_STAMP_PATH, CONDUCTOR_DIR, gateSummary, releaseLine, releaseSummaries } from "./constants.mjs";
@@ -104,7 +104,7 @@ export function render() {
     const carriedOut = e.disposition && e.disposition.carriedTo
       ? [`carried-to→${e.disposition.carriedTo}`] : [];
     const carriedIn = (inherited.get(e.id) || []).map(from => `carried-from←${from}`);
-    const links = [...(e.links || []).filter(validLink).map(l => `${l.type}→${l.epic}`),
+    const links = [...(e.links || []).filter(isRenderableLink).map(l => `${l.type}→${l.epic}`),
       ...carriedOut, ...carriedIn].join("; ") || "-";
     const miss = missing(e) ? " ⚠ no change on disk" : "";
     const indent = depth > 0 ? "└─ ".repeat(depth) : "";

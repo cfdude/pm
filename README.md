@@ -525,6 +525,23 @@ tombstones it identically, naming `--spec` in the un-ignore instruction.
 | `reorder <id> <id> …` | **Manual rank** — place the epics of ONE priority band, top to bottom, in the order given. Ranks are rewritten dense `1..N` on every call, and this is the only thing that writes `rank`. Takes the whole band and refuses a partial one, so the numbering stays contiguous by construction; unranked epics sort after every ranked one. Rank is the LAST sort key (dependencies → priority → **rank**) — it breaks ties that today fall through to alphabetical order, and never outranks a dependency or a priority. `update-epic --priority` clears an epic's rank, since a placement among one band's peers means nothing among another's. |
 | `set-active <id>` / `clear-active` | Set/clear the top-level active epic. |
 
+**Link types are a closed vocabulary, and only two of them do anything.** `--link
+"<type>:<epic>[:<reason>]"` validates both halves — an unknown `<type>` is refused with the
+valid set, because a typo used to be stored silently and then copied as precedent by the next
+agent reading `state.json`.
+
+| Type | What it does |
+|---|---|
+| `depends-on` | **Read by the engine** — orders the queue so a blocker is listed, and picked by `/pm:next`, before the epic waiting on it. |
+| `supersedes` | **Read by the engine** — marks the named epic replaced, for `/pm:triage` and for `integrity`. Lives on the epic that replaces. |
+| `may-invalidate` | Protocol state written at a detour PUSH; carries the reconcile verdict. Nothing switches on the type. |
+| `relates-to` · `blocks` · `resolves-blocker-for` | Annotation only — recorded for a reader, read by no behaviour. |
+
+`resolves-blocker-for` is **not** a synonym for `depends-on`: the detour protocol puts it on the
+detour naming the parent, so the equivalent `depends-on` edge points the other way. Links already
+stored under some other type still load and still render — validation is on write only — and
+`integrity`'s `link-of-unknown-type` check reports each one instead of guessing a repair.
+
 **Inline story mutation** — `--add-story "<title>"` (repeatable, and available on `add-epic`
 and `add-many` too) appends `{ title, done: false }` to the epic's inline `stories[]`;
 `--story <n> --done` marks the `n`-th story done, where `n` is **1-indexed** (`--story 1` is

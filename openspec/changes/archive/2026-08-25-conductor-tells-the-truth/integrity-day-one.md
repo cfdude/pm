@@ -11,11 +11,13 @@ here carries a disposition, and the scope rule's two exclusions currently exclud
 upgrade, the same checks report the same findings: the migration stamps `unknown` on every archived
 epic, and `unknown` stays in scope by design.
 
-**13 checks, 11 findings.**
+**14 checks, 11 findings.**
 
 **Re-measured 2026-08-27** when `recorded-sha-the-repository-cannot-resolve` was added for #142,
 and again when `delivered-release-epic-left-open` was added for #137 and
 `superseded-epic-never-ended` alongside it (gh-112's deferred follow-up).
+**Re-measured 2026-08-29** when `link-of-unknown-type` was added for #100. The count of checks
+moved; no finding did.
 The count of checks moved; no finding did. This document is the living record of what the audit
 reports, not a snapshot of one afternoon — a check added later that nobody wrote down here is a
 check whose result nobody wrote down at all, which is the failure the document exists to end.
@@ -90,6 +92,7 @@ on today's record, and each reason is checkable rather than asserted.
 | `recorded-sha-the-repository-cannot-resolve` | **All 35 recorded shas resolve here and every one is reachable from a ref.** That zero is not luck and it is not the natural state: measured immediately after 0.28.0 merged, all 36 recorded shas were reachable from *nothing* — a squash-merge orphans every commit on the branch, and squash is this repo's only permitted merge. They are reachable today because #143 made `pr-workflow` tag the pre-squash tip before merging, so 32 of the 35 are held by a `presquash/*` tag and by nothing else. Delete those tags and this check reports 32 findings on its orphaned arm. **The zero is measured against the fix, not against the absence of the problem.** In CI the same zero comes from the other direction: `actions/checkout` fetches one ref, so none of the 35 resolve, and the probe correctly reads that as "this clone lacks the history" rather than "the evidence was destroyed". |
 | `delivered-release-epic-left-open` | **This repository holds one release, `0.27.0`, and every one of its 21 members is `archived`.** The zero is the *discharged* form of the finding this check was written from, not the absence of one: at the moment #137 was filed the same twenty epics were `queued` under a release whose change had archived `delivered`, and the check would have named all twenty. They were then given their dispositions by twenty hand-run `update-epic` calls, which is exactly what a cleared finding looks like. The four epics `0.27.0` deliberately cut — `gh-114`, `gh-66`, `gh-64`, `gh-69` — are correctly absent for a *second* reason: they are in the release's `deferred[]`, and `--defer` also cleared their membership pointer, so they are not members either. |
 | `superseded-epic-never-ended` | **No epic in this repository holds a `supersedes` link.** Measured across all 148 epics: the link types actually in use are `relates-to` (22), `depends-on` (16) and `blocks` (4), and `supersedes` (0). The vocabulary shipped with gh-112's intake/triage layer and nothing has consolidated a pair through it yet — so the zero is "the declaration has never been made here", not "consolidations are being ended correctly". The first `--link "supersedes:<id>:<why>"` written in this repo puts a candidate in front of this check. |
+| `link-of-unknown-type` | **Every link type stored in this repository is in the known set.** Measured 2026-08-29 across every epic: the types in use are `relates-to`, `depends-on` and `blocks`, and all three are known — so the zero says the vocabulary matches this record, not that the check cannot fire. It fires readily elsewhere: gh#100 was filed from a live repo holding `relates` (36), `resolves-blocker-for` (2), `parent` (2) and `may-invalidate` (1) with **zero** `depends-on`, which is the state this check exists to name. The zero here also has a second, weaker cause worth stating: `--link` is written by hand rarely in this repo, so the population is small. |
 | `archived-with-no-gate-2-review` | **No epic carries an `ungated` Gate 2.** Only the archive-drift heal writes that verdict, and it writes it only where an openspec-lane epic reaches `archived` with no `gate2` at all; the three epics that have a `gate2` all carry `pass`. The backfill and the two archived-at-creation paths are forbidden from writing a `gate2` entry, which is what keeps this from becoming a permanent, unclearable condition against every historical change. |
 
 ---
@@ -114,5 +117,6 @@ Both are explained rather than silently absorbed.
 Every finding count — 5, 4, 2, and ten zeros — matches the 2026-08-23 measurement. The seventh
 zero is `dangling-epic-reference`, added while fixing what tasks 16.1/16.2 found; the eighth is
 `recorded-sha-the-repository-cannot-resolve`, added on 2026-08-27 for #142; the ninth and tenth are
-`delivered-release-epic-left-open` and `superseded-epic-never-ended`, added on 2026-08-27 for #137.
+`delivered-release-epic-left-open` and `superseded-epic-never-ended`, added on 2026-08-27 for #137;
+the eleventh is `link-of-unknown-type`, added on 2026-08-29 for #100.
 None existed on 2026-08-23 and none changes a finding.
