@@ -8,7 +8,7 @@
 import { activate } from "./active-pointer.mjs";
 import { isInitialized, loadState, pushEpic, saveState } from "./state.mjs";
 import { render } from "./render.mjs";
-import { KNOWN_LANES, KNOWN_STATUSES, epicFlagsFor, repeatableEpicFlags } from "./constants.mjs";
+import { KNOWN_LANES, KNOWN_STATUSES, epicFlagsFor, repeatableEpicFlags, valueBearingFlagsFor } from "./constants.mjs";
 import { creationStamp } from "./disposition.mjs";
 import { rankOf } from "./epic-progress.mjs";
 
@@ -42,6 +42,53 @@ export function parseFlags(argv) {
     else o[k] = v;
   }
   return o;
+}
+
+/** #149 — the ONE rule for "this flag needs a value", read from EPIC_FLAGS.
+ *
+ *  Returns the refusal message, or null when every value-bearing flag `command` accepts either
+ *  is absent or carries a usable value. Pure, so the rule is testable without a subprocess;
+ *  requireFlagValues() below is the exit-1 wrapper every write surface calls.
+ *
+ *  THE ASYMMETRY THIS ENDS. `update-epic --plan` with no value was refused and `add-epic --plan`
+ *  with no value was silently dropped — exit 0, epic created, field absent — because each
+ *  command carried its own hand-written list of flags to check. `record-gate-review` carried no
+ *  list at all, so a valueless `--reviewer` exited 0 with the evidence field missing. Refusing
+ *  on every surface is the only reading that does not REMOVE a working catch, and the mistake it
+ *  catches is silent and unrecoverable: a shell that ate the value, a trailing flag with nothing
+ *  after it.
+ *
+ *  THREE SHAPES, and the second is the one a per-flag guard always misses:
+ *   • `true` — a valueless non-repeatable flag, as parseFlags yields it.
+ *   • `[…, true]` — a valueless occurrence of a REPEATABLE flag. parseFlags pushes into an
+ *     array, so a repeatable flag NEVER arrives as bare `true`; a guard written `f[flag] ===
+ *     true` covers none of the eight repeatable rows, and one reading `vals[0]` misses
+ *     `--attribute-commit <sha> --attribute-commit`, where the good occurrence is first.
+ *   • `"   "` — present but blank. `str()` passes it through and the write lands as a
+ *     whitespace-only path, title or sha, which is the same unrecoverable silence one step on.
+ *     `--title ""` previously fell back to the id; it is now refused, which is the one live
+ *     behaviour change here beyond the valueless case.
+ */
+export function valuelessFlagError(command, f) {
+  for (const { flag, requires } of valueBearingFlagsFor(command)) {
+    const raw = f[flag];
+    if (raw === undefined) continue;
+    const vals = Array.isArray(raw) ? raw : [raw];
+    // An EMPTY array cannot occur (parseFlags only creates the array by pushing) but is treated
+    // as "given with nothing usable" rather than skipped, so a future caller constructing flags
+    // programmatically cannot slip past by handing over [].
+    if (!vals.length || vals.some(v => typeof v !== "string" || !v.trim())) {
+      return `conductor: --${flag} requires ${requires}`;
+    }
+  }
+  return null;
+}
+
+/** The exit-1 wrapper. Called by every write surface IMMEDIATELY after its unknown-flag
+ *  allowlist and BEFORE loadState(), so a refusal can never leave a partial write behind. */
+export function requireFlagValues(command, f) {
+  const err = valuelessFlagError(command, f);
+  if (err) { process.stderr.write(err + "\n"); process.exit(1); }
 }
 
 /** Parse `--link "<type>:<epic>[:<reason>]"` strings into validated {type,epic,reason?}
@@ -244,6 +291,11 @@ export function addEpic() {
       `(known: ${known.map(k => `--${k}`).join(", ")})\n`);
     process.exit(1);
   }
+  // #149 — every value-bearing flag this command accepts must carry a usable value. One rule
+  // from the registry, applied here and at every other write surface, replacing the literal
+  // `["description", "notes", "spec"]` this command used to check: `--plan` was absent from that
+  // list and was silently dropped, while `update-epic` refused it. Before loadState().
+  requireFlagValues("add-epic", f);
   const str = (v) => (typeof v === "string" ? v : undefined); // valueless flags arrive as boolean true
   // Stories are parsed BEFORE loadState(), with the id and lane checks, so a bad title refuses
   // the whole registration rather than creating a story-less epic somebody then has to notice.
@@ -322,20 +374,12 @@ export function addEpic() {
   // pass the allowlist and vanish — exit-0-write-nothing, and the family's parity test would
   // stay green because it checks registration, not the write.
   if (str(f.spec)) epic.specPath = str(f.spec);
-  // A valueless `--description` / `--notes` arrives as boolean true and would otherwise be
-  // dropped by str() — exit-0-write-nothing, the exact shape of #79 the allowlist above was
-  // added to end. Refuse it instead.
+  // The per-flag `["description", "notes", "spec"]` loop that used to live here is gone: #149
+  // moved the rule into requireFlagValues() above, which reads it from EPIC_FLAGS and so covers
+  // every flag this command accepts rather than the three somebody remembered. The `--plan`
+  // asymmetry that loop deliberately preserved — refused on `update-epic`, dropped here — is
+  // what #149 decided, and it is decided the strict way, on every surface.
   //
-  // `--spec` is refused the same way, and `--plan` deliberately is NOT changed to match:
-  // add-epic has silently dropped a valueless `--plan` since it shipped while `update-epic`
-  // refuses one, and tightening a flag in use is a behaviour change that belongs to its own
-  // change rather than riding along with a new field. The asymmetry is recorded here so the
-  // next reader sees a decision rather than an oversight.
-  for (const flag of ["description", "notes", "spec"]) {
-    if (f[flag] === true) {
-      process.stderr.write(`conductor: --${flag} requires a value\n`); process.exit(1);
-    }
-  }
   // Absent, not empty: an epic that declared no milestones carries no `stories` key at all, so
   // epicProgress() falls through to its planPath/tasks.md precedence exactly as before.
   if (stories.length) epic.stories = stories;
