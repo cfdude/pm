@@ -46,6 +46,16 @@
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs\" gate-guard --platform claude-code"
           }
         ]
+      },
+      {
+        "comment": "PM CONDUCTOR: lesson advisor — surfaces a docs/lessons/ entry whose `detect:` matcher matches the pending tool call, BEFORE the mistake. ADVISORY ONLY: it never blocks and always exits 0, which is why it is a separate entry from the gate guard above. A SEPARATE, WIDER matcher on purpose: half the matchable lessons match on a COMMAND, so Bash must be covered or they are dead on arrival. Silent in projects that have not run /pm:init, and in any project with no docs/lessons/.",
+        "matcher": "Bash|Edit|Write|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs\" lesson-advice --platform claude-code"
+          }
+        ]
       }
     ]
   }

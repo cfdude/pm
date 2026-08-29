@@ -42,6 +42,7 @@ export const VERB_EFFECTS = {
   changesets: { effect: "read-only", exercise: [], note: "lists pending .changesets/*.md fragments" },
   "gate-guard": { effect: "read-only", exercise: [], note: "PreToolUse decision; reads state and the hook payload on stdin" },
   integrity: { effect: "read-only", exercise: [], note: "audits the record for shapes that cannot be true; reports, never repairs" },
+  "lesson-advice": { effect: "read-only", exercise: [], note: "PreToolUse advisory; reads docs/lessons/ frontmatter and the hook payload on stdin, writes nothing and never blocks" },
   "plan-hierarchy": { effect: "read-only", exercise: ["--parent", "p"], note: "recomputes execution batches fresh every call; no persistent state" },
   rules: { effect: "read-only", exercise: [], note: "prints the CLAUDE.md rules block to stdout — `write-rules` is the writing half" },
   "rules-target": { effect: "read-only", exercise: [], note: "prints which file this platform's rules block belongs in; deliberately does NOT record the platform" },
