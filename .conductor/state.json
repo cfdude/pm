@@ -2249,7 +2249,12 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "81",
-      "externalUrl": "https://github.com/cfdude/pm/issues/81"
+      "externalUrl": "https://github.com/cfdude/pm/issues/81",
+      "attributedCommits": [
+        "72241fb",
+        "4f10b89",
+        "b342023"
+      ]
     },
     {
       "id": "gh-82-claude-project-dir-overrides-cwd",
@@ -2262,7 +2267,10 @@
       "reconcileNeeded": false,
       "externalId": "82",
       "externalUrl": "https://github.com/cfdude/pm/issues/82",
-      "specPath": "docs/superpowers/specs/2026-08-23-cross-repo-orchestration-design.md"
+      "specPath": "docs/superpowers/specs/2026-08-23-cross-repo-orchestration-design.md",
+      "attributedCommits": [
+        "6a3506e"
+      ]
     },
     {
       "id": "gh-85-document-mutating-verbs",
@@ -2274,7 +2282,11 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "85",
-      "externalUrl": "https://github.com/cfdude/pm/issues/85"
+      "externalUrl": "https://github.com/cfdude/pm/issues/85",
+      "attributedCommits": [
+        "66b71fd",
+        "ca8144b"
+      ]
     },
     {
       "id": "gh-86-openspec-lane-silent-zero-progress",
@@ -2743,7 +2755,10 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "105",
-      "externalUrl": "https://github.com/cfdude/pm/issues/105"
+      "externalUrl": "https://github.com/cfdude/pm/issues/105",
+      "attributedCommits": [
+        "bcff31c"
+      ]
     },
     {
       "id": "gh-106-conductor-logs-never-gitignored",
@@ -3500,7 +3515,10 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "131",
-      "externalUrl": "https://github.com/cfdude/pm/issues/131"
+      "externalUrl": "https://github.com/cfdude/pm/issues/131",
+      "attributedCommits": [
+        "c355f4c"
+      ]
     },
     {
       "id": "gh-132-lessons-advisor-hook",
@@ -3624,7 +3642,9 @@
       "reconcileNeeded": false,
       "externalId": "136",
       "externalUrl": "https://github.com/cfdude/pm/issues/136",
-      "attributedCommits": []
+      "attributedCommits": [
+        "c6a516e"
+      ]
     },
     {
       "id": "gh-138-refresh-warning-counts-terminal-epics",
@@ -3798,7 +3818,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 202,
+  "revision": 211,
   "reviewMode": "thorough",
   "releases": [
     {
