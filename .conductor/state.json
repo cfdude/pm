@@ -3881,7 +3881,9 @@
       "reconcileNeeded": false,
       "externalId": "148",
       "externalUrl": "https://github.com/cfdude/pm/issues/148",
-      "attributedCommits": []
+      "attributedCommits": [
+        "156b888"
+      ]
     },
     {
       "id": "gh-149-add-epic-drops-valueless-flag",
@@ -3900,7 +3902,10 @@
       "reconcileNeeded": false,
       "externalId": "149",
       "externalUrl": "https://github.com/cfdude/pm/issues/149",
-      "attributedCommits": []
+      "attributedCommits": [
+        "423d864",
+        "156b888"
+      ]
     },
     {
       "id": "gh-151-no-push-detour-verb",
@@ -3920,6 +3925,25 @@
       "externalId": "151",
       "externalUrl": "https://github.com/cfdude/pm/issues/151",
       "attributedCommits": []
+    },
+    {
+      "id": "gh-152-flag-value-rule-outside-epic-flags",
+      "title": "Seven verbs outside EPIC_FLAGS each invented their own answer to a valueless flag",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-149-add-epic-drops-valueless-flag",
+          "reason": "149 fixed the six registry surfaces; this is where the rule stops and why widening it needs its own registry decision"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "152",
+      "externalUrl": "https://github.com/cfdude/pm/issues/152",
+      "attributedCommits": []
     }
   ],
   "detourStack": [],
@@ -3930,7 +3954,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 227,
+  "revision": 231,
   "reviewMode": "thorough",
   "releases": [
     {
