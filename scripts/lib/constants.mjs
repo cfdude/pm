@@ -242,6 +242,11 @@ export const EPIC_FLAGS = [
   // The handoff. Lands on the disposition record rather than a field of its own — "where the
   // work went" is part of how this epic ended, not a separate fact about it.
   { flag: "carried-to", key: "disposition", commands: ["update-epic"], write: "custom" },
+  // The CORRECTION of an already-recorded agent disposition (#130). Value-bearing on purpose:
+  // its value is why the recorded record was wrong, so the justification is required by the
+  // flag's own shape rather than by a second flag — the same form `--wont-do "<reason>"` takes.
+  // `update-epic` only: a creation path has no prior judgment to correct.
+  { flag: "correct-disposition", key: "disposition", commands: ["update-epic"], write: "custom" },
   // Release planning. The `release` verb writes exactly ONE epic key — `release`, the one-way
   // membership pointer — and its other flags shape the release object itself, so they carry a
   // null key exactly as record-gate-review's evidence flags do.

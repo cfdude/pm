@@ -105,14 +105,18 @@ function upgradeAt(cwd, version) {
   return runCombined(["upgrade"], { cwd, env: { CLAUDE_PLUGIN_ROOT: fixturePluginRoot(version) } });
 }
 
-test("7.1: a 0.26.0 state applies exactly one migration, and the second run is a byte-identical no-op", () => {
+test("7.1: a 0.26.0 state applies the entries above it, and the second run is a byte-identical no-op", () => {
   const cwd = repoAt0260();
-  const first = upgradeAt(cwd, "0.27.0");
-  assert.match(first, /upgraded \(1 migration\(s\)\)/,
-    "the 0.27.0 entry must be the one migration a 0.26.0-stamped repo is missing");
-  assert.equal(readState(cwd).pmVersion, "0.27.0");
+  // TWO entries now sit above 0.26.0 — the 0.27.0 stamp, and the 0.32.0 lift of archive-backfill
+  // registration provenance onto the epic (#133). The count is release-specific and moves with
+  // every appended entry; what this test pins is that the missing entries apply, apply ONCE,
+  // and that a second run is byte-identical.
+  const first = upgradeAt(cwd, "0.32.0");
+  assert.match(first, /upgraded \(2 migration\(s\)\)/,
+    "a 0.26.0-stamped repo is missing exactly the 0.27.0 and 0.32.0 entries");
+  assert.equal(readState(cwd).pmVersion, "0.32.0");
   const after = stateBytes(cwd);
-  const second = upgradeAt(cwd, "0.27.0");
+  const second = upgradeAt(cwd, "0.32.0");
   assert.match(second, /upgraded \(0 migration\(s\)\)/, "a stamped repo replays nothing");
   assert.equal(stateBytes(cwd), after,
     "the second upgrade must be byte-identical — the no-op-save rule means even `revision` " +
@@ -846,7 +850,11 @@ test("9.2: a killed 47-task epic with everything unticked is not a finding; an u
   writeState(cwd, { version: 1, active: null, detourStack: [], platform: "claude-code", epics: [
     epic("killed-at-gate-1", { outcome: "killed", reason: "no code was ever written", recordedAt: "2026-08-01T00:00:00.000Z" }),
     epic("nobody-recorded-one", { outcome: "unknown", recordedAt: "2026-08-01T00:00:00.000Z", recordedBy: "migration" }),
-    epic("registered-from-the-archive", { outcome: "unknown", recordedAt: "2026-08-01T00:00:00.000Z", recordedBy: "archive-backfill" }),
+    // Since 0.32.0 the REGISTRATION provenance sits on the EPIC and is no longer inferred from
+    // the disposition stamp — that inference is what an agent's honest disposition destroyed
+    // (#133). The stamp stays too: it says the backfill recorded no disposition, a different fact.
+    { ...epic("registered-from-the-archive", { outcome: "unknown", recordedAt: "2026-08-01T00:00:00.000Z", recordedBy: "archive-backfill" }),
+      registeredBy: "archive-backfill" },
   ] });
   const out = run(["integrity"], { cwd });
   assert.ok(!out.includes("killed-at-gate-1"),

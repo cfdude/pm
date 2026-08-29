@@ -18,7 +18,7 @@
 import { gateHasEvidence, isOpenspecLane } from "./constants.mjs";
 import { isAncestor, sameCommit } from "./git.mjs";
 import { LIFECYCLE_MARKER, epicProgress, outstandingWork } from "./epic-progress.mjs";
-import { KNOWN_OUTCOMES, agentDisposition, dispositionError, isEngineStamped, isStoryDisposed, outcomeOf } from "./disposition.mjs";
+import { KNOWN_OUTCOMES, agentDisposition, correctionError, dispositionError, isEngineStamped, isStoryDisposed, outcomeOf } from "./disposition.mjs";
 
 /**
  * The outstanding-work quantity a refusal cites, rendered ONCE so a guard can never name a
@@ -179,13 +179,26 @@ export function archiveGate(epic, request = {}) {
   // `disposition`. Both are engine paths overwriting an agent's work. This is an agent
   // correcting a record the engine wrote because nobody was asked — and without it every
   // migration-stamped archived epic is frozen at `unknown` forever.
+  //
+  // A CORRECTION (#130) is the one way past that refusal, and it is deliberate, self-describing
+  // and non-destructive rather than a second door with the same key: `--correct-disposition
+  // "<why the recorded one was wrong>"` is never reachable by re-running the ordinary verb, its
+  // value is the justification, and the prior record survives verbatim under `superseded` where
+  // every surface renders it. Without it a mistyped outcome had NO correction verb at all and
+  // the only remaining route was hand-editing state.json — the failure this project's own
+  // feedback section already documents, one field over and on the TERMINAL record.
   const existing = epic.disposition;
-  if (existing && !isEngineStamped(existing)) {
+  const correction = request.correction;
+  if (correction !== undefined) {
+    const cerr = correctionError({ prior: existing, reason: correction });
+    if (cerr) return { ok: false, message: `cannot correct '${epic.id}' — ${cerr}` };
+  } else if (existing && !isEngineStamped(existing)) {
     return { ok: false, message:
       `cannot archive '${epic.id}' — it already carries an agent-recorded outcome ` +
       `'${outcomeOf(epic)}'${existing.recordedAt ? `, recorded ${existing.recordedAt}` : ""}. ` +
-      `Replacing it would destroy a judgment somebody made; correcting a mistaken disposition ` +
-      `is not something this verb does.` };
+      `Replacing it would destroy a judgment somebody made. If it is WRONG, correct it: add ` +
+      `--correct-disposition "<why the recorded one was wrong>", which keeps the prior record ` +
+      `readable under it rather than overwriting it.` };
   }
 
   // The DEFERRAL ASSERTION. The engine has not identified this change's deferrals and cannot,
@@ -279,6 +292,7 @@ export function archiveGate(epic, request = {}) {
   }
 
   return { ok: true,
-    disposition: agentDisposition({ outcome, reason, carriedTo: request.carriedTo }),
+    disposition: agentDisposition({ outcome, reason, carriedTo: request.carriedTo,
+      corrects: correction !== undefined ? { prior: existing, reason: correction } : undefined }),
     deferralAssertion: request.deferralAssertion };
 }
