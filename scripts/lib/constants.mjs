@@ -25,6 +25,12 @@ export const CLAUDE_MD = path.join(ROOT, "CLAUDE.md");
 export const CHANGES_DIR = path.join(ROOT, "openspec", "changes");
 export const ARCHIVE_DIR = path.join(CHANGES_DIR, "archive");
 export const PLANS_DIR = path.join(ROOT, "docs", "superpowers", "plans");
+// Where `verify-specs` looks for design documents when no `--root` is given (#93). A DEFAULT
+// and never an assumption: nothing scans it, no epic is registered from it, and a repository
+// that keeps its designs elsewhere is told the root is absent rather than handed a confidently
+// empty report. It sits beside PLANS_DIR because they are the same kind of fact — a convention
+// this estate happens to follow — not because the engine reads inside either one.
+export const SPECS_DIR = path.join(ROOT, "docs", "superpowers", "specs");
 export const KNOWN_LANES = ["openspec", "superpowers", "claude-code", "decision", "external"];
 
 /** THE predicate every site deciding openspec-lane membership goes through.
@@ -176,6 +182,13 @@ export const EPIC_FLAGS = [
   { flag: "external-id", key: "externalId", commands: ["add-epic", "update-epic", "add-many"] },
   { flag: "external-url", key: "externalUrl", commands: ["add-epic", "update-epic", "add-many"] },
   { flag: "plan", key: "planPath", commands: ["add-epic", "update-epic", "add-many"] },
+  // The DESIGN DOCUMENT the epic's work was drawn from (#92) — provenance, and many-to-one on
+  // purpose: a design too large for one implementation plan yields N epics that all name it.
+  // Registered on all three surfaces for the reason `--plan` is: an association settable only
+  // at creation is unreachable for every epic that already exists, which is what kept #64/#69
+  // unfixable. Nothing infers progress from it; see EPIC_SOURCE_ARTIFACTS in
+  // lib/source-artifacts.mjs for the family it joins.
+  { flag: "spec", key: "specPath", commands: ["add-epic", "update-epic", "add-many"] },
   { flag: "link", key: "links", commands: ["add-epic", "update-epic", "add-many"], repeats: true, write: "custom" },
   // Emptying the links array is its OWN named flag. `--link` replaces the array wholesale, so a
   // VALUELESS `--link` parsed as `[true]`, was filtered to `[]` by parseLinkFlags, and silently

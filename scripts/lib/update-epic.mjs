@@ -74,7 +74,7 @@ export function updateEpic() {
       process.exit(1);
     }
     process.stderr.write("conductor: update-epic requires an epic id as its first POSITIONAL argument\n");
-    process.stderr.write(`usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--lane openspec|superpowers|claude-code|decision|external] [--plan <path>] [--link \"<type>:<epic>[:<reason>]\"] [--clear-links] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done|--wont-do "<reason>"] [--attribute-commit <sha>] [--outcome ${AGENT_OUTCOMES.join("|")}] [--reason \"<why>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\"] [--declined-deferral \"<what>:<why not>\"] [--no-deferrals] [--description D] [--notes \"<text>\"] [--external-updated-at <iso>]\n`);
+    process.stderr.write(`usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--lane openspec|superpowers|claude-code|decision|external] [--plan <path>] [--spec <path>] [--link \"<type>:<epic>[:<reason>]\"] [--clear-links] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done|--wont-do "<reason>"] [--attribute-commit <sha>] [--outcome ${AGENT_OUTCOMES.join("|")}] [--reason \"<why>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\"] [--declined-deferral \"<what>:<why not>\"] [--no-deferrals] [--description D] [--notes \"<text>\"] [--external-updated-at <iso>]\n`);
     process.exit(1);
   }
   const f = parseFlags(argv.slice(1));
@@ -113,6 +113,14 @@ export function updateEpic() {
   const planPath = str(f.plan);
   if (f.plan !== undefined && planPath === undefined) {
     process.stderr.write("conductor: --plan requires a value\n"); process.exit(1);
+  }
+  // --spec: attach (or repoint) the DESIGN DOCUMENT an epic's work was drawn from (#92). The
+  // sibling of --plan, and written by its own explicit line for the same reason: the EPIC_FLAGS
+  // row makes this command ACCEPT the flag, and nothing in the registry copies a value onto a
+  // key. Registering the row and stopping there is the exit-0-write-nothing shape of #79.
+  const specPath = str(f.spec);
+  if (f.spec !== undefined && specPath === undefined) {
+    process.stderr.write("conductor: --spec requires a value\n"); process.exit(1);
   }
   // Clearing the links is a NAMED flag, and the valueless `--link` that used to do it by
   // accident is refused. `--link` is repeatable, so `--link` with nothing after it parses as
@@ -296,6 +304,7 @@ export function updateEpic() {
   // it used to is the whole reason remove-and-re-register was the only correction available.
   if (lane !== undefined) epic.lane = lane;
   if (planPath !== undefined) epic.planPath = planPath;
+  if (specPath !== undefined) epic.specPath = specPath;
   // The ONE claim site outside pushEpic(): every other way an epic comes to hold a source
   // artifact is a creation, and creation routes through that sink. Attaching an artifact says
   // it is real work, so any sync-ignore tombstone saying it is not must go — the record must

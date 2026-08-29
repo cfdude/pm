@@ -218,7 +218,8 @@ test("every add-many key the registry declares round-trips through a batch entry
     epics: [{
       id: "full", lane: "claude-code", title: "T", priority: "P1", status: "queued",
       externalId: "JOB-1", externalUrl: "https://example.test/JOB-1",
-      planPath: "docs/superpowers/plans/x.md", links: [], description: "why this epic exists",
+      planPath: "docs/superpowers/plans/x.md", specPath: "docs/superpowers/specs/x-design.md",
+      links: [], description: "why this epic exists",
       externalUpdatedAt: "2026-08-23T09:30:00Z",
       stories: ["a milestone", { title: "one already behind us", done: true }],
     }],
@@ -282,6 +283,7 @@ const EXERCISE = {
   "--review-mode": { args: ["--review-mode", "thorough"], check: (e) => assert.equal(e.reviewMode, "thorough") },
   "--lane": { args: ["--lane", "superpowers"], check: (e) => assert.equal(e.lane, "superpowers") },
   "--plan": { args: ["--plan", "docs/superpowers/plans/p.md"], check: (e) => assert.equal(e.planPath, "docs/superpowers/plans/p.md") },
+  "--spec": { args: ["--spec", "docs/superpowers/specs/d.md"], check: (e) => assert.equal(e.specPath, "docs/superpowers/specs/d.md") },
   "--external-updated-at": { args: ["--external-updated-at", "2026-08-23T09:30:00Z"], check: (e) => assert.equal(e.externalUpdatedAt, "2026-08-23T09:30:00Z") },
   "--description": { args: ["--description", "durable rationale"], check: (e) => assert.equal(e.description, "durable rationale") },
   // A note reads back as an ENTRY, not a string — {at, actor, text}. Asserting on the text
