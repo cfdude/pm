@@ -481,6 +481,31 @@ The step otherwise lost after compaction. Do not skip it.
    into your actual Honcho MCP memory/conclusion tool call.
 5. Render. State the exact next story to build.
 
+## Delegate discovery — your context is the scarce resource
+
+**If you do not already know the file path, do not go looking yourself.** A subagent's transcript
+never enters yours; only its final report does. So an open-ended read costs you a conclusion
+instead of a transcript the moment it is delegated — a structural saving, independent of any
+output-style or verbosity setting.
+
+| The question | Where it goes |
+|---|---|
+| "where is X handled", "does a spec for this already exist", "what does this epic touch", "what did the last three changes here do" | an `Explore` or `general-purpose` subagent; use its conclusion |
+| "what is on line 40 of the file I am editing", "what does this epic's `lane` say" | read it inline — you already know the path |
+
+**This binds YOU, the orchestrating agent.** It is the half with no such rule today: a dispatched
+`hierarchy-child-executor` is already told to return a fixed report and not to narrate its
+process, and pm already delegates review, execution and conflict resolution. Discovery was the one
+category left inline. It binds hardest across a hierarchy run or a multi-epic backlog, where your
+context survives many epics and is therefore the scarce resource — discovery you perform inline is
+paid for once per epic and never reclaimed.
+
+**Delegating never weakens a full-read requirement.** Two places below demand the WHOLE document —
+the epic-level-autonomy preflight scan, and re-reading an epic's source before it becomes the
+work. Delegating those means the subagent reads the whole document and returns the finding. What
+is forbidden is substituting a keyword grep for a full read, and that is forbidden whoever
+performs it.
+
 ## Choosing what's next
 
 Resume the **top of the detour stack** first if non-empty. Otherwise the highest-priority
@@ -786,8 +811,14 @@ not just one epic.
 
 **The process:**
 
-1. **Preflight EVERY child up front, not one at a time.** Run the epic-level-autonomy preflight
-   scan (above) against every child of the parent. Consolidate all findings into ONE batch of
+1. **Preflight EVERY child up front, not one at a time — and DISPATCH each scan rather than
+   running it in your own context.** The preflight is a full read of each child's entire source
+   (proposal + design + tasks + every spec, or the whole plan), so running it inline for N
+   children spends N full documents of your context before the first child is dispatched, and
+   never gets it back. Send one subagent per child, ask it for the preflight scan's sections
+   against that child's full source, and consolidate what comes back. The full-read requirement
+   is unchanged — it is about depth, not about who performs it; a keyword grep is no more
+   acceptable from a subagent than from you. Consolidate all findings into ONE batch of
    questions presented to the user — across the whole hierarchy, not per-child. Record answers
    per child exactly as epic-level autonomy already works: `set-autonomy <child-id>
    --preauthorize "<action>:<reason>"` / `--context "<note>"`, then `set-autonomy <child-id>

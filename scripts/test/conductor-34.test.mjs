@@ -156,3 +156,84 @@ test("34.2 the recorded-reason demand is no longer a one-site rule", () => {
   assert.ok(block.split(NOTE).length - 1 >= 2,
     "the demand must appear at intake AND at the inward tracker-sync procedure, not one of them");
 });
+
+// ───────────── 34.3 (#89): discovery is delegated, and the rule binds the ORCHESTRATOR ─────────────
+//
+// A subagent's transcript never enters the parent's context — only its final report does — so
+// delegating discovery is a structural saving, not a stylistic one. The sweep that placed this:
+// `rg 'dispatch|delegate|subagent'` across the shipped surfaces found delegation instructed for
+// REVIEW (both gates, cross-spec, reconciler), EXECUTION (hierarchy-child-executor) and CONFLICT
+// RESOLUTION (merge-conflict-resolver) — and for discovery, nowhere. Meanwhile the orchestrator is
+// told to read/scan/grep inline at ~25 sites, the heaviest being the hierarchy preflight, which is
+// a FULL read of every child's entire source before the first child is dispatched.
+//
+// It is NOT a gate-procedure item, deliberately: every member of that list is a per-change
+// record-correctness obligation carried into `tasks.md` and checked at both gates. "Delegate
+// discovery" is a per-action habit that fires dozens of times per change and cannot be ticked as
+// a checkbox; adding it would dilute a list whose authority comes from every member being a
+// genuine gate obligation. It lands instead as a NUMBERED operating rule (the same form, in the
+// list that governs how the conductor is operated) plus a numbered step where the cost is
+// concentrated.
+
+test("34.3 delegating discovery is a NUMBERED operating rule, not a prose bullet", () => {
+  const block = rulesText(initRepo());
+  const items = numberedItems(block);
+  const rule = items.find(l => /\*\*Delegate discovery/.test(l));
+  assert.ok(rule, "the emitted block must carry the delegation rule as a numbered item — " +
+    "14/14 against 3/15 for the same rule as a prose bullet");
+  assert.doesNotMatch(block, /^\s*[-*] \*\*Delegate discovery/m, "not a bullet");
+  // Its list is the operating rules, which run 1..N contiguously.
+  const opsStart = block.indexOf("## PM Conductor — operating rules");
+  const opsEnd = block.indexOf("## The gate procedure");
+  assert.ok(opsStart !== -1 && opsEnd > opsStart);
+  const ops = numberedItems(block.slice(opsStart, opsEnd));
+  assert.deepEqual(ops.map(l => Number(l.match(/^(\d+)\./)[1])), ops.map((_, i) => i + 1),
+    "the operating rules must run 1..N with no gap");
+  assert.ok(ops.some(l => /\*\*Delegate discovery/.test(l)),
+    "the rule belongs to the OPERATING rules, not to some other numbered list in the block");
+});
+
+test("34.3 the rule names the mechanism, binds the orchestrator, and does not weaken a full read", () => {
+  const surfaces = [
+    ["rules block", rulesText(initRepo())],
+    ["skills/conductor/SKILL.md", shipped("skills/conductor/SKILL.md")],
+    ["commands/hierarchy.md", shipped("commands/hierarchy.md")],
+  ];
+  for (const [name, text] of surfaces) {
+    const t = norm(text);
+    // The MECHANISM, stated — without it the rule reads as a style preference rather than the
+    // structural fact that makes it worth following.
+    assert.ok(t.includes(norm("transcript never enters")),
+      `${name} must state WHY delegation saves anything — the subagent's transcript never ` +
+      "enters the parent's context, only its report does");
+    // WHO it binds. The child executors already have this discipline; the orchestrator did not.
+    assert.ok(t.includes(norm("if you do not already know the file path")),
+      `${name} must give the actionable line — delegate unless you already know the path`);
+    // The exception, or the rule silently overrides the preflight's own "do not keyword-grep".
+    assert.ok(t.includes(norm("full read")),
+      `${name} must say that delegating does not weaken a full-read requirement — otherwise it ` +
+      "contradicts the preflight scan, which forbids a keyword grep by name");
+  }
+  // The two surfaces that OWN the nuance must state the prohibition itself, not merely mention a
+  // full read: "delegate discovery" and "read the whole document" only coexist if the text says
+  // which one gives way, and neither does. (commands/hierarchy.md defers to the skill by name.)
+  for (const rel of ["skills/conductor/SKILL.md"]) {
+    assert.ok(norm(shipped(rel)).includes(norm("substituting a keyword grep for a full read")),
+      `${rel} must forbid the substitution outright, not just mention a full read`);
+  }
+  assert.ok(norm(rulesText(initRepo())).includes(norm("substituting a keyword grep for a full read")),
+    "the emitted block must forbid the substitution outright, not just mention a full read");
+});
+
+test("34.3 the hierarchy preflight — the heaviest inline read — is dispatched per child", () => {
+  for (const rel of ["skills/conductor/SKILL.md", "commands/hierarchy.md"]) {
+    const t = norm(shipped(rel));
+    assert.ok(t.includes(norm("one subagent per child")) || t.includes(norm("subagent per child")),
+      `${rel} must say the preflight scan is dispatched per child, not run in the orchestrator's ` +
+      "own context — N children means N full source documents otherwise");
+  }
+  // And the depth requirement survives the delegation, stated in the skill that owns the scan.
+  const skill = norm(shipped("skills/conductor/SKILL.md"));
+  assert.ok(skill.includes(norm("about depth, not about who performs it")),
+    "the skill must say the full-read requirement is about depth, not about who performs it");
+});

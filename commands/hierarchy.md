@@ -28,6 +28,14 @@ before retrying.
 was not cleared in the preflight step (see the `conductor` skill) — resolve that first; don't
 dispatch a non-autonomous child.
 
+**Dispatch the preflight too, not just the work.** The preflight scan is a full read of each
+child's entire source, so running it inline for N children spends N full documents of the
+orchestrator's context before the first child is dispatched. Send one subagent per child and
+consolidate what comes back — a subagent's transcript never enters yours, only its report does.
+Same rule for any open-ended discovery this run needs ("where is X handled", "does a spec already
+exist"): if you do not already know the file path, delegate the search. See the `conductor`
+skill's "Delegate discovery" section.
+
 ## No new state
 
 `plan-hierarchy` is a pure read — it recomputes the plan fresh from `parent`, `priority`,

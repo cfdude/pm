@@ -625,6 +625,13 @@ child runs as its own agent in its own git worktree/branch, never writes
 writer of state transitions. An ordinary merge conflict is never a hard stop — it resolves via
 a tiered ladder before ever reaching "ask the human."
 
+**Discovery is dispatched too, not just the work.** The preflight scan is a full read of each
+child's entire source, so running it inline for N children spends N whole documents of the
+orchestrator's context before the first child is dispatched — and a subagent's transcript never
+enters the parent's, only its report does. One subagent per child; same rule for any open-ended
+search the run needs. The full-read requirement is unchanged: it is about depth, not about who
+performs it.
+
 </details>
 
 <details>
