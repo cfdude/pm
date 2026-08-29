@@ -20,6 +20,15 @@
 // the work a design implies stays with the agent, which is reading the design anyway; the
 // engine computes only the set difference, exactly as the issue asks.
 //
+// THE ONE PLACE A DOCUMENT'S CONTENT IS READ, and only when `--headers` asks for it (#148).
+// The bare report above reads no document's body, by the rule stated two paragraphs up, and that
+// stays true. `--headers` is its own arm because it answers a different question — not "is this
+// document covered" but "which epics does this document SAY it is about" — and because reading
+// content unconditionally would make every future noise complaint about the inventory a
+// complaint about a parse nobody asked for. It PROPOSES and never associates: the engine must
+// not decide a document and an epic belong together, a header is prose an author can typo, and
+// the split is exactly `triage`'s — mechanical candidate set, agent's verdict.
+//
 // WHAT COUNTS AS COVERAGE. Any epic source-artifact claim on that path, read from
 // EPIC_SOURCE_ARTIFACTS via artifactClaimants(). Family-driven rather than `specPath`-only, so
 // pointing `--root` at a plans directory answers the same question about plans, and so a field
@@ -38,7 +47,67 @@ import { parseFlags } from "./add-epic.mjs";
  *  and this verb writes no epic. "Not in the registry" is not "needs no allowlist" — parseFlags
  *  reads whatever it is handed, so an unregistered flag would parse, be ignored, and exit 0
  *  having quietly checked the default root instead of the one the caller named. */
-export const VERIFY_SPECS_FLAGS = ["root"];
+export const VERIFY_SPECS_FLAGS = ["root", "headers"];
+
+/** How far into a document the leading metadata block may start. Generous — a title, a blank
+ *  line and a couple of badges — and bounded so a document with no header never has its BODY
+ *  scanned for backticked code spans. */
+export const HEADER_SCAN_LINES = 15;
+
+/** The epic-id format `add-epic` enforces. Quoted here rather than imported for the reason
+ *  EPIC_SOURCE_ARTIFACTS quotes its keys: this module must not grow a dependency edge for one
+ *  regex. A candidate that could not be a legal epic id is not a candidate — it is how
+ *  `docs/x/y-design.md` and `foo()` are excluded without a vocabulary of things to ignore. */
+const EPIC_ID = /^[a-z0-9][a-z0-9._-]*$/;
+
+/** Every backtick-quoted epic id the document's LEADING METADATA BLOCK names, with the label it
+ *  appeared under. In document order, duplicates kept out.
+ *
+ *  THE RULE, and why it is this one. #148 reports two header shapes that already differ
+ *  (`**Epic:**` on one line, `**Epics:**` wrapped across two), which argues against parsing a
+ *  fixed format. Two candidate rules were run against this repository's ten real design
+ *  documents before choosing:
+ *
+ *   • Backticked ids anywhere in the first N lines — recovered all 26 ids with no false ones,
+ *     but only because these ten documents happen to open with a header. It would read
+ *     `state.json` and `tasks.md` out of any document whose opening paragraph quotes a filename,
+ *     and those would land in the "names no epic" bucket, which is the half that must stay a
+ *     genuine finding.
+ *   • Backticked ids on lines under a label from an ALLOWLIST (`Epic`, `Epics`, `Relates`) —
+ *     dropped three genuine ids in `2026-07-25-codex-platform-support-design.md`, which files
+ *     them under `**Depends on (all three must land first):**`. An allowlist of labels is a
+ *     vocabulary that goes stale the first time an author invents a heading, which is precisely
+ *     the failure mode the issue warns about.
+ *
+ *  So: label-AGNOSTIC (any `**Anything:**` opens the block) but region-BOUNDED (the block is the
+ *  run of non-blank lines it starts, and the first blank line ends the scan). That recovered
+ *  26/26 with 0 false candidates on the real corpus, including the two many-to-one cases no
+ *  filename normalisation reaches — three epics from `tracker-direction-and-freshness-design.md`
+ *  and `gh-82` plus two `Relates` ids from `cross-repo-orchestration-design.md`.
+ *
+ *  The label is CARRIED, never interpreted. "This document is about it" and "it is related" are
+ *  different claims and the agent confirming the association needs to see which one it is — but
+ *  deciding which labels mean which is the allowlist this rule exists to avoid, so the author's
+ *  own word is reported verbatim. */
+export function headerEpicIds(text) {
+  const out = [];
+  const seen = new Set();
+  let label = null, opened = false;
+  for (const line of String(text || "").split("\n").slice(0, HEADER_SCAN_LINES)) {
+    // A blank line ENDS the block, and ends the scan: everything after it is body. Before the
+    // block opens, a blank line is just the gap under the title.
+    if (!line.trim()) { if (opened) break; else continue; }
+    const m = line.match(/^\s*\*\*([^*]+?):\*\*/);
+    if (m) { label = m[1].trim(); opened = true; }
+    else if (!opened) continue; // the title, or prose standing where a header would be
+    for (const t of line.matchAll(/`([^`]+)`/g)) {
+      if (!EPIC_ID.test(t[1]) || seen.has(t[1])) continue;
+      seen.add(t[1]);
+      out.push({ id: t[1], label });
+    }
+  }
+  return out;
+}
 
 /** A directory's own index file is not a design document — verbatim the rule planFiles() applies
  *  in the plans directory, so the two roots cannot disagree about what a document is. */
@@ -136,9 +205,89 @@ export function formatSpecCoverage(report) {
     L.push("A document with no epic is worth ONE look, not a fix: read it, and where it implies");
     L.push("work nobody registered, author an `add-many` batch whose entries each carry its");
     L.push("`specPath`. Where it implies none, it has already told you what it is.");
+    // The pointer is what makes the arm reachable. An arm nobody is told about is an arm
+    // nobody runs, and this report is the one place a reader is already asking the question
+    // it answers.
+    L.push("Many documents already name their own epics in a header: `verify-specs --headers`");
+    L.push("reads them and proposes the association for you to confirm.");
   }
   L.push("");
   if (report.dangling.length) L.push(...danglingBlock(report.dangling));
+  return L.join("\n");
+}
+
+/** #148's candidate set, as data. For every document under the root, the epic ids its own header
+ *  names, split by whether that id EXISTS in the record.
+ *
+ *  Two different things, deliberately not merged:
+ *   • `proposals` — an UNCOVERED document whose header names ids that exist. This is the offer:
+ *     run the association if you agree with it. Only uncovered documents produce one; a covered
+ *     document needs no proposal.
+ *   • `unknown` — a header id that resolves to NO epic, from ANY document, covered or not. That
+ *     is a finding rather than inventory (the issue's own word): a stale header, an epic that
+ *     was removed, or a typo. Coverage does not excuse it — a document whose first named epic
+ *     shipped can still name a second that never existed, and scoping this half to uncovered
+ *     documents would hide exactly those.
+ */
+export function headerCandidates(state, absRoot) {
+  const rootExists = fs.existsSync(absRoot) && fs.statSync(absRoot).isDirectory();
+  const known = new Set(((state && state.epics) || []).map(e => e && e.id).filter(Boolean));
+  const claims = artifactClaimants(state);
+  const proposals = [], unknown = [];
+  for (const rel of specDocuments(absRoot)) {
+    let text;
+    try { text = fs.readFileSync(path.join(ROOT, rel), "utf8"); } catch { continue; }
+    const found = headerEpicIds(text);
+    if (!found.length) continue;
+    const covered = (claims.get(rel) || []).length > 0;
+    const live = found.filter(c => known.has(c.id));
+    for (const c of found) if (!known.has(c.id)) unknown.push({ path: rel, ...c });
+    if (!covered && live.length) proposals.push({ path: rel, candidates: live });
+  }
+  return { root: relToRoot(absRoot) || absRoot, rootExists, proposals, unknown };
+}
+
+/** The `--headers` report, as text. Every line is an OFFER — nothing here writes state, and the
+ *  commands it prints are for the agent to run after reading the document, not before. */
+export function formatHeaderCandidates(report) {
+  const L = [
+    "HEADER CANDIDATES — the epic ids each design document's own header names.",
+    "PROPOSED, never applied: the engine does not decide that a document and an epic belong",
+    "together, and a header is prose an author can typo. Read the document, then run the",
+    "association you agree with.",
+    "",
+  ];
+  // Distinct from "read them all and found nothing", for the reason the bare report separates the
+  // two: a repository that keeps its designs elsewhere must not read a confidently empty report
+  // as a clean one. Silence and clean must never look the same.
+  if (!report.rootExists) {
+    L.push(`no spec root at \`${report.root}\` — no document was read.`);
+    L.push("Point the check at your design documents with `verify-specs --headers --root <path>`.");
+    L.push("");
+    return L.join("\n");
+  }
+  if (!report.proposals.length) {
+    L.push("No uncovered document names an epic that exists — nothing to propose.");
+  } else {
+    L.push(`${report.proposals.length} uncovered document(s) name an epic in the record:`);
+    L.push("");
+    for (const p of report.proposals) {
+      L.push(`  ${p.path}`);
+      for (const c of p.candidates) {
+        L.push(`    • \`${c.id}\`${c.label ? `  (under **${c.label}:**)` : ""}`);
+        L.push(`        update-epic ${c.id} --spec ${p.path}`);
+      }
+    }
+  }
+  L.push("");
+  if (report.unknown.length) {
+    L.push(`${report.unknown.length} header id(s) name no epic in the record — a stale header, a`);
+    L.push("removed epic, or a typo. This half is a finding, not inventory:");
+    for (const u of report.unknown) {
+      L.push(`  • \`${u.id}\`${u.label ? ` (under **${u.label}:**)` : ""} — ${u.path}`);
+    }
+    L.push("");
+  }
   return L.join("\n");
 }
 
@@ -175,6 +324,17 @@ export function verifySpecs() {
     // root the caller did not ask about and report on it as though they had.
     process.stderr.write("conductor: --root requires a value\n"); process.exit(1);
   }
+  // `--headers` is a BOOLEAN arm: it carries no value, and a stray argument after it must not be
+  // read as one. parseFlags would consume the next non-flag token, so `--headers docs/x` would
+  // silently look like `headers: "docs/x"` and check the default root while looking answered.
+  if (f.headers !== undefined && f.headers !== true) {
+    process.stderr.write("conductor: --headers takes no value (did you mean --root?)\n"); process.exit(1);
+  }
   const absRoot = f.root ? path.resolve(ROOT, f.root) : SPECS_DIR;
-  process.stdout.write(formatSpecCoverage(specCoverage(loadState(), absRoot)) + "\n");
+  const state = loadState();
+  if (f.headers) {
+    process.stdout.write(formatHeaderCandidates(headerCandidates(state, absRoot)) + "\n");
+    return;
+  }
+  process.stdout.write(formatSpecCoverage(specCoverage(state, absRoot)) + "\n");
 }

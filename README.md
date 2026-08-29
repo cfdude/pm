@@ -525,6 +525,15 @@ tombstones it identically, naming `--spec` in the un-ignore instruction.
 | `reorder <id> <id> …` | **Manual rank** — place the epics of ONE priority band, top to bottom, in the order given. Ranks are rewritten dense `1..N` on every call, and this is the only thing that writes `rank`. Takes the whole band and refuses a partial one, so the numbering stays contiguous by construction; unranked epics sort after every ranked one. Rank is the LAST sort key (dependencies → priority → **rank**) — it breaks ties that today fall through to alphabetical order, and never outranks a dependency or a priority. `update-epic --priority` clears an epic's rank, since a placement among one band's peers means nothing among another's. |
 | `set-active <id>` / `clear-active` | Set/clear the top-level active epic. |
 
+**A flag with no value is refused, on every command that accepts it.** `--clear-links`,
+`--no-deferrals` and `--done` are the three flags that legitimately carry none; every other flag
+exits non-zero when its value is missing or blank, rather than writing the epic with the field
+quietly absent. The rule lives on the shared flag registry rather than in each command — so
+`add-epic`, `update-epic`, `add-many`, `record-gate-review`, `record-cross-spec-review` and
+`release` cannot answer it three different ways, which is exactly what they used to do:
+`add-epic --plan` with no value exited 0 and created the epic with no plan attached, while
+`update-epic --plan` refused the identical mistake a minute later.
+
 **Inline story mutation** — `--add-story "<title>"` (repeatable, and available on `add-epic`
 and `add-many` too) appends `{ title, done: false }` to the epic's inline `stories[]`;
 `--story <n> --done` marks the `n`-th story done, where `n` is **1-indexed** (`--story 1` is
@@ -788,7 +797,7 @@ Scanning a specs directory would not have helped: that yields one epic per docum
 when chunk 1 ships.
 
 ```bash
-node scripts/conductor.mjs verify-specs [--root <path>]
+node scripts/conductor.mjs verify-specs [--root <path>] [--headers]
 ```
 
 Prints, for every `.md` file under the root (recursively, minus `README`/`INDEX`/`CONTRIBUTING`),
@@ -806,6 +815,18 @@ than reporting zero uncovered — silence and clean must never look the same.
 Enumerating what a design implies stays with the agent, which is reading the document anyway;
 `add-many` is the atomic fan-out (one write, N chunks, all naming the same `specPath`) and the
 engine computes only the difference.
+
+**`--headers` — the epics a document already names.** Most design documents open with a header
+that already says which epics they are for (`**Epic:** \`gh-82-…\` · **Relates:** \`…\``).
+`verify-specs --headers` reads those headers and prints, for every **uncovered** document, the
+ids it names and the `update-epic <id> --spec <path>` line that would attach each one. It
+**proposes and never applies** — the same split `triage` uses for asks: mechanical candidate set,
+your verdict. A header id that names no epic in the record is reported as a finding, from covered
+documents too. The parse is label-agnostic and region-bounded: any `**Anything:**` line in the
+leading metadata block opens it, the first blank line ends it, and backtick-quoted tokens
+matching the epic-id format are the candidates, each carrying its label verbatim. It exists
+because deriving the association from FILENAMES placed 8 of this repository's 10 documents and
+structurally could not place the other two — the many-to-one cases `specPath` is for.
 
 </details>
 

@@ -93,8 +93,11 @@ test("gh-149: the registry declares which flags take no value, and it is a short
 });
 
 test("gh-149: EVERY command in the registry has a baseline invocation, so the sweep covers all of them", async () => {
-  const { EPIC_FLAGS } = await import(CONSTANTS);
-  const commands = [...new Set(EPIC_FLAGS.flatMap(f => f.commands))].sort();
+  // Read through the registry's OWN projection, never recomputed here: a second literal of
+  // "which commands does EPIC_FLAGS name" in the change whose whole subject is second literals
+  // would be the defect wearing the test's clothes.
+  const { epicFlagCommands } = await import(CONSTANTS);
+  const commands = epicFlagCommands().sort();
   const declared = Object.keys(BASELINE).sort();
   assert.deepEqual(commands.filter(c => !declared.includes(c)), [],
     "a command added to EPIC_FLAGS with no BASELINE entry here would be swept by nothing");
@@ -232,3 +235,148 @@ test("gh-149: add-many still accepts the array-valued keys it validates itself",
   assert.equal(e.stories.length, 2, "`links` and `stories` are array-valued by design and must survive");
 });
 
+// ═══════════════ #148: the epic ids a design document already names ═══════════════
+
+const SPECS = ["docs", "superpowers", "specs"];
+function withSpec(cwd, name, body) {
+  const abs = path.join(cwd, ...SPECS, name);
+  fs.mkdirSync(path.dirname(abs), { recursive: true });
+  fs.writeFileSync(abs, body);
+  return [...SPECS, name].join("/");
+}
+function epic(over = {}) {
+  return {
+    id: "e1", title: "e1", priority: "P1", status: "queued", role: "epic",
+    lane: "superpowers", links: [], reconcileNeeded: false, ...over,
+  };
+}
+function seed(cwd, epics) {
+  run(["init"], { cwd });
+  writeState(cwd, { version: 1, active: null, detourStack: [], epics });
+}
+
+const ONE_LINE = `# Design: cross-repo orchestration
+
+**Epic:** \`gh-82-claude-project-dir-overrides-cwd\` (P2, untriaged) · **Issue:** cfdude/pm#82
+**Relates:** \`cross-session-epic-assignment\` (#84, planned) · \`epic-session-attribution\` (planned)
+**Date:** 2026-08-23
+
+## What is running
+
+Prose mentioning \`state.json\` and \`tasks.md\`, which are not epic ids.
+`;
+
+const TWO_LINE = `# Design: tracker direction
+
+**Epics:** \`gh-109-tracker-sync-direction\` (P1) · \`gh-102-sync-blind-to-issue-comments\` (P2) ·
+\`gh-103-tracker-refresh-gate-before-specs\` (P2)
+**Issues:** cfdude/pm#109, #102, #103
+
+Body.
+`;
+
+test("gh-148: the header parse keys on the METADATA BLOCK, not on a list of label names", async () => {
+  const { headerEpicIds } = await import(new URL("../lib/verify-specs.mjs", import.meta.url).href);
+  // Both shapes the issue reports — `**Epic:**` on one line, `**Epics:**` wrapped over two —
+  // plus every other label an author invents. Keying on an ALLOWLIST of labels was measured
+  // against this repository's ten real design documents and dropped three genuine ids under a
+  // label nobody anticipated (`**Depends on (all three must land first):**`).
+  assert.deepEqual(headerEpicIds(ONE_LINE).map(c => c.id),
+    ["gh-82-claude-project-dir-overrides-cwd", "cross-session-epic-assignment", "epic-session-attribution"]);
+  assert.deepEqual(headerEpicIds(TWO_LINE).map(c => c.id),
+    ["gh-109-tracker-sync-direction", "gh-102-sync-blind-to-issue-comments",
+      "gh-103-tracker-refresh-gate-before-specs"],
+    "a wrapped label line is a continuation, not a new block — this is the many-to-one case " +
+    "no filename normalisation recovers");
+});
+
+test("gh-148: each candidate carries the LABEL it was found under, verbatim and uninterpreted", async () => {
+  const { headerEpicIds } = await import(new URL("../lib/verify-specs.mjs", import.meta.url).href);
+  const found = headerEpicIds(ONE_LINE);
+  assert.equal(found[0].label, "Epic", "'this document is about it' and 'it is related' are different claims");
+  assert.equal(found[1].label, "Relates");
+  // Recorded, never interpreted: a label allowlist is the thing this parse deliberately avoids,
+  // so the agent reads the author's own word and decides.
+  const odd = headerEpicIds("# T\n\n**Depends on (all three must land first):** `some-epic-id`\n");
+  assert.deepEqual(odd, [{ id: "some-epic-id", label: "Depends on (all three must land first)" }]);
+});
+
+test("gh-148: prose, code spans and body text below the header block are not candidates", async () => {
+  const { headerEpicIds } = await import(new URL("../lib/verify-specs.mjs", import.meta.url).href);
+  // Prose ABOVE the header contributes nothing: only a `**Label:**` line opens the block, so a
+  // blockquote intro quoting filenames is skipped whole while the real header below it is still
+  // read. `state.json` and `tasks.md` both satisfy the epic-id format, so this is the case that
+  // decides whether the "names no epic" half stays a finding or becomes noise.
+  assert.deepEqual(
+    headerEpicIds("# T\n\n> A blockquote naming `state.json` and `tasks.md`.\n\n**Epic:** `real-id`\n").map(c => c.id),
+    ["real-id"]);
+  assert.deepEqual(headerEpicIds("# T\n\n> Only a blockquote naming `state.json`.\n\n## Problem\n"), [],
+    "a document with no header block names nothing at all");
+  assert.deepEqual(headerEpicIds("# T\n\n**Epic:** `real-id`\n\nBody naming `state.json`.\n").map(c => c.id),
+    ["real-id"], "the blank line ends the header — body code spans are not epic ids");
+  assert.deepEqual(headerEpicIds("# T\n\n**Spec:** `docs/x/y-design.md`\n").map(c => c.id), [],
+    "a path is not an epic id — it must fail the id format the register enforces");
+});
+
+test("gh-148: verify-specs --headers proposes the ids an UNCOVERED document names, and confirms nothing", () => {
+  const cwd = tmpRepo();
+  seed(cwd, [epic({ id: "gh-82-claude-project-dir-overrides-cwd" })]);
+  const rel = withSpec(cwd, "cross-repo-design.md", ONE_LINE);
+  const before = stateOf(cwd);
+  const out = run(["verify-specs", "--headers"], { cwd });
+  assert.ok(out.includes(rel), "the uncovered document must be named");
+  assert.ok(out.includes("gh-82-claude-project-dir-overrides-cwd"), "and the id its header names");
+  assert.ok(out.includes("update-epic gh-82-claude-project-dir-overrides-cwd --spec"),
+    "the report must hand over the command the AGENT runs — the engine never associates");
+  assert.equal(stateOf(cwd), before, "--headers is read-only, exactly as the bare report is");
+});
+
+test("gh-148: a header id naming NO epic in the record is a finding, not inventory", () => {
+  const cwd = tmpRepo();
+  seed(cwd, [epic({ id: "gh-82-claude-project-dir-overrides-cwd" })]);
+  withSpec(cwd, "cross-repo-design.md", ONE_LINE);
+  const out = run(["verify-specs", "--headers"], { cwd });
+  assert.match(out, /name no epic/i, "stale header, removed epic or a typo — worth seeing on its own");
+  assert.ok(out.includes("cross-session-epic-assignment") && out.includes("epic-session-attribution"),
+    "both unknown ids must be reported");
+});
+
+test("gh-148: a COVERED document's stale header id is still reported — coverage does not excuse it", () => {
+  const cwd = tmpRepo();
+  const rel = "docs/superpowers/specs/tracker-design.md";
+  seed(cwd, [epic({ id: "gh-109-tracker-sync-direction", specPath: rel })]);
+  withSpec(cwd, "tracker-design.md", TWO_LINE);
+  const out = run(["verify-specs", "--headers"], { cwd });
+  assert.ok(!out.includes(`propose`) || !out.split("name no epic")[0].includes("gh-109"),
+    "a covered document needs no proposal");
+  assert.ok(out.includes("gh-102-sync-blind-to-issue-comments"),
+    "but an id that resolves to nothing is a finding wherever it appears");
+});
+
+test("gh-148: the bare report points at --headers so the arm is discoverable", () => {
+  const cwd = tmpRepo();
+  seed(cwd, [epic()]);
+  withSpec(cwd, "uncovered-design.md", ONE_LINE);
+  const out = run(["verify-specs"], { cwd });
+  assert.ok(out.includes("--headers"), "an arm nobody is told about is an arm nobody runs");
+  assert.ok(!out.includes("gh-82-claude-project-dir-overrides-cwd"),
+    "and the bare report still reads no document's content");
+});
+
+test("gh-148: an ABSENT spec root says so rather than reporting a confidently empty proposal set", () => {
+  const cwd = tmpRepo();
+  seed(cwd, [epic()]);
+  const out = run(["verify-specs", "--headers"], { cwd });
+  assert.match(out, /no spec root/,
+    "silence and clean must never look the same — the bare report separates them and so must this");
+  assert.ok(!out.includes("nothing to propose"),
+    "'read them all and found nothing' is a different answer from 'read nothing'");
+});
+
+test("gh-148: --headers is an allowlisted flag and takes no value", () => {
+  const cwd = tmpRepo();
+  seed(cwd, [epic()]);
+  const err = expectFail(() => run(["verify-specs", "--headers", "yes"], { cwd }));
+  assert.ok(err, "--headers takes no value; a stray argument must not be read as one");
+  run(["verify-specs", "--headers", "--root", "docs/superpowers/specs"], { cwd });
+});
