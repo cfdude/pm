@@ -3218,13 +3218,24 @@
       "id": "gh-123-adopt-openspec-1-9-cli-surface",
       "title": "Adopt the OpenSpec 1.9 CLI surface — status/doctor/list --json beat pm's hand-rolled substitutes",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
       "externalId": "123",
-      "externalUrl": "https://github.com/cfdude/pm/issues/123"
+      "externalUrl": "https://github.com/cfdude/pm/issues/123",
+      "disposition": {
+        "outcome": "killed",
+        "recordedAt": "2026-08-29T10:31:39.259Z",
+        "reason": "investigated and declined on evidence, no code shipped: status --json carries artifact existence not task counts, doctor is structurally empty here, and openspec validate --archived FAILS pm's own correctly-archived change because it counts raw checkboxes and knows nothing of the pm:lifecycle marker. The two tools compute different quantities from one file and cannot be reconciled by precedence. Surfaced #154"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T10:31:39.258Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T10:31:39.259Z"
     },
     {
       "id": "gh-124-rules-block-emits-failing-add-epic",
@@ -4010,6 +4021,25 @@
       "externalId": "152",
       "externalUrl": "https://github.com/cfdude/pm/issues/152",
       "attributedCommits": []
+    },
+    {
+      "id": "gh-154-openspec-validate-lifecycle-collision",
+      "title": "openspec validate --archived fails every correctly-archived pm change — the pm:lifecycle marker collides with an upstream lint",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-123-adopt-openspec-1-9-cli-surface",
+          "reason": "surfaced while investigating 123; the sharpest single reason the CLI cannot be a progress source"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "154",
+      "externalUrl": "https://github.com/cfdude/pm/issues/154",
+      "attributedCommits": []
     }
   ],
   "detourStack": [],
@@ -4020,7 +4050,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 238,
+  "revision": 240,
   "reviewMode": "thorough",
   "releases": [
     {
