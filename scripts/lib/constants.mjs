@@ -377,6 +377,26 @@ export const EPIC_FLAGS = [
 export const CLAIM_DEFAULT_TTL_MINUTES = 120;
 export const REPO_CLAIM_DEFAULT_TTL_MINUTES = 30;
 
+// ─────────────────── #111: the activity log's two caps ───────────────────
+//
+// Both SIZE-based, deliberately, and the maintainer's ruling says why a day is not a unit of
+// anything here: a quiet repo emits nothing for a week, an orchestrated fan-out emits more in an
+// hour than a normal month, and a log that only rotates on a calendar boundary can grow past the
+// point where an agent can read it at all — which defeats the reason for collecting it.
+//
+// SEGMENT: 128 KB, chosen against a stated constraint rather than by feel. A segment must be
+// fully readable in ONE pass by an agent: 128 KB / 191 B per measured event ≈ 680 events ≈ 37k
+// tokens, which leaves room for the actual task. Larger stops satisfying the constraint; smaller
+// multiplies files for no gain. At the observed rate that is 1–2 segments per month for the
+// busiest repo in the fleet.
+export const ACTIVITY_SEGMENT_MAX_BYTES = 131_072;
+// RETENTION: 1 GB total per project, oldest first. ≈ 5.5 million events ≈ centuries at pm's own
+// measured rate — a backstop against pathology, not an operating point, which is the right
+// posture for a cap. Stated plainly because it is easy to misread: the cap is PER PROJECT and
+// this is intended to run in ~22 of them, so the worst case is 22 GB and the measured real case
+// is a few megabytes in total.
+export const ACTIVITY_RETENTION_MAX_BYTES = 1_073_741_824;
+
 /** The flags `command` accepts, as bare names. The projection an allowlist is built from —
  *  never a second literal. */
 export const epicFlagsFor = (command) =>

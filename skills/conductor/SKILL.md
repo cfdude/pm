@@ -502,6 +502,13 @@ it waits on.
   everything else writes to a claimed epic exactly as before. A claim expires on its own stated
   TTL, so a session that died mid-epic shows as STALE rather than owning the work forever, and
   `integrity`'s `advisory-claim-shape` check reports one without being asked.
+- Want to know HOW this project got here, not just where it is? `set-activity-log on` starts an
+  append-only record of conductor state transitions, and `activity` reads it back — time an epic
+  waited before it went active, detour frequency, lane choices and re-routes, gate verdicts in
+  sequence, and **out-of-band writes**: `state.json` revisions no engine verb accounts for, which
+  is what a hand-edit looks like from the record's side. Off by default; it records nothing
+  retroactively, so turning it on says nothing about yesterday. `purge-logs` is the manual
+  cleanup — it removes nothing without a selector, and nothing without `--yes`.
 
 These rules are also installed into the project's `CLAUDE.md` by `/pm:init` — or `AGENTS.md`
 (or `HERMES.md`-chain equivalent) on a repo running a declared non-Claude-Code `--platform` —

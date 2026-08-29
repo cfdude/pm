@@ -50,6 +50,10 @@ export function ensureGitignore() {
     // complaint. upgrade() re-runs this (migrations.mjs), so repos initialized before the
     // marker existed pick it up without a MIGRATIONS entry.
     ".conductor/session-claim.json",
+    // #111's activity segments. The whole DIRECTORY, not a glob of segment names: the names are
+    // timestamped, so a per-file entry would need one line per segment forever. Same #106 rule —
+    // engine-written, per-checkout, and useless to anyone but this working tree.
+    ".conductor/activity/",
   ];
   const giPath = path.join(ROOT, ".gitignore");
   let existing = "";

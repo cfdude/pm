@@ -95,6 +95,11 @@ import { release, recordCrossSpecReview } from "./lib/releases.mjs";
 import { verifyWorktrees, changesets, verifyState } from "./lib/worktree-hygiene.mjs";
 import { verifySpecs } from "./lib/verify-specs.mjs";
 import { claim, unclaim, owners } from "./lib/claims.mjs";
+import { activityEnabled, appendEvents, diffEvents, setActivityLog } from "./lib/activity-log.mjs";
+import { activity } from "./lib/activity-report.mjs";
+import { purgeLogs } from "./lib/purge-logs.mjs";
+import { isInitialized } from "./lib/state.mjs";
+import { resolveSession } from "./lib/session-identity.mjs";
 import { delegateToCheckout } from "./lib/self-hosting.mjs";
 
 // ---------- self-hosting handoff (gh-134) ----------
@@ -122,7 +127,7 @@ const cmd = process.argv[2];
 // entry to .conductor/detours.log with "--help" as the detour description, and the log is
 // append-only with no verb to remove it. Handled before dispatch so every subcommand is covered
 // -- log-detour is only where the damage is visible, not where the gap is.
-const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|verify-worktrees|verify-state|verify-specs|integrity|changesets|upgrade|changelog|rules|write-rules|rules-target\n";
+const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|upgrade|changelog|rules|write-rules|rules-target\n";
 if (!cmd || process.argv.slice(2).some(a => a === "--help" || a === "-h")) {
   process.stdout.write(USAGE);
   process.exit(0);
@@ -152,6 +157,42 @@ if (showEngineBanner) {
     `conductor: engine ${pluginVersion() || "unknown"} @ ${path.dirname(fileURLToPath(import.meta.url))}\n`
   );
 }
+// ---------- #111: the activity log's ONE instrumentation point ----------
+//
+// Events are DERIVED by diffing state.json across this whole invocation, rather than emitted by
+// hand from each of the ~25 verbs that write state. That is not a shortcut: a list of emit sites
+// typed from memory goes stale the moment a verb is added, and a verb that forgot to emit would
+// be invisible in exactly the log built to find invisible things. The diff cannot forget.
+//
+// process.on("exit"), NOT try/finally. Verified mechanically before choosing the shape:
+// `rg -n "process\.exit" scripts/lib/` finds one MUTATING verb that writes state and then exits
+// non-zero (update-epic's post-write attribution read-back). process.exit() skips `finally` and
+// runs exit handlers, so a `finally` would drop exactly the invocation most worth recording.
+//
+// Placed AFTER the --help short-circuit (a help flag must have no side effect, and there is
+// nothing to diff) and BEFORE dispatch, so the snapshot is genuinely the pre-verb state.
+//
+// EVERY call here is guarded. Observability must never break the run it observes — the rule
+// lib/write-conflicts.mjs opens with, for the same reason: a throw would convert a working
+// command into a visible failure, and would fire when the filesystem is already in trouble.
+try {
+  if (isInitialized()) {
+    const activityBefore = loadState();
+    if (activityEnabled(activityBefore)) {
+      const session = resolveSession(parseFlags(process.argv.slice(3)));
+      process.on("exit", () => {
+        try {
+          const after = loadState();
+          // No revision movement means no write happened; recording a line for it would make
+          // every read verb a log entry and drown the signal the log exists for.
+          if (after.revision === activityBefore.revision) return;
+          appendEvents(diffEvents(activityBefore, after, { verb: cmd, session }));
+        } catch { /* never break the run being observed */ }
+      });
+    }
+  }
+} catch { /* ditto — including a state.json this process cannot read at all */ }
+
 try {
 ({
   init,
@@ -190,6 +231,9 @@ try {
   claim,
   unclaim,
   owners,
+  activity,
+  "set-activity-log": setActivityLog,
+  "purge-logs": purgeLogs,
   integrity,
   changesets,
   upgrade,
