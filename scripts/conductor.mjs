@@ -64,7 +64,7 @@ import {
 } from "./lib/rules.mjs";
 import { resolvePlatform, assertKnownPlatform, platformFlag, resolveAndRecordPlatform, rulesTarget } from "./lib/platform.mjs";
 import { loadState, conflictExitCode } from "./lib/state.mjs";
-import { ROOT } from "./lib/constants.mjs";
+import { ROOT, warnRootDivergence } from "./lib/constants.mjs";
 import { setActive, clearActive } from "./lib/active-pointer.mjs";
 import { setAutonomy } from "./lib/autonomy.mjs";
 import { parseFlags, planHierarchy, addEpic } from "./lib/add-epic.mjs";
@@ -120,6 +120,17 @@ if (!cmd || process.argv.slice(2).some(a => a === "--help" || a === "-h")) {
   process.stdout.write(USAGE);
   process.exit(0);
 }
+
+// gh#82 — is ROOT the repository the caller is standing in?  Emitted here, ONCE, and for every
+// verb: after the --help short-circuit (a help flag must have no side effect and nothing to warn
+// about) and after the self-hosting handoff (the delegated child owns the whole invocation and
+// prints it there instead of twice). Before the banner, because it outranks it.
+//
+// Every verb, deliberately — including the hooks. `commit-nudge` fires on every Bash tool call
+// and writes detours.log and state.json, so a redirected hook is failure mode 1 from the issue,
+// not a quiet read. The predicate is cheap (two realpaths and one existsSync) and, by
+// construction, silent in every case except two live conductors with the wrong one selected.
+warnRootDivergence();
 
 // df-engine-banner-noise-every-invocation: the banner is suppressed by default whenever
 // CLAUDE_PROJECT_DIR is set (self-hosting/dev context -- the stale-cache scenario this banner
