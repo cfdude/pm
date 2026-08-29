@@ -2570,7 +2570,7 @@
       "id": "gh-94-serial-detours-accepted-silently",
       "title": "Serial detours are accepted silently — the conductor should push back",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -2579,7 +2579,18 @@
       "externalUrl": "https://github.com/cfdude/pm/issues/94",
       "attributedCommits": [
         "c0f5b09"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T10:18:55.790Z",
+        "reason": "shipped in 0.34.0 (5811c9f): visibility shipped; the gate DECLINED for a structural reason now filed as #151 — no push-detour verb means the engine is absent at the decision"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T10:18:55.789Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T10:18:55.790Z"
     },
     {
       "id": "gh-95-stories-optional-and-gate-nothing",
@@ -2618,7 +2629,7 @@
       "id": "gh-100-link-types-no-known-set",
       "title": "Link types: no known-set, no validation, no discovery — only depends-on drives behaviour and resolves-blocker-for is inert",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -2634,7 +2645,18 @@
       "attributedCommits": [
         "c0f5b09",
         "43dca98"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T10:18:54.273Z",
+        "reason": "shipped in 0.34.0 (5811c9f): a closed vocabulary in three bands, derived mechanically from what the code reads and guarded in both directions"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T10:18:54.272Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T10:18:54.273Z"
     },
     {
       "id": "gh-101-dependency-order-blind-to-blocked",
@@ -3309,7 +3331,7 @@
       "id": "gh-127-dogfooding-practices-as-product",
       "title": "Dogfooding as a standing rule — practices invented here are product candidates; papercuts worked around here hit every user",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -3326,7 +3348,18 @@
       "attributedCommits": [
         "dfabd41",
         "3354d03"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T10:18:51.205Z",
+        "reason": "shipped in 0.34.0 (5811c9f): both practices ship in skills/ with .claude/ stubs, plus numbered required task item 7 — pm ships the mechanism, never the corpus"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T10:18:51.204Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T10:18:51.205Z"
     },
     {
       "id": "gh-128-openspec-staleness-nudge",
@@ -3604,7 +3637,7 @@
       "id": "gh-132-lessons-advisor-hook",
       "title": "Lessons need three modes — a PreToolUse advisor that surfaces a known lesson before the mistake",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -3613,7 +3646,18 @@
         "dfabd41"
       ],
       "externalId": "132",
-      "externalUrl": "https://github.com/cfdude/pm/issues/132"
+      "externalUrl": "https://github.com/cfdude/pm/issues/132",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T10:18:52.733Z",
+        "reason": "shipped in 0.34.0 (5811c9f): the lessons mechanism ships (shape, frontmatter contract, PreToolUse advisor); the corpus stays in this repo"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T10:18:52.732Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T10:18:52.733Z"
     },
     {
       "id": "gh-133-disposition-reverts-backfill-counts",
@@ -3868,7 +3912,7 @@
       "id": "gh-148-propose-spec-association-from-header",
       "title": "Design documents already name their epics in a header — the specPath association could be proposed, not hand-backfilled",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -3883,13 +3927,24 @@
       "externalUrl": "https://github.com/cfdude/pm/issues/148",
       "attributedCommits": [
         "156b888"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T10:18:58.828Z",
+        "reason": "shipped in 0.34.0 (5811c9f): verify-specs --headers proposes; the parse rule was chosen empirically against ten real documents, 26 of 26 ids, zero false candidates"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T10:18:58.828Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T10:18:58.828Z"
     },
     {
       "id": "gh-149-add-epic-drops-valueless-flag",
       "title": "add-epic silently drops a valueless flag that update-epic refuses — the same mistake succeeds on one surface and fails on the other",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -3905,7 +3960,18 @@
       "attributedCommits": [
         "423d864",
         "156b888"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T10:18:57.337Z",
+        "reason": "shipped in 0.34.0 (5811c9f): refused on all six registry surfaces from one shared rule; the sweep found it at a fourth surface, record-gate-review --reviewer"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T10:18:57.337Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T10:18:57.337Z"
     },
     {
       "id": "gh-151-no-push-detour-verb",
@@ -3947,14 +4013,14 @@
     }
   ],
   "detourStack": [],
-  "pmVersion": "0.33.0",
+  "pmVersion": "0.34.0",
   "tracker": {
     "system": "github-issues",
     "repo": "cfdude/pm",
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 231,
+  "revision": 238,
   "reviewMode": "thorough",
   "releases": [
     {
