@@ -8,6 +8,104 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.33.0] — 2026-08-29
+
+### Added
+
+- **`commit-nudge` names the attribution command at the moment the commit lands** (#129). The
+  emitted gate procedure asks for `update-epic <id> --attribute-commit <sha>` *at the moment each
+  commit is made*, and until now nothing checked until the archive gate read the array — by which
+  time the commits were made, often across sessions, and the append-only ordering rule may already
+  have been broken irrecoverably. The `PostToolUse` hook already runs on every commit and, since
+  0.32.0, knows from the repository (HEAD watermark + reflog) whether one actually landed. It now
+  appends the exact runnable command for the epic that commit belongs to.
+  - **The epic is the DETOUR epic while a detour is live**, never the paused parent `state.active`
+    still names. The id is resolved against `state.epics` rather than trusted, so
+    `detourContext`'s `"-"` fallback can never produce a command that will not run.
+  - **Louder exactly once.** While the epic's `attributedCommits` is still empty the clause carries
+    item 4's catch-up-in-order rule, because that is the only state in which catching up is still
+    available — after the first append it would leave an ancestor as the Gate 2 endpoint. After
+    that it is one line. The escalation extinguishes itself off state the *agent* wrote; the hook
+    keeps no epic→sha bookkeeping of its own.
+  - **The exclusion travels with the command**: a commit that only moves or deletes a change's
+    artifacts (the `/opsx:archive` move above all) must not be attributed. The engine states the
+    rule and classifies nothing — it reads no commit message and inspects no commit's contents.
+  - **Silent wherever the engine would be guessing**: no active epic (gh#91's lesson), an epic with
+    no `attributedCommits` array at all (archive-backfilled — the staleness gate's one forgiven
+    case), a sha that is not a sha, a commit already attributed, and every commit on the
+    `unverifiable` rung, where `obs.head` can be a real sha while nothing is known to have landed.
+
+No migration: nothing is added to, removed from, or transformed in `state.json`. The nudge reads
+`attributedCommits` and writes nothing.
+
+- **A stated contract for which verbs mutate the working tree** (#85). Reaching for `render` to
+  "just look at" a sibling repo's backlog silently dirtied it, producing drift the caller then
+  went to reconcile. `lib/verb-effects.mjs` now declares every dispatched verb as `read-only` or
+  `mutates`, and the suite checks it two ways: COMPLETENESS against `conductor.mjs`'s own dispatch
+  object read from source, so a verb added later without an entry fails rather than defaulting to
+  an unstated claim; and BEHAVIOUR for every read-only verb, running it against a repo with a
+  render pending and hashing the whole tree by content **and** mtime before and after. A write
+  added to a verb that used to be safe now fails CI rather than someone else's checkout. Want the
+  current state without touching anything: `brief`, not `render`.
+
+  Two things the measurement corrected. `render` no longer dirties the tree on *every* call —
+  the `PROJECT.md`-is-never-clean fix made both of its writes content-conditional — but it is
+  still declared `mutates`, because idempotent-when-nothing-changed is not read-only. And a
+  `--read-only` enforcement flag is declined: it would be threaded through or argv-sniffed at
+  forty verbs and still asks a caller to trust it was wired up, while the CI-time check gives the
+  same guarantee without shipping anything.
+
+- **A round-trip guard for every flag `add-epic` registers** (#136). `add-epic --notes` was
+  accepted, exited 0 and stored nothing; the fix shipped, but the guard that would catch the next
+  flag to do it did not — the guard that existed asserted *registration*, which is the half that
+  stays green through exactly this defect. The check is driven by the `EPIC_FLAGS` projection, so
+  a row added later with no exercise entry is a hard failure naming the flag. It does not
+  supersede the documentation-driven check for `update-epic`: the two catch opposite directions
+  (registered-but-not-honoured here, documented-but-not-registered there).
+
+### Fixed
+
+- **`/pm:feedback` no longer assumes the `gh` CLI and a GitHub account** (#105). Both it and the
+  emitted inward tracker-sync step shelled out to `gh` with the dependency stated nowhere — not
+  the README, not the install instructions, not the command doc. It worked for the maintainer
+  (gh installed, logged in, tracker repo their own) and for nobody else, failing with a bare
+  shell error that explains nothing. `curl` is not a substitute: anonymous issue creation returns
+  HTTP 401, and a PAT is strictly worse than `gh` — same account requirement, hand-managed token
+  instead of the system keyring. The dependency was never on the CLI; it is on holding a GitHub
+  credential at all.
+
+  Feedback is OUTWARD, so credential-free channels exist, and it now runs three in order:
+  `gh issue create` when `command -v gh` **and** `gh auth status` both pass — the preferred path
+  whenever available, not merely a faster one; else a prefilled `issues/new?title=…&body=…` URL,
+  which needs no token, no CLI and no account and attributes the issue to whoever actually hit
+  the bug; else `bugs@pm-plugin.dev`, so declining GitHub never means losing the feedback. The
+  report is written to `.conductor/feedback/` **first** on every path, so nothing is lost when a
+  channel fails — and so a body over the measured ~6 KB URL ceiling (≈ 3 KB of raw markdown after
+  percent-encoding) has somewhere to live rather than being silently truncated.
+
+  The inward SYNC half is fixed differently and deliberately: listing issues is a READ and
+  anonymous listing does not exist, so there is no credential-free substitute. The rules block
+  now emits a preflight naming both checks and instructing the agent to STOP that section rather
+  than report a clean sync it could not perform — from ONE shared constant at both the primary
+  and secondary emitters, which are separate loops behind separate predicates.
+
+- **The retry half of "retry once, then skip" is now provable** (#131). 0.26.0 specified hook
+  writes as retry-once-then-skip and shipped the retry as five lines copied into two files.
+  Measured on 0.32.0 before the fix: delete the retry from **both** sites and all 856 tests still
+  pass — the heal is idempotent and hook-driven, so a later hook covers for the loss and the
+  suite never notices. The policy is now one function (`lib/hook-write.mjs`) with `load`/`save`
+  injectable, unit-tested including that the retry RE-LOADS and RE-HEALS rather than re-saving
+  the stale in-hand object; plus an end-to-end test at the `render` site driven by a real conflict
+  injected between `loadState()` and `saveState()` inside one invocation, through a Node preload
+  that lives entirely under `scripts/test/` — no test-only branch, env var or verb ships in the
+  engine. Both sites call the shared policy and a source scan forbids re-implementing it.
+
+  Honest scope: the commit-nudge site cannot be covered end to end. `commitNudge()` calls
+  `render()` two lines later and render's heal is idempotent, so from outside a single invocation
+  the retry running and the retry being absent are indistinguishable — identical final state,
+  identical revision, identical conflict log. That cover is the mechanism that hid the defect;
+  the source scan is what binds that site.
+
 ## [0.32.0] — 2026-08-27
 
 ### Added
