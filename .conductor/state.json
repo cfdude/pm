@@ -2149,7 +2149,12 @@
       "reconcileNeeded": false,
       "externalId": "84",
       "externalUrl": "https://github.com/cfdude/pm/issues/84",
-      "specPath": "docs/superpowers/specs/2026-08-23-cross-repo-orchestration-design.md"
+      "specPath": "docs/superpowers/specs/2026-08-23-cross-repo-orchestration-design.md",
+      "attributedCommits": [
+        "55653e3",
+        "5182782",
+        "b8e910b"
+      ]
     },
     {
       "id": "changelog-page-too-long-archive-older-releases",
@@ -2939,7 +2944,12 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "111",
-      "externalUrl": "https://github.com/cfdude/pm/issues/111"
+      "externalUrl": "https://github.com/cfdude/pm/issues/111",
+      "attributedCommits": [
+        "dba7f4f",
+        "e13b7da",
+        "b8e910b"
+      ]
     },
     {
       "id": "gh-112-backlog-triage-at-intake",
@@ -4056,7 +4066,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 244,
+  "revision": 250,
   "reviewMode": "thorough",
   "releases": [
     {
