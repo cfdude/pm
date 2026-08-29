@@ -2479,7 +2479,7 @@
       "id": "gh-89-delegate-discovery-to-subagents",
       "title": "Delegate discovery/reading to subagents so exploration never enters the orchestrator context",
       "priority": "P3",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -2488,13 +2488,24 @@
       "externalUrl": "https://github.com/cfdude/pm/issues/89",
       "attributedCommits": [
         "f936d08"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T14:55:17.891Z",
+        "reason": "shipped in 0.36.0 (04fdd8a): an operating rule rather than a gate item — a per-action habit cannot be ticked in tasks.md and would dilute a list whose authority is that every member is a real gate"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T14:55:17.890Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T14:55:17.891Z"
     },
     {
       "id": "gh-90-honor-output-style-contract",
       "title": "Honor the user's configured output style / CLAUDE.md communication contract",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -2503,7 +2514,18 @@
       "externalUrl": "https://github.com/cfdude/pm/issues/90",
       "attributedCommits": [
         "ec3780d"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T14:55:19.380Z",
+        "reason": "shipped in 0.36.0 (04fdd8a): three bands — RECORDED and PARSED never bend (a reason is a write, field names are a wire format), NARRATED follows the user; reshape-never-drop"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T14:55:19.379Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T14:55:19.380Z"
     },
     {
       "id": "gh-91-autodetour-false-minimal-detour",
@@ -3043,6 +3065,13 @@
       "externalUrl": "https://github.com/cfdude/pm/issues/114",
       "attributedCommits": [
         "e8f6c40"
+      ],
+      "notes": [
+        {
+          "at": "2026-08-29T14:55:22.370Z",
+          "actor": "agent",
+          "text": "0.36.0 (04fdd8a) shipped the instruction half: suggestion demoted to an input, judgment half named as absent, tie-break made directional away from the lightest lane. The primary complaint stays OPEN — routing has no product/milestone layer to weigh and the engine cannot invent one without becoming an integration layer."
+        }
       ]
     },
     {
@@ -4095,7 +4124,7 @@
       "id": "gh-154-openspec-validate-lifecycle-collision",
       "title": "openspec validate --archived fails every correctly-archived pm change — the pm:lifecycle marker collides with an upstream lint",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -4110,7 +4139,18 @@
       "externalUrl": "https://github.com/cfdude/pm/issues/154",
       "attributedCommits": [
         "2e43374"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T14:55:20.865Z",
+        "reason": "shipped in 0.36.0 (04fdd8a): documented where the marker already is, riding item 3's mustSay so a mirror cannot drop it"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T14:55:20.865Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T14:55:20.865Z"
     },
     {
       "id": "gh-156-shipped-markdown-structural-check",
@@ -4129,14 +4169,14 @@
     }
   ],
   "detourStack": [],
-  "pmVersion": "0.35.0",
+  "pmVersion": "0.36.0",
   "tracker": {
     "system": "github-issues",
     "repo": "cfdude/pm",
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 261,
+  "revision": 266,
   "reviewMode": "thorough",
   "releases": [
     {
