@@ -4,7 +4,7 @@
 // what the agent supplies, exactly as it does for record-gate-review and record-reconcile.
 
 import { isInitialized, loadState, saveState } from "./state.mjs";
-import { parseFlags } from "./add-epic.mjs";
+import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
 
 /** The verdicts a refresh can record. `unchanged` and `material-change` are the whole
@@ -31,6 +31,7 @@ export function recordTrackerRefresh() {
     process.exit(1);
   }
   const f = parseFlags(argv.slice(1));
+  requireFlagValues("record-tracker-refresh", f);
   const str = (v) => (typeof v === "string" ? v : undefined);
 
   const verdict = str(f.verdict);

@@ -3,7 +3,7 @@
 // dependencies only.
 
 import { isInitialized, loadState, saveState } from "./state.mjs";
-import { parseFlags } from "./add-epic.mjs";
+import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { epicReferences } from "./links.mjs";
 import { tombstoneArtifacts } from "./source-artifacts.mjs";
 import { render } from "./render.mjs";
@@ -30,6 +30,7 @@ export function removeEpic() {
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
   if (!id) { process.stderr.write("usage: conductor.mjs remove-epic <id> [--cascade]\n"); process.exit(1); }
   const f = parseFlags(argv.slice(1));
+  requireFlagValues("remove-epic", f);
   const cascade = f.cascade === true || f.cascade === "true";
 
   const state = loadState();

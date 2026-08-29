@@ -3,7 +3,7 @@
 // dependency on lib/rules.mjs's writeRules() -- NOT circular, see the design doc.
 
 import { isInitialized, loadState, saveState } from "./state.mjs";
-import { parseFlags } from "./add-epic.mjs";
+import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { writeRules } from "./rules.mjs";
 import { render } from "./render.mjs";
 import { KNOWN_REVIEW_MODES } from "./constants.mjs";
@@ -17,6 +17,7 @@ import { resolvePlatform } from "./platform.mjs";
 export function setReviewMode() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const f = parseFlags(process.argv.slice(3));
+  requireFlagValues("set-review-mode", f);
   const mode = typeof f.mode === "string" ? f.mode : undefined;
   if (!mode || !KNOWN_REVIEW_MODES.includes(mode)) {
     process.stderr.write(`conductor: set-review-mode requires --mode, one of ${KNOWN_REVIEW_MODES.join("|")}\n`);

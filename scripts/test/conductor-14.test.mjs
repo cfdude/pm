@@ -220,7 +220,13 @@ test("a secondary tracker is pinned to inward — any other direction is refused
 // prior release's output, not a re-derivation of it.
 
 const FIXTURES = new URL("./fixtures/", import.meta.url).pathname;
-const baseline = (name) => fs.readFileSync(path.join(FIXTURES, `rules-0.26.0-${name}.txt`), "utf8");
+/** The checked-in 0.26.0 output, put through the SAME always-on strip as the block under test.
+ *  Both sides, or the comparison is between a stripped document and an unstripped one. The
+ *  refresh-gate/gate-procedure/intake replaces are no-ops here (0.26.0 emitted none of them);
+ *  the operating-rules one is what actually bites, and gh-151 is why it has to — see
+ *  stripAlwaysOn below. */
+const baseline = (name) =>
+  stripAlwaysOn(fs.readFileSync(path.join(FIXTURES, `rules-0.26.0-${name}.txt`), "utf8"));
 
 const OUTWARD_HEADING = "## External tracker sync";
 const REFRESH_GATE_HEADING = "## Re-read the source before an epic becomes the work";
@@ -237,8 +243,18 @@ const INTAKE_HEADING = "## Intake — triage an ask against the whole backlog BE
  *  governs — not for the whole document. This release also ADDS instruction that no tracker
  *  configuration turns on or off. Comparing whole blocks would forbid the release from adding
  *  any instruction at all, which is not what the direction requirement pins. */
+const OPERATING_RULES_HEADING = "## PM Conductor — operating rules";
 const stripAlwaysOn = (block) => block
   .replace(new RegExp(`\\n*${REFRESH_GATE_HEADING}[\\s\\S]*?(?=\\n<!-- END pm-conductor rules -->)`), "")
+  // The numbered operating rules are always-on for the same reason the three sections below are:
+  // no tracker configuration turns them on, off, or into something else. Stripped since gh-151,
+  // which replaced rule 1's "PUSH the current epic onto the detour stack in
+  // `.conductor/state.json`" — a HAND-EDIT the engine now has a verb for — and amended rules 3
+  // and 4 to match. Pinning this section byte-for-byte against 0.26.0 would forbid the release
+  // from correcting instruction that has nothing to do with tracker direction, which is exactly
+  // the over-claim this helper's own comment warns about. Stripped FIRST so it consumes up to
+  // the gate-procedure heading, which the next replace then removes in turn.
+  .replace(new RegExp(`${OPERATING_RULES_HEADING}[\\s\\S]*?(?=## )`), "")
   .replace(new RegExp(`${GATE_PROCEDURE_HEADING}[\\s\\S]*?(?=## )`), "")
   .replace(new RegExp(`${INTAKE_HEADING}[\\s\\S]*?(?=## )`), "");
 const REMINDER_HEADING = "## Sync after completing tracker-linked work";

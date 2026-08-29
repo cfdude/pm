@@ -37,13 +37,15 @@ export const LINK_TYPES_READ = [
  *  switches on it — filing it under "semantic" would be exactly the overclaim gh#100 is about. */
 export const LINK_TYPES_WRITTEN = [
   // pm:link-vocabulary
-  { type: "may-invalidate", writtenBy: ["reconciler-writeback.mjs"],
+  { type: "may-invalidate", writtenBy: ["reconciler-writeback.mjs", "detour-stack.mjs"],
     drives: "nothing switches on it — it carries a reconcile verdict for a human and for `/pm:resume`" },
 ];
 
 /** Accepted, inert, and DOCUMENTED as inert. `blocks` and `relates-to` are the two the shipped
- *  command docs teach; `resolves-blocker-for` is written by the detour protocol
- *  (commands/detour.md) onto the DETOUR, naming the parent it unblocks.
+ *  command docs teach; `resolves-blocker-for` is written by the detour protocol — since #151 by
+ *  the `push-detour` verb itself (detour-stack.mjs), not by hand — onto the DETOUR, naming the
+ *  parent it unblocks. It stays in the ANNOTATION band even so: the band is about whether
+ *  anything switches on the type, and nothing does.
  *
  *  `resolves-blocker-for` is deliberately NOT an alias for `depends-on`, which gh#100 asks about:
  *  the direction is opposite. The link lives on the detour and names the parent, so recording it
@@ -241,11 +243,13 @@ export function epicReferences(state) {
  *     and a `detours.log` whose lines are overwhelmingly AUTO-DETOUR commit attributions rather
  *     than deliberate deferrals. There is no distribution here to put a number on, and a
  *     threshold invented anyway would be a number the engine cannot support.
- *  3. There is nowhere to put a gate even if one were justified. The substantial-detour PUSH is
- *     a HAND-EDIT of state.json (see commands/detour.md step 2) — the engine has no
- *     `push-detour` verb, so it is not present at the moment the deferral is decided. Its one
- *     invitation is `honcho-memory push`, which runs at step 3, AFTER the edit. That makes a
- *     disclosure possible and a gate impossible.
+ *  3. #151 removed the third reason, and it is recorded here rather than deleted because it is
+ *     the one that CHANGED. It read: "there is nowhere to put a gate even if one were justified
+ *     — the substantial-detour PUSH is a HAND-EDIT of state.json, so the engine is not present
+ *     at the moment the deferral is decided." `push-detour` (lib/detour-stack.mjs) is now that
+ *     moment, and it calls deferralNote() itself. So a gate has become BUILDABLE; reasons 1 and
+ *     2 are why one is still not built, and they are about evidence, not mechanism. Building it
+ *     needs a defensible threshold, which needs a distribution this repository does not have.
  *
  *  So: information, never an imperative. "You have paused this three times" is a fact the
  *  operator can act on; "you should stop doing that" is a judgment the engine cannot support.

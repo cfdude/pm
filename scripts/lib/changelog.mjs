@@ -4,12 +4,13 @@
 
 import { changelogBetween } from "./plugin-meta.mjs";
 import { isInitialized, loadState } from "./state.mjs";
-import { parseFlags } from "./add-epic.mjs";
+import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 
 /** Show CHANGELOG entries newer than a version. `--since <x.y.z>` overrides the
  *  default, which is the version stamped in this repo's state.json. */
 export function changelog() {
   const f = parseFlags(process.argv.slice(3));
+  requireFlagValues("changelog", f);
   const since = typeof f.since === "string"
     ? f.since
     : (isInitialized() ? (loadState().pmVersion || null) : null);

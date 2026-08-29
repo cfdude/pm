@@ -36,11 +36,14 @@ function repoAt0260() {
 const REFRESH_GATE_HEADING = "## Re-read the source before an epic becomes the work";
 const GATE_PROCEDURE_HEADING = "## The gate procedure — required task items";
 const INTAKE_HEADING = "## Intake — triage an ask against the whole backlog BEFORE registering it";
-/** The block minus the ALWAYS-ON sections this release adds — the refresh gate, the emitted
- *  gate procedure and the intake procedure — see conductor-14's identical helper for why
- *  byte-identity is claimed for the tracker sections and not for the whole document. */
+const OPERATING_RULES_HEADING = "## PM Conductor — operating rules";
+/** The block minus the ALWAYS-ON sections — the numbered operating rules, the refresh gate, the
+ *  emitted gate procedure and the intake procedure — see conductor-14's identical helper for why
+ *  byte-identity is claimed for the tracker sections and not for the whole document, and for why
+ *  gh-151 added the operating rules to the list. */
 const stripAlwaysOn = (block) => block
   .replace(new RegExp(`\\n*${REFRESH_GATE_HEADING}[\\s\\S]*?(?=\\n<!-- END pm-conductor rules -->)`), "")
+  .replace(new RegExp(`${OPERATING_RULES_HEADING}[\\s\\S]*?(?=## )`), "")
   .replace(new RegExp(`${GATE_PROCEDURE_HEADING}[\\s\\S]*?(?=## )`), "")
   .replace(new RegExp(`${INTAKE_HEADING}[\\s\\S]*?(?=## )`), "");
 
@@ -61,7 +64,8 @@ test("7.5: the checked-in 0.26.0 state carries none of this release's fields", (
 test("7.5: an un-upgraded 0.26.0 state emits byte-identically to 0.26.0 for a jira primary", () => {
   const cwd = repoAt0260();
   const block = run(["rules"], { cwd });
-  const before = fs.readFileSync(path.join(FIXTURES, "rules-0.26.0-jira-scoped.txt"), "utf8");
+  // BOTH sides through the same strip — see conductor-14's `baseline()`.
+  const before = stripAlwaysOn(fs.readFileSync(path.join(FIXTURES, "rules-0.26.0-jira-scoped.txt"), "utf8"));
   assert.equal(stripAlwaysOn(block), before,
     "a direction-less jira primary on un-upgraded state must emit exactly what 0.26.0 emitted");
 });

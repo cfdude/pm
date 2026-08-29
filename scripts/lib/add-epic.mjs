@@ -8,28 +8,23 @@
 import { activate } from "./active-pointer.mjs";
 import { isInitialized, loadState, pushEpic, saveState } from "./state.mjs";
 import { render } from "./render.mjs";
-import { KNOWN_LANES, KNOWN_STATUSES, epicFlagsFor, repeatableEpicFlags, valueBearingFlagsFor } from "./constants.mjs";
+import { KNOWN_LANES, KNOWN_STATUSES, epicFlagsFor, repeatableFlagNames, valueBearingFlagsFor } from "./constants.mjs";
 import { isKnownLinkType, unknownLinkTypeMessage, linkTypeVocabulary } from "./links.mjs";
 import { creationStamp } from "./disposition.mjs";
 import { rankOf } from "./epic-progress.mjs";
 
-// Repeatable flags that belong to NO epic-writing command, and so cannot come from the shared
-// EPIC_FLAGS registry: --intent is set-tracker's, --preauthorize/--context/--notify are
-// set-autonomy's, --add/--remove are set-lane-routing's. parseFlags is shared by nearly every
-// subcommand, so the epic registry's repeatable entries are UNIONED with this list and never
-// substituted for it — replacing it would leave `set-tracker --intent a:b --intent c:d`
-// silently keeping only the second pair, with an exit code of 0.
-//
-// `link` is deliberately absent: it IS an epic flag, and it now carries `repeats: true` in the
-// registry, so it reaches parseFlags through the union like any flag a later capability adds.
-const REPEATABLE_NON_EPIC_FLAGS = ["intent", "preauthorize", "context", "notify", "add", "remove"];
-
-/** The full repeatable set — the non-epic list above UNIONed with every EPIC_FLAGS entry
- *  marked `repeats: true`. Recomputed on every parseFlags() call rather than frozen at module
- *  scope, so declaring `repeats: true` in the registry is the entire edit a capability makes;
- *  this file never changes for it. */
-export const repeatableFlags = () =>
-  [...new Set([...REPEATABLE_NON_EPIC_FLAGS, ...repeatableEpicFlags()])];
+/** The full repeatable set, read from BOTH flag tables — see repeatableFlagNames() in
+ *  constants.mjs. Recomputed on every parseFlags() call rather than frozen at module scope, so
+ *  declaring `repeats: true` on a row is the entire edit a capability makes; this file never
+ *  changes for it.
+ *
+ *  It used to be that union taken against a HAND-WRITTEN list here — `["intent", "preauthorize",
+ *  "context", "notify", "add", "remove"]` — because those six belong to `set-tracker`,
+ *  `set-autonomy` and `set-lane-routing`, which the epic registry does not name. #152 gave those
+ *  verbs rows of their own, so the list is now the projection it was always standing in for. It
+ *  is still a UNION over both tables and never one of them: `set-tracker --intent a:b --intent
+ *  c:d` silently keeping only the second pair, exit code 0, is what a narrowing here costs. */
+export const repeatableFlags = () => repeatableFlagNames();
 
 export function parseFlags(argv) {
   const o = {};
@@ -209,6 +204,7 @@ export function findCyclePath(stuckIds, deps) {
 export function planHierarchy() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const f = parseFlags(process.argv.slice(3));
+  requireFlagValues("plan-hierarchy", f);
   const parent = typeof f.parent === "string" ? f.parent : undefined;
   if (!parent) { process.stderr.write("usage: conductor.mjs plan-hierarchy --parent <id>\n"); process.exit(1); }
   const state = loadState();

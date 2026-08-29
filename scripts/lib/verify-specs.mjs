@@ -40,7 +40,7 @@ import path from "node:path";
 import { ROOT, SPECS_DIR } from "./constants.mjs";
 import { isInitialized, loadState } from "./state.mjs";
 import { artifactClaimants, normalizeArtifactPath } from "./source-artifacts.mjs";
-import { parseFlags } from "./add-epic.mjs";
+import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 
 /** The flags `verify-specs` accepts. A LOCAL list and deliberately not an EPIC_FLAGS entry, for
  *  triage.mjs' stated reason: that registry is the shared surface of the epic-WRITING commands,
@@ -312,6 +312,7 @@ function danglingBlock(dangling) {
 export function verifySpecs() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const f = parseFlags(process.argv.slice(3));
+  requireFlagValues("verify-specs", f);
   const unknown = Object.keys(f).filter(k => !VERIFY_SPECS_FLAGS.includes(k));
   if (unknown.length) {
     process.stderr.write(

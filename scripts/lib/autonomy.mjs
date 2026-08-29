@@ -4,7 +4,7 @@
 // lib/add-epic.mjs's parseFlags() -- see the design doc.
 
 import { isInitialized, loadState, saveState } from "./state.mjs";
-import { parseFlags } from "./add-epic.mjs";
+import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
 import { KNOWN_AUTONOMY_LEVELS, KNOWN_PREAUTHORIZE_CATEGORIES } from "./constants.mjs";
 
@@ -46,6 +46,7 @@ export function setAutonomy() {
     process.exit(1);
   }
   const f = parseFlags(argv.slice(1));
+  requireFlagValues("set-autonomy", f);
   const state = loadState();
   const epic = state.epics.find(e => e.id === id);
   if (!epic) { process.stderr.write(`conductor: epic '${id}' not found\n`); process.exit(1); }
