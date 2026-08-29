@@ -65,6 +65,12 @@ function dispatchedVerbs() {
  *  verb without a baseline here fails loudly instead of going unswept. */
 const VERB_BASELINE = {
   "add-many": (cwd) => ["add-many", "--from", batchFile(cwd)],
+  // gh-84 / gh-111. The three read-only verbs whose flags were parsed off `process.argv` by hand
+  // until the branches met; `purge-logs` needs a selector to get past its own refusal, and
+  // `--keep 5` matches nothing on a repo with no logs, so the baseline removes nothing.
+  activity: () => ["activity"],
+  owners: () => ["owners"],
+  "purge-logs": () => ["purge-logs", "--keep", "5"],
   changelog: () => ["changelog", "--since", "0.0.1"],
   "plan-hierarchy": () => ["plan-hierarchy", "--parent", "e1"],
   "push-detour": () => ["push-detour", "e1", "--detour", "other", "--reason", "blocked", "--reconcile"],
@@ -271,6 +277,14 @@ test("gh-152: VERB_FLAGS' valueless rows are a short closed list", async () => {
   const { VERB_FLAGS } = await import(CONSTANTS);
   const valueless = VERB_FLAGS.filter(f => f.valueless).map(f => `${f.commands.join("/")} --${f.flag}`).sort();
   assert.deepEqual(valueless, [
+    // gh-84 / gh-111, added when those branches were integrated. Each is a genuine boolean —
+    // `--json` selects a rendering, `--dry-run`/`--yes` are the two halves of purge-logs'
+    // confirmation — so exempting them states a truth rather than buying a green suite. The
+    // word in this assertion's message is SILENTLY: the list is closed, not frozen, and
+    // widening it is a line in a diff somebody has to justify.
+    "owners/activity --json",
+    "purge-logs --dry-run",
+    "purge-logs --yes",
     "push-detour --no-reconcile",
     "push-detour --reconcile",
     "remove-epic --cascade",

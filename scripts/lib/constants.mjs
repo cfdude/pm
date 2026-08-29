@@ -342,7 +342,35 @@ export const EPIC_FLAGS = [
   // a control flag paired with `--story`, so its `key` is null exactly as `--done`'s is; the
   // write lands inside `stories[n-1].disposition`, not on a top-level epic key.
   { flag: "wont-do", key: null, commands: ["update-epic"], write: "custom", requires: "a reason" },
+  // ─────────── #84: the advisory claim's control flags ───────────
+  //
+  // `claim`/`unclaim` write an epic (`epic.claim`), so they belong in the registry every
+  // epic-writing command shares rather than carrying two literal lists of their own — the
+  // second-literal defect #149 reports. `key` is null on all four: the write lands nested under
+  // `epic.claim`, never on a top-level epic key, so the verb owns it.
+  //
+  // NOTE the verb is `unclaim`, NOT `release`: #84 suggests `conductor release <epic-id>` and
+  // that name is already this engine's version-release verb. One verb carrying two unrelated
+  // meanings is how a `release --defer` would come to mean both "cut from a release" and "hand
+  // the claim back".
+  { flag: "session", key: null, commands: ["claim", "unclaim"], write: "custom",
+    requires: "a session name — set PM_SESSION or pass --session <name>" },
+  { flag: "ttl", key: null, commands: ["claim"], write: "custom",
+    requires: "a positive number of minutes" },
+  // `--steal` is deliberately NOT `--force`. saveState() reads `--force` GLOBALLY off argv to
+  // bypass the revision guard (state.mjs), so a claim verb spelled `--force` would silently
+  // disable optimistic concurrency on the very write it is coordinating — the enforcement half
+  // (#83) defeated as a side effect of the cooperative half (#84).
+  { flag: "steal", key: null, commands: ["claim", "unclaim"], write: "custom", valueless: true },
+  // The REPO-level quiescence marker rather than an epic's claim. Valueless: its presence is
+  // the whole argument.
+  { flag: "repo", key: null, commands: ["claim", "unclaim"], write: "custom", valueless: true },
 ];
+
+/** The log families `purge-logs` can select. HERE rather than in purge-logs.mjs because
+ *  `VERB_FLAGS`' `--kind` row names them in its refusal, and constants.mjs must not import a
+ *  verb module to say what a flag accepts. purge-logs.mjs imports it back. */
+export const PURGE_KINDS = ["activity", "conflicts", "detours", "all"];
 
 // ─────────────────────── the flag surface of every OTHER verb ───────────────────────
 //
@@ -367,9 +395,11 @@ export const EPIC_FLAGS = [
 // living next to each verb makes the derivation walk a dozen modules to find what it is missing.
 //
 // THE BOUNDARY, stated so a later capability does not have to guess: a flag belongs in
-// `EPIC_FLAGS` when the command is one of the epic-write surfaces that registry already declares
-// (add-epic, update-epic, add-many, release, record-gate-review, record-cross-spec-review), and
-// in `VERB_FLAGS` otherwise. Both tables carry the SAME row shape and `valueBearingFlagsFor()`
+// `EPIC_FLAGS` when the command WRITES AN EPIC RECORD — the criterion, not the list, because
+// #84 landed `claim`/`unclaim` (they write `epic.claim`) into that registry while this comment
+// still named six commands, and the list was false the moment the two branches met. Read the
+// criterion; `epicFlagCommands()` will always tell you the current membership. Everything else
+// goes in `VERB_FLAGS`. Both tables carry the SAME row shape and `valueBearingFlagsFor()`
 // reads their union, so the split is invisible to the rule — it decides which projections see a
 // row, never whether the guard applies. Where the two tables need the same WORDS, they share a
 // constant (`REASON_REQUIRES`) rather than a row.
@@ -439,6 +469,36 @@ export const VERB_FLAGS = [
   // for why, and KNOWN_STATUSES' neighbour `--no-deferrals` for the precedent.
   { flag: "reconcile", commands: ["push-detour"], valueless: true },
   { flag: "no-reconcile", commands: ["push-detour"], valueless: true },
+  // ─────────── #84 / #111: the four verbs the two branches met without declaring ───────────
+  //
+  // `owners`, `activity` and `purge-logs` each parsed `process.argv` BY HAND — a third and
+  // fourth independent reinvention of the rule after `triage --limit` and `verify-specs --root`,
+  // written on a branch that could not see #152 because #152 did not exist on it yet. Declaring
+  // the rows without converting the verbs would have asserted a refusal that does not happen,
+  // which is why the guard refused the shortcut; the verbs now go through
+  // `parseFlags` + `requireFlagValues` like every other one, and these rows are true.
+  //
+  // `set-activity-log` is in FLAGLESS_VERBS below, not here: its argument is the POSITIONAL
+  // `on|off`, and a row would claim a flag surface it does not have.
+  //
+  // `--json` is one row across both readers because it means the same boolean on each — the
+  // opposite case to `--remove`, which is two rows precisely because it does not.
+  { flag: "json", commands: ["owners", "activity"], valueless: true },
+  // Scoped rather than folded into `changelog --since` / `rules --epic`: the spellings collide
+  // and the vocabularies do not. `changelog --since` takes a VERSION, `activity --since` an
+  // instant; `rules --epic` selects the epic a rules block is rendered for, `activity --epic`
+  // filters a log. What they agree on — that a value is required — is all the row carries.
+  { flag: "since", commands: ["activity"], requires: "an ISO-8601 timestamp" },
+  { flag: "epic", commands: ["activity"], requires: "an epic id" },
+  // purge-logs. Its own `--keep`/`--over`/`--older-than` checks stay and run AFTER this rule,
+  // on the precedent `triage --limit` set: neither is subsumed, because a value that is present
+  // and unparseable is a different mistake from a value that is absent.
+  { flag: "kind", commands: ["purge-logs"], requires: `one of ${PURGE_KINDS.join("|")}` },
+  { flag: "keep", commands: ["purge-logs"], requires: "a non-negative whole number" },
+  { flag: "over", commands: ["purge-logs"], requires: "a size like 500K, 10M or 1G" },
+  { flag: "older-than", commands: ["purge-logs"], requires: "a non-negative number of days" },
+  { flag: "dry-run", commands: ["purge-logs"], valueless: true },
+  { flag: "yes", commands: ["purge-logs"], valueless: true },
 ];
 
 /** The dispatched verbs that accept NO flags at all — positional arguments or none.
@@ -452,16 +512,74 @@ export const FLAGLESS_VERBS = [
   "init", "brief", "snapshot", "commit-nudge", "sync", "log-detour", "honcho-memory",
   "reorder", "set-active", "clear-active", "suggest-lane", "set-gate-guard", "gate-guard",
   "lesson-advice", "verify-worktrees", "verify-state", "integrity", "changesets", "upgrade",
+  // #111's toggle. Its argument is the POSITIONAL `on|off` — `set-activity-log --on` is refused
+  // by the same check that refuses `set-activity-log maybe` — so it has no flag surface to
+  // declare, and a VERB_FLAGS row for it would be a claim about a parser that does not exist.
+  "set-activity-log",
   // `pop-detour` takes an OPTIONAL POSITIONAL assertion (the epic you expect to be on top) and
   // no flags. The stack is LIFO, so a flag that SELECTED a frame would be a different verb; what
   // the positional does is refuse when the top is not what the caller thinks it is.
   "pop-detour",
 ];
 
+// ─────────────────── #84: advisory claim TTLs ───────────────────
+//
+// TWO defaults, and the split is load-bearing rather than fussy. #84 suggests a `heartbeatAt`,
+// and a heartbeat nothing beats is `claimedAt` wearing a costume: it would make the staleness
+// threshold a lie in both directions — a live session reads stale after N minutes of honest
+// work, and a crashed one reads live until N minutes after its last write. The only true
+// auto-bump chokepoint is saveState(), which does not know WHICH epic is being written, so an
+// epic-scoped heartbeat there is not cheap. A stated TTL is unambiguous, self-documenting, and
+// needs no distributed heartbeat: re-claiming extends it.
+//
+// An EPIC claim spans the work — hours. A REPO marker spans one operation — minutes — and its
+// failure mode is the expensive one: a crashed session holding the "do not write here" flag for
+// two hours is exactly the false coordination signal #84 warns is worse than none.
+export const CLAIM_DEFAULT_TTL_MINUTES = 120;
+export const REPO_CLAIM_DEFAULT_TTL_MINUTES = 30;
+
+// ─────────────────── #111: the activity log's two caps ───────────────────
+//
+// Both SIZE-based, deliberately, and the maintainer's ruling says why a day is not a unit of
+// anything here: a quiet repo emits nothing for a week, an orchestrated fan-out emits more in an
+// hour than a normal month, and a log that only rotates on a calendar boundary can grow past the
+// point where an agent can read it at all — which defeats the reason for collecting it.
+//
+// SEGMENT: 128 KB, chosen against a stated constraint rather than by feel. A segment must be
+// fully readable in ONE pass by an agent: 128 KB / 191 B per measured event ≈ 680 events ≈ 37k
+// tokens, which leaves room for the actual task. Larger stops satisfying the constraint; smaller
+// multiplies files for no gain. At the observed rate that is 1–2 segments per month for the
+// busiest repo in the fleet.
+export const ACTIVITY_SEGMENT_MAX_BYTES = 131_072;
+// RETENTION: 1 GB total per project, oldest first. ≈ 5.5 million events ≈ centuries at pm's own
+// measured rate — a backstop against pathology, not an operating point, which is the right
+// posture for a cap. Stated plainly because it is easy to misread: the cap is PER PROJECT and
+// this is intended to run in ~22 of them, so the worst case is 22 GB and the measured real case
+// is a few megabytes in total.
+export const ACTIVITY_RETENTION_MAX_BYTES = 1_073_741_824;
+
 /** The flags `command` accepts, as bare names. The projection an allowlist is built from —
  *  never a second literal. */
 export const epicFlagsFor = (command) =>
   EPIC_FLAGS.filter(f => f.commands.includes(command)).map(f => f.flag);
+
+/** EVERY flag `command` accepts, from BOTH tables. The union projection an ALLOWLIST is built
+ *  from — the "is this flag known here at all" question, as distinct from `valueBearingFlagsFor`'s
+ *  "does it need a value".
+ *
+ *  `epicFlagsFor()` answered this for the epic-write surfaces and `[]` for every other verb, so
+ *  the verbs outside that registry that wanted an allowlist typed one out — `purge-logs`' KNOWN
+ *  list was six flag names beside a table that could declare them. That is #152's shape one
+ *  question over: a rule bound to a LIST rather than to the function it governs. Reading the
+ *  union here means a verb's allowlist follows its rows whichever table they sit in, so moving a
+ *  row between the two tables can never silently narrow what a verb accepts.
+ *
+ *  Note this deliberately does NOT filter on `valueless`: an allowlist must recognise
+ *  `--dry-run` as known, and the value rule is a separate projection precisely so neither
+ *  question can be answered with the other one's list. */
+export const flagsFor = (command) =>
+  [...new Set([...EPIC_FLAGS, ...VERB_FLAGS].filter(f => f.commands.includes(command))
+    .map(f => f.flag))];
 
 /** EVERY repeatable flag either table declares. parseFlags()'s repeatable set is GLOBAL across
  *  subcommands, so this is the one honest projection for it: a flag repeatable on any verb is

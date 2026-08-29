@@ -512,6 +512,24 @@ it waits on.
   is INVENTORY, not a finding: a note or an abandoned sketch legitimately has no epic, so it
   never speaks up on its own — you run it. Where a document does imply unregistered work, author
   an `add-many` batch whose entries each carry its `specPath`.
+- Working alongside ANOTHER SESSION, or dispatching into a sibling repo's conductor? `claim <id>
+  --session <name>` records who owns an epic and until when; `unclaim <id> --session <name>`
+  hands it back (named `unclaim` because `release` already means a version here); `owners` reports
+  who holds what and how stale, and is behaviourally verified read-only so you can point it at a
+  repo you do not own. `claim --repo` sets a repo-level "I am mid-operation here" marker in a
+  git-ignored sidecar — release it when you are done touching the CONDUCTOR, which is strictly
+  later than when the work is done, because a review routinely files follow-up stories.
+  **It is advisory.** `claim`/`unclaim` are the only verbs that refuse because of a claim;
+  everything else writes to a claimed epic exactly as before. A claim expires on its own stated
+  TTL, so a session that died mid-epic shows as STALE rather than owning the work forever, and
+  `integrity`'s `advisory-claim-shape` check reports one without being asked.
+- Want to know HOW this project got here, not just where it is? `set-activity-log on` starts an
+  append-only record of conductor state transitions, and `activity` reads it back — time an epic
+  waited before it went active, detour frequency, lane choices and re-routes, gate verdicts in
+  sequence, and **out-of-band writes**: `state.json` revisions no engine verb accounts for, which
+  is what a hand-edit looks like from the record's side. Off by default; it records nothing
+  retroactively, so turning it on says nothing about yesterday. `purge-logs` is the manual
+  cleanup — it removes nothing without a selector, and nothing without `--yes`.
 
 These rules are also installed into the project's `CLAUDE.md` by `/pm:init` — or `AGENTS.md`
 (or `HERMES.md`-chain equivalent) on a repo running a declared non-Claude-Code `--platform` —

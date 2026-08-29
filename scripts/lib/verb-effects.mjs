@@ -49,6 +49,14 @@ export const VERB_EFFECTS = {
   "suggest-lane": { effect: "read-only", exercise: ["a caching bug"], note: "returns the routed lane for a title" },
   triage: { effect: "read-only", exercise: ["a caching bug in the renderer"], note: "candidate duplicates + lane suggestion; emits verdict:null and registers nothing" },
   "verify-specs": { effect: "read-only", exercise: [], note: "design-document coverage inventory" },
+  // #84's whole point: an orchestrator asks "is it safe to write here" BEFORE dispatching into
+  // a sibling repo. A verb that dirtied that repo to answer would be answering its own question
+  // wrongly — so this one is exercised, not merely declared.
+  owners: { effect: "read-only", exercise: [], note: "advisory claim report — who holds what, and how stale" },
+  // #111's reader. Read-only in the strict sense the suite checks: it opens `.conductor/activity/`
+  // and nothing else, and it does NOT create that directory when it is absent — a reader that
+  // scaffolded its own store would dirty a repo merely by being asked a question about it.
+  activity: { effect: "read-only", exercise: [], note: "reads the activity log and answers the questions it exists for" },
   // The ONE exercised verb that is SUPPOSED to exit non-zero — its whole job is to fail on
   // drift, and the behavioural check runs it against a repo with a render pending. Declared
   // rather than special-cased in the test, so "this verb fails by design" and "this verb
@@ -88,6 +96,11 @@ export const VERB_EFFECTS = {
   "record-gate-review": { effect: "mutates", writes: "state.json (gateReview.gateN)" },
   "record-cross-spec-review": { effect: "mutates", writes: "state.json (the release-scope verdict and its spec-set hash)" },
   "record-tracker-refresh": { effect: "mutates", writes: "state.json (the externalUpdatedAt watermark and refresh verdict)" },
+  "set-activity-log": { effect: "mutates", writes: "state.json (the activityLog toggle)" },
+  // DESTRUCTIVE by nature, which is why it removes nothing without both a selector and --yes.
+  "purge-logs": { effect: "mutates", writes: "removes .conductor/ log files — activity segments, write-conflicts.log(.prev), detours.log" },
+  claim: { effect: "mutates", writes: "state.json (an epic's advisory claim) — or .conductor/session-claim.json with --repo" },
+  unclaim: { effect: "mutates", writes: "state.json (clears an epic's advisory claim) — or removes .conductor/session-claim.json with --repo" },
   upgrade: { effect: "mutates", writes: "state.json (migrations, pmVersion), CLAUDE.md (the rules block), .gitignore" },
   "write-rules": { effect: "mutates", writes: "CLAUDE.md (or the platform's rules file), state.json (the recorded platform)" },
 };

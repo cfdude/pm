@@ -20,6 +20,7 @@ import { gateHasEvidence, isOpenspecLane, releaseMembers } from "./constants.mjs
 import { commitDate, isAncestor, objectExists, reachableFromAnyRef } from "./git.mjs";
 import { isArchiveBackfilled, outcomeOf, stampedBy } from "./disposition.mjs";
 import { epicReferences, isKnownLinkType, isRenderableLink, KNOWN_LINK_TYPES, supersededEpics } from "./links.mjs";
+import { claimExpiry, isLiveClaim } from "./claim-shape.mjs";
 
 /** The outcomes that are their own explanation. Each carries a REQUIRED reason saying why the
  *  work did not complete, so an epic holding one is a record working rather than a record
@@ -597,6 +598,43 @@ export const CHECKS = [
             "record's history, so it was not merely never fetched. The evidence for what these " +
             "records claim is unrecoverable locally; a fork, another clone or the PR record is " +
             `the only place left to look. ${cite(arms.absent)}` });
+        }
+      }
+      return out;
+    },
+  },
+  {
+    id: "advisory-claim-shape",
+    title: "an advisory claim that cannot be true — expired, or held on an epic that has ended",
+    // #84 — `owners` answers the question only when someone thinks to ask it, and a stale claim
+    // is by construction left behind by a session that is no longer there to ask. This check is
+    // the surface that finds one without being asked. It REPORTS, like everything here: a claim
+    // is advisory, so nothing about a finding blocks a command, and the remediation is a `claim`
+    // or `unclaim` a person runs.
+    //
+    // Two shapes, deliberately distinguished. An EXPIRED claim is ordinary — it is how a dead
+    // session looks, and taking it over is a normal `claim` with no --steal. A claim on an
+    // ARCHIVED epic is the dangling-reference shape: `update-epic --status archived` clears it,
+    // so one that survives was written by a hand-edit or by a state file older than that rule,
+    // and it renders as ownership of work that has ended.
+    run(state) {
+      const out = [];
+      const now = Date.now();
+      for (const e of state.epics || []) {
+        if (!e.claim) continue;
+        if (e.status === "archived") {
+          out.push({ epic: e.id, detail:
+            `archived, and still holding a claim by session '${e.claim.session}' since ` +
+            `${e.claim.claimedAt}. Archiving clears the claim, so this record predates that rule ` +
+            "or was hand-edited. Clear it: `unclaim " + e.id + " --session " + e.claim.session + " --steal`." });
+          continue;
+        }
+        if (!isLiveClaim(e.claim, now)) {
+          out.push({ epic: e.id, detail:
+            `claim by session '${e.claim.session}' expired at ${claimExpiry(e.claim) || "an unreadable time"} ` +
+            `(claimed ${e.claim.claimedAt}, ttl ${e.claim.ttlMinutes} min). A session that died ` +
+            "mid-epic looks exactly like this. Take it over with `claim " + e.id +
+            " --session <you>` — no --steal is needed once expired." });
         }
       }
       return out;

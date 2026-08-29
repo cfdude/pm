@@ -46,6 +46,11 @@ const BASELINE = {
     "--base-sha", "aaa", "--head-sha", "bbb"],
   "record-cross-spec-review": () => ["record-cross-spec-review", "0.1.0", "--verdict", "pass"],
   release: () => ["release", "0.1.0", "--intent", "why"],
+  // gh-84. Both baselines are chosen to exit 0 on the fixture WITHOUT writing to the shared cwd
+  // the sweep byte-compares: `claim` is only ever run there with an appended valueless flag (a
+  // refusal), and `unclaim` on an unclaimed epic is a deliberate exit-0 no-op.
+  claim: () => ["claim", "e1", "--session", "sweeper"],
+  unclaim: () => ["unclaim", "e1", "--session", "sweeper"],
   // `add-many` takes no epic flags on argv at all — its surface is the batch DOCUMENT's keys,
   // swept separately below because the shape of the mistake is a key with a non-string value.
   "add-many": null,
@@ -81,7 +86,7 @@ const stateOf = (cwd) => fs.readFileSync(path.join(cwd, ".conductor", "state.jso
 test("gh-149: the registry declares which flags take no value, and it is a short closed list", async () => {
   const { EPIC_FLAGS } = await import(CONSTANTS);
   const valueless = EPIC_FLAGS.filter(f => f.valueless).map(f => f.flag).sort();
-  assert.deepEqual(valueless, ["clear-links", "done", "no-deferrals"],
+  assert.deepEqual(valueless, ["clear-links", "done", "no-deferrals", "repo", "steal"],
     "a flag marked valueless is EXEMPT from the guard — widening this list silently reopens #149");
   // The discriminator is `valueless`, never `key`. Ten value-bearing rows carry `key: null`
   // because the command owns the write (`--gate`, `--reviewer`, `--wont-do`, …); projecting the
