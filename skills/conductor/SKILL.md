@@ -43,6 +43,13 @@ is unlikely) — set `PM_VERBOSE_ENGINE_BANNER=1` to force it back on if you nee
 source there. `PM_QUIET_ENGINE_BANNER=1` still works as an explicit suppress outside that
 context too.
 
+One line is NOT suppressed by either switch. If `$CLAUDE_PROJECT_DIR` resolves to a different
+directory than your cwd AND your cwd has a `.conductor/` of its own, every invocation warns on
+stderr and names both repositories — because in that situation every path the engine reads or
+writes belongs to the other one. It is a warning, never a refusal: pointing the engine at a
+sibling repo's conductor is a supported pattern. Running from a subdirectory, or targeting a
+project from a directory with no conductor, is silent as before.
+
 **Developing pm itself?** This is how the checkout's engine wins, for every caller at once —
 including `hooks/hooks.json`, which invokes the engine through `$CLAUDE_PLUGIN_ROOT` with no
 chance to resolve anything. Export `PM_ENGINE_DELEGATION=/abs/path/to/your/pm/checkout` and an
@@ -460,6 +467,13 @@ These rules are also installed into the project's `CLAUDE.md` by `/pm:init` — 
 and re-injected by the SessionStart hook (so they survive compaction). Two artifacts back them up: every
 commit made while a detour is active is auto-logged to `.conductor/detours.log` by the hook
 (deterministic), and minimal detours are logged there by `log-detour` (rule-driven).
+
+Two commits are deliberately NOT logged, so the trail describes the detour rather than itself
+(#81). A commit touching ONLY pm's own generated output — `state.json`, `PROJECT.md`,
+`render-stamp.json`, `commit-watch.json` — is bookkeeping, not detour work; and a commit whose
+SHA already has a row of that kind is never given a second one. `MINIMAL` rows are exempt from
+that de-duplication: they record what you DECLARED, not what git observed, so two minimal detours
+between one pair of commits are two real entries.
 
 ## Intake — triage an ask BEFORE it becomes an epic
 

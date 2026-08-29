@@ -950,6 +950,10 @@ your-project/
 ├── .conductor/
 │   ├── state.json           # state of record — epics, detour stack, links, autonomy grants
 │   ├── detours.log          # append-only trail: timestamp · SHA · kind · epic · note
+│                             # — one row per commit: a SHA already logged under a kind is not
+│                             #   given a second row, and a commit touching only pm's own
+│                             #   generated files is bookkeeping, not detour work. MINIMAL rows
+│                             #   are exempt — they record what you declared, not what git saw.
 │   └── honcho-memories.log  # ready-to-copy Honcho memory lines, timestamped
 ├── CLAUDE.md                # managed rules block (idempotent; delete to opt out)
 │                             # — AGENTS.md instead, on a platform that reads that file (see
@@ -989,6 +993,16 @@ in [CONTRIBUTING.md](CONTRIBUTING.md#developing-pm-with-pm-required-one-time-set
 
 **If you are a pm *user*, there is nothing here for you to configure.** Unset is the default and
 the correct state; the installed plugin runs its own engine, as it should.
+
+**Which repository did that command just write?** The engine resolves everything it touches —
+`.conductor/`, `PROJECT.md`, the managed rules block — from `CLAUDE_PROJECT_DIR` when that
+variable is set, falling back to the working directory. That is deliberate and is how a session
+targets a sibling repo's conductor. But when the variable resolves to a *different* directory
+than your cwd and your cwd has a `.conductor/` of its own, every invocation now warns on stderr
+and names both repositories, so a redirected write never looks like a local one. It is a warning,
+never a refusal, and nothing silences it — not `PM_QUIET_ENGINE_BANNER`, and not the presence of
+`CLAUDE_PROJECT_DIR` itself. Running the engine from a subdirectory, or pointing it at a project
+from a directory with no conductor, stays silent.
 
 ## Roadmap
 
