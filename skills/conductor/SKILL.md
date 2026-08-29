@@ -595,7 +595,34 @@ computes what is WORTH READING and never decides:
 --no-deferrals`. A consolidation that leaves both epics open has consolidated nothing, and a
 candidate already flagged `superseded: true` is dead — never consolidate into it.
 
-**4. Say no out loud when the answer is no.** Not every ask should be taken on. Declining by
+**4. Decide the lane; do not inherit it.** `triage` already ran `suggest-lane` for you, and its
+answer reads THE ASK — the words, the size, this repo's `laneRouting` overrides — and nothing
+else. It cannot ask what a person would ask, whether this work SERVES something already committed
+to, because pm holds no milestone or product context to weigh and the engine will not invent one.
+The suggestion is an input; the lane is your call.
+
+**The tie-break is asymmetric**, and it is not a matter of taste. `claude-code` means no spec, no
+plan, no gate and no stories — right for a genuine sub-2-hour tweak, and the reason a misrouted
+epic leaves no record of what it was FOR. Over-processing costs hours; under-processing costs the
+record permanently, and nothing later can reconstruct it. So an unresolved routing question
+resolves AWAY from `claude-code`, never into it. Whenever you register in a lane other than the
+one routing suggested, say why on the epic:
+
+```bash
+update-epic <id> --notes "lane: <chosen> not <routed> — <why>"
+```
+
+The tracker-sync procedures already demand that line. It binds every path that registers an epic —
+manual `epic add`, a roadmap read in-session, and intake — not only the mirrored ones. *Measured
+in `pm`'s own repository: 83% of epics sat in `claude-code`, 51 of them already archived, none
+carrying an artifact link.*
+
+**What is NOT solved.** Weighing an ask against a milestone the project committed to needs a
+product layer pm does not have. This step makes the decision deliberate and its departures
+recorded; it does not make the routing itself smarter. Tracked as
+[#114](https://github.com/cfdude/pm/issues/114).
+
+**5. Say no out loud when the answer is no.** Not every ask should be taken on. Declining by
 never registering it destroys the record that anybody considered it — the same objection that
 made every other ending recordable. Register it, then:
 

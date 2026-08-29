@@ -688,6 +688,15 @@ keyword/glob rules checked before the generic lane heuristic — for when "anyth
 billing always goes through openspec" needs to be a rule, not a CLAUDE.md carve-out.
 `suggest-lane "<free text>"` looks one up.
 
+**It is an input, not an answer.** Routing reads THE ASK — words, size, the overrides recorded
+here — and nothing else; it cannot ask whether the work serves something the project already
+committed to, because pm holds no milestone or product context to weigh. So the tie-break is
+asymmetric: `claude-code` means no spec, no plan, no gate and no stories, over-processing costs
+hours and under-processing costs the record permanently, and an unresolved routing question
+therefore resolves **away** from `claude-code`, never into it. Departing from the suggestion is
+expected — record why on the epic (`update-epic <id> --notes "lane: <chosen> not <routed> —
+<why>"`), which every path that registers an epic now asks for, not just the mirrored ones.
+
 </details>
 
 <details>
