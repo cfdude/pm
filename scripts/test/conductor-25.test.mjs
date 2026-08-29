@@ -8,6 +8,7 @@
 // back off disk, a heal that landed, a tree that did not move — and never a declaration.
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -330,4 +331,135 @@ test("gh-105: commands/feedback.md declares the dependency and all three channel
   // gh-when-available is preferred, not merely faster.
   assert.ok(doc.indexOf("command -v gh") < doc.indexOf("issues/new?title="),
     "the `gh` channel is documented BEFORE the prefilled URL — it is the preferred path when available");
+});
+
+// ─────────────────── gh-85: which verbs mutate the working tree ───────────────────
+//
+// There was no stated contract for this. An orchestrator reading a sibling repo's backlog
+// reached for `render` — the natural-sounding "show me the state" verb — and silently dirtied
+// that repo, producing drift it then went to reconcile.
+//
+// BOTH halves the issue offers, because they are complementary and a doc alone drifts: the
+// declaration is lib/verb-effects.mjs, and it is checked for COMPLETENESS against the engine's
+// own dispatch table and for BEHAVIOUR against a real run. A `--read-only` enforcement flag is
+// declined — see that module's header for why the CI-time check answers #85's stated need
+// ("a flag survives someone adding a write to a verb that used to be safe") without shipping a
+// flag on forty verbs.
+
+const VERB_EFFECTS_MOD = new URL("../lib/verb-effects.mjs", import.meta.url).href;
+
+/** The verb names the engine actually dispatches, read from conductor.mjs's dispatch object —
+ *  never transcribed here, or the check would go stale in exactly the way it exists to prevent. */
+function dispatchedVerbs() {
+  const src = fs.readFileSync(path.join(REPO, "scripts", "conductor.mjs"), "utf8");
+  const start = src.indexOf("// ---------- dispatch ----------");
+  assert.notEqual(start, -1, "conductor.mjs must still carry its dispatch marker comment");
+  const body = src.slice(src.indexOf("({", src.indexOf("try {", start)));
+  const end = body.indexOf("}[cmd]");
+  assert.notEqual(end, -1, "the dispatch object must still be indexed as `}[cmd]`");
+  const table = body.slice(0, end);
+  const verbs = new Set();
+  for (const m of table.matchAll(/^ {2}(?:"([a-z-]+)"|([a-z-]+))\s*:/gm)) verbs.add(m[1] || m[2]);
+  // Shorthand entries (`init,` / `render,` with no colon) are dispatched too.
+  for (const m of table.matchAll(/^ {2}([a-z-]+),\s*$/gm)) verbs.add(m[1]);
+  return verbs;
+}
+
+test("gh-85: every dispatched verb declares whether it mutates the working tree", async () => {
+  const { VERB_EFFECTS } = await import(VERB_EFFECTS_MOD);
+  const dispatched = dispatchedVerbs();
+  assert.ok(dispatched.size >= 30,
+    `the dispatch-table reader yielded only ${dispatched.size} verbs — the reader is broken, not the table`);
+
+  for (const verb of [...dispatched].sort()) {
+    assert.ok(VERB_EFFECTS[verb],
+      `verb '${verb}' is dispatched but declares no effect in lib/verb-effects.mjs — a caller ` +
+      "cannot know whether inspecting this repo will dirty it");
+  }
+  for (const verb of Object.keys(VERB_EFFECTS).sort()) {
+    assert.ok(dispatched.has(verb),
+      `lib/verb-effects.mjs declares '${verb}', which the engine does not dispatch`);
+  }
+});
+
+/** Hash every file under `dir` by path, MTIME and content. `.conductor/` and `PROJECT.md` are
+ *  the two things #85 is about, so they are IN. mtime is load-bearing: since #81, several writes
+ *  are content-conditional, and a rewrite with identical bytes is still a write — it is what
+ *  makes the file show up as touched to anything watching the tree. */
+function treeHash(dir) {
+  const h = crypto.createHash("sha256");
+  const walk = (p, rel) => {
+    for (const name of fs.readdirSync(p).sort()) {
+      if (name === ".git") continue;
+      const full = path.join(p, name);
+      const st = fs.lstatSync(full);
+      if (st.isDirectory()) walk(full, `${rel}${name}/`);
+      else h.update(`${rel}${name}\0`).update(String(st.mtimeMs)).update(fs.readFileSync(full));
+    }
+  };
+  walk(dir, "");
+  return h.digest("hex");
+}
+
+/** A repo with a render PENDING: state.json has moved since PROJECT.md was generated. Without
+ *  this the check would be weak in the direction that matters — `render` writes nothing at all
+ *  when there is nothing to render, so a settled repo cannot tell a read-only verb from it. */
+function repoWithPendingRender() {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "p", "--lane", "claude-code", "--title", "Parent"], { cwd });
+  const state = readState(cwd);
+  state.epics.push({
+    id: "pending", title: "registered without a render", priority: "P1", status: "queued",
+    role: "epic", lane: "claude-code", links: [], reconcileNeeded: false, attributedCommits: [],
+  });
+  writeState(cwd, state);
+  return cwd;
+}
+
+test("gh-85: every verb declared read-only leaves the working tree byte- and mtime-identical", async () => {
+  const { VERB_EFFECTS } = await import(VERB_EFFECTS_MOD);
+  const exercisable = Object.entries(VERB_EFFECTS)
+    .filter(([, v]) => v.effect === "read-only" && Array.isArray(v.exercise));
+  assert.ok(exercisable.length >= 10,
+    `only ${exercisable.length} read-only verbs are exercisable — the declaration has stopped ` +
+    "carrying `exercise` argument lists, so this check has quietly become a no-op");
+
+  for (const [verb, decl] of exercisable) {
+    const cwd = repoWithPendingRender();
+    const before = treeHash(cwd);
+    // stdin is closed for the hook verbs that read it, so they see an empty payload rather than
+    // hanging on the runner's inherited stdin. A non-zero exit is fine — `verify-state` is
+    // SUPPOSED to fail against a pending render, and failing is not writing.
+    expectFail(() => run([verb, ...decl.exercise], { cwd, input: "" }));
+    assert.equal(treeHash(cwd), before,
+      `'${verb}' is declared read-only but touched the working tree — either the write is a bug ` +
+      "or lib/verb-effects.mjs is now lying to callers that trust it");
+  }
+});
+
+test("gh-85: render is declared `mutates`, and against a pending render it really writes", () => {
+  // The counterpart. A check that only ever asserts "nothing moved" proves nothing about its
+  // ability to tell the two apart — it would pass against a treeHash that returned a constant.
+  const cwd = repoWithPendingRender();
+  const before = treeHash(cwd);
+  run(["render"], { cwd });
+  assert.notEqual(treeHash(cwd), before,
+    "render rewrites PROJECT.md and the render stamp when there is anything to render — that is " +
+    "why it must never be reached for as a read");
+});
+
+test("gh-85: render is idempotent when nothing changed — the nuance #85's premise got wrong", () => {
+  // #85 measured on 0.25.0 that render "dirties the repo on every call, at minimum the
+  // Last rendered timestamp". #81's fix made both writes content-conditional, so that is no
+  // longer true — and the declaration says `mutates` anyway, because idempotent-when-nothing-
+  // changed is not read-only. Asserting the nuance keeps the two facts from being conflated
+  // back together by someone reading only the table.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["render"], { cwd });
+  const settled = treeHash(cwd);
+  run(["render"], { cwd });
+  assert.equal(treeHash(cwd), settled,
+    "a second render against unchanged state must skip both writes (#81)");
 });

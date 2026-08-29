@@ -846,6 +846,31 @@ time, then deleting the consumed fragment files.
 
 </details>
 
+### Which verbs mutate the working tree
+
+Reach for a `render` to "just look at" another repo's backlog and you dirty it. There is now a
+stated contract, declared in `scripts/lib/verb-effects.mjs` and enforced by the test suite —
+completeness against the engine's own dispatch table, plus a real run of every read-only verb
+with the whole repo hashed by content **and** mtime before and after. A write added to a verb
+that used to be safe fails CI rather than someone else's checkout.
+
+| Effect | Verbs |
+|--------|-------|
+| **read-only** — safe against a repo you do not own | `brief` · `changelog` · `changesets` · `gate-guard` · `integrity` · `plan-hierarchy` · `rules` · `rules-target` · `suggest-lane` · `triage` · `verify-specs` · `verify-state` · `verify-worktrees` |
+| **mutates** — writes `state.json`, `PROJECT.md`, `CLAUDE.md`, or a `.conductor/` log | everything else, including `render`, `snapshot`, `sync`, `commit-nudge`, `upgrade`, `write-rules`, and every `add-`/`update-`/`set-`/`record-` verb |
+
+Want the current state without touching anything? Use **`brief`**, not `render`.
+
+`render` is `mutates` even though it is idempotent when nothing changed: since the `PROJECT.md`
+-is-never-clean fix it skips both writes when the content would be identical, but with anything
+to render it rewrites `PROJECT.md` and `.conductor/render-stamp.json`. Idempotent-when-nothing-
+changed is not read-only.
+
+A `--read-only` enforcement flag was considered and declined: it would have to be threaded
+through or sniffed from argv at forty verbs, and it asks a caller to trust that the flag was
+wired up. The CI-time behavioural check gives the same guarantee — a doc that cannot drift —
+without shipping anything.
+
 ## Skills
 
 Installed to `skills/` on `/pm:init`:
