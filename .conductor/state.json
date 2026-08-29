@@ -3249,7 +3249,14 @@
       "links": [],
       "reconcileNeeded": false,
       "externalId": "127",
-      "externalUrl": "https://github.com/cfdude/pm/issues/127"
+      "externalUrl": "https://github.com/cfdude/pm/issues/127",
+      "notes": [
+        {
+          "at": "2026-08-29T07:27:00.158Z",
+          "actor": "agent",
+          "text": "Triaged 2026-08-29: NOT satisfied. The dogfooding skill exists only at .claude/skills/dogfooding (repo practice, unshipped) and 'dogfood' appears twice in this repo's CLAUDE.md and ZERO times in scripts/lib/rules.mjs — so the rule reaches exactly one repo, which is the asymmetry the issue is about. The fix has a precedent: #126 moved cross-spec-review from .claude/skills/ into skills/ AND into the emitted rules block as a numbered required task item. Do the same here; the issue's own design constraint says task-not-prose (14/14 vs 3/15)."
+        }
+      ]
     },
     {
       "id": "gh-128-openspec-staleness-nudge",
@@ -3791,7 +3798,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 201,
+  "revision": 202,
   "reviewMode": "thorough",
   "releases": [
     {
