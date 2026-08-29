@@ -8,6 +8,68 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.31.0] — 2026-08-27
+
+### Added
+
+- **`scripts/lib/source-artifacts.mjs`** declares the epic source-artifact field family once —
+  `planPath` today, `specPath` (#92) by adding one row plus its `EPIC_FLAGS` entry. Claim
+  checking, tombstone clearing and the removal sweep all read that table, so the next artifact
+  field inherits them instead of becoming a second shape with its own half-covered call sites.
+
+- **`--add-story` is repeatable and works on `add-epic` and `add-many`, not just `update-epic`.**
+  An epic's milestones now land in the SAME write as the epic:
+  `add-epic --id deploy-pipeline --lane superpowers --add-story "Build" --add-story "Cut over"`.
+  An `add-many` batch entry carries a `stories` array of plain titles or `{"title", "done"}`
+  objects, validated in the same up-front pass as everything else — a blank title refuses the
+  whole batch and creates nothing. Measured cause of the gap: with stories addable only one
+  `update-epic` call at a time after registration, 91.7% of epics in a 108-epic audit had none.
+- **`update-epic <id> --story <n> --wont-do "<reason>"`** — a story's terminal disposition. A
+  `done` boolean holds two states and the record needs three: open, completed, and deliberately
+  not being done. Deletion is never the third state, so the row and its title always survive and
+  only the terminal state differs. The reason is required; a recorded disposition is never
+  silently replaced; a `done` story cannot be dropped and a disposed one cannot be ticked.
+
+### Fixed
+
+- **The never-re-read warning no longer counts epics whose work can never happen** (#138). The
+  brief's `⚠ N tracker-linked epic(s) never re-read since mirroring` line counted every linked
+  epic with no watermark, `archived` ones included. Measured on this repository when the issue
+  was filed: 59 counted, 29 of them archived or with an already-closed item — twenty of those
+  epics 0.27.0 had *delivered*. Half the number was work that can never happen, and the remedy
+  the line names could not clear it: `/pm:sync` reads OPEN items, and an epic that ended has no
+  open item to read. An inflated count is how a true warning gets ignored, and an ignored
+  warning enforces nothing. The line now counts only non-terminal linked epics, so it names a
+  number the action it prescribes can actually reach.
+
+  **The archive disposition is the discharge** — deliberately, rather than a terminal watermark.
+  An epic that ended never becomes the work again, whatever its outcome, and the rules block's
+  closed-item sync step already ships that semantics ("an epic that is already `archived` owes
+  nothing here"). A terminal watermark would be a second mechanism for what the disposition
+  already accomplishes, with its own writer, verb and staleness story. The engine half is a pure
+  function of `state.json` (`status !== "archived"`, the same reading of "terminal" 0.30.0's
+  `superseded-epic-never-ended` and `delivered-release-epic-left-open` use); the closed half
+  stays with the inward-sync instruction the agent runs, which lists open items anyway. Dated
+  observation on this repository, 2026-08-27: the count goes 60 → 31.
+
+- **`sync` dedups a plan file on a recorded epic↔plan association, not on the plan's filename**
+  (#64, #69). The dedup keyed on the plan's filename-derived id, so it fired only when a plan
+  happened to be named exactly like its epic — the uncommon case, since plan filenames carry a
+  date prefix and epic ids do not. Every other epic's plan was re-registered as a fresh
+  untriaged epic on **every sync, forever**: reported four times across three repos, one
+  operator hand-deleted the same phantom four times in a day, and one phantom duplicated the
+  epic that was *active* at that moment. `sync` now walks a ladder per plan file — claimed by
+  some epic's `planPath` (status- and lane-blind, so an archived epic's plan is never re-offered:
+  the done-signal #69 asks for, with no completion heuristic); the pre-existing id guard,
+  unchanged; a sync-ignore tombstone; an epic whose id is the plan id minus its date prefix,
+  which is **reported with both exits named** rather than repaired; otherwise registered.
+- **`remove-epic` now survives the next `sync`** (#64). Removal used to be durable only until
+  the next sync — byte-identical ids came straight back within the hour. It leaves a
+  `syncIgnore` tombstone for every source artifact every removed epic claimed, over the whole
+  `--cascade` set rather than the named epic alone. Attaching that artifact to an epic
+  (`update-epic <id> --plan <path>`, or any creation path) clears the tombstone, so the
+  un-ignore is an action operators already take rather than a verb nobody would find.
+
 ## [0.30.0] — 2026-08-27
 
 ### Added

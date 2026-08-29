@@ -261,9 +261,27 @@ export const EPIC_FLAGS = [
   // saying something nobody wrote.
   { flag: "defer", key: null, commands: ["release"], write: "custom" },
   { flag: "review-mode", key: "reviewMode", commands: ["update-epic"] },
-  { flag: "add-story", key: "stories", commands: ["update-epic"], write: "append" },
+  // Stories, and the ONE registry edit that makes a plan land with its milestones (#95).
+  // `add-epic` and `add-many` join `update-epic` here rather than growing a second literal:
+  // `epicFlagsFor("add-epic")` builds add-epic's allowlist and `epicBatchKeys()` builds
+  // add-many's accepted batch keys from this same row, so declaring the row is the whole edit.
+  // Measured cause of the gap it closes: an epic's milestones could only be added one
+  // `update-epic` call at a time AFTER registration, which is why 91.7% of epics in the audited
+  // 108-epic repo had none at all — decomposition was a chore rather than part of registration.
+  //
+  // `repeats: true` is what makes `--add-story A --add-story B` in one invocation land BOTH.
+  // It reaches parseFlags through repeatableEpicFlags()'s union, so no parser edit is needed —
+  // but it also changes `--add-story`'s parsed shape from a string to an array on the
+  // pre-existing `update-epic` path, which is why both writers read it through one helper.
+  { flag: "add-story", key: "stories", commands: ["add-epic", "update-epic", "add-many"], repeats: true, write: "append" },
   { flag: "story", key: null, commands: ["update-epic"], write: "custom" },
   { flag: "done", key: null, commands: ["update-epic"], write: "custom" },
+  // The story-level TERMINAL DISPOSITION. `--story <n> --wont-do "<reason>"` keeps the row and
+  // records why it will never be done, which is the only honest key to the archive gate's
+  // pre-existing handoff refusal for work that was DROPPED rather than carried anywhere. It is
+  // a control flag paired with `--story`, so its `key` is null exactly as `--done`'s is; the
+  // write lands inside `stories[n-1].disposition`, not on a top-level epic key.
+  { flag: "wont-do", key: null, commands: ["update-epic"], write: "custom" },
 ];
 
 /** The flags `command` accepts, as bare names. The projection an allowlist is built from —

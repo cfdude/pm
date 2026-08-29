@@ -38,7 +38,20 @@ export function gateGuardCheck() {
   if (!isInitialized()) return;         // DORMANT until /pm:init
   readStdin();                          // drain, unused — this check needs no tool_input
   const state = loadState();
-  const active = state.active ? state.epics.find(e => e.id === state.active) : null;
+  const activeEpic = state.active ? state.epics.find(e => e.id === state.active) : null;
+  // AN EPIC THAT HAS ENDED OWES NOTHING. `state.active` can legitimately name an ARCHIVED epic
+  // for a stretch — the pointer is cleared by reconcileArchived(), which runs on the WRITE paths
+  // (render, sync, commit-nudge, upgrade) and not on this read-only hook. render.mjs says so out
+  // loud: "`<id>` was archived; the active pointer clears on next `/pm:sync` or commit".
+  //
+  // This is the THIRD reader of that pointer and it was the only one not filtering: render.mjs:53
+  // and briefing.mjs:60 both drop an archived epic at the moment they resolve it. The asymmetry
+  // mattered here more than anywhere, because this reader BLOCKS WRITES mechanically and the
+  // reconcile branch below is deliberately unreachable by `set-gate-guard off` — so an archived
+  // epic carrying a stale `reconcileNeeded` could wedge Edit/Write/NotebookEdit with no CLI way
+  // out. Filtered HERE, at the resolution, rather than inside each branch, so a future third
+  // obligation inherits the rule instead of having to remember it.
+  const active = activeEpic && activeEpic.status !== "archived" ? activeEpic : null;
   if (!active) return;
   // UNCONDITIONAL. `set-gate-guard off` does not reach this case: writing source before the
   // reconcile gate runs on a detour POP is the single highest-stakes skip, and the opt-in was

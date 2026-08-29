@@ -460,11 +460,18 @@ than in the logic they test.
 
 ### Requirement: The brief reports only locally computable freshness
 The brief SHALL surface `N tracker-linked epics never re-read since mirroring` — epics that have
-an external id and no watermark. This is the same freshness line that "The brief's tracker block is
-governed by direction" gates, and it has exactly two conditions, both required: an inward procedure
-must be emittable for the repo (the predicate defined in "An inward section is emitted only when
-the tracker names what to read"), and the count must be greater than zero. It SHALL be omitted
-entirely when either fails. The
+an external id, no watermark, and a **non-terminal status**. An epic whose status is `archived`
+SHALL NOT be counted, whatever its outcome: the archive disposition discharges the refresh
+obligation outright, because the obligation is to re-read the linked item *before the epic becomes
+the work* and work that ended never becomes the work again. No terminal watermark is recorded or
+required. The engine SHALL NOT consider whether the linked ITEM is closed — that requires
+integration it is forbidden to make — so the closed half belongs to the inward-sync procedure,
+which already reads the open list and proposes a disposition for an epic whose item is no longer
+open; that disposition is what clears the count. This is the same freshness line that "The brief's
+tracker block is governed by direction" gates, and it has exactly two emission conditions, both
+required: an inward procedure must be emittable for the repo (the predicate defined in "An inward
+section is emitted only when the tracker names what to read"), and the count must be greater than
+zero. It SHALL be omitted entirely when either fails. The
 brief MUST NOT claim how many linked items have newer remote activity: that number requires a
 network call the engine is forbidden to make, so emitting it would be fabricated. The live drift
 count belongs in `/pm:sync`'s own in-session output, reported by the agent that made the call.
@@ -477,6 +484,16 @@ count belongs in `/pm:sync`'s own in-session output, reported by the agent that 
 
 #### Scenario: The line disappears once every linked epic has been read
 - **WHEN** every epic with an external id has a watermark
+- **THEN** the line is absent from the brief
+
+#### Scenario: An epic that has ended is not counted
+- **WHEN** the brief is built for an inward repo holding both non-terminal and `archived` epics,
+  every one of them carrying an external id and no watermark
+- **THEN** the line reports only the non-terminal ones, and archiving a counted epic lowers the
+  count by exactly one without any watermark being recorded
+
+#### Scenario: The line vanishes when every linked epic has ended
+- **WHEN** every epic with an external id and no watermark is `archived`
 - **THEN** the line is absent from the brief
 
 #### Scenario: The brief never asserts remote activity it cannot see

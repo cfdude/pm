@@ -32,8 +32,13 @@ link could end up in `state.json` with no CLI path to fix it.
      --id "<id>" --title "<title>" --lane "<lane>" --priority "<P?>" \
      [--status "<status>"] [--parent "<parent-id>"] \
      [--external-id "<KEY>"] [--external-url "<url>"] \
-     [--plan "<docs/superpowers/plans/...md>"] [--link "blocks:<id>:<reason>"]
+     [--plan "<docs/superpowers/plans/...md>"] [--link "blocks:<id>:<reason>"] \
+     [--add-story "<milestone>" --add-story "<milestone>" …]
    ```
+
+   `--add-story` is repeatable and lands the epic's milestones in the SAME write as the epic —
+   see "Stories" below. Register the decomposition the planning phase already produced; adding
+   it one call at a time afterwards is why most epics never get any.
 
    If `${CLAUDE_PLUGIN_ROOT}` is empty:
    `ENGINE="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/scripts/conductor.mjs}"; [ -f "$ENGINE" ] || ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1); node "$ENGINE" add-epic …`
@@ -52,7 +57,8 @@ tickets), author a JSON batch and pass it with `--from <path>` (or `--from -` fo
   "parent":  { "id": "sprint-2026-06-25", "title": "Pre-staging sprint", "lane": "external", "priority": "P0", "status": "queued" },
   "epics": [
     { "id": "job-506", "title": "[JOB-506] HMAC-verify webhooks", "lane": "external", "priority": "P0", "externalId": "JOB-506", "externalUrl": "https://onvex.example/JOB-506" },
-    { "id": "job-507", "title": "[JOB-507] …", "lane": "external", "priority": "P1", "externalId": "JOB-507" }
+    { "id": "job-507", "title": "[JOB-507] …", "lane": "external", "priority": "P1", "externalId": "JOB-507",
+      "stories": ["Verify the signature", {"title": "Backfill old events", "done": true}] }
   ]
 }
 ```
@@ -68,6 +74,9 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" add-many --from /path/to/batc
   chaining, no write race.
 - JSON only (the engine is zero-dependency). `parent` is optional; a bare `{ "epics": [...] }`
   batch works too.
+- **`stories`** is an array of plain titles, or `{"title": "...", "done": true}` objects where a
+  milestone is already behind you. Validated in the same up-front pass as everything else — a
+  blank title or a non-boolean `done` refuses the whole batch and creates nothing.
 
 ## Write-back — `update-epic`
 
@@ -108,8 +117,9 @@ of them are declared once in `EPIC_FLAGS` (`scripts/lib/constants.mjs`), which i
 | `--declined-deferral "<what>:<why not>"` | `deferralAssertion` | **repeatable** |
 | `--no-deferrals` | `deferralAssertion` | the explicit "there are none" |
 | `--review-mode <m>` | `reviewMode` | per-epic escalation above the repo dial |
-| `--add-story "<title>"` | `stories` | appends `{title, done: false}` |
+| `--add-story "<title>"` | `stories` | **repeatable**; appends `{title, done: false}` |
 | `--story <n> --done` | `stories[n-1].done` | 1-indexed |
+| `--story <n> --wont-do "<reason>"` | `stories[n-1].disposition` | 1-indexed; the reason is REQUIRED |
 
 `--description` and `--notes` are DISTINCT and neither substitutes for the other: a description
 says why the epic exists and what would make it worth revisiting; notes are a trail of what
@@ -178,6 +188,50 @@ filtered away, and replaced the array with an empty one while printing "updated"
 now exits non-zero and points here. `--clear-links` takes no value and may not be combined with
 `--link`.
 
+## Stories — decomposition at registration, and the third state a checklist needs
+
+`--add-story` is **repeatable and available on `add-epic` and `add-many` as well as
+`update-epic`**, so an epic's milestones land in the SAME write as the epic:
+
+```
+add-epic --id deploy-pipeline --lane superpowers \
+  --add-story "Build the image" --add-story "Cut over staging DNS" --add-story "Retire the old worker"
+```
+
+An `add-many` batch entry carries a `stories` array of the same thing — plain titles, or
+`{"title": "...", "done": true}` where a milestone is already behind you. Measured cause: with
+stories addable only one `update-epic` call at a time AFTER registration, 91.7% of epics in a
+108-epic audit had none at all.
+
+**`--wont-do` is how a story ENDS without being done.** A story's `done` boolean holds two
+states and the record needs three — open, completed, and *deliberately not being done*.
+Deletion is not the third state: removing the row destroys the evidence that the work was ever
+projected, which is exactly the history an archived epic's reader needs. So the row and its
+title always survive, and only the terminal state differs:
+
+```
+update-epic deploy-pipeline --story 3 --wont-do "old worker was decommissioned by infra instead"
+```
+
+The reason is required — a terminal state with no recorded why reproduces the original problem
+one level down. A disposed story is refused a second disposition and cannot be ticked `--done`
+afterwards; a story already `--done` cannot be dropped.
+
+A disposed story leaves **both** sides of the progress ratio, exactly as a `<!-- pm:lifecycle -->`
+task does: `3/3 stories · 2 disposed`, never `5/5` (which would claim completion for work nobody
+did) and never `3/5` (which would leave the archive gate refusing forever with no honest key).
+
+> **There is no new archive refusal here.** The gate already refuses `--outcome delivered` while
+> any work is outstanding, and inline stories are the FIRST progress source it reads — so an
+> epic with an unticked story has been blocked since that gate shipped. What was missing was a
+> way past it that tells the truth: the refusal's other remedy, the `<!-- pm:lifecycle -->`
+> marker, cannot be written on an inline story at all (there is no task source), leaving only
+> `--carried-to`, which names a receiving epic for work that was dropped rather than moved.
+> That is the fabricated record the refusal itself warns against. `--wont-do` is the honest key.
+
+
+---
+
 ## Order equals by hand — `reorder`
 
 ```bash
@@ -245,6 +299,12 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" remove-epic <id> [--cascade]
   the blocked attempt printed and get explicit confirmation. The engine has no interactive
   prompt of its own; that confirmation step is the agent's job, not the CLI's.
 - If the removed epic was `.active`, the pointer is cleared automatically.
+- **A removal now survives the next `sync`.** Removing an epic that claimed a source artifact
+  (its `planPath`) records a `syncIgnore` tombstone for that path, over the whole `--cascade` set
+  and not just the named epic — previously `remove-epic` bought you only until the next sync,
+  which re-registered byte-identical ids within the hour. The tombstone is inspectable in
+  `.conductor/state.json` and reversible by the action that contradicts it: attaching that
+  artifact to an epic (`update-epic <id> --plan <path>`) clears it.
 
 ## Set the active epic — `set-active` / `clear-active`
 

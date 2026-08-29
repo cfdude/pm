@@ -213,3 +213,54 @@ export function releaseDeferral({ epic, reason, recordedAt } = {}) {
 export function creationStamp(command, { via } = {}) {
   return engineStamp(via || command);
 }
+
+// ───────────────────────── the STORY-level terminal disposition (#95) ─────────────────────────
+//
+// A story is `{title, done}`. A boolean holds two states and the record needs three: open,
+// completed, and DELIBERATELY NOT BEING DONE. Deletion is not the third state — removing the row
+// destroys the evidence that the work was ever projected, which is precisely the history an
+// archived epic's reader needs. So the row always survives and only its terminal state differs.
+//
+// SEPARATE from the epic-level disposition above and deliberately not folded into it: that one
+// says how an EPIC ended and carries an `outcome` from KNOWN_OUTCOMES; this one says what
+// happened to ONE MILESTONE inside an epic that may still be running. Giving them one shape
+// would put `delivered|killed|superseded|abandoned|declined` on a checklist row, where four of
+// the five are meaningless.
+//
+// A REASON IS MANDATORY, with no `delivered`-style exemption, because there is no disposition
+// here that means "this shipped" — `--done` already says that. Every value this field can hold
+// is a decision not to do the work, and a terminal state with no recorded why reproduces the
+// original problem one level down.
+
+/** The story-level terminal states. One value today; a closed list rather than a free string so
+ *  a second one cannot arrive without a rule saying what it exempts — the same discipline
+ *  ENGINE_STAMP_TOKENS carries. `moved` was considered and deliberately left out: the audited
+ *  record holds zero story-level moves, the epic-level `--carried-to` handoff already names a
+ *  receiving epic, and a story-level receiver id would be a new cross-record pointer with its
+ *  own deletion path to sweep. */
+export const KNOWN_STORY_DISPOSITIONS = ["wont-do"];
+
+/** Validate a proposed story disposition. Returns an error STRING or null; never exits, never
+ *  writes — same contract as dispositionError() above, so a CLI verb and any later gate enforce
+ *  one rule rather than two. */
+export function storyDispositionError({ state, reason } = {}) {
+  if (!KNOWN_STORY_DISPOSITIONS.includes(state)) {
+    return `story disposition '${state}' is not one of ${KNOWN_STORY_DISPOSITIONS.join("|")}`;
+  }
+  if (!nonEmpty(reason)) return `--${state} requires a reason — a terminal state with no recorded why is the silence this records`;
+  return null;
+}
+
+/** Build the record written onto `stories[n-1].disposition`. Timestamped here so every writer
+ *  stamps identically. */
+export function storyDisposition({ state, reason, recordedAt } = {}) {
+  return { state, reason: reason.trim(), recordedAt: recordedAt || new Date().toISOString() };
+}
+
+/** Is this story terminally disposed? The ONE predicate every counter and guard reads, so
+ *  "disposed" cannot come to mean two things in two files. A story with no `disposition` key —
+ *  which is every story written before this capability existed — is not disposed, so a legacy
+ *  record keeps meaning exactly what it meant and no migration is required. */
+export function isStoryDisposed(story) {
+  return !!(story && story.disposition && KNOWN_STORY_DISPOSITIONS.includes(story.disposition.state));
+}

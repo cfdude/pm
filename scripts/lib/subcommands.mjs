@@ -14,6 +14,7 @@ import { buildBrief } from "./briefing.mjs";
 import { appendDetourLog, gitShortSha } from "./git.mjs";
 import { detourContext } from "./links.mjs";
 import { activeChangeIds, archivedChanges, firstHeading, planFiles, reconcileArchived, strippedChangeId } from "./epic-progress.mjs";
+import { claimedSourceArtifacts, epicSourceArtifacts, normalizeArtifactPath, syncIgnoredArtifacts } from "./source-artifacts.mjs";
 import { engineStamp } from "./disposition.mjs";
 import { ROOT, CONDUCTOR_DIR, BRIEF_PATH, PLANS_DIR, anyInwardProcedureEmittable } from "./constants.mjs";
 import { resolveAndRecordPlatform } from "./platform.mjs";
@@ -302,16 +303,76 @@ export function sync(quiet = false) {
       known.add(id); added++;
     }
   }
+  // THE RESOLUTION LADDER (#64/#69). Dedup used to key on the plan's FILENAME-DERIVED id alone,
+  // so it fired only when a plan happened to be named exactly like its epic — which is the
+  // uncommon case, since plan filenames carry a date prefix and epic ids do not. Every other
+  // epic's plan was re-registered as a fresh untriaged epic on EVERY sync, forever. Reported
+  // four times across three repos; one operator hand-deleted the same phantom four times in a
+  // day, and one phantom was a duplicate of the epic that was ACTIVE at that moment.
+  //
+  // Rungs, in order, per plan file on disk. Order is deliberate: the truthful answers come
+  // first, the heuristic last, so a repo that has recorded its associations never reaches the
+  // rung that guesses.
+  const claimed = claimedSourceArtifacts(state);
+  const ignored = syncIgnoredArtifacts(state);
   for (const fname of planFiles()) {
     const id = fname.replace(/\.md$/, "");
+    const planPath = path.join("docs", "superpowers", "plans", fname);
+    const norm = normalizeArtifactPath(planPath);
+
+    // 1. CLAIMED — the durable fix. Status-blind and lane-blind by construction (see
+    //    claimedSourceArtifacts): an archived epic still holds its `planPath`, which is the
+    //    done-signal #69 asks for without inferring completion from anything.
+    const claim = claimed.get(norm);
+    if (claim) {
+      if (!quiet) process.stderr.write(
+        `conductor: sync skipped ${claim.label} '${fname}' — already claimed by epic '${claim.epic}'\n`);
+      continue;
+    }
+
+    // 2. The pre-existing id guard, unchanged in behavior and in wording.
     if (known.has(id)) {
       if (!quiet) process.stderr.write(`conductor: sync skipped plan '${id}' — id already exists\n`);
       continue;
     }
-    const planPath = path.join("docs", "superpowers", "plans", fname);
+
+    // 3. TOMBSTONED — `remove-epic` said no. Removal used to buy you only until the next sync.
+    if (ignored.has(norm)) {
+      if (!quiet) process.stderr.write(
+        `conductor: sync skipped plan '${fname}' — sync-ignore tombstone (removed epic); ` +
+        `attach it to an epic with \`update-epic <id> --plan ${planPath}\` to un-ignore it\n`);
+      continue;
+    }
+
+    // 4. NAME MATCH — the recovery path for the epics registered before `update-epic --plan`
+    //    existed (0.27.0), which therefore claim nothing yet. This rung REPORTS, it does not
+    //    repair: it names BOTH exits, because the match is a name collision and may be
+    //    coincidental, and an operator who followed a single "associate it" instruction onto an
+    //    unrelated plan would point that epic's progress source at the wrong file and read
+    //    `0/N` forever. Registering nothing is the conservative half — a plan named after an
+    //    existing epic minus its date prefix is, on all evidence, that epic's plan.
+    //    The candidate must claim NO source artifact of its own. Rung 1 only fires when THIS
+    //    plan is claimed, so an epic already holding a DIFFERENT plan still matches by name —
+    //    and the instruction would then repoint that epic's progress source at this file,
+    //    silently discarding a recorded association. Reachable with two date-prefixed plans
+    //    sharing a stem: `2026-08-01-x.md` registers, then `2026-09-01-x.md` matches it. An
+    //    epic that already claims something falls through to registration instead: a visible
+    //    epic a human can remove beats a silent overwrite of a real association.
+    const near = state.epics.find(e =>
+      e.id !== id && strippedChangeId(e.id) === strippedChangeId(id) && !epicSourceArtifacts(e).length);
+    if (near) {
+      if (!quiet) process.stderr.write(
+        `conductor: sync skipped plan '${fname}' — epic '${near.id}' has the same name without ` +
+        `the date prefix and claims no plan. If it IS that epic's plan: ` +
+        `\`update-epic ${near.id} --plan ${planPath}\`. If it is genuinely different work: ` +
+        `\`add-epic --id ${id} --lane superpowers --plan ${planPath}\`\n`);
+      continue;
+    }
+
+    // 5. Real backlog.
     const title = firstHeading(path.join(PLANS_DIR, fname)) || id;
     pushEpic(state, { id, title, priority: "P?", status: "untriaged", role: "epic", lane: "superpowers", planPath, links: [], reconcileNeeded: false });
-    known.add(id); added++;
+    known.add(id); claimed.set(norm, { epic: id, key: "planPath", label: "plan" }); added++;
   }
   // EXEMPTION NOTE: registering a historical archived change does NOT go through archiveGate().
   // Like the heal below and the two archived-at-creation paths, it supplies no disposition,
