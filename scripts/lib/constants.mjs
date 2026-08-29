@@ -34,6 +34,20 @@ export const PLANS_DIR = path.join(ROOT, "docs", "superpowers", "plans");
 export const SPECS_DIR = path.join(ROOT, "docs", "superpowers", "specs");
 export const KNOWN_LANES = ["openspec", "superpowers", "claude-code", "decision", "external"];
 
+/** The `--link` vocabulary. It lives HERE, beside every other `KNOWN_*`, because gh#100 was
+ *  filed after running `rg 'KNOWN_[A-Z_]+ =' constants.mjs` and getting every enumerated set
+ *  except this one — in a repo an agent reads code before fetching a website, so the set has to
+ *  land where attention already is.
+ *
+ *  This is the FLAT list and nothing more. Which types the engine READS, which it WRITES as
+ *  protocol state, and which are annotation-only are declared in lib/links.mjs next to the
+ *  consumer files that read each one — that adjacency is what makes the vocabulary drift-proof
+ *  instead of a second enumeration, and conductor-29 asserts the bands' union is exactly this
+ *  array, so the two cannot come apart. */
+export const KNOWN_LINK_TYPES = [
+  "depends-on", "supersedes", "may-invalidate", "relates-to", "blocks", "resolves-blocker-for",
+];
+
 /** THE predicate every site deciding openspec-lane membership goes through.
  *
  *  An absent `lane` IS openspec — `resolveEpics()` has normalized it that way since 0.3.0, so a

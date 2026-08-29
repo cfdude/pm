@@ -15,11 +15,31 @@ form a cycle. Use `--external-id`/`--external-url` to link the epic to an issue 
 external tracker (see `/pm:tracker`). The matching engine flags are added to the `add-epic`
 invocation.
 
-`--link "<type>:<epic>[:<reason>]"` (repeatable) is validated, not just parsed: `<epic>` must be
-an already-known epic id, and the string must split into at least `type` and `epic`. A malformed
-value (wrong segment order, a typo'd epic id) is rejected with a clear error instead of being
-silently stored as a garbage link object — this used to succeed silently, which is how a bad
+`--link "<type>:<epic>[:<reason>]"` (repeatable) is validated, not just parsed: **both halves**.
+`<epic>` must be an already-known epic id, the string must split into at least `type` and
+`epic`, and `<type>` must be one of the known link types below. A malformed value (wrong segment
+order, a typo'd epic id, a typo'd type) is rejected with a clear error instead of being silently
+stored as a garbage or inert link object — this used to succeed silently, which is how a bad
 link could end up in `state.json` with no CLI path to fix it.
+
+**The link-type vocabulary.** There are six, and they are not equal — only two change what the
+engine does, so pick by what you want to happen, not by what reads best:
+
+| Type | What it does |
+|---|---|
+| `depends-on` | **Read.** Orders the queue: a blocker is listed (and picked by `/pm:next`) before the epic waiting on it. This is the one to reach for when work is genuinely blocked. |
+| `supersedes` | **Read.** Marks the named epic as replaced — `/pm:triage` will not consolidate a new ask into it, and `integrity` reports it if it never ended. Lives on the epic that REPLACES, naming the one replaced. |
+| `may-invalidate` | Protocol state the engine writes at a detour PUSH; `record-reconcile` hangs the reconcile verdict on it. Nothing switches on the type. |
+| `relates-to` · `blocks` · `resolves-blocker-for` | **Annotation only.** They record a relationship for a reader; no engine behaviour reads them. |
+
+`resolves-blocker-for` is deliberately **not** a synonym for `depends-on`: the detour protocol
+puts it on the *detour*, naming the parent it unblocks, so recording it as `depends-on` would
+say the detour depends on the epic it is unblocking — an inverted edge the queue sorter would
+act on. If you want ordering, put `depends-on` on the epic that is waiting.
+
+Links already in a record with some other type (written before this validation existed) still
+load and still render — validation is on write only. `integrity`'s `link-of-unknown-type` check
+reports each one so it can be corrected deliberately rather than rewritten by a guess.
 
 `--spec <path>` records the **design document** this epic's work was drawn from. It is
 provenance and nothing else — no progress is read from it, no scan registers epics from it —
