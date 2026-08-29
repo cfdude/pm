@@ -94,6 +94,7 @@ import { changelog } from "./lib/changelog.mjs";
 import { release, recordCrossSpecReview } from "./lib/releases.mjs";
 import { verifyWorktrees, changesets, verifyState } from "./lib/worktree-hygiene.mjs";
 import { verifySpecs } from "./lib/verify-specs.mjs";
+import { claim, unclaim, owners } from "./lib/claims.mjs";
 import { delegateToCheckout } from "./lib/self-hosting.mjs";
 
 // ---------- self-hosting handoff (gh-134) ----------
@@ -121,7 +122,7 @@ const cmd = process.argv[2];
 // entry to .conductor/detours.log with "--help" as the detour description, and the log is
 // append-only with no verb to remove it. Handled before dispatch so every subcommand is covered
 // -- log-detour is only where the damage is visible, not where the gap is.
-const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|verify-worktrees|verify-state|verify-specs|integrity|changesets|upgrade|changelog|rules|write-rules|rules-target\n";
+const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|verify-worktrees|verify-state|verify-specs|integrity|changesets|upgrade|changelog|rules|write-rules|rules-target\n";
 if (!cmd || process.argv.slice(2).some(a => a === "--help" || a === "-h")) {
   process.stdout.write(USAGE);
   process.exit(0);
@@ -186,6 +187,9 @@ try {
   "verify-worktrees": verifyWorktrees,
   "verify-state": verifyState,
   "verify-specs": verifySpecs,
+  claim,
+  unclaim,
+  owners,
   integrity,
   changesets,
   upgrade,

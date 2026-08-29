@@ -377,6 +377,25 @@ export function updateEpic() {
   // while already archived) — supports velocity tracking off startedAt/completedAt.
   if (status === "archived" && !epic.completedAt) epic.completedAt = new Date().toISOString();
 
+  // #84 — an ARCHIVED epic cannot still be OWNED. The claim is an advisory "I am working on
+  // this"; the work has ended, so leaving it behind is the dangling-reference shape the DATA
+  // half of the call-site sweep names, and it would show in `owners` as live ownership of
+  // finished work forever. CLEARED here rather than REFUSED: refusing to archive because a
+  // marker was left set is pm refusing to work over an advisory signal, which is the one thing
+  // #84 rules out. `claim` refuses at the other end — you cannot claim an archived epic — so the
+  // two directions close the loop without either of them blocking real work.
+  //
+  // The sibling removal sites, enumerated mechanically (`rg -n '\.claim' scripts/lib/`): the
+  // holder's own `unclaim` (claims.mjs), and `remove-epic`, which needs no edit because the
+  // claim is nested INSIDE the epic object and leaves with it. A detour PUSH/POP deliberately
+  // does not clear it — parking an epic does not change who owns it, and the owner is exactly
+  // who resumes it.
+  if (status === "archived" && epic.claim) {
+    process.stderr.write(
+      `conductor: cleared the advisory claim held by '${epic.claim.session}' — '${id}' has ended\n`);
+    delete epic.claim;
+  }
+
   // Keep .active consistent with status — the two must never disagree.
   if (epic.status === "active") activate(state, id);
   else if (state.active === id) state.active = null;

@@ -44,6 +44,12 @@ export function ensureGitignore() {
     // call and per-checkout by nature — a worktree has its own HEAD — so tracking it would be
     // a merge conflict per commit as well as #106's untracked-file complaint.
     ".conductor/commit-watch.json",
+    // #84's repo-level quiescence marker (claims.mjs). Per-checkout and per-session by nature —
+    // it says "THIS session is mid-operation in THIS working tree" — so committing it would
+    // publish one machine's transient state to everybody, on top of #106's untracked-file
+    // complaint. upgrade() re-runs this (migrations.mjs), so repos initialized before the
+    // marker existed pick it up without a MIGRATIONS entry.
+    ".conductor/session-claim.json",
   ];
   const giPath = path.join(ROOT, ".gitignore");
   let existing = "";

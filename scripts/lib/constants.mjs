@@ -336,7 +336,46 @@ export const EPIC_FLAGS = [
   // a control flag paired with `--story`, so its `key` is null exactly as `--done`'s is; the
   // write lands inside `stories[n-1].disposition`, not on a top-level epic key.
   { flag: "wont-do", key: null, commands: ["update-epic"], write: "custom", requires: "a reason" },
+  // ─────────── #84: the advisory claim's control flags ───────────
+  //
+  // `claim`/`unclaim` write an epic (`epic.claim`), so they belong in the registry every
+  // epic-writing command shares rather than carrying two literal lists of their own — the
+  // second-literal defect #149 reports. `key` is null on all four: the write lands nested under
+  // `epic.claim`, never on a top-level epic key, so the verb owns it.
+  //
+  // NOTE the verb is `unclaim`, NOT `release`: #84 suggests `conductor release <epic-id>` and
+  // that name is already this engine's version-release verb. One verb carrying two unrelated
+  // meanings is how a `release --defer` would come to mean both "cut from a release" and "hand
+  // the claim back".
+  { flag: "session", key: null, commands: ["claim", "unclaim"], write: "custom",
+    requires: "a session name — set PM_SESSION or pass --session <name>" },
+  { flag: "ttl", key: null, commands: ["claim"], write: "custom",
+    requires: "a positive number of minutes" },
+  // `--steal` is deliberately NOT `--force`. saveState() reads `--force` GLOBALLY off argv to
+  // bypass the revision guard (state.mjs), so a claim verb spelled `--force` would silently
+  // disable optimistic concurrency on the very write it is coordinating — the enforcement half
+  // (#83) defeated as a side effect of the cooperative half (#84).
+  { flag: "steal", key: null, commands: ["claim", "unclaim"], write: "custom", valueless: true },
+  // The REPO-level quiescence marker rather than an epic's claim. Valueless: its presence is
+  // the whole argument.
+  { flag: "repo", key: null, commands: ["claim", "unclaim"], write: "custom", valueless: true },
 ];
+
+// ─────────────────── #84: advisory claim TTLs ───────────────────
+//
+// TWO defaults, and the split is load-bearing rather than fussy. #84 suggests a `heartbeatAt`,
+// and a heartbeat nothing beats is `claimedAt` wearing a costume: it would make the staleness
+// threshold a lie in both directions — a live session reads stale after N minutes of honest
+// work, and a crashed one reads live until N minutes after its last write. The only true
+// auto-bump chokepoint is saveState(), which does not know WHICH epic is being written, so an
+// epic-scoped heartbeat there is not cheap. A stated TTL is unambiguous, self-documenting, and
+// needs no distributed heartbeat: re-claiming extends it.
+//
+// An EPIC claim spans the work — hours. A REPO marker spans one operation — minutes — and its
+// failure mode is the expensive one: a crashed session holding the "do not write here" flag for
+// two hours is exactly the false coordination signal #84 warns is worse than none.
+export const CLAIM_DEFAULT_TTL_MINUTES = 120;
+export const REPO_CLAIM_DEFAULT_TTL_MINUTES = 30;
 
 /** The flags `command` accepts, as bare names. The projection an allowlist is built from —
  *  never a second literal. */
