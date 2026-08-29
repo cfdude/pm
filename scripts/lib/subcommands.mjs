@@ -201,8 +201,107 @@ export function commitNudge() {
     : unverifiableSubject(cmd);
   if (subject === null) return;              // unverifiable rung, and the old heuristic said no
 
+  // gh#129 — the commit-TIME half of the attribution obligation, and ONLY on the observed rung.
+  // On the unverifiable rung `obs.head` can be a perfectly real sha while nothing is known to
+  // have landed (no watermark yet, reflogs off, HEAD unreadable): naming it there would be
+  // gh#104 in a new costume, asserting a commit the repository never confirmed — against an
+  // APPEND-ONLY array whose last entry is the Gate 2 endpoint. Absence of the clause is the
+  // degradation, and it costs nothing.
+  const attribution = obs.verdict === "landed" ? attributionNudge(state, ctx, obs.head) : null;
+
   // ── everything below is shared by both rungs ──
-  runNudge(state, ctx, subject);
+  runNudge(state, ctx, subject, attribution);
+}
+
+/** The epic a commit that just landed belongs to, or null wherever the engine would have to
+ *  GUESS. Guessing is the one thing this must not do: the emitted rule says attribution is
+ *  inferred from NOTHING, and `attributedCommits` is append-only — the engine neither reorders
+ *  nor de-duplicates it — so a wrongly-named epic is not a papercut, it is a permanent wrong
+ *  Gate 2 endpoint on an epic nobody will think to re-check.
+ *
+ *  NOT `state.active`. While a detour is live `state.active` still names the PAUSED PARENT
+ *  (links.mjs `detourContext`) while the commits being made are the detour's work, so the
+ *  parent is exactly the wrong answer during the one period the hook fires most.
+ *
+ *  The id is RESOLVED against `state.epics` rather than interpolated: `detourContext` falls back
+ *  to `state.active` and then to the literal `"-"` for a frame naming no spawned detour, and a
+ *  nudge reading `update-epic - --attribute-commit …` is a command that cannot run. */
+function attributionTarget(state, ctx) {
+  const id = ctx.active ? ctx.detourId : state.active;
+  // RESOLUTION IS THE ONLY GUARD, deliberately. Explicit `!id` and `id === "-"` checks read as
+  // defence but are strictly redundant here — neither `null` nor `"-"` names an epic — and a
+  // redundant guard is one no mutation can kill, which is how a file grows branches nobody can
+  // verify. One lookup covers "no active epic", detourContext's `state.active` fallback, and its
+  // literal `"-"` fallback alike.
+  const epic = (state.epics || []).find(e => e.id === id);
+  if (!epic) return null;
+  // ABSENT is not empty, and the difference is the whole exemption. pushEpic() deliberately
+  // leaves `attributedCommits` OFF an archive-backfilled epic (state.mjs) because that epic
+  // never passed through the conductor while it was in flight; the staleness gate reads the
+  // same absence as "unverifiable" and forgives it. Nudging there would demand attribution for
+  // work that predates the capability — turning the gate's one forgiven case into a per-commit
+  // false positive, which is precisely how a channel stops being read.
+  if (!Array.isArray(epic.attributedCommits)) return null;
+  return epic;
+}
+
+/** gh#129 — one clause, appended to the advisory commit-nudge ALREADY emits on a real commit.
+ *
+ *  The obligation ("record it at the moment each commit is made") was checked only at the
+ *  archive gate, which is after the commits were made, often across sessions, and after the
+ *  ordering rule may already have been violated irrecoverably. This moves the DETECTOR to the
+ *  moment the finding is still actionable, and moves nothing else: no new hook, no new file, no
+ *  new state, no new flag, and no engine-held epic→sha mapping (which would owe a pruning story
+ *  for detours, resets, rebases, dropped branches and the archive move — five false-nag modes on
+ *  a channel that only just became trustworthy).
+ *
+ *  SELF-EXTINGUISHING WITHOUT ANY BOOKKEEPING OF ITS OWN: the escalated form keys on
+ *  `attributedCommits.length === 0`, which is state the AGENT wrote. Attribute once and the
+ *  loud form is gone for the life of the epic. That empty array is also the only state in which
+ *  item 4's catch-up rule is still available — after the first append, catching up would leave
+ *  an ancestor as the last entry — so the escalation lands at the one moment it changes the
+ *  outcome rather than on every commit forever.
+ *
+ *  NOISE BUDGET, stated plainly: this is willing to be ignored on the steady-state rung. One
+ *  short sentence per real commit under an active epic, on a message that already prints, is
+ *  what it spends; if a reader skims past it the cost is what today already costs. What it must
+ *  never do is fire when no commit landed, or name the wrong epic or the wrong sha. */
+function attributionNudge(state, ctx, sha) {
+  // `observeCommit()` documents `""` (unborn HEAD) and `null` (git cannot answer) as real return
+  // values for `head`. Neither can reach here today — `landed` implies a reflog-confirmed commit
+  // — but that coupling lives in another module, and an empty sha would emit a command that
+  // silently appends nothing to an append-only array. Stated exception: no test kills this
+  // guard, because nothing in the current engine can reach it.
+  if (!sha || typeof sha !== "string") return null;
+  const epic = attributionTarget(state, ctx);
+  if (!epic) return null;
+  // No "already attributed?" check, deliberately: `verdict: "landed"` means this sha is where
+  // HEAD moved TO since the last observation, so it is being announced for the first time by
+  // construction. A guard for it would be a branch no test can reach — and unreachable guards
+  // are how a file accumulates behaviour nobody can verify.
+
+  const cmd = `update-epic ${epic.id} --attribute-commit ${sha}`;
+  // The exclusion travels WITH the command, because this nudge is the surface most likely to be
+  // obeyed reflexively and the archive move is the one commit obeying it would damage: it lands
+  // after the reviewed range by construction, so attributing it makes the epic's own Gate 2 read
+  // stale at the instant the archive gate checks it. The engine states the rule and classifies
+  // NOTHING — it reads no commit message and inspects no commit's contents, exactly as
+  // archive-gate.mjs's own exclusion does.
+  const exclusion =
+    "ONE exclusion: a commit that only moves or deletes a change's artifacts — the " +
+    "`/opsx:archive` move above all — is lifecycle bookkeeping and must NOT be attributed; it " +
+    "lands after the reviewed range, so attributing it makes this epic's own Gate 2 read stale.";
+
+  if (epic.attributedCommits.length === 0) {
+    return `ATTRIBUTION — \`${epic.id}\` has attributed no commits yet, so this is the last ` +
+      "moment its catch-up rule is available: attribute every commit of this epic's work that " +
+      "already landed, IN THE ORDER THEY LANDED, and then this one — " +
+      `\`${cmd}\`. The array is append-only and its LAST entry is the endpoint a Gate 2 ` +
+      "`headSha` is compared against, so catching up after attributing forward is not " +
+      `recoverable. ${exclusion}`;
+  }
+  return `ATTRIBUTION — record this commit against its epic now, before the next one: ` +
+    `\`${cmd}\`. ${exclusion}`;
 }
 
 /** The pre-observation heuristic, kept intact for the UNVERIFIABLE rung only: no git, no
@@ -268,7 +367,7 @@ function unverifiableSubject(cmd) {
 /** Log the commit, self-heal an archived active pointer, re-render, and emit the advisory.
  *  Reached only once a commit is believed to have landed — by observation, or by the fallback
  *  heuristic above. */
-function runNudge(state, ctx, subject) {
+function runNudge(state, ctx, subject, attribution = null) {
   // DETERMINISTIC: if we are inside a detour, record this commit in the trail.
   let autoLogged = false;
   let detourLogged = false;
@@ -328,8 +427,14 @@ function runNudge(state, ctx, subject) {
       "as an AUTO-DETOUR entry. Review it — if that's wrong, edit/remove the line."
     : "Commit detected. If this was a MINIMAL detour, run `/pm:detour --minimal \"<what>\"` " +
       "to record it. Otherwise update `.conductor/state.json` if an epic's status or stories changed.";
+  // The attribution clause is a SECOND paragraph, never a longer first one: the three messages
+  // above are about the DETOUR record and are decided by different inputs, so splicing the two
+  // obligations into one sentence would make each harder to act on than either alone.
   process.stdout.write(JSON.stringify({
-    hookSpecificOutput: { hookEventName: "PostToolUse", additionalContext: msg },
+    hookSpecificOutput: {
+      hookEventName: "PostToolUse",
+      additionalContext: attribution ? `${msg}\n\n${attribution}` : msg,
+    },
   }));
 }
 
