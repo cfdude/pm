@@ -91,6 +91,10 @@ is the same thing without a plan printed first.
   other one, so a shell that ate a value is a refusal rather than an empty window, an epic id
   matching no event, or a silent fall-back to `--kind all`. `purge-logs`' own checks still run
   after that rule — `--keep abc` carries a value and is still refused as not a whole number.
+- **An undeclared flag is refused by name.** `activity --bogus` exits non-zero rather than
+  printing the report, as `claim`, `unclaim`, `owners` and `purge-logs` already did. The
+  allowlist is each verb's own row set, so a typo answers no question at all rather than
+  quietly answering a different one.
 
 ## What it does not do
 

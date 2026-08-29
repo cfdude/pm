@@ -8,7 +8,7 @@
 import { activate } from "./active-pointer.mjs";
 import { isInitialized, loadState, pushEpic, saveState } from "./state.mjs";
 import { render } from "./render.mjs";
-import { KNOWN_LANES, KNOWN_STATUSES, epicFlagsFor, repeatableFlagNames, valueBearingFlagsFor } from "./constants.mjs";
+import { KNOWN_LANES, KNOWN_STATUSES, epicFlagsFor, flagsFor, repeatableFlagNames, valueBearingFlagsFor } from "./constants.mjs";
 import { isKnownLinkType, unknownLinkTypeMessage, linkTypeVocabulary } from "./links.mjs";
 import { creationStamp } from "./disposition.mjs";
 import { rankOf } from "./epic-progress.mjs";
@@ -85,6 +85,31 @@ export function valuelessFlagError(command, f) {
 export function requireFlagValues(command, f) {
   const err = valuelessFlagError(command, f);
   if (err) { process.stderr.write(err + "\n"); process.exit(1); }
+}
+
+/** The OTHER half of the flag rule: "is this flag known on this verb at all", refused by name.
+ *
+ *  Companion to requireFlagValues(), and the two answer different questions from different
+ *  projections — `flagsFor()` for known-ness, `valueBearingFlagsFor()` for value-ness — which is
+ *  why neither may be answered with the other's list.
+ *
+ *  IT LIVES HERE because the value rule does. The three read-only verbs #84/#111 added arrived
+ *  with two of the three carrying a hand-written copy of this loop and the third carrying
+ *  nothing at all — `activity --bogus` printed the report and exited 0, so a typo silently
+ *  answered a different question from the one asked. A verb reads its declared values through a
+ *  COMPUTED accessor (`f[name]`), which conductor-31's region scanner cannot see, so the
+ *  allowlist is the only thing standing between an undeclared flag and silence on those verbs.
+ *
+ *  Only the three verbs that had a check (or needed one) call it today; the older bespoke
+ *  `unknown flag(s)` checks on add-epic, update-epic, release, triage and the rest are a
+ *  separate, wider consolidation and are deliberately not touched here. */
+export function requireKnownFlags(command, argv) {
+  for (const a of argv) {
+    if (!a.startsWith("--")) continue;
+    if (flagsFor(command).includes(a.slice(2))) continue;
+    process.stderr.write(`conductor: unknown flag ${a} for ${command}\n`);
+    process.exit(1);
+  }
 }
 
 /** Parse `--link "<type>:<epic>[:<reason>]"` strings into validated {type,epic,reason?}

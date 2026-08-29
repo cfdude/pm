@@ -42,19 +42,19 @@
 import fs from "node:fs";
 import path from "node:path";
 import { isInitialized, loadState, saveState } from "./state.mjs";
-import { CLAIM_DEFAULT_TTL_MINUTES, REPO_CLAIM_DEFAULT_TTL_MINUTES, flagsFor } from "./constants.mjs";
-import { parseFlags, requireFlagValues } from "./add-epic.mjs";
+import { CLAIM_DEFAULT_TTL_MINUTES, REPO_CLAIM_DEFAULT_TTL_MINUTES } from "./constants.mjs";
+import { parseFlags, requireFlagValues, requireKnownFlags } from "./add-epic.mjs";
 import { resolveSession, SESSION_HINT } from "./session-identity.mjs";
 import { claimExpiry, isLiveClaim } from "./claim-shape.mjs";
 
 export { claimExpiry, isLiveClaim };
 
-// Through `flagsFor()` — the UNION of both registries — rather than `epicFlagsFor()`. These
-// verbs' rows sit in EPIC_FLAGS because they write `epic.claim`, but an allowlist that reads
-// only one table would silently narrow to `[]` the day a row moved, which is a verb accepting
-// nothing rather than a loud failure. The union has no such edge.
-export const CLAIM_FLAGS = flagsFor("claim");
-export const UNCLAIM_FLAGS = flagsFor("unclaim");
+// The `CLAIM_FLAGS`/`UNCLAIM_FLAGS` projections that stood here are gone with the loop that was
+// their only consumer: `requireKnownFlags(command, argv)` derives the list itself, from the
+// UNION of both registries. These verbs' rows sit in EPIC_FLAGS because they write `epic.claim`,
+// and an allowlist reading one table would have narrowed silently to `[]` the day a row moved —
+// a verb accepting nothing, rather than a loud failure. Deriving inside the checker removes both
+// the second literal and the chance of handing it the wrong list.
 
 /** The repo-level quiescence marker's path. Re-derived per call for the same reason
  *  write-conflicts.mjs does it: the tests cache-bust by moving CLAUDE_PROJECT_DIR. */
@@ -109,13 +109,9 @@ function ttlFrom(f, fallback) {
   return n;
 }
 
-function unknownFlags(argv, known, verb) {
-  for (const a of argv) {
-    if (!a.startsWith("--")) continue;
-    const k = a.slice(2);
-    if (!known.includes(k)) die(`unknown flag --${k} for ${verb}`);
-  }
-}
+// The local copy of this loop is gone: `requireKnownFlags()` in add-epic.mjs is the one
+// implementation, sitting beside `requireFlagValues()` because they are the two halves of the
+// same rule. It derives `flagsFor(command)` itself, so a caller cannot pass the wrong list.
 
 // ─────────────────────────────── claim ───────────────────────────────
 
@@ -124,7 +120,7 @@ function unknownFlags(argv, known, verb) {
 export function claim() {
   if (!isInitialized()) die("run /pm:init first");
   const argv = process.argv.slice(3);
-  unknownFlags(argv, CLAIM_FLAGS, "claim");
+  requireKnownFlags("claim", argv);
   const f = parseFlags(argv);
   requireFlagValues("claim", f);
 
@@ -198,7 +194,7 @@ export function claim() {
 export function unclaim() {
   if (!isInitialized()) die("run /pm:init first");
   const argv = process.argv.slice(3);
-  unknownFlags(argv, UNCLAIM_FLAGS, "unclaim");
+  requireKnownFlags("unclaim", argv);
   const f = parseFlags(argv);
   requireFlagValues("unclaim", f);
 
@@ -326,7 +322,7 @@ export function owners() {
   // today — but a raw argv scan is how a verb ends up outside the rule, and the next flag this
   // verb grows would inherit that rather than the rule (#152).
   const f = parseFlags(process.argv.slice(3));
-  unknownFlags(process.argv.slice(3), flagsFor("owners"), "owners");
+  requireKnownFlags("owners", process.argv.slice(3));
   requireFlagValues("owners", f);
   const rows = ownerRows(loadState(), readRepoClaim());
   if (f.json === true) {

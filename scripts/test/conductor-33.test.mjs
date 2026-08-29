@@ -399,6 +399,30 @@ test("gh-84: owners --json is machine-readable for an orchestrator", () => {
   assert.deepEqual(clean.claims, []);
 });
 
+test("gh-84/gh-111: EVERY verb with an allowlist refuses an undeclared flag, by name", () => {
+  // MUTATION SURVIVORS (84-ii, 111-iii). `owners` and `activity` each got a test of their own
+  // above, and deleting the check on `claim`, `unclaim` or `purge-logs` still killed nothing —
+  // the shape this repository's own audit calls the dominant defect class: a guard covered at one
+  // call site while its identical siblings go unexercised. The five are swept together HERE so
+  // that adding a sixth verb with an allowlist and forgetting its case is a visible omission in
+  // one list rather than a test nobody wrote.
+  const cwd = claimRepo();
+  const before = stateBytes(cwd);
+  for (const argv of [
+    ["claim", "e1", "--session", "s", "--bogus"],
+    ["unclaim", "e1", "--session", "s", "--bogus"],
+    ["owners", "--bogus"],
+    ["activity", "--bogus"],
+    ["purge-logs", "--keep", "5", "--bogus"],
+  ]) {
+    const err = expectFail(() => run(argv, { cwd }));
+    assert.match(String(err.stderr || err.message),
+      new RegExp(`unknown flag --bogus for ${argv[0]}`),
+      `\`${argv.join(" ")}\` must be refused by name, not silently ignored`);
+  }
+  assert.equal(stateBytes(cwd), before, "not one refusal may leave a write behind");
+});
+
 test("gh-84: owners refuses a flag it does not declare, instead of ignoring it", () => {
   // MUTATION SURVIVOR (84-i). `owners` read `--json` off `process.argv` and had no allowlist at
   // all, so `owners --jsno` printed the human report and exited 0 — a typo silently answering a
@@ -720,6 +744,21 @@ test("gh-111: --epic scopes the report to one epic", () => {
   assert.ok(j.pickup.every(p => p.epic === "e1"));
   assert.ok(j.events > 0);
   assert.ok(expectFail(() => run(["activity", "--epic"], { cwd })), "--epic requires a value");
+});
+
+test("gh-111: activity refuses a flag it does not declare, instead of printing the report", () => {
+  // MUTATION SURVIVOR (111-ii). `activity` had no allowlist at all while both its read-only
+  // siblings did, so `activity --bogus` printed the whole report and exited 0 — a typo answering
+  // a different question from the one asked. It compounds: `--since`/`--epic` are read through a
+  // COMPUTED accessor (`f[name]`), which conductor-31's region scanner cannot see, so on this
+  // verb the allowlist is the only thing between an undeclared flag and silence.
+  const cwd = loggingRepo();
+  const before = stateBytes(cwd);
+  const err = expectFail(() => run(["activity", "--bogus"], { cwd }));
+  assert.match(String(err.stderr || err.message), /unknown flag --bogus for activity/);
+  assert.equal(stateBytes(cwd), before, "a refusal writes nothing");
+  // …and the flags it DOES declare still work, so the allowlist is not simply refusing everything.
+  run(["activity", "--json"], { cwd });
 });
 
 test("gh-111: --since scopes the report AT THE CLI, and a valueless or blank one is refused", () => {

@@ -29,7 +29,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { isInitialized, loadState } from "./state.mjs";
 import { activityDir, activityEnabled, segments } from "./activity-log.mjs";
-import { parseFlags, requireFlagValues } from "./add-epic.mjs";
+import { parseFlags, requireFlagValues, requireKnownFlags } from "./add-epic.mjs";
 
 /** Every event, oldest first, optionally scoped. Returns `{events, malformed, segmentsRead}`.
  *
@@ -273,7 +273,15 @@ export function activity() {
   // answer `triage --limit` and `verify-specs --root` had each invented independently, written
   // on a branch where `VERB_FLAGS` did not exist yet. It also let `--since "   "` through, and a
   // blank window is the same silent drop as a missing one, one step further on.
-  const f = parseFlags(process.argv.slice(3));
+  const argv = process.argv.slice(3);
+  // BOTH halves, and `activity` had NEITHER: `activity --bogus` printed the report and exited 0,
+  // while its two siblings each refused an unknown flag. The gap matters more here than the
+  // wording suggests — `--since`/`--epic` are read through the computed `val()` accessor below,
+  // which conductor-31's region scanner is structurally blind to, so a flag added later and
+  // never declared would be unrefused AND invisible to the guard. The allowlist is what closes
+  // that, and it is the registry's own projection rather than a literal.
+  requireKnownFlags("activity", argv);
+  const f = parseFlags(argv);
   requireFlagValues("activity", f);
   const val = (name) => (f[name] === undefined ? null : String(f[name]));
   const state = loadState();
