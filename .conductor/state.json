@@ -2243,7 +2243,7 @@
       "id": "gh-81-project-md-never-clean",
       "title": "PROJECT.md is never clean: render timestamp + duplicate detour-log rows create a permanent dirty diff",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -2254,13 +2254,24 @@
         "72241fb",
         "4f10b89",
         "b342023"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T08:21:57.625Z",
+        "reason": "shipped in 0.33.0 (08ff745): SHA dedupe on the trail plus a bookkeeping filter that had never reached its sibling branch"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T08:21:57.624Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T08:21:57.625Z"
     },
     {
       "id": "gh-82-claude-project-dir-overrides-cwd",
       "title": "CLAUDE_PROJECT_DIR silently overrides cwd for ROOT — any conductor call can target the wrong repo",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -2270,13 +2281,24 @@
       "specPath": "docs/superpowers/specs/2026-08-23-cross-repo-orchestration-design.md",
       "attributedCommits": [
         "6a3506e"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T08:21:59.322Z",
+        "reason": "shipped in 0.33.0 (08ff745): warns on three required conditions, realpath-compared; warns and never refuses"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T08:21:59.322Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T08:21:59.323Z"
     },
     {
       "id": "gh-85-document-mutating-verbs",
       "title": "Document (or flag) which verbs mutate the working tree — render writes without warning",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -2286,7 +2308,18 @@
       "attributedCommits": [
         "66b71fd",
         "ca8144b"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T08:21:55.963Z",
+        "reason": "shipped in 0.33.0 (08ff745): all 39 verbs declare their effect, verified by running each read-only verb and hashing content AND mtime"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T08:21:55.962Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T08:21:55.963Z"
     },
     {
       "id": "gh-86-openspec-lane-silent-zero-progress",
@@ -2749,7 +2782,7 @@
       "id": "gh-105-feedback-undeclared-gh-dependency",
       "title": "Feedback channels: gh-when-authenticated → prefilled URL → email to bugs@pm-plugin.dev, with a recorded preference so declining GitHub is not re-asked (mail routing verified live 2026-08-18: MX = smtp.google.com)",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -2758,7 +2791,18 @@
       "externalUrl": "https://github.com/cfdude/pm/issues/105",
       "attributedCommits": [
         "bcff31c"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T08:21:54.299Z",
+        "reason": "shipped in 0.33.0 (08ff745): gh declared, plus a prefilled URL and email; sync stops rather than reporting a read nobody performed"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T08:21:54.298Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T08:21:54.299Z"
     },
     {
       "id": "gh-106-conductor-logs-never-gitignored",
@@ -3317,7 +3361,7 @@
       "id": "gh-129-attribution-nudge-at-commit-time",
       "title": "Agent obligations ship as prose and the attribution detector fires only at archive — needs a commit-time nudge",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -3332,7 +3376,18 @@
       "externalUrl": "https://github.com/cfdude/pm/issues/129",
       "attributedCommits": [
         "1fd2018"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T08:22:01.178Z",
+        "reason": "shipped in 0.33.0 (08ff745): the detector half only — the prose half was discharged by 0.27.0 and the issue was never updated"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T08:22:01.177Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T08:22:01.178Z"
     },
     {
       "id": "conductor-tells-the-truth",
@@ -3512,7 +3567,7 @@
       "id": "gh-131-retry-half-unverified",
       "title": "The retry half of retry-once-then-skip has no test that fails when removed",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -3521,7 +3576,18 @@
       "externalUrl": "https://github.com/cfdude/pm/issues/131",
       "attributedCommits": [
         "c355f4c"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T08:21:52.619Z",
+        "reason": "shipped in 0.33.0 (08ff745): the claim reproduced at HEAD (both sites deleted, suite still green); three neuters now produce three catches"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T08:21:52.618Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T08:21:52.619Z"
     },
     {
       "id": "gh-132-lessons-advisor-hook",
@@ -3638,7 +3704,7 @@
       "id": "gh-136-add-epic-notes-discarded",
       "title": "add-epic --notes is silently discarded (accepted, never persisted)",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -3647,7 +3713,18 @@
       "externalUrl": "https://github.com/cfdude/pm/issues/136",
       "attributedCommits": [
         "c6a516e"
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-08-29T08:21:50.945Z",
+        "reason": "shipped in 0.33.0 (08ff745): no engine fix was needed — --notes already round-tripped; the gap was a guard asserting registration rather than honoring"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-08-29T08:21:50.945Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-08-29T08:21:50.945Z"
     },
     {
       "id": "gh-138-refresh-warning-counts-terminal-epics",
@@ -3814,14 +3891,14 @@
     }
   ],
   "detourStack": [],
-  "pmVersion": "0.32.0",
+  "pmVersion": "0.33.0",
   "tracker": {
     "system": "github-issues",
     "repo": "cfdude/pm",
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 212,
+  "revision": 220,
   "reviewMode": "thorough",
   "releases": [
     {

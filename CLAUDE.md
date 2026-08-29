@@ -300,6 +300,7 @@ OpenSpec/Superpowers auto-registration `sync` already does for on-disk changes/p
 pm plugin NEVER calls github-issues itself — as part of running `/pm:sync`, YOU (the interactive
 agent) do:
 1. `gh issue list --repo cfdude/pm --state open --json number,title,url,updatedAt,labels`.
+   Preflight, BEFORE running that line: this step needs the `gh` CLI **and** an authenticated GitHub account — `command -v gh` and `gh auth status`. If either is missing, say so, name what to install or authenticate, and STOP this section; an inward sync is a READ and has no credential-free substitute, so reporting a clean sync you could not perform is worse than reporting that you could not perform it.
 2. For each item, check whether an epic's `externalUrl` already matches that item's URL
    (`/pm:epic list` or read `.conductor/state.json`) — if so, skip it (already
    mirrored; re-running sync must never create a duplicate epic for the same item). Match
