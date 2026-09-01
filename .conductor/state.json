@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": null,
+  "active": "per-verb-help-from-flag-registry",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -4166,6 +4166,116 @@
       "attributedCommits": [
         "94cd7d1"
       ]
+    },
+    {
+      "id": "per-verb-help-from-flag-registry",
+      "title": "conductor --help is verb-blind: any --help anywhere in argv prints the global 47-verb usage line and exits, so an agent that needs a verb's flags must read scripts/lib/<verb>.mjs. Hit in the wild by a session upgrading another repo and turning on features, quote: '--help isn't per-verb here. Reading the actual flags from source:'. Fix derives per-verb help from the EXISTING shared flag registry (EPIC_FLAGS + VERB_FLAGS in constants.mjs) via flagsFor/valueBearingFlagsFor/repeatableFlagNames — the same projection the unknown-flag allowlists already read — so help can never drift from what the verb actually accepts, and no second hand-maintained list is introduced (that would be #152's defect shape again). Registry already carries flag/valueless/repeats/requires, and 'requires' holds a human phrase ('a non-empty title'), so a truthful signature ships without touching ~100 rows; per-row prose help can layer later.",
+      "priority": "P1",
+      "status": "active",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "description": "Per-verb help derived from the shared flag registry. Discovered by a sibling session that could not turn on pm features in another repo without reading engine source.",
+      "attributedCommits": [],
+      "notes": [
+        {
+          "at": "2026-09-01T03:35:44.168Z",
+          "actor": "agent",
+          "text": "lane: superpowers not <none> — suggest-lane matched no rule. Routed away from claude-code deliberately per the intake tie-break: it changes user-facing CLI surface on all 47 verbs, needs README + Mintlify sync and tests, and under-processing would leave no record of what it was for."
+        }
+      ],
+      "externalId": "158",
+      "externalUrl": "https://github.com/cfdude/pm/issues/158",
+      "externalUpdatedAt": "2026-09-01T03:36:07Z",
+      "startedAt": "2026-09-01T04:24:00.876Z",
+      "trackerRefreshNeeded": true
+    },
+    {
+      "id": "rules-block-emits-no-help-pointer",
+      "title": "The emitted rules block teaches flags by worked example but gives the reading agent no way to enumerate them. Measured across all 408 emitted lines and all three platform variants (claude-code/hermes/codex, identical on this axis): 0 occurrences of conductor.mjs, 0 of any http(s) URL, 0 of MCP, 0 of --help, 0 of pm-plugin.dev, 0 of SKILL.md, 0 of commands/, 0 of README. Meanwhile emitted line 354 hardcodes eight flags in one add-epic recipe — so an agent learns flags exist, learns a few by example, and has no path to the rest except reading engine source. Fix: emit a ~4-line 'Getting help' pointer from rules.mjs — local 'conductor.mjs <verb> --help' as the version-exact authority on the INSTALLED engine, https://pm-plugin.dev/llms.txt (index; any page is markdown by appending .md) and the no-auth MCP at pm-plugin.dev/mcp for procedure and rationale, plus one sentence inoculating against version skew because the site is latest-only and a repo pinned older will be shown flags its engine refuses. Never cite llms-full.txt (367KB). Architecturally clean: the ENGINE still opens no connection — same shape as the tracker sections that tell the agent to run gh.",
+      "priority": "P1",
+      "status": "queued",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "per-verb-help-from-flag-registry",
+          "reason": "the pointer's first bullet promises a per-verb --help that does not exist yet; shipping the pointer alone would advertise a broken door"
+        },
+        {
+          "type": "relates-to",
+          "epic": "rules-block-hardcodes-claude-slash-commands",
+          "reason": "same emitter, same family — the block assuming context it should state"
+        }
+      ],
+      "reconcileNeeded": false,
+      "description": "Discoverability, not content: pm's docs are good (the no-auth MCP returns update-epic's full 24-flag table in one call) but nothing in a managed repo tells a reading agent either channel exists. Origin: a sibling session upgrading another repo read engine source instead.",
+      "attributedCommits": [],
+      "notes": [
+        {
+          "at": "2026-09-01T03:57:12.298Z",
+          "actor": "agent",
+          "text": "lane: superpowers not <none> — suggest-lane matched no rule. Away from claude-code per the intake tie-break: it changes what every managed repo receives on next upgrade, needs tests + README + Mintlify sync."
+        }
+      ]
+    },
+    {
+      "id": "flag-level-doc-gaps",
+      "title": "Flag-level documentation gaps, measured: --description undocumented on add-epic/add-many/update-epic and in every SKILL.md; --carried-to undocumented; --diff-summary and --platform the only two flags absent from commands/ entirely; write-rules and rules-target absent from commands/ altogether, making the rules-authoring surface the one coherent hole. Skills carry 52/76 distinct flags, essentially all via skills/conductor/SKILL.md; purge-logs worst at 1/6.",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "per-verb-help-from-flag-registry",
+          "reason": "--help makes flags discoverable at the CLI; this makes them discoverable in prose — neither substitutes for the other"
+        }
+      ],
+      "reconcileNeeded": false,
+      "description": "Prose-side counterpart to the CLI help gap. Found by mechanical audit of the flag registry against commands/ and skills/.",
+      "externalId": "160",
+      "externalUrl": "https://github.com/cfdude/pm/issues/160",
+      "attributedCommits": [],
+      "externalUpdatedAt": "2026-09-01T03:57:41Z",
+      "notes": [
+        {
+          "at": "2026-09-01T03:57:54.184Z",
+          "actor": "agent",
+          "text": "lane: claude-code not <none> — suggest-lane matched no rule. Deliberately kept in claude-code despite the intake tie-break's away-from-claude-code bias: the record this normally protects is already durable in issue #160, which carries the full measured evidence table, so the usual cost of under-processing does not apply here. Bounded prose edits across commands/*.md plus a Mintlify sync, no design ambiguity."
+        }
+      ]
+    },
+    {
+      "id": "gh-159-no-reader-for-gate-guard-state",
+      "title": "No CLI way to read gate-guard state. Filed as 'the read verb prints nothing', but gate-guard is NOT a read verb: it is the PreToolUse hook (hooks/hooks.json:46), blocking via stderr + exit 2 and returning silently at scripts/lib/gate-guard.mjs:54 to ALLOW. Silence IS the allow signal, and with no active epic it returns at the !active guard immediately — so the reported symptom is the protocol working. Printing a human report on its stdout would corrupt the hook. The gap underneath is real and worth fixing: set-gate-guard WRITES and confirms, and nothing READS, so 'is the guard on?' is answerable only by opening state.json — exactly what a read verb exists to avoid. Fix belongs on a DIFFERENT surface (bare set-gate-guard with no argument, or a status flag), never on the hook's stdout. Adopt the owners model the reporter correctly identified: state the value AND what it implies, including what it cannot tell you.",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-80-gate-guard-refusal-applies-anyway",
+          "reason": "same verb, same family — a guard whose observable behavior does not match what a reader concludes from it"
+        }
+      ],
+      "reconcileNeeded": false,
+      "description": "Mirrored from #159. Registered against the verified cause rather than the reported one: the hook is correct, the missing reader is the defect.",
+      "externalId": "159",
+      "externalUrl": "https://github.com/cfdude/pm/issues/159",
+      "externalUpdatedAt": "2026-09-01T03:43:25Z",
+      "attributedCommits": [],
+      "notes": [
+        {
+          "at": "2026-09-01T04:22:59.360Z",
+          "actor": "agent",
+          "text": "lane: claude-code not <none> — suggest-lane matched no rule. Genuinely small: one status surface plus its test, no design ambiguity, and the record is durable in #159."
+        }
+      ]
     }
   ],
   "detourStack": [],
@@ -4176,7 +4286,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 266,
+  "revision": 276,
   "reviewMode": "thorough",
   "releases": [
     {
