@@ -4,6 +4,8 @@
 // lib/constants.mjs only — see the design doc for why this is NOT circular with
 // lib/tracker.mjs / lib/review-mode.mjs despite first appearances.
 
+import { pluginVersion } from "./plugin-meta.mjs";
+import { DOCS_INDEX_URL, DOCS_MCP_URL } from "./constants.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import { loadState } from "./state.mjs";
@@ -481,6 +483,7 @@ const GH_PREFLIGHT =
 
 export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform = "claude-code") {
   const mode = KNOWN_REVIEW_MODES.includes(reviewMode) ? reviewMode : "standard";
+  const running = pluginVersion();
   const lines = [
     RULES_BEGIN,
     "## PM Conductor — operating rules",
@@ -546,6 +549,18 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     "   it becomes the work — the subagent reads the whole document and returns the finding. What",
     "   is forbidden is substituting a keyword grep for a full read, and that is forbidden",
     "   whoever performs it.",
+    "",
+    "## Getting help with pm — two channels, and which one can lie",
+    "",
+    "**The INSTALLED engine is the authority on what it accepts.** `conductor.mjs <verb> --help`",
+    "prints that verb's real flags, projected from the engine's own registry, so it is version-exact",
+    "by construction. Use it before reading engine source and before guessing a flag name.",
+    "",
+    `**For procedure and rationale:** ${DOCS_INDEX_URL} indexes the docs (its entries are already`,
+    `markdown), and a free, no-auth MCP at ${DOCS_MCP_URL} answers the same questions in one call.`,
+    "",
+    `**The site documents the LATEST release; this repo runs pm ${running}.** A flag it shows that`,
+    `your engine refuses is a version gap, not a bug — check \`${pmCmd(platform, "changelog")}\`.`,
     "",
     "## The gate procedure — required task items",
     "",

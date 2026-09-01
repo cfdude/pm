@@ -38,6 +38,7 @@ const GATE_PROCEDURE_HEADING = "## The gate procedure — required task items";
 const INTAKE_HEADING = "## Intake — triage an ask against the whole backlog BEFORE registering it";
 const OPERATING_RULES_HEADING = "## PM Conductor — operating rules";
 const REPORTING_HEADING = "## Reporting — pm owns what is recorded and what is said; you own how you say it";
+const HELP_HEADING = "## Getting help with pm — two channels, and which one can lie";
 /** The block minus the ALWAYS-ON sections — the numbered operating rules, the refresh gate, the
  *  emitted gate procedure and the intake procedure — see conductor-14's identical helper for why
  *  byte-identity is claimed for the tracker sections and not for the whole document, and for why
@@ -45,6 +46,12 @@ const REPORTING_HEADING = "## Reporting — pm owns what is recorded and what is
 const stripAlwaysOn = (block) => block
   .replace(new RegExp(`\\n*${REFRESH_GATE_HEADING}[\\s\\S]*?(?=\\n<!-- END pm-conductor rules -->)`), "")
   .replace(new RegExp(`${OPERATING_RULES_HEADING}[\\s\\S]*?(?=## )`), "")
+  // #158's help pointer — always-on, stripped for the same reason, and placed HERE because each
+  // replace consumes only to the next `## ` and this section sits between the operating rules and
+  // the gate procedure. SECOND COPY of this helper: conductor-14 carries the other one, and the
+  // suite is what caught the sibling being left behind. That is the absent-edit shape the gate
+  // procedure's call-site sweep exists for — `rg -l stripAlwaysOn scripts/test/` returns both.
+  .replace(new RegExp(`${HELP_HEADING}[\\s\\S]*?(?=## )`), "")
   .replace(new RegExp(`${GATE_PROCEDURE_HEADING}[\\s\\S]*?(?=## )`), "")
   .replace(new RegExp(`${INTAKE_HEADING}[\\s\\S]*?(?=## )`), "")
   // gh-90 adds the reporting section: always-on for the same reason, and stripped for the same

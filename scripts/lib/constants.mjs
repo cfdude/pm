@@ -613,6 +613,66 @@ export const valueBearingFlagsFor = (command) =>
 export const epicBatchKeys = () =>
   EPIC_FLAGS.filter(f => f.commands.includes("add-many") && f.key).map(f => f.key);
 
+/** The commands whose EPIC_FLAGS rows describe a JSON BATCH DOCUMENT rather than a CLI flag
+ *  surface. A COMMAND-level declaration, deliberately — the same shape as `FLAGLESS_VERBS` and
+ *  for the same reason: how a command ACCEPTS keys is a property of the command, not of each row,
+ *  and an inferred remainder is how a dozen verbs came to sit outside #149's rule.
+ *
+ *  `add-many` is the whole set today. Its rows are here so `epicBatchKeys()` can derive the state
+ *  keys a batch entry may carry; its parser (`scripts/lib/add-many.mjs`) takes exactly one flag,
+ *  `--from`, and refuses everything else. So `flagsFor("add-many")` answering 15 is CORRECT for
+ *  the allowlist question it exists to answer, and WRONG the moment help reuses it: help would
+ *  advertise 14 flags the parser ignores. An authoritative wrong answer is worse than none, which
+ *  is the whole reason #158 was filed. */
+/** Where a reader goes for procedure and rationale, as distinct from what THIS engine accepts.
+ *
+ *  Constants because two surfaces emit them — `verbHelp()` and the rules block — and a URL typed
+ *  twice is a URL that will one day disagree with itself.
+ *
+ *  `llms.txt` is the INDEX and its entries already carry `.md`, so no instruction to append one is
+ *  needed. `llms-full.txt` also exists and is deliberately NOT here: it is ~367KB, which is a
+ *  context bomb rather than a help channel. conductor-35 asserts it never appears in emitted
+ *  output. */
+export const DOCS_INDEX_URL = "https://pm-plugin.dev/llms.txt";
+export const DOCS_MCP_URL = "https://pm-plugin.dev/mcp";
+
+export const BATCH_KEY_COMMANDS = ["add-many"];
+
+/** The flags `command` accepts AT ITS PARSER — the projection HELP reads.
+ *
+ *  Distinct from `flagsFor()` on purpose, and the distinction is the one #158's fix turns on.
+ *  `flagsFor()` answers "which rows NAME this command", which is right for an allowlist: a batch
+ *  key and a CLI flag must both be recognised as known. This answers "which of those can a caller
+ *  actually type", which is the only honest thing to print in help.
+ *
+ *  For every command outside `BATCH_KEY_COMMANDS` the two are identical by construction, and
+ *  conductor-35 asserts that on a sample — so this can never quietly narrow a normal verb's
+ *  surface while looking like it only touched add-many. */
+export const cliFlagsFor = (command) =>
+  BATCH_KEY_COMMANDS.includes(command)
+    ? [...new Set(VERB_FLAGS.filter(f => f.commands.includes(command)).map(f => f.flag))]
+    : flagsFor(command);
+
+/** Everything help needs about ONE flag on ONE command, read from the row itself: whether it
+ *  takes a value, whether repeating it accumulates, and the phrase its own refusal ends in.
+ *  `requires` is already written for a human ("a non-empty title"), which is why a truthful
+ *  signature ships without adding a prose field to ~100 rows. */
+export const flagSpecsFor = (command) => {
+  const rows = [...EPIC_FLAGS, ...VERB_FLAGS].filter(f => f.commands.includes(command));
+  const seen = new Map();
+  for (const name of cliFlagsFor(command)) {
+    const f = rows.find(r => r.flag === name);
+    if (!f || seen.has(name)) continue;
+    seen.set(name, {
+      flag: name,
+      valueless: f.valueless === true,
+      repeats: f.repeats === true,
+      requires: f.valueless === true ? null : (f.requires || "a value"),
+    });
+  }
+  return [...seen.values()];
+};
+
 export const KNOWN_AUTONOMY_LEVELS = ["off", "autonomous"];
 // Default category taxonomy for the `--preauthorize "category:<name>:<reason>"` shorthand —
 // see the `conductor` skill's "Epic-level autonomy" section for the matching heuristic each
