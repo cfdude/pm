@@ -4,11 +4,10 @@
 // lib/constants.mjs only — see the design doc for why this is NOT circular with
 // lib/tracker.mjs / lib/review-mode.mjs despite first appearances.
 
-import { pluginVersion } from "./plugin-meta.mjs";
 import { DOCS_INDEX_URL, DOCS_MCP_URL } from "./constants.mjs";
+import { loadState } from "./state.mjs";
 import fs from "node:fs";
 import path from "node:path";
-import { loadState } from "./state.mjs";
 import {
   KNOWN_REVIEW_MODES, REVIEW_MODE_RANK, RULES_BEGIN, RULES_BEGIN_PREFIX, RULES_END, ROOT,
   PLATFORM_COMMAND_PREFIX, anyInwardProcedureEmittable, inwardProcedureEmittable, outwardApplies,
@@ -483,7 +482,20 @@ const GH_PREFLIGHT =
 
 export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform = "claude-code") {
   const mode = KNOWN_REVIEW_MODES.includes(reviewMode) ? reviewMode : "standard";
-  const running = pluginVersion();
+  // NO VERSION NUMBER IN THIS BLOCK, and the omission is the design.
+  //
+  // Gate 2 first found the sentence naming the RENDERING ENGINE's version while claiming to
+  // describe THE REPO — a fixture stamped 0.20.0 rendered "this repo runs pm 0.37.0". Reading
+  // state.pmVersion instead fixes that one case and breaks a load-bearing invariant: conductor-15
+  // 7.2 asserts the block a repo reads is IDENTICAL before and after an upgrade, because a
+  // migration records behavior and must not alter what anyone reads. Any embedded version
+  // violates that by construction, whichever source it reads.
+  //
+  // The deeper half of the same finding settles it: the block is STATIC and the plugin is not, so
+  // an embedded version is a snapshot that goes stale the moment the plugin updates without
+  // /pm:upgrade running here — which is exactly the skew case the sentence existed to warn about.
+  // `/pm:changelog` COMPUTES the answer instead of snapshotting it, so the warning points there
+  // and asserts no number of its own.
   const lines = [
     RULES_BEGIN,
     "## PM Conductor — operating rules",
@@ -552,15 +564,15 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     "",
     "## Getting help with pm — two channels, and which one can lie",
     "",
-    "**The INSTALLED engine is the authority on what it accepts.** `conductor.mjs <verb> --help`",
-    "prints that verb's real flags, projected from the engine's own registry, so it is version-exact",
-    "by construction. Use it before reading engine source and before guessing a flag name.",
+    '**The INSTALLED engine is the authority on what it accepts.** `node "$ENGINE" <verb> --help`',
+    "(resolve `$ENGINE` the way pm's own command docs do) prints that verb's real flags, projected",
+    "from its own registry — version-exact by construction. Use it before reading engine source.",
     "",
-    `**For procedure and rationale:** ${DOCS_INDEX_URL} indexes the docs (its entries are already`,
-    `markdown), and a free, no-auth MCP at ${DOCS_MCP_URL} answers the same questions in one call.`,
+    `**For procedure and rationale:** ${DOCS_INDEX_URL} indexes the docs (entries are`,
+    `already markdown); a free, no-auth MCP at ${DOCS_MCP_URL} answers in one call.`,
     "",
-    `**The site documents the LATEST release; this repo runs pm ${running}.** A flag it shows that`,
-    `your engine refuses is a version gap, not a bug — check \`${pmCmd(platform, "changelog")}\`.`,
+    "**The site documents the LATEST release, which may be newer than the pm running here.** A flag",
+    `it shows that your engine refuses is a version gap, not a bug — \`${pmCmd(platform, "changelog")}\` says which.`,
     "",
     "## The gate procedure — required task items",
     "",

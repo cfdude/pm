@@ -214,9 +214,12 @@ export const EPIC_FLAGS = [
   // time, its gate verdicts, its links and its stories. Both are validated on `update-epic`
   // against the same lists creation validates against, so the two surfaces cannot admit
   // different values.
-  { flag: "lane", key: "lane", commands: ["add-epic", "update-epic", "add-many"] },
-  { flag: "priority", key: "priority", commands: ["add-epic", "update-epic", "add-many"] },
-  { flag: "status", key: "status", commands: ["add-epic", "update-epic", "add-many"] },
+  { flag: "lane", key: "lane", commands: ["add-epic", "update-epic", "add-many"],
+    placeholder: KNOWN_LANES.join("|") },
+  { flag: "priority", key: "priority", commands: ["add-epic", "update-epic", "add-many"],
+    placeholder: "P0|P1|P2|P3" },
+  { flag: "status", key: "status", commands: ["add-epic", "update-epic", "add-many"],
+    placeholder: KNOWN_STATUSES.join("|") },
   { flag: "parent", key: "parent", commands: ["add-epic", "update-epic", "add-many"] },
   { flag: "external-id", key: "externalId", commands: ["add-epic", "update-epic", "add-many"] },
   { flag: "external-url", key: "externalUrl", commands: ["add-epic", "update-epic", "add-many"] },
@@ -229,7 +232,8 @@ export const EPIC_FLAGS = [
   // lib/source-artifacts.mjs for the family it joins.
   { flag: "spec", key: "specPath", commands: ["add-epic", "update-epic", "add-many"] },
   { flag: "link", key: "links", commands: ["add-epic", "update-epic", "add-many"], repeats: true, write: "custom",
-    requires: "a \"<type>:<epic>[:<reason>]\" value — to empty an epic's links, say so with --clear-links" },
+    requires: "a \"<type>:<epic>[:<reason>]\" value — to empty an epic's links, say so with --clear-links",
+    placeholder: "type:epic[:reason]" },
   // Emptying the links array is its OWN named flag. `--link` replaces the array wholesale, so a
   // VALUELESS `--link` parsed as `[true]`, was filtered to `[]` by parseLinkFlags, and silently
   // wiped every link — the destructive reading of what looks like a typo. `--clear-links` says
@@ -254,13 +258,14 @@ export const EPIC_FLAGS = [
   // flags every invocation carries would reject the command's own usage line. Registering them
   // is what makes the allowlist usable at all; leaving them out would be the second, parallel
   // list `epic-annotation` forbids, spelled as an exception instead of as an array.
-  { flag: "gate", key: null, commands: ["record-gate-review"], write: "custom" },
+  { flag: "gate", key: null, commands: ["record-gate-review"], write: "custom", placeholder: "1|2" },
   // `verdict` and `reviewer` are SHARED with record-cross-spec-review, the RELEASE-scope gate:
   // registered by adding a command name to the entry that already exists, never by giving that
   // verb a literal list of its own. This is the registry doing the job it was built for — a
   // shared allowlist four capabilities each needed to grow was one of the five Criticals that
   // motivated the release gate, and growing it here costs one array element.
-  { flag: "verdict", key: null, commands: ["record-gate-review", "record-cross-spec-review"], write: "custom" },
+  { flag: "verdict", key: null, commands: ["record-gate-review", "record-cross-spec-review"], write: "custom",
+    placeholder: "pass|fail" },
   // record-gate-review's evidence flags. They live in this registry because it is the single
   // declaration of the flag surface every epic-WRITING command shares, and recording a verdict
   // writes an epic. `key` is null on all three: they land nested under `gateReview.gateN`
@@ -280,7 +285,8 @@ export const EPIC_FLAGS = [
   { flag: "attribute-commit", key: "attributedCommits", commands: ["update-epic"], repeats: true, write: "append" },
   // The interactive archive verb's disposition. `key` is `disposition` for both: they are two
   // halves of ONE record the verb builds and writes together, never two epic fields.
-  { flag: "outcome", key: "disposition", commands: ["update-epic"], write: "custom" },
+  { flag: "outcome", key: "disposition", commands: ["update-epic"], write: "custom",
+    placeholder: "delivered|killed|superseded|abandoned|declined" },
   // Also `release`'s: an exclusion's reason IS a disposition reason — the same required-reason
   // rule at a fourth scope — so it shares this entry rather than getting a second one under the
   // same name, which epicFlagsFor() would then project twice.
@@ -354,7 +360,8 @@ export const EPIC_FLAGS = [
   // meanings is how a `release --defer` would come to mean both "cut from a release" and "hand
   // the claim back".
   { flag: "session", key: null, commands: ["claim", "unclaim"], write: "custom",
-    requires: "a session name — set PM_SESSION or pass --session <name>" },
+    requires: "a session name — set PM_SESSION or pass --session <name>",
+    placeholder: "a session name" },
   { flag: "ttl", key: null, commands: ["claim"], write: "custom",
     requires: "a positive number of minutes" },
   // `--steal` is deliberately NOT `--force`. saveState() reads `--force` GLOBALLY off argv to
@@ -417,9 +424,9 @@ export const PURGE_KINDS = ["activity", "conflicts", "detours", "all"];
 export const VERB_FLAGS = [
   { flag: "from", commands: ["add-many"], requires: "a path, or `-` to read the batch from stdin" },
   { flag: "cascade", commands: ["remove-epic"], valueless: true },
-  { flag: "mode", commands: ["set-review-mode"] },
+  { flag: "mode", commands: ["set-review-mode"], placeholder: "off|standard|thorough" },
   // set-autonomy — #152's sharpest instance.
-  { flag: "level", commands: ["set-autonomy"] },
+  { flag: "level", commands: ["set-autonomy"], placeholder: "off|autonomous" },
   { flag: "preauthorize", commands: ["set-autonomy"], repeats: true },
   { flag: "context", commands: ["set-autonomy"], repeats: true },
   { flag: "notify", commands: ["set-autonomy"], repeats: true },
@@ -436,13 +443,19 @@ export const VERB_FLAGS = [
   { flag: "project", commands: ["set-tracker"] },
   { flag: "instance", commands: ["set-tracker"] },
   { flag: "mechanism", commands: ["set-tracker"] },
-  { flag: "direction", commands: ["set-tracker"] },
+  { flag: "direction", commands: ["set-tracker"], placeholder: "inward|outward|both" },
   { flag: "intent", commands: ["set-tracker"], repeats: true },
   { flag: "remove", commands: ["set-tracker"], valueless: true },
   // record-reconcile and record-tracker-refresh. `--verdict` is spelled the same on four verbs
   // and means four different vocabularies, so it is four scoped rows and not one shared one;
   // what they agree on — that it takes a value — is what the row carries.
   { flag: "detour", commands: ["record-reconcile"] },
+  // NO `placeholder`, deliberately. This ONE row serves two commands with DIFFERENT value
+  // spaces — record-reconcile takes valid|invalidated, record-tracker-refresh takes
+  // unchanged|material-change — and the registry has no way to say "these values, but only on
+  // that command". A placeholder here would be right for one caller and a lie to the other,
+  // which is worse than `<a value>`. Splitting the row, or giving `placeholder` a per-command
+  // shape, is the real fix; neither is worth doing blind at the moment this was found.
   { flag: "verdict", commands: ["record-reconcile", "record-tracker-refresh"] },
   { flag: "amendments", commands: ["record-reconcile"] },
   { flag: "summary", commands: ["record-tracker-refresh"] },
@@ -459,7 +472,8 @@ export const VERB_FLAGS = [
   // FLAGLESS_VERBS, where it would have been a false claim.
   { flag: "diff-summary", commands: ["render"], valueless: true },
   { flag: "epic", commands: ["rules"] },
-  { flag: "platform", commands: ["rules", "write-rules", "rules-target"] },
+  { flag: "platform", commands: ["rules", "write-rules", "rules-target"],
+    placeholder: KNOWN_PLATFORMS.join("|") },
   // #151's detour-stack verbs. `--reason` shares REASON_REQUIRES with the epic registry's row
   // rather than restating the phrase: a deferral's reason is held to the same standard whichever
   // verb records it.
@@ -655,8 +669,18 @@ export const cliFlagsFor = (command) =>
 
 /** Everything help needs about ONE flag on ONE command, read from the row itself: whether it
  *  takes a value, whether repeating it accumulates, and the phrase its own refusal ends in.
- *  `requires` is already written for a human ("a non-empty title"), which is why a truthful
- *  signature ships without adding a prose field to ~100 rows. */
+ *  Two sources, in order: `placeholder` when the row carries one, else `requires`, else
+ *  `<a value>`. The ORDER is the fix for a real defect — see the note inside.
+ *
+ *  HONEST LIMIT, measured rather than asserted: of the 92 value-bearing (verb, flag) pairs across
+ *  all 48 verbs, only 21 render anything more specific than `<a value>`. An earlier version of
+ *  this comment claimed `requires` alone made a truthful signature possible "without adding a
+ *  prose field to ~100 rows" — true about truthfulness, false about usefulness, and Gate 2
+ *  measured it: every closed-enum flag the engine enforces named none of its legal values, so a
+ *  reader wanting to know what `--outcome` accepts still had to open `scripts/lib/`, which is the
+ *  thing #158 exists to stop. `placeholder` is where a closed enum names its values; the ten that
+ *  have one are done, and the remaining `<a value>` rows are a known, visible gap rather than a
+ *  claim that the surface is complete. */
 export const flagSpecsFor = (command) => {
   const rows = [...EPIC_FLAGS, ...VERB_FLAGS].filter(f => f.commands.includes(command));
   const seen = new Map();
@@ -667,7 +691,14 @@ export const flagSpecsFor = (command) => {
       flag: name,
       valueless: f.valueless === true,
       repeats: f.repeats === true,
-      requires: f.valueless === true ? null : (f.requires || "a value"),
+      // PLACEHOLDER first, `requires` only as a fallback. The two have different audiences and
+      // conflating them shipped a real defect: `--link`'s `requires` ends "...say so with
+      // --clear-links", which is correct in a REFUSAL and made `add-epic --help` advertise
+      // `--clear-links` — a flag add-epic's parser refuses — falsifying help's own headline
+      // invariant. `--session`'s nested itself the same way. `requires` stays the refusal tail
+      // and is unchanged; `placeholder` is what a SIGNATURE needs, and it is also where a closed
+      // enum names its legal values, which `requires` never did for --outcome, --status or --lane.
+      requires: f.valueless === true ? null : (f.placeholder || f.requires || "a value"),
     });
   }
   return [...seen.values()];

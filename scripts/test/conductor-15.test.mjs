@@ -48,7 +48,8 @@ const stripAlwaysOn = (block) => block
   .replace(new RegExp(`${OPERATING_RULES_HEADING}[\\s\\S]*?(?=## )`), "")
   // #158's help pointer — always-on, stripped for the same reason, and placed HERE because each
   // replace consumes only to the next `## ` and this section sits between the operating rules and
-  // the gate procedure. SECOND COPY of this helper: conductor-14 carries the other one, and the
+  // the gate procedure — READABILITY, not a constraint; Gate 2 proved the chain order-independent.
+  // SECOND COPY of this helper: conductor-14 carries the other one, and the
   // suite is what caught the sibling being left behind. That is the absent-edit shape the gate
   // procedure's call-site sweep exists for — `rg -l stripAlwaysOn scripts/test/` returns both.
   .replace(new RegExp(`${HELP_HEADING}[\\s\\S]*?(?=## )`), "")

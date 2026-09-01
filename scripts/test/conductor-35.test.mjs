@@ -111,6 +111,31 @@ test("help declares a flagless verb explicitly rather than printing an empty lis
   }
 });
 
+// ═══════════════ the ghost sweep — EVERY verb, not one ═══════════════
+
+test("no verb's help advertises a flag that verb's parser refuses", async () => {
+  // Gate 2 found this the moment it was written mechanically: `add-epic --help` printed
+  // `--clear-links`, which add-epic refuses. The cause was `requires` doing double duty as both
+  // the refusal tail and the help signature — `--link`'s ends "...say so with --clear-links" —
+  // so the ghost was TEXT inside another flag's placeholder, which no per-verb spot check would
+  // ever have been shaped to catch.
+  //
+  // The previous version of this test hardcoded four ghost names on ONE verb. That is the
+  // sibling-miss this repo's gate procedure names as its dominant defect class: a guard at one
+  // call site while 47 identical ones go unchecked. This asserts the INVARIANT over the whole
+  // dispatch table, so a row added later is covered without anyone remembering to extend a list.
+  const { cliFlagsFor } = await import(CONSTANTS);
+  const { verbHelp } = await import(new URL("../lib/help.mjs", import.meta.url).href);
+  const ghosts = [];
+  for (const verb of dispatchedVerbs()) {
+    const accepted = new Set(cliFlagsFor(verb));
+    for (const m of new Set([...verbHelp(verb).matchAll(/--([a-z][a-z0-9-]*)/g)].map(x => x[1]))) {
+      if (!accepted.has(m)) ghosts.push(`${verb} --help advertises --${m}, which it refuses`);
+    }
+  }
+  assert.deepEqual(ghosts, [], ghosts.join("\n"));
+});
+
 test("add-many --help does not advertise the 14 flags its parser ignores", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
@@ -167,7 +192,11 @@ const POINTER_PATTERNS = [
   [/--help/, "the local, version-exact channel"],
   [/pm-plugin\.dev\/llms\.txt/, "the docs index"],
   [/pm-plugin\.dev\/mcp/, "the no-auth MCP"],
-  [/conductor\.mjs/, "the engine binary the reader must invoke"],
+  // Gate 2: the block previously said `conductor.mjs <verb> --help`, which is NOT runnable — a
+  // bare binary name with no resolution, in a block that names no path anywhere. It now routes
+  // through $ENGINE like every command doc, so THAT is what must be present.
+  [/\$ENGINE/, "a resolvable engine invocation, not a bare binary name"],
+  [/&lt;verb&gt;|<verb>/, "the verb placeholder the reader substitutes"],
 ];
 
 test("the emitted rules block routes a reader to help, on every platform", () => {
@@ -181,23 +210,34 @@ test("the emitted rules block routes a reader to help, on every platform", () =>
   }
 });
 
-test("the pointer inoculates against version skew, naming THIS repo's version", () => {
+test("the pointer warns about version skew WITHOUT embedding a version", () => {
+  // It must not name a number. conductor-15's 7.2 requires the block a repo reads to be identical
+  // before and after an upgrade — a migration records behavior, it does not alter what anyone
+  // reads — and any embedded version breaks that whichever source it comes from. An embedded
+  // version is also a snapshot that goes stale the moment the plugin updates without /pm:upgrade
+  // running here, which is the very skew the sentence exists to warn about. So it points at
+  // `changelog`, which COMPUTES the answer.
   const cwd = tmpRepo();
   run(["init"], { cwd });
-  const version = JSON.parse(
-    fs.readFileSync(path.join(REPO, ".claude-plugin", "plugin.json"), "utf8")).version;
   const out = run(["rules"], { cwd });
-  assert.ok(out.includes(version),
-    "the pointer must name the version THIS repo runs, or the skew warning is abstract");
-  assert.match(out, /latest/i, "it must say the site documents the latest release");
+  const start = out.split("\n").findIndex(l => /getting help/i.test(l));
+  const section = out.split("\n").slice(start, start + 14).join("\n");
+  assert.match(section, /latest/i, "it must say the site documents the latest release");
+  assert.match(section, /changelog/, "it must route to the verb that computes the real answer");
+  assert.ok(!/\b\d+\.\d+\.\d+\b/.test(section),
+    `the pointer must embed no version number; found one in:\n${section}`);
 });
 
-test("the pointer never cites llms-full.txt", () => {
+test("the pointer cites the index and never llms-full.txt", () => {
+  // A pure inverse assertion cannot tell "correct" from "absent": Gate 2 deleted the entire
+  // pointer section and this test still passed. It now asserts the section is THERE and that the
+  // thing it must not cite is not, so it can only pass for the right reason.
   const cwd = tmpRepo();
   run(["init"], { cwd });
   const out = run(["rules"], { cwd });
+  assert.ok(out.includes("llms.txt"), "the pointer must cite the index");
   assert.ok(!out.includes("llms-full"),
-    "llms-full.txt is 367KB — citing it hands the reader a context bomb");
+    "llms-full.txt is ~360KB — citing it hands the reader a context bomb");
 });
 
 test("the emitted pointer stays small — it is paid for in every session of every repo", () => {
@@ -220,4 +260,53 @@ test("the engine still opens no network connection — the pointer is an INSTRUC
     assert.ok(!forbidden.test(engineSrc),
       `the engine must never open a connection (matched ${forbidden}) — pm is an instruction layer`);
   }
+});
+
+test("every enum placeholder still matches the constant the engine enforces", async () => {
+  // Four placeholders interpolate their constant directly; the rest are literals ONLY because
+  // their constant is declared BELOW the flag tables and a template reference would hit the TDZ
+  // at module load. A literal that cannot interpolate can still drift, so it is checked here —
+  // binding the rule to a check rather than to whoever remembers.
+  const c = await import(CONSTANTS);
+  const rows = [...c.EPIC_FLAGS, ...c.VERB_FLAGS];
+  const spec = {
+    lane: c.KNOWN_LANES, status: c.KNOWN_STATUSES, platform: c.KNOWN_PLATFORMS,
+    mode: c.KNOWN_REVIEW_MODES, level: c.KNOWN_AUTONOMY_LEVELS,
+    direction: c.KNOWN_TRACKER_DIRECTIONS,
+  };
+  for (const [flag, values] of Object.entries(spec)) {
+    const row = rows.find(r => r.flag === flag && r.placeholder);
+    assert.ok(row, `${flag} lost its placeholder`);
+    assert.deepEqual(row.placeholder.split("|"), values,
+      `--${flag}'s placeholder has drifted from the constant the engine validates against`);
+  }
+});
+
+test("a flag claimed by BOTH tables for one command would resolve silently — assert none is", async () => {
+  // flagSpecsFor resolves with rows.find() over [...EPIC_FLAGS, ...VERB_FLAGS], so a name claimed
+  // by both tables for the same command takes the EPIC_FLAGS row's valueless/repeats/placeholder
+  // with no error and no warning. Zero collisions today; this is what keeps it that way.
+  const { EPIC_FLAGS, VERB_FLAGS } = await import(CONSTANTS);
+  const seen = new Map();
+  for (const [table, rows] of [["EPIC_FLAGS", EPIC_FLAGS], ["VERB_FLAGS", VERB_FLAGS]]) {
+    for (const r of rows) for (const cmd of r.commands) {
+      const key = `${cmd} --${r.flag}`;
+      assert.ok(!seen.has(key), `${key} is declared in both ${seen.get(key)} and ${table}`);
+      seen.set(key, table);
+    }
+  }
+});
+
+test("USAGE and the dispatch table agree in BOTH directions", () => {
+  // conductor.mjs derives the help-eligible verb list by splitting USAGE, so a verb listed there
+  // but no longer dispatched would render help from its rows and then fail on real invocation.
+  // The forward direction (dispatched but absent from USAGE) is covered by the sweep above; this
+  // is the reverse, which nothing checked.
+  const src = fs.readFileSync(path.join(REPO, "scripts", "conductor.mjs"), "utf8");
+  const usage = src.match(/const USAGE = "usage: conductor\.mjs ([^\\]+)/)[1].split("|");
+  const dispatched = dispatchedVerbs();
+  assert.deepEqual(usage.filter(v => !dispatched.has(v)), [],
+    "USAGE names a verb the engine no longer dispatches");
+  assert.deepEqual([...dispatched].filter(v => !usage.includes(v)), [],
+    "the engine dispatches a verb USAGE does not name");
 });

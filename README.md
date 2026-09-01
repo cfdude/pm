@@ -1032,20 +1032,25 @@ node "$ENGINE" update-epic --help
 ```
 conductor.mjs update-epic — 27 flags.
 
-  --outcome <a value>
-  --reason <a non-empty reason>
-  --no-deferrals                                  (no value)
-  --attribute-commit <a value>                    (repeatable)
-  ...
+  --title <a value>
+  --lane <openspec|superpowers|claude-code|decision|external>
+  --priority <P0|P1|P2|P3>
+  --status <untriaged|queued|active|paused|later|blocked|planned|archived>
+  --parent <a value>
+  --external-id <a value>
+  …
+  --wont-do <a reason>
 
   Docs: https://pm-plugin.dev/llms.txt
 ```
+
+That block is captured output, not a hand-written illustration — an earlier draft of this section composed one from memory and got the flag order wrong, in a section about help that cannot lie.
 
 Every line is **projected from the same registry rows the unknown-flag guards read**, so help
 cannot advertise a flag the parser refuses — adding a flag grows both in one edit, and a
 hand-written help table could not make that promise. `(no value)` and `(repeatable)` are called
 out because they change the shape of a correct invocation: a valueless flag given a value is
-refused, and repeating a non-repeatable flag silently keeps only the last one.
+refused, and repeating a non-repeatable flag silently keeps only the last one. A flag with a closed set of legal values names them — `--outcome`, `--status`, `--lane`, `--priority`, `--platform` and the rest — so the answer does not live in `scripts/lib/` any more. Flags without a closed set still render `<a value>`; that gap is visible rather than papered over.
 
 A verb that takes no flags **says so** rather than printing an empty list. 21 of the 48 are in
 that group, and "takes none" must not look like "nobody declared this yet".

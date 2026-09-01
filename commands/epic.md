@@ -6,7 +6,7 @@ allowed-tools: Bash, Read
 Register an epic in a non-OpenSpec lane (superpowers, claude-code, decision, external) —
 for work that is correctly routed away from OpenSpec but still belongs in the system of record.
 
-Usage: `/pm:epic add <id> "<title>" <lane> [priority] [--status <untriaged|queued|active|paused|planned|archived>] [--parent <id>] [--external-id <KEY>] [--external-url <url>] [--plan <path>] [--spec <path>] [--link type:epic:reason] [--description "<why>"]`
+Usage: `/pm:epic add <id> "<title>" <lane> [priority] [--status <untriaged|queued|active|paused|later|blocked|planned|archived>] [--parent <id>] [--external-id <KEY>] [--external-url <url>] [--plan <path>] [--spec <path>] [--link type:epic:reason] [--description "<why>"]`
 
 Use `--status planned` for roadmap work you intend to do but haven't proposed/scaffolded yet
 (default status is `queued`). Use `--parent <id>` to nest this epic under an existing parent

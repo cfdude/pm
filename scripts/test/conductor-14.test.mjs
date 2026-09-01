@@ -258,10 +258,11 @@ const stripAlwaysOn = (block) => block
   // the gate-procedure heading, which the next replace then removes in turn.
   .replace(new RegExp(`${OPERATING_RULES_HEADING}[\\s\\S]*?(?=## )`), "")
   // #158's help pointer: always-on for exactly the reason this helper documents — no tracker
-  // configuration turns it on, off, or into something else. Stripped HERE, immediately after the
-  // operating rules, because each replace consumes only up to the NEXT `## ` heading and this
-  // section sits between the operating rules and the gate procedure. Placed anywhere later and
-  // the chain would break at this heading and leave the tail unstripped.
+  // configuration turns it on, off, or into something else. Placed here for READABILITY, matching
+  // where the section sits in the rendered block — NOT because the position is load-bearing. An
+  // earlier version of this comment claimed the chain would break if this replace moved later;
+  // Gate 2 moved it to the end and every test still passed, because each replace is anchored at
+  // its own heading and non-greedy. Correcting it rather than leaving a constraint nobody has.
   .replace(new RegExp(`${HELP_HEADING}[\\s\\S]*?(?=## )`), "")
   .replace(new RegExp(`${GATE_PROCEDURE_HEADING}[\\s\\S]*?(?=## )`), "")
   .replace(new RegExp(`${INTAKE_HEADING}[\\s\\S]*?(?=## )`), "")

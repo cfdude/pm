@@ -13,7 +13,7 @@
 // The one place that symmetry breaks is `add-many`, whose EPIC_FLAGS rows are batch-document
 // state keys rather than CLI flags — hence `cliFlagsFor()` rather than `flagsFor()`. See
 // BATCH_KEY_COMMANDS in constants.mjs.
-import { cliFlagsFor, flagSpecsFor, FLAGLESS_VERBS, epicBatchKeys, BATCH_KEY_COMMANDS } from "./constants.mjs";
+import { flagSpecsFor, FLAGLESS_VERBS, epicBatchKeys, BATCH_KEY_COMMANDS } from "./constants.mjs";
 import { DOCS_INDEX_URL, DOCS_MCP_URL } from "./constants.mjs";
 
 /** One flag's line: `--name <what it requires>`, then the modifiers a caller must know to invoke
@@ -69,13 +69,3 @@ export function verbHelp(command) {
   out.push(`  Docs: ${DOCS_INDEX_URL}`);
   return out.join("\n") + "\n";
 }
-
-/** Is `command` something we can render help for? The caller asks BEFORE deciding between verb
- *  help and the global usage line, so an unknown word still gets the global answer. */
-export const hasVerbHelp = (command, dispatchable) => dispatchable.includes(command);
-
-/** Every verb's flags, one block each. Not wired to a flag today; exported because the sweep in
- *  conductor-35 renders all 48 and a single entry point keeps that honest. */
-export const allVerbHelp = (verbs) => verbs.map(v => verbHelp(v)).join("\n");
-
-export { cliFlagsFor };

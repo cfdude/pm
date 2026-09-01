@@ -28,6 +28,17 @@ pointer to the docs for everything the engine does not know.
 * **A verb that takes no flags SAYS SO.** 21 of the 48 legitimately take none, declared in
   `FLAGLESS_VERBS`; printing an empty list would make "takes none" and "nobody declared this
   verb yet" look identical, which is the ambiguity that declaration exists to remove.
+* **A closed-enum flag names its legal values.** `--outcome <delivered|killed|superseded|abandoned|declined>`,
+  `--status`, `--lane`, `--priority`, `--platform`, `--mode`, `--level`, `--direction`, `--gate`
+  and `--verdict` all render their real value space, projected from the same constants the engine
+  validates against. Gate 2 measured the gap this closes: of the 92 value-bearing (verb, flag)
+  pairs, only 21 rendered anything more specific than `<a value>`, and not one closed enum named
+  its values — so a reader wanting to know what `--outcome` accepts still had to open
+  `scripts/lib/`, which is the thing this release exists to stop. Flags with no closed set still
+  render `<a value>`; that remainder is visible rather than papered over. One row carries no
+  placeholder on purpose: `--verdict` on `record-reconcile` and `record-tracker-refresh` serves
+  two different value spaces from one row, and a placeholder would be right for one caller and a
+  lie to the other.
 * **`cliFlagsFor()` and `BATCH_KEY_COMMANDS`** — the projection help reads, deliberately distinct
   from `flagsFor()`. `flagsFor()` answers "which rows NAME this command", which is correct for an
   allowlist and wrong for help: `add-many`'s 14 `EPIC_FLAGS` rows are batch-document STATE keys
@@ -42,7 +53,26 @@ pointer to the docs for everything the engine does not know.
   in a single `add-epic` recipe. It taught flags by worked example and offered no way to enumerate
   them. The section names the local channel first, the docs index and the no-auth MCP second, and
   carries one sentence inoculating against version skew, because the docs site documents the
-  latest release and a repo pinned older will be shown flags its engine refuses.
+  latest release and a repo pinned older will be shown flags its engine refuses. That sentence
+  deliberately embeds **no version number**: the block a repo reads must be identical before and
+  after an upgrade (a migration records behavior, it does not alter what anyone reads), and the
+  block is static while the plugin is not — so an embedded version is a snapshot that goes stale
+  in exactly the skew case it was meant to warn about. It routes to `/pm:changelog`, which
+  computes the answer instead.
+
+### Fixed
+
+* **`add-epic --help` advertised `--clear-links`, a flag `add-epic` refuses** — caught at Gate 2,
+  and it falsified this release's own headline invariant. The cause was `requires` doing double
+  duty: it is the tail of a refusal message *and*, new here, the help signature. `--link`'s reads
+  "…to empty an epic's links, say so with `--clear-links`", correct in a refusal and a ghost flag
+  in a signature. `--session`'s nested itself the same way. Rows now carry an optional
+  `placeholder` for the signature while `requires` stays the refusal tail, unchanged.
+* **The guard that found it is now the test.** A mechanical sweep asserts that for **every** one
+  of the 48 verbs, every `--token` its help prints is a flag that verb accepts. The previous test
+  hardcoded four names on one verb — the sibling-miss this repo's gate procedure names as its
+  dominant defect class, and the reason a ghost living inside another flag's placeholder text was
+  invisible to it.
 
 ### Changed
 
