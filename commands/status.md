@@ -44,6 +44,32 @@ or `0/0 · N lifecycle` where every task is excluded. The archive task always qu
 cannot be ticked before the thing that ticks it, so it used to render as outstanding work
 forever and would now demand a handoff at archive time.
 
+## Is this PROJECT.md diff worth reading — `render --diff-summary`
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" render --diff-summary
+```
+
+Renders exactly as above, and additionally prints `epic-relevant: yes` or `epic-relevant: no` to
+stdout. It is a switch, not a value-bearing flag.
+
+Two things move in `PROJECT.md` on nearly every render with nothing about the epics having
+changed: the `> Last rendered:` stamp, and the "Recent detours" table, which rotates as entries
+land and the oldest falls off its eight-row window. Deciding by eye whether a `git diff
+PROJECT.md` is *only* those two is a judgment that is wrong occasionally and silently.
+`--diff-summary` normalizes both away and compares what is left, so "safe to discard this diff as
+noise" is answered mechanically instead of by reading. A `PROJECT.md` that has never been
+rendered reports `yes`: there is no baseline, and reporting `no` would call a diff noise without
+having seen one.
+
+**`epic-relevant: no` is a claim about the DIFF, not about whether the file was written.** The
+two comparisons are deliberately not the same one: `--diff-summary` normalizes the detours table
+away, and the skip-the-rewrite check a step later normalizes only the stamp. So a render whose
+only change is a rotated detour row prints `epic-relevant: no` **and** rewrites `PROJECT.md` in
+the same invocation — the row belongs in the file, it is just not a reason to read the diff.
+Reading `no` as "nothing was written" is how a modified `PROJECT.md` gets committed as an
+unrelated stray hunk, or left dirty under a `git status` check that expected a clean tree.
+
 ## Auditing the record itself
 
 `integrity` is a READ-ONLY audit of the conductor's own record — shapes that cannot be true: an

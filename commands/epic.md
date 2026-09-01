@@ -6,7 +6,7 @@ allowed-tools: Bash, Read
 Register an epic in a non-OpenSpec lane (superpowers, claude-code, decision, external) —
 for work that is correctly routed away from OpenSpec but still belongs in the system of record.
 
-Usage: `/pm:epic add <id> "<title>" <lane> [priority] [--status <untriaged|queued|active|paused|planned|archived>] [--parent <id>] [--external-id <KEY>] [--external-url <url>] [--plan <path>] [--spec <path>] [--link type:epic:reason]`
+Usage: `/pm:epic add <id> "<title>" <lane> [priority] [--status <untriaged|queued|active|paused|planned|archived>] [--parent <id>] [--external-id <KEY>] [--external-url <url>] [--plan <path>] [--spec <path>] [--link type:epic:reason] [--description "<why>"]`
 
 Use `--status planned` for roadmap work you intend to do but haven't proposed/scaffolded yet
 (default status is `queued`). Use `--parent <id>` to nest this epic under an existing parent
@@ -49,6 +49,22 @@ what makes "which design documents have no epic?" answerable at all; ask it with
 `verify-specs` (see `/pm:status`). `--plan` and `--spec` are independent: an epic may carry
 either, both, or neither.
 
+`--description "<why>"` records the epic's **durable rationale** — why this epic exists and what
+would make it worth revisiting — and it is available on `add-epic`, `add-many` and `update-epic`
+alike. Set it in the call that CREATES the epic. Two surfaces read it, and both read it when you
+are not in the room to explain: `PROJECT.md`'s Backlog section renders it beside every `planned`
+and `later` epic (that section's whole premise is "registered for later, with the rationale that
+justified registering it"), and `/pm:triage` tokenizes id + title + description together when it
+scores an incoming ask against this backlog. An epic registered with a thin title and no
+description is illegible on both — it sits in the backlog saying nothing about itself, and the
+ask that arrives a month later under a different name shares no vocabulary for triage to match
+on — the duplicate-under-another-name failure `/pm:triage` exists to catch, with the field that
+would have carried the shared words left empty. Same
+argument as `--add-story` below: register the rationale the triage you just did already produced,
+because nothing ever comes back to add it. It REPLACES wholesale on each set, and it is not
+`--notes` — the two are distinct and neither substitutes for the other; see the paragraph under
+`update-epic`.
+
 **Every value-bearing flag is REFUSED when its value is missing or blank, on every command that
 accepts it** — `add-epic`, `update-epic`, `record-gate-review`, `record-cross-spec-review` and
 `release` alike, plus the equivalent key in an `add-many` batch document. `--clear-links`,
@@ -60,7 +76,8 @@ the shared flag registry, not in each command, so a flag added tomorrow inherits
 
 1. Parse the user's request into: id (kebab-case), title, lane (one of
    openspec|superpowers|claude-code|decision|external), priority (P0–P3, default P?),
-   optional parent, optional external id/url, optional plan path, optional links.
+   optional parent, optional external id/url, optional plan path, optional links, and the
+   rationale for `--description` (the triage that got you here already stated it).
 
 2. Run the engine:
 
@@ -70,7 +87,7 @@ the shared flag registry, not in each command, so a flag added tomorrow inherits
      [--status "<status>"] [--parent "<parent-id>"] \
      [--external-id "<KEY>"] [--external-url "<url>"] \
      [--plan "<docs/superpowers/plans/...md>"] [--spec "<docs/superpowers/specs/...md>"] \
-     [--link "blocks:<id>:<reason>"] \
+     [--link "blocks:<id>:<reason>"] [--description "<why this epic exists>"] \
      [--add-story "<milestone>" --add-story "<milestone>" …]
    ```
 
@@ -112,6 +129,11 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" add-many --from /path/to/batc
   chaining, no write race.
 - JSON only (the engine is zero-dependency). `parent` is optional; a bare `{ "epics": [...] }`
   batch works too.
+- **`description`** is the durable rationale, in state-key spelling — a batch entry carries
+  `description`, not `--description`, exactly as it carries `externalId` rather than
+  `external-id`. A bulk-registered epic is the one that needs it most: a batch entry's title is
+  usually a ticket line or a chunk number, and the reason that chunk exists lives in a design
+  document nobody re-reads before triaging the next ask against it.
 - **`stories`** is an array of plain titles, or `{"title": "...", "done": true}` objects where a
   milestone is already behind you. Validated in the same up-front pass as everything else — a
   blank title or a non-boolean `done` refuses the whole batch and creates nothing.
