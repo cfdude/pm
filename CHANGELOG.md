@@ -8,6 +8,62 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.37.0] — 2026-08-31
+
+**Help that answers the question actually asked.** `--help` was verb-blind and the emitted rules
+block carried no route to documentation at all, so an agent that needed a verb's flags read the
+engine's source — which is exactly what a session bringing another repo up to date did, and said
+so. Both halves ship together: a local channel that cannot lie about the installed engine, and a
+pointer to the docs for everything the engine does not know.
+
+### Added
+
+* **`<verb> --help` — per-verb, projected from the flag registry.** Naming a verb now prints that
+  verb's own flag surface: every flag it accepts, which take no value, which repeat, and the
+  phrase each one's own refusal ends in. Naming none still prints the verb list. Every line is
+  DERIVED from the same registry rows the unknown-flag allowlists read, so a row that grows the
+  allowlist grows the help in the same edit and help can never advertise a flag the parser
+  refuses. A per-verb help table was refused: that is a rule bound to a list rather than to the
+  function that governs it, and it would be stale the first time a flag was added.
+* **A verb that takes no flags SAYS SO.** 21 of the 48 legitimately take none, declared in
+  `FLAGLESS_VERBS`; printing an empty list would make "takes none" and "nobody declared this
+  verb yet" look identical, which is the ambiguity that declaration exists to remove.
+* **`cliFlagsFor()` and `BATCH_KEY_COMMANDS`** — the projection help reads, deliberately distinct
+  from `flagsFor()`. `flagsFor()` answers "which rows NAME this command", which is correct for an
+  allowlist and wrong for help: `add-many`'s 14 `EPIC_FLAGS` rows are batch-document STATE keys
+  (`externalId`, not `--external-id`) while its parser accepts exactly one flag, `--from`.
+  Deriving help from `flagsFor()` would have advertised 14 flags the parser ignores — an
+  authoritative wrong answer, and worse than the no-help state being fixed. The acceptance MODE is
+  declared per COMMAND, the same shape `FLAGLESS_VERBS` already uses.
+* **A "Getting help with pm" section in the emitted rules block.** Every managed repo receives it
+  on the next `/pm:upgrade`. Measured across all 408 emitted lines and all three platform
+  variants before this release: **0** occurrences of `conductor.mjs`, of any URL, of `MCP`, of
+  `--help`, of `pm-plugin.dev`, of `SKILL.md`, of `README` — while the block hardcodes eight flags
+  in a single `add-epic` recipe. It taught flags by worked example and offered no way to enumerate
+  them. The section names the local channel first, the docs index and the no-auth MCP second, and
+  carries one sentence inoculating against version skew, because the docs site documents the
+  latest release and a repo pinned older will be shown flags its engine refuses.
+
+### Changed
+
+* **`<verb> --help` and `<verb> -h` no longer print the global usage line.** This is the point of
+  the release rather than a side effect. The short-circuit itself is unchanged and keeps its
+  original property: a help flag still fires BEFORE dispatch, reaches no subcommand, and cannot be
+  consumed as data — the bug that put it there was `log-detour --help` writing a real detour entry
+  described as `--help`, into an append-only log with no verb to remove it.
+* **Documentation gaps closed** — `--description` (declared on `add-epic`, `add-many` and
+  `update-epic` and documented near none of them), `--carried-to`, `--diff-summary`, `--platform`,
+  and the `write-rules` / `rules-target` verbs, which had no command doc at all. Measured by
+  auditing the flag registry against `commands/` and `skills/`.
+* **The conductor skill's reference section leads with the local channel** and corrects
+  `llms-full.txt`'s stated size, which was ~200KB and is measured today at ~360KB.
+
+### Notes
+
+* **No migration.** Nothing in this release changes the shape of `state.json`.
+* **What existing repos will see change in the emitted block:** exactly one addition, the
+  "Getting help with pm" section. Treat a second as a regression.
+
 ## [0.36.0] — 2026-08-29
 
 ### Added

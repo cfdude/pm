@@ -4177,7 +4177,11 @@
       "links": [],
       "reconcileNeeded": false,
       "description": "Per-verb help derived from the shared flag registry. Discovered by a sibling session that could not turn on pm features in another repo without reading engine source.",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "2aa1dad4773d8ebe12ce72dd3417d8ffaa738ca3",
+        "185c68068f81cbbb6e0c28c9d5d9f3c4fd0054c9",
+        "78f43f5d6cc4f20419f421c78c2e14ce32c38453"
+      ],
       "notes": [
         {
           "at": "2026-09-01T03:35:44.168Z",
@@ -4239,7 +4243,9 @@
       "description": "Prose-side counterpart to the CLI help gap. Found by mechanical audit of the flag registry against commands/ and skills/.",
       "externalId": "160",
       "externalUrl": "https://github.com/cfdude/pm/issues/160",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "78f43f5d6cc4f20419f421c78c2e14ce32c38453"
+      ],
       "externalUpdatedAt": "2026-09-01T03:57:41Z",
       "notes": [
         {
@@ -4286,7 +4292,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 276,
+  "revision": 280,
   "reviewMode": "thorough",
   "releases": [
     {
