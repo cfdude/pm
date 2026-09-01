@@ -1020,6 +1020,56 @@ time, then deleting the consumed fragment files.
 
 </details>
 
+### Discovering a verb's flags
+
+`--help` is per-verb. Name a verb and you get that verb's real flag surface; name none and you
+get the verb list.
+
+```bash
+node "$ENGINE" update-epic --help
+```
+
+```
+conductor.mjs update-epic — 27 flags.
+
+  --title <a value>
+  --lane <openspec|superpowers|claude-code|decision|external>
+  --priority <P0|P1|P2|P3>
+  --status <untriaged|queued|active|paused|later|blocked|planned|archived>
+  --parent <a value>
+  --external-id <a value>
+  …
+  --wont-do <a reason>
+
+  Docs: https://pm-plugin.dev/llms.txt
+```
+
+That block is captured output, not a hand-written illustration — an earlier draft of this section composed one from memory and got the flag order wrong, in a section about help that cannot lie.
+
+Every line is **projected from the same registry rows the unknown-flag guards read**, so help
+cannot advertise a flag the parser refuses — adding a flag grows both in one edit, and a
+hand-written help table could not make that promise. `(no value)` and `(repeatable)` are called
+out because they change the shape of a correct invocation: a valueless flag given a value is
+refused, and repeating a non-repeatable flag silently keeps only the last one. A flag with a closed set of legal values names them — `--outcome`, `--status`, `--lane`, `--priority`, `--platform` and the rest — so the answer does not live in `scripts/lib/` any more. Flags without a closed set still render `<a value>`; that gap is visible rather than papered over.
+
+A verb that takes no flags **says so** rather than printing an empty list. 21 of the 48 are in
+that group, and "takes none" must not look like "nobody declared this yet".
+
+`add-many` is the one verb whose registry rows are not all flags — its parser takes only
+`--from`, and the rest describe keys inside the batch JSON. Its help says both, so a reader does
+not conclude the verb is impoverished and go back to the source.
+
+Help never touches state. A help flag reaches no subcommand, which is why `log-detour --help`
+does not write a detour entry described as `--help` — the bug that put the short-circuit there.
+
+**Where the two channels differ.** The installed engine is the authority on what *it* accepts and
+is version-exact by construction. [pm-plugin.dev](https://pm-plugin.dev/llms.txt) is authoritative
+for procedure, concepts and rationale, and documents the **latest** release — so a flag the site
+shows that your engine refuses is a version gap, not a bug. `/pm:changelog` tells you which.
+The docs also expose a free, no-auth MCP server at `https://pm-plugin.dev/mcp`.
+
+Every managed repo receives this same routing in its `CLAUDE.md` rules block on `/pm:upgrade`.
+
 ### Which verbs mutate the working tree
 
 Reach for a `render` to "just look at" another repo's backlog and you dirty it. There is now a

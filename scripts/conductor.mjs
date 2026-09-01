@@ -137,6 +137,20 @@ const cmd = process.argv[2];
 // -- log-detour is only where the damage is visible, not where the gap is.
 const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|push-detour|pop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|upgrade|changelog|rules|write-rules|rules-target\n";
 if (!cmd || process.argv.slice(2).some(a => a === "--help" || a === "-h")) {
+  // #158 — VERB-SCOPED when a verb is named, global otherwise. The short-circuit stays exactly
+  // where it was and keeps its original property: a help flag reaches no subcommand, so it can
+  // still never be consumed as DATA. What changes is only WHICH answer is printed.
+  //
+  // The verb list is read from USAGE rather than from the dispatch object below, because the
+  // dispatch object is not constructed yet at this point in the file and moving it above the
+  // short-circuit would put subcommand imports on the help path. conductor-35 renders help for
+  // every verb the DISPATCH TABLE names, so the two cannot drift apart unnoticed.
+  const knownVerbs = USAGE.replace(/^usage: conductor\.mjs /, "").trim().split("|");
+  if (cmd && knownVerbs.includes(cmd)) {
+    const { verbHelp } = await import("./lib/help.mjs");
+    process.stdout.write(verbHelp(cmd));
+    process.exit(0);
+  }
   process.stdout.write(USAGE);
   process.exit(0);
 }

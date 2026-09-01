@@ -83,6 +83,10 @@ Below, `$ENGINE` means the path resolved this way.
 
 ## Commands
 
+**Any verb's flags: `node "$ENGINE" <verb> --help`.** Per-verb since 0.37.0 — it prints that
+verb's own surface rather than the global verb list, and it is derived from the engine's flag
+registry, so it cannot disagree with what the parser accepts. Use it instead of reading source.
+
 `/pm:init` scaffold · `/pm:status` show · `/pm:next` decide · `/pm:detour` park ·
 `/pm:triage` screen an incoming ask against the whole backlog before registering it ·
 `snapshot` (PreCompact hook only — re-renders PROJECT.md and writes `.conductor/brief.txt`
@@ -951,13 +955,27 @@ not just one epic.
      manual `cat`-and-edit step, not automated by the engine; `changesets` only makes the fragment
      set visible and machine-readable so the step is mechanical rather than a guess.
 
-## Further reference
+## Further reference — two channels, and only one of them can lie
 
-This skill and `README.md` cover the recurring essentials. If you need more — a command's full
-docs, a guide, a concept page — `https://pm-plugin.dev/llms.txt` is a lightweight,
-AI-agent-oriented index of every doc page (~7KB). Fetch `https://pm-plugin.dev/llms-full.txt`
-only if you genuinely need the entire site as one document (~200KB, tens of thousands of
-tokens — use sparingly, not as a default).
+**What THIS engine accepts: ask the engine.** `node "$ENGINE" <verb> --help` prints that verb's
+real flag surface — every flag, which ones take no value, which ones repeat — projected from the
+same registry rows the unknown-flag guards read. It is therefore version-exact by construction and
+cannot advertise a flag your engine refuses. Reach for it BEFORE reading engine source, and before
+guessing a flag name. A verb that takes no flags says so explicitly.
+
+**Procedure, concepts and rationale: the docs.** This skill and `README.md` cover the recurring
+essentials. For more — a command's full docs, a guide, a concept page —
+`https://pm-plugin.dev/llms.txt` is a lightweight, AI-agent-oriented index of every doc page
+(~9KB), and its entries are already markdown URLs, so no extension needs appending. A free,
+no-auth MCP server at `https://pm-plugin.dev/mcp` answers the same questions in one call where it
+is configured, which is cheaper than index-then-fetch.
+
+`https://pm-plugin.dev/llms-full.txt` is the entire site as one document and is **~360KB** — tens
+of thousands of tokens. Fetch it only if you genuinely need everything at once; it is not a
+default, and for a single question it is strictly worse than the index or the MCP.
+
+**The site documents the LATEST release.** A flag the docs show that your engine refuses is a
+version gap, not a bug — `/pm:changelog` says what your repo is missing.
 
 ## state.json reference
 

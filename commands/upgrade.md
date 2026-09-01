@@ -81,6 +81,51 @@ anytime; idempotent. Use it when the briefing shows a "pm <old> → <new>" upgra
 
 5. Show the result with `/pm:status`.
 
+## The rules-authoring surface — `write-rules`, `rules-target`, `rules`, and `--platform`
+
+Step 1 refreshes the managed rules block by calling one engine verb, `write-rules`. It is
+documented here because it is the verb behind that step, not because it is meant to be run
+standalone — `/pm:init` and `/pm:upgrade` are how it is reached. Three verbs share the
+`--platform` flag, and only one of them writes anything:
+
+| Verb | What it does | Records the platform |
+|---|---|---|
+| `write-rules` | writes or refreshes the managed block in the target file | **yes** |
+| `rules-target` | prints the absolute path of the file that block belongs in | no |
+| `rules` | prints the block to stdout, writing nothing (`--epic <id>` renders it at that epic's review mode) | no |
+
+`--platform <claude-code|hermes|codex>` **declares** which host agent this invocation is running
+under. Declared, never detected: pm is only ever invoked by a host agent through a hook whose
+command string pm itself authored, so the platform is knowable at the call site — no markers to
+hunt for on disk, no precedence heuristic to get wrong. An unrecognized value exits non-zero
+naming the three, on all three verbs; it is never quietly defaulted.
+
+Resolution runs in one order and ends in a hard default: an explicit `--platform` wins, else the
+platform recorded in `.conductor/state.json`, else `claude-code`. There is deliberately no falsy
+outcome — a platform that resolved to nothing would write no rules block at all, which is pm
+appearing installed while contributing nothing.
+
+**`--platform` requires a value on every verb that takes it.** A bare `--platform` used to parse
+as *absent*, so `write-rules --platform` wrote the RECORDED platform's block while the command
+line looked answered — a wrong file, silently, from an invocation that read as deliberate.
+
+`rules-target` resolves that platform's own project-context chain **first-EXISTING-file wins** —
+`CLAUDE.md` for Claude Code, `AGENTS.md` for Codex, `HERMES.md` > `AGENTS.md` > `CLAUDE.md` for
+Hermes — and falls back to the chain's LAST entry when none of them exist yet, which is the most
+broadly compatible choice (a fresh Hermes repo gets `CLAUDE.md`, which Hermes reads as its third
+fallback and Claude Code reads natively, rather than a Hermes-exclusive `HERMES.md`). It exists
+so that nothing built around pm — evals, scripts, another agent — has to keep a second copy of
+that chain, because a mirrored copy of platform knowledge is drift waiting to happen. It records
+nothing: a query must not mutate the state a writer owns.
+
+`write-rules` records the resolved platform on `state.json` and prints `conductor: platform:
+<id>` when it differs from what was recorded — a project that changed hands. It persists that
+**only in a repo that is already conductor-managed**: run in a directory that never saw
+`/pm:init`, it writes the rules block and no `.conductor/state.json`. That guard is load-bearing
+rather than tidy. `state.json` existing is what ends pm's dormancy in a repo, and before the
+guard, `write-rules` in an empty directory created one — after which `commit-nudge` started
+firing in a project that had never opted in.
+
 ## What `0.27.0`'s migration does
 
 One entry, additive, idempotent and backward-compatible — a `state.json` written by `0.26.0` still

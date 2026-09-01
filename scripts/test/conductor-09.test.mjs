@@ -337,8 +337,15 @@ test("--help on a mutating subcommand prints usage and writes nothing", () => {
 
   // log-detour is where the damage was visible: --help was consumed as the detour DESCRIPTION
   // and appended a real MINIMAL row to an append-only log with no verb to remove it.
+  // #158 CHANGED WHICH ANSWER this prints — it is now log-detour's own flag surface rather than
+  // the global 48-verb usage line — and deliberately did NOT change the property this test exists
+  // for. The short-circuit still fires BEFORE dispatch, so a help flag still reaches no
+  // subcommand and still cannot be consumed as data. Both no-write assertions below are the
+  // original ones, untouched.
   const out = run(["log-detour", "--help"], { cwd });
-  assert.match(out, /usage: conductor\.mjs/);
+  assert.match(out, /conductor\.mjs log-detour/);
+  assert.ok(!out.includes("init|render|brief"),
+    "a named verb must get ITS help, not the global usage blob");
 
   const logPath = path.join(cwd, ".conductor", "detours.log");
   const logged = fs.existsSync(logPath) ? fs.readFileSync(logPath, "utf8").trim() : "";
@@ -350,7 +357,7 @@ test("--help on a mutating subcommand prints usage and writes nothing", () => {
 test("-h is handled the same as --help", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
-  assert.match(run(["log-detour", "-h"], { cwd }), /usage: conductor\.mjs/);
+  assert.match(run(["log-detour", "-h"], { cwd }), /conductor\.mjs log-detour/);
   const logPath = path.join(cwd, ".conductor", "detours.log");
   assert.ok(!fs.existsSync(logPath) || fs.readFileSync(logPath, "utf8").trim() === "");
 });

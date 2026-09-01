@@ -245,6 +245,7 @@ const INTAKE_HEADING = "## Intake — triage an ask against the whole backlog BE
  *  any instruction at all, which is not what the direction requirement pins. */
 const OPERATING_RULES_HEADING = "## PM Conductor — operating rules";
 const REPORTING_HEADING = "## Reporting — pm owns what is recorded and what is said; you own how you say it";
+const HELP_HEADING = "## Getting help with pm — two channels, and which one can lie";
 const stripAlwaysOn = (block) => block
   .replace(new RegExp(`\\n*${REFRESH_GATE_HEADING}[\\s\\S]*?(?=\\n<!-- END pm-conductor rules -->)`), "")
   // The numbered operating rules are always-on for the same reason the three sections below are:
@@ -256,6 +257,13 @@ const stripAlwaysOn = (block) => block
   // the over-claim this helper's own comment warns about. Stripped FIRST so it consumes up to
   // the gate-procedure heading, which the next replace then removes in turn.
   .replace(new RegExp(`${OPERATING_RULES_HEADING}[\\s\\S]*?(?=## )`), "")
+  // #158's help pointer: always-on for exactly the reason this helper documents — no tracker
+  // configuration turns it on, off, or into something else. Placed here for READABILITY, matching
+  // where the section sits in the rendered block — NOT because the position is load-bearing. An
+  // earlier version of this comment claimed the chain would break if this replace moved later;
+  // Gate 2 moved it to the end and every test still passed, because each replace is anchored at
+  // its own heading and non-greedy. Correcting it rather than leaving a constraint nobody has.
+  .replace(new RegExp(`${HELP_HEADING}[\\s\\S]*?(?=## )`), "")
   .replace(new RegExp(`${GATE_PROCEDURE_HEADING}[\\s\\S]*?(?=## )`), "")
   .replace(new RegExp(`${INTAKE_HEADING}[\\s\\S]*?(?=## )`), "")
   // gh-90 adds the reporting section: always-on for the same reason, and stripped for the same
