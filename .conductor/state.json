@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "per-verb-help-from-flag-registry",
+  "active": null,
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -4183,7 +4183,7 @@
       "id": "per-verb-help-from-flag-registry",
       "title": "conductor --help is verb-blind: any --help anywhere in argv prints the global 47-verb usage line and exits, so an agent that needs a verb's flags must read scripts/lib/<verb>.mjs. Hit in the wild by a session upgrading another repo and turning on features, quote: '--help isn't per-verb here. Reading the actual flags from source:'. Fix derives per-verb help from the EXISTING shared flag registry (EPIC_FLAGS + VERB_FLAGS in constants.mjs) via flagsFor/valueBearingFlagsFor/repeatableFlagNames — the same projection the unknown-flag allowlists already read — so help can never drift from what the verb actually accepts, and no second hand-maintained list is introduced (that would be #152's defect shape again). Registry already carries flag/valueless/repeats/requires, and 'requires' holds a human phrase ('a non-empty title'), so a truthful signature ships without touching ~100 rows; per-row prose help can layer later.",
       "priority": "P1",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -4223,7 +4223,29 @@
             "when": "2026-09-01T05:22:17.919Z"
           }
         ]
-      }
+      },
+      "release": "0.37.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-01T06:12:56.356Z",
+        "reason": "Shipped in 0.37.0 (PR #164, squash bac5466). Per-verb --help projected from the flag registry, closed enums naming their legal values, a ghost-flag sweep over all 48 verbs, and a docs pointer every managed repo receives on its next /pm:upgrade. Gate 2 passed with two independent fresh-context reviewers; its one Important finding — add-epic --help advertising a flag add-epic refuses — was fixed before merge. 1069 tests green; docs verified live on pm-plugin.dev."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-01T06:12:56.356Z",
+        "deferrals": [
+          {
+            "epic": "gh-159-no-reader-for-gate-guard-state",
+            "section": "the same family of read-surface gaps, registered separately"
+          }
+        ],
+        "declined": [
+          {
+            "what": "prose help text per flag",
+            "reason": "the registry carries no per-row description and adding one to ~100 rows was not warranted; closed enums now name their values, and the remaining <a value> rows are a visible gap rather than a claim of completeness"
+          }
+        ]
+      },
+      "completedAt": "2026-09-01T06:12:56.356Z"
     },
     {
       "id": "rules-block-emits-no-help-pointer",
@@ -4259,7 +4281,7 @@
       "id": "flag-level-doc-gaps",
       "title": "Flag-level documentation gaps, measured: --description undocumented on add-epic/add-many/update-epic and in every SKILL.md; --carried-to undocumented; --diff-summary and --platform the only two flags absent from commands/ entirely; write-rules and rules-target absent from commands/ altogether, making the rules-authoring surface the one coherent hole. Skills carry 52/76 distinct flags, essentially all via skills/conductor/SKILL.md; purge-logs worst at 1/6.",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -4289,7 +4311,24 @@
           "actor": "agent",
           "text": "Covered by the same Gate 2 pass as per-verb-help-from-flag-registry; shipped in 0.37.0. Two of this epic's four headline gaps were measurement error, not gaps — corrected on #160."
         }
-      ]
+      ],
+      "release": "0.37.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-01T06:12:57.971Z",
+        "reason": "Shipped in 0.37.0 (PR #164). --description on add-epic/add-many, --diff-summary, --platform, and the write-rules/rules-target verbs documented; two of the four reported gaps turned out to be measurement error and were corrected on #160 rather than 'fixed'."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-01T06:12:57.970Z",
+        "deferrals": [],
+        "declined": [
+          {
+            "what": "a dedicated commands/rules.md",
+            "reason": "a new file under commands/ is a new slash command, which drags README and the docs site into the same cycle for what is reference material; the rules-authoring surface lives in upgrade.md instead"
+          }
+        ]
+      },
+      "completedAt": "2026-09-01T06:12:57.971Z"
     },
     {
       "id": "gh-159-no-reader-for-gate-guard-state",
@@ -4328,7 +4367,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 288,
+  "revision": 291,
   "reviewMode": "thorough",
   "releases": [
     {
@@ -4387,6 +4426,12 @@
         ],
         "reviewer": "two independent fresh-context lenses, 2026-08-23 — RECORDED RETROACTIVELY: the review ran by hand before /opsx:apply and returned 5 Critical + 10 Important; all Critical closed and re-reviewed twice, the second round finding 2 more introduced by the fixes. The verb did not exist at the time, so this date is the write date, not the review date"
       }
+    },
+    {
+      "id": "0.37.0",
+      "intent": "Help that answers the question actually asked: per-verb --help projected from the flag registry, closed enums naming their legal values, and a docs pointer every managed repo receives on its next upgrade",
+      "deferred": [],
+      "target": "0.37.0"
     }
   ],
   "archiveBackfilledAt": "2026-08-27T04:52:42.658Z"
