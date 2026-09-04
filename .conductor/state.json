@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": null,
+  "active": "gh-165-deferral-assertion-mangled-and-immutable",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -4251,7 +4251,7 @@
       "id": "rules-block-emits-no-help-pointer",
       "title": "The emitted rules block teaches flags by worked example but gives the reading agent no way to enumerate them. Measured across all 408 emitted lines and all three platform variants (claude-code/hermes/codex, identical on this axis): 0 occurrences of conductor.mjs, 0 of any http(s) URL, 0 of MCP, 0 of --help, 0 of pm-plugin.dev, 0 of SKILL.md, 0 of commands/, 0 of README. Meanwhile emitted line 354 hardcodes eight flags in one add-epic recipe — so an agent learns flags exist, learns a few by example, and has no path to the rest except reading engine source. Fix: emit a ~4-line 'Getting help' pointer from rules.mjs — local 'conductor.mjs <verb> --help' as the version-exact authority on the INSTALLED engine, https://pm-plugin.dev/llms.txt (index; any page is markdown by appending .md) and the no-auth MCP at pm-plugin.dev/mcp for procedure and rationale, plus one sentence inoculating against version skew because the site is latest-only and a repo pinned older will be shown flags its engine refuses. Never cite llms-full.txt (367KB). Architecturally clean: the ENGINE still opens no connection — same shape as the tracker sections that tell the agent to run gh.",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -4275,7 +4275,18 @@
           "actor": "agent",
           "text": "lane: superpowers not <none> — suggest-lane matched no rule. Away from claude-code per the intake tie-break: it changes what every managed repo receives on next upgrade, needs tests + README + Mintlify sync."
         }
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-01T23:19:57.689Z",
+        "reason": "Shipped in 0.37.0 (185c680, PR #164) alongside per-verb --help, exactly as its relates-to link required — the pointer's first bullet promises a --help that had to exist first. Verified in the emitted block: the 'Getting help with pm' section renders on all three platform variants. The epic was left queued when its two siblings were archived; caught by /pm:sync."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-01T23:19:57.688Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-01T23:19:57.689Z"
     },
     {
       "id": "flag-level-doc-gaps",
@@ -4348,13 +4359,160 @@
       "description": "Mirrored from #159. Registered against the verified cause rather than the reported one: the hook is correct, the missing reader is the defect.",
       "externalId": "159",
       "externalUrl": "https://github.com/cfdude/pm/issues/159",
-      "externalUpdatedAt": "2026-09-01T03:43:25Z",
-      "attributedCommits": [],
+      "externalUpdatedAt": "2026-09-01T04:23:19Z",
+      "attributedCommits": [
+        "989f0ebecc71723ec6e96eb146df996d5e7eec1e",
+        "6beea2b44e1727ccca6a131ead1aaae57f7ebb07"
+      ],
       "notes": [
         {
           "at": "2026-09-01T04:22:59.360Z",
           "actor": "agent",
           "text": "lane: claude-code not <none> — suggest-lane matched no rule. Genuinely small: one status surface plus its test, no design ambiguity, and the record is durable in #159."
+        }
+      ],
+      "trackerRefresh": {
+        "verdict": "unchanged",
+        "summary": "Moved only by my own Gate-2-era comment reframing the cause; no third-party context added.",
+        "recordedAt": "2026-09-01T23:19:59.647Z",
+        "externalUpdatedAt": "2026-09-01T04:23:19Z"
+      },
+      "withdrawnCommits": [
+        {
+          "sha": "ef45ab2b00fe2f82680d4821919fbf5503ce97ab",
+          "reason": "attributed to a commit that was then reset away: ef45ab2's message described these three fixes and contained none of them — it captured only a leftover staged .githooks file. The real work is re-committed under a new sha. Withdrawn with the verb this incident produced (#166) rather than by hand-editing state.json.",
+          "withdrawnAt": "2026-09-04T22:58:25.578Z"
+        }
+      ]
+    },
+    {
+      "id": "gh-165-deferral-assertion-mangled-and-immutable",
+      "title": "Two quiet failures in the deferral assertion, both in update-epic. (1) --declined-deferral splits on the FIRST colon rather than the separator, so a colon inside <what> silently truncates it and dumps the remainder into the reason — recording 'Set alwaysLoad' where 'Set alwaysLoad:false ...' was meant, which reads as an instruction to DO the thing being declined, the opposite of the record's meaning, and renders that way in PROJECT.md. Colons in the what half are natural (config keys, a clause). (2) Re-running the flags to CORRECT a recorded assertion prints 'updated' and writes nothing: assertedAt and entries keep their original values. Immutability may be defensible, but it must then refuse loudly the way --outcome superseded without --reason already does; reporting a write that did not happen is a false statement in the project's own record, which is the failure class this repo keeps shipping fixes for.",
+      "priority": "P1",
+      "status": "active",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-149-add-epic-drops-valueless-flag",
+          "reason": "same family — a write surface that accepts input and does not act on it as stated"
+        }
+      ],
+      "reconcileNeeded": false,
+      "description": "Filed from another session while archiving an epic under 0.37.0. Reported rather than hand-fixed, so the mangled entry is still live in that repo.",
+      "externalId": "165",
+      "externalUrl": "https://github.com/cfdude/pm/issues/165",
+      "externalUpdatedAt": "2026-09-01T23:18:36Z",
+      "attributedCommits": [
+        "989f0ebecc71723ec6e96eb146df996d5e7eec1e",
+        "6beea2b44e1727ccca6a131ead1aaae57f7ebb07"
+      ],
+      "notes": [
+        {
+          "at": "2026-09-01T23:19:46.672Z",
+          "actor": "agent",
+          "text": "lane: claude-code not <none> — suggest-lane matched no rule. Bounded: one parser fix plus one refusal, both in update-epic, with the record durable in #165. P1 rather than P2 because it silently corrupts the record that dispositions exist to preserve."
+        }
+      ],
+      "startedAt": "2026-09-02T07:01:57.027Z",
+      "trackerRefreshNeeded": true,
+      "withdrawnCommits": [
+        {
+          "sha": "ef45ab2b00fe2f82680d4821919fbf5503ce97ab",
+          "reason": "attributed to a commit that was then reset away: ef45ab2's message described these three fixes and contained none of them — it captured only a leftover staged .githooks file. The real work is re-committed under a new sha. Withdrawn with the verb this incident produced (#166) rather than by hand-editing state.json.",
+          "withdrawnAt": "2026-09-04T22:58:23.036Z"
+        }
+      ]
+    },
+    {
+      "id": "gh-161-strip-always-on-duplicated",
+      "title": "stripAlwaysOn is duplicated across conductor-14 and conductor-15 and must stay identical, with nothing enforcing it. Both compare the emitted block against the same 0.26.0 fixtures, and each replace consumes only to the next '## ' heading, so the list of stripped headings matters in both copies. Found by committing the exact miss it describes: one copy was patched, the file ran 93/93 green, and the sibling failed in the full suite. Hoist it into helpers.mjs, which both files already import — a byte-identity test would detect divergence instead of preventing it.",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-115-gates-blind-to-absent-edit",
+          "reason": "the absent-edit class, in the test suite rather than the product"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "161",
+      "externalUrl": "https://github.com/cfdude/pm/issues/161",
+      "externalUpdatedAt": "2026-09-01T04:59:41Z",
+      "attributedCommits": [],
+      "notes": [
+        {
+          "at": "2026-09-01T23:20:35.914Z",
+          "actor": "agent",
+          "text": "lane: claude-code not <none> — suggest-lane matched no rule; record is durable in the linked issue."
+        }
+      ]
+    },
+    {
+      "id": "gh-162-delegation-drops-stdout",
+      "title": "The self-hosting handoff intermittently drops stdout under parallel load. With PM_ENGINE_DELEGATION set, run(['rules']) returns truncated or empty output in ~2 of 3 combined suite runs; clean-env CI is unaffected. helpers.mjs passes process.env into every child, so each invocation spawns an extra delegated process layer. TWO CANDIDATE CAUSES needing to be distinguished before any fix: a harness problem (child stdout not drained before the parent reads), or a REAL engine problem (the delegating parent exiting before the delegated child flushes) — the second would affect real usage, not just tests. Do NOT fix by making the assertion tolerant: a test that passes when output is missing accepts the truncation it exists to catch, and this repo already shipped one silent truncation nobody noticed for four releases.",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-156-shipped-markdown-structural-check",
+          "reason": "both are about output that goes missing without anything noticing"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "162",
+      "externalUrl": "https://github.com/cfdude/pm/issues/162",
+      "externalUpdatedAt": "2026-09-01T05:37:49Z",
+      "attributedCommits": [],
+      "notes": [
+        {
+          "at": "2026-09-01T23:20:37.645Z",
+          "actor": "agent",
+          "text": "lane: claude-code not <none> — suggest-lane matched no rule; record is durable in the linked issue."
+        }
+      ]
+    },
+    {
+      "id": "gh-163-gate-verdicts-openspec-only",
+      "title": "A gate verdict is recordable only on an openspec-lane epic, so every other lane's review evidence lands in --notes prose. set-review-mode is lane-agnostic and names 'a Superpowers task review' in its own table, so pm tells every lane to run reviews and can record the verdict for one of them. Consequences are 0.27.0's own defects one lane over: --base-sha/--head-sha become prose nothing compares, so a superpowers verdict can never read stale; integrity's gate checks key off gateReview and cannot see it; silence and reviewed-and-clean look identical. NOT asking to extend the archive gate — keep that openspec-only. Open design question: what --gate 1|2 means where there is no propose/apply split. Evidence: 0.37.0's own two-reviewer Gate 2, with a real commit range and one Important finding, is unverifiable prose in this repo's state.json.",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-113-gate-verdict-records-no-diff-range",
+          "reason": "the same unverifiable-verdict defect, scoped to the lanes 113 did not reach"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "163",
+      "externalUrl": "https://github.com/cfdude/pm/issues/163",
+      "externalUpdatedAt": "2026-09-01T06:02:02Z",
+      "attributedCommits": [
+        "989f0ebecc71723ec6e96eb146df996d5e7eec1e",
+        "6beea2b44e1727ccca6a131ead1aaae57f7ebb07"
+      ],
+      "notes": [
+        {
+          "at": "2026-09-01T23:20:39.338Z",
+          "actor": "agent",
+          "text": "lane: claude-code not <none> — suggest-lane matched no rule; record is durable in the linked issue."
+        }
+      ],
+      "withdrawnCommits": [
+        {
+          "sha": "ef45ab2b00fe2f82680d4821919fbf5503ce97ab",
+          "reason": "attributed to a commit that was then reset away: ef45ab2's message described these three fixes and contained none of them — it captured only a leftover staged .githooks file. The real work is re-committed under a new sha. Withdrawn with the verb this incident produced (#166) rather than by hand-editing state.json.",
+          "withdrawnAt": "2026-09-04T22:58:27.322Z"
         }
       ]
     }
@@ -4367,7 +4525,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 291,
+  "revision": 314,
   "reviewMode": "thorough",
   "releases": [
     {
