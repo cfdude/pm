@@ -2,7 +2,7 @@
 // Records an OpenSpec gate review's verdict durably against an epic. One-directional
 // dependencies only.
 
-import { epicFlagsFor, gateHasEvidence, isOpenspecLane } from "./constants.mjs";
+import { epicFlagsFor, gateHasEvidence } from "./constants.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
@@ -79,12 +79,19 @@ export function recordGateReview() {
   // Normalized, not strict: an epic with no lane is openspec-lane everywhere else, and
   // refusing it a verdict here would leave it permanently unable to satisfy the archive
   // gate that (also normalizing) binds it.
-  if (!isOpenspecLane(epic)) {
-    process.stderr.write(
-      `conductor: record-gate-review only applies to openspec-lane epics ` +
-      `('${id}' is lane '${epic.lane}')\n`);
-    process.exit(1);
-  }
+  // #163 — NO LANE REFUSAL. A verdict is recordable wherever a review actually happened.
+  //
+  // `set-review-mode` is lane-agnostic and its own table names "a Superpowers task review", so pm
+  // told every lane to run reviews and could record the verdict for exactly one of them. The
+  // consequences were 0.27.0's own defects displaced by one lane: `--base-sha`/`--head-sha` became
+  // prose in `--notes`, which nothing compares, so a non-openspec verdict could never read stale;
+  // `integrity` keys off `gateReview` and could not see it; and silence was indistinguishable from
+  // reviewed-and-clean. This release's own Gate 2 — two fresh-context reviewers, a real commit
+  // range, one Important finding — was unverifiable prose for exactly this reason.
+  //
+  // THE ARCHIVE GATE IS UNCHANGED and stays openspec-only (archive-gate.mjs). Recording evidence
+  // where a review happened must not create an obligation where none existed: a claude-code epic
+  // with no verdict archives exactly as it always has. Asserted by conductor-36.
 
   epic.gateReview = epic.gateReview && typeof epic.gateReview === "object" ? epic.gateReview : {};
   const entry = { verdict, reviewedAt: new Date().toISOString() };

@@ -283,6 +283,20 @@ export const EPIC_FLAGS = [
   // having silently kept only <b> — two attributed hashes becoming one, with the ORDER that
   // gives the array its meaning quietly destroyed.
   { flag: "attribute-commit", key: "attributedCommits", commands: ["update-epic"], repeats: true, write: "append" },
+  // #166 — the EXIT from an append-only array. Append-only is right and stays: order carries
+  // meaning and the LAST entry is the endpoint a recorded Gate 2 headSha is compared against. But
+  // "cannot be reordered or de-duplicated" is a different claim from "can never be corrected",
+  // and the second was inherited rather than decided. A `git reset` is a normal operation, and
+  // the gate procedure requires attributing at the moment of each commit — so an attribution can
+  // outlive its commit through no error of process, and every escape was worse than the problem:
+  // hand-edit state.json (forbidden here), tag the orphan (makes a false record permanent and
+  // reachable), or remove-epic (destroys the disposition, links and stories).
+  //
+  // Repeatable, because one reset can strand several shas at once. The withdrawal is RECORDED in
+  // a SIBLING field rather than erased — a correction is a judgment, and this record keeps
+  // judgments — and the sibling is what keeps the endpoint rule intact.
+  { flag: "withdraw-commit", key: null, commands: ["update-epic"], repeats: true, write: "custom",
+    requires: "the sha to withdraw", placeholder: "a sha this epic attributed" },
   // The interactive archive verb's disposition. `key` is `disposition` for both: they are two
   // halves of ONE record the verb builds and writes together, never two epic fields.
   { flag: "outcome", key: "disposition", commands: ["update-epic"], write: "custom",
