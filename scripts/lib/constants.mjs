@@ -310,8 +310,10 @@ export const EPIC_FLAGS = [
   // registered epic, `--declined-deferral` records a deliberate decline with its reason, and
   // `--no-deferrals` is the explicit "there are none" — which must be sayable, or an absence
   // is indistinguishable from never having looked.
-  { flag: "deferral", key: "deferralAssertion", commands: ["update-epic"], repeats: true, write: "custom" },
-  { flag: "declined-deferral", key: "deferralAssertion", commands: ["update-epic"], repeats: true, write: "custom" },
+  { flag: "deferral", key: "deferralAssertion", commands: ["update-epic"], repeats: true, write: "custom",
+    placeholder: "epicId:artifact section" },
+  { flag: "declined-deferral", key: "deferralAssertion", commands: ["update-epic"], repeats: true, write: "custom",
+    placeholder: "what::why not" },
   { flag: "no-deferrals", key: "deferralAssertion", commands: ["update-epic"], write: "custom", valueless: true },
   // The handoff. Lands on the disposition record rather than a field of its own — "where the
   // work went" is part of how this epic ended, not a separate fact about it.

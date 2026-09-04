@@ -99,8 +99,10 @@ never has to mirror the chain: a second copy of platform knowledge is drift wait
 Does not record a platform, unlike `write-rules`) ·
 `/pm:resume` resume + reconcile (writes the reconciler's verdict back durably via
 `record-reconcile`) · `record-gate-review <id> --gate 1|2 --verdict pass|fail` records an
-openspec-lane epic's Gate 1/Gate 2 review verdict (see "OpenSpec build" below); `update-epic
---status archived` on an openspec-lane epic requires a passing Gate 2 verdict already recorded ·
+epic's Gate 1/Gate 2 review verdict on ANY lane (see "OpenSpec build" below); a `pass` requires
+`--base-sha`/`--head-sha`. Recording is lane-agnostic, ENFORCEMENT is not: `update-epic
+--status archived` on an openspec-lane epic requires a passing Gate 2 verdict already recorded,
+and no other lane gains that obligation ·
 `record-tracker-refresh <id> --verdict unchanged|material-change --external-updated-at <iso>`
 records the re-read a tracker-linked epic owes before specs are drawn for it, and advances that
 epic's freshness watermark in the same write (an epic with no external id re-reads its local
@@ -238,14 +240,22 @@ CLAUDE.md's "OpenSpec build — TWO mandatory gates" section describes the disci
 (fresh-context spec review, before code) and Gate 2 (fresh-context implementation review,
 before docs/archive). Until this mechanism existed, nothing checked that either gate actually
 happened — an epic could go straight from `apply` to `archive` on narration alone. The engine
-now enforces Gate 2 mechanically, scoped strictly to the `openspec` lane:
+now enforces Gate 2 mechanically. Keep the two halves apart, because they are scoped
+differently: a verdict is RECORDABLE on any lane, and it is ENFORCED at archive time strictly on
+the `openspec` lane.
 
 - After a real fresh-context review, write the verdict back with `node "$ENGINE"
   record-gate-review <epicId> --gate 1|2 --verdict pass|fail --base-sha <a> --head-sha <b>
   [--reviewer "<who>"]` — this writes `{verdict, reviewedAt, baseSha, headSha, reviewer?}` onto
   `epic.gateReview.gate1`/`gate2` in `.conductor/state.json`, mirroring how `record-reconcile`
-  writes the reconciler's verdict. Rejects (writes nothing) if the epic isn't in the `openspec`
-  lane, the epic id is unknown, `--gate` isn't `1`/`2`, or `--verdict` isn't `pass`/`fail`.
+  writes the reconciler's verdict. Rejects (writes nothing) if the epic id is unknown, `--gate`
+  isn't `1`/`2`, `--verdict` isn't `pass`/`fail`, or a `pass` arrives without both shas. **The
+  epic's LANE is not a rejection reason.** It used to be, which left pm telling every lane to run
+  reviews while it could record the verdict for exactly one of them — `set-review-mode` is
+  lane-agnostic and its own table names "a Superpowers task review". The consequences were the
+  defects the next bullet describes, displaced by one lane: the shas became prose in `--notes`,
+  which nothing compares, so a non-openspec verdict could never read stale; `integrity` keys off
+  `gateReview` and could not see it; and silence was indistinguishable from reviewed-and-clean.
 - **The range is evidence, and a verdict can go STALE.** `--base-sha`/`--head-sha` record what
   was actually reviewed. If the epic later attributes commits the recorded head does not reach,
   the archive is refused by name until the range is re-reviewed or the attribution is corrected.
@@ -269,8 +279,12 @@ now enforces Gate 2 mechanically, scoped strictly to the `openspec` lane:
 - **The gate binds every path to `archived`, not just this verb.** `reconcileArchived()` — reached
   from `upgrade`, `render`, the commit nudge and `sync` — used to flip an epic with no lane check
   and no gate check. It now records how it bypassed instead of passing silently.
-- Non-openspec-lane epics (`superpowers`/`claude-code`/`decision`/`external`) are completely
-  unaffected — they have no two-gate process and this check never runs for them.
+- Non-openspec-lane epics (`superpowers`/`claude-code`/`decision`/`external`) gain no OBLIGATION
+  from any of this — they have no two-gate process, the archive check never runs for them, and an
+  epic with no verdict (or a stale one) archives exactly as it always has. What they gained is
+  somewhere to PUT a review they actually ran: `record-gate-review` accepts them, and the verdict
+  renders in `PROJECT.md`'s Gate reviews table and the briefing alongside every other. Recording
+  evidence must never create an obligation, which is why only the recording side moved.
 - An epic running under autonomy (`autonomy.level: "autonomous"`) must still call
   `record-gate-review` after each real gate review rather than only narrating it in
   conversation — narration alone does not satisfy the archive-time check, and there is no
@@ -359,6 +373,17 @@ bullet reached 3/15.
    "<epicId>:<artifact section>"` where work is now held by a registered epic, or
    `--declined-deferral "<what>:<why not>"` where you are deliberately not doing it; both
    repeat, and the engine will not read your artifacts to guess.
+   **Separate `--declined-deferral`'s halves with `::` whenever either carries a colon.** Both
+   halves are free text, so there is no correct guess between them: a single colon still splits
+   as it always did, but two or more with no `::` are REFUSED rather than truncated, and a value
+   with no separator at all is refused too. First-colon used to record
+   `"Set alwaysLoad:false to reclaim RAM:declined because X"` as `what: "Set alwaysLoad"` — which
+   reads as an instruction to DO the thing being declined. `--deferral` keeps the first-colon
+   rule and needs no `::`: its left half is an epic id, which cannot contain one.
+   **All three flags are refused outside an archive.** The assertion is written only in the
+   archive transition, so supplying them anywhere else used to compute it, drop it, and print
+   `updated`. Correct one already recorded by re-running the archive with
+   `--correct-disposition "<why the recorded one was wrong>"` alongside the corrected flags.
    Deletion removes the record of projected work, which is
    precisely what a disposition exists to preserve. `remove-epic` stays available and ungated for
    what it is for: an epic registered in error, a duplicate, a mistake made a minute ago — where
@@ -985,16 +1010,21 @@ pmVersion     : "<semver>" — release that last touched this repo (set by init/
 tracker?      : { system, instance?, projectKey?, mechanism?, repo?, statusIntent? }  — optional;
                 opt-in. `repo` (`owner/name`) is used by the `github-issues` inward-pull shape.
 reviewMode?   : "off" | "standard" | "thorough" — repo-level dial (default "standard" if unset)
-gateGuard?    : boolean — repo-level PreToolUse guard toggle; no longer gates the
-                reconcile-owed check (that blocks unconditionally whenever
-                reconcileNeeded is true) — reserved for any future generalization
+gateGuard?    : boolean — repo-level PreToolUse guard toggle; does NOT gate the reconcile-owed
+                check (that blocks unconditionally whenever reconcileNeeded is true). What it
+                does gate is the TRACKER REFRESH check, which blocks only while it is on.
+                Absent means off. Read it back with a bare `set-gate-guard`, which also reports
+                whether anything is blocked right now: `on` alone never means something is,
+                since the guard also needs a live active epic owing one of those two things
 laneRouting?  : { overrides: [{ match, lane }] } — optional per-repo lane overrides, checked
                 before the generic lane heuristic (see "Lane routing overrides" above);
                 set via set-lane-routing, looked up via suggest-lane
 epics[]       : { id, title, priority, status, role, lane, parent?, externalId?, externalUrl?, planPath?, stories[]?, links[], reconcileNeeded?, autonomy?, gateReview? }
-gateReview?   : { gate1?: {verdict, reviewedAt, note?}, gate2?: {verdict, reviewedAt, note?} } —
-                openspec-lane only; verdict ∈ pass|fail; set via record-gate-review; `update-epic
-                --status archived` on an openspec-lane epic requires gate2.verdict === "pass"
+gateReview?   : { gate1?: {verdict, reviewedAt, baseSha?, headSha?, reviewer?, note?}, gate2?: same } —
+                ANY lane; verdict ∈ pass|fail; set via record-gate-review, which requires both
+                shas for a `pass` (a legacy `note` is the pre-fields shape, kept unparsed).
+                Recording is lane-agnostic; the archive gate is not — `update-epic --status
+                archived` requires gate2.verdict === "pass" on an openspec-lane epic ONLY
 autonomy?     : { level: "off"|"autonomous", preAuthorized[], context[], notifications[] } — per epic
 preAuthorized[] entries are either { action, reason?, grantedAt } (exact-action grant) or
   { category, reason?, grantedAt } (category-shorthand grant, category one of

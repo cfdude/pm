@@ -43,6 +43,42 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" set-gate-guard on
 node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" set-gate-guard off
 ```
 
+## `set-gate-guard` with no argument — READS
+
+`set-gate-guard` wrote and confirmed the write, and nothing anywhere read it back, so "is the
+guard on?" was answerable only by opening `.conductor/state.json` — which is what a read verb
+exists to avoid. A bare invocation now prints the state, what the guard enforces, and what it
+does NOT tell you. It exits 0, writes nothing, and does not re-render `PROJECT.md`.
+
+```
+GATE GUARD — on.
+
+  The reconcile gate is ALWAYS enforced, whatever this flag says: an epic carrying
+  `reconcileNeeded` blocks Edit/Write/NotebookEdit until a verdict is recorded, and
+  `set-gate-guard off` does not reach that case.
+  This flag additionally enforces the TRACKER REFRESH obligation.
+
+  BLOCKING NOW: 't3' owes a tracker refresh.
+  'on' alone never means something is blocked — the guard also needs a live active
+  epic that owes one of those two things.
+
+  Change it with `set-gate-guard on|off`.
+```
+
+The last section is the half that matters, and it is the reason this is a report rather than a
+one-line echo: **`on` does not mean anything is currently blocked.** The guard also needs a live
+active epic — one that exists and is not archived — which owes a reconcile or a tracker refresh.
+Reading `gateGuard: true` plus a silent hook and concluding the guard was broken is exactly the
+inference this removes. The blocked line is computed from the active epic, so it reports
+`BLOCKING NOW: '<id>' owes a reconcile` even while the flag reads `off`, matching the
+unconditional reconcile case above.
+
+**The reader lives on the toggle and deliberately NOT on `gate-guard`, which is unchanged.** That
+verb is the `PreToolUse` hook (`hooks/hooks.json`): it blocks with stderr and exit 2, and it
+ALLOWS by returning silently with empty stdout and exit 0. Its stdout is protocol surface, so a
+human-readable report printed there would corrupt it. The silence is the allow signal, not a
+broken command.
+
 If `${CLAUDE_PLUGIN_ROOT}` is empty:
 `ENGINE="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/scripts/conductor.mjs}"; [ -f "$ENGINE" ] || ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1); node "$ENGINE" set-gate-guard on`
 

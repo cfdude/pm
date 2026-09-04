@@ -101,7 +101,16 @@ export function gateGuardCheck() {
     process.stderr.write(
       `conductor: gate guard — '${active.id}' still owes a reconcile (a detour touched shared ` +
       "code). Run the reconcile gate (reconciler agent, per the conductor skill's POP protocol) " +
-      "before writing source. Turn the guard off with `set-gate-guard off` if you need to bypass.\n"
+      // NO BYPASS SENTENCE HERE, and its absence is the fix. This branch is UNCONDITIONAL —
+      // `set-gate-guard off` does not reach it, by design (the reconcile skip is the
+      // highest-stakes one, and the opt-in was never actually turned on in real usage). The
+      // message nevertheless told the reader to turn the guard off to bypass, which is simply
+      // false: verified by setting it off and watching this branch still exit 2. It also
+      // contradicted commands/gate-guard.md's "There is no bypass for this specific case".
+      // The tracker branch below keeps its bypass sentence because there the flag really does
+      // gate it.
+      "before writing source. There is NO bypass for this case: `set-gate-guard off` does not " +
+      "reach it. Completing the reconcile gate is the only way through.\n"
     );
     process.exit(2);
   }

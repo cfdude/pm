@@ -198,8 +198,8 @@ of them are declared once in `EPIC_FLAGS` (`scripts/lib/constants.mjs`), which i
 | `--reason "<why>"` | `disposition` | required for every outcome except `delivered` |
 | `--carried-to <epicId>` | `disposition` | where unfinished work went |
 | `--correct-disposition "<why the recorded one was wrong>"` | `disposition` | corrects an agent-recorded disposition; keeps the prior one under `superseded` |
-| `--deferral "<epicId>:<section>"` | `deferralAssertion` | **repeatable** |
-| `--declined-deferral "<what>:<why not>"` | `deferralAssertion` | **repeatable** |
+| `--deferral "<epicId>:<section>"` | `deferralAssertion` | **repeatable**; splits on the FIRST colon |
+| `--declined-deferral "<what>::<why not>"` | `deferralAssertion` | **repeatable**; `::` separates, and a lone `:` still works |
 | `--no-deferrals` | `deferralAssertion` | the explicit "there are none" |
 | `--review-mode <m>` | `reviewMode` | per-epic escalation above the repo dial |
 | `--add-story "<title>"` | `stories` | **repeatable**; appends `{title, done: false}` |
@@ -236,6 +236,38 @@ Gate 2, and demands `--carried-to <epicId> --reason "<which tasks moved>"` where
 remains. `killed`, `superseded` and `abandoned` are exempt from the Gate 2 and handoff demands by
 design: the code was never written or was thrown away, and the required reason already answers
 where the work went.
+
+**The two halves of a deferral are separated differently, because they are different shapes.**
+`--deferral` splits on the FIRST colon and that is correct for it: its left half is an EPIC ID,
+which cannot contain one, so `--deferral "t2:design.md § Deferred: the tricky part"` splits where
+it must and the section keeps its colons. `--declined-deferral` has free text on BOTH sides and
+there is no correct guess between them. First-colon truncated a `<what>` that carried one —
+`"Set alwaysLoad:false to reclaim RAM:declined because X"` recorded `what: "Set alwaysLoad"`,
+which reads as an instruction to DO the thing being declined, and rendered that way in
+`PROJECT.md`. Last-colon is no better and arguably worse, since a reason is a sentence and
+carries a colon more often than a short label does.
+
+So it stopped guessing. `::` is the explicit separator, split on the FIRST one so a reason may
+itself contain one; a value with a single colon behaves exactly as it always did; and a value
+that is genuinely AMBIGUOUS — two or more colons with no `::` — is REFUSED, naming the remedy.
+A value with NO separator at all is refused too: it used to record `reason: ""`, and the reason
+is what distinguishes a deliberate decline from work nobody considered. Note the boundary
+precisely — the refusal is about where `<what>` ENDS, not about whether the reason is empty. A
+trailing separator (`"a label:"` or `"a label::"`) is unambiguous, so it is accepted and still
+records an empty reason. A refusal costs one re-run; the silent truncation it replaces corrupted
+the record that dispositions exist to preserve, and stayed live in a repo because its author
+correctly would not hand-edit `state.json` to fix it.
+
+**These three flags are refused outside an archive, rather than silently dropped.** A deferral
+assertion is written only inside the archive transition, so supplying `--deferral`,
+`--declined-deferral` or `--no-deferrals` on any other invocation computed the assertion, threw
+it away, and printed `updated` — reporting a write that did not happen, in the project's own
+record. It now exits non-zero, writes nothing, and names both paths: `--status archived --outcome
+<outcome> --reason "<why>"` to record one for the first time, and a re-run of the archive with
+`--correct-disposition "<why the recorded one was wrong>"` alongside the corrected flags to
+replace one already recorded (detailed below). Naming that second path is the whole fix: it
+already overwrote the assertion cleanly, and was merely undiscoverable, so a refusal that points
+at it was enough — no new mechanism was needed.
 
 An engine-written disposition — the migration's stamp, the archive-drift heal's — may be REPLACED
 by an agent recording a real one. Another agent's recorded judgment may not: re-running the verb
@@ -463,7 +495,7 @@ behavior, unchanged). `PROJECT.md` and the session brief mark an autonomous epic
 
 ## Record a gate verdict — `record-gate-review`
 
-An OpenSpec gate review is recorded against the epic with the evidence a later reader can
+A gate review is recorded against the epic with the evidence a later reader can
 check, as FIELDS rather than as prose in a note:
 
 ```bash
@@ -478,9 +510,26 @@ to be byte-identical in `state.json` to one that covered everything; recorded as
 are distinguishable without reading prose, and the range is what later tells a covering verdict
 from a stale one.
 
+A `pass` REQUIRES both shas — a verdict that claims everything is fine without saying what it
+read is the thing this section exists to replace. A `fail` may omit them.
+
 Verdicts recorded before these fields existed carry a free-text `note` instead. They load
 unchanged and are reported as carrying no checkable evidence — never deleted, never rewritten,
 never mined for a range by parsing that note.
+
+**A verdict records on ANY lane.** `record-gate-review` used to refuse a non-`openspec` epic by
+name, which left pm telling every lane to run reviews while it could record the verdict for
+exactly one of them — `set-review-mode` is lane-agnostic and its own table names "a Superpowers
+task review". The consequences were the same defects this section already describes, displaced by
+one lane: the commit range became prose in an epic's notes, which nothing compares, so a
+non-openspec verdict could never read stale; `integrity` keys off `gateReview` and could not see
+it; and silence was indistinguishable from reviewed-and-clean.
+
+**The archive gate is UNCHANGED and stays openspec-only.** Recording evidence must not create an
+obligation where none existed: a `claude-code` epic with no verdict archives exactly as it always
+has, and one carrying a stale verdict archives too. What a non-openspec lane gains is a place to
+put a review it actually ran — rendered in `PROJECT.md`'s Gate reviews table and the briefing
+alongside every other — not a new gate it must satisfy.
 
 ## The gate procedure — required task items
 
