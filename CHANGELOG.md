@@ -8,6 +8,79 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.38.0] — 2026-09-04
+
+**The record says what actually happened.** Four defects under one invariant: a write must be
+readable back, and a reported write must have happened. Three were reported from the field within
+a day of each other; the fourth was found by hitting it while fixing the others.
+
+### Added
+
+* **`set-gate-guard` with no argument READS.** It wrote and confirmed the write, and nothing
+  anywhere read it back, so "is the guard on?" was answerable only by opening `state.json` — which
+  is what a read verb exists to avoid. The reader lives on the **toggle**, deliberately not on
+  `gate-guard`: that verb is the PreToolUse hook, which blocks with stderr + exit 2 and **allows
+  by returning silently**, so its stdout is protocol surface and a report printed there would
+  corrupt it. The reporter read that silence as a broken command. Following `owners`, the output
+  states the value **and its limits** — above all that `on` alone does not mean anything is
+  currently blocked, which is exactly the inference `gateGuard: true` plus silence invited.
+* **`update-epic --withdraw-commit <sha> --reason "<why>"`** — the exit from an append-only array.
+  Append-only was right and stays: order carries meaning and the **last** entry is the endpoint a
+  recorded Gate 2 `headSha` is compared against. But "cannot be reordered" is a different claim
+  from "can never be corrected", and the second was inherited rather than decided. A `git reset`
+  is a normal operation and the gate procedure requires attributing at the moment of each commit,
+  so an attribution can outlive its commit through no error of process — after which every escape
+  was worse than the problem: hand-edit `state.json` (forbidden), tag the orphan (makes a false
+  record permanent and reachable), or `remove-epic` (destroys the disposition, links and stories).
+  The withdrawal is **recorded** in a sibling `withdrawnCommits` field rather than erased, which
+  is also what keeps the endpoint rule intact. Refuses a sha the epic never attributed, and
+  refuses a missing reason.
+* **`::` as the explicit separator for `--declined-deferral`,** and enum placeholders so
+  `update-epic --help` teaches the form (`--declined-deferral <what::why not>`) instead of
+  `<a value>`.
+
+### Fixed
+
+* **`--declined-deferral` silently truncated `<what>` at its first colon.** Measured in the wild:
+  `"Set alwaysLoad:false to reclaim RAM:declined because X"` recorded `what: "Set alwaysLoad"` —
+  which reads as an instruction to **do** the thing being declined, the opposite of the record's
+  meaning, and rendered that way in `PROJECT.md`. Neither split is safe for two free-text halves:
+  first-colon breaks on a colon in `<what>`, last-colon breaks on a colon in the reason, and
+  reasons are sentences so they carry colons *more* often. So it stops guessing — a single colon
+  behaves exactly as before, `::` is explicit, and an **ambiguous** value (two or more colons, no
+  `::`) is refused with the remedy in the message. A value with no separator is refused too.
+  **`--deferral` is deliberately unchanged**: its left half is an epic id, which cannot contain a
+  colon, so first-colon is correct there and this rule would refuse a valid `<section>` carrying
+  one.
+* **A deferral flag outside an archive printed `updated` and wrote nothing.** The assertion is
+  written only in the `status === "archived"` branch, so supplying the flags anywhere else
+  computed it, dropped it, and reported a write that never happened — a false statement in the
+  project's own record. It now refuses and **names the correction path**, which existed and was
+  merely undiscoverable: re-run the archive with `--correct-disposition` alongside the corrected
+  flags.
+* **A gate verdict was recordable only on an `openspec`-lane epic** while `set-review-mode` is
+  lane-agnostic and its own table names "a Superpowers task review" — so pm told every lane to run
+  reviews and could record the verdict for one of them. The consequences were 0.27.0's own
+  defects one lane over: `--base-sha`/`--head-sha` became `--notes` prose that nothing compares,
+  so a verdict could never read **stale**, and `integrity` keys off `gateReview` and could not see
+  it at all. **The archive gate is unchanged and stays openspec-only** — recording evidence where
+  a review happened must not create an obligation where none existed.
+* **The reconcile-gate refusal told you to bypass it in a way that does not work.** It said "turn
+  the guard off with `set-gate-guard off` if you need to bypass" on a branch that is
+  **unconditional** and which `set-gate-guard off` does not reach — verified by setting it off and
+  watching the hook still exit 2. It also contradicted `commands/gate-guard.md`. The tracker
+  branch keeps its bypass sentence, because there the flag really does gate it.
+
+### Notes
+
+* **No migration.** `withdrawnCommits` is additive and absent until a withdrawal happens; a
+  `state.json` written by 0.37.0 loads unchanged.
+* **`integrity` gains reach without gaining checks.** Its staleness and evidence checks read
+  `gateReview` with no lane filter, so they now cover the lanes `record-gate-review` previously
+  refused. Expect true findings on non-openspec epics that carry a verdict — verified on a fixture
+  that a `superpowers` epic delivered with a passing Gate 2 and no attributed commits produces the
+  finding it should.
+
 ## [0.37.0] — 2026-08-31
 
 **Help that answers the question actually asked.** `--help` was verb-blind and the emitted rules
