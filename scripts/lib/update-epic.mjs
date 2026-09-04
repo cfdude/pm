@@ -257,14 +257,77 @@ export function updateEpic() {
   // The deferral assertion is BUILT here and validated by the gate: three flags, one record.
   // `--no-deferrals` makes "there are none" sayable, which is the whole point — an absence is
   // otherwise indistinguishable from never having looked.
+  // FIRST-COLON, and it is correct for `--deferral` for one reason: its left half is an EPIC ID,
+  // which cannot contain a colon. So `--deferral "t2:design.md § Deferred: the tricky part"`
+  // splits where it must and the section keeps its colons. Verified before this was written.
   const pairs = (raw, a, b) => [].concat(raw === undefined ? [] : raw)
     .filter(v => typeof v === "string")
     .map(v => { const i = v.indexOf(":"); return i === -1
       ? { [a]: v.trim(), [b]: "" } : { [a]: v.slice(0, i).trim(), [b]: v.slice(i + 1).trim() }; });
+
+  // `--declined-deferral "<what>:<why not>"` is the OTHER shape and cannot use the same rule:
+  // BOTH halves are free text. First-colon truncates a <what> that carries one — measured in the
+  // wild, "Set alwaysLoad:false to reclaim RAM:declined because X" recorded what="Set alwaysLoad",
+  // which reads as an instruction to DO the thing being declined and rendered that way in
+  // PROJECT.md. Last-colon is no better and is arguably worse: a reason is a sentence, so it
+  // carries a colon more often than a short label does.
+  //
+  // There is no correct guess between two free-text halves, so this stops guessing. `::` is the
+  // explicit separator; a single colon keeps working exactly as before; and a value that is
+  // AMBIGUOUS — two or more colons with no `::` — is REFUSED. A refusal costs one re-run; the
+  // silent truncation it replaces corrupted the record that dispositions exist to preserve, and
+  // stayed live in a repo because its author correctly would not hand-edit state.json to fix it.
+  const declinedPairs = (raw) => [].concat(raw === undefined ? [] : raw)
+    .filter(v => typeof v === "string")
+    .map(v => {
+      const explicit = v.indexOf("::");
+      if (explicit !== -1) {
+        // FIRST `::`, so a reason may itself contain one.
+        return { what: v.slice(0, explicit).trim(), reason: v.slice(explicit + 2).trim() };
+      }
+      const colons = (v.match(/:/g) || []).length;
+      if (colons === 0) {
+        process.stderr.write(
+          `conductor: --declined-deferral "${v}" has no separator — it must read ` +
+          `"<what>:<why not>". The reason is what distinguishes a deliberate decline from work ` +
+          `nobody considered, so it is not optional.\n`);
+        process.exit(1);
+      }
+      if (colons > 1) {
+        process.stderr.write(
+          `conductor: --declined-deferral "${v}" is ambiguous — it carries ${colons} colons, so ` +
+          `where <what> ends cannot be inferred. Separate the halves explicitly with "::":\n` +
+          `  --declined-deferral "<what>::<why not>"\n` +
+          `Splitting on the first colon here would silently truncate <what> and dump the rest ` +
+          `into the reason, which is the corruption this refusal replaces.\n`);
+        process.exit(1);
+      }
+      const i = v.indexOf(":");
+      return { what: v.slice(0, i).trim(), reason: v.slice(i + 1).trim() };
+    });
+  // A deferral assertion is written ONLY inside the `status === "archived"` branch below, so
+  // supplying these flags on any other invocation computed the assertion, dropped it, and printed
+  // "updated" — reporting a write that did not happen, in the project's own record. Refuse
+  // instead, and NAME the correction path, because it exists and was merely undiscoverable:
+  // re-archiving with --correct-disposition does overwrite the assertion cleanly (verified before
+  // this guard was written, which is why this is a refusal rather than a new mechanism).
+  const supplied = ["deferral", "declined-deferral", "no-deferrals"]
+    .filter(k => f[k] !== undefined);
+  if (supplied.length && str(f.status) !== "archived") {
+    process.stderr.write(
+      `conductor: ${supplied.map(k => `--${k}`).join(", ")} ` +
+      `${supplied.length === 1 ? "is" : "are"} recorded only when an epic is ARCHIVED, and this ` +
+      `invocation does not archive '${id}' — nothing would have been written.\n` +
+      `  To record one: add --status archived --outcome <outcome> --reason "<why>".\n` +
+      `  To CORRECT one already recorded: re-run the archive with ` +
+      `--correct-disposition "<why the recorded one was wrong>" alongside the corrected flags.\n`);
+    process.exit(1);
+  }
+
   const asserted = f.deferral !== undefined || f["declined-deferral"] !== undefined || f["no-deferrals"] === true
     ? deferralAssertion({
         deferrals: pairs(f.deferral, "epic", "section"),
-        declined: pairs(f["declined-deferral"], "what", "reason"),
+        declined: declinedPairs(f["declined-deferral"]),
       })
     : undefined;
 
@@ -308,6 +371,32 @@ export function updateEpic() {
     // with is the one the gate validated — there is no second construction site to drift.
     if (verdict.disposition) epic.disposition = verdict.disposition;
     if (verdict.deferralAssertion) epic.deferralAssertion = verdict.deferralAssertion;
+  }
+
+  // #166 — withdraw an attribution. Runs BEFORE the field writes below so a refusal leaves the
+  // epic untouched, the same ordering every other guard in this file uses.
+  if (f["withdraw-commit"] !== undefined) {
+    const shas = [].concat(f["withdraw-commit"]).filter(v => typeof v === "string");
+    const why = str(f.reason);
+    if (!why) {
+      process.stderr.write(
+        `conductor: --withdraw-commit requires --reason "<why>" — a withdrawal is a correction, ` +
+        `and a correction without its reason is indistinguishable from a deletion.\n`);
+      process.exit(1);
+    }
+    const attributed = Array.isArray(epic.attributedCommits) ? epic.attributedCommits : [];
+    // REFUSE a sha this epic never attributed, rather than removing nothing and reporting
+    // success — the silent-no-op class this release exists to end.
+    const missing = shas.filter(sha => !attributed.includes(sha));
+    if (missing.length) {
+      process.stderr.write(
+        `conductor: '${id}' never attributed ${missing.join(", ")} — nothing to withdraw. ` +
+        `It currently attributes: ${attributed.length ? attributed.join(", ") : "(none)"}.\n`);
+      process.exit(1);
+    }
+    epic.attributedCommits = attributed.filter(sha => !shas.includes(sha));
+    epic.withdrawnCommits = (epic.withdrawnCommits || []).concat(
+      shas.map(sha => ({ sha, reason: why, withdrawnAt: new Date().toISOString() })));
   }
 
   if (str(f.title) !== undefined) epic.title = str(f.title);

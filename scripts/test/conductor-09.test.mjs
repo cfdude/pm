@@ -138,13 +138,34 @@ test("record-gate-review supports gate 2 independently of gate 1", () => {
   assert.equal(epic.gateReview.gate1, undefined);
 });
 
-test("record-gate-review rejects a non-openspec-lane epic", () => {
+test("record-gate-review ACCEPTS a non-openspec-lane epic (#163)", () => {
+  // INVERTED DELIBERATELY. This asserted the refusal that #163 removes: a verdict was recordable
+  // only on an openspec-lane epic, while `set-review-mode` is lane-agnostic and its own table
+  // names "a Superpowers task review" — so pm told every lane to run reviews and could record the
+  // verdict for one of them. Evidence for other lanes became `--notes` prose that nothing
+  // compares, so it could never read stale, and `integrity` (which keys off `gateReview`) could
+  // not see it at all.
+  //
+  // The property this test actually protected — that a refusal writes nothing — is not lost: it
+  // moves to the refusals that remain (unknown epic id, bad gate, a pass with no range), each
+  // covered by its own test in this file. What is gone is the refusal itself.
   const cwd = tmpRepo(); run(["init"], { cwd });
   run(["add-epic", "--id", "cc-epic", "--lane", "claude-code"], { cwd });
-  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
-  assert.ok(expectFail(() => run(
-    ["record-gate-review", "cc-epic", "--gate", "1", "--verdict", "pass", "--base-sha", "aaaaaaa", "--head-sha", "bbbbbbb"], { cwd })));
-  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
+  run(["record-gate-review", "cc-epic", "--gate", "1", "--verdict", "pass",
+       "--base-sha", "aaaaaaa", "--head-sha", "bbbbbbb"], { cwd });
+  const epic = readState(cwd).epics.find(e => e.id === "cc-epic");
+  assert.equal(epic.gateReview.gate1.verdict, "pass");
+  assert.equal(epic.gateReview.gate1.baseSha, "aaaaaaa");
+});
+
+test("recording a verdict adds NO archive obligation to a non-openspec lane (#163)", () => {
+  // The other half, and the one that would hurt if it broke: letting evidence be recorded where
+  // reviews happen must not make a lane un-archivable without it. A claude-code epic carrying no
+  // verdict at all archives exactly as it always has.
+  const cwd = tmpRepo(); run(["init"], { cwd });
+  run(["add-epic", "--id", "cc2", "--lane", "claude-code"], { cwd });
+  run(["update-epic", "cc2", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd });
+  assert.equal(readState(cwd).epics.find(e => e.id === "cc2").status, "archived");
 });
 
 test("record-gate-review rejects an unknown epic id", () => {

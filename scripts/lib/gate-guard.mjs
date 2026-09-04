@@ -13,6 +13,47 @@ import { render } from "./render.mjs";
 export function setGateGuard() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const val = process.argv[3];
+  // #159 — BARE INVOCATION READS. `set-gate-guard` wrote and confirmed the write, and nothing
+  // anywhere read it back, so "is the guard on?" was answerable only by opening state.json —
+  // which is what a read verb exists to avoid.
+  //
+  // The reader goes HERE, on the toggle, and deliberately NOT on `gate-guard`. That verb is the
+  // PreToolUse hook (hooks/hooks.json): it blocks with stderr + exit 2 and ALLOWS by returning
+  // silently, so its stdout is protocol surface and a human-readable report printed there would
+  // corrupt it. The reporter read that silence as a broken command; it is the allow signal.
+  //
+  // `owners` is the model, including the half that matters most: state the value AND what it
+  // cannot tell you. The non-obvious limit here is that `on` does not mean anything is currently
+  // blocked — the guard also needs an active, non-archived epic that owes something, which is
+  // exactly the inference the reporter drew from `gateGuard: true` plus silence.
+  if (val === undefined) {
+    const st = loadState();
+    const on = st.gateGuard === true;
+    const active = st.active ? st.epics.find(e => e.id === st.active) : null;
+    const live = active && active.status !== "archived" ? active : null;
+    const out = [`GATE GUARD — ${on ? "on" : "off"}.`, ""];
+    out.push("  The reconcile gate is ALWAYS enforced, whatever this flag says: an epic carrying");
+    out.push("  `reconcileNeeded` blocks Edit/Write/NotebookEdit until a verdict is recorded, and");
+    out.push("  `set-gate-guard off` does not reach that case.");
+    out.push(on
+      ? "  This flag additionally enforces the TRACKER REFRESH obligation."
+      : "  This flag is off, so the tracker-refresh obligation is NOT enforced.");
+    out.push("");
+    // What it cannot tell you, said out loud rather than left to be inferred.
+    out.push(!live
+      ? "  Nothing is blocked right now: no live active epic, and the guard needs one."
+      : (live.reconcileNeeded
+          ? `  BLOCKING NOW: '${live.id}' owes a reconcile.`
+          : (on && live.trackerRefreshNeeded
+              ? `  BLOCKING NOW: '${live.id}' owes a tracker refresh.`
+              : `  Nothing is blocked right now: '${live.id}' owes neither obligation.`)));
+    out.push("  'on' alone never means something is blocked — the guard also needs a live active");
+    out.push("  epic that owes one of those two things.");
+    out.push("");
+    out.push("  Change it with `set-gate-guard on|off`.");
+    process.stdout.write(out.join("\n") + "\n");
+    return;
+  }
   if (val !== "on" && val !== "off") {
     process.stderr.write("usage: conductor.mjs set-gate-guard <on|off>\n"); process.exit(1);
   }
