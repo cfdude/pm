@@ -1,4 +1,13 @@
 #!/bin/sh
+
+# --- secret scanning ---
+# core.hooksPath sends git here instead of .git/hooks, bypassing the
+# `git secrets` hook that ~/.git-templates installs at clone time.
+# Without this call the repo has NO secret scanning. Keep it first.
+if command -v git-secrets >/dev/null 2>&1; then
+  git secrets --pre_commit_hook -- "$@" || exit 1
+fi
+# --- end secret scanning ---
 # Mechanical safeguard for df-orchestrator-committed-release-without-reverifying: the full
 # test suite must pass immediately before every commit, not "a few tool calls ago in the same
 # turn." This is enforced here, not just documented, because prose reminders already failed
