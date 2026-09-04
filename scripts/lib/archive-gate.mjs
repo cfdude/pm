@@ -209,7 +209,7 @@ export function archiveGate(epic, request = {}) {
     return { ok: false, message:
       `cannot archive '${epic.id}' — no deferral assertion recorded. Say what this change ` +
       `deferred: --deferral "<epicId>:<artifact section>" for work now held by a registered ` +
-      `epic, --declined-deferral "<what>:<why not>" for one you are deliberately not doing, ` +
+      `epic, --declined-deferral "<what>::<why not>" for one you are deliberately not doing, ` +
       `or --no-deferrals if there are none. What was deferred is yours to identify; this ` +
       `command does not read your artifacts and will not guess.` };
   }
