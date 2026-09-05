@@ -1617,7 +1617,10 @@
       "role": "epic",
       "lane": "claude-code",
       "links": [],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "attributedCommits": [
+        "30483d12bea29e2aa3b505b80d5da2e44e9dbb09"
+      ]
     },
     {
       "id": "init-detects-foreign-agent-instruction-files",
@@ -4176,7 +4179,23 @@
       "externalId": "156",
       "externalUrl": "https://github.com/cfdude/pm/issues/156",
       "attributedCommits": [
-        "94cd7d1"
+        "94cd7d1",
+        "4a90d5c07935cedbe59eac9d51e6b563e4a2e2c5",
+        "b52da22d1bc51d880538197283e85c8fd5e7bd0b"
+      ],
+      "trackerRefresh": {
+        "verdict": "unchanged",
+        "summary": "Read in full before building: the issue's own suggested checks were evaluated and two rejected on measurement (line-count floor, mid-sentence splice).",
+        "recordedAt": "2026-09-05T07:52:55.035Z",
+        "externalUpdatedAt": "2026-08-29T14:37:03Z"
+      },
+      "externalUpdatedAt": "2026-08-29T14:37:03Z",
+      "withdrawnCommits": [
+        {
+          "sha": "30483d12bea29e2aa3b505b80d5da2e44e9dbb09",
+          "reason": "attributed in error: 30483d1 is the evals adapter commit, and HEAD had not advanced to the #161/#162 commit when this ran. Withdrawn rather than left dangling — the case #166 was built for, hit two hours after shipping it.",
+          "withdrawnAt": "2026-09-05T08:45:27.542Z"
+        }
       ]
     },
     {
@@ -4499,12 +4518,22 @@
       "externalId": "161",
       "externalUrl": "https://github.com/cfdude/pm/issues/161",
       "externalUpdatedAt": "2026-09-01T04:59:41Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "b52da22d1bc51d880538197283e85c8fd5e7bd0b",
+        "b52da22d1bc51d880538197283e85c8fd5e7bd0b"
+      ],
       "notes": [
         {
           "at": "2026-09-01T23:20:35.914Z",
           "actor": "agent",
           "text": "lane: claude-code not <none> — suggest-lane matched no rule; record is durable in the linked issue."
+        }
+      ],
+      "withdrawnCommits": [
+        {
+          "sha": "30483d12bea29e2aa3b505b80d5da2e44e9dbb09",
+          "reason": "attributed in error: 30483d1 is the evals adapter commit, and HEAD had not advanced to the #161/#162 commit when this ran. Withdrawn rather than left dangling — the case #166 was built for, hit two hours after shipping it.",
+          "withdrawnAt": "2026-09-05T08:45:18.758Z"
         }
       ]
     },
@@ -4526,12 +4555,22 @@
       "externalId": "162",
       "externalUrl": "https://github.com/cfdude/pm/issues/162",
       "externalUpdatedAt": "2026-09-01T05:37:49Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "b52da22d1bc51d880538197283e85c8fd5e7bd0b",
+        "b52da22d1bc51d880538197283e85c8fd5e7bd0b"
+      ],
       "notes": [
         {
           "at": "2026-09-01T23:20:37.645Z",
           "actor": "agent",
           "text": "lane: claude-code not <none> — suggest-lane matched no rule; record is durable in the linked issue."
+        }
+      ],
+      "withdrawnCommits": [
+        {
+          "sha": "30483d12bea29e2aa3b505b80d5da2e44e9dbb09",
+          "reason": "attributed in error: 30483d1 is the evals adapter commit, and HEAD had not advanced to the #161/#162 commit when this ran. Withdrawn rather than left dangling — the case #166 was built for, hit two hours after shipping it.",
+          "withdrawnAt": "2026-09-05T08:45:23.261Z"
         }
       ]
     },
@@ -4609,7 +4648,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 327,
+  "revision": 341,
   "reviewMode": "thorough",
   "releases": [
     {
