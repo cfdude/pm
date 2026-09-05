@@ -70,7 +70,12 @@ def test_every_runner_passes_the_disabling_env_to_the_subprocess(monkeypatch):
             )
 
 
-def test_a_timed_out_run_keeps_its_partial_transcript(monkeypatch):
+def test_timed_out_run_keeps_its_partial_transcript(monkeypatch):
+    # NAME, not behaviour: TruffleHog 3.96.0 (the version CI's shared security
+    # workflow pins) matches a `test_a…` pytest name as a Lob API key and reports it
+    # VERIFIED, failing the scan. 3.97.0 does not — the false positive is fixed
+    # upstream. Renamed rather than excluding the scanner or weakening the gate;
+    # the scanner bump lives in cfdude/.github and is filed separately.
     """TimeoutExpired carries e.stdout/e.stderr and both were being discarded.
 
     Gate 2 found it: the exception propagated to the adapter's bare `except`, which

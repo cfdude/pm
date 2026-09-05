@@ -246,7 +246,12 @@ def test_stdout_is_whole_not_excerpted(stubbed):
     assert len(_invoke()["stdout"]) == 50_000, "the transcript must not be capped"
 
 
-def test_a_runner_without_stderr_still_works(stubbed):
+def test_missing_stderr_key_reads_as_empty(stubbed):
+    # NAME, not behaviour: TruffleHog 3.96.0 (the version CI's shared security
+    # workflow pins) matches a `test_a…` pytest name as a Lob API key and reports it
+    # VERIFIED, failing the scan. 3.97.0 does not — the false positive is fixed
+    # upstream. Renamed rather than excluding the scanner or weakening the gate;
+    # the scanner bump lives in cfdude/.github and is filed separately.
     # The existing stub returns no `stderr` key. Absent must read as "" rather than
     # raising: an adapter that crashes on a missing DIAGNOSTIC field turns a scorer
     # failure into an infrastructure failure, which is strictly worse than the gap.
