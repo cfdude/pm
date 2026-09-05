@@ -71,6 +71,38 @@ a day of each other; the fourth was found by hitting it while fixing the others.
   watching the hook still exit 2. It also contradicted `commands/gate-guard.md`. The tracker
   branch keeps its bypass sentence, because there the flag really does gate it.
 
+* **Secret scanning in the pre-commit hook.** `core.hooksPath` points git at `.githooks/`, which
+  bypasses the `git secrets` hook installed at clone time — so the repo had none. The call is
+  guarded on `command -v git-secrets`, so it cannot block a commit where the tool is absent.
+
+* **A withdrawal is not a route past a gate.** Gate 2 caught the bypass in this release's own new
+  verb: an epic whose Gate 2 read **stale** archived cleanly once `--withdraw-commit` emptied the
+  attribution array, because an empty array reads `none-attributed` and that is deliberately not a
+  refusal. `gateStaleness` now answers `attribution-withdrawn` instead of collapsing to
+  `none-attributed`, the archive gate refuses it by name, `integrity` reports the withdrawal with
+  its recorded reason rather than telling you to re-attribute the sha you deliberately removed,
+  and the verdict renders `⚠ attribution withdrawn`. A withdrawal corrects the record; it never
+  discharges the obligation.
+* **The withdrawal reason has its own flag.** `--reason` already serves the disposition, so a
+  withdrawal borrowing it made "the sha was reset away" silently become the reason the epic was
+  **delivered**. `--withdrawal-reason` is separate, and required.
+* **Empty deferral halves are refused.** `--declined-deferral ":"` recorded `{what:"", reason:""}`
+  and satisfied the archive gate — an assertion asserting nothing — while the refusal beside it
+  claimed the reason "is not optional". Both halves must now be non-empty.
+* **One withdrawal removes one occurrence.** `attributedCommits` does not de-duplicate, and
+  removing every copy for a single request deleted two entries and silently moved the Gate 2
+  endpoint. Attributing and withdrawing the same sha in one invocation is refused rather than
+  recorded in both arrays, and the removal gets the same read-back verification the append has.
+* **The registry⇒doc direction is now asserted.** The existing gate derives "documented" from the
+  usage line *union* the command doc, so satisfying either half discharged it — which is exactly
+  how `--withdraw-commit` reached README, the CHANGELOG and the usage line while missing from
+  `commands/epic.md`'s flag table, whose own preamble says those flags are declared once in
+  `EPIC_FLAGS`. A test now asserts every registry-declared `update-epic` and `add-epic` flag
+  appears in that doc.
+* **`set-gate-guard --help` names the read form**, and `record-gate-review --help` states that a
+  `pass` requires both shas — two surfaces that described the old behavior after the release
+  changed it.
+
 ### Notes
 
 * **No migration.** `withdrawnCommits` is additive and absent until a withdrawal happens; a

@@ -194,6 +194,8 @@ of them are declared once in `EPIC_FLAGS` (`scripts/lib/constants.mjs`), which i
 | `--external-url <url>` | `externalUrl` | the globally unique dedup key |
 | `--external-updated-at <iso>` | `externalUpdatedAt` | the **tracker's own** timestamp, never a local clock |
 | `--attribute-commit <sha>` | `attributedCommits` | **repeatable**, append-only, in landing order |
+| `--withdraw-commit <sha>` | `attributedCommits`, `withdrawnCommits` | **repeatable**. Removes ONE occurrence of a sha this epic attributed and records why. A `git reset` is a normal operation, so an attribution can outlive its commit; this is the only supported way to correct that. Refuses a sha the epic never attributed. |
+| `--withdrawal-reason "<why>"` | `withdrawnCommits` | Required by `--withdraw-commit`, and deliberately **not** `--reason` — that one is the disposition's, and sharing it made a withdrawal's reason silently become the reason the epic was delivered. |
 | `--outcome <o>` | `disposition` | `delivered\|killed\|superseded\|abandoned` |
 | `--reason "<why>"` | `disposition` | required for every outcome except `delivered` |
 | `--carried-to <epicId>` | `disposition` | where unfinished work went |

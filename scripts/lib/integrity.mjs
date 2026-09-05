@@ -208,9 +208,19 @@ export const CHECKS = [
         // no trace anywhere — the staleness gate behaves correctly on an empty array, so it
         // reports nothing either.
         if (Array.isArray(e.attributedCommits) && e.attributedCommits.length === 0) {
-          out.push({ epic: e.id, detail:
-            "recorded as delivered with a passing Gate 2 but attributed no commits — record " +
-            `the range that shipped with: update-epic ${e.id} --attribute-commit <sha>` });
+          // WITHDRAWN READS DIFFERENTLY FROM NEVER-ATTRIBUTED. Gate 2: telling an agent to
+          // "record the range that shipped" on an epic that deliberately WITHDREW its shas hides
+          // the judgment somebody made, and invites re-attributing the very commit that was
+          // withdrawn — with the recorded reason visible nowhere. Same finding, same shape as
+          // #159 in this release: a field written and never read.
+          const withdrawn = Array.isArray(e.withdrawnCommits) ? e.withdrawnCommits : [];
+          out.push({ epic: e.id, detail: withdrawn.length
+            ? `recorded as delivered with a passing Gate 2 and attributes no commits, having ` +
+              `WITHDRAWN ${withdrawn.map(w => `${w.sha} ("${w.reason}")`).join("; ")}. A ` +
+              `withdrawal corrects the record and does not discharge the obligation — attribute ` +
+              `the commits that actually shipped: update-epic ${e.id} --attribute-commit <sha>`
+            : "recorded as delivered with a passing Gate 2 but attributed no commits — record " +
+              `the range that shipped with: update-epic ${e.id} --attribute-commit <sha>` });
         }
       }
       return out;

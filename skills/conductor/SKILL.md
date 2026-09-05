@@ -331,7 +331,11 @@ bullet reached 3/15.
    a marked line upstream is the clean fix and it is not pm's to make.
 
 4. **Attribute every commit to its epic.** At the moment each commit is made, record it:
-   `update-epic <id> --attribute-commit <sha>`. The engine infers attribution from nothing — not
+   `update-epic <id> --attribute-commit <sha>`. If a commit you attributed later goes away — a
+   `git reset` is a normal operation — correct it with
+   `update-epic <id> --withdraw-commit <sha> --withdrawal-reason "<why>"` rather than editing
+   state.json; the withdrawal is recorded and does not discharge the attribution obligation.
+   The engine infers attribution from nothing — not
    the files a commit touches, not an epic id in a message — so an unrecorded commit is a commit
    the epic's Gate 2 cannot be checked against. The per-task conventional commit of an OpenSpec
    apply loop always qualifies. Work already in flight is covered too, but **only before the first
@@ -1019,7 +1023,13 @@ gateGuard?    : boolean — repo-level PreToolUse guard toggle; does NOT gate th
 laneRouting?  : { overrides: [{ match, lane }] } — optional per-repo lane overrides, checked
                 before the generic lane heuristic (see "Lane routing overrides" above);
                 set via set-lane-routing, looked up via suggest-lane
-epics[]       : { id, title, priority, status, role, lane, parent?, externalId?, externalUrl?, planPath?, stories[]?, links[], reconcileNeeded?, autonomy?, gateReview? }
+epics[]       : { id, title, priority, status, role, lane, parent?, externalId?, externalUrl?, planPath?, stories[]?, links[], reconcileNeeded?, autonomy?, gateReview?, attributedCommits?, withdrawnCommits? }
+withdrawnCommits? : [{sha, reason, withdrawnAt}] — attributions CORRECTED away, via
+                `update-epic <id> --withdraw-commit <sha> --withdrawal-reason "<why>"`.
+                attributedCommits stays append-only (its last entry is the endpoint a Gate 2
+                headSha is compared against), so a withdrawal is recorded beside it rather
+                than inside it. Withdrawing every sha does NOT clear the Gate 2 obligation —
+                the archive gate reads this field and refuses.
 gateReview?   : { gate1?: {verdict, reviewedAt, baseSha?, headSha?, reviewer?, note?}, gate2?: same } —
                 ANY lane; verdict ∈ pass|fail; set via record-gate-review, which requires both
                 shas for a `pass` (a legacy `note` is the pre-fields shape, kept unparsed).

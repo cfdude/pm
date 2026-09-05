@@ -317,9 +317,16 @@ const EXERCISE = {
   // attributed, so an exercise without one would assert the refusal rather than the write.
   // The check covers BOTH halves — the array loses the sha, and the sibling record gains it —
   // because a withdrawal that erased without recording would pass a check on the array alone.
+  // Its own reason, exercised through the verb it belongs to: --withdrawal-reason is not
+  // invocable alone, exactly like --story/--done, so both rows assert the half they own.
+  "--withdrawal-reason": {
+    setup: ["--attribute-commit", "abc1234"],
+    args: ["--withdraw-commit", "abc1234", "--withdrawal-reason", "reset away"],
+    check: (e) => assert.equal(e.withdrawnCommits.at(-1).reason, "reset away"),
+  },
   "--withdraw-commit": {
     setup: ["--attribute-commit", "abc1234"],
-    args: ["--withdraw-commit", "abc1234", "--reason", "reset away"],
+    args: ["--withdraw-commit", "abc1234", "--withdrawal-reason", "reset away"],
     check: (e) => {
       assert.deepEqual(e.attributedCommits, []);
       assert.equal(e.withdrawnCommits.at(-1).sha, "abc1234");

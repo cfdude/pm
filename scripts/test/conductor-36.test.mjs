@@ -37,6 +37,10 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { tmpRepo, run, readState, expectFail } from "./helpers.mjs";
+import { fileURLToPath } from "node:url";
+
+const CONSTANTS = new URL("../lib/constants.mjs", import.meta.url).href;
+const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 /** The stderr of a refusal, plus an assertion that it WAS one. expectFail() returns the Error
  *  object execFileSync throws, not a string — matching a regex against that object silently
@@ -229,7 +233,7 @@ test("--withdraw-commit removes a sha the epic attributed, with a required reaso
   run(["update-epic", "t1", "--attribute-commit", "aaaaaaa"], { cwd });
   run(["update-epic", "t1", "--attribute-commit", "bbbbbbb"], { cwd });
   run(["update-epic", "t1", "--withdraw-commit", "aaaaaaa",
-       "--reason", "the commit was reset; its message described work it did not contain"], { cwd });
+       "--withdrawal-reason", "the commit was reset; its message described work it did not contain"], { cwd });
   const e = readState(cwd).epics.find(x => x.id === "t1");
   assert.deepEqual(e.attributedCommits, ["bbbbbbb"], "the withdrawn sha is gone");
 });
@@ -237,7 +241,7 @@ test("--withdraw-commit removes a sha the epic attributed, with a required reaso
 test("the withdrawal is RECORDED, not erased — a correction is a judgment", () => {
   const cwd = repoWithEpic();
   run(["update-epic", "t1", "--attribute-commit", "aaaaaaa"], { cwd });
-  run(["update-epic", "t1", "--withdraw-commit", "aaaaaaa", "--reason", "reset away"], { cwd });
+  run(["update-epic", "t1", "--withdraw-commit", "aaaaaaa", "--withdrawal-reason", "reset away"], { cwd });
   const e = readState(cwd).epics.find(x => x.id === "t1");
   assert.equal(e.withdrawnCommits.length, 1);
   assert.equal(e.withdrawnCommits[0].sha, "aaaaaaa");
@@ -253,7 +257,7 @@ test("it lands in a SIBLING field, so the last attributed entry stays the Gate 2
   for (const sha of ["aaaaaaa", "bbbbbbb", "ccccccc"]) {
     run(["update-epic", "t1", "--attribute-commit", sha], { cwd });
   }
-  run(["update-epic", "t1", "--withdraw-commit", "bbbbbbb", "--reason", "wrong epic"], { cwd });
+  run(["update-epic", "t1", "--withdraw-commit", "bbbbbbb", "--withdrawal-reason", "wrong epic"], { cwd });
   const e = readState(cwd).epics.find(x => x.id === "t1");
   assert.deepEqual(e.attributedCommits, ["aaaaaaa", "ccccccc"], "order of the survivors is kept");
   assert.equal(e.attributedCommits.at(-1), "ccccccc", "and the endpoint is unmoved");
@@ -263,7 +267,7 @@ test("withdrawing a sha the epic never attributed is REFUSED, not a silent no-op
   const cwd = repoWithEpic();
   run(["update-epic", "t1", "--attribute-commit", "aaaaaaa"], { cwd });
   const err = refusal(() => run(["update-epic", "t1", "--withdraw-commit", "ddddddd",
-    "--reason", "r"], { cwd }));
+    "--withdrawal-reason", "r"], { cwd }));
   assert.match(err, /ddddddd/, "the refusal must name the sha it could not find");
   assert.deepEqual(readState(cwd).epics.find(x => x.id === "t1").attributedCommits, ["aaaaaaa"]);
 });
@@ -272,7 +276,7 @@ test("a withdrawal without a reason is REFUSED — the same rule as every other 
   const cwd = repoWithEpic();
   run(["update-epic", "t1", "--attribute-commit", "aaaaaaa"], { cwd });
   const err = refusal(() => run(["update-epic", "t1", "--withdraw-commit", "aaaaaaa"], { cwd }));
-  assert.match(err, /reason/i);
+  assert.match(err, /withdrawal-reason/i);
   assert.deepEqual(readState(cwd).epics.find(x => x.id === "t1").attributedCommits, ["aaaaaaa"]);
 });
 
@@ -282,6 +286,116 @@ test("--withdraw-commit repeats, so one reset can be undone across its epics in 
     run(["update-epic", "t1", "--attribute-commit", sha], { cwd });
   }
   run(["update-epic", "t1", "--withdraw-commit", "aaaaaaa", "--withdraw-commit", "ccccccc",
-       "--reason", "both reset away"], { cwd });
+       "--withdrawal-reason", "both reset away"], { cwd });
   assert.deepEqual(readState(cwd).epics.find(x => x.id === "t1").attributedCommits, ["bbbbbbb"]);
+});
+
+// ═══════════════ Gate 2 findings — the withdrawal's own defects ═══════════════
+
+test("C1: withdrawing every attribution must NOT quietly satisfy a stale archive gate", () => {
+  // The worst of them. gateStaleness answers `stale` when a recorded Gate 2 headSha does not
+  // reach the epic's attributed commits, and `none-attributed` when there is nothing to compare.
+  // Withdrawing every sha moved the epic from the first to the second, so an archive the gate had
+  // been refusing SUCCEEDED. A withdrawal is a correction, never a way through a gate.
+  const cwd = repoWithEpic("os1", "openspec");
+  run(["update-epic", "os1", "--attribute-commit", "aaaaaaa"], { cwd });
+  run(["record-gate-review", "os1", "--gate", "2", "--verdict", "pass",
+       "--base-sha", "0000000", "--head-sha", "1111111"], { cwd });
+  run(["update-epic", "os1", "--withdraw-commit", "aaaaaaa",
+       "--withdrawal-reason", "reset away"], { cwd });
+  const err = refusal(() => run(["update-epic", "os1", "--status", "archived",
+    "--outcome", "delivered", "--no-deferrals"], { cwd }));
+  assert.match(err, /withdraw/i,
+    "the refusal must say the attribution history was edited, not that none ever existed");
+});
+
+test("C1: integrity distinguishes never-attributed from attributed-then-withdrawn", () => {
+  const cwd = repoWithEpic("sp1", "superpowers");
+  run(["update-epic", "sp1", "--attribute-commit", "aaaaaaa"], { cwd });
+  run(["record-gate-review", "sp1", "--gate", "2", "--verdict", "pass",
+       "--base-sha", "0000000", "--head-sha", "aaaaaaa"], { cwd });
+  run(["update-epic", "sp1", "--withdraw-commit", "aaaaaaa",
+       "--withdrawal-reason", "the branch was reset"], { cwd });
+  // The check keys on a DELIVERED epic carrying a passing Gate 2, so the epic has to end first.
+  run(["update-epic", "sp1", "--status", "archived", "--outcome", "delivered",
+       "--no-deferrals"], { cwd });
+  const out = run(["integrity"], { cwd });
+  assert.match(out, /withdraw/i,
+    "telling an agent to 'record the range that shipped' hides that it was withdrawn on purpose");
+});
+
+test("C2: an empty half is REFUSED — a blank assertion asserts nothing", () => {
+  const cwd = repoWithEpic();
+  for (const bad of [":", "::", "x:", "x::", "::x", ":::"]) {
+    const err = refusal(() => archived(cwd, "t1", ["--declined-deferral", bad]));
+    assert.match(err, /empty|blank|both halves/i, `"${bad}" must be refused, got: ${err}`);
+  }
+  assert.equal(readState(cwd).epics.find(e => e.id === "t1").deferralAssertion, undefined);
+});
+
+test("I1: the withdrawal reason has its OWN flag and cannot rewrite the disposition", () => {
+  // --reason serves the disposition. Forcing a withdrawal to borrow it meant the reason a sha
+  // was withdrawn silently became the reason the epic was DELIVERED, and rendered that way.
+  const cwd = repoWithEpic();
+  run(["update-epic", "t1", "--attribute-commit", "aaaaaaa"], { cwd });
+  run(["update-epic", "t1", "--status", "archived", "--outcome", "delivered", "--no-deferrals",
+       "--withdraw-commit", "aaaaaaa", "--withdrawal-reason", "the sha was reset away"], { cwd });
+  const e = readState(cwd).epics.find(x => x.id === "t1");
+  assert.notEqual(e.disposition.reason, "the sha was reset away",
+    "the withdrawal's reason must not land on the disposition");
+  assert.equal(e.withdrawnCommits.at(-1).reason, "the sha was reset away");
+});
+
+test("I2: attributing and withdrawing the SAME sha in one call is refused", () => {
+  const cwd = repoWithEpic();
+  const err = refusal(() => run(["update-epic", "t1", "--attribute-commit", "aaaaaaa",
+    "--withdraw-commit", "aaaaaaa", "--withdrawal-reason", "r"], { cwd }));
+  assert.match(err, /aaaaaaa/, "the refusal must name the contradictory sha");
+});
+
+test("I3: one withdrawal removes ONE occurrence, so the endpoint moves only when asked", () => {
+  // attributedCommits does not de-duplicate, so a sha can appear twice. Removing every
+  // occurrence for one request silently deleted two entries and moved the Gate 2 endpoint.
+  const cwd = repoWithEpic();
+  for (const sha of ["ccccccc", "ddddddd", "ccccccc"]) {
+    run(["update-epic", "t1", "--attribute-commit", sha], { cwd });
+  }
+  run(["update-epic", "t1", "--withdraw-commit", "ccccccc", "--withdrawal-reason", "one of them"], { cwd });
+  const e = readState(cwd).epics.find(x => x.id === "t1");
+  assert.equal(e.attributedCommits.filter(s => s === "ccccccc").length, 1,
+    "exactly one occurrence removed");
+  assert.equal(e.withdrawnCommits.length, 1, "and exactly one withdrawal recorded");
+});
+
+test("the reason is still required — it just has its own flag now", () => {
+  const cwd = repoWithEpic();
+  run(["update-epic", "t1", "--attribute-commit", "aaaaaaa"], { cwd });
+  const err = refusal(() => run(["update-epic", "t1", "--withdraw-commit", "aaaaaaa"], { cwd }));
+  assert.match(err, /withdrawal-reason/);
+});
+
+// ═══════════════ closing the one-way documentation gate ═══════════════
+
+test("every update-epic flag the REGISTRY declares appears in commands/epic.md", async () => {
+  // Gate 2 found `--withdraw-commit` in EPIC_FLAGS, in the usage line, in README and in the
+  // CHANGELOG — and absent from epic.md's flag table, whose own preamble says those flags "are
+  // declared once in EPIC_FLAGS". Nothing caught it because conductor-13's gate is ONE-WAY: it
+  // derives "documented" from the usage line UNION the command doc, so satisfying either half
+  // discharges it, and a registry flag missing from the table is structurally invisible.
+  //
+  // This is the other direction — registry ⇒ documented — which is what makes the pair complete.
+  // Same shape as the ghost sweep 0.37.0 added: assert the INVARIANT over the whole set rather
+  // than spot-checking the flag somebody remembered.
+  const { cliFlagsFor } = await import(CONSTANTS);
+  const doc = fs.readFileSync(path.join(REPO, "commands", "epic.md"), "utf8");
+  const missing = cliFlagsFor("update-epic").filter(f => !doc.includes(`--${f}`));
+  assert.deepEqual(missing, [],
+    `declared on update-epic but absent from commands/epic.md: ${missing.map(f => "--" + f).join(", ")}`);
+});
+
+test("every add-epic flag the registry declares appears in commands/epic.md too", async () => {
+  const { cliFlagsFor } = await import(CONSTANTS);
+  const doc = fs.readFileSync(path.join(REPO, "commands", "epic.md"), "utf8");
+  const missing = cliFlagsFor("add-epic").filter(f => !doc.includes(`--${f}`));
+  assert.deepEqual(missing, [], `declared on add-epic but absent from commands/epic.md: ${missing.join(", ")}`);
 });
