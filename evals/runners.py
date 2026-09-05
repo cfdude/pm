@@ -79,6 +79,11 @@ def run_claude_code(
     return {
         "exit_code": proc.returncode,
         "stdout": proc.stdout,
+        # stderr was captured by subprocess and then DISCARDED here, so a crashed
+        # agent's error text was lost even on the path whose whole job is keeping
+        # diagnostics. It costs nothing to carry and is the first thing anyone reads
+        # when a run fails for a reason the JSON payload cannot express.
+        "stderr": proc.stderr,
         "plugin_dir": plugin_dir,
         **_parse_result(proc.stdout),
     }

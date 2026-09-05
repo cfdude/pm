@@ -51,6 +51,7 @@ def test_every_runner_passes_the_disabling_env_to_the_subprocess(monkeypatch):
         class _Proc:
             returncode = 0
             stdout = "{}"
+            stderr = ""
 
         return _Proc()
 
