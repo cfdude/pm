@@ -8,6 +8,67 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.39.0] — 2026-09-05
+
+**Things that go missing without anything noticing.** Four items under one class: a shipped file
+that lost its tail, an agent transcript thrown away, a test helper whose sibling silently went
+stale, and a reported stdout loss that turned out not to exist.
+
+### Added
+
+* **A structural check over every shipped markdown file.** A skill lost 78 lines in 0.31.0 and no
+  check noticed for five releases (0.31.0 through 0.35.0), because **every existing guard
+  asserts things are PRESENT** and
+  a truncation is an absence *below* the last thing anyone asserts. Five assertions — an unclosed
+  code fence, unterminated frontmatter, a heading whose section is empty, a table header with no
+  rows, unbalanced `<details>` — each **measured at zero violations across every shipped markdown file**
+  before adoption. The fence check is a *tracker*, not line parity: a ` ```` `-fence holding a
+  ` ``` `-example has even parity while well-formed, and truncating inside it keeps parity even,
+  so parity would call the broken file clean.
+
+  **Proven against real history**, which is the strongest evidence available: the test reads
+  `skills/conductor/SKILL.md` out of git at `32c940f` (0.30.0, intact), `64b1adc` (0.31.0) and
+  `1896ce1` (0.35.0), and requires the first to pass and the other two to report `unclosed-fence`.
+  It would have fired in 0.31.0's own CI run.
+* **A guard on write-before-exit output size.** A process that writes a large payload to a pipe
+  and then calls `process.exit()` truncates at the buffer, because exit skips the flush — measured
+  at 65,536 bytes. Unreachable today (`update-epic --help`, the largest such path, is 1,286 bytes),
+  which was a property of today's output sizes that nothing held. Now a paged report or a large
+  `--help` added later fails here instead of silently truncating for a user with a piped stdout.
+
+### Fixed
+
+* **The EDD harness threw away the agent's own output.** The runner captured stdout and the adapter
+  copied four metrics out of the result and dropped the rest, so the only way to see what the agent
+  actually said was to run it again — 90 seconds, and a different sample against a
+  non-deterministic surface. `stderr` was captured **nowhere**, so a crashed agent's error text was
+  lost even on the path whose whole job is keeping diagnostics. Both are carried now, **whole and
+  never excerpted**: a cap is the silent-truncation shape the release's first item is about, and
+  the interesting part of a transcript is as often the end as the beginning.
+* **`stripAlwaysOn` was duplicated across two test files** that compare against the same fixtures
+  and so must strip identically, with nothing enforcing it. Found the way it was always going to
+  be: 0.37.0 added one always-on section, the edit landed in one copy, that file ran green, and the
+  sibling failed in the full suite. Hoisted to one definition, with the heading list as data — a
+  byte-identity test between copies was rejected, because it *detects* divergence where one
+  definition *prevents* it.
+
+### Notes
+
+* **No migration.** Nothing in this release changes the shape of `state.json`.
+* **#162 is closed as not-reproducible, and its mechanism was impossible.** It claimed the test
+  harness spawns an extra delegated process layer that loses output under load. Delegation returns
+  `null` for *both* shapes the harness can produce, and the handoff uses `spawnSync` with
+  `stdio: "inherit"` — the child writes to the parent's own descriptor, and the parent blocks until
+  it has exited and flushed. 0 reproductions in 34 full-suite runs across two trees; 200 delegating
+  runs at 24-way parallelism against a 1 MB payload gave one distinct output length every time.
+  The issue recorded no output *length*, so a missing heading at full size — a different block —
+  was never distinguished from a short read, and its "193 pass" is **~67 below the static floor**
+  for those files — 260 static `test(` declarations across conductor-13/14/15/34/35 at `820a303`.
+  (Published first as "~55", which omitted conductor-34 from the floor; the correction makes the
+  conclusion stronger, not weaker, and the public issue comment carries the same correction.) Filed in a window where two files under test carried uncommitted edits; the lesson
+  it walked into (`docs/lessons/measuring-under-concurrent-writes.md`) was already in this repo.
+  Both facts are now tests, so the mechanism cannot be re-derived from the issue text later.
+
 ## [0.38.0] — 2026-09-04
 
 **The record says what actually happened.** Four defects under one invariant: a write must be
@@ -260,6 +321,61 @@ pointer to the docs for everything the engine does not know.
   (`link.type` now lists all six of `KNOWN_LINK_TYPES`).
 
 ## [0.35.0] — 2026-08-29
+
+> **BACKFILLED 2026-09-05.** This release shipped with a heading and no entry — its CHANGELOG diff
+> was two lines — and nothing noticed for four releases. Found by 0.39.0's structural check, which
+> reports `## [0.35.0]` as an empty section; the check had excluded `CHANGELOG.md`, and that
+> exclusion is what hid it. Reconstructed from PR #155 and `1896ce1`, not from memory.
+
+**The engine is present at the transition it was absent from.** 1,036 tests, up from 953. No
+migration.
+
+### Added
+
+* **`push-detour` / `pop-detour` — the substantial-detour transition becomes a verb.** PUSH was a
+  documented **hand-edit of `state.json`**, the one mechanism this project tells every agent never
+  to use, at its most consequential transition: no validation, no conflict guard, no read-back, no
+  record that it happened. It is also why #94's gate could not be built — a gate needs the engine
+  present at the moment it gates. POP mattered *more*: it removes the frame before reconciliation
+  runs, and the archive heal clears `reconcileNeeded` for any epic with no live frame, so as two
+  separate writes **the obligation is destroyed by the heal meant to preserve it.** The verb does
+  frame removal, the obligation write and the pointer move in one state object and one write.
+* **`claim` / `unclaim` / `owners`** — advisory ownership, with **exactly one refusal**: claiming
+  over another session's live claim exits non-zero having written nothing, so "two sessions both
+  claim" has a defined outcome rather than a race. Everything else writes to a claimed epic
+  unchanged, because a tool that refused to work over an advisory marker would be a lock wearing
+  the wrong name. The override is `--steal`, not `--force`, and that is not cosmetic: `saveState()`
+  reads `--force` globally off argv, so that spelling would have silently disabled optimistic
+  concurrency as a side effect. A stated **TTL rather than a heartbeat** — a heartbeat nothing
+  beats is a creation timestamp in costume, and makes staleness wrong in both directions.
+* **An activity log that ships with its reader.** A log nobody reads is a data graveyard, and this
+  project has declined things on that argument. Events carry a revision **range** rather than a
+  number, because an ordinary update writes twice and single-number events would flag every normal
+  write as a hand-edit.
+
+### Changed
+
+* **The flag-value rule binds the dispatch table, not one registry (#152).** It had covered only
+  the epic write surfaces and so no-opped on a dozen verbs — and **two of them had each
+  independently hand-rolled the same check**, which is the tell that a rule is bound to a list
+  rather than to the function it governs.
+
+### Fixed
+
+* **`activity --bogus` printed the entire report and exited 0** — that verb had no unknown-flag
+  allowlist at all. Found during integration, not by either gate.
+
+### Notes
+
+* **#123 investigated and killed on evidence, no code.** `openspec validate --archived` fails this
+  repository's own correctly-archived change because it counts raw checkboxes and knows nothing of
+  the `{/* pm:lifecycle */}` marker, unticked at archive time by construction. Two tools computing
+  different quantities from one file, with no precedence rule between them. Surfaced #154.
+* **The guard earned itself twice in one merge.** Two branches merged cleanly and the *combination*
+  failed; then the obvious shortcut — declaring four verbs' flags anyway — was refused, because
+  those verbs hand-parse argv and declaring them value-bearing asserts a refusal that never
+  happens. The red merge was aborted rather than committed.
+* Mutation testing: 27 + 24 + 20, nine survivors, each a real gap that got the test which kills it.
 
 ## [0.34.0] — 2026-08-29
 

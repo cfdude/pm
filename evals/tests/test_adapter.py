@@ -199,3 +199,62 @@ def test_scorers_survive_a_failed_run_without_keyerror(stubbed):
     assert results["run_succeeded"] is False, "the gate scorer must FAIL a broken run"
     # And the illustration of why it is load-bearing: this one passes vacuously.
     assert results["logged_no_spurious_detour"] is True
+
+
+# ── the agent's own output must survive into the observation ──────────────────
+#
+# A scorer that fails was undiagnosable if the agent's output was gone: the runner
+# captured stdout, and the adapter copied exit_code/duration/turns/cost out of the
+# result and dropped the rest — so the only way to see what the agent actually said
+# was to RUN IT AGAIN, 90 seconds and a different sample against a non-deterministic
+# surface. The failure path already knew this ("Keep the diagnostic. A failing run
+# that can't be explained is worse than no run at all"); the
+# success-with-a-failing-scorer path did not, which is the case a corpus produces
+# most often.
+#
+# `stderr` was captured NOWHERE — `runners.py` discarded `proc.stderr` outright — so
+# a crashed agent's error text was lost even on the path that keeps diagnostics.
+#
+# Deliberately NOT truncated. A bounded excerpt is the silent-truncation shape this
+# repo has already shipped once (#156), and the interesting part of an agent
+# transcript is as often the end as the beginning, so any cap discards evidence
+# exactly on the run worth reading.
+
+def _loud_runner(prompt, cwd, allowed_tools="Bash", timeout=300):
+    return {"exit_code": 0, "stdout": '{"num_turns": 3}', "stderr": "a warning on stderr",
+            "duration_ms": 1, "num_turns": 3, "total_cost_usd": 0.0}
+
+
+def test_adapter_carries_agent_stdout_into_the_observation(stubbed):
+    stubbed.setitem(adapter.RUNNERS, "stub", _loud_runner)
+    assert _invoke()["stdout"] == '{"num_turns": 3}'
+
+
+def test_adapter_carries_agent_stderr_too(stubbed):
+    stubbed.setitem(adapter.RUNNERS, "stub", _loud_runner)
+    assert _invoke()["stderr"] == "a warning on stderr"
+
+
+def test_stdout_is_whole_not_excerpted(stubbed):
+    big = "x" * 50_000
+
+    def _verbose(prompt, cwd, allowed_tools="Bash", timeout=300):
+        return {"exit_code": 0, "stdout": big, "stderr": "",
+                "duration_ms": 1, "num_turns": 1, "total_cost_usd": 0.0}
+
+    stubbed.setitem(adapter.RUNNERS, "stub", _verbose)
+    assert len(_invoke()["stdout"]) == 50_000, "the transcript must not be capped"
+
+
+def test_missing_stderr_key_reads_as_empty(stubbed):
+    # NAME, not behaviour: TruffleHog 3.96.0 (the version CI's shared security
+    # workflow pins) matches a `test_a…` pytest name as a Lob API key and reports it
+    # VERIFIED, failing the scan. 3.97.0 does not — the false positive is fixed
+    # upstream. Renamed rather than excluding the scanner or weakening the gate;
+    # the scanner bump lives in cfdude/.github and is filed separately.
+    # The existing stub returns no `stderr` key. Absent must read as "" rather than
+    # raising: an adapter that crashes on a missing DIAGNOSTIC field turns a scorer
+    # failure into an infrastructure failure, which is strictly worse than the gap.
+    out = _invoke()
+    assert out["stderr"] == ""
+    assert out["stdout"] == "{}"

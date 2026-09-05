@@ -139,6 +139,18 @@ plan, or a manual list). Follow these rules:
    is forbidden is substituting a keyword grep for a full read, and that is forbidden
    whoever performs it.
 
+## Getting help with pm — two channels, and which one can lie
+
+**The INSTALLED engine is the authority on what it accepts.** `node "$ENGINE" <verb> --help`
+(resolve `$ENGINE` the way pm's own command docs do) prints that verb's real flags, projected
+from its own registry — version-exact by construction. Use it before reading engine source.
+
+**For procedure and rationale:** https://pm-plugin.dev/llms.txt indexes the docs (entries are
+already markdown); a free, no-auth MCP at https://pm-plugin.dev/mcp answers in one call.
+
+**The site documents the LATEST release, which may be newer than the pm running here.** A flag
+it shows that your engine refuses is a version gap, not a bug — `/pm:changelog` says which.
+
 ## The gate procedure — required task items
 
 Every item below is a NUMBERED REQUIRED TASK ITEM in the change's own task list, carried

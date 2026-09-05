@@ -155,6 +155,7 @@ def test_runner_argv_loads_the_worktree_plugin(monkeypatch, tmp_path):
     class _Proc:
         returncode = 0
         stdout = "{}"
+        stderr = ""
 
     def _fake_run(argv, **kwargs):
         captured["argv"] = argv
@@ -177,6 +178,7 @@ def test_run_claude_code_reports_the_plugin_dir_it_used(monkeypatch, tmp_path):
     class _Proc:
         returncode = 0
         stdout = "{}"
+        stderr = ""
 
     def _fake_run(argv, **kwargs):
         return _Proc()

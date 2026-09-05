@@ -2,6 +2,8 @@
 agent invocation is exercised by the corpus, not by pytest."""
 
 import json
+import subprocess
+from pathlib import Path
 
 import runners
 
@@ -51,6 +53,7 @@ def test_every_runner_passes_the_disabling_env_to_the_subprocess(monkeypatch):
         class _Proc:
             returncode = 0
             stdout = "{}"
+            stderr = ""
 
         return _Proc()
 
@@ -65,3 +68,29 @@ def test_every_runner_passes_the_disabling_env_to_the_subprocess(monkeypatch):
             assert env.get("HONCHO_ENABLED") == "false", (
                 f"{platform} spawns {binary} without HONCHO_ENABLED=false"
             )
+
+
+def test_timed_out_run_keeps_its_partial_transcript(monkeypatch):
+    # NAME, not behaviour: TruffleHog 3.96.0 (the version CI's shared security
+    # workflow pins) matches a `test_a…` pytest name as a Lob API key and reports it
+    # VERIFIED, failing the scan. 3.97.0 does not — the false positive is fixed
+    # upstream. Renamed rather than excluding the scanner or weakening the gate;
+    # the scanner bump lives in cfdude/.github and is filed separately.
+    """TimeoutExpired carries e.stdout/e.stderr and both were being discarded.
+
+    Gate 2 found it: the exception propagated to the adapter's bare `except`, which
+    returned a sentinel with empty strings — so the one run whose partial output
+    explains what the agent was doing when it hung was the one that kept nothing.
+    INFRA_FAILURE_EXIT_CODE's own docstring names a timeout as an expected failure.
+    """
+    def fake_run(argv, **kwargs):
+        raise subprocess.TimeoutExpired(
+            cmd=argv, timeout=300, output="partial agent output", stderr="a warning")
+
+    monkeypatch.setattr(runners.subprocess, "run", fake_run)
+    out = runners.run_claude_code("prompt", Path("."))
+
+    assert out["stdout"] == "partial agent output", "the partial transcript must survive"
+    assert "a warning" in out["stderr"]
+    assert "timed out after 300s" in out["stderr"], "and must say why it ended"
+    assert out["exit_code"] == -1

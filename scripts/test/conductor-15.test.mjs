@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { tmpRepo, run, runCombined, readState, writeState, projectMd, parseBrief, fixturePluginRoot, gitInitWithCommit, expectFail } from "./helpers.mjs";
+import { tmpRepo, run, runCombined, readState, writeState, projectMd, parseBrief, fixturePluginRoot, gitInitWithCommit, expectFail, stripAlwaysOn, REFRESH_GATE_HEADING } from "./helpers.mjs";
 
 // conductor-tells-the-truth, groups 7–9: the 0.27.0 migration, the archive backfill, and the
 // read-only integrity checks. Split from conductor-13/14 for the same reason those were split
@@ -33,32 +33,14 @@ function repoAt0260() {
   return cwd;
 }
 
-const REFRESH_GATE_HEADING = "## Re-read the source before an epic becomes the work";
-const GATE_PROCEDURE_HEADING = "## The gate procedure — required task items";
-const INTAKE_HEADING = "## Intake — triage an ask against the whole backlog BEFORE registering it";
-const OPERATING_RULES_HEADING = "## PM Conductor — operating rules";
-const REPORTING_HEADING = "## Reporting — pm owns what is recorded and what is said; you own how you say it";
-const HELP_HEADING = "## Getting help with pm — two channels, and which one can lie";
 /** The block minus the ALWAYS-ON sections — the numbered operating rules, the refresh gate, the
  *  emitted gate procedure and the intake procedure — see conductor-14's identical helper for why
  *  byte-identity is claimed for the tracker sections and not for the whole document, and for why
  *  gh-151 added the operating rules to the list. */
-const stripAlwaysOn = (block) => block
-  .replace(new RegExp(`\\n*${REFRESH_GATE_HEADING}[\\s\\S]*?(?=\\n<!-- END pm-conductor rules -->)`), "")
-  .replace(new RegExp(`${OPERATING_RULES_HEADING}[\\s\\S]*?(?=## )`), "")
-  // #158's help pointer — always-on, stripped for the same reason, and placed HERE because each
-  // replace consumes only to the next `## ` and this section sits between the operating rules and
-  // the gate procedure — READABILITY, not a constraint; Gate 2 proved the chain order-independent.
-  // SECOND COPY of this helper: conductor-14 carries the other one, and the
-  // suite is what caught the sibling being left behind. That is the absent-edit shape the gate
-  // procedure's call-site sweep exists for — `rg -l stripAlwaysOn scripts/test/` returns both.
-  .replace(new RegExp(`${HELP_HEADING}[\\s\\S]*?(?=## )`), "")
-  .replace(new RegExp(`${GATE_PROCEDURE_HEADING}[\\s\\S]*?(?=## )`), "")
-  .replace(new RegExp(`${INTAKE_HEADING}[\\s\\S]*?(?=## )`), "")
-  // gh-90 adds the reporting section: always-on for the same reason, and stripped for the same
-  // reason — no tracker configuration turns it on, off, or into something else, and pinning it
-  // byte-for-byte against 0.26.0 would forbid the release from adding it at all.
-  .replace(new RegExp(`${REPORTING_HEADING}[\\s\\S]*?(?=## )`), "");
+// stripAlwaysOn + its headings are HOISTED to helpers.mjs (#161): both this file and its
+// sibling compare against the same 0.26.0 fixtures, so they must strip identically, and
+// nothing enforced that while there were two copies. One definition prevents the divergence
+// a byte-identity test would only detect.
 
 test("7.5: the checked-in 0.26.0 state carries none of this release's fields", () => {
   const raw = fs.readFileSync(STATE_0_26_0, "utf8");

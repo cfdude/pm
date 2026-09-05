@@ -52,6 +52,12 @@ def _failure(error: str) -> dict:
         "plugin_commit": None,
         "plugin_dirty": None,
         "new_epics": [],
+        # Shape-identical to a success, which the suite asserts by name. An infra
+        # failure has no agent transcript to keep -- the agent may never have run --
+        # so these are empty rather than absent: a scorer reading `stdout` must get
+        # "" and fail, never KeyError and raise.
+        "stdout": "",
+        "stderr": "",
         "exit_code": INFRA_FAILURE_EXIT_CODE,
         "duration_ms": None,
         "num_turns": None,
@@ -96,6 +102,23 @@ def pm_adapter(scenario_input: dict) -> dict:
         # NOTIONAL under Claude subscription auth: an equivalent-API estimate, not
         # billed spend. Only a real API key makes this actual money.
         after["total_cost_usd"] = result["total_cost_usd"]
+        # THE AGENT'S OWN OUTPUT. Without it a failing scorer is undiagnosable: the
+        # runner captured stdout and this function copied four metrics out of the
+        # result and dropped the rest, so the only way to see what the agent actually
+        # said was to run it again -- 90 seconds, and a different sample against a
+        # non-deterministic surface. The failure path below already keeps its
+        # traceback for exactly this reason; the success-with-a-failing-scorer path,
+        # which is the case a corpus produces most often, kept nothing.
+        #
+        # WHOLE, never excerpted. A cap is the silent-truncation shape this repo has
+        # already shipped once, and the interesting part of a transcript is as often
+        # the end as the beginning.
+        #
+        # `.get` on stderr, not `[]`: a runner that omits a DIAGNOSTIC field must not
+        # turn a scorer failure into an infrastructure failure. The metrics above stay
+        # subscripted because their absence is a real contract breach.
+        after["stdout"] = result["stdout"]
+        after["stderr"] = result.get("stderr", "")
         after["error"] = None
         return after
     except Exception:  # noqa: BLE001 -- deliberate: see INFRA_FAILURE_EXIT_CODE

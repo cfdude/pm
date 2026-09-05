@@ -299,3 +299,35 @@ export function runHookAgainstFixture(testFileBody, { extraFiles = {} } = {}) {
 // this repo". Three observed divergences, all producing a false detours.log entry attributed
 // to this repo's STALE HEAD: the commit was rejected by pre-commit (gh#65), it was backgrounded
 // and is still running (gh#68), or it landed in a different repo entirely (gh#65 bug 2).
+
+/** The emitted rules block MINUS its always-on sections — the ones no tracker configuration turns
+ *  on, off, or into something else.
+ *
+ *  HOISTED HERE (#161) because it was duplicated across conductor-14 and conductor-15, which both
+ *  compare against the same 0.26.0 fixtures and so must strip identically. Nothing enforced that.
+ *  It was found the way it was always going to be found: 0.37.0 added one always-on section, the
+ *  edit landed in one copy, that file ran green on its own (68/68), and the sibling failed in the full suite.
+ *  A byte-identity test between the two copies was considered and rejected — it DETECTS
+ *  divergence where one definition PREVENTS it.
+ *
+ *  Byte-identity against 0.26.0 is claimed for the SYNC SECTIONS, not the whole document: a
+ *  release that adds instruction no tracker governs must be able to do so. Order within the chain
+ *  is READABILITY, not a constraint — each replace is anchored at its own heading and non-greedy,
+ *  verified by moving one to the end and watching everything still pass. */
+export const ALWAYS_ON_HEADINGS = [
+  "## PM Conductor — operating rules",
+  "## Getting help with pm — two channels, and which one can lie",
+  "## The gate procedure — required task items",
+  "## Intake — triage an ask against the whole backlog BEFORE registering it",
+  "## Reporting — pm owns what is recorded and what is said; you own how you say it",
+];
+export const REFRESH_GATE_HEADING = "## Re-read the source before an epic becomes the work";
+
+export const stripAlwaysOn = (block) =>
+  ALWAYS_ON_HEADINGS.reduce(
+    (b, heading) => b.replace(new RegExp(`${heading}[\\s\\S]*?(?=## )`), ""),
+    // The refresh gate is last in the document, so it consumes to the END marker rather than to a
+    // following heading — a different shape, hence outside the reduce.
+    block.replace(
+      new RegExp(`\\n*${REFRESH_GATE_HEADING}[\\s\\S]*?(?=\\n<!-- END pm-conductor rules -->)`), ""),
+  );
