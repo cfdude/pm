@@ -1613,7 +1613,7 @@
       "id": "edd-adapter-discards-agent-stdout",
       "title": "adapter discards agent stdout -- a failing scorer is undiagnosable without a re-run",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -1622,7 +1622,24 @@
         "30483d12bea29e2aa3b505b80d5da2e44e9dbb09",
         "bac265e7326e983196f12282838f04ad0f0db0c8",
         "4339e67e00e6075b9d24748951de056fb1f7acd8"
-      ]
+      ],
+      "release": "0.39.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-05T09:49:32.280Z",
+        "reason": "Shipped in 0.39.0 (PR #171, squash b9c5bec). Gate 2 passed with two independent fresh-context reviewers; A found five Important, B found a published arithmetic error in the #162 retraction and README Real Numbers stale by ~2x since 0.27.0. All fixed before merge. 1116 tests + 48 evals green; docs verified live."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-05T09:49:32.279Z",
+        "deferrals": [
+          {
+            "epic": "gh-172-trufflehog-false-positive",
+            "section": "the scanner bump lives in cfdude/.github and is not this repo's to make"
+          }
+        ],
+        "declined": []
+      },
+      "completedAt": "2026-09-05T09:49:32.280Z"
     },
     {
       "id": "init-detects-foreign-agent-instruction-files",
@@ -4173,7 +4190,7 @@
       "id": "gh-156-shipped-markdown-structural-check",
       "title": "A shipped skill was silently truncated in 0.31.0 and no check noticed for four releases",
       "priority": "P1",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
@@ -4185,7 +4202,8 @@
         "4a90d5c07935cedbe59eac9d51e6b563e4a2e2c5",
         "b52da22d1bc51d880538197283e85c8fd5e7bd0b",
         "bac265e7326e983196f12282838f04ad0f0db0c8",
-        "4339e67e00e6075b9d24748951de056fb1f7acd8"
+        "4339e67e00e6075b9d24748951de056fb1f7acd8",
+        "a035e6c8e4a40e99815d67fe1c77e378b51cbe01"
       ],
       "trackerRefresh": {
         "verdict": "unchanged",
@@ -4200,7 +4218,24 @@
           "reason": "attributed in error: 30483d1 is the evals adapter commit, and HEAD had not advanced to the #161/#162 commit when this ran. Withdrawn rather than left dangling — the case #166 was built for, hit two hours after shipping it.",
           "withdrawnAt": "2026-09-05T08:45:27.542Z"
         }
-      ]
+      ],
+      "release": "0.39.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-05T09:49:29.001Z",
+        "reason": "Shipped in 0.39.0 (PR #171, squash b9c5bec). Gate 2 passed with two independent fresh-context reviewers; A found five Important, B found a published arithmetic error in the #162 retraction and README Real Numbers stale by ~2x since 0.27.0. All fixed before merge. 1116 tests + 48 evals green; docs verified live."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-05T09:49:29.001Z",
+        "deferrals": [
+          {
+            "epic": "gh-172-trufflehog-false-positive",
+            "section": "the scanner bump lives in cfdude/.github and is not this repo's to make"
+          }
+        ],
+        "declined": []
+      },
+      "completedAt": "2026-09-05T09:49:29.002Z"
     },
     {
       "id": "per-verb-help-from-flag-registry",
@@ -4508,7 +4543,7 @@
       "id": "gh-161-strip-always-on-duplicated",
       "title": "stripAlwaysOn is duplicated across conductor-14 and conductor-15 and must stay identical, with nothing enforcing it. Both compare the emitted block against the same 0.26.0 fixtures, and each replace consumes only to the next '## ' heading, so the list of stripped headings matters in both copies. Found by committing the exact miss it describes: one copy was patched, the file ran 93/93 green, and the sibling failed in the full suite. Hoist it into helpers.mjs, which both files already import — a byte-identity test would detect divergence instead of preventing it.",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -4540,13 +4575,30 @@
           "reason": "attributed in error: 30483d1 is the evals adapter commit, and HEAD had not advanced to the #161/#162 commit when this ran. Withdrawn rather than left dangling — the case #166 was built for, hit two hours after shipping it.",
           "withdrawnAt": "2026-09-05T08:45:18.758Z"
         }
-      ]
+      ],
+      "release": "0.39.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-05T09:49:30.635Z",
+        "reason": "Shipped in 0.39.0 (PR #171, squash b9c5bec). Gate 2 passed with two independent fresh-context reviewers; A found five Important, B found a published arithmetic error in the #162 retraction and README Real Numbers stale by ~2x since 0.27.0. All fixed before merge. 1116 tests + 48 evals green; docs verified live."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-05T09:49:30.635Z",
+        "deferrals": [
+          {
+            "epic": "gh-172-trufflehog-false-positive",
+            "section": "the scanner bump lives in cfdude/.github and is not this repo's to make"
+          }
+        ],
+        "declined": []
+      },
+      "completedAt": "2026-09-05T09:49:30.635Z"
     },
     {
       "id": "gh-162-delegation-drops-stdout",
       "title": "The self-hosting handoff intermittently drops stdout under parallel load. With PM_ENGINE_DELEGATION set, run(['rules']) returns truncated or empty output in ~2 of 3 combined suite runs; clean-env CI is unaffected. helpers.mjs passes process.env into every child, so each invocation spawns an extra delegated process layer. TWO CANDIDATE CAUSES needing to be distinguished before any fix: a harness problem (child stdout not drained before the parent reads), or a REAL engine problem (the delegating parent exiting before the delegated child flushes) — the second would affect real usage, not just tests. Do NOT fix by making the assertion tolerant: a test that passes when output is missing accepts the truncation it exists to catch, and this repo already shipped one silent truncation nobody noticed for four releases.",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -4579,7 +4631,19 @@
           "reason": "attributed in error: 30483d1 is the evals adapter commit, and HEAD had not advanced to the #161/#162 commit when this ran. Withdrawn rather than left dangling — the case #166 was built for, hit two hours after shipping it.",
           "withdrawnAt": "2026-09-05T08:45:23.261Z"
         }
-      ]
+      ],
+      "release": "0.39.0",
+      "disposition": {
+        "outcome": "declined",
+        "recordedAt": "2026-09-05T09:49:51.385Z",
+        "reason": "NOT REPRODUCIBLE, and the mechanism I reported was impossible. Delegation returns null for both shapes the test harness produces, and the handoff hands the child the parent's own descriptor via stdio:inherit. 0 reproductions in 34 full-suite runs; 200 delegating runs at 24-way parallelism against a 1MB payload gave one distinct output length every time. I filed it after measuring while two files under test carried uncommitted edits — the lesson it walked into was already in docs/lessons/. Both facts are now tests (conductor-38) so the mechanism cannot be re-derived from the issue text, and the one REAL truncation mechanism found is guarded at 8KB."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-05T09:49:51.384Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-05T09:49:51.385Z"
     },
     {
       "id": "gh-163-gate-verdicts-openspec-only",
@@ -4645,6 +4709,21 @@
         "declined": []
       },
       "completedAt": "2026-09-05T07:27:15.839Z"
+    },
+    {
+      "id": "gh-172-trufflehog-false-positive",
+      "title": "CI's TruffleHog (3.96.0) reports a pytest function name as a VERIFIED Lob API key. Lob's test-mode keys are test_-prefixed and so is every pytest function, so a long enough name collides — and it is reported VERIFIED, the one class a reviewer is trained never to wave through. Fixed upstream: 3.97.0 finds nothing in the same file. The version comes from cfdude/.github's SHA-pinned reusable workflow, so the fix is a scanner bump there, affecting every consuming repo — deliberately not changed as a side effect of a release here. 0.39.0 renamed two tests as a labelled workaround, which weakens nothing but does not survive the next contributor naming a test test_a_...",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "external",
+      "links": [],
+      "reconcileNeeded": false,
+      "description": "Filed while shipping 0.39.0. The fix is in another repository, which is why the lane is external.",
+      "externalId": "172",
+      "externalUrl": "https://github.com/cfdude/pm/issues/172",
+      "externalUpdatedAt": "2026-09-05T09:41:51Z",
+      "attributedCommits": []
     }
   ],
   "detourStack": [],
@@ -4655,7 +4734,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 350,
+  "revision": 357,
   "reviewMode": "thorough",
   "releases": [
     {
@@ -4726,6 +4805,12 @@
       "intent": "The record says what actually happened: the deferral separator stops guessing, a deferral flag outside an archive refuses instead of reporting a phantom write, set-gate-guard reads back, gate verdicts record on any lane, and an attribution can be withdrawn",
       "deferred": [],
       "target": "0.38.0"
+    },
+    {
+      "id": "0.39.0",
+      "intent": "Things that go missing without anything noticing: a shipped file that lost its tail, an agent transcript thrown away, a duplicated helper whose sibling went stale, and a reported stdout loss that did not exist",
+      "deferred": [],
+      "target": "0.39.0"
     }
   ],
   "archiveBackfilledAt": "2026-08-27T04:52:42.658Z"
