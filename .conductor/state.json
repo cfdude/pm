@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "gh-165-deferral-assertion-mangled-and-immutable",
+  "active": null,
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -4345,7 +4345,7 @@
       "id": "gh-159-no-reader-for-gate-guard-state",
       "title": "No CLI way to read gate-guard state. Filed as 'the read verb prints nothing', but gate-guard is NOT a read verb: it is the PreToolUse hook (hooks/hooks.json:46), blocking via stderr + exit 2 and returning silently at scripts/lib/gate-guard.mjs:54 to ALLOW. Silence IS the allow signal, and with no active epic it returns at the !active guard immediately — so the reported symptom is the protocol working. Printing a human report on its stdout would corrupt the hook. The gap underneath is real and worth fixing: set-gate-guard WRITES and confirms, and nothing READS, so 'is the guard on?' is answerable only by opening state.json — exactly what a read verb exists to avoid. Fix belongs on a DIFFERENT surface (bare set-gate-guard with no argument, or a status flag), never on the hook's stdout. Adopt the owners model the reporter correctly identified: state the value AND what it implies, including what it cannot tell you.",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -4363,7 +4363,8 @@
       "attributedCommits": [
         "989f0ebecc71723ec6e96eb146df996d5e7eec1e",
         "6beea2b44e1727ccca6a131ead1aaae57f7ebb07",
-        "fd7d741f17200a522321af7d90fab8e1a16a62ed"
+        "fd7d741f17200a522321af7d90fab8e1a16a62ed",
+        "66bb8ff908ef7d1f0696d2ee8b6ae0d6935c42d5"
       ],
       "notes": [
         {
@@ -4385,13 +4386,38 @@
           "withdrawnAt": "2026-09-04T22:58:25.578Z"
         }
       ],
-      "release": "0.38.0"
+      "release": "0.38.0",
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-05T00:28:08.716Z",
+          "baseSha": "977bcea",
+          "headSha": "66bb8ff908ef7d1f0696d2ee8b6ae0d6935c42d5",
+          "reviewer": "two independent fresh-context reviewers (thorough) over 977bcea..HEAD; 9 findings, all fixed and re-tested. 1101 tests, 0 failures."
+        }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-05T07:27:13.909Z",
+        "reason": "Shipped in 0.38.0 (PR #170, squash e077394). Gate 2 passed with two independent fresh-context reviewers; reviewer A returned FAIL with two Criticals, all nine findings across both reviewers fixed before merge. 1101 tests green; docs merged and verified live."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-05T07:27:13.909Z",
+        "deferrals": [
+          {
+            "epic": "gh-161-strip-always-on-duplicated",
+            "section": "the duplicated test helper, held for Group B"
+          }
+        ],
+        "declined": []
+      },
+      "completedAt": "2026-09-05T07:27:13.909Z"
     },
     {
       "id": "gh-165-deferral-assertion-mangled-and-immutable",
       "title": "Two quiet failures in the deferral assertion, both in update-epic. (1) --declined-deferral splits on the FIRST colon rather than the separator, so a colon inside <what> silently truncates it and dumps the remainder into the reason — recording 'Set alwaysLoad' where 'Set alwaysLoad:false ...' was meant, which reads as an instruction to DO the thing being declined, the opposite of the record's meaning, and renders that way in PROJECT.md. Colons in the what half are natural (config keys, a clause). (2) Re-running the flags to CORRECT a recorded assertion prints 'updated' and writes nothing: assertedAt and entries keep their original values. Immutability may be defensible, but it must then refuse loudly the way --outcome superseded without --reason already does; reporting a write that did not happen is a false statement in the project's own record, which is the failure class this repo keeps shipping fixes for.",
       "priority": "P1",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -4409,7 +4435,8 @@
       "attributedCommits": [
         "989f0ebecc71723ec6e96eb146df996d5e7eec1e",
         "6beea2b44e1727ccca6a131ead1aaae57f7ebb07",
-        "fd7d741f17200a522321af7d90fab8e1a16a62ed"
+        "fd7d741f17200a522321af7d90fab8e1a16a62ed",
+        "66bb8ff908ef7d1f0696d2ee8b6ae0d6935c42d5"
       ],
       "notes": [
         {
@@ -4427,7 +4454,32 @@
           "withdrawnAt": "2026-09-04T22:58:23.036Z"
         }
       ],
-      "release": "0.38.0"
+      "release": "0.38.0",
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-05T00:27:44.116Z",
+          "baseSha": "977bcea",
+          "headSha": "66bb8ff908ef7d1f0696d2ee8b6ae0d6935c42d5",
+          "reviewer": "two independent fresh-context reviewers (thorough). A: FAIL, 2 Critical — the withdrawal could walk an epic past the archive gate, and withdrawnCommits was write-only (#159's own defect, on the feature fixing it). B: no Critical, 2 Important — --withdraw-commit absent from epic.md's flag table (conductor-13's gate is one-way), and the withdrawal borrowing the disposition's --reason. All 9 findings fixed and re-tested; the reverse registry-to-doc assertion now catches B's finding mechanically. 1101 tests, 0 failures."
+        }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-05T07:27:11.816Z",
+        "reason": "Shipped in 0.38.0 (PR #170, squash e077394). Gate 2 passed with two independent fresh-context reviewers; reviewer A returned FAIL with two Criticals, all nine findings across both reviewers fixed before merge. 1101 tests green; docs merged and verified live."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-05T07:27:11.815Z",
+        "deferrals": [
+          {
+            "epic": "gh-161-strip-always-on-duplicated",
+            "section": "the duplicated test helper, held for Group B"
+          }
+        ],
+        "declined": []
+      },
+      "completedAt": "2026-09-05T07:27:11.816Z"
     },
     {
       "id": "gh-161-strip-always-on-duplicated",
@@ -4487,7 +4539,7 @@
       "id": "gh-163-gate-verdicts-openspec-only",
       "title": "A gate verdict is recordable only on an openspec-lane epic, so every other lane's review evidence lands in --notes prose. set-review-mode is lane-agnostic and names 'a Superpowers task review' in its own table, so pm tells every lane to run reviews and can record the verdict for one of them. Consequences are 0.27.0's own defects one lane over: --base-sha/--head-sha become prose nothing compares, so a superpowers verdict can never read stale; integrity's gate checks key off gateReview and cannot see it; silence and reviewed-and-clean look identical. NOT asking to extend the archive gate — keep that openspec-only. Open design question: what --gate 1|2 means where there is no propose/apply split. Evidence: 0.37.0's own two-reviewer Gate 2, with a real commit range and one Important finding, is unverifiable prose in this repo's state.json.",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -4504,7 +4556,8 @@
       "attributedCommits": [
         "989f0ebecc71723ec6e96eb146df996d5e7eec1e",
         "6beea2b44e1727ccca6a131ead1aaae57f7ebb07",
-        "fd7d741f17200a522321af7d90fab8e1a16a62ed"
+        "fd7d741f17200a522321af7d90fab8e1a16a62ed",
+        "66bb8ff908ef7d1f0696d2ee8b6ae0d6935c42d5"
       ],
       "notes": [
         {
@@ -4520,7 +4573,32 @@
           "withdrawnAt": "2026-09-04T22:58:27.322Z"
         }
       ],
-      "release": "0.38.0"
+      "release": "0.38.0",
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-05T00:28:10.565Z",
+          "baseSha": "977bcea",
+          "headSha": "66bb8ff908ef7d1f0696d2ee8b6ae0d6935c42d5",
+          "reviewer": "two independent fresh-context reviewers (thorough) over 977bcea..HEAD; 9 findings, all fixed and re-tested. 1101 tests, 0 failures."
+        }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-05T07:27:15.839Z",
+        "reason": "Shipped in 0.38.0 (PR #170, squash e077394). Gate 2 passed with two independent fresh-context reviewers; reviewer A returned FAIL with two Criticals, all nine findings across both reviewers fixed before merge. 1101 tests green; docs merged and verified live."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-05T07:27:15.838Z",
+        "deferrals": [
+          {
+            "epic": "gh-161-strip-always-on-duplicated",
+            "section": "the duplicated test helper, held for Group B"
+          }
+        ],
+        "declined": []
+      },
+      "completedAt": "2026-09-05T07:27:15.839Z"
     }
   ],
   "detourStack": [],
@@ -4531,7 +4609,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 318,
+  "revision": 327,
   "reviewMode": "thorough",
   "releases": [
     {
