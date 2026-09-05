@@ -13,7 +13,7 @@
 // The one place that symmetry breaks is `add-many`, whose EPIC_FLAGS rows are batch-document
 // state keys rather than CLI flags — hence `cliFlagsFor()` rather than `flagsFor()`. See
 // BATCH_KEY_COMMANDS in constants.mjs.
-import { flagSpecsFor, FLAGLESS_VERBS, epicBatchKeys, BATCH_KEY_COMMANDS } from "./constants.mjs";
+import { flagSpecsFor, FLAGLESS_VERBS, FLAGLESS_USAGE, epicBatchKeys, BATCH_KEY_COMMANDS } from "./constants.mjs";
 import { DOCS_INDEX_URL, DOCS_MCP_URL } from "./constants.mjs";
 
 /** One flag's line: `--name <what it requires>`, then the modifiers a caller must know to invoke
@@ -42,7 +42,9 @@ export function verbHelp(command) {
     const declared = FLAGLESS_VERBS.includes(command);
     out.push(`conductor.mjs ${command} — takes no flags.`);
     out.push(declared
-      ? "  Positional arguments only, or none. See the command doc for what it expects."
+      ? (FLAGLESS_USAGE[command]
+          ? "  " + FLAGLESS_USAGE[command]
+          : "  Positional arguments only, or none. See the command doc for what it expects.")
       : "  No flags are declared for this verb in the registry.");
   } else {
     out.push(`conductor.mjs ${command} — ${specs.length} flag${specs.length === 1 ? "" : "s"}.`);

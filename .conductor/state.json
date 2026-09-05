@@ -4362,7 +4362,8 @@
       "externalUpdatedAt": "2026-09-01T04:23:19Z",
       "attributedCommits": [
         "989f0ebecc71723ec6e96eb146df996d5e7eec1e",
-        "6beea2b44e1727ccca6a131ead1aaae57f7ebb07"
+        "6beea2b44e1727ccca6a131ead1aaae57f7ebb07",
+        "fd7d741f17200a522321af7d90fab8e1a16a62ed"
       ],
       "notes": [
         {
@@ -4383,7 +4384,8 @@
           "reason": "attributed to a commit that was then reset away: ef45ab2's message described these three fixes and contained none of them — it captured only a leftover staged .githooks file. The real work is re-committed under a new sha. Withdrawn with the verb this incident produced (#166) rather than by hand-editing state.json.",
           "withdrawnAt": "2026-09-04T22:58:25.578Z"
         }
-      ]
+      ],
+      "release": "0.38.0"
     },
     {
       "id": "gh-165-deferral-assertion-mangled-and-immutable",
@@ -4406,7 +4408,8 @@
       "externalUpdatedAt": "2026-09-01T23:18:36Z",
       "attributedCommits": [
         "989f0ebecc71723ec6e96eb146df996d5e7eec1e",
-        "6beea2b44e1727ccca6a131ead1aaae57f7ebb07"
+        "6beea2b44e1727ccca6a131ead1aaae57f7ebb07",
+        "fd7d741f17200a522321af7d90fab8e1a16a62ed"
       ],
       "notes": [
         {
@@ -4423,7 +4426,8 @@
           "reason": "attributed to a commit that was then reset away: ef45ab2's message described these three fixes and contained none of them — it captured only a leftover staged .githooks file. The real work is re-committed under a new sha. Withdrawn with the verb this incident produced (#166) rather than by hand-editing state.json.",
           "withdrawnAt": "2026-09-04T22:58:23.036Z"
         }
-      ]
+      ],
+      "release": "0.38.0"
     },
     {
       "id": "gh-161-strip-always-on-duplicated",
@@ -4499,7 +4503,8 @@
       "externalUpdatedAt": "2026-09-01T06:02:02Z",
       "attributedCommits": [
         "989f0ebecc71723ec6e96eb146df996d5e7eec1e",
-        "6beea2b44e1727ccca6a131ead1aaae57f7ebb07"
+        "6beea2b44e1727ccca6a131ead1aaae57f7ebb07",
+        "fd7d741f17200a522321af7d90fab8e1a16a62ed"
       ],
       "notes": [
         {
@@ -4514,7 +4519,8 @@
           "reason": "attributed to a commit that was then reset away: ef45ab2's message described these three fixes and contained none of them — it captured only a leftover staged .githooks file. The real work is re-committed under a new sha. Withdrawn with the verb this incident produced (#166) rather than by hand-editing state.json.",
           "withdrawnAt": "2026-09-04T22:58:27.322Z"
         }
-      ]
+      ],
+      "release": "0.38.0"
     }
   ],
   "detourStack": [],
@@ -4525,7 +4531,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 314,
+  "revision": 318,
   "reviewMode": "thorough",
   "releases": [
     {
@@ -4590,6 +4596,12 @@
       "intent": "Help that answers the question actually asked: per-verb --help projected from the flag registry, closed enums naming their legal values, and a docs pointer every managed repo receives on its next upgrade",
       "deferred": [],
       "target": "0.37.0"
+    },
+    {
+      "id": "0.38.0",
+      "intent": "The record says what actually happened: the deferral separator stops guessing, a deferral flag outside an archive refuses instead of reporting a phantom write, set-gate-guard reads back, gate verdicts record on any lane, and an attribution can be withdrawn",
+      "deferred": [],
+      "target": "0.38.0"
     }
   ],
   "archiveBackfilledAt": "2026-08-27T04:52:42.658Z"

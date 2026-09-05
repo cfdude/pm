@@ -75,7 +75,7 @@ export function updateEpic() {
       process.exit(1);
     }
     process.stderr.write("conductor: update-epic requires an epic id as its first POSITIONAL argument\n");
-    process.stderr.write(`usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--lane openspec|superpowers|claude-code|decision|external] [--plan <path>] [--spec <path>] [--link \"<${linkTypeVocabulary()}>:<epic>[:<reason>]\"] [--clear-links] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done|--wont-do "<reason>"] [--attribute-commit <sha>] [--withdraw-commit <sha> --reason \"<why>\"] [--outcome ${AGENT_OUTCOMES.join("|")}] [--reason \"<why>\"] [--correct-disposition \"<why the recorded one was wrong>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\"] [--declined-deferral \"<what>::<why not>\"] [--no-deferrals] [--description D] [--notes \"<text>\"] [--external-updated-at <iso>]\n`);
+    process.stderr.write(`usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--lane openspec|superpowers|claude-code|decision|external] [--plan <path>] [--spec <path>] [--link \"<${linkTypeVocabulary()}>:<epic>[:<reason>]\"] [--clear-links] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done|--wont-do "<reason>"] [--attribute-commit <sha>] [--withdraw-commit <sha> --withdrawal-reason \"<why>\"] [--outcome ${AGENT_OUTCOMES.join("|")}] [--reason \"<why>\"] [--correct-disposition \"<why the recorded one was wrong>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\"] [--declined-deferral \"<what>::<why not>\"] [--no-deferrals] [--description D] [--notes \"<text>\"] [--external-updated-at <iso>]\n`);
     process.exit(1);
   }
   const f = parseFlags(argv.slice(1));
@@ -289,8 +289,9 @@ export function updateEpic() {
       if (colons === 0) {
         process.stderr.write(
           `conductor: --declined-deferral "${v}" has no separator — it must read ` +
-          `"<what>:<why not>". The reason is what distinguishes a deliberate decline from work ` +
-          `nobody considered, so it is not optional.\n`);
+          `"<what>:<why not>", or "<what>::<why not>" where <what> itself contains a colon. ` +
+          `The reason is what distinguishes a deliberate decline from work nobody considered, ` +
+          `so it is not optional.\n`);
         process.exit(1);
       }
       if (colons > 1) {
@@ -304,6 +305,21 @@ export function updateEpic() {
       }
       const i = v.indexOf(":");
       return { what: v.slice(0, i).trim(), reason: v.slice(i + 1).trim() };
+    })
+    // BOTH HALVES MUST BE NON-EMPTY. Gate 2: `":"` recorded {what:"", reason:""} and SATISFIED the
+    // archive gate — a deferral assertion asserting literally nothing, which is the exact silence
+    // archive-gate.mjs:208 exists to make impossible. `"x:"` and `"x::"` recorded a decline with no
+    // reason, while the zero-colon refusal two lines up says the reason "is not optional". The
+    // code disagreed with its own message.
+    .map(pair => {
+      if (!pair.what || !pair.reason) {
+        process.stderr.write(
+          `conductor: --declined-deferral needs BOTH halves non-empty — got ` +
+          `what="${pair.what}", reason="${pair.reason}". What was declined, and why not: a blank ` +
+          `half records a decline nobody can read, which is the silence this assertion removes.\n`);
+        process.exit(1);
+      }
+      return pair;
     });
   // A deferral assertion is written ONLY inside the `status === "archived"` branch below, so
   // supplying these flags on any other invocation computed the assertion, dropped it, and printed
@@ -377,16 +393,27 @@ export function updateEpic() {
   // epic untouched, the same ordering every other guard in this file uses.
   if (f["withdraw-commit"] !== undefined) {
     const shas = [].concat(f["withdraw-commit"]).filter(v => typeof v === "string");
-    const why = str(f.reason);
+    // ITS OWN reason flag. `--reason` serves the DISPOSITION, and Gate 2 confirmed that borrowing
+    // it made a withdrawal's reason become the reason the epic was delivered.
+    const why = str(f["withdrawal-reason"]);
     if (!why) {
       process.stderr.write(
-        `conductor: --withdraw-commit requires --reason "<why>" — a withdrawal is a correction, ` +
-        `and a correction without its reason is indistinguishable from a deletion.\n`);
+        `conductor: --withdraw-commit requires --withdrawal-reason "<why>" — a withdrawal is a ` +
+        `correction, and a correction without its reason is indistinguishable from a deletion. ` +
+        `(--reason is the DISPOSITION's, and is not reused here.)\n`);
       process.exit(1);
     }
-    const attributed = Array.isArray(epic.attributedCommits) ? epic.attributedCommits : [];
-    // REFUSE a sha this epic never attributed, rather than removing nothing and reporting
-    // success — the silent-no-op class this release exists to end.
+    // CONTRADICTORY IN ONE INVOCATION. Attribution appends further down, so attributing and
+    // withdrawing the same sha in one call left it in BOTH arrays and reported success.
+    const alsoAttributed = [].concat(f["attribute-commit"] === undefined ? [] : f["attribute-commit"])
+      .filter(v => typeof v === "string" && shas.includes(v));
+    if (alsoAttributed.length) {
+      process.stderr.write(
+        `conductor: cannot attribute and withdraw ${alsoAttributed.join(", ")} in one ` +
+        `invocation — the two record contradictory things about the same commit.\n`);
+      process.exit(1);
+    }
+    const attributed = Array.isArray(epic.attributedCommits) ? epic.attributedCommits.slice() : [];
     const missing = shas.filter(sha => !attributed.includes(sha));
     if (missing.length) {
       process.stderr.write(
@@ -394,7 +421,15 @@ export function updateEpic() {
         `It currently attributes: ${attributed.length ? attributed.join(", ") : "(none)"}.\n`);
       process.exit(1);
     }
-    epic.attributedCommits = attributed.filter(sha => !shas.includes(sha));
+    // ONE OCCURRENCE PER REQUEST. The array does not de-duplicate, so a sha can appear twice;
+    // filtering removed EVERY copy for a single request, deleting two entries and moving the
+    // endpoint a Gate 2 headSha is compared against. Removing the LAST occurrence means the
+    // endpoint moves only when the endpoint itself is what you withdrew.
+    for (const sha of shas) {
+      const at = attributed.lastIndexOf(sha);
+      if (at !== -1) attributed.splice(at, 1);
+    }
+    epic.attributedCommits = attributed;
     epic.withdrawnCommits = (epic.withdrawnCommits || []).concat(
       shas.map(sha => ({ sha, reason: why, withdrawnAt: new Date().toISOString() })));
   }
@@ -505,6 +540,24 @@ export function updateEpic() {
         "afterwards. NOTHING has been recorded for those commits — do not treat this epic's " +
         "attribution as current. Re-run the attribution, then verify with `git show` against the " +
         "COMMIT rather than against the working tree.\n");
+      process.exit(1);
+    }
+  }
+  // I4 — the REMOVAL gets the same read-back the append has, and for the same reason: render()
+  // writes the file again after saveState(), so a removal is exactly as vulnerable to being
+  // silently undone as an append (#140's mechanism). Reporting a withdrawal that did not land
+  // would be the false-write class this whole release is about, in the verb that fixes it.
+  if (f["withdraw-commit"] !== undefined) {
+    const asked = [].concat(f["withdraw-commit"]).filter(v => typeof v === "string");
+    const after = loadState().epics.find(e => e.id === id);
+    const stillThere = asked.filter(sha =>
+      (after && Array.isArray(after.withdrawnCommits) ? after.withdrawnCommits : [])
+        .every(w => w.sha !== sha));
+    if (stillThere.length) {
+      process.stderr.write(
+        `conductor: --withdraw-commit did NOT land for ${stillThere.join(", ")} on '${id}' — ` +
+        ".conductor/state.json holds no withdrawal record for them afterwards. Do not treat " +
+        "this epic's attribution as corrected; re-run the withdrawal.\n");
       process.exit(1);
     }
   }

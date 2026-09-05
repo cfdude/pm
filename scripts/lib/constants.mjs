@@ -270,8 +270,10 @@ export const EPIC_FLAGS = [
   // declaration of the flag surface every epic-WRITING command shares, and recording a verdict
   // writes an epic. `key` is null on all three: they land nested under `gateReview.gateN`
   // rather than on a top-level epic key, so the command owns the write.
-  { flag: "base-sha", key: null, commands: ["record-gate-review"], write: "custom" },
-  { flag: "head-sha", key: null, commands: ["record-gate-review"], write: "custom" },
+  { flag: "base-sha", key: null, commands: ["record-gate-review"], write: "custom",
+    placeholder: "a sha — REQUIRED for a pass, optional for a fail" },
+  { flag: "head-sha", key: null, commands: ["record-gate-review"], write: "custom",
+    placeholder: "a sha — REQUIRED for a pass, optional for a fail" },
   { flag: "reviewer", key: null, commands: ["record-gate-review", "record-cross-spec-review"], write: "custom" },
   // Attribution is an EXPLICIT array of hashes the agent supplies, and the engine infers it
   // from nothing else — not the files a commit touches, not an epic id in a commit message.
@@ -297,6 +299,11 @@ export const EPIC_FLAGS = [
   // judgments — and the sibling is what keeps the endpoint rule intact.
   { flag: "withdraw-commit", key: null, commands: ["update-epic"], repeats: true, write: "custom",
     requires: "the sha to withdraw", placeholder: "a sha this epic attributed" },
+  // Its OWN reason flag, not `--reason`. Gate 2 found the collision: `--reason` already serves the
+  // DISPOSITION, so a withdrawal forced to borrow it silently rewrote why the epic was delivered,
+  // and rendered that way in PROJECT.md. Two records, two reasons, two flags.
+  { flag: "withdrawal-reason", key: null, commands: ["update-epic"], write: "custom",
+    requires: "why the attribution is being withdrawn" },
   // The interactive archive verb's disposition. `key` is `disposition` for both: they are two
   // halves of ONE record the verb builds and writes together, never two epic fields.
   { flag: "outcome", key: "disposition", commands: ["update-epic"], write: "custom",
@@ -538,6 +545,18 @@ export const VERB_FLAGS = [
  *  "this verb takes no flags" and "nobody got round to declaring this verb" cannot look the same
  *  — which is precisely how a dozen verbs came to sit outside #149's rule without anyone
  *  deciding they should. */
+/** What a FLAGLESS verb's positional surface actually is, for the verbs where that surface is the
+ *  whole point and "takes no flags" alone would hide it. Keyed by verb; help prints it verbatim.
+ *
+ *  #159's complaint was "there is no way to answer whether the guard is on" — and the release that
+ *  answered it left `set-gate-guard --help` saying "takes no flags. Positional arguments only, or
+ *  none", never naming the read form it had just added. A verb whose surface is positional needs
+ *  help that says what the positionals ARE. Additive: a verb absent from this map renders exactly
+ *  as before. */
+export const FLAGLESS_USAGE = {
+  "set-gate-guard": "set-gate-guard on|off   — set it\n  set-gate-guard          — READ it: the current value, what it enforces, and whether anything is blocked right now",
+};
+
 export const FLAGLESS_VERBS = [
   "init", "brief", "snapshot", "commit-nudge", "sync", "log-detour", "honcho-memory",
   "reorder", "set-active", "clear-active", "suggest-lane", "set-gate-guard", "gate-guard",
