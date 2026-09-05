@@ -62,20 +62,41 @@ def run_claude_code(
     # REPLAY this exact value rather than re-deriving its own from REPO_ROOT (that decoupling
     # was the Task 4/5 defect: a diagnostic re-query that ignores what this argv actually used).
     plugin_dir = str(REPO_ROOT)
-    proc = subprocess.run(
-        [
-            "claude", "-p", prompt,
-            "--plugin-dir", plugin_dir,
-            "--allowedTools", allowed_tools,
-            "--permission-mode", "acceptEdits",
-            "--output-format", "json",
-        ],
-        cwd=str(cwd),
-        env=_child_env(),
-        capture_output=True,
-        text=True,
-        timeout=timeout,
-    )
+    # TimeoutExpired CARRIES the partial transcript in e.stdout/e.stderr, and letting it
+    # propagate discarded both — the adapter's bare except turns it into a sentinel with empty
+    # strings. INFRA_FAILURE_EXIT_CODE's own docstring names a timeout as an expected failure, and
+    # a timed-out run is exactly the one whose partial output explains what the agent was doing
+    # when it hung. Caught here rather than in the adapter: the adapter cannot recover what this
+    # frame already holds.
+    try:
+        proc = subprocess.run(
+            [
+                "claude", "-p", prompt,
+                "--plugin-dir", plugin_dir,
+                "--allowedTools", allowed_tools,
+                "--permission-mode", "acceptEdits",
+                "--output-format", "json",
+            ],
+            cwd=str(cwd),
+            env=_child_env(),
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+    except subprocess.TimeoutExpired as e:
+        # Decoded defensively: with text=True these are str, but a runner added later that omits
+        # it would hand back bytes, and a diagnostic path must not raise while reporting a failure.
+        def _text(v):
+            if v is None:
+                return ""
+            return v if isinstance(v, str) else v.decode("utf-8", "replace")
+        return {
+            "exit_code": -1,
+            "stdout": _text(e.stdout),
+            "stderr": _text(e.stderr) + f"\n[timed out after {timeout}s]",
+            "plugin_dir": plugin_dir,
+            **_parse_result(_text(e.stdout)),
+        }
     return {
         "exit_code": proc.returncode,
         "stdout": proc.stdout,

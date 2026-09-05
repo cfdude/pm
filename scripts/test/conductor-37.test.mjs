@@ -29,7 +29,20 @@
 // that gap were considered and rejected below, on the grounds that a gate which is wrong most of
 // the time is a gate nobody reads.
 //
-// EVERY ASSERTION HERE WAS MEASURED AT 0 VIOLATIONS ACROSS ALL 27 SHIPPED MARKDOWN FILES BEFORE
+// AND HERE IS THE NUMBER, because "would have caught #156" is true of one artifact and oversells
+// the gate. Excising contiguous blocks at every offset in real shipped files, the detection rate
+// on the mid-document shape #156 actually took:
+//
+//     skills/conductor/SKILL.md   78-line cut   9.3%   20-line cut   3.8%   tail cut 13.7%
+//     commands/epic.md            78-line cut   3.4%   20-line cut   2.2%   tail cut 12.7%
+//     README.md                   78-line cut  31.0%   20-line cut  16.3%   tail cut 63.7%
+//
+// #156 itself falls inside that 9.3%. So this is a real guard against a real defect and NOT a
+// general truncation detector — stated as a measured rate rather than as "an edge case", because
+// the edge is the majority. Raising it means adding assertions that clear the same
+// measured-false-positive bar these did, never loosening these.
+//
+// EVERY ASSERTION HERE WAS MEASURED AT 0 VIOLATIONS ACROSS EVERY SHIPPED MARKDOWN FILE BEFORE
 // IT WAS ADOPTED. Candidates that scored above zero were rejected, and the rejections are
 // recorded at the bottom of this file so nobody re-proposes them.
 import { test } from "node:test";
@@ -38,6 +51,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { PARITY_ROOTS } from "./parity-helpers.mjs";
 
 const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
@@ -60,8 +74,17 @@ const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..")
  *  `.claude-plugin/` hold only JSON today — verified, no *.md — but they are shipped surface the
  *  parity ledger already claims, so they are walked anyway: a doc dropped into either one next
  *  release is checked the day it lands rather than the day someone remembers to add it here. */
-const SHIPPED_MD_ROOTS = ["skills", "commands", "agents", "hooks", ".claude-plugin"];
-const SHIPPED_MD_FILES = ["README.md"];
+// IMPORTED, never re-typed. Gate 2 caught this as a literal copy of parity-helpers.mjs's
+// PARITY_ROOTS with byte-identical values — the exact defect #161 fixes two commits later in this
+// same release ("one definition PREVENTS it"). A sixth shipped root added to the parity ledger and
+// not here leaves the new tree silently unchecked, and the coverage guard cannot see that: the
+// count stays above its floor and all four named files are still present.
+const SHIPPED_MD_ROOTS = PARITY_ROOTS;
+// CHANGELOG.md is SHIPPED SURFACE, not repo bookkeeping: plugin-meta.mjs reads it out of the
+// plugin root at runtime and /pm:changelog parses it. Excluding it was load-bearing and
+// unrecorded — and the exclusion hid a real defect. 0.35.0 shipped a heading with NO ENTRY and
+// nothing noticed for four releases; this check reports it as an empty section. Backfilled here.
+const SHIPPED_MD_FILES = ["README.md", "CHANGELOG.md"];
 
 /** Repo-relative paths of every shipped markdown file, sorted. */
 export function shippedMarkdown(rootDir = REPO) {
@@ -153,10 +176,17 @@ export function structuralViolations(text) {
   // followed by a code block, a table, a list or a blockquote has content and passes — which is
   // why this walks the raw lines and treats fenced code as content rather than stripping it.
   // Headings INSIDE fenced code are skipped: `# comment` in a bash example is not a heading.
+  // ONE EXEMPTION, by exact name. Keep a Changelog defines `## [Unreleased]` as a standing
+  // placeholder for work not yet released, so it is empty by convention rather than by
+  // truncation. Narrow deliberately: exempting a PATTERN (say, any bracketed heading) would
+  // quietly excuse every version heading, which is exactly the empty section this check just
+  // found in 0.35.0. One literal, and it stops excusing anything the moment the name changes.
+  const EXEMPT_EMPTY = new Set(["## [Unreleased]"]);
   for (let i = 0; i < lines.length; i++) {
     if (code[i]) continue;
     const m = lines[i].match(/^(#{1,6})\s+\S/);
     if (!m) continue;
+    if (EXEMPT_EMPTY.has(lines[i].trim())) continue;
     let j = i + 1;
     while (j < lines.length && lines[j].trim() === "") j++;
     if (j >= lines.length) {
@@ -190,8 +220,13 @@ export function structuralViolations(text) {
   // see the rejected-assertions note at the bottom, which measured why. Counted outside fenced
   // code so a fenced HTML example cannot skew it.
   const prose = lines.filter((_, i) => !code[i]).join("\n");
-  const opens = (prose.match(/<details[\s>]/g) || []).length;
-  const closes = (prose.match(/<\/details>/g) || []).length;
+  // Inline code spans stripped FIRST. Gate 2 found CHANGELOG.md mentioning `<details>` twice
+  // while describing this very assertion — both inside backticks, neither real HTML — so a doc
+  // that documents the gate would false-positive on itself. Fenced blocks were already excluded;
+  // this closes the inline half.
+  const noInline = prose.replace(/`[^`\n]*`/g, "");
+  const opens = (noInline.match(/<details[\s>]/g) || []).length;
+  const closes = (noInline.match(/<\/details>/g) || []).length;
   if (opens !== closes) {
     v.push({ line: 0, kind: "unclosed-details", detail: `${opens} <details> opened, ${closes} closed` });
   }

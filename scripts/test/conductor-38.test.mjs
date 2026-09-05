@@ -70,7 +70,7 @@ test("#162: the handoff hands the child the SAME fd, so it cannot buffer or drop
 
 // ═══════════════ the truncation that IS real, and is not delegation's ═══════════════
 
-test("no verb writes enough to stdout before process.exit to hit the pipe buffer", async () => {
+test("no verb's EXITING --help path writes enough to hit the pipe buffer", async () => {
   // The one genuine truncation mechanism found: a process that writes a large payload to a PIPE
   // and then calls process.exit() truncates at the buffer, because exit skips the flush. Measured
   // at 65536 bytes, and IDENTICAL with and without the delegating parent — so it is Node's exit
@@ -95,4 +95,41 @@ test("no verb writes enough to stdout before process.exit to hit the pipe buffer
   assert.deepEqual(over, [],
     `these write more than ${BUDGET} bytes and then exit, which truncates at the pipe buffer:\n` +
     over.join("\n"));
+});
+
+test("and no NON-help path writes large stdout then exits — the sibling the loop cannot reach", () => {
+  // Gate 2's finding: the test above is named for all verbs and exercises only `--help`, so the
+  // identical sibling class — any verb that writes big output on a normal path and then exits —
+  // sat unguarded, and would never appear in a diff. Invoking all 48 verbs for real is not
+  // available (most need arguments and most mutate), so this asserts the property STATICALLY:
+  // every `process.exit` in the engine must not sit close after a stdout write, which is the
+  // shape that truncates.
+  //
+  // The sweep found no live instance — `rules` (28 KB), `integrity`, `activity`, `verify-specs`
+  // and `owners` all write and RETURN — so this holds the property rather than fixing a bug.
+  const files = [path.join(REPO, "scripts", "conductor.mjs"),
+    ...fs.readdirSync(path.join(REPO, "scripts", "lib"))
+      .filter(f => f.endsWith(".mjs")).map(f => path.join(REPO, "scripts", "lib", f))];
+  const risky = [];
+  for (const file of files) {
+    const lines = fs.readFileSync(file, "utf8").split("\n");
+    lines.forEach((line, i) => {
+      if (!/process\.exit\(/.test(line)) return;
+      // A write within the preceding 3 lines is the truncation shape. Small literal writes are
+      // fine; what this forbids is exiting right after emitting a VARIABLE payload, whose size
+      // nothing here bounds.
+      const before = lines.slice(Math.max(0, i - 3), i).join("\n");
+      if (!/process\.stdout\.write\((?!"|`[^`$]*`)/.test(before)) return;
+      // The help short-circuit is EXCLUDED here because the test above measures it directly, and
+      // a measured byte count beats a static shape. Excluded by what it writes rather than by
+      // line number, so it survives the file moving: any OTHER non-literal write before an exit
+      // still fails. Together the two tests cover the whole class — the runtime one where it can
+      // invoke, this one where it cannot.
+      if (/verbHelp\(|write\(USAGE\)/.test(before)) return;
+      risky.push(`${path.basename(file)}:${i + 1}`);
+    });
+  }
+  assert.deepEqual(risky, [],
+    "these write a non-literal payload to stdout and then exit, which truncates at the pipe " +
+    `buffer for a caller with a piped stdout:\n${risky.join("\n")}`);
 });

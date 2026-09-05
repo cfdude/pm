@@ -319,6 +319,61 @@ pointer to the docs for everything the engine does not know.
 
 ## [0.35.0] — 2026-08-29
 
+> **BACKFILLED 2026-09-05.** This release shipped with a heading and no entry — its CHANGELOG diff
+> was two lines — and nothing noticed for four releases. Found by 0.39.0's structural check, which
+> reports `## [0.35.0]` as an empty section; the check had excluded `CHANGELOG.md`, and that
+> exclusion is what hid it. Reconstructed from PR #155 and `1896ce1`, not from memory.
+
+**The engine is present at the transition it was absent from.** 1,036 tests, up from 953. No
+migration.
+
+### Added
+
+* **`push-detour` / `pop-detour` — the substantial-detour transition becomes a verb.** PUSH was a
+  documented **hand-edit of `state.json`**, the one mechanism this project tells every agent never
+  to use, at its most consequential transition: no validation, no conflict guard, no read-back, no
+  record that it happened. It is also why #94's gate could not be built — a gate needs the engine
+  present at the moment it gates. POP mattered *more*: it removes the frame before reconciliation
+  runs, and the archive heal clears `reconcileNeeded` for any epic with no live frame, so as two
+  separate writes **the obligation is destroyed by the heal meant to preserve it.** The verb does
+  frame removal, the obligation write and the pointer move in one state object and one write.
+* **`claim` / `unclaim` / `owners`** — advisory ownership, with **exactly one refusal**: claiming
+  over another session's live claim exits non-zero having written nothing, so "two sessions both
+  claim" has a defined outcome rather than a race. Everything else writes to a claimed epic
+  unchanged, because a tool that refused to work over an advisory marker would be a lock wearing
+  the wrong name. The override is `--steal`, not `--force`, and that is not cosmetic: `saveState()`
+  reads `--force` globally off argv, so that spelling would have silently disabled optimistic
+  concurrency as a side effect. A stated **TTL rather than a heartbeat** — a heartbeat nothing
+  beats is a creation timestamp in costume, and makes staleness wrong in both directions.
+* **An activity log that ships with its reader.** A log nobody reads is a data graveyard, and this
+  project has declined things on that argument. Events carry a revision **range** rather than a
+  number, because an ordinary update writes twice and single-number events would flag every normal
+  write as a hand-edit.
+
+### Changed
+
+* **The flag-value rule binds the dispatch table, not one registry (#152).** It had covered only
+  the epic write surfaces and so no-opped on a dozen verbs — and **two of them had each
+  independently hand-rolled the same check**, which is the tell that a rule is bound to a list
+  rather than to the function it governs.
+
+### Fixed
+
+* **`activity --bogus` printed the entire report and exited 0** — that verb had no unknown-flag
+  allowlist at all. Found during integration, not by either gate.
+
+### Notes
+
+* **#123 investigated and killed on evidence, no code.** `openspec validate --archived` fails this
+  repository's own correctly-archived change because it counts raw checkboxes and knows nothing of
+  the `{/* pm:lifecycle */}` marker, unticked at archive time by construction. Two tools computing
+  different quantities from one file, with no precedence rule between them. Surfaced #154.
+* **The guard earned itself twice in one merge.** Two branches merged cleanly and the *combination*
+  failed; then the obvious shortcut — declaring four verbs' flags anyway — was refused, because
+  those verbs hand-parse argv and declaring them value-bearing asserts a refusal that never
+  happens. The red merge was aborted rather than committed.
+* Mutation testing: 27 + 24 + 20, nine survivors, each a real gap that got the test which kills it.
+
 ## [0.34.0] — 2026-08-29
 
 ### Added
