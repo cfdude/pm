@@ -93,7 +93,17 @@ export function gateStaleness(epic, entry) {
   if (!entry || typeof entry.verdict !== "string") return { state: "none", uncovered: [] };
   const attributed = epic && epic.attributedCommits;
   if (!Array.isArray(attributed)) return { state: "unverifiable", uncovered: [] };
-  if (!attributed.length) return { state: "none-attributed", uncovered: [] };
+  // WITHDRAWN IS NOT THE SAME AS NEVER-ATTRIBUTED. Gate 2 found the bypass: an epic whose
+  // verdict read `stale` could be archived by simply withdrawing every attribution, because an
+  // empty array reads `none-attributed` and the archive gate lets that through. A withdrawal is a
+  // CORRECTION — it says the sha was wrong — and it must never be a route past a gate. An epic
+  // that attributed, then withdrew, and now attributes nothing owes the real range.
+  if (!attributed.length) {
+    const withdrawn = epic && Array.isArray(epic.withdrawnCommits) ? epic.withdrawnCommits : [];
+    return withdrawn.length
+      ? { state: "attribution-withdrawn", uncovered: [], withdrawn }
+      : { state: "none-attributed", uncovered: [] };
+  }
   if (!gateHasEvidence(entry)) return { state: "unverifiable", uncovered: [] };
   const last = attributed[attributed.length - 1];
   if (sameCommit(last, entry.headSha) === true) return { state: "fresh", uncovered: [] };
@@ -112,6 +122,7 @@ export function stalenessMarking(epic, entry) {
     case "stale": return " ⚠ stale";
     case "unverifiable": return " ⚠ unverifiable";
     case "none-attributed": return " · no attributed commits";
+    case "attribution-withdrawn": return " ⚠ attribution withdrawn";
     default: return "";
   }
 }
@@ -209,7 +220,7 @@ export function archiveGate(epic, request = {}) {
     return { ok: false, message:
       `cannot archive '${epic.id}' — no deferral assertion recorded. Say what this change ` +
       `deferred: --deferral "<epicId>:<artifact section>" for work now held by a registered ` +
-      `epic, --declined-deferral "<what>:<why not>" for one you are deliberately not doing, ` +
+      `epic, --declined-deferral "<what>::<why not>" for one you are deliberately not doing, ` +
       `or --no-deferrals if there are none. What was deferred is yours to identify; this ` +
       `command does not read your artifacts and will not guess.` };
   }
@@ -245,6 +256,19 @@ export function archiveGate(epic, request = {}) {
         `${staleness.headSha}, which does not cover the commit(s) attributed to this epic ` +
         `since: ${staleness.uncovered.join(", ")}. Re-review the full range and record it, or ` +
         `correct the attribution.` };
+    }
+    // WITHDRAWING EVERY ATTRIBUTION IS NOT A ROUTE THROUGH THIS GATE. Gate 2 found it: an epic
+    // whose verdict read `stale` archived cleanly after `--withdraw-commit` emptied the array,
+    // because an empty array reads `none-attributed` and that is deliberately not a refusal.
+    // A withdrawal says a sha was WRONG, never that the work was never done, so an epic that
+    // attributed and then withdrew everything still owes the real range.
+    if (staleness.state === "attribution-withdrawn") {
+      return { ok: false, message:
+        `cannot archive openspec-lane epic '${epic.id}' — it carries a passing Gate 2 and ` +
+        `attributes no commits, having withdrawn ${staleness.withdrawn.length} ` +
+        `(${staleness.withdrawn.map(w => w.sha).join(", ")}). A withdrawal corrects the record; ` +
+        `it does not remove the obligation. Attribute the commits that actually shipped, then ` +
+        `re-record Gate 2 over the range that covers them.` };
     }
   }
 

@@ -313,6 +313,26 @@ const EXERCISE = {
   "--deferral": { args: ["--status", "archived", "--outcome", "delivered", "--deferral", "other:design.md § Risks"], check: (e) => assert.deepEqual(e.deferralAssertion.deferrals, [{ epic: "other", section: "design.md § Risks" }]) },
   "--declined-deferral": { args: ["--status", "archived", "--outcome", "delivered", "--declined-deferral", "a second zero-fall-through fix:not worth the schema"], check: (e) => assert.deepEqual(e.deferralAssertion.declined, [{ what: "a second zero-fall-through fix", reason: "not worth the schema" }]) },
   "--attribute-commit": { args: ["--attribute-commit", "abc1234"], check: (e) => assert.deepEqual(e.attributedCommits, ["abc1234"]) },
+  // #166. A `setup` is REQUIRED here, not convenience: the verb refuses a sha the epic never
+  // attributed, so an exercise without one would assert the refusal rather than the write.
+  // The check covers BOTH halves — the array loses the sha, and the sibling record gains it —
+  // because a withdrawal that erased without recording would pass a check on the array alone.
+  // Its own reason, exercised through the verb it belongs to: --withdrawal-reason is not
+  // invocable alone, exactly like --story/--done, so both rows assert the half they own.
+  "--withdrawal-reason": {
+    setup: ["--attribute-commit", "abc1234"],
+    args: ["--withdraw-commit", "abc1234", "--withdrawal-reason", "reset away"],
+    check: (e) => assert.equal(e.withdrawnCommits.at(-1).reason, "reset away"),
+  },
+  "--withdraw-commit": {
+    setup: ["--attribute-commit", "abc1234"],
+    args: ["--withdraw-commit", "abc1234", "--withdrawal-reason", "reset away"],
+    check: (e) => {
+      assert.deepEqual(e.attributedCommits, []);
+      assert.equal(e.withdrawnCommits.at(-1).sha, "abc1234");
+      assert.equal(e.withdrawnCommits.at(-1).reason, "reset away");
+    },
+  },
   "--add-story": { args: ["--add-story", "a story"], check: (e) => assert.equal(e.stories.at(-1).title, "a story") },
   // --story and --done are a control PAIR: neither is invocable alone, so both are exercised
   // by the same invocation and each asserts the half it is responsible for.

@@ -39,6 +39,12 @@ and size the reviewer budget accordingly — don't default back to ad-hoc judgme
 repo-level setting: it applies uniformly regardless of which epic is active, EXCEPT where a
 single epic has an escalation-only override (below).
 
+Then RECORD the verdict, whatever the lane. This dial is lane-agnostic — the table above names a
+Superpowers task review — and `record-gate-review <id> --gate 1|2 --verdict pass|fail --base-sha
+<a> --head-sha <b>` now accepts any lane to match, so a review this dial asked for has somewhere
+to land as checkable fields instead of prose. Recording one creates no archive obligation: the
+archive gate remains openspec-only. See `/pm:epic`'s "Record a gate verdict".
+
 ## Per-epic override (escalate only, never de-escalate)
 
 A single epic can be forced to a stricter mode than the repo-global dial — e.g. a
