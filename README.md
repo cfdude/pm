@@ -46,11 +46,11 @@ Not a benchmark — real numbers pulled straight from this repo's own history, v
 - Every multi-agent hierarchy dispatch runs **worktree-isolated**, unattended, converging back
   through sequential merge with **zero data loss** — every conflict seen so far has been
   mechanical (a shared CHANGELOG header, a usage string), never a real logic collision.
-- **43 releases** shipped end-to-end (spec → build → test → changelog → version bump → release)
+- **56 releases** shipped end-to-end (spec → build → test → changelog → version bump → release)
   with the plugin managing its own backlog the entire time.
-- **603 tests**, **0 dependencies** — the entire engine is Node 18+ built-ins only, ~6,000 lines
-  across a 174-line `scripts/conductor.mjs` entry point and 32 `scripts/lib/*.mjs` modules,
-  nothing to `npm install`. The suite itself is split across 18 files so it runs in parallel.
+- **1,116 tests**, **0 dependencies** — the entire engine is Node 18+ built-ins only, ~12,600 lines
+  across a 308-line `scripts/conductor.mjs` entry point and 52 `scripts/lib/*.mjs` modules,
+  nothing to `npm install`. The suite itself is split across 46 files so it runs in parallel.
 - Caught its own bugs mid-flight, live: a stale-cache silent fallback, an archived-child leak in
   hierarchy planning, a false-positive auto-detour heuristic — each found by using the tool on
   itself, logged as a `DF-` finding, and fixed in the same session it was discovered.

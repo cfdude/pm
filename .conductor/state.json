@@ -1619,7 +1619,9 @@
       "links": [],
       "reconcileNeeded": false,
       "attributedCommits": [
-        "30483d12bea29e2aa3b505b80d5da2e44e9dbb09"
+        "30483d12bea29e2aa3b505b80d5da2e44e9dbb09",
+        "bac265e7326e983196f12282838f04ad0f0db0c8",
+        "4339e67e00e6075b9d24748951de056fb1f7acd8"
       ]
     },
     {
@@ -4181,7 +4183,9 @@
       "attributedCommits": [
         "94cd7d1",
         "4a90d5c07935cedbe59eac9d51e6b563e4a2e2c5",
-        "b52da22d1bc51d880538197283e85c8fd5e7bd0b"
+        "b52da22d1bc51d880538197283e85c8fd5e7bd0b",
+        "bac265e7326e983196f12282838f04ad0f0db0c8",
+        "4339e67e00e6075b9d24748951de056fb1f7acd8"
       ],
       "trackerRefresh": {
         "verdict": "unchanged",
@@ -4520,7 +4524,8 @@
       "externalUpdatedAt": "2026-09-01T04:59:41Z",
       "attributedCommits": [
         "b52da22d1bc51d880538197283e85c8fd5e7bd0b",
-        "b52da22d1bc51d880538197283e85c8fd5e7bd0b"
+        "b52da22d1bc51d880538197283e85c8fd5e7bd0b",
+        "bac265e7326e983196f12282838f04ad0f0db0c8"
       ],
       "notes": [
         {
@@ -4557,7 +4562,9 @@
       "externalUpdatedAt": "2026-09-01T05:37:49Z",
       "attributedCommits": [
         "b52da22d1bc51d880538197283e85c8fd5e7bd0b",
-        "b52da22d1bc51d880538197283e85c8fd5e7bd0b"
+        "b52da22d1bc51d880538197283e85c8fd5e7bd0b",
+        "bac265e7326e983196f12282838f04ad0f0db0c8",
+        "4339e67e00e6075b9d24748951de056fb1f7acd8"
       ],
       "notes": [
         {
@@ -4641,14 +4648,14 @@
     }
   ],
   "detourStack": [],
-  "pmVersion": "0.36.0",
+  "pmVersion": "0.39.0",
   "tracker": {
     "system": "github-issues",
     "repo": "cfdude/pm",
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 341,
+  "revision": 350,
   "reviewMode": "thorough",
   "releases": [
     {

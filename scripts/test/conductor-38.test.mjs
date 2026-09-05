@@ -11,8 +11,9 @@
 //
 // The issue's own evidence does not support its headline either: it recorded no output LENGTH, so
 // "a missing heading" was never distinguished from "truncation" — a missing heading at full length
-// is a different BLOCK, not a short read. And its "193 pass" is ~55 below the static floor for
-// those five files, so that run did not execute all of their tests at all. The likeliest
+// is a different BLOCK, not a short read. And its "193 pass" is ~67 below the static floor for
+// those five files (260 static declarations at 820a303; the first published figure, ~67, omitted
+// conductor-34 — the correction strengthens the conclusion), so that run did not execute all of their tests at all. The likeliest
 // explanation left standing is docs/lessons/measuring-under-concurrent-writes.md: the issue was
 // filed in a window where two of the files under test carried uncommitted in-progress edits.
 //

@@ -306,7 +306,7 @@ export function runHookAgainstFixture(testFileBody, { extraFiles = {} } = {}) {
  *  HOISTED HERE (#161) because it was duplicated across conductor-14 and conductor-15, which both
  *  compare against the same 0.26.0 fixtures and so must strip identically. Nothing enforced that.
  *  It was found the way it was always going to be found: 0.37.0 added one always-on section, the
- *  edit landed in one copy, that file ran 93/93 green, and the sibling failed in the full suite.
+ *  edit landed in one copy, that file ran green on its own (68/68), and the sibling failed in the full suite.
  *  A byte-identity test between the two copies was considered and rejected — it DETECTS
  *  divergence where one definition PREVENTS it.
  *

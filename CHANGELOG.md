@@ -17,10 +17,11 @@ stale, and a reported stdout loss that turned out not to exist.
 ### Added
 
 * **A structural check over every shipped markdown file.** A skill lost 78 lines in 0.31.0 and no
-  check noticed for four releases, because **every existing guard asserts things are PRESENT** and
+  check noticed for five releases (0.31.0 through 0.35.0), because **every existing guard
+  asserts things are PRESENT** and
   a truncation is an absence *below* the last thing anyone asserts. Five assertions — an unclosed
   code fence, unterminated frontmatter, a heading whose section is empty, a table header with no
-  rows, unbalanced `<details>` — each **measured at zero violations across all 27 shipped files**
+  rows, unbalanced `<details>` — each **measured at zero violations across every shipped markdown file**
   before adoption. The fence check is a *tracker*, not line parity: a ` ```` `-fence holding a
   ` ``` `-example has even parity while well-formed, and truncating inside it keeps parity even,
   so parity would call the broken file clean.
@@ -61,8 +62,10 @@ stale, and a reported stdout loss that turned out not to exist.
   it has exited and flushed. 0 reproductions in 34 full-suite runs across two trees; 200 delegating
   runs at 24-way parallelism against a 1 MB payload gave one distinct output length every time.
   The issue recorded no output *length*, so a missing heading at full size — a different block —
-  was never distinguished from a short read, and its "193 pass" is ~55 below the static floor for
-  those files. Filed in a window where two files under test carried uncommitted edits; the lesson
+  was never distinguished from a short read, and its "193 pass" is **~67 below the static floor**
+  for those files — 260 static `test(` declarations across conductor-13/14/15/34/35 at `820a303`.
+  (Published first as "~55", which omitted conductor-34 from the floor; the correction makes the
+  conclusion stronger, not weaker, and the public issue comment carries the same correction.) Filed in a window where two files under test carried uncommitted edits; the lesson
   it walked into (`docs/lessons/measuring-under-concurrent-writes.md`) was already in this repo.
   Both facts are now tests, so the mechanism cannot be re-derived from the issue text later.
 
