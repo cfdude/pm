@@ -4724,6 +4724,92 @@
       "externalUrl": "https://github.com/cfdude/pm/issues/172",
       "externalUpdatedAt": "2026-09-05T09:41:51Z",
       "attributedCommits": []
+    },
+    {
+      "id": "gh-cfdude-pm-168",
+      "title": "/pm:upgrade hardcodes the engine path, so it silently re-stamps the OLD version",
+      "priority": "P0",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-139-command-doc-engine-fallback-ungated",
+          "reason": "same command-doc engine-resolution mechanism, different failure"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "168",
+      "externalUrl": "https://github.com/cfdude/pm/issues/168",
+      "attributedCommits": [],
+      "notes": [
+        {
+          "at": "2026-09-06T02:20:34.446Z",
+          "actor": "agent",
+          "text": "lane: superpowers not <none routed> — multi-site fix across every command doc's engine resolver plus a staleness guard; gh-139 precedent was 15 sites"
+        }
+      ],
+      "externalUpdatedAt": "2026-09-03T22:53:16Z"
+    },
+    {
+      "id": "gh-cfdude-pm-169",
+      "title": "update-epic --link replaces an epic's existing links instead of appending",
+      "priority": "P1",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-66-update-epic-missing-flags",
+          "reason": "re-reports two surfaces gh-66 closed as delivered — the unset half was never shipped"
+        },
+        {
+          "type": "relates-to",
+          "epic": "gh-70-link-validation-gap",
+          "reason": "same link surface"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "169",
+      "externalUrl": "https://github.com/cfdude/pm/issues/169",
+      "attributedCommits": [],
+      "notes": [
+        {
+          "at": "2026-09-06T02:20:38.175Z",
+          "actor": "agent",
+          "text": "lane: superpowers not <none routed> — changes shared behavior on the update surface; gh-66 already shipped this partially once"
+        }
+      ],
+      "externalUpdatedAt": "2026-09-04T22:25:53Z"
+    },
+    {
+      "id": "gh-cfdude-pm-167",
+      "title": "sync has no --dry-run: registering archived changes is unpreviewable, and no selective import",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-117-sync-blind-to-archived-changes",
+          "reason": "fallout of that feature shipping with no preview or subset control"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "167",
+      "externalUrl": "https://github.com/cfdude/pm/issues/167",
+      "attributedCommits": [],
+      "notes": [
+        {
+          "at": "2026-09-06T02:20:41.834Z",
+          "actor": "agent",
+          "text": "lane: superpowers not <none routed> — the subset selector has real design ambiguity"
+        }
+      ],
+      "externalUpdatedAt": "2026-09-03T01:14:23Z"
     }
   ],
   "detourStack": [],
@@ -4734,7 +4820,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 357,
+  "revision": 366,
   "reviewMode": "thorough",
   "releases": [
     {
