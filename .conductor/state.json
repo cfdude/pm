@@ -1037,12 +1037,28 @@
       "id": "multi-platform-agent-support",
       "title": "Support additional AI coding platforms beyond Claude Code: Codex, Gemini CLI, Grok Build (xAI), and generic agents.md-based platforms (most non-Claude-Code tools use AGENTS.md instead of CLAUDE.md for project instructions). Needs investigation into what pm's plugin distribution mechanism would need to look like per-platform (skills dir conventions, command registration) before scoping real work — referenced from the README's Supported Platforms table as 'Planned'.",
       "priority": "P3",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
-      "startedAt": "2026-07-25T19:35:58.751Z"
+      "startedAt": "2026-07-25T19:35:58.751Z",
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-09-08T06:43:24.797Z",
+        "reason": "Premise dead for 2 of 6 platforms. This epic's premise was 'needs investigation before scoping'; Codex and Hermes were since investigated hands-on (CLI 0.145.0 / v0.19.0), are separately registered as codex-platform-support and hermes-platform-support, and README.md:207-208 now reads 'Rules block only' for both. The umbrella carried no links in state — the parent/child relationship existed only in a design doc — so it was invisible to every dependency surface. Remaining uninvestigated scope re-registered as remaining-platform-investigation. Grooming pass 2026-09-07."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-08T06:43:24.797Z",
+        "deferrals": [
+          {
+            "epic": "remaining-platform-investigation",
+            "section": "Gemini CLI, Grok Build, generic AGENTS.md"
+          }
+        ],
+        "declined": []
+      },
+      "completedAt": "2026-09-08T06:43:24.797Z"
     },
     {
       "id": "df-no-mechanical-openspec-gate-enforcement",
@@ -1655,6 +1671,13 @@
           "title": "if CLAUDE.md is absent but AGENTS.md (or sol.md) exists, read its contents -- it may dictate what belongs in CLAUDE.md, or at minimum hint how to initialize correctly in a project another agent already used",
           "done": false
         }
+      ],
+      "notes": [
+        {
+          "at": "2026-09-08T06:43:59.949Z",
+          "actor": "agent",
+          "text": "RESCOPE 2026-09-07: drop the sol.md half. 'sol.md' is a Typeless mishearing of SOUL.md, and SOUL.md was already ruled out of scope by design at docs/superpowers/specs/2026-07-29-platform-aware-rules-block-design.md:187-188 — Hermes loads it from HERMES_HOME, not the project directory, so init could not detect it even in principle. The AGENTS.md half HOLDS: init() at scripts/lib/subcommands.mjs:68-85 reads no instruction file of any kind."
+        }
       ]
     },
     {
@@ -2197,7 +2220,14 @@
       "role": "epic",
       "lane": "superpowers",
       "links": [],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "notes": [
+        {
+          "at": "2026-09-08T06:43:55.250Z",
+          "actor": "agent",
+          "text": "EVIDENCE CORRECTED 2026-09-07: the epic's 1198 lines / 40 releases UNDERSTATES the problem rather than being stale-in-the-usual-direction. The Mintlify source lives in cfdude/pm-docs, not here (zero .mdx, zero docs.json in this repo), so it cannot be measured locally; the in-repo proxy CHANGELOG.md is now 2334 lines across 55 releases. Whatever threshold the spec picks, derive it from the pm-docs source, not from this repo."
+        }
+      ]
     },
     {
       "id": "gh-71-update-epic-positional-id",
@@ -2401,7 +2431,14 @@
       "role": "epic",
       "lane": "claude-code",
       "links": [],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "notes": [
+        {
+          "at": "2026-09-08T06:43:58.410Z",
+          "actor": "agent",
+          "text": "TWO CORRECTIONS 2026-09-07. (1) The '10x' is overstated 2x for the object it names: against .claude/skills/openspec-*/SKILL.md — the generated skills the claim cites — 'openspec list --json' appears 5 times; across ALL generated instruction files (those 5 plus .claude/commands/opsx/*.md) it is 10. 'list --specs' is 0 in both readings, so the asymmetry the epic rests on survives either way, but fix the number before it lands in a spec. Measured after 2bbb039, the regeneration for OpenSpec CLI 1.12.0, so it is current. (2) The work is bigger than 'reword': there is NO 'Orient' section in skills/conductor/SKILL.md at all — nearest is '## Choosing what is next' at :582 — and commands/status.md:37 reads the in-flight change list, which is the wrong object entirely. This is write, not amend."
+        }
+      ]
     },
     {
       "id": "autonomy-grant-starts-at-apply-not-propose",
@@ -2453,7 +2490,14 @@
           "reason": "both are store-relocation exposure -- #86 stops the render layer reporting a confident wrong count, this stops the instruction layer pointing an agent at a path that moved. Neither is urgent while openspec store list is empty on both machines"
         }
       ],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "notes": [
+        {
+          "at": "2026-09-08T06:43:56.776Z",
+          "actor": "agent",
+          "text": "CITATIONS CORRECTED 2026-09-07. Directive count still 4-in-3 files, but two line numbers moved: agents/reconciler.md:20,:22 still correct; skills/conductor/SKILL.md:328 is now :800; commands/status.md:19 is now :37. MORE IMPORTANTLY the epic's own NOTE is now self-refuting: it argues rules.mjs holds no path literal, and while rules.mjs:129 still does not, rules.mjs:236 NOW EMITS 'openspec/changes/<id>/' into the shipped rules block. So the emitted surface acquired the hardcoding the note said it was free of. Re-read the note before it becomes spec evidence."
+        }
+      ]
     },
     {
       "id": "gh-87-sync-registers-readme-as-plans",
@@ -4728,7 +4772,7 @@
     {
       "id": "gh-cfdude-pm-168",
       "title": "/pm:upgrade hardcodes the engine path, so it silently re-stamps the OLD version",
-      "priority": "P0",
+      "priority": "P2",
       "status": "untriaged",
       "role": "epic",
       "lane": "superpowers",
@@ -4748,6 +4792,16 @@
           "at": "2026-09-06T02:20:34.446Z",
           "actor": "agent",
           "text": "lane: superpowers not <none routed> — multi-site fix across every command doc's engine resolver plus a staleness guard; gh-139 precedent was 15 sites"
+        },
+        {
+          "at": "2026-09-08T06:28:23.465Z",
+          "actor": "agent",
+          "text": "GROUNDED 2026-09-07 before drafting. The tracked source does NOT hardcode a version — every doc uses ${CLAUDE_PLUGIN_ROOT} as primary. The absolute pm/0.26.0/... path observed in a live session was the HARNESS interpolating that variable at command-doc LOAD time, from a plugin root that went stale when the plugin updated mid-session. So the defect has two halves and the issue only names one: (a) the fallback sorts by mtime — 'ls -t ... | head -1' — at 14 sites across commands/ and skills/conductor/SKILL.md, the gh-139 shape again (15 sites there); (b) a stale CLAUDE_PLUGIN_ROOT cannot be fixed from inside a command doc at all, so the engine itself must refuse or warn when its own version is older than the newest installed. Half (b) is the real fix; half (a) alone leaves the silent case silent. Fleet run 2026-09-06 produced NO reproduction — ten fresh sessions all resolved correctly — which lowers urgency but does not make it wrong."
+        },
+        {
+          "at": "2026-09-08T06:42:27.965Z",
+          "actor": "agent",
+          "text": "CORRECTION 2026-09-07, second grounding — my first note was WRONG. The engine ALREADY refuses a stale engine: scripts/lib/migrations.mjs:165-176 exits 1 when cmpVer(newest, running) > 0, before loadState(). So 'the engine must refuse' is built, not missing. Two real survivors remain: (1) the guard no-ops when newestInstalledVersion() returns null — cache outside ~/.claude/plugins/cache, unreadable, or PM_CACHE_ROOT set (plugin-meta.mjs:83-89; proven inert at scripts/test/conductor-02.test.mjs:271-278); (2) 'ls -t' mtime ordering in the documented fallback at 14 sites, which can select an older engine. Both are hygiene-shaped. P0 -> P2: the fleet run produced zero reproductions and the headline mechanism does not exist."
         }
       ],
       "externalUpdatedAt": "2026-09-03T22:53:16Z"
@@ -4780,6 +4834,11 @@
           "at": "2026-09-06T02:20:38.175Z",
           "actor": "agent",
           "text": "lane: superpowers not <none routed> — changes shared behavior on the update surface; gh-66 already shipped this partially once"
+        },
+        {
+          "at": "2026-09-08T06:28:46.144Z",
+          "actor": "agent",
+          "text": "GROUNDED 2026-09-07 before drafting. Operation-pair sweep over scripts/lib/update-epic.mjs: --clear-plan is ONE INSTANCE of an eight-field pattern, not a one-off. 'links' is the only optional field with an explicit clear (--clear-links, line 130). Every other nullable field is set-only with no unset path: planPath (447), specPath (448), parent (441), externalId (438), externalUrl (439), externalUpdatedAt (440), description (483), reviewMode (475). Separately confirmed: --link ASSIGNS rather than appends (line 146: links = parseLinkFlags(...)), so --clear-links is the only way to reach an empty list and passing --link twice in separate invocations silently discards the earlier set. Spec should decide a uniform unset mechanism across the eight and justify any field deliberately left set-only — per required task item 1, an omission has to be argued, not assumed. Shipping a single --clear-plan would repeat exactly the sibling miss that gh-66 made and that this issue re-reports."
         }
       ],
       "externalUpdatedAt": "2026-09-04T22:25:53Z"
@@ -4810,6 +4869,233 @@
         }
       ],
       "externalUpdatedAt": "2026-09-03T01:14:23Z"
+    },
+    {
+      "id": "fleet-upgrade-after-release",
+      "title": "A release reaches a repo only when /pm:upgrade runs there, and nothing tells you which repos are behind. Measured 2026-09-06: 26 pm-managed repos on one machine across three roots, 23 of them stale — the oldest by 35 releases. pm should be able to answer 'which repos on this machine are behind' and emit the per-repo upgrade recipe, without the engine ever leaving the instruction layer (same shape as the tracker sections that tell the agent to run gh). The manual process, its traps and its runner now live in ~/.claude/skills/pm-fleet-upgrade/ — repo-maintenance tooling that every multi-repo pm user is reinventing.",
+      "priority": "P2",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "notes": [
+        {
+          "at": "2026-09-07T04:19:23.768Z",
+          "actor": "agent",
+          "text": "lane: superpowers not <none routed> — a discovery verb plus a command doc plus tests; not a sub-2h tweak, and an unresolved routing question resolves away from claude-code. Filed per the dogfooding rule: invented to work here, and every pm user with more than one repo has the same gap."
+        },
+        {
+          "at": "2026-09-08T06:42:30.225Z",
+          "actor": "agent",
+          "text": "MEASUREMENT CORRECTED 2026-09-07. The '23 of 26 stale' figure in the title is dead — the manual sweep already ran and the fleet is current. Two better arguments survive: (1) discovery is the actual gap, and a fixed-depth glob gets it WRONG — there are 28 .conductor directories, not 26, because a repo can hold NESTED conductors (~/Documents/Repos/highway-llm/projects/maca/ and .../maca/api/, at depths 7 and 8). The skill I wrote to do this by hand shipped that exact bug and had to be repatched twice in one hour, which is the case for an engine verb rather than a shell recipe. (2) ~/Documents/Repos/highway-llm/projects/maca/api/.conductor/ holds ONLY render-stamp.json and no state.json — pm wrote a breadcrumb into a tree that was never /pm:init'd. That is gh-cfdude-pm-175's defect found independently, in a second location."
+        }
+      ]
+    },
+    {
+      "id": "epic-registration-clock",
+      "title": "Epics carry no registration date, so nothing can say how long one has sat untouched. Measured 2026-09-06: 18 of 20 open epics carried no date of ANY kind — the schema has startedAt, completedAt, externalUpdatedAt and disposition.recordedAt, and no createdAt, so an epic registered and never started has no clock at all. That is precisely the population premise decay targets. The proposed free proxy (add-epic/update-epic timestamps from the activity log) CANNOT work: the log is off in most repos and pruneToCap deletes old segments, so it is blind to exactly the old untouched epics it would need to see. Add createdAt at registration and touchedAt on any update. The backfill is real, not null: git log -S'\"<id>\"' -- .conductor/state.json recovers the registering commit date in any repo that commits .conductor/ — verified on three ids (2026-07-15, 2026-08-03, 2026-08-25).",
+      "priority": "P1",
+      "status": "planned",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "notes": [
+        {
+          "at": "2026-09-08T06:27:29.220Z",
+          "actor": "agent",
+          "text": "lane: openspec not <none routed> — state.json schema change plus a MIGRATIONS entry with a git-derived backfill; review-mode thorough applies to schema work by this repo's own dial."
+        }
+      ]
+    },
+    {
+      "id": "sweep-covers-operation-pairs",
+      "title": "Required task item 1 enumerates CALL SITES of the guarded thing and never the INVERSE OPERATION, so a guard shipped for set-but-not-unset passes both gates. Evidence: gh-66-update-epic-missing-flags archived 'delivered' 2026-08-29 claiming a CI test fails if any source-artifact field is settable at creation but not on the update surfaces — yet planPath still has no unset path and --link still REPLACES rather than appends (scripts/lib/update-epic.mjs:146). A user re-filed both as #169 six days later. A call-site sweep cannot find this: 'where is planPath set' never leads to 'can it be unset'. Extend the item to operation pairs — set/unset, add/remove, append/replace, enable/disable — in the shipped rules block, as a numbered required task item (14/14 adoption vs 3/15 for a prose bullet).",
+      "priority": "P1",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-cfdude-pm-169",
+          "reason": "169 is the defect this rule would have caught; fix and rule ship together"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "notes": [
+        {
+          "at": "2026-09-08T06:27:32.279Z",
+          "actor": "agent",
+          "text": "lane: superpowers not <none routed> — amends a shipped instruction surface (the emitted rules block) plus the gate procedure; no schema change."
+        },
+        {
+          "at": "2026-09-08T06:42:56.305Z",
+          "actor": "agent",
+          "text": "SIX INSTANCES, not one — grooming pass 2026-09-07 found five more, ranked by consequence. (1) SAFETY: set-autonomy grants are append-only with no revoke — scripts/lib/autonomy.mjs:79,:89 do a.preAuthorized = [...a.preAuthorized, entry], and --level off leaves preAuthorized intact, so re-enabling autonomy silently restores every prior grant including one made in error. CLAUDE.md's execution-time decision rule branches on 'already pre-authorized -> proceed', so this is a safety surface. The in-repo precedent is exact: --attribute-commit (append) got --withdraw-commit + --withdrawal-reason when gh-140 shipped; the pattern was applied to commits and not to grants. (2) set-tracker --remove is secondary-only (tracker.mjs:56 sits inside if (role === 'secondary')), so on the primary path --remove is a declared, accepted flag that is silently ignored and a configured primary cannot be unconfigured. (3) gh-159's bare-invocation READ shipped on one verb of five: set-gate-guard reads (gate-guard.mjs:15-16); set-review-mode (review-mode.mjs:22-25), set-activity-log (activity-log.mjs:59-62) and set-tracker (tracker.mjs:115) all exit 1; set-lane-routing reads only by accident, falling through to a no-op saveState and printing a COUNT rather than the value. (4) eight nullable fields on update-epic with one clear path. (5) no story-removal path — --add-story adds, --done/--wont-do dispose, and a story added by typo can only be closed by recording a false --wont-do. ALSO: --clear-links is all-or-nothing while set-lane-routing has per-item --remove; same collection shape, two answers, one engine. AND THE KEY MECHANISM: gh-66's disposition claims 'a test now fails CI if any source-artifact field is settable at creation but not on the update surfaces' — scripts/test/conductor-23.test.mjs tests set-at-creation against set-on-update and NEVER tests unset. The guard was built along the axis the sweep already looks at, which is exactly why a call-site sweep cannot find this class."
+        }
+      ]
+    },
+    {
+      "id": "backlog-grooming-pass",
+      "title": "Nothing ever re-reads the backlog as a SET after intake. /pm:triage runs once, at registration; after that no surface asks whether an epic still matters, duplicates another, or was already delivered under a different name. The sprint-planning role is unfilled: nobody prunes, dedupes, merges a P2's context into the P0 that supersedes it, or catches an epic whose premise died. Consolidation must record a disposition (--outcome superseded --reason plus a supersedes link), never delete — deletion removes the record of projected work, which is what a disposition exists to preserve. Measured 2026-09-06: all three newly-synced issues overlapped archived epics, and one was a straight re-report of work recorded delivered.",
+      "priority": "P1",
+      "status": "planned",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "epic-registration-clock",
+          "reason": "grooming needs a clock to answer 'how long has this sat' — the repeatable pass is blind without createdAt"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "notes": [
+        {
+          "at": "2026-09-08T06:27:30.787Z",
+          "actor": "agent",
+          "text": "lane: openspec not <none routed> — a new verb, a command doc and real design ambiguity in what the pass proposes vs decides."
+        }
+      ]
+    },
+    {
+      "id": "gh-cfdude-pm-174",
+      "title": "No integrity check reports an epic in a status the engine does not know",
+      "priority": "P1",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "epic-registration-clock",
+          "reason": "same class — the record cannot answer a question about itself; 174 is status legality, the clock is age"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "174",
+      "externalUrl": "https://github.com/cfdude/pm/issues/174",
+      "externalUpdatedAt": "2026-09-06T20:02:18Z",
+      "attributedCommits": [],
+      "notes": [
+        {
+          "at": "2026-09-08T06:33:47.795Z",
+          "actor": "agent",
+          "text": "FLEET-MEASURED 2026-09-07: 29 epics across 6 repos carry status 'done', which is not in KNOWN_STATUSES — personal-finance-paper 18, market-intelligence 3, market-intelligence-dev 3, onvex-meetnexus-backend 3, onvex-meetnexus-ios 1, virtual-mic 1. All 29 are non-terminal to the 25 sites that read status === 'archived', and 0.27.0's disposition migration stamps archived epics only, so none of them was reached. Fleet total of epics whose record does not say what happened is therefore 382, not the 353 counted from outcome:unknown alone — and these 29 are the worse half because they are invisible rather than merely unlabelled. lane: superpowers not <none routed> — the check is small but its remedy message has to explain the silent-exemption consequence, which is the non-obvious part."
+        }
+      ]
+    },
+    {
+      "id": "gh-cfdude-pm-175",
+      "title": "pm treats a deployed detached checkout as conductor-managed, because state.json is tracked",
+      "priority": "P1",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "175",
+      "externalUrl": "https://github.com/cfdude/pm/issues/175",
+      "externalUpdatedAt": "2026-09-06T20:36:31Z",
+      "attributedCommits": [],
+      "notes": [
+        {
+          "at": "2026-09-08T06:33:50.841Z",
+          "actor": "agent",
+          "text": "lane: openspec not <none routed> — the reporter offers four candidate signals (detached HEAD matching a tag, git-common-dir vs git-dir with the sign inverted here, an explicit deployment flag that inherits the same tracking problem, or simply not writing breadcrumbs when HEAD is detached) and explicitly declines to pick one. That is real design ambiguity in pm's dormancy guard, which is load-bearing. Hit market-intelligence PRODUCTION: commit-watch.json and detours.log written into the deployed checkout, both gitignored so git status stayed clean and nothing surfaced it."
+        },
+        {
+          "at": "2026-09-08T06:42:31.705Z",
+          "actor": "agent",
+          "text": "SECOND INSTANCE found independently 2026-09-07: /Users/robsherman/Documents/Repos/highway-llm/projects/maca/api/.conductor/ contains ONLY render-stamp.json — no state.json, so that tree was never /pm:init'd, yet pm wrote a render stamp into it. Different mechanism from the deployed-checkout case in the report (no detached HEAD involved; a session's cwd simply landed in a subdirectory of a managed repo), same root: pm decides it is managed and writes, on a signal that is not ownership. Whatever guard this epic lands must cover BOTH — a deployed checkout carrying a tracked state.json, and a nested directory carrying none. lane: openspec not <none routed> — four candidate signals offered by the reporter, none chosen; real design ambiguity in a load-bearing guard. Hit market-intelligence PRODUCTION."
+        }
+      ]
+    },
+    {
+      "id": "gh-cfdude-pm-173",
+      "title": "Auto-detour fires on pm's own bookkeeping commits (chore(conductor): ...)",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "df-autodetour-false-positive-conductor-admin-commits",
+          "reason": "the 2026-07 proposal for this exact fix, archived by migration with outcome unknown and no reason"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "173",
+      "externalUrl": "https://github.com/cfdude/pm/issues/173",
+      "externalUpdatedAt": "2026-09-06T20:27:32Z",
+      "attributedCommits": [],
+      "notes": [
+        {
+          "at": "2026-09-08T06:33:49.347Z",
+          "actor": "agent",
+          "text": "GROUNDED 2026-09-07. NOT the missing-guard bug it looks like: looksLikeUnloggedMinimalDetour already calls isConductorOwnFiles internally (scripts/lib/subcommands.mjs:174-181), and the guard reaches both branches. It fired because the commit touched .gitignore, which is absent from CONDUCTOR_OWN_FILES (subcommands.mjs:138-143). Adding it is a judgment, not a one-liner: CLAUDE.md is deliberately excluded from that set as user-authored content, and .gitignore has the same property — a .gitignore-only commit right after an upgrade is pm's, a .gitignore commit generally is not. Also worth noting: df-autodetour-false-positive-conductor-admin-commits proposed this fix in 2026-07, was archived by the migration with outcome unknown and no reason, and a user in a different repo re-reported it two months later. lane: superpowers not <none routed> — the ownership predicate needs a design decision."
+        }
+      ]
+    },
+    {
+      "id": "disposition-backfill-undispositioned-archive",
+      "title": "66 of 143 archived epics carry no disposition — outcome 'unknown', recordedBy 'migration', no reason text. That is 46% of the archive, and it is not cosmetic: four separate premise checks in the 2026-09-07 grooming pass hit that wall and had to be answered by reading code instead of the record (df-no-mechanical-openspec-gate-enforcement, gh-70-link-validation-gap, edd-harness-agent-behavior-testing and rules-block-hardcodes-claude-slash-commands — the last two being depends-on targets whose satisfaction is inferred from disk rather than read). Worse, gh-cfdude-pm-173 was filed by a user against work that HAD been done, because the epic proposing it archived with no record saying so. Fleet-wide the number is larger: 353 outcome:unknown plus 29 epics in status 'done' that the 0.27.0 migration never reached at all = 382. Needs a verb or procedure to walk the undispositioned set, reconstruct each outcome from commits and CHANGELOG, and record it with a reason — plus a way to mark what genuinely cannot be reconstructed, since a fabricated disposition is worse than an absent one.",
+      "priority": "P1",
+      "status": "planned",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "notes": [
+        {
+          "at": "2026-09-08T06:42:59.571Z",
+          "actor": "agent",
+          "text": "lane: openspec not <none routed> — reconstructing a historical record has real design ambiguity (what evidence is sufficient, what to do when it is insufficient, whether the engine proposes or the agent decides) and it writes to the disposition field the archive gate reads. Review-mode thorough applies."
+        }
+      ]
+    },
+    {
+      "id": "remaining-platform-investigation",
+      "title": "Scope the three platforms nobody has investigated hands-on: Gemini CLI, Grok Build, and generic AGENTS.md consumers. Codex and Hermes came out of the original multi-platform sweep with hands-on CLI verification (Codex CLI 0.145.0, Hermes v0.19.0) and are separately registered; README.md:207-208 now reads 'Rules block only' for both. These three are still 'Planned' with no investigation behind them, and README.md:205-212 still points all six rows at the superseded umbrella epic — which is wrong for four of them. Deliverable is the same shape the Codex and Hermes work produced: install the CLI, find where it reads project instructions, and decide whether pm's rules block can land there at all before scoping any port.",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "supersedes",
+          "epic": "multi-platform-agent-support",
+          "reason": "carries forward the uninvestigated remainder — Gemini CLI, Grok Build, generic AGENTS.md — after Codex and Hermes were separately registered with hands-on verification"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "notes": [
+        {
+          "at": "2026-09-08T06:43:21.190Z",
+          "actor": "agent",
+          "text": "lane: claude-code deliberately, against the usual away-from-claude-code tie-break — this is genuinely an investigation with a written finding as its only deliverable, not a port. If the finding says a port is viable, THAT becomes its own epic in a lane chosen then. Also: README.md:205-212 must be corrected in the same change, since it currently attributes all six platform rows to an epic that is being superseded."
+        }
+      ]
+    },
+    {
+      "id": "record-answers-for-itself",
+      "title": "record-answers-for-itself",
+      "priority": "P?",
+      "status": "queued",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [],
+      "reconcileNeeded": false,
+      "attributedCommits": []
     }
   ],
   "detourStack": [],
@@ -4820,7 +5106,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 366,
+  "revision": 404,
   "reviewMode": "thorough",
   "releases": [
     {
