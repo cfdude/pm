@@ -12,7 +12,9 @@ stored body with `revision` as its only exclusion, so a stamp applied to a recor
 comparison makes every save differ from disk unconditionally, the no-op path never fires, and
 byte-idempotence is lost for every verb. Any such stamp SHALL therefore be applied AFTER the
 identity comparison has already decided the save is not a no-op, and SHALL be derived by comparing
-each record against the disk pre-image the comparison has already read — not by a second notion of
+each record against the disk pre-image the comparison has already read, MATCHED BY THE RECORD'S
+OWN IDENTIFIER RATHER THAN BY POSITION — a verb that removes a record shifts every record after it,
+so an index-matched comparison would report all of them as changed and stamp them — not by a second notion of
 "changed" maintained elsewhere, and not by the callers, of which there are 69.
 
 That per-record comparison SHALL EXCLUDE the timekeeping fields themselves — the registration date

@@ -13,7 +13,7 @@ which is the class this release exists to reduce.
 Four constraints shape every decision.
 
 **The engine is zero-dependency and never opens a network connection.** Six modules already shell
-to git, and `scripts/lib/git.mjs:118-125` (`commitDate()`) is the exact idiom the backfill needs,
+to git, and `scripts/lib/git.mjs:118-125` (`commitDate()`) is the exact idiom the recovery needs,
 carrying its own note: *"Local only, per the engine's architectural law — this reads the object
 database and contacts nothing."* Reading history adds no new architectural category.
 
@@ -92,7 +92,7 @@ draft did not list it, which is how the conflict survived to review.
 
 ### The recovery is a re-runnable verb the migration invokes once
 
-**Reversal.** The first draft put the backfill inside `MIGRATIONS`, which `migrations.mjs:44-48`
+**Reversal.** The first draft put the recovery inside `MIGRATIONS`, which `migrations.mjs:44-48`
 forbids for a disk-reading transformation, and then froze the wrong answer with a test asserting a
 second run changes nothing "including the epics it left absent."
 
@@ -201,7 +201,10 @@ record its predicate, which is a capability, not a clause. It is redundant. Cut.
 an already-recorded link changes nothing, so no touch, so the whole-state comparison is equal, so
 `saveState` early-returns — and the command reports success having written nothing. `--clear` on an
 already-absent field is the same shape, and `update-epic.mjs:356` names this defect class by number
-(#79). `epic-annotation` now carries a requirement that both paths say so on stderr.
+(#79). `epic-annotation` now carries a requirement over the WHOLE write surface — whenever the save
+reports it changed nothing, the invocation says so. Scoping it to the two paths this change happens
+to introduce was the first draft's framing and was itself the defect required task item 1 exists to
+catch: setting a field to the value it already holds ALREADY reports a write that did not happen.
 
 **Two spines, and the rider was cut.** Items 1–3 are "the record cannot answer questions about
 itself"; items 4–5 are "operations ship without their inverse". A sixth item — a non-writing `sync`

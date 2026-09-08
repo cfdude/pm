@@ -121,7 +121,7 @@ changes with it.
 
 **Docs** — `README.md` and the Mintlify site at `pm-plugin.dev` in the same PR cycle.
 
-**Fleet** — 27 upstreams take this on their next `/pm:upgrade`. The backfill costs a measured
+**Fleet** — 27 upstreams take this on their next `/pm:upgrade`. The recovery costs a measured
 85–155ms per epic, so roughly 15–23 seconds on the larger repositories: tens of seconds, not
 "seconds". `upgrade` is user-invoked and not hooked, so that is tolerable. The migration must be
 safe on the six repositories carrying `status: "done"` epics.

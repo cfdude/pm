@@ -40,7 +40,7 @@
 - [ ] 2.5 RED: test that the release migration leaves `touchedAt` ABSENT on pre-existing epics.
       This is the Gate 1 round-2 Critical and it is NOT free: `upgrade()` applies every pending
       migration to one in-memory state and calls `saveState` ONCE (`migrations.mjs:183-188`), so the
-      backfill writing `createdAt` makes every pre-existing epic differ from its disk pre-image. The
+      recovery writing `createdAt` makes every pre-existing epic differ from its disk pre-image. The
       per-record comparison MUST exclude both timekeeping fields — the same shape as `revision`'s
       exclusion from the whole-body comparison — or all 27 repositories read "last touched: upgrade
       day". Test the standalone re-run of the recovery verb the same way; it is the same write on a
@@ -86,11 +86,17 @@
       literal here silently stops matching". THREE MORE, none of which any test guards:
       `constants.mjs:310` (the `--outcome` placeholder, i.e. the `--help` text a user reads);
       `commands/epic.md:238` and `skills/conductor/SKILL.md:274` (the exemption-list mirrors)
-- [ ] 4.5b FIX THE EXISTING STALENESS IN THE SAME EDIT — this is the evidence, not a prediction.
-      `declined` was added to this same closed set in an earlier release. It reached the engine
-      (`disposition.mjs:33` `KNOWN_OUTCOMES`, `integrity.mjs:32` `EXPLAINED_OUTCOMES`) and reached
-      NONE of `README.md:561`, `commands/epic.md:238`, `skills/conductor/SKILL.md:274`. All three are
-      stale in the tree today. The release is already opening those files
+- [ ] 4.5b FIX THE EXISTING STALENESS IN THE SAME EDIT — this is the evidence, not a prediction,
+      and the count is FIVE, arrived at by `rg` over `README.md commands/ skills/ scripts/` rather
+      than by reading the three sites someone remembered. `declined` was added to this same closed
+      set in an earlier release, reached the engine (`disposition.mjs:33`, `integrity.mjs:32`,
+      `constants.mjs:310`, `rules.mjs:132` and `:279`), and reached NONE of: `README.md:561`;
+      `commands/epic.md:199` (the `--outcome` flag-table row a user reads); `commands/epic.md:238`
+      and `skills/conductor/SKILL.md:274` (the exemption prose); and `conductor-18.test.mjs:253`.
+      That last one is the finding inside the finding: it asserts
+      `/--outcome delivered\|killed\|superseded\|abandoned/` against the emitted block and PASSES
+      BY PREFIX MATCH, so the test that should have caught this drift is blind to it and will stay
+      blind after `unreconstructable` lands. Anchor it or make it exact
 - [ ] 4.5c Make the next growth fail loudly rather than ship stale: either render the emitted and
       mirrored `--outcome` enumeration FROM `KNOWN_OUTCOMES`, or declare a `mustSay` claim covering
       it so the drift guard sees it. Without one of the two, site 4.5b recurs on the growth after
@@ -121,14 +127,25 @@
       UPDATES that entry's reason in place rather than adding a second entry or silently discarding
       the correction; that an exact repeat of all three changes nothing and says so; and that
       `--clear-links --link a --link b` is accepted as ONE atomic replace
-- [ ] 5.6 RED: test that a no-op link supply and a no-op clear both report "nothing changed" rather
-      than the generic success line — the `update-epic.mjs:356` defect class (#79)
+- [ ] 5.6 RED: test the BROADENED surface, not the two paths this change introduces — setting any
+      field to the value it already holds reports "nothing changed" rather than the generic success
+      line, and a no-op link supply and a no-op clear are instances of that rule. `saveState`
+      already returns `unchanged: true` for every no-op (`state.mjs:201`); `update-epic.mjs:527`
+      discards it and `:564` prints success unconditionally, which is why same-valued `--title`,
+      `--status` and `--priority` ALREADY report writes that did not happen — the
+      `update-epic.mjs:356` defect class (#79)
 - [ ] 5.7 GREEN: implement `--clear`, the append semantics, and the mutual-exclusion relaxation at
       `update-epic.mjs:134-137`
 - [ ] 5.8 GREEN: update ALL SIX sites documenting replacement, two of which the engine emits at
       runtime — `links.mjs:76-83` (`unknownLinkTypeMessage`), `integrity.mjs:387-388` (the
       finding's own remedy), `commands/epic.md:189,321,329`, `commands/next.md:43`,
       `update-epic.mjs:49-51` docstring, and the assertion at `conductor-14.test.mjs:1049`
+- [ ] 5.8b GREEN: update the sites documenting the MUTUAL EXCLUSION, which the relaxation makes
+      false — `commands/epic.md:190` (the flag-table row "may not be combined with `--link`"),
+      `commands/epic.md:338` (the same claim in prose), and the usage blocks at
+      `commands/epic.md:172` and `update-epic.mjs:78`, which must also gain `[--clear <field>]`.
+      The usage line is not cosmetic: the shared flag-allowlist check reads the documented flag
+      surface AT CHECK TIME, so registering `--clear` in `EPIC_FLAGS` without it still fails
 - [ ] 5.9 Add a SIBLING sweep asserting set-implies-clear, driven from `EPIC_FLAGS`. Do NOT widen
       `conductor-20.test.mjs:264-281` — that sweep asserts every field appears on all three of
       `add-epic`/`update-epic`/`add-many`, which two nullable fields fail BY DESIGN (`notes` is

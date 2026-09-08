@@ -55,8 +55,15 @@ non-zero exit naming the field where that field is not declared nullable.
 ### Requirement: Supplying a link adds it, and the documented repair stays one write
 Supplying a link to an existing epic SHALL add that link to the epic's recorded links rather than
 replacing them, because replacement makes the operation destructive in a way its name does not
-state and makes recording a second relationship silently discard the first. Supplying a link
-already recorded SHALL leave the recorded set unchanged rather than producing a duplicate.
+state and makes recording a second relationship silently discard the first. A link's IDENTITY is its type
+and its target; its reason is the part a reader acts on and is NOT part of its identity. Supplying a
+link whose identity matches one already recorded SHALL NOT produce a second entry — two
+relationships of the same type between the same pair of epics are one relationship, and a record
+listing it twice disagrees with itself — and SHALL update that entry's reason in place rather than
+discarding it. Discarding would be worse than a duplicate: today replacement makes correcting a
+reason work, and a dedup that merely dropped the repeat would remove the only path to it while
+reporting that nothing changed. Where identity AND reason both match, nothing changes and the
+invocation says so.
 
 Every surface that DOCUMENTS the replacing behaviour SHALL change with it, including the messages
 the engine emits at runtime. Two of those messages instruct a reader to repair a malformed link by
@@ -73,8 +80,13 @@ them, and a rejection on the second write would leave the epic with no links at 
 - **WHEN** a link is supplied to an epic that already records one
 - **THEN** the epic records both
 
-#### Scenario: Re-supplying a recorded link is not a duplicate
-- **WHEN** a link identical to one already recorded is supplied
+#### Scenario: Re-supplying a link with a corrected reason updates it in place
+- **WHEN** a link whose type and target match one already recorded is supplied with a different
+  reason
+- **THEN** the epic records one link with that type and target, carrying the new reason
+
+#### Scenario: Re-supplying a wholly identical link is not a duplicate
+- **WHEN** a link matching one already recorded in type, target AND reason is supplied
 - **THEN** the epic's recorded links are unchanged
 
 #### Scenario: Repairing a malformed link is one atomic write
