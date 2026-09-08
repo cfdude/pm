@@ -1154,9 +1154,11 @@ stale, while actively running an OpenSpec change.)
 The session brief and `/pm:upgrade` now both report that drift, from one shared emitter so the two
 can never disagree. Three things about how it behaves:
 
-- **`pm` never runs `openspec update`.** It emits the instruction and you run the terminal
-  command, exactly as with `openspec init` — a source scan in the test suite fails the build if
-  any engine file ever passes the `openspec` binary an argv other than `--version`.
+- **pm's engine never runs `openspec update`.** It emits the instruction and whoever reads it —
+  agent or human — runs the command; pm instructs, it does not integrate. That is a property of
+  the engine, not a permission boundary, so an agent reading the nudge may run the update itself.
+  A source scan in the test suite fails the build if any engine file ever passes the `openspec`
+  binary an argv other than `--version`.
 - **It holds rather than suppressing itself mid-change.** `openspec update` rewrites the
   instruction files an in-flight change is being authored against, so with an active change the
   drift is still reported but the imperative becomes *hold until `<change>` is archived*.

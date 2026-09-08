@@ -16,8 +16,10 @@
 // ARCHITECTURAL LAW, restated because this is the one file in the engine that could break it:
 // `pm` is an INSTRUCTION layer, never an INTEGRATION layer. Reading a local version is a READ —
 // the same class as git.mjs's `merge-base`, which contacts nothing. Running `openspec update`
-// is a MUTATION, and the engine must never perform it: it emits the instruction and the user
-// runs the terminal command, exactly as with `openspec init`. The ONLY argv this file ever
+// is a MUTATION, and the engine must never perform it: it emits the instruction and whoever reads
+// the instruction — agent or human — runs the command. That is a statement about pm's ENGINE, not
+// a permission boundary: an agent reading the nudge MAY run `openspec update` immediately, and the
+// safety requirement is reviewing the diff, not who typed it. The ONLY argv this file ever
 // passes to the `openspec` binary is `--version`, and a source scan in
 // scripts/test/tool-currency.test.mjs fails the suite if any lib file ever passes another.
 //
@@ -187,7 +189,8 @@ export function openspecCurrencyLines() {
   if (!c) return [];
   const L = [];
   L.push(`⚠ OpenSpec drift — this project's generated instruction files are ${c.project}, ` +
-    `the installed CLI is ${c.installed}. Run \`openspec update\` in a terminal; pm never runs it for you.`);
+    `the installed CLI is ${c.installed}. Run \`openspec update\` yourself; pm's engine never runs it ` +
+    "for you (pm instructs, it does not integrate).");
   L.push(`   It rewrites ${OPENSPEC_GENERATED_PATHS.join(" and ")} in place, and local edits there ` +
     "are overwritten silently — never accept it blind.");
   if (c.tracked === true) {

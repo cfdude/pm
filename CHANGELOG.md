@@ -8,6 +8,25 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+* **The OpenSpec drift nudge no longer reads as "a human must run this".** The line said *Run
+  `openspec update` in a terminal; pm never runs it for you*, and `commands/upgrade.md` plus the
+  README both equated it with `openspec init` — "a terminal command, exactly like `openspec
+  init`". `openspec init` genuinely is reserved to the user in at least one estate's global agent
+  instructions, so the analogy transferred that reservation onto `update`, which has no such
+  reservation. **Measured cost:** an agent session read the nudge, refused to run the command, and
+  asked the user to run it instead — one full round trip on 2026-09-07 — and the same misread had
+  already left FOUR repositories on that machine stale at 1.9.0.
+
+  The negation now names pm's **engine** as the non-actor rather than naming a human as the
+  required one: *pm's engine never runs it for you (pm instructs, it does not integrate)*. The
+  architectural law is unchanged and so is the behavior — the engine still passes the `openspec`
+  binary nothing but `--version`, and the source scan that enforces that still fires. The safety
+  requirement was always *review the diff before committing*, which lines 2 and 3 of the nudge
+  already said correctly; it was never *a human must type it*. The test that pins this now asserts
+  the old wording is ABSENT as well, so a revert to it cannot pass unnoticed.
+
 ## [0.39.0] — 2026-09-05
 
 **Things that go missing without anything noticing.** Four items under one class: a shipped file
