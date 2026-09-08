@@ -37,7 +37,7 @@ repair them.
 - An epic can be asked how long it has existed, and answers "unknown" honestly where it cannot.
 - An epic in an undefined status is visible, with the consequence that it is exempt from every
   terminal rule.
-- The undispositioned archive is enumerable with a per-epic remedy.
+- The archive can be asked which records carry no considered outcome with a per-epic remedy.
 - Every nullable field an update surface can set, it can unset — declared in one place so a ninth
   field cannot be added silently.
 - The emitted call-site sweep obliges the inverse operation.
@@ -90,7 +90,7 @@ epic against its disk pre-image in `currentBody.epics`, which `state.mjs:197` ha
 This modifies behaviour `state-write-guard` owns, so that capability now carries a delta. The first
 draft did not list it, which is how the conflict survived to review.
 
-### The backfill is a re-runnable verb the migration invokes once
+### The recovery is a re-runnable verb the migration invokes once
 
 **Reversal.** The first draft put the backfill inside `MIGRATIONS`, which `migrations.mjs:44-48`
 forbids for a disk-reading transformation, and then froze the wrong answer with a test asserting a
@@ -147,7 +147,7 @@ atomic replace — which is what preserves the repair path append would otherwis
 **The first draft's deciding argument was wrong.** It chose the single flag over a `--clear-<field>`
 family because "the failure mode of the flag family is silent while the single flag's is loud." But
 no nullability declaration exists — `EPIC_FLAGS` rows carry `flag`, `key`, `commands`,
-`placeholder`, `repeats`, `write`, `requires` and nothing else — so a ninth nullable field added
+`placeholder`, `repeats`, `write`, `requires` and nothing else — so a nullable field added
 later gets no clearing form under *either* shape, silently. The argument did not hold.
 
 The real decision is the declaration: add `nullable: true` to the relevant `EPIC_FLAGS` rows. Once
@@ -175,7 +175,7 @@ The spec states this as "every rule that tests for the archived status" with no 
 would be wrong within a release: measured today it is 24 code sites for `=== "archived"` plus 16
 for `!== "archived"`, and the narrative's "25" was off by one.
 
-### The undispositioned population excludes evidence-based stamps
+### The unconsidered population excludes evidence-based stamps
 
 **Corrected.** The first draft's predicate was "stamped by a migration", which returns 69 here, not
 the 66 claimed — because three epics carry `delivered` written by the migration *from a passing
@@ -218,7 +218,7 @@ path. Named here so both gates see it rather than discover it.
 **The migration runs against malformed input.** Six repositories carry epics in an undefined status.
 Tested against a fixture carrying one, asserting the migration transforms it and does not repair it.
 
-**Six items is a large release by recent cadence** — thirteen shipped in the eleven days before it.
+**Five items is a large release by recent cadence** — thirteen shipped in the eleven days before it.
 The mitigation is the cross-spec gate, which returned six BLOCKS on this set's first draft, three of
 which no change-scoped review could have found because they were conflicts *between* specs.
 

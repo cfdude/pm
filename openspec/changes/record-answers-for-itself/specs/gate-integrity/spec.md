@@ -111,8 +111,7 @@ question, answered by the staleness gate and refused at the archive, never guess
 
 #### Scenario: An archived epic with zero ticked tasks is reported
 
-- **WHEN** an archived epic that carries neither an excluded outcome (`killed`, `superseded`,
-  `abandoned`) nor the `archive-backfill` stamp has a progress source that exists and contains
+- **WHEN** an archived epic that carries neither an outcome the requirement above excludes nor the `archive-backfill` stamp has a progress source that exists and contains
   checkboxes, none of which are ticked
 - **THEN** the check reports the epic and its source — four epics in this repository qualify today,
   archived at `0/17`, `0/99`, `0/37` and `0/34`, none carrying a passing Gate 2 and so none

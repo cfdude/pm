@@ -37,8 +37,14 @@
       the opposite and that was a Gate 1 Critical
 - [ ] 2.4 RED: test against a fixture carrying an epic in `status: "done"`, asserting the verb
       handles it like any other and does NOT repair the status
-- [ ] 2.5 RED: test that the release migration leaves `touchedAt` ABSENT on pre-existing epics —
-      stamping it would record every epic in the fleet as touched on upgrade day
+- [ ] 2.5 RED: test that the release migration leaves `touchedAt` ABSENT on pre-existing epics.
+      This is the Gate 1 round-2 Critical and it is NOT free: `upgrade()` applies every pending
+      migration to one in-memory state and calls `saveState` ONCE (`migrations.mjs:183-188`), so the
+      backfill writing `createdAt` makes every pre-existing epic differ from its disk pre-image. The
+      per-record comparison MUST exclude both timekeeping fields — the same shape as `revision`'s
+      exclusion from the whole-body comparison — or all 27 repositories read "last touched: upgrade
+      day". Test the standalone re-run of the recovery verb the same way; it is the same write on a
+      different day
 - [ ] 2.6 GREEN: implement the verb, invoked with an argv array and never a shell string
       (`git.mjs:141-142`; ids may predate `add-epic.mjs:345`'s validation)
 - [ ] 2.7 GREEN: add the `MIGRATIONS` entry keyed to 0.40.0 that INVOKES the verb once. Note in the
@@ -69,9 +75,26 @@
       the epic leaves the unconsidered set
 - [ ] 4.4 RED: test that an `unreconstructable` epic with unticked tasks does NOT fire the
       zero-ticked check
-- [ ] 4.5 GREEN: implement the walker and the `unreconstructable` outcome. This grows a closed enum:
-      update `KNOWN_OUTCOMES`, `AGENT_OUTCOMES`, `dispositionError`'s reason rule, the
-      `gate-integrity` exclusion list, and the `--outcome` enumeration `rules.mjs` emits
+- [ ] 4.5 GREEN: implement the walker and the `unreconstructable` outcome. This grows a CLOSED enum,
+      and the consumers were enumerated mechanically rather than from memory:
+      `KNOWN_OUTCOMES`; `AGENT_OUTCOMES`; `dispositionError`'s reason rule;
+      `integrity.mjs:32` `EXPLAINED_OUTCOMES` (this IS the gate-integrity exclusion list, consumed
+      at `:46`); **BOTH** literal alternations in `rules.mjs` — `:132` AND `:279`, not one; and
+      `conductor-13.test.mjs:394`, which asserts the exact six-value set with the comment "a seventh
+      outcome added without a rule fails it". Missing any of the last three fails CI immediately —
+      `conductor-16.test.mjs:553` derives its normalizer from `AGENT_OUTCOMES` and warns that "a
+      literal here silently stops matching". THREE MORE, none of which any test guards:
+      `constants.mjs:310` (the `--outcome` placeholder, i.e. the `--help` text a user reads);
+      `commands/epic.md:238` and `skills/conductor/SKILL.md:274` (the exemption-list mirrors)
+- [ ] 4.5b FIX THE EXISTING STALENESS IN THE SAME EDIT — this is the evidence, not a prediction.
+      `declined` was added to this same closed set in an earlier release. It reached the engine
+      (`disposition.mjs:33` `KNOWN_OUTCOMES`, `integrity.mjs:32` `EXPLAINED_OUTCOMES`) and reached
+      NONE of `README.md:561`, `commands/epic.md:238`, `skills/conductor/SKILL.md:274`. All three are
+      stale in the tree today. The release is already opening those files
+- [ ] 4.5c Make the next growth fail loudly rather than ship stale: either render the emitted and
+      mirrored `--outcome` enumeration FROM `KNOWN_OUTCOMES`, or declare a `mustSay` claim covering
+      it so the drift guard sees it. Without one of the two, site 4.5b recurs on the growth after
+      this one — the generic doc-currency line in 8.1 is the prose form this repo measures at 3/15
 - [ ] 4.6 Assert the walker's INVARIANT against a fixture — every returned epic satisfies the
       predicate and no epic satisfying it is omitted. Do NOT assert a live count: a test naming a
       live number is a known failure mode here, and this release's own dispositions change it
@@ -79,16 +102,25 @@
 ## 5. Nullability, uniform clearing, and `--link` appends
 
 - [ ] 5.1 GREEN first (the registry is a prerequisite, not an outcome): add `nullable: true` to the
-      relevant `EPIC_FLAGS` rows in `constants.mjs`, and `setOnly: "<reason>"` to any field
-      deliberately left set-only. Without this declaration neither clearing shape can fail loudly
-- [ ] 5.2 RED: test that every `nullable: true` row is reachable by `--clear <field>`, derived from
-      the registry so a tenth nullable row with no clearing path fails the suite
+      relevant `EPIC_FLAGS` rows in `constants.mjs`, `setOnly: "<reason>"` to any field deliberately
+      left set-only, and register `--clear` itself as a value-bearing repeatable flag on
+      `update-epic`. Without the declaration neither clearing shape can fail loudly; without the
+      registration the shared flag-allowlist check fails against `commands/epic.md`. Declare `links`
+      SET-ONLY for the generic form with its reason — `--clear-links` is grandfathered and is
+      required in one invocation with `--link` for the atomic repair, which `--clear` cannot express
+- [ ] 5.2 RED: test BOTH directions of the declaration, not one. (a) every `nullable: true` row is
+      reachable by `--clear <field>`, derived from the registry so a later nullable row with no
+      clearing path fails the suite; (b) every SETTABLE `EPIC_FLAGS` row carries one marker or the
+      other — `nullable: true` or `setOnly: "<reason>"`. Without (b) an undeclared row passes
+      silently, and undeclared rows are the population the requirement is about
 - [ ] 5.3 RED: test that `--clear` names fields by FLAG spelling, not state key — `constants.mjs`
       warns these are two namespaces
 - [ ] 5.4 RED: test that clearing one field leaves the others unchanged, and that `--clear` on a
       non-nullable field exits non-zero naming it
-- [ ] 5.5 RED: test that `--link` appends, that a duplicate `(type, target)` produces no second
-      entry, and that `--clear-links --link a --link b` is accepted as ONE atomic replace
+- [ ] 5.5 RED: test that `--link` appends; that a repeat of an already-recorded `(type, target)`
+      UPDATES that entry's reason in place rather than adding a second entry or silently discarding
+      the correction; that an exact repeat of all three changes nothing and says so; and that
+      `--clear-links --link a --link b` is accepted as ONE atomic replace
 - [ ] 5.6 RED: test that a no-op link supply and a no-op clear both report "nothing changed" rather
       than the generic success line — the `update-epic.mjs:356` defect class (#79)
 - [ ] 5.7 GREEN: implement `--clear`, the append semantics, and the mutual-exclusion relaxation at
@@ -97,9 +129,13 @@
       runtime — `links.mjs:76-83` (`unknownLinkTypeMessage`), `integrity.mjs:387-388` (the
       finding's own remedy), `commands/epic.md:189,321,329`, `commands/next.md:43`,
       `update-epic.mjs:49-51` docstring, and the assertion at `conductor-14.test.mjs:1049`
-- [ ] 5.9 Widen the source-artifact parity sweep at `conductor-20.test.mjs:264-281` — driven from
-      `EPIC_SOURCE_ARTIFACTS`, covering two fields today — to the nullable set. THIS is the sweep
-      `gh-66`'s disposition referred to; `conductor-23.test.mjs` is gh-92/93 and is the wrong file
+- [ ] 5.9 Add a SIBLING sweep asserting set-implies-clear, driven from `EPIC_FLAGS`. Do NOT widen
+      `conductor-20.test.mjs:264-281` — that sweep asserts every field appears on all three of
+      `add-epic`/`update-epic`/`add-many`, which two nullable fields fail BY DESIGN (`notes` is
+      `["add-epic","update-epic"]` at `constants.mjs:250`; `review-mode` is `["update-epic"]` at
+      `:351`), and it is driven by a different registry (`EPIC_SOURCE_ARTIFACTS`). It remains the
+      sweep `gh-66`'s disposition referred to — that citation was the correction; the widening was
+      not implementable
 
 ## 6. The emitted inverse-operation obligation
 

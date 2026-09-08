@@ -15,6 +15,17 @@ identity comparison has already decided the save is not a no-op, and SHALL be de
 each record against the disk pre-image the comparison has already read — not by a second notion of
 "changed" maintained elsewhere, and not by the callers, of which there are 69.
 
+That per-record comparison SHALL EXCLUDE the timekeeping fields themselves — the registration date
+and the last-touched date — exactly as the whole-body comparison excludes `revision`, and for the
+same reason: a field this mechanism introduces must not be an input to the mechanism's own decision.
+A record whose ONLY delta is a newly recovered registration date is a recovery, not a touch. Without
+that exclusion any write populating registration dates makes every record it touches differ from its
+pre-image, so the last-touched stamp fires on all of them — and that is not hypothetical: the release
+migration applies every pending transformation to one in-memory state and saves ONCE, so a recovery
+sweeping an entire archive would stamp every record as last touched on upgrade day. The exclusion
+SHALL hold identically for a later standalone re-run of that recovery, which is the same write on a
+different day.
+
 #### Scenario: Re-running an idempotent verb
 
 - **WHEN** a verb saves state whose content, excluding `revision`, matches the file on disk
@@ -32,3 +43,9 @@ each record against the disk pre-image the comparison has already read — not b
 
 - **WHEN** a save that is not a no-op writes state in which some records changed and others did not
 - **THEN** only the changed records carry an advanced last-touched date
+
+#### Scenario: Recovering a registration date is not a touch
+
+- **WHEN** a write populates a record's registration date and changes nothing else about it —
+  whether during the release migration or during a later standalone re-run of the recovery
+- **THEN** that record's last-touched date is unchanged

@@ -45,18 +45,18 @@ which is why the sweep cannot find this class. Six instances are catalogued.
   0.40.0 migration and available afterwards. Not inside `MIGRATIONS` itself: a one-shot
   transformation that reads disk produces a different result per checkout, which
   `scripts/lib/migrations.mjs:44-48` forbids by name — and two checkouts of one remote on this
-  machine differ by two commits touching `state.json`, so a one-shot backfill would freeze a wrong
+  machine differ by two commits touching `state.json`, so a one-shot recovery would freeze a wrong
   answer in one of them permanently.
 - **An epic in a status the engine does not define is reported**, mirroring the existing
   unknown-link-type check, and naming the consequence a reader would otherwise miss: the epic is
   exempt from every rule testing for the archived status, and any dependency edge pointing at it
   reads unsatisfied forever.
-- **The undispositioned archive is enumerable**, with an outcome that can be recorded as genuinely
+- **The archive is enumerable by considered outcome**, with an outcome that can be recorded as genuinely
   unreconstructable. The population is `recordedBy` present **and** `outcome: unknown` — which
   deliberately excludes the three epics here whose `delivered` a migration derived from a passing
   Gate 2 verdict.
 - **Every nullable field can be unset**, via `--clear <field>` deriving its accepted set from a new
-  `nullable: true` marker on the flag registry, so a ninth nullable field added later fails CI
+  `nullable: true` marker on the flag registry, so a nullable field added later fails CI
   rather than silently having no clearing form.
 - **`--link` appends instead of replacing**, and the six sites documenting replacement change with
   it — including two the engine emits at runtime, whose remedies would otherwise stop remedying.
@@ -85,10 +85,14 @@ no new concept, it closes questions the existing concepts already imply.
 - `state-write-guard`: a last-touched stamp must not defeat the no-op save path — the stamp happens
   after the identity comparison, not before it.
 - `gate-integrity`: an epic whose `status` is outside `KNOWN_STATUSES` is a reported integrity
-  finding; and required task item 1's existing emitted-procedure requirement is extended to oblige
-  the inverse operation across every mirrored surface.
-- `epic-disposition`: the undispositioned archive is enumerable, an unreconstructable outcome is
-  recordable, and the outcome keyword set and the zero-ticked-tasks exclusion list grow to admit it.
+  finding; the zero-ticked-tasks exclusion list grows to admit `unreconstructable` and `declined`;
+  and required task item 1's existing emitted-procedure requirement is extended to oblige the
+  inverse operation across every mirrored surface.
+- `epic-disposition`: the archive can be asked which records carry no considered outcome, an unreconstructable outcome is
+  recordable, and the outcome keyword set grows to admit it. That set also gains `declined`, which
+  the engine has accepted since it shipped while the specification's enumeration omitted it — a
+  spec-to-code drift repaired here rather than repeated. The matching growth of the zero-ticked
+  exclusion list belongs to `gate-integrity`, which owns it.
 - `epic-annotation`: clearing is uniform across nullable fields; `--link` appends; and a write that
   changes nothing says so rather than reporting success.
 
@@ -96,7 +100,7 @@ no new concept, it closes questions the existing concepts already imply.
 
 **Engine** — `scripts/lib/`: `state.mjs` (`pushEpic`, `saveState`), `constants.mjs` (`nullable`
 markers and `--clear`), `update-epic.mjs` (clear paths, `--link` append, the
-mutual-exclusion relaxation), `migrations.mjs` (the 0.40.0 entry), the new backfill verb,
+mutual-exclusion relaxation), `migrations.mjs` (the 0.40.0 entry), the new recovery verb,
 `integrity.mjs` (unknown-status check **and** the `--link` remedy text), `links.mjs`
 (`unknownLinkTypeMessage`), `rules.mjs`
 (`GATE_PROCEDURE_ITEMS[0].lines` and `.mustSay`), `disposition.mjs`, `archive-gate.mjs`.
@@ -105,7 +109,7 @@ mutual-exclusion relaxation), `migrations.mjs` (the 0.40.0 entry), the new backf
 `skills/conductor/SKILL.md` (the three the drift guard reads), `commands/next.md`, and this repository's own managed `CLAUDE.md` block.
 
 **Schema** — `state.json` epics gain `createdAt` and `touchedAt`. Additive, idempotent,
-backward-compatible; a `MIGRATIONS` entry keyed to 0.40.0 that invokes the backfill verb once and
+backward-compatible; a `MIGRATIONS` entry keyed to 0.40.0 that invokes the recovery verb once and
 leaves `touchedAt` absent on pre-existing epics rather than stamping upgrade day.
 
 **Tests** — `conductor-20.test.mjs:264-281` — the source-artifact parity sweep driven from

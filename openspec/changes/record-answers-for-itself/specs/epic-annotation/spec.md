@@ -6,20 +6,32 @@ NULLABLE — whether absence is a legal, meaningful state rather than a broken r
 field so declared SHALL be reachable by a clearing form.
 
 The declaration is what makes the rule enforceable, and without it neither candidate shape works. A
-per-field clearing flag can be forgotten when a ninth nullable field is added; so can a single
+per-field clearing flag can be forgotten when a further nullable field is added; so can a single
 clearing flag's accepted set, if that set is typed by hand. Only a registry marker lets the
 clearing surface and its test both derive from one place, so a nullable field added without a
 clearing path fails the suite instead of shipping silently. A field deliberately left set-only
 SHALL carry its reason in the registry beside the marker, not in prose a test cannot read.
 
 The clearing form SHALL be uniform across the declared-nullable fields rather than invented per
-field. Measured here, one field of nine carried a clearing flag while the others did not; a fix
+field. Measured here, one field of the set carried a clearing flag while the others did not; a fix
 adding a second flag for a second field and leaving the rest would reproduce, inside the fix, the
 defect it was written to repair.
 
 The clearing form SHALL name fields by the spelling a user reads in the command's own help — the
 flag name, not the internal state key — because those are two namespaces that the engine already
 warns must not be confused.
+
+`links` is the one field that keeps a dedicated clearing flag. It is GRANDFATHERED, not an exception
+to the uniformity rule: `--clear-links` is already documented, already tested, and is required in one
+invocation alongside `--link` for the atomic repair this specification also requires — a shape the
+generic form cannot express. It SHALL therefore be declared set-only for the generic form, carrying
+that reason, so that the generic form refuses `links` by name and points at `--clear-links` rather
+than appearing to offer a second way to do the same thing.
+
+`notes` is an append-only trail and SHALL be declared set-only with that reason: its entries are a
+record of what was said and when, so removing one would edit history rather than clear a value. That
+is a decision recorded here, not an omission — the requirement above demands every settable field
+carry one marker or the other.
 
 Unsetting a field SHALL leave every other field on the epic unchanged, and SHALL be refused with a
 non-zero exit naming the field where that field is not declared nullable.
@@ -75,13 +87,24 @@ them, and a rejection on the second write would leave the epic with no links at 
 
 ### Requirement: A write that changes nothing says so
 An epic-writing invocation whose effect on the record is empty SHALL say so, rather than reporting
-the generic success line for a write that did not happen.
+the generic success line for a write that did not happen. The rule binds the WRITE SURFACE, not an
+enumerated list of paths: whenever the save reports that it changed nothing, the invocation reports
+that it changed nothing.
 
-Two paths this specification introduces reach that state legitimately: supplying a link already
-recorded, and clearing a field already absent. In both the record is correct and no error occurred,
-so refusing would be wrong — but reporting "updated" tells a reader something happened when nothing
-did, and this engine has already recorded that exact defect on another surface, where a flag parsed,
-wrote nothing, exited zero and printed success.
+Scoping this to the paths a single change happens to introduce would be the very defect required
+task item 1 exists to catch, so it is stated once over the surface. The save layer already returns
+whether it was a no-op; the reporting layer currently discards that and prints success
+unconditionally, which is why a same-valued title, status or priority ALREADY reports a write that
+did not happen. Two paths this specification introduces reach the same state — supplying a link
+already recorded, and clearing a field already absent — and they are instances of the rule rather
+than its scope. In all of them the record is correct and no error occurred, so refusing would be
+wrong; but reporting "updated" tells a reader something happened when nothing did.
+
+#### Scenario: Any invocation whose save changed nothing reports no change
+- **WHEN** an epic-writing invocation results in a save that reports it changed nothing — including
+  setting a field to the value it already holds
+- **THEN** the invocation exits zero and reports that nothing changed, rather than reporting the
+  record was updated
 
 #### Scenario: A no-op link supply reports no change
 - **WHEN** a link already recorded is supplied

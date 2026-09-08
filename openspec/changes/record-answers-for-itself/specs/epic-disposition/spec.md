@@ -44,7 +44,11 @@ An epic reaching `status: "archived"` SHALL carry an `outcome` alongside that st
 `delivered` | `killed` | `superseded` | `abandoned` | `declined` | `unreconstructable` | `unknown`.
 `outcome` is a distinct field from `status`, not a new status value — an epic is still `archived`,
 and every existing status-driven behavior is unchanged. `delivered` MAY omit a reason; `killed`,
-`superseded`, `abandoned`, `declined` and `unreconstructable` MUST carry one. This capability
+`superseded`, `abandoned`, `declined` and `unreconstructable` MUST carry one. The refusal to
+archive without an outcome binds the INTERACTIVE ARCHIVE VERB only — the one path where an agent
+supplies a disposition. Every other archive path has nobody to ask, and the engine stamps
+`outcome: unknown` with `recordedBy` instead; demanding prose from such a path would be a
+fabrication, not a record. This capability
 defines the record's shape; **which archive paths exist, and which outcome the Gate 2 requirement
 binds, are enumerated by the `gate-integrity` capability** and are not restated here.
 
@@ -60,10 +64,15 @@ defeats every later reader — so the record SHALL preserve all three states.
 `declined` is included here because the engine already accepts it on the agent-facing surface while
 this specification's enumeration omitted it; that divergence is closed rather than repeated.
 
-#### Scenario: An ended epic carries a reason-bearing outcome
-- **WHEN** an epic reaches `archived` through any path
-- **THEN** it carries an outcome from the enumerated set, and every outcome except `delivered`
-  carries a reason
+#### Scenario: An agent-supplied disposition is reason-bearing
+- **WHEN** an agent records a disposition through the interactive archive verb
+- **THEN** it carries an outcome from the enumerated set, and every agent-supplied outcome except
+  `delivered` carries a reason
+
+#### Scenario: An engine-stamped path carries provenance instead of prose
+- **WHEN** an epic reaches `archived` through a path that supplies no disposition
+- **THEN** it carries `outcome: unknown` with `recordedBy` naming the path, and no reason is
+  demanded of it
 
 #### Scenario: An unreconstructable outcome is recorded with its reason
 - **WHEN** an agent determines that an archived epic's outcome cannot be reconstructed from
@@ -106,5 +115,5 @@ this specification's enumeration omitted it; that divergence is closed rather th
 #### Scenario: Pre-existing archived epics remain valid
 - **WHEN** the engine loads a `state.json` whose archived epics predate this capability
 - **THEN** those epics load as `outcome: unknown` (stamped `delivered` by migration only where a
-  passing Gate 2 verdict exists — 7 of the 49 audited), every existing behavior functions unchanged,
+  passing Gate 2 verdict exists — 7 of the 49 audited at the time that migration shipped; 3 of 144 remain so today), every existing behavior functions unchanged,
   and no reason is demanded retroactively

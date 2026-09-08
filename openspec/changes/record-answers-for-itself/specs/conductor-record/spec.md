@@ -15,7 +15,9 @@ The registration date SHALL NOT be rewritten by any later mutation.
 
 The last-touched date SHALL be advanced only for records whose stored content changed, and the
 mechanism SHALL respect the no-op save requirement the `state-write-guard` capability owns: a save
-that changes nothing writes nothing and therefore touches nothing.
+that changes nothing writes nothing and therefore touches nothing. Neither timekeeping field SHALL
+be an input to that comparison — writing a registration date is not itself a touch, whether it
+happens during the release migration or during a later standalone re-run of the recovery.
 
 Both SHALL be absent-tolerant: an epic written by an earlier version carries neither, and any
 reader SHALL treat absence as "unknown", never as a date — never substituting another field's date
@@ -68,7 +70,10 @@ because epic ids are read from a state file that may predate the id validation n
 registration.
 
 The release migration SHALL leave the last-touched date ABSENT on pre-existing epics rather than
-stamping its own run time. Stamping it would record every epic in the fleet as last touched on
+stamping its own run time. This is a consequence of the exclusion above and not a separate rule: the
+migration writes registration dates across the whole archive in one save, so without excluding the
+timekeeping fields from the per-record comparison every epic in every repository would read as last
+touched on upgrade day. Stamping it would record every epic in the fleet as last touched on
 upgrade day, which is the same signal destruction this specification rejects for the registration
 date.
 
