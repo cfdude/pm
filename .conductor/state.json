@@ -4841,7 +4841,8 @@
           "text": "GROUNDED 2026-09-07 before drafting. Operation-pair sweep over scripts/lib/update-epic.mjs: --clear-plan is ONE INSTANCE of an eight-field pattern, not a one-off. 'links' is the only optional field with an explicit clear (--clear-links, line 130). Every other nullable field is set-only with no unset path: planPath (447), specPath (448), parent (441), externalId (438), externalUrl (439), externalUpdatedAt (440), description (483), reviewMode (475). Separately confirmed: --link ASSIGNS rather than appends (line 146: links = parseLinkFlags(...)), so --clear-links is the only way to reach an empty list and passing --link twice in separate invocations silently discards the earlier set. Spec should decide a uniform unset mechanism across the eight and justify any field deliberately left set-only — per required task item 1, an omission has to be argued, not assumed. Shipping a single --clear-plan would repeat exactly the sibling miss that gh-66 made and that this issue re-reports."
         }
       ],
-      "externalUpdatedAt": "2026-09-04T22:25:53Z"
+      "externalUpdatedAt": "2026-09-04T22:25:53Z",
+      "release": "0.40.0"
     },
     {
       "id": "gh-cfdude-pm-167",
@@ -4914,7 +4915,8 @@
           "actor": "agent",
           "text": "lane: openspec not <none routed> — state.json schema change plus a MIGRATIONS entry with a git-derived backfill; review-mode thorough applies to schema work by this repo's own dial."
         }
-      ]
+      ],
+      "release": "0.40.0"
     },
     {
       "id": "sweep-covers-operation-pairs",
@@ -4943,7 +4945,8 @@
           "actor": "agent",
           "text": "SIX INSTANCES, not one — grooming pass 2026-09-07 found five more, ranked by consequence. (1) SAFETY: set-autonomy grants are append-only with no revoke — scripts/lib/autonomy.mjs:79,:89 do a.preAuthorized = [...a.preAuthorized, entry], and --level off leaves preAuthorized intact, so re-enabling autonomy silently restores every prior grant including one made in error. CLAUDE.md's execution-time decision rule branches on 'already pre-authorized -> proceed', so this is a safety surface. The in-repo precedent is exact: --attribute-commit (append) got --withdraw-commit + --withdrawal-reason when gh-140 shipped; the pattern was applied to commits and not to grants. (2) set-tracker --remove is secondary-only (tracker.mjs:56 sits inside if (role === 'secondary')), so on the primary path --remove is a declared, accepted flag that is silently ignored and a configured primary cannot be unconfigured. (3) gh-159's bare-invocation READ shipped on one verb of five: set-gate-guard reads (gate-guard.mjs:15-16); set-review-mode (review-mode.mjs:22-25), set-activity-log (activity-log.mjs:59-62) and set-tracker (tracker.mjs:115) all exit 1; set-lane-routing reads only by accident, falling through to a no-op saveState and printing a COUNT rather than the value. (4) eight nullable fields on update-epic with one clear path. (5) no story-removal path — --add-story adds, --done/--wont-do dispose, and a story added by typo can only be closed by recording a false --wont-do. ALSO: --clear-links is all-or-nothing while set-lane-routing has per-item --remove; same collection shape, two answers, one engine. AND THE KEY MECHANISM: gh-66's disposition claims 'a test now fails CI if any source-artifact field is settable at creation but not on the update surfaces' — scripts/test/conductor-23.test.mjs tests set-at-creation against set-on-update and NEVER tests unset. The guard was built along the axis the sweep already looks at, which is exactly why a call-site sweep cannot find this class."
         }
-      ]
+      ],
+      "release": "0.40.0"
     },
     {
       "id": "backlog-grooming-pass",
@@ -4994,7 +4997,8 @@
           "actor": "agent",
           "text": "FLEET-MEASURED 2026-09-07: 29 epics across 6 repos carry status 'done', which is not in KNOWN_STATUSES — personal-finance-paper 18, market-intelligence 3, market-intelligence-dev 3, onvex-meetnexus-backend 3, onvex-meetnexus-ios 1, virtual-mic 1. All 29 are non-terminal to the 25 sites that read status === 'archived', and 0.27.0's disposition migration stamps archived epics only, so none of them was reached. Fleet total of epics whose record does not say what happened is therefore 382, not the 353 counted from outcome:unknown alone — and these 29 are the worse half because they are invisible rather than merely unlabelled. lane: superpowers not <none routed> — the check is small but its remedy message has to explain the silent-exemption consequence, which is the non-obvious part."
         }
-      ]
+      ],
+      "release": "0.40.0"
     },
     {
       "id": "gh-cfdude-pm-175",
@@ -5065,7 +5069,8 @@
           "actor": "agent",
           "text": "lane: openspec not <none routed> — reconstructing a historical record has real design ambiguity (what evidence is sufficient, what to do when it is insufficient, whether the engine proposes or the agent decides) and it writes to the disposition field the archive gate reads. Review-mode thorough applies."
         }
-      ]
+      ],
+      "release": "0.40.0"
     },
     {
       "id": "remaining-platform-investigation",
@@ -5100,7 +5105,11 @@
       "lane": "openspec",
       "links": [],
       "reconcileNeeded": false,
-      "attributedCommits": []
+      "attributedCommits": [
+        "cb0a97c",
+        "81b1a49"
+      ],
+      "release": "0.40.0"
     }
   ],
   "detourStack": [],
@@ -5111,7 +5120,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 405,
+  "revision": 411,
   "reviewMode": "thorough",
   "releases": [
     {
@@ -5188,6 +5197,22 @@
       "intent": "Things that go missing without anything noticing: a shipped file that lost its tail, an agent transcript thrown away, a duplicated helper whose sibling went stale, and a reported stdout loss that did not exist",
       "deferred": [],
       "target": "0.39.0"
+    },
+    {
+      "id": "0.40.0",
+      "intent": "The record answers questions about itself. Five defects, one root: .conductor/state.json cannot answer questions about its own contents. Epics gain a registration date and a last-touched date; an epic in a status the engine does not define is reported; the archive can be asked which of its records carry no considered outcome, and an outcome can be recorded as genuinely unreconstructable; every declared-nullable field can be unset and --link appends instead of replacing; and the emitted call-site sweep obliges the inverse operation. Measured across 27 distinct upstreams: 310 archived epics carry outcome unknown and 26 sit in status 'done', a value KNOWN_STATUSES does not contain.",
+      "deferred": [
+        {
+          "epic": "gh-cfdude-pm-167",
+          "reason": "sync --dry-run, cut at Gate 1 on a reviewer's recommendation. It was the rider on a release with two spines, and its one real complication was unaddressed: sync calls render() at scripts/lib/subcommands.mjs:648, so the spec's byte-identical-state-file clause would still have rewritten PROJECT.md and .conductor/render-stamp.json. Its own change must also declare the dry-run variant in verb-effects.mjs:73 and cover the archive backfill without consuming the archiveBackfilledAt marker.",
+          "recordedAt": "2026-09-08T07:21:35.099Z"
+        },
+        {
+          "epic": "backlog-grooming-pass",
+          "reason": "Depends on the clock this release introduces. Specifying a recurring staleness pass against a field that does not exist yet is how a spec gets written from assumption — the exact failure this release exists to reduce. Follows in 0.41.0 once createdAt and touchedAt are real.",
+          "recordedAt": "2026-09-08T07:21:44.569Z"
+        }
+      ]
     }
   ],
   "archiveBackfilledAt": "2026-08-27T04:52:42.658Z"
