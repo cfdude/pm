@@ -81,7 +81,27 @@ anytime; idempotent. Use it when the briefing shows a "pm <old> → <new>" upgra
    repo carries no `generatedBy` stamp to compare against — an undeterminable version is reported
    as nothing, never as staleness. The same line appears at the top of the SessionStart briefing.
 
-5. Show the result with `/pm:status`.
+5. **Commit what the upgrade just rewrote.** If the command printed a `⚠ COMMIT THIS UPGRADE`
+   line, run the `git add` and `git commit` it names — the paths are already filled in. Do this
+   BEFORE step 6: `/pm:status` re-renders `PROJECT.md`, so committing afterwards invites a second
+   round of churn.
+
+   Why it matters: leaving the rewrite uncommitted is silent by construction. Every session reads
+   the new rules, `PROJECT.md` and version stamp straight off disk, so nothing looks broken —
+   while git records the version the repo used to be at. A sweep of this machine on 2026-09-08
+   found NINE repositories in exactly that state, two of them for six days with git saying pm
+   0.16.0 and disk running 0.39.0. This is the same failure the OpenSpec branch of step 4 guards
+   against, one layer down.
+
+   The line is conditional in both directions and needs no action when absent: an idempotent
+   re-run that changed no content prints nothing, and a repo that git-ignores these files prints
+   nothing, because there is nothing there git would let you commit.
+
+   This does not replace the "commit `state.json` **before** upgrading" advice in
+   *If an upgrade goes wrong* below — the two are complementary. That commit is the rollback
+   point; this one publishes the rewrite.
+
+6. Show the result with `/pm:status`.
 
 ## The rules-authoring surface — `write-rules`, `rules-target`, `rules`, and `--platform`
 

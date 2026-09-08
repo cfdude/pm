@@ -8,7 +8,36 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+* **`/pm:upgrade` now tells you to commit what it just rewrote.** The verb re-stamps
+  `state.json`, rewrites the platform's rules block, re-renders `PROJECT.md` and the render
+  stamp, and back-fills `.gitignore` — and said nothing about any of it reaching git. A sweep of
+  one machine on 2026-09-08 found **nine repositories** where `/pm:upgrade` or `openspec update`
+  had run, succeeded, and been left uncommitted: two sat six days with git recording pm 0.16.0
+  while disk ran 0.39.0, and one was two OpenSpec upgrades deep (HEAD 1.7.0, disk 1.11.0).
+
+  The failure is silent **by construction**, which is why nothing caught it: every session reads
+  the rewritten files off disk, so nothing is broken and nothing looks wrong. And
+  `tool-currency.mjs` resolves a project's version from the `generatedBy:` stamp ON DISK — correct
+  for what that function measures, but it means an uncommitted upgrade makes the one surface built
+  to notice staleness go quiet.
+
+  The new line names the changed paths so the `git add` is a copy-paste, and it is conditional in
+  **both** directions off a single `git diff --name-only HEAD` probe against the paths the verb
+  itself wrote: content that did not change never appears, so an idempotent re-run stays silent
+  (a message that always fires is one people stop reading), and a path that is untracked or
+  git-ignored never appears, so a repo that ignores these files is never told to commit something
+  git would refuse. `git diff` rather than a "we wrote it" flag also kills a false positive that
+  was already latent — `writeRules` rewrites byte-identical content on a repeat run, which any
+  mtime- or write-site-keyed check would report as a change.
+
 ### Fixed
+
+* **`verb-effects.mjs` under-declared what `upgrade` writes** — it named `state.json`, `CLAUDE.md`
+  and `.gitignore`, omitting `PROJECT.md` and `.conductor/render-stamp.json`, both written through
+  `render()`. It also said `CLAUDE.md` where the target is whatever the platform's precedence chain
+  resolves to.
 
 * **The OpenSpec drift nudge no longer reads as "a human must run this".** The line said *Run
   `openspec update` in a terminal; pm never runs it for you*, and `commands/upgrade.md` plus the

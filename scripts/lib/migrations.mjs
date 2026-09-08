@@ -2,6 +2,7 @@
 // APPEND-ONLY schema migrations, keyed by the release that introduced each change, and
 // the /pm:upgrade verb that applies them. One-directional dependencies only.
 
+import path from "node:path";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { pluginVersion, newestInstalledVersion, cmpVer, changelogBetween, stampVersion } from "./plugin-meta.mjs";
 import { reconcileArchived } from "./epic-progress.mjs";
@@ -12,6 +13,7 @@ import { ARCHIVE_BACKFILL, engineStamp, stampedBy } from "./disposition.mjs";
 import { resolvePlatform } from "./platform.mjs";
 import { ensureGitignore } from "./subcommands.mjs";
 import { openspecCurrencyLines } from "./tool-currency.mjs";
+import { differsFromHead } from "./git.mjs";
 
 // MIGRATIONS — APPEND-ONLY, each keyed by the release that introduced the change.
 // NEVER remove or reorder a shipped entry: a repo many versions behind replays every
@@ -186,7 +188,7 @@ export function upgrade() {
   reconcileArchived(state);
   stampVersion(state);
   saveState(state);
-  writeRules(resolvePlatform({}, state));
+  const rulesFile = path.basename(writeRules(resolvePlatform({}, state)));
   render();
   ensureGitignore();
   process.stderr.write(`conductor: upgraded (${applied} migration(s)), pmVersion now ${state.pmVersion || "unknown"}\n`);
@@ -208,4 +210,31 @@ export function upgrade() {
   // never-replayed transformation may not have.
   const openspecLines = openspecCurrencyLines();
   for (const l of openspecLines) process.stderr.write(l + "\n");
+
+  // COMMIT WHAT THIS JUST REWROTE. Every path below is one THIS function wrote a moment ago:
+  // state.json (migrations + the version stamp), the platform's rules file (NOT always
+  // CLAUDE.md — Hermes/Codex resolve AGENTS.md or HERMES.md, so the name comes from
+  // writeRules()'s return, never a literal), PROJECT.md and the render stamp (both via
+  // render()), and .gitignore (ensureGitignore's back-fill).
+  //
+  // Nine repositories on one machine had run this and never committed the result — see
+  // differsFromHead()'s note for the measurements. The failure is silent by construction: the
+  // session reads the rewritten files off disk, so nothing looks broken, and git quietly records
+  // a version the code is no longer at. `/pm:upgrade` said nothing about committing any of it.
+  //
+  // The probe decides BOTH suppressions on its own: an idempotent re-run changes no content and
+  // prints nothing, and a path this repo git-ignores never appears, so a repo that ignores the
+  // file is never told to commit something git would refuse. Nothing here is a second list of
+  // what the verb writes — it IS the verb's own writes, named at the point they happen.
+  const rewritten = differsFromHead(
+    [".conductor/state.json", rulesFile, "PROJECT.md", ".conductor/render-stamp.json", ".gitignore"]);
+  if (rewritten.length) {
+    process.stderr.write(
+      `conductor: \u26a0 COMMIT THIS UPGRADE — it rewrote ${rewritten.length} tracked ` +
+      `file${rewritten.length === 1 ? "" : "s"} and git still records the old ones.\n` +
+      `   git add ${rewritten.join(" ")}\n` +
+      `   git commit -m "chore(pm): upgrade conductor to ${state.pmVersion || "unknown"}"\n` +
+      "   Left uncommitted, git says this repo is on the OLD version while every session reads " +
+      "the new rules off disk — nothing anywhere detects that.\n");
+  }
 }
