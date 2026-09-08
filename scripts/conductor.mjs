@@ -77,6 +77,7 @@ import {
 import { resolvePlatform, assertKnownPlatform, platformFlag, resolveAndRecordPlatform, rulesTarget } from "./lib/platform.mjs";
 import { loadState, conflictExitCode } from "./lib/state.mjs";
 import { ROOT, warnRootDivergence } from "./lib/constants.mjs";
+import { VERB_EFFECTS } from "./lib/verb-effects.mjs";
 import { setActive, clearActive } from "./lib/active-pointer.mjs";
 import { setAutonomy } from "./lib/autonomy.mjs";
 import { parseFlags, planHierarchy, addEpic, requireFlagValues } from "./lib/add-epic.mjs";
@@ -160,11 +161,26 @@ if (!cmd || process.argv.slice(2).some(a => a === "--help" || a === "-h")) {
 // about) and after the self-hosting handoff (the delegated child owns the whole invocation and
 // prints it there instead of twice). Before the banner, because it outranks it.
 //
-// Every verb, deliberately — including the hooks. `commit-nudge` fires on every Bash tool call
+// EVERY VERB THAT WRITES, including the hooks — `commit-nudge` fires on every Bash tool call
 // and writes detours.log and state.json, so a redirected hook is failure mode 1 from the issue,
-// not a quiet read. The predicate is cheap (two realpaths and one existsSync) and, by
-// construction, silent in every case except two live conductors with the wrong one selected.
-warnRootDivergence();
+// not a quiet read. That argument is about the MUTATING hooks and was never an argument for
+// warning on a read: this line said "WRITING A DIFFERENT REPOSITORY" ahead of `integrity`, whose
+// own output two lines later reads "Findings are reported, never repaired: nothing here writes
+// state" — verified writing nothing (state.json md5 identical before and after, working tree
+// clean). Crying wolf on the 16 read-only verbs is what teaches a reader to skim past it on the
+// 32 where it is the difference between inspecting another repo and mutating it.
+//
+// The classification is NOT a list kept here. lib/verb-effects.mjs already declares
+// `effect: "read-only" | "mutates"` for every verb, and conductor-25 asserts set-equality
+// between that table and the dispatch object BELOW, read out of this file's source — so a verb
+// added without an entry fails the build and this gate cannot go stale. An UNKNOWN verb has no
+// entry, reads as not-read-only, and still warns: it falls through to USAGE having done nothing,
+// but a misspelling under a redirected CLAUDE_PROJECT_DIR is exactly when a caller wants to be
+// told where they are pointed.
+//
+// The predicate is cheap (two realpaths and one existsSync) and, by construction, silent in
+// every case except two live conductors with the wrong one selected.
+if (VERB_EFFECTS[cmd]?.effect !== "read-only") warnRootDivergence();
 
 // df-engine-banner-noise-every-invocation: the banner is suppressed by default whenever
 // CLAUDE_PROJECT_DIR is set (self-hosting/dev context -- the stale-cache scenario this banner

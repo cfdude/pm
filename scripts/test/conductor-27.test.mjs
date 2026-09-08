@@ -245,6 +245,44 @@ test("gh#82: with CLAUDE_PROJECT_DIR unset there is nothing to diverge from", ()
   assert.equal(r.status, 0);
 });
 
+test("gh#82: a READ-ONLY verb does not claim to be writing a different repository", () => {
+  // The warning said "⚠ WRITING A DIFFERENT REPOSITORY" ahead of `integrity`, whose own output
+  // two lines later reads "Findings are reported, never repaired: nothing here writes state".
+  // Verified in the field that it genuinely wrote nothing — state.json md5 identical before and
+  // after, working tree clean — so the two lines simply contradicted each other. Crying wolf on
+  // a read is what teaches a reader to skim past the line on the 32 verbs where it is the
+  // difference between inspecting another repo and mutating it.
+  const target = tmpRepo(); run(["init"], { cwd: target });
+  const here = tmpRepo();   run(["init"], { cwd: here });
+
+  for (const verb of ["integrity", "owners", "changesets"]) {
+    const r = runSplit([verb], { cwd: here, projectDir: target });
+    assert.doesNotMatch(r.stderr, WARN,
+      `${verb} is declared read-only in verb-effects.mjs and must not warn about writing:\n${r.stderr}`);
+  }
+});
+
+test("gh#82: a MUTATING verb in the same fixture still warns — the gate is not a blanket silence", () => {
+  // The control for the test above. Same two repos, same redirect, one verb declared `mutates`:
+  // if this ever goes quiet the guard has been disabled rather than narrowed.
+  const target = tmpRepo(); run(["init"], { cwd: target });
+  const here = tmpRepo();   run(["init"], { cwd: here });
+  const r = runSplit(["render"], { cwd: here, projectDir: target });
+  assert.match(r.stderr, WARN, `render mutates and must still warn:\n${r.stderr}`);
+});
+
+test("gh#82: the read/write split is READ from verb-effects.mjs, not a second list", () => {
+  // A hardcoded array of read-only verb names would go stale the first time someone adds a verb,
+  // and a staleness bug in a safety warning is worse than the warning being noisy. conductor-25
+  // already asserts set-equality between VERB_EFFECTS and the dispatch object, so consulting
+  // that table is what makes this gate un-staleable. Pin the dependency so a future refactor
+  // back to a literal list is caught here.
+  const src = fs.readFileSync(ENGINE, "utf8");
+  assert.match(src, /VERB_EFFECTS\[cmd\]\?\.effect !== "read-only"/,
+    "the divergence warning must be gated on verb-effects.mjs, not on an inline list of verb names");
+  assert.match(src, /from "\.\/lib\/verb-effects\.mjs"/);
+});
+
 test("gh#82: the warning is not silenced by the banner switches that the redirect itself trips", () => {
   // df-engine-banner-noise-every-invocation suppresses the engine banner whenever
   // CLAUDE_PROJECT_DIR is set — i.e. the single condition that redirects every write is also the

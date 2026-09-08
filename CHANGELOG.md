@@ -34,6 +34,23 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+* **A read-only verb no longer warns that it is WRITING a different repository.** Running
+  `integrity` with `CLAUDE_PROJECT_DIR` pointed at another repo printed
+  `⚠ WRITING A DIFFERENT REPOSITORY` — and then, two lines later, `integrity`'s own output read
+  *"Findings are reported, never repaired: nothing here writes state."* The two contradicted each
+  other, and the verb genuinely wrote nothing (state.json md5 identical before and after, working
+  tree clean). The warning is worth shouting — pointing the engine at another repo and mutating
+  it by accident is exactly the mistake it exists for — which is why crying wolf on the **16**
+  read-only verbs is the defect: it trains a reader to skim past it on the **32** where it is the
+  difference between inspecting another repo and mutating it.
+
+  Gated on `verb-effects.mjs`, which already declared `effect: "read-only" | "mutates"` for every
+  verb and already had `integrity` right — **no new list of verb names**, which would go stale the
+  first time someone added a verb, and a staleness bug in a safety warning is worse than the
+  warning being noisy. conductor-25 asserts set-equality between that table and the dispatch
+  object, so a verb added without an entry still fails the build. An unknown verb has no entry,
+  reads as not-read-only and still warns. Mutating verbs, hooks included, are unchanged.
+
 * **`verb-effects.mjs` under-declared what `upgrade` writes** — it named `state.json`, `CLAUDE.md`
   and `.gitignore`, omitting `PROJECT.md` and `.conductor/render-stamp.json`, both written through
   `render()`. It also said `CLAUDE.md` where the target is whatever the platform's precedence chain
