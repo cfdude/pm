@@ -288,7 +288,7 @@ export function buildBrief(state, { consume = false } = {}) {
   // `inCompletionScope` is deliberately NOT applied, and for a DIFFERENT reason than the two
   // 0.30.0 checks give: those exempt epics whose ending is already explained, whereas here every
   // ending discharges regardless of outcome or provenance. Applying it would re-include exactly
-  // the `killed`/`superseded`/`abandoned`/`declined` and archive-backfilled epics — the inverse
+  // the EXPLAINED_OUTCOMES and archive-backfilled epics — the inverse
   // of the fix. `later` and `planned` stay in scope: they can still become work.
   const neverReRead = epics.filter(e =>
     e.externalId && !e.externalUpdatedAt && !missing(e) && e.status !== "archived");

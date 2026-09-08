@@ -271,9 +271,10 @@ the `openspec` lane.
 - `update-epic <id> --status archived` on an `openspec`-lane epic REQUIRES
   `gateReview.gate2.verdict === "pass"`, non-stale, when the outcome is `delivered` — if it's
   missing, `fail`, `ungated` or stale, the transition is rejected with a clear error naming what's
-  missing, and nothing is written. `killed`, `superseded` and `abandoned` are exempt: the code was
-  never written or was thrown away, so demanding a verdict would make those outcomes recordable
-  only by fabricating one. Gate 1 is not itself required at archive time (it gates code, which
+  missing, and nothing is written. Every other outcome — `killed`, `superseded`, `abandoned`,
+  `declined` and `unreconstructable` — is exempt: the code was never written, was thrown away, or
+  the evidence is gone, so demanding a verdict would make those outcomes recordable only by
+  fabricating one. Gate 1 is not itself required at archive time (it gates code, which
   already happened earlier), though recording it via the same subcommand is good practice and
   `integrity` reports an archived openspec epic that passed Gate 2 with no Gate 1.
 - **The gate binds every path to `archived`, not just this verb.** `reconcileArchived()` — reached
@@ -381,7 +382,7 @@ bullet reached 3/15.
    ENDS by recording a terminal disposition carrying its required reason, and
    never by removing the record. The archive verb takes TWO halves in ONE invocation — the
    disposition AND a deferral assertion — because the gate refuses either half alone:
-   `update-epic <id> --status archived --outcome delivered|killed|superseded|abandoned|declined --reason "<why>" --no-deferrals`
+   `update-epic <id> --status archived --outcome delivered|killed|superseded|abandoned|declined|unreconstructable --reason "<why>" --no-deferrals`
    (every outcome except `delivered` requires the reason). `--no-deferrals` is the explicit
    "there are none" and is a claim, not a default — swap it for `--deferral
    "<epicId>:<artifact section>"` where work is now held by a registered epic, or

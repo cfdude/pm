@@ -154,6 +154,18 @@
       sweep `gh-66`'s disposition referred to — that citation was the correction; the widening was
       not implementable
 
+- [ ] 5.10 SURFACE THE WALKER. `unconsideredOutcomes()` landed in group 4 as a library export with
+      NO consumer outside tests, so the release would ship an enumeration nobody can ask for while
+      `epic-disposition/spec.md:25` says "an agent asks the engine". Add a dispatched verb — the
+      shape every other ask-the-engine surface here uses — which needs `FLAGLESS_VERBS` in
+      `constants.mjs`, a `verb-effects.mjs` entry (read-only), `USAGE` and dispatch in
+      `conductor.mjs`, a `commands/` doc, and a `docs/parity-ledger.json` claim for that doc.
+      NOT an integrity CHECKS entry: `conductor-15.test.mjs:1362-1374` asserts the archived
+      `integrity-day-one.md` names every finding's epic, so ~66 ids would have to be written into
+      a closed change's document. Group 4 declined to wire this rather than guess, and named the
+      three candidate surfaces with the evidence against two — the right call; this is the
+      orchestrator's decision recorded rather than a silent scope widening
+
 ## 6. The emitted inverse-operation obligation
 
 - [x] 6.1 RED: test the rendered block carries the obligation inside required task item 1, as a

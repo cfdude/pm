@@ -13,6 +13,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { tmpRepo, run, readState, writeState } from "./helpers.mjs";
+import { AGENT_OUTCOMES } from "../lib/archive-gate.mjs";
 
 const REPO = new URL("../..", import.meta.url).pathname;
 const { runIntegrity } = await import("../lib/integrity.mjs");
@@ -250,8 +251,17 @@ for (const [name, emit] of INWARD_EMITTERS) {
     const block = flat(emit());
     assert.match(block, /no longer open/,
       "an epic linked to an item absent from the open list is the signal nothing consumed");
-    assert.match(block, /--outcome delivered\|killed\|superseded\|abandoned/,
-      "the proposal names the vocabulary the disposition must come from");
+    // EXACT, terminated, and SCOPED TO THIS STEP — three properties, and dropping any one of them
+    // reproduces the blindness. It was `/--outcome delivered\|killed\|superseded\|abandoned/`
+    // against the WHOLE block, so it passed by PREFIX MATCH through the entire release that added
+    // `declined`. Anchoring alone does not fix it: the emitted block ALSO carries the gate
+    // procedure's own archive command, which is rendered from the same constant, so a whole-block
+    // match still finds the full alternation while this step carries a stale one — measured, by
+    // reverting this step to the four-value literal and watching the anchored assertion pass.
+    const step = block.slice(block.indexOf("no longer open"), block.indexOf("WHICH outcome it is"));
+    assert.ok(step.length > 100, "the closed-item step was not located — the markers moved");
+    assert.match(step, new RegExp(`--outcome ${AGENT_OUTCOMES.join("\\|")} --reason`),
+      "the proposal names the vocabulary the disposition must come from, in full");
     assert.match(block, /PROPOSE/,
       "proposing, not writing — the outcome and its reason are the agent's judgment, and an " +
       "engine-inferred disposition is unreplaceable (gh-130)");

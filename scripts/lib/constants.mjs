@@ -307,7 +307,7 @@ export const EPIC_FLAGS = [
   // The interactive archive verb's disposition. `key` is `disposition` for both: they are two
   // halves of ONE record the verb builds and writes together, never two epic fields.
   { flag: "outcome", key: "disposition", commands: ["update-epic"], write: "custom",
-    placeholder: "delivered|killed|superseded|abandoned|declined" },
+    placeholder: "delivered|killed|superseded|abandoned|declined|unreconstructable" },
   // Also `release`'s: an exclusion's reason IS a disposition reason — the same required-reason
   // rule at a fourth scope — so it shares this entry rather than getting a second one under the
   // same name, which epicFlagsFor() would then project twice.

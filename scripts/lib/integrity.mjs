@@ -21,7 +21,7 @@
 import { isInitialized, loadState } from "./state.mjs";
 import { archivedChanges, epicProgress, strippedChangeId } from "./epic-progress.mjs";
 import { KNOWN_STATUSES, gateHasEvidence, isOpenspecLane, releaseMembers } from "./constants.mjs";
-import { AGENT_OUTCOMES } from "./archive-gate.mjs";
+import { AGENT_OUTCOMES, dispositionInvocation } from "./archive-gate.mjs";
 import { commitDate, isAncestor, objectExists, reachableFromAnyRef } from "./git.mjs";
 import { isArchiveBackfilled, outcomeOf, stampedBy } from "./disposition.mjs";
 import { epicReferences, isKnownLinkType, isRenderableLink, KNOWN_LINK_TYPES, supersededEpics } from "./links.mjs";
@@ -33,8 +33,13 @@ import { claimExpiry, isLiveClaim } from "./claim-shape.mjs";
  *  code written, which is zero-ticked by construction. `declined` is the extreme of the same
  *  shape: an ask turned down at intake was never worked at all, so leaving it in scope would
  *  make every recorded decline a permanent finding — which is how a team learns to stop
- *  recording them, and the record goes silent again. */
-const EXPLAINED_OUTCOMES = ["killed", "superseded", "abandoned", "declined"];
+ *  recording them, and the record goes silent again.
+ *
+ *  `unreconstructable` belongs here for the same reason the others do, and it is a BEHAVIOURAL
+ *  entry rather than bookkeeping: an epic whose defining property is that the evidence of what
+ *  happened is gone is zero-ticked by construction, so a completion-shaped check firing on it
+ *  would fire forever on the record working correctly. */
+const EXPLAINED_OUTCOMES = ["killed", "superseded", "abandoned", "declined", "unreconstructable"];
 
 /** THE scope rule for the completion-shaped checks. Exactly two exclusions and nothing else.
  *
@@ -124,7 +129,7 @@ export function recordedShas(state) {
  *  consumed would report the condition to one session and hide it from every session after.
  *
  *  Scoped by `inCompletionScope`, exactly as every other completion-shaped check is. An epic the
- *  heal flipped to `archived` and an agent then closed `killed`, `superseded` or `abandoned` will
+ *  heal flipped to `archived` and an agent then closed with any EXPLAINED_OUTCOMES value will
  *  never acquire the passing Gate 2 that is this condition's ONLY clearing path — the code was
  *  never written, or was written and thrown away — so without the scope rule its entry is
  *  permanent and unclearable, which is precisely the shape the backfill exclusion below it was
@@ -431,8 +436,9 @@ export const CHECKS = [
           "priority is lifted to that of everything depending on it, for as long as the value " +
           "persists. Decide what happened to the work and set a defined status: " +
           `\`update-epic ${e.id} --status <${KNOWN_STATUSES.join("|")}>\`, or, where the work ` +
-          `ended, \`update-epic ${e.id} --status archived --outcome ` +
-          `<${AGENT_OUTCOMES.join("|")}> --reason "<why>" --no-deferrals\`. ` +
+          // The archive remedy is rendered by archive-gate.mjs's ONE renderer — a second copy of
+          // the invocation here is how the vocabulary in a remedy comes to outlive the verb's.
+          `ended, \`${dispositionInvocation(e.id)}\`. ` +
           "The check will not choose for you — which legal status an undefined one should become " +
           "is a judgment about what happened to the work." });
       }

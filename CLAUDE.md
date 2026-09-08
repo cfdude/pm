@@ -247,7 +247,7 @@ measured across one audited repository, a rule carried by a mandatory task secti
    exclusion ENDS by recording a terminal disposition carrying its required reason, and
    never by removing the record. The archive verb takes TWO halves in ONE invocation — the
    disposition AND a deferral assertion — because the gate refuses either half alone:
-   `update-epic <id> --status archived --outcome delivered|killed|superseded|abandoned|declined --reason "<why>" --no-deferrals`
+   `update-epic <id> --status archived --outcome delivered|killed|superseded|abandoned|declined|unreconstructable --reason "<why>" --no-deferrals`
    (every outcome except `delivered` requires the reason). `--no-deferrals` is the explicit
    "there are none" and is a claim, not a default — swap it for `--deferral
    "<epicId>:<artifact section>"` where work is now held by a registered epic, or
@@ -476,7 +476,7 @@ agent) do:
    item can be deleted, transferred or moved out of this scope), so READ THE ITEM first.
    Then, where the epic's status is not already `archived`, PROPOSE its disposition to the
    user and let them confirm it — never write one unasked:
-   `update-epic <id> --status archived --outcome delivered|killed|superseded|abandoned|declined --reason "<why>" --no-deferrals`.
+   `update-epic <id> --status archived --outcome delivered|killed|superseded|abandoned|declined|unreconstructable --reason "<why>" --no-deferrals`.
    WHICH outcome it is, and the reason that goes with it, is a judgment about what happened
    to the work; github-issues closing an item does not say which one and pm will not guess. An epic
    that is already `archived` owes nothing here — it ended, and a record that ended does not

@@ -159,6 +159,41 @@ export function stalenessMarking(epic, entry) {
  *  real disposition is exactly the silence this release removes. */
 export const AGENT_OUTCOMES = KNOWN_OUTCOMES.filter(o => o !== "unknown");
 
+/** The invocation that would record a disposition for ONE epic — rendered once, so no caller
+ *  types the vocabulary into a string of its own. Both halves in one invocation, because the
+ *  gate above refuses either half alone. */
+export const dispositionInvocation = (id) =>
+  `update-epic ${id} --status archived --outcome <${AGENT_OUTCOMES.join("|")}> ` +
+  `--reason "<why>" --no-deferrals`;
+
+/** THE WALKER: the archived epics whose outcome NOBODY CONSIDERED, each with the invocation that
+ *  would record one. Lives here rather than in disposition.mjs because the remedy is this
+ *  module's own verb and its vocabulary is `AGENT_OUTCOMES`, which disposition.mjs may not import
+ *  (it imports constants.mjs and nothing else, and nothing under it imports back up).
+ *
+ *  THE PREDICATE IS TWO HALVES AND BOTH ARE LOAD-BEARING — an ENGINE-WRITTEN stamp whose value is
+ *  `unknown`:
+ *
+ *  - An engine stamp ALONE is not enough. A stamp can be evidence-derived: the 0.27.0 migration
+ *    wrote `delivered` wherever a passing Gate 2 verdict existed, and this repository still holds
+ *    three of them. Handing those to an agent to re-dispose would ask it to re-derive what the
+ *    record already derived correctly. The first draft's predicate was "stamped by a migration"
+ *    and returned exactly those three too many.
+ *  - An `unknown` VALUE alone is not enough either. `outcomeOf()` answers `"unknown"` for an epic
+ *    carrying no disposition at all, and an absent disposition is deliberately outside the
+ *    population: every archive path binds the outcome invariant and the migration stamped every
+ *    pre-existing archived epic, so a predicate handling absence would handle a state no path
+ *    produces. Live data agrees at zero.
+ *
+ *  Asked through `isEngineStamped()`, never by reading `.recordedBy` — that reader is THE
+ *  discriminator, and a second one is what the suite's source scan exists to prevent. */
+export function unconsideredOutcomes(epics) {
+  return (epics || [])
+    .filter(e => e && e.status === "archived" && isEngineStamped(e.disposition) &&
+      outcomeOf(e) === "unknown")
+    .map(e => ({ epic: e, invocation: dispositionInvocation(e.id) }));
+}
+
 export function archiveGate(epic, request = {}) {
   // The interactive verb must name how the work ended. Every OTHER archive path — the
   // archive-drift heal, the archive backfill and the two archived-at-creation paths — supplies
@@ -232,7 +267,8 @@ export function archiveGate(epic, request = {}) {
   // An ABSENT lane is openspec-lane (isOpenspecLane), so a lane-less epic is held to this
   // gate exactly as a declared one is — it renders as openspec-lane on every surface.
   //
-  // The Gate 2 demand binds `delivered` ONLY. A change that is killed, superseded or abandoned
+  // The Gate 2 demand binds `delivered` ONLY. A change that ended any other way — killed,
+  // superseded, abandoned, declined or unreconstructable —
   // has no passing Gate 2 and never will — the code was never written, or was written and
   // thrown away — so demanding one would make those dispositions recordable only by fabricating
   // a verdict or hand-editing state.json, which are the two failures this release exists to
@@ -273,7 +309,8 @@ export function archiveGate(epic, request = {}) {
   }
 
   // The HANDOFF. Binds `delivered` only, for the same reason the Gate 2 demand does: killed,
-  // superseded and abandoned already carry a required reason that answers where the work went,
+  // superseded, abandoned, declined and unreconstructable already carry a required reason that
+  // answers where the work went,
   // and a change killed with every task outstanding by construction would otherwise be refused
   // the exact archive this release exists to make recordable.
   //

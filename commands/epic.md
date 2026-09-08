@@ -196,7 +196,7 @@ of them are declared once in `EPIC_FLAGS` (`scripts/lib/constants.mjs`), which i
 | `--attribute-commit <sha>` | `attributedCommits` | **repeatable**, append-only, in landing order |
 | `--withdraw-commit <sha>` | `attributedCommits`, `withdrawnCommits` | **repeatable**. Removes ONE occurrence of a sha this epic attributed and records why. A `git reset` is a normal operation, so an attribution can outlive its commit; this is the only supported way to correct that. Refuses a sha the epic never attributed. |
 | `--withdrawal-reason "<why>"` | `withdrawnCommits` | Required by `--withdraw-commit`, and deliberately **not** `--reason` — that one is the disposition's, and sharing it made a withdrawal's reason silently become the reason the epic was delivered. |
-| `--outcome <o>` | `disposition` | `delivered\|killed\|superseded\|abandoned` |
+| `--outcome <o>` | `disposition` | `delivered\|killed\|superseded\|abandoned\|declined\|unreconstructable` |
 | `--reason "<why>"` | `disposition` | required for every outcome except `delivered` |
 | `--carried-to <epicId>` | `disposition` | where unfinished work went |
 | `--correct-disposition "<why the recorded one was wrong>"` | `disposition` | corrects an agent-recorded disposition; keeps the prior one under `superseded` |
@@ -235,9 +235,10 @@ which demands a disposition (`--outcome`, plus `--reason` unless the outcome is 
 a deferral assertion (`--no-deferrals`, or one or more `--deferral`/`--declined-deferral`). It
 also refuses to archive an `openspec`-lane epic as `delivered` without a passing, non-stale
 Gate 2, and demands `--carried-to <epicId> --reason "<which tasks moved>"` where outstanding work
-remains. `killed`, `superseded` and `abandoned` are exempt from the Gate 2 and handoff demands by
-design: the code was never written or was thrown away, and the required reason already answers
-where the work went.
+remains. Every outcome other than `delivered` — `killed`, `superseded`, `abandoned`, `declined`
+and `unreconstructable` — is exempt from the Gate 2 and handoff demands by design: the code was
+never written, was thrown away, or the evidence of what happened no longer exists, and the
+required reason already answers where the work went.
 
 **The two halves of a deferral are separated differently, because they are different shapes.**
 `--deferral` splits on the FIRST colon and that is correct for it: its left half is an EPIC ID,
@@ -616,7 +617,7 @@ bullet reached 3/15.
    ENDS by recording a terminal disposition carrying its required reason, and
    never by removing the record. The archive verb takes TWO halves in ONE invocation — the
    disposition AND a deferral assertion — because the gate refuses either half alone:
-   `update-epic <id> --status archived --outcome delivered|killed|superseded|abandoned|declined --reason "<why>" --no-deferrals`
+   `update-epic <id> --status archived --outcome delivered|killed|superseded|abandoned|declined|unreconstructable --reason "<why>" --no-deferrals`
    (every outcome except `delivered` requires the reason). `--no-deferrals` is the explicit
    "there are none" and is a claim, not a default — swap it for `--deferral
    "<epicId>:<artifact section>"` where work is now held by a registered epic, or
