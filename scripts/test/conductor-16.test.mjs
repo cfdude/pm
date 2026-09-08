@@ -5,6 +5,7 @@ import path from "node:path";
 import { tmpRepo, run, runCombined, readState, projectMd, parseBrief, expectFail } from "./helpers.mjs";
 import { GATE_PROCEDURE_ITEMS } from "../lib/rules.mjs";
 import { AGENT_OUTCOMES } from "../lib/archive-gate.mjs";
+import { KNOWN_PLATFORMS } from "../lib/constants.mjs";
 
 // conductor-tells-the-truth, groups 14–15: release planning (#125's minimum slice) and the
 // gate procedure pm EMITS. Split from conductor-13/14/15 for the same reason those were split
@@ -569,6 +570,94 @@ test("15.6 every emitted surface names all three deferral-assertion flags, not j
       assert.ok(text.includes(flag),
         `${name} must name ${flag} — emitting only one of the three teaches the assertion as a ` +
         "formality rather than as the claim it is");
+    }
+  }
+});
+
+// ───────── 15.7: item 1 also demands the INVERSE of every operation the change adds ─────────
+//
+// A call-site sweep enumerates the CALLERS of a thing that is written, and that enumeration
+// never arrives at the question of whether the thing can be UNWRITTEN. So the sweep is blind to
+// a whole class by construction, and six instances of it shipped past both gates here while the
+// call-site obligation was already in force — the most consequential being pre-authorization
+// grants that accumulate with no revoke.
+//
+// The assertions below slice the body of item 1 rather than searching the whole surface: an
+// obligation appended to item 7, or dropped into a prose paragraph, would satisfy a whole-text
+// grep while sitting outside the required task item the requirement names.
+
+/** The lines belonging to numbered item `n` — its title line plus every continuation line up to
+ *  the next numbered item. `numberedItems()` cannot do this: it keeps title lines only, so an
+ *  obligation living in a BODY is invisible to it. */
+const itemBody = (text, n, title) => {
+  const lines = text.split("\n");
+  const start = lines.findIndex(l => l.trim().startsWith(`${n}. **${title}**`));
+  assert.ok(start !== -1, `no numbered item ${n}. **${title}** found`);
+  const rest = lines.slice(start + 1);
+  const end = rest.findIndex(l => /^\s*\d+\.\s+\*\*/.test(l));
+  return [lines[start], ...(end === -1 ? rest : rest.slice(0, end))].join("\n");
+};
+
+const CALL_SITE_TITLE = "Call-site completeness sweep.";
+/** Determiner-free, punctuation-stable fragments: the mirrors are deliberately reworded (they
+ *  already say "the change" where the generator says "this change"), so a claim carrying a
+ *  determiner passes the generator self-check and fails every mirror. */
+const INVERSE_CLAIMS = [
+  "set against unset, add against remove",
+  "name and justify each inverse that is not shipped",
+  "shipped without its inverse, and not justified, is a FINDING",
+  "whether it can be unwritten",
+];
+const normClaim = (s) => s.replace(/[`*_]/g, "").replace(/\s+/g, " ").trim().toLowerCase();
+
+test("15.7 the rendered block carries the inverse-operation obligation INSIDE required task item 1", () => {
+  const cwd = repoWithEpics(1);
+  const block = rulesText(cwd);
+  const body = normClaim(itemBody(block, 1, CALL_SITE_TITLE));
+  for (const claim of INVERSE_CLAIMS) {
+    assert.ok(body.includes(normClaim(claim)),
+      `the rules block's item 1 is missing "${claim}" — the inverse obligation must live inside ` +
+      "the numbered required task item, not in surrounding prose");
+  }
+  // FORM: still one numbered item, never downgraded to a bullet and never split into a nested
+  // numbered sub-list, which would break the same-items-same-order guard at 15.4.
+  assert.doesNotMatch(block, /^\s*[-*] \*\*Call-site completeness sweep/m);
+  const continuations = itemBody(block, 1, CALL_SITE_TITLE).split("\n").slice(1);
+  for (const l of continuations) {
+    assert.doesNotMatch(l, /^\s*\d+\.\s/,
+      `a continuation line of item 1 must not begin with a number: ${JSON.stringify(l)}`);
+  }
+});
+
+test("15.7 the inverse obligation is a DECLARED mustSay claim, not only text in `lines`", () => {
+  const item = GATE_PROCEDURE_ITEMS[0];
+  assert.equal(item.title, CALL_SITE_TITLE);
+  const declared = item.mustSay.map(normClaim);
+  for (const claim of INVERSE_CLAIMS) {
+    assert.ok(declared.includes(normClaim(claim)),
+      `"${claim}" is not declared in GATE_PROCEDURE_ITEMS[0].mustSay — the drift guard iterates ` +
+      "mustSay ONLY, so an obligation added to `lines` alone leaves every mirror carrying the " +
+      "older, narrower rule with the whole suite green");
+  }
+});
+
+test("15.7 every mirrored surface carries the inverse obligation inside its own item 1", () => {
+  for (const rel of EMITTED_DOCS) {
+    const body = normClaim(itemBody(shipped(rel), 1, CALL_SITE_TITLE));
+    for (const claim of INVERSE_CLAIMS) {
+      assert.ok(body.includes(normClaim(claim)),
+        `${rel}'s item 1 is missing "${claim}"`);
+    }
+  }
+});
+
+test("15.7 the inverse obligation is emitted for every known platform, not just claude-code", () => {
+  const cwd = repoWithEpics(1);
+  for (const platform of KNOWN_PLATFORMS) {
+    const body = normClaim(itemBody(run(["rules", "--platform", platform], { cwd }), 1, CALL_SITE_TITLE));
+    for (const claim of INVERSE_CLAIMS) {
+      assert.ok(body.includes(normClaim(claim)),
+        `the ${platform} rules block's item 1 is missing "${claim}"`);
     }
   }
 });

@@ -1,43 +1,43 @@
 ## 0. Release object first
 
-- [ ] 0.1 Create the `0.40.0` release object with its intent and member epics BEFORE task 8.4. The
+- [x] 0.1 Create the `0.40.0` release object with its intent and member epics BEFORE task 8.4. The
       cross-spec gate enumerates the spec set from the release's member epics and refuses when the
       release does not exist — so recording that verdict is unrunnable until this exists. This
       ordering is itself a finding from Gate 1. <!-- pm:lifecycle -->
 
 ## 1. The clock — `createdAt` and `touchedAt`
 
-- [ ] 1.1 RED: test that a newly registered epic carries `createdAt`, that it is unchanged by a
+- [x] 1.1 RED: test that a newly registered epic carries `createdAt`, that it is unchanged by a
       later mutation, and that an epic written without it reads as unknown rather than as a date
-- [ ] 1.2 RED: test that a save which changes nothing stamps nothing — no `touchedAt` advance, no
+- [x] 1.2 RED: test that a save which changes nothing stamps nothing — no `touchedAt` advance, no
       revision bump, `state.json` byte-identical. This is the `state-write-guard` contract and the
       first draft's mechanism broke it
-- [ ] 1.3 RED: test that on a save which does write, only the epics whose stored content changed
+- [x] 1.3 RED: test that on a save which does write, only the epics whose stored content changed
       carry an advanced `touchedAt`
-- [ ] 1.4 GREEN: bind `createdAt` to `pushEpic` in `scripts/lib/state.mjs` — the single creation
+- [x] 1.4 GREEN: bind `createdAt` to `pushEpic` in `scripts/lib/state.mjs` — the single creation
       sink, already carrying the `attributedCommits` rule and covered by the source scan in
       `conductor-13.test.mjs` that forbids bypassing it. Do NOT enumerate creation surfaces: that
       approach was already tried here for the sibling field and already went stale
-- [ ] 1.5 GREEN: stamp `touchedAt` inside `saveState` AFTER the no-op early return, comparing each
+- [x] 1.5 GREEN: stamp `touchedAt` inside `saveState` AFTER the no-op early return, comparing each
       epic against the disk pre-image already read into `currentBody` at `state.mjs:197`
-- [ ] 1.6 Verify absence tolerance: a `state.json` written by 0.39.0 loads, renders and passes
+- [x] 1.6 Verify absence tolerance: a `state.json` written by 0.39.0 loads, renders and passes
       integrity with neither field present
-- [ ] 1.7 Confirm the three byte-idempotence tests still pass — `conductor-02.test.mjs:40`,
+- [x] 1.7 Confirm the three byte-idempotence tests still pass — `conductor-02.test.mjs:40`,
       `conductor-15.test.mjs:107`, `conductor-01.test.mjs:80`
 
 ## 2. History recovery — a re-runnable verb, not a migration body
 
-- [ ] 2.1 RED: test that the verb recovers a real date for an id whose introducing commit exists in
+- [x] 2.1 RED: test that the verb recovers a real date for an id whose introducing commit exists in
       the tracked history
-- [ ] 2.2 RED: test each degradation path independently — no git, untracked state file, shallow
+- [x] 2.2 RED: test each degradation path independently — no git, untracked state file, shallow
       history, id absent from history — and assert every one yields ABSENT, never an error and
       never a fabricated date
-- [ ] 2.3 RED: test that re-running never overwrites a date already present, AND that an absent date
+- [x] 2.3 RED: test that re-running never overwrites a date already present, AND that an absent date
       is re-attempted and recovered when the checkout later has the history. The first draft froze
       the opposite and that was a Gate 1 Critical
-- [ ] 2.4 RED: test against a fixture carrying an epic in `status: "done"`, asserting the verb
+- [x] 2.4 RED: test against a fixture carrying an epic in `status: "done"`, asserting the verb
       handles it like any other and does NOT repair the status
-- [ ] 2.5 RED: test that the release migration leaves `touchedAt` ABSENT on pre-existing epics.
+- [x] 2.5 RED: test that the release migration leaves `touchedAt` ABSENT on pre-existing epics.
       This is the Gate 1 round-2 Critical and it is NOT free: `upgrade()` applies every pending
       migration to one in-memory state and calls `saveState` ONCE (`migrations.mjs:183-188`), so the
       recovery writing `createdAt` makes every pre-existing epic differ from its disk pre-image. The
@@ -45,22 +45,22 @@
       exclusion from the whole-body comparison — or all 27 repositories read "last touched: upgrade
       day". Test the standalone re-run of the recovery verb the same way; it is the same write on a
       different day
-- [ ] 2.6 GREEN: implement the verb, invoked with an argv array and never a shell string
+- [x] 2.6 GREEN: implement the verb, invoked with an argv array and never a shell string
       (`git.mjs:141-142`; ids may predate `add-epic.mjs:345`'s validation)
-- [ ] 2.7 GREEN: add the `MIGRATIONS` entry keyed to 0.40.0 that INVOKES the verb once. Note in the
+- [x] 2.7 GREEN: add the `MIGRATIONS` entry keyed to 0.40.0 that INVOKES the verb once. Note in the
       entry why it delegates: `migrations.mjs:44-48` forbids a one-shot migration from reading disk
-- [ ] 2.8 Confirm no network connection is opened and only local history is read
+- [x] 2.8 Confirm no network connection is opened and only local history is read
 
 ## 3. Unknown-status integrity check
 
-- [ ] 3.1 RED: test that an epic whose status is outside `KNOWN_STATUSES` is reported with the epic
+- [x] 3.1 RED: test that an epic whose status is outside `KNOWN_STATUSES` is reported with the epic
       id, the offending value, and the remedy
-- [ ] 3.2 RED: test that the finding names the consequence — exempt from every archived-status rule,
+- [x] 3.2 RED: test that the finding names the consequence — exempt from every archived-status rule,
       and any dependency edge pointing at it reads unsatisfied permanently
-- [ ] 3.3 RED: test that the check repairs nothing and that a clean state file reports nothing
-- [ ] 3.4 GREEN: implement alongside `link-of-unknown-type` in `integrity.mjs`, following its shape
-- [ ] 3.5 Verify against a copy of a real repository's state file carrying `status: "done"` epics
-- [ ] 3.6 Assert the SEAM deliberately: a `done` epic is not `archived`, so the section-4 walker
+- [x] 3.3 RED: test that the check repairs nothing and that a clean state file reports nothing
+- [x] 3.4 GREEN: implement alongside `link-of-unknown-type` in `integrity.mjs`, following its shape
+- [x] 3.5 Verify against a copy of a real repository's state file carrying `status: "done"` epics
+- [x] 3.6 Assert the SEAM deliberately: a `done` epic is not `archived`, so the section-4 walker
       cannot reach it. This check reports the illegal status; the walker reaches those epics only
       after a human moves them to `archived`. Two halves of one measured number, split across two
       capabilities on purpose — test that the partition holds rather than leaving it implied
@@ -156,17 +156,17 @@
 
 ## 6. The emitted inverse-operation obligation
 
-- [ ] 6.1 RED: test the rendered block carries the obligation inside required task item 1, as a
+- [x] 6.1 RED: test the rendered block carries the obligation inside required task item 1, as a
       numbered task item and not prose
-- [ ] 6.2 RED: test the obligation is present as a `mustSay` CLAIM, not only in `lines`. The drift
+- [x] 6.2 RED: test the obligation is present as a `mustSay` CLAIM, not only in `lines`. The drift
       guard at `conductor-16.test.mjs:502-530` iterates `mustSay` only — amend `lines` alone and the
       suite stays green while all three mirrors carry the old rule, which is this change's own
       defect class reproduced inside it
-- [ ] 6.3 GREEN: amend `GATE_PROCEDURE_ITEMS[0]` in `rules.mjs` — BOTH `.lines` and `.mustSay`
-- [ ] 6.4 GREEN: update the three mirrored surfaces the guard reads — `commands/epic.md`,
+- [x] 6.3 GREEN: amend `GATE_PROCEDURE_ITEMS[0]` in `rules.mjs` — BOTH `.lines` and `.mustSay`
+- [x] 6.4 GREEN: update the three mirrored surfaces the guard reads — `commands/epic.md`,
       `commands/status.md`, `skills/conductor/SKILL.md`
-- [ ] 6.5 Regenerate this repository's own managed `CLAUDE.md` block and confirm it carries the rule
-- [ ] 6.6 Verify the emitted block for all three platform variants in `KNOWN_PLATFORMS` — correct,
+- [x] 6.5 Regenerate this repository's own managed `CLAUDE.md` block and confirm it carries the rule
+- [x] 6.6 Verify the emitted block for all three platform variants in `KNOWN_PLATFORMS` — correct,
       but insufficient alone, which is why 6.2 and 6.4 exist
 
 ## 7. Gate procedure — required task items, carried into both gates

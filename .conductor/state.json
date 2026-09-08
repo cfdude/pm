@@ -5113,7 +5113,8 @@
       "reconcileNeeded": false,
       "attributedCommits": [
         "cb0a97c",
-        "81b1a49"
+        "81b1a49",
+        "65efef2"
       ],
       "release": "0.40.0",
       "gateReview": {
@@ -5124,7 +5125,8 @@
           "headSha": "19b077b",
           "reviewer": "four fresh-context reviewers across three rounds (thorough): Gate 1 correctness, Gate 1 absent-edit, cross-spec x2. 13 blocks, then 6, then 6 — all closed. Round 2's Critical was created by two round-1 fixes interacting; three of round 3's blocks existed because earlier fixes had silently no-op'd. Stopped at three rounds deliberately: the KIND of finding converged to wording and doc sites even though the count did not, and the rest is Gate 2's job against real code."
         }
-      }
+      },
+      "touchedAt": "2026-09-08T17:40:09.394Z"
     }
   ],
   "detourStack": [],
@@ -5135,7 +5137,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 414,
+  "revision": 415,
   "reviewMode": "thorough",
   "releases": [
     {

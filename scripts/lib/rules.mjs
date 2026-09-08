@@ -162,7 +162,16 @@ function closedItemStep(platform, sys, n = 6) {
 export const GATE_PROCEDURE_ITEMS = [
   {
     title: "Call-site completeness sweep.",
-    mustSay: ["enumerate ALL call sites of the thing being guarded", "DATA reference is a call site"],
+    mustSay: ["enumerate ALL call sites of the thing being guarded", "DATA reference is a call site",
+      // The inverse-operation half. Determiner-free and punctuation-stable on purpose: the
+      // mirrors are reworded for markdown and already say "the change" where this text says
+      // "this change", so a claim carrying a determiner passes the self-check here and fails
+      // every mirror. The last one is the load-bearing claim — soften the rule and the sentence
+      // explaining WHY a call-site sweep cannot reach this class is the first thing to go.
+      "set against unset, add against remove",
+      "name and justify each inverse that is not shipped",
+      "shipped without its inverse, and not justified, is a FINDING",
+      "whether it can be unwritten"],
     lines: [
       "For every rule, guard or invariant this change introduces",
       "   or modifies, enumerate ALL call sites of the thing being guarded — derived mechanically",
@@ -178,6 +187,18 @@ export const GATE_PROCEDURE_ITEMS = [
       "   that strips one holder and not its siblings leaves a dangling reference — the record",
       "   rendering a pointer to something that no longer exists — and it is invisible to both",
       "   gates for the same diff-scoped reason.",
+      "   AN OPERATION HAS AN INVERSE, and the sweep above cannot reach it. For every operation",
+      "   this change adds or modifies, enumerate that inverse — set against unset, add against",
+      "   remove, append against replace, enable against disable, grant against revoke — then",
+      "   name and justify each inverse that is not shipped, exactly as an unguarded call site",
+      "   must be. An operation shipped without its inverse, and not justified, is a FINDING.",
+      "   The reason the sweep cannot reach this class is mechanical rather than a matter of",
+      "   diligence: enumerating the callers of a thing that is written never leads to the",
+      "   question of whether it can be unwritten. Measured here, six instances shipped past both",
+      "   gates while the call-site obligation was already in force, and the most consequential",
+      "   is a safety surface — pre-authorization grants accumulate with no revoke, so turning",
+      "   autonomy off leaves every prior grant intact and turning it back on silently restores",
+      "   all of them.",
     ],
   },
   {
