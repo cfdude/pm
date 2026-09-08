@@ -5109,7 +5109,16 @@
         "cb0a97c",
         "81b1a49"
       ],
-      "release": "0.40.0"
+      "release": "0.40.0",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-08T08:09:12.216Z",
+          "baseSha": "88eaadf",
+          "headSha": "19b077b",
+          "reviewer": "four fresh-context reviewers across three rounds (thorough): Gate 1 correctness, Gate 1 absent-edit, cross-spec x2. 13 blocks, then 6, then 6 — all closed. Round 2's Critical was created by two round-1 fixes interacting; three of round 3's blocks existed because earlier fixes had silently no-op'd. Stopped at three rounds deliberately: the KIND of finding converged to wording and doc sites even though the count did not, and the rest is Gate 2's job against real code."
+        }
+      }
     }
   ],
   "detourStack": [],
@@ -5120,7 +5129,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 411,
+  "revision": 413,
   "reviewMode": "thorough",
   "releases": [
     {
@@ -5212,7 +5221,34 @@
           "reason": "Depends on the clock this release introduces. Specifying a recurring staleness pass against a field that does not exist yet is how a spec gets written from assumption — the exact failure this release exists to reduce. Follows in 0.41.0 once createdAt and touchedAt are real.",
           "recordedAt": "2026-09-08T07:21:44.569Z"
         }
-      ]
+      ],
+      "crossSpecReview": {
+        "verdict": "pass",
+        "reviewedAt": "2026-09-08T08:08:53.530Z",
+        "specs": [
+          {
+            "key": "record-answers-for-itself/specs/conductor-record/spec.md",
+            "sha256": "39d679884fd4fd12fbf41ca7c71132a4b727c1b26f0a89da4885542871c7cb2b"
+          },
+          {
+            "key": "record-answers-for-itself/specs/epic-annotation/spec.md",
+            "sha256": "8508a05cfd42ac99b235cf2d62c1ab77272351f261695dd2d111e21c4f279428"
+          },
+          {
+            "key": "record-answers-for-itself/specs/epic-disposition/spec.md",
+            "sha256": "fe461223f7a4576efcf7cc8d18e37e5ee5ed7c091e239b6dfc1c14a663d8d05a"
+          },
+          {
+            "key": "record-answers-for-itself/specs/gate-integrity/spec.md",
+            "sha256": "332a51eb7b8605e4c23b3e4ee2a2ce4b90751e8388b3132187c66c5f53e8a6df"
+          },
+          {
+            "key": "record-answers-for-itself/specs/state-write-guard/spec.md",
+            "sha256": "46624f80f116e08af572f91e5fa0905b9e47656022232cd7eac2d7d69f7e8510"
+          }
+        ],
+        "reviewer": "three rounds, two fresh-context lenses each (review mode: thorough), 2026-09-07/08"
+      }
     }
   ],
   "archiveBackfilledAt": "2026-08-27T04:52:42.658Z"
