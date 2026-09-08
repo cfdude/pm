@@ -31,6 +31,12 @@ Read the current state (`node "$ENGINE" render` then `PROJECT.md`), and apply th
    > effective P1). Next: `gate2-write-path` — or descope the P1.
 
    Sometimes the right answer *is* "drop the P1", and nothing else asks.
+
+   **A dependency is satisfied only when it is `archived`.** So a blocker sitting in a status the
+   engine does not define — `done`, say — never satisfies anything: the edge reads unsatisfied
+   forever, the dependent stays unworkable, and the blocker absorbs its effective priority. Run
+   `integrity` when a warning will not clear; `epic-in-undefined-status` names it.
+
 3. **Otherwise** → the highest-priority epic with status `queued` (P0 → P3), reading the
    **effective** priority where the Priority column shows two values. `P2 → P1` means P2 on
    merit, sorting as P1 because a P1 depends on it: the merit priority is what the epic is worth

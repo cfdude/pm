@@ -350,12 +350,13 @@ plans as epics, writes the managed rules block into `CLAUDE.md` (or the file the
 `--platform` actually reads — see Supported Platforms), and renders `PROJECT.md`.
 Safe to run once per repo; re-running is a no-op if already initialized.
 
-The rules block carries a **gate procedure of five numbered, required task items** — the call-site
-completeness sweep, commit-based verification, the lifecycle-marker declaration, commit
-attribution, and ending work by recording a disposition. They are numbered items rather than prose
-bullets on purpose: measured across an audit of 8 repositories, a rule carried by a mandatory task
-section reached **14/14** adoption in subsequent changes, and the same rule as a prose bullet
-reached **3/15**.
+The rules block carries a **gate procedure of seven numbered, required task items** — the call-site
+completeness sweep (which since 0.40.0 also obliges the INVERSE of every operation the change
+adds), commit-based verification, the lifecycle-marker declaration, commit attribution, the
+release-scope cross-spec review, ending work by recording a disposition, and routing what the work
+taught you. They are numbered items rather than prose bullets on purpose: measured across an audit
+of 8 repositories, a rule carried by a mandatory task section reached **14/14** adoption in
+subsequent changes, and the same rule as a prose bullet reached **3/15**.
 
 </details>
 
@@ -579,6 +580,18 @@ agent reading `state.json`.
 detour naming the parent, so the equivalent `depends-on` edge points the other way. Links already
 stored under some other type still load and still render — validation is on write only — and
 `integrity`'s `link-of-unknown-type` check reports each one instead of guessing a repair.
+
+**Clearing a field can cost more than the field.** Six of the eight clearable fields carry a stated
+consequence, printed on stderr when a value was actually removed. `--clear external-url` drops the
+PRIMARY dedup key the inward sync matches on, so the linked item is mirrored again as a **new**
+untriaged epic on the next `/pm:sync`; `--clear external-id` drops the FALLBACK half of that key,
+compared only when neither side carries a URL. `--clear plan` and `--clear spec` stop the epic
+claiming that file, so the next `sync` registers it as a fresh untriaged epic — and no sync-ignore
+tombstone is written, deliberately, because the epic survives and the clear may well mean *let sync
+find this file's real owner*. `--clear parent` drops the epic out of the hierarchy;
+`--clear review-mode` falls back to the repo-global dial, which may be LOWER, and the de-escalation
+guard does not see a clear. Clearing an already-absent field prints nothing — there was no removal
+to have a consequence.
 
 **A flag with no value is refused, on every command that accepts it.** `--clear-links`,
 `--no-deferrals` and `--done` are the three flags that legitimately carry none; every other flag
@@ -819,8 +832,8 @@ verdict whose recorded range does not reach the commits its note cites, a gate r
 bookkeeping rather than review, a `delivered` epic that attributed no commits, an archived
 openspec-lane epic with a passing Gate 2 and no Gate 1, an epic archived with an `ungated` Gate 2
 (no review from anyone), an epic the archive-drift heal flipped that reads `outcome: unknown`
-while carrying a passing Gate 2, a dangling epic reference, an archive directory no epic
-corresponds to, **a recorded commit sha this repository can no longer resolve**, an epic still
+while carrying a passing Gate 2, an epic sitting in a status the engine does not define, a dangling
+epic reference, an archive directory no epic corresponds to, **a recorded commit sha this repository can no longer resolve**, an epic still
 open in a release that has already delivered, and an epic another epic declares it supersedes
 that never ended.
 
@@ -841,6 +854,19 @@ after a release, 36 recorded shas were reachable from nothing while every check 
 check separates **orphaned** — still in the object store, recoverable *now* with `git tag` — from
 **already gone**, and reports nothing at all in a clone that resolves none of the record, because
 a fresh, shallow or single-ref clone lacks that history rather than having destroyed it.
+
+**An epic in an undefined status is invisible to the checks that would surface it.**
+`KNOWN_STATUSES` is enforced on write — `add-epic`, `update-epic` and `add-many` each refuse a
+status outside it — so a value outside the set never arrived through a verb; the read side has
+always accepted whatever was stored and must keep doing so, or an existing state file stops
+loading. The consequence is the half a reader cannot deduce: such an epic is not `archived`, so it
+is **non-terminal to every rule that tests for the archived status**. It is skipped by all the
+completion-shaped checks above, which makes the record read cleaner than it is, and every
+`depends-on` edge pointing at it reads unsatisfied forever — whatever waits on it stays blocked,
+and it absorbs their effective priority for as long as the value persists. Measured across 27
+distinct upstreams before this shipped: **26 epics** sitting in `status: "done"`. Reported, never
+repaired: which legal status an undefined one should become is a judgment about what happened to
+the work.
 
 **Expect a burst of `heal-archived-epic-passed-gate-2` on your first run after upgrading.** Every
 repo that followed the documented `/opsx:archive` → heal flow lands on `outcome: unknown` rather
@@ -1089,7 +1115,7 @@ node "$ENGINE" update-epic --help
 ```
 
 ```
-conductor.mjs update-epic — 27 flags.
+conductor.mjs update-epic — 30 flags.
 
   --title <a value>
   --lane <openspec|superpowers|claude-code|decision|external>
@@ -1111,7 +1137,7 @@ hand-written help table could not make that promise. `(no value)` and `(repeatab
 out because they change the shape of a correct invocation: a valueless flag given a value is
 refused, and repeating a non-repeatable flag silently keeps only the last one. A flag with a closed set of legal values names them — `--outcome`, `--status`, `--lane`, `--priority`, `--platform` and the rest — so the answer does not live in `scripts/lib/` any more. Flags without a closed set still render `<a value>`; that gap is visible rather than papered over.
 
-A verb that takes no flags **says so** rather than printing an empty list. 21 of the 48 are in
+A verb that takes no flags **says so** rather than printing an empty list. 23 of the 50 are in
 that group, and "takes none" must not look like "nobody declared this yet".
 
 `add-many` is the one verb whose registry rows are not all flags — its parser takes only
@@ -1139,7 +1165,7 @@ that used to be safe fails CI rather than someone else's checkout.
 
 | Effect | Verbs |
 |--------|-------|
-| **read-only** — safe against a repo you do not own | `activity` · `brief` · `changelog` · `changesets` · `gate-guard` · `integrity` · `lesson-advice` · `owners` · `plan-hierarchy` · `rules` · `rules-target` · `suggest-lane` · `triage` · `verify-specs` · `verify-state` · `verify-worktrees` |
+| **read-only** — safe against a repo you do not own | `activity` · `brief` · `changelog` · `changesets` · `gate-guard` · `integrity` · `lesson-advice` · `owners` · `plan-hierarchy` · `rules` · `rules-target` · `suggest-lane` · `triage` · `unconsidered-outcomes` · `verify-specs` · `verify-state` · `verify-worktrees` |
 | **mutates** — writes `state.json`, `PROJECT.md`, `CLAUDE.md`, or a `.conductor/` log | everything else, including `render`, `snapshot`, `sync`, `commit-nudge`, `upgrade`, `write-rules`, and every `add-`/`update-`/`set-`/`record-` verb |
 
 Want the current state without touching anything? Use **`brief`**, not `render`.
@@ -1149,9 +1175,19 @@ Want the current state without touching anything? Use **`brief`**, not `render`.
 to render it rewrites `PROJECT.md` and `.conductor/render-stamp.json`. Idempotent-when-nothing-
 changed is not read-only.
 
+**A write that changes nothing says so.** Every verb that saves state reports from the save's own
+answer instead of printing an unconditional success line, so a re-run that finds the record already
+correct tells you it wrote nothing rather than claiming an update. Read "nothing" literally, because
+its scope is exact: it means `.conductor/state.json` was not rewritten. Most of these verbs call
+`render` afterwards and several rewrite the rules block, either of which can change while state does
+not — so such a verb names the state file rather than claiming the invocation did nothing at all. A
+verb that genuinely cannot reach a no-op declares that at its call site, and a scan of the shipped
+source fails the build on one that neither reports nor declares — the rule binds the write surface,
+not a list of verbs someone remembered to update.
+
 A `--read-only` enforcement flag was considered and declined: it would have to be threaded
-through or sniffed from argv at forty verbs, and it asks a caller to trust that the flag was
-wired up. The CI-time behavioural check gives the same guarantee — a doc that cannot drift —
+through or sniffed from argv at every verb — forty of them when that call was made, fifty now,
+which is itself the argument — and it asks a caller to trust that the flag was wired up. The CI-time behavioural check gives the same guarantee — a doc that cannot drift —
 without shipping anything.
 
 ## Skills

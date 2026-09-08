@@ -77,11 +77,12 @@ archived epic with nothing ticked, one change registered under two lanes, a gate
 does not reach the commits it cites, a gate recorded as bookkeeping rather than review, a
 `delivered` epic that attributed no commits, an archived openspec-lane epic with a passing Gate 2
 and no Gate 1, an epic archived with an `ungated` Gate 2, an epic the archive-drift heal flipped
-that reads `outcome: unknown` while carrying a passing Gate 2, a dangling epic reference, an
-archive directory no epic corresponds to, a recorded commit sha this repository can no longer
-resolve, an epic still open in a release that has already delivered, and an epic another epic
-declares it supersedes that never ended. It reports every check with its count, including the
-ones that found nothing, so a check that measured nothing is visibly a check that ran.
+that reads `outcome: unknown` while carrying a passing Gate 2, an epic sitting in a status the
+engine does not define, a dangling epic reference, an archive directory no epic corresponds to, a
+recorded commit sha this repository can no longer resolve, an epic still open in a release that
+has already delivered, and an epic another epic declares it supersedes that never ended. It
+reports every check with its count, including the ones that found nothing, so a check that
+measured nothing is visibly a check that ran.
 
 `delivered-release-epic-left-open` is the one that catches a release closing out. A release
 object carries no delivery marker, so "the release delivered" is read from its members — at
@@ -98,6 +99,18 @@ and every gate verdict's `baseSha`/`headSha` into a sentence about commits nobod
 The check separates **orphaned** (still in the object store, recoverable now with `git tag`) from
 **already gone**, and stays silent in a clone that resolves none of the record at all, because a
 fresh, shallow or single-ref clone legitimately lacks that history and is not a disaster.
+
+`epic-in-undefined-status` is the one that explains a backlog nobody can unstick. `KNOWN_STATUSES`
+is enforced on write — `add-epic`, `update-epic` and `add-many` each refuse a status outside it —
+so such a value never arrived through a verb, while the read side accepts whatever is stored and
+must keep doing so or an existing state file stops loading. The consequence is the half a reader
+cannot deduce: the epic is not `archived`, so it is non-terminal to every rule that tests for the
+archived status. It is skipped by all the completion-shaped checks above, which makes the record
+read cleaner than it is, and `dependencySatisfied()` answers true for `archived` and nothing else —
+so every `depends-on` edge pointing at it reads unsatisfied forever, whatever waits on it stays
+blocked, and it absorbs their effective priority for as long as the value persists. Measured across
+27 distinct upstreams before this shipped: 26 epics in `status: "done"`. Reported, never repaired —
+which legal status an undefined one should become is a judgment about what happened to the work.
 
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" integrity

@@ -112,7 +112,16 @@ plan/proposal instead — instruction only, nothing recorded)
 "<milestone>"` so a plan's milestones land in the SAME write) · `/pm:epic` → `add-many`
 (atomic bulk create, each entry taking a `stories` array) / `update-epic` (write-back, incl.
 `--title`/`--link`/`--add-story "<title>"`/`--story <n> --done` [1-indexed] / `--story <n>
---wont-do "<reason>"` — closes the hand-edit-of-state.json risk for inline `stories[]`) /
+--wont-do "<reason>"` — closes the hand-edit-of-state.json risk for inline `stories[]`; `--link`
+APPENDS, and a repeat of a recorded type+target updates that entry's reason in place rather than
+duplicating it, so recording a second relationship no longer discards the first; `--clear <field>`
+is the generic UNSET for every field whose absence is legal, naming the FLAG and not the state key
+— `--clear plan`, never `--clear planPath` — and a refusal enumerates the clearable set live, so
+never guess it. Clearing is not free where the field is a key something else reads: `--clear
+external-url` and `--clear external-id` release the dedup key, so the linked item is mirrored again
+as a NEW epic on the next sync, and `--clear plan`/`--clear spec` stop the epic claiming that file,
+so the next sync registers it as a fresh untriaged one — the engine prints each such consequence
+when a value was actually removed) /
 `remove-epic`
 (hard-delete, `--cascade` for a parent + descendants) ·
 **`push-detour <parent> --detour <id> --reason "<why>" (--reconcile | --no-reconcile)` /

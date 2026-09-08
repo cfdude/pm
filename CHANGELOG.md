@@ -8,6 +8,73 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.40.0] — 2026-09-08
+
+**The record answers questions about itself.** Five defects, one root: `.conductor/state.json`
+could not answer questions about its own contents. Measured across 27 distinct upstreams before
+this shipped — 310 archived epics carrying `outcome: unknown`, 26 more in `status: "done"` (a value
+`KNOWN_STATUSES` does not contain, which the 0.27.0 migration never reached), and 18 of 20 open
+epics in this repository carrying no date of any kind.
+
+### Added
+
+* **Epics record when they were registered and when they were last touched.** `createdAt` binds to
+  `pushEpic` — the single sink every creation routes through — so it inherits the source scan that
+  already forbids bypassing it, rather than an enumeration of creation surfaces that this
+  repository already tried and already watched go stale. `touchedAt` is stamped inside `saveState`
+  *after* its no-op early return, against the disk pre-image already read there, excluding both
+  timekeeping fields from the per-record comparison and matching records **by epic id, not array
+  position** — `remove-epic` filters the array, so index-matching would have falsely stamped every
+  record after a removal.
+* **`recover-created-at`**, a re-runnable verb the 0.40.0 migration invokes once. Not implemented
+  inside `MIGRATIONS`: a one-shot transformation that reads disk produces a different result per
+  checkout, which the migration framework forbids by name — and two checkouts of one remote on the
+  development machine differ by two commits touching `state.json`, so a one-shot recovery would
+  have frozen a wrong answer in one of them permanently. **A shallow clone would have fabricated a
+  date for every epic and recorded it as fact**: at a graft point git diffs the boundary commit
+  against nothing and reports every id as introduced there. Guarded, and absence stays
+  re-attemptable — unshallow the clone, re-run, get the real dates.
+* **`epic-in-undefined-status`**, an integrity check reporting any epic whose `status` is outside
+  `KNOWN_STATUSES`. The finding names the consequence a reader would otherwise miss: such an epic
+  is non-terminal to every rule testing for the archived status, so it is invisible to precisely
+  the checks that would surface it, and it permanently absorbs the effective priority of everything
+  depending on it. Reports; never repairs.
+* **`unconsidered-outcomes`**, a read-only verb enumerating archived epics whose outcome nobody
+  considered — engine-stamped **and** `outcome: unknown`. Both halves matter: a stamp alone sweeps
+  in epics whose outcome a migration correctly derived from a passing Gate 2, and an `unknown`
+  value alone sweeps in epics carrying no disposition at all.
+* **`unreconstructable`**, an agent-supplied outcome recording that somebody looked for the evidence
+  of what happened and it does not exist — distinct from `unknown`, which says nobody looked.
+* **`--clear <field>`** on `update-epic`, deriving its accepted set from a new `nullable: true`
+  marker on the flag registry, with `setOnly: "<reason>"` on the rows deliberately not clearable.
+  Both directions are tested, so a nullable row added later with no clearing path fails the suite
+  instead of shipping silently. Fields whose clearing costs more than the field carry a
+  `clearNote` — clearing `externalUrl` lets the linked item be mirrored again as a *new* epic;
+  clearing `plan` lets the next `sync` register that file as a fresh untriaged epic.
+* **The emitted call-site sweep now obliges the inverse operation** — set against unset, add
+  against remove, append against replace, enable against disable, grant against revoke — as a
+  numbered required task item, a declared `mustSay` claim, and in all three mirrored surfaces.
+
+### Changed
+
+* **`--link` appends instead of replacing.** A link's identity is its type and target; the reason
+  is not part of it, so re-supplying an identity updates the reason in place rather than
+  duplicating it or silently discarding the correction. `--clear-links` and `--link` are no longer
+  mutually exclusive, so the documented repair stays one atomic write. All six sites documenting
+  the old behaviour changed with it, including two the engine emits at runtime.
+* **A write that changes nothing says so**, across the whole write surface rather than one verb:
+  26 `saveState` call sites report through a shared reporter, four carry a declared exemption, and
+  a per-call-site source scan fails the build on a fifth that does neither.
+
+### Fixed
+
+* `declined` had been added to the outcome enum in an earlier release, reached the engine, and
+  reached **none** of five documented surfaces — including a test asserting the four-value list
+  that passed by prefix match, so the guard for this drift was blind to it. All five repaired, and
+  the emitted enumerations now render from `AGENT_OUTCOMES`.
+* Two live tests asserted that `--link` replaces; both would have failed CI on the change above.
+
+
 ### Added
 
 * **`/pm:upgrade` now tells you to commit what it just rewrote.** The verb re-stamps

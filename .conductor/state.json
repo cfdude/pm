@@ -5117,7 +5117,8 @@
         "65efef2",
         "6b8f09e",
         "9a0dfb1",
-        "8726d8b"
+        "8726d8b",
+        "135b22c"
       ],
       "release": "0.40.0",
       "gateReview": {
@@ -5127,14 +5128,41 @@
           "baseSha": "88eaadf",
           "headSha": "19b077b",
           "reviewer": "four fresh-context reviewers across three rounds (thorough): Gate 1 correctness, Gate 1 absent-edit, cross-spec x2. 13 blocks, then 6, then 6 — all closed. Round 2's Critical was created by two round-1 fixes interacting; three of round 3's blocks existed because earlier fixes had silently no-op'd. Stopped at three rounds deliberately: the KIND of finding converged to wording and doc sites even though the count did not, and the rest is Gate 2's job against real code."
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-08T21:40:24.137Z",
+          "baseSha": "996b068",
+          "headSha": "135b22c",
+          "reviewer": "two independent fresh-context lenses (review mode: thorough) — A: correctness and spec alignment, 0 Critical 2 Important 5 Minor. B: absent edits, 2 Critical 1 Important 2 Minor. Both independently found the same Critical: the no-op reporting rule was specified over the whole write surface and shipped at one verb, with four siblings executed and confirmed printing success on a no-op save. All findings closed; suite 1206/1206 verified by the orchestrator, not taken from a report. Every finding was the same shape — a guard at one call site with an identical sibling untouched — which is the class this release ships the rule against."
         }
       },
-      "touchedAt": "2026-09-08T20:50:47.302Z",
+      "touchedAt": "2026-09-08T21:40:24.139Z",
       "notes": [
         {
           "at": "2026-09-08T20:50:47.300Z",
           "actor": "agent",
           "text": "GATE 2 CRITICAL 1, and the enumeration commit 8726d8b claimed was already here. It was not — this note is that claim being made true. The no-op reporting requirement (epic-annotation delta) binds the WHOLE write surface; it shipped at update-epic only. Sibling sites that print an unconditional success line after a saveState that returned unchanged:true — autonomy.mjs:98/100, releases.mjs:155/157, review-mode.mjs:28/31, active-pointer.mjs:78/80 (all four EXECUTED by the reviewer and confirmed printing success on a no-op), plus rank.mjs:108/109, gate-guard.mjs:62/64, lane-routing.mjs:63/65, tracker.mjs:62/80/123, claims.mjs:238/239. The spec text forbids exactly this scoping in its own words: 'Scoping this to the paths a single change happens to introduce would be the very defect required task item 1 exists to catch.' Fix is a shared reportSave helper plus a source scan asserting no module prints success after saveState without consulting its return."
+        }
+      ]
+    },
+    {
+      "id": "agent-outcomes-derivation-unguarded",
+      "title": "AGENT_OUTCOMES has no test asserting it derives from KNOWN_OUTCOMES, so narrowing it passes every drift guard. Found at 0.40.0 Gate 2 and deliberately NOT folded into that release. The emitted --outcome enumerations and the archive gate refusals all render FROM AGENT_OUTCOMES, and both drift guards (conductor-13, conductor-18) anchor their assertions to it — so emitter and assertion move together and narrowing the constant fires nothing. Verified during the Gate 2 fix pass: anchoring conductor-13 to the joined alternation does not catch a narrowed constant; only hardcoding a stale list in the emitter fails. Same shape as the five stale \"declined\" sites 0.40.0 repaired, one level up: the guard is derived, which is right, but nothing guards the thing it derives from.",
+      "priority": "P2",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-08T21:40:43.715Z",
+      "touchedAt": "2026-09-08T21:41:07.737Z",
+      "notes": [
+        {
+          "at": "2026-09-08T21:40:45.513Z",
+          "actor": "agent",
+          "text": "lane: claude-code deliberately — one assertion in an existing test file, no design ambiguity, well under two hours. The asymmetric tie-break (resolve away from claude-code) applies to unresolved routing questions; this one is resolved. Found by the Gate 2 fix agent as an observation it declined to fix, correctly: it is pre-existing and outside 0.40.0's five items."
         }
       ]
     }
@@ -5147,7 +5175,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 419,
+  "revision": 424,
   "reviewMode": "thorough",
   "releases": [
     {

@@ -364,17 +364,32 @@ left set-only carries its reason on the same row, and `--clear` refuses it by qu
 reason. `links` is one of those: `--clear-links` is its clearing form, for the atomicity above.
 `notes` is another — it is an append-only trail, so removing an entry would edit history.
 
-**Clearing a field that points at another record says what it costs.** Two do:
+**Clearing a field whose absence costs more than the field says what it costs.** Six of the eight
+carry such a note — the ones pointing at another record, at a file on disk, or at a dial:
 
 - `--clear parent` — the epic leaves the hierarchy. `plan-hierarchy --parent <that id>` stops
   batching it and it renders at the top level. Re-attach with `--parent <id>`.
-- `--clear external-url` — that URL is the **dedup key** the inward sync procedure matches on, so
-  the linked item can be mirrored again as a NEW epic on the next `/pm:sync`. Clear it only when
-  the epic is genuinely no longer mirrored.
+- `--clear external-url` — that URL is the **PRIMARY dedup key** the inward sync procedure matches
+  on, so the linked item can be mirrored again as a NEW epic on the next `/pm:sync`. Clear it only
+  when the epic is genuinely no longer mirrored.
+- `--clear external-id` — the **FALLBACK half** of the same key, compared only when neither side
+  carries a URL. So clearing it re-opens the same re-mirroring for a URL-less linked item, and it
+  is a different exposure from the one above rather than the same one said twice. Re-attach with
+  `--external-id <key>`.
+- `--clear plan` — the epic stops CLAIMING that plan, so `sync`'s rung 1 no longer skips the file
+  and the next run registers it as a NEW untriaged epic. **No sync-ignore tombstone is written**,
+  deliberately: `remove-epic` tombstones because the epic is GONE, whereas this epic survives and
+  clearing may well mean *let sync find this plan's real owner*. Re-attach with `--plan <path>`.
+- `--clear spec` — the same, for a design document: the epic drops out of that document's coverage
+  count in `verify-specs` and the file reads as unclaimed. No tombstone, for the reason above.
+- `--clear review-mode` — the epic stops carrying its own escalation and falls back to the
+  repo-global dial (`set-review-mode`), which may be **lower**. The de-escalation guard that would
+  refuse a lowering does not see a clear. Re-escalate with `--review-mode <mode>`.
 
-Both print the consequence on stderr when a value was actually removed — same shape as the rank
+Each prints its consequence on stderr when a value was actually removed — same shape as the rank
 clear and the archived-claim clear. A clear of an already-absent field prints nothing, because
-there was no removal to have a consequence.
+there was no removal to have a consequence. `--clear description` and `--clear external-updated-at`
+carry no such note.
 
 ## Stories — decomposition at registration, and the third state a checklist needs
 
