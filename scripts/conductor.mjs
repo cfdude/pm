@@ -51,6 +51,9 @@
  *                  field, from the commit that first introduced its id into state.json.
  *                  Local history only; unrecoverable stays ABSENT and re-attemptable,
  *                  which is why it is a re-runnable verb and not a MIGRATIONS body
+ *   unconsidered-outcomes  READ-ONLY: the archived epics whose outcome NOBODY CONSIDERED —
+ *                  an engine stamp carrying `unknown` — each with the invocation that would
+ *                  record a disposition. The spec says an agent ASKS the engine; this is the ask
  *   integrity      READ-ONLY audit of the record itself — shapes that cannot be true
  *                  (reports; never writes state, never blocks a command)
  *   verify-state   fail loudly if state.json's mtime is newer than the last render's stamp
@@ -115,6 +118,7 @@ import { isInitialized } from "./lib/state.mjs";
 import { resolveSession } from "./lib/session-identity.mjs";
 import { delegateToCheckout } from "./lib/self-hosting.mjs";
 import { recoverCreatedAt } from "./lib/created-at.mjs";
+import { unconsideredOutcomesReport } from "./lib/unconsidered.mjs";
 
 // ---------- self-hosting handoff (gh-134) ----------
 //
@@ -141,7 +145,7 @@ const cmd = process.argv[2];
 // entry to .conductor/detours.log with "--help" as the detour description, and the log is
 // append-only with no verb to remove it. Handled before dispatch so every subcommand is covered
 // -- log-detour is only where the damage is visible, not where the gap is.
-const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|push-detour|pop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|upgrade|changelog|rules|write-rules|rules-target\n";
+const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|push-detour|pop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n";
 if (!cmd || process.argv.slice(2).some(a => a === "--help" || a === "-h")) {
   // #158 — VERB-SCOPED when a verb is named, global otherwise. The short-circuit stays exactly
   // where it was and keeps its original property: a help flag reaches no subcommand, so it can
@@ -280,6 +284,7 @@ try {
   "set-activity-log": setActivityLog,
   "purge-logs": purgeLogs,
   "recover-created-at": recoverCreatedAt,
+  "unconsidered-outcomes": unconsideredOutcomesReport,
   integrity,
   changesets,
   upgrade,

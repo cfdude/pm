@@ -970,6 +970,33 @@ read "last touched: upgrade day".
 </details>
 
 <details>
+<summary><code>unconsidered-outcomes</code> — Which archived epics did nobody decide about?</summary>
+
+Every archived epic carries a disposition, but not every disposition was somebody's judgment: an
+epic archived before dispositions existed carries an **engine stamp** recording that nobody was
+asked. This verb is how you ask which ones those are.
+
+```bash
+node scripts/conductor.mjs unconsidered-outcomes
+```
+
+Read-only. It prints each such epic with **who stamped it** — the migration and the archive-drift
+heal are different histories, and which one you are looking at changes how much of the epic's
+story is still recoverable — and the exact `update-epic … --status archived --outcome … --reason
+… --no-deferrals` invocation that would record a real one.
+
+**The predicate is two halves and both matter:** an engine stamp *and* an outcome of `unknown`. A
+stamp can be evidence-derived — the 0.27.0 migration wrote `delivered` wherever a passing Gate 2
+verdict existed — and handing those back would ask an agent to re-derive what the record already
+derived correctly. An `unknown` value alone is not enough either, because an epic carrying no
+disposition at all also reads `unknown`, and that is a state no archive path produces.
+
+Where a record genuinely cannot be reconstructed, `--outcome unreconstructable` says so with its
+required reason. The set shrinks only by somebody deciding — never by the engine guessing.
+
+</details>
+
+<details>
 <summary><code>verify-specs</code> — Which design documents have no epics?</summary>
 
 An epic can record the **design document** its work was drawn from: `--spec <path>` →

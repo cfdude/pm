@@ -169,7 +169,7 @@ To change an epic that already exists (notably, to record a tracker key after cr
 node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" update-epic <id> \
   [--title <title>] [--external-id <KEY>] [--external-url <url>] [--parent <id>] \
   [--status <status>] [--priority <P?>] [--link "<type>:<epic>[:<reason>]"] \
-  [--clear-links] [--lane <lane>] [--plan <path>] [--spec <path>]
+  [--clear-links] [--clear <field>] [--lane <lane>] [--plan <path>] [--spec <path>]
 ```
 
 **Every flag `update-epic` accepts.** The list below is the whole surface — an unlisted flag
@@ -186,8 +186,9 @@ of them are declared once in `EPIC_FLAGS` (`scripts/lib/constants.mjs`), which i
 | `--plan <path>` | `planPath` | attaches a plan to an epic created without one |
 | `--spec <path>` | `specPath` | the DESIGN DOCUMENT this epic's work was drawn from — provenance only, **many-to-one** |
 | `--parent <id>` | `parent` | no self-parent, no cycle |
-| `--link "<type>:<epic>[:<reason>]"` | `links` | **repeatable**; REPLACES the array wholesale |
-| `--clear-links` | `links` | empties it; may not be combined with `--link` |
+| `--link "<type>:<epic>[:<reason>]"` | `links` | **repeatable**; APPENDS. A repeat of an already-recorded `(type, target)` updates that entry's reason in place — never a second row |
+| `--clear-links` | `links` | empties it; **combinable with `--link`** in one invocation, which is how a malformed link is replaced atomically |
+| `--clear <field>` | the named field | **repeatable**; unsets a field whose absence is legal. Names the FLAG (`--clear plan`, not `planPath`). Clearable: `parent`, `external-id`, `external-url`, `plan`, `spec`, `description`, `external-updated-at`, `review-mode` — the set is `nullable: true` in `EPIC_FLAGS`, and the refusal enumerates it live. A set-only field is refused with the registry's own reason |
 | `--description "<why>"` | `description` | durable rationale, REPLACED wholesale on each set |
 | `--notes "<what>"` | `notes` | APPEND-only trail of `{at, actor, text}`; reads as activity |
 | `--external-id <KEY>` | `externalId` | |
@@ -318,26 +319,62 @@ remove it and register it again — discarding its start time, its gate verdicts
 its stories along the way. Both are in-place field writes: the epic keeps its position in
 `state.epics[]` and every other field it carries.
 
-> [!WARNING]
-> **`--link` REPLACES the whole links array. It does not append.** Adding one `depends-on` edge
-> to an epic that already has links means passing **every** link that epic should end up with,
-> in one invocation — read its current `links[]` first (`/pm:epic list`, or `.conductor/state.json`).
-> Three separate `update-epic --link` calls, each adding one edge, silently dropped seven
-> existing annotation edges; they were recovered from git, which is not a recovery path that
-> always exists. This bites hardest doing exactly what gh#101 asks for — wiring up dependency
-> edges in bulk.
+**`--link` APPENDS.** Supplying a link ADDS it to the epic's recorded links; omitting `--link`
+entirely leaves existing links untouched. A link's IDENTITY is its **type and its target** — the
+reason is the part a reader acts on and is not part of the identity — so:
 
-**`--link` REPLACES the epic's links wholesale**, unlike the other flags which patch a single
-field — this is the intended CLI path to fix a malformed link (recorded with a bad `add-epic
---link` before this validation existed, or hand-edited) without touching `state.json` directly.
-Pass every link you want the epic to have; omitting `--link` entirely leaves existing links
-untouched.
+- a new `(type, target)` is appended;
+- a repeat of an already-recorded `(type, target)` **updates that entry's reason in place**,
+  keeping its position. It never produces a second row: two relationships of the same type
+  between the same pair of epics are one relationship, and a record listing it twice disagrees
+  with itself;
+- a repeat matching type, target **and** reason changes nothing, and the command says so rather
+  than reporting the record was updated.
+
+It used to REPLACE the array wholesale, which made recording a second relationship silently
+discard the first: three separate `update-epic --link` calls, each adding one edge, dropped seven
+existing annotation edges. They were recovered from git, which is not a recovery path that always
+exists.
 
 **To EMPTY an epic's links, say so: `--clear-links`.** `--link` with no value used to do it by
 accident — it is a repeatable flag, so a bare `--link` parsed as one non-string element, was
 filtered away, and replaced the array with an empty one while printing "updated". That spelling
-now exits non-zero and points here. `--clear-links` takes no value and may not be combined with
-`--link`.
+now exits non-zero and points here. `--clear-links` takes no value.
+
+**`--clear-links` and `--link` combine in ONE invocation**, and that combination is how a
+malformed link is repaired: it clears, then supplies, in a single atomic write.
+
+```bash
+node "$ENGINE" update-epic <id> --clear-links \
+  --link "depends-on:<id>:<why>" --link "relates-to:<id>:<why>"
+```
+
+They were mutually exclusive, which would have left the repair as two writes with a zero-link
+window between them — and a rejection on the second write would leave the epic with no links at
+all.
+
+**`--clear <field>` unsets a field whose absence is a legal state**, one flag for the whole set
+rather than a new flag per field. It names fields by the spelling you read in this document — the
+FLAG, not the internal state key: `--clear plan`, never `--clear planPath`. It is repeatable,
+clearing one field leaves every other field untouched, and clearing a field that is already
+absent exits zero reporting that nothing changed.
+
+A field is clearable when its `EPIC_FLAGS` row declares `nullable: true`; a field deliberately
+left set-only carries its reason on the same row, and `--clear` refuses it by quoting that
+reason. `links` is one of those: `--clear-links` is its clearing form, for the atomicity above.
+`notes` is another — it is an append-only trail, so removing an entry would edit history.
+
+**Clearing a field that points at another record says what it costs.** Two do:
+
+- `--clear parent` — the epic leaves the hierarchy. `plan-hierarchy --parent <that id>` stops
+  batching it and it renders at the top level. Re-attach with `--parent <id>`.
+- `--clear external-url` — that URL is the **dedup key** the inward sync procedure matches on, so
+  the linked item can be mirrored again as a NEW epic on the next `/pm:sync`. Clear it only when
+  the epic is genuinely no longer mirrored.
+
+Both print the consequence on stderr when a value was actually removed — same shape as the rank
+clear and the archived-claim clear. A clear of an already-absent field prints nothing, because
+there was no removal to have a consequence.
 
 ## Stories — decomposition at registration, and the third state a checklist needs
 

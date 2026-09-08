@@ -209,6 +209,19 @@ export function stampedBy(epic, recordedBy) {
   return !!d && d.recordedBy === recordedBy;
 }
 
+/** WHICH path wrote it, as a VALUE rather than a yes/no against a token the caller names.
+ *
+ *  `stampedBy()` above answers "was it this one", which is what every EXEMPTION needs. A REPORT
+ *  needs the other question — it has no token in mind and is telling a reader which history they
+ *  are looking at, because "the migration wrote this" and "the archive-drift heal wrote this"
+ *  differ in how much of the epic's story is still recoverable. Reading `.recordedBy` at the
+ *  report instead would be the second definition the suite's source scan exists to fail. `null`
+ *  where there is no disposition at all. */
+export function recordedByOf(epic) {
+  const d = epic && epic.disposition;
+  return d && typeof d.recordedBy === "string" ? d.recordedBy : null;
+}
+
 /** The epic-level REGISTRATION provenance: which engine path created this epic RECORD.
  *
  *  Distinct from `disposition.recordedBy`, which says who recorded how the work ENDED, and the

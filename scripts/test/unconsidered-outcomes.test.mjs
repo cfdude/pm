@@ -218,3 +218,65 @@ test("4.6: every returned epic satisfies the predicate and no epic satisfying it
     assert.ok(satisfies(row.epic), `${row.epic.id} was returned but does not satisfy the predicate`);
   }
 });
+
+// ───────────────── 5.10: the walker is REACHABLE — a dispatched verb, not a library export ────
+//
+// `epic-disposition/spec.md` says an agent ASKS the engine. Group 4 landed the walker as an
+// export with no consumer outside this file, so the release would otherwise ship an enumeration
+// nobody can ask for. These tests exercise the ASK, through the real dispatcher, and they are
+// what would fail if the verb were removed and the export left intact.
+
+test("5.10: `unconsidered-outcomes` is dispatched and returns the population as JSON", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const st = readState(cwd);
+  st.epics = [
+    epic("nobody-was-asked", { disposition: engineStamp("migration", { recordedAt: AT }) }),
+    epic("evidence-derived",
+      { disposition: engineStamp("migration", { outcome: "delivered", recordedAt: AT }) }),
+    epic("somebody-decided",
+      { disposition: agentDisposition({ outcome: "killed", reason: "no longer wanted", recordedAt: AT }) }),
+    epic("still-open", { status: "queued" }),
+  ];
+  writeState(cwd, st);
+
+  const out = JSON.parse(run(["unconsidered-outcomes"], { cwd }));
+  assert.equal(out.count, 1, "only the engine stamp carrying `unknown` is the population");
+  assert.deepEqual(out.unconsidered.map(r => r.id), ["nobody-was-asked"]);
+  const row = out.unconsidered[0];
+  assert.equal(row.recordedBy, "migration",
+    "WHO stamped it decides how much of the epic's story is recoverable, so it is carried through");
+  // The invocation is the walker's, verbatim — a second rendering here would be the vocabulary
+  // typed twice, which is what dispositionInvocation() exists to prevent.
+  assert.equal(row.invocation, unconsideredOutcomes(st.epics)[0].invocation);
+});
+
+test("5.10: recording a disposition through the printed invocation empties the set", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const st = readState(cwd);
+  st.epics = [epic("nobody-was-asked",
+    { lane: "claude-code", disposition: engineStamp("migration", { recordedAt: AT }) })];
+  writeState(cwd, st);
+  assert.equal(JSON.parse(run(["unconsidered-outcomes"], { cwd })).count, 1);
+
+  run(["update-epic", "nobody-was-asked", "--status", "archived",
+       "--outcome", "unreconstructable",
+       "--reason", "archived before dispositions existed; nothing left to reconstruct from",
+       "--no-deferrals"], { cwd });
+  const after = JSON.parse(run(["unconsidered-outcomes"], { cwd }));
+  assert.equal(after.count, 0, "the set shrinks only by somebody deciding");
+  assert.deepEqual(after.unconsidered, []);
+});
+
+test("5.10: the verb is READ-ONLY — asking the question does not write the record", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const st = readState(cwd);
+  st.epics = [epic("nobody-was-asked", { disposition: engineStamp("migration", { recordedAt: AT }) })];
+  writeState(cwd, st);
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
+  run(["unconsidered-outcomes"], { cwd });
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before,
+    "an orchestrator asks this of a repo it does not own — answering must not dirty it");
+});

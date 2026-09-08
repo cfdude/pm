@@ -71,15 +71,24 @@ export function linkTypeVocabulary() {
 
 /** The refusal an unknown type earns. It names the whole set WITH its bands (the issue's
  *  ranked list puts the write-time error first — it is the only surface an agent cannot skip),
- *  and it names the way out: `--link` REPLACES an epic's links wholesale, so the common way to
- *  meet this error is re-passing a legacy link somebody else wrote, not typing a new one. */
+ *  and it names the way out. The common way to meet this error is re-passing a legacy link
+ *  somebody else wrote, not typing a new one.
+ *
+ *  THE REMEDY CHANGED WITH THE BEHAVIOUR. `--link` used to replace the array, so "pass the
+ *  corrected type" removed the malformed link as a side effect. It now APPENDS, and a corrected
+ *  type is a DIFFERENT identity — so following the old wording would leave the malformed link
+ *  exactly where it was and the finding would persist forever. An emitted command that no longer
+ *  runs as written is a defect this engine forbids elsewhere, so the wording names the one shape
+ *  that still repairs: clear and re-supply, in one invocation. */
 export function unknownLinkTypeMessage(raw, type) {
   return `bad --link '${raw}': '${type}' is not a known link type.\n` +
     `  reads (these change behaviour): ${LINK_TYPES_READ.map(t => `${t.type} — ${t.drives}`).join("; ")}\n` +
     `  protocol state: ${LINK_TYPES_WRITTEN.map(t => t.type).join(", ")}\n` +
     `  annotation only: ${LINK_TYPES_ANNOTATION.join(", ")}\n` +
-    "  `--link` replaces an epic's links wholesale, so if this came from a link already in the " +
-    "record, pass the corrected type (or `--clear-links`) rather than re-passing the old one.";
+    "  `--link` APPENDS (a repeat of an existing type+target updates that entry's reason in " +
+    "place). So if this came from a link already in the record, correcting the type ADDS a " +
+    "second edge and leaves the bad one: replace the set instead — `--clear-links` and every " +
+    "`--link` you want kept, in ONE invocation.";
 }
 
 /** A link is renderable only when both endpoints are strings. Guards against

@@ -194,6 +194,25 @@ export const KNOWN_STATUSES = ["untriaged", "queued", "active", "paused", "later
 //             command grew — `--link` pointing at `--clear-links`, `--wont-do` demanding a
 //             reason — reaches EVERY command that accepts the flag, instead of being a second
 //             behaviour on a second surface. That asymmetry is the whole subject of #149.
+//   nullable  true = ABSENCE of this field is a legal, meaningful state, so the field is
+//             reachable by `update-epic --clear <flag>`. The accepted set of that flag and the
+//             test asserting it is complete are BOTH derived from this marker, so a field
+//             declared nullable with no clearing path fails the suite rather than shipping
+//             without one — which is the whole reason nullability is DECLARED here rather than
+//             implied by a hand-maintained list inside the clearing flag.
+//   clearNote what UNSETTING this field costs BEYOND the field itself — printed on stderr by
+//             `--clear` when a value was actually removed. Carried on the ROW rather than in the
+//             clearing code for the same reason `setOnly` is: the consequence belongs to the
+//             field, and a `switch` in one command is a second place to keep it current. Only
+//             the two fields that hold or key on ANOTHER RECORD carry one today (`parent` is an
+//             epic id; `externalUrl` is the sync procedure's dedup key), which is the DATA half
+//             of the call-site sweep: a removal path for a cross-record pointer is not the same
+//             operation as a removal path for free text, and must not be silent.
+//   setOnly   the REASON this settable field is deliberately NOT clearable, in the registry
+//             beside the marker rather than in prose no test can read. Exactly one of
+//             `nullable`/`setOnly` is required on every SETTABLE row (`update-epic` in
+//             `commands`, a non-null `key`, not `valueless`) — an undeclared row is the
+//             population the requirement is about, so silence must not pass.
 //
 // `key` is carried EXPLICITLY rather than derived from `flag`, because the mapping is already
 // non-identity today (`--plan` → planPath, `--link` → links, `--external-id` → externalId) and
@@ -208,37 +227,63 @@ export const REASON_REQUIRES = "a non-empty reason";
 
 export const EPIC_FLAGS = [
   { flag: "id", key: "id", commands: ["add-epic", "add-many"] },
-  { flag: "title", key: "title", commands: ["add-epic", "update-epic", "add-many"] },
+  { flag: "title", key: "title", commands: ["add-epic", "update-epic", "add-many"],
+    setOnly: "an epic with no title renders as a bare id on every surface — absence is a broken record, not a legal state" },
   // `lane` and `plan` are settable AFTER creation as well as at it. A mis-routed epic used to be
   // correctable in exactly one way — remove it and register it again — which discards its start
   // time, its gate verdicts, its links and its stories. Both are validated on `update-epic`
   // against the same lists creation validates against, so the two surfaces cannot admit
   // different values.
   { flag: "lane", key: "lane", commands: ["add-epic", "update-epic", "add-many"],
-    placeholder: KNOWN_LANES.join("|") },
+    placeholder: KNOWN_LANES.join("|"),
+    setOnly: "an ABSENT lane is normalized to openspec (isOpenspecLane), so clearing it would not remove the lane — it would silently re-route the epic" },
   { flag: "priority", key: "priority", commands: ["add-epic", "update-epic", "add-many"],
-    placeholder: "P0|P1|P2|P3" },
+    placeholder: "P0|P1|P2|P3",
+    setOnly: "priority is what orders the backlog; an epic carrying none has no place in it" },
   { flag: "status", key: "status", commands: ["add-epic", "update-epic", "add-many"],
-    placeholder: KNOWN_STATUSES.join("|") },
-  { flag: "parent", key: "parent", commands: ["add-epic", "update-epic", "add-many"] },
-  { flag: "external-id", key: "externalId", commands: ["add-epic", "update-epic", "add-many"] },
-  { flag: "external-url", key: "externalUrl", commands: ["add-epic", "update-epic", "add-many"] },
-  { flag: "plan", key: "planPath", commands: ["add-epic", "update-epic", "add-many"] },
+    placeholder: KNOWN_STATUSES.join("|"),
+    setOnly: "a status outside KNOWN_STATUSES is exempt from every status rule — the unknown-status integrity check exists because that state is broken, and an ABSENT status is its limiting case" },
+  { flag: "parent", key: "parent", commands: ["add-epic", "update-epic", "add-many"], nullable: true,
+    clearNote: "it leaves the hierarchy — `plan-hierarchy --parent <that id>` will no longer batch it, and it renders at the top level. Re-attach with --parent <id>" },
+  { flag: "external-id", key: "externalId", commands: ["add-epic", "update-epic", "add-many"], nullable: true },
+  { flag: "external-url", key: "externalUrl", commands: ["add-epic", "update-epic", "add-many"], nullable: true,
+    clearNote: "it is the DEDUP KEY the inward sync procedure matches on, so the linked item can be mirrored again as a NEW epic on the next sync. Clear it only when the epic is genuinely no longer mirrored" },
+  { flag: "plan", key: "planPath", commands: ["add-epic", "update-epic", "add-many"], nullable: true },
   // The DESIGN DOCUMENT the epic's work was drawn from (#92) — provenance, and many-to-one on
   // purpose: a design too large for one implementation plan yields N epics that all name it.
   // Registered on all three surfaces for the reason `--plan` is: an association settable only
   // at creation is unreachable for every epic that already exists, which is what kept #64/#69
   // unfixable. Nothing infers progress from it; see EPIC_SOURCE_ARTIFACTS in
   // lib/source-artifacts.mjs for the family it joins.
-  { flag: "spec", key: "specPath", commands: ["add-epic", "update-epic", "add-many"] },
-  { flag: "link", key: "links", commands: ["add-epic", "update-epic", "add-many"], repeats: true, write: "custom",
+  { flag: "spec", key: "specPath", commands: ["add-epic", "update-epic", "add-many"], nullable: true },
+  { flag: "link", key: "links", commands: ["add-epic", "update-epic", "add-many"], repeats: true, write: "append",
     requires: "a \"<type>:<epic>[:<reason>]\" value — to empty an epic's links, say so with --clear-links",
-    placeholder: "type:epic[:reason]" },
-  // Emptying the links array is its OWN named flag. `--link` replaces the array wholesale, so a
-  // VALUELESS `--link` parsed as `[true]`, was filtered to `[]` by parseLinkFlags, and silently
-  // wiped every link — the destructive reading of what looks like a typo. `--clear-links` says
-  // what it does; the valueless `--link` is now refused and points here.
+    placeholder: "type:epic[:reason]",
+    setOnly: "`--clear-links` is the GRANDFATHERED clearing form and is required in ONE invocation alongside --link for the atomic repair of a malformed link — a shape the generic --clear cannot express" },
+  // Emptying the links array is its OWN named flag, and it is the one field that keeps a
+  // dedicated one. A VALUELESS `--link` parsed as `[true]`, was filtered to `[]` by
+  // parseLinkFlags, and silently wiped every link — the destructive reading of what looks like a
+  // typo. `--clear-links` says what it does; the valueless `--link` is refused and points here.
+  //
+  // It is NOT a duplicate of the generic `--clear`: the two are combinable-with-`--link` and
+  // not, respectively, and that difference is the atomic repair. See the `link` row's `setOnly`.
   { flag: "clear-links", key: "links", commands: ["update-epic"], write: "custom", valueless: true },
+  // The GENERIC clearing form. Repeatable and VALUE-BEARING — it names the FLAG spelling of the
+  // field to unset (`--clear plan`, never `--clear planPath`; the `key` note above warns those
+  // are two namespaces). Its accepted set is the `nullable: true` marker on the rows themselves,
+  // so a field declared nullable later is reachable the moment its row says so.
+  //
+  // The `placeholder` names the SHAPE and deliberately does NOT enumerate the legal values: the
+  // legal values are the nullable rows of this very array, and a literal enumeration here would
+  // be the hand-typed list that went stale on `--outcome`. A placeholder that enumerates nothing
+  // cannot go stale. The refusal in update-epic.mjs prints the live set at the moment it refuses.
+  //
+  // `repeats: true` reaches parseFlags through repeatableFlagNames()'s GLOBAL union, so
+  // `set-lane-routing --clear` (VERB_FLAGS below, valueless) now arrives as `[true]` rather than
+  // bare `true`. That is fine — lane-routing.mjs asks `if (f.clear)` and `[true]` is truthy — but
+  // a later tightening of that test to `=== true` would break it silently.
+  { flag: "clear", key: null, commands: ["update-epic"], repeats: true, write: "custom",
+    requires: "the FLAG NAME of a field to unset, e.g. --clear plan", placeholder: "field" },
   // `description` and `notes` are DISTINCT and neither substitutes for the other: a description
   // is durable rationale (why this epic exists, what would make it worth revisiting), replaced
   // wholesale when set again; notes are an append-only trail that reads as activity. Both are
@@ -246,13 +291,14 @@ export const EPIC_FLAGS = [
   // string, so `add-many`'s string copy carries it unchanged; `notes` deliberately is NOT an
   // `add-many` flag — its state shape is an array of {at, actor, text} entries the batch loop
   // would silently drop, and rejecting the key by name is the whole point of #79.
-  { flag: "description", key: "description", commands: ["add-epic", "update-epic", "add-many"] },
-  { flag: "notes", key: "notes", commands: ["add-epic", "update-epic"], write: "append" },
+  { flag: "description", key: "description", commands: ["add-epic", "update-epic", "add-many"], nullable: true },
+  { flag: "notes", key: "notes", commands: ["add-epic", "update-epic"], write: "append",
+    setOnly: "an APPEND-ONLY trail — each entry records what was said and when, so removing one would edit history rather than clear a value" },
   // The tracker's OWN updated timestamp as of the last time the agent read that item's content
   // — never a local clock reading, and never advanced by merely seeing the item in a list
   // response. Registered on all three surfaces because a bulk-mirrored epic that carries no
   // watermark instantly pollutes the "never re-read" count the brief reports.
-  { flag: "external-updated-at", key: "externalUpdatedAt", commands: ["add-epic", "update-epic", "add-many"] },
+  { flag: "external-updated-at", key: "externalUpdatedAt", commands: ["add-epic", "update-epic", "add-many"], nullable: true },
   // record-gate-review's CONTROL flags. Pre-existing — the command read them long before this
   // registry existed — and registered here anyway, because an allowlist that omits the two
   // flags every invocation carries would reject the command's own usage line. Registering them
@@ -284,7 +330,8 @@ export const EPIC_FLAGS = [
   // flag on each occurrence, so `--attribute-commit <a> --attribute-commit <b>` would exit 0
   // having silently kept only <b> — two attributed hashes becoming one, with the ORDER that
   // gives the array its meaning quietly destroyed.
-  { flag: "attribute-commit", key: "attributedCommits", commands: ["update-epic"], repeats: true, write: "append" },
+  { flag: "attribute-commit", key: "attributedCommits", commands: ["update-epic"], repeats: true, write: "append",
+    setOnly: "`--withdraw-commit` is the declared inverse and it RECORDS the withdrawal in a sibling field; a bulk clear would erase the record a correction exists to keep" },
   // #166 — the EXIT from an append-only array. Append-only is right and stays: order carries
   // meaning and the LAST entry is the endpoint a recorded Gate 2 headSha is compared against. But
   // "cannot be reordered or de-duplicated" is a different claim from "can never be corrected",
@@ -307,29 +354,35 @@ export const EPIC_FLAGS = [
   // The interactive archive verb's disposition. `key` is `disposition` for both: they are two
   // halves of ONE record the verb builds and writes together, never two epic fields.
   { flag: "outcome", key: "disposition", commands: ["update-epic"], write: "custom",
-    placeholder: "delivered|killed|superseded|abandoned|declined|unreconstructable" },
+    placeholder: "delivered|killed|superseded|abandoned|declined|unreconstructable",
+    setOnly: "work ENDS by recording a disposition, never by removing one — `--correct-disposition` supersedes a recorded outcome and keeps the one it replaced" },
   // Also `release`'s: an exclusion's reason IS a disposition reason — the same required-reason
   // rule at a fourth scope — so it shares this entry rather than getting a second one under the
   // same name, which epicFlagsFor() would then project twice.
   { flag: "reason", key: "disposition", commands: ["update-epic", "release"], write: "custom",
-    requires: REASON_REQUIRES },
+    requires: REASON_REQUIRES,
+    setOnly: "the reason is half of a disposition record; clearing it would leave an outcome asserting something nobody explained — the silence the required reason removes" },
   // The deferral assertion. Three flags, ONE record: `--deferral` names work that moved to a
   // registered epic, `--declined-deferral` records a deliberate decline with its reason, and
   // `--no-deferrals` is the explicit "there are none" — which must be sayable, or an absence
   // is indistinguishable from never having looked.
   { flag: "deferral", key: "deferralAssertion", commands: ["update-epic"], repeats: true, write: "custom",
-    placeholder: "epicId:artifact section" },
+    placeholder: "epicId:artifact section",
+    setOnly: "an assertion that was made is a record somebody wrote; re-archiving with --correct-disposition is how it is corrected, and clearing it would make an absence indistinguishable from never having looked" },
   { flag: "declined-deferral", key: "deferralAssertion", commands: ["update-epic"], repeats: true, write: "custom",
-    placeholder: "what::why not" },
+    placeholder: "what::why not",
+    setOnly: "same record, same rule as --deferral: a decline that was recorded is corrected through the archive, never removed" },
   { flag: "no-deferrals", key: "deferralAssertion", commands: ["update-epic"], write: "custom", valueless: true },
   // The handoff. Lands on the disposition record rather than a field of its own — "where the
   // work went" is part of how this epic ended, not a separate fact about it.
-  { flag: "carried-to", key: "disposition", commands: ["update-epic"], write: "custom" },
+  { flag: "carried-to", key: "disposition", commands: ["update-epic"], write: "custom",
+    setOnly: "where the work went is part of the disposition record, and shares its rule: corrected at the archive, never removed" },
   // The CORRECTION of an already-recorded agent disposition (#130). Value-bearing on purpose:
   // its value is why the recorded record was wrong, so the justification is required by the
   // flag's own shape rather than by a second flag — the same form `--wont-do "<reason>"` takes.
   // `update-epic` only: a creation path has no prior judgment to correct.
-  { flag: "correct-disposition", key: "disposition", commands: ["update-epic"], write: "custom" },
+  { flag: "correct-disposition", key: "disposition", commands: ["update-epic"], write: "custom",
+    setOnly: "the correction's own justification is kept BESIDE the record it supersedes — removing it would leave a superseded disposition nobody explained" },
   // Release planning. The `release` verb writes exactly ONE epic key — `release`, the one-way
   // membership pointer — and its other flags shape the release object itself, so they carry a
   // null key exactly as record-gate-review's evidence flags do.
@@ -348,7 +401,11 @@ export const EPIC_FLAGS = [
   // would silently attach one reason to several exclusions, which is the reason-bearing record
   // saying something nobody wrote.
   { flag: "defer", key: null, commands: ["release"], write: "custom" },
-  { flag: "review-mode", key: "reviewMode", commands: ["update-epic"] },
+  // NULLABLE, and the absence is the DEFAULT rather than a hole: with no per-epic override the
+  // epic falls back to the repo-global dial, which is exactly what "this epic needs no
+  // escalation of its own" means. An escalation recorded in error was previously uncorrectable —
+  // the de-escalation guard refuses lowering it, so there was no way back to the global.
+  { flag: "review-mode", key: "reviewMode", commands: ["update-epic"], nullable: true },
   // Stories, and the ONE registry edit that makes a plan land with its milestones (#95).
   // `add-epic` and `add-many` join `update-epic` here rather than growing a second literal:
   // `epicFlagsFor("add-epic")` builds add-epic's allowlist and `epicBatchKeys()` builds
@@ -362,7 +419,8 @@ export const EPIC_FLAGS = [
   // but it also changes `--add-story`'s parsed shape from a string to an array on the
   // pre-existing `update-epic` path, which is why both writers read it through one helper.
   { flag: "add-story", key: "stories", commands: ["add-epic", "update-epic", "add-many"], repeats: true, write: "append",
-    requires: "a non-empty title" },
+    requires: "a non-empty title",
+    setOnly: "a story ENDS by carrying `--wont-do \"<reason>\"`, and the row survives — deleting it destroys the record that the work was ever projected, which is the history an archived epic's reader needs" },
   { flag: "story", key: null, commands: ["update-epic"], write: "custom" },
   { flag: "done", key: null, commands: ["update-epic"], write: "custom", valueless: true },
   // The story-level TERMINAL DISPOSITION. `--story <n> --wont-do "<reason>"` keeps the row and
@@ -458,6 +516,12 @@ export const VERB_FLAGS = [
   { flag: "add", commands: ["set-lane-routing"], repeats: true, requires: "a \"<match>:<lane>\" value" },
   { flag: "remove", commands: ["set-lane-routing"], repeats: true,
     requires: "the <match> of the override to remove" },
+  // VALUELESS here, and value-bearing + REPEATABLE on `update-epic` (EPIC_FLAGS above).
+  // `repeatableFlagNames()` is a GLOBAL union across subcommands, so parseFlags now hands this
+  // verb `{ clear: [true] }` where it used to hand it `{ clear: true }`. `lane-routing.mjs` asks
+  // `if (f.clear)` and an array is truthy, so the behaviour is unchanged — but the survival is
+  // INCIDENTAL, not designed: tightening that test to `f.clear === true` would silently stop
+  // clearing the overrides. conductor-08's "--clear empties the overrides list" is the guard.
   { flag: "clear", commands: ["set-lane-routing"], valueless: true },
   // set-tracker. `--remove` here is the BOOLEAN "delete this secondary", not a match string.
   { flag: "role", commands: ["set-tracker"] },
@@ -568,6 +632,10 @@ export const FLAGLESS_VERBS = [
   // The registration-date recovery takes no arguments at all: it sweeps every epic that has
   // no date and can only ever ADD one, so there is nothing to select and nothing to confirm.
   "recover-created-at",
+  // The unconsidered-outcome walker's ASK. Its population is a PREDICATE over the whole record
+  // — an engine stamp carrying `unknown` — so there is nothing to select; a `--status` or
+  // `--lane` filter would let a caller narrow the very set the question is "show me all of".
+  "unconsidered-outcomes",
   // `pop-detour` takes an OPTIONAL POSITIONAL assertion (the epic you expect to be on top) and
   // no flags. The stack is LIFO, so a flag that SELECTED a frame would be a different verb; what
   // the positional does is refuse when the top is not what the caller thinks it is.
@@ -614,6 +682,31 @@ export const ACTIVITY_RETENTION_MAX_BYTES = 1_073_741_824;
  *  never a second literal. */
 export const epicFlagsFor = (command) =>
   EPIC_FLAGS.filter(f => f.commands.includes(command)).map(f => f.flag);
+
+/** The rows a CLEARING form could reach on `command`: it accepts them, they write a top-level
+ *  epic state key, and they carry a value of their own.
+ *
+ *  THE POPULATION the nullability requirement is about, derived rather than listed. The three
+ *  conditions each rule out a row for which "unset this field" is not expressible at all:
+ *  a row the command does not accept, a `key: null` control flag (the command owns the write and
+ *  there is no field to unset), and a `valueless` row — `--clear-links` and `--no-deferrals` are
+ *  themselves ACTIONS, not fields holding a value.
+ *
+ *  Two EPIC_FLAGS rows sit outside every command this returns for, deliberately: `--id`
+ *  (add-epic/add-many only — an epic's identity is not a field it can lose) and `--member`
+ *  (`release` only, and the membership pointer's inverse is `release --defer`, which records
+ *  the exclusion's reason rather than dropping the pointer). */
+export const settableEpicFlags = (command) =>
+  EPIC_FLAGS.filter(f => f.commands.includes(command) && f.key && !f.valueless);
+
+/** The rows `command` accepts whose ABSENCE is a declared-legal state — the accepted set of
+ *  `update-epic --clear <flag>`, and the enumeration its refusal prints.
+ *
+ *  Read at every use rather than snapshotted: the clearing surface and the test asserting that
+ *  surface is complete both derive from here, so a row that gains `nullable: true` without a
+ *  clearing path fails the suite instead of shipping silently. */
+export const nullableEpicFlags = (command) =>
+  EPIC_FLAGS.filter(f => f.commands.includes(command) && f.nullable === true);
 
 /** EVERY flag `command` accepts, from BOTH tables. The union projection an ALLOWLIST is built
  *  from — the "is this flag known here at all" question, as distinct from `valueBearingFlagsFor`'s

@@ -395,7 +395,9 @@ export const CHECKS = [
           out.push({ epic: e.id, detail:
             `link \`${l.type}→${l.epic}\` — '${l.type}' is not one of ${KNOWN_LINK_TYPES.join(", ")}, ` +
             "so every consumer that switches on the type ignores it. Fix it with " +
-            `\`update-epic ${e.id} --link\` (which replaces the whole array — pass every link you want kept).` });
+            `\`update-epic ${e.id} --clear-links --link "<type>:<epic>[:<reason>]" ...\` — every ` +
+            "link you want kept, in ONE invocation. `--link` alone APPENDS, so a corrected type " +
+            "is a new edge and would leave this one exactly where it is." });
         }
       }
       return out;

@@ -631,6 +631,20 @@ it waits on.
   already present and it repairs nothing else: an epic sitting in an undefined status is dated like
   any other and left in that status, because which status it should be is a judgment about what
   happened to the work. The 0.40.0 upgrade invokes it once for you.
+- Which ARCHIVED epics did nobody actually decide about? `unconsidered-outcomes` — a read-only
+  list of every archived epic whose disposition is an ENGINE STAMP carrying `unknown`, i.e. the
+  engine recorded that nobody was asked. Each row names WHO stamped it (the migration and the
+  archive-drift heal are different histories, and which one it is changes how much of the epic's
+  story is recoverable) and carries the exact `update-epic … --status archived --outcome … --reason
+  … --no-deferrals` invocation that would record a real disposition. Both halves of the predicate
+  are load-bearing: an evidence-derived stamp (`delivered` written from a passing Gate 2) is
+  EXCLUDED, because re-deciding it would ask you to re-derive what the record already got right,
+  and so is an agent-recorded outcome, whatever its value — somebody was asked. Where a record
+  genuinely cannot be reconstructed, `--outcome unreconstructable` says so with its required
+  reason. The set shrinks only by somebody deciding; the engine never guesses. Note the SEAM: an
+  epic sitting in an undefined status such as `done` is NOT archived, so this walker cannot reach
+  it — `integrity`'s unknown-status check reports that one, and this verb reaches it only after a
+  human moves it to `archived`.
 - Want to know which DESIGN DOCUMENTS have no epics? `verify-specs` — a read-only inventory of
   every `.md` under a spec root (default `docs/superpowers/specs/`, `--root` to point elsewhere)
   with the epics claiming each, plus the epics naming a document that is not on disk. Uncovered

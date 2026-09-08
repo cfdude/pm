@@ -64,6 +64,12 @@ export const VERB_EFFECTS = {
   // that accepted any non-zero exit would prove nothing for the other twelve.
   "verify-state": { effect: "read-only", exercise: [], expectsFailure: true, note: "compares state.json's mtime against the render stamp; exits non-zero on drift and writes nothing" },
   "verify-worktrees": { effect: "read-only", exercise: [], note: "reports stale git worktrees" },
+  // 0.40.0's ASK-THE-ENGINE surface for the unconsidered-outcome walker. Read-only in the strict
+  // sense this table's behavioural check enforces: it loads state and prints, exactly as `triage`
+  // does. It answers a question about a repository's ARCHIVE, which is precisely the question an
+  // orchestrator would want to ask of a repo it does not own — so a verb that dirtied that repo
+  // to answer it would be the #85 defect again.
+  "unconsidered-outcomes": { effect: "read-only", exercise: [], note: "the archived epics whose outcome nobody considered, each with the invocation that would record one" },
 
   // ─────────────── mutates: never call these against a repo you are only inspecting ───────────────
   init: { effect: "mutates", writes: ".conductor/state.json, .gitignore, CLAUDE.md, PROJECT.md" },

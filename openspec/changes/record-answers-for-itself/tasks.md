@@ -67,15 +67,15 @@
 
 ## 4. The unconsidered-outcome walker
 
-- [ ] 4.1 RED: test the predicate is engine-stamped AND `outcome: unknown` — an evidence-derived
+- [x] 4.1 RED: test the predicate is engine-stamped AND `outcome: unknown` — an evidence-derived
       engine stamp (`delivered` written by migration from a passing Gate 2) is EXCLUDED, and an
       agent-recorded outcome is excluded
-- [ ] 4.2 RED: test that each returned epic carries the invocation that would record a disposition
-- [ ] 4.3 RED: test `unreconstructable` is recordable with its required reason, and that afterwards
+- [x] 4.2 RED: test that each returned epic carries the invocation that would record a disposition
+- [x] 4.3 RED: test `unreconstructable` is recordable with its required reason, and that afterwards
       the epic leaves the unconsidered set
-- [ ] 4.4 RED: test that an `unreconstructable` epic with unticked tasks does NOT fire the
+- [x] 4.4 RED: test that an `unreconstructable` epic with unticked tasks does NOT fire the
       zero-ticked check
-- [ ] 4.5 GREEN: implement the walker and the `unreconstructable` outcome. This grows a CLOSED enum,
+- [x] 4.5 GREEN: implement the walker and the `unreconstructable` outcome. This grows a CLOSED enum,
       and the consumers were enumerated mechanically rather than from memory:
       `KNOWN_OUTCOMES`; `AGENT_OUTCOMES`; `dispositionError`'s reason rule;
       `integrity.mjs:32` `EXPLAINED_OUTCOMES` (this IS the gate-integrity exclusion list, consumed
@@ -86,7 +86,7 @@
       literal here silently stops matching". THREE MORE, none of which any test guards:
       `constants.mjs:310` (the `--outcome` placeholder, i.e. the `--help` text a user reads);
       `commands/epic.md:238` and `skills/conductor/SKILL.md:274` (the exemption-list mirrors)
-- [ ] 4.5b FIX THE EXISTING STALENESS IN THE SAME EDIT — this is the evidence, not a prediction,
+- [x] 4.5b FIX THE EXISTING STALENESS IN THE SAME EDIT — this is the evidence, not a prediction,
       and the count is FIVE, arrived at by `rg` over `README.md commands/ skills/ scripts/` rather
       than by reading the three sites someone remembered. `declined` was added to this same closed
       set in an earlier release, reached the engine (`disposition.mjs:33`, `integrity.mjs:32`,
@@ -97,56 +97,56 @@
       `/--outcome delivered\|killed\|superseded\|abandoned/` against the emitted block and PASSES
       BY PREFIX MATCH, so the test that should have caught this drift is blind to it and will stay
       blind after `unreconstructable` lands. Anchor it or make it exact
-- [ ] 4.5c Make the next growth fail loudly rather than ship stale: either render the emitted and
+- [x] 4.5c Make the next growth fail loudly rather than ship stale: either render the emitted and
       mirrored `--outcome` enumeration FROM `KNOWN_OUTCOMES`, or declare a `mustSay` claim covering
       it so the drift guard sees it. Without one of the two, site 4.5b recurs on the growth after
       this one — the generic doc-currency line in 8.1 is the prose form this repo measures at 3/15
-- [ ] 4.6 Assert the walker's INVARIANT against a fixture — every returned epic satisfies the
+- [x] 4.6 Assert the walker's INVARIANT against a fixture — every returned epic satisfies the
       predicate and no epic satisfying it is omitted. Do NOT assert a live count: a test naming a
       live number is a known failure mode here, and this release's own dispositions change it
 
 ## 5. Nullability, uniform clearing, and `--link` appends
 
-- [ ] 5.1 GREEN first (the registry is a prerequisite, not an outcome): add `nullable: true` to the
+- [x] 5.1 GREEN first (the registry is a prerequisite, not an outcome): add `nullable: true` to the
       relevant `EPIC_FLAGS` rows in `constants.mjs`, `setOnly: "<reason>"` to any field deliberately
       left set-only, and register `--clear` itself as a value-bearing repeatable flag on
       `update-epic`. Without the declaration neither clearing shape can fail loudly; without the
       registration the shared flag-allowlist check fails against `commands/epic.md`. Declare `links`
       SET-ONLY for the generic form with its reason — `--clear-links` is grandfathered and is
       required in one invocation with `--link` for the atomic repair, which `--clear` cannot express
-- [ ] 5.2 RED: test BOTH directions of the declaration, not one. (a) every `nullable: true` row is
+- [x] 5.2 RED: test BOTH directions of the declaration, not one. (a) every `nullable: true` row is
       reachable by `--clear <field>`, derived from the registry so a later nullable row with no
       clearing path fails the suite; (b) every SETTABLE `EPIC_FLAGS` row carries one marker or the
       other — `nullable: true` or `setOnly: "<reason>"`. Without (b) an undeclared row passes
       silently, and undeclared rows are the population the requirement is about
-- [ ] 5.3 RED: test that `--clear` names fields by FLAG spelling, not state key — `constants.mjs`
+- [x] 5.3 RED: test that `--clear` names fields by FLAG spelling, not state key — `constants.mjs`
       warns these are two namespaces
-- [ ] 5.4 RED: test that clearing one field leaves the others unchanged, and that `--clear` on a
+- [x] 5.4 RED: test that clearing one field leaves the others unchanged, and that `--clear` on a
       non-nullable field exits non-zero naming it
-- [ ] 5.5 RED: test that `--link` appends; that a repeat of an already-recorded `(type, target)`
+- [x] 5.5 RED: test that `--link` appends; that a repeat of an already-recorded `(type, target)`
       UPDATES that entry's reason in place rather than adding a second entry or silently discarding
       the correction; that an exact repeat of all three changes nothing and says so; and that
       `--clear-links --link a --link b` is accepted as ONE atomic replace
-- [ ] 5.6 RED: test the BROADENED surface, not the two paths this change introduces — setting any
+- [x] 5.6 RED: test the BROADENED surface, not the two paths this change introduces — setting any
       field to the value it already holds reports "nothing changed" rather than the generic success
       line, and a no-op link supply and a no-op clear are instances of that rule. `saveState`
       already returns `unchanged: true` for every no-op (`state.mjs:201`); `update-epic.mjs:527`
       discards it and `:564` prints success unconditionally, which is why same-valued `--title`,
       `--status` and `--priority` ALREADY report writes that did not happen — the
       `update-epic.mjs:356` defect class (#79)
-- [ ] 5.7 GREEN: implement `--clear`, the append semantics, and the mutual-exclusion relaxation at
+- [x] 5.7 GREEN: implement `--clear`, the append semantics, and the mutual-exclusion relaxation at
       `update-epic.mjs:134-137`
-- [ ] 5.8 GREEN: update ALL SIX sites documenting replacement, two of which the engine emits at
+- [x] 5.8 GREEN: update ALL SIX sites documenting replacement, two of which the engine emits at
       runtime — `links.mjs:76-83` (`unknownLinkTypeMessage`), `integrity.mjs:387-388` (the
       finding's own remedy), `commands/epic.md:189,321,329`, `commands/next.md:43`,
       `update-epic.mjs:49-51` docstring, and the assertion at `conductor-14.test.mjs:1049`
-- [ ] 5.8b GREEN: update the sites documenting the MUTUAL EXCLUSION, which the relaxation makes
+- [x] 5.8b GREEN: update the sites documenting the MUTUAL EXCLUSION, which the relaxation makes
       false — `commands/epic.md:190` (the flag-table row "may not be combined with `--link`"),
       `commands/epic.md:338` (the same claim in prose), and the usage blocks at
       `commands/epic.md:172` and `update-epic.mjs:78`, which must also gain `[--clear <field>]`.
       The usage line is not cosmetic: the shared flag-allowlist check reads the documented flag
       surface AT CHECK TIME, so registering `--clear` in `EPIC_FLAGS` without it still fails
-- [ ] 5.9 Add a SIBLING sweep asserting set-implies-clear, driven from `EPIC_FLAGS`. Do NOT widen
+- [x] 5.9 Add a SIBLING sweep asserting set-implies-clear, driven from `EPIC_FLAGS`. Do NOT widen
       `conductor-20.test.mjs:264-281` — that sweep asserts every field appears on all three of
       `add-epic`/`update-epic`/`add-many`, which two nullable fields fail BY DESIGN (`notes` is
       `["add-epic","update-epic"]` at `constants.mjs:250`; `review-mode` is `["update-epic"]` at
@@ -154,7 +154,7 @@
       sweep `gh-66`'s disposition referred to — that citation was the correction; the widening was
       not implementable
 
-- [ ] 5.10 SURFACE THE WALKER. `unconsideredOutcomes()` landed in group 4 as a library export with
+- [x] 5.10 SURFACE THE WALKER. `unconsideredOutcomes()` landed in group 4 as a library export with
       NO consumer outside tests, so the release would ship an enumeration nobody can ask for while
       `epic-disposition/spec.md:25` says "an agent asks the engine". Add a dispatched verb — the
       shape every other ask-the-engine surface here uses — which needs `FLAGLESS_VERBS` in

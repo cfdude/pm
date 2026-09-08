@@ -40,8 +40,8 @@ Read the current state (`node "$ENGINE" render` then `PROJECT.md`), and apply th
    If the active epic still has open stories, that is the default next action.
 4. An epic in status `blocked` with no `depends-on` link records nothing about what it waits on.
    PROJECT.md says so. Fix it while you are there:
-   `update-epic <id> --link "depends-on:<blocker-id>:<why>"` — noting that `--link` REPLACES the
-   links array, so pass every link the epic should end up with.
+   `update-epic <id> --link "depends-on:<blocker-id>:<why>"` — `--link` APPENDS, so this adds the
+   edge without disturbing the epic's existing links.
 5. Surface ties or ambiguity to the user instead of guessing.
 
 Once you've chosen the epic to work on, **make it the active epic through the CLI — do not

@@ -280,6 +280,42 @@ test("every source-artifact field is a registered EPIC_FLAGS key on all three wr
   }
 });
 
+// ─────────── the SIBLING sweep: what can be SET can be UNSET, or says why not ───────────
+//
+// A SIBLING of the sweep above rather than a widening of it, deliberately. That one asserts
+// every source-artifact field appears on all three of add-epic/update-epic/add-many, which two
+// NULLABLE fields fail BY DESIGN — `notes` is ["add-epic","update-epic"] and `review-mode` is
+// ["update-epic"] alone — and it is driven by a different registry (EPIC_SOURCE_ARTIFACTS).
+// Widening it was cited as the fix for gh-66 and is not implementable; this is what that
+// citation was correcting toward.
+//
+// DECLARATION-level on purpose. The FUNCTIONAL half — that `--clear <flag>` actually removes the
+// field from the record — is exercised per nullable row in nullable-clearing.test.mjs, against a
+// fixture that SETS the field first so it cannot pass against an implementation that does
+// nothing. What this sweep adds is the other direction: a settable field that silently declares
+// neither markers, and a nullable field that no user-facing document names.
+test("every settable epic field is declared clearable or declares why it is not", async () => {
+  const { settableEpicFlags, nullableEpicFlags } = await import("../lib/constants.mjs");
+  const settable = settableEpicFlags("update-epic");
+  assert.ok(settable.length >= 15,
+    `the settable projection yielded ${settable.length} rows — it is broken, not the registry`);
+  for (const row of settable) {
+    const declared = row.nullable === true || typeof row.setOnly === "string";
+    assert.ok(declared,
+      `--${row.flag} writes '${row.key}' and declares neither \`nullable: true\` nor a ` +
+      "`setOnly` reason. Absence of a marker is what this sweep exists to catch: an undeclared " +
+      "field ships with no clearing path and nothing says that was a decision.");
+  }
+  // And every nullable field is named in the document a user reads, not only in the registry —
+  // an unreachable clearing path and an undocumented one cost the same.
+  const doc = fs.readFileSync(path.join(new URL("../..", import.meta.url).pathname,
+    "commands", "epic.md"), "utf8");
+  for (const row of nullableEpicFlags("update-epic")) {
+    assert.ok(doc.includes(`\`${row.flag}\``) || doc.includes(`--${row.flag}`),
+      `--${row.flag} is declared nullable but commands/epic.md never names it`);
+  }
+});
+
 test("a state file written before syncIgnore existed loads and syncs unchanged", () => {
   const cwd = tmpRepo();
   const p = withPlan(cwd, "2026-08-01-old.md");
