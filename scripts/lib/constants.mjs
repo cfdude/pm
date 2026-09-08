@@ -565,6 +565,9 @@ export const FLAGLESS_VERBS = [
   // by the same check that refuses `set-activity-log maybe` — so it has no flag surface to
   // declare, and a VERB_FLAGS row for it would be a claim about a parser that does not exist.
   "set-activity-log",
+  // The registration-date recovery takes no arguments at all: it sweeps every epic that has
+  // no date and can only ever ADD one, so there is nothing to select and nothing to confirm.
+  "recover-created-at",
   // `pop-detour` takes an OPTIONAL POSITIONAL assertion (the epic you expect to be on top) and
   // no flags. The stack is LIFO, so a flag that SELECTED a frame would be a different verb; what
   // the positional does is refuse when the top is not what the caller thinks it is.

@@ -111,9 +111,9 @@ The migration itself leaves `touchedAt` absent on every pre-existing epic — th
 epic in the fleet reads "last touched: upgrade day", which is precisely the signal destruction this
 design rejects for the sibling field.
 
-**Cost, measured, not estimated:** 85ms/epic in this repository, 155ms/epic on
-market-intelligence-dev — roughly 15s for pm's 176 epics and 23s for a 151-epic repository. That is
-tens of seconds, not "seconds". `upgrade` is user-invoked and not hooked (`conductor.mjs:263`), so
+**Cost, measured, not estimated:** 25ms/epic against this repository's real history — roughly 4.5s
+for its 176 epics. An earlier reading of 85ms/epic (155ms on a larger repository) was taken while
+four test suites were running concurrently and was conservative by 3x. `upgrade` is user-invoked and not hooked (`conductor.mjs:263`), so
 it is tolerable, but it is not free.
 
 The invocation uses `execFileSync` with an argv array, never a shell string:
@@ -168,8 +168,10 @@ than `=== true`. That call site is named in the sweep.
 Naming an epic and its illegal status is the easy half. The non-obvious half — why this went
 unnoticed in six repositories — is that such an epic is non-terminal to every rule testing for the
 archived status, so it is invisible to precisely the checks that would surface it, and any
-dependency edge pointing at it reads unsatisfied forever (`dependency-order.mjs:41`, priority lift
-at `:80-82`). The remedy text carries that.
+dependency edge pointing at it reads unsatisfied forever (`dependency-order.mjs:41`), so the epic
+ITSELF absorbs the effective priority of everything depending on it — `:80-99` propagates from the
+dependent into the blocker, which is the opposite of what this design first asserted and was caught
+only when the check was implemented, after three review rounds had read the sentence. The remedy text carries that.
 
 The spec states this as "every rule that tests for the archived status" with no number. A count
 would be wrong within a release: measured today it is 24 code sites for `=== "archived"` plus 16

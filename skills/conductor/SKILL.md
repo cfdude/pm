@@ -610,6 +610,16 @@ it waits on.
   that does not reach the commits it cites, an archive directory with no epic). It reports every
   check with its count including zeros, writes no state, blocks nothing and repairs nothing: each
   finding's remediation is a command you run.
+- An epic registered before pm carried a clock has NO registration date, and absence there means
+  UNKNOWN — never today's date and never another field's. `recover-created-at` sweeps every such
+  epic and takes its `createdAt` from the commit that first introduced that id into
+  `.conductor/state.json`, reading local history only. Where this checkout holds no such evidence —
+  no git, an untracked state file, a shallow graft, an id older than the history you have fetched —
+  the date is LEFT ABSENT rather than invented, and the verb is RE-RUNNABLE precisely so a checkout
+  that later fetches more history recovers what it could not see before. It never overwrites a date
+  already present and it repairs nothing else: an epic sitting in an undefined status is dated like
+  any other and left in that status, because which status it should be is a judgment about what
+  happened to the work. The 0.40.0 upgrade invokes it once for you.
 - Want to know which DESIGN DOCUMENTS have no epics? `verify-specs` — a read-only inventory of
   every `.md` under a spec root (default `docs/superpowers/specs/`, `--root` to point elsewhere)
   with the epics claiming each, plus the epics naming a document that is not on disk. Uncovered

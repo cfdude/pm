@@ -60,7 +60,12 @@ and it never recovers when that checkout catches up. This is a distinct constrai
 law and is stated in the engine's own migration framework.
 
 Where the state file is tracked, the commit that first introduced an epic's id into it SHALL be the
-source of that epic's registration date. Where no such evidence is recoverable — the file is
+source of that epic's registration date. A commit at a SHALLOW BOUNDARY SHALL NOT be
+accepted as that source. Git has cut such a commit's parents, so it diffs against nothing and reports
+every id in the file as introduced there — a naive search would hand an entire archive one fabricated
+date and record it as fact, which is precisely the outcome the absence rule exists to prevent. A
+boundary hit SHALL yield ABSENT, and SHALL remain re-attemptable: unshallowing the clone and
+re-running recovers the real dates, which is the case the re-runnable requirement above exists for. Where no such evidence is recoverable — the file is
 untracked, the history is shallow, or the id predates the tracked history — the date SHALL be left
 absent, absence SHALL mean unknown, and a later run SHALL be free to recover it.
 

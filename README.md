@@ -939,6 +939,37 @@ prints the plan and removes nothing.
 </details>
 
 <details>
+<summary><code>recover-created-at</code> — Where did the dates go for epics older than the clock?</summary>
+
+Every epic registered from 0.40.0 on carries `createdAt`, stamped at `pushEpic()` — the single
+sink every creation routes through. Epics registered before it carry nothing, and absence there
+means **unknown**: no reader substitutes today's date, and none substitutes another field's.
+
+```bash
+node scripts/conductor.mjs recover-created-at
+```
+
+It takes each dateless epic's `createdAt` from the commit that first introduced that id into
+`.conductor/state.json`, reading **local history only** — no network, ever, and the pickaxe is
+invoked with an argument vector rather than a shell string because these ids come out of a state
+file that may predate today's id validation.
+
+**Absence is a first-class answer.** No git, an untracked state file, a shallow graft point, an id
+older than the history this checkout has fetched: each leaves the date absent rather than
+fabricating one. That is also why this is a **verb and not a migration body** — a migration runs at
+most once per repository, and an operation reading version-control history returns a different
+answer per checkout, so a one-shot would freeze the wrong answer permanently in whichever clone had
+less history that day. Re-run it after fetching and it recovers the rest. It never overwrites a
+date already present, and it repairs nothing else — an epic in a status the engine does not define
+is dated like any other and left exactly as it was.
+
+The 0.40.0 upgrade invokes it once. `touchedAt` is deliberately **not** stamped by that pass:
+recovering a registration date is a recovery, not a touch, or every epic in every repository would
+read "last touched: upgrade day".
+
+</details>
+
+<details>
 <summary><code>verify-specs</code> — Which design documents have no epics?</summary>
 
 An epic can record the **design document** its work was drawn from: `--spec <path>` →

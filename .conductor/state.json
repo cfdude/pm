@@ -4996,9 +4996,15 @@
           "at": "2026-09-08T06:33:47.795Z",
           "actor": "agent",
           "text": "FLEET-MEASURED 2026-09-07: 29 epics across 6 repos carry status 'done', which is not in KNOWN_STATUSES — personal-finance-paper 18, market-intelligence 3, market-intelligence-dev 3, onvex-meetnexus-backend 3, onvex-meetnexus-ios 1, virtual-mic 1. All 29 are non-terminal to the 25 sites that read status === 'archived', and 0.27.0's disposition migration stamps archived epics only, so none of them was reached. Fleet total of epics whose record does not say what happened is therefore 382, not the 353 counted from outcome:unknown alone — and these 29 are the worse half because they are invisible rather than merely unlabelled. lane: superpowers not <none routed> — the check is small but its remedy message has to explain the silent-exemption consequence, which is the non-obvious part."
+        },
+        {
+          "at": "2026-09-08T17:10:10.749Z",
+          "actor": "agent",
+          "text": "NEW INSTANCE found during 0.40.0 implementation, 2026-09-08: the illegal-status problem is not only in user repos — pm's OWN test helpers seed one. 'in-progress' is not in KNOWN_STATUSES (constants.mjs:156), yet scripts/test/helpers.mjs writes it directly into fixture state files (e.g. autoDetourState). update-epic --status in-progress correctly refuses it, so the fixtures are reaching a state the write surface forbids — the same shape as the 26 'done' epics across five repos, in this repository's own tests. The check this epic asks for would report pm's own fixtures, which is a useful acceptance signal and should be decided deliberately rather than discovered at CI."
         }
       ],
-      "release": "0.40.0"
+      "release": "0.40.0",
+      "touchedAt": "2026-09-08T17:10:10.751Z"
     },
     {
       "id": "gh-cfdude-pm-175",
@@ -5129,7 +5135,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 413,
+  "revision": 414,
   "reviewMode": "thorough",
   "releases": [
     {

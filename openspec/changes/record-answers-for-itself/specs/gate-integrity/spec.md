@@ -8,8 +8,11 @@ shape the existing unknown-link-type check establishes for a stored value that c
 The finding SHALL state the consequence a reader would otherwise not deduce: an epic in an
 undefined status is **non-terminal to every rule that tests for the archived status**, so it is
 invisible to the completion-shaped checks and makes the record look cleaner than it is. It SHALL
-also state that any dependency edge pointing at such an epic reads unsatisfied permanently, which
-lifts the effective priority of everything downstream of it for as long as the value persists.
+also state that any dependency edge pointing at such an epic reads unsatisfied permanently — so
+whatever waits on it stays blocked, and the epic itself permanently ABSORBS the effective priority
+of everything depending on it, for as long as the value persists. The direction matters: priority
+propagates from the dependent into the blocker, so the stuck epic is what gets lifted, not the work
+behind it.
 
 The check SHALL be read-only and SHALL NOT repair the value it finds. Which legal status an
 undefined one should become is a judgment about what happened to the work, and an engine that

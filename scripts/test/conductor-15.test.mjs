@@ -106,16 +106,20 @@ function upgradeAt(cwd, version) {
 
 test("7.1: a 0.26.0 state applies the entries above it, and the second run is a byte-identical no-op", () => {
   const cwd = repoAt0260();
-  // TWO entries now sit above 0.26.0 — the 0.27.0 stamp, and the 0.32.0 lift of archive-backfill
-  // registration provenance onto the epic (#133). The count is release-specific and moves with
-  // every appended entry; what this test pins is that the missing entries apply, apply ONCE,
-  // and that a second run is byte-identical.
-  const first = upgradeAt(cwd, "0.32.0");
-  assert.match(first, /upgraded \(2 migration\(s\)\)/,
-    "a 0.26.0-stamped repo is missing exactly the 0.27.0 and 0.32.0 entries");
-  assert.equal(readState(cwd).pmVersion, "0.32.0");
+  // THREE entries now sit above 0.26.0 — the 0.27.0 stamp, the 0.32.0 lift of archive-backfill
+  // registration provenance onto the epic (#133), and the 0.40.0 registration-date recovery. The
+  // count is release-specific and moves with every appended entry; what this test pins is that
+  // the missing entries apply, apply ONCE, and that a second run is byte-identical.
+  //
+  // The pinned version tracks the NEWEST entry rather than sitting below it, or the second run
+  // would replay whatever is above it and "a stamped repo replays nothing" would stop being the
+  // property under test. (The harsher below-the-entry case is the next test, deliberately.)
+  const first = upgradeAt(cwd, "0.40.0");
+  assert.match(first, /upgraded \(3 migration\(s\)\)/,
+    "a 0.26.0-stamped repo is missing exactly the 0.27.0, 0.32.0 and 0.40.0 entries");
+  assert.equal(readState(cwd).pmVersion, "0.40.0");
   const after = stateBytes(cwd);
-  const second = upgradeAt(cwd, "0.32.0");
+  const second = upgradeAt(cwd, "0.40.0");
   assert.match(second, /upgraded \(0 migration\(s\)\)/, "a stamped repo replays nothing");
   assert.equal(stateBytes(cwd), after,
     "the second upgrade must be byte-identical — the no-op-save rule means even `revision` " +

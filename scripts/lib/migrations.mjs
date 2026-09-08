@@ -14,6 +14,7 @@ import { resolvePlatform } from "./platform.mjs";
 import { ensureGitignore } from "./subcommands.mjs";
 import { openspecCurrencyLines } from "./tool-currency.mjs";
 import { differsFromHead } from "./git.mjs";
+import { recoverCreatedAtDates } from "./created-at.mjs";
 
 // MIGRATIONS — APPEND-ONLY, each keyed by the release that introduced the change.
 // NEVER remove or reorder a shipped entry: a repo many versions behind replays every
@@ -68,6 +69,29 @@ const MIGRATIONS = [
     note: "lift archive-backfill registration provenance from the disposition onto the epic",
     apply(state) {
       liftBackfillProvenance(state);
+    },
+  },
+  // 0.40.0 — every epic gains a registration date, and the ones that predate the field get theirs
+  // back from this checkout's own history.
+  //
+  // IT DELEGATES, and the delegation is the point. The rule stated at the 0.27.0 entry above
+  // forbids a migration from reading disk, because a one-shot, never-replayed transformation may
+  // not produce a different result on a machine whose checkout sits at a different commit — and
+  // reading history does exactly that. Two checkouts of one remote on this machine differ by two
+  // commits touching state.json, so the poorer one would freeze absence permanently, keyed to a
+  // pmVersion it never replays again.
+  //
+  // So the recovery is a VERB (lib/created-at.mjs) that this entry invokes once. The migration
+  // stays a one-shot; the recovery stays re-runnable; a checkout that later fetches more history
+  // recovers what this pass could not. Nothing else here changes: `createdAt` on epics registered
+  // from now on is stamped by pushEpic(), and `touchedAt` is deliberately left ABSENT on every
+  // pre-existing epic — saveState() excludes both timekeeping fields from its per-record
+  // comparison, so this sweep is a recovery rather than a fleet-wide touch on upgrade day.
+  {
+    release: "0.40.0",
+    note: "recover epic registration dates from local history (delegates to the re-runnable verb)",
+    apply(state) {
+      recoverCreatedAtDates(state);
     },
   },
 ];

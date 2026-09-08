@@ -101,6 +101,9 @@ export const VERB_EFFECTS = {
   "purge-logs": { effect: "mutates", writes: "removes .conductor/ log files — activity segments, write-conflicts.log(.prev), detours.log" },
   claim: { effect: "mutates", writes: "state.json (an epic's advisory claim) — or .conductor/session-claim.json with --repo" },
   unclaim: { effect: "mutates", writes: "state.json (clears an epic's advisory claim) — or removes .conductor/session-claim.json with --repo" },
+  // The 0.40.0 recovery, available as a verb precisely because it must be RE-RUNNABLE: a
+  // checkout that fetches more history recovers dates the earlier run could not see.
+  "recover-created-at": { effect: "mutates", writes: "state.json (registration dates recovered from local git history), PROJECT.md and .conductor/render-stamp.json (via render())" },
   upgrade: { effect: "mutates", writes: "state.json (migrations, pmVersion), the platform rules file (the rules block), PROJECT.md and .conductor/render-stamp.json (via render()), .gitignore" },
   "write-rules": { effect: "mutates", writes: "CLAUDE.md (or the platform's rules file), state.json (the recorded platform)" },
 };
