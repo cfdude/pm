@@ -4866,6 +4866,11 @@
           "at": "2026-09-06T02:20:41.834Z",
           "actor": "agent",
           "text": "lane: superpowers not <none routed> — the subset selector has real design ambiguity"
+        },
+        {
+          "at": "2026-09-08T07:11:06.474Z",
+          "actor": "agent",
+          "text": "CUT FROM 0.40.0 AT GATE 1, deliberately — reviewer recommendation, accepted. Of the six items proposed it was the only one with no design decision, no risk entry and the thinnest delta, and its one real complication was unmentioned: sync calls render() at scripts/lib/subcommands.mjs:648, so a 'preview' also rewrites PROJECT.md and .conductor/render-stamp.json. The spec's byte-identical clause constrained state.json ONLY, so as written the change would have shipped a preview that rewrites two tracked files. Its own change must: suppress the render; declare the dry-run variant in scripts/lib/verb-effects.mjs:73, where sync is currently { effect: 'mutates' }; cover the one-time archive backfill (subcommands.mjs:605-612), which alters epic counts and must not be quiet; and not consume the archiveBackfilledAt marker. Also note the release it was cut from had two spines — 'the record cannot answer questions about itself' and 'operations ship without their inverse' — and this belonged to neither."
         }
       ],
       "externalUpdatedAt": "2026-09-03T01:14:23Z"
@@ -5106,7 +5111,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 404,
+  "revision": 405,
   "reviewMode": "thorough",
   "releases": [
     {

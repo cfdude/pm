@@ -1,102 +1,123 @@
 ## Why
 
-`.conductor/state.json` is pm's state of record, and there is a class of question it cannot
-answer about itself. Measured across 28 pm-managed repositories on 2026-09-06/07:
+`.conductor/state.json` is pm's state of record, and there is a class of question it cannot answer
+about itself. Measured on this machine 2026-09-06/08, over the **working-repo set** — 27 distinct
+upstreams, excluding plugin-cache copies of this repository's own state file and counting
+`market-intelligence` and its `-dev` worktree once:
 
-- **382 archived epics carry no usable outcome.** 353 hold `outcome: "unknown"` written by
-  0.27.0's migration with no reason text; a further 29 sit in `status: "done"` — a status
-  `KNOWN_STATUSES` does not contain — and were never reached by that migration at all. In this
-  repository alone that is 66 of 143 archived epics, **46% of the archive**.
-- **18 of 20 open epics carried no date of any kind.** The schema has `startedAt`,
-  `completedAt`, `externalUpdatedAt` and `disposition.recordedAt`, and no field recording when
-  an epic was *registered* — which is exactly the population a staleness question is about, since
-  an epic that was registered and never started has no clock at all.
-- **Eight nullable fields can be set and never unset.** `--clear-links` is the only clear path
-  on `update-epic`; `planPath`, `specPath`, `parent`, `externalId`, `externalUrl`,
-  `externalUpdatedAt`, `description` and `reviewMode` are set-only.
+- **310 archived epics carry `outcome: unknown`**, written by 0.27.0's migration with no reason
+  text, plus **26 epics in `status: "done"`** across five repositories — a value `KNOWN_STATUSES`
+  does not contain and that migration never reached. In this repository alone that is **66 of 144**
+  archived epics, **46% of the archive**.
+- **18 of 20 open epics carried no date of any kind.** The schema has `startedAt`, `completedAt`,
+  `externalUpdatedAt` and `disposition.recordedAt`, and nothing recording when an epic was
+  *registered* — which is exactly the population a staleness question is about, since an epic
+  registered and never started has no other date.
+- **Eight nullable fields can be set and never unset.** `--clear-links` is the only clear path on
+  `update-epic`; `planPath`, `specPath`, `parent`, `externalId`, `externalUrl`,
+  `externalUpdatedAt`, `description` and `reviewMode` are set-only, and `notes` appends with no
+  removal path at all.
 
-These are not separate papercuts. Each one is the record failing to answer a question that a
-person or an agent then answers by reading code instead — and the cost is measurable. A grooming
-pass over this repository's own backlog on 2026-09-07 hit the missing-disposition wall four
-separate times and had to reconstruct from commits what the record should have stated. A user
-filed `#173` against work that **had** been done, because the epic proposing it archived with
-nothing saying so. `#174` was filed from another repository after finding 18 epics silently
-exempt from every terminal rule.
+Each is the record failing to answer a question that a person or an agent then answers by reading
+code instead, and the cost is measurable. A grooming pass over this repository's own backlog on
+2026-09-07 hit the missing-disposition wall four separate times and reconstructed from commit
+history what the record should have stated. A user filed `#173` against work that **had** been done,
+because the epic proposing it archived with nothing saying so. `#174` came from another repository
+after finding 18 epics silently exempt from every terminal rule.
 
-The dominant defect class behind the set-only fields has a name here and a measured cost: a
-guard added at one call site while its inverse operation goes untouched. `gh-66` archived
-`delivered` claiming *"a test now fails CI if any source-artifact field is settable at creation
-but not on the update surfaces"* — and `scripts/test/conductor-23.test.mjs` tests set-at-creation
-against set-on-update and **never tests unset**. The guard was built along the axis the existing
-sweep already looks at, which is precisely why the sweep cannot find this class. Six instances
-are now catalogued, and the most consequential is a safety surface: `set-autonomy` grants are
-append-only with no revoke, and `--level off` leaves `preAuthorized` intact, so re-enabling
-autonomy silently restores every prior grant.
+The set-only fields belong to a defect class this repository has named and measured: a guard added
+at one call site while its inverse operation goes untouched. `gh-66` archived `delivered` claiming
+*"a test now fails CI if any source-artifact field is settable at creation but not on the update
+surfaces"* — and the sweep it refers to, `scripts/test/conductor-20.test.mjs:264-281`, is driven
+from `EPIC_SOURCE_ARTIFACTS` and tests set-at-creation against set-on-update while **never testing
+unset**. The guard was built along the axis the existing sweep already looks at,
+which is why the sweep cannot find this class. Six instances are catalogued.
 
 ## What Changes
 
-- **Epics record when they were registered.** `createdAt` at registration and `touchedAt` on any
-  mutation, with a migration that backfills real dates rather than nulls: `git log -S'"<id>"' --
-  .conductor/state.json` recovers the registering commit's date in any repository that commits
-  `.conductor/`, verified against three ids spanning 2026-07-15 to 2026-08-25.
-- **An epic in a status the engine does not know is reported.** A new integrity check mirroring
-  the existing `link-of-unknown-type`, naming the epic, the status, and the consequence a reader
-  would otherwise miss: the epic is silently exempt from all 25 sites that read
-  `status === "archived"`, including `dependencySatisfied`, where it would read unsatisfied
-  forever and permanently lift effective priority.
-- **The undispositioned archive can be walked and repaired.** A surface that enumerates archived
-  epics carrying no agent-recorded outcome and emits the per-epic remedy, plus an explicit way to
-  record that an outcome is genuinely unreconstructable — because a fabricated disposition is
-  worse than an absent one.
-- **Every nullable field an epic-writing surface can set, it can unset** — or the spec states why
-  not, per field. This is the operation-pair rule applied to its own first instance rather than
-  shipping a single `--clear-plan`, which would repeat exactly the miss `#169` re-reports.
-- **The call-site completeness sweep covers operation pairs.** The emitted rules block's required
-  task item 1 gains the inverse-operation obligation — set/unset, add/remove, append/replace,
-  enable/disable — as a numbered required task item, the form measured at 14/14 adoption against
-  3/15 for the same rule written as prose.
-- **`sync` can be previewed.** `--dry-run` reports the epics a sync would create or update
-  without writing, following the shape `purge-logs --dry-run` already proves in this engine.
+- **Epics record when they were registered and when they were last touched.** `createdAt` is bound
+  to `pushEpic` — the single sink every creation routes through, already carrying the
+  `attributedCommits` rule and a source scan forbidding bypass — rather than to an enumeration of
+  creation surfaces, which this repository already tried and already watched go stale. `touchedAt`
+  is stamped inside `saveState` after its no-op early return, against the disk pre-image already
+  read there.
+- **Registration dates are recovered from history by a re-runnable verb**, invoked once by the
+  0.40.0 migration and available afterwards. Not inside `MIGRATIONS` itself: a one-shot
+  transformation that reads disk produces a different result per checkout, which
+  `scripts/lib/migrations.mjs:44-48` forbids by name — and two checkouts of one remote on this
+  machine differ by two commits touching `state.json`, so a one-shot backfill would freeze a wrong
+  answer in one of them permanently.
+- **An epic in a status the engine does not define is reported**, mirroring the existing
+  unknown-link-type check, and naming the consequence a reader would otherwise miss: the epic is
+  exempt from every rule testing for the archived status, and any dependency edge pointing at it
+  reads unsatisfied forever.
+- **The undispositioned archive is enumerable**, with an outcome that can be recorded as genuinely
+  unreconstructable. The population is `recordedBy` present **and** `outcome: unknown` — which
+  deliberately excludes the three epics here whose `delivered` a migration derived from a passing
+  Gate 2 verdict.
+- **Every nullable field can be unset**, via `--clear <field>` deriving its accepted set from a new
+  `nullable: true` marker on the flag registry, so a ninth nullable field added later fails CI
+  rather than silently having no clearing form.
+- **`--link` appends instead of replacing**, and the six sites documenting replacement change with
+  it — including two the engine emits at runtime, whose remedies would otherwise stop remedying.
+  `--clear-links` and `--link` stop being mutually exclusive, so the documented repair path stays a
+  single atomic write.
+- **The call-site sweep obliges the inverse operation**, in `GATE_PROCEDURE_ITEMS[0]`'s `lines`
+  **and** its `mustSay` claims, plus the three mirrored surfaces the drift guard reads — because
+  the guard iterates `mustSay` only, and amending `lines` alone leaves the suite green while every
+  mirror carries the old rule.
 
-No breaking changes. Every field added has a documented absent-value default, and a `state.json`
-written by 0.39.0 must still load.
+No breaking changes to stored data. Every field added has a documented absent-value default, and a
+`state.json` written by 0.39.0 must still load. `--link`'s semantics change is a documented
+behaviour change and is named in Design's risks.
 
 ## Capabilities
 
 ### New Capabilities
 
-None. Every change extends an existing capability, which is the correct outcome here: this
-release adds no new concept, it closes questions the existing concepts already imply.
+None. Every change extends an existing capability, which is the correct outcome: this release adds
+no new concept, it closes questions the existing concepts already imply.
 
 ### Modified Capabilities
 
-- `conductor-record`: epics carry a registration date and a last-touched date; the emitted
-  required task item 1 obliges an inverse-operation sweep, not only a call-site sweep.
+- `conductor-record`: epics carry a registration date and a last-touched date, recovered from
+  history by a re-runnable operation the release migration invokes once.
+- `state-write-guard`: a last-touched stamp must not defeat the no-op save path — the stamp happens
+  after the identity comparison, not before it.
 - `gate-integrity`: an epic whose `status` is outside `KNOWN_STATUSES` is a reported integrity
-  finding, with its silent-exemption consequence named in the remedy.
-- `epic-disposition`: the undispositioned archive is enumerable, and an unreconstructable outcome
-  is recordable as such rather than left indistinguishable from one nobody looked at.
-- `epic-annotation`: clearing is uniform across the nullable fields rather than existing for
-  `links` alone, and `--link` appends rather than replaces.
-- `tracker-sync`: `sync` supports a non-writing preview.
+  finding; and required task item 1's existing emitted-procedure requirement is extended to oblige
+  the inverse operation across every mirrored surface.
+- `epic-disposition`: the undispositioned archive is enumerable, an unreconstructable outcome is
+  recordable, and the outcome keyword set and the zero-ticked-tasks exclusion list grow to admit it.
+- `epic-annotation`: clearing is uniform across nullable fields; `--link` appends; and a write that
+  changes nothing says so rather than reporting success.
 
 ## Impact
 
-**Engine** — `scripts/lib/`: `constants.mjs` (flag registry, `KNOWN_STATUSES`), `update-epic.mjs`
-(clear paths, `--link` append semantics), `migrations.mjs` (the clock migration and its git
-backfill), `integrity.mjs` (the unknown-status check), `subcommands.mjs` (`sync --dry-run`),
-`rules.mjs` (required task item 1).
+**Engine** — `scripts/lib/`: `state.mjs` (`pushEpic`, `saveState`), `constants.mjs` (`nullable`
+markers and `--clear`), `update-epic.mjs` (clear paths, `--link` append, the
+mutual-exclusion relaxation), `migrations.mjs` (the 0.40.0 entry), the new backfill verb,
+`integrity.mjs` (unknown-status check **and** the `--link` remedy text), `links.mjs`
+(`unknownLinkTypeMessage`), `rules.mjs`
+(`GATE_PROCEDURE_ITEMS[0].lines` and `.mustSay`), `disposition.mjs`, `archive-gate.mjs`.
 
-**Schema** — `state.json` gains `createdAt` and `touchedAt` on epics. Additive, idempotent,
-backward-compatible; a `MIGRATIONS` entry keyed to 0.40.0. The backfill shells out to `git log`,
-which is read-only and already how the engine reads history elsewhere — it opens no network
-connection and the architectural law holds.
+**Emitted and mirrored surfaces** — `commands/epic.md`, `commands/status.md`,
+`skills/conductor/SKILL.md` (the three the drift guard reads), `commands/next.md`, and this repository's own managed `CLAUDE.md` block.
 
-**Docs** — `README.md`, `commands/epic.md`, `commands/sync.md`, `commands/status.md`, the
-`conductor` skill, and the Mintlify site at `pm-plugin.dev` in the same PR cycle.
+**Schema** — `state.json` epics gain `createdAt` and `touchedAt`. Additive, idempotent,
+backward-compatible; a `MIGRATIONS` entry keyed to 0.40.0 that invokes the backfill verb once and
+leaves `touchedAt` absent on pre-existing epics rather than stamping upgrade day.
 
-**Tests** — `scripts/test/conductor-23.test.mjs` gains the unset axis it never had, which is the
-regression guard for the class this release is named after.
+**Tests** — `conductor-20.test.mjs:264-281` — the source-artifact parity sweep driven from
+`EPIC_SOURCE_ARTIFACTS`, which is the sweep `gh-66`'s disposition actually referred to — widens from
+two fields to the nullable set; `conductor-16.test.mjs`'s
+`mustSay` guard must see the new claim; `conductor-13.test.mjs`'s creation-sink source scan covers
+`createdAt` by construction; `conductor-14.test.mjs:1049` asserts the old `--link` wording and
+changes with it.
 
-**Fleet** — 28 repositories take this on their next `/pm:upgrade`. The migration must be safe on
-a repository carrying `status: "done"` epics, since six of them do.
+**Docs** — `README.md` and the Mintlify site at `pm-plugin.dev` in the same PR cycle.
+
+**Fleet** — 27 upstreams take this on their next `/pm:upgrade`. The backfill costs a measured
+85–155ms per epic, so roughly 15–23 seconds on the larger repositories: tens of seconds, not
+"seconds". `upgrade` is user-invoked and not hooked, so that is tolerable. The migration must be
+safe on the six repositories carrying `status: "done"` epics.
