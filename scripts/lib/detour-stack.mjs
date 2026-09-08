@@ -27,6 +27,7 @@
 // the engine is an instruction layer and never opens a network connection (see conductor.mjs).
 
 import { isInitialized, loadState, saveState } from "./state.mjs";
+import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
 import { activate } from "./active-pointer.mjs";
@@ -131,12 +132,18 @@ export function pushDetour() {
   linkOnce(detour, "resolves-blocker-for", id, reason);
   activate(state, detourId);
 
-  saveState(state, { verb: "push-detour" });
+  const saved = saveState(state, { verb: "push-detour" });
   render();
 
-  process.stderr.write(
-    `conductor: paused '${id}' and made detour '${detourId}' active` +
-    `${reconcileOnResume ? " — reconcile gate armed for /pm:resume" : " — NO reconcile on resume"}\n`);
+  reportSave(saved, {
+    changed: `conductor: paused '${id}' and made detour '${detourId}' active` +
+      `${reconcileOnResume ? " — reconcile gate armed for /pm:resume" : " — NO reconcile on resume"}`,
+    // A frame carries `pausedAt`, so a PUSH always differs from disk. Bound rather than
+    // exempted for the same reason add-epic is: the argument for "cannot no-op" is about
+    // today's frame shape, not about this verb.
+    unchanged: `conductor: '${id}' was already paused for detour '${detourId}' on exactly these ` +
+      `terms — ${STATE_UNCHANGED}`,
+  });
   // gh#94's disclosure, now at the moment of the deferral itself rather than one step after it.
   // Computed from the POST-push state so the push being made is counted; silent on a first
   // deferral, because the first detour is the mechanism working.
@@ -191,7 +198,7 @@ export function popDetour() {
   if (frame.reconcileOnResume) epic.reconcileNeeded = true;
   activate(state, pausedEpic);
 
-  saveState(state, { verb: "pop-detour" });
+  const saved = saveState(state, { verb: "pop-detour" });
   render();
 
   const detourId = typeof frame.spawnedDetour === "string" ? frame.spawnedDetour : null;
@@ -201,7 +208,11 @@ export function popDetour() {
       `conductor: detour '${detourId}' is still ${detour.status}, not archived — resuming anyway, ` +
       "but confirm its work is finished and committed before building on the resumed epic\n");
   }
-  process.stderr.write(`conductor: resumed '${pausedEpic}'\n`);
+  reportSave(saved, {
+    changed: `conductor: resumed '${pausedEpic}'`,
+    unchanged: `conductor: '${pausedEpic}' was already resumed on exactly these terms — ` +
+      `${STATE_UNCHANGED}`,
+  });
   if (frame.reconcileOnResume) {
     // The Honcho POP line says "reconciled vs X", which is not yet true. Emitting it here would
     // be the engine writing a claim nobody has made — the same defect the reconcile gate exists

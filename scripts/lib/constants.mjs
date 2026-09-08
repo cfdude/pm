@@ -225,6 +225,20 @@ export const KNOWN_STATUSES = ["untriaged", "queued", "active", "paused", "later
  *  way the RULE itself forked across two commands before #149. */
 export const REASON_REQUIRES = "a non-empty reason";
 
+/** THE two epic fields the inward-sync dedup compares, and which of them is which.
+ *
+ *  DECLARED rather than left as two literals inside add-epic's predicate, for the same reason
+ *  EPIC_SOURCE_ARTIFACTS and epicReferences() are declarations: a nullable field that another
+ *  record — or another procedure — keys on must not be clearable in silence, and the test that
+ *  enforces that has to DERIVE its population instead of listing it. `primary` is compared when
+ *  both sides carry one; `fallback` only when neither does, because a bare item number is unique
+ *  within one tracker and not across two. addEpic() reads these names, so the declaration is
+ *  load-bearing and cannot rot into decoration.
+ *
+ *  Not a flat array: the asymmetry between the two IS the rule, and an array would leave it to be
+ *  re-derived from position by every reader. */
+export const EPIC_DEDUP_KEYS = { primary: "externalUrl", fallback: "externalId" };
+
 export const EPIC_FLAGS = [
   { flag: "id", key: "id", commands: ["add-epic", "add-many"] },
   { flag: "title", key: "title", commands: ["add-epic", "update-epic", "add-many"],
@@ -245,17 +259,25 @@ export const EPIC_FLAGS = [
     setOnly: "a status outside KNOWN_STATUSES is exempt from every status rule — the unknown-status integrity check exists because that state is broken, and an ABSENT status is its limiting case" },
   { flag: "parent", key: "parent", commands: ["add-epic", "update-epic", "add-many"], nullable: true,
     clearNote: "it leaves the hierarchy — `plan-hierarchy --parent <that id>` will no longer batch it, and it renders at the top level. Re-attach with --parent <id>" },
-  { flag: "external-id", key: "externalId", commands: ["add-epic", "update-epic", "add-many"], nullable: true },
+  { flag: "external-id", key: "externalId", commands: ["add-epic", "update-epic", "add-many"], nullable: true,
+    clearNote: "it is the FALLBACK half of the dedup key (EPIC_DEDUP_KEYS) — compared when neither side carries a URL — so a URL-less mirrored item can be registered again as a NEW untriaged epic on the next sync. Re-attach with --external-id <key>" },
   { flag: "external-url", key: "externalUrl", commands: ["add-epic", "update-epic", "add-many"], nullable: true,
-    clearNote: "it is the DEDUP KEY the inward sync procedure matches on, so the linked item can be mirrored again as a NEW epic on the next sync. Clear it only when the epic is genuinely no longer mirrored" },
-  { flag: "plan", key: "planPath", commands: ["add-epic", "update-epic", "add-many"], nullable: true },
+    clearNote: "it is the PRIMARY dedup key (EPIC_DEDUP_KEYS) the inward sync procedure matches on, so the linked item can be mirrored again as a NEW epic on the next sync. Clear it only when the epic is genuinely no longer mirrored" },
+  // CLEARING THESE TWO UN-CLAIMS AN ON-DISK SOURCE ARTIFACT, which is the whole reason
+  // source-artifacts.mjs exists: `sync` skips a plan or spec an epic already claims, and an epic
+  // that stops claiming one makes it registerable again. Gate 2 reproduced it — attach a plan,
+  // sync skips it, `--clear plan`, sync registers it as a fresh untriaged epic — and the note is
+  // what makes that visible at the moment of the clear rather than an hour later.
+  { flag: "plan", key: "planPath", commands: ["add-epic", "update-epic", "add-many"], nullable: true,
+    clearNote: "the epic stops CLAIMING that plan, so the next `sync` registers the file as a NEW untriaged epic. No sync-ignore tombstone is written, deliberately: `remove-epic` tombstones because the epic is GONE, whereas this epic survives and clearing may well mean \"let sync find this plan's real owner\". Re-attach with --plan <path>" },
   // The DESIGN DOCUMENT the epic's work was drawn from (#92) — provenance, and many-to-one on
   // purpose: a design too large for one implementation plan yields N epics that all name it.
   // Registered on all three surfaces for the reason `--plan` is: an association settable only
   // at creation is unreachable for every epic that already exists, which is what kept #64/#69
   // unfixable. Nothing infers progress from it; see EPIC_SOURCE_ARTIFACTS in
   // lib/source-artifacts.mjs for the family it joins.
-  { flag: "spec", key: "specPath", commands: ["add-epic", "update-epic", "add-many"], nullable: true },
+  { flag: "spec", key: "specPath", commands: ["add-epic", "update-epic", "add-many"], nullable: true,
+    clearNote: "the epic stops CLAIMING that design document, so the next `sync` registers the file as a NEW untriaged epic and this epic drops out of its coverage count. No sync-ignore tombstone is written, for the same reason `--clear plan` writes none. Re-attach with --spec <path>" },
   { flag: "link", key: "links", commands: ["add-epic", "update-epic", "add-many"], repeats: true, write: "append",
     requires: "a \"<type>:<epic>[:<reason>]\" value — to empty an epic's links, say so with --clear-links",
     placeholder: "type:epic[:reason]",
@@ -405,7 +427,14 @@ export const EPIC_FLAGS = [
   // epic falls back to the repo-global dial, which is exactly what "this epic needs no
   // escalation of its own" means. An escalation recorded in error was previously uncorrectable —
   // the de-escalation guard refuses lowering it, so there was no way back to the global.
-  { flag: "review-mode", key: "reviewMode", commands: ["update-epic"], nullable: true },
+  //
+  // The clearNote is a DECLARED JUDGEMENT rather than something the cross-record sweep demands:
+  // `reviewMode` points at a repo-global dial, not at another record, so it is deliberately
+  // outside that population (see nullable-clearing.test.mjs). It carries one anyway because the
+  // consequence is real and silent — the epic's escalation is gone, and the de-escalation guard
+  // means nothing will complain.
+  { flag: "review-mode", key: "reviewMode", commands: ["update-epic"], nullable: true,
+    clearNote: "this epic stops carrying its own escalation and falls back to the repo-global dial (`set-review-mode`), which may be LOWER — and the de-escalation guard that would normally refuse a lowering does not see a clear. Re-escalate with --review-mode <mode>" },
   // Stories, and the ONE registry edit that makes a plan land with its milestones (#95).
   // `add-epic` and `add-many` join `update-epic` here rather than growing a second literal:
   // `epicFlagsFor("add-epic")` builds add-epic's allowlist and `epicBatchKeys()` builds

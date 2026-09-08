@@ -59,6 +59,42 @@ export const LINK_TYPES_ANNOTATION = ["relates-to", "blocks", "resolves-blocker-
  *  declared in constants.mjs; conductor-29 asserts the bands' union equals it. */
 export { KNOWN_LINK_TYPES };
 
+/** THE link merge — the one place "supplying a link ADDS it" is implemented.
+ *
+ *  `epic-annotation` states the rule without qualification: a link's IDENTITY is its type and its
+ *  target, a repeat of an identity already recorded updates that entry's reason IN PLACE rather
+ *  than appending a second row, and a wholly identical repeat changes nothing. It shipped inside
+ *  `updateEpic()` and at neither sibling write path — `add-epic --link "blocks:other:first"
+ *  --link "blocks:other:second"` recorded two entries for one identity, and `add-many`'s copy
+ *  loop assigned the batch's array verbatim. `add-many.mjs` even carries a comment naming itself
+ *  as the sibling path a rule written at `parseLinkFlags` misses; the rule was written one level
+ *  further out and missed it anyway.
+ *
+ *  So it is a FUNCTION all three call, not a shape three files are trusted to keep — the same
+ *  ruling epicReferences() and EPIC_SOURCE_ARTIFACTS carry, one concept over.
+ *
+ *  WHERE IDENTITY AND REASON BOTH MATCH THE STORED OBJECT IS LEFT ALONE, byte for byte, rather
+ *  than overwritten with an equal-valued fresh one. That is not tidiness: "a wholly identical link
+ *  is not a duplicate" is REPORTED through saveState()'s whole-body `JSON.stringify` comparison,
+ *  and a stored link whose keys are in another order — anything migrated by normalizeLink(), or
+ *  written before `reason` existed — would serialize differently and turn the no-op into a write.
+ *  A stored entry may also carry fields this parser does not produce, and replacing it with an
+ *  equal-valued object would silently drop them.
+ *
+ *  `existing` is never mutated; the caller assigns the result. */
+export function mergeLinks(existing, supplied) {
+  const reasonOf = (l) => (l && typeof l.reason === "string" ? l.reason : undefined);
+  const merged = Array.isArray(existing) ? existing.slice() : [];
+  for (const l of Array.isArray(supplied) ? supplied : []) {
+    if (!l || typeof l !== "object") continue;
+    const at = merged.findIndex(x => x && x.type === l.type && x.epic === l.epic);
+    if (at === -1) { merged.push(l); continue; }
+    if (reasonOf(merged[at]) === reasonOf(l)) continue;   // identical — the stored object stands
+    merged[at] = l;                                        // corrected reason, same position
+  }
+  return merged;
+}
+
 export function isKnownLinkType(t) {
   return typeof t === "string" && KNOWN_LINK_TYPES.includes(t);
 }

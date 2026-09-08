@@ -26,6 +26,7 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { ROOT } from "./constants.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
+import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
 
 /** The state file as a git PATHSPEC — CWD-relative, for the reason differsFromHead()'s is: git
@@ -147,11 +148,22 @@ export function recoverCreatedAt() {
   // The save is guarded on nothing: with no recovery the state is identical to disk and
   // saveState's own no-op path returns without writing, so an unproductive run leaves
   // state.json byte-identical without this function having to know that.
-  saveState(state, { verb: "recover-created-at" });
+  const saved = saveState(state, { verb: "recover-created-at" });
   render();
-  process.stderr.write(
-    `conductor: recover-created-at: ${recovered} recovered, ${unrecoverable} unrecoverable ` +
-    `(${missing} epic(s) had no registration date)\n`);
+  // ONE summary shape for both outcomes, and the no-op only APPENDS to it. The counts are the
+  // verb's proof that it ran to completion at all — conductor-39 requires them before every
+  // absence assertion it makes, because an absence assertion passes just as happily against a
+  // subcommand that does not exist. A no-op line that dropped them would have turned that guard
+  // off, which is a strictly worse trade than the honesty it was buying.
+  const summary = `conductor: recover-created-at: ${recovered} recovered, ${unrecoverable} ` +
+    `unrecoverable (${missing} epic(s) had no registration date)`;
+  reportSave(saved, {
+    changed: summary,
+    // The honest reading of a no-op here: either every epic already carried a date, or none of
+    // the missing ones was recoverable from this checkout's history. Both leave the file alone,
+    // and a re-run after `git fetch --unshallow` is exactly what the spec keeps available.
+    unchanged: `${summary} — ${STATE_UNCHANGED}`,
+  });
   if (unrecoverable) {
     process.stderr.write(
       "   Unrecoverable means UNKNOWN, not unknowable: no commit in THIS checkout introduces " +

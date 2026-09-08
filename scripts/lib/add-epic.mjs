@@ -7,9 +7,10 @@
 
 import { activate } from "./active-pointer.mjs";
 import { isInitialized, loadState, pushEpic, saveState } from "./state.mjs";
+import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
-import { KNOWN_LANES, KNOWN_STATUSES, epicFlagsFor, flagsFor, repeatableFlagNames, valueBearingFlagsFor } from "./constants.mjs";
-import { isKnownLinkType, unknownLinkTypeMessage, linkTypeVocabulary } from "./links.mjs";
+import { EPIC_DEDUP_KEYS, KNOWN_LANES, KNOWN_STATUSES, epicFlagsFor, flagsFor, repeatableFlagNames, valueBearingFlagsFor } from "./constants.mjs";
+import { isKnownLinkType, mergeLinks, unknownLinkTypeMessage, linkTypeVocabulary } from "./links.mjs";
 import { creationStamp } from "./disposition.mjs";
 import { rankOf } from "./epic-progress.mjs";
 
@@ -367,9 +368,14 @@ export function addEpic() {
     // and the other doesn't, they are never treated as a duplicate — falling back to an
     // externalId-only comparison in that case would let a URL-less legacy epic falsely block a
     // genuinely distinct, URL-bearing one sharing the same bare id (Gate 2 finding).
+    // The two key names come from EPIC_DEDUP_KEYS, not from literals here: the nullable-clearing
+    // sweep derives its cross-record population from that declaration, and a declaration nothing
+    // reads is a comment. The COMPARISON is unchanged — only where the names come from is.
+    const { primary, fallback } = EPIC_DEDUP_KEYS;
+    const supplied = { [primary]: externalUrl, [fallback]: externalId };
     const dup = state.epics.find(e => {
-      if (externalUrl !== undefined && e.externalUrl !== undefined) return e.externalUrl === externalUrl;
-      if (externalUrl === undefined && e.externalUrl === undefined) return e.externalId === externalId;
+      if (supplied[primary] !== undefined && e[primary] !== undefined) return e[primary] === supplied[primary];
+      if (supplied[primary] === undefined && e[primary] === undefined) return e[fallback] === supplied[fallback];
       return false;
     });
     if (dup) {
@@ -379,7 +385,11 @@ export function addEpic() {
   }
   let links;
   try {
-    links = parseLinkFlags(f.link, new Set(state.epics.map(e => e.id)));
+    // Through mergeLinks() even at CREATION, where there is nothing to merge against: two
+    // `--link` occurrences naming the same type and target are one relationship, and this path
+    // recorded them as two rows. Identity dedup is a property of supplying a link, not of
+    // updating an epic.
+    links = mergeLinks([], parseLinkFlags(f.link, new Set(state.epics.map(e => e.id))));
   } catch (e) {
     process.stderr.write(`conductor: ${e.message}\n`); process.exit(1);
   }
@@ -432,7 +442,14 @@ export function addEpic() {
   if (epic.status === "active") {
     activate(state, id, { freshlyRead: str(f["external-updated-at"]) !== undefined });
   }
-  saveState(state);
+  const saved = saveState(state);
   render();
-  process.stderr.write(`conductor: added epic '${id}' (${lane}, ${status})\n`);
+  reportSave(saved, {
+    changed: `conductor: added epic '${id}' (${lane}, ${status})`,
+    // Unreachable in practice — a duplicate id is refused above, and pushEpic() stamps a
+    // registration date, so a creation always differs from disk. Bound anyway rather than
+    // exempted: "cannot no-op" is an argument about today's guards, and the report costs one
+    // line while the exemption would have to be re-audited every time one of them moves.
+    unchanged: `conductor: '${id}' was already recorded exactly as supplied — ${STATE_UNCHANGED}`,
+  });
 }

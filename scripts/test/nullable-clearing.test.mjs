@@ -12,9 +12,11 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
-import { run, tmpRepo, readState, expectFail, ENGINE, EMPTY_CACHE } from "./helpers.mjs";
+import { run, tmpRepo, readState, expectFail, writeBatch, ENGINE, EMPTY_CACHE } from "./helpers.mjs";
 
 const CONSTANTS = new URL("../lib/constants.mjs", import.meta.url).href;
+const SOURCE_ARTIFACTS = new URL("../lib/source-artifacts.mjs", import.meta.url).href;
+const LINKS = new URL("../lib/links.mjs", import.meta.url).href;
 
 /** stdout+stderr of an invocation that MUST succeed. Local rather than helpers' `runCombined()`
  *  because that one ignores the exit code, and a crash would then read as "no such message" —
@@ -283,6 +285,92 @@ test("a write that DOES change something still reports 'updated'", () => {
 });
 
 
+// ───────── the link rule binds every write surface the registry names, not one of them ─────────
+
+/** How to supply the SAME link identity twice on each command the `link` row declares. Keyed by
+ *  command, so a fourth surface declaring `--link` fails here by name instead of being silently
+ *  unexercised — the same shape SET_VALUE above uses, and the reason this is a table rather than
+ *  three tests. */
+const SUPPLY_DUPLICATE_LINK = {
+  "add-epic": (cwd) => {
+    run(["add-epic", "--id", "subj", "--lane", "claude-code",
+      "--link", "blocks:other:first", "--link", "blocks:other:second"], { cwd });
+    return "subj";
+  },
+  "update-epic": (cwd) => {
+    run(["update-epic", "subject", "--link", "blocks:other:first",
+      "--link", "blocks:other:second"], { cwd });
+    return "subject";
+  },
+  "add-many": (cwd) => {
+    const batch = writeBatch(cwd, { epics: [{ id: "subj", lane: "claude-code", links: [
+      { type: "blocks", epic: "other", reason: "first" },
+      { type: "blocks", epic: "other", reason: "second" },
+    ] }] });
+    run(["add-many", "--from", batch], { cwd });
+    return "subj";
+  },
+};
+
+test("supplying one link identity twice records ONE link on EVERY surface the registry declares", async () => {
+  const { EPIC_FLAGS } = await import(CONSTANTS);
+  const row = EPIC_FLAGS.find(f => f.flag === "link");
+  assert.ok(row && row.commands.length >= 3, "the `link` row must still declare its write surfaces");
+
+  for (const command of row.commands) {
+    const supply = SUPPLY_DUPLICATE_LINK[command];
+    assert.ok(supply,
+      `'${command}' declares --link and this sweep has no way to drive it. The identity rule ` +
+      "binds every write surface; a surface nothing exercises is how it came to hold at one of " +
+      "three. Add a driver rather than removing the command from the row.");
+    const cwd = repo();
+    const id = supply(cwd);
+    const links = epicOf(cwd, id).links.filter(l => l.type === "blocks" && l.epic === "other");
+    assert.equal(links.length, 1,
+      `${command} recorded ${links.length} entries for one (type, target) — two relationships of ` +
+      "the same type between the same pair of epics are one relationship");
+    assert.equal(links[0].reason, "second",
+      `${command} kept the FIRST reason — a repeat updates the entry's reason in place, and ` +
+      "discarding the supplied one removes the only path to correcting it");
+  }
+});
+
+test("every surface the registry declares reaches `links` through mergeLinks()", async () => {
+  // The inversion, so a fifth surface inherits the rule instead of re-implementing it. Scoped to
+  // the three modules the registry names: `detour-stack.mjs` and `reconciler-writeback.mjs` also
+  // write links, but as ENGINE PROTOCOL with different semantics on purpose (linkOnce() leaves an
+  // existing edge's reason alone), and they are not a user supplying a link.
+  const { EPIC_FLAGS } = await import(CONSTANTS);
+  const row = EPIC_FLAGS.find(f => f.flag === "link");
+  for (const command of row.commands) {
+    const src = fs.readFileSync(new URL(`../lib/${command}.mjs`, import.meta.url).pathname, "utf8");
+    assert.match(src, /mergeLinks\(/,
+      `lib/${command}.mjs declares --link and never calls mergeLinks() — the identity rule is a ` +
+      "function every surface calls, not a shape three files are trusted to keep");
+  }
+});
+
+test("mergeLinks leaves an identical stored link OBJECT in place, which is what makes the no-op report true", async () => {
+  const { mergeLinks } = await import(LINKS);
+  // Key order deliberately reversed from what parseLinkFlags produces: a stored link migrated by
+  // normalizeLink(), or written before `reason` existed, serializes differently. Overwriting it
+  // with an equal-VALUED fresh object changes the bytes, so saveState()'s whole-body comparison
+  // no longer short-circuits and "a wholly identical link is not a duplicate" stops being true.
+  const stored = { reason: "why", epic: "other", type: "blocks" };
+  const merged = mergeLinks([stored], [{ type: "blocks", epic: "other", reason: "why" }]);
+  assert.equal(merged.length, 1);
+  assert.equal(merged[0], stored, "the STORED object must survive, not an equal-valued copy");
+
+  // A changed reason DOES replace, in position.
+  const two = mergeLinks(
+    [{ type: "blocks", epic: "a" }, { type: "relates-to", epic: "b" }],
+    [{ type: "blocks", epic: "a", reason: "corrected" }]);
+  assert.deepEqual(two, [{ type: "blocks", epic: "a", reason: "corrected" }, { type: "relates-to", epic: "b" }]);
+
+  // And a different type to the same target is a DIFFERENT identity.
+  assert.equal(mergeLinks([{ type: "blocks", epic: "a" }], [{ type: "relates-to", epic: "a" }]).length, 2);
+});
+
 // ───────── the DATA half of the call-site sweep: a cross-record pointer never leaves quietly ────
 
 test("clearing a field that holds another record's id ANNOUNCES what the removal costs", () => {
@@ -301,6 +389,39 @@ test("clearing a field that holds another record's id ANNOUNCES what the removal
     "clearing the sync procedure's dedup key means the item can be mirrored again as a new epic");
 });
 
+test("`--clear plan` says the artifact is un-claimed, and the next sync proves it", () => {
+  // THE Gate 2 reproduction, end to end. `--clear plan` is a third un-claim path alongside
+  // `remove-epic` (which tombstones) and never registering the artifact at all — and it shipped
+  // with neither a tombstone nor a note, so the duplicate-registration defect
+  // source-artifacts.mjs exists to make impossible came back through the clearing surface.
+  const cwd = repo();
+  const plan = path.join(cwd, "docs", "superpowers", "plans", "2026-09-08-a-plan.md");
+  fs.mkdirSync(path.dirname(plan), { recursive: true });
+  fs.writeFileSync(plan, "# a plan\n");
+  run(["update-epic", "subject", "--plan", "docs/superpowers/plans/2026-09-08-a-plan.md"], { cwd });
+
+  const skipped = combined(cwd, ["sync"]);
+  assert.match(skipped, /claimed by epic 'subject'/,
+    "the fixture must actually reach the claim check, or the clear below proves nothing");
+
+  const cleared = combined(cwd, ["update-epic", "subject", "--clear", "plan"]);
+  assert.match(cleared, /cleared `subject`'s plan/);
+  assert.match(cleared, /registers the file as a NEW untriaged epic/,
+    "the note must name the CONSEQUENCE — the next sync re-registers what this epic stopped claiming");
+  assert.match(cleared, /--plan <path>/, "and name the way back");
+  assert.match(cleared, /tombstone/i,
+    "NOT tombstoning is a decision, and an undocumented decision is indistinguishable from an " +
+    "omission — the note says so rather than leaving a reader to reason it out from remove-epic");
+
+  // And the consequence is REAL, not just announced.
+  const after = combined(cwd, ["sync"]);
+  assert.match(after, /1 new epic/,
+    "the un-claimed plan is registered again — which is exactly why the note has to exist");
+  assert.equal(readState(cwd).syncIgnore, undefined,
+    "no tombstone was written: the epic survives, and clearing may mean `let sync find this " +
+    "plan's real owner`");
+});
+
 test("a no-op clear announces NOTHING — there was no removal to have a consequence", () => {
   const cwd = repo();
   assert.ok(!("parent" in epicOf(cwd)));
@@ -310,17 +431,77 @@ test("a no-op clear announces NOTHING — there was no removal to have a consequ
   assert.match(out, /nothing changed/i);
 });
 
-test("every nullable field holding or keying on ANOTHER record carries a clearNote", async () => {
-  // Driven from the registry, and the population is derived from the state key rather than
-  // listed: `epicReferences()` already treats `parent` as an epic-id reference, and the sync
-  // procedure keys dedup on `externalUrl`. A nullable row added later for another cross-record
-  // field with no note fails here rather than removing a pointer in silence.
+/** THE cross-record population, DERIVED — the half the first version of this test only claimed.
+ *
+ *  It said "the population is derived from the state key rather than listed" and then wrote
+ *  `const CROSS_RECORD = ["parent", "externalUrl"]`, which is the hand-typed enumeration
+ *  `constants.mjs` rejects everywhere else. It was wrong the moment it shipped: `--clear plan` and
+ *  `--clear spec` un-claim an on-disk source artifact, so the next `sync` registers the file as a
+ *  fresh untriaged epic — the duplicate-registration defect `source-artifacts.mjs` exists to make
+ *  structurally impossible — and neither row carried a note.
+ *
+ *  Three sources, each of which exists for its OWN reason and is therefore already maintained:
+ *
+ *   1. `EPIC_SOURCE_ARTIFACTS` — every field naming an on-disk artifact `sync` dedups against.
+ *   2. `epicReferences()` — every place the record holds a live epic id, probed with a SENTINEL
+ *      rather than read off the returned `where` string (which is rendered prose, not a key).
+ *      A synthetic epic gets `sentinel-<key>` in every nullable key; whichever sentinels come
+ *      back as `r.epic` are the epic-id-bearing nullable fields, by construction.
+ *   3. `EPIC_DEDUP_KEYS` — the two fields the inward sync dedup compares. `add-epic` reads the
+ *      same declaration, so it cannot rot into decoration.
+ *
+ *  DELIBERATELY OUT: `reviewMode`, which points at a repo-global dial rather than at another
+ *  record. It carries a clearNote anyway, as a declared judgement on its row — but demanding one
+ *  from THIS sweep would need a fourth source invented for one field, and a population widened to
+ *  fit its members stops being derived. */
+async function crossRecordKeys() {
+  const { nullableEpicFlags, EPIC_DEDUP_KEYS } = await import(CONSTANTS);
+  const { EPIC_SOURCE_ARTIFACTS } = await import(SOURCE_ARTIFACTS);
+  const { epicReferences } = await import(LINKS);
+
+  const nullable = nullableEpicFlags("update-epic");
+  const probe = { id: "probe" };
+  for (const row of nullable) probe[row.key] = `sentinel-${row.key}`;
+  const held = new Set(epicReferences({ epics: [probe] }).map(r => r.epic));
+
+  const keys = new Set();
+  for (const row of nullable) if (held.has(`sentinel-${row.key}`)) keys.add(row.key);
+  for (const a of EPIC_SOURCE_ARTIFACTS) keys.add(a.key);
+  for (const k of Object.values(EPIC_DEDUP_KEYS)) keys.add(k);
+  return keys;
+}
+
+test("the cross-record population is DERIVED, and reaches the fields it exists to reach", async () => {
+  // The derivation itself, asserted — because a sweep whose population silently narrowed to the
+  // empty set passes every assertion below it. Named here as a MINIMUM rather than an equality:
+  // this is what the three sources reach today, and a fourth cross-record nullable field must
+  // join by being declared in one of them, not by being added to this line.
+  const keys = await crossRecordKeys();
+  for (const expected of ["parent", "externalUrl", "externalId", "planPath", "specPath"]) {
+    assert.ok(keys.has(expected),
+      `'${expected}' fell out of the derived cross-record population — one of the three sources ` +
+      "stopped covering it, and the sweep below is no longer checking it");
+  }
   const { nullableEpicFlags } = await import(CONSTANTS);
-  const CROSS_RECORD = ["parent", "externalUrl"];
+  assert.ok(!keys.has("reviewMode"),
+    "reviewMode points at a repo dial, not another record — widening the population to include " +
+    "it would need a fourth source invented for one field");
+  assert.ok(keys.size < nullableEpicFlags("update-epic").length,
+    "the population is a SUBSET of the nullable rows; one equal to all of them means the " +
+    "derivation collapsed into 'everything' and stopped discriminating");
+});
+
+test("every nullable field holding or keying on ANOTHER record carries a clearNote", async () => {
+  const { nullableEpicFlags } = await import(CONSTANTS);
+  const keys = await crossRecordKeys();
+  let checked = 0;
   for (const row of nullableEpicFlags("update-epic")) {
-    if (!CROSS_RECORD.includes(row.key)) continue;
+    if (!keys.has(row.key)) continue;
+    checked++;
     assert.equal(typeof row.clearNote, "string",
-      `--${row.flag} unsets '${row.key}', which points at another record, and carries no clearNote`);
+      `--${row.flag} unsets '${row.key}', which points at another record or keys a dedup, and ` +
+      "carries no clearNote — the removal would be silent");
     assert.ok(row.clearNote.length > 30, `--${row.flag}'s clearNote is too short to be a consequence`);
   }
+  assert.ok(checked >= 5, `only ${checked} cross-record row(s) checked — the population shrank`);
 });

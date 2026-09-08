@@ -183,6 +183,39 @@ emitted, and the brief's `consider /pm:sync` nudge now leaves outward-only repos
 difference is in progress rendering: `· N lifecycle` where tasks carry the
 `<!-- pm:lifecycle -->` marker. Treat a fourth as a regression.
 
+## What `0.40.0`'s migration does, and the verb that finishes it
+
+`0.40.0` gives every epic a **registration date** (`createdAt`) and a **last-touched date**
+(`touchedAt`). Both are absent-tolerant: an epic written by an earlier version carries neither, and
+absence means *unknown* — never today's date, and never another field's.
+
+1. **Every epic the migration can date is dated.** The state file is git-tracked in a pm-managed
+   repo, so the commit that first introduced an epic's id into `.conductor/state.json` is the
+   evidence, and that is what the migration reads.
+2. **Where the evidence is not recoverable, the date is left ABSENT** — the file is untracked, the
+   id predates the tracked history, or the clone is shallow. A commit at a shallow boundary is
+   never accepted as the source: git has cut its parents, so it diffs against nothing and reports
+   *every* id in the file as introduced there, which would hand a whole archive one fabricated
+   date and record it as fact.
+
+**`recover-created-at` is the re-runnable half**, and it is why absence is safe rather than
+permanent. It is an engine subcommand rather than a slash command — nothing about it is
+interactive:
+
+```bash
+node "$ENGINE" recover-created-at
+```
+
+Run it after `git fetch --unshallow`, after a shallow clone is deepened, or in any repo where the
+upgrade reported epics it could not date. It sweeps every epic still missing a registration date,
+recovers what the now-deeper history supports, and leaves the rest absent for the next run. It
+reports `<n> recovered, <n> unrecoverable`, and says so plainly when it wrote nothing.
+
+**Recovering a registration date is not a touch.** The per-record last-touched comparison excludes
+both timekeeping fields, so a sweep that fills in dates across an entire archive does not stamp
+every one of those epics as last-touched on the day you ran it — during the release migration or
+during a later standalone re-run.
+
 ## If an upgrade goes wrong — git is the rollback
 
 There is no undo verb, and there does not need to be one: `.conductor/state.json` is

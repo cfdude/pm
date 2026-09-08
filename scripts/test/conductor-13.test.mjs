@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { tmpRepo, run, readState, writeState, projectMd, parseBrief, expectFail, writeBatch, gitInitWithCommit, commitFiles } from "./helpers.mjs";
+import { AGENT_OUTCOMES } from "../lib/archive-gate.mjs";
 
 // ─────────────── the shared epic-flag registry (EPIC_FLAGS) ───────────────
 //
@@ -1234,7 +1235,13 @@ test("archiving with no --outcome is refused, naming the permitted outcomes", ()
   const err = expectFail(() => run(["update-epic", "cc-epic", "--status", "archived"], { cwd }));
   assert.ok(err, "an epic that ends without saying how is the silence this release removes");
   const msg = String(err.stderr || err.message);
-  for (const o of ["delivered", "killed", "superseded", "abandoned"]) assert.match(msg, new RegExp(o));
+  // ANCHORED TO THE ENUM, not a four-value subset of it. This was the identical shape 9a0dfb1
+  // repaired in conductor-18 and left standing at its sibling: a per-value substring loop passes
+  // whatever the enum's contents, so `declined` and `unreconstructable` joined it with nothing
+  // asserting the refusal names them. The joined alternation is exact — a value added to
+  // AGENT_OUTCOMES without reaching the refusal fails here.
+  assert.match(msg, new RegExp(AGENT_OUTCOMES.join("\\|")),
+    "the refusal must name the permitted outcomes in full, as the engine renders them");
   assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
 });
 

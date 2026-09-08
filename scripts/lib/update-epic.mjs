@@ -9,12 +9,13 @@ import {
 import { activate } from "./active-pointer.mjs";
 import { globalReviewMode } from "./rules.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
+import { reportSave } from "./save-report.mjs";
 import { noteEntry, parentError, parseFlags, parseLinkFlags, parseStoryFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
 import { archiveGate, AGENT_OUTCOMES } from "./archive-gate.mjs";
 import { deferralAssertion, isStoryDisposed, storyDisposition, storyDispositionError } from "./disposition.mjs";
 import { claimArtifacts } from "./source-artifacts.mjs";
-import { linkTypeVocabulary } from "./links.mjs";
+import { linkTypeVocabulary, mergeLinks } from "./links.mjs";
 
 // The flags update-epic recognizes. Anything else is a rejected error, not a
 // silent no-op — an unrecognized flag (e.g. a typo) used to parse, run, and
@@ -530,19 +531,10 @@ export function updateEpic() {
   // --link a --link b` the atomic replace the repair needs. Supplying alone appends; clearing
   // alone empties; together they replace.
   if (clearedLinks) epic.links = [];
-  if (suppliedLinks !== undefined) {
-    const merged = Array.isArray(epic.links) ? epic.links.slice() : [];
-    for (const l of suppliedLinks) {
-      // IDENTITY IS type + target. A repeat of an identity already recorded replaces THAT ENTRY,
-      // in place, keeping its position — it does not append a second row (a record listing one
-      // relationship twice disagrees with itself) and it does not discard the supplied reason
-      // (correcting a reason is what replacement made possible, and a dedup that merely dropped
-      // the repeat would remove the only path to it while reporting nothing changed).
-      const at = merged.findIndex(x => x && x.type === l.type && x.epic === l.epic);
-      if (at === -1) merged.push(l); else merged[at] = l;
-    }
-    epic.links = merged;
-  }
+  // IDENTITY IS type + target, and the rule lives in mergeLinks() (links.mjs) rather than here:
+  // it binds every write surface, and implemented at this one it reached neither `add-epic` nor
+  // `add-many`.
+  if (suppliedLinks !== undefined) epic.links = mergeLinks(epic.links, suppliedLinks);
   if (reviewMode !== undefined) epic.reviewMode = reviewMode;
   if (attributed.length) {
     if (!Array.isArray(epic.attributedCommits)) epic.attributedCommits = [];
@@ -660,11 +652,12 @@ export function updateEpic() {
   }
   // NOT an error, and not a success line either. The record is correct and nothing failed —
   // refusing would be wrong — but "updated" tells a reader something happened when nothing did.
-  if (saved && saved.unchanged) {
-    process.stderr.write(
-      `conductor: nothing changed on '${id}' — every value this invocation supplied is already ` +
-      "the value the record holds. Nothing was written.\n");
-    return;
-  }
-  process.stderr.write(`conductor: updated '${id}'\n`);
+  // Routed through the SHARED reporter rather than kept as this verb's own if/else: the rule
+  // binds the write surface, and a rule implemented once at the verb that introduced it is how
+  // twenty siblings came to print success on a save that wrote nothing.
+  reportSave(saved, {
+    changed: `conductor: updated '${id}'`,
+    unchanged: `conductor: nothing changed on '${id}' — every value this invocation supplied is ` +
+      "already the value the record holds. Nothing was written.",
+  });
 }

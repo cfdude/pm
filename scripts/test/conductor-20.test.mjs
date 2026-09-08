@@ -306,13 +306,30 @@ test("every settable epic field is declared clearable or declares why it is not"
       "`setOnly` reason. Absence of a marker is what this sweep exists to catch: an undeclared " +
       "field ships with no clearing path and nothing says that was a decision.");
   }
-  // And every nullable field is named in the document a user reads, not only in the registry —
-  // an unreachable clearing path and an undocumented one cost the same.
+  // And the CLEARABLE LIST a user reads is the registry's, not a hand-kept copy of it.
+  //
+  // SCOPED TO THE `--clear <field>` ROW, and that is the whole point. Asserting each nullable flag
+  // is named SOMEWHERE in commands/epic.md passes on the flag table alone — every one of these
+  // flags has its own row there because it can be SET — so the enumeration inside the `--clear`
+  // row could go stale without a single assertion moving. Both directions, because the
+  // one-directional version misses a flag that LOSES `nullable: true` while the doc keeps
+  // offering it.
   const doc = fs.readFileSync(path.join(new URL("../..", import.meta.url).pathname,
     "commands", "epic.md"), "utf8");
+  const clearRow = doc.split("\n").find(l => l.includes("`--clear <field>`"));
+  assert.ok(clearRow && clearRow.length > 200,
+    "the `--clear <field>` row was not located in commands/epic.md — the table moved, and this " +
+    "sweep is now checking nothing");
+  const { settableEpicFlags: settableFor } = await import("../lib/constants.mjs");
   for (const row of nullableEpicFlags("update-epic")) {
-    assert.ok(doc.includes(`\`${row.flag}\``) || doc.includes(`--${row.flag}`),
-      `--${row.flag} is declared nullable but commands/epic.md never names it`);
+    assert.ok(new RegExp(`\`${row.flag}\``).test(clearRow),
+      `--${row.flag} is declared nullable and the \`--clear <field>\` row in commands/epic.md ` +
+      "does not list it, so the document offers a smaller clearable set than the engine accepts");
+  }
+  for (const row of settableFor("update-epic").filter(r => typeof r.setOnly === "string")) {
+    assert.ok(!new RegExp(`\`${row.flag}\``).test(clearRow),
+      `--${row.flag} is declared SET-ONLY and the \`--clear <field>\` row lists it as clearable — ` +
+      "the document promises a clear the engine refuses by name");
   }
 });
 

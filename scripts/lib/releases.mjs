@@ -17,6 +17,7 @@
 
 import { epicFlagsFor, findRelease, releaseLine, releaseSummaries } from "./constants.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
+import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
 import { releaseDeferral, releaseDeferralError } from "./disposition.mjs";
@@ -152,9 +153,13 @@ export function release() {
     if (at === -1) rel.deferred.push(record); else rel.deferred[at] = record;
   }
 
-  saveState(state);
+  const saved = saveState(state);
   render();
-  process.stderr.write(`conductor: release '${id}' — ${releaseLine(releaseSummaries(state, state.epics).find(s => s.id === id))}\n`);
+  reportSave(saved, {
+    changed: `conductor: release '${id}' — ${releaseLine(releaseSummaries(state, state.epics).find(s => s.id === id))}`,
+    unchanged: `conductor: release '${id}' already held exactly what this invocation supplied — ` +
+      `${STATE_UNCHANGED}`,
+  });
 }
 
 // ─────────────────── the RELEASE-scope review gate (gh#126) ───────────────────
@@ -260,9 +265,12 @@ export function recordCrossSpecReview() {
   }
   rel.crossSpecReview = entry;
 
-  saveState(state);
+  const saved = saveState(state);
   render();
-  process.stderr.write(
-    `conductor: recorded cross-spec review '${verdict}' for release '${id}' ` +
-    `(${recorded.length} spec${recorded.length === 1 ? "" : "s"})\n`);
+  reportSave(saved, {
+    changed: `conductor: recorded cross-spec review '${verdict}' for release '${id}' ` +
+      `(${recorded.length} spec${recorded.length === 1 ? "" : "s"})`,
+    unchanged: `conductor: release '${id}' already carried this exact cross-spec verdict over the ` +
+      `same ${recorded.length} spec${recorded.length === 1 ? "" : "s"} — ${STATE_UNCHANGED}`,
+  });
 }

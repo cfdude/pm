@@ -7,6 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { execSync } from "node:child_process";
 import { defaultState, isInitialized, loadState, pushEpic, saveState, readStdin } from "./state.mjs";
+import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { stampVersion } from "./plugin-meta.mjs";
 import { render } from "./render.mjs";
 import { writeRules } from "./rules.mjs";
@@ -69,11 +70,15 @@ export function init() {
   if (isInitialized()) {
     process.stderr.write("conductor: already initialized (.conductor/state.json exists)\n");
   } else {
+    // save-report: exempt — the file does not exist on this branch (isInitialized() is false), so
+    // the first write of defaultState() cannot compare equal to a disk pre-image there is none of.
     saveState(defaultState());
     process.stderr.write("conductor: created .conductor/state.json\n");
   }
   ensureGitignore();
   sync(true);                 // pull in existing openspec changes + plans
+  // save-report: exempt — a version stamp inside init(), which prints its own outcome line once
+  // at the end; this write has no outcome line of its own to make true or false.
   { const s = loadState(); stampVersion(s); saveState(s); }
   const { platform } = resolveAndRecordPlatform();
   writeRules(platform);
@@ -604,7 +609,7 @@ export function sync(quiet = false) {
   const backfilled = backfillArchive(state);
   if (firstBackfill) state.archiveBackfilledAt = new Date().toISOString();
   reconcileArchived(state);
-  saveState(state);
+  const saved = saveState(state);
   // Said even under `quiet`, which init passes to suppress routine per-epic chatter. The
   // historical backfill is the one thing here that MUST NOT be quiet: it alters a repo's epic
   // counts, and those counts are the input to every effectiveness measurement taken from
@@ -617,7 +622,13 @@ export function sync(quiet = false) {
       : `conductor: registered ${backfilled.length} newly archived change(s): ${backfilled.join(", ")}\n`);
   }
   if (!quiet) {
-    process.stderr.write(`conductor: synced (${added} new epic(s) added as untriaged)\n`);
+    reportSave(saved, {
+      changed: `conductor: synced (${added} new epic(s) added as untriaged)`,
+      // `added` counts registrations, and it is NOT the same question as "did the file change":
+      // a sync that registers nothing still rewrites state when it heals an archive drift or
+      // stamps the backfill marker. The save's own answer is the only one that is true of the file.
+      unchanged: `conductor: synced (${added} new epic(s) added as untriaged) — ${STATE_UNCHANGED}`,
+    });
     // What sync instructs EXTERNALLY follows direction. The engine performs none of it — it
     // reads no tracker and never will — but saying which branch applies is the difference
     // between an agent doing the inward pull and an agent inventing one for a repo that has

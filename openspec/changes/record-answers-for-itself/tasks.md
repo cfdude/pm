@@ -221,9 +221,13 @@
 
 ## 8. Documentation and release
 
-- [ ] 8.1 Update `README.md`, `commands/epic.md`, `commands/status.md`, `commands/next.md` and the
-      `conductor` skill. `commands/status.md` is one of the three files the drift guard reads and
-      was missing from the first draft's doc list
+- [ ] 8.1 Update `README.md`, `commands/epic.md`, `commands/status.md`, `commands/next.md`,
+      `commands/upgrade.md` and the `conductor` skill. `commands/status.md` is one of the three
+      files the drift guard reads and was missing from the first draft's doc list.
+      `commands/upgrade.md` was added by Gate 2: `recover-created-at` is a DISPATCHED SUBCOMMAND
+      and shipped with no user-facing documentation at all, and the migration section of the
+      upgrade doc is its home — it is not a slash command, so `commands/recover-created-at.md`
+      would have added a product surface this change never proposed
 - [ ] 8.2 Confirm `docs/parity-ledger.json` claims every file this change adds under `commands/`,
       `skills/`, `agents/` or `.claude-plugin/` — `parity.test.mjs` fails CI otherwise
 - [ ] 8.3 Sync the Mintlify site at `pm-plugin.dev` in the same PR cycle, per `mintlify-doc-sync`

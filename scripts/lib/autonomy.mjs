@@ -4,6 +4,7 @@
 // lib/add-epic.mjs's parseFlags() -- see the design doc.
 
 import { isInitialized, loadState, saveState } from "./state.mjs";
+import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
 import { KNOWN_AUTONOMY_LEVELS, KNOWN_PREAUTHORIZE_CATEGORIES } from "./constants.mjs";
@@ -95,7 +96,11 @@ export function setAutonomy() {
   }
 
   epic.autonomy = a;
-  saveState(state);
+  const saved = saveState(state);
   render();
-  process.stderr.write(`conductor: autonomy for '${id}' is now level=${a.level}\n`);
+  reportSave(saved, {
+    changed: `conductor: autonomy for '${id}' is now level=${a.level}`,
+    unchanged: `conductor: autonomy for '${id}' already reads level=${a.level} with exactly the ` +
+      `pre-authorizations and context this invocation supplied — ${STATE_UNCHANGED}`,
+  });
 }

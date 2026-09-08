@@ -4,6 +4,7 @@
 // corrected circular-imports section (this is NOT circular).
 
 import { isInitialized, loadState, saveState } from "./state.mjs";
+import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { removeSecondaryTracker, secondaryTrackerKey, upsertSecondaryTracker, writeRules } from "./rules.mjs";
 import { render } from "./render.mjs";
@@ -59,10 +60,14 @@ export function setTracker() {
         process.stderr.write(`conductor: no matching secondary tracker (${system}${repo ? ` ${repo}` : ` ${projectKey}`})\n`);
         process.exit(1);
       }
-      saveState(state);
+      const saved = saveState(state);
       writeRules(resolvePlatform({}, state));
       render();
-      process.stderr.write(`conductor: secondary tracker removed (${system}${repo ? ` ${repo}` : ` ${projectKey}`})\n`);
+      reportSave(saved, {
+        changed: `conductor: secondary tracker removed (${system}${repo ? ` ${repo}` : ` ${projectKey}`})`,
+        unchanged: `conductor: no secondary tracker matched (${system}${repo ? ` ${repo}` : ` ${projectKey}`}) — ` +
+          `${STATE_UNCHANGED} (the rules block and PROJECT.md were re-rendered)`,
+      });
       return;
     }
     const entry = { system, role: "secondary" };
@@ -77,10 +82,14 @@ export function setTracker() {
       .some(e => secondaryTrackerKey(e) === secondaryTrackerKey(entry));
     if (!existingSecondary && entry.direction === undefined) entry.direction = "inward";
     upsertSecondaryTracker(state, entry);
-    saveState(state);
+    const saved = saveState(state);
     writeRules(resolvePlatform({}, state));
     render();
-    process.stderr.write(`conductor: secondary tracker set (${entry.system}${entry.repo ? ` ${entry.repo}` : ` ${entry.projectKey}`})\n`);
+    reportSave(saved, {
+      changed: `conductor: secondary tracker set (${entry.system}${entry.repo ? ` ${entry.repo}` : ` ${entry.projectKey}`})`,
+      unchanged: `conductor: that secondary tracker was already recorded exactly so — ` +
+        `${STATE_UNCHANGED} (the rules block and PROJECT.md were re-rendered)`,
+    });
     return;
   }
 
@@ -120,8 +129,12 @@ export function setTracker() {
   // outward` is the one-flag remedy.
   if (isNew && t.direction === undefined) t.direction = "inward";
   state.tracker = t;
-  saveState(state);
+  const saved = saveState(state);
   writeRules(resolvePlatform({}, state));   // refresh CLAUDE.md so the agent sees its new tracker-sync responsibility
   render();
-  process.stderr.write(`conductor: tracker set (${t.system}${t.projectKey ? ` ${t.projectKey}` : ""})\n`);
+  reportSave(saved, {
+    changed: `conductor: tracker set (${t.system}${t.projectKey ? ` ${t.projectKey}` : ""})`,
+    unchanged: `conductor: the primary tracker was already recorded exactly so — ${STATE_UNCHANGED} ` +
+      "(the rules block and PROJECT.md were re-rendered)",
+  });
 }

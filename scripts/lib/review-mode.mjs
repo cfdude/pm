@@ -3,6 +3,7 @@
 // dependency on lib/rules.mjs's writeRules() -- NOT circular, see the design doc.
 
 import { isInitialized, loadState, saveState } from "./state.mjs";
+import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { writeRules } from "./rules.mjs";
 import { render } from "./render.mjs";
@@ -25,8 +26,14 @@ export function setReviewMode() {
   }
   const state = loadState();
   state.reviewMode = mode;
-  saveState(state);
+  const saved = saveState(state);
   writeRules(resolvePlatform({}, state));   // refresh CLAUDE.md so the agent sees the new active mode
   render();
-  process.stderr.write(`conductor: review mode is now '${mode}'\n`);
+  reportSave(saved, {
+    changed: `conductor: review mode is now '${mode}'`,
+    // NAMES THE STATE FILE, not the invocation: the rules block and PROJECT.md were rewritten
+    // either way, so "nothing changed" alone would be false about what this verb just did.
+    unchanged: `conductor: review mode was already '${mode}' — ${STATE_UNCHANGED} ` +
+      "(the rules block and PROJECT.md were re-rendered)",
+  });
 }

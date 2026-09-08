@@ -3,6 +3,7 @@
 // dependencies only.
 
 import { isInitialized, loadState, saveState } from "./state.mjs";
+import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { epicReferences } from "./links.mjs";
 import { tombstoneArtifacts } from "./source-artifacts.mjs";
@@ -101,10 +102,13 @@ export function removeEpic() {
 
   state.epics = state.epics.filter(e => !toRemove.has(e.id));
 
-  saveState(state);
+  const saved = saveState(state);
   render();
   const removedIds = [...toRemove];
-  process.stderr.write(`conductor: removed ${removedIds.length} epic(s): ${removedIds.join(", ")}\n`);
+  reportSave(saved, {
+    changed: `conductor: removed ${removedIds.length} epic(s): ${removedIds.join(", ")}`,
+    unchanged: `conductor: nothing matched for removal — ${STATE_UNCHANGED}`,
+  });
   if (affected.length) {
     process.stderr.write(
       `conductor: stripped ${affected.length} dangling reference(s) to removed epic(s), held by: ` +

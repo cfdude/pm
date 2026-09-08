@@ -4,6 +4,7 @@
 
 import path from "node:path";
 import { isInitialized, loadState, saveState } from "./state.mjs";
+import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { pluginVersion, newestInstalledVersion, cmpVer, changelogBetween, stampVersion } from "./plugin-meta.mjs";
 import { reconcileArchived } from "./epic-progress.mjs";
 import { writeRules } from "./rules.mjs";
@@ -211,11 +212,20 @@ export function upgrade() {
   }
   reconcileArchived(state);
   stampVersion(state);
-  saveState(state);
+  const saved = saveState(state);
   const rulesFile = path.basename(writeRules(resolvePlatform({}, state)));
   render();
   ensureGitignore();
-  process.stderr.write(`conductor: upgraded (${applied} migration(s)), pmVersion now ${state.pmVersion || "unknown"}\n`);
+  // STILL "upgraded", and still exit zero: state-write-guard's own re-run scenario ends "and the
+  // save reports success", and `upgrade` is the byte-idempotent verb that scenario is written
+  // about. What changes is the claim about the FILE — a second run rewrote nothing, and the
+  // rules block and PROJECT.md were re-rendered regardless.
+  reportSave(saved, {
+    changed: `conductor: upgraded (${applied} migration(s)), pmVersion now ${state.pmVersion || "unknown"}`,
+    unchanged: `conductor: upgraded (${applied} migration(s)), pmVersion now ` +
+      `${state.pmVersion || "unknown"} — ${STATE_UNCHANGED} ` +
+      "(the rules block and PROJECT.md were re-rendered)",
+  });
 
   // Surface WHAT the upgrade brought, not just that it happened — close the
   // post-upgrade blindspot. Print the CHANGELOG delta for (stamped, running].

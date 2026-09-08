@@ -3,6 +3,7 @@
 // One-directional dependencies only.
 
 import { isInitialized, loadState, saveState, readStdin } from "./state.mjs";
+import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
 
 /** `set-gate-guard <on|off>` — repo-level opt-in for a hard PreToolUse guard blocking
@@ -59,9 +60,12 @@ export function setGateGuard() {
   }
   const state = loadState();
   state.gateGuard = (val === "on");
-  saveState(state);
+  const saved = saveState(state);
   render();
-  process.stderr.write(`conductor: gate guard is now ${val}\n`);
+  reportSave(saved, {
+    changed: `conductor: gate guard is now ${val}`,
+    unchanged: `conductor: gate guard was already ${val} — ${STATE_UNCHANGED}`,
+  });
 }
 
 /** PreToolUse hook body: block Edit/Write/NotebookEdit while the active epic still owes a

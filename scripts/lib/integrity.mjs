@@ -412,8 +412,9 @@ export const CHECKS = [
      *  that guessed would be writing a disposition nobody made.
      *
      *  Measured across 27 distinct upstreams before this shipped: 26 epics sit in `status:
-     *  "done"`. `KNOWN_STATUSES` is enforced on WRITE — `add-epic.mjs:353`, `update-epic.mjs:105`
-     *  and `add-many.mjs:107` all refuse it — so nothing here arrived through a verb; the read
+     *  "done"`. `KNOWN_STATUSES` is enforced on WRITE — every one of `add-epic.mjs`,
+     *  `update-epic.mjs` and `add-many.mjs` refuses a status outside it (`rg -n 'KNOWN_STATUSES'
+     *  scripts/lib/`) — so nothing here arrived through a verb; the read
      *  side has always accepted whatever was stored, and must keep doing so or an existing state
      *  file stops loading.
      *

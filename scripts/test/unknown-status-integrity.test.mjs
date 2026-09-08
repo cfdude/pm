@@ -91,9 +91,10 @@ test("the consequence the finding states is TRUE of the engine, not prose about 
   // waiting on it — so the epic in the undefined status is the one that is lifted, and it stays
   // lifted for as long as the value persists because the edge can never read satisfied.
   //
-  // NOTE the direction: the delta spec says the lift falls on "everything downstream of it",
-  // which is the opposite end of the same edge. Reported as a finding, not silently mirrored —
-  // a finding whose stated mechanism points the wrong way is worse than one that says less.
+  // THE DIRECTION IS SETTLED, and this assertion is what settled it. An earlier draft of the
+  // delta spec said the lift fell on "everything downstream of it", which is the opposite end of
+  // the same edge; the spec was corrected to match what the engine measurably does rather than
+  // this test being bent to match the spec.
   const stuck = epic("stuck", { status: "done", priority: "P3" });
   const waiting = epic("waiting", { priority: "P0", links: [{ type: "depends-on", epic: "stuck" }] });
   assert.equal(effectivePriorityOf([stuck, waiting]).get("stuck"), "P0",
