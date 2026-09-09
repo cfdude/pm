@@ -66,10 +66,13 @@ The exclusion is deliberately written as those two cases rather than as "any
 outcome other than `delivered`": `unknown` is the value the engine stamps when nobody was asked, and
 its reason is a path name, not an explanation of why the work did not complete — the property the
 exclusion above actually rests on. Scoping these checks to `delivered` would make them inert, which
-is measurable rather than arguable: this repository holds 68 archived epics, 3 with a passing
-Gate 2, so after the migration that stamps `delivered` only where such a verdict exists, a
-`delivered`-only zero-ticked check has zero candidates in the repository whose live data this
-requirement cites as its evidence.
+is measurable rather than arguable. The migration stamps `delivered` only where a passing Gate 2
+already exists, and in this repository it did so for exactly **3** archived epics (measured
+2026-09-08; 149 archived in total, of which 9 carry a passing Gate 2 — the two counts are
+different populations and only the first is what the migration acted on). Every candidate a
+zero-ticked check would report sits outside that set of 3, so scoping the check to `delivered`
+leaves it with none. The relative claim is what this requirement rests on: the `delivered` set is
+a strict and very small subset of the archive, so a `delivered`-only check measures nothing.
 
 #### Scenario: A verdict's range does not contain the commits its note cites
 
@@ -119,7 +122,7 @@ question, answered by the staleness gate and refused at the archive, never guess
 - **THEN** the check reports the epic and its source — four epics in this repository qualify today,
   archived at `0/17`, `0/99`, `0/37` and `0/34`, none carrying a passing Gate 2 and so none
   `delivered` after the migration. Three of the four are the date-prefixed superpowers-lane
-  registrations of ids also held under the openspec lane, which the dual-lane check below reports
+  registrations of ids also held under another lane, which the dual-lane check below reports
   separately once that check keys on the date-prefix-stripped id; the fourth,
   `2026-07-29-platform-aware-rules-block`, is not in the collision set at all, so this check has a
   live candidate that is not an artifact of another finding
@@ -139,9 +142,12 @@ question, answered by the staleness gate and refused at the archive, never guess
 
 > Identity for this check MUST be the date-prefix-stripped id, not literal equality. Measured on
 > this repository: **zero** ids collide literally, while **four changes** are registered twice —
-> `conductor-mjs-module-split` (openspec) against `2026-07-21-conductor-mjs-module-split`
-> (superpowers), and the same shape for `platform-parity-mechanism`,
-> `epic-hierarchy-orchestration` and `edd-harness-agent-behavior-testing`. A literal-equality check
+> `conductor-mjs-module-split` (openspec) and `platform-parity-mechanism` (openspec), each against
+> its date-prefixed superpowers-lane twin; and `epic-hierarchy-orchestration` and
+> `edd-harness-agent-behavior-testing`, each held under the **decision** lane against the same
+> superpowers-lane twin. The pairing shape is identical in all four; the lane on the non-prefixed
+> side is not, which is why the check reports the lanes it finds rather than assuming a pair.
+> A literal-equality check
 > reports none of them while claiming four exist — a check that reads as coverage and measures
 > nothing, which is the defect class this capability exists to end.
 

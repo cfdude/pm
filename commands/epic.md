@@ -65,6 +65,15 @@ because nothing ever comes back to add it. It REPLACES wholesale on each set, an
 `--notes` — the two are distinct and neither substitutes for the other; see the paragraph under
 `update-epic`.
 
+**Registration and last-touched dates are stamped for you; no flag sets either.** From 0.40.0 on,
+every epic carries `createdAt`, written by `pushEpic()` — the single sink every creation surface
+routes through, so a new surface inherits the stamp instead of having to remember it. `touchedAt`
+advances inside `saveState()` on any write that genuinely changes the epic's stored content, and
+on no write that changes nothing. Both are ABSENT-TOLERANT: an epic registered before 0.40.0 has
+no registration date and absence there means UNKNOWN — never today's date, never another field's.
+`recover-created-at` (see `/pm:upgrade`) backfills the first from git history where the history
+holds the evidence, and leaves it absent where it does not.
+
 **Every value-bearing flag is REFUSED when its value is missing or blank, on every command that
 accepts it** — `add-epic`, `update-epic`, `record-gate-review`, `record-cross-spec-review` and
 `release` alike, plus the equivalent key in an `add-many` batch document. `--clear-links`,

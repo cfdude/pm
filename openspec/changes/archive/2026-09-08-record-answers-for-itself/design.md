@@ -79,7 +79,7 @@ comparison at that granularity to reuse. `state.mjs:196-201` is a whole-state bo
 time, after the caller has already mutated the epic, with `revision` as its *only* exclusion.
 Stamping before it makes `nextBody` differ unconditionally, the short-circuit never fires, and the
 byte-idempotence three shipped tests assert (`conductor-02:40`, `conductor-15:107`,
-`conductor-01:80`) breaks for every verb. Per-caller stamping is infeasible at 69 `saveState` call
+`conductor-01:80`) breaks for every verb. Per-caller stamping is infeasible at 31 `saveState` call
 sites.
 
 The scenario is implementable at exactly one site: stamp **after** the early return, comparing each
@@ -230,3 +230,33 @@ which no change-scoped review could have found because they were conflicts *betw
 **This change is its own first test of the rule it adds.** Required task item 1 gains the
 inverse-operation obligation, and this change must satisfy it — including for the operations it adds
 itself.
+
+### The inverse enumeration, recorded late
+
+*Added after the change archived, because it was missing and required item 1 demands it. A
+fresh-context Gate 2 reviewer found the omission — the obligation was stated one paragraph above
+and never discharged for this change's own operations, which is the same absent-edit shape the
+obligation exists to catch, one level up.*
+
+| Operation added | Inverse | Shipped? |
+| --- | --- | --- |
+| `--clear <field>` | it IS the inverse of the eight setters | n/a |
+| `--link` appends | `--clear-links`, now combinable in one write | yes |
+| `unconsidered-outcomes` | read-only; nothing to un-do | n/a |
+| `--outcome unreconstructable` | `--correct-disposition`, which predates this change | yes |
+| `epic-in-undefined-status` | read-only; reports, never repairs | n/a |
+| `touchedAt` stamp | **not shipped, and justified**: engine-maintained, re-stamped by the next write that changes the record, so clearing it would be undone immediately and answers no question |
+| `createdAt` / `recover-created-at` | **not shipped, and NOT justified** | no |
+
+The last row is a genuine gap and is recorded as one rather than argued away. `recover-created-at`
+never overwrites a date already present — correct on its own, so a re-run after fetching more
+history cannot clobber a good answer — and no verb removes one. Together those mean a `createdAt`
+recovered wrongly is permanent, correctable only by the hand-edit this tool forbids everywhere
+else. It can be recovered wrongly: a reused id dates to the first registration, and a wholesale
+`state.json` rewrite or a history rewrite dates every epic to that event. `pm` itself was extracted
+by `git subtree split`, so that is not hypothetical.
+
+Filed as `cfdude/pm#181` rather than folded in here: the release had closed and its Gate 2 passed,
+and shipping an unreviewed flag past a passing gate is worse than a filed gap. The sibling instance
+the same review found — `release --member`/`--defer` with no `--unmember`/`--undefer` — is
+`cfdude/pm#178`.

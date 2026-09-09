@@ -54,29 +54,6 @@ epics in this repository carrying no date of any kind.
 * **The emitted call-site sweep now obliges the inverse operation** — set against unset, add
   against remove, append against replace, enable against disable, grant against revoke — as a
   numbered required task item, a declared `mustSay` claim, and in all three mirrored surfaces.
-
-### Changed
-
-* **`--link` appends instead of replacing.** A link's identity is its type and target; the reason
-  is not part of it, so re-supplying an identity updates the reason in place rather than
-  duplicating it or silently discarding the correction. `--clear-links` and `--link` are no longer
-  mutually exclusive, so the documented repair stays one atomic write. All six sites documenting
-  the old behaviour changed with it, including two the engine emits at runtime.
-* **A write that changes nothing says so**, across the whole write surface rather than one verb:
-  26 `saveState` call sites report through a shared reporter, four carry a declared exemption, and
-  a per-call-site source scan fails the build on a fifth that does neither.
-
-### Fixed
-
-* `declined` had been added to the outcome enum in an earlier release, reached the engine, and
-  reached **none** of five documented surfaces — including a test asserting the four-value list
-  that passed by prefix match, so the guard for this drift was blind to it. All five repaired, and
-  the emitted enumerations now render from `AGENT_OUTCOMES`.
-* Two live tests asserted that `--link` replaces; both would have failed CI on the change above.
-
-
-### Added
-
 * **`/pm:upgrade` now tells you to commit what it just rewrote.** The verb re-stamps
   `state.json`, rewrites the platform's rules block, re-renders `PROJECT.md` and the render
   stamp, and back-fills `.gitignore` — and said nothing about any of it reaching git. A sweep of
@@ -99,17 +76,34 @@ epics in this repository carrying no date of any kind.
   was already latent — `writeRules` rewrites byte-identical content on a repeat run, which any
   mtime- or write-site-keyed check would report as a change.
 
+### Changed
+
+* **`--link` appends instead of replacing.** A link's identity is its type and target; the reason
+  is not part of it, so re-supplying an identity updates the reason in place rather than
+  duplicating it or silently discarding the correction. `--clear-links` and `--link` are no longer
+  mutually exclusive, so the documented repair stays one atomic write. All six sites documenting
+  the old behaviour changed with it, including two the engine emits at runtime.
+* **A write that changes nothing says so**, across the whole write surface rather than one verb:
+  27 `saveState` call sites report through a shared reporter, four carry a declared exemption, and
+  a per-call-site source scan fails the build on a fifth that does neither.
+
 ### Fixed
 
+* `declined` had been added to the outcome enum in an earlier release, reached the engine, and
+  reached **none** of five documented surfaces — including a test asserting the four-value list
+  that passed by prefix match, so the guard for this drift was blind to it. All five repaired, and
+  the emitted enumerations now render from `AGENT_OUTCOMES`.
+* Two live tests asserted that `--link` replaces; both would have failed CI on the change above.
 * **A read-only verb no longer warns that it is WRITING a different repository.** Running
   `integrity` with `CLAUDE_PROJECT_DIR` pointed at another repo printed
   `⚠ WRITING A DIFFERENT REPOSITORY` — and then, two lines later, `integrity`'s own output read
   *"Findings are reported, never repaired: nothing here writes state."* The two contradicted each
   other, and the verb genuinely wrote nothing (state.json md5 identical before and after, working
   tree clean). The warning is worth shouting — pointing the engine at another repo and mutating
-  it by accident is exactly the mistake it exists for — which is why crying wolf on the **16**
-  read-only verbs is the defect: it trains a reader to skim past it on the **32** where it is the
-  difference between inspecting another repo and mutating it.
+  it by accident is exactly the mistake it exists for — which is why crying wolf on the **17**
+  read-only verbs is the defect: it trains a reader to skim past it on the **33** where it is the
+  difference between inspecting another repo and mutating it. (16 and 32 when the fix was written;
+  this release's two new read-only verbs move both.)
 
   Gated on `verb-effects.mjs`, which already declared `effect: "read-only" | "mutates"` for every
   verb and already had `integrity` right — **no new list of verb names**, which would go stale the

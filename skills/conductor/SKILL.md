@@ -627,7 +627,8 @@ it waits on.
 - `state.json` always wins over `PROJECT.md` — just re-render.
 - Want to know what the index is HIDING? `integrity` — a read-only audit reporting records that
   cannot be true (an archived epic with nothing ticked, one change under two lanes, a verdict
-  that does not reach the commits it cites, an archive directory with no epic). It reports every
+  that does not reach the commits it cites, an archive directory with no epic, an epic in a status
+  the engine does not define — `epic-in-undefined-status`). It reports every
   check with its count including zeros, writes no state, blocks nothing and repairs nothing: each
   finding's remediation is a command you run.
 - An epic registered before pm carried a clock has NO registration date, and absence there means
@@ -639,7 +640,11 @@ it waits on.
   that later fetches more history recovers what it could not see before. It never overwrites a date
   already present and it repairs nothing else: an epic sitting in an undefined status is dated like
   any other and left in that status, because which status it should be is a judgment about what
-  happened to the work. The 0.40.0 upgrade invokes it once for you.
+  happened to the work. The 0.40.0 upgrade invokes it once for you. RECOVERING A DATE IS NOT A
+  TOUCH: the sweep writes `createdAt` without advancing `touchedAt`, because the last-touched
+  stamp answers when the epic's own content last changed and a backfill of its registration date
+  is not that. `touchedAt` itself needs no verb — every write that genuinely changes an epic
+  advances it, and one that changes nothing leaves it alone.
 - Which ARCHIVED epics did nobody actually decide about? `unconsidered-outcomes` — a read-only
   list of every archived epic whose disposition is an ENGINE STAMP carrying `unknown`, i.e. the
   engine recorded that nobody was asked. Each row names WHO stamped it (the migration and the
@@ -1067,7 +1072,15 @@ gateGuard?    : boolean — repo-level PreToolUse guard toggle; does NOT gate th
 laneRouting?  : { overrides: [{ match, lane }] } — optional per-repo lane overrides, checked
                 before the generic lane heuristic (see "Lane routing overrides" above);
                 set via set-lane-routing, looked up via suggest-lane
-epics[]       : { id, title, priority, status, role, lane, parent?, externalId?, externalUrl?, planPath?, stories[]?, links[], reconcileNeeded?, autonomy?, gateReview?, attributedCommits?, withdrawnCommits? }
+epics[]       : { id, title, priority, status, role, lane, parent?, externalId?, externalUrl?, planPath?, stories[]?, links[], reconcileNeeded?, autonomy?, gateReview?, attributedCommits?, withdrawnCommits?, createdAt?, touchedAt? }
+createdAt?    : ISO stamp written by `pushEpic()` — the single sink every epic creation routes
+                through — at the moment the epic is registered. ABSENT means UNKNOWN, never
+                today and never another field's value; `recover-created-at` backfills it from
+                git history where the history holds the evidence.
+touchedAt?    : ISO stamp advanced inside `saveState()` on each epic whose stored content
+                actually changed, compared AFTER the no-op early return and with both
+                timekeeping fields excluded from that comparison — so a write that changes
+                nothing advances nothing. Absent on every epic untouched since 0.40.0.
 withdrawnCommits? : [{sha, reason, withdrawnAt}] — attributions CORRECTED away, via
                 `update-epic <id> --withdraw-commit <sha> --withdrawal-reason "<why>"`.
                 attributedCommits stays append-only (its last entry is the endpoint a Gate 2

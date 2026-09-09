@@ -15,7 +15,7 @@ identity comparison has already decided the save is not a no-op, and SHALL be de
 each record against the disk pre-image the comparison has already read, MATCHED BY THE RECORD'S
 OWN IDENTIFIER RATHER THAN BY POSITION — a verb that removes a record shifts every record after it,
 so an index-matched comparison would report all of them as changed and stamp them — not by a second notion of
-"changed" maintained elsewhere, and not by the callers, of which there are 69.
+"changed" maintained elsewhere, and not by the callers, of which the shipped engine has 31.
 
 That per-record comparison SHALL EXCLUDE the timekeeping fields themselves — the registration date
 and the last-touched date — exactly as the whole-body comparison excludes `revision`, and for the

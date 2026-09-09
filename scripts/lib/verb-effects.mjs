@@ -16,7 +16,7 @@
 //     as a write.
 //
 // A `--read-only` enforcement flag was considered and DECLINED. It would have to be threaded
-// through or sniffed from argv at forty verbs, and it answers the question at call time for a
+// through or sniffed from argv at fifty verbs, and it answers the question at call time for a
 // caller who already has to trust the flag was wired up; the CI-time behavioural check answers
 // #85's actual need — "a flag survives someone adding a write to a verb that used to be safe" —
 // without shipping anything.

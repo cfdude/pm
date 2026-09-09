@@ -97,5 +97,13 @@ date.
 - **THEN** no already-present date changes
 
 #### Scenario: The migration does not stamp last-touched
-- **WHEN** the release migration runs over a state file of pre-existing epics
-- **THEN** no epic carries a last-touched date as a result of the migration's own write
+- **WHEN** the release migration runs over a state file of pre-existing epics and the 0.40.0 entry
+  is the only pending one
+- **THEN** no epic carries a last-touched date as a result of that entry's own write
+
+> Scoped to the 0.40.0 entry deliberately. `upgrade()` applies EVERY pending migration plus the
+> archive-drift heal to one in-memory state and calls `saveState` once, so a repository lagging
+> far enough back runs an earlier entry in the same write — and an epic that entry genuinely
+> modified WAS touched. The claim being made is about this entry, not about the save it happens to
+> share. The general form of it is the delta-shaped one the sibling scenario already states: a
+> record whose only change is a recovered registration date is not touched.

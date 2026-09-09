@@ -183,7 +183,7 @@
 
 ## 7. Gate procedure — required task items, carried into both gates
 
-- [ ] 7.1 **Call-site completeness sweep, INCLUDING INVERSE OPERATIONS.** Enumerate all call sites
+- [x] 7.1 **Call-site completeness sweep, INCLUDING INVERSE OPERATIONS.** Enumerate all call sites
       mechanically (`rg`, never from memory); state where each rule holds and where it does not;
       justify every omission. A guard at one call site with an untouched sibling is a FINDING even
       though the unedited site never appears in the diff. **Then enumerate the INVERSE of every
@@ -192,47 +192,49 @@
       `createdAt` and `touchedAt` are written, read and REMOVED. Named call sites already known:
       `--clear` is repeatable and `repeatableFlagNames()` is global, so `set-lane-routing --clear`
       (`constants.mjs:461`, consumed at `lane-routing.mjs:37` by truthiness) is in scope
-- [ ] 7.2 **Verify against the commit, not the working tree.** For every task run
+- [x] 7.2 **Verify against the commit, not the working tree.** For every task run
       `git show --stat <that task's sha>` and assert every file the task claims appears in THAT
       commit
-- [ ] 7.3 **Declare lifecycle bookkeeping.** Every task in this list that is bookkeeping about the
+- [x] 7.3 **Declare lifecycle bookkeeping.** Every task in this list that is bookkeeping about the
       change's own lifecycle rather than its work carries the literal `<!-- pm:lifecycle -->` on its
       task line — 0.1, 8.6 and 8.7 as authored, plus the archive task. The engine infers this from
       nothing else
-- [ ] 7.4 **Attribute every commit to its epic** at the moment it is made:
+- [x] 7.4 **Attribute every commit to its epic** at the moment it is made:
       `update-epic record-answers-for-itself --attribute-commit <sha>`. Attribute forward only. The
       archive commit is excluded and MUST NOT be attributed
-- [ ] 7.5 **Cross-spec review before `/opsx:apply`.** FIVE delta specs, so this gate is mandatory.
+- [x] 7.5 **Cross-spec review before `/opsx:apply`.** FIVE delta specs, so this gate is mandatory.
       Two fresh-context reviewers, different lenses (review mode `thorough`), the six questions:
       contradiction, double ownership, unmeetable requirements, gaps against the proposal,
       vocabulary forks, shared chokepoints. Split BLOCKS from POLISH, fix the BLOCKS, decline most
       POLISH with reasons. Record it:
       `record-cross-spec-review 0.40.0 --verdict pass|fail --reviewer "<identity>"` — requires 0.1
-- [ ] 7.6 **Gate 1 — spec review before code.** Fresh-context reviewers over the artifacts by file
+- [x] 7.6 **Gate 1 — spec review before code.** Fresh-context reviewers over the artifacts by file
       path. Fix Critical and Important, re-validate. FIRST ROUND COMPLETE: four reviewers, four
       FAILs, 13 BLOCKS; this document is the rewrite. A second round runs against the rewrite
-- [ ] 7.7 **Gate 2 — implementation review, committed, before docs.** Full `BASE..HEAD` diff, two
+- [x] 7.7 **Gate 2 — implementation review, committed, before docs.** Full `BASE..HEAD` diff, two
       independent fresh-context reviewers under `thorough`. Record with `record-gate-review`
-- [ ] 7.8 **End work by recording a disposition** for every member epic, in one invocation carrying
-      both halves. Never end work by removing the record
-- [ ] 7.9 **Route what the work taught you** — a practice becomes an epic with its evidence;
+- [x] 7.8 <!-- pm:lifecycle --> **End work by recording a disposition** for every member epic, in one invocation carrying
+      both halves. Never end work by removing the record. The last member is this change itself, so
+      the final invocation IS the archive — lifecycle bookkeeping about this change's own ending,
+      the same class as 8.7 <!-- pm:lifecycle -->
+- [x] 7.9 **Route what the work taught you** — a practice becomes an epic with its evidence;
       tooling friction becomes a `/pm:feedback` filing; a process failure becomes a lesson file in
       `docs/lessons/`. Name which of the three each is out loud
 
 ## 8. Documentation and release
 
-- [ ] 8.1 Update `README.md`, `commands/epic.md`, `commands/status.md`, `commands/next.md`,
+- [x] 8.1 Update `README.md`, `commands/epic.md`, `commands/status.md`, `commands/next.md`,
       `commands/upgrade.md` and the `conductor` skill. `commands/status.md` is one of the three
       files the drift guard reads and was missing from the first draft's doc list.
       `commands/upgrade.md` was added by Gate 2: `recover-created-at` is a DISPATCHED SUBCOMMAND
       and shipped with no user-facing documentation at all, and the migration section of the
       upgrade doc is its home — it is not a slash command, so `commands/recover-created-at.md`
       would have added a product surface this change never proposed
-- [ ] 8.2 Confirm `docs/parity-ledger.json` claims every file this change adds under `commands/`,
+- [x] 8.2 Confirm `docs/parity-ledger.json` claims every file this change adds under `commands/`,
       `skills/`, `agents/` or `.claude-plugin/` — `parity.test.mjs` fails CI otherwise
-- [ ] 8.3 Sync the Mintlify site at `pm-plugin.dev` in the same PR cycle, per `mintlify-doc-sync`
-- [ ] 8.4 Bump `.claude-plugin/plugin.json` to 0.40.0 and add the `CHANGELOG.md` entry
-- [ ] 8.5 Full suite green — every test, including ones this change did not write
-- [ ] 8.6 Record the release's member epics and any deliberate exclusions on the 0.40.0 object
+- [x] 8.3 Sync the Mintlify site at `pm-plugin.dev` in the same PR cycle, per `mintlify-doc-sync`
+- [x] 8.4 Bump `.claude-plugin/plugin.json` to 0.40.0 and add the `CHANGELOG.md` entry
+- [x] 8.5 Full suite green — every test, including ones this change did not write
+- [x] 8.6 Record the release's member epics and any deliberate exclusions on the 0.40.0 object
       created in 0.1 <!-- pm:lifecycle -->
-- [ ] 8.7 Archive this change <!-- pm:lifecycle -->
+- [x] 8.7 Archive this change <!-- pm:lifecycle -->

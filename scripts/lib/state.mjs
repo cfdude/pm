@@ -205,7 +205,7 @@ function comparableEpic(epic) {
  *  exclusion, so a stamp applied BEFORE it makes every save differ from disk unconditionally, the
  *  short-circuit never fires, and byte-idempotence breaks for every verb — three shipped tests
  *  assert it (conductor-02:40, conductor-15:107, conductor-01:80). Stamping per CALLER is the only
- *  other shape and it is infeasible across 69 saveState call sites, which is the same enumeration
+ *  other shape and it is infeasible across the engine's 31 saveState call sites, which is the same enumeration
  *  argument pushEpic() above is bound by.
  *
  *  Records are matched BY ID and never by position: remove-epic filters the array, so every record

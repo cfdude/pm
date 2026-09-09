@@ -4810,7 +4810,7 @@
       "id": "gh-cfdude-pm-169",
       "title": "update-epic --link replaces an epic's existing links instead of appending",
       "priority": "P1",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -4828,7 +4828,10 @@
       "reconcileNeeded": false,
       "externalId": "169",
       "externalUrl": "https://github.com/cfdude/pm/issues/169",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "8726d8b",
+        "135b22c"
+      ],
       "notes": [
         {
           "at": "2026-09-06T02:20:38.175Z",
@@ -4842,7 +4845,19 @@
         }
       ],
       "externalUpdatedAt": "2026-09-04T22:25:53Z",
-      "release": "0.40.0"
+      "release": "0.40.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-08T22:15:15.277Z",
+        "reason": "Shipped in 0.40.0 (8726d8b, 135b22c). Not the single --clear-plan the issue asked for: nullability is now DECLARED on the flag registry and --clear <field> derives its accepted set from it, tested both directions so a nullable row added later with no clearing path fails the suite. --link appends and upserts a reason in place, at all three write paths after Gate 2 found it had landed at one. Six sites documenting replacement changed with it, two of them emitted by the engine at runtime."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-08T22:15:15.277Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-08T22:15:15.278Z",
+      "touchedAt": "2026-09-08T23:58:50.764Z"
     },
     {
       "id": "gh-cfdude-pm-167",
@@ -4903,12 +4918,14 @@
       "id": "epic-registration-clock",
       "title": "Epics carry no registration date, so nothing can say how long one has sat untouched. Measured 2026-09-06: 18 of 20 open epics carried no date of ANY kind — the schema has startedAt, completedAt, externalUpdatedAt and disposition.recordedAt, and no createdAt, so an epic registered and never started has no clock at all. That is precisely the population premise decay targets. The proposed free proxy (add-epic/update-epic timestamps from the activity log) CANNOT work: the log is off in most repos and pruneToCap deletes old segments, so it is blind to exactly the old untouched epics it would need to see. Add createdAt at registration and touchedAt on any update. The backfill is real, not null: git log -S'\"<id>\"' -- .conductor/state.json recovers the registering commit date in any repo that commits .conductor/ — verified on three ids (2026-07-15, 2026-08-03, 2026-08-25).",
       "priority": "P1",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "65efef2"
+      ],
       "notes": [
         {
           "at": "2026-09-08T06:27:29.220Z",
@@ -4916,13 +4933,41 @@
           "text": "lane: openspec not <none routed> — state.json schema change plus a MIGRATIONS entry with a git-derived backfill; review-mode thorough applies to schema work by this repo's own dial."
         }
       ],
-      "release": "0.40.0"
+      "release": "0.40.0",
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-08T22:15:38.164Z",
+          "baseSha": "996b068",
+          "headSha": "135b22c",
+          "reviewer": "two independent fresh-context lenses over 996b068..135b22c (review mode: thorough). This is the SAME Gate 2 that covered record-answers-for-itself, recorded here because that change is what implemented this epic and both lenses read the whole diff — not a second review, and not a rubber stamp: lens A returned 2 Important, lens B 2 Critical, and all four were fixed in 135b22c before this verdict was written."
+        },
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-08T23:02:41.310Z",
+          "baseSha": "88eaadf",
+          "headSha": "19b077b",
+          "reviewer": "the SAME Gate 1 review as record-answers-for-itself, not a second one: four fresh-context reviewers across three rounds (thorough) read all five delta specs of this change as one artifact set, and this epic is one of the five. Recorded here separately because a verdict is per-epic and this epic carried none, not because it was reviewed again. The sha range is the artifact range, which is what Gate 1 had to review — it reviews specs by path before code exists, and record-gate-review requires a range for a pass (filed as cfdude/pm#177)."
+        }
+      },
+      "touchedAt": "2026-09-08T23:02:41.312Z",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-08T22:15:42.126Z",
+        "reason": "Shipped in 0.40.0 (65efef2). createdAt bound to pushEpic, the single creation sink, so it inherits the source scan forbidding bypass rather than an enumeration that had already gone stale once here. touchedAt stamped inside saveState after the no-op early return, excluding both timekeeping fields from the per-record comparison and matching by epic id rather than array position, because remove-epic filters the array. recover-created-at is a re-runnable verb the migration invokes once, not a migration body: a one-shot disk-reading transformation produces a different result per checkout, and two checkouts of one remote on this machine differ. A shallow clone would have fabricated a date for every epic and recorded it as fact; guarded, and absence stays re-attemptable."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-08T22:15:42.126Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-08T22:15:42.126Z"
     },
     {
       "id": "sweep-covers-operation-pairs",
       "title": "Required task item 1 enumerates CALL SITES of the guarded thing and never the INVERSE OPERATION, so a guard shipped for set-but-not-unset passes both gates. Evidence: gh-66-update-epic-missing-flags archived 'delivered' 2026-08-29 claiming a CI test fails if any source-artifact field is settable at creation but not on the update surfaces — yet planPath still has no unset path and --link still REPLACES rather than appends (scripts/lib/update-epic.mjs:146). A user re-filed both as #169 six days later. A call-site sweep cannot find this: 'where is planPath set' never leads to 'can it be unset'. Extend the item to operation pairs — set/unset, add/remove, append/replace, enable/disable — in the shipped rules block, as a numbered required task item (14/14 adoption vs 3/15 for a prose bullet).",
       "priority": "P1",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -4933,7 +4978,9 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "6b8f09e"
+      ],
       "notes": [
         {
           "at": "2026-09-08T06:27:32.279Z",
@@ -4946,7 +4993,19 @@
           "text": "SIX INSTANCES, not one — grooming pass 2026-09-07 found five more, ranked by consequence. (1) SAFETY: set-autonomy grants are append-only with no revoke — scripts/lib/autonomy.mjs:79,:89 do a.preAuthorized = [...a.preAuthorized, entry], and --level off leaves preAuthorized intact, so re-enabling autonomy silently restores every prior grant including one made in error. CLAUDE.md's execution-time decision rule branches on 'already pre-authorized -> proceed', so this is a safety surface. The in-repo precedent is exact: --attribute-commit (append) got --withdraw-commit + --withdrawal-reason when gh-140 shipped; the pattern was applied to commits and not to grants. (2) set-tracker --remove is secondary-only (tracker.mjs:56 sits inside if (role === 'secondary')), so on the primary path --remove is a declared, accepted flag that is silently ignored and a configured primary cannot be unconfigured. (3) gh-159's bare-invocation READ shipped on one verb of five: set-gate-guard reads (gate-guard.mjs:15-16); set-review-mode (review-mode.mjs:22-25), set-activity-log (activity-log.mjs:59-62) and set-tracker (tracker.mjs:115) all exit 1; set-lane-routing reads only by accident, falling through to a no-op saveState and printing a COUNT rather than the value. (4) eight nullable fields on update-epic with one clear path. (5) no story-removal path — --add-story adds, --done/--wont-do dispose, and a story added by typo can only be closed by recording a false --wont-do. ALSO: --clear-links is all-or-nothing while set-lane-routing has per-item --remove; same collection shape, two answers, one engine. AND THE KEY MECHANISM: gh-66's disposition claims 'a test now fails CI if any source-artifact field is settable at creation but not on the update surfaces' — scripts/test/conductor-23.test.mjs tests set-at-creation against set-on-update and NEVER tests unset. The guard was built along the axis the sweep already looks at, which is exactly why a call-site sweep cannot find this class."
         }
       ],
-      "release": "0.40.0"
+      "release": "0.40.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-08T22:15:11.490Z",
+        "reason": "Shipped in 0.40.0 (6b8f09e). Required task item 1 now obliges enumerating the inverse of every operation a change adds — in GATE_PROCEDURE_ITEMS[0] lines AND its mustSay claims, plus all three mirrored surfaces the drift guard reads, because the guard iterates mustSay only and amending lines alone would have left every mirror carrying the old rule. Immediately earned its keep: Gate 2 found three more instances of the class inside this very release, two of which both reviewers found independently."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-08T22:15:11.490Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-08T22:15:11.490Z",
+      "touchedAt": "2026-09-08T23:02:28.116Z"
     },
     {
       "id": "backlog-grooming-pass",
@@ -4976,7 +5035,7 @@
       "id": "gh-cfdude-pm-174",
       "title": "No integrity check reports an epic in a status the engine does not know",
       "priority": "P1",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -4990,7 +5049,9 @@
       "externalId": "174",
       "externalUrl": "https://github.com/cfdude/pm/issues/174",
       "externalUpdatedAt": "2026-09-06T20:02:18Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "65efef2"
+      ],
       "notes": [
         {
           "at": "2026-09-08T06:33:47.795Z",
@@ -5004,7 +5065,18 @@
         }
       ],
       "release": "0.40.0",
-      "touchedAt": "2026-09-08T17:10:10.751Z"
+      "touchedAt": "2026-09-08T23:02:26.148Z",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-08T22:15:13.396Z",
+        "reason": "Shipped in 0.40.0 (65efef2). epic-in-undefined-status reports any epic whose status is outside KNOWN_STATUSES, naming the consequence a reader would otherwise miss — non-terminal to every archived-status rule, and it permanently absorbs the effective priority of everything depending on it. Reports, never repairs. The reporter also corrected the spec: the priority lift runs from dependent into blocker, the opposite of what three review rounds had read."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-08T22:15:13.396Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-08T22:15:13.396Z"
     },
     {
       "id": "gh-cfdude-pm-175",
@@ -5063,12 +5135,15 @@
       "id": "disposition-backfill-undispositioned-archive",
       "title": "66 of 143 archived epics carry no disposition — outcome 'unknown', recordedBy 'migration', no reason text. That is 46% of the archive, and it is not cosmetic: four separate premise checks in the 2026-09-07 grooming pass hit that wall and had to be answered by reading code instead of the record (df-no-mechanical-openspec-gate-enforcement, gh-70-link-validation-gap, edd-harness-agent-behavior-testing and rules-block-hardcodes-claude-slash-commands — the last two being depends-on targets whose satisfaction is inferred from disk rather than read). Worse, gh-cfdude-pm-173 was filed by a user against work that HAD been done, because the epic proposing it archived with no record saying so. Fleet-wide the number is larger: 353 outcome:unknown plus 29 epics in status 'done' that the 0.27.0 migration never reached at all = 382. Needs a verb or procedure to walk the undispositioned set, reconstruct each outcome from commits and CHANGELOG, and record it with a reason — plus a way to mark what genuinely cannot be reconstructed, since a fabricated disposition is worse than an absent one.",
       "priority": "P1",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "9a0dfb1",
+        "8726d8b"
+      ],
       "notes": [
         {
           "at": "2026-09-08T06:42:59.571Z",
@@ -5076,7 +5151,40 @@
           "text": "lane: openspec not <none routed> — reconstructing a historical record has real design ambiguity (what evidence is sufficient, what to do when it is insufficient, whether the engine proposes or the agent decides) and it writes to the disposition field the archive gate reads. Review-mode thorough applies."
         }
       ],
-      "release": "0.40.0"
+      "release": "0.40.0",
+      "gateReview": {
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-08T22:15:40.088Z",
+          "baseSha": "996b068",
+          "headSha": "135b22c",
+          "reviewer": "two independent fresh-context lenses over 996b068..135b22c (review mode: thorough). This is the SAME Gate 2 that covered record-answers-for-itself, recorded here because that change is what implemented this epic and both lenses read the whole diff — not a second review, and not a rubber stamp: lens A returned 2 Important, lens B 2 Critical, and all four were fixed in 135b22c before this verdict was written."
+        },
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-08T23:02:43.765Z",
+          "baseSha": "88eaadf",
+          "headSha": "19b077b",
+          "reviewer": "the SAME Gate 1 review as record-answers-for-itself, not a second one: four fresh-context reviewers across three rounds (thorough) read all five delta specs of this change as one artifact set, and this epic is one of the five. Recorded here separately because a verdict is per-epic and this epic carried none, not because it was reviewed again. The sha range is the artifact range, which is what Gate 1 had to review — it reviews specs by path before code exists, and record-gate-review requires a range for a pass (filed as cfdude/pm#177)."
+        }
+      },
+      "touchedAt": "2026-09-08T23:59:23.802Z",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-08T22:15:44.003Z",
+        "reason": "The CAPABILITY shipped in 0.40.0 (9a0dfb1): unconsidered-outcomes enumerates the population — engine-stamped AND outcome unknown, excluding both the three epics whose delivered a migration derived from a passing Gate 2 and the epics carrying no disposition at all — and emits a per-epic remedy, with unreconstructable for cases where the evidence is genuinely gone. Shipping the walker is NOT walking it: 66 epics here still carry outcome unknown. That is operator work with a judgement per epic, and it is deferred rather than claimed."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-08T22:15:44.003Z",
+        "deferrals": [
+          {
+            "epic": "walk-the-undispositioned-archive",
+            "section": "the 66 epics themselves"
+          }
+        ],
+        "declined": []
+      },
+      "completedAt": "2026-09-08T22:15:44.003Z"
     },
     {
       "id": "remaining-platform-investigation",
@@ -5106,7 +5214,7 @@
       "id": "record-answers-for-itself",
       "title": "record-answers-for-itself",
       "priority": "P?",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [],
@@ -5118,7 +5226,8 @@
         "6b8f09e",
         "9a0dfb1",
         "8726d8b",
-        "135b22c"
+        "135b22c",
+        "d89f080"
       ],
       "release": "0.40.0",
       "gateReview": {
@@ -5131,20 +5240,48 @@
         },
         "gate2": {
           "verdict": "pass",
-          "reviewedAt": "2026-09-08T21:40:24.137Z",
+          "reviewedAt": "2026-09-09T00:02:13.244Z",
           "baseSha": "996b068",
-          "headSha": "135b22c",
-          "reviewer": "two independent fresh-context lenses (review mode: thorough) — A: correctness and spec alignment, 0 Critical 2 Important 5 Minor. B: absent edits, 2 Critical 1 Important 2 Minor. Both independently found the same Critical: the no-op reporting rule was specified over the whole write surface and shipped at one verb, with four siblings executed and confirmed printing success on a no-op save. All findings closed; suite 1206/1206 verified by the orchestrator, not taken from a report. Every finding was the same shape — a guard at one call site with an identical sibling untouched — which is the class this release ships the rule against."
+          "headSha": "d89f080",
+          "reviewer": "two independent fresh-context lenses over 996b068..135b22c (thorough) — A: correctness and spec alignment, 0 Critical 2 Important 5 Minor. B: absent edits, 2 Critical 1 Important 2 Minor. Both independently found the same Critical: the no-op reporting rule was specified over the whole write surface and shipped at one verb, with four siblings confirmed printing success on a no-op save. All closed. THIS RECORD EXTENDS THAT RANGE TO d89f080 on evidence, not by assertion: a third fresh-context lens reviewed 135b22c..d89f080 (the release commit) together with the then-uncommitted documentation and record repair, and returned FAIL with 2 Critical. C1 was this endpoint itself. C2 was a wrong published number — 26 saveState call sites where the shipped scan finds 27 reporting plus 4 exempt of 31; reproduced independently before fixing, and corrected in CHANGELOG.md and on the live docs site. Its Minors also caught three stale counts in engine comments (help.mjs 21/48 to 23/50, verb-effects.mjs forty to fifty, state.mjs 69 to 31) and 16/32 to 17/33 read-only/mutating verbs, all moved by this release's own two new read-only verbs. Its Important flagged the cross-spec verdict as stale; that gate was re-run and re-recorded separately. NOT COVERED BY ANY LENS: the commit that immediately follows this record, carrying those fixes plus the archive. It is deliberately unattributed — docs and the archive move land after Gate 2 by construction, and attributing them would make this verdict stale at the instant the archive gate reads it. The 0.38.0 change epics all carry headSha equal to their last attributed commit; this follows that precedent.",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-09-08T21:40:24.137Z",
+            "baseSha": "996b068",
+            "headSha": "135b22c",
+            "reviewer": "two independent fresh-context lenses (review mode: thorough) — A: correctness and spec alignment, 0 Critical 2 Important 5 Minor. B: absent edits, 2 Critical 1 Important 2 Minor. Both independently found the same Critical: the no-op reporting rule was specified over the whole write surface and shipped at one verb, with four siblings executed and confirmed printing success on a no-op save. All findings closed; suite 1206/1206 verified by the orchestrator, not taken from a report. Every finding was the same shape — a guard at one call site with an identical sibling untouched — which is the class this release ships the rule against."
+          }
         }
       },
-      "touchedAt": "2026-09-08T21:40:24.139Z",
+      "touchedAt": "2026-09-09T00:16:34.065Z",
       "notes": [
         {
           "at": "2026-09-08T20:50:47.300Z",
           "actor": "agent",
           "text": "GATE 2 CRITICAL 1, and the enumeration commit 8726d8b claimed was already here. It was not — this note is that claim being made true. The no-op reporting requirement (epic-annotation delta) binds the WHOLE write surface; it shipped at update-epic only. Sibling sites that print an unconditional success line after a saveState that returned unchanged:true — autonomy.mjs:98/100, releases.mjs:155/157, review-mode.mjs:28/31, active-pointer.mjs:78/80 (all four EXECUTED by the reviewer and confirmed printing success on a no-op), plus rank.mjs:108/109, gate-guard.mjs:62/64, lane-routing.mjs:63/65, tracker.mjs:62/80/123, claims.mjs:238/239. The spec text forbids exactly this scoping in its own words: 'Scoping this to the paths a single change happens to introduce would be the very defect required task item 1 exists to catch.' Fix is a shared reportSave helper plus a source scan asserting no module prints success after saveState without consulting its return."
+        },
+        {
+          "at": "2026-09-09T00:16:34.062Z",
+          "actor": "agent",
+          "text": "Required task item 1's inverse enumeration was MISSING from this change's own artifacts and was recorded late, after the archive, in design.md under 'The inverse enumeration, recorded late'. Found by a fresh-context Gate 2 reviewer. Six of seven operations this change adds either are an inverse, have one, or are read-only; touchedAt's absence of a clearing path is justified (engine-maintained, re-stamped by the next real write). createdAt's is NOT justified and is a genuine gap — filed as cfdude/pm#181. Sibling instance filed as #178."
         }
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-09T00:04:14.925Z",
+        "reason": "Shipped as 0.40.0. Five capabilities modified, no new concept added: the clock (createdAt/touchedAt) bound to pushEpic and to saveState's post-no-op path, recover-created-at with its shallow-graft guard, epic-in-undefined-status, unconsidered-outcomes with the unreconstructable outcome, --clear over a declared nullable set, and --link that appends. Gate 1 pass over 88eaadf..19b077b, cross-spec pass re-recorded over five specs after amendment, Gate 2 pass over 996b068..d89f080 across three fresh-context lenses."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-09T00:04:14.922Z",
+        "deferrals": [
+          {
+            "epic": "agent-outcomes-derivation-unguarded",
+            "section": "specs/epic-disposition/spec.md — Requirement: An epic that ends records its outcome"
+          }
+        ],
+        "declined": []
+      },
+      "completedAt": "2026-09-09T00:04:14.925Z"
     },
     {
       "id": "agent-outcomes-derivation-unguarded",
@@ -5165,6 +5302,217 @@
           "text": "lane: claude-code deliberately — one assertion in an existing test file, no design ambiguity, well under two hours. The asymmetric tie-break (resolve away from claude-code) applies to unresolved routing questions; this one is resolved. Found by the Gate 2 fix agent as an observation it declined to fix, correctly: it is pre-existing and outside 0.40.0's five items."
         }
       ]
+    },
+    {
+      "id": "walk-the-undispositioned-archive",
+      "title": "Actually walk this repository 66 undispositioned archived epics. 0.40.0 shipped the CAPABILITY — the unconsidered-outcomes verb enumerates the population and emits a per-epic remedy, and unreconstructable records that somebody looked and the evidence is gone — but shipping the walker is not walking it. The 66 epics still carry outcome unknown with no reason, which is the 46% of this archive that a grooming pass hit four separate times. This is operator work with a judgement per epic: reconstruct from commits and CHANGELOG where the evidence exists, record unreconstructable with its reason where it does not, and never fabricate. Fleet-wide the same job is 310 epics across 27 upstreams, but each repository owns its own.",
+      "priority": "P2",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-08T22:15:09.416Z",
+      "touchedAt": "2026-09-08T23:59:48.098Z",
+      "notes": [
+        {
+          "at": "2026-09-08T23:59:48.094Z",
+          "actor": "agent",
+          "text": "lane: claude-code not <none — suggest-lane returns null for this ask> — recorded late, at 0.40.0 Gate 2. This is NOT a sub-2-hour tweak and the intake rule resolves an unrouted question AWAY from claude-code, so the lane is wrong on the rule as written. Left as claude-code deliberately for now because the work is 66 independent operator judgements with no shared design, no spec to draw and no gate to pass — the shape claude-code is for — and re-laning it to superpowers would demand a plan document for a walk. Re-lane if the walk turns out to need one."
+        }
+      ]
+    },
+    {
+      "id": "gh-cfdude-pm-177",
+      "title": "record-gate-review --gate 1 requires a SHA range for a gate that reviews artifacts by path",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "openspec-gate1-guard-on-apply",
+          "reason": "both are Gate 1's record being wrong — that one guards the transition Gate 1 should block, this one is the evidence Gate 1 can honestly supply"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "177",
+      "externalUrl": "https://github.com/cfdude/pm/issues/177",
+      "externalUpdatedAt": "2026-09-08T23:22:40Z",
+      "attributedCommits": [],
+      "createdAt": "2026-09-09T00:19:04.779Z",
+      "touchedAt": "2026-09-09T00:19:47.331Z",
+      "notes": [
+        {
+          "at": "2026-09-09T00:19:47.321Z",
+          "actor": "agent",
+          "text": "lane: superpowers not <none — suggest-lane returns null for this ask> — the intake tie-break resolves an unrouted question AWAY from claude-code, never into it, because claude-code leaves no spec, plan or gate record. Each of these is an engine change with a real design question (what evidence a gate should record; what a release read-back should show; how to harmonise three flag shapes without a breaking change; how to make a replay hermetic; whether a recovered date should be clearable), so superpowers is the floor, not claude-code."
+        }
+      ]
+    },
+    {
+      "id": "gh-cfdude-pm-178",
+      "title": "A release object cannot be read back: no show verb, membership invisible on the record, and --member/--defer ship no inverse",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "sweep-covers-operation-pairs",
+          "reason": "that epic shipped the inverse-operation rule in 0.40.0; this is a pre-existing instance the rule now catches"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "178",
+      "externalUrl": "https://github.com/cfdude/pm/issues/178",
+      "externalUpdatedAt": "2026-09-08T22:53:47Z",
+      "attributedCommits": [],
+      "createdAt": "2026-09-09T00:19:16.204Z",
+      "touchedAt": "2026-09-09T00:19:55.821Z",
+      "notes": [
+        {
+          "at": "2026-09-09T00:19:55.819Z",
+          "actor": "agent",
+          "text": "lane: superpowers not <none — suggest-lane returns null for this ask> — the intake tie-break resolves an unrouted question AWAY from claude-code, never into it, because claude-code leaves no spec, plan or gate record. Each of these is an engine change with a real design question (what evidence a gate should record; what a release read-back should show; how to harmonise three flag shapes without a breaking change; how to make a replay hermetic; whether a recovered date should be clearable), so superpowers is the floor, not claude-code."
+        }
+      ]
+    },
+    {
+      "id": "gh-cfdude-pm-179",
+      "title": "Three flags for one concept, three different shapes: --defer, --deferral and --declined-deferral disagree on separator and arity",
+      "priority": "P3",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-165-deferral-assertion-mangled-and-immutable",
+          "reason": "that fixed the :: parsing bug on one flag; this is the ergonomic gap it left — three adjacent flags for one concept, no two agreeing on shape"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "179",
+      "externalUrl": "https://github.com/cfdude/pm/issues/179",
+      "externalUpdatedAt": "2026-09-08T22:54:05Z",
+      "attributedCommits": [],
+      "createdAt": "2026-09-09T00:19:24.306Z",
+      "touchedAt": "2026-09-09T00:20:04.605Z",
+      "notes": [
+        {
+          "at": "2026-09-09T00:20:04.602Z",
+          "actor": "agent",
+          "text": "lane: superpowers not <none — suggest-lane returns null for this ask> — the intake tie-break resolves an unrouted question AWAY from claude-code, never into it, because claude-code leaves no spec, plan or gate record. Each of these is an engine change with a real design question (what evidence a gate should record; what a release read-back should show; how to harmonise three flag shapes without a breaking change; how to make a replay hermetic; whether a recovered date should be clearable), so superpowers is the floor, not claude-code."
+        }
+      ]
+    },
+    {
+      "id": "gh-cfdude-pm-180",
+      "title": "The gh-137 replay test reads live findings from every release, so it fails on normal mid-release state",
+      "priority": "P1",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "180",
+      "externalUrl": "https://github.com/cfdude/pm/issues/180",
+      "externalUpdatedAt": "2026-09-09T00:00:48Z",
+      "attributedCommits": [],
+      "createdAt": "2026-09-09T00:19:31.693Z",
+      "touchedAt": "2026-09-09T00:20:12.232Z",
+      "notes": [
+        {
+          "at": "2026-09-09T00:20:12.222Z",
+          "actor": "agent",
+          "text": "lane: superpowers not <none — suggest-lane returns null for this ask> — the intake tie-break resolves an unrouted question AWAY from claude-code, never into it, because claude-code leaves no spec, plan or gate record. Each of these is an engine change with a real design question (what evidence a gate should record; what a release read-back should show; how to harmonise three flag shapes without a breaking change; how to make a replay hermetic; whether a recovered date should be clearable), so superpowers is the floor, not claude-code."
+        }
+      ]
+    },
+    {
+      "id": "gh-cfdude-pm-181",
+      "title": "A recovered createdAt cannot be corrected: recover-created-at ships with no inverse, found by 0.40.0's own new rule",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-cfdude-pm-178",
+          "reason": "the sibling instance of the same missing-inverse gap, found in the same Gate 2 review"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "181",
+      "externalUrl": "https://github.com/cfdude/pm/issues/181",
+      "externalUpdatedAt": "2026-09-09T00:16:05Z",
+      "attributedCommits": [],
+      "createdAt": "2026-09-09T00:19:38.815Z",
+      "touchedAt": "2026-09-09T00:20:18.461Z",
+      "notes": [
+        {
+          "at": "2026-09-09T00:20:18.458Z",
+          "actor": "agent",
+          "text": "lane: superpowers not <none — suggest-lane returns null for this ask> — the intake tie-break resolves an unrouted question AWAY from claude-code, never into it, because claude-code leaves no spec, plan or gate record. Each of these is an engine change with a real design question (what evidence a gate should record; what a release read-back should show; how to harmonise three flag shapes without a breaking change; how to make a replay hermetic; whether a recovered date should be clearable), so superpowers is the floor, not claude-code."
+        }
+      ]
+    },
+    {
+      "id": "gh-cfdude-pm-176",
+      "title": "--story <n> is 1-indexed but --help says only '<a value>'; a wrong index writes a wont-do reason onto the wrong story with no correction path",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "176",
+      "externalUrl": "https://github.com/cfdude/pm/issues/176",
+      "externalUpdatedAt": "2026-09-08T17:49:40Z",
+      "attributedCommits": [],
+      "createdAt": "2026-09-09T00:20:59.267Z",
+      "touchedAt": "2026-09-09T00:21:30.533Z",
+      "notes": [
+        {
+          "at": "2026-09-09T00:21:30.522Z",
+          "actor": "agent",
+          "text": "lane: superpowers not <none — suggest-lane returns null> — the intake tie-break resolves an unrouted question away from claude-code. Registered via add-many --from rather than add-epic: this issue's own title begins with '--story', and the argv parser reads any value starting with -- as a flag, so neither --title \"--story ...\" nor --title=--story ... could register it. Filed as cfdude/pm#182."
+        }
+      ]
+    },
+    {
+      "id": "gh-cfdude-pm-182",
+      "title": "A flag value beginning with two dashes is unparseable, so a tracker item whose title starts with a flag name cannot be mirrored",
+      "priority": "P1",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-cfdude-pm-176",
+          "reason": "found while mirroring #176, whose title is what the parser could not accept"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "182",
+      "externalUrl": "https://github.com/cfdude/pm/issues/182",
+      "externalUpdatedAt": "2026-09-09T00:30:00Z",
+      "attributedCommits": [],
+      "createdAt": "2026-09-09T00:21:49.671Z",
+      "touchedAt": "2026-09-09T00:21:57.416Z",
+      "notes": [
+        {
+          "at": "2026-09-09T00:21:57.414Z",
+          "actor": "agent",
+          "text": "lane: superpowers not <none — suggest-lane returns null> — the intake tie-break resolves an unrouted question away from claude-code. P1 rather than P2 because it silently drops items from the inward sync the tracker procedure specifies verbatim, and a dropped item leaves no trace in the record."
+        }
+      ]
     }
   ],
   "detourStack": [],
@@ -5175,7 +5523,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 424,
+  "revision": 461,
   "reviewMode": "thorough",
   "releases": [
     {
@@ -5270,11 +5618,11 @@
       ],
       "crossSpecReview": {
         "verdict": "pass",
-        "reviewedAt": "2026-09-08T08:08:53.530Z",
+        "reviewedAt": "2026-09-09T00:01:10.599Z",
         "specs": [
           {
             "key": "record-answers-for-itself/specs/conductor-record/spec.md",
-            "sha256": "39d679884fd4fd12fbf41ca7c71132a4b727c1b26f0a89da4885542871c7cb2b"
+            "sha256": "ac95fbfdb341334457749859bd64b55447f29141b45c043adc6c820f72537337"
           },
           {
             "key": "record-answers-for-itself/specs/epic-annotation/spec.md",
@@ -5286,14 +5634,41 @@
           },
           {
             "key": "record-answers-for-itself/specs/gate-integrity/spec.md",
-            "sha256": "332a51eb7b8605e4c23b3e4ee2a2ce4b90751e8388b3132187c66c5f53e8a6df"
+            "sha256": "a905e032f8998b3ba39e7a3651f053fc401eae566b09b216f63a416d0e991712"
           },
           {
             "key": "record-answers-for-itself/specs/state-write-guard/spec.md",
-            "sha256": "46624f80f116e08af572f91e5fa0905b9e47656022232cd7eac2d7d69f7e8510"
+            "sha256": "bdab3527b89aea898553053f8f5ce540ba4b051c94febd47633ffc74842fb4ac"
           }
         ],
-        "reviewer": "three rounds, two fresh-context lenses each (review mode: thorough), 2026-09-07/08"
+        "reviewer": "re-review after amendment (thorough): the first verdict went stale when 65efef2 amended conductor-record (the shallow-boundary rule) and gate-integrity (the priority-propagation direction). A fresh-context reviewer re-read all five specs against each other AND against the shipped engine, since these specs are now implemented and a spec amended after the code ships can describe behaviour the code does not have. Both amendments verified correct against created-at.mjs:57-75 and dependency-order.mjs:79-99. Returned 1 BLOCK and 5 POLISH. The BLOCK was two specs asserting different sizes for one measured population — gate-integrity said 68 archived epics where epic-disposition and the proposal say 144 — and, underneath it, a conflation: '3 with a passing Gate 2' is the count the MIGRATION stamped delivered, while 9 archived epics carry a passing Gate 2. Fixed by re-measuring once (149 archived, 9 passing Gate 2, 3 migration-derived delivered, all 2026-09-08) and restating the requirement on the relative claim it actually rests on. Three POLISH fixed: the saveState call-site count (69, actually 31) in state-write-guard and design; a scenario whose absolutism a multi-migration upgrade falsifies; and two of four dual-lane collisions named as openspec when they are decision-lane. Two declined with reasons: a live count that drifted 4 to 5 and strengthens its own point, and a chokepoint documented in design and guarded by conductor-08 that does not belong in a capability spec. openspec validate --strict passes after the edits.",
+        "superseded": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-08T08:08:53.530Z",
+          "specs": [
+            {
+              "key": "record-answers-for-itself/specs/conductor-record/spec.md",
+              "sha256": "39d679884fd4fd12fbf41ca7c71132a4b727c1b26f0a89da4885542871c7cb2b"
+            },
+            {
+              "key": "record-answers-for-itself/specs/epic-annotation/spec.md",
+              "sha256": "8508a05cfd42ac99b235cf2d62c1ab77272351f261695dd2d111e21c4f279428"
+            },
+            {
+              "key": "record-answers-for-itself/specs/epic-disposition/spec.md",
+              "sha256": "fe461223f7a4576efcf7cc8d18e37e5ee5ed7c091e239b6dfc1c14a663d8d05a"
+            },
+            {
+              "key": "record-answers-for-itself/specs/gate-integrity/spec.md",
+              "sha256": "332a51eb7b8605e4c23b3e4ee2a2ce4b90751e8388b3132187c66c5f53e8a6df"
+            },
+            {
+              "key": "record-answers-for-itself/specs/state-write-guard/spec.md",
+              "sha256": "46624f80f116e08af572f91e5fa0905b9e47656022232cd7eac2d7d69f7e8510"
+            }
+          ],
+          "reviewer": "three rounds, two fresh-context lenses each (review mode: thorough), 2026-09-07/08"
+        }
       }
     }
   ],

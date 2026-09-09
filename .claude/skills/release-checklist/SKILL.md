@@ -51,7 +51,9 @@ skip straight to the branch dance at the bottom.
    - **Introduction's "Real Numbers" table** claims to be mechanically derived — keep that true
      every release by recomputing, never estimating:
      ```bash
-     grep -c '^## \[' CHANGELOG.md                                    # releases shipped
+     rg -c '^## \[[0-9]' CHANGELOG.md                                 # releases shipped
+     # NOT `grep -c '^## \['` — that counts the [Unreleased] placeholder as a release, and
+     # did, publishing a number one too high on every release up to 0.39.0 before anyone checked.
      node --test scripts/test/*.test.mjs 2>&1 | grep '^ℹ tests'    # tests in the engine
      wc -l scripts/conductor.mjs                                      # engine LOC
      # external dependencies is always 0 — enforced by the zero-dependency hard constraint
