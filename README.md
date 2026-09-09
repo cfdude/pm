@@ -350,12 +350,13 @@ plans as epics, writes the managed rules block into `CLAUDE.md` (or the file the
 `--platform` actually reads — see Supported Platforms), and renders `PROJECT.md`.
 Safe to run once per repo; re-running is a no-op if already initialized.
 
-The rules block carries a **gate procedure of five numbered, required task items** — the call-site
-completeness sweep, commit-based verification, the lifecycle-marker declaration, commit
-attribution, and ending work by recording a disposition. They are numbered items rather than prose
-bullets on purpose: measured across an audit of 8 repositories, a rule carried by a mandatory task
-section reached **14/14** adoption in subsequent changes, and the same rule as a prose bullet
-reached **3/15**.
+The rules block carries a **gate procedure of seven numbered, required task items** — the call-site
+completeness sweep (which since 0.40.0 also obliges the INVERSE of every operation the change
+adds), commit-based verification, the lifecycle-marker declaration, commit attribution, the
+release-scope cross-spec review, ending work by recording a disposition, and routing what the work
+taught you. They are numbered items rather than prose bullets on purpose: measured across an audit
+of 8 repositories, a rule carried by a mandatory task section reached **14/14** adoption in
+subsequent changes, and the same rule as a prose bullet reached **3/15**.
 
 </details>
 
@@ -555,10 +556,10 @@ tombstones it identically, naming `--spec` in the un-ignore instruction.
 |------------|------|
 | `add --id X --title "…" --lane L --priority P [--status S] [--parent ID] [--external-id KEY] [--add-story "<milestone>" …]` | Register any epic in any lane; optionally nest under a parent or link a tracker issue. `--add-story` is **repeatable**, so a plan's milestones land in the same write as the epic instead of one `update-epic` call at a time afterwards. |
 | `add-many --from <path\|->` | Atomically bulk-create a parent + children from a JSON batch. Each entry may carry a `stories` array — plain titles, or `{"title": "…", "done": true}` — validated in the same up-front pass, so a blank title refuses the whole batch. |
-| `update-epic <id> [--title …] [--status …] [--lane …] [--priority …] [--parent …] [--plan …] [--link …] [--clear-links] [--description "…"] [--notes "…"] [--external-id …] [--external-url …] [--external-updated-at <iso>] [--review-mode …] [--add-story "<title>"] [--story <n> --done\|--wont-do "<reason>"]` | Write-back path — title corrections, status/lane/priority changes, links, free-text annotation, tracker linkage, per-epic review-mode escalation, inline story mutation (see below). |
+| `update-epic <id> [--title …] [--status …] [--lane …] [--priority …] [--parent …] [--plan …] [--spec …] [--link …] [--clear-links] [--clear <field>] [--description "…"] [--notes "…"] [--external-id …] [--external-url …] [--external-updated-at <iso>] [--review-mode …] [--add-story "<title>"] [--story <n> --done\|--wont-do "<reason>"]` | Write-back path — title corrections, status/lane/priority changes, links, free-text annotation, tracker linkage, per-epic review-mode escalation, inline story mutation (see below). `--link` **appends** (a repeat of an already-recorded type+target updates that entry's reason in place); `--clear <field>` is the generic unset for any field whose absence is legal, repeatable, naming the FLAG (`--clear plan`, not `planPath`) — the refusal enumerates the clearable set live, and a set-only field is refused with the registry's own reason. |
 | `update-epic <id> --attribute-commit <sha>` | Record a commit as this epic's work. Repeatable, append-only, in landing order. The engine infers attribution from **nothing** — not the files a commit touches, not an epic id in a message — so an unattributed commit is one the epic's Gate 2 cannot be checked against. **Do not attribute the commit that moves `openspec/changes/<id>/` under `archive/`**: it lands after the reviewed range by construction and makes the epic's own Gate 2 stale at the instant the archive gate reads it. |
 | `update-epic <id> --withdraw-commit <sha> --reason "<why>"` | **Withdraw an attribution** when the commit it named is gone — a `git reset` is a normal operation, and attributing at the moment of each commit means an attribution can outlive its commit through no error of process. Refuses a sha the epic never attributed, and refuses a missing reason. The array stays append-only (its last entry is the endpoint a Gate 2 `headSha` is compared against), so the withdrawal is **recorded** in a sibling `withdrawnCommits` field rather than erased. |
-| `update-epic <id> --status archived --outcome delivered\|killed\|superseded\|abandoned --reason "<why>" --no-deferrals` | **How work ends** — a terminal disposition with its reason, never deletion. Every outcome except `delivered` requires the reason. The deferral assertion is required in the *same* invocation: swap `--no-deferrals` for `--deferral "<epicId>:<section>"` where work is now held by a registered epic, or `--declined-deferral "<what>::<why not>"` where you are deliberately not doing it — `::` separates the halves explicitly, because both are free text and a single colon inside `<what>` used to truncate it silently. A single colon still works where the value carries only one; two or more with no `::` are refused rather than guessed. Add `--carried-to <epicId> --reason "<which tasks moved>"` to hand off unfinished work. |
+| `update-epic <id> --status archived --outcome delivered\|killed\|superseded\|abandoned\|declined\|unreconstructable --reason "<why>" --no-deferrals` | **How work ends** — a terminal disposition with its reason, never deletion. Every outcome except `delivered` requires the reason. The deferral assertion is required in the *same* invocation: swap `--no-deferrals` for `--deferral "<epicId>:<section>"` where work is now held by a registered epic, or `--declined-deferral "<what>::<why not>"` where you are deliberately not doing it — `::` separates the halves explicitly, because both are free text and a single colon inside `<what>` used to truncate it silently. A single colon still works where the value carries only one; two or more with no `::` are refused rather than guessed. Add `--carried-to <epicId> --reason "<which tasks moved>"` to hand off unfinished work. |
 | `remove-epic <id> [--cascade]` | Hard-delete; blocked by default if it has children (`--cascade` removes descendants too). Strips dangling links elsewhere. |
 | `reorder <id> <id> …` | **Manual rank** — place the epics of ONE priority band, top to bottom, in the order given. Ranks are rewritten dense `1..N` on every call, and this is the only thing that writes `rank`. Takes the whole band and refuses a partial one, so the numbering stays contiguous by construction; unranked epics sort after every ranked one. Rank is the LAST sort key (dependencies → priority → **rank**) — it breaks ties that today fall through to alphabetical order, and never outranks a dependency or a priority. `update-epic --priority` clears an epic's rank, since a placement among one band's peers means nothing among another's. |
 | `set-active <id>` / `clear-active` | Set/clear the top-level active epic. |
@@ -579,6 +580,18 @@ agent reading `state.json`.
 detour naming the parent, so the equivalent `depends-on` edge points the other way. Links already
 stored under some other type still load and still render — validation is on write only — and
 `integrity`'s `link-of-unknown-type` check reports each one instead of guessing a repair.
+
+**Clearing a field can cost more than the field.** Six of the eight clearable fields carry a stated
+consequence, printed on stderr when a value was actually removed. `--clear external-url` drops the
+PRIMARY dedup key the inward sync matches on, so the linked item is mirrored again as a **new**
+untriaged epic on the next `/pm:sync`; `--clear external-id` drops the FALLBACK half of that key,
+compared only when neither side carries a URL. `--clear plan` and `--clear spec` stop the epic
+claiming that file, so the next `sync` registers it as a fresh untriaged epic — and no sync-ignore
+tombstone is written, deliberately, because the epic survives and the clear may well mean *let sync
+find this file's real owner*. `--clear parent` drops the epic out of the hierarchy;
+`--clear review-mode` falls back to the repo-global dial, which may be LOWER, and the de-escalation
+guard does not see a clear. Clearing an already-absent field prints nothing — there was no removal
+to have a consequence.
 
 **A flag with no value is refused, on every command that accepts it.** `--clear-links`,
 `--no-deferrals` and `--done` are the three flags that legitimately carry none; every other flag
@@ -819,8 +832,8 @@ verdict whose recorded range does not reach the commits its note cites, a gate r
 bookkeeping rather than review, a `delivered` epic that attributed no commits, an archived
 openspec-lane epic with a passing Gate 2 and no Gate 1, an epic archived with an `ungated` Gate 2
 (no review from anyone), an epic the archive-drift heal flipped that reads `outcome: unknown`
-while carrying a passing Gate 2, a dangling epic reference, an archive directory no epic
-corresponds to, **a recorded commit sha this repository can no longer resolve**, an epic still
+while carrying a passing Gate 2, an epic sitting in a status the engine does not define, a dangling
+epic reference, an archive directory no epic corresponds to, **a recorded commit sha this repository can no longer resolve**, an epic still
 open in a release that has already delivered, and an epic another epic declares it supersedes
 that never ended.
 
@@ -841,6 +854,19 @@ after a release, 36 recorded shas were reachable from nothing while every check 
 check separates **orphaned** — still in the object store, recoverable *now* with `git tag` — from
 **already gone**, and reports nothing at all in a clone that resolves none of the record, because
 a fresh, shallow or single-ref clone lacks that history rather than having destroyed it.
+
+**An epic in an undefined status is invisible to the checks that would surface it.**
+`KNOWN_STATUSES` is enforced on write — `add-epic`, `update-epic` and `add-many` each refuse a
+status outside it — so a value outside the set never arrived through a verb; the read side has
+always accepted whatever was stored and must keep doing so, or an existing state file stops
+loading. The consequence is the half a reader cannot deduce: such an epic is not `archived`, so it
+is **non-terminal to every rule that tests for the archived status**. It is skipped by all the
+completion-shaped checks above, which makes the record read cleaner than it is, and every
+`depends-on` edge pointing at it reads unsatisfied forever — whatever waits on it stays blocked,
+and it absorbs their effective priority for as long as the value persists. Measured across 27
+distinct upstreams before this shipped: **26 epics** sitting in `status: "done"`. Reported, never
+repaired: which legal status an undefined one should become is a judgment about what happened to
+the work.
 
 **Expect a burst of `heal-archived-epic-passed-gate-2` on your first run after upgrading.** Every
 repo that followed the documented `/opsx:archive` → heal flow lands on `outcome: unknown` rather
@@ -939,6 +965,64 @@ prints the plan and removes nothing.
 </details>
 
 <details>
+<summary><code>recover-created-at</code> — Where did the dates go for epics older than the clock?</summary>
+
+Every epic registered from 0.40.0 on carries `createdAt`, stamped at `pushEpic()` — the single
+sink every creation routes through. Epics registered before it carry nothing, and absence there
+means **unknown**: no reader substitutes today's date, and none substitutes another field's.
+
+```bash
+node scripts/conductor.mjs recover-created-at
+```
+
+It takes each dateless epic's `createdAt` from the commit that first introduced that id into
+`.conductor/state.json`, reading **local history only** — no network, ever, and the pickaxe is
+invoked with an argument vector rather than a shell string because these ids come out of a state
+file that may predate today's id validation.
+
+**Absence is a first-class answer.** No git, an untracked state file, a shallow graft point, an id
+older than the history this checkout has fetched: each leaves the date absent rather than
+fabricating one. That is also why this is a **verb and not a migration body** — a migration runs at
+most once per repository, and an operation reading version-control history returns a different
+answer per checkout, so a one-shot would freeze the wrong answer permanently in whichever clone had
+less history that day. Re-run it after fetching and it recovers the rest. It never overwrites a
+date already present, and it repairs nothing else — an epic in a status the engine does not define
+is dated like any other and left exactly as it was.
+
+The 0.40.0 upgrade invokes it once. `touchedAt` is deliberately **not** stamped by that pass:
+recovering a registration date is a recovery, not a touch, or every epic in every repository would
+read "last touched: upgrade day".
+
+</details>
+
+<details>
+<summary><code>unconsidered-outcomes</code> — Which archived epics did nobody decide about?</summary>
+
+Every archived epic carries a disposition, but not every disposition was somebody's judgment: an
+epic archived before dispositions existed carries an **engine stamp** recording that nobody was
+asked. This verb is how you ask which ones those are.
+
+```bash
+node scripts/conductor.mjs unconsidered-outcomes
+```
+
+Read-only. It prints each such epic with **who stamped it** — the migration and the archive-drift
+heal are different histories, and which one you are looking at changes how much of the epic's
+story is still recoverable — and the exact `update-epic … --status archived --outcome … --reason
+… --no-deferrals` invocation that would record a real one.
+
+**The predicate is two halves and both matter:** an engine stamp *and* an outcome of `unknown`. A
+stamp can be evidence-derived — the 0.27.0 migration wrote `delivered` wherever a passing Gate 2
+verdict existed — and handing those back would ask an agent to re-derive what the record already
+derived correctly. An `unknown` value alone is not enough either, because an epic carrying no
+disposition at all also reads `unknown`, and that is a state no archive path produces.
+
+Where a record genuinely cannot be reconstructed, `--outcome unreconstructable` says so with its
+required reason. The set shrinks only by somebody deciding — never by the engine guessing.
+
+</details>
+
+<details>
 <summary><code>verify-specs</code> — Which design documents have no epics?</summary>
 
 An epic can record the **design document** its work was drawn from: `--spec <path>` →
@@ -1031,7 +1115,7 @@ node "$ENGINE" update-epic --help
 ```
 
 ```
-conductor.mjs update-epic — 27 flags.
+conductor.mjs update-epic — 30 flags.
 
   --title <a value>
   --lane <openspec|superpowers|claude-code|decision|external>
@@ -1053,7 +1137,7 @@ hand-written help table could not make that promise. `(no value)` and `(repeatab
 out because they change the shape of a correct invocation: a valueless flag given a value is
 refused, and repeating a non-repeatable flag silently keeps only the last one. A flag with a closed set of legal values names them — `--outcome`, `--status`, `--lane`, `--priority`, `--platform` and the rest — so the answer does not live in `scripts/lib/` any more. Flags without a closed set still render `<a value>`; that gap is visible rather than papered over.
 
-A verb that takes no flags **says so** rather than printing an empty list. 21 of the 48 are in
+A verb that takes no flags **says so** rather than printing an empty list. 23 of the 50 are in
 that group, and "takes none" must not look like "nobody declared this yet".
 
 `add-many` is the one verb whose registry rows are not all flags — its parser takes only
@@ -1081,7 +1165,7 @@ that used to be safe fails CI rather than someone else's checkout.
 
 | Effect | Verbs |
 |--------|-------|
-| **read-only** — safe against a repo you do not own | `activity` · `brief` · `changelog` · `changesets` · `gate-guard` · `integrity` · `lesson-advice` · `owners` · `plan-hierarchy` · `rules` · `rules-target` · `suggest-lane` · `triage` · `verify-specs` · `verify-state` · `verify-worktrees` |
+| **read-only** — safe against a repo you do not own | `activity` · `brief` · `changelog` · `changesets` · `gate-guard` · `integrity` · `lesson-advice` · `owners` · `plan-hierarchy` · `rules` · `rules-target` · `suggest-lane` · `triage` · `unconsidered-outcomes` · `verify-specs` · `verify-state` · `verify-worktrees` |
 | **mutates** — writes `state.json`, `PROJECT.md`, `CLAUDE.md`, or a `.conductor/` log | everything else, including `render`, `snapshot`, `sync`, `commit-nudge`, `upgrade`, `write-rules`, and every `add-`/`update-`/`set-`/`record-` verb |
 
 Want the current state without touching anything? Use **`brief`**, not `render`.
@@ -1091,9 +1175,19 @@ Want the current state without touching anything? Use **`brief`**, not `render`.
 to render it rewrites `PROJECT.md` and `.conductor/render-stamp.json`. Idempotent-when-nothing-
 changed is not read-only.
 
+**A write that changes nothing says so.** Every verb that saves state reports from the save's own
+answer instead of printing an unconditional success line, so a re-run that finds the record already
+correct tells you it wrote nothing rather than claiming an update. Read "nothing" literally, because
+its scope is exact: it means `.conductor/state.json` was not rewritten. Most of these verbs call
+`render` afterwards and several rewrite the rules block, either of which can change while state does
+not — so such a verb names the state file rather than claiming the invocation did nothing at all. A
+verb that genuinely cannot reach a no-op declares that at its call site, and a scan of the shipped
+source fails the build on one that neither reports nor declares — the rule binds the write surface,
+not a list of verbs someone remembered to update.
+
 A `--read-only` enforcement flag was considered and declined: it would have to be threaded
-through or sniffed from argv at forty verbs, and it asks a caller to trust that the flag was
-wired up. The CI-time behavioural check gives the same guarantee — a doc that cannot drift —
+through or sniffed from argv at every verb — forty of them when that call was made, fifty now,
+which is itself the argument — and it asks a caller to trust that the flag was wired up. The CI-time behavioural check gives the same guarantee — a doc that cannot drift —
 without shipping anything.
 
 ## Skills
@@ -1154,9 +1248,11 @@ stale, while actively running an OpenSpec change.)
 The session brief and `/pm:upgrade` now both report that drift, from one shared emitter so the two
 can never disagree. Three things about how it behaves:
 
-- **`pm` never runs `openspec update`.** It emits the instruction and you run the terminal
-  command, exactly as with `openspec init` — a source scan in the test suite fails the build if
-  any engine file ever passes the `openspec` binary an argv other than `--version`.
+- **pm's engine never runs `openspec update`.** It emits the instruction and whoever reads it —
+  agent or human — runs the command; pm instructs, it does not integrate. That is a property of
+  the engine, not a permission boundary, so an agent reading the nudge may run the update itself.
+  A source scan in the test suite fails the build if any engine file ever passes the `openspec`
+  binary an argv other than `--version`.
 - **It holds rather than suppressing itself mid-change.** `openspec update` rewrites the
   instruction files an in-flight change is being authored against, so with an active change the
   drift is still reported but the imperative becomes *hold until `<change>` is archived*.

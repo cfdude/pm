@@ -239,14 +239,22 @@ test("gh#128: tracked-ness is scoped to THIS project, not to an enclosing reposi
   assert.doesNotMatch(brief, /git diff/);
 });
 
-test("gh#128: the nudge always says pm will not run it", () => {
-  // The architectural law, stated where the user reads it: pm emits the instruction, the user
-  // runs the terminal command, exactly as with `openspec init`.
+test("gh#128: the nudge says pm's ENGINE will not run it, not that a human must", () => {
+  // The architectural law, stated where the reader reads it: pm emits the instruction and
+  // whoever reads it runs the command. The negation must name pm's ENGINE as the non-actor.
+  //
+  // WHY THE doesNotMatch. The line used to read "Run `openspec update` in a terminal", and an
+  // agent read that as a permission boundary — "a human must type this" — refused to run it, and
+  // asked the user instead (one round trip, 2026-09-07; four repos on that machine were already
+  // stale at 1.9.0 from the same misread). It collides with a real reservation of `openspec
+  // init` as user-run, so the phrasing cannot merely be improved: the old wording must be
+  // ASSERTED ABSENT, or a revert to it passes this test unnoticed.
   const cwd = tmpRepo();
   run(["init"], { cwd });
   withOpenspecArtifacts(cwd, { stamps: ["1.6.0"] });
   const brief = parseBrief(cwd, { env: { PM_OPENSPEC_VERSION: "1.10.0" } });
-  assert.match(brief, /run it for you|in a terminal/i);
+  assert.match(brief, /engine never runs it for you/i);
+  assert.doesNotMatch(brief, /in a terminal|by hand|the user runs/i);
 });
 
 // ─────────── /pm:upgrade emits the same finding ───────────

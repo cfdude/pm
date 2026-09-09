@@ -168,3 +168,47 @@ export function reachableFromAnyRef(sha) {
     return out.length > 0;
   } catch { return false; }
 }
+
+/** Which of `paths` — each ROOT-relative, as `generatedArtifactsTracked()`'s pathspec is —
+ *  currently DIFFER from HEAD. In other words: what is there here to commit.
+ *
+ *  WHY THIS EXISTS. A machine-wide sweep on 2026-09-08 found NINE repositories where
+ *  `/pm:upgrade` or `openspec update` had run, succeeded, rewritten git-tracked files, and been
+ *  left uncommitted — git recording an old version while the session read the new rules off
+ *  disk. Two repos sat six days with git saying pm 0.16.0 and disk running 0.39.0; one was two
+ *  OpenSpec upgrades deep. Nothing catches it because nothing is broken: the session reads the
+ *  new files, so everything works. And `tool-currency.mjs` resolves the project version from the
+ *  `generatedBy:` stamp ON DISK, so an uncommitted upgrade makes the one surface built to notice
+ *  staleness go quiet — correct for what that function measures, and the reason no surface
+ *  anywhere is watching.
+ *
+ *  ONE PROBE, THREE ANSWERS, and that is why it is `git diff` rather than `git ls-files`:
+ *    - content that did not change never appears, so an idempotent re-run stays SILENT — and a
+ *      writer that rewrites byte-identical content (`writeRules` does exactly that) cannot
+ *      produce a false positive the way an mtime or a "we wrote it" flag would;
+ *    - a path that is untracked or GITIGNORED never appears, so a repo that git-ignores the
+ *      file is never told to commit something git would refuse;
+ *    - what remains is the `git add` list.
+ *  `generatedArtifactsTracked()` is deliberately NOT reused: it hardcodes the OpenSpec generated
+ *  paths in both its pathspec and its result regex, and answers a different question — "will a
+ *  diff exist for THOSE files" — about files this never looks at.
+ *
+ *  The pathspec and the returned values are CWD-RELATIVE for the reason tool-currency.mjs's
+ *  probe is: `git` walks UP to find a repository, so a pm-managed project nested inside a larger
+ *  repo must be described in its own terms. `git diff --name-only` prints ROOT-relative paths,
+ *  so the caller's own strings are returned rather than git's output — printing git's would
+ *  hand a nested project a `git add` line that does not work from where it is standing.
+ *
+ *  `[]` on any failure — no HEAD yet, not a git repository, git absent. Every one of those means
+ *  there is no commit to compare against, and a nudge derived from a comparison that never
+ *  happened would be asserting work it did not measure. */
+export function differsFromHead(paths) {
+  if (!paths || !paths.length) return [];
+  try {
+    const out = execFileSync("git", ["diff", "--name-only", "HEAD", "--", ...paths], {
+      cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"],
+    });
+    const changed = out.split("\n").map(l => l.trim()).filter(Boolean);
+    return paths.filter(p => changed.some(l => l === p || l.endsWith(`/${p}`)));
+  } catch { return []; }
+}

@@ -65,6 +65,15 @@ because nothing ever comes back to add it. It REPLACES wholesale on each set, an
 `--notes` — the two are distinct and neither substitutes for the other; see the paragraph under
 `update-epic`.
 
+**Registration and last-touched dates are stamped for you; no flag sets either.** From 0.40.0 on,
+every epic carries `createdAt`, written by `pushEpic()` — the single sink every creation surface
+routes through, so a new surface inherits the stamp instead of having to remember it. `touchedAt`
+advances inside `saveState()` on any write that genuinely changes the epic's stored content, and
+on no write that changes nothing. Both are ABSENT-TOLERANT: an epic registered before 0.40.0 has
+no registration date and absence there means UNKNOWN — never today's date, never another field's.
+`recover-created-at` (see `/pm:upgrade`) backfills the first from git history where the history
+holds the evidence, and leaves it absent where it does not.
+
 **Every value-bearing flag is REFUSED when its value is missing or blank, on every command that
 accepts it** — `add-epic`, `update-epic`, `record-gate-review`, `record-cross-spec-review` and
 `release` alike, plus the equivalent key in an `add-many` batch document. `--clear-links`,
@@ -169,7 +178,7 @@ To change an epic that already exists (notably, to record a tracker key after cr
 node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" update-epic <id> \
   [--title <title>] [--external-id <KEY>] [--external-url <url>] [--parent <id>] \
   [--status <status>] [--priority <P?>] [--link "<type>:<epic>[:<reason>]"] \
-  [--clear-links] [--lane <lane>] [--plan <path>] [--spec <path>]
+  [--clear-links] [--clear <field>] [--lane <lane>] [--plan <path>] [--spec <path>]
 ```
 
 **Every flag `update-epic` accepts.** The list below is the whole surface — an unlisted flag
@@ -186,8 +195,9 @@ of them are declared once in `EPIC_FLAGS` (`scripts/lib/constants.mjs`), which i
 | `--plan <path>` | `planPath` | attaches a plan to an epic created without one |
 | `--spec <path>` | `specPath` | the DESIGN DOCUMENT this epic's work was drawn from — provenance only, **many-to-one** |
 | `--parent <id>` | `parent` | no self-parent, no cycle |
-| `--link "<type>:<epic>[:<reason>]"` | `links` | **repeatable**; REPLACES the array wholesale |
-| `--clear-links` | `links` | empties it; may not be combined with `--link` |
+| `--link "<type>:<epic>[:<reason>]"` | `links` | **repeatable**; APPENDS. A repeat of an already-recorded `(type, target)` updates that entry's reason in place — never a second row |
+| `--clear-links` | `links` | empties it; **combinable with `--link`** in one invocation, which is how a malformed link is replaced atomically |
+| `--clear <field>` | the named field | **repeatable**; unsets a field whose absence is legal. Names the FLAG (`--clear plan`, not `planPath`). Clearable: `parent`, `external-id`, `external-url`, `plan`, `spec`, `description`, `external-updated-at`, `review-mode` — the set is `nullable: true` in `EPIC_FLAGS`, and the refusal enumerates it live. A set-only field is refused with the registry's own reason |
 | `--description "<why>"` | `description` | durable rationale, REPLACED wholesale on each set |
 | `--notes "<what>"` | `notes` | APPEND-only trail of `{at, actor, text}`; reads as activity |
 | `--external-id <KEY>` | `externalId` | |
@@ -196,7 +206,7 @@ of them are declared once in `EPIC_FLAGS` (`scripts/lib/constants.mjs`), which i
 | `--attribute-commit <sha>` | `attributedCommits` | **repeatable**, append-only, in landing order |
 | `--withdraw-commit <sha>` | `attributedCommits`, `withdrawnCommits` | **repeatable**. Removes ONE occurrence of a sha this epic attributed and records why. A `git reset` is a normal operation, so an attribution can outlive its commit; this is the only supported way to correct that. Refuses a sha the epic never attributed. |
 | `--withdrawal-reason "<why>"` | `withdrawnCommits` | Required by `--withdraw-commit`, and deliberately **not** `--reason` — that one is the disposition's, and sharing it made a withdrawal's reason silently become the reason the epic was delivered. |
-| `--outcome <o>` | `disposition` | `delivered\|killed\|superseded\|abandoned` |
+| `--outcome <o>` | `disposition` | `delivered\|killed\|superseded\|abandoned\|declined\|unreconstructable` |
 | `--reason "<why>"` | `disposition` | required for every outcome except `delivered` |
 | `--carried-to <epicId>` | `disposition` | where unfinished work went |
 | `--correct-disposition "<why the recorded one was wrong>"` | `disposition` | corrects an agent-recorded disposition; keeps the prior one under `superseded` |
@@ -235,9 +245,10 @@ which demands a disposition (`--outcome`, plus `--reason` unless the outcome is 
 a deferral assertion (`--no-deferrals`, or one or more `--deferral`/`--declined-deferral`). It
 also refuses to archive an `openspec`-lane epic as `delivered` without a passing, non-stale
 Gate 2, and demands `--carried-to <epicId> --reason "<which tasks moved>"` where outstanding work
-remains. `killed`, `superseded` and `abandoned` are exempt from the Gate 2 and handoff demands by
-design: the code was never written or was thrown away, and the required reason already answers
-where the work went.
+remains. Every outcome other than `delivered` — `killed`, `superseded`, `abandoned`, `declined`
+and `unreconstructable` — is exempt from the Gate 2 and handoff demands by design: the code was
+never written, was thrown away, or the evidence of what happened no longer exists, and the
+required reason already answers where the work went.
 
 **The two halves of a deferral are separated differently, because they are different shapes.**
 `--deferral` splits on the FIRST colon and that is correct for it: its left half is an EPIC ID,
@@ -317,26 +328,77 @@ remove it and register it again — discarding its start time, its gate verdicts
 its stories along the way. Both are in-place field writes: the epic keeps its position in
 `state.epics[]` and every other field it carries.
 
-> [!WARNING]
-> **`--link` REPLACES the whole links array. It does not append.** Adding one `depends-on` edge
-> to an epic that already has links means passing **every** link that epic should end up with,
-> in one invocation — read its current `links[]` first (`/pm:epic list`, or `.conductor/state.json`).
-> Three separate `update-epic --link` calls, each adding one edge, silently dropped seven
-> existing annotation edges; they were recovered from git, which is not a recovery path that
-> always exists. This bites hardest doing exactly what gh#101 asks for — wiring up dependency
-> edges in bulk.
+**`--link` APPENDS.** Supplying a link ADDS it to the epic's recorded links; omitting `--link`
+entirely leaves existing links untouched. A link's IDENTITY is its **type and its target** — the
+reason is the part a reader acts on and is not part of the identity — so:
 
-**`--link` REPLACES the epic's links wholesale**, unlike the other flags which patch a single
-field — this is the intended CLI path to fix a malformed link (recorded with a bad `add-epic
---link` before this validation existed, or hand-edited) without touching `state.json` directly.
-Pass every link you want the epic to have; omitting `--link` entirely leaves existing links
-untouched.
+- a new `(type, target)` is appended;
+- a repeat of an already-recorded `(type, target)` **updates that entry's reason in place**,
+  keeping its position. It never produces a second row: two relationships of the same type
+  between the same pair of epics are one relationship, and a record listing it twice disagrees
+  with itself;
+- a repeat matching type, target **and** reason changes nothing, and the command says so rather
+  than reporting the record was updated.
+
+It used to REPLACE the array wholesale, which made recording a second relationship silently
+discard the first: three separate `update-epic --link` calls, each adding one edge, dropped seven
+existing annotation edges. They were recovered from git, which is not a recovery path that always
+exists.
 
 **To EMPTY an epic's links, say so: `--clear-links`.** `--link` with no value used to do it by
 accident — it is a repeatable flag, so a bare `--link` parsed as one non-string element, was
 filtered away, and replaced the array with an empty one while printing "updated". That spelling
-now exits non-zero and points here. `--clear-links` takes no value and may not be combined with
-`--link`.
+now exits non-zero and points here. `--clear-links` takes no value.
+
+**`--clear-links` and `--link` combine in ONE invocation**, and that combination is how a
+malformed link is repaired: it clears, then supplies, in a single atomic write.
+
+```bash
+node "$ENGINE" update-epic <id> --clear-links \
+  --link "depends-on:<id>:<why>" --link "relates-to:<id>:<why>"
+```
+
+They were mutually exclusive, which would have left the repair as two writes with a zero-link
+window between them — and a rejection on the second write would leave the epic with no links at
+all.
+
+**`--clear <field>` unsets a field whose absence is a legal state**, one flag for the whole set
+rather than a new flag per field. It names fields by the spelling you read in this document — the
+FLAG, not the internal state key: `--clear plan`, never `--clear planPath`. It is repeatable,
+clearing one field leaves every other field untouched, and clearing a field that is already
+absent exits zero reporting that nothing changed.
+
+A field is clearable when its `EPIC_FLAGS` row declares `nullable: true`; a field deliberately
+left set-only carries its reason on the same row, and `--clear` refuses it by quoting that
+reason. `links` is one of those: `--clear-links` is its clearing form, for the atomicity above.
+`notes` is another — it is an append-only trail, so removing an entry would edit history.
+
+**Clearing a field whose absence costs more than the field says what it costs.** Six of the eight
+carry such a note — the ones pointing at another record, at a file on disk, or at a dial:
+
+- `--clear parent` — the epic leaves the hierarchy. `plan-hierarchy --parent <that id>` stops
+  batching it and it renders at the top level. Re-attach with `--parent <id>`.
+- `--clear external-url` — that URL is the **PRIMARY dedup key** the inward sync procedure matches
+  on, so the linked item can be mirrored again as a NEW epic on the next `/pm:sync`. Clear it only
+  when the epic is genuinely no longer mirrored.
+- `--clear external-id` — the **FALLBACK half** of the same key, compared only when neither side
+  carries a URL. So clearing it re-opens the same re-mirroring for a URL-less linked item, and it
+  is a different exposure from the one above rather than the same one said twice. Re-attach with
+  `--external-id <key>`.
+- `--clear plan` — the epic stops CLAIMING that plan, so `sync`'s rung 1 no longer skips the file
+  and the next run registers it as a NEW untriaged epic. **No sync-ignore tombstone is written**,
+  deliberately: `remove-epic` tombstones because the epic is GONE, whereas this epic survives and
+  clearing may well mean *let sync find this plan's real owner*. Re-attach with `--plan <path>`.
+- `--clear spec` — the same, for a design document: the epic drops out of that document's coverage
+  count in `verify-specs` and the file reads as unclaimed. No tombstone, for the reason above.
+- `--clear review-mode` — the epic stops carrying its own escalation and falls back to the
+  repo-global dial (`set-review-mode`), which may be **lower**. The de-escalation guard that would
+  refuse a lowering does not see a clear. Re-escalate with `--review-mode <mode>`.
+
+Each prints its consequence on stderr when a value was actually removed — same shape as the rank
+clear and the archived-claim clear. A clear of an already-absent field prints nothing, because
+there was no removal to have a consequence. `--clear description` and `--clear external-updated-at`
+carry no such note.
 
 ## Stories — decomposition at registration, and the third state a checklist needs
 
@@ -551,6 +613,16 @@ bullet reached 3/15.
    strips one holder and not its siblings leaves a dangling reference — the record rendering a
    pointer to something that no longer exists — and it is invisible to both gates for the same
    diff-scoped reason.
+   AN OPERATION HAS AN INVERSE, and the sweep above cannot reach it. Enumerate the inverse of
+   every operation the change adds or modifies — set against unset, add against remove, append
+   against replace, enable against disable, grant against revoke — then name and justify each
+   inverse that is not shipped, exactly as an unguarded call site must be. An operation shipped
+   without its inverse, and not justified, is a FINDING. Why the sweep misses this class is
+   mechanical, not a matter of diligence: enumerating the callers of a thing that is written
+   never leads to the question of whether it can be unwritten. Six instances shipped past both
+   gates here while the call-site obligation was already in force, the most consequential a
+   safety surface — pre-authorization grants accumulate with no revoke, so turning autonomy off
+   leaves every prior grant intact and turning it back on silently restores all of them.
 2. **Verify against the commit, not the working tree.** The commit is the unit of verification.
    Reading a file in the working tree is NOT verification. For every task, run
    `git show --stat <that task's sha>` and assert that every file the task claims to change
@@ -606,7 +678,7 @@ bullet reached 3/15.
    ENDS by recording a terminal disposition carrying its required reason, and
    never by removing the record. The archive verb takes TWO halves in ONE invocation — the
    disposition AND a deferral assertion — because the gate refuses either half alone:
-   `update-epic <id> --status archived --outcome delivered|killed|superseded|abandoned|declined --reason "<why>" --no-deferrals`
+   `update-epic <id> --status archived --outcome delivered|killed|superseded|abandoned|declined|unreconstructable --reason "<why>" --no-deferrals`
    (every outcome except `delivered` requires the reason). `--no-deferrals` is the explicit
    "there are none" and is a claim, not a default — swap it for `--deferral
    "<epicId>:<artifact section>"` where work is now held by a registered epic, or

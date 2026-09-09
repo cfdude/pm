@@ -4,6 +4,7 @@
 
 import { epicFlagsFor, gateHasEvidence } from "./constants.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
+import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
 
@@ -115,7 +116,10 @@ export function recordGateReview() {
   }
   epic.gateReview[`gate${gate}`] = entry;
 
-  saveState(state);
+  const saved = saveState(state);
   render();
-  process.stderr.write(`conductor: recorded gate ${gate} review '${verdict}' for '${id}'\n`);
+  reportSave(saved, {
+    changed: `conductor: recorded gate ${gate} review '${verdict}' for '${id}'`,
+    unchanged: `conductor: '${id}' already carried this exact gate ${gate} verdict — ${STATE_UNCHANGED}`,
+  });
 }

@@ -1046,11 +1046,11 @@ test("--plan attaches a plan to an epic created without one, and refuses a value
 
 // ─────────── 12.3: --clear-links, and a valueless --link that refuses ───────────
 //
-// `--link` REPLACES the links array, and a VALUELESS `--link` arrives as `[true]` (it is a
-// repeatable flag), which parseLinkFlags filters down to `[]` — so the one spelling an agent
-// reaches for to empty the array silently empties it while looking like a typo, and the one
-// spelling that says "empty it" did not exist. Clearing is now a NAMED flag; the valueless form
-// is refused.
+// A VALUELESS `--link` arrives as `[true]` (it is a repeatable flag), which parseLinkFlags
+// filters down to `[]` — and back when `--link` REPLACED the array, that emptied it silently
+// while looking like a typo, with no spelling that said "empty it". Clearing is now a NAMED
+// flag; the valueless form is refused. `--link` itself APPENDS as of 0.40.0, and `--clear-links`
+// is combinable with it in one invocation — see nullable-clearing.test.mjs for that pair.
 
 test("--clear-links empties the links and touches nothing else about the epic", () => {
   const cwd = tmpRepo();

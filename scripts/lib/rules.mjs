@@ -1,10 +1,16 @@
 // scripts/lib/rules.mjs
 // The CLAUDE.md managed rules block: tracker/review-mode-aware instruction text, and
-// the idempotent writer that keeps it in sync. Depends on lib/state.mjs and
-// lib/constants.mjs only — see the design doc for why this is NOT circular with
-// lib/tracker.mjs / lib/review-mode.mjs despite first appearances.
+// the idempotent writer that keeps it in sync. Depends on lib/state.mjs,
+// lib/constants.mjs and lib/archive-gate.mjs — see the design doc for why this is NOT circular
+// with lib/tracker.mjs / lib/review-mode.mjs despite first appearances.
+//
+// archive-gate.mjs is here for one reason and it is the same one integrity.mjs states: the
+// emitted archive command must quote the vocabulary the verb ACTUALLY accepts. `AGENT_OUTCOMES`
+// grows, and an emitted command naming a set the verb has outgrown is a command pm emits that
+// does not run as written. Nothing under archive-gate.mjs imports back up.
 
 import { DOCS_INDEX_URL, DOCS_MCP_URL } from "./constants.mjs";
+import { AGENT_OUTCOMES } from "./archive-gate.mjs";
 import { loadState } from "./state.mjs";
 import fs from "node:fs";
 import path from "node:path";
@@ -129,7 +135,7 @@ function closedItemStep(platform, sys, n = 6) {
     "   item can be deleted, transferred or moved out of this scope), so READ THE ITEM first.",
     "   Then, where the epic's status is not already `archived`, PROPOSE its disposition to the",
     "   user and let them confirm it — never write one unasked:",
-    "   `update-epic <id> --status archived --outcome delivered|killed|superseded|abandoned|declined --reason \"<why>\" --no-deferrals`.",
+    `   \`update-epic <id> --status archived --outcome ${AGENT_OUTCOMES.join("|")} --reason "<why>" --no-deferrals\`.`,
     `   WHICH outcome it is, and the reason that goes with it, is a judgment about what happened`,
     `   to the work; ${sys} closing an item does not say which one and pm will not guess. An epic`,
     "   that is already `archived` owes nothing here — it ended, and a record that ended does not",
@@ -162,7 +168,16 @@ function closedItemStep(platform, sys, n = 6) {
 export const GATE_PROCEDURE_ITEMS = [
   {
     title: "Call-site completeness sweep.",
-    mustSay: ["enumerate ALL call sites of the thing being guarded", "DATA reference is a call site"],
+    mustSay: ["enumerate ALL call sites of the thing being guarded", "DATA reference is a call site",
+      // The inverse-operation half. Determiner-free and punctuation-stable on purpose: the
+      // mirrors are reworded for markdown and already say "the change" where this text says
+      // "this change", so a claim carrying a determiner passes the self-check here and fails
+      // every mirror. The last one is the load-bearing claim — soften the rule and the sentence
+      // explaining WHY a call-site sweep cannot reach this class is the first thing to go.
+      "set against unset, add against remove",
+      "name and justify each inverse that is not shipped",
+      "shipped without its inverse, and not justified, is a FINDING",
+      "whether it can be unwritten"],
     lines: [
       "For every rule, guard or invariant this change introduces",
       "   or modifies, enumerate ALL call sites of the thing being guarded — derived mechanically",
@@ -178,6 +193,18 @@ export const GATE_PROCEDURE_ITEMS = [
       "   that strips one holder and not its siblings leaves a dangling reference — the record",
       "   rendering a pointer to something that no longer exists — and it is invisible to both",
       "   gates for the same diff-scoped reason.",
+      "   AN OPERATION HAS AN INVERSE, and the sweep above cannot reach it. For every operation",
+      "   this change adds or modifies, enumerate that inverse — set against unset, add against",
+      "   remove, append against replace, enable against disable, grant against revoke — then",
+      "   name and justify each inverse that is not shipped, exactly as an unguarded call site",
+      "   must be. An operation shipped without its inverse, and not justified, is a FINDING.",
+      "   The reason the sweep cannot reach this class is mechanical rather than a matter of",
+      "   diligence: enumerating the callers of a thing that is written never leads to the",
+      "   question of whether it can be unwritten. Measured here, six instances shipped past both",
+      "   gates while the call-site obligation was already in force, and the most consequential",
+      "   is a safety surface — pre-authorization grants accumulate with no revoke, so turning",
+      "   autonomy off leaves every prior grant intact and turning it back on silently restores",
+      "   all of them.",
     ],
   },
   {
@@ -269,14 +296,20 @@ export const GATE_PROCEDURE_ITEMS = [
   },
   {
     title: "End work by recording a disposition.",
+    // The enumeration is a DECLARED CLAIM, not only emitted text, and it is derived from the
+    // vocabulary rather than typed. The generator renders itself from `AGENT_OUTCOMES`, so the
+    // next outcome reaches the emitted block for free — but the three MIRRORS are static markdown
+    // and can render nothing, which is exactly how `declined` reached the engine and none of five
+    // documented surfaces. With the claim declared here, the drift guard fails the moment a
+    // mirror still carries the older, narrower set.
     mustSay: ["ENDS by recording a terminal disposition", "never by removing the record",
-      "the gate refuses either half alone"],
+      "the gate refuses either half alone", `--outcome ${AGENT_OUTCOMES.join("|")}`],
     lines: [
       "An epic, a story, a deferral or a release",
       "   exclusion ENDS by recording a terminal disposition carrying its required reason, and",
       "   never by removing the record. The archive verb takes TWO halves in ONE invocation — the",
       "   disposition AND a deferral assertion — because the gate refuses either half alone:",
-      "   `update-epic <id> --status archived --outcome delivered|killed|superseded|abandoned|declined --reason \"<why>\" --no-deferrals`",
+      `   \`update-epic <id> --status archived --outcome ${AGENT_OUTCOMES.join("|")} --reason "<why>" --no-deferrals\``,
       "   (every outcome except `delivered` requires the reason). `--no-deferrals` is the explicit",
       "   \"there are none\" and is a claim, not a default — swap it for `--deferral",
       "   \"<epicId>:<artifact section>\"` where work is now held by a registered epic, or",

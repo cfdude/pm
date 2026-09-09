@@ -268,11 +268,17 @@ test("every enum placeholder still matches the constant the engine enforces", as
   // at module load. A literal that cannot interpolate can still drift, so it is checked here —
   // binding the rule to a check rather than to whoever remembers.
   const c = await import(CONSTANTS);
+  const { AGENT_OUTCOMES } = await import(new URL("../lib/archive-gate.mjs", import.meta.url).href);
   const rows = [...c.EPIC_FLAGS, ...c.VERB_FLAGS];
   const spec = {
     lane: c.KNOWN_LANES, status: c.KNOWN_STATUSES, platform: c.KNOWN_PLATFORMS,
     mode: c.KNOWN_REVIEW_MODES, level: c.KNOWN_AUTONOMY_LEVELS,
     direction: c.KNOWN_TRACKER_DIRECTIONS,
+    // `--outcome`'s constant lives OUTSIDE constants.mjs (archive-gate.mjs derives it from
+    // disposition.mjs's KNOWN_OUTCOMES), so this row could never interpolate and was the one
+    // enum placeholder nothing guarded. `declined` reached the engine and this literal in the
+    // same release; the next growth is now caught here instead of by a reader.
+    outcome: AGENT_OUTCOMES,
   };
   for (const [flag, values] of Object.entries(spec)) {
     const row = rows.find(r => r.flag === flag && r.placeholder);

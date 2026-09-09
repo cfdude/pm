@@ -112,7 +112,16 @@ plan/proposal instead — instruction only, nothing recorded)
 "<milestone>"` so a plan's milestones land in the SAME write) · `/pm:epic` → `add-many`
 (atomic bulk create, each entry taking a `stories` array) / `update-epic` (write-back, incl.
 `--title`/`--link`/`--add-story "<title>"`/`--story <n> --done` [1-indexed] / `--story <n>
---wont-do "<reason>"` — closes the hand-edit-of-state.json risk for inline `stories[]`) /
+--wont-do "<reason>"` — closes the hand-edit-of-state.json risk for inline `stories[]`; `--link`
+APPENDS, and a repeat of a recorded type+target updates that entry's reason in place rather than
+duplicating it, so recording a second relationship no longer discards the first; `--clear <field>`
+is the generic UNSET for every field whose absence is legal, naming the FLAG and not the state key
+— `--clear plan`, never `--clear planPath` — and a refusal enumerates the clearable set live, so
+never guess it. Clearing is not free where the field is a key something else reads: `--clear
+external-url` and `--clear external-id` release the dedup key, so the linked item is mirrored again
+as a NEW epic on the next sync, and `--clear plan`/`--clear spec` stop the epic claiming that file,
+so the next sync registers it as a fresh untriaged one — the engine prints each such consequence
+when a value was actually removed) /
 `remove-epic`
 (hard-delete, `--cascade` for a parent + descendants) ·
 **`push-detour <parent> --detour <id> --reason "<why>" (--reconcile | --no-reconcile)` /
@@ -271,9 +280,10 @@ the `openspec` lane.
 - `update-epic <id> --status archived` on an `openspec`-lane epic REQUIRES
   `gateReview.gate2.verdict === "pass"`, non-stale, when the outcome is `delivered` — if it's
   missing, `fail`, `ungated` or stale, the transition is rejected with a clear error naming what's
-  missing, and nothing is written. `killed`, `superseded` and `abandoned` are exempt: the code was
-  never written or was thrown away, so demanding a verdict would make those outcomes recordable
-  only by fabricating one. Gate 1 is not itself required at archive time (it gates code, which
+  missing, and nothing is written. Every other outcome — `killed`, `superseded`, `abandoned`,
+  `declined` and `unreconstructable` — is exempt: the code was never written, was thrown away, or
+  the evidence is gone, so demanding a verdict would make those outcomes recordable only by
+  fabricating one. Gate 1 is not itself required at archive time (it gates code, which
   already happened earlier), though recording it via the same subcommand is good practice and
   `integrity` reports an archived openspec epic that passed Gate 2 with no Gate 1.
 - **The gate binds every path to `archived`, not just this verb.** `reconcileArchived()` — reached
@@ -308,6 +318,16 @@ bullet reached 3/15.
    strips one holder and not its siblings leaves a dangling reference — the record rendering a
    pointer to something that no longer exists — and it is invisible to both gates for the same
    diff-scoped reason.
+   AN OPERATION HAS AN INVERSE, and the sweep above cannot reach it. Enumerate the inverse of
+   every operation the change adds or modifies — set against unset, add against remove, append
+   against replace, enable against disable, grant against revoke — then name and justify each
+   inverse that is not shipped, exactly as an unguarded call site must be. An operation shipped
+   without its inverse, and not justified, is a FINDING. Why the sweep misses this class is
+   mechanical, not a matter of diligence: enumerating the callers of a thing that is written
+   never leads to the question of whether it can be unwritten. Six instances shipped past both
+   gates here while the call-site obligation was already in force, the most consequential a
+   safety surface — pre-authorization grants accumulate with no revoke, so turning autonomy off
+   leaves every prior grant intact and turning it back on silently restores all of them.
 
 2. **Verify against the commit, not the working tree.** The commit is the unit of verification.
    Reading a file in the working tree is NOT verification. For every task, run
@@ -371,7 +391,7 @@ bullet reached 3/15.
    ENDS by recording a terminal disposition carrying its required reason, and
    never by removing the record. The archive verb takes TWO halves in ONE invocation — the
    disposition AND a deferral assertion — because the gate refuses either half alone:
-   `update-epic <id> --status archived --outcome delivered|killed|superseded|abandoned|declined --reason "<why>" --no-deferrals`
+   `update-epic <id> --status archived --outcome delivered|killed|superseded|abandoned|declined|unreconstructable --reason "<why>" --no-deferrals`
    (every outcome except `delivered` requires the reason). `--no-deferrals` is the explicit
    "there are none" and is a claim, not a default — swap it for `--deferral
    "<epicId>:<artifact section>"` where work is now held by a registered epic, or
@@ -607,9 +627,38 @@ it waits on.
 - `state.json` always wins over `PROJECT.md` — just re-render.
 - Want to know what the index is HIDING? `integrity` — a read-only audit reporting records that
   cannot be true (an archived epic with nothing ticked, one change under two lanes, a verdict
-  that does not reach the commits it cites, an archive directory with no epic). It reports every
+  that does not reach the commits it cites, an archive directory with no epic, an epic in a status
+  the engine does not define — `epic-in-undefined-status`). It reports every
   check with its count including zeros, writes no state, blocks nothing and repairs nothing: each
   finding's remediation is a command you run.
+- An epic registered before pm carried a clock has NO registration date, and absence there means
+  UNKNOWN — never today's date and never another field's. `recover-created-at` sweeps every such
+  epic and takes its `createdAt` from the commit that first introduced that id into
+  `.conductor/state.json`, reading local history only. Where this checkout holds no such evidence —
+  no git, an untracked state file, a shallow graft, an id older than the history you have fetched —
+  the date is LEFT ABSENT rather than invented, and the verb is RE-RUNNABLE precisely so a checkout
+  that later fetches more history recovers what it could not see before. It never overwrites a date
+  already present and it repairs nothing else: an epic sitting in an undefined status is dated like
+  any other and left in that status, because which status it should be is a judgment about what
+  happened to the work. The 0.40.0 upgrade invokes it once for you. RECOVERING A DATE IS NOT A
+  TOUCH: the sweep writes `createdAt` without advancing `touchedAt`, because the last-touched
+  stamp answers when the epic's own content last changed and a backfill of its registration date
+  is not that. `touchedAt` itself needs no verb — every write that genuinely changes an epic
+  advances it, and one that changes nothing leaves it alone.
+- Which ARCHIVED epics did nobody actually decide about? `unconsidered-outcomes` — a read-only
+  list of every archived epic whose disposition is an ENGINE STAMP carrying `unknown`, i.e. the
+  engine recorded that nobody was asked. Each row names WHO stamped it (the migration and the
+  archive-drift heal are different histories, and which one it is changes how much of the epic's
+  story is recoverable) and carries the exact `update-epic … --status archived --outcome … --reason
+  … --no-deferrals` invocation that would record a real disposition. Both halves of the predicate
+  are load-bearing: an evidence-derived stamp (`delivered` written from a passing Gate 2) is
+  EXCLUDED, because re-deciding it would ask you to re-derive what the record already got right,
+  and so is an agent-recorded outcome, whatever its value — somebody was asked. Where a record
+  genuinely cannot be reconstructed, `--outcome unreconstructable` says so with its required
+  reason. The set shrinks only by somebody deciding; the engine never guesses. Note the SEAM: an
+  epic sitting in an undefined status such as `done` is NOT archived, so this walker cannot reach
+  it — `integrity`'s unknown-status check reports that one, and this verb reaches it only after a
+  human moves it to `archived`.
 - Want to know which DESIGN DOCUMENTS have no epics? `verify-specs` — a read-only inventory of
   every `.md` under a spec root (default `docs/superpowers/specs/`, `--root` to point elsewhere)
   with the epics claiming each, plus the epics naming a document that is not on disk. Uncovered
@@ -1023,7 +1072,15 @@ gateGuard?    : boolean — repo-level PreToolUse guard toggle; does NOT gate th
 laneRouting?  : { overrides: [{ match, lane }] } — optional per-repo lane overrides, checked
                 before the generic lane heuristic (see "Lane routing overrides" above);
                 set via set-lane-routing, looked up via suggest-lane
-epics[]       : { id, title, priority, status, role, lane, parent?, externalId?, externalUrl?, planPath?, stories[]?, links[], reconcileNeeded?, autonomy?, gateReview?, attributedCommits?, withdrawnCommits? }
+epics[]       : { id, title, priority, status, role, lane, parent?, externalId?, externalUrl?, planPath?, stories[]?, links[], reconcileNeeded?, autonomy?, gateReview?, attributedCommits?, withdrawnCommits?, createdAt?, touchedAt? }
+createdAt?    : ISO stamp written by `pushEpic()` — the single sink every epic creation routes
+                through — at the moment the epic is registered. ABSENT means UNKNOWN, never
+                today and never another field's value; `recover-created-at` backfills it from
+                git history where the history holds the evidence.
+touchedAt?    : ISO stamp advanced inside `saveState()` on each epic whose stored content
+                actually changed, compared AFTER the no-op early return and with both
+                timekeeping fields excluded from that comparison — so a write that changes
+                nothing advances nothing. Absent on every epic untouched since 0.40.0.
 withdrawnCommits? : [{sha, reason, withdrawnAt}] — attributions CORRECTED away, via
                 `update-epic <id> --withdraw-commit <sha> --withdrawal-reason "<why>"`.
                 attributedCommits stays append-only (its last entry is the endpoint a Gate 2

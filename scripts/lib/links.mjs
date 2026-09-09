@@ -59,6 +59,42 @@ export const LINK_TYPES_ANNOTATION = ["relates-to", "blocks", "resolves-blocker-
  *  declared in constants.mjs; conductor-29 asserts the bands' union equals it. */
 export { KNOWN_LINK_TYPES };
 
+/** THE link merge — the one place "supplying a link ADDS it" is implemented.
+ *
+ *  `epic-annotation` states the rule without qualification: a link's IDENTITY is its type and its
+ *  target, a repeat of an identity already recorded updates that entry's reason IN PLACE rather
+ *  than appending a second row, and a wholly identical repeat changes nothing. It shipped inside
+ *  `updateEpic()` and at neither sibling write path — `add-epic --link "blocks:other:first"
+ *  --link "blocks:other:second"` recorded two entries for one identity, and `add-many`'s copy
+ *  loop assigned the batch's array verbatim. `add-many.mjs` even carries a comment naming itself
+ *  as the sibling path a rule written at `parseLinkFlags` misses; the rule was written one level
+ *  further out and missed it anyway.
+ *
+ *  So it is a FUNCTION all three call, not a shape three files are trusted to keep — the same
+ *  ruling epicReferences() and EPIC_SOURCE_ARTIFACTS carry, one concept over.
+ *
+ *  WHERE IDENTITY AND REASON BOTH MATCH THE STORED OBJECT IS LEFT ALONE, byte for byte, rather
+ *  than overwritten with an equal-valued fresh one. That is not tidiness: "a wholly identical link
+ *  is not a duplicate" is REPORTED through saveState()'s whole-body `JSON.stringify` comparison,
+ *  and a stored link whose keys are in another order — anything migrated by normalizeLink(), or
+ *  written before `reason` existed — would serialize differently and turn the no-op into a write.
+ *  A stored entry may also carry fields this parser does not produce, and replacing it with an
+ *  equal-valued object would silently drop them.
+ *
+ *  `existing` is never mutated; the caller assigns the result. */
+export function mergeLinks(existing, supplied) {
+  const reasonOf = (l) => (l && typeof l.reason === "string" ? l.reason : undefined);
+  const merged = Array.isArray(existing) ? existing.slice() : [];
+  for (const l of Array.isArray(supplied) ? supplied : []) {
+    if (!l || typeof l !== "object") continue;
+    const at = merged.findIndex(x => x && x.type === l.type && x.epic === l.epic);
+    if (at === -1) { merged.push(l); continue; }
+    if (reasonOf(merged[at]) === reasonOf(l)) continue;   // identical — the stored object stands
+    merged[at] = l;                                        // corrected reason, same position
+  }
+  return merged;
+}
+
 export function isKnownLinkType(t) {
   return typeof t === "string" && KNOWN_LINK_TYPES.includes(t);
 }
@@ -71,15 +107,24 @@ export function linkTypeVocabulary() {
 
 /** The refusal an unknown type earns. It names the whole set WITH its bands (the issue's
  *  ranked list puts the write-time error first — it is the only surface an agent cannot skip),
- *  and it names the way out: `--link` REPLACES an epic's links wholesale, so the common way to
- *  meet this error is re-passing a legacy link somebody else wrote, not typing a new one. */
+ *  and it names the way out. The common way to meet this error is re-passing a legacy link
+ *  somebody else wrote, not typing a new one.
+ *
+ *  THE REMEDY CHANGED WITH THE BEHAVIOUR. `--link` used to replace the array, so "pass the
+ *  corrected type" removed the malformed link as a side effect. It now APPENDS, and a corrected
+ *  type is a DIFFERENT identity — so following the old wording would leave the malformed link
+ *  exactly where it was and the finding would persist forever. An emitted command that no longer
+ *  runs as written is a defect this engine forbids elsewhere, so the wording names the one shape
+ *  that still repairs: clear and re-supply, in one invocation. */
 export function unknownLinkTypeMessage(raw, type) {
   return `bad --link '${raw}': '${type}' is not a known link type.\n` +
     `  reads (these change behaviour): ${LINK_TYPES_READ.map(t => `${t.type} — ${t.drives}`).join("; ")}\n` +
     `  protocol state: ${LINK_TYPES_WRITTEN.map(t => t.type).join(", ")}\n` +
     `  annotation only: ${LINK_TYPES_ANNOTATION.join(", ")}\n` +
-    "  `--link` replaces an epic's links wholesale, so if this came from a link already in the " +
-    "record, pass the corrected type (or `--clear-links`) rather than re-passing the old one.";
+    "  `--link` APPENDS (a repeat of an existing type+target updates that entry's reason in " +
+    "place). So if this came from a link already in the record, correcting the type ADDS a " +
+    "second edge and leaves the bad one: replace the set instead — `--clear-links` and every " +
+    "`--link` you want kept, in ONE invocation.";
 }
 
 /** A link is renderable only when both endpoints are strings. Guards against

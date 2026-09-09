@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { tmpRepo, run, readState, writeState, projectMd, parseBrief, expectFail, writeBatch, gitInitWithCommit, commitFiles } from "./helpers.mjs";
+import { AGENT_OUTCOMES } from "../lib/archive-gate.mjs";
 
 // ─────────────── the shared epic-flag registry (EPIC_FLAGS) ───────────────
 //
@@ -280,6 +281,15 @@ const EXERCISE = {
   // The setup link is load-bearing: a freshly created epic already has `links: []`, so without
   // it this entry would pass against an implementation that did nothing at all.
   "--clear-links": { setup: ["--link", "blocks:other:because"], args: ["--clear-links"], check: (e) => assert.deepEqual(e.links, []) },
+  // The GENERIC unset. The `setup` is load-bearing for exactly the reason the row above says:
+  // a fresh epic carries no `planPath`, so without it this entry would pass against an
+  // implementation that did nothing at all. `in` rather than a `=== undefined` compare, because
+  // an undefined VALUE is not an absent KEY and absence is what nullability declares.
+  "--clear": {
+    setup: ["--plan", "docs/superpowers/plans/p.md"],
+    args: ["--clear", "plan"],
+    check: (e) => assert.ok(!("planPath" in e), "--clear plan left planPath on the record"),
+  },
   "--review-mode": { args: ["--review-mode", "thorough"], check: (e) => assert.equal(e.reviewMode, "thorough") },
   "--lane": { args: ["--lane", "superpowers"], check: (e) => assert.equal(e.lane, "superpowers") },
   "--plan": { args: ["--plan", "docs/superpowers/plans/p.md"], check: (e) => assert.equal(e.planPath, "docs/superpowers/plans/p.md") },
@@ -388,11 +398,13 @@ const DISPOSITION = new URL("../lib/disposition.mjs", import.meta.url).href;
 
 test("the outcome vocabulary and the engine-stamp token set are each exactly what the release defines", async () => {
   const { KNOWN_OUTCOMES, ENGINE_STAMP_TOKENS } = await import(DISPOSITION);
-  // `declined` (gh-112) is the intake end: an ask considered and not taken on. Added to the
-  // vocabulary rather than to KNOWN_STATUSES, so no status-driven behavior changes — and named
-  // here because this assertion is EXACT: a seventh outcome added without a rule fails it.
+  // `declined` (gh-112) is the intake end: an ask considered and not taken on. `unreconstructable`
+  // is the evidence end: somebody looked and the evidence is gone — distinct from `unknown`, which
+  // says nobody looked. Both are outcomes rather than statuses, so no status-driven behavior
+  // changes — and named here because this assertion is EXACT: an eighth outcome added without a
+  // rule fails it.
   assert.deepEqual([...KNOWN_OUTCOMES].sort(),
-    ["abandoned", "declined", "delivered", "killed", "superseded", "unknown"]);
+    ["abandoned", "declined", "delivered", "killed", "superseded", "unknown", "unreconstructable"]);
   // Exact, not superset: a sixth token added without a rule fails here, and so does dropping
   // any of the five. Every exemption elsewhere in this release keys on one of these values.
   assert.deepEqual([...ENGINE_STAMP_TOKENS].sort(),
@@ -1223,7 +1235,13 @@ test("archiving with no --outcome is refused, naming the permitted outcomes", ()
   const err = expectFail(() => run(["update-epic", "cc-epic", "--status", "archived"], { cwd }));
   assert.ok(err, "an epic that ends without saying how is the silence this release removes");
   const msg = String(err.stderr || err.message);
-  for (const o of ["delivered", "killed", "superseded", "abandoned"]) assert.match(msg, new RegExp(o));
+  // ANCHORED TO THE ENUM, not a four-value subset of it. This was the identical shape 9a0dfb1
+  // repaired in conductor-18 and left standing at its sibling: a per-value substring loop passes
+  // whatever the enum's contents, so `declined` and `unreconstructable` joined it with nothing
+  // asserting the refusal names them. The joined alternation is exact — a value added to
+  // AGENT_OUTCOMES without reaching the refusal fails here.
+  assert.match(msg, new RegExp(AGENT_OUTCOMES.join("\\|")),
+    "the refusal must name the permitted outcomes in full, as the engine renders them");
   assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
 });
 

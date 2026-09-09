@@ -48,6 +48,7 @@
 // side and the rules above.
 
 import { isInitialized, loadState, saveState } from "./state.mjs";
+import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
 
 /** `reorder <id> <id> …` — set the manual rank of one whole priority band, atomically.
@@ -105,7 +106,11 @@ export function reorder() {
   }
 
   ids.forEach((id, i) => { byId.get(id).rank = i + 1; });
-  saveState(state, { verb: "reorder" });
-  process.stdout.write(`conductor: ${band} reordered — ${ids.map((id, i) => `${i + 1}. ${id}`).join("  ")}\n`);
+  const saved = saveState(state, { verb: "reorder" });
+  reportSave(saved, {
+    stream: process.stdout,
+    changed: `conductor: ${band} reordered — ${ids.map((id, i) => `${i + 1}. ${id}`).join("  ")}`,
+    unchanged: `conductor: ${band} was already in that order — ${STATE_UNCHANGED}`,
+  });
   render();
 }

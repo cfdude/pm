@@ -2,7 +2,9 @@
 // APPEND-ONLY schema migrations, keyed by the release that introduced each change, and
 // the /pm:upgrade verb that applies them. One-directional dependencies only.
 
+import path from "node:path";
 import { isInitialized, loadState, saveState } from "./state.mjs";
+import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { pluginVersion, newestInstalledVersion, cmpVer, changelogBetween, stampVersion } from "./plugin-meta.mjs";
 import { reconcileArchived } from "./epic-progress.mjs";
 import { writeRules } from "./rules.mjs";
@@ -12,6 +14,8 @@ import { ARCHIVE_BACKFILL, engineStamp, stampedBy } from "./disposition.mjs";
 import { resolvePlatform } from "./platform.mjs";
 import { ensureGitignore } from "./subcommands.mjs";
 import { openspecCurrencyLines } from "./tool-currency.mjs";
+import { differsFromHead } from "./git.mjs";
+import { recoverCreatedAtDates } from "./created-at.mjs";
 
 // MIGRATIONS — APPEND-ONLY, each keyed by the release that introduced the change.
 // NEVER remove or reorder a shipped entry: a repo many versions behind replays every
@@ -66,6 +70,29 @@ const MIGRATIONS = [
     note: "lift archive-backfill registration provenance from the disposition onto the epic",
     apply(state) {
       liftBackfillProvenance(state);
+    },
+  },
+  // 0.40.0 — every epic gains a registration date, and the ones that predate the field get theirs
+  // back from this checkout's own history.
+  //
+  // IT DELEGATES, and the delegation is the point. The rule stated at the 0.27.0 entry above
+  // forbids a migration from reading disk, because a one-shot, never-replayed transformation may
+  // not produce a different result on a machine whose checkout sits at a different commit — and
+  // reading history does exactly that. Two checkouts of one remote on this machine differ by two
+  // commits touching state.json, so the poorer one would freeze absence permanently, keyed to a
+  // pmVersion it never replays again.
+  //
+  // So the recovery is a VERB (lib/created-at.mjs) that this entry invokes once. The migration
+  // stays a one-shot; the recovery stays re-runnable; a checkout that later fetches more history
+  // recovers what this pass could not. Nothing else here changes: `createdAt` on epics registered
+  // from now on is stamped by pushEpic(), and `touchedAt` is deliberately left ABSENT on every
+  // pre-existing epic — saveState() excludes both timekeeping fields from its per-record
+  // comparison, so this sweep is a recovery rather than a fleet-wide touch on upgrade day.
+  {
+    release: "0.40.0",
+    note: "recover epic registration dates from local history (delegates to the re-runnable verb)",
+    apply(state) {
+      recoverCreatedAtDates(state);
     },
   },
 ];
@@ -185,11 +212,20 @@ export function upgrade() {
   }
   reconcileArchived(state);
   stampVersion(state);
-  saveState(state);
-  writeRules(resolvePlatform({}, state));
+  const saved = saveState(state);
+  const rulesFile = path.basename(writeRules(resolvePlatform({}, state)));
   render();
   ensureGitignore();
-  process.stderr.write(`conductor: upgraded (${applied} migration(s)), pmVersion now ${state.pmVersion || "unknown"}\n`);
+  // STILL "upgraded", and still exit zero: state-write-guard's own re-run scenario ends "and the
+  // save reports success", and `upgrade` is the byte-idempotent verb that scenario is written
+  // about. What changes is the claim about the FILE — a second run rewrote nothing, and the
+  // rules block and PROJECT.md were re-rendered regardless.
+  reportSave(saved, {
+    changed: `conductor: upgraded (${applied} migration(s)), pmVersion now ${state.pmVersion || "unknown"}`,
+    unchanged: `conductor: upgraded (${applied} migration(s)), pmVersion now ` +
+      `${state.pmVersion || "unknown"} — ${STATE_UNCHANGED} ` +
+      "(the rules block and PROJECT.md were re-rendered)",
+  });
 
   // Surface WHAT the upgrade brought, not just that it happened — close the
   // post-upgrade blindspot. Print the CHANGELOG delta for (stamped, running].
@@ -208,4 +244,31 @@ export function upgrade() {
   // never-replayed transformation may not have.
   const openspecLines = openspecCurrencyLines();
   for (const l of openspecLines) process.stderr.write(l + "\n");
+
+  // COMMIT WHAT THIS JUST REWROTE. Every path below is one THIS function wrote a moment ago:
+  // state.json (migrations + the version stamp), the platform's rules file (NOT always
+  // CLAUDE.md — Hermes/Codex resolve AGENTS.md or HERMES.md, so the name comes from
+  // writeRules()'s return, never a literal), PROJECT.md and the render stamp (both via
+  // render()), and .gitignore (ensureGitignore's back-fill).
+  //
+  // Nine repositories on one machine had run this and never committed the result — see
+  // differsFromHead()'s note for the measurements. The failure is silent by construction: the
+  // session reads the rewritten files off disk, so nothing looks broken, and git quietly records
+  // a version the code is no longer at. `/pm:upgrade` said nothing about committing any of it.
+  //
+  // The probe decides BOTH suppressions on its own: an idempotent re-run changes no content and
+  // prints nothing, and a path this repo git-ignores never appears, so a repo that ignores the
+  // file is never told to commit something git would refuse. Nothing here is a second list of
+  // what the verb writes — it IS the verb's own writes, named at the point they happen.
+  const rewritten = differsFromHead(
+    [".conductor/state.json", rulesFile, "PROJECT.md", ".conductor/render-stamp.json", ".gitignore"]);
+  if (rewritten.length) {
+    process.stderr.write(
+      `conductor: \u26a0 COMMIT THIS UPGRADE — it rewrote ${rewritten.length} tracked ` +
+      `file${rewritten.length === 1 ? "" : "s"} and git still records the old ones.\n` +
+      `   git add ${rewritten.join(" ")}\n` +
+      `   git commit -m "chore(pm): upgrade conductor to ${state.pmVersion || "unknown"}"\n` +
+      "   Left uncommitted, git says this repo is on the OLD version while every session reads " +
+      "the new rules off disk — nothing anywhere detects that.\n");
+  }
 }

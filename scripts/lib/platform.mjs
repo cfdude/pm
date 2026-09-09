@@ -98,6 +98,9 @@ export function resolveAndRecordPlatform() {
   // dormancy: once state.json exists, isInitialized() is true and every hook activates.
   // Verified live before this guard -- `write-rules` in an empty directory produced a state
   // file, after which commit-nudge started firing.
+  // save-report: exempt — a silent record of which platform's rules file this repo uses. It
+  // prints nothing at all, so there is no success line for a no-op save to falsify; the verb the
+  // caller is running reports its own outcome.
   if (switched && isInitialized()) saveState(state);
   return { platform, switched };
 }

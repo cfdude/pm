@@ -11,7 +11,7 @@ here carries a disposition, and the scope rule's two exclusions currently exclud
 upgrade, the same checks report the same findings: the migration stamps `unknown` on every archived
 epic, and `unknown` stays in scope by design.
 
-**15 checks, 11 findings.**
+**16 checks, 11 findings.**
 
 **Re-measured 2026-08-27** when `recorded-sha-the-repository-cannot-resolve` was added for #142,
 and again when `delivered-release-epic-left-open` was added for #137 and
@@ -19,6 +19,9 @@ and again when `delivered-release-epic-left-open` was added for #137 and
 **Re-measured 2026-08-29** when `link-of-unknown-type` was added for #100, and again when
 `advisory-claim-shape` was added for #84 — see its section at the end. The count of checks
 moved; no finding did.
+**Re-measured 2026-09-08** when `epic-in-undefined-status` was added for 0.40.0. The count of
+checks moved; no finding did — this repository holds no epic outside `KNOWN_STATUSES`, which is
+not the case elsewhere (see its row below).
 The count of checks moved; no finding did. This document is the living record of what the audit
 reports, not a snapshot of one afternoon — a check added later that nobody wrote down here is a
 check whose result nobody wrote down at all, which is the failure the document exists to end.
@@ -94,6 +97,7 @@ on today's record, and each reason is checkable rather than asserted.
 | `delivered-release-epic-left-open` | **This repository holds one release, `0.27.0`, and every one of its 21 members is `archived`.** The zero is the *discharged* form of the finding this check was written from, not the absence of one: at the moment #137 was filed the same twenty epics were `queued` under a release whose change had archived `delivered`, and the check would have named all twenty. They were then given their dispositions by twenty hand-run `update-epic` calls, which is exactly what a cleared finding looks like. The four epics `0.27.0` deliberately cut — `gh-114`, `gh-66`, `gh-64`, `gh-69` — are correctly absent for a *second* reason: they are in the release's `deferred[]`, and `--defer` also cleared their membership pointer, so they are not members either. |
 | `superseded-epic-never-ended` | **No epic in this repository holds a `supersedes` link.** Measured across all 148 epics: the link types actually in use are `relates-to` (22), `depends-on` (16) and `blocks` (4), and `supersedes` (0). The vocabulary shipped with gh-112's intake/triage layer and nothing has consolidated a pair through it yet — so the zero is "the declaration has never been made here", not "consolidations are being ended correctly". The first `--link "supersedes:<id>:<why>"` written in this repo puts a candidate in front of this check. |
 | `link-of-unknown-type` | **Every link type stored in this repository is in the known set.** Measured 2026-08-29 across every epic: the types in use are `relates-to`, `depends-on` and `blocks`, and all three are known — so the zero says the vocabulary matches this record, not that the check cannot fire. It fires readily elsewhere: gh#100 was filed from a live repo holding `relates` (36), `resolves-blocker-for` (2), `parent` (2) and `may-invalidate` (1) with **zero** `depends-on`, which is the state this check exists to name. The zero here also has a second, weaker cause worth stating: `--link` is written by hand rarely in this repo, so the population is small. |
+| `epic-in-undefined-status` | **Every epic here carries a status `KNOWN_STATUSES` defines.** Added 2026-09-08 for 0.40.0. The zero is local and it is not the general case: measured across 27 distinct upstreams, **26 epics sit in `status: "done"`** — a value no verb can write (`add-epic.mjs:353`, `update-epic.mjs:105` and `add-many.mjs:107` all refuse it) and every read path has always accepted. The check is exercised against a redacted copy of one such record — 67 epics, 18 of them `done` — at `scripts/test/fixtures/state-real-undefined-statuses.json`, so the zero here is measured against a check with a live population elsewhere rather than against a check nobody has seen fire. |
 | `archived-with-no-gate-2-review` | **No epic carries an `ungated` Gate 2.** Only the archive-drift heal writes that verdict, and it writes it only where an openspec-lane epic reaches `archived` with no `gate2` at all; the three epics that have a `gate2` all carry `pass`. The backfill and the two archived-at-creation paths are forbidden from writing a `gate2` entry, which is what keeps this from becoming a permanent, unclearable condition against every historical change. |
 
 ---

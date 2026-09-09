@@ -8,6 +8,132 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.40.0] — 2026-09-08
+
+**The record answers questions about itself.** Five defects, one root: `.conductor/state.json`
+could not answer questions about its own contents. Measured across 27 distinct upstreams before
+this shipped — 310 archived epics carrying `outcome: unknown`, 26 more in `status: "done"` (a value
+`KNOWN_STATUSES` does not contain, which the 0.27.0 migration never reached), and 18 of 20 open
+epics in this repository carrying no date of any kind.
+
+### Added
+
+* **Epics record when they were registered and when they were last touched.** `createdAt` binds to
+  `pushEpic` — the single sink every creation routes through — so it inherits the source scan that
+  already forbids bypassing it, rather than an enumeration of creation surfaces that this
+  repository already tried and already watched go stale. `touchedAt` is stamped inside `saveState`
+  *after* its no-op early return, against the disk pre-image already read there, excluding both
+  timekeeping fields from the per-record comparison and matching records **by epic id, not array
+  position** — `remove-epic` filters the array, so index-matching would have falsely stamped every
+  record after a removal.
+* **`recover-created-at`**, a re-runnable verb the 0.40.0 migration invokes once. Not implemented
+  inside `MIGRATIONS`: a one-shot transformation that reads disk produces a different result per
+  checkout, which the migration framework forbids by name — and two checkouts of one remote on the
+  development machine differ by two commits touching `state.json`, so a one-shot recovery would
+  have frozen a wrong answer in one of them permanently. **A shallow clone would have fabricated a
+  date for every epic and recorded it as fact**: at a graft point git diffs the boundary commit
+  against nothing and reports every id as introduced there. Guarded, and absence stays
+  re-attemptable — unshallow the clone, re-run, get the real dates.
+* **`epic-in-undefined-status`**, an integrity check reporting any epic whose `status` is outside
+  `KNOWN_STATUSES`. The finding names the consequence a reader would otherwise miss: such an epic
+  is non-terminal to every rule testing for the archived status, so it is invisible to precisely
+  the checks that would surface it, and it permanently absorbs the effective priority of everything
+  depending on it. Reports; never repairs.
+* **`unconsidered-outcomes`**, a read-only verb enumerating archived epics whose outcome nobody
+  considered — engine-stamped **and** `outcome: unknown`. Both halves matter: a stamp alone sweeps
+  in epics whose outcome a migration correctly derived from a passing Gate 2, and an `unknown`
+  value alone sweeps in epics carrying no disposition at all.
+* **`unreconstructable`**, an agent-supplied outcome recording that somebody looked for the evidence
+  of what happened and it does not exist — distinct from `unknown`, which says nobody looked.
+* **`--clear <field>`** on `update-epic`, deriving its accepted set from a new `nullable: true`
+  marker on the flag registry, with `setOnly: "<reason>"` on the rows deliberately not clearable.
+  Both directions are tested, so a nullable row added later with no clearing path fails the suite
+  instead of shipping silently. Fields whose clearing costs more than the field carry a
+  `clearNote` — clearing `externalUrl` lets the linked item be mirrored again as a *new* epic;
+  clearing `plan` lets the next `sync` register that file as a fresh untriaged epic.
+* **The emitted call-site sweep now obliges the inverse operation** — set against unset, add
+  against remove, append against replace, enable against disable, grant against revoke — as a
+  numbered required task item, a declared `mustSay` claim, and in all three mirrored surfaces.
+* **`/pm:upgrade` now tells you to commit what it just rewrote.** The verb re-stamps
+  `state.json`, rewrites the platform's rules block, re-renders `PROJECT.md` and the render
+  stamp, and back-fills `.gitignore` — and said nothing about any of it reaching git. A sweep of
+  one machine on 2026-09-08 found **nine repositories** where `/pm:upgrade` or `openspec update`
+  had run, succeeded, and been left uncommitted: two sat six days with git recording pm 0.16.0
+  while disk ran 0.39.0, and one was two OpenSpec upgrades deep (HEAD 1.7.0, disk 1.11.0).
+
+  The failure is silent **by construction**, which is why nothing caught it: every session reads
+  the rewritten files off disk, so nothing is broken and nothing looks wrong. And
+  `tool-currency.mjs` resolves a project's version from the `generatedBy:` stamp ON DISK — correct
+  for what that function measures, but it means an uncommitted upgrade makes the one surface built
+  to notice staleness go quiet.
+
+  The new line names the changed paths so the `git add` is a copy-paste, and it is conditional in
+  **both** directions off a single `git diff --name-only HEAD` probe against the paths the verb
+  itself wrote: content that did not change never appears, so an idempotent re-run stays silent
+  (a message that always fires is one people stop reading), and a path that is untracked or
+  git-ignored never appears, so a repo that ignores these files is never told to commit something
+  git would refuse. `git diff` rather than a "we wrote it" flag also kills a false positive that
+  was already latent — `writeRules` rewrites byte-identical content on a repeat run, which any
+  mtime- or write-site-keyed check would report as a change.
+
+### Changed
+
+* **`--link` appends instead of replacing.** A link's identity is its type and target; the reason
+  is not part of it, so re-supplying an identity updates the reason in place rather than
+  duplicating it or silently discarding the correction. `--clear-links` and `--link` are no longer
+  mutually exclusive, so the documented repair stays one atomic write. All six sites documenting
+  the old behaviour changed with it, including two the engine emits at runtime.
+* **A write that changes nothing says so**, across the whole write surface rather than one verb:
+  27 `saveState` call sites report through a shared reporter, four carry a declared exemption, and
+  a per-call-site source scan fails the build on a fifth that does neither.
+
+### Fixed
+
+* `declined` had been added to the outcome enum in an earlier release, reached the engine, and
+  reached **none** of five documented surfaces — including a test asserting the four-value list
+  that passed by prefix match, so the guard for this drift was blind to it. All five repaired, and
+  the emitted enumerations now render from `AGENT_OUTCOMES`.
+* Two live tests asserted that `--link` replaces; both would have failed CI on the change above.
+* **A read-only verb no longer warns that it is WRITING a different repository.** Running
+  `integrity` with `CLAUDE_PROJECT_DIR` pointed at another repo printed
+  `⚠ WRITING A DIFFERENT REPOSITORY` — and then, two lines later, `integrity`'s own output read
+  *"Findings are reported, never repaired: nothing here writes state."* The two contradicted each
+  other, and the verb genuinely wrote nothing (state.json md5 identical before and after, working
+  tree clean). The warning is worth shouting — pointing the engine at another repo and mutating
+  it by accident is exactly the mistake it exists for — which is why crying wolf on the **17**
+  read-only verbs is the defect: it trains a reader to skim past it on the **33** where it is the
+  difference between inspecting another repo and mutating it. (16 and 32 when the fix was written;
+  this release's two new read-only verbs move both.)
+
+  Gated on `verb-effects.mjs`, which already declared `effect: "read-only" | "mutates"` for every
+  verb and already had `integrity` right — **no new list of verb names**, which would go stale the
+  first time someone added a verb, and a staleness bug in a safety warning is worse than the
+  warning being noisy. conductor-25 asserts set-equality between that table and the dispatch
+  object, so a verb added without an entry still fails the build. An unknown verb has no entry,
+  reads as not-read-only and still warns. Mutating verbs, hooks included, are unchanged.
+
+* **`verb-effects.mjs` under-declared what `upgrade` writes** — it named `state.json`, `CLAUDE.md`
+  and `.gitignore`, omitting `PROJECT.md` and `.conductor/render-stamp.json`, both written through
+  `render()`. It also said `CLAUDE.md` where the target is whatever the platform's precedence chain
+  resolves to.
+
+* **The OpenSpec drift nudge no longer reads as "a human must run this".** The line said *Run
+  `openspec update` in a terminal; pm never runs it for you*, and `commands/upgrade.md` plus the
+  README both equated it with `openspec init` — "a terminal command, exactly like `openspec
+  init`". `openspec init` genuinely is reserved to the user in at least one estate's global agent
+  instructions, so the analogy transferred that reservation onto `update`, which has no such
+  reservation. **Measured cost:** an agent session read the nudge, refused to run the command, and
+  asked the user to run it instead — one full round trip on 2026-09-07 — and the same misread had
+  already left FOUR repositories on that machine stale at 1.9.0.
+
+  The negation now names pm's **engine** as the non-actor rather than naming a human as the
+  required one: *pm's engine never runs it for you (pm instructs, it does not integrate)*. The
+  architectural law is unchanged and so is the behavior — the engine still passes the `openspec`
+  binary nothing but `--version`, and the source scan that enforces that still fires. The safety
+  requirement was always *review the diff before committing*, which lines 2 and 3 of the nudge
+  already said correctly; it was never *a human must type it*. The test that pins this now asserts
+  the old wording is ABSENT as well, so a revert to it cannot pass unnoticed.
+
 ## [0.39.0] — 2026-09-05
 
 **Things that go missing without anything noticing.** Four items under one class: a shipped file

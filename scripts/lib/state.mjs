@@ -67,12 +67,34 @@ export function defaultState() {
  *  epic comes to claim an artifact. NOTE the body below is kept tight on purpose — a source
  *  scan in conductor-13 allows the raw push only within a few lines of this signature. */
 export function pushEpic(state, epic) {
-  if (!Object.prototype.hasOwnProperty.call(epic, "attributedCommits") && !isArchiveBackfilled(epic)) {
-    epic.attributedCommits = [];
-  }
+  seedCreationFields(epic);
   claimArtifacts(state, epic);
   state.epics.push(epic);
   return epic;
+}
+
+/** The fields every epic owes AT CREATION, seeded in one place so pushEpic()'s body stays the
+ *  handful of lines conductor-13's source scan allows the raw array append to sit within — the
+ *  scan matches on the literal call, so this sentence deliberately does not spell it. Called from
+ *  pushEpic() and nowhere else: the sink is still the sink, and this is only where its seeding is
+ *  spelled out.
+ *
+ *  `createdAt` binds here for exactly the reason the array does, and the enumeration history above
+ *  is the argument rather than a preference. It takes NO exemption, not even the archive
+ *  backfill's: registration records when PM LEARNED OF THE WORK and not how old the work is, so a
+ *  change archived long ago and registered today is correctly stamped today. Reaching back for the
+ *  epics that predate the field is the recovery verb's job, and it can only fill an ABSENT date.
+ *
+ *  Both guards are ABSENCE guards, so anything already carrying the key is left exactly as given —
+ *  which is what lets the recovery, or a caller replaying a record, route through here without
+ *  being re-dated. */
+function seedCreationFields(epic) {
+  if (!Object.prototype.hasOwnProperty.call(epic, "attributedCommits") && !isArchiveBackfilled(epic)) {
+    epic.attributedCommits = [];
+  }
+  if (!Object.prototype.hasOwnProperty.call(epic, "createdAt")) {
+    epic.createdAt = new Date().toISOString();
+  }
 }
 
 /** Thrown when a write would clobber a newer revision than the one this caller read. */
@@ -156,6 +178,60 @@ export function loadState() {
   return base;
 }
 
+/** The fields excluded from the PER-RECORD comparison in stampTouched(), and the exclusion is the
+ *  same shape as `revision`'s from the whole-body comparison: a field a mechanism introduces must
+ *  not be an input to that mechanism's own decision.
+ *
+ *  Without it, any write that populates `createdAt` makes every record it fills differ from its
+ *  disk pre-image, so the touch stamp fires on all of them — and that is not hypothetical.
+ *  `upgrade()` applies every pending migration to ONE in-memory state and calls saveState ONCE, so
+ *  the 0.40.0 recovery sweeping an entire archive would record every epic in every repository as
+ *  last touched on upgrade day. A record whose only delta is a recovered registration date is a
+ *  RECOVERY, not a touch — on upgrade day, and equally on any later day the standalone recovery
+ *  verb is re-run, which is the same write. */
+const TIMEKEEPING_FIELDS = ["createdAt", "touchedAt"];
+
+/** A record's comparable content: everything except the two timekeeping fields. */
+function comparableEpic(epic) {
+  const rest = { ...epic };
+  for (const k of TIMEKEEPING_FIELDS) delete rest[k];
+  return JSON.stringify(rest);
+}
+
+/** Advance `touchedAt` on exactly the epics whose stored content differs from the disk pre-image.
+ *
+ *  Called ONLY after the identity comparison has already decided this save is not a no-op, and
+ *  that ordering IS the mechanism. `nextBody` is compared whole with `revision` as its only
+ *  exclusion, so a stamp applied BEFORE it makes every save differ from disk unconditionally, the
+ *  short-circuit never fires, and byte-idempotence breaks for every verb — three shipped tests
+ *  assert it (conductor-02:40, conductor-15:107, conductor-01:80). Stamping per CALLER is the only
+ *  other shape and it is infeasible across the engine's 31 saveState call sites, which is the same enumeration
+ *  argument pushEpic() above is bound by.
+ *
+ *  Records are matched BY ID and never by position: remove-epic filters the array, so every record
+ *  after a removed one shifts index and an index-matched comparison would report the lot as
+ *  changed.
+ *
+ *  A record with no pre-image is NEW and is stamped — which is also what makes a first save right,
+ *  since readJSON(..., {}) yields no pre-image at all and every epic correctly gets
+ *  `createdAt == touchedAt`. A record carrying no usable id is stamped for a different reason: we
+ *  cannot tell whether it changed, and "not touched" would be an assertion nothing measured. */
+function stampTouched(state, diskBody) {
+  const at = new Date().toISOString();
+  const preImage = new Map();
+  for (const e of Array.isArray(diskBody.epics) ? diskBody.epics : []) {
+    if (e && typeof e === "object" && typeof e.id === "string" && !preImage.has(e.id)) {
+      preImage.set(e.id, comparableEpic(e));
+    }
+  }
+  for (const e of Array.isArray(state.epics) ? state.epics : []) {
+    if (!e || typeof e !== "object") continue;
+    const before = typeof e.id === "string" ? preImage.get(e.id) : undefined;
+    if (before !== undefined && before === comparableEpic(e)) continue;
+    e.touchedAt = at;
+  }
+}
+
 /** Atomic write with an optimistic revision check.
  *
  *  The tmp-file + rename(2) below already guaranteed the WRITE was atomic — a crash never left
@@ -200,6 +276,10 @@ export function saveState(state, opts = {}) {
   if (JSON.stringify(currentBody) === JSON.stringify(nextBody)) {
     return { ok: true, revision: found, unchanged: true };
   }
+
+  // AFTER the early return, never before it — see stampTouched(). `next` below is built from
+  // `state` and therefore carries the stamps this mutates in place.
+  stampTouched(state, currentBody);
 
   // Math.max(found, expected), not just expected: with --force, `expected` is the forcing
   // writer's STALE value, and a plain `expected + 1` can land BELOW what's already on disk

@@ -132,9 +132,12 @@ test("add-epic --link refuses an unknown type and names the valid set", () => {
   assert.match(msg, /depends_on/);
   assert.match(msg, /not a known link type/);
   for (const t of KNOWN_LINK_TYPES) assert.ok(msg.includes(t), `the refusal does not name '${t}'`);
-  // The wholesale-replace trap is the actual back-compat wall: a user hits this while
-  // re-passing a link they did not author. The message must say what to do about it.
-  assert.match(msg, /--clear-links|replaces/);
+  // The actual back-compat wall: a user hits this while re-passing a link they did not author.
+  // The message must say what to do about it — and under APPEND that remedy is `--clear-links`
+  // plus the corrected set in one invocation, since a corrected type is a different identity
+  // and would leave the malformed link in place. Anchored on the flag, not on "replaces", which
+  // was the old behaviour's wording.
+  assert.match(msg, /--clear-links/);
   assert.ok(!readState(cwd).epics.some(e => e.id === "b"), "the epic was written anyway");
 });
 
@@ -152,9 +155,15 @@ test("every known type is accepted on write", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
   seed(cwd, [epic("a"), epic("b")]);
+  // `--link` APPENDS, and each type is a distinct identity against the same target, so the
+  // array GROWS by one per iteration. It previously asserted a one-element array because the
+  // flag replaced wholesale; asserting the last element alone would pass against an
+  // implementation that still replaced, so the whole array is compared.
+  const expected = [];
   for (const t of KNOWN_LINK_TYPES) {
     run(["update-epic", "b", "--link", `${t}:a:why`], { cwd });
-    assert.deepEqual(readState(cwd).epics.find(e => e.id === "b").links, [{ type: t, epic: "a", reason: "why" }]);
+    expected.push({ type: t, epic: "a", reason: "why" });
+    assert.deepEqual(readState(cwd).epics.find(e => e.id === "b").links, expected);
   }
 });
 

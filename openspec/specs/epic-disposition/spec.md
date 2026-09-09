@@ -30,34 +30,49 @@ be used at all four scopes below rather than four independent shapes.
 
 ### Requirement: An epic that ends records its outcome
 An epic reaching `status: "archived"` SHALL carry an `outcome` alongside that status, drawn from
-`delivered` | `killed` | `superseded` | `abandoned` | `unknown`. `outcome` is a distinct field from
-`status`, not a new status value — an epic is still `archived`, and every existing status-driven
-behavior is unchanged. `delivered` MAY omit a reason; `killed`, `superseded` and `abandoned` MUST
-carry one. This capability defines the record's shape; **which archive paths exist, and which
-outcome the Gate 2 requirement binds, are enumerated by the `gate-integrity` capability** and are
-not restated here.
+`delivered` | `killed` | `superseded` | `abandoned` | `declined` | `unreconstructable` | `unknown`.
+`outcome` is a distinct field from `status`, not a new status value — an epic is still `archived`,
+and every existing status-driven behavior is unchanged. `delivered` MAY omit a reason; `killed`,
+`superseded`, `abandoned`, `declined` and `unreconstructable` MUST carry one. The refusal to
+archive without an outcome binds the INTERACTIVE ARCHIVE VERB only — the one path where an agent
+supplies a disposition. Every other archive path has nobody to ask, and the engine stamps
+`outcome: unknown` with `recordedBy` instead; demanding prose from such a path would be a
+fabrication, not a record. This capability
+defines the record's shape; **which archive paths exist, and which outcome the Gate 2 requirement
+binds, are enumerated by the `gate-integrity` capability** and are not restated here.
 
-`unknown` is never an agent's answer. The refusal to archive without an outcome binds the
-**interactive archive verb** only — the one path where an agent supplies a disposition — and that
-path MUST also refuse `unknown` supplied by the agent, since choosing "I don't know" over a real
-disposition is the silence this capability exists to remove. **Every other archive path
-`gate-integrity` enumerates supplies no disposition** — the **archive-drift heal**, the **archive
-backfill registration** and the two **archived-at-creation paths** — and each MUST instead have the
-**engine** stamp `outcome: unknown`. On all of them, that stamp MUST carry
-`recordedBy` — the fixed literal path token `gate-integrity` and `conductor-record` define
-(`archive-drift-heal`, `archive-backfill`, `add-epic`, `add-many`) — as a **field on the disposition
-record**, not merely as the free-text reason. `conductor-record` states the general rule: any path in this release that
-stamps an outcome the agent did not supply uses that field, precisely so a consumer keys on data
-rather than parsing prose; a heal whose outcome carried only a reason naming its path would
-reintroduce exactly the prose-parsing dependency the field exists to eliminate. The reason MAY
-additionally name the path for a human reader.
+`unknown` is never an agent's answer — it is the engine saying nobody recorded one.
 
-Note that "the engine stamps it" is not a claim that nobody was at the keyboard: `gate-integrity`
-binds the heal to `reconcileArchived()` wherever invoked, and two of its call sites are interactive
-verbs. The stamp records that no disposition was supplied at the transition, which is true at all of
-them. Together with pre-existing state loading as `unknown` this is the only way the value is ever
-written. The alternative — an archived epic carrying no outcome at all — is strictly worse than a
-recorded "unknown, healed from disk".
+`unreconstructable` IS an agent's answer, and it is the one this release adds: it records that
+somebody looked for the evidence of what happened and the evidence does not exist. It is
+deliberately distinct from `unknown`, which says nobody looked, and from any reconstructed outcome,
+which says somebody looked and found. A fabricated disposition is worse than an absent one — an
+absent outcome is visibly a gap, while an invented one is indistinguishable from evidence and
+defeats every later reader — so the record SHALL preserve all three states.
+
+`declined` is included here because the engine already accepts it on the agent-facing surface while
+this specification's enumeration omitted it; that divergence is closed rather than repeated.
+
+#### Scenario: An agent-supplied disposition is reason-bearing
+- **WHEN** an agent records a disposition through the interactive archive verb
+- **THEN** it carries an outcome from the enumerated set, and every agent-supplied outcome except
+  `delivered` carries a reason
+
+#### Scenario: An engine-stamped path carries provenance instead of prose
+- **WHEN** an epic reaches `archived` through a path that supplies no disposition
+- **THEN** it carries `outcome: unknown` with `recordedBy` naming the path, and no reason is
+  demanded of it
+
+#### Scenario: An unreconstructable outcome is recorded with its reason
+- **WHEN** an agent determines that an archived epic's outcome cannot be reconstructed from
+  available evidence
+- **THEN** that determination is recorded with its reason, and the epic no longer appears in the
+  unconsidered set
+
+#### Scenario: The three states remain distinguishable
+- **WHEN** a reader inspects an archived epic's disposition
+- **THEN** it can distinguish an outcome nobody considered, one an agent recorded, and one an agent
+  determined to be unreconstructable
 
 #### Scenario: Archiving a killed change preserves why it was killed
 - **WHEN** an openspec-lane epic proposed with 47 tasks is dropped before any code is written
@@ -89,7 +104,7 @@ recorded "unknown, healed from disk".
 #### Scenario: Pre-existing archived epics remain valid
 - **WHEN** the engine loads a `state.json` whose archived epics predate this capability
 - **THEN** those epics load as `outcome: unknown` (stamped `delivered` by migration only where a
-  passing Gate 2 verdict exists — 7 of the 49 audited), every existing behavior functions unchanged,
+  passing Gate 2 verdict exists — 7 of the 49 audited at the time that migration shipped; 3 of 144 remain so today), every existing behavior functions unchanged,
   and no reason is demanded retroactively
 
 ### Requirement: An agent's disposition replaces an engine stamp and never another agent's
@@ -325,3 +340,40 @@ than only from the session that made the call.
 - **WHEN** a release has 12 member epics and 3 epics deferred from it with reasons
 - **THEN** `PROJECT.md` and the briefing show `12 epics, 3 deferred` for that release, and the three
   reasons are readable from `state.json`
+
+### Requirement: The archive can be asked which of its records carry no considered outcome
+The engine SHALL be able to enumerate the archived epics whose outcome nobody considered, and SHALL
+emit, per epic, the invocation that would record one.
+
+That population is precisely the epics carrying an ENGINE-WRITTEN stamp whose outcome value is
+`unknown`. Both halves are load-bearing. An engine stamp alone is not enough: a stamp can be
+evidence-derived, and this repository holds three epics stamped `delivered` by migration from a
+passing Gate 2 verdict — handing those to an agent to re-dispose would ask it to re-derive what the
+record already derived correctly. An `unknown` value alone is not enough either, since `unknown` is
+never an agent's answer and can only arrive by stamp.
+
+An absent disposition SHALL NOT be part of the population. Absence is not a state an archived epic
+reaches: every archive path binds the outcome invariant, and the migration stamped every
+pre-existing archived epic. A predicate handling absence would be handling a state no path produces.
+
+Measured in this repository, 66 of 144 archived epics match — 46% of the archive — with 3
+evidence-derived stamps correctly excluded and 75 agent-recorded outcomes untouched. The cost of
+that gap is not cosmetic: a grooming pass hit it four separate times and reconstructed from commit
+history what the record should have stated, and a user filed an issue reporting work that had in
+fact been done, because the epic proposing it archived with nothing saying so.
+
+#### Scenario: The unconsidered set is enumerable with its remedy
+- **WHEN** an agent asks the engine which archived epics carry no considered outcome
+- **THEN** it receives those epics and, for each, the invocation that would record a disposition
+
+#### Scenario: An evidence-derived engine stamp is excluded
+- **WHEN** an archived epic carries an engine-written outcome other than `unknown`
+- **THEN** it does NOT appear in the unconsidered set
+
+#### Scenario: An agent-recorded outcome is excluded
+- **WHEN** an archived epic carries an agent-recorded outcome
+- **THEN** it does NOT appear in the unconsidered set
+
+#### Scenario: An archive with every outcome considered reports an empty set
+- **WHEN** no archived epic carries an engine-written `unknown`
+- **THEN** the unconsidered set is empty

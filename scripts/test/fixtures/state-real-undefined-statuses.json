@@ -1,0 +1,973 @@
+{
+  "version": 1,
+  "active": "epic-54",
+  "epics": [
+    {
+      "id": "2026-03-20-epic-00",
+      "title": "epic 00",
+      "priority": "P3",
+      "status": "done",
+      "role": "epic",
+      "lane": "superpowers",
+      "planPath": "docs/plans/2026-03-20-epic-00.md",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "2026-03-20-epic-01",
+      "title": "epic 01",
+      "priority": "P3",
+      "status": "done",
+      "role": "epic",
+      "lane": "superpowers",
+      "planPath": "docs/plans/2026-03-20-epic-01.md",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "2026-03-20-epic-02",
+      "title": "epic 02",
+      "priority": "P3",
+      "status": "done",
+      "role": "epic",
+      "lane": "superpowers",
+      "planPath": "docs/plans/2026-03-20-epic-02.md",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "2026-03-23-epic-03",
+      "title": "epic 03",
+      "priority": "P3",
+      "status": "done",
+      "role": "epic",
+      "lane": "superpowers",
+      "planPath": "docs/plans/2026-03-23-epic-03.md",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "2026-03-24-epic-04",
+      "title": "epic 04",
+      "priority": "P3",
+      "status": "done",
+      "role": "epic",
+      "lane": "superpowers",
+      "planPath": "docs/plans/2026-03-24-epic-04.md",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "2026-03-30-epic-05",
+      "title": "epic 05",
+      "priority": "P3",
+      "status": "done",
+      "role": "epic",
+      "lane": "superpowers",
+      "planPath": "docs/plans/2026-03-30-epic-05.md",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "2026-03-31-epic-06",
+      "title": "epic 06",
+      "priority": "P3",
+      "status": "done",
+      "role": "epic",
+      "lane": "superpowers",
+      "planPath": "docs/plans/2026-03-31-epic-06.md",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "2026-04-03-epic-07",
+      "title": "epic 07",
+      "priority": "P3",
+      "status": "done",
+      "role": "epic",
+      "lane": "superpowers",
+      "planPath": "docs/plans/2026-04-03-epic-07.md",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "2026-04-03-epic-08",
+      "title": "epic 08",
+      "priority": "P3",
+      "status": "done",
+      "role": "epic",
+      "lane": "superpowers",
+      "planPath": "docs/plans/2026-04-03-epic-08.md",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "2026-04-08-epic-09",
+      "title": "epic 09",
+      "priority": "P3",
+      "status": "done",
+      "role": "epic",
+      "lane": "superpowers",
+      "planPath": "docs/plans/2026-04-08-epic-09.md",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "2026-04-15-epic-10",
+      "title": "epic 10",
+      "priority": "P3",
+      "status": "done",
+      "role": "epic",
+      "lane": "superpowers",
+      "planPath": "docs/plans/2026-04-15-epic-10.md",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "2026-04-17-epic-11",
+      "title": "epic 11",
+      "priority": "P3",
+      "status": "done",
+      "role": "epic",
+      "lane": "superpowers",
+      "planPath": "docs/plans/2026-04-17-epic-11.md",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "2026-05-06-epic-12",
+      "title": "epic 12",
+      "priority": "P3",
+      "status": "done",
+      "role": "epic",
+      "lane": "superpowers",
+      "planPath": "docs/plans/2026-05-06-epic-12.md",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "2026-05-15-epic-13",
+      "title": "epic 13",
+      "priority": "P3",
+      "status": "done",
+      "role": "epic",
+      "lane": "superpowers",
+      "planPath": "docs/plans/2026-05-15-epic-13.md",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "2026-05-21-epic-14",
+      "title": "epic 14",
+      "priority": "P3",
+      "status": "done",
+      "role": "epic",
+      "lane": "superpowers",
+      "planPath": "docs/plans/2026-05-21-epic-14.md",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "epic-15",
+      "title": "epic 15",
+      "priority": "P0",
+      "status": "done",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "epic-16",
+      "title": "epic 16",
+      "priority": "P2",
+      "status": "done",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "epic-17",
+      "title": "epic 17",
+      "priority": "P2",
+      "status": "archived",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-09-06T19:54:02.240Z",
+        "recordedBy": "migration"
+      }
+    },
+    {
+      "id": "epic-18",
+      "title": "epic 18",
+      "priority": "P3",
+      "status": "later",
+      "role": "epic",
+      "lane": "external",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "epic-19",
+      "title": "epic 19",
+      "priority": "P3",
+      "status": "later",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "epic-20",
+      "title": "epic 20",
+      "priority": "P0",
+      "status": "archived",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [],
+      "reconcileNeeded": false,
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-09-06T19:54:02.240Z",
+        "recordedBy": "migration"
+      }
+    },
+    {
+      "id": "epic-21",
+      "title": "epic 21",
+      "priority": "P1",
+      "status": "archived",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [],
+      "reconcileNeeded": false,
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-09-06T19:54:02.240Z",
+        "recordedBy": "migration"
+      }
+    },
+    {
+      "id": "epic-22",
+      "title": "epic 22",
+      "priority": "P1",
+      "status": "archived",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [],
+      "reconcileNeeded": false,
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-09-06T19:54:02.240Z",
+        "recordedBy": "migration"
+      }
+    },
+    {
+      "id": "epic-23",
+      "title": "epic 23",
+      "priority": "P1",
+      "status": "archived",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [],
+      "reconcileNeeded": false,
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-09-06T19:54:02.240Z",
+        "recordedBy": "migration"
+      }
+    },
+    {
+      "id": "epic-24",
+      "title": "epic 24",
+      "priority": "P2",
+      "status": "archived",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [],
+      "reconcileNeeded": false,
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-09-06T19:54:02.240Z",
+        "recordedBy": "migration"
+      }
+    },
+    {
+      "id": "epic-25",
+      "title": "epic 25",
+      "priority": "P2",
+      "status": "archived",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [],
+      "reconcileNeeded": false,
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-09-06T19:54:02.240Z",
+        "recordedBy": "migration"
+      }
+    },
+    {
+      "id": "epic-26",
+      "title": "epic 26",
+      "priority": "P2",
+      "status": "archived",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [],
+      "reconcileNeeded": false,
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-09-06T19:54:02.240Z",
+        "recordedBy": "migration"
+      }
+    },
+    {
+      "id": "epic-27",
+      "title": "epic 27",
+      "priority": "P2",
+      "status": "archived",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [],
+      "reconcileNeeded": false,
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-09-06T19:54:02.240Z",
+        "recordedBy": "migration"
+      }
+    },
+    {
+      "id": "epic-28",
+      "title": "epic 28",
+      "priority": "P3",
+      "status": "archived",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [],
+      "reconcileNeeded": false,
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-09-06T19:54:02.240Z",
+        "recordedBy": "migration"
+      }
+    },
+    {
+      "id": "epic-29",
+      "title": "epic 29",
+      "priority": "P3",
+      "status": "later",
+      "role": "epic",
+      "lane": "decision",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "epic-30",
+      "title": "epic 30",
+      "priority": "P3",
+      "status": "archived",
+      "role": "epic",
+      "lane": "decision",
+      "links": [],
+      "reconcileNeeded": false,
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-09-06T19:54:02.240Z",
+        "recordedBy": "migration"
+      }
+    },
+    {
+      "id": "epic-31",
+      "title": "epic 31",
+      "priority": "P3",
+      "status": "archived",
+      "role": "epic",
+      "lane": "decision",
+      "links": [],
+      "reconcileNeeded": false,
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-09-06T19:54:02.240Z",
+        "recordedBy": "migration"
+      }
+    },
+    {
+      "id": "epic-32",
+      "title": "epic 32",
+      "priority": "P2",
+      "status": "archived",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [],
+      "reconcileNeeded": false,
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-09-06T19:54:02.240Z",
+        "recordedBy": "migration"
+      }
+    },
+    {
+      "id": "epic-33",
+      "title": "epic 33",
+      "priority": "P1",
+      "status": "archived",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [],
+      "reconcileNeeded": false,
+      "planPath": "docs/plans/epic-33.md",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-09-06T19:54:02.240Z",
+        "recordedBy": "migration"
+      }
+    },
+    {
+      "id": "epic-34",
+      "title": "epic 34",
+      "priority": "P1",
+      "status": "archived",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "depends-on",
+          "epic": "epic-33",
+          "reason": "redacted"
+        }
+      ],
+      "reconcileNeeded": false,
+      "planPath": "docs/plans/epic-34.md",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-09-06T19:54:02.240Z",
+        "recordedBy": "migration"
+      }
+    },
+    {
+      "id": "epic-35",
+      "title": "epic 35",
+      "priority": "P1",
+      "status": "archived",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [],
+      "reconcileNeeded": false,
+      "planPath": "docs/plans/epic-35.md",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-09-06T19:54:02.240Z",
+        "recordedBy": "migration"
+      }
+    },
+    {
+      "id": "epic-36",
+      "title": "epic 36",
+      "priority": "P2",
+      "status": "archived",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "depends-on",
+          "epic": "epic-33",
+          "reason": "redacted"
+        }
+      ],
+      "reconcileNeeded": false,
+      "planPath": "docs/plans/epic-36.md",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-09-06T19:54:02.240Z",
+        "recordedBy": "migration"
+      }
+    },
+    {
+      "id": "epic-37",
+      "title": "epic 37",
+      "priority": "P3",
+      "status": "done",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "epic-38",
+      "title": "epic 38",
+      "priority": "P2",
+      "status": "archived",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [],
+      "reconcileNeeded": false,
+      "planPath": "docs/plans/epic-38.md",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-09-06T19:54:02.240Z",
+        "recordedBy": "migration"
+      }
+    },
+    {
+      "id": "epic-39",
+      "title": "epic 39",
+      "priority": "P3",
+      "status": "archived",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-09-06T19:54:02.240Z",
+        "recordedBy": "migration"
+      }
+    },
+    {
+      "id": "epic-40",
+      "title": "epic 40",
+      "priority": "P2",
+      "status": "archived",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-09-06T19:54:02.240Z",
+        "recordedBy": "migration"
+      }
+    },
+    {
+      "id": "epic-41",
+      "title": "epic 41",
+      "priority": "P2",
+      "status": "archived",
+      "role": "epic",
+      "lane": "decision",
+      "links": [],
+      "reconcileNeeded": false,
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-09-06T19:54:02.240Z",
+        "recordedBy": "migration"
+      }
+    },
+    {
+      "id": "epic-42",
+      "title": "epic 42",
+      "priority": "P1",
+      "status": "archived",
+      "role": "epic",
+      "lane": "decision",
+      "links": [],
+      "reconcileNeeded": false,
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-09-06T19:54:02.240Z",
+        "recordedBy": "migration"
+      }
+    },
+    {
+      "id": "epic-43",
+      "title": "epic 43",
+      "priority": "P2",
+      "status": "archived",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-09-06T19:54:02.240Z",
+        "recordedBy": "migration"
+      }
+    },
+    {
+      "id": "epic-44",
+      "title": "epic 44",
+      "priority": "P2",
+      "status": "archived",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-09-06T19:54:02.240Z",
+        "recordedBy": "migration"
+      }
+    },
+    {
+      "id": "epic-45",
+      "title": "epic 45",
+      "priority": "P1",
+      "status": "archived",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-09-06T19:54:02.240Z",
+        "recordedBy": "migration"
+      }
+    },
+    {
+      "id": "epic-46",
+      "title": "epic 46",
+      "priority": "P2",
+      "status": "archived",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "epic-43",
+          "reason": "redacted"
+        }
+      ],
+      "reconcileNeeded": false,
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-09-06T19:54:02.240Z",
+        "recordedBy": "migration"
+      }
+    },
+    {
+      "id": "epic-47",
+      "title": "epic 47",
+      "priority": "P1",
+      "status": "archived",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "startedAt": "2026-07-19T22:09:52.194Z",
+      "completedAt": "2026-07-19T22:20:37.814Z",
+      "externalId": "1047",
+      "externalUrl": "https://example.invalid/issues/1047",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-19T22:20:37.814Z",
+        "recordedBy": "migration"
+      }
+    },
+    {
+      "id": "epic-48",
+      "title": "epic 48",
+      "priority": "P2",
+      "status": "archived",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "startedAt": "2026-07-19T22:20:37.870Z",
+      "completedAt": "2026-07-19T22:32:32.076Z",
+      "externalId": "1048",
+      "externalUrl": "https://example.invalid/issues/1048",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-19T22:32:32.076Z",
+        "recordedBy": "migration"
+      }
+    },
+    {
+      "id": "epic-49",
+      "title": "epic 49",
+      "priority": "P2",
+      "status": "archived",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "startedAt": "2026-07-19T22:32:32.130Z",
+      "completedAt": "2026-07-19T22:42:48.040Z",
+      "externalId": "1049",
+      "externalUrl": "https://example.invalid/issues/1049",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-07-19T22:42:48.040Z",
+        "recordedBy": "migration"
+      }
+    },
+    {
+      "id": "epic-50",
+      "title": "epic 50",
+      "priority": "P3",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false
+    },
+    {
+      "id": "epic-51",
+      "title": "epic 51",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "epic-54",
+          "reason": "redacted"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "1051",
+      "externalUrl": "https://example.invalid/issues/1051"
+    },
+    {
+      "id": "epic-52",
+      "title": "epic 52",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "epic-54",
+          "reason": "redacted"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "1052",
+      "externalUrl": "https://example.invalid/issues/1052"
+    },
+    {
+      "id": "epic-53",
+      "title": "epic 53",
+      "priority": "P1",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "epic-54",
+          "reason": "redacted"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "1053",
+      "externalUrl": "https://example.invalid/issues/1053"
+    },
+    {
+      "id": "epic-54",
+      "title": "epic 54",
+      "priority": "P1",
+      "status": "active",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "1054",
+      "externalUrl": "https://example.invalid/issues/1054",
+      "startedAt": "2026-07-30T21:43:07.629Z"
+    },
+    {
+      "id": "epic-55",
+      "title": "epic 55",
+      "priority": "P1",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "epic-54",
+          "reason": "redacted"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "1055",
+      "externalUrl": "https://example.invalid/issues/1055"
+    },
+    {
+      "id": "epic-56",
+      "title": "epic 56",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "epic-54",
+          "reason": "redacted"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "1056",
+      "externalUrl": "https://example.invalid/issues/1056"
+    },
+    {
+      "id": "epic-57",
+      "title": "epic 57",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "epic-54",
+          "reason": "redacted"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "1057",
+      "externalUrl": "https://example.invalid/issues/1057"
+    },
+    {
+      "id": "epic-58",
+      "title": "epic 58",
+      "priority": "P1",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "epic-54",
+          "reason": "redacted"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "1058",
+      "externalUrl": "https://example.invalid/issues/1058"
+    },
+    {
+      "id": "epic-59",
+      "title": "epic 59",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "epic-54",
+          "reason": "redacted"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "1059",
+      "externalUrl": "https://example.invalid/issues/1059"
+    },
+    {
+      "id": "epic-60",
+      "title": "epic 60",
+      "priority": "P3",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "1060",
+      "externalUrl": "https://example.invalid/issues/1060"
+    },
+    {
+      "id": "epic-61",
+      "title": "epic 61",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "epic-54",
+          "reason": "redacted"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "1061",
+      "externalUrl": "https://example.invalid/issues/1061"
+    },
+    {
+      "id": "epic-62",
+      "title": "epic 62",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "epic-54",
+          "reason": "redacted"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "1062",
+      "externalUrl": "https://example.invalid/issues/1062"
+    },
+    {
+      "id": "epic-63",
+      "title": "epic 63",
+      "priority": "P1",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "1063",
+      "externalUrl": "https://example.invalid/issues/1063"
+    },
+    {
+      "id": "epic-64",
+      "title": "epic 64",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "1064",
+      "externalUrl": "https://example.invalid/issues/1064"
+    },
+    {
+      "id": "epic-65",
+      "title": "epic 65",
+      "priority": "P3",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "1065",
+      "externalUrl": "https://example.invalid/issues/1065"
+    },
+    {
+      "id": "epic-66",
+      "title": "epic 66",
+      "priority": "P1",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "1066",
+      "externalUrl": "https://example.invalid/issues/1066"
+    }
+  ],
+  "detourStack": [],
+  "pmVersion": "0.39.0",
+  "platform": "claude-code",
+  "tracker": {
+    "system": "github-issues",
+    "repo": "example/redacted",
+    "direction": "inward"
+  },
+  "revision": 14
+}

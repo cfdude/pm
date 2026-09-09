@@ -262,7 +262,7 @@ test("add-epic rejects a --link with fewer than two segments", () => {
     "--link", "justoneword"], { cwd })));
 });
 
-test("update-epic --link replaces the epic's links wholesale, validated the same way as add-epic", () => {
+test("update-epic --link APPENDS, and is validated the same way as add-epic", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
   run(["add-epic", "--id", "y", "--lane", "claude-code"], { cwd });
@@ -270,10 +270,14 @@ test("update-epic --link replaces the epic's links wholesale, validated the same
   run(["add-epic", "--id", "x", "--lane", "claude-code", "--link", "blocks:y:old reason"], { cwd });
   run(["update-epic", "x", "--link", "relates-to:z:new reason"], { cwd });
   const e = readState(cwd).epics.find(x => x.id === "x");
-  assert.deepEqual(e.links, [{ type: "relates-to", epic: "z", reason: "new reason" }]);   // replaced, not appended
+  // ADDED, not substituted. This assertion read `[relates-to:z]` alone while `--link` replaced
+  // the array — recording a second relationship silently discarded the first.
+  assert.deepEqual(e.links, [
+    { type: "blocks", epic: "y", reason: "old reason" },
+    { type: "relates-to", epic: "z", reason: "new reason" },
+  ]);
 
-  // fixing a malformed link works the same way: an invalid --link is rejected and
-  // writes nothing, leaving the last-good links array intact.
+  // an invalid --link is rejected and writes nothing, leaving the last-good links array intact.
   const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
   const err = expectFail(() => run(["update-epic", "x", "--link", "type:ghost-epic:bad"], { cwd }));
   assert.ok(err, "expected rejection");

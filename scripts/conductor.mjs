@@ -47,6 +47,13 @@
  *                  one-way: `epic.release`, at most one)
  *   record-cross-spec-review  record the RELEASE-scope review verdict — do this release's specs
  *                  agree WITH EACH OTHER? (Gate 1/Gate 2 each take one CHANGE as their unit)
+ *   recover-created-at  fill in the registration date of every epic that predates the
+ *                  field, from the commit that first introduced its id into state.json.
+ *                  Local history only; unrecoverable stays ABSENT and re-attemptable,
+ *                  which is why it is a re-runnable verb and not a MIGRATIONS body
+ *   unconsidered-outcomes  READ-ONLY: the archived epics whose outcome NOBODY CONSIDERED —
+ *                  an engine stamp carrying `unknown` — each with the invocation that would
+ *                  record a disposition. The spec says an agent ASKS the engine; this is the ask
  *   integrity      READ-ONLY audit of the record itself — shapes that cannot be true
  *                  (reports; never writes state, never blocks a command)
  *   verify-state   fail loudly if state.json's mtime is newer than the last render's stamp
@@ -77,6 +84,7 @@ import {
 import { resolvePlatform, assertKnownPlatform, platformFlag, resolveAndRecordPlatform, rulesTarget } from "./lib/platform.mjs";
 import { loadState, conflictExitCode } from "./lib/state.mjs";
 import { ROOT, warnRootDivergence } from "./lib/constants.mjs";
+import { VERB_EFFECTS } from "./lib/verb-effects.mjs";
 import { setActive, clearActive } from "./lib/active-pointer.mjs";
 import { setAutonomy } from "./lib/autonomy.mjs";
 import { parseFlags, planHierarchy, addEpic, requireFlagValues } from "./lib/add-epic.mjs";
@@ -109,6 +117,8 @@ import { purgeLogs } from "./lib/purge-logs.mjs";
 import { isInitialized } from "./lib/state.mjs";
 import { resolveSession } from "./lib/session-identity.mjs";
 import { delegateToCheckout } from "./lib/self-hosting.mjs";
+import { recoverCreatedAt } from "./lib/created-at.mjs";
+import { unconsideredOutcomesReport } from "./lib/unconsidered.mjs";
 
 // ---------- self-hosting handoff (gh-134) ----------
 //
@@ -135,7 +145,7 @@ const cmd = process.argv[2];
 // entry to .conductor/detours.log with "--help" as the detour description, and the log is
 // append-only with no verb to remove it. Handled before dispatch so every subcommand is covered
 // -- log-detour is only where the damage is visible, not where the gap is.
-const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|push-detour|pop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|upgrade|changelog|rules|write-rules|rules-target\n";
+const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|push-detour|pop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n";
 if (!cmd || process.argv.slice(2).some(a => a === "--help" || a === "-h")) {
   // #158 — VERB-SCOPED when a verb is named, global otherwise. The short-circuit stays exactly
   // where it was and keeps its original property: a help flag reaches no subcommand, so it can
@@ -160,11 +170,26 @@ if (!cmd || process.argv.slice(2).some(a => a === "--help" || a === "-h")) {
 // about) and after the self-hosting handoff (the delegated child owns the whole invocation and
 // prints it there instead of twice). Before the banner, because it outranks it.
 //
-// Every verb, deliberately — including the hooks. `commit-nudge` fires on every Bash tool call
+// EVERY VERB THAT WRITES, including the hooks — `commit-nudge` fires on every Bash tool call
 // and writes detours.log and state.json, so a redirected hook is failure mode 1 from the issue,
-// not a quiet read. The predicate is cheap (two realpaths and one existsSync) and, by
-// construction, silent in every case except two live conductors with the wrong one selected.
-warnRootDivergence();
+// not a quiet read. That argument is about the MUTATING hooks and was never an argument for
+// warning on a read: this line said "WRITING A DIFFERENT REPOSITORY" ahead of `integrity`, whose
+// own output two lines later reads "Findings are reported, never repaired: nothing here writes
+// state" — verified writing nothing (state.json md5 identical before and after, working tree
+// clean). Crying wolf on the 16 read-only verbs is what teaches a reader to skim past it on the
+// 32 where it is the difference between inspecting another repo and mutating it.
+//
+// The classification is NOT a list kept here. lib/verb-effects.mjs already declares
+// `effect: "read-only" | "mutates"` for every verb, and conductor-25 asserts set-equality
+// between that table and the dispatch object BELOW, read out of this file's source — so a verb
+// added without an entry fails the build and this gate cannot go stale. An UNKNOWN verb has no
+// entry, reads as not-read-only, and still warns: it falls through to USAGE having done nothing,
+// but a misspelling under a redirected CLAUDE_PROJECT_DIR is exactly when a caller wants to be
+// told where they are pointed.
+//
+// The predicate is cheap (two realpaths and one existsSync) and, by construction, silent in
+// every case except two live conductors with the wrong one selected.
+if (VERB_EFFECTS[cmd]?.effect !== "read-only") warnRootDivergence();
 
 // df-engine-banner-noise-every-invocation: the banner is suppressed by default whenever
 // CLAUDE_PROJECT_DIR is set (self-hosting/dev context -- the stale-cache scenario this banner
@@ -258,6 +283,8 @@ try {
   activity,
   "set-activity-log": setActivityLog,
   "purge-logs": purgeLogs,
+  "recover-created-at": recoverCreatedAt,
+  "unconsidered-outcomes": unconsideredOutcomesReport,
   integrity,
   changesets,
   upgrade,

@@ -31,6 +31,7 @@ import {
   ACTIVITY_SEGMENT_MAX_BYTES, ACTIVITY_RETENTION_MAX_BYTES,
 } from "./constants.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
+import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 
 /** Re-derived per call, like write-conflicts.mjs's: the tests cache-bust by moving
  *  CLAUDE_PROJECT_DIR, and a module-scope constant would freeze the first repo seen. */
@@ -63,11 +64,13 @@ export function setActivityLog() {
   }
   const state = loadState();
   state.activityLog = { ...(state.activityLog || {}), enabled: arg === "on" };
-  saveState(state);
-  process.stderr.write(
-    `conductor: activity log ${arg}${arg === "on"
+  const saved = saveState(state);
+  reportSave(saved, {
+    changed: `conductor: activity log ${arg}${arg === "on"
       ? ` — writing to ${activityDir()} (git-ignored). Read it with \`activity\`.`
-      : " — nothing further is recorded. What was already recorded is kept."}\n`);
+      : " — nothing further is recorded. What was already recorded is kept."}`,
+    unchanged: `conductor: the activity log was already ${arg} — ${STATE_UNCHANGED}`,
+  });
 }
 
 /** Segment file names, oldest first.

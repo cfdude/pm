@@ -24,6 +24,9 @@ import { loadState, saveState } from "./state.mjs";
 
 /** The real write both hook sites use: skip on conflict, tagged with the calling verb so the
  *  sidecar names which hook lost the race. */
+// save-report: exempt — a HOOK write. It prints nothing by design (a hook that narrated its own
+// self-heal would narrate on every tool call), and its skip-on-conflict return is not an
+// `unchanged` at all; see applyHookHeal() below.
 const hookSave = (verb) => (s) => saveState(s, { onConflict: "skip", verb });
 
 /** Apply a hook's self-heal to state.json under the RETRY ONCE, THEN SKIP policy.

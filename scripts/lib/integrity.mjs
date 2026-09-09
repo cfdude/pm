@@ -1,8 +1,12 @@
 // scripts/lib/integrity.mjs
 // READ-ONLY checks over the conductor's own record: shapes that cannot be true, reported with
 // the epic they concern and enough detail to act on. May import constants.mjs,
-// epic-progress.mjs, disposition.mjs, links.mjs and git.mjs — and nothing under those imports
-// back up.
+// epic-progress.mjs, disposition.mjs, links.mjs, claim-shape.mjs, archive-gate.mjs and git.mjs
+// — and nothing under those imports back up.
+//
+// Those last two are here so a finding's REMEDY quotes the vocabulary the engine actually
+// accepts rather than a literal typed into a string: `AGENT_OUTCOMES` grows, and a remedy naming
+// a set the archive verb has since outgrown is the drift class this file exists to report.
 //
 // REPORTS, NEVER REPAIRS. Nothing here writes state and nothing here blocks a command. That is
 // not a stylistic preference: a check that repaired would be a second writer racing the paths
@@ -16,7 +20,8 @@
 
 import { isInitialized, loadState } from "./state.mjs";
 import { archivedChanges, epicProgress, strippedChangeId } from "./epic-progress.mjs";
-import { gateHasEvidence, isOpenspecLane, releaseMembers } from "./constants.mjs";
+import { KNOWN_STATUSES, gateHasEvidence, isOpenspecLane, releaseMembers } from "./constants.mjs";
+import { AGENT_OUTCOMES, dispositionInvocation } from "./archive-gate.mjs";
 import { commitDate, isAncestor, objectExists, reachableFromAnyRef } from "./git.mjs";
 import { isArchiveBackfilled, outcomeOf, stampedBy } from "./disposition.mjs";
 import { epicReferences, isKnownLinkType, isRenderableLink, KNOWN_LINK_TYPES, supersededEpics } from "./links.mjs";
@@ -28,8 +33,13 @@ import { claimExpiry, isLiveClaim } from "./claim-shape.mjs";
  *  code written, which is zero-ticked by construction. `declined` is the extreme of the same
  *  shape: an ask turned down at intake was never worked at all, so leaving it in scope would
  *  make every recorded decline a permanent finding — which is how a team learns to stop
- *  recording them, and the record goes silent again. */
-const EXPLAINED_OUTCOMES = ["killed", "superseded", "abandoned", "declined"];
+ *  recording them, and the record goes silent again.
+ *
+ *  `unreconstructable` belongs here for the same reason the others do, and it is a BEHAVIOURAL
+ *  entry rather than bookkeeping: an epic whose defining property is that the evidence of what
+ *  happened is gone is zero-ticked by construction, so a completion-shaped check firing on it
+ *  would fire forever on the record working correctly. */
+const EXPLAINED_OUTCOMES = ["killed", "superseded", "abandoned", "declined", "unreconstructable"];
 
 /** THE scope rule for the completion-shaped checks. Exactly two exclusions and nothing else.
  *
@@ -119,7 +129,7 @@ export function recordedShas(state) {
  *  consumed would report the condition to one session and hide it from every session after.
  *
  *  Scoped by `inCompletionScope`, exactly as every other completion-shaped check is. An epic the
- *  heal flipped to `archived` and an agent then closed `killed`, `superseded` or `abandoned` will
+ *  heal flipped to `archived` and an agent then closed with any EXPLAINED_OUTCOMES value will
  *  never acquire the passing Gate 2 that is this condition's ONLY clearing path — the code was
  *  never written, or was written and thrown away — so without the scope rule its entry is
  *  permanent and unclearable, which is precisely the shape the backfill exclusion below it was
@@ -385,8 +395,55 @@ export const CHECKS = [
           out.push({ epic: e.id, detail:
             `link \`${l.type}→${l.epic}\` — '${l.type}' is not one of ${KNOWN_LINK_TYPES.join(", ")}, ` +
             "so every consumer that switches on the type ignores it. Fix it with " +
-            `\`update-epic ${e.id} --link\` (which replaces the whole array — pass every link you want kept).` });
+            `\`update-epic ${e.id} --clear-links --link "<type>:<epic>[:<reason>]" ...\` — every ` +
+            "link you want kept, in ONE invocation. `--link` alone APPENDS, so a corrected type " +
+            "is a new edge and would leave this one exactly where it is." });
         }
+      }
+      return out;
+    },
+  },
+  {
+    id: "epic-in-undefined-status",
+    title: "an epic in a status the engine does not define — a record no terminal rule can reach",
+    /** `link-of-unknown-type`'s sibling, and the same ruling for the same reason: a stored value
+     *  the engine has no definition for is REPORTED, never repaired. Which legal status an
+     *  undefined one should become is a judgment about what happened to the work, and an engine
+     *  that guessed would be writing a disposition nobody made.
+     *
+     *  Measured across 27 distinct upstreams before this shipped: 26 epics sit in `status:
+     *  "done"`. `KNOWN_STATUSES` is enforced on WRITE — every one of `add-epic.mjs`,
+     *  `update-epic.mjs` and `add-many.mjs` refuses a status outside it (`rg -n 'KNOWN_STATUSES'
+     *  scripts/lib/`) — so nothing here arrived through a verb; the read
+     *  side has always accepted whatever was stored, and must keep doing so or an existing state
+     *  file stops loading.
+     *
+     *  THE CONSEQUENCE IS THE HALF A READER CANNOT DEDUCE, and it is why this went unnoticed in
+     *  six repositories: an epic in an undefined status is not `archived`, so it is non-terminal
+     *  to every rule that tests for the archived status. It is invisible to the completion-shaped
+     *  checks above — which all gate on `status === "archived"` before anything else — so the
+     *  record reads cleaner than it is. And `dependencySatisfied()` in dependency-order.mjs
+     *  answers true for `archived` and for nothing else, so every `depends-on` edge pointing at
+     *  such an epic reads unsatisfied FOREVER: whatever waits on it stays blocked, and the epic
+     *  permanently absorbs the effective priority of everything that depends on it. */
+    run(state) {
+      const out = [];
+      for (const e of state.epics || []) {
+        if (!e || KNOWN_STATUSES.includes(e.status)) continue;
+        out.push({ epic: e.id, detail:
+          `status \`${e.status}\` is not one of ${KNOWN_STATUSES.join(", ")}. ` +
+          "Because it is not `archived`, this epic is NON-TERMINAL to every rule that tests for " +
+          "the archived status: it is invisible to the completion-shaped checks above, so the " +
+          "record reads cleaner than it is, and every `depends-on` edge pointing at it reads " +
+          "unsatisfied permanently — whatever waits on it stays blocked, and its own effective " +
+          "priority is lifted to that of everything depending on it, for as long as the value " +
+          "persists. Decide what happened to the work and set a defined status: " +
+          `\`update-epic ${e.id} --status <${KNOWN_STATUSES.join("|")}>\`, or, where the work ` +
+          // The archive remedy is rendered by archive-gate.mjs's ONE renderer — a second copy of
+          // the invocation here is how the vocabulary in a remedy comes to outlive the verb's.
+          `ended, \`${dispositionInvocation(e.id)}\`. ` +
+          "The check will not choose for you — which legal status an undefined one should become " +
+          "is a judgment about what happened to the work." });
       }
       return out;
     },

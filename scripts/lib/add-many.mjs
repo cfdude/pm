@@ -7,10 +7,11 @@ import path from "node:path";
 import { activate } from "./active-pointer.mjs";
 import { newStory, parentError, parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { isInitialized, loadState, pushEpic, saveState, readStdin } from "./state.mjs";
+import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
 import { ROOT, KNOWN_LANES, KNOWN_STATUSES, epicBatchKeys } from "./constants.mjs";
 import { creationStamp } from "./disposition.mjs";
-import { isKnownLinkType, KNOWN_LINK_TYPES } from "./links.mjs";
+import { isKnownLinkType, KNOWN_LINK_TYPES, mergeLinks } from "./links.mjs";
 
 /** Bulk-create epics from a JSON batch `{ parent?, epics: [...] }`.
  *  Validate EVERYTHING first (id format, uniqueness vs existing AND within the
@@ -140,7 +141,10 @@ export function addMany() {
     for (const key of allowedKeys) {
       const v = e[key];
       if (v === undefined || v === null) continue;
-      if (key === "links") { if (Array.isArray(v)) epic.links = v; continue; }
+      // THE sibling write path this file's own comment names, now reading the same rule as the
+      // other two: a batch listing one identity twice is one relationship, and copying the array
+      // verbatim recorded it twice.
+      if (key === "links") { if (Array.isArray(v)) epic.links = mergeLinks([], v); continue; }
       // Normalized through newStory() rather than copied verbatim: a batch may write a bare
       // title string, and every other writer produces `{title, done}`. One row shape, one
       // constructor — see newStory() in add-epic.mjs. Validated above, so this cannot throw.
@@ -166,7 +170,11 @@ export function addMany() {
   for (const e of incoming) {
     if ((e.status || "queued") === "active") activate(state, e.id);
   }
-  saveState(state);
+  const saved = saveState(state);
   render();
-  process.stderr.write(`conductor: add-many added ${incoming.length} epic(s)\n`);
+  reportSave(saved, {
+    changed: `conductor: add-many added ${incoming.length} epic(s)`,
+    unchanged: `conductor: every epic in the batch was already recorded exactly as supplied — ` +
+      `${STATE_UNCHANGED}`,
+  });
 }

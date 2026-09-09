@@ -4,6 +4,7 @@
 // what the agent supplies, exactly as it does for record-gate-review and record-reconcile.
 
 import { isInitialized, loadState, saveState } from "./state.mjs";
+import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
 
@@ -67,7 +68,11 @@ export function recordTrackerRefresh() {
   epic.externalUpdatedAt = watermark;
   delete epic.trackerRefreshNeeded;
 
-  saveState(state);
+  const saved = saveState(state);
   render();
-  process.stderr.write(`conductor: recorded tracker refresh for '${id}' (${verdict})\n`);
+  reportSave(saved, {
+    changed: `conductor: recorded tracker refresh for '${id}' (${verdict})`,
+    unchanged: `conductor: '${id}' already carried this exact tracker refresh (${verdict}) — ` +
+      `${STATE_UNCHANGED}`,
+  });
 }

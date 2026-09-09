@@ -280,6 +280,59 @@ test("every source-artifact field is a registered EPIC_FLAGS key on all three wr
   }
 });
 
+// ─────────── the SIBLING sweep: what can be SET can be UNSET, or says why not ───────────
+//
+// A SIBLING of the sweep above rather than a widening of it, deliberately. That one asserts
+// every source-artifact field appears on all three of add-epic/update-epic/add-many, which two
+// NULLABLE fields fail BY DESIGN — `notes` is ["add-epic","update-epic"] and `review-mode` is
+// ["update-epic"] alone — and it is driven by a different registry (EPIC_SOURCE_ARTIFACTS).
+// Widening it was cited as the fix for gh-66 and is not implementable; this is what that
+// citation was correcting toward.
+//
+// DECLARATION-level on purpose. The FUNCTIONAL half — that `--clear <flag>` actually removes the
+// field from the record — is exercised per nullable row in nullable-clearing.test.mjs, against a
+// fixture that SETS the field first so it cannot pass against an implementation that does
+// nothing. What this sweep adds is the other direction: a settable field that silently declares
+// neither markers, and a nullable field that no user-facing document names.
+test("every settable epic field is declared clearable or declares why it is not", async () => {
+  const { settableEpicFlags, nullableEpicFlags } = await import("../lib/constants.mjs");
+  const settable = settableEpicFlags("update-epic");
+  assert.ok(settable.length >= 15,
+    `the settable projection yielded ${settable.length} rows — it is broken, not the registry`);
+  for (const row of settable) {
+    const declared = row.nullable === true || typeof row.setOnly === "string";
+    assert.ok(declared,
+      `--${row.flag} writes '${row.key}' and declares neither \`nullable: true\` nor a ` +
+      "`setOnly` reason. Absence of a marker is what this sweep exists to catch: an undeclared " +
+      "field ships with no clearing path and nothing says that was a decision.");
+  }
+  // And the CLEARABLE LIST a user reads is the registry's, not a hand-kept copy of it.
+  //
+  // SCOPED TO THE `--clear <field>` ROW, and that is the whole point. Asserting each nullable flag
+  // is named SOMEWHERE in commands/epic.md passes on the flag table alone — every one of these
+  // flags has its own row there because it can be SET — so the enumeration inside the `--clear`
+  // row could go stale without a single assertion moving. Both directions, because the
+  // one-directional version misses a flag that LOSES `nullable: true` while the doc keeps
+  // offering it.
+  const doc = fs.readFileSync(path.join(new URL("../..", import.meta.url).pathname,
+    "commands", "epic.md"), "utf8");
+  const clearRow = doc.split("\n").find(l => l.includes("`--clear <field>`"));
+  assert.ok(clearRow && clearRow.length > 200,
+    "the `--clear <field>` row was not located in commands/epic.md — the table moved, and this " +
+    "sweep is now checking nothing");
+  const { settableEpicFlags: settableFor } = await import("../lib/constants.mjs");
+  for (const row of nullableEpicFlags("update-epic")) {
+    assert.ok(new RegExp(`\`${row.flag}\``).test(clearRow),
+      `--${row.flag} is declared nullable and the \`--clear <field>\` row in commands/epic.md ` +
+      "does not list it, so the document offers a smaller clearable set than the engine accepts");
+  }
+  for (const row of settableFor("update-epic").filter(r => typeof r.setOnly === "string")) {
+    assert.ok(!new RegExp(`\`${row.flag}\``).test(clearRow),
+      `--${row.flag} is declared SET-ONLY and the \`--clear <field>\` row lists it as clearable — ` +
+      "the document promises a clear the engine refuses by name");
+  }
+});
+
 test("a state file written before syncIgnore existed loads and syncs unchanged", () => {
   const cwd = tmpRepo();
   const p = withPlan(cwd, "2026-08-01-old.md");

@@ -16,7 +16,7 @@
 //     as a write.
 //
 // A `--read-only` enforcement flag was considered and DECLINED. It would have to be threaded
-// through or sniffed from argv at forty verbs, and it answers the question at call time for a
+// through or sniffed from argv at fifty verbs, and it answers the question at call time for a
 // caller who already has to trust the flag was wired up; the CI-time behavioural check answers
 // #85's actual need — "a flag survives someone adding a write to a verb that used to be safe" —
 // without shipping anything.
@@ -64,6 +64,12 @@ export const VERB_EFFECTS = {
   // that accepted any non-zero exit would prove nothing for the other twelve.
   "verify-state": { effect: "read-only", exercise: [], expectsFailure: true, note: "compares state.json's mtime against the render stamp; exits non-zero on drift and writes nothing" },
   "verify-worktrees": { effect: "read-only", exercise: [], note: "reports stale git worktrees" },
+  // 0.40.0's ASK-THE-ENGINE surface for the unconsidered-outcome walker. Read-only in the strict
+  // sense this table's behavioural check enforces: it loads state and prints, exactly as `triage`
+  // does. It answers a question about a repository's ARCHIVE, which is precisely the question an
+  // orchestrator would want to ask of a repo it does not own — so a verb that dirtied that repo
+  // to answer it would be the #85 defect again.
+  "unconsidered-outcomes": { effect: "read-only", exercise: [], note: "the archived epics whose outcome nobody considered, each with the invocation that would record one" },
 
   // ─────────────── mutates: never call these against a repo you are only inspecting ───────────────
   init: { effect: "mutates", writes: ".conductor/state.json, .gitignore, CLAUDE.md, PROJECT.md" },
@@ -101,6 +107,9 @@ export const VERB_EFFECTS = {
   "purge-logs": { effect: "mutates", writes: "removes .conductor/ log files — activity segments, write-conflicts.log(.prev), detours.log" },
   claim: { effect: "mutates", writes: "state.json (an epic's advisory claim) — or .conductor/session-claim.json with --repo" },
   unclaim: { effect: "mutates", writes: "state.json (clears an epic's advisory claim) — or removes .conductor/session-claim.json with --repo" },
-  upgrade: { effect: "mutates", writes: "state.json (migrations, pmVersion), CLAUDE.md (the rules block), .gitignore" },
+  // The 0.40.0 recovery, available as a verb precisely because it must be RE-RUNNABLE: a
+  // checkout that fetches more history recovers dates the earlier run could not see.
+  "recover-created-at": { effect: "mutates", writes: "state.json (registration dates recovered from local git history), PROJECT.md and .conductor/render-stamp.json (via render())" },
+  upgrade: { effect: "mutates", writes: "state.json (migrations, pmVersion), the platform rules file (the rules block), PROJECT.md and .conductor/render-stamp.json (via render()), .gitignore" },
   "write-rules": { effect: "mutates", writes: "CLAUDE.md (or the platform's rules file), state.json (the recorded platform)" },
 };

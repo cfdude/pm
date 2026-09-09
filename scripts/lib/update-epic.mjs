@@ -2,16 +2,20 @@
 // The update-epic write-back verb: title/status/priority/links/story mutations on an
 // existing epic. One-directional dependencies only.
 
-import { KNOWN_LANES, KNOWN_STATUSES, KNOWN_REVIEW_MODES, REVIEW_MODE_RANK, epicFlagsFor } from "./constants.mjs";
+import {
+  EPIC_FLAGS, KNOWN_LANES, KNOWN_STATUSES, KNOWN_REVIEW_MODES, REVIEW_MODE_RANK,
+  epicFlagsFor, nullableEpicFlags,
+} from "./constants.mjs";
 import { activate } from "./active-pointer.mjs";
 import { globalReviewMode } from "./rules.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
+import { reportSave } from "./save-report.mjs";
 import { noteEntry, parentError, parseFlags, parseLinkFlags, parseStoryFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
 import { archiveGate, AGENT_OUTCOMES } from "./archive-gate.mjs";
 import { deferralAssertion, isStoryDisposed, storyDisposition, storyDispositionError } from "./disposition.mjs";
 import { claimArtifacts } from "./source-artifacts.mjs";
-import { linkTypeVocabulary } from "./links.mjs";
+import { linkTypeVocabulary, mergeLinks } from "./links.mjs";
 
 // The flags update-epic recognizes. Anything else is a rejected error, not a
 // silent no-op — an unrecognized flag (e.g. a typo) used to parse, run, and
@@ -46,9 +50,18 @@ export function missingAttributions(state, id, shas) {
 /** Update an EXISTING epic's title/externalId/externalUrl/parent/status/priority/links.
  *  The id is POSITIONAL (parseFlags skips non-`--` tokens). Closes the tracker
  *  sync loop: after the agent creates an issue it records the key here.
- *  --link REPLACES the links array wholesale (unlike the other flags, which patch single
- *  fields) — this is the CLI path to fix a malformed link without hand-editing state.json;
- *  "fixing" means replacing the bad entry, not layering a new one on top of it. */
+ *
+ *  --link APPENDS. A link's IDENTITY is its type and its target; the reason is the part a reader
+ *  acts on and is NOT part of that identity, so re-supplying an already-recorded (type, target)
+ *  UPDATES that entry's reason in place rather than adding a second entry — two relationships of
+ *  the same type between the same pair of epics are one relationship. It used to REPLACE the
+ *  array wholesale, which made recording a second relationship silently discard the first.
+ *  To empty the array, say so with --clear-links; the two are combinable in ONE invocation, so
+ *  the documented repair of a malformed link stays a single atomic write.
+ *
+ *  --clear <flag> is the GENERIC unset, one flag for every field the registry declares nullable
+ *  (`nullable: true` in EPIC_FLAGS). It names fields by their FLAG spelling, never their state
+ *  key. `links` is deliberately refused by it and points at --clear-links. */
 export function updateEpic() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const argv = process.argv.slice(3);
@@ -75,7 +88,7 @@ export function updateEpic() {
       process.exit(1);
     }
     process.stderr.write("conductor: update-epic requires an epic id as its first POSITIONAL argument\n");
-    process.stderr.write(`usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--lane openspec|superpowers|claude-code|decision|external] [--plan <path>] [--spec <path>] [--link \"<${linkTypeVocabulary()}>:<epic>[:<reason>]\"] [--clear-links] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done|--wont-do "<reason>"] [--attribute-commit <sha>] [--withdraw-commit <sha> --withdrawal-reason \"<why>\"] [--outcome ${AGENT_OUTCOMES.join("|")}] [--reason \"<why>\"] [--correct-disposition \"<why the recorded one was wrong>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\"] [--declined-deferral \"<what>::<why not>\"] [--no-deferrals] [--description D] [--notes \"<text>\"] [--external-updated-at <iso>]\n`);
+    process.stderr.write(`usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--lane openspec|superpowers|claude-code|decision|external] [--plan <path>] [--spec <path>] [--link \"<${linkTypeVocabulary()}>:<epic>[:<reason>]\"] [--clear-links] [--clear <field>] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done|--wont-do "<reason>"] [--attribute-commit <sha>] [--withdraw-commit <sha> --withdrawal-reason \"<why>\"] [--outcome ${AGENT_OUTCOMES.join("|")}] [--reason \"<why>\"] [--correct-disposition \"<why the recorded one was wrong>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\"] [--declined-deferral \"<what>::<why not>\"] [--no-deferrals] [--description D] [--notes \"<text>\"] [--external-updated-at <iso>]\n`);
     process.exit(1);
   }
   const f = parseFlags(argv.slice(1));
@@ -126,27 +139,70 @@ export function updateEpic() {
   // `[true]`; parseLinkFlags filters non-strings away and yields `[]`, which then REPLACED the
   // array — a wipe that looks exactly like a typo and reports "updated". Both spellings now say
   // what they mean, and the refusal names the one that clears.
-  let links;
+  //
+  // THE MUTUAL EXCLUSION IS GONE, deliberately. Replacement is the documented repair for a
+  // malformed link, and under APPEND that repair is exactly "clear, then supply the corrected
+  // set". Keeping them exclusive would make it two writes with a zero-link window between them,
+  // and a rejection on the second would leave the epic with no links at all.
+  let clearedLinks = false;
+  let suppliedLinks;
   if (f["clear-links"] !== undefined) {
     if (f["clear-links"] !== true) {
       process.stderr.write("conductor: --clear-links takes no value\n"); process.exit(1);
     }
-    if (f.link !== undefined) {
-      process.stderr.write("conductor: --clear-links and --link are mutually exclusive — pass the links you want, or clear them\n");
-      process.exit(1);
-    }
-    links = [];
-  } else if (f.link !== undefined) {
+    clearedLinks = true;
+  }
+  if (f.link !== undefined) {
     // The "--link requires a value, and --clear-links is the one that empties" refusal that
     // stood here now lives on the `--link` ROW in EPIC_FLAGS, as its `requires` phrase, and
     // fires from requireFlagValues() above. Same words, and now on `add-epic` too — which
     // accepted a valueless `--link`, filtered it to `[]` and created the epic. Keeping a second
     // copy here would be unreachable code asserting a rule the registry already carries.
     try {
-      links = parseLinkFlags(f.link, new Set(state.epics.map(e => e.id)));
+      suppliedLinks = parseLinkFlags(f.link, new Set(state.epics.map(e => e.id)));
     } catch (e) {
       process.stderr.write(`conductor: ${e.message}\n`); process.exit(1);
     }
+  }
+
+  // `--clear <field>` — the GENERIC unset. Repeatable, and it names fields by their FLAG
+  // spelling: `--clear plan`, never `--clear planPath`. The accepted set and the message that
+  // enumerates it are both read from the registry HERE, at the moment of the refusal, so a row
+  // that gains `nullable: true` becomes clearable without an edit to this file — and a literal
+  // list here would be the stale hand-typed enumeration this release already measured once.
+  const nullableRows = nullableEpicFlags("update-epic");
+  const clearedFlags = [].concat(f.clear === undefined ? [] : f.clear)
+    .filter(v => typeof v === "string").map(v => v.trim().replace(/^--/, ""));
+  const clearedRows = [];
+  for (const name of clearedFlags) {
+    const nullableRow = nullableRows.find(r => r.flag === name);
+    if (nullableRow) { clearedRows.push(nullableRow); continue; }
+    // A SET-ONLY field is refused with the registry's OWN reason rather than a generic "not
+    // clearable" — the reason is declared beside the marker precisely so it reaches a reader.
+    const declared = EPIC_FLAGS.find(r => r.flag === name && r.commands.includes("update-epic"));
+    if (declared && declared.setOnly) {
+      process.stderr.write(
+        `conductor: --clear ${name}: '${name}' is deliberately set-only — ${declared.setOnly}. ` +
+        "Nothing was written.\n");
+      process.exit(1);
+    }
+    process.stderr.write(
+      `conductor: --clear ${name}: '${name}' is not a field this command can unset. ` +
+      `Clearable fields: ${nullableRows.map(r => `${r.flag} (${r.key})`).join(", ")}. ` +
+      "Name the FLAG, not the state key — they are two namespaces. Nothing was written.\n");
+    process.exit(1);
+  }
+  // Setting and clearing ONE field in one invocation is contradictory, and silently letting one
+  // win would make the record depend on the order this function happens to write in. Scoped to
+  // the cleared FLAG's own spelling, so it can never catch `--clear-links --link`, which is a
+  // different flag and is the required atomic repair.
+  const contradictory = clearedFlags.filter(n => f[n] !== undefined);
+  if (contradictory.length) {
+    process.stderr.write(
+      `conductor: --clear ${contradictory.join(", --clear ")} contradicts ` +
+      `--${contradictory.join(", --")} in the same invocation — set the field or unset it, ` +
+      "not both. Nothing was written.\n");
+    process.exit(1);
   }
 
   // --review-mode: a per-epic escalation-only override of the repo-global review-mode dial
@@ -471,7 +527,14 @@ export function updateEpic() {
     }
     epic.priority = newPriority;
   }
-  if (links !== undefined) epic.links = links;
+  // CLEAR then SUPPLY, in that order and in ONE write — which is what makes `--clear-links
+  // --link a --link b` the atomic replace the repair needs. Supplying alone appends; clearing
+  // alone empties; together they replace.
+  if (clearedLinks) epic.links = [];
+  // IDENTITY IS type + target, and the rule lives in mergeLinks() (links.mjs) rather than here:
+  // it binds every write surface, and implemented at this one it reached neither `add-epic` nor
+  // `add-many`.
+  if (suppliedLinks !== undefined) epic.links = mergeLinks(epic.links, suppliedLinks);
   if (reviewMode !== undefined) epic.reviewMode = reviewMode;
   if (attributed.length) {
     if (!Array.isArray(epic.attributedCommits)) epic.attributedCommits = [];
@@ -495,6 +558,26 @@ export function updateEpic() {
     // the history an archived epic's reader needs.
     if (storyMutation === "done") epic.stories[storyIndex].done = true;
     else epic.stories[storyIndex].disposition = storyDisposition({ state: "wont-do", reason: wontDo });
+  }
+
+  // The unsets. AFTER every field write above, and it costs nothing that they cannot collide:
+  // setting and clearing the same field in one invocation was refused before loadState().
+  // `delete`, never `= undefined` — an undefined value is not an absent key, and absence is the
+  // legal state the nullable declaration is about. It is also the exact shape the dangling-
+  // reference sweep already uses for this field (`epicReferences()` in links.mjs drops a parent
+  // with `delete e.parent`), so clearing does not invent a second removal.
+  //
+  // ANNOUNCED where the row says removal costs something beyond the field. Two of them hold or
+  // key on ANOTHER RECORD — `parent` is an epic id, `externalUrl` is the sync procedure's dedup
+  // key — and a cross-record pointer disappearing silently is the DATA half of the call-site
+  // sweep. Same precedent as the rank clear and the archived-claim clear just below: the write
+  // happens, and the consequence is said out loud rather than discovered later.
+  for (const row of clearedRows) {
+    const had = row.key in epic;
+    delete epic[row.key];
+    if (had && row.clearNote) {
+      process.stderr.write(`conductor: cleared \`${id}\`'s ${row.flag} — ${row.clearNote}\n`);
+    }
   }
 
   // Stamp completedAt the moment an epic transitions TO archived (not merely re-saved
@@ -524,7 +607,13 @@ export function updateEpic() {
   if (epic.status === "active") activate(state, id);
   else if (state.active === id) state.active = null;
 
-  saveState(state);
+  // The save's OWN answer to "did anything change", kept rather than discarded. saveState()
+  // compares the whole body against disk and short-circuits a no-op; this command threw that
+  // away and printed success unconditionally, which is why a same-valued --title, --status or
+  // --priority ALREADY reported a write that did not happen. The rule binds the WRITE SURFACE
+  // and not the two paths this change adds — a no-op link supply and a no-op clear are
+  // INSTANCES of it, not its scope.
+  const saved = saveState(state);
   render();
 
   // The success message is printed only after the record on disk is READ BACK and confirmed to
@@ -561,5 +650,14 @@ export function updateEpic() {
       process.exit(1);
     }
   }
-  process.stderr.write(`conductor: updated '${id}'\n`);
+  // NOT an error, and not a success line either. The record is correct and nothing failed —
+  // refusing would be wrong — but "updated" tells a reader something happened when nothing did.
+  // Routed through the SHARED reporter rather than kept as this verb's own if/else: the rule
+  // binds the write surface, and a rule implemented once at the verb that introduced it is how
+  // twenty siblings came to print success on a save that wrote nothing.
+  reportSave(saved, {
+    changed: `conductor: updated '${id}'`,
+    unchanged: `conductor: nothing changed on '${id}' — every value this invocation supplied is ` +
+      "already the value the record holds. Nothing was written.",
+  });
 }

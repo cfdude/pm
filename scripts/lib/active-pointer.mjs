@@ -5,6 +5,7 @@
 
 import { isArchived } from "./epic-progress.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
+import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
 
 /** Enforce the single-active invariant: `id` becomes the one active epic AND the
@@ -75,9 +76,12 @@ export function setActive() {
     process.stderr.write(`conductor: epic '${id}' is archived — cannot make it active\n`); process.exit(1);
   }
   activate(state, id);
-  saveState(state);
+  const saved = saveState(state);
   render();
-  process.stderr.write(`conductor: active is now '${id}'\n`);
+  reportSave(saved, {
+    changed: `conductor: active is now '${id}'`,
+    unchanged: `conductor: '${id}' was already the active epic — ${STATE_UNCHANGED}`,
+  });
 }
 
 /** `clear-active` — drop the active pointer and demote the epic it pointed at. */
@@ -89,7 +93,10 @@ export function clearActive() {
     if (a && a.status === "active") a.status = "queued";
   }
   state.active = null;
-  saveState(state);
+  const saved = saveState(state);
   render();
-  process.stderr.write("conductor: active cleared\n");
+  reportSave(saved, {
+    changed: "conductor: active cleared",
+    unchanged: `conductor: there was no active epic to clear — ${STATE_UNCHANGED}`,
+  });
 }

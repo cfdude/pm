@@ -3,6 +3,7 @@
 // lane heuristic. One-directional dependencies only.
 
 import { isInitialized, loadState, saveState } from "./state.mjs";
+import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
 import { KNOWN_LANES } from "./constants.mjs";
@@ -60,9 +61,13 @@ export function setLaneRouting() {
   }
 
   state.laneRouting = lr;
-  saveState(state);
+  const saved = saveState(state);
   render();
-  process.stderr.write(`conductor: lane routing has ${lr.overrides.length} override(s)\n`);
+  reportSave(saved, {
+    changed: `conductor: lane routing has ${lr.overrides.length} override(s)`,
+    unchanged: `conductor: lane routing already held exactly these ${lr.overrides.length} ` +
+      `override(s) — ${STATE_UNCHANGED}`,
+  });
 }
 
 /** The repo's lane-routing answer for one piece of free text, as data: `{lane, matched}`, with

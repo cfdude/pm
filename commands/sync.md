@@ -40,6 +40,12 @@ every other epic's plan was re-registered as a fresh untriaged epic on every syn
 answer for an epic registered before the association existed; it also clears any tombstone on
 that path, since claiming an artifact says it is real work.
 
+**And `--clear plan` is how you let go of one.** Clearing the association drops the epic out of
+rung 1, so the next `sync` registers that file as a fresh untriaged epic. No sync-ignore tombstone
+is written, deliberately — `remove-epic` tombstones because the epic is GONE, whereas here the epic
+survives and clearing may well mean *let sync find this plan's real owner*. `--clear spec` does the
+same for a design document.
+
 ## The archive backfill — `openspec/changes/archive/`
 
 `sync` also walks `openspec/changes/archive/`. An archived change the conductor holds no epic for
@@ -84,6 +90,12 @@ carries the exact steps for whichever branch applies:
 
 `sync` prints which of the two applies, so you never have to infer it. A secondary tracker is
 inward by definition and always contributes its own inward pull.
+
+**Clearing the link is what re-opens registration.** The `externalUrl` match above is the PRIMARY
+dedup key, so `update-epic <id> --clear external-url` hands the item back to this step: it will be
+mirrored again as a NEW untriaged epic on the next run. `--clear external-id` releases the FALLBACK
+half of the key, compared only when neither side carries a URL. That is the intended way to say
+*this epic is no longer that item*, and the reason to say it only when it is true.
 
 **The registration recipe runs as written.** Its epic id is derived (`<system>-<scope>-<number>`),
 so the same item yields the same id in every repo and session and a re-run is refused as a

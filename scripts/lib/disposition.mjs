@@ -29,8 +29,25 @@
  *  It inherits the required-reason rule below with no exemption of its own (a decline with no
  *  reason is indistinguishable from an ask nobody looked at), and it is NOT `delivered`, so the
  *  Gate 2 demand and the handoff demand in archive-gate.mjs both pass it by — correctly: no code
- *  was written, so there is no implementation to review and no outstanding work to hand over. */
-export const KNOWN_OUTCOMES = ["delivered", "killed", "superseded", "abandoned", "declined", "unknown"];
+ *  was written, so there is no implementation to review and no outstanding work to hand over.
+ *
+ *  `unreconstructable` is the EVIDENCE end: somebody looked for what happened to this epic and
+ *  the evidence does not exist. It is deliberately distinct from `unknown`, which says nobody
+ *  looked, and from any reconstructed outcome, which says somebody looked and FOUND. All three
+ *  states are preserved on purpose: a fabricated disposition is worse than an absent one, because
+ *  an absent outcome is visibly a gap while an invented one is indistinguishable from evidence
+ *  and defeats every later reader. It is an AGENT's answer — unlike `unknown`, it is a judgment
+ *  somebody made — so it inherits the required-reason rule below with no exemption, and it is not
+ *  `delivered`, so the Gate 2 demand and the handoff demand in archive-gate.mjs both pass it by.
+ *
+ *  THIS SET IS CLOSED, and every growth of it has to reach the surfaces that ENUMERATE it, not
+ *  only the engine that validates against it. `declined` reached the engine and none of five
+ *  documented surfaces; the enumerations are now rendered from `AGENT_OUTCOMES` where the text is
+ *  generated (`rules.mjs`) and pinned by a declared `mustSay` claim where it is mirrored in
+ *  markdown, so the next value cannot ship stale in silence. */
+export const KNOWN_OUTCOMES = [
+  "delivered", "killed", "superseded", "abandoned", "declined", "unreconstructable", "unknown",
+];
 
 /** The fixed literal path tokens `recordedBy` may hold. A disposition is ENGINE-STAMPED when
  *  it carries one of these and AGENT-SUPPLIED when it carries no `recordedBy` at all; nothing
@@ -192,6 +209,19 @@ export function stampedBy(epic, recordedBy) {
   return !!d && d.recordedBy === recordedBy;
 }
 
+/** WHICH path wrote it, as a VALUE rather than a yes/no against a token the caller names.
+ *
+ *  `stampedBy()` above answers "was it this one", which is what every EXEMPTION needs. A REPORT
+ *  needs the other question — it has no token in mind and is telling a reader which history they
+ *  are looking at, because "the migration wrote this" and "the archive-drift heal wrote this"
+ *  differ in how much of the epic's story is still recoverable. Reading `.recordedBy` at the
+ *  report instead would be the second definition the suite's source scan exists to fail. `null`
+ *  where there is no disposition at all. */
+export function recordedByOf(epic) {
+  const d = epic && epic.disposition;
+  return d && typeof d.recordedBy === "string" ? d.recordedBy : null;
+}
+
 /** The epic-level REGISTRATION provenance: which engine path created this epic RECORD.
  *
  *  Distinct from `disposition.recordedBy`, which says who recorded how the work ENDED, and the
@@ -312,8 +342,8 @@ export function creationStamp(command, { via } = {}) {
 // SEPARATE from the epic-level disposition above and deliberately not folded into it: that one
 // says how an EPIC ended and carries an `outcome` from KNOWN_OUTCOMES; this one says what
 // happened to ONE MILESTONE inside an epic that may still be running. Giving them one shape
-// would put `delivered|killed|superseded|abandoned|declined` on a checklist row, where four of
-// the five are meaningless.
+// would put every value of KNOWN_OUTCOMES on a checklist row, where all but `delivered` are
+// meaningless.
 //
 // A REASON IS MANDATORY, with no `delivered`-style exemption, because there is no disposition
 // here that means "this shipped" — `--done` already says that. Every value this field can hold

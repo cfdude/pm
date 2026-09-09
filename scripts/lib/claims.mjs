@@ -42,6 +42,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { isInitialized, loadState, saveState } from "./state.mjs";
+import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { CLAIM_DEFAULT_TTL_MINUTES, REPO_CLAIM_DEFAULT_TTL_MINUTES } from "./constants.mjs";
 import { parseFlags, requireFlagValues, requireKnownFlags } from "./add-epic.mjs";
 import { resolveSession, SESSION_HINT } from "./session-identity.mjs";
@@ -173,9 +174,12 @@ export function claim() {
       `(${isLiveClaim(held) ? "STOLEN while live" : "its claim had expired"})\n`);
   }
   epic.claim = makeClaim(session, ttl);
-  saveState(state);
-  process.stderr.write(
-    `conductor: '${epicId}' claimed by '${session}' until ${claimExpiry(epic.claim)}\n`);
+  const saved = saveState(state);
+  reportSave(saved, {
+    changed: `conductor: '${epicId}' claimed by '${session}' until ${claimExpiry(epic.claim)}`,
+    unchanged: `conductor: '${epicId}' already carried this exact claim by '${session}' — ` +
+      `${STATE_UNCHANGED}`,
+  });
 }
 
 // ────────────────────────────── unclaim ──────────────────────────────
@@ -235,8 +239,11 @@ export function unclaim() {
     process.stderr.write(`conductor: cleared a claim held by '${held.session}', not '${session}'\n`);
   }
   delete epic.claim;
-  saveState(state);
-  process.stderr.write(`conductor: '${epicId}' released\n`);
+  const saved = saveState(state);
+  reportSave(saved, {
+    changed: `conductor: '${epicId}' released`,
+    unchanged: `conductor: '${epicId}' held no claim to release — ${STATE_UNCHANGED}`,
+  });
 }
 
 // ─────────────────────────────── owners ──────────────────────────────

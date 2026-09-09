@@ -77,11 +77,12 @@ archived epic with nothing ticked, one change registered under two lanes, a gate
 does not reach the commits it cites, a gate recorded as bookkeeping rather than review, a
 `delivered` epic that attributed no commits, an archived openspec-lane epic with a passing Gate 2
 and no Gate 1, an epic archived with an `ungated` Gate 2, an epic the archive-drift heal flipped
-that reads `outcome: unknown` while carrying a passing Gate 2, a dangling epic reference, an
-archive directory no epic corresponds to, a recorded commit sha this repository can no longer
-resolve, an epic still open in a release that has already delivered, and an epic another epic
-declares it supersedes that never ended. It reports every check with its count, including the
-ones that found nothing, so a check that measured nothing is visibly a check that ran.
+that reads `outcome: unknown` while carrying a passing Gate 2, an epic sitting in a status the
+engine does not define, a dangling epic reference, an archive directory no epic corresponds to, a
+recorded commit sha this repository can no longer resolve, an epic still open in a release that
+has already delivered, and an epic another epic declares it supersedes that never ended. It
+reports every check with its count, including the ones that found nothing, so a check that
+measured nothing is visibly a check that ran.
 
 `delivered-release-epic-left-open` is the one that catches a release closing out. A release
 object carries no delivery marker, so "the release delivered" is read from its members — at
@@ -98,6 +99,18 @@ and every gate verdict's `baseSha`/`headSha` into a sentence about commits nobod
 The check separates **orphaned** (still in the object store, recoverable now with `git tag`) from
 **already gone**, and stays silent in a clone that resolves none of the record at all, because a
 fresh, shallow or single-ref clone legitimately lacks that history and is not a disaster.
+
+`epic-in-undefined-status` is the one that explains a backlog nobody can unstick. `KNOWN_STATUSES`
+is enforced on write — `add-epic`, `update-epic` and `add-many` each refuse a status outside it —
+so such a value never arrived through a verb, while the read side accepts whatever is stored and
+must keep doing so or an existing state file stops loading. The consequence is the half a reader
+cannot deduce: the epic is not `archived`, so it is non-terminal to every rule that tests for the
+archived status. It is skipped by all the completion-shaped checks above, which makes the record
+read cleaner than it is, and `dependencySatisfied()` answers true for `archived` and nothing else —
+so every `depends-on` edge pointing at it reads unsatisfied forever, whatever waits on it stays
+blocked, and it absorbs their effective priority for as long as the value persists. Measured across
+27 distinct upstreams before this shipped: 26 epics in `status: "done"`. Reported, never repaired —
+which legal status an undefined one should become is a judgment about what happened to the work.
 
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" integrity
@@ -240,6 +253,16 @@ bullet reached 3/15.
    strips one holder and not its siblings leaves a dangling reference — the record rendering a
    pointer to something that no longer exists — and it is invisible to both gates for the same
    diff-scoped reason.
+   AN OPERATION HAS AN INVERSE, and the sweep above cannot reach it. Enumerate the inverse of
+   every operation the change adds or modifies — set against unset, add against remove, append
+   against replace, enable against disable, grant against revoke — then name and justify each
+   inverse that is not shipped, exactly as an unguarded call site must be. An operation shipped
+   without its inverse, and not justified, is a FINDING. Why the sweep misses this class is
+   mechanical, not a matter of diligence: enumerating the callers of a thing that is written
+   never leads to the question of whether it can be unwritten. Six instances shipped past both
+   gates here while the call-site obligation was already in force, the most consequential a
+   safety surface — pre-authorization grants accumulate with no revoke, so turning autonomy off
+   leaves every prior grant intact and turning it back on silently restores all of them.
 2. **Verify against the commit, not the working tree.** The commit is the unit of verification.
    Reading a file in the working tree is NOT verification. For every task, run
    `git show --stat <that task's sha>` and assert that every file the task claims to change
@@ -295,7 +318,7 @@ bullet reached 3/15.
    ENDS by recording a terminal disposition carrying its required reason, and
    never by removing the record. The archive verb takes TWO halves in ONE invocation — the
    disposition AND a deferral assertion — because the gate refuses either half alone:
-   `update-epic <id> --status archived --outcome delivered|killed|superseded|abandoned|declined --reason "<why>" --no-deferrals`
+   `update-epic <id> --status archived --outcome delivered|killed|superseded|abandoned|declined|unreconstructable --reason "<why>" --no-deferrals`
    (every outcome except `delivered` requires the reason). `--no-deferrals` is the explicit
    "there are none" and is a claim, not a default — swap it for `--deferral
    "<epicId>:<artifact section>"` where work is now held by a registered epic, or

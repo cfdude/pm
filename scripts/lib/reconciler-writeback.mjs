@@ -3,6 +3,7 @@
 // link to the detour that may have invalidated it. One-directional dependencies only.
 
 import { isInitialized, loadState, saveState } from "./state.mjs";
+import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
 
@@ -46,7 +47,11 @@ export function recordReconcile() {
   link.reconciled = { verdict, amendments, reconciledAt: new Date().toISOString() };
   epic.reconcileNeeded = false;
 
-  saveState(state);
+  const saved = saveState(state);
   render();
-  process.stderr.write(`conductor: recorded reconcile verdict '${verdict}' for '${id}' vs '${detourId}'\n`);
+  reportSave(saved, {
+    changed: `conductor: recorded reconcile verdict '${verdict}' for '${id}' vs '${detourId}'`,
+    unchanged: `conductor: '${id}' already carried this exact reconcile verdict against ` +
+      `'${detourId}' — ${STATE_UNCHANGED}`,
+  });
 }

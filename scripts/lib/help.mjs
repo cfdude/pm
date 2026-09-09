@@ -35,7 +35,7 @@ export function verbHelp(command) {
   const out = [];
 
   if (specs.length === 0) {
-    // EXPLICIT, never an empty list. 21 of 48 verbs legitimately take no flags, and they are
+    // EXPLICIT, never an empty list. 23 of 50 verbs legitimately take no flags, and they are
     // declared in FLAGLESS_VERBS precisely so that "takes none" and "nobody declared this yet"
     // cannot look the same. Printing nothing here would re-introduce exactly that ambiguity at
     // the surface a reader actually looks at.
