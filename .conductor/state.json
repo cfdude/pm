@@ -5502,10 +5502,10 @@
       "reconcileNeeded": false,
       "externalId": "182",
       "externalUrl": "https://github.com/cfdude/pm/issues/182",
-      "externalUpdatedAt": "2026-09-09T00:30:00Z",
+      "externalUpdatedAt": "2026-09-09T00:21:40Z",
       "attributedCommits": [],
       "createdAt": "2026-09-09T00:21:49.671Z",
-      "touchedAt": "2026-09-09T00:21:57.416Z",
+      "touchedAt": "2026-09-09T00:33:47.615Z",
       "notes": [
         {
           "at": "2026-09-09T00:21:57.414Z",
@@ -5523,7 +5523,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 461,
+  "revision": 462,
   "reviewMode": "thorough",
   "releases": [
     {
