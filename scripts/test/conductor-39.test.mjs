@@ -180,7 +180,17 @@ function trackedHistoryRepo(ids = ["one", "two"]) {
                  lane: "claude-code", links: [], reconcileNeeded: false });
     writeState(cwd, { version: 1, active: null, detourStack: [], pmVersion: "0.39.0", epics: [...epics] });
     git(cwd, "add", "-A");
-    git(cwd, "commit", "-q", "-m", `chore: register ${id}`);
+    // EXPLICIT, SPACED commit times. `git log --format=%cI` has SECOND resolution, so two commits
+    // made in the same second are indistinguishable to the verb under test — and on a fast machine
+    // this loop makes them in the same second. That is not a hypothetical: this test passed on a
+    // developer laptop for a whole release and failed on the first CI run, on the assertion that
+    // two epics do not share a date, with `expected` and `actual` printed IDENTICALLY. Spacing the
+    // commits a minute apart makes the fixture deterministic on any machine, and lets the
+    // assertions below check the stronger property: each epic gets ITS OWN commit's date.
+    const when = `2026-01-0${epics.length} 12:00:00 +0000`;
+    execFileSync("git", ["commit", "-q", "-m", `chore: register ${id}`],
+      { cwd, encoding: "utf8",
+        env: { ...process.env, GIT_AUTHOR_DATE: when, GIT_COMMITTER_DATE: when } });
   }
   return cwd;
 }
@@ -193,11 +203,16 @@ test("2.1: the verb recovers a real date for an id whose introducing commit is i
 
   recover(cwd);
 
+  const introducedTwo = git(cwd, "log", "-S", '"id": "two"', "--reverse", "--format=%cI", "--",
+    ".conductor/state.json").split("\n").filter(Boolean)[0];
+
   assert.equal(epicOf(cwd, "one").createdAt, introduced,
     "the date is the introducing commit's, not the run time");
   assert.match(epicOf(cwd, "two").createdAt || "", ISO);
+  assert.equal(epicOf(cwd, "two").createdAt, introducedTwo,
+    "each epic takes ITS OWN introducing commit's date, not the first one's");
   assert.notEqual(epicOf(cwd, "one").createdAt, epicOf(cwd, "two").createdAt,
-    "two epics introduced by two commits do not share a date");
+    "two epics introduced by two commits a minute apart do not share a date");
 });
 
 test("2.2: degradation — no git repository yields ABSENT, not an error and not a date", () => {
