@@ -15,7 +15,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-08-26T22:39:16.528Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-14T15:26:34-07:00"
     },
     {
       "id": "epic-hierarchy-orchestration",
@@ -31,7 +32,8 @@
         "recordedAt": "2026-08-26T22:39:16.528Z",
         "recordedBy": "migration"
       },
-      "specPath": "docs/superpowers/specs/2026-07-14-epic-hierarchy-orchestration-design.md"
+      "specPath": "docs/superpowers/specs/2026-07-14-epic-hierarchy-orchestration-design.md",
+      "createdAt": "2026-07-14T15:56:03-07:00"
     },
     {
       "id": "portfolio-architecture-consistency-scan",
@@ -53,7 +55,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-15T23:01:10.348Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-14T15:56:03-07:00"
     },
     {
       "id": "infra-runbook-preflight",
@@ -68,7 +71,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-08-26T22:39:16.528Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-14T15:56:03-07:00"
     },
     {
       "id": "pm-plugin-improvements-2026-07-14",
@@ -84,7 +88,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-16T05:28:32.305Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-14T22:55:49-07:00"
     },
     {
       "id": "gate-guard-default-on-reconcile",
@@ -115,7 +120,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-15T21:56:25.609Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-14T22:55:49-07:00"
     },
     {
       "id": "diffshape-minimal-detour-inference",
@@ -146,7 +152,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-15T21:56:25.567Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-14T22:55:49-07:00"
     },
     {
       "id": "remove-epic-verb",
@@ -207,7 +214,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-08-26T22:39:16.528Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-14T22:55:49-07:00"
     },
     {
       "id": "fix-archived-no-change-warning",
@@ -232,7 +240,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-15T21:56:25.840Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-14T22:55:49-07:00"
     },
     {
       "id": "reconciler-structured-writeback",
@@ -263,7 +272,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-15T21:56:26.035Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-14T22:55:49-07:00"
     },
     {
       "id": "lane-routing-config",
@@ -288,7 +298,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-15T21:56:25.957Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-14T22:55:49-07:00"
     },
     {
       "id": "autonomy-hierarchy-adoption-investigation",
@@ -313,7 +324,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-15T21:56:25.648Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-14T22:55:49-07:00"
     },
     {
       "id": "honcho-memory-string-print",
@@ -338,7 +350,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-15T21:56:25.879Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-14T22:55:49-07:00"
     },
     {
       "id": "verify-state-command",
@@ -369,7 +382,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-15T21:56:26.074Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-14T22:55:49-07:00"
     },
     {
       "id": "dependency-aware-standalone-ordering",
@@ -400,7 +414,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-15T21:56:25.762Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-14T22:55:49-07:00"
     },
     {
       "id": "per-epic-review-mode-override",
@@ -425,7 +440,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-15T21:56:25.996Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-14T22:55:49-07:00"
     },
     {
       "id": "epic-timestamps-and-staleness",
@@ -450,7 +466,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-15T21:56:25.800Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-14T22:55:49-07:00"
     },
     {
       "id": "category-based-preauthorization",
@@ -475,7 +492,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-15T21:56:25.686Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-14T22:55:49-07:00"
     },
     {
       "id": "incremental-notify-timing-fix",
@@ -500,7 +518,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-15T21:56:25.918Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-14T22:55:49-07:00"
     },
     {
       "id": "cross-repo-epic-dependency-investigation",
@@ -525,7 +544,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-15T21:56:26.111Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-14T22:55:49-07:00"
     },
     {
       "id": "changelog-preview-in-sessionstart-nudge",
@@ -550,7 +570,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-15T21:56:25.724Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-14T22:55:49-07:00"
     },
     {
       "id": "ai-feedback-loop-github-issues",
@@ -585,7 +606,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-15T23:01:10.171Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-14T23:05:28-07:00"
     },
     {
       "id": "github-issue-tracker-sync",
@@ -626,7 +648,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-15T23:01:10.225Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-14T23:05:28-07:00"
     },
     {
       "id": "cfdude-pm-repo-governance",
@@ -642,7 +665,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-16T05:28:32.266Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-14T23:05:28-07:00"
     },
     {
       "id": "branch-protection-and-pr-workflow",
@@ -678,7 +702,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-15T23:06:28.073Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-14T23:05:28-07:00"
     },
     {
       "id": "ci-test-lint-workflow",
@@ -709,7 +734,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-15T23:01:10.267Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-14T23:05:28-07:00"
     },
     {
       "id": "autonomous-issue-resolution-agent",
@@ -726,7 +752,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-15T23:01:10.307Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-14T23:05:28-07:00"
     },
     {
       "id": "df-stale-cache-silent-fallback",
@@ -756,7 +783,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-08-26T22:39:16.528Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-15T08:26:55-07:00"
     },
     {
       "id": "df-plan-hierarchy-includes-archived-children",
@@ -772,7 +800,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-08-26T22:39:16.528Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-15T08:26:55-07:00"
     },
     {
       "id": "df-hierarchy-no-shared-file-conflict-detection",
@@ -788,7 +817,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-08-26T22:39:16.528Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-15T08:26:55-07:00"
     },
     {
       "id": "df-github-tracker-outward-sync-unsuppressed",
@@ -818,7 +848,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-16T07:59:26.876Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-15T16:01:52-07:00"
     },
     {
       "id": "df-changelog-fragment-conflicts",
@@ -848,7 +879,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-16T05:07:27.632Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-15T16:32:43-07:00"
     },
     {
       "id": "df-conflict-resolution-verification-step",
@@ -878,7 +910,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-16T05:07:27.678Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-15T16:32:43-07:00"
     },
     {
       "id": "df-skill-commands-line-drift",
@@ -908,7 +941,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-16T07:59:26.955Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-15T16:32:43-07:00"
     },
     {
       "id": "df-live-infra-epic-session-continuity-warning",
@@ -938,7 +972,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-16T05:07:27.718Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-15T16:32:43-07:00"
     },
     {
       "id": "df-stray-render-artifacts-noise",
@@ -968,7 +1003,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-16T07:59:26.994Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-15T16:32:43-07:00"
     },
     {
       "id": "df-verify-worktrees-merged-not-just-archived",
@@ -998,7 +1034,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-21T06:09:36.854Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-15T16:32:43-07:00"
     },
     {
       "id": "df-autodetour-false-positive-conductor-admin-commits",
@@ -1015,7 +1052,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-16T05:35:43.440Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-15T16:32:43-07:00"
     },
     {
       "id": "df-readme-stale-since-gate-guard",
@@ -1031,7 +1069,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-16T01:52:11.686Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-15T16:43:54-07:00"
     },
     {
       "id": "multi-platform-agent-support",
@@ -1058,7 +1097,8 @@
         ],
         "declined": []
       },
-      "completedAt": "2026-09-08T06:43:24.797Z"
+      "completedAt": "2026-09-08T06:43:24.797Z",
+      "createdAt": "2026-07-15T18:53:56-07:00"
     },
     {
       "id": "df-no-mechanical-openspec-gate-enforcement",
@@ -1093,7 +1133,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-16T07:59:26.916Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-15T22:43:28-07:00"
     },
     {
       "id": "df-orchestrator-committed-release-without-reverifying",
@@ -1110,7 +1151,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-19T20:46:53.640Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-16T01:06:27-07:00"
     },
     {
       "id": "df-hierarchy-executor-must-check-readme-for-user-facing-changes",
@@ -1127,7 +1169,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-17T07:04:32.571Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-16T16:32:50-07:00"
     },
     {
       "id": "docs-site-cleanup",
@@ -1181,7 +1224,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-21T06:45:48.230Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-16T17:26:17-07:00"
     },
     {
       "id": "df-precommit-hook-too-noisy-on-success",
@@ -1211,7 +1255,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-21T06:20:07.492Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-19T14:24:17-07:00"
     },
     {
       "id": "df-engine-banner-noise-every-invocation",
@@ -1242,7 +1287,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-21T06:28:09.825Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-19T14:24:17-07:00"
     },
     {
       "id": "df-project-md-diff-triviality-not-mechanically-checkable",
@@ -1272,7 +1318,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-21T06:36:02.583Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-19T14:24:17-07:00"
     },
     {
       "id": "df-contributing-doc-missing-direct-push-recovery",
@@ -1289,7 +1336,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-25T18:18:44.268Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-19T14:24:17-07:00"
     },
     {
       "id": "multi-tracker-primary-secondary-support",
@@ -1318,7 +1366,8 @@
         "outcome": "delivered",
         "recordedAt": "2026-07-20T01:04:54.194Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-19T17:40:47-07:00"
     },
     {
       "id": "2026-07-14-epic-hierarchy-orchestration",
@@ -1336,7 +1385,8 @@
         "recordedAt": "2026-07-25T18:52:22.706Z",
         "recordedBy": "migration"
       },
-      "specPath": "docs/superpowers/specs/2026-07-14-epic-hierarchy-orchestration-design.md"
+      "specPath": "docs/superpowers/specs/2026-07-14-epic-hierarchy-orchestration-design.md",
+      "createdAt": "2026-07-19T17:40:47-07:00"
     },
     {
       "id": "df-update-epic-no-story-toggle-verb",
@@ -1366,7 +1416,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-21T06:42:07.249Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-20T19:49:21-07:00"
     },
     {
       "id": "conductor-mjs-module-split",
@@ -1391,7 +1442,8 @@
         "recordedAt": "2026-07-21T09:59:09.242Z",
         "recordedBy": "migration"
       },
-      "specPath": "docs/superpowers/specs/2026-07-21-conductor-mjs-module-split-design.md"
+      "specPath": "docs/superpowers/specs/2026-07-21-conductor-mjs-module-split-design.md",
+      "createdAt": "2026-07-20T20:27:55-07:00"
     },
     {
       "id": "edd-harness-agent-behavior-testing",
@@ -1410,7 +1462,8 @@
         "recordedAt": "2026-07-28T01:32:40.590Z",
         "recordedBy": "migration"
       },
-      "specPath": "docs/superpowers/specs/2026-07-25-edd-harness-agent-behavior-testing-design.md"
+      "specPath": "docs/superpowers/specs/2026-07-25-edd-harness-agent-behavior-testing-design.md",
+      "createdAt": "2026-07-23T18:07:21-07:00"
     },
     {
       "id": "rules-block-hardcodes-claude-slash-commands",
@@ -1428,7 +1481,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-30T05:54:27.332Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-28T19:25:39-07:00"
     },
     {
       "id": "platform-parity-mechanism",
@@ -1454,7 +1508,8 @@
         "recordedAt": "2026-08-04T00:48:57.337Z",
         "recordedBy": "migration"
       },
-      "specPath": "docs/superpowers/specs/2026-07-31-platform-parity-mechanism-design.md"
+      "specPath": "docs/superpowers/specs/2026-07-31-platform-parity-mechanism-design.md",
+      "createdAt": "2026-07-28T19:25:39-07:00"
     },
     {
       "id": "codex-platform-support",
@@ -1487,7 +1542,8 @@
       ],
       "reconcileNeeded": false,
       "parent": "multi-platform-agent-support",
-      "specPath": "docs/superpowers/specs/2026-07-25-codex-platform-support-design.md"
+      "specPath": "docs/superpowers/specs/2026-07-25-codex-platform-support-design.md",
+      "createdAt": "2026-07-28T19:25:39-07:00"
     },
     {
       "id": "hermes-platform-support",
@@ -1514,7 +1570,8 @@
         }
       ],
       "reconcileNeeded": false,
-      "parent": "multi-platform-agent-support"
+      "parent": "multi-platform-agent-support",
+      "createdAt": "2026-07-28T19:25:39-07:00"
     },
     {
       "id": "edd-observe-hardcodes-claude-md",
@@ -1543,7 +1600,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-30T21:21:55.677Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-28T19:25:39-07:00"
     },
     {
       "id": "edd-user-memory-confound-control-run",
@@ -1600,7 +1658,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-30T23:20:07.828Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-28T19:25:39-07:00"
     },
     {
       "id": "edd-measures-installed-plugin-not-worktree",
@@ -1623,7 +1682,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-08-17T06:15:57.388Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-28T19:25:39-07:00"
     },
     {
       "id": "edd-adapter-discards-agent-stdout",
@@ -1655,7 +1715,8 @@
         ],
         "declined": []
       },
-      "completedAt": "2026-09-05T09:49:32.280Z"
+      "completedAt": "2026-09-05T09:49:32.280Z",
+      "createdAt": "2026-07-28T19:25:39-07:00"
     },
     {
       "id": "init-detects-foreign-agent-instruction-files",
@@ -1678,7 +1739,8 @@
           "actor": "agent",
           "text": "RESCOPE 2026-09-07: drop the sol.md half. 'sol.md' is a Typeless mishearing of SOUL.md, and SOUL.md was already ruled out of scope by design at docs/superpowers/specs/2026-07-29-platform-aware-rules-block-design.md:187-188 — Hermes loads it from HERMES_HOME, not the project directory, so init could not detect it even in principle. The AGENTS.md half HOLDS: init() at scripts/lib/subcommands.mjs:68-85 reads no instruction file of any kind."
         }
-      ]
+      ],
+      "createdAt": "2026-07-30T12:31:30-07:00"
     },
     {
       "id": "rules-block-cli-fallback",
@@ -1694,7 +1756,8 @@
           "title": "deferred deliberately: a CLI fallback changes WHO the instruction addresses (slash command = the user, node scripts/conductor.mjs = the agent), which is a design fork, not just longer text",
           "done": false
         }
-      ]
+      ],
+      "createdAt": "2026-07-30T12:31:30-07:00"
     },
     {
       "id": "gh-64-sync-duplicate-shipped-plan",
@@ -1747,7 +1810,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-29T01:57:09.323Z"
+      "completedAt": "2026-08-29T01:57:09.323Z",
+      "createdAt": "2026-07-30T12:31:30-07:00"
     },
     {
       "id": "gh-65-autodetour-false-positives",
@@ -1798,7 +1862,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-30T22:52:14.536Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-30T12:31:30-07:00"
     },
     {
       "id": "gh-66-update-epic-missing-flags",
@@ -1827,7 +1892,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-29T01:56:33.852Z"
+      "completedAt": "2026-08-29T01:56:33.852Z",
+      "createdAt": "2026-07-30T12:31:30-07:00"
     },
     {
       "id": "gh-69-sync-no-done-signal-for-plans",
@@ -1856,7 +1922,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-29T01:56:35.618Z"
+      "completedAt": "2026-08-29T01:56:35.618Z",
+      "createdAt": "2026-07-30T12:31:30-07:00"
     },
     {
       "id": "gh-70-link-validation-gap",
@@ -1874,7 +1941,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-08-18T15:32:31.121Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-30T12:31:30-07:00"
     },
     {
       "id": "test-suite-perf-and-scaffolding",
@@ -1933,7 +2001,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-07-30T05:02:31.485Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-07-30T12:31:30-07:00"
     },
     {
       "id": "2026-07-21-conductor-mjs-module-split",
@@ -1951,7 +2020,8 @@
         "recordedAt": "2026-07-30T04:00:55.770Z",
         "recordedBy": "migration"
       },
-      "specPath": "docs/superpowers/specs/2026-07-21-conductor-mjs-module-split-design.md"
+      "specPath": "docs/superpowers/specs/2026-07-21-conductor-mjs-module-split-design.md",
+      "createdAt": "2026-07-30T12:31:30-07:00"
     },
     {
       "id": "2026-07-26-edd-harness-agent-behavior-testing",
@@ -1969,7 +2039,8 @@
         "recordedAt": "2026-07-30T04:00:55.969Z",
         "recordedBy": "migration"
       },
-      "specPath": "docs/superpowers/specs/2026-07-25-edd-harness-agent-behavior-testing-design.md"
+      "specPath": "docs/superpowers/specs/2026-07-25-edd-harness-agent-behavior-testing-design.md",
+      "createdAt": "2026-07-30T12:31:30-07:00"
     },
     {
       "id": "2026-07-29-platform-aware-rules-block",
@@ -1987,7 +2058,8 @@
         "recordedAt": "2026-07-30T04:00:56.179Z",
         "recordedBy": "migration"
       },
-      "specPath": "docs/superpowers/specs/2026-07-29-platform-aware-rules-block-design.md"
+      "specPath": "docs/superpowers/specs/2026-07-29-platform-aware-rules-block-design.md",
+      "createdAt": "2026-07-30T12:31:30-07:00"
     },
     {
       "id": "platform-switch-orphans-old-rules-block",
@@ -2013,7 +2085,8 @@
           "title": "unreachable today (no Hermes/Codex hooks ship, needs a hand-passed --platform), but must be resolved before either port",
           "done": false
         }
-      ]
+      ],
+      "createdAt": "2026-07-30T12:31:30-07:00"
     },
     {
       "id": "autodetour-parser-misses-am-and-f",
@@ -2051,7 +2124,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-29T05:18:40.665Z"
+      "completedAt": "2026-08-29T05:18:40.665Z",
+      "createdAt": "2026-07-30T12:31:30-07:00"
     },
     {
       "id": "edd-corpus-expansion-nondeterministic-surfaces",
@@ -2075,7 +2149,8 @@
           "title": "each scenario must be mutation-tested -- this session found 4 of 5 guard tests passing on an unrelated rule, so a scenario that cannot fail is worse than none",
           "done": false
         }
-      ]
+      ],
+      "createdAt": "2026-08-03T17:46:36-07:00"
     },
     {
       "id": "parity-reassessment-per-platform",
@@ -2101,7 +2176,8 @@
           "title": "the ledger catches FORGOTTEN capabilities; EDD catches capabilities that exist but BEHAVE differently. Both must run per platform -- neither substitutes for the other",
           "done": false
         }
-      ]
+      ],
+      "createdAt": "2026-08-03T17:46:36-07:00"
     },
     {
       "id": "parity-propagation-skill",
@@ -2117,7 +2193,8 @@
           "title": "DEFERRED from platform-parity-mechanism on purpose: writing the procedure before any port has happened would infer steps from design docs rather than from what a port actually required",
           "done": false
         }
-      ]
+      ],
+      "createdAt": "2026-08-03T17:46:36-07:00"
     },
     {
       "id": "parity-ledger-exemptions",
@@ -2133,7 +2210,8 @@
           "title": "DROPPED from the initial ledger deliberately: with zero exemptions the 'every exemption has a reason' assertion could never fail -- the vacuous-coverage pattern that bit this session four times. Design it when Hermes hits a real cannot-support case.",
           "done": false
         }
-      ]
+      ],
+      "createdAt": "2026-08-03T17:46:36-07:00"
     },
     {
       "id": "state-lost-update-concurrent-sessions",
@@ -2158,7 +2236,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-08-20T17:43:40.832Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-08-16T23:06:53-07:00"
     },
     {
       "id": "epic-session-attribution",
@@ -2175,7 +2254,8 @@
         }
       ],
       "reconcileNeeded": false,
-      "specPath": "docs/superpowers/specs/2026-08-23-cross-repo-orchestration-design.md"
+      "specPath": "docs/superpowers/specs/2026-08-23-cross-repo-orchestration-design.md",
+      "createdAt": "2026-08-16T23:06:53-07:00"
     },
     {
       "id": "cross-session-epic-assignment",
@@ -2210,7 +2290,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-29T13:31:47.624Z"
+      "completedAt": "2026-08-29T13:31:47.624Z",
+      "createdAt": "2026-08-16T23:06:53-07:00"
     },
     {
       "id": "changelog-page-too-long-archive-older-releases",
@@ -2227,7 +2308,8 @@
           "actor": "agent",
           "text": "EVIDENCE CORRECTED 2026-09-07: the epic's 1198 lines / 40 releases UNDERSTATES the problem rather than being stale-in-the-usual-direction. The Mintlify source lives in cfdude/pm-docs, not here (zero .mdx, zero docs.json in this repo), so it cannot be measured locally; the in-repo proxy CHANGELOG.md is now 2334 lines across 55 releases. Whatever threshold the spec picks, derive it from the pm-docs source, not from this repo."
         }
-      ]
+      ],
+      "createdAt": "2026-08-16T23:06:53-07:00"
     },
     {
       "id": "gh-71-update-epic-positional-id",
@@ -2251,7 +2333,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-26T21:22:39.653Z"
+      "completedAt": "2026-08-26T21:22:39.653Z",
+      "createdAt": "2026-08-16T23:06:53-07:00"
     },
     {
       "id": "gh-79-epic-description-and-notes",
@@ -2281,7 +2364,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-26T21:22:41.261Z"
+      "completedAt": "2026-08-26T21:22:41.261Z",
+      "createdAt": "2026-08-16T23:06:53-07:00"
     },
     {
       "id": "gh-80-gate-guard-refusal-applies-anyway",
@@ -2305,7 +2389,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-26T21:22:42.876Z"
+      "completedAt": "2026-08-26T21:22:42.876Z",
+      "createdAt": "2026-08-16T23:06:53-07:00"
     },
     {
       "id": "gh-81-project-md-never-clean",
@@ -2333,7 +2418,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-29T08:21:57.625Z"
+      "completedAt": "2026-08-29T08:21:57.625Z",
+      "createdAt": "2026-08-16T23:06:53-07:00"
     },
     {
       "id": "gh-82-claude-project-dir-overrides-cwd",
@@ -2360,7 +2446,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-29T08:21:59.323Z"
+      "completedAt": "2026-08-29T08:21:59.323Z",
+      "createdAt": "2026-08-16T23:06:53-07:00"
     },
     {
       "id": "gh-85-document-mutating-verbs",
@@ -2387,7 +2474,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-29T08:21:55.963Z"
+      "completedAt": "2026-08-29T08:21:55.963Z",
+      "createdAt": "2026-08-16T23:06:53-07:00"
     },
     {
       "id": "gh-86-openspec-lane-silent-zero-progress",
@@ -2405,7 +2493,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-08-17T06:23:41.462Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-08-16T23:06:53-07:00"
     },
     {
       "id": "edd-run-policy-when-behavior-artifacts-change",
@@ -2421,7 +2510,8 @@
           "reason": "a run-always policy is only worth its cost once the corpus covers more than one scenario -- today it would mostly re-prove typo-routing"
         }
       ],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "createdAt": "2026-08-16T23:06:53-07:00"
     },
     {
       "id": "conductor-skill-orient-reads-spec-inventory",
@@ -2438,7 +2528,8 @@
           "actor": "agent",
           "text": "TWO CORRECTIONS 2026-09-07. (1) The '10x' is overstated 2x for the object it names: against .claude/skills/openspec-*/SKILL.md — the generated skills the claim cites — 'openspec list --json' appears 5 times; across ALL generated instruction files (those 5 plus .claude/commands/opsx/*.md) it is 10. 'list --specs' is 0 in both readings, so the asymmetry the epic rests on survives either way, but fix the number before it lands in a spec. Measured after 2bbb039, the regeneration for OpenSpec CLI 1.12.0, so it is current. (2) The work is bigger than 'reword': there is NO 'Orient' section in skills/conductor/SKILL.md at all — nearest is '## Choosing what is next' at :582 — and commands/status.md:37 reads the in-flight change list, which is the wrong object entirely. This is write, not amend."
         }
-      ]
+      ],
+      "createdAt": "2026-08-16T23:06:53-07:00"
     },
     {
       "id": "autonomy-grant-starts-at-apply-not-propose",
@@ -2448,7 +2539,8 @@
       "role": "epic",
       "lane": "claude-code",
       "links": [],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "createdAt": "2026-08-16T23:06:53-07:00"
     },
     {
       "id": "openspec-gate1-guard-on-apply",
@@ -2458,7 +2550,8 @@
       "role": "epic",
       "lane": "claude-code",
       "links": [],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "createdAt": "2026-08-16T23:06:53-07:00"
     },
     {
       "id": "openspec-planning-completeness-instruction",
@@ -2474,7 +2567,8 @@
           "reason": "both gate the SAME transition (into implementation) with different evidence -- OpenSpec's planning completeness vs pm's own Gate 1 review. SUPERSESSION RISK: if the two-gate schema fork (page D2) is ever adopted, gate1 becomes an OpenSpec artifact and these two collapse into one; do not build both independently without deciding which is authoritative"
         }
       ],
-      "reconcileNeeded": false
+      "reconcileNeeded": false,
+      "createdAt": "2026-08-16T23:06:53-07:00"
     },
     {
       "id": "dehardcode-openspec-change-root-in-instructions",
@@ -2497,7 +2591,8 @@
           "actor": "agent",
           "text": "CITATIONS CORRECTED 2026-09-07. Directive count still 4-in-3 files, but two line numbers moved: agents/reconciler.md:20,:22 still correct; skills/conductor/SKILL.md:328 is now :800; commands/status.md:19 is now :37. MORE IMPORTANTLY the epic's own NOTE is now self-refuting: it argues rules.mjs holds no path literal, and while rules.mjs:129 still does not, rules.mjs:236 NOW EMITS 'openspec/changes/<id>/' into the shipped rules block. So the emitted surface acquired the hardcoding the note said it was free of. Re-read the note before it becomes spec evidence."
         }
-      ]
+      ],
+      "createdAt": "2026-08-16T23:06:53-07:00"
     },
     {
       "id": "gh-87-sync-registers-readme-as-plans",
@@ -2515,7 +2610,8 @@
         "outcome": "unknown",
         "recordedAt": "2026-08-17T06:23:41.521Z",
         "recordedBy": "migration"
-      }
+      },
+      "createdAt": "2026-08-16T23:22:35-07:00"
     },
     {
       "id": "gh-88-record-where-unfinished-tasks-went",
@@ -2539,7 +2635,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-26T21:22:44.467Z"
+      "completedAt": "2026-08-26T21:22:44.467Z",
+      "createdAt": "2026-08-16T23:22:35-07:00"
     },
     {
       "id": "gh-89-delegate-discovery-to-subagents",
@@ -2565,7 +2662,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-29T14:55:17.891Z"
+      "completedAt": "2026-08-29T14:55:17.891Z",
+      "createdAt": "2026-08-16T23:22:35-07:00"
     },
     {
       "id": "gh-90-honor-output-style-contract",
@@ -2591,7 +2689,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-29T14:55:19.380Z"
+      "completedAt": "2026-08-29T14:55:19.380Z",
+      "createdAt": "2026-08-16T23:22:35-07:00"
     },
     {
       "id": "gh-91-autodetour-false-minimal-detour",
@@ -2617,7 +2716,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-29T06:57:07.922Z"
+      "completedAt": "2026-08-29T06:57:07.922Z",
+      "createdAt": "2026-08-16T23:22:35-07:00"
     },
     {
       "id": "gh-92-epic-specpath",
@@ -2651,7 +2751,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-29T06:57:00.173Z"
+      "completedAt": "2026-08-29T06:57:00.173Z",
+      "createdAt": "2026-08-16T23:22:35-07:00"
     },
     {
       "id": "gh-93-verify-specs-coverage",
@@ -2674,7 +2775,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-29T06:57:01.719Z"
+      "completedAt": "2026-08-29T06:57:01.719Z",
+      "createdAt": "2026-08-16T23:22:35-07:00"
     },
     {
       "id": "gh-94-serial-detours-accepted-silently",
@@ -2700,7 +2802,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-29T10:18:55.790Z"
+      "completedAt": "2026-08-29T10:18:55.790Z",
+      "createdAt": "2026-08-16T23:22:35-07:00"
     },
     {
       "id": "gh-95-stories-optional-and-gate-nothing",
@@ -2733,7 +2836,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-29T01:56:37.298Z"
+      "completedAt": "2026-08-29T01:56:37.298Z",
+      "createdAt": "2026-08-16T23:22:35-07:00"
     },
     {
       "id": "gh-100-link-types-no-known-set",
@@ -2766,7 +2870,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-29T10:18:54.273Z"
+      "completedAt": "2026-08-29T10:18:54.273Z",
+      "createdAt": "2026-08-20T14:29:22-07:00"
     },
     {
       "id": "gh-101-dependency-order-blind-to-blocked",
@@ -2794,7 +2899,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-27T23:19:11.691Z"
+      "completedAt": "2026-08-27T23:19:11.691Z",
+      "createdAt": "2026-08-20T14:29:22-07:00"
     },
     {
       "id": "2026-08-03-platform-parity-mechanism",
@@ -2810,7 +2916,8 @@
         "recordedAt": "2026-08-26T22:39:16.528Z",
         "recordedBy": "migration"
       },
-      "specPath": "docs/superpowers/specs/2026-07-31-platform-parity-mechanism-design.md"
+      "specPath": "docs/superpowers/specs/2026-07-31-platform-parity-mechanism-design.md",
+      "createdAt": "2026-08-20T14:29:22-07:00"
     },
     {
       "id": "2026-08-14-eval-measures-worktree",
@@ -2826,7 +2933,8 @@
         "recordedAt": "2026-08-26T22:39:16.528Z",
         "recordedBy": "migration"
       },
-      "specPath": "docs/superpowers/specs/2026-08-07-eval-measures-worktree-design.md"
+      "specPath": "docs/superpowers/specs/2026-08-07-eval-measures-worktree-design.md",
+      "createdAt": "2026-08-20T14:29:22-07:00"
     },
     {
       "id": "gh-104-commit-nudge-fires-on-text-match",
@@ -2859,7 +2967,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-29T06:57:06.318Z"
+      "completedAt": "2026-08-29T06:57:06.318Z",
+      "createdAt": "2026-08-20T14:29:22-07:00"
     },
     {
       "id": "gh-102-sync-blind-to-issue-comments",
@@ -2884,7 +2993,8 @@
         "declined": []
       },
       "completedAt": "2026-08-26T21:22:46.061Z",
-      "specPath": "docs/superpowers/specs/2026-08-23-tracker-direction-and-freshness-design.md"
+      "specPath": "docs/superpowers/specs/2026-08-23-tracker-direction-and-freshness-design.md",
+      "createdAt": "2026-08-20T14:29:22-07:00"
     },
     {
       "id": "gh-103-tracker-refresh-gate-before-specs",
@@ -2915,7 +3025,8 @@
         "declined": []
       },
       "completedAt": "2026-08-26T21:22:47.586Z",
-      "specPath": "docs/superpowers/specs/2026-08-23-tracker-direction-and-freshness-design.md"
+      "specPath": "docs/superpowers/specs/2026-08-23-tracker-direction-and-freshness-design.md",
+      "createdAt": "2026-08-20T14:29:22-07:00"
     },
     {
       "id": "gh-105-feedback-undeclared-gh-dependency",
@@ -2941,7 +3052,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-29T08:21:54.299Z"
+      "completedAt": "2026-08-29T08:21:54.299Z",
+      "createdAt": "2026-08-20T14:29:22-07:00"
     },
     {
       "id": "gh-106-conductor-logs-never-gitignored",
@@ -2971,7 +3083,8 @@
         "declined": []
       },
       "completedAt": "2026-09-01T05:22:04.025Z",
-      "externalUpdatedAt": "2026-08-20T21:29:26Z"
+      "externalUpdatedAt": "2026-08-20T21:29:26Z",
+      "createdAt": "2026-08-20T14:29:22-07:00"
     },
     {
       "id": "gh-107-snapshot-consumes-warning-into-unread-file",
@@ -2995,7 +3108,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-26T21:22:49.143Z"
+      "completedAt": "2026-08-26T21:22:49.143Z",
+      "createdAt": "2026-08-20T14:29:22-07:00"
     },
     {
       "id": "gh-109-tracker-sync-direction",
@@ -3020,7 +3134,8 @@
         "declined": []
       },
       "completedAt": "2026-08-26T21:22:50.755Z",
-      "specPath": "docs/superpowers/specs/2026-08-23-tracker-direction-and-freshness-design.md"
+      "specPath": "docs/superpowers/specs/2026-08-23-tracker-direction-and-freshness-design.md",
+      "createdAt": "2026-08-25T16:36:38-07:00"
     },
     {
       "id": "gh-110-gate2-bypassed-by-archive-hook",
@@ -3049,7 +3164,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-26T21:22:25.567Z"
+      "completedAt": "2026-08-26T21:22:25.567Z",
+      "createdAt": "2026-08-25T16:36:38-07:00"
     },
     {
       "id": "gh-111-activity-log-for-conductor-usage",
@@ -3077,7 +3193,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-29T13:31:49.146Z"
+      "completedAt": "2026-08-29T13:31:49.146Z",
+      "createdAt": "2026-08-25T16:36:38-07:00"
     },
     {
       "id": "gh-112-backlog-triage-at-intake",
@@ -3104,7 +3221,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-27T23:19:14.972Z"
+      "completedAt": "2026-08-27T23:19:14.972Z",
+      "createdAt": "2026-08-25T16:36:38-07:00"
     },
     {
       "id": "gh-113-gate-verdict-records-no-diff-range",
@@ -3128,7 +3246,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-26T21:22:52.332Z"
+      "completedAt": "2026-08-26T21:22:52.332Z",
+      "createdAt": "2026-08-25T16:36:38-07:00"
     },
     {
       "id": "gh-114-lane-routing-blind-to-product",
@@ -3150,7 +3269,8 @@
           "actor": "agent",
           "text": "0.36.0 (04fdd8a) shipped the instruction half: suggestion demoted to an input, judgment half named as absent, tie-break made directional away from the lightest lane. The primary complaint stays OPEN — routing has no product/milestone layer to weigh and the engine cannot invent one without becoming an integration layer."
         }
-      ]
+      ],
+      "createdAt": "2026-08-25T16:36:38-07:00"
     },
     {
       "id": "gh-115-gates-blind-to-absent-edit",
@@ -3180,7 +3300,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-26T21:22:53.938Z"
+      "completedAt": "2026-08-26T21:22:53.938Z",
+      "createdAt": "2026-08-25T16:36:38-07:00"
     },
     {
       "id": "gh-116-conflict-warning-missed-on-burst",
@@ -3210,7 +3331,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-26T21:22:55.526Z"
+      "completedAt": "2026-08-26T21:22:55.526Z",
+      "createdAt": "2026-08-25T16:36:38-07:00"
     },
     {
       "id": "gh-117-sync-blind-to-archived-changes",
@@ -3234,7 +3356,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-26T21:22:57.278Z"
+      "completedAt": "2026-08-26T21:22:57.278Z",
+      "createdAt": "2026-08-25T16:36:38-07:00"
     },
     {
       "id": "gh-118-checkbox-signal-unreliable",
@@ -3264,7 +3387,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-26T21:22:58.874Z"
+      "completedAt": "2026-08-26T21:22:58.874Z",
+      "createdAt": "2026-08-25T16:36:38-07:00"
     },
     {
       "id": "gh-119-deferrals-have-no-path-to-backlog",
@@ -3288,7 +3412,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-26T21:23:00.412Z"
+      "completedAt": "2026-08-26T21:23:00.412Z",
+      "createdAt": "2026-08-25T16:36:38-07:00"
     },
     {
       "id": "gh-120-epic-outcome-shipped-vs-killed",
@@ -3312,7 +3437,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-26T21:23:01.965Z"
+      "completedAt": "2026-08-26T21:23:01.965Z",
+      "createdAt": "2026-08-25T16:36:38-07:00"
     },
     {
       "id": "gh-121-tasks-verified-against-tree-not-commit",
@@ -3336,7 +3462,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-26T21:23:03.515Z"
+      "completedAt": "2026-08-26T21:23:03.515Z",
+      "createdAt": "2026-08-25T16:36:38-07:00"
     },
     {
       "id": "gh-122-gate-records-unreliable-both-ways",
@@ -3360,7 +3487,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-26T21:23:05.092Z"
+      "completedAt": "2026-08-26T21:23:05.092Z",
+      "createdAt": "2026-08-25T16:36:38-07:00"
     },
     {
       "id": "gh-123-adopt-openspec-1-9-cli-surface",
@@ -3383,7 +3511,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-29T10:31:39.259Z"
+      "completedAt": "2026-08-29T10:31:39.259Z",
+      "createdAt": "2026-08-25T16:36:38-07:00"
     },
     {
       "id": "gh-124-rules-block-emits-failing-add-epic",
@@ -3413,7 +3542,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-26T21:23:06.660Z"
+      "completedAt": "2026-08-26T21:23:06.660Z",
+      "createdAt": "2026-08-25T16:36:38-07:00"
     },
     {
       "id": "gh-125-release-planning-and-deliberate-exclusion",
@@ -3443,7 +3573,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-26T21:23:08.290Z"
+      "completedAt": "2026-08-26T21:23:08.290Z",
+      "createdAt": "2026-08-25T16:36:38-07:00"
     },
     {
       "id": "gh-126-release-level-cross-spec-gate",
@@ -3484,7 +3615,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-27T16:47:17.753Z"
+      "completedAt": "2026-08-27T16:47:17.753Z",
+      "createdAt": "2026-08-25T16:36:38-07:00"
     },
     {
       "id": "gh-127-dogfooding-practices-as-product",
@@ -3518,7 +3650,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-29T10:18:51.205Z"
+      "completedAt": "2026-08-29T10:18:51.205Z",
+      "createdAt": "2026-08-25T16:36:38-07:00"
     },
     {
       "id": "gh-128-openspec-staleness-nudge",
@@ -3558,7 +3691,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-27T16:47:20.535Z"
+      "completedAt": "2026-08-27T16:47:20.535Z",
+      "createdAt": "2026-08-25T16:36:38-07:00"
     },
     {
       "id": "gh-129-attribution-nudge-at-commit-time",
@@ -3590,7 +3724,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-29T08:22:01.178Z"
+      "completedAt": "2026-08-29T08:22:01.178Z",
+      "createdAt": "2026-08-25T16:36:38-07:00"
     },
     {
       "id": "conductor-tells-the-truth",
@@ -3719,7 +3854,8 @@
           }
         ]
       },
-      "completedAt": "2026-08-25T23:12:02.877Z"
+      "completedAt": "2026-08-25T23:12:02.877Z",
+      "createdAt": "2026-08-25T16:36:38-07:00"
     },
     {
       "id": "2026-08-18-state-write-conflict-guard",
@@ -3737,7 +3873,8 @@
         "recordedAt": "2026-08-24T01:40:39.820Z",
         "recordedBy": "migration"
       },
-      "specPath": "docs/superpowers/specs/2026-08-18-state-write-conflict-guard-design.md"
+      "specPath": "docs/superpowers/specs/2026-08-18-state-write-conflict-guard-design.md",
+      "createdAt": "2026-08-25T16:36:38-07:00"
     },
     {
       "id": "gh-130-disposition-has-no-correction-verb",
@@ -3764,7 +3901,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-29T06:57:03.194Z"
+      "completedAt": "2026-08-29T06:57:03.194Z",
+      "createdAt": "2026-08-25T16:36:38-07:00"
     },
     {
       "id": "gh-131-retry-half-unverified",
@@ -3790,7 +3928,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-29T08:21:52.619Z"
+      "completedAt": "2026-08-29T08:21:52.619Z",
+      "createdAt": "2026-08-25T16:36:38-07:00"
     },
     {
       "id": "gh-132-lessons-advisor-hook",
@@ -3816,7 +3955,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-29T10:18:52.733Z"
+      "completedAt": "2026-08-29T10:18:52.733Z",
+      "createdAt": "2026-08-25T16:36:38-07:00"
     },
     {
       "id": "gh-133-disposition-reverts-backfill-counts",
@@ -3843,7 +3983,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-29T06:57:04.757Z"
+      "completedAt": "2026-08-29T06:57:04.757Z",
+      "createdAt": "2026-08-25T16:36:38-07:00"
     },
     {
       "id": "gh-134-hooks-run-the-installed-plugin",
@@ -3878,7 +4019,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-27T16:47:22.171Z"
+      "completedAt": "2026-08-27T16:47:22.171Z",
+      "createdAt": "2026-08-25T16:36:38-07:00"
     },
     {
       "id": "gh-137-release-completion-cascade",
@@ -3914,7 +4056,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-28T00:35:28.728Z"
+      "completedAt": "2026-08-28T00:35:28.728Z",
+      "createdAt": "2026-08-27T09:45:38-07:00"
     },
     {
       "id": "gh-136-add-epic-notes-discarded",
@@ -3940,7 +4083,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-29T08:21:50.945Z"
+      "completedAt": "2026-08-29T08:21:50.945Z",
+      "createdAt": "2026-08-27T09:45:38-07:00"
     },
     {
       "id": "gh-138-refresh-warning-counts-terminal-epics",
@@ -3973,7 +4117,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-29T01:56:38.923Z"
+      "completedAt": "2026-08-29T01:56:38.923Z",
+      "createdAt": "2026-08-27T09:45:38-07:00"
     },
     {
       "id": "gh-139-command-doc-engine-fallback-ungated",
@@ -4007,7 +4152,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-28T00:35:30.204Z"
+      "completedAt": "2026-08-28T00:35:30.204Z",
+      "createdAt": "2026-08-27T09:45:38-07:00"
     },
     {
       "id": "gh-140-attribution-write-not-persisted",
@@ -4033,7 +4179,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-27T23:19:17.925Z"
+      "completedAt": "2026-08-27T23:19:17.925Z",
+      "createdAt": "2026-08-27T09:45:38-07:00"
     },
     {
       "id": "gh-142-recorded-sha-unreachable",
@@ -4065,7 +4212,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-27T23:19:20.493Z"
+      "completedAt": "2026-08-27T23:19:20.493Z",
+      "createdAt": "2026-08-27T15:01:49-07:00"
     },
     {
       "id": "gh-148-propose-spec-association-from-header",
@@ -4097,7 +4245,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-29T10:18:58.828Z"
+      "completedAt": "2026-08-29T10:18:58.828Z",
+      "createdAt": "2026-08-29T01:18:25-07:00"
     },
     {
       "id": "gh-149-add-epic-drops-valueless-flag",
@@ -4130,7 +4279,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-29T10:18:57.337Z"
+      "completedAt": "2026-08-29T10:18:57.337Z",
+      "createdAt": "2026-08-29T01:18:25-07:00"
     },
     {
       "id": "gh-151-no-push-detour-verb",
@@ -4164,7 +4314,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-29T13:31:44.532Z"
+      "completedAt": "2026-08-29T13:31:44.532Z",
+      "createdAt": "2026-08-29T03:15:36-07:00"
     },
     {
       "id": "gh-152-flag-value-rule-outside-epic-flags",
@@ -4196,7 +4347,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-29T13:31:46.072Z"
+      "completedAt": "2026-08-29T13:31:46.072Z",
+      "createdAt": "2026-08-29T03:15:36-07:00"
     },
     {
       "id": "gh-154-openspec-validate-lifecycle-collision",
@@ -4228,7 +4380,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-08-29T14:55:20.865Z"
+      "completedAt": "2026-08-29T14:55:20.865Z",
+      "createdAt": "2026-08-29T06:27:41-07:00"
     },
     {
       "id": "gh-156-shipped-markdown-structural-check",
@@ -4279,7 +4432,8 @@
         ],
         "declined": []
       },
-      "completedAt": "2026-09-05T09:49:29.002Z"
+      "completedAt": "2026-09-05T09:49:29.002Z",
+      "createdAt": "2026-08-29T07:51:41-07:00"
     },
     {
       "id": "per-verb-help-from-flag-registry",
@@ -4347,7 +4501,8 @@
           }
         ]
       },
-      "completedAt": "2026-09-01T06:12:56.356Z"
+      "completedAt": "2026-09-01T06:12:56.356Z",
+      "createdAt": "2026-08-31T23:12:34-07:00"
     },
     {
       "id": "rules-block-emits-no-help-pointer",
@@ -4388,7 +4543,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-01T23:19:57.689Z"
+      "completedAt": "2026-09-01T23:19:57.689Z",
+      "createdAt": "2026-08-31T23:12:34-07:00"
     },
     {
       "id": "flag-level-doc-gaps",
@@ -4441,7 +4597,8 @@
           }
         ]
       },
-      "completedAt": "2026-09-01T06:12:57.971Z"
+      "completedAt": "2026-09-01T06:12:57.971Z",
+      "createdAt": "2026-08-31T23:12:34-07:00"
     },
     {
       "id": "gh-159-no-reader-for-gate-guard-state",
@@ -4513,7 +4670,8 @@
         ],
         "declined": []
       },
-      "completedAt": "2026-09-05T07:27:13.909Z"
+      "completedAt": "2026-09-05T07:27:13.909Z",
+      "createdAt": "2026-08-31T23:12:34-07:00"
     },
     {
       "id": "gh-165-deferral-assertion-mangled-and-immutable",
@@ -4581,7 +4739,8 @@
         ],
         "declined": []
       },
-      "completedAt": "2026-09-05T07:27:11.816Z"
+      "completedAt": "2026-09-05T07:27:11.816Z",
+      "createdAt": "2026-09-05T00:26:52-07:00"
     },
     {
       "id": "gh-161-strip-always-on-duplicated",
@@ -4636,7 +4795,8 @@
         ],
         "declined": []
       },
-      "completedAt": "2026-09-05T09:49:30.635Z"
+      "completedAt": "2026-09-05T09:49:30.635Z",
+      "createdAt": "2026-09-05T00:26:52-07:00"
     },
     {
       "id": "gh-162-delegation-drops-stdout",
@@ -4687,7 +4847,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-05T09:49:51.385Z"
+      "completedAt": "2026-09-05T09:49:51.385Z",
+      "createdAt": "2026-09-05T00:26:52-07:00"
     },
     {
       "id": "gh-163-gate-verdicts-openspec-only",
@@ -4752,7 +4913,8 @@
         ],
         "declined": []
       },
-      "completedAt": "2026-09-05T07:27:15.839Z"
+      "completedAt": "2026-09-05T07:27:15.839Z",
+      "createdAt": "2026-09-05T00:26:52-07:00"
     },
     {
       "id": "gh-172-trufflehog-false-positive",
@@ -4767,7 +4929,8 @@
       "externalId": "172",
       "externalUrl": "https://github.com/cfdude/pm/issues/172",
       "externalUpdatedAt": "2026-09-05T09:41:51Z",
-      "attributedCommits": []
+      "attributedCommits": [],
+      "createdAt": "2026-09-08T17:55:42-07:00"
     },
     {
       "id": "gh-cfdude-pm-168",
@@ -4804,7 +4967,8 @@
           "text": "CORRECTION 2026-09-07, second grounding — my first note was WRONG. The engine ALREADY refuses a stale engine: scripts/lib/migrations.mjs:165-176 exits 1 when cmpVer(newest, running) > 0, before loadState(). So 'the engine must refuse' is built, not missing. Two real survivors remain: (1) the guard no-ops when newestInstalledVersion() returns null — cache outside ~/.claude/plugins/cache, unreadable, or PM_CACHE_ROOT set (plugin-meta.mjs:83-89; proven inert at scripts/test/conductor-02.test.mjs:271-278); (2) 'ls -t' mtime ordering in the documented fallback at 14 sites, which can select an older engine. Both are hygiene-shaped. P0 -> P2: the fleet run produced zero reproductions and the headline mechanism does not exist."
         }
       ],
-      "externalUpdatedAt": "2026-09-03T22:53:16Z"
+      "externalUpdatedAt": "2026-09-03T22:53:16Z",
+      "createdAt": "2026-09-08T17:55:42-07:00"
     },
     {
       "id": "gh-cfdude-pm-169",
@@ -4857,7 +5021,8 @@
         "declined": []
       },
       "completedAt": "2026-09-08T22:15:15.278Z",
-      "touchedAt": "2026-09-08T23:58:50.764Z"
+      "touchedAt": "2026-09-08T23:58:50.764Z",
+      "createdAt": "2026-09-08T17:55:42-07:00"
     },
     {
       "id": "gh-cfdude-pm-167",
@@ -4889,7 +5054,8 @@
           "text": "CUT FROM 0.40.0 AT GATE 1, deliberately — reviewer recommendation, accepted. Of the six items proposed it was the only one with no design decision, no risk entry and the thinnest delta, and its one real complication was unmentioned: sync calls render() at scripts/lib/subcommands.mjs:648, so a 'preview' also rewrites PROJECT.md and .conductor/render-stamp.json. The spec's byte-identical clause constrained state.json ONLY, so as written the change would have shipped a preview that rewrites two tracked files. Its own change must: suppress the render; declare the dry-run variant in scripts/lib/verb-effects.mjs:73, where sync is currently { effect: 'mutates' }; cover the one-time archive backfill (subcommands.mjs:605-612), which alters epic counts and must not be quiet; and not consume the archiveBackfilledAt marker. Also note the release it was cut from had two spines — 'the record cannot answer questions about itself' and 'operations ship without their inverse' — and this belonged to neither."
         }
       ],
-      "externalUpdatedAt": "2026-09-03T01:14:23Z"
+      "externalUpdatedAt": "2026-09-03T01:14:23Z",
+      "createdAt": "2026-09-08T17:55:42-07:00"
     },
     {
       "id": "fleet-upgrade-after-release",
@@ -4912,7 +5078,8 @@
           "actor": "agent",
           "text": "MEASUREMENT CORRECTED 2026-09-07. The '23 of 26 stale' figure in the title is dead — the manual sweep already ran and the fleet is current. Two better arguments survive: (1) discovery is the actual gap, and a fixed-depth glob gets it WRONG — there are 28 .conductor directories, not 26, because a repo can hold NESTED conductors (~/Documents/Repos/highway-llm/projects/maca/ and .../maca/api/, at depths 7 and 8). The skill I wrote to do this by hand shipped that exact bug and had to be repatched twice in one hour, which is the case for an engine verb rather than a shell recipe. (2) ~/Documents/Repos/highway-llm/projects/maca/api/.conductor/ holds ONLY render-stamp.json and no state.json — pm wrote a breadcrumb into a tree that was never /pm:init'd. That is gh-cfdude-pm-175's defect found independently, in a second location."
         }
-      ]
+      ],
+      "createdAt": "2026-09-08T17:55:42-07:00"
     },
     {
       "id": "epic-registration-clock",
@@ -4961,7 +5128,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-08T22:15:42.126Z"
+      "completedAt": "2026-09-08T22:15:42.126Z",
+      "createdAt": "2026-09-08T17:55:42-07:00"
     },
     {
       "id": "sweep-covers-operation-pairs",
@@ -5005,7 +5173,8 @@
         "declined": []
       },
       "completedAt": "2026-09-08T22:15:11.490Z",
-      "touchedAt": "2026-09-08T23:02:28.116Z"
+      "touchedAt": "2026-09-08T23:02:28.116Z",
+      "createdAt": "2026-09-08T17:55:42-07:00"
     },
     {
       "id": "backlog-grooming-pass",
@@ -5029,7 +5198,8 @@
           "actor": "agent",
           "text": "lane: openspec not <none routed> — a new verb, a command doc and real design ambiguity in what the pass proposes vs decides."
         }
-      ]
+      ],
+      "createdAt": "2026-09-08T17:55:42-07:00"
     },
     {
       "id": "gh-cfdude-pm-174",
@@ -5076,7 +5246,8 @@
         "deferrals": [],
         "declined": []
       },
-      "completedAt": "2026-09-08T22:15:13.396Z"
+      "completedAt": "2026-09-08T22:15:13.396Z",
+      "createdAt": "2026-09-08T17:55:42-07:00"
     },
     {
       "id": "gh-cfdude-pm-175",
@@ -5102,7 +5273,8 @@
           "actor": "agent",
           "text": "SECOND INSTANCE found independently 2026-09-07: /Users/robsherman/Documents/Repos/highway-llm/projects/maca/api/.conductor/ contains ONLY render-stamp.json — no state.json, so that tree was never /pm:init'd, yet pm wrote a render stamp into it. Different mechanism from the deployed-checkout case in the report (no detached HEAD involved; a session's cwd simply landed in a subdirectory of a managed repo), same root: pm decides it is managed and writes, on a signal that is not ownership. Whatever guard this epic lands must cover BOTH — a deployed checkout carrying a tracked state.json, and a nested directory carrying none. lane: openspec not <none routed> — four candidate signals offered by the reporter, none chosen; real design ambiguity in a load-bearing guard. Hit market-intelligence PRODUCTION."
         }
-      ]
+      ],
+      "createdAt": "2026-09-08T17:55:42-07:00"
     },
     {
       "id": "gh-cfdude-pm-173",
@@ -5129,7 +5301,8 @@
           "actor": "agent",
           "text": "GROUNDED 2026-09-07. NOT the missing-guard bug it looks like: looksLikeUnloggedMinimalDetour already calls isConductorOwnFiles internally (scripts/lib/subcommands.mjs:174-181), and the guard reaches both branches. It fired because the commit touched .gitignore, which is absent from CONDUCTOR_OWN_FILES (subcommands.mjs:138-143). Adding it is a judgment, not a one-liner: CLAUDE.md is deliberately excluded from that set as user-authored content, and .gitignore has the same property — a .gitignore-only commit right after an upgrade is pm's, a .gitignore commit generally is not. Also worth noting: df-autodetour-false-positive-conductor-admin-commits proposed this fix in 2026-07, was archived by the migration with outcome unknown and no reason, and a user in a different repo re-reported it two months later. lane: superpowers not <none routed> — the ownership predicate needs a design decision."
         }
-      ]
+      ],
+      "createdAt": "2026-09-08T17:55:42-07:00"
     },
     {
       "id": "disposition-backfill-undispositioned-archive",
@@ -5184,7 +5357,8 @@
         ],
         "declined": []
       },
-      "completedAt": "2026-09-08T22:15:44.003Z"
+      "completedAt": "2026-09-08T22:15:44.003Z",
+      "createdAt": "2026-09-08T17:55:42-07:00"
     },
     {
       "id": "remaining-platform-investigation",
@@ -5208,7 +5382,8 @@
           "actor": "agent",
           "text": "lane: claude-code deliberately, against the usual away-from-claude-code tie-break — this is genuinely an investigation with a written finding as its only deliverable, not a port. If the finding says a port is viable, THAT becomes its own epic in a lane chosen then. Also: README.md:205-212 must be corrected in the same change, since it currently attributes all six platform rows to an epic that is being superseded."
         }
-      ]
+      ],
+      "createdAt": "2026-09-08T17:55:42-07:00"
     },
     {
       "id": "record-answers-for-itself",
@@ -5281,7 +5456,8 @@
         ],
         "declined": []
       },
-      "completedAt": "2026-09-09T00:04:14.925Z"
+      "completedAt": "2026-09-09T00:04:14.925Z",
+      "createdAt": "2026-09-08T17:55:42-07:00"
     },
     {
       "id": "agent-outcomes-derivation-unguarded",
@@ -5516,14 +5692,14 @@
     }
   ],
   "detourStack": [],
-  "pmVersion": "0.39.0",
+  "pmVersion": "0.40.0",
   "tracker": {
     "system": "github-issues",
     "repo": "cfdude/pm",
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 462,
+  "revision": 463,
   "reviewMode": "thorough",
   "releases": [
     {
