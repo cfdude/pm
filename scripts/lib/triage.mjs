@@ -24,6 +24,7 @@ import { isInitialized, loadState } from "./state.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { laneSuggestion } from "./lane-routing.mjs";
 import { supersededEpics } from "./links.mjs";
+import { isFlagToken } from "./constants.mjs";
 
 /** Words shorter than this carry no discriminating power and appear everywhere ("of", "to",
  *  "id", "pm"). A length floor is mechanical; a curated stopword list would be a second thing
@@ -156,7 +157,17 @@ export function candidateSet(epics, ask, { limit = 5 } = {}) {
 export function triage() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const ask = process.argv[3];
-  if (typeof ask !== "string" || !ask.trim() || ask.startsWith("--")) {
+  // gh-186. The old test was `ask.startsWith("--")`, which refused any ask whose own words begin
+  // with a flag name — and CLAUDE.md makes this call STEP 1 of intake, "the ask, in its own
+  // words", before any add-epic. A bug report ABOUT a flag is titled that way; this tracker had
+  // one open at the time. Rewording to get past the guard defeats the lexical matching triage
+  // exists to do, because the flag names ARE the distinctive tokens.
+  //
+  // NARROWED, not dropped. The guard had a real job: `triage --limit 5` supplies no ask, and
+  // reading `--limit` as one returns a scored, confident, meaningless result. `isFlagToken` is
+  // the same predicate gh-182 shipped for flag VALUES — it matches a token shaped exactly like a
+  // flag, so a bare `--limit` is still a flag while "--story <n> is 1-indexed" is text.
+  if (typeof ask !== "string" || !ask.trim() || isFlagToken(ask)) {
     process.stderr.write("usage: conductor.mjs triage \"<free text>\" [--limit N]\n"); process.exit(1);
   }
   const f = parseFlags(process.argv.slice(4));

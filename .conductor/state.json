@@ -5880,9 +5880,11 @@
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "48baf43"
+      ],
       "createdAt": "2026-09-08T21:40:43.715Z",
-      "touchedAt": "2026-09-10T03:18:49.431Z",
+      "touchedAt": "2026-09-10T04:12:31.201Z",
       "notes": [
         {
           "at": "2026-09-08T21:40:45.513Z",
@@ -5949,9 +5951,11 @@
       "externalId": "177",
       "externalUrl": "https://github.com/cfdude/pm/issues/177",
       "externalUpdatedAt": "2026-09-08T23:22:40Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "48baf43"
+      ],
       "createdAt": "2026-09-09T00:19:04.779Z",
-      "touchedAt": "2026-09-10T03:57:11.493Z",
+      "touchedAt": "2026-09-10T04:12:19.014Z",
       "notes": [
         {
           "at": "2026-09-09T00:19:47.321Z",
@@ -5981,9 +5985,11 @@
       "externalId": "178",
       "externalUrl": "https://github.com/cfdude/pm/issues/178",
       "externalUpdatedAt": "2026-09-08T22:53:47Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "48baf43"
+      ],
       "createdAt": "2026-09-09T00:19:16.204Z",
-      "touchedAt": "2026-09-10T01:21:42.132Z",
+      "touchedAt": "2026-09-10T04:12:21.860Z",
       "notes": [
         {
           "at": "2026-09-09T00:19:55.819Z",
@@ -6011,9 +6017,11 @@
       "externalId": "179",
       "externalUrl": "https://github.com/cfdude/pm/issues/179",
       "externalUpdatedAt": "2026-09-08T22:54:05Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "48baf43"
+      ],
       "createdAt": "2026-09-09T00:19:24.306Z",
-      "touchedAt": "2026-09-10T01:21:44.375Z",
+      "touchedAt": "2026-09-10T04:12:24.652Z",
       "notes": [
         {
           "at": "2026-09-09T00:20:04.602Z",
@@ -6067,9 +6075,11 @@
       "externalId": "181",
       "externalUrl": "https://github.com/cfdude/pm/issues/181",
       "externalUpdatedAt": "2026-09-09T00:16:05Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "48baf43"
+      ],
       "createdAt": "2026-09-09T00:19:38.815Z",
-      "touchedAt": "2026-09-10T01:21:48.762Z",
+      "touchedAt": "2026-09-10T04:12:27.627Z",
       "notes": [
         {
           "at": "2026-09-09T00:20:18.458Z",
@@ -6218,7 +6228,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 567,
+  "revision": 572,
   "reviewMode": "thorough",
   "releases": [
     {
