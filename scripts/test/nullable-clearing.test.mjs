@@ -68,7 +68,13 @@ test("every EPIC_FLAGS row declared nullable is reachable by `update-epic --clea
     // SETTING FIRST IS LOAD-BEARING. A freshly created epic already lacks every one of these
     // fields, so a clear asserted against a fresh epic passes against an implementation that
     // does nothing at all — the trap conductor-13's `--clear-links` row documents.
-    run(["update-epic", "subject", ...setArgs(row.flag)], { cwd });
+    //
+    // An `engineWritten` row (gh#181) has NO setting form by construction — `--created-at` is not
+    // a flag any caller may type — and needs none: the engine stamps the field at registration,
+    // so the precondition this step exists to create is already true. It is ASSERTED rather than
+    // assumed, on the same line, so a field that stopped being stamped fails here instead of
+    // making the clear below vacuous.
+    if (!row.engineWritten) run(["update-epic", "subject", ...setArgs(row.flag)], { cwd });
     assert.ok(row.key in epicOf(cwd),
       `the fixture must actually set ${row.key} before the clear proves anything`);
 

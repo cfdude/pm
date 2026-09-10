@@ -189,7 +189,10 @@ export function loadState() {
  *  last touched on upgrade day. A record whose only delta is a recovered registration date is a
  *  RECOVERY, not a touch — on upgrade day, and equally on any later day the standalone recovery
  *  verb is re-run, which is the same write. */
-const TIMEKEEPING_FIELDS = ["createdAt", "touchedAt"];
+/** EXPORTED because it is a POPULATION, not a detail: gh#181 requires every engine-written
+ *  timekeeping field to declare in EPIC_FLAGS whether it can be cleared and why, and the check
+ *  that enforces that has to derive its population from here rather than transcribe one. */
+export const TIMEKEEPING_FIELDS = ["createdAt", "touchedAt"];
 
 /** A record's comparable content: everything except the two timekeeping fields. */
 function comparableEpic(epic) {

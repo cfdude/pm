@@ -9,7 +9,7 @@ import { activate } from "./active-pointer.mjs";
 import { isInitialized, loadState, pushEpic, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
-import { EPIC_DEDUP_KEYS, KNOWN_LANES, KNOWN_STATUSES, epicFlagsFor, flagsFor, repeatableFlagNames, valueBearingFlagsFor } from "./constants.mjs";
+import { EPIC_DEDUP_KEYS, KNOWN_LANES, KNOWN_STATUSES, epicFlagsFor, flagsFor, isFlagToken, repeatableFlagNames, splitFlagToken, valueBearingFlagsFor } from "./constants.mjs";
 import { isKnownLinkType, mergeLinks, unknownLinkTypeMessage, linkTypeVocabulary } from "./links.mjs";
 import { creationStamp } from "./disposition.mjs";
 import { rankOf } from "./epic-progress.mjs";
@@ -27,17 +27,44 @@ import { rankOf } from "./epic-progress.mjs";
  *  c:d` silently keeping only the second pair, exit code 0, is what a narrowing here costs. */
 export const repeatableFlags = () => repeatableFlagNames();
 
+/** gh#182 — where parseFlags parks "a FLAG-SHAPED token arrived where this flag's value
+ *  belonged". A SYMBOL key, so it is invisible to `Object.keys(f)` — which is what every
+ *  unknown-flag allowlist in the engine filters, and a string key here would make the parser's
+ *  own diagnostic look like an undeclared flag on every verb at once. Read by
+ *  valuelessFlagError() below, and by nothing else. */
+export const FLAG_IN_VALUE_POSITION = Symbol("pm.flagInValuePosition");
+
+/** THE argv parser, shared by nearly every verb. Two rules beyond "--name value", both gh#182:
+ *
+ *   1. `--name=value` — split on the FIRST `=` (so a value may contain one). The standard
+ *      escape, and the only way to give a flag a value that is itself flag-SHAPED.
+ *   2. In a VALUE position, a token is taken as the value unless it is flag-shaped — see
+ *      isFlagToken() in constants.mjs for the full argument, including why this is decided by
+ *      SHAPE and not by asking the registry which flags bear values.
+ *
+ *  What rule 2 deliberately does NOT do is swallow `--bar` in `--foo --bar`. That case is
+ *  genuinely ambiguous, so it is refused rather than guessed — `--foo` is left valueless and
+ *  requireFlagValues() reports it, naming the token and the `=` form that would say it. Guessing
+ *  there would trade the reported silent failure for a different one: a missing value written as
+ *  a record, or a typo'd flag name stored as a title. */
 export function parseFlags(argv) {
   const o = {};
   const repeatable = new Set(repeatableFlags());
+  /** flag name -> the flag-shaped token seen where its value belonged. */
+  let misread = null;
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (!a.startsWith("--")) continue;
-    const k = a.slice(2);
-    const v = (argv[i + 1] !== undefined && !argv[i + 1].startsWith("--")) ? argv[++i] : true;
+    const [k, inline] = splitFlagToken(a);
+    let v;
+    if (inline !== undefined) v = inline;
+    else if (argv[i + 1] === undefined) v = true;
+    else if (!isFlagToken(argv[i + 1])) v = argv[++i];
+    else { v = true; (misread || (misread = {}))[k] = argv[i + 1]; }
     if (repeatable.has(k)) (o[k] || (o[k] = [])).push(v);
     else o[k] = v;
   }
+  if (misread) o[FLAG_IN_VALUE_POSITION] = misread;
   return o;
 }
 
@@ -75,6 +102,19 @@ export function valuelessFlagError(command, f) {
     // as "given with nothing usable" rather than skipped, so a future caller constructing flags
     // programmatically cannot slip past by handing over [].
     if (!vals.length || vals.some(v => typeof v !== "string" || !v.trim())) {
+      // gh#182, the THIRD rule. "this flag name is unknown" and "this looks like a flag but
+      // arrived where a value was expected" are different mistakes and must not share a message.
+      // The reported bug was the second wearing the first's words — `unknown flag(s) --story
+      // <n> is 1-indexed …`, which sends the reader off to check the spelling of `--title`,
+      // which is correct. So NAME the flag being filled, QUOTE the token, and show the `=` form
+      // that says it unambiguously. Everything before the dash is unchanged, because existing
+      // refusals are asserted on that prefix.
+      const token = (f[FLAG_IN_VALUE_POSITION] || {})[flag];
+      if (token) {
+        return `conductor: --${flag} requires ${requires} — '${token}' arrived where that value ` +
+          `belonged and was read as a flag, not as the value. If it IS the value, write ` +
+          `--${flag}=${token}`;
+      }
       return `conductor: --${flag} requires ${requires}`;
     }
   }
@@ -104,11 +144,26 @@ export function requireFlagValues(command, f) {
  *  Only the three verbs that had a check (or needed one) call it today; the older bespoke
  *  `unknown flag(s)` checks on add-epic, update-epic, release, triage and the rest are a
  *  separate, wider consolidation and are deliberately not touched here. */
+/*  gh#182 — THE IDENTICAL SIBLING. This was a flat `for…of` with no index, so it could not skip
+ *  a value token: it re-emitted the exact bug gh#182 reports (`unknown flag --weird value for
+ *  claim`) on all five verbs that call it, and would have gone on doing so after parseFlags was
+ *  fixed, because this scanner reads RAW ARGV rather than parseFlags' output. Every existing
+ *  test put its unknown flag LAST in argv, where no value token can follow, so none of them
+ *  could see it. It now walks argv with an index and consumes a value exactly as parseFlags
+ *  does — same predicate, same splitter, one rule. */
 export function requireKnownFlags(command, argv) {
-  for (const a of argv) {
+  const known = flagsFor(command);
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
     if (!a.startsWith("--")) continue;
-    if (flagsFor(command).includes(a.slice(2))) continue;
-    process.stderr.write(`conductor: unknown flag ${a} for ${command}\n`);
+    const [k, inline] = splitFlagToken(a);
+    // Consume the value BEFORE deciding, so an unknown flag's value can never be read as a flag
+    // in its own right on the next pass of the loop.
+    if (inline === undefined && argv[i + 1] !== undefined && !isFlagToken(argv[i + 1])) i++;
+    if (known.includes(k)) continue;
+    // `--${k}`, not the raw token: `--titel=x` should name `--titel`, which is the part that is
+    // actually wrong.
+    process.stderr.write(`conductor: unknown flag --${k} for ${command}\n`);
     process.exit(1);
   }
 }

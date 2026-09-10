@@ -122,6 +122,12 @@ test("gh-149: every value-bearing flag, on every command, refuses a valueless oc
     run(baseline(), { cwd: sweepRepo() });
     for (const row of EPIC_FLAGS) {
       if (!row.commands.includes(command) || row.valueless) continue;
+      // An `engineWritten` row is not typeable AT ALL (gh#181): it is in no allowlist, so
+      // `--created-at` is refused as an UNKNOWN flag rather than as a flag missing its value.
+      // Both refusals are correct and this sweep is about the second one — the rule it enforces
+      // is "a value-bearing flag refuses a valueless occurrence", and a flag no caller may type
+      // has no valueless occurrence to refuse.
+      if (row.engineWritten) continue;
       for (const args of [[`--${row.flag}`], [`--${row.flag}`, "   "]]) {
         const err = expectFail(() => run([...baseline(), ...args], { cwd }));
         assert.ok(err, `${command} ${args.join(" ")} must exit non-zero — a blank value is the ` +

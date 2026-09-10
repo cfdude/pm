@@ -297,23 +297,49 @@ test("gh-137: an outward-only repo is instructed to close no epic — it reads n
 // 0.27.0 back to `queued` with its disposition removed, exactly the twenty hand-run `update-epic`
 // calls undone — and asserts the check names all twenty. Nothing is written: the mutation is on
 // a parsed copy.
+//
+// IT IS A SLICE, NOT A MUTATION OF THE WHOLE RECORD (gh-180). The replay used to revert 0.27.0's
+// members in place on a copy of the live state and then read `findingsFor(...)` off ALL of it, so
+// the count was really `20 + (open members of every OTHER delivered release)`. That extra term is
+// NORMAL mid-release state — the change epic shipping a release is legitimately `queued` in a
+// release object that already reads delivered, in the window between "the release object exists"
+// and "the change epic archives" — so the test failed during every closeout, reporting `21 !== 20`
+// against a nine-month-old issue that had nothing to do with the cause. Filtering the findings
+// afterwards would fix the number and leave the check COMPUTING over epics that did not exist at
+// the replayed moment, so any future cross-release reading in the check re-contaminates it
+// silently. Slicing the fixture makes that structurally impossible.
+//
+// What the slice does NOT buy: it is still built from live data. If 0.27.0's own membership ever
+// moves — a member set `active`, a member removed — the replay stops replaying, and that is what
+// the `reverted === 20` precondition is for. The failure surface is bounded to 0.27.0 itself, not
+// eliminated.
+
+/** 0.27.0's release object and its own members, nothing else, with every `gh-*` member reverted
+ *  to the `queued`/no-disposition state it held when #137 was filed. */
+const replayGh137 = (live) => {
+  const release = (live.releases || []).find(r => r.id === "0.27.0");
+  assert.ok(release, "0.27.0's release object must still be in the record — the replay reads its deferred[]");
+  const epics = (live.epics || []).filter(e => e.release === "0.27.0").map(e => ({ ...e }));
+  const reverted = [];
+  for (const e of epics) {
+    if (e.id.startsWith("gh-")) { e.status = "queued"; delete e.disposition; reverted.push(e.id); }
+  }
+  return {
+    reverted,
+    findings: findingsFor("delivered-release-epic-left-open",
+      { version: 1, active: null, detourStack: [], releases: [release], epics }),
+  };
+};
 
 test("gh-137: replayed against the record as it stood when the issue was filed, the check names all twenty", () => {
-  const st = liveState();
-  let reverted = 0;
-  for (const e of st.epics) {
-    if (e.release === "0.27.0" && e.id.startsWith("gh-")) {
-      e.status = "queued";
-      delete e.disposition;
-      reverted++;
-    }
-  }
-  assert.equal(reverted, 20,
-    `0.27.0 held twenty tracker-mirrored members when #137 was filed — found ${reverted}. If this ` +
-    "moved, the replay is no longer replaying the issue and the number below means nothing.");
-  const findings = findingsFor("delivered-release-epic-left-open", st);
-  assert.equal(findings.length, 20,
-    "all twenty, which is what the issue says the engine could have known and did not");
+  const { reverted, findings } = replayGh137(liveState());
+  assert.equal(reverted.length, 20,
+    `0.27.0 held twenty tracker-mirrored members when #137 was filed — found ${reverted.length}. If ` +
+    "this moved, the replay is no longer replaying the issue and the set below means nothing.");
+  // The IDENTITY set, not a count: the check must name exactly the twenty that were reverted.
+  // A count is what let an unrelated epic elsewhere in the record stand in for one of them.
+  assert.deepEqual(findings.map(f => f.epic).sort(), [...reverted].sort(),
+    "all twenty, and only them — which is what the issue says the engine could have known and did not");
   // The change that shipped the release is still archived `delivered` in the replay — it is what
   // makes the release read as delivered — so it must not be among them.
   assert.ok(!findings.some(f => f.epic === "conductor-tells-the-truth"),
@@ -325,4 +351,21 @@ test("gh-137: replayed against the record as it stood when the issue was filed, 
     assert.ok(!findings.some(f => f.epic === cut),
       `${cut} was deliberately cut from 0.27.0 and must never be reported as unfinished bookkeeping`);
   }
+});
+
+test("gh-180: the replay is not contaminated by an open member of some OTHER delivered release", () => {
+  // The shape that broke it: a release whose object already reads delivered (one member archived
+  // `delivered`) while the change epic that ships it is still `queued`, and no member `active` or
+  // `paused` to trip the in-flight guard. That is the normal state of every release closeout.
+  const live = liveState();
+  live.releases.push({ id: "9.99.9-foreign", intent: "a release closeout in progress" });
+  live.epics.push(delivered("foreign-shipped", { release: "9.99.9-foreign" }),
+    epic("foreign-open", { release: "9.99.9-foreign" }));
+  const { reverted, findings } = replayGh137(live);
+  assert.equal(reverted.length, 20, "precondition: the same twenty are being replayed");
+  assert.ok(!findings.some(f => f.epic === "foreign-open"),
+    "an epic that did not exist at the replayed moment cannot be one of the twenty the replay names");
+  assert.deepEqual(findings.map(f => f.epic).sort(), [...reverted].sort(),
+    "the replay reports the twenty it is replaying, and nothing else — reading the whole live " +
+    "record instead made this `21 !== 20` during every release closeout (gh-180)");
 });

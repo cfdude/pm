@@ -197,7 +197,7 @@ of them are declared once in `EPIC_FLAGS` (`scripts/lib/constants.mjs`), which i
 | `--parent <id>` | `parent` | no self-parent, no cycle |
 | `--link "<type>:<epic>[:<reason>]"` | `links` | **repeatable**; APPENDS. A repeat of an already-recorded `(type, target)` updates that entry's reason in place — never a second row |
 | `--clear-links` | `links` | empties it; **combinable with `--link`** in one invocation, which is how a malformed link is replaced atomically |
-| `--clear <field>` | the named field | **repeatable**; unsets a field whose absence is legal. Names the FLAG (`--clear plan`, not `planPath`). Clearable: `parent`, `external-id`, `external-url`, `plan`, `spec`, `description`, `external-updated-at`, `review-mode` — the set is `nullable: true` in `EPIC_FLAGS`, and the refusal enumerates it live. A set-only field is refused with the registry's own reason |
+| `--clear <field>` | the named field | **repeatable**; unsets a field whose absence is legal. Names the FLAG (`--clear plan`, not `planPath`). Clearable: `parent`, `external-id`, `external-url`, `plan`, `spec`, `description`, `external-updated-at`, `review-mode`, `created-at` — the set is `nullable: true` in `EPIC_FLAGS`, and the refusal enumerates it live. A set-only field is refused with the registry's own reason |
 | `--description "<why>"` | `description` | durable rationale, REPLACED wholesale on each set |
 | `--notes "<what>"` | `notes` | APPEND-only trail of `{at, actor, text}`; reads as activity |
 | `--external-id <KEY>` | `externalId` | |
@@ -373,7 +373,7 @@ left set-only carries its reason on the same row, and `--clear` refuses it by qu
 reason. `links` is one of those: `--clear-links` is its clearing form, for the atomicity above.
 `notes` is another — it is an append-only trail, so removing an entry would edit history.
 
-**Clearing a field whose absence costs more than the field says what it costs.** Six of the eight
+**Clearing a field whose absence costs more than the field says what it costs.** Seven of the nine
 carry such a note — the ones pointing at another record, at a file on disk, or at a dial:
 
 - `--clear parent` — the epic leaves the hierarchy. `plan-hierarchy --parent <that id>` stops
@@ -394,6 +394,15 @@ carry such a note — the ones pointing at another record, at a file on disk, or
 - `--clear review-mode` — the epic stops carrying its own escalation and falls back to the
   repo-global dial (`set-review-mode`), which may be **lower**. The de-escalation guard that would
   refuse a lowering does not see a clear. Re-escalate with `--review-mode <mode>`.
+- `--clear created-at` — the registration date returns to **absent**, which the schema reads as
+  UNKNOWN and never as today. `recover-created-at` will attempt it again from this checkout's git
+  history on its next run, and it never overwrites a date that is present — so **clear, then
+  recover** is the correction path for a date the recovery got wrong (an id reused after a
+  `remove-epic`, a wholesale `state.json` rewrite, a `filter-branch` or a subtree split). There is
+  deliberately NO SETTING FORM — no flag that writes the field — because a registration date the
+  party whose record it is simply asserts would be provenance nobody evidenced. `touchedAt` is the sibling case and is
+  **not** clearable — the engine re-stamps it on the next write that changes the record, so
+  clearing it answers no question.
 
 Each prints its consequence on stderr when a value was actually removed — same shape as the rank
 clear and the archived-claim clear. A clear of an already-absent field prints nothing, because
@@ -563,9 +572,16 @@ A gate review is recorded against the epic with the evidence a later reader can
 check, as FIELDS rather than as prose in a note:
 
 ```bash
+# Gate 2 — the IMPLEMENTATION review: its evidence is the commit range
 node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" record-gate-review <id> \
-  --gate 1|2 --verdict pass|fail \
+  --gate 2 --verdict pass|fail \
   --base-sha "<a>" --head-sha "<b>" --reviewer "<identity>"
+
+# Gate 1 — the SPEC review: its evidence is the artifacts it read, by path
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" record-gate-review <id> \
+  --gate 1 --verdict pass|fail \
+  --artifact "openspec/changes/<id>/proposal.md" \
+  --artifact "openspec/changes/<id>/specs/<cap>/spec.md" --reviewer "<identity>"
 ```
 
 `--base-sha`/`--head-sha` record the commit range the review actually covered, and `--reviewer`
@@ -574,8 +590,21 @@ to be byte-identical in `state.json` to one that covered everything; recorded as
 are distinguishable without reading prose, and the range is what later tells a covering verdict
 from a stale one.
 
-A `pass` REQUIRES both shas — a verdict that claims everything is fine without saying what it
-read is the thing this section exists to replace. A `fail` may omit them.
+**A `pass` requires evidence, and WHICH evidence depends on the gate.** Gate 2 requires both
+shas. Gate 1 requires `--artifact <path>` (repeatable) instead: Gate 1 is the spec review and runs
+*before* `/opsx:apply`, so at the moment its verdict is truthful there is no implementation range
+in existence — demanding one produced a required field satisfiable only with a value of the wrong
+kind, and the artifact commits that got typed into it then read as an implementation range to
+every consumer that treats the field as one. A `fail` may omit both.
+
+The sha pair is still ACCEPTED on Gate 1, so every invocation that worked before still works and
+every verdict already recorded still loads — but a Gate 1 pass carrying a range and no artifacts
+says so on stderr. `--artifact` is accepted on Gate 2 as well; what differs between the gates is
+only what a *pass* requires. Paths are stored as given and are not hashed: nothing compares a
+gate-1 digest today, and a digest nothing compares would look like staleness detection without
+being it. A verdict is corrected by RECORDING IT AGAIN — the write supersedes and the prior entry
+stays readable under `superseded` — so there is deliberately no flag that edits an artifact list
+out from under a recorded verdict.
 
 Verdicts recorded before these fields existed carry a free-text `note` instead. They load
 unchanged and are reported as carrying no checkable evidence — never deleted, never rewritten,

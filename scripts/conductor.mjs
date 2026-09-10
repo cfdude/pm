@@ -146,7 +146,18 @@ const cmd = process.argv[2];
 // append-only with no verb to remove it. Handled before dispatch so every subcommand is covered
 // -- log-detour is only where the damage is visible, not where the gap is.
 const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|push-detour|pop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n";
-if (!cmd || process.argv.slice(2).some(a => a === "--help" || a === "-h")) {
+const helpAt = process.argv.slice(2).findIndex(a => a === "--help" || a === "-h");
+// gh-187. This used to fire on a help token ANYWHERE in argv, so `--title --help` printed help,
+// exited 0 and wrote NOTHING — the silent-success shape this project has spent several releases
+// closing. Narrowed to the position a person actually types it: with no verb at all, or as the
+// FIRST token after the verb. Everywhere else it is data.
+//
+// The short-circuit keeps both properties it was built for. It is still PRE-DISPATCH, so help
+// works for a verb whose own parsing would reject the rest of the line; and a help token in the
+// position a person types it still reaches no subcommand, so `log-detour --help` cannot append
+// "--help" to the append-only detour log. What changes is only that a token in a VALUE position
+// is no longer mistaken for a request.
+if (!cmd || helpAt === 0 || helpAt === 1) {
   // #158 — VERB-SCOPED when a verb is named, global otherwise. The short-circuit stays exactly
   // where it was and keeps its original property: a help flag reaches no subcommand, so it can
   // still never be consumed as DATA. What changes is only WHICH answer is printed.

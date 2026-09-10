@@ -265,6 +265,14 @@ export function epicReferences(state) {
       add(null, `release \`${r.id}\` deferred[]`, d && d.epic,
         () => { r.deferred = r.deferred.filter(x => x !== d); });
     }
+    // gh#178's amendments trail holds an epic id in exactly the way `deferred[]` above does, and
+    // being HISTORICAL exempts it from nothing — the same ruling `disposition.superseded.carriedTo`
+    // carries. An amendment naming an epic that no longer exists renders, in `release show`, a
+    // pointer to something a reader cannot look up.
+    for (const a of r && Array.isArray(r.amendments) ? [...r.amendments] : []) {
+      add(null, `release \`${r.id}\` amendments[]`, a && a.epic,
+        () => { r.amendments = r.amendments.filter(x => x !== a); });
+    }
   }
   for (const f of (state && state.detourStack) || []) {
     if (!f || typeof f !== "object") continue;

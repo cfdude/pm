@@ -97,7 +97,7 @@
     },
     {
       "id": "session-lifecycle-hooks",
-      "artifacts": ["hooks/hooks.json"],
+      "artifacts": ["hooks/hooks.json", "hooks/README.md"],
       "platforms": { "claude-code": "SessionStart / PreCompact / PostToolUse hooks in hooks.json, each passing --platform claude-code" }
     },
     {

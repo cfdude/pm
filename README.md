@@ -205,10 +205,10 @@ Codex, which cannot read `CLAUDE.md` at all).
 | Platform | Status | Notes |
 |----------|--------|-------|
 | Claude Code | ✅ Supported | The only platform PM actually *runs* on today — plugin commands, hooks, and skills all target it directly. |
-| Hermes | 🗺️ Rules block only | pm renders a correctly-targeted, correctly-worded rules block (`--platform hermes`) but ships no Hermes commands/hooks yet. Tracked under `multi-platform-agent-support`. |
-| Codex | 🗺️ Rules block only | Same — `--platform codex` writes `AGENTS.md` with the flat `/pm-status` command form, but no Codex prompt files ship yet. Tracked under `multi-platform-agent-support`. |
-| Gemini CLI | 🗺️ Planned | Tracked under `multi-platform-agent-support`. |
-| Grok Build (xAI) | 🗺️ Planned | Tracked under `multi-platform-agent-support`. |
+| Hermes | 🗺️ Rules block only | pm renders a correctly-targeted, correctly-worded rules block (`--platform hermes`) but ships no Hermes commands/hooks yet. Tracked under `hermes-platform-support`. |
+| Codex | 🗺️ Rules block only | Same — `--platform codex` writes `AGENTS.md` with the flat `/pm-status` command form, but no Codex prompt files ship yet. Tracked under `codex-platform-support`, which follows `hermes-platform-support`. |
+| Gemini CLI | 🗺️ Planned | Not yet scoped — tracked under `remaining-platform-investigation`, which decides what each remaining platform actually needs. |
+| Grok Build (xAI) | 🗺️ Planned | Not yet scoped — tracked under `remaining-platform-investigation`. |
 | `AGENTS.md`-based platforms (generic) | 🗺️ Planned | Most non-Claude-Code tools use `AGENTS.md` instead of `CLAUDE.md` for project instructions — supporting that format is the shared unlock for all of the above. |
 
 ## External Trackers
@@ -473,7 +473,7 @@ document, or OpenSpec proposal plus tasks), and nothing about that is recorded i
 </details>
 
 <details>
-<summary><code>record-gate-review &lt;epicId&gt; --gate 1|2 --verdict pass|fail --base-sha &lt;sha&gt; --head-sha &lt;sha&gt; [--reviewer "&lt;who&gt;"]</code> — Record an OpenSpec gate review</summary>
+<summary><code>record-gate-review &lt;epicId&gt; --gate 1|2 --verdict pass|fail [--artifact &lt;path&gt;]... [--base-sha &lt;sha&gt; --head-sha &lt;sha&gt;] [--reviewer "&lt;who&gt;"]</code> — Record an OpenSpec gate review</summary>
 
 Writes a fresh-context reviewer's verdict durably onto any epic — the archive gate remains `openspec`-lane only
 (`gateReview.gate1`/`gate2`). `update-epic --status archived` **rejects** the transition for any
@@ -488,6 +488,16 @@ actually reviewed and `--reviewer` records who reviewed it, so a verdict can be 
 refused by name until the range is re-reviewed or the attribution is corrected. Before 0.27.0 a
 review of `a..b` on an epic that then shipped `b..c` was byte-identical to one that covered
 everything.
+
+**Which evidence a `pass` requires depends on the gate.** Gate 2 is the implementation review and
+requires the sha pair. Gate 1 is the **spec** review and runs before `/opsx:apply`, so there is no
+implementation range in existence when its verdict is truthful — it requires `--artifact <path>`
+(repeatable), the proposal, design, specs and tasks the reviewer actually read. Demanding a range
+there produced a required field satisfiable only with a value of the wrong kind, and the artifact
+commits typed into it read as an implementation range to every consumer that treats the field as
+one. The sha pair is still accepted on Gate 1 (every prior invocation and every recorded verdict
+keeps working); a Gate 1 pass carrying a range and no artifacts says so on stderr. A `fail` needs
+neither.
 
 An archive that reached `archived` without any review at all now records **`verdict: "ungated"`**
 instead of nothing. That is a standing condition, reported by the brief and by `integrity` until a
@@ -556,7 +566,7 @@ tombstones it identically, naming `--spec` in the un-ignore instruction.
 |------------|------|
 | `add --id X --title "…" --lane L --priority P [--status S] [--parent ID] [--external-id KEY] [--add-story "<milestone>" …]` | Register any epic in any lane; optionally nest under a parent or link a tracker issue. `--add-story` is **repeatable**, so a plan's milestones land in the same write as the epic instead of one `update-epic` call at a time afterwards. |
 | `add-many --from <path\|->` | Atomically bulk-create a parent + children from a JSON batch. Each entry may carry a `stories` array — plain titles, or `{"title": "…", "done": true}` — validated in the same up-front pass, so a blank title refuses the whole batch. |
-| `update-epic <id> [--title …] [--status …] [--lane …] [--priority …] [--parent …] [--plan …] [--spec …] [--link …] [--clear-links] [--clear <field>] [--description "…"] [--notes "…"] [--external-id …] [--external-url …] [--external-updated-at <iso>] [--review-mode …] [--add-story "<title>"] [--story <n> --done\|--wont-do "<reason>"]` | Write-back path — title corrections, status/lane/priority changes, links, free-text annotation, tracker linkage, per-epic review-mode escalation, inline story mutation (see below). `--link` **appends** (a repeat of an already-recorded type+target updates that entry's reason in place); `--clear <field>` is the generic unset for any field whose absence is legal, repeatable, naming the FLAG (`--clear plan`, not `planPath`) — the refusal enumerates the clearable set live, and a set-only field is refused with the registry's own reason. |
+| `update-epic <id> [--title …] [--status …] [--lane …] [--priority …] [--parent …] [--plan …] [--spec …] [--link …] [--clear-links] [--clear <field>] [--description "…"] [--notes "…"] [--external-id …] [--external-url …] [--external-updated-at <iso>] [--review-mode …] [--add-story "<title>"] [--story <n> --done\|--wont-do "<reason>"]` | Write-back path — title corrections, status/lane/priority changes, links, free-text annotation, tracker linkage, per-epic review-mode escalation, inline story mutation (see below). `--link` **appends** (a repeat of an already-recorded type+target updates that entry's reason in place); `--clear <field>` is the generic unset for any field whose absence is legal, repeatable, naming the FLAG (`--clear plan`, not `planPath`) — including `--clear created-at`, which returns a wrong recovered registration date to UNKNOWN so `recover-created-at` can derive it again from git history (there is deliberately no setting form for it — the date is evidence-derived, never asserted — and `touchedAt` is engine-stamped and deliberately not clearable) — the refusal enumerates the clearable set live, and a set-only field is refused with the registry's own reason. |
 | `update-epic <id> --attribute-commit <sha>` | Record a commit as this epic's work. Repeatable, append-only, in landing order. The engine infers attribution from **nothing** — not the files a commit touches, not an epic id in a message — so an unattributed commit is one the epic's Gate 2 cannot be checked against. **Do not attribute the commit that moves `openspec/changes/<id>/` under `archive/`**: it lands after the reviewed range by construction and makes the epic's own Gate 2 stale at the instant the archive gate reads it. |
 | `update-epic <id> --withdraw-commit <sha> --reason "<why>"` | **Withdraw an attribution** when the commit it named is gone — a `git reset` is a normal operation, and attributing at the moment of each commit means an attribution can outlive its commit through no error of process. Refuses a sha the epic never attributed, and refuses a missing reason. The array stays append-only (its last entry is the endpoint a Gate 2 `headSha` is compared against), so the withdrawal is **recorded** in a sibling `withdrawnCommits` field rather than erased. |
 | `update-epic <id> --status archived --outcome delivered\|killed\|superseded\|abandoned\|declined\|unreconstructable --reason "<why>" --no-deferrals` | **How work ends** — a terminal disposition with its reason, never deletion. Every outcome except `delivered` requires the reason. The deferral assertion is required in the *same* invocation: swap `--no-deferrals` for `--deferral "<epicId>:<section>"` where work is now held by a registered epic, or `--declined-deferral "<what>::<why not>"` where you are deliberately not doing it — `::` separates the halves explicitly, because both are free text and a single colon inside `<what>` used to truncate it silently. A single colon still works where the value carries only one; two or more with no `::` are refused rather than guessed. Add `--carried-to <epicId> --reason "<which tasks moved>"` to hand off unfinished work. |
@@ -806,7 +816,7 @@ source to the prior ref and `/reload-plugins`.
 </details>
 
 <details>
-<summary><code>release &lt;id&gt; --intent "&lt;what&gt;" [--target &lt;date&gt;] [--member &lt;epicId&gt;] [--defer &lt;epicId&gt; --reason "&lt;why&gt;"]</code> — Plan a release as a first-class object</summary>
+<summary><code>release &lt;id&gt; --intent "&lt;what&gt;" [--target &lt;date&gt;] [--member &lt;epicId&gt;] [--defer "&lt;epicId&gt;:&lt;why&gt;"] [--unmember "&lt;epicId&gt;:&lt;why&gt;"] [--undefer "&lt;epicId&gt;:&lt;why&gt;"] · <code>release show [&lt;id&gt;]</code></summary>
 
 `state.releases[]` holds `{id, intent, target, deferred[]}`. Membership is recorded **one-way** as
 `epic.release`, so the release and the epic can never disagree about whether an epic is in it, and
@@ -820,6 +830,27 @@ design doc, a handoff), applied to release scope. `PROJECT.md` and the briefing 
 
 Without it, "we deliberately cut X because Y" survives only in a conversation transcript — which
 is exactly the failure this release exists to fix.
+
+**`release show [<id>]` reads one back** — intent, target, the **derived** members, the deferrals
+with their reasons, the cross-spec verdict, and any amendments; with no id it lists every release.
+Membership being derived is right, but nothing ever presented the derived view, so a reader who
+opened the release object saw `deferred[]` populated and members absent — "exclusions and no
+members", the opposite of the truth. It is a pure read. `show` is reserved as the first positional,
+so a release cannot be named `show`.
+
+**`--unmember` and `--undefer` are the two inverses**, each requiring its reason inline
+(`"<epicId>:<why>"`) or via `--reason`, and each recording it in the release's `amendments[]` where
+`release show` renders it. `--unmember` is not `--defer` renamed: `--defer` records an exclusion
+(considered and cut), `--unmember` says the pointer should never have been there. `--undefer`
+removes an exclusion, keeps what it said, and does **not** make the epic a member. The implicit
+undefer `--member` has always performed is now recorded the same way, marked `via: "member"` and
+carrying no invented reason.
+
+**`--defer` also takes its reason inline** — `--defer "<epicId>:<why>"`, split on the first colon,
+the same rule `--deferral` uses — because deferral was one concept spelled three ways across two
+verbs and no two agreed. `--deferral` now accepts `::` as well as `:` for the same reason, and
+`--declined-deferral`'s help says why its double colon is deliberate: both of ITS halves are free
+text, so first-colon would truncate a `<what>` that carries one.
 
 </details>
 

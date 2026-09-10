@@ -13,7 +13,7 @@
 // The one place that symmetry breaks is `add-many`, whose EPIC_FLAGS rows are batch-document
 // state keys rather than CLI flags — hence `cliFlagsFor()` rather than `flagsFor()`. See
 // BATCH_KEY_COMMANDS in constants.mjs.
-import { flagSpecsFor, FLAGLESS_VERBS, FLAGLESS_USAGE, epicBatchKeys, BATCH_KEY_COMMANDS } from "./constants.mjs";
+import { flagSpecsFor, FLAGLESS_VERBS, POSITIONAL_USAGE, epicBatchKeys, BATCH_KEY_COMMANDS } from "./constants.mjs";
 import { DOCS_INDEX_URL, DOCS_MCP_URL } from "./constants.mjs";
 
 /** One flag's line: `--name <what it requires>`, then the modifiers a caller must know to invoke
@@ -42,8 +42,8 @@ export function verbHelp(command) {
     const declared = FLAGLESS_VERBS.includes(command);
     out.push(`conductor.mjs ${command} — takes no flags.`);
     out.push(declared
-      ? (FLAGLESS_USAGE[command]
-          ? "  " + FLAGLESS_USAGE[command]
+      ? (POSITIONAL_USAGE[command]
+          ? "  " + POSITIONAL_USAGE[command]
           : "  Positional arguments only, or none. See the command doc for what it expects.")
       : "  No flags are declared for this verb in the registry.");
   } else {
@@ -55,6 +55,15 @@ export function verbHelp(command) {
     const width = Math.min(44, Math.max(...specs.map(s =>
       (s.valueless ? `--${s.flag}` : `--${s.flag} <${s.requires}>`).length)));
     for (const s of specs) out.push(flagLine(s, width));
+  }
+
+  // AND the POSITIONAL surface, for a verb that has BOTH flags and positionals. This branch is
+  // the gh#178 half: the map was read only where `specs.length === 0`, so `release`'s read form —
+  // the whole point of that change — was absent from the one surface a reader consults. Same map,
+  // same wording, both branches; a verb absent from it renders exactly as before.
+  if (specs.length && POSITIONAL_USAGE[command]) {
+    out.push("");
+    out.push("  " + POSITIONAL_USAGE[command]);
   }
 
   // The batch surface is a real part of what `add-many` accepts — just not on the command line.

@@ -4,7 +4,7 @@
 
 import {
   EPIC_FLAGS, KNOWN_LANES, KNOWN_STATUSES, KNOWN_REVIEW_MODES, REVIEW_MODE_RANK,
-  epicFlagsFor, nullableEpicFlags,
+  epicFlagsFor, isFlagToken, nullableEpicFlags, splitFlagToken,
 } from "./constants.mjs";
 import { activate } from "./active-pointer.mjs";
 import { globalReviewMode } from "./rules.mjs";
@@ -77,10 +77,19 @@ export function updateEpic() {
   // different mistakes and get different messages; collapsing them back into one usage dump is
   // the regression this guards against.
   if (!id) {
-    const at = argv.indexOf("--id");
+    // gh#182: the FOURTH raw-argv scanner, and the same two halves. `--id=e1` must be diagnosed
+    // as well as `--id e1`, and the token it consumes as the value must be decided by
+    // isFlagToken() rather than by a leading `--`, so the rewritten line it prints is the line
+    // the caller actually meant.
+    const at = argv.findIndex(a => a === "--id" || a.startsWith("--id="));
     if (at !== -1) {
-      const value = argv[at + 1] !== undefined && !argv[at + 1].startsWith("--") ? argv[at + 1] : "<id>";
-      const rest = argv.filter((_, i) => i !== at && i !== at + 1);
+      const [, inline] = splitFlagToken(argv[at]);
+      const consumesNext = inline === undefined
+        && argv[at + 1] !== undefined && !isFlagToken(argv[at + 1]);
+      const value = inline !== undefined ? inline : (consumesNext ? argv[at + 1] : "<id>");
+      // Only drop at+1 when it WAS this flag's value. Dropping it unconditionally silently
+      // deleted the next flag from the suggested line whenever `--id` carried no value at all.
+      const rest = argv.filter((_, i) => i !== at && !(consumesNext && i === at + 1));
       process.stderr.write(
         `conductor: update-epic takes its epic id POSITIONALLY, not as --id — write ` +
         `\`update-epic <id> ...\`, i.e. \`update-epic ${value}${rest.length ? ` ${rest.join(" ")}` : ""}\`. ` +
@@ -88,7 +97,7 @@ export function updateEpic() {
       process.exit(1);
     }
     process.stderr.write("conductor: update-epic requires an epic id as its first POSITIONAL argument\n");
-    process.stderr.write(`usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--lane openspec|superpowers|claude-code|decision|external] [--plan <path>] [--spec <path>] [--link \"<${linkTypeVocabulary()}>:<epic>[:<reason>]\"] [--clear-links] [--clear <field>] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done|--wont-do "<reason>"] [--attribute-commit <sha>] [--withdraw-commit <sha> --withdrawal-reason \"<why>\"] [--outcome ${AGENT_OUTCOMES.join("|")}] [--reason \"<why>\"] [--correct-disposition \"<why the recorded one was wrong>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\"] [--declined-deferral \"<what>::<why not>\"] [--no-deferrals] [--description D] [--notes \"<text>\"] [--external-updated-at <iso>]\n`);
+    process.stderr.write(`usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--lane openspec|superpowers|claude-code|decision|external] [--plan <path>] [--spec <path>] [--link \"<${linkTypeVocabulary()}>:<epic>[:<reason>]\"] [--clear-links] [--clear <field>] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done|--wont-do "<reason>"] [--attribute-commit <sha>] [--withdraw-commit <sha> --withdrawal-reason \"<why>\"] [--outcome ${AGENT_OUTCOMES.join("|")}] [--reason \"<why>\"] [--correct-disposition \"<why the recorded one was wrong>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\" (or ::)] [--declined-deferral \"<what>::<why not>\"] [--no-deferrals] [--description D] [--notes \"<text>\"] [--external-updated-at <iso>]\n`);
     process.exit(1);
   }
   const f = parseFlags(argv.slice(1));
@@ -316,10 +325,24 @@ export function updateEpic() {
   // FIRST-COLON, and it is correct for `--deferral` for one reason: its left half is an EPIC ID,
   // which cannot contain a colon. So `--deferral "t2:design.md § Deferred: the tricky part"`
   // splits where it must and the section keeps its colons. Verified before this was written.
+  //
+  // `::` IS ACCEPTED TOO (gh#179), and takes precedence where both appear. Deferral is ONE
+  // concept spelled three ways across two verbs, and the two inline forms differed by a colon
+  // with nothing at the call site to say why — so a caller arriving from `--declined-deferral`
+  // guessed wrong and paid a full round trip, because the failure surfaces as a parse error and
+  // not as a hint. Accepting the STRICTER separator everywhere is always safe: it can only make
+  // an explicit split explicit, never move one. The reverse — teaching `--declined-deferral` to
+  // accept a single colon between two free-text halves — is NOT safe and is not done; that is
+  // the truncation its ambiguity refusal exists to prevent.
   const pairs = (raw, a, b) => [].concat(raw === undefined ? [] : raw)
     .filter(v => typeof v === "string")
-    .map(v => { const i = v.indexOf(":"); return i === -1
-      ? { [a]: v.trim(), [b]: "" } : { [a]: v.slice(0, i).trim(), [b]: v.slice(i + 1).trim() }; });
+    .map(v => {
+      const explicit = v.indexOf("::");
+      if (explicit !== -1) return { [a]: v.slice(0, explicit).trim(), [b]: v.slice(explicit + 2).trim() };
+      const i = v.indexOf(":");
+      return i === -1
+        ? { [a]: v.trim(), [b]: "" } : { [a]: v.slice(0, i).trim(), [b]: v.slice(i + 1).trim() };
+    });
 
   // `--declined-deferral "<what>:<why not>"` is the OTHER shape and cannot use the same rule:
   // BOTH halves are free text. First-colon truncates a <what> that carries one — measured in the

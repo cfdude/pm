@@ -8,6 +8,108 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.41.0] — 2026-09-09
+
+**Backlog health, and the papercuts 0.40.0's own closeout surfaced.** Ten items in one release
+rather than ten point releases: shipping 13 versions in 11 days meant a 28-repo fleet pass roughly
+every 20 hours, and the upgrade is the expensive half. Every item here was found by *using* 0.40.0
+— four of them by the inverse-operation rule 0.40.0 itself added, applied to surfaces that predate
+it.
+
+### Added
+
+* **`release show [<id>]`** — a release object could be written and never read back. Membership is
+  one-way, living on the epic as `epic.release`, which is the right storage and exactly why a
+  reader who opened the release object saw `deferred[]` populated and members absent: it read as
+  *"exclusions and no members"*, the inverse of the truth. The read-back renders intent, target,
+  derived members, deferrals and the cross-spec verdict.
+* **`--unmember` and `--undefer`** on `release`, each requiring a reason, and those reasons land in
+  a new `amendments[]` the read-back renders. `--member`'s long-standing *implicit* undefer now
+  records the same way instead of silently. `amendments[].epic` holds an epic id, so it joins
+  `epicReferences()` — found by applying the sweep's DATA-reference half, and without it
+  `remove-epic` left a dangling pointer `release show` would have rendered.
+* **`record-gate-review --artifact <path>`** (repeatable) — Gate 1 reviews spec artifacts **by
+  path, before code exists**, and was required to supply a commit range for a passing verdict. The
+  only way to satisfy it was a range of artifact commits, which every downstream consumer then
+  reads as an implementation range. A gate-2 pass still requires the sha pair. Making the shas
+  merely optional was rejected: a correct Gate 1 would then render `⚠ no checkable evidence`, which
+  moves the wrong record one step along rather than repairing it.
+* **`--clear created-at`** — `recover-created-at` never overwrites a date already present, which is
+  correct, and nothing removed one, so a date recovered wrongly was permanent and correctable only
+  by the hand-edit this tool forbids everywhere else. Clear-then-recover is now the correction
+  path, which leaves the never-overwrite rule intact rather than weakening it. `touchedAt` stays
+  non-clearable and its registry row says why: the engine re-stamps it on the next real write.
+* **`--flag=value`** on every flag, splitting on the first `=` so a value may contain one.
+
+### Changed
+
+* **A flag value may begin with `--`.** The inward tracker-sync line this project's own instructions
+  specify verbatim failed on any issue whose title starts with a flag name — and a bug report
+  *about* a flag usually is titled that way. It failed in the worst available shape: the message
+  said "unknown flag(s)" and listed the title, pointing a reader at the flag spelling rather than
+  the value; the sync run continued; and the item was then silently absent from the backlog with no
+  trace in the record. In a value position a token is now the value unless it is shaped exactly
+  like a flag.
+* **Four raw-argv scanners stop disagreeing.** Fixing the shared parser fixed 24 modules at once —
+  and `requireKnownFlags`, serving `claim`, `unclaim`, `owners`, `activity` and `purge-logs`, was
+  still emitting the original bug **verbatim** afterwards. No existing test could see it, because
+  every one of them puts the unknown flag last. `positionalArgs`, `platformFlag` and `update-epic`'s
+  `--id` diagnosis were the other three.
+* **`/pm:triage` accepts an ask beginning with `--`.** That call is step 1 of intake — "the ask, in
+  its own words" — and rewording to get past the guard defeats the lexical matching triage exists
+  to do, because the flag names *are* the distinctive tokens. Narrowed rather than dropped: the
+  guard had a real job, since `triage --limit 5` supplies no ask and reading `--limit` as one
+  returns a scored, confident, meaningless result.
+* **`--defer` takes `<epicId:why>` inline**, `--deferral` accepts `::` as well as `:`, and
+  `--declined-deferral`'s placeholder finally says *why* its separator is doubled — its left half
+  is free text and may contain a colon. Nothing that worked before was removed.
+* **`FLAGLESS_USAGE` is now `POSITIONAL_USAGE`** and prints in help's flag-bearing branch too. It
+  was consulted only for verbs with no flags, so `release show` would have been invisible on the
+  surface a reader consults to find it.
+
+### Fixed
+
+* **`hooks.json` validates clean.** It shipped a `"comment"` key beside `matcher` and `hooks` in
+  all five matcher groups, so Claude Code reported *unknown keys … ignored* at the **top of every
+  session, in every repository with the plugin installed** — 27 on the development machine. The
+  hooks kept working, which is why it survived: nothing broke, so nothing prompted. The comments
+  were real documentation and moved to `hooks/README.md` rather than being deleted — *"fires on
+  EVERY Bash call by design"* and *"a SEPARATE, WIDER matcher on purpose"* are what stop someone
+  narrowing a matcher and silently killing a hook. Guarded by a **closed allowlist**, not a
+  blocklist of `"comment"`: a blocklist only ever catches the mistake already made.
+* **A help token in a value position no longer exits 0 having written nothing.** `--help` anywhere
+  in argv short-circuited pre-dispatch, so a command carrying it as a value printed help and
+  reported success. Narrowed to the position a person types it — no verb, or first after the verb.
+  The short-circuit keeps both properties it was built for. `--title --help` is still refused,
+  correctly; what changed is that it now exits 1 and names the token.
+* **The `gh-137` replay test reads only the release it replays.** It called itself a replay of a
+  historical moment but computed over the whole live record, so it returned `20 + (any other
+  release with an open member)` — failing during **every** release closeout with a bare `21 !== 20`
+  about an unrelated issue. Fixed by slicing the fixture rather than filtering the findings, which
+  makes cross-release contamination structurally impossible, and the count is replaced by the
+  identity set.
+* **`AGENT_OUTCOMES` gets an anchor.** It derives from `KNOWN_OUTCOMES`, which is right — every
+  emitted enumeration and every archive-gate refusal renders from it — but both existing drift
+  guards anchor their assertions to it too, so emitter and assertion moved together and narrowing
+  it fired nothing. Mutation-tested: dropping `declined` now fails on any record. Of the 124 tests
+  in the two existing guards, exactly one caught it, and only by accident of this record happening
+  to hold a `declined` epic.
+
+### Notes
+
+* **This repository's archive is now fully dispositioned: 66 `outcome: unknown` records → 0.**
+  0.40.0 shipped `unconsidered-outcomes` to enumerate them; shipping the walker was not walking it.
+  Every verdict cites a commit, a CHANGELOG version, an archived change directory or a source line:
+  58 `delivered`, 7 `superseded`, 1 `abandoned`. Integrity findings fell from 11 to 6. The archive
+  gate refused three, correctly, and each was resolved on evidence — one epic's six "open" stories
+  were verified done **against the live site**.
+* **Four tests broke because the product worked.** `conductor-15`'s fixture reconstructed the
+  pre-migration record by peeling migration stamps off the live record, so replacing those stamps
+  with real dispositions made the reconstruction permanently impossible. A green suite had quietly
+  come to mean *"the archive is still full of undispositioned epics"*. Fixed by freezing a
+  pre-walk fixture; written up as a lesson, because the tell is the word **undo**.
+* No `state.json` schema change and no migration. `amendments[]` is additive and absent-tolerant.
+
 ## [0.40.0] — 2026-09-08
 
 **The record answers questions about itself.** Five defects, one root: `.conductor/state.json`
