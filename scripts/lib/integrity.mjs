@@ -51,7 +51,10 @@ const EXPLAINED_OUTCOMES = ["killed", "superseded", "abandoned", "declined", "un
  *  rather than arguable: this repository holds 69 archived epics and 3 carrying a passing
  *  Gate 2 (measured 2026-08-23), so after the migration that stamps `delivered` only where such
  *  a verdict exists, a `delivered`-only zero-ticked check has zero candidates in the very
- *  repository whose live data this rule cites as its evidence. */
+ *  repository whose live data this rule cites as its evidence. That evidence is now checkable
+ *  rather than quoted: it is asserted against the frozen record in
+ *  `scripts/test/fixtures/state-pre-disposition-walk.json`, because it is a claim about a past
+ *  state and the live record has since moved past it. */
 export function inCompletionScope(epic) {
   if (EXPLAINED_OUTCOMES.includes(outcomeOf(epic))) return false;
   // A backfilled epic never passed through the conductor while it was in flight: it has no gate

@@ -12,18 +12,11 @@
       "links": [],
       "reconcileNeeded": false,
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:47:13.519Z",
-        "reason": "`978ddd4` validated `--link` and added `update-epic --link`; shipped 0.9.3, archived by `91cb87b`."
+        "outcome": "unknown",
+        "recordedAt": "2026-08-26T22:39:16.528Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-14T15:26:34-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:47:13.518Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "completedAt": "2026-09-10T02:47:13.519Z",
-      "touchedAt": "2026-09-10T02:47:13.521Z"
+      "createdAt": "2026-07-14T15:26:34-07:00"
     },
     {
       "id": "epic-hierarchy-orchestration",
@@ -35,19 +28,12 @@
       "links": [],
       "reconcileNeeded": false,
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:47:15.824Z",
-        "reason": "plan-hierarchy verb + hierarchy-child-executor agent shipped 0.10.0 (`388edd3`, `fd2ea96`); archived by `85f3e4e`."
+        "outcome": "unknown",
+        "recordedAt": "2026-08-26T22:39:16.528Z",
+        "recordedBy": "migration"
       },
       "specPath": "docs/superpowers/specs/2026-07-14-epic-hierarchy-orchestration-design.md",
-      "createdAt": "2026-07-14T15:56:03-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:47:15.824Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "completedAt": "2026-09-10T02:47:15.824Z",
-      "touchedAt": "2026-09-10T02:47:15.826Z"
+      "createdAt": "2026-07-14T15:56:03-07:00"
     },
     {
       "id": "portfolio-architecture-consistency-scan",
@@ -66,17 +52,11 @@
       "reconcileNeeded": false,
       "completedAt": "2026-07-15T23:01:10.348Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:47:17.888Z",
-        "reason": "The epic's own title scopes it to a brainstorm — 'least-scoped of the three, needs its own brainstorm'. That brainstorm shipped: 686d669, docs/feedback/2026-07-15-portfolio-architecture-consistency-scan-brainstorm.md. A brainstorm that ends in open questions is a completed brainstorm, not an abandoned scan."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T23:01:10.348Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-14T15:56:03-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:47:17.887Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:47:17.889Z"
+      "createdAt": "2026-07-14T15:56:03-07:00"
     },
     {
       "id": "infra-runbook-preflight",
@@ -88,18 +68,11 @@
       "links": [],
       "reconcileNeeded": false,
       "disposition": {
-        "outcome": "abandoned",
-        "recordedAt": "2026-09-10T02:47:19.918Z",
-        "reason": "The epic asked to WIRE infra-runbook preflight into pm's epic/hierarchy preflight. rg for infra-playbook|infra-runbook across commands/ skills/ agents/ scripts/ hooks/ .claude-plugin/ returns NOTHING — the wiring never landed in pm. f7a2b37 archived it claiming a cross-repo docs change shipped it; that was a mistaken record, and the infra-playbooks commits in that window are unrelated taxonomy work."
+        "outcome": "unknown",
+        "recordedAt": "2026-08-26T22:39:16.528Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-14T15:56:03-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:47:19.917Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "completedAt": "2026-09-10T02:47:19.918Z",
-      "touchedAt": "2026-09-10T02:47:19.920Z"
+      "createdAt": "2026-07-14T15:56:03-07:00"
     },
     {
       "id": "pm-plugin-improvements-2026-07-14",
@@ -112,17 +85,11 @@
       "reconcileNeeded": false,
       "completedAt": "2026-07-16T05:28:32.305Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:47:21.986Z",
-        "reason": "Parent epic: `118e273` archived all 15 children, `24ff9ab` archived the parent as all-children-done."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-16T05:28:32.305Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-14T22:55:49-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:47:21.985Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:47:21.988Z"
+      "createdAt": "2026-07-14T22:55:49-07:00"
     },
     {
       "id": "gate-guard-default-on-reconcile",
@@ -150,17 +117,11 @@
       },
       "completedAt": "2026-07-15T21:56:25.609Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:47:24.025Z",
-        "reason": "`f77d774` makes the reconcile-owed guard block unconditionally by default."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T21:56:25.609Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-14T22:55:49-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:47:24.025Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:47:24.027Z"
+      "createdAt": "2026-07-14T22:55:49-07:00"
     },
     {
       "id": "diffshape-minimal-detour-inference",
@@ -188,17 +149,11 @@
       },
       "completedAt": "2026-07-15T21:56:25.567Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:47:26.057Z",
-        "reason": "`9dc85bf` auto-detects an unlogged minimal detour from commit diff shape (0.13.0)."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T21:56:25.567Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-14T22:55:49-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:47:26.057Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:47:26.059Z"
+      "createdAt": "2026-07-14T22:55:49-07:00"
     },
     {
       "id": "remove-epic-verb",
@@ -252,27 +207,15 @@
         },
         {
           "title": "Fresh-context code review (standard review mode)",
-          "done": false,
-          "disposition": {
-            "state": "wont-do",
-            "reason": "No record of this review exists. remove-epic shipped in 0.11.0 (1d87dcc) and the verb has been in the dispatch table ever since, so the code was written and released; what is missing is any evidence the fresh-context review was performed. Recording it as not-done rather than ticking it, because ticking would assert a review nobody can point at — and the row and this reason stay on the record, which is the point.",
-            "recordedAt": "2026-09-10T02:51:51.076Z"
-          }
+          "done": false
         }
       ],
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:51:52.853Z",
-        "reason": "1d87dcc added remove-epic [--cascade] in 0.11.0; the verb is in today's dispatch list with cascade, link-stripping and active-pointer clearing all present. Five of six stories shipped; the sixth, a fresh-context code review, is recorded --wont-do because no evidence of one exists."
+        "outcome": "unknown",
+        "recordedAt": "2026-08-26T22:39:16.528Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-14T22:55:49-07:00",
-      "touchedAt": "2026-09-10T02:51:52.855Z",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:51:52.853Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "completedAt": "2026-09-10T02:51:52.853Z"
+      "createdAt": "2026-07-14T22:55:49-07:00"
     },
     {
       "id": "fix-archived-no-change-warning",
@@ -294,17 +237,11 @@
       },
       "completedAt": "2026-07-15T21:56:25.840Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:47:28.153Z",
-        "reason": "`260bbd0` — `missing()` excludes archived epics from the no-change-on-disk warning."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T21:56:25.840Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-14T22:55:49-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:47:28.153Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:47:28.155Z"
+      "createdAt": "2026-07-14T22:55:49-07:00"
     },
     {
       "id": "reconciler-structured-writeback",
@@ -332,17 +269,11 @@
       },
       "completedAt": "2026-07-15T21:56:26.035Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:47:30.212Z",
-        "reason": "`7902ee6` writes the verdict back onto the paused link; `record-reconcile` verb present today."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T21:56:26.035Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-14T22:55:49-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:47:30.212Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:47:30.214Z"
+      "createdAt": "2026-07-14T22:55:49-07:00"
     },
     {
       "id": "lane-routing-config",
@@ -364,17 +295,11 @@
       },
       "completedAt": "2026-07-15T21:56:25.957Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:47:32.265Z",
-        "reason": "`9120a93` added per-repo lane routing; `set-lane-routing`/`suggest-lane` present today."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T21:56:25.957Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-14T22:55:49-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:47:32.264Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:47:32.267Z"
+      "createdAt": "2026-07-14T22:55:49-07:00"
     },
     {
       "id": "autonomy-hierarchy-adoption-investigation",
@@ -396,17 +321,11 @@
       },
       "completedAt": "2026-07-15T21:56:25.648Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:47:34.308Z",
-        "reason": "`d6d6efc` committed docs/feedback/2026-07-15-autonomy-hierarchy-adoption-investigation.md with recommendations."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T21:56:25.648Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-14T22:55:49-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:47:34.307Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:47:34.310Z"
+      "createdAt": "2026-07-14T22:55:49-07:00"
     },
     {
       "id": "honcho-memory-string-print",
@@ -428,17 +347,11 @@
       },
       "completedAt": "2026-07-15T21:56:25.879Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:47:36.337Z",
-        "reason": "`fc89ff5` added the `honcho-memory` subcommand; verb present today."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T21:56:25.879Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-14T22:55:49-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:47:36.337Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:47:36.339Z"
+      "createdAt": "2026-07-14T22:55:49-07:00"
     },
     {
       "id": "verify-state-command",
@@ -466,17 +379,11 @@
       },
       "completedAt": "2026-07-15T21:56:26.074Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:47:38.402Z",
-        "reason": "`dd3272a` added `verify-state`; verb present in today's dispatch list."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T21:56:26.074Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-14T22:55:49-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:47:38.401Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:47:38.403Z"
+      "createdAt": "2026-07-14T22:55:49-07:00"
     },
     {
       "id": "dependency-aware-standalone-ordering",
@@ -504,17 +411,11 @@
       },
       "completedAt": "2026-07-15T21:56:25.762Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:47:40.494Z",
-        "reason": "`3693032` extends depends-on ordering from hierarchy siblings to the whole top-level queue."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T21:56:25.762Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-14T22:55:49-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:47:40.493Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:47:40.495Z"
+      "createdAt": "2026-07-14T22:55:49-07:00"
     },
     {
       "id": "per-epic-review-mode-override",
@@ -536,17 +437,11 @@
       },
       "completedAt": "2026-07-15T21:56:25.996Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:47:42.665Z",
-        "reason": "`2607829` added the per-epic escalation-only review-mode override."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T21:56:25.996Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-14T22:55:49-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:47:42.664Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:47:42.667Z"
+      "createdAt": "2026-07-14T22:55:49-07:00"
     },
     {
       "id": "epic-timestamps-and-staleness",
@@ -568,17 +463,11 @@
       },
       "completedAt": "2026-07-15T21:56:25.800Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:47:44.660Z",
-        "reason": "`206b6d8` stamps startedAt/completedAt and surfaces a staleness indicator."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T21:56:25.800Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-14T22:55:49-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:47:44.660Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:47:44.662Z"
+      "createdAt": "2026-07-14T22:55:49-07:00"
     },
     {
       "id": "category-based-preauthorization",
@@ -600,17 +489,11 @@
       },
       "completedAt": "2026-07-15T21:56:25.686Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:47:46.652Z",
-        "reason": "`cd0b8f7` added the `category:` `--preauthorize` shorthand; documented in the live rules block."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T21:56:25.686Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-14T22:55:49-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:47:46.651Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:47:46.653Z"
+      "createdAt": "2026-07-14T22:55:49-07:00"
     },
     {
       "id": "incremental-notify-timing-fix",
@@ -632,17 +515,11 @@
       },
       "completedAt": "2026-07-15T21:56:25.918Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:47:48.613Z",
-        "reason": "`0b20572`; the emitted rules block carries \"Notify incrementally, not at the end\" today."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T21:56:25.918Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-14T22:55:49-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:47:48.612Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:47:48.614Z"
+      "createdAt": "2026-07-14T22:55:49-07:00"
     },
     {
       "id": "cross-repo-epic-dependency-investigation",
@@ -664,17 +541,11 @@
       },
       "completedAt": "2026-07-15T21:56:26.111Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:47:50.614Z",
-        "reason": "`216808f` committed the investigation doc recommending a `link.repo` field."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T21:56:26.111Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-14T22:55:49-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:47:50.614Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:47:50.616Z"
+      "createdAt": "2026-07-14T22:55:49-07:00"
     },
     {
       "id": "changelog-preview-in-sessionstart-nudge",
@@ -696,17 +567,11 @@
       },
       "completedAt": "2026-07-15T21:56:25.724Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:47:52.659Z",
-        "reason": "`2f4d102` inlines top Added-bullet headlines in the SessionStart upgrade nudge."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T21:56:25.724Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-14T22:55:49-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:47:52.659Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:47:52.661Z"
+      "createdAt": "2026-07-14T22:55:49-07:00"
     },
     {
       "id": "ai-feedback-loop-github-issues",
@@ -738,17 +603,11 @@
       },
       "completedAt": "2026-07-15T23:01:10.171Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:47:54.663Z",
-        "reason": "`0edf820` added the /pm:feedback command; commands/feedback.md ships today."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T23:01:10.171Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-14T23:05:28-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:47:54.662Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:47:54.665Z"
+      "createdAt": "2026-07-14T23:05:28-07:00"
     },
     {
       "id": "github-issue-tracker-sync",
@@ -786,17 +645,11 @@
       },
       "completedAt": "2026-07-15T23:01:10.225Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:47:56.676Z",
-        "reason": "`766dd9f` added github-issues inward sync (open issues to untriaged epics), 0.14.0."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T23:01:10.225Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-14T23:05:28-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:47:56.675Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:47:56.678Z"
+      "createdAt": "2026-07-14T23:05:28-07:00"
     },
     {
       "id": "cfdude-pm-repo-governance",
@@ -809,17 +662,11 @@
       "reconcileNeeded": false,
       "completedAt": "2026-07-16T05:28:32.266Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:47:58.674Z",
-        "reason": "Parent epic archived by `24ff9ab` with all three children (branch protection, CI, autonomous-agent research) done."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-16T05:28:32.266Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-14T23:05:28-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:47:58.673Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:47:58.675Z"
+      "createdAt": "2026-07-14T23:05:28-07:00"
     },
     {
       "id": "branch-protection-and-pr-workflow",
@@ -852,17 +699,11 @@
       },
       "completedAt": "2026-07-15T23:06:28.073Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:48:00.668Z",
-        "reason": "0.15.0 CHANGELOG records main requiring PRs + the `test` check live; `ffb6b60` (#1) is the first PR through it."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T23:06:28.073Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-14T23:05:28-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:48:00.668Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:48:00.670Z"
+      "createdAt": "2026-07-14T23:05:28-07:00"
     },
     {
       "id": "ci-test-lint-workflow",
@@ -890,17 +731,11 @@
       },
       "completedAt": "2026-07-15T23:01:10.267Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:48:02.699Z",
-        "reason": "`8773fa5` added .github/workflows/ci.yml, which exists and gates PRs today."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T23:01:10.267Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-14T23:05:28-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:48:02.699Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:48:02.701Z"
+      "createdAt": "2026-07-14T23:05:28-07:00"
     },
     {
       "id": "autonomous-issue-resolution-agent",
@@ -914,17 +749,11 @@
       "parent": "cfdude-pm-repo-governance",
       "completedAt": "2026-07-15T23:01:10.307Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:48:04.753Z",
-        "reason": "The epic's own title scopes it to research: 'Needs its own research pass ... BEFORE any design'. f332b36 shipped that pass. The issue-to-PR pipeline was explicitly out of scope, so its absence is not a shortfall."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-15T23:01:10.307Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-14T23:05:28-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:48:04.752Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:48:04.755Z"
+      "createdAt": "2026-07-14T23:05:28-07:00"
     },
     {
       "id": "df-stale-cache-silent-fallback",
@@ -951,18 +780,11 @@
         "notifications": []
       },
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:48:06.751Z",
-        "reason": "`9e83963` makes a stale cached engine visible; `43c82bc` archives it as fixed in 0.12.2."
+        "outcome": "unknown",
+        "recordedAt": "2026-08-26T22:39:16.528Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-15T08:26:55-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:48:06.750Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "completedAt": "2026-09-10T02:48:06.751Z",
-      "touchedAt": "2026-09-10T02:48:06.753Z"
+      "createdAt": "2026-07-15T08:26:55-07:00"
     },
     {
       "id": "df-plan-hierarchy-includes-archived-children",
@@ -975,18 +797,11 @@
       "reconcileNeeded": false,
       "parent": "pm-plugin-improvements-2026-07-14",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:48:09.194Z",
-        "reason": "`c39c538` excludes archived children; `d329d06` archives it as fixed in 0.12.1."
+        "outcome": "unknown",
+        "recordedAt": "2026-08-26T22:39:16.528Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-15T08:26:55-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:48:09.194Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "completedAt": "2026-09-10T02:48:09.194Z",
-      "touchedAt": "2026-09-10T02:48:09.196Z"
+      "createdAt": "2026-07-15T08:26:55-07:00"
     },
     {
       "id": "df-hierarchy-no-shared-file-conflict-detection",
@@ -999,18 +814,11 @@
       "reconcileNeeded": false,
       "parent": "pm-plugin-improvements-2026-07-14",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:48:11.482Z",
-        "reason": "`9803a68`/`ca7d3f9` shipped worktree-isolated dispatch + verify-worktrees in 0.12.0; `e731fb5` archives it."
+        "outcome": "unknown",
+        "recordedAt": "2026-08-26T22:39:16.528Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-15T08:26:55-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:48:11.482Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "completedAt": "2026-09-10T02:48:11.483Z",
-      "touchedAt": "2026-09-10T02:48:11.484Z"
+      "createdAt": "2026-07-15T08:26:55-07:00"
     },
     {
       "id": "df-github-tracker-outward-sync-unsuppressed",
@@ -1037,17 +845,11 @@
       },
       "completedAt": "2026-07-16T07:59:26.876Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:48:13.991Z",
-        "reason": "0.16.0 CHANGELOG: rulesBlock() suppresses the outward sync section for github-issues (inward-only by design)."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-16T07:59:26.876Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-15T16:01:52-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:48:13.991Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:48:13.993Z"
+      "createdAt": "2026-07-15T16:01:52-07:00"
     },
     {
       "id": "df-changelog-fragment-conflicts",
@@ -1074,17 +876,11 @@
       },
       "completedAt": "2026-07-16T05:07:27.632Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:48:15.987Z",
-        "reason": "0.15.0 CHANGELOG: .changesets/<epic-id>.md fragments + a `changesets` engine verb; zero conflicts on first use."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-16T05:07:27.632Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-15T16:32:43-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:48:15.987Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:48:15.989Z"
+      "createdAt": "2026-07-15T16:32:43-07:00"
     },
     {
       "id": "df-conflict-resolution-verification-step",
@@ -1111,17 +907,11 @@
       },
       "completedAt": "2026-07-16T05:07:27.678Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:48:18.576Z",
-        "reason": "0.15.0 CHANGELOG: mandatory post-resolution marker grep + `node -c` on the merge-conflict ladder."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-16T05:07:27.678Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-15T16:32:43-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:48:18.575Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:48:18.579Z"
+      "createdAt": "2026-07-15T16:32:43-07:00"
     },
     {
       "id": "df-skill-commands-line-drift",
@@ -1148,17 +938,11 @@
       },
       "completedAt": "2026-07-16T07:59:26.955Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:48:20.998Z",
-        "reason": "0.16.0 CHANGELOG: a test asserts every dispatch-table key appears in SKILL.md; it caught two real gaps."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-16T07:59:26.955Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-15T16:32:43-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:48:20.997Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:48:21.000Z"
+      "createdAt": "2026-07-15T16:32:43-07:00"
     },
     {
       "id": "df-live-infra-epic-session-continuity-warning",
@@ -1185,17 +969,11 @@
       },
       "completedAt": "2026-07-16T05:07:27.718Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:48:23.407Z",
-        "reason": "0.15.0 CHANGELOG: hierarchy-child-executor must answer the session-continuity question in CONCERNS."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-16T05:07:27.718Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-15T16:32:43-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:48:23.406Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:48:23.408Z"
+      "createdAt": "2026-07-15T16:32:43-07:00"
     },
     {
       "id": "df-stray-render-artifacts-noise",
@@ -1222,17 +1000,11 @@
       },
       "completedAt": "2026-07-16T07:59:26.994Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:48:25.650Z",
-        "reason": "0.16.0 CHANGELOG Fixed: writeRenderStamp() skips the rewrite when stateMtimeMs is unchanged."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-16T07:59:26.994Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-15T16:32:43-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:48:25.649Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:48:25.652Z"
+      "createdAt": "2026-07-15T16:32:43-07:00"
     },
     {
       "id": "df-verify-worktrees-merged-not-just-archived",
@@ -1259,17 +1031,11 @@
       },
       "completedAt": "2026-07-21T06:09:36.854Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:48:27.714Z",
-        "reason": "`6bf0984` (#49) flags merged-but-uncleaned hierarchy-child worktrees."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-21T06:09:36.854Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-15T16:32:43-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:48:27.713Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:48:27.716Z"
+      "createdAt": "2026-07-15T16:32:43-07:00"
     },
     {
       "id": "df-autodetour-false-positive-conductor-admin-commits",
@@ -1283,17 +1049,11 @@
       "startedAt": "2026-07-16T05:31:47.740Z",
       "completedAt": "2026-07-16T05:35:43.440Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:48:29.779Z",
-        "reason": "`dba2baa` (#12), 0.16.0 — conductor bookkeeping paths are never auto-logged as a detour."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-16T05:35:43.440Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-15T16:32:43-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:48:29.779Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:48:29.781Z"
+      "createdAt": "2026-07-15T16:32:43-07:00"
     },
     {
       "id": "df-readme-stale-since-gate-guard",
@@ -1306,17 +1066,11 @@
       "reconcileNeeded": false,
       "completedAt": "2026-07-16T01:52:11.686Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:48:32.023Z",
-        "reason": "0.15.0 CHANGELOG says \"Resolves df-readme-stale-since-gate-guard\"; README revamped in `5dec585`."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-16T01:52:11.686Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-15T16:43:54-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:48:32.023Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:48:32.025Z"
+      "createdAt": "2026-07-15T16:43:54-07:00"
     },
     {
       "id": "multi-platform-agent-support",
@@ -1376,17 +1130,11 @@
       },
       "completedAt": "2026-07-16T07:59:26.916Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:48:35.005Z",
-        "reason": "0.16.0 added `record-gate-review` and made archive reject an openspec epic lacking a gate2 pass."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-16T07:59:26.916Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-15T22:43:28-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:48:34.963Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:48:35.007Z"
+      "createdAt": "2026-07-15T22:43:28-07:00"
     },
     {
       "id": "df-orchestrator-committed-release-without-reverifying",
@@ -1400,17 +1148,11 @@
       "startedAt": "2026-07-19T20:41:48.423Z",
       "completedAt": "2026-07-19T20:46:53.640Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:48:37.199Z",
-        "reason": "`a268cd1`, 0.18.0 — a mechanical pre-commit hook now runs the full suite before every commit."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-19T20:46:53.640Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-16T01:06:27-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:48:37.198Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:48:37.200Z"
+      "createdAt": "2026-07-16T01:06:27-07:00"
     },
     {
       "id": "df-hierarchy-executor-must-check-readme-for-user-facing-changes",
@@ -1424,17 +1166,11 @@
       "startedAt": "2026-07-17T06:56:36.616Z",
       "completedAt": "2026-07-17T07:04:32.571Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:48:41.047Z",
-        "reason": "`79205f9`, 0.17.0 — README drift test + hierarchy-executor README requirement."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-17T07:04:32.571Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-16T16:32:50-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:48:41.025Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:48:41.049Z"
+      "createdAt": "2026-07-16T16:32:50-07:00"
     },
     {
       "id": "docs-site-cleanup",
@@ -1448,27 +1184,27 @@
       "stories": [
         {
           "title": "Fix index.mdx frontmatter title/description (currently \"PM: Epic Tracking and Detour Stack for Claude Code\") to match the README's Project Manager (PM) branding and tagline",
-          "done": true
+          "done": false
         },
         {
           "title": "Replace docs.json logo (brand.dev auto-detected, likely wrong) with the real PM banner/logo asset; verify favicon too",
-          "done": true
+          "done": false
         },
         {
           "title": "Update docs.json site name from \"PM for Claude Code\" to match README branding (e.g. \"Project Manager (PM)\")",
-          "done": true
+          "done": false
         },
         {
           "title": "Differentiate index.mdx from introduction.mdx -- they currently duplicate the same \"why PM\" content and real-numbers table almost verbatim",
-          "done": true
+          "done": false
         },
         {
           "title": "Add an Industry-Frontier-Practice-style section/page -- exists in the README, missing entirely from the docs site",
-          "done": true
+          "done": false
         },
         {
           "title": "Confirm AGENTS.md/README.md/LICENSE/.atlas-analysis.json are not publicly reachable at a direct URL despite being excluded from nav; add to .mintignore if they are",
-          "done": true
+          "done": false
         },
         {
           "title": "Add a Changelog page to the docs site (mirroring CHANGELOG.md) showing each version, its release date, and its bullets, so a visitor can see the latest changes without leaving the site; update it as part of the standing documentation-currency rule whenever a PR into main ships a version bump",
@@ -1485,17 +1221,11 @@
       ],
       "completedAt": "2026-07-21T06:45:48.230Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:51:26.100Z",
-        "reason": "All nine stories shipped. The six that read unticked were verified against the LIVE SITE rather than assumed: /industry-frontier-practice returns 200 (story 5); the index title is 'Project Manager (PM) — A Claude Code Project Management Plugin', not the old 'PM: Epic Tracking and Detour Stack' (1 and 3); AGENTS.md, README.md, LICENSE and .atlas-analysis.json all return 404 (6); the nav logo is pm's own pm-plugin-nav-logo-light.png, not a brand.dev guess (2); and the real-numbers table appears twice on /introduction and zero times on the index, so the two pages no longer duplicate (4). The checkboxes were never ticked; the work was done."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-21T06:45:48.230Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-16T17:26:17-07:00",
-      "touchedAt": "2026-09-10T02:51:26.102Z",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:51:26.099Z",
-        "deferrals": [],
-        "declined": []
-      }
+      "createdAt": "2026-07-16T17:26:17-07:00"
     },
     {
       "id": "df-precommit-hook-too-noisy-on-success",
@@ -1522,17 +1252,11 @@
       },
       "completedAt": "2026-07-21T06:20:07.492Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:48:44.560Z",
-        "reason": "`06a7d89` (#50) quiets the pre-commit hook on success."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-21T06:20:07.492Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-19T14:24:17-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:48:44.559Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:48:44.566Z"
+      "createdAt": "2026-07-19T14:24:17-07:00"
     },
     {
       "id": "df-engine-banner-noise-every-invocation",
@@ -1560,17 +1284,11 @@
       },
       "completedAt": "2026-07-21T06:28:09.825Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:48:50.378Z",
-        "reason": "`a82c151` (#51) suppresses the engine banner by default in dev/self-hosting context."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-21T06:28:09.825Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-19T14:24:17-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:48:50.374Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:48:50.380Z"
+      "createdAt": "2026-07-19T14:24:17-07:00"
     },
     {
       "id": "df-project-md-diff-triviality-not-mechanically-checkable",
@@ -1597,17 +1315,11 @@
       },
       "completedAt": "2026-07-21T06:36:02.583Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:48:55.143Z",
-        "reason": "`bcae4da` (#52) added `render --diff-summary`."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-21T06:36:02.583Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-19T14:24:17-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:48:55.141Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:48:55.150Z"
+      "createdAt": "2026-07-19T14:24:17-07:00"
     },
     {
       "id": "df-contributing-doc-missing-direct-push-recovery",
@@ -1621,17 +1333,11 @@
       "startedAt": "2026-07-25T18:12:08.311Z",
       "completedAt": "2026-07-25T18:18:44.268Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:49:00.577Z",
-        "reason": "`da2ebfa` (#62) documents the main-moved-under-your-PR rebase recovery in CONTRIBUTING.md."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-25T18:18:44.268Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-19T14:24:17-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:49:00.574Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:49:00.585Z"
+      "createdAt": "2026-07-19T14:24:17-07:00"
     },
     {
       "id": "multi-tracker-primary-secondary-support",
@@ -1675,18 +1381,12 @@
       "reconcileNeeded": false,
       "completedAt": "2026-07-25T18:52:22.706Z",
       "disposition": {
-        "outcome": "superseded",
-        "recordedAt": "2026-09-10T02:49:06.320Z",
-        "reason": "Sync-registered plan file; `e8c0740` (#63) archives it as a \"stale duplicate\" of epic-hierarchy-orchestration (shipped 0.10.0)."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-25T18:52:22.706Z",
+        "recordedBy": "migration"
       },
       "specPath": "docs/superpowers/specs/2026-07-14-epic-hierarchy-orchestration-design.md",
-      "createdAt": "2026-07-19T17:40:47-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:49:06.320Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:49:06.322Z"
+      "createdAt": "2026-07-19T17:40:47-07:00"
     },
     {
       "id": "df-update-epic-no-story-toggle-verb",
@@ -1713,17 +1413,11 @@
       },
       "completedAt": "2026-07-21T06:42:07.249Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:49:11.736Z",
-        "reason": "`63309a3` (#53) added `update-epic --add-story` and `--story N --done`."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-21T06:42:07.249Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-20T19:49:21-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:49:11.733Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:49:11.738Z"
+      "createdAt": "2026-07-20T19:49:21-07:00"
     },
     {
       "id": "conductor-mjs-module-split",
@@ -1764,18 +1458,12 @@
       "startedAt": "2026-07-26T21:23:54.593Z",
       "completedAt": "2026-07-28T01:32:40.590Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:49:16.573Z",
-        "reason": "`8de2833` (#67) shipped the EDD harness under evals/ as the semantic parity gate."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-28T01:32:40.590Z",
+        "recordedBy": "migration"
       },
       "specPath": "docs/superpowers/specs/2026-07-25-edd-harness-agent-behavior-testing-design.md",
-      "createdAt": "2026-07-23T18:07:21-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:49:16.515Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:49:16.575Z"
+      "createdAt": "2026-07-23T18:07:21-07:00"
     },
     {
       "id": "rules-block-hardcodes-claude-slash-commands",
@@ -1790,17 +1478,11 @@
       "startedAt": "2026-07-29T02:28:12.027Z",
       "completedAt": "2026-07-30T05:54:27.332Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:49:20.983Z",
-        "reason": "0.24.0 `7be1c4f` shipped the platform-aware rules block; the `rules-target` verb exists today."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-30T05:54:27.332Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-28T19:25:39-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:49:20.980Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:49:20.989Z"
+      "createdAt": "2026-07-28T19:25:39-07:00"
     },
     {
       "id": "platform-parity-mechanism",
@@ -1915,17 +1597,11 @@
       ],
       "completedAt": "2026-07-30T21:21:55.677Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:49:26.862Z",
-        "reason": "`d93ea84`, 0.25.0 (#76) closes the second platform seam in observe.py."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-30T21:21:55.677Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-28T19:25:39-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:49:26.860Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:49:26.867Z"
+      "createdAt": "2026-07-28T19:25:39-07:00"
     },
     {
       "id": "edd-user-memory-confound-control-run",
@@ -1979,17 +1655,11 @@
       "startedAt": "2026-07-30T21:50:06.581Z",
       "completedAt": "2026-07-30T23:20:07.828Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:49:32.249Z",
-        "reason": "`687b518` (#77) isolates eval runs from operator memory and proves the isolation positively."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-30T23:20:07.828Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-28T19:25:39-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:49:32.248Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:49:32.251Z"
+      "createdAt": "2026-07-28T19:25:39-07:00"
     },
     {
       "id": "edd-measures-installed-plugin-not-worktree",
@@ -2009,17 +1679,11 @@
       "startedAt": "2026-08-06T19:36:16.808Z",
       "completedAt": "2026-08-17T06:15:57.388Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:49:37.753Z",
-        "reason": "`b49f9e7` (#96) measures the worktree, not the installed plugin, and records which tree was measured."
+        "outcome": "unknown",
+        "recordedAt": "2026-08-17T06:15:57.388Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-28T19:25:39-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:49:37.749Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:49:37.758Z"
+      "createdAt": "2026-07-28T19:25:39-07:00"
     },
     {
       "id": "edd-adapter-discards-agent-stdout",
@@ -2195,17 +1859,11 @@
       "startedAt": "2026-07-30T02:48:10.981Z",
       "completedAt": "2026-07-30T22:52:14.536Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:49:43.635Z",
-        "reason": "0.24.0 `7be1c4f` names the auto-detour fix for #65/#68 (success check + repo-scope check)."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-30T22:52:14.536Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-30T12:31:30-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:49:43.633Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:49:43.640Z"
+      "createdAt": "2026-07-30T12:31:30-07:00"
     },
     {
       "id": "gh-66-update-epic-missing-flags",
@@ -2280,17 +1938,11 @@
       "externalUrl": "https://github.com/cfdude/pm/issues/70",
       "completedAt": "2026-08-18T15:32:31.121Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:49:49.282Z",
-        "reason": "Issue #70 closed COMPLETED; the fix shipped a month earlier in 0.9.3 (`978ddd4`) — duplicate of pm-fix-link-flag-validation-and-update."
+        "outcome": "unknown",
+        "recordedAt": "2026-08-18T15:32:31.121Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-30T12:31:30-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:49:49.280Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:49:49.287Z"
+      "createdAt": "2026-07-30T12:31:30-07:00"
     },
     {
       "id": "test-suite-perf-and-scaffolding",
@@ -2304,7 +1956,7 @@
       "stories": [
         {
           "title": "MEASURED: 73ms per engine spawn x 676 run() call sites = ~49s of pure node startup, in ONE file, on 16 cores. node parallelizes across FILES only (proven: 4 files x 3s = 3.3s wall).",
-          "done": true
+          "done": false
         },
         {
           "title": "split conductor.test.mjs (3202 lines, 255 tests) into ~8-10 files along the 29 existing section markers; the 8 exported helpers already exist and nothing imports them -- the file was built to be split",
@@ -2328,35 +1980,29 @@
         },
         {
           "title": "MEASURED RESULT: 118s serial -> ~46s parallel (2.6x) across 11 files. 18 files was WORSE (46s) than 11 -- runner startup overhead. Floor is the slowest file (21s); the 46-21 gap is tmpdir/spawn contention, not concurrency (--test-concurrency=16 changed nothing).",
-          "done": true
+          "done": false
         },
         {
           "title": "GLOB LANDMINE: node --test scripts/test (a DIRECTORY) does not work on Node 26 -- it treats the arg as a module, dies MODULE_NOT_FOUND, reports '1 test'. Only the shell glob works. Documented in the hook so nobody 'simplifies' it.",
-          "done": true
+          "done": false
         },
         {
           "title": "MUTATION-TESTED the guard tests: disabling the guard initially left 4 of 5 still PASSING, because gitRepo()'s baseline commit touches 4 files and looksLikeUnloggedMinimalDetour rejects >3 -- they were passing on the file-count rule, not the guard. Fixed; now 4/5 fail on mutation and the 5th is the positive control that should pass either way.",
-          "done": true
+          "done": false
         },
         {
           "title": "AUDIT RESULT: projectMd/claudeMd THROW on a missing file so they cannot be vacuous. detourLog returns '' -- 4 pre-existing bare assertions in conductor-08 hardened via nudgeAndReadLog(). REMAINING (low): 3 doesNotMatch(parseBrief(...)) can be vacuous since parseBrief returns '' on empty brief output.",
-          "done": true
+          "done": false
         }
       ],
       "startedAt": "2026-07-30T04:28:32.303Z",
       "completedAt": "2026-07-30T05:02:31.485Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:51:49.232Z",
-        "reason": "Shipped in 0.24.0 (7be1c4f), which names the split and faster suite for #72. The five stories that read unticked are COMPLETION NOTES miscast as stories — they open 'MEASURED:', 'MEASURED RESULT:', 'GLOB LANDMINE:', 'MUTATION-TESTED', 'AUDIT RESULT:' and record findings the work produced, not work outstanding. That is the exact shape the 0.27.0 audit named when it found four epics archived with 'incomplete' stories that were actually completion notes, and the reason --description exists. One genuine remainder is stated inside story 10 and is low: three doesNotMatch(parseBrief(...)) assertions can still pass vacuously."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-30T05:02:31.485Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-07-30T12:31:30-07:00",
-      "touchedAt": "2026-09-10T02:51:49.233Z",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:51:49.231Z",
-        "deferrals": [],
-        "declined": []
-      }
+      "createdAt": "2026-07-30T12:31:30-07:00"
     },
     {
       "id": "2026-07-21-conductor-mjs-module-split",
@@ -2370,18 +2016,12 @@
       "reconcileNeeded": false,
       "completedAt": "2026-07-30T04:00:55.770Z",
       "disposition": {
-        "outcome": "superseded",
-        "recordedAt": "2026-09-10T02:49:55.133Z",
-        "reason": "Plan-file epic sync-registered 2026-07-30 after the work shipped in `2f61c59` (#57); superseded by epic conductor-mjs-module-split."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-30T04:00:55.770Z",
+        "recordedBy": "migration"
       },
       "specPath": "docs/superpowers/specs/2026-07-21-conductor-mjs-module-split-design.md",
-      "createdAt": "2026-07-30T12:31:30-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:49:55.131Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:49:55.138Z"
+      "createdAt": "2026-07-30T12:31:30-07:00"
     },
     {
       "id": "2026-07-26-edd-harness-agent-behavior-testing",
@@ -2395,18 +2035,12 @@
       "reconcileNeeded": false,
       "completedAt": "2026-07-30T04:00:55.969Z",
       "disposition": {
-        "outcome": "superseded",
-        "recordedAt": "2026-09-10T02:49:59.714Z",
-        "reason": "Plan-file epic sync-registered; superseded by edd-harness-agent-behavior-testing, which shipped as `8de2833` (#67)."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-30T04:00:55.969Z",
+        "recordedBy": "migration"
       },
       "specPath": "docs/superpowers/specs/2026-07-25-edd-harness-agent-behavior-testing-design.md",
-      "createdAt": "2026-07-30T12:31:30-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:49:59.713Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:49:59.718Z"
+      "createdAt": "2026-07-30T12:31:30-07:00"
     },
     {
       "id": "2026-07-29-platform-aware-rules-block",
@@ -2420,18 +2054,12 @@
       "reconcileNeeded": false,
       "completedAt": "2026-07-30T04:00:56.179Z",
       "disposition": {
-        "outcome": "superseded",
-        "recordedAt": "2026-09-10T02:50:02.408Z",
-        "reason": "Plan-file epic; superseded by rules-block-hardcodes-claude-slash-commands, which shipped in 0.24.0 (`7be1c4f`)."
+        "outcome": "unknown",
+        "recordedAt": "2026-07-30T04:00:56.179Z",
+        "recordedBy": "migration"
       },
       "specPath": "docs/superpowers/specs/2026-07-29-platform-aware-rules-block-design.md",
-      "createdAt": "2026-07-30T12:31:30-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:50:02.407Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:50:02.410Z"
+      "createdAt": "2026-07-30T12:31:30-07:00"
     },
     {
       "id": "platform-switch-orphans-old-rules-block",
@@ -2605,17 +2233,11 @@
       "startedAt": "2026-08-17T23:29:29.142Z",
       "completedAt": "2026-08-20T17:43:40.832Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:50:04.652Z",
-        "reason": "`152587b`, 0.26.0 (#108) guards state.json against silent lost updates."
+        "outcome": "unknown",
+        "recordedAt": "2026-08-20T17:43:40.832Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-08-16T23:06:53-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:50:04.652Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:50:04.654Z"
+      "createdAt": "2026-08-16T23:06:53-07:00"
     },
     {
       "id": "epic-session-attribution",
@@ -2868,17 +2490,11 @@
       "externalUrl": "https://github.com/cfdude/pm/issues/86",
       "completedAt": "2026-08-17T06:23:41.462Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:50:06.845Z",
-        "reason": "`1113924`, 0.25.1 (#97) warns on a missing progress source instead of rendering a silent 0/0."
+        "outcome": "unknown",
+        "recordedAt": "2026-08-17T06:23:41.462Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-08-16T23:06:53-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:50:06.844Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:50:06.847Z"
+      "createdAt": "2026-08-16T23:06:53-07:00"
     },
     {
       "id": "edd-run-policy-when-behavior-artifacts-change",
@@ -2991,17 +2607,11 @@
       "externalUrl": "https://github.com/cfdude/pm/issues/87",
       "completedAt": "2026-08-17T06:23:41.521Z",
       "disposition": {
-        "outcome": "delivered",
-        "recordedAt": "2026-09-10T02:50:08.948Z",
-        "reason": "`1113924`, 0.25.1 (#97) stops registering plans/README.md as an epic."
+        "outcome": "unknown",
+        "recordedAt": "2026-08-17T06:23:41.521Z",
+        "recordedBy": "migration"
       },
-      "createdAt": "2026-08-16T23:22:35-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:50:08.947Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:50:08.950Z"
+      "createdAt": "2026-08-16T23:22:35-07:00"
     },
     {
       "id": "gh-88-record-where-unfinished-tasks-went",
@@ -3302,19 +2912,12 @@
       "links": [],
       "reconcileNeeded": false,
       "disposition": {
-        "outcome": "superseded",
-        "recordedAt": "2026-09-10T02:50:11.029Z",
-        "reason": "Tombstone by its own title; shipped as platform-parity-mechanism, PR #78 (`10bbef1`)."
+        "outcome": "unknown",
+        "recordedAt": "2026-08-26T22:39:16.528Z",
+        "recordedBy": "migration"
       },
       "specPath": "docs/superpowers/specs/2026-07-31-platform-parity-mechanism-design.md",
-      "createdAt": "2026-08-20T14:29:22-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:50:11.027Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "completedAt": "2026-09-10T02:50:11.030Z",
-      "touchedAt": "2026-09-10T02:50:11.031Z"
+      "createdAt": "2026-08-20T14:29:22-07:00"
     },
     {
       "id": "2026-08-14-eval-measures-worktree",
@@ -3326,19 +2929,12 @@
       "links": [],
       "reconcileNeeded": false,
       "disposition": {
-        "outcome": "superseded",
-        "recordedAt": "2026-09-10T02:50:13.056Z",
-        "reason": "Tombstone; shipped as edd-measures-installed-plugin-not-worktree, PR #96 (`b49f9e7`)."
+        "outcome": "unknown",
+        "recordedAt": "2026-08-26T22:39:16.528Z",
+        "recordedBy": "migration"
       },
       "specPath": "docs/superpowers/specs/2026-08-07-eval-measures-worktree-design.md",
-      "createdAt": "2026-08-20T14:29:22-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:50:13.055Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "completedAt": "2026-09-10T02:50:13.056Z",
-      "touchedAt": "2026-09-10T02:50:13.058Z"
+      "createdAt": "2026-08-20T14:29:22-07:00"
     },
     {
       "id": "gh-104-commit-nudge-fires-on-text-match",
@@ -4273,18 +3869,12 @@
       "reconcileNeeded": false,
       "completedAt": "2026-08-24T01:40:39.820Z",
       "disposition": {
-        "outcome": "superseded",
-        "recordedAt": "2026-09-10T02:50:15.043Z",
-        "reason": "Tombstone; shipped in 0.26.0 as state-lost-update-concurrent-sessions (`152587b`)."
+        "outcome": "unknown",
+        "recordedAt": "2026-08-24T01:40:39.820Z",
+        "recordedBy": "migration"
       },
       "specPath": "docs/superpowers/specs/2026-08-18-state-write-conflict-guard-design.md",
-      "createdAt": "2026-08-25T16:36:38-07:00",
-      "deferralAssertion": {
-        "assertedAt": "2026-09-10T02:50:15.042Z",
-        "deferrals": [],
-        "declined": []
-      },
-      "touchedAt": "2026-09-10T02:50:15.045Z"
+      "createdAt": "2026-08-25T16:36:38-07:00"
     },
     {
       "id": "gh-130-disposition-has-no-correction-verb",
@@ -6015,11 +5605,9 @@
       "externalId": "180",
       "externalUrl": "https://github.com/cfdude/pm/issues/180",
       "externalUpdatedAt": "2026-09-09T00:00:48Z",
-      "attributedCommits": [
-        "f20003a"
-      ],
+      "attributedCommits": [],
       "createdAt": "2026-09-09T00:19:31.693Z",
-      "touchedAt": "2026-09-10T02:38:42.600Z",
+      "touchedAt": "2026-09-10T01:21:46.549Z",
       "notes": [
         {
           "at": "2026-09-09T00:20:12.222Z",
@@ -6100,11 +5688,9 @@
       "externalId": "182",
       "externalUrl": "https://github.com/cfdude/pm/issues/182",
       "externalUpdatedAt": "2026-09-09T00:21:40Z",
-      "attributedCommits": [
-        "c80a948"
-      ],
+      "attributedCommits": [],
       "createdAt": "2026-09-09T00:21:49.671Z",
-      "touchedAt": "2026-09-10T02:47:02.050Z",
+      "touchedAt": "2026-09-10T01:21:51.007Z",
       "notes": [
         {
           "at": "2026-09-09T00:21:57.414Z",
@@ -6124,11 +5710,9 @@
       "links": [],
       "reconcileNeeded": false,
       "description": "Cosmetic per session, but multiplied by every user and every session. Found from a screenshot of the session-start banner after the 0.40.0 fleet upgrade — no test, no gate and no reviewer could have seen it, because the harness prints it and nothing in the repo reads the harness's output.",
-      "attributedCommits": [
-        "2078614"
-      ],
+      "attributedCommits": [],
       "createdAt": "2026-09-10T01:21:22.155Z",
-      "touchedAt": "2026-09-10T01:39:59.485Z",
+      "touchedAt": "2026-09-10T01:21:37.482Z",
       "release": "0.41.0",
       "notes": [
         {
@@ -6137,57 +5721,6 @@
           "text": "lane: claude-code not <none — suggest-lane returns null> — the intake tie-break resolves an UNRESOLVED routing question away from claude-code, but this one is not unresolved: single file, no design ambiguity, no shared behaviour, done in under an hour with its guard test. That is the case claude-code exists for. The record it would otherwise lose is preserved by this epic plus hooks/README.md plus scripts/test/hooks-schema.test.mjs."
         }
       ]
-    },
-    {
-      "id": "gh-cfdude-pm-185",
-      "title": "Two more tests read the live record and break during every release closeout — the siblings #180 did not cover",
-      "priority": "P1",
-      "status": "untriaged",
-      "role": "epic",
-      "lane": "superpowers",
-      "links": [],
-      "reconcileNeeded": false,
-      "externalId": "185",
-      "externalUrl": "https://github.com/cfdude/pm/issues/185",
-      "externalUpdatedAt": "2026-09-10T02:10:58Z",
-      "attributedCommits": [],
-      "createdAt": "2026-09-10T02:55:15.265Z",
-      "touchedAt": "2026-09-10T02:55:17.396Z",
-      "release": "0.41.0"
-    },
-    {
-      "id": "gh-cfdude-pm-186",
-      "title": "/pm:triage still refuses an ask beginning with two dashes, so intake step 1 fails on the titles add-epic now accepts",
-      "priority": "P2",
-      "status": "untriaged",
-      "role": "epic",
-      "lane": "superpowers",
-      "links": [],
-      "reconcileNeeded": false,
-      "externalId": "186",
-      "externalUrl": "https://github.com/cfdude/pm/issues/186",
-      "externalUpdatedAt": "2026-09-10T02:24:27Z",
-      "attributedCommits": [],
-      "createdAt": "2026-09-10T02:55:19.755Z",
-      "touchedAt": "2026-09-10T02:55:21.633Z",
-      "release": "0.41.0"
-    },
-    {
-      "id": "gh-cfdude-pm-187",
-      "title": "A bare --help anywhere in argv short-circuits and exits 0, so a command carrying it as a value silently writes nothing",
-      "priority": "P3",
-      "status": "untriaged",
-      "role": "epic",
-      "lane": "superpowers",
-      "links": [],
-      "reconcileNeeded": false,
-      "externalId": "187",
-      "externalUrl": "https://github.com/cfdude/pm/issues/187",
-      "externalUpdatedAt": "2026-09-10T02:24:28Z",
-      "attributedCommits": [],
-      "createdAt": "2026-09-10T02:55:23.922Z",
-      "touchedAt": "2026-09-10T02:55:25.805Z",
-      "release": "0.41.0"
     }
   ],
   "detourStack": [],
@@ -6198,7 +5731,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 563,
+  "revision": 476,
   "reviewMode": "thorough",
   "releases": [
     {

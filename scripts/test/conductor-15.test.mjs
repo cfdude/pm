@@ -204,49 +204,64 @@ test("7.2: the rules block after the upgrade is identical to the one emitted bef
 // record that a review actually happened — and `unknown` everywhere else, which is not a hedge
 // but the true statement: nobody recorded a disposition.
 
-/** This repository's own state.json, copied into a throwaway repo so the migration can be run
- *  against LIVE data without touching the record. Reading the live file is the point: a
- *  migration verified only against hand-built fixtures is verified against the implementer's
- *  own assumptions about the shapes that exist. */
 const REPO = new URL("../..", import.meta.url).pathname;
 /** The release before the one whose migration this test exercises. */
 const PRE_MIGRATION_VERSION = "0.26.0";
-/** The live record with the migration's OWN stamps peeled back off — the pre-migration shape,
- *  reconstructed rather than invented.
+
+/** A FROZEN copy of this repository's own `.conductor/state.json`, taken at the commit before the
+ *  2026-09-09 disposition walk. It is real data — every shape in it was written by this engine
+ *  against this repository — and it is checked in precisely so that it stops moving.
  *
- *  Copying live state verbatim worked exactly once. The moment `/pm:upgrade` ran on this
- *  repository the migration stamped all 69 unstamped archived epics, the population this test
- *  needs fell to zero, and the test began asserting "this measures nothing" — permanently, since
- *  no later run can un-stamp them. A live-data fixture whose precondition the operation under
- *  test destroys is a test with a single-use fuse.
+ *  WHY IT IS FROZEN. This helper used to read the LIVE record and peel the migration's stamps
+ *  back off. That reconstruction only works while the stamps are still there, and the product's
+ *  explicit goal is to remove them: `unconsidered-outcomes` exists to drive the engine-stamped
+ *  `unknown` count to zero. On 2026-09-09 an evidence-based walk replaced all 66 of this
+ *  repository's `recordedBy: "migration"` dispositions with agent-recorded ones (which correctly
+ *  carry no `recordedBy`), the peel found nothing, and this test's population went permanently
+ *  empty. A fixture reconstructed by UNDOING something somebody is trying to fix for real dies
+ *  the moment they succeed — see docs/lessons/
+ *  a-fixture-reconstructed-from-live-data-dies-when-the-data-improves.md.
+ *
+ *  WHEN IT WOULD BE LEGITIMATE TO REFRESH IT. Only when the fixture stops exercising the SHAPES
+ *  the migration must handle — a new epic field the migration reads, a new lane, a new
+ *  disposition shape. Refreshing it to "make it current" is not a reason: the 0.27.0 migration is
+ *  a fixed historical operation against a fixed historical record, and a newer copy of live state
+ *  is a WORSE fixture for it, not a better one, because every disposition recorded since is one
+ *  more epic the migration is correctly forbidden to touch. A refresh must keep an unstamped
+ *  population — assert it, as the test below does, rather than assume it. */
+const PRE_WALK_STATE = path.join(FIXTURES, "state-pre-disposition-walk.json");
+
+/** The frozen record with the migration's OWN stamps peeled back off — the pre-migration shape,
+ *  reconstructed rather than invented.
  *
  *  Removing only `recordedBy: "migration"` dispositions is faithful, not a fabrication: that
  *  field exists precisely so a later rule can tell an engine-written stamp from a recorded
  *  judgment. Agent-recorded dispositions are left in place, so the other half of what this test
  *  asserts — that the migration never overwrites one — keeps a real population too. */
-function repoFromLiveState() {
+function repoFromFrozenPreMigrationRecord() {
   const cwd = tmpRepo();
   fs.mkdirSync(path.join(cwd, ".conductor"), { recursive: true });
-  const live = JSON.parse(fs.readFileSync(path.join(REPO, ".conductor", "state.json"), "utf8"));
-  for (const e of live.epics) {
+  const frozen = JSON.parse(fs.readFileSync(PRE_WALK_STATE, "utf8"));
+  for (const e of frozen.epics) {
     if (e.disposition && e.disposition.recordedBy === "migration") delete e.disposition;
   }
   // The version stamp is half the reconstruction. MIGRATIONS are keyed to the release that
-  // introduced them and run once; with `pmVersion` already at 0.27.0 the migration is correctly
+  // introduced them and run once; with `pmVersion` already past 0.27.0 the migration is correctly
   // a no-op and nothing would be stamped no matter how many dispositions were peeled off.
-  live.pmVersion = PRE_MIGRATION_VERSION;
-  fs.writeFileSync(path.join(cwd, ".conductor", "state.json"), JSON.stringify(live, null, 2));
+  frozen.pmVersion = PRE_MIGRATION_VERSION;
+  fs.writeFileSync(path.join(cwd, ".conductor", "state.json"), JSON.stringify(frozen, null, 2));
   return cwd;
 }
 const passingGate2 = (e) => !!(e.gateReview && e.gateReview.gate2 && e.gateReview.gate2.verdict === "pass");
 
-test("7.3: on live data every archived epic ends with an outcome, and `delivered` is exactly the passing-Gate-2 set", () => {
-  const cwd = repoFromLiveState();
+test("7.3: on real data every archived epic ends with an outcome, and `delivered` is exactly the passing-Gate-2 set", () => {
+  const cwd = repoFromFrozenPreMigrationRecord();
   const before = readState(cwd);
   const archivedBefore = before.epics.filter(e => e.status === "archived");
   // Asserted RELATIVELY: the populations are read from the data, never transcribed. Measured
-  // 2026-08-23 as 69 archived of which 3 carry a passing Gate 2 — quoted as a dated snapshot
-  // and asserted nowhere, because both numbers move with every release.
+  // 2026-08-23 as 69 archived of which 3 carry a passing Gate 2, and 2026-09-09 against the
+  // frozen fixture as 150 of which 10 — quoted as dated snapshots and asserted nowhere, because
+  // both numbers moved between those two readings and would move again on any refresh.
   assert.ok(archivedBefore.length > 0, "the live record must hold archived epics for this to measure anything");
   // PARTITIONED, never asserted at zero. "No live epic carries a disposition" was true when this
   // was written and stopped being true the moment this release archived ITSELF with an
@@ -759,7 +774,7 @@ test("9.1: every check is reported with its count, including the ones that found
   assert.match(out, /0 finding\(s\) across \d+ check\(s\)/);
 });
 
-// ───────────── 9.5: the zero-ticked check, against live data ─────────────
+// ───── 9.5: the zero-ticked check — its day-one evidence, frozen, and its live behaviour ─────
 //
 // This file's own process has ROOT pointed at this repository (helpers.mjs sets
 // CLAUDE_PROJECT_DIR only in the CHILD env, and nothing here mutates the parent), so importing
@@ -795,10 +810,26 @@ const findingsFor = (id, state) => {
   return c.findings;
 };
 
-test("9.5: on live data the zero-ticked check reports exactly the five identified epics", () => {
+/** The frozen pre-walk record read as plain data — the same fixture 7.3 reconstructs from, here
+ *  used unmodified. The STATE is frozen; the task sources the check reads are this repository's
+ *  real files on disk, which is deliberate: the finding is a relation between the two. */
+const preWalkState = () => JSON.parse(fs.readFileSync(PRE_WALK_STATE, "utf8"));
+
+/** The outcomes that EXPLAIN why an archived epic's tasks were never ticked, and so scope it out
+ *  of every completion-shaped check. Restated here rather than imported because this test's job
+ *  is to assert what the RECORD says, independently of the predicate the check happens to use —
+ *  importing `inCompletionScope` would make the assertion below a restatement of the check. */
+const EXPLAINED = new Set(["killed", "superseded", "abandoned", "declined", "unreconstructable"]);
+
+// This is a DAY-ONE EVIDENCE claim, not a claim about today: it is the measurement that justified
+// registering the zero-ticked check at all, so it is asserted against the frozen record that
+// measurement was taken from. On the LIVE record all five have since been dispositioned and the
+// check correctly reports none of them — which the sibling test below is what asserts.
+test("9.5: on the frozen pre-walk record the zero-ticked check reports exactly the five identified epics", () => {
   assert.equal(process.env.CLAUDE_PROJECT_DIR || process.cwd(), REPO.replace(/\/$/, ""),
-    "the live checks must evaluate against THIS repository, or they measure a temp directory");
-  const reported = findingsFor("archived-with-zero-ticked-tasks", liveState()).map(f => f.epic).sort();
+    "these checks must resolve task sources against THIS repository, or they measure a temp directory");
+  const state = preWalkState();
+  const reported = findingsFor("archived-with-zero-ticked-tasks", state).map(f => f.epic).sort();
   // The SET, not a count. Measured 2026-08-23 at 0/17, 0/99, 0/37, 0/34 and 0/39 respectively.
   // These five are stable only because none of the plan files under docs/superpowers/plans/
   // carries a `<!-- pm:lifecycle -->` declaration today; a marker added later moves a count and
@@ -810,14 +841,45 @@ test("9.5: on live data the zero-ticked check reports exactly the five identifie
     "2026-07-29-platform-aware-rules-block",
     "2026-08-18-state-write-conflict-guard",
   ].sort());
-  // Two of the five are NOT date-prefixed duplicates of an un-prefixed sibling, so this check
-  // has live candidates that are not artifacts of the dual-lane finding.
+  // Two of the five are NOT date-prefixed duplicates of an un-prefixed sibling, so this check had
+  // candidates that are not artifacts of the dual-lane finding. The sibling set is read from the
+  // SAME frozen record — mixing a frozen finding set against a live id set would silently change
+  // what "not a collision" means.
   const strip = (id) => id.replace(/^\d{4}-\d{2}-\d{2}-/, "");
-  const others = new Set(liveState().epics.map(e => e.id));
+  const others = new Set(state.epics.map(e => e.id));
   const notCollisions = reported.filter(id => !others.has(strip(id)));
   assert.deepEqual(notCollisions.sort(),
     ["2026-07-29-platform-aware-rules-block", "2026-08-18-state-write-conflict-guard"],
     "a check whose every finding is another check's finding measures nothing of its own");
+});
+
+// The LIVE arm, stated DIFFERENTIALLY so it neither transcribes a population nor goes vacuous
+// when the population empties. Naming the live finding set is what rotted the previous version of
+// this test (docs/lessons/hardcoded-live-data-claims-rot.md); asserting "the live set is empty"
+// would rot the same way from the other side, and asserting a property of each live finding says
+// nothing at all while there are none. What survives both is the RELATION: an epic may leave this
+// check's population only by acquiring a recorded explanation, never by the check going quiet.
+test("9.5: every epic the zero-ticked check has since dropped left because the record now explains it", () => {
+  const wasReported = findingsFor("archived-with-zero-ticked-tasks", preWalkState()).map(f => f.epic);
+  assert.ok(wasReported.length > 0,
+    "the frozen record must still yield findings, or this comparison measures nothing");
+  const live = liveState();
+  const stillReported = new Set(findingsFor("archived-with-zero-ticked-tasks", live).map(f => f.epic));
+  const byId = new Map(live.epics.map(e => [e.id, e]));
+  const dropped = wasReported.filter(id => !stillReported.has(id));
+  for (const id of dropped) {
+    const e = byId.get(id);
+    assert.ok(e, `${id}: a finding that vanished because its epic was DELETED is the record losing ` +
+      "the projected work, not the record explaining it");
+    const d = e.disposition || {};
+    assert.ok(EXPLAINED.has(d.outcome),
+      `${id}: dropped from the check while its recorded outcome is ${d.outcome || "absent"} — only an ` +
+      "outcome that explains why the work did not complete may scope an epic out of a completion check");
+    assert.ok(d.reason && d.reason.trim().length > 0,
+      `${id}: an explained outcome with no reason explains nothing`);
+    assert.notEqual(d.recordedBy, "migration",
+      `${id}: an engine stamp is what "nobody was asked" looks like — it cannot discharge a finding`);
+  }
 });
 
 test("9.5: the check is gated on total > 0, so an archived epic with no source is not a finding", () => {
@@ -868,8 +930,15 @@ test("9.2: a killed 47-task epic with everything unticked is not a finding; an u
     "`unknown` is not an explanation of why the work did not complete, so it stays in scope");
 });
 
-test("9.2: scoping to `delivered` would empty the candidate set on this repository", () => {
-  const state = liveState();
+// The evidence `inCompletionScope`'s design cites, asserted against the record it was measured
+// on. This is an argument about a HISTORICAL state, not a live invariant: it says a
+// `delivered`-only scope WOULD HAVE BEEN inert on the repository whose data the rule cites. It
+// cannot be restated live and stay honest — on today's record the zero-ticked check has no
+// findings at all (every candidate has since been dispositioned `superseded`), so a live version
+// would compare two empty sets and pass while proving nothing. Freezing it keeps the rule's stated
+// evidence checkable; the rule itself is defended live by 9.2's constructed-data sibling above.
+test("9.2: scoping to `delivered` would have emptied the candidate set on the record this rule cites", () => {
+  const state = preWalkState();
   const archived = state.epics.filter(e => e.status === "archived");
   // After the migration, `delivered` is exactly the archived epics carrying a passing Gate 2.
   const deliverable = archived.filter(e => e.gateReview && e.gateReview.gate2 && e.gateReview.gate2.verdict === "pass");
@@ -878,8 +947,8 @@ test("9.2: scoping to `delivered` would empty the candidate set on this reposito
   const ids = new Set(deliverable.map(e => e.id));
   const outside = findingsFor("archived-with-zero-ticked-tasks", state).filter(f => !ids.has(f.epic));
   assert.ok(outside.length > 0,
-    "the checks have candidates outside the delivered set — a `delivered`-only scope makes " +
-    "every completion-shaped check below inert on the repository whose data this rule cites");
+    "the checks had candidates outside the delivered set — a `delivered`-only scope would have " +
+    "made every completion-shaped check below inert on the repository whose data this rule cites");
 });
 
 // ───────────── 9.6: one change registered under two lanes ─────────────
@@ -1369,9 +1438,27 @@ test("9.14: the recorded day-one set names every check and explains every live f
         "no explanation is the counting-alone failure this task exists to end");
     }
   }
-  assert.match(doc, new RegExp(`\\*\\*${report.length} checks?, ` +
-    `${report.reduce((n, c) => n + c.findings.length, 0)} findings?\\.\\*\\*`),
-    "the totals in the record must be the totals the command actually produced");
+  // THE TOTALS ARM IS DELIBERATELY GONE — gh-185. It asserted the document's literal
+  // `**16 checks, 11 findings.**` against `runIntegrity(liveState())`, which made a claim about a
+  // frozen historical document depend on a moving record: any genuine new finding anywhere in the
+  // repository — the thing `integrity` exists to surface — turned the suite red, and the remedy
+  // then LOOKED like editing an archived historical document to make a test pass, which is the
+  // opposite of what an archive is for. It went red for real when the 2026-09-09 disposition walk
+  // dropped the live findings from 11 to 6 by making the record BETTER.
+  //
+  // Re-homing it to the frozen `state-pre-disposition-walk.json` fixture was tried and rejected:
+  // it does not decouple. `runIntegrity` resolves several checks against this repository's real
+  // DISK, not only against the state it is handed — `archive-directory-has-no-epic` enumerates
+  // `openspec/changes/archive/`, and the zero-ticked check reads task sources. So the next change
+  // this repository archives adds a directory the frozen state holds no epic for, the frozen
+  // totals move anyway, and #185's complaint returns through the disk instead of the state.
+  //
+  // What survives is the arm that was always the valuable one, and it stays LIVE: the loop above
+  // asserts that every check is NAMED in the document and every live finding is EXPLAINED in it.
+  // That is the document's own stated purpose — "a check added later that nobody wrote down here
+  // is a check whose result nobody wrote down at all" — and unlike a total it cannot be satisfied
+  // by arithmetic. The document's totals are prose it maintains under its own re-measurement
+  // practice; nothing here asserts them.
 });
 
 // ───────── dangling epic references — the class, not the one instance reported ─────────
