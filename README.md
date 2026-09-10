@@ -205,10 +205,10 @@ Codex, which cannot read `CLAUDE.md` at all).
 | Platform | Status | Notes |
 |----------|--------|-------|
 | Claude Code | ✅ Supported | The only platform PM actually *runs* on today — plugin commands, hooks, and skills all target it directly. |
-| Hermes | 🗺️ Rules block only | pm renders a correctly-targeted, correctly-worded rules block (`--platform hermes`) but ships no Hermes commands/hooks yet. Tracked under `multi-platform-agent-support`. |
-| Codex | 🗺️ Rules block only | Same — `--platform codex` writes `AGENTS.md` with the flat `/pm-status` command form, but no Codex prompt files ship yet. Tracked under `multi-platform-agent-support`. |
-| Gemini CLI | 🗺️ Planned | Tracked under `multi-platform-agent-support`. |
-| Grok Build (xAI) | 🗺️ Planned | Tracked under `multi-platform-agent-support`. |
+| Hermes | 🗺️ Rules block only | pm renders a correctly-targeted, correctly-worded rules block (`--platform hermes`) but ships no Hermes commands/hooks yet. Tracked under `hermes-platform-support`. |
+| Codex | 🗺️ Rules block only | Same — `--platform codex` writes `AGENTS.md` with the flat `/pm-status` command form, but no Codex prompt files ship yet. Tracked under `codex-platform-support`, which follows `hermes-platform-support`. |
+| Gemini CLI | 🗺️ Planned | Not yet scoped — tracked under `remaining-platform-investigation`, which decides what each remaining platform actually needs. |
+| Grok Build (xAI) | 🗺️ Planned | Not yet scoped — tracked under `remaining-platform-investigation`. |
 | `AGENTS.md`-based platforms (generic) | 🗺️ Planned | Most non-Claude-Code tools use `AGENTS.md` instead of `CLAUDE.md` for project instructions — supporting that format is the shared unlock for all of the above. |
 
 ## External Trackers
