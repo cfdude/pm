@@ -43,7 +43,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
-import { CLAIM_DEFAULT_TTL_MINUTES, REPO_CLAIM_DEFAULT_TTL_MINUTES } from "./constants.mjs";
+import { CLAIM_DEFAULT_TTL_MINUTES, REPO_CLAIM_DEFAULT_TTL_MINUTES, isFlagToken, splitFlagToken } from "./constants.mjs";
 import { parseFlags, requireFlagValues, requireKnownFlags } from "./add-epic.mjs";
 import { resolveSession, SESSION_HINT } from "./session-identity.mjs";
 import { claimExpiry, isLiveClaim } from "./claim-shape.mjs";
@@ -257,7 +257,11 @@ export function positionalArgs(argv) {
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a.startsWith("--")) {
-      if (argv[i + 1] !== undefined && !argv[i + 1].startsWith("--")) i++;
+      // gh#182: mirrors parseFlags through the SAME two helpers, not through a second copy of
+      // its logic. Both halves matter here — `--session=s` is self-contained and must NOT eat
+      // the next token, and `--session "--weird name"` must eat one that starts with `--`.
+      const [, inline] = splitFlagToken(a);
+      if (inline === undefined && argv[i + 1] !== undefined && !isFlagToken(argv[i + 1])) i++;
       continue;
     }
     out.push(a);

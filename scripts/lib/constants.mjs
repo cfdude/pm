@@ -707,6 +707,47 @@ export const ACTIVITY_SEGMENT_MAX_BYTES = 131_072;
 // is a few megabytes in total.
 export const ACTIVITY_RETENTION_MAX_BYTES = 1_073_741_824;
 
+/** gh#182 — THE ONE ANSWER to "is this argv token a flag, or a value that merely starts with
+ *  `--`?", shared by every scanner that walks argv: parseFlags() and requireKnownFlags() in
+ *  add-epic.mjs, positionalArgs() in claims.mjs, platformFlag() in platform.mjs. It lives HERE
+ *  because platform.mjs is deliberately a LEAF (see its own comment: importing add-epic.mjs
+ *  would close a circular loop around the rules writer) and constants.mjs is the one module all
+ *  four already depend on. Four copies of this rule is exactly how the reported bug survived at
+ *  one scanner after being fixed at another.
+ *
+ *  THE REPORTED FAILURE. `add-epic --title "--story <n> is 1-indexed but --help says only '<a
+ *  value>'"` died with `unknown flag(s) --story <n> is …` — the parser took a VALUE for a flag
+ *  NAME, the message pointed at the wrong thing, /pm:sync carried on, and the item was silently
+ *  absent from the backlog. Issue titles beginning with a flag name are routine, and this
+ *  repository's own CLAUDE.md specifies that add-epic line to be run verbatim.
+ *
+ *  WHY SHAPE, NOT THE REGISTRY. The obvious alternative — "the token after a known
+ *  value-bearing flag is its value, whatever it looks like" — cannot be written here: parseFlags
+ *  has no command, so it would need a GLOBAL value-bearing union, and `--clear` is VALUELESS in
+ *  VERB_FLAGS (`set-lane-routing --clear`) while value-bearing and repeatable on `update-epic`.
+ *  A global union must pick one answer for it and is wrong on one of the two verbs. Shape also
+ *  keeps the typo catch: `--title --bogus` still reports `--bogus` as an unknown flag rather
+ *  than storing it as a title.
+ *
+ *  THE COST, stated: a value that is itself flag-SHAPED (`--no-deferrals`, no spaces, all
+ *  lowercase) is not rescued by the value position. `--flag=value` is the escape for it, which
+ *  is why the `=` form is the first of the two rules and not the second.
+ *
+ *  A flag name that did not match this pattern would be silently eaten as the previous flag's
+ *  value — a wrong measurement that looks correct downstream — so scripts/test/flag-parsing
+ *  asserts every row in both tables matches it. All 78 do today. */
+export const FLAG_TOKEN = /^--[a-z][a-z0-9-]*(?:=|$)/;
+export const isFlagToken = (t) => typeof t === "string" && FLAG_TOKEN.test(t);
+
+/** Split a token that occupies a FLAG position into `[name, inlineValue]`, where `inlineValue`
+ *  is `undefined` for the `--name` form and the text after the FIRST `=` for `--name=value`.
+ *  First `=` only, so a value may contain one (`--title=a=b=c` is the title `a=b=c`). */
+export function splitFlagToken(token) {
+  const body = token.slice(2);
+  const eq = body.indexOf("=");
+  return eq === -1 ? [body, undefined] : [body.slice(0, eq), body.slice(eq + 1)];
+}
+
 /** The flags `command` accepts, as bare names. The projection an allowlist is built from —
  *  never a second literal. */
 export const epicFlagsFor = (command) =>

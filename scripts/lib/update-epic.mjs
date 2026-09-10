@@ -4,7 +4,7 @@
 
 import {
   EPIC_FLAGS, KNOWN_LANES, KNOWN_STATUSES, KNOWN_REVIEW_MODES, REVIEW_MODE_RANK,
-  epicFlagsFor, nullableEpicFlags,
+  epicFlagsFor, isFlagToken, nullableEpicFlags, splitFlagToken,
 } from "./constants.mjs";
 import { activate } from "./active-pointer.mjs";
 import { globalReviewMode } from "./rules.mjs";
@@ -77,10 +77,19 @@ export function updateEpic() {
   // different mistakes and get different messages; collapsing them back into one usage dump is
   // the regression this guards against.
   if (!id) {
-    const at = argv.indexOf("--id");
+    // gh#182: the FOURTH raw-argv scanner, and the same two halves. `--id=e1` must be diagnosed
+    // as well as `--id e1`, and the token it consumes as the value must be decided by
+    // isFlagToken() rather than by a leading `--`, so the rewritten line it prints is the line
+    // the caller actually meant.
+    const at = argv.findIndex(a => a === "--id" || a.startsWith("--id="));
     if (at !== -1) {
-      const value = argv[at + 1] !== undefined && !argv[at + 1].startsWith("--") ? argv[at + 1] : "<id>";
-      const rest = argv.filter((_, i) => i !== at && i !== at + 1);
+      const [, inline] = splitFlagToken(argv[at]);
+      const consumesNext = inline === undefined
+        && argv[at + 1] !== undefined && !isFlagToken(argv[at + 1]);
+      const value = inline !== undefined ? inline : (consumesNext ? argv[at + 1] : "<id>");
+      // Only drop at+1 when it WAS this flag's value. Dropping it unconditionally silently
+      // deleted the next flag from the suggested line whenever `--id` carried no value at all.
+      const rest = argv.filter((_, i) => i !== at && !(consumesNext && i === at + 1));
       process.stderr.write(
         `conductor: update-epic takes its epic id POSITIONALLY, not as --id — write ` +
         `\`update-epic <id> ...\`, i.e. \`update-epic ${value}${rest.length ? ` ${rest.join(" ")}` : ""}\`. ` +

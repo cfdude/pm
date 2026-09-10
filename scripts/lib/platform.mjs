@@ -7,7 +7,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { KNOWN_PLATFORMS, PLATFORM_RULES_CHAIN } from "./constants.mjs";
+import { KNOWN_PLATFORMS, PLATFORM_RULES_CHAIN, isFlagToken, splitFlagToken } from "./constants.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 
 /** Extract just `--platform <value>` from an argv slice.
@@ -19,10 +19,22 @@ import { isInitialized, loadState, saveState } from "./state.mjs";
  *  platform.mjs stays a LEAF -- constants.mjs and state.mjs only. Scanning for one flag is
  *  three lines; the coupling is not worth saving them. */
 export function platformFlag(argv) {
-  const i = argv.indexOf("--platform");
-  if (i === -1) return "";
-  const v = argv[i + 1];
-  return (typeof v === "string" && !v.startsWith("--")) ? v.trim() : "";
+  // gh#182: `--platform=claude-code` must reach this too. It is one of the four argv scanners,
+  // and the one whose miss is silent by design — an unresolved platform is treated as ABSENT
+  // (#152's note below), so an `=` form this loop did not recognise would have written the
+  // RECORDED platform's rules block while looking answered. The shape predicate and the splitter
+  // are imported from constants.mjs (a leaf, like this module) rather than from add-epic.mjs,
+  // which would close the circular loop this file's header exists to keep open.
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (typeof a !== "string" || !a.startsWith("--")) continue;
+    const [k, inline] = splitFlagToken(a);
+    if (k !== "platform") continue;
+    if (inline !== undefined) return inline.trim();
+    const v = argv[i + 1];
+    return (typeof v === "string" && !isFlagToken(v)) ? v.trim() : "";
+  }
+  return "";
 }
 
 /** Resolve the active platform. Never throws and never returns falsy: an unresolved
