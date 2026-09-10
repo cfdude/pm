@@ -5199,7 +5199,9 @@
           "text": "lane: openspec not <none routed> — a new verb, a command doc and real design ambiguity in what the pass proposes vs decides."
         }
       ],
-      "createdAt": "2026-09-08T17:55:42-07:00"
+      "createdAt": "2026-09-08T17:55:42-07:00",
+      "release": "0.41.0",
+      "touchedAt": "2026-09-10T01:21:55.509Z"
     },
     {
       "id": "gh-cfdude-pm-174",
@@ -5470,14 +5472,15 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-08T21:40:43.715Z",
-      "touchedAt": "2026-09-08T21:41:07.737Z",
+      "touchedAt": "2026-09-10T01:21:57.670Z",
       "notes": [
         {
           "at": "2026-09-08T21:40:45.513Z",
           "actor": "agent",
           "text": "lane: claude-code deliberately — one assertion in an existing test file, no design ambiguity, well under two hours. The asymmetric tie-break (resolve away from claude-code) applies to unresolved routing questions; this one is resolved. Found by the Gate 2 fix agent as an observation it declined to fix, correctly: it is pre-existing and outside 0.40.0's five items."
         }
-      ]
+      ],
+      "release": "0.41.0"
     },
     {
       "id": "walk-the-undispositioned-archive",
@@ -5490,14 +5493,15 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-08T22:15:09.416Z",
-      "touchedAt": "2026-09-08T23:59:48.098Z",
+      "touchedAt": "2026-09-10T01:21:53.319Z",
       "notes": [
         {
           "at": "2026-09-08T23:59:48.094Z",
           "actor": "agent",
           "text": "lane: claude-code not <none — suggest-lane returns null for this ask> — recorded late, at 0.40.0 Gate 2. This is NOT a sub-2-hour tweak and the intake rule resolves an unrouted question AWAY from claude-code, so the lane is wrong on the rule as written. Left as claude-code deliberately for now because the work is 66 independent operator judgements with no shared design, no spec to draw and no gate to pass — the shape claude-code is for — and re-laning it to superpowers would demand a plan document for a walk. Re-lane if the walk turns out to need one."
         }
-      ]
+      ],
+      "release": "0.41.0"
     },
     {
       "id": "gh-cfdude-pm-177",
@@ -5519,14 +5523,15 @@
       "externalUpdatedAt": "2026-09-08T23:22:40Z",
       "attributedCommits": [],
       "createdAt": "2026-09-09T00:19:04.779Z",
-      "touchedAt": "2026-09-09T00:19:47.331Z",
+      "touchedAt": "2026-09-10T01:21:39.872Z",
       "notes": [
         {
           "at": "2026-09-09T00:19:47.321Z",
           "actor": "agent",
           "text": "lane: superpowers not <none — suggest-lane returns null for this ask> — the intake tie-break resolves an unrouted question AWAY from claude-code, never into it, because claude-code leaves no spec, plan or gate record. Each of these is an engine change with a real design question (what evidence a gate should record; what a release read-back should show; how to harmonise three flag shapes without a breaking change; how to make a replay hermetic; whether a recovered date should be clearable), so superpowers is the floor, not claude-code."
         }
-      ]
+      ],
+      "release": "0.41.0"
     },
     {
       "id": "gh-cfdude-pm-178",
@@ -5548,14 +5553,15 @@
       "externalUpdatedAt": "2026-09-08T22:53:47Z",
       "attributedCommits": [],
       "createdAt": "2026-09-09T00:19:16.204Z",
-      "touchedAt": "2026-09-09T00:19:55.821Z",
+      "touchedAt": "2026-09-10T01:21:42.132Z",
       "notes": [
         {
           "at": "2026-09-09T00:19:55.819Z",
           "actor": "agent",
           "text": "lane: superpowers not <none — suggest-lane returns null for this ask> — the intake tie-break resolves an unrouted question AWAY from claude-code, never into it, because claude-code leaves no spec, plan or gate record. Each of these is an engine change with a real design question (what evidence a gate should record; what a release read-back should show; how to harmonise three flag shapes without a breaking change; how to make a replay hermetic; whether a recovered date should be clearable), so superpowers is the floor, not claude-code."
         }
-      ]
+      ],
+      "release": "0.41.0"
     },
     {
       "id": "gh-cfdude-pm-179",
@@ -5577,14 +5583,15 @@
       "externalUpdatedAt": "2026-09-08T22:54:05Z",
       "attributedCommits": [],
       "createdAt": "2026-09-09T00:19:24.306Z",
-      "touchedAt": "2026-09-09T00:20:04.605Z",
+      "touchedAt": "2026-09-10T01:21:44.375Z",
       "notes": [
         {
           "at": "2026-09-09T00:20:04.602Z",
           "actor": "agent",
           "text": "lane: superpowers not <none — suggest-lane returns null for this ask> — the intake tie-break resolves an unrouted question AWAY from claude-code, never into it, because claude-code leaves no spec, plan or gate record. Each of these is an engine change with a real design question (what evidence a gate should record; what a release read-back should show; how to harmonise three flag shapes without a breaking change; how to make a replay hermetic; whether a recovered date should be clearable), so superpowers is the floor, not claude-code."
         }
-      ]
+      ],
+      "release": "0.41.0"
     },
     {
       "id": "gh-cfdude-pm-180",
@@ -5600,14 +5607,15 @@
       "externalUpdatedAt": "2026-09-09T00:00:48Z",
       "attributedCommits": [],
       "createdAt": "2026-09-09T00:19:31.693Z",
-      "touchedAt": "2026-09-09T00:20:12.232Z",
+      "touchedAt": "2026-09-10T01:21:46.549Z",
       "notes": [
         {
           "at": "2026-09-09T00:20:12.222Z",
           "actor": "agent",
           "text": "lane: superpowers not <none — suggest-lane returns null for this ask> — the intake tie-break resolves an unrouted question AWAY from claude-code, never into it, because claude-code leaves no spec, plan or gate record. Each of these is an engine change with a real design question (what evidence a gate should record; what a release read-back should show; how to harmonise three flag shapes without a breaking change; how to make a replay hermetic; whether a recovered date should be clearable), so superpowers is the floor, not claude-code."
         }
-      ]
+      ],
+      "release": "0.41.0"
     },
     {
       "id": "gh-cfdude-pm-181",
@@ -5629,14 +5637,15 @@
       "externalUpdatedAt": "2026-09-09T00:16:05Z",
       "attributedCommits": [],
       "createdAt": "2026-09-09T00:19:38.815Z",
-      "touchedAt": "2026-09-09T00:20:18.461Z",
+      "touchedAt": "2026-09-10T01:21:48.762Z",
       "notes": [
         {
           "at": "2026-09-09T00:20:18.458Z",
           "actor": "agent",
           "text": "lane: superpowers not <none — suggest-lane returns null for this ask> — the intake tie-break resolves an unrouted question AWAY from claude-code, never into it, because claude-code leaves no spec, plan or gate record. Each of these is an engine change with a real design question (what evidence a gate should record; what a release read-back should show; how to harmonise three flag shapes without a breaking change; how to make a replay hermetic; whether a recovered date should be clearable), so superpowers is the floor, not claude-code."
         }
-      ]
+      ],
+      "release": "0.41.0"
     },
     {
       "id": "gh-cfdude-pm-176",
@@ -5681,12 +5690,35 @@
       "externalUpdatedAt": "2026-09-09T00:21:40Z",
       "attributedCommits": [],
       "createdAt": "2026-09-09T00:21:49.671Z",
-      "touchedAt": "2026-09-09T00:33:47.615Z",
+      "touchedAt": "2026-09-10T01:21:51.007Z",
       "notes": [
         {
           "at": "2026-09-09T00:21:57.414Z",
           "actor": "agent",
           "text": "lane: superpowers not <none — suggest-lane returns null> — the intake tie-break resolves an unrouted question away from claude-code. P1 rather than P2 because it silently drops items from the inward sync the tracker procedure specifies verbatim, and a dropped item leaves no trace in the record."
+        }
+      ],
+      "release": "0.41.0"
+    },
+    {
+      "id": "hooks-json-unknown-keys-warn-every-session",
+      "title": "hooks.json shipped comment keys beside matcher/hooks, so Claude Code printed 'unknown keys ... ignored' at the top of EVERY session in EVERY repo with pm installed — 27 on this machine. Hooks kept working, which is why it survived: nothing broke, so nothing prompted. Comments moved to hooks/README.md (they were load-bearing: 'fires on EVERY Bash call by design' and 'a SEPARATE, WIDER matcher on purpose' are what stop someone narrowing a matcher and silently killing a hook) and scripts/test/hooks-schema.test.mjs guards a CLOSED key set, not a blocklist of 'comment'.",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [],
+      "reconcileNeeded": false,
+      "description": "Cosmetic per session, but multiplied by every user and every session. Found from a screenshot of the session-start banner after the 0.40.0 fleet upgrade — no test, no gate and no reviewer could have seen it, because the harness prints it and nothing in the repo reads the harness's output.",
+      "attributedCommits": [],
+      "createdAt": "2026-09-10T01:21:22.155Z",
+      "touchedAt": "2026-09-10T01:21:37.482Z",
+      "release": "0.41.0",
+      "notes": [
+        {
+          "at": "2026-09-10T01:21:37.479Z",
+          "actor": "agent",
+          "text": "lane: claude-code not <none — suggest-lane returns null> — the intake tie-break resolves an UNRESOLVED routing question away from claude-code, but this one is not unresolved: single file, no design ambiguity, no shared behaviour, done in under an hour with its guard test. That is the case claude-code exists for. The record it would otherwise lose is preserved by this epic plus hooks/README.md plus scripts/test/hooks-schema.test.mjs."
         }
       ]
     }
@@ -5699,7 +5731,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 463,
+  "revision": 476,
   "reviewMode": "thorough",
   "releases": [
     {
@@ -5846,6 +5878,12 @@
           "reviewer": "three rounds, two fresh-context lenses each (review mode: thorough), 2026-09-07/08"
         }
       }
+    },
+    {
+      "id": "0.41.0",
+      "intent": "Backlog health and the papercuts 0.40.0's own closeout surfaced: the replay test that fails during every release, the flag parser that silently drops synced issues, the release object that cannot be read back, three deferral flag shapes, a createdAt with no inverse, and hooks.json validating clean. Batched deliberately — 13 releases in 11 days was a 28-repo fleet pass every 20 hours.",
+      "deferred": [],
+      "target": "0.41.0"
     }
   ],
   "archiveBackfilledAt": "2026-08-27T04:52:42.658Z"
