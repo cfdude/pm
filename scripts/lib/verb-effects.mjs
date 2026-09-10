@@ -97,7 +97,11 @@ export const VERB_EFFECTS = {
   "set-autonomy": { effect: "mutates", writes: "state.json (an epic's autonomy block and notifications)" },
   "set-review-mode": { effect: "mutates", writes: "state.json (the review-mode dial), CLAUDE.md (the rules block)" },
   "set-gate-guard": { effect: "mutates", writes: "state.json (the gate-guard toggle)" },
-  release: { effect: "mutates", writes: "state.json (releases and one-way membership), plus render()'s writes" },
+  // `release show [<id>]` is a PURE READ under this verb and writes nothing — the same shape
+  // `set-gate-guard`'s read form has. The classification stays `mutates` because it is a property
+  // of the VERB, which is what the divergence warning is gated on; declaring it read-only would
+  // silence that warning for every real write the verb makes.
+  release: { effect: "mutates", writes: "state.json (releases, one-way membership, deferrals and the amendments trail), plus render()'s writes — except `release show`, which writes nothing at all" },
   "record-reconcile": { effect: "mutates", writes: "state.json (the reconcile verdict on an epic's detour link)" },
   "record-gate-review": { effect: "mutates", writes: "state.json (gateReview.gateN)" },
   "record-cross-spec-review": { effect: "mutates", writes: "state.json (the release-scope verdict and its spec-set hash)" },

@@ -91,7 +91,11 @@ test("UPDATE_EPIC_FLAGS is the registry's projection, not a literal that happens
   // registry" apart from "a second literal that currently agrees with it".
   assert.deepEqual(
     UPDATE_EPIC_FLAGS,
-    EPIC_FLAGS.filter(f => f.commands.includes("update-epic")).map(f => f.flag),
+    // `engineWritten` rows are excluded here for the same reason `epicFlagsFor()` excludes them:
+    // they describe a field the ENGINE writes (`createdAt`, `touchedAt`) and no caller may type
+    // one, so an allowlist that accepted `--created-at` would accept a flag nothing writes. They
+    // are in the registry only to declare whether the field can be CLEARED — see gh#181.
+    EPIC_FLAGS.filter(f => f.commands.includes("update-epic") && !f.engineWritten).map(f => f.flag),
     "update-epic's allowlist must BE the registry projection — registering a flag on " +
     "update-epic in EPIC_FLAGS must be the whole edit");
 });
@@ -1957,7 +1961,7 @@ test("every DOCUMENTED record-gate-review flag is accepted and reads back from s
   // Every documented flag must be one the allowlist knows, or the allowlist would reject the
   // command's own usage line — which is how a rejection added late breaks a working command.
   const missing = documented.filter(f =>
-    !["--gate", "--verdict", "--base-sha", "--head-sha", "--reviewer"].includes(f));
+    !["--gate", "--verdict", "--artifact", "--base-sha", "--head-sha", "--reviewer"].includes(f));
   assert.deepEqual(missing, [],
     "record-gate-review documents a flag this check does not exercise — add it to the " +
     "allowlist and to this invocation rather than letting it go unchecked");
@@ -1966,7 +1970,10 @@ test("every DOCUMENTED record-gate-review flag is accepted and reads back from s
 test("record-gate-review's allowlist is the shared registry's projection, not a second literal", async () => {
   const { epicFlagsFor } = await import(CONSTANTS);
   assert.deepEqual(epicFlagsFor("record-gate-review").sort(),
-    ["base-sha", "gate", "head-sha", "reviewer", "verdict"],
+    // `artifact` joined the five in gh#177: Gate 1 reviews artifacts BY PATH, before any code
+    // exists, so the sha pair it used to be forced to invent is Gate 2's evidence and this is
+    // Gate 1's.
+    ["artifact", "base-sha", "gate", "head-sha", "reviewer", "verdict"],
     "every flag record-gate-review accepts is declared in EPIC_FLAGS — there is no second, " +
     "parallel allowlist for a subset of them");
 });

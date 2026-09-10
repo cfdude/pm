@@ -234,6 +234,47 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" release 0.27.0 --defer <epicI
 - Re-deferring the same epic updates its reason. Re-adding a deferred epic with `--member`
   removes the exclusion and says on stderr what the removed record read, so a recorded judgment
   never disappears silently.
+- **The reason can be inline**: `--defer "<epicId>:<why it was cut>"` splits on the FIRST colon —
+  an epic id cannot contain one, so the reason keeps every colon it carries. The separate
+  `--reason` form still works; supplying BOTH is refused rather than resolved by last-wins.
+
+**Reading a release back — `release show`:**
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" release show 0.27.0   # one release, in full
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" release show          # every release, one line each
+```
+
+It renders intent, target, the **derived** members, the deferrals with their reasons, the
+cross-spec verdict in the same wording every other surface uses, and any amendments. That derived
+half is the point: membership lives on the epic, so a reader who opened the release object saw
+`deferred[]` populated and members absent — which reads as "exclusions and no members", the
+opposite of the truth. It is a pure read: it saves nothing and re-renders nothing.
+
+`show` is RESERVED as the first positional, so a release cannot be named `show` — a keyword whose
+meaning depends on what else you typed is resolved by guesswork, and this engine resolves nothing
+by guesswork.
+
+**Undoing either write — `--unmember` and `--undefer`:**
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" release 0.27.0 --unmember "<epicId>:<why it is not in this release>"
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" release 0.27.0 --undefer  "<epicId>:<why it is back in scope>"
+```
+
+- **Each requires its reason** — inline or via `--reason`, exactly as `--defer` does — and the
+  reason LANDS, in the release's `amendments[]`, where `release show` renders it. A reason demanded
+  and then discarded would be worse than one never demanded.
+- **`--unmember` is not `--defer` under another name.** `--defer` records an EXCLUSION: this epic
+  was considered and cut. `--unmember` says the pointer should never have been there — the
+  `remove-epic` analogue at release scope. Both clear the pointer; only one leaves a deferral.
+- **`--undefer` does not make the epic a member.** It removes the exclusion and keeps what that
+  exclusion said (`was`); membership is a separate decision, made with `--member`.
+- **The implicit undefer `--member` already performed is recorded the same way**, carrying
+  `via: "member"` and no invented reason — `--member` demands none, and a fabricated reason is
+  worse than an absent one.
+- Both refuse an unknown epic, and `--unmember` refuses an epic that belongs to a DIFFERENT
+  release rather than silently deleting that release's pointer.
 
 ## The gate procedure — required task items
 

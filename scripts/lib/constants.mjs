@@ -74,6 +74,21 @@ export const gateHasEvidence = (entry) =>
 
 export const NO_GATE_EVIDENCE = "no checkable evidence";
 
+/** The ARTIFACT PATHS a verdict records having reviewed — Gate 1's evidence (gh#177), where a
+ *  commit range is Gate 2's.
+ *
+ *  A SEPARATE predicate from `gateHasEvidence()` above, deliberately and not for tidiness.
+ *  `gateHasEvidence()` means "carries a checkable COMMIT RANGE" and two call sites dereference
+ *  `entry.headSha` on the line after it passes — archive-gate.mjs's staleness comparison and
+ *  integrity's `verdict-range-omits-cited-commits` message. Widening it to admit artifacts would
+ *  hand both of them `undefined` and produce a confidently wrong answer in silence, which is the
+ *  same defect gh#177 reports one layer down. It stays range-only; this one answers the other
+ *  question, and only the RENDERING reads both. */
+export const gateArtifacts = (entry) =>
+  entry && Array.isArray(entry.artifacts)
+    ? entry.artifacts.filter(a => typeof a === "string" && a.trim() !== "")
+    : [];
+
 /** The verdicts that may be STORED on `gateReview.gateN`. Deliberately WIDER than the
  *  verdicts an agent may write: `ungated` is the archive-drift heal's record that it flipped a
  *  status with no verdict from anyone, and a verdict meaning "no review happened" must never
@@ -88,11 +103,18 @@ export const STORABLE_GATE_VERDICTS = ["pass", "fail", "ungated"];
  *  staleness marking). */
 export function gateSummary(entry, extra = "") {
   if (!entry || typeof entry.verdict !== "string") return "—";
-  const range = gateHasEvidence(entry)
+  // TWO KINDS OF EVIDENCE, in the order a reader wants them. A range is the stronger claim and
+  // wins where both are present; artifacts are what a SPEC review has, and rendering a correct
+  // Gate 1 pass as `⚠ no checkable evidence` would move gh#177's wrong record one step on rather
+  // than fixing it — a warning that fires on compliance is a warning readers learn to ignore.
+  const artifacts = gateArtifacts(entry);
+  const evidence = gateHasEvidence(entry)
     ? `${entry.baseSha}..${entry.headSha}`
-    : `⚠ ${NO_GATE_EVIDENCE}`;
+    : artifacts.length
+      ? `${artifacts.length} artifact${artifacts.length === 1 ? "" : "s"}`
+      : `⚠ ${NO_GATE_EVIDENCE}`;
   const who = entry.reviewer ? ` · ${entry.reviewer}` : "";
-  return `${entry.verdict} (${range})${who}${extra}`;
+  return `${entry.verdict} (${evidence})${who}${extra}`;
 }
 // ─────────────────────── releases: the readers both surfaces share ───────────────────────
 //
@@ -213,6 +235,23 @@ export const KNOWN_STATUSES = ["untriaged", "queued", "active", "paused", "later
 //             `nullable`/`setOnly` is required on every SETTABLE row (`update-epic` in
 //             `commands`, a non-null `key`, not `valueless`) — an undeclared row is the
 //             population the requirement is about, so silence must not pass.
+//   engineWritten
+//             true = this row describes a field the ENGINE writes and NO caller may type. It is
+//             in no allowlist, in no help surface and in no value-bearing sweep — `flagsFor()`,
+//             `epicFlagsFor()`, `cliFlagsFor()` and `valueBearingFlagsFor()` all drop it — so
+//             `--created-at 2020-01-01` is refused as an unknown flag rather than accepted and
+//             written by nothing, which is #79's shape.
+//             It is HERE anyway, rather than nowhere, because CLEARING is a real operation on
+//             these fields and the registry is where clearability is declared: `nullable: true`
+//             plus a `clearNote` makes `--clear <flag>` reach it, and a `setOnly` reason states
+//             why a field has no clearing path where it has none. gh#181: `recover-created-at`
+//             deliberately never overwrites a date already present and nothing removed one, so a
+//             WRONG registration date was permanent and correctable only by the hand-edit this
+//             tool forbids by name everywhere else.
+//             `setOnly` on an engine-written row is a slight stretch of that word — the field is
+//             not settable by a caller either — and it is reused deliberately: the requirement
+//             test reads `setOnly`, and a second reason-field name would be a second place to
+//             look for the same sentence.
 //
 // `key` is carried EXPLICITLY rather than derived from `flag`, because the mapping is already
 // non-identity today (`--plan` → planPath, `--link` → links, `--external-id` → externalId) and
@@ -339,9 +378,41 @@ export const EPIC_FLAGS = [
   // writes an epic. `key` is null on all three: they land nested under `gateReview.gateN`
   // rather than on a top-level epic key, so the command owns the write.
   { flag: "base-sha", key: null, commands: ["record-gate-review"], write: "custom",
-    placeholder: "a sha — REQUIRED for a pass, optional for a fail" },
+    placeholder: "a sha — REQUIRED for a gate 2 pass, optional otherwise" },
   { flag: "head-sha", key: null, commands: ["record-gate-review"], write: "custom",
-    placeholder: "a sha — REQUIRED for a pass, optional for a fail" },
+    placeholder: "a sha — REQUIRED for a gate 2 pass, optional otherwise" },
+  // GATE 1's evidence, and the reason the sha pair above stopped being unconditional (gh#177).
+  // Gate 1 is the SPEC review and runs before `/opsx:apply`, so at the moment its verdict is
+  // truthful there is by construction no implementation range to point at — the emitted procedure
+  // says reviewers are dispatched "on the artifacts (file paths, not a SHA range)". A required
+  // field satisfiable only with a value of the wrong kind produces a confidently wrong record:
+  // 0.40.0's own Gate 1 recorded its ARTIFACT commits, which every consumer that reads
+  // `baseSha..headSha` as an implementation range then read as one.
+  //
+  // Repeatable — a spec review reads a set of files, and one path per invocation would be the
+  // `--attribute-commit` overwrite defect at a second flag.
+  //
+  // BARE PATHS, no digest. record-cross-spec-review hashes its spec set because it COMPARES the
+  // hashes later and marks the verdict stale; nothing compares a gate-1 digest today, and a
+  // digest nothing compares is a record that LOOKS like staleness detection and is not — the same
+  // shape as the defect this fixes. Recording what was reviewed is the honest half; the
+  // comparator is its own change.
+  //
+  // NOT EXEMPTED FROM `integrity`'s `gate-recorded-as-bookkeeping` ARM 1, and that is a decision
+  // rather than an omission: that arm exempts a verdict carrying a checkable COMMIT RANGE, and
+  // widening the exemption to artifacts would turn off a live check for the gate that no longer
+  // has to carry a range. A correctly run Gate 1 cannot trip it — it is recorded before the
+  // commits exist, so `reviewedAt < mergedAt` — and a Gate 1 RE-recorded after the work merged
+  // is exactly the case the arm is asking about.
+  //
+  // ITS INVERSE, stated because this change's whole subject is inverses that were never shipped:
+  // there is no `--clear-artifacts`, and one would be wrong. A verdict is corrected by RECORDING
+  // IT AGAIN — the write below supersedes, never destroys, so the prior evidence stays readable
+  // under `superseded` — and an artifact list edited out from under a recorded verdict would
+  // leave a pass claiming to have covered something nobody can see.
+  { flag: "artifact", key: null, commands: ["record-gate-review"], repeats: true, write: "custom",
+    requires: "a path the reviewer actually read",
+    placeholder: "path — the gate 1 evidence, repeatable" },
   { flag: "reviewer", key: null, commands: ["record-gate-review", "record-cross-spec-review"], write: "custom" },
   // Attribution is an EXPLICIT array of hashes the agent supplies, and the engine infers it
   // from nothing else — not the files a commit touches, not an epic id in a commit message.
@@ -389,10 +460,17 @@ export const EPIC_FLAGS = [
   // `--no-deferrals` is the explicit "there are none" — which must be sayable, or an absence
   // is indistinguishable from never having looked.
   { flag: "deferral", key: "deferralAssertion", commands: ["update-epic"], repeats: true, write: "custom",
-    placeholder: "epicId:artifact section",
+    // `::` is accepted here too (gh#179). The stricter separator is safe to accept everywhere —
+    // an epic id cannot contain a colon, so first-colon was never wrong for this flag; what was
+    // wrong is that a caller who had just used `--declined-deferral` had no way to guess it.
+    placeholder: "epicId:artifact section (or ::)",
     setOnly: "an assertion that was made is a record somebody wrote; re-archiving with --correct-disposition is how it is corrected, and clearing it would make an absence indistinguishable from never having looked" },
   { flag: "declined-deferral", key: "deferralAssertion", commands: ["update-epic"], repeats: true, write: "custom",
-    placeholder: "what::why not",
+    // The double colon is DELIBERATE and it was invisible at the call site, which is gh#179's
+    // actual complaint: both halves here are free text, so first-colon truncates a <what> that
+    // carries one. The placeholder now says why, because the reasoning being sound does not help
+    // a caller who cannot see it.
+    placeholder: "what::why not — :: since <what> may hold a colon",
     setOnly: "same record, same rule as --deferral: a decline that was recorded is corrected through the archive, never removed" },
   { flag: "no-deferrals", key: "deferralAssertion", commands: ["update-epic"], write: "custom", valueless: true },
   // The handoff. Lands on the disposition record rather than a field of its own — "where the
@@ -417,12 +495,45 @@ export const EPIC_FLAGS = [
   // last value — see lastStr() in releases.mjs.
   { flag: "intent", key: null, commands: ["release"], repeats: true, write: "custom" },
   { flag: "target", key: null, commands: ["release"], write: "custom" },
-  { flag: "member", key: "release", commands: ["release"], repeats: true, write: "custom" },
+  { flag: "member", key: "release", commands: ["release"], repeats: true, write: "custom",
+    placeholder: "epicId" },
   // The exclusion. `--defer <epicId> --reason "<why>"` records one epic cut from one release,
   // so `--defer` is deliberately NOT repeatable: a repeatable `--defer` with a single `--reason`
   // would silently attach one reason to several exclusions, which is the reason-bearing record
   // saying something nobody wrote.
-  { flag: "defer", key: null, commands: ["release"], write: "custom" },
+  //
+  // gh#179 — THE INLINE PAIR. Deferral is one concept expressed by three flags across two verbs,
+  // and no two of them agreed on how the pair is written: `--defer` took its reason out-of-band
+  // through `--reason` while `--deferral` and `--declined-deferral` took theirs inline, and those
+  // two differed by a colon. So `--defer` now also accepts `<epicId>:<reason>` — FIRST colon,
+  // exactly `--deferral`'s rule and correct for the same reason: the left half is an epic id and
+  // cannot contain one. The out-of-band form keeps working unchanged; supplying BOTH is refused
+  // rather than resolved by last-wins, because two reasons for one record is a question, not a
+  // default.
+  //
+  // Still NOT repeatable. The inline reason removes the hazard that made it non-repeatable, so
+  // the original rationale no longer holds — but making it repeatable is a separate behaviour
+  // change with its own inverse questions, and this change is already the change about inverses.
+  { flag: "defer", key: null, commands: ["release"], write: "custom",
+    placeholder: "epicId[:why it was cut]" },
+  // gh#178 — THE TWO INVERSES. `--member` and `--defer` shipped with none, so an epic added to
+  // the wrong release, or cut and then pulled back into scope, had no verb-level way out and the
+  // only remaining path was hand-editing `.conductor/state.json`.
+  //
+  // Each REQUIRES a reason, and the reason LANDS: it is appended to the release's `amendments[]`
+  // — a reason demanded and then discarded would be worse than one never demanded. `--undefer`
+  // additionally keeps what the exclusion used to say (`was`), because a recorded judgment must
+  // never disappear silently.
+  //
+  // Same inline pair as `--defer` above, same first-colon rule, same `--reason` fallback, and
+  // NON-REPEATABLE for the same reason `--defer` is: one removal per invocation, so a single
+  // `--reason` can never be spread silently across several records.
+  { flag: "unmember", key: null, commands: ["release"], write: "custom",
+    requires: "\"<epicId>:<why it is not in this release>\" (or --reason)",
+    placeholder: "epicId[:why it is not in this release]" },
+  { flag: "undefer", key: null, commands: ["release"], write: "custom",
+    requires: "\"<epicId>:<why it is back in scope>\" (or --reason)",
+    placeholder: "epicId[:why it is back in scope]" },
   // NULLABLE, and the absence is the DEFAULT rather than a hole: with no per-epic override the
   // epic falls back to the repo-global dial, which is exactly what "this epic needs no
   // escalation of its own" means. An escalation recorded in error was previously uncorrectable —
@@ -482,6 +593,34 @@ export const EPIC_FLAGS = [
   // The REPO-level quiescence marker rather than an epic's claim. Valueless: its presence is
   // the whole argument.
   { flag: "repo", key: null, commands: ["claim", "unclaim"], write: "custom", valueless: true },
+  // ─────────── gh#181: the ENGINE-WRITTEN timekeeping pair ───────────
+  //
+  // Neither is typeable — see `engineWritten` in the header — and they are declared here for the
+  // one operation a caller DOES have on them: clearing. The population is state.mjs's own
+  // TIMEKEEPING_FIELDS, and the requirement that each of them declare its clearability is
+  // enforced against that export rather than against a list typed into a test.
+  //
+  // THE TWO ARE NOT THE SAME CASE, which is the whole reason one is nullable and the other is
+  // not. `createdAt` is agent-recoverable rather than engine-derived, and ABSENCE is a
+  // meaningful value in its own right — the schema already reads absence as UNKNOWN and never as
+  // today — so returning it to absent is a coherent operation. `touchedAt` is stamped by the
+  // next write that changes the record, so clearing it would be undone immediately and answers
+  // no question anyone can ask.
+  //
+  // Clearing `createdAt` is the CORRECTION PATH, and it keeps `recover-created-at`'s
+  // never-overwrite rule intact rather than weakening it: the recovery skips a date that is
+  // present, so clear-then-recover re-derives the date from history instead of letting a caller
+  // assert one. That is also why there is no setting form — a registration date asserted by the
+  // party whose record it is would be provenance nobody evidenced.
+  { flag: "created-at", key: "createdAt", commands: ["update-epic"], engineWritten: true, nullable: true,
+    clearNote: "the registration date returns to ABSENT, which the schema reads as UNKNOWN — not as today. " +
+      "`recover-created-at` will attempt it again from this checkout's git history on its next run, which is " +
+      "what makes clear-then-recover the correction path for a date the recovery got wrong (a reused id, a " +
+      "wholesale state.json rewrite, a filter-branch or subtree split). Nothing else derives from it" },
+  { flag: "touched-at", key: "touchedAt", commands: ["update-epic"], engineWritten: true,
+    setOnly: "the engine stamps it on every write that changes the record (stampTouched in state.mjs), so " +
+      "clearing it would be undone by the next real write — it answers no question a reader can ask, and an " +
+      "absence that reappears on its own is not a legal state anyone chose" },
 ];
 
 /** The log families `purge-logs` can select. HERE rather than in purge-logs.mjs because
@@ -638,16 +777,22 @@ export const VERB_FLAGS = [
  *  "this verb takes no flags" and "nobody got round to declaring this verb" cannot look the same
  *  — which is precisely how a dozen verbs came to sit outside #149's rule without anyone
  *  deciding they should. */
-/** What a FLAGLESS verb's positional surface actually is, for the verbs where that surface is the
- *  whole point and "takes no flags" alone would hide it. Keyed by verb; help prints it verbatim.
+/** What a verb's POSITIONAL surface actually is, for the verbs where that surface is the whole
+ *  point and the flag list alone would hide it. Keyed by verb; help prints it verbatim.
  *
  *  #159's complaint was "there is no way to answer whether the guard is on" — and the release that
  *  answered it left `set-gate-guard --help` saying "takes no flags. Positional arguments only, or
  *  none", never naming the read form it had just added. A verb whose surface is positional needs
  *  help that says what the positionals ARE. Additive: a verb absent from this map renders exactly
- *  as before. */
-export const FLAGLESS_USAGE = {
+ *  as before.
+ *
+ *  RENAMED from `FLAGLESS_USAGE` in gh#178, because the name was the bug one level up: help
+ *  consulted it ONLY in the "takes no flags" branch, so `release` — seven flags AND a positional
+ *  read form — hit the same silence #159 reports, at the very verb whose read-back was the point
+ *  of the change. A verb having flags says nothing about whether its positionals need explaining. */
+export const POSITIONAL_USAGE = {
   "set-gate-guard": "set-gate-guard on|off   — set it\n  set-gate-guard          — READ it: the current value, what it enforces, and whether anything is blocked right now",
+  release: "release <id> --intent \"<what this release is for>\" …   — create or amend one\n  release show [<id>]                                    — READ it back: intent, target, DERIVED members, deferrals, the cross-spec verdict and any amendments (no id: every release, one line each). `show` is RESERVED as a release id",
 };
 
 export const FLAGLESS_VERBS = [
@@ -751,7 +896,7 @@ export function splitFlagToken(token) {
 /** The flags `command` accepts, as bare names. The projection an allowlist is built from —
  *  never a second literal. */
 export const epicFlagsFor = (command) =>
-  EPIC_FLAGS.filter(f => f.commands.includes(command)).map(f => f.flag);
+  EPIC_FLAGS.filter(f => f.commands.includes(command) && !f.engineWritten).map(f => f.flag);
 
 /** The rows a CLEARING form could reach on `command`: it accepts them, they write a top-level
  *  epic state key, and they carry a value of their own.
@@ -767,7 +912,7 @@ export const epicFlagsFor = (command) =>
  *  (`release` only, and the membership pointer's inverse is `release --defer`, which records
  *  the exclusion's reason rather than dropping the pointer). */
 export const settableEpicFlags = (command) =>
-  EPIC_FLAGS.filter(f => f.commands.includes(command) && f.key && !f.valueless);
+  EPIC_FLAGS.filter(f => f.commands.includes(command) && f.key && !f.valueless && !f.engineWritten);
 
 /** The rows `command` accepts whose ABSENCE is a declared-legal state — the accepted set of
  *  `update-epic --clear <flag>`, and the enumeration its refusal prints.
@@ -793,7 +938,8 @@ export const nullableEpicFlags = (command) =>
  *  `--dry-run` as known, and the value rule is a separate projection precisely so neither
  *  question can be answered with the other one's list. */
 export const flagsFor = (command) =>
-  [...new Set([...EPIC_FLAGS, ...VERB_FLAGS].filter(f => f.commands.includes(command))
+  [...new Set([...EPIC_FLAGS, ...VERB_FLAGS]
+    .filter(f => f.commands.includes(command) && !f.engineWritten)
     .map(f => f.flag))];
 
 /** EVERY repeatable flag either table declares. parseFlags()'s repeatable set is GLOBAL across
@@ -802,7 +948,8 @@ export const flagsFor = (command) =>
  *  add-epic.mjs used to carry — six flag names typed out beside a registry that could declare
  *  them, which is the same enumeration #152 is about wearing a smaller costume. */
 export const repeatableFlagNames = () =>
-  [...new Set([...EPIC_FLAGS, ...VERB_FLAGS].filter(f => f.repeats).map(f => f.flag))];
+  [...new Set([...EPIC_FLAGS, ...VERB_FLAGS].filter(f => f.repeats && !f.engineWritten)
+    .map(f => f.flag))];
 
 /** Every command any EPIC_FLAGS row names. Derived, never listed: the #149 guard has to be
  *  applied at EVERY write surface, and a surface enumerated by hand is the surface nobody
@@ -819,14 +966,15 @@ export const epicFlagCommands = () => [...new Set(EPIC_FLAGS.flatMap(f => f.comm
 // whole fix: every existing call site is covered without changing its code, and a verb declared
 // in either table is covered from the moment its row lands.
 export const valueBearingFlagsFor = (command) =>
-  [...EPIC_FLAGS, ...VERB_FLAGS].filter(f => f.commands.includes(command) && !f.valueless)
+  [...EPIC_FLAGS, ...VERB_FLAGS]
+    .filter(f => f.commands.includes(command) && !f.valueless && !f.engineWritten)
     .map(f => ({ flag: f.flag, requires: f.requires || "a value" }));
 
 /** The state keys an `add-many` batch entry may carry. Derived from the same declaration, so
  *  the bulk path cannot drift from the single-epic one. Note these are STATE keys, not flag
  *  names — a batch document is written in `externalId`, not `--external-id`. */
 export const epicBatchKeys = () =>
-  EPIC_FLAGS.filter(f => f.commands.includes("add-many") && f.key).map(f => f.key);
+  EPIC_FLAGS.filter(f => f.commands.includes("add-many") && f.key && !f.engineWritten).map(f => f.key);
 
 /** The commands whose EPIC_FLAGS rows describe a JSON BATCH DOCUMENT rather than a CLI flag
  *  surface. A COMMAND-level declaration, deliberately — the same shape as `FLAGLESS_VERBS` and

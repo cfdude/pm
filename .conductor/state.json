@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": null,
+  "active": "gh-cfdude-pm-177",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -5882,12 +5882,17 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-08T21:40:43.715Z",
-      "touchedAt": "2026-09-10T01:21:57.670Z",
+      "touchedAt": "2026-09-10T03:18:49.431Z",
       "notes": [
         {
           "at": "2026-09-08T21:40:45.513Z",
           "actor": "agent",
           "text": "lane: claude-code deliberately — one assertion in an existing test file, no design ambiguity, well under two hours. The asymmetric tie-break (resolve away from claude-code) applies to unresolved routing questions; this one is resolved. Found by the Gate 2 fix agent as an observation it declined to fix, correctly: it is pre-existing and outside 0.40.0's five items."
+        },
+        {
+          "at": "2026-09-10T03:18:49.429Z",
+          "actor": "agent",
+          "text": "Mutation-tested rather than assumed. Narrowing AGENT_OUTCOMES by dropping 'declined' makes 2 of the new guard's 3 assertions fail, on any record. Of the two EXISTING drift guards (conductor-13, conductor-18, 124 tests), exactly one failed — 'gh-137/gh-112: both checks are quiet on this repository's real record' — and that catch is ACCIDENTAL: it fires only because this record happens to hold one epic whose outcome is 'declined'. On a record without one it would stay green. So the epic's premise holds with a correction: the narrowing is caught today by live data, not by construction. The new file holds ONE deliberate literal at the root of the vocabulary and asserts every derivation above it."
         }
       ],
       "release": "0.41.0"
@@ -5896,14 +5901,16 @@
       "id": "walk-the-undispositioned-archive",
       "title": "Actually walk this repository 66 undispositioned archived epics. 0.40.0 shipped the CAPABILITY — the unconsidered-outcomes verb enumerates the population and emits a per-epic remedy, and unreconstructable records that somebody looked and the evidence is gone — but shipping the walker is not walking it. The 66 epics still carry outcome unknown with no reason, which is the 46% of this archive that a grooming pass hit four separate times. This is operator work with a judgement per epic: reconstruct from commits and CHANGELOG where the evidence exists, record unreconstructable with its reason where it does not, and never fabricate. Fleet-wide the same job is 310 epics across 27 upstreams, but each repository owns its own.",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "00be074"
+      ],
       "createdAt": "2026-09-08T22:15:09.416Z",
-      "touchedAt": "2026-09-10T01:21:53.319Z",
+      "touchedAt": "2026-09-10T03:14:36.095Z",
       "notes": [
         {
           "at": "2026-09-08T23:59:48.094Z",
@@ -5911,13 +5918,24 @@
           "text": "lane: claude-code not <none — suggest-lane returns null for this ask> — recorded late, at 0.40.0 Gate 2. This is NOT a sub-2-hour tweak and the intake rule resolves an unrouted question AWAY from claude-code, so the lane is wrong on the rule as written. Left as claude-code deliberately for now because the work is 66 independent operator judgements with no shared design, no spec to draw and no gate to pass — the shape claude-code is for — and re-laning it to superpowers would demand a plan document for a walk. Re-lane if the walk turns out to need one."
         }
       ],
-      "release": "0.41.0"
+      "release": "0.41.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-10T03:14:36.093Z",
+        "reason": "Walked all 66. Every verdict cites a commit sha, a CHANGELOG version, an archived change directory or a source line proving the thing exists today: 58 delivered, 7 superseded (plan-file epics sync re-registered after the work had shipped elsewhere), 1 abandoned. unconsidered-outcomes now reports 0 and integrity findings fell 11 to 6. Three verdicts were corrected against each epic's own stated scope, and the three the archive gate refused were resolved on evidence rather than by ticking — docs-site-cleanup's six open stories were verified done against the LIVE SITE."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-10T03:14:36.092Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-10T03:14:36.093Z"
     },
     {
       "id": "gh-cfdude-pm-177",
       "title": "record-gate-review --gate 1 requires a SHA range for a gate that reviews artifacts by path",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "active",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -5933,7 +5951,7 @@
       "externalUpdatedAt": "2026-09-08T23:22:40Z",
       "attributedCommits": [],
       "createdAt": "2026-09-09T00:19:04.779Z",
-      "touchedAt": "2026-09-10T01:21:39.872Z",
+      "touchedAt": "2026-09-10T03:57:11.493Z",
       "notes": [
         {
           "at": "2026-09-09T00:19:47.321Z",
@@ -5941,7 +5959,9 @@
           "text": "lane: superpowers not <none — suggest-lane returns null for this ask> — the intake tie-break resolves an unrouted question AWAY from claude-code, never into it, because claude-code leaves no spec, plan or gate record. Each of these is an engine change with a real design question (what evidence a gate should record; what a release read-back should show; how to harmonise three flag shapes without a breaking change; how to make a replay hermetic; whether a recovered date should be clearable), so superpowers is the floor, not claude-code."
         }
       ],
-      "release": "0.41.0"
+      "release": "0.41.0",
+      "startedAt": "2026-09-10T03:57:11.490Z",
+      "trackerRefreshNeeded": true
     },
     {
       "id": "gh-cfdude-pm-178",
@@ -6198,7 +6218,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 563,
+  "revision": 567,
   "reviewMode": "thorough",
   "releases": [
     {
