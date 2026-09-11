@@ -6496,10 +6496,74 @@
       ],
       "reconcileNeeded": false,
       "attributedCommits": [
-        "e6f4849"
+        "e6f4849",
+        "672d55e"
       ],
       "createdAt": "2026-09-11T07:06:45.967Z",
-      "touchedAt": "2026-09-11T07:16:22.089Z",
+      "touchedAt": "2026-09-11T07:26:02.326Z",
+      "release": "0.42.0",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-11T07:25:44.348Z",
+          "artifacts": [
+            "openspec/changes/detached-head-is-not-a-workspace/proposal.md",
+            "openspec/changes/detached-head-is-not-a-workspace/design.md",
+            "openspec/changes/detached-head-is-not-a-workspace/tasks.md",
+            "openspec/changes/detached-head-is-not-a-workspace/specs/conductor-record/spec.md",
+            "openspec/changes/detached-head-is-not-a-workspace/specs/state-write-guard/spec.md"
+          ],
+          "reviewer": "two independent fresh-context lenses (thorough) — A: correctness and testability, 4 Critical 6 Important. B: absent edits and untrue assertions, 2 Critical 6 Important. BOTH independently found the same two Criticals: the proposal's evidence was stale and the cited tree disproved its own central claim, and the write-set requirement was a CLOSED four-item list while its rationale defined a larger one (eight sites exist; session-claim.json and render-stamp.json were both missing, the second measured dirty in production). Lens A additionally caught that 'exits non-zero' would make a non-repository suppress writes, contradicting this change's own scenario, and that the spec's 'mutates' predicate differs from the design's reuse of the shipped '!== read-only' gate on exactly the unknown-verb case the suite asserts against a literal source string. All findings closed. First gate-1 verdict recorded with --artifact paths rather than a fabricated commit range — 0.41.0's capability used for its own purpose.",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-09-11T07:25:29.095Z",
+            "artifacts": [
+              "openspec/changes/detached-head-is-not-a-workspace/proposal.md",
+              "openspec/changes/detached-head-is-not-a-workspace/design.md",
+              "openspec/changes/detached-head-is-not-a-workspace/tasks.md",
+              "openspec/changes/detached-head-is-not-a-workspace/specs/conductor-record/spec.md",
+              "openspec/changes/detached-head-is-not-a-workspace/specs/state-write-guard/spec.md"
+            ],
+            "reviewer": "two independent fresh-context lenses (review mode: thorough) — A: correctness, testability and whether the design survives contact, 4 Critical 6 Important. B: absent edits and untrue assertions, 2 Critical 6 Important. BOTH independently found the same two Criticals: the proposal's evidence was stale and the cited tree disproved its own central claim, and the breadcrumb requirement was a CLOSED four-item list while its rationale defined a larger set (eight write sites exist; session-claim.json and render-stamp.json were both missing, the second being the one measured dirty in production). Lens A additionally caught that the probe's 'exits non-zero' would make a non-repository suppress writes, contradicting this change's own scenario, and that the spec's 'mutates' predicate differs from the design's reuse of the shipped '!== read-only' gate on exactly the unknown-verb case the suite asserts. All findings closed; this is the FIRST gate-1 verdict recorded with --artifact rather than a fabricated commit range, which is the 0.41.0 capability being used for its own purpose."
+          }
+        }
+      },
+      "withdrawnCommits": [
+        {
+          "sha": "672d55e",
+          "reason": "Duplicate attribution, not a wrong sha. A backgrounded wait-loop and a direct call both recorded 672d55e; the array is append-only and does not de-duplicate, by design. Removing ONE occurrence leaves the endpoint unchanged, which is precisely why --withdraw-commit removes one per request rather than all copies.",
+          "withdrawnAt": "2026-09-11T07:26:02.309Z"
+        }
+      ]
+    },
+    {
+      "id": "gh-cfdude-pm-191",
+      "title": "0.41.0's --artifact evidence is invisible to gateHasEvidence, so a correct Gate 1 reports as bookkeeping",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-cfdude-pm-177",
+          "reason": "#177 added the --artifact evidence form; this is the reader of the same field that kept the old definition"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "191",
+      "externalUrl": "https://github.com/cfdude/pm/issues/191",
+      "externalUpdatedAt": "2026-09-11T07:27:30Z",
+      "attributedCommits": [],
+      "createdAt": "2026-09-11T07:27:50.883Z",
+      "touchedAt": "2026-09-11T07:27:57.435Z",
+      "notes": [
+        {
+          "at": "2026-09-11T07:27:54.109Z",
+          "actor": "agent",
+          "text": "lane: superpowers not <none — suggest-lane returns null> — the intake tie-break resolves an unrouted question away from claude-code. Not a one-liner despite appearances: gateHasEvidence has four call sites and two dereference entry.headSha on the next line, so widening it naively hands those undefined. Found on the FIRST real use of --artifact, which is the strongest kind of evidence a filing can carry."
+        }
+      ],
       "release": "0.42.0"
     }
   ],
@@ -6511,7 +6575,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 611,
+  "revision": 619,
   "reviewMode": "thorough",
   "releases": [
     {
