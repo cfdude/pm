@@ -4,15 +4,23 @@
       `attached` on an unborn HEAD, and `unknown` where git cannot answer
 - [ ] 1.2 Implement the three-state probe in `scripts/lib/git.mjs` using
       `git symbolic-ref --quiet HEAD`, NOT `rev-parse --abbrev-ref HEAD` — the latter returns the
-      literal `HEAD` when detached, which is also a legal ref name
-- [ ] 1.3 Cache the answer per process; assert the probe is not re-run per call site
+      literal `HEAD` when detached (also a legal ref name) and exits 128 on an unborn HEAD.
+      DISCRIMINATE THE EXIT STATUS: only status 1 is `detached`; 128 and any throw are `unknown`.
+      Follow `isAncestor()`'s `e && e.status === 1 ? false : null`, do not write a fresh rule
+- [ ] 1.3 Cache the answer per process; assert it with a SPAWN COUNT (stub `execFileSync` and count
+      invocations), not by inspection. Note the consequence for tests: a fixture that changes HEAD
+      within one process sees the cached value
+- [ ] 1.4 Assert the probe runs with `cwd: ROOT`, under a `CLAUDE_PROJECT_DIR` that differs from
+      `process.cwd()` — the warning prints beside one that exists precisely for that divergence
 
 ## 2. Breadcrumb suppression
 
 - [ ] 2.1 RED: a detached fixture writes no commit watermark
 - [ ] 2.2 RED: a detached fixture writes no detour log entry
 - [ ] 2.3 RED: a detached fixture writes no brief snapshot and no activity event
-- [ ] 2.4 Implement suppression at each write site; SILENT, with no output
+- [ ] 2.4 Implement suppression at each write site named in the spec's table; SILENT, with no output
+- [ ] 2.4b Suppress commit-nudge's REACTION, not only its watermark — a suppressed watermark alone
+      leaves every run on the pre-observation text heuristic (gh#104) and still reaches a state write
 - [ ] 2.5 Assert a branch fixture is byte-identical to its pre-change behaviour — the regression
       that matters, since every managed repo is on a branch
 
@@ -29,8 +37,9 @@
 - [ ] 4.1 Enumerate ALL breadcrumb write sites mechanically (`rg`), state where suppression holds
       and where it does not, and justify each omission. A guard at one site with an untouched
       sibling is a FINDING even though the unedited site never appears in the diff
-- [ ] 4.2 Enumerate the INVERSE of every operation added. Suppression has no inverse to ship (there
-      is no "write it anyway" flag) — state whether that is right, or a gap
+- [x] 4.2 Enumerate the INVERSE of every operation added — SETTLED IN design.md under "The inverse
+      of each operation added": neither suppression nor the warning ships an override, because every
+      detached population (deploys, CI, bisect) wants neither the writes nor an opt-out
 - [ ] 4.3 Confirm no read-only verb acquired the warning, re-running the check 0.41.0 used
 
 ## 5. Gates

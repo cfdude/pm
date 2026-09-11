@@ -9,27 +9,48 @@ workspace it manages.
 One file is answering two different questions — *"is this repository pm-managed?"* and *"is this
 tree a place to work?"* — and in a self-deploying repository those answers diverge.
 
-**Measured on this machine 2026-09-11, in a production tree:** `~/Servers/market-intelligence`
-deploys via `git checkout --detach --force <tag>` and sits detached at exactly `v2.11.0`, with
-development in a sibling worktree on branch `dev`. Its `.conductor/` holds `commit-watch.json`,
-`brief.txt` and an `activity/` directory — breadcrumbs pm wrote into the deployed tree because two
-sessions opened with their cwd there. Every one of those paths is gitignored, so `git status`
-stayed clean and nothing surfaced it; the owner noticed independently and asked why the production
-checkout had conductor files at all. Filed as `cfdude/pm#175`.
+**Re-measured in that tree on 2026-09-11, and it is worse than the issue reported.**
+`~/Servers/market-intelligence` deploys via `git checkout --detach --force <tag>` and sits detached
+at exactly `v2.11.0`. Development happens in `~/Servers/market-intelligence-dev`, on branch `dev`
+— a **separate clone, not a linked worktree**: `rev-parse --git-dir` and `--git-common-dir` both
+return `.git` in each, so a worktree probe is blind there rather than inverted.
 
-The failure is silent in **both** directions, which is why it is worth the engine's attention
-rather than operator discipline:
+`git status` in the deployed tree is **not** clean. Four TRACKED files are modified:
 
-- A deploy runs `git checkout --force`, so any uncommitted state pm wrote there is **discarded**.
-  A `/pm:upgrade` in that tree reports success and then vanishes at the next release.
-- A session that meant to work on the backlog writes to the deployed copy instead, and the two
-  `state.json` files disagree with nothing reporting it. Measured here: revision 105 (deployed, pm
-  0.36.0) against 108 (dev, 0.39.0) — harmless only because the deployed one happened to be
-  byte-identical to its committed version.
+```
+ M .conductor/render-stamp.json     renderedAt 2026-09-11T05:37:07Z
+ M .conductor/state.json            pmVersion 0.41.0, revision 156
+ M CLAUDE.md                        the managed pm rules block
+ M PROJECT.md
+```
 
-The workaround is remembering to wrap every invocation as `(cd <dev worktree> && node "$ENGINE" …)`
-— which is exactly the shape this project's own feedback rule calls a filing rather than a
-footnote.
+`.conductor/brief.txt` is **tracked** too, not gitignored — only `commit-watch.json`, `detours.log`
+and `activity/` are. So the issue's *"every one of those paths is gitignored, so `git status` stayed
+clean"* was true of the breadcrumbs it looked at and false of the tree as a whole.
+
+**And failure mode 1 is no longer hypothetical: it happened while this proposal was being written.**
+A fleet upgrade pass on 2026-09-11 ran `/pm:upgrade` across every managed repository, including this
+deployed checkout. It stamped pm 0.41.0, rewrote the rules block and re-rendered — all into a tree
+whose next `git checkout --force` discards the lot. The deployed copy reads revision 156 against the
+dev clone's 188. Nothing refused, nothing warned, and the operator running the pass did not notice
+until a reviewer measured the tree.
+
+That is the strongest available argument for this change and it is first-hand rather than reported.
+It also corrects the issue's framing: the harm is not only that breadcrumbs appear where nobody
+works, it is that **pm's own upgrade path writes durable, tracked state into a tree that will throw
+it away** — and because the files are tracked, a deploy that does *not* use `--force` fails on local
+modifications instead.
+
+The failure is silent in both directions:
+
+- A deploy runs `git checkout --force`, so anything pm wrote there is discarded. The upgrade reports
+  success and vanishes at the next release.
+- A session meaning to work on the backlog writes to the deployed copy instead, and the two
+  `state.json` files disagree with nothing reporting it.
+
+The workaround is remembering to wrap every invocation as `(cd <dev clone> && node "$ENGINE" …)` —
+exactly the shape this project's own feedback rule calls a filing rather than a footnote. Filed as
+`cfdude/pm#175`.
 
 ## What Changes
 
@@ -55,7 +76,7 @@ silent false negatives, and this defect is already a story about a silent false 
 
 ### New Capabilities
 
-None. This narrows when two existing capabilities write, and adds a warning to a third.
+None. This narrows when one existing capability writes, and adds a warning to a second.
 
 ### Modified Capabilities
 

@@ -6495,9 +6495,11 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "e6f4849"
+      ],
       "createdAt": "2026-09-11T07:06:45.967Z",
-      "touchedAt": "2026-09-11T07:07:04.072Z",
+      "touchedAt": "2026-09-11T07:16:22.089Z",
       "release": "0.42.0"
     }
   ],
@@ -6509,7 +6511,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 610,
+  "revision": 611,
   "reviewMode": "thorough",
   "releases": [
     {
