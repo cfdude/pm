@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": null,
+  "active": "gh-cfdude-pm-175",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -5774,7 +5774,7 @@
       "id": "gh-cfdude-pm-175",
       "title": "pm treats a deployed detached checkout as conductor-managed, because state.json is tracked",
       "priority": "P1",
-      "status": "untriaged",
+      "status": "active",
       "role": "epic",
       "lane": "openspec",
       "links": [],
@@ -5793,9 +5793,18 @@
           "at": "2026-09-08T06:42:31.705Z",
           "actor": "agent",
           "text": "SECOND INSTANCE found independently 2026-09-07: /Users/robsherman/Documents/Repos/highway-llm/projects/maca/api/.conductor/ contains ONLY render-stamp.json — no state.json, so that tree was never /pm:init'd, yet pm wrote a render stamp into it. Different mechanism from the deployed-checkout case in the report (no detached HEAD involved; a session's cwd simply landed in a subdirectory of a managed repo), same root: pm decides it is managed and writes, on a signal that is not ownership. Whatever guard this epic lands must cover BOTH — a deployed checkout carrying a tracked state.json, and a nested directory carrying none. lane: openspec not <none routed> — four candidate signals offered by the reporter, none chosen; real design ambiguity in a load-bearing guard. Hit market-intelligence PRODUCTION."
+        },
+        {
+          "at": "2026-09-11T07:03:17.624Z",
+          "actor": "agent",
+          "text": "0.42.0 work starts here."
         }
       ],
-      "createdAt": "2026-09-08T17:55:42-07:00"
+      "createdAt": "2026-09-08T17:55:42-07:00",
+      "touchedAt": "2026-09-11T07:06:51.639Z",
+      "release": "0.42.0",
+      "startedAt": "2026-09-11T07:06:51.636Z",
+      "trackerRefreshNeeded": true
     },
     {
       "id": "gh-cfdude-pm-173",
@@ -6470,6 +6479,26 @@
         "declined": []
       },
       "completedAt": "2026-09-10T04:39:25.960Z"
+    },
+    {
+      "id": "detached-head-is-not-a-workspace",
+      "title": "detached-head-is-not-a-workspace",
+      "priority": "P1",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-cfdude-pm-175",
+          "reason": "this change IS the fix for that issue — the issue is the report, this is the work"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-11T07:06:45.967Z",
+      "touchedAt": "2026-09-11T07:07:04.072Z",
+      "release": "0.42.0"
     }
   ],
   "detourStack": [],
@@ -6480,7 +6509,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 603,
+  "revision": 610,
   "reviewMode": "thorough",
   "releases": [
     {
@@ -6639,6 +6668,12 @@
         }
       ],
       "target": "0.41.0"
+    },
+    {
+      "id": "0.42.0",
+      "intent": "The record stops writing where nobody is working, and the backlog items 0.41.0's grooming rescoped. Starts with #175 — pm reads a deployed detached checkout as a workspace because state.json is tracked, so breadcrumbs land in production trees and an upgrade there is discarded by the next deploy, both silently.",
+      "deferred": [],
+      "target": "0.42.0"
     }
   ],
   "archiveBackfilledAt": "2026-08-27T04:52:42.658Z"
