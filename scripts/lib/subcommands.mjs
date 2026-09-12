@@ -12,7 +12,7 @@ import { stampVersion } from "./plugin-meta.mjs";
 import { render } from "./render.mjs";
 import { writeRules } from "./rules.mjs";
 import { buildBrief } from "./briefing.mjs";
-import { appendDetourLog, gitShortSha } from "./git.mjs";
+import { appendDetourLog, gitShortSha, isDetachedTree } from "./git.mjs";
 import { observeCommit } from "./commit-watch.mjs";
 import { deferralHistory, deferralNote, detourContext } from "./links.mjs";
 import { activeChangeIds, archivedChanges, firstHeading, planFiles, reconcileArchived, strippedChangeId } from "./epic-progress.mjs";
@@ -110,7 +110,9 @@ export function snapshot() {
   // SessionStart showed the message to no one, and compaction is routine in exactly the long
   // sessions where sustained contention is most likely. brief() is the only delivery point that
   // reaches a session; render() already passes no consume and stays that way.
-  fs.writeFileSync(BRIEF_PATH, buildBrief(state) + "\n");
+  // gh#175: a snapshot is for the NEXT session in this tree, and a deployed checkout has none —
+  // the next thing to touch it is a `git checkout --force` that discards the file.
+  if (!isDetachedTree()) fs.writeFileSync(BRIEF_PATH, buildBrief(state) + "\n");
   process.stderr.write("conductor: snapshot written before compaction\n");
 }
 
@@ -191,6 +193,14 @@ export function looksLikeUnloggedMinimalDetour(subject, activeEpicId) {
 
 export function commitNudge() {
   if (!isInitialized()) return;          // DORMANT until /pm:init
+  // gh#175: DORMANT in a detached tree too, and suppressing the watermark alone would have been
+  // worse than doing nothing. writeWatch() now returns false there, so readWatch() answers null
+  // forever, so every invocation reads `no-baseline` / `unverifiable` and falls through to
+  // unverifiableSubject() — the PRE-OBSERVATION text heuristic, where any command merely
+  // mentioning `git commit` fires the nudge. That is gh#104's behaviour, reinstated permanently in
+  // exactly the tree where noise is least wanted, and it reaches reconcileArchived() and a
+  // state.json write on the way. Suppressing the WATERMARK requires suppressing the REACTION.
+  if (isDetachedTree()) return;
   const raw = readStdin();
   let cmd = "";
   try {

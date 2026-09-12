@@ -31,6 +31,7 @@ import {
   ACTIVITY_SEGMENT_MAX_BYTES, ACTIVITY_RETENTION_MAX_BYTES,
 } from "./constants.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
+import { isDetachedTree } from "./git.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 
 /** Re-derived per call, like write-conflicts.mjs's: the tests cache-bust by moving
@@ -148,6 +149,10 @@ function currentSegment(dir) {
 /** Append already-built event objects. One JSON object per line. */
 export function appendEvents(events) {
   if (!events || !events.length) return;
+  // gh#175: a per-session event trail, and a tree nobody is working in has no session to trail.
+  // Found by the call-site sweep AFTER the four siblings were done — the exact absent-edit shape
+  // the sweep is mandatory for, in the change that ships against it.
+  if (isDetachedTree()) return;
   try {
     const dir = activityDir();
     fs.mkdirSync(dir, { recursive: true });

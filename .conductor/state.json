@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "gh-cfdude-pm-175",
+  "active": "detached-head-is-not-a-workspace",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -5774,7 +5774,7 @@
       "id": "gh-cfdude-pm-175",
       "title": "pm treats a deployed detached checkout as conductor-managed, because state.json is tracked",
       "priority": "P1",
-      "status": "active",
+      "status": "queued",
       "role": "epic",
       "lane": "openspec",
       "links": [],
@@ -5801,10 +5801,15 @@
         }
       ],
       "createdAt": "2026-09-08T17:55:42-07:00",
-      "touchedAt": "2026-09-11T07:06:51.639Z",
+      "touchedAt": "2026-09-12T00:04:10.342Z",
       "release": "0.42.0",
       "startedAt": "2026-09-11T07:06:51.636Z",
-      "trackerRefreshNeeded": true
+      "trackerRefresh": {
+        "verdict": "unchanged",
+        "summary": "Re-read before drawing the change. Still OPEN, zero comments, label bug, updatedAt unmoved since filing — no third-party context accumulated. The proposal's own re-measurement of the cited tree is where the new evidence came from, not the item.",
+        "recordedAt": "2026-09-12T00:04:08.127Z",
+        "externalUpdatedAt": "2026-09-06T20:36:31Z"
+      }
     },
     {
       "id": "gh-cfdude-pm-173",
@@ -6484,7 +6489,7 @@
       "id": "detached-head-is-not-a-workspace",
       "title": "detached-head-is-not-a-workspace",
       "priority": "P1",
-      "status": "untriaged",
+      "status": "active",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -6500,7 +6505,7 @@
         "672d55e"
       ],
       "createdAt": "2026-09-11T07:06:45.967Z",
-      "touchedAt": "2026-09-11T07:26:02.326Z",
+      "touchedAt": "2026-09-12T00:04:10.342Z",
       "release": "0.42.0",
       "gateReview": {
         "gate1": {
@@ -6534,13 +6539,14 @@
           "reason": "Duplicate attribution, not a wrong sha. A backgrounded wait-loop and a direct call both recorded 672d55e; the array is append-only and does not de-duplicate, by design. Removing ONE occurrence leaves the endpoint unchanged, which is precisely why --withdraw-commit removes one per request rather than all copies.",
           "withdrawnAt": "2026-09-11T07:26:02.309Z"
         }
-      ]
+      ],
+      "startedAt": "2026-09-12T00:04:10.339Z"
     },
     {
       "id": "gh-cfdude-pm-191",
       "title": "0.41.0's --artifact evidence is invisible to gateHasEvidence, so a correct Gate 1 reports as bookkeeping",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -6554,9 +6560,11 @@
       "externalId": "191",
       "externalUrl": "https://github.com/cfdude/pm/issues/191",
       "externalUpdatedAt": "2026-09-11T07:27:30Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "62e0586"
+      ],
       "createdAt": "2026-09-11T07:27:50.883Z",
-      "touchedAt": "2026-09-11T07:27:57.435Z",
+      "touchedAt": "2026-09-11T08:16:14.043Z",
       "notes": [
         {
           "at": "2026-09-11T07:27:54.109Z",
@@ -6564,7 +6572,18 @@
           "text": "lane: superpowers not <none — suggest-lane returns null> — the intake tie-break resolves an unrouted question away from claude-code. Not a one-liner despite appearances: gateHasEvidence has four call sites and two dereference entry.headSha on the next line, so widening it naively hands those undefined. Found on the FIRST real use of --artifact, which is the strongest kind of evidence a filing can carry."
         }
       ],
-      "release": "0.42.0"
+      "release": "0.42.0",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-11T08:16:14.039Z",
+        "reason": "Shipped in 0.42.0. Two readers of the artifact field kept the range-only definition after #177 added it; the predicate itself is correctly range-only and was NOT widened, because two of its callers dereference entry.headSha on the next line. Found by running a Gate 1 with --artifact for the first time — the arm reported the correct sequence as a defect, because its premise (a real verdict predates the work it names) inverts for a Gate 1, whose verdict necessarily post-dates the commit that fixes what the review found."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-11T08:16:14.038Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-11T08:16:14.039Z"
     }
   ],
   "detourStack": [],
@@ -6575,7 +6594,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 619,
+  "revision": 623,
   "reviewMode": "thorough",
   "releases": [
     {

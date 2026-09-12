@@ -44,6 +44,7 @@ import path from "node:path";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { CLAIM_DEFAULT_TTL_MINUTES, REPO_CLAIM_DEFAULT_TTL_MINUTES, isFlagToken, splitFlagToken } from "./constants.mjs";
+import { isDetachedTree } from "./git.mjs";
 import { parseFlags, requireFlagValues, requireKnownFlags } from "./add-epic.mjs";
 import { resolveSession, SESSION_HINT } from "./session-identity.mjs";
 import { claimExpiry, isLiveClaim } from "./claim-shape.mjs";
@@ -78,6 +79,9 @@ export function readRepoClaim() {
 }
 
 function writeRepoClaim(claim) {
+  // gh#175: this file says "THIS session is mid-operation in THIS working tree", which is the
+  // session-bookkeeping criterion stated aloud.
+  if (isDetachedTree()) return;
   const p = repoClaimPath();
   fs.mkdirSync(path.dirname(p), { recursive: true });
   fs.writeFileSync(p, JSON.stringify(claim, null, 2) + "\n");

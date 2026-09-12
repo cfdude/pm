@@ -11,6 +11,50 @@ export function gitShortSha() {
   catch { return "-"; }
 }
 
+/** IS THIS TREE A PLACE TO WORK? Three states, and `unknown` is a real third answer rather than a
+ *  synonym for `attached`, even though both write normally — collapsing them is how a future
+ *  reader turns "git could not say" into "the tree is a workspace" and takes the discrimination
+ *  below with it.
+ *
+ *  gh#175. pm's dormancy guard asks whether `.conductor/state.json` EXISTS, and that file is
+ *  git-tracked by design because `git restore` is the documented undo. A repository that deploys by
+ *  checking ITSELF out therefore carries state.json in the deployed copy and reads as a workspace.
+ *  One file was answering two questions — is this repository pm-managed, and is this tree a place
+ *  to work — which diverge exactly there. Measured: a production checkout detached at a tag held a
+ *  commit watermark, a brief snapshot and an activity log, and a fleet upgrade later stamped a new
+ *  pmVersion and rewrote the rules block into it, all of which the next `git checkout --force`
+ *  discards.
+ *
+ *  `symbolic-ref --quiet HEAD` rather than `rev-parse --abbrev-ref HEAD`, for two independent
+ *  reasons: the latter returns the literal string `HEAD` when detached — which is also a legal ref
+ *  name, so the comparison is ambiguous by construction — and it exits 128 on an UNBORN HEAD,
+ *  putting every fresh repository on the error path.
+ *
+ *  THE EXIT STATUS IS DISCRIMINATED, not merely tested for non-zero. Status 1 is a detached HEAD;
+ *  128 is "not a repository"; a throw is git missing from PATH. `catch → detached` would make a
+ *  non-repository SUPPRESS writes, which is the opposite of the safe direction — a false record is
+ *  visible and removable, a false suppression silently disables the trail. Same shape as
+ *  `isAncestor()` below, deliberately.
+ *
+ *  CACHED PER PROCESS. Every caller is a write path that would otherwise spawn git again, and HEAD
+ *  does not move under a running invocation. */
+let headAttachmentCache = null;
+export function headAttachment() {
+  if (headAttachmentCache) return headAttachmentCache;
+  try {
+    execFileSync("git", ["symbolic-ref", "--quiet", "HEAD"],
+      { cwd: ROOT, stdio: ["ignore", "ignore", "ignore"] });
+    headAttachmentCache = "attached";
+  } catch (e) {
+    headAttachmentCache = e && e.status === 1 ? "detached" : "unknown";
+  }
+  return headAttachmentCache;
+}
+
+/** `true` only where git SAID the tree is detached. An unanswerable probe is not detachment, which
+ *  is why every caller asks this rather than `!== "attached"`. */
+export const isDetachedTree = () => headAttachment() === "detached";
+
 /** Kinds whose IDENTITY is the commit they describe, so a second row for the same sha is a
  *  duplicate by definition rather than a second event (gh#81: one repo held 8 rows for 4 distinct
  *  shas, one sha three times, twice with an empty note).
@@ -43,6 +87,9 @@ function alreadyLogged(kind, sha) {
  *  log is the wrong place to depend on an upstream guard: dedupe where the row is written, so
  *  every rung inherits it. */
 export function appendDetourLog(kind, epic, note) {
+  // gh#175: a detour is BY DEFINITION an interruption of active work, and a detached tree is one
+  // nobody is working in. Suppressed silently, like every other session-bookkeeping write.
+  if (isDetachedTree()) return false;
   fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
   const sha = gitShortSha();
   // sha "-" is gitShortSha()'s "cannot tell" (no git, no repository, no commits yet), NOT a
