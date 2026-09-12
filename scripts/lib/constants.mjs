@@ -1315,6 +1315,8 @@ export function warnDetachedTree(writes) {
     `conductor: ⚠ DETACHED CHECKOUT${tag ? ` (at ${tag})` : ""} — this tree is not on a branch, so ` +
     "a deploy that checks it out again discards what this command writes.\n" +
     `conductor:   about to write: ${writes || "state"}\n` +
+    "conductor:   session bookkeeping is NOT written here (commit watermark, detour log, brief " +
+    "snapshot, session claim, activity log), so any of those named above will not happen.\n" +
     "conductor:   if you meant the workspace, run this in the checkout that is on a branch.\n");
 }
 

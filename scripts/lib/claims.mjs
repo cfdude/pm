@@ -78,13 +78,18 @@ export function readRepoClaim() {
   } catch { return null; }
 }
 
+/** Returns whether it wrote. gh#175 Gate 2 C1: the caller announced "repository marked busy"
+ *  unconditionally, so suppression produced a confident false statement — and with `--steal` it
+ *  also announced a takeover that never happened and printed the OTHER session's expiry, which
+ *  makes the message internally plausible and unreadable as wrong. */
 function writeRepoClaim(claim) {
   // gh#175: this file says "THIS session is mid-operation in THIS working tree", which is the
   // session-bookkeeping criterion stated aloud.
-  if (isDetachedTree()) return;
+  if (isDetachedTree()) return false;
   const p = repoClaimPath();
   fs.mkdirSync(path.dirname(p), { recursive: true });
   fs.writeFileSync(p, JSON.stringify(claim, null, 2) + "\n");
+  return true;
 }
 
 function clearRepoClaim() {
@@ -143,12 +148,20 @@ export function claim() {
     if (held && held.session !== session && isLiveClaim(held) && !steal) {
       refuseHeld("this repository", held, "claim --repo");
     }
-    if (held && held.session !== session) {
+    // The takeover line is announced only if the write actually lands — it describes a change to
+    // the marker, and in a detached tree the marker does not change.
+    const stolenFrom = held && held.session !== session ? held : null;
+    if (!writeRepoClaim(makeClaim(session, ttl))) {
       process.stderr.write(
-        `conductor: took over the repository marker from session '${held.session}' ` +
-        `(${isLiveClaim(held) ? "STOLEN while live" : "its claim had expired"})\n`);
+        "conductor: NOT recorded — this tree is detached, so no repository marker was written " +
+        "and nothing was taken over. Run this in the checkout that is on a branch.\n");
+      return;
     }
-    writeRepoClaim(makeClaim(session, ttl));
+    if (stolenFrom) {
+      process.stderr.write(
+        `conductor: took over the repository marker from session '${stolenFrom.session}' ` +
+        `(${isLiveClaim(stolenFrom) ? "STOLEN while live" : "its claim had expired"})\n`);
+    }
     process.stderr.write(
       `conductor: repository marked busy by '${session}' until ${claimExpiry(readRepoClaim())}\n`);
     return;

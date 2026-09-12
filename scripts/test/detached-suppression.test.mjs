@@ -58,8 +58,12 @@ test("the watermark IS written on a branch — the control that makes the absenc
 test("the detour log is not written in a detached tree, and the verb still reports", () => {
   const cwd = deployed();
   const out = runCombined(["log-detour", "--minimal", "a thing"], { cwd });
-  assert.match(out, /conductor:/, "the verb reports as it normally would");
   assert.ok(!exists(cwd, "detours.log"), "a detour interrupts active work; there is none here");
+  // Assert the verb's OWN line, not merely `conductor:` — the detached WARNING matches that too,
+  // so the weaker form would pass even if the verb crashed right after warning.
+  assert.match(out, /NOT logged/, "and it says so, rather than claiming a row it did not write");
+  assert.doesNotMatch(out, /^conductor: logged minimal detour$/m,
+    "the false-success line must be gone, not merely accompanied by a warning");
 });
 
 test("the detour log IS written on a branch", () => {
@@ -71,8 +75,10 @@ test("the detour log IS written on a branch", () => {
 test("the brief snapshot is not written in a detached tree, and snapshot still reports", () => {
   const cwd = deployed();
   const out = runCombined(["snapshot"], { cwd });
-  assert.match(out, /conductor:/, "snapshot completes");
   assert.ok(!exists(cwd, "brief.txt"), "a snapshot is for the next session in this tree");
+  assert.match(out, /snapshot NOT written/,
+    "the verb's own line, and it tells the truth — `conductor:` alone is matched by the warning");
+  assert.doesNotMatch(out, /snapshot written before compaction/, "the false line is gone");
 });
 
 test("the brief snapshot IS written on a branch", () => {
@@ -83,10 +89,14 @@ test("the brief snapshot IS written on a branch", () => {
 
 test("the session claim is not written in a detached tree", () => {
   const cwd = deployed();
-  runCombined(["claim", "--repo", "--session", "s1"], { cwd });
+  const out = runCombined(["claim", "--repo", "--session", "s1"], { cwd });
   assert.ok(!exists(cwd, "session-claim.json"),
     "its own comment reads 'THIS session is mid-operation in THIS working tree' — the criterion " +
     "said aloud");
+  // This assertion had NO completion half and that is exactly why it missed the verb announcing
+  // "repository marked busy by 's1' until null" for a marker it never wrote.
+  assert.match(out, /NOT recorded/, "and the verb says so instead of reporting a claim");
+  assert.doesNotMatch(out, /marked busy/, "the false-success line is gone");
 });
 
 test("a tree git cannot answer about keeps writing — the safe direction", () => {
@@ -155,4 +165,19 @@ test("the activity log IS written on a branch — the control", () => {
   runCombined(["add-epic", "--id", "a1", "--title", "t", "--lane", "claude-code", "--priority", "P2"], { cwd });
   assert.ok(exists(cwd, "activity"),
     "without this the suppression above is satisfied by the log never being written at all");
+});
+
+test("--steal does not announce a takeover that did not happen", () => {
+  // The sharpest of the three: with a live claim by another session, the verb announced BOTH a
+  // takeover and the new claim, and printed the OTHER session's expiry — internally plausible,
+  // and therefore unreadable as wrong.
+  const cwd = deployed();
+  fs.mkdirSync(at(cwd), { recursive: true });
+  fs.writeFileSync(at(cwd, "session-claim.json"), JSON.stringify({
+    session: "held-by-other", expiresAt: new Date(Date.now() + 3600000).toISOString() }, null, 2));
+  const out = runCombined(["claim", "--repo", "--session", "mine", "--steal"], { cwd });
+  assert.doesNotMatch(out, /took over|STOLEN/, "nothing was taken over — the marker is unchanged");
+  assert.match(out, /NOT recorded/);
+  assert.match(JSON.parse(fs.readFileSync(at(cwd, "session-claim.json"), "utf8")).session,
+    /held-by-other/, "and the other session's marker survives untouched");
 });

@@ -6502,10 +6502,11 @@
       "reconcileNeeded": false,
       "attributedCommits": [
         "e6f4849",
-        "672d55e"
+        "672d55e",
+        "a20b1e5"
       ],
       "createdAt": "2026-09-11T07:06:45.967Z",
-      "touchedAt": "2026-09-12T00:04:10.342Z",
+      "touchedAt": "2026-09-12T00:30:21.832Z",
       "release": "0.42.0",
       "gateReview": {
         "gate1": {
@@ -6538,6 +6539,11 @@
           "sha": "672d55e",
           "reason": "Duplicate attribution, not a wrong sha. A backgrounded wait-loop and a direct call both recorded 672d55e; the array is append-only and does not de-duplicate, by design. Removing ONE occurrence leaves the endpoint unchanged, which is precisely why --withdraw-commit removes one per request rather than all copies.",
           "withdrawnAt": "2026-09-11T07:26:02.309Z"
+        },
+        {
+          "sha": "a20b1e5",
+          "reason": "Duplicate attribution, not a wrong sha — a backgrounded wait-loop and a direct call both recorded a20b1e5. SECOND time this session from the same cause: chaining an attribution onto a wait-loop that the orchestrator then also runs. The pattern to stop is putting a write in the tail of a background waiter.",
+          "withdrawnAt": "2026-09-12T00:30:21.829Z"
         }
       ],
       "startedAt": "2026-09-12T00:04:10.339Z"
@@ -6594,7 +6600,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 623,
+  "revision": 626,
   "reviewMode": "thorough",
   "releases": [
     {

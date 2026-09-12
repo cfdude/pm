@@ -209,7 +209,9 @@ if (VERB_EFFECTS[cmd]?.effect !== "read-only") {
   // unrecognised verb has no entry, reads as not-read-only, and warns — which is the same
   // deliberate choice the line above makes, and conductor-25 asserts set-equality between
   // VERB_EFFECTS and the dispatch object so a new verb cannot arrive undeclared.
-  if (isDetachedTree()) warnDetachedTree(VERB_EFFECTS[cmd]?.writes);
+  // A verb whose whole write set is session bookkeeping writes NOTHING here, so there is no
+  // discarded write to warn about — and one of them runs on every Bash tool call.
+  if (isDetachedTree() && !VERB_EFFECTS[cmd]?.detachedNoOp) warnDetachedTree(VERB_EFFECTS[cmd]?.writes);
 }
 
 // df-engine-banner-noise-every-invocation: the banner is suppressed by default whenever

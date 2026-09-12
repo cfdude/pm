@@ -76,8 +76,10 @@ test("EVERY read-only verb is silent — the defect 0.40.0 removed must not retu
     .filter(([, v]) => v.effect === "read-only").map(([k]) => k);
   assert.ok(readOnly.length > 10, `expected a real population of read-only verbs, got ${readOnly.length}`);
   const cwd = deployed();
-  for (const verb of ["integrity", "brief", "changesets", "owners"]) {
-    assert.ok(readOnly.includes(verb), `${verb} must be declared read-only for this to measure anything`);
+  // ITERATE THE DECLARED SET, not a typed sample. A typed list of four would leave a verb
+  // reclassified to read-only later uncovered — the staleness shape this change's own design
+  // rejects, and task 4.3 claims the declared set is what is used, so it must be.
+  for (const verb of readOnly) {
     assert.doesNotMatch(runCombined([verb], { cwd }), DETACHED,
       `${verb} is read-only — reading a deployed checkout's record is a legitimate thing to want`);
   }
@@ -96,4 +98,29 @@ test("a tree git cannot answer about produces no warning", () => {
   const out = runCombined(["add-epic", "--id", "e1", "--title", "t", "--lane", "claude-code",
                            "--priority", "P2"], { cwd });
   assert.doesNotMatch(out, DETACHED, "`unknown` is not detachment");
+});
+
+test("an UNRECOGNISED verb in a detached tree warns — the spec scenario that had no assertion", () => {
+  // `!== "read-only"` and not `=== "mutates"`: a verb nobody declared is not evidence that it is
+  // safe, and reading an absent declaration as read-only would make every new verb silently exempt
+  // until someone remembered to add a row.
+  const cwd = deployed();
+  const out = runCombined(["no-such-verb"], { cwd });
+  assert.match(out, DETACHED, "an undeclared verb warns, mirroring the divergence warning beside it");
+});
+
+test("commit-nudge does NOT warn — it writes nothing here, and it runs on every Bash call", () => {
+  // Warning about a discarded write would be false, and this verb is PostToolUse-wired: three
+  // stderr lines and a `git describe` spawn per tool call, in a deployed checkout, for a no-op.
+  const cwd = deployed();
+  const out = runCombined(["commit-nudge"], { cwd, input: JSON.stringify({ tool_input: { command: "ls" } }) });
+  assert.doesNotMatch(out, DETACHED, "nothing is written, so there is no discarded write to warn about");
+});
+
+test("the warning says that session bookkeeping will not happen", () => {
+  const cwd = deployed();
+  const out = runCombined(["snapshot"], { cwd });
+  assert.match(out, /session bookkeeping is NOT written here/,
+    "some of the writes it names are suppressed by the sibling requirement — saying only what the " +
+    "verb declares would point at writes that no longer happen");
 });

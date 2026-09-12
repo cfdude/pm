@@ -34,21 +34,31 @@
 
 ## 4. Call-site completeness sweep, including inverse operations
 
-- [x] 4.1 Call-site sweep, DONE MECHANICALLY and it earned itself. `rg` over every
-      writeFileSync/appendFileSync/rmSync/renameSync in the engine touching `.conductor/` returned
-      13 sites across 9 files. Five suppressed, per the spec's criterion: commit-watch.json,
-      detours.log, brief.txt, session-claim.json, activity/*.log. Four NOT suppressed with their
-      reasons in the spec: write-conflicts log+latch (a fact about the repository, not a session),
-      honcho-memories.log (an outbox whose absence loses work), render-stamp.json (the project's
-      own rendered output, and TRACKED — it is what the warning is about), state.json (it IS the
-      record). Removals (clearRepoClaim, the write-conflicts rmSync pair) need no guard.
-      THE SWEEP FOUND ONE: activity-log.mjs was still writing after the other four were done, and
-      had no test — the absent-edit shape, inside the change that ships the rule against it
+- [x] 4.1 Call-site sweep, DONE MECHANICALLY and it earned itself twice. `rg` over
+      writeFileSync/appendFileSync/rmSync/renameSync restricted to `.conductor/` paths returns
+      **15 sites across 10 files** — an earlier note said "13 across 9", which was the count for a
+      NARROWER query (no rmSync/renameSync) and is corrected here rather than left standing.
+      Five suppressed, per the spec's criterion: commit-watch.json, detours.log, brief.txt,
+      session-claim.json, activity/*.log. Not suppressed, with reasons in the spec: the
+      write-conflicts log and latch (a fact about the repository, not a session — and the latch is
+      consumed by a read-only verb the warning cannot reach), honcho-memories.log (an outbox whose
+      absent line is work lost), render-stamp.json (the project's own rendered output, TRACKED, and
+      the thing the warning is ABOUT), state.json (it IS the record). Removals need no guard:
+      clearRepoClaim, the write-conflicts rmSync pair, and activity-log's pruneToCap — the last
+      being unreachable once appendEvents returns early.
+      THE SWEEP FOUND TWO. activity-log.mjs was still writing after the other four were done, with
+      no test — the absent-edit shape, inside the change that ships the rule against it. And Gate 2
+      found `scripts/agent-log.sh` writing `.conductor/agent-logs/`, which a `*.mjs` glob is
+      STRUCTURALLY blind to: a maintainer shell tool, no in-repo caller, gitignored, and it resolves
+      its root through `--git-common-dir` so it writes to the main checkout rather than a linked
+      worktree. Left writing, deliberately, and recorded here rather than absent from the list.
 - [x] 4.2 Enumerate the INVERSE of every operation added — SETTLED IN design.md under "The inverse
       of each operation added": neither suppression nor the warning ships an override, because every
       detached population (deploys, CI, bisect) wants neither the writes nor an opt-out
-- [x] 4.3 No read-only verb acquired the warning — asserted over the DECLARED read-only set read
-      from VERB_EFFECTS at test time, not a typed list, so a verb reclassified later is covered
+- [x] 4.3 No read-only verb acquired the warning — asserted by RUNNING every verb in the DECLARED
+      read-only set, read from VERB_EFFECTS at test time rather than typed out, so a verb
+      reclassified later is covered. (The first version iterated a sample of four and claimed
+      otherwise; Gate 2 caught the gap between the claim and the code.)
 
 ## 5. Gates
 

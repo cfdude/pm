@@ -36,24 +36,35 @@ export function gitShortSha() {
  *  visible and removable, a false suppression silently disables the trail. Same shape as
  *  `isAncestor()` below, deliberately.
  *
- *  CACHED PER PROCESS. Every caller is a write path that would otherwise spawn git again, and HEAD
- *  does not move under a running invocation. */
-let headAttachmentCache = null;
-export function headAttachment() {
-  if (headAttachmentCache) return headAttachmentCache;
+ *  TAKES THE ROOT IT IS ASKED ABOUT, defaulting to `ROOT`. gh#175 Gate 2 C-A: a caller must be
+ *  able to ask about THE TREE IT IS WRITING TO, and one of them derives that per call. `ROOT` is
+ *  frozen at constants.mjs load, while `activityDir()` re-derives from CLAUDE_PROJECT_DIR every
+ *  time — deliberately, so tests can move it. Guarding one tree while writing to another is
+ *  silently wrong in-process, and it broke this repository's own suite under a detached ROOT,
+ *  which is EVERY CI run: `actions/checkout` leaves HEAD detached at the sha. The CLI never
+ *  diverges (one root, fixed at startup), which is exactly why a local run could not see it.
+ *
+ *  CACHED PER PROCESS, PER ROOT. Every caller is a write path that would otherwise spawn git
+ *  again, and HEAD does not move under a running invocation. Keyed by root so asking about a
+ *  second tree is answered, not served a stale answer about the first. */
+const headAttachmentCache = new Map();
+export function headAttachment(root = ROOT) {
+  if (headAttachmentCache.has(root)) return headAttachmentCache.get(root);
+  let answer;
   try {
     execFileSync("git", ["symbolic-ref", "--quiet", "HEAD"],
-      { cwd: ROOT, stdio: ["ignore", "ignore", "ignore"] });
-    headAttachmentCache = "attached";
+      { cwd: root, stdio: ["ignore", "ignore", "ignore"] });
+    answer = "attached";
   } catch (e) {
-    headAttachmentCache = e && e.status === 1 ? "detached" : "unknown";
+    answer = e && e.status === 1 ? "detached" : "unknown";
   }
-  return headAttachmentCache;
+  headAttachmentCache.set(root, answer);
+  return answer;
 }
 
 /** `true` only where git SAID the tree is detached. An unanswerable probe is not detachment, which
  *  is why every caller asks this rather than `!== "attached"`. */
-export const isDetachedTree = () => headAttachment() === "detached";
+export const isDetachedTree = (root = ROOT) => headAttachment(root) === "detached";
 
 /** Kinds whose IDENTITY is the commit they describe, so a second row for the same sha is a
  *  duplicate by definition rather than a second event (gh#81: one repo held 8 rows for 4 distinct

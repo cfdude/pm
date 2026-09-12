@@ -104,3 +104,20 @@ test("the probe answers about ROOT, not about process.cwd()", () => {
   assert.equal(probeIn(detached, { cwd: onBranch }), "detached",
     "ROOT is the detached tree while the process cwd is on a branch — the answer follows ROOT");
 });
+
+test("the probe answers per ROOT — a guard must be able to ask about the tree it is writing", () => {
+  // gh#175 Gate 2 C-A. `ROOT` is frozen at constants.mjs load; `activityDir()` re-derives its root
+  // per call so tests can move CLAUDE_PROJECT_DIR. A guard on the frozen ROOT therefore suppressed
+  // writes to a DIFFERENT tree — invisible in the CLI, where one root is fixed at startup and the
+  // two can never diverge, and red on CI, where every checkout is detached.
+  const detached = withCommit(repo());
+  git(detached, "checkout", "-q", "--detach", git(detached, "rev-parse", "HEAD").trim());
+  const onBranch = withCommit(repo());
+
+  const src = "import('" + LIB + "git.mjs').then(m => process.stdout.write(" +
+    `m.headAttachment('${detached}') + ',' + m.headAttachment('${onBranch}')))`;
+  const out = execFileSync(process.execPath, ["--input-type=module", "-e", src],
+    { cwd: onBranch, env: { ...process.env, CLAUDE_PROJECT_DIR: onBranch }, encoding: "utf8" }).trim();
+  assert.equal(out, "detached,attached",
+    "two roots, two answers — a single cached answer would serve the first to both");
+});
