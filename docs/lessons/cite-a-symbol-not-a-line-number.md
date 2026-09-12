@@ -9,6 +9,8 @@ cost: A grooming pass on 2026-09-07/08 recorded its evidence as line numbers. Wi
   69-90). Two independent agents each burned a read discovering it. The worst one is unfixable:
   the same wrong README citation is frozen inside an archived epic's DISPOSITION REASON, which is
   a permanent record and is now permanently wrong.
+rule: Cite a symbol, a heading or a quoted phrase — never `file.ext:123`. A line number rots within
+  days, and one frozen in a disposition reason or an archived epic is wrong permanently.
 enforced_in: Nothing mechanical — a line number is well-formed text and no test can tell a fresh
   one from a rotted one. This is a habit, which is why it is a lesson.
 detect: --(reason|notes|description) "[^"]*\b[a-z0-9_.-]+\.(mjs|md|json|py|ts):[0-9]+

@@ -7,6 +7,9 @@ cost: Four tests failed at once, mid-batch, after an evidence-based walk replace
   dispositions with real ones. The walk was the product's explicit goal — `unconsidered-outcomes`
   exists to drive that count to zero — so the tests broke BECAUSE the tool worked. Blocked a commit
   until a frozen fixture was captured and four tests were re-pointed.
+rule: Freeze the fixture. Never build a test's starting state by reading the project's own live
+  record and undoing part of it — the tool improving that record is then what breaks the test, and
+  the failure arrives mid-batch with nothing wrong.
 enforced_in: scripts/test/fixtures/state-pre-disposition-walk.json — the frozen pre-walk record,
   and the rename of `repoFromLiveState()` to `repoFromFrozenPreMigrationRecord()` in
   scripts/test/conductor-15.test.mjs that stopped the function claiming to read live state.

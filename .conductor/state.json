@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "gh-cfdude-pm-192",
+  "active": "lessons-index-cannot-drift-silently",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -6635,7 +6635,7 @@
       "id": "gh-cfdude-pm-192",
       "title": "A gate verdict cannot be withdrawn, so one recorded on the wrong epic is permanent",
       "priority": "P2",
-      "status": "active",
+      "status": "queued",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -6651,7 +6651,7 @@
       "externalUpdatedAt": "2026-09-12T01:29:22Z",
       "attributedCommits": [],
       "createdAt": "2026-09-12T01:29:33.093Z",
-      "touchedAt": "2026-09-12T06:09:28.399Z",
+      "touchedAt": "2026-09-12T06:42:10.474Z",
       "notes": [
         {
           "at": "2026-09-12T01:29:35.731Z",
@@ -6661,6 +6661,26 @@
       ],
       "startedAt": "2026-09-12T01:37:09.382Z",
       "trackerRefreshNeeded": true
+    },
+    {
+      "id": "lessons-index-cannot-drift-silently",
+      "title": "docs/lessons/README.md claimed to be generated from the files and stays honest while six lessons were missing from it, and six of the twelve declared detect: matchers are bare regexes that JSON.parse rejects, so half the corpus's matchers have never fired. Index every lesson from its own frontmatter, add the rule: field four lessons lacked (the engine renders it as the advice bullet), and guard both plus the detect: shape with scripts/test/lessons-index.test.mjs. The product half — that a malformed detect: is discarded with no report on any surface — is cfdude/pm#194, not this.",
+      "priority": "P2",
+      "status": "active",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "df-skill-commands-line-drift",
+          "reason": "same defect class — a hand-maintained doc index drifting from the directory or table it claims to mirror, with nothing enforcing it; that one fixed the SKILL.md commands line the same way, with a test"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-12T06:42:05.418Z",
+      "touchedAt": "2026-09-12T06:42:10.474Z",
+      "startedAt": "2026-09-12T06:42:10.472Z"
     }
   ],
   "detourStack": [],
@@ -6671,7 +6691,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 637,
+  "revision": 639,
   "reviewMode": "thorough",
   "releases": [
     {
