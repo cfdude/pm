@@ -1068,7 +1068,7 @@ test("9.3: a verdict's own recorded endpoints are never reported as commits it f
 // release, and arm 2 finds nothing because the one live epic holding two gate verdicts recorded
 // them 22 minutes apart.
 
-const { gateHasEvidence } = await import("../lib/constants.mjs");
+const { gateHasEvidence, gateArtifacts } = await import("../lib/constants.mjs");
 const shiftIso = (iso, ms) => new Date(Date.parse(iso) + ms).toISOString();
 const epicWithGates = (over) => ({ version: 1, active: null, detourStack: [], epics: [
   { id: "audited", title: "x", priority: "P1", status: "archived", role: "epic", lane: "openspec",
@@ -1160,8 +1160,13 @@ test("9.4: zero live candidates, and the reason each arm cannot fire is checkabl
   for (const e of state.epics) {
     const attributed = Array.isArray(e.attributedCommits) ? e.attributedCommits : [];
     if (!attributed.length) continue;
+    // gh#191: "unevidenced" means NEITHER evidence form. `gateHasEvidence` is deliberately
+    // range-only — two engine callers dereference `entry.headSha` on the next line — so a Gate 1
+    // recorded with `--artifact` reads as unevidenced to that predicate alone while carrying
+    // perfectly good evidence. Asking only it here made this assertion fire on the first correctly
+    // recorded artifact-bearing Gate 1, which is the same stale-reader defect the arm itself had.
     const unevidenced = Object.values(e.gateReview || {})
-      .filter(g => g && g.reviewedAt && !gateHasEvidence(g));
+      .filter(g => g && g.reviewedAt && !gateHasEvidence(g) && !gateArtifacts(g).length);
     assert.deepEqual(unevidenced.map(g => g.reviewedAt), [],
       `arm 1: \`${e.id}\` has attributed commits, so an unevidenced verdict of its own would ` +
       "have to be compared against them — the zero above must come from the comparison, not " +

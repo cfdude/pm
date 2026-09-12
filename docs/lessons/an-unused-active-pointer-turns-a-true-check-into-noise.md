@@ -46,6 +46,25 @@ And the second-order cost is the one that matters: an inflated count is precisel
 warning gets ignored. That is `gh-138`'s failure, and it is named three paragraphs above the code
 that produced it.
 
+## The recurrence has a shape: ARCHIVING the active epic leaves the pointer null
+
+Hit three times in one session, and the first fix did not prevent the second or third, because the
+rule as first written was *"set the pointer when you start work"* — which I did. What I did not do
+is set it again after **archiving** the epic it pointed at.
+
+`update-epic <id> --status archived` clears `.active` as a side effect, correctly. But a release
+mid-flight almost always still holds open members, so the moment the last active epic archives, the
+check has a delivered release, open siblings, and nothing marked in flight. It fires once per open
+member.
+
+So the rule has a second half: **after archiving an epic, point the pointer at what you are doing
+next, before anything else reads the record.** If nothing is next, the release is finished and the
+open members should be closed or deferred — which is the check telling the truth rather than
+crying wolf.
+
+The tell is a suite that was green minutes ago going red on live-record tests with no code change
+between the two runs.
+
 ## Before reaching for the source of a noisy check, read its comment
 
 Twelve findings looked like a bug in the check. The fix was one command, and the comment named it.

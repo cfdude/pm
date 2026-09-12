@@ -37,6 +37,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { CONDUCTOR_DIR, ROOT } from "./constants.mjs";
+import { isDetachedTree } from "./git.mjs";
 
 /** Where the HEAD watermark lives. Engine-written and per-checkout (a worktree has its own HEAD
  *  and its own .conductor/), so it is git-ignored by ensureGitignore() rather than tracked. */
@@ -95,6 +96,9 @@ export function readWatch() {
 /** Record where HEAD is now. Best-effort: a read-only checkout that cannot write it simply stays
  *  on the unverifiable rung forever, which is the old behaviour and therefore safe. */
 export function writeWatch(head) {
+  // gh#175: session bookkeeping, and a tree nobody works in has none. Suppressed SILENTLY — a file
+  // that does not appear asserts nothing, where a line on every hook invocation would be noise.
+  if (isDetachedTree()) return false;
   try {
     fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
     fs.writeFileSync(COMMIT_WATCH_PATH, JSON.stringify({ head }) + "\n");

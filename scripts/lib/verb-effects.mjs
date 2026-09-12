@@ -75,7 +75,14 @@ export const VERB_EFFECTS = {
   init: { effect: "mutates", writes: ".conductor/state.json, .gitignore, CLAUDE.md, PROJECT.md" },
   render: { effect: "mutates", writes: "PROJECT.md, .conductor/render-stamp.json (both skipped when the content would be identical)" },
   snapshot: { effect: "mutates", writes: ".conductor/brief.txt, plus render()'s writes" },
-  "commit-nudge": { effect: "mutates", writes: ".conductor/commit-watch.json, .conductor/detours.log, state.json's archived-epic self-heal, plus render()'s writes" },
+  // gh#175 `detachedNoOp`: this verb's ENTIRE write set is session bookkeeping, so in a detached
+  // tree it writes nothing at all and returns early. Declared HERE rather than as a list of verb
+  // names elsewhere, because this table is already the one the warning's gate reads and
+  // conductor-25 already asserts it covers every dispatched verb. Two consequences: warning about
+  // a discarded write would be false, and commit-nudge is PostToolUse-wired so it would have
+  // warned on EVERY Bash tool call in a deployed checkout — three stderr lines and a `git
+  // describe` spawn per call, for a verb that does nothing.
+  "commit-nudge": { effect: "mutates", detachedNoOp: true, writes: ".conductor/commit-watch.json, .conductor/detours.log, state.json's archived-epic self-heal, plus render()'s writes" },
   sync: { effect: "mutates", writes: "state.json — registers newly-found openspec changes and plans as untriaged epics" },
   "log-detour": { effect: "mutates", writes: ".conductor/detours.log (append-only)" },
   // #151. The substantial-detour PUSH and POP were a documented HAND-EDIT of state.json until

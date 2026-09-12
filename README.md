@@ -947,6 +947,23 @@ when nobody thinks to ask — which matters, because a stale claim is by constru
 session that is no longer there to ask. `owners` is behaviourally verified read-only, so an
 orchestrator can point it at a repo it does not own.
 
+### A deployed checkout is not a workspace
+
+**New in 0.42.0.** `.conductor/state.json` is git-tracked by design — it is the backup, and
+`git restore` is the documented undo. So a repository that deploys by checking *itself* out carries
+that file in the deployed copy, and pm's dormancy guard (which asks only whether the file exists)
+read that tree as a workspace.
+
+When **HEAD is detached**, pm now writes no session bookkeeping there — no commit watermark, detour
+log, brief snapshot, session claim or activity log — and any verb that does write says so, naming
+the tag when HEAD is exactly at one. Read-only verbs stay silent, because reading a deployed
+checkout's record is a legitimate thing to want.
+
+It warns rather than refusing: detachment is a deliberately cheap signal whose false positives —
+a bisect, reviewing an old release, and every CI checkout — are cases where suppressing session
+bookkeeping is right anyway. Filed as `#175`, and measured in a production tree that had
+accumulated all three breadcrumbs plus an upgrade the next deploy would have discarded.
+
 The repo-level "some session is mid-operation here" marker lives in a git-ignored sidecar,
 `.conductor/session-claim.json`, not in `state.json` — it answers *is it safe to write to
 `state.json`*, so putting it in the file it is worried about would invert its purpose. Release it

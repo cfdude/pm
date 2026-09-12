@@ -20,7 +20,7 @@
 
 import { isInitialized, loadState } from "./state.mjs";
 import { archivedChanges, epicProgress, strippedChangeId } from "./epic-progress.mjs";
-import { KNOWN_STATUSES, gateHasEvidence, isOpenspecLane, releaseMembers } from "./constants.mjs";
+import { KNOWN_STATUSES, gateArtifacts, gateHasEvidence, isOpenspecLane, releaseMembers } from "./constants.mjs";
 import { AGENT_OUTCOMES, dispositionInvocation } from "./archive-gate.mjs";
 import { commitDate, isAncestor, objectExists, reachableFromAnyRef } from "./git.mjs";
 import { isArchiveBackfilled, outcomeOf, stampedBy } from "./disposition.mjs";
@@ -323,7 +323,20 @@ export const CHECKS = [
         const attributed = Array.isArray(e.attributedCommits) ? e.attributedCommits : [];
         const mergedAt = attributed.length ? commitDate(attributed[attributed.length - 1]) : null;
         for (const [gate, entry] of [["gate1", g1], ["gate2", g2]]) {
-          if (!entry || !entry.reviewedAt || !mergedAt || gateHasEvidence(entry)) continue;
+          // gh#191: EITHER evidence form exempts. `gateHasEvidence` means "carries a checkable
+          // COMMIT RANGE" and stays that, because two of its callers dereference `entry.headSha`
+          // on the next line — widening the PREDICATE would hand them `undefined`. This arm asks a
+          // different question: does the verdict carry evidence of a real review AT ALL.
+          //
+          // The arm's premise INVERTS for a Gate 1 recorded with artifacts. For Gate 2 the loop is
+          // commit then review, so "dated after the last commit it names" is a bookkeeping signal.
+          // For Gate 1 the loop is write, commit, review, FIX WHAT THE REVIEW FOUND, commit the
+          // fixes, record — so the verdict necessarily post-dates the last attributed commit, and
+          // recording it earlier would mean recording a verdict for artifacts nobody had corrected.
+          // Measured: this arm fired on the FIRST Gate 1 recorded with --artifact, which is
+          // precisely the compliance its own comment above says the exemption exists to protect.
+          if (!entry || !entry.reviewedAt || !mergedAt) continue;
+          if (gateHasEvidence(entry) || gateArtifacts(entry).length) continue;
           if (Date.parse(entry.reviewedAt) > Date.parse(mergedAt)) {
             out.push({ epic: e.id, detail:
               `${gate} was recorded ${entry.reviewedAt} — after the epic's merge commit ` +

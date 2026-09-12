@@ -83,7 +83,8 @@ import {
 } from "./lib/rules.mjs";
 import { resolvePlatform, assertKnownPlatform, platformFlag, resolveAndRecordPlatform, rulesTarget } from "./lib/platform.mjs";
 import { loadState, conflictExitCode } from "./lib/state.mjs";
-import { ROOT, warnRootDivergence } from "./lib/constants.mjs";
+import { ROOT, warnRootDivergence, warnDetachedTree } from "./lib/constants.mjs";
+import { isDetachedTree } from "./lib/git.mjs";
 import { VERB_EFFECTS } from "./lib/verb-effects.mjs";
 import { setActive, clearActive } from "./lib/active-pointer.mjs";
 import { setAutonomy } from "./lib/autonomy.mjs";
@@ -200,7 +201,18 @@ if (!cmd || helpAt === 0 || helpAt === 1) {
 //
 // The predicate is cheap (two realpaths and one existsSync) and, by construction, silent in
 // every case except two live conductors with the wrong one selected.
-if (VERB_EFFECTS[cmd]?.effect !== "read-only") warnRootDivergence();
+if (VERB_EFFECTS[cmd]?.effect !== "read-only") {
+  warnRootDivergence();
+  // gh#175. THE SAME GATE, deliberately. 0.40.0 stopped the divergence warning above crying wolf
+  // on the 17 read-only verbs; a second warning built beside it must inherit that gate or it
+  // reintroduces the defect one release later. `!== "read-only"` and not `=== "mutates"`: an
+  // unrecognised verb has no entry, reads as not-read-only, and warns — which is the same
+  // deliberate choice the line above makes, and conductor-25 asserts set-equality between
+  // VERB_EFFECTS and the dispatch object so a new verb cannot arrive undeclared.
+  // A verb whose whole write set is session bookkeeping writes NOTHING here, so there is no
+  // discarded write to warn about — and one of them runs on every Bash tool call.
+  if (isDetachedTree() && !VERB_EFFECTS[cmd]?.detachedNoOp) warnDetachedTree(VERB_EFFECTS[cmd]?.writes);
+}
 
 // df-engine-banner-noise-every-invocation: the banner is suppressed by default whenever
 // CLAUDE_PROJECT_DIR is set (self-hosting/dev context -- the stale-cache scenario this banner

@@ -12,7 +12,7 @@ import { stampVersion } from "./plugin-meta.mjs";
 import { render } from "./render.mjs";
 import { writeRules } from "./rules.mjs";
 import { buildBrief } from "./briefing.mjs";
-import { appendDetourLog, gitShortSha } from "./git.mjs";
+import { appendDetourLog, gitShortSha, isDetachedTree } from "./git.mjs";
 import { observeCommit } from "./commit-watch.mjs";
 import { deferralHistory, deferralNote, detourContext } from "./links.mjs";
 import { activeChangeIds, archivedChanges, firstHeading, planFiles, reconcileArchived, strippedChangeId } from "./epic-progress.mjs";
@@ -110,8 +110,14 @@ export function snapshot() {
   // SessionStart showed the message to no one, and compaction is routine in exactly the long
   // sessions where sustained contention is most likely. brief() is the only delivery point that
   // reaches a session; render() already passes no consume and stays that way.
-  fs.writeFileSync(BRIEF_PATH, buildBrief(state) + "\n");
-  process.stderr.write("conductor: snapshot written before compaction\n");
+  // gh#175: a snapshot is for the NEXT session in this tree, and a deployed checkout has none —
+  // the next thing to touch it is a `git checkout --force` that discards the file.
+  const detached = isDetachedTree();
+  if (!detached) fs.writeFileSync(BRIEF_PATH, buildBrief(state) + "\n");
+  process.stderr.write(detached
+    ? "conductor: snapshot NOT written — this tree is detached, and the next thing to touch it is " +
+      "a checkout that would discard the file. PROJECT.md was still re-rendered.\n"
+    : "conductor: snapshot written before compaction\n");
 }
 
 
@@ -191,6 +197,14 @@ export function looksLikeUnloggedMinimalDetour(subject, activeEpicId) {
 
 export function commitNudge() {
   if (!isInitialized()) return;          // DORMANT until /pm:init
+  // gh#175: DORMANT in a detached tree too, and suppressing the watermark alone would have been
+  // worse than doing nothing. writeWatch() now returns false there, so readWatch() answers null
+  // forever, so every invocation reads `no-baseline` / `unverifiable` and falls through to
+  // unverifiableSubject() — the PRE-OBSERVATION text heuristic, where any command merely
+  // mentioning `git commit` fires the nudge. That is gh#104's behaviour, reinstated permanently in
+  // exactly the tree where noise is least wanted, and it reaches reconcileArchived() and a
+  // state.json write on the way. Suppressing the WATERMARK requires suppressing the REACTION.
+  if (isDetachedTree()) return;
   const raw = readStdin();
   let cmd = "";
   try {
@@ -655,9 +669,16 @@ export function logDetour() {
   const reason = process.argv.slice(3).join(" ").trim();
   if (!reason) { process.stderr.write("usage: conductor.mjs log-detour \"<what you fixed>\"\n"); process.exit(1); }
   const state = loadState();
-  appendDetourLog("MINIMAL", state.active || "-", reason);
+  // gh#175 Gate 2 C2: HONOUR THE RETURN. appendDetourLog()'s docstring says the boolean exists
+  // "so a caller never announces 'logged to detours.log' for a row that was suppressed" — the two
+  // commit-nudge callers already honour it, and this one did not. Detachment added a second
+  // suppressed path through a channel that was already there, which is the absent-edit class in
+  // the change that ships the rule against it.
+  const logged = appendDetourLog("MINIMAL", state.active || "-", reason);
   render();
-  process.stderr.write("conductor: logged minimal detour\n");
+  process.stderr.write(logged
+    ? "conductor: logged minimal detour\n"
+    : "conductor: NOT logged — this tree is detached, so nothing was written to .conductor/detours.log\n");
 }
 
 const HONCHO_MEMORIES_LOG = path.join(CONDUCTOR_DIR, "honcho-memories.log");

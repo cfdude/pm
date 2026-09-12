@@ -31,13 +31,16 @@ import {
   ACTIVITY_SEGMENT_MAX_BYTES, ACTIVITY_RETENTION_MAX_BYTES,
 } from "./constants.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
+import { isDetachedTree } from "./git.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 
 /** Re-derived per call, like write-conflicts.mjs's: the tests cache-bust by moving
  *  CLAUDE_PROJECT_DIR, and a module-scope constant would freeze the first repo seen. */
+export function activityRoot() {
+  return process.env.CLAUDE_PROJECT_DIR || process.cwd();
+}
 export function activityDir() {
-  const root = process.env.CLAUDE_PROJECT_DIR || process.cwd();
-  return path.join(root, ".conductor", "activity");
+  return path.join(activityRoot(), ".conductor", "activity");
 }
 
 /** Is the log on for this repo? Absent config means OFF — the issue's stated posture, and the
@@ -148,6 +151,16 @@ function currentSegment(dir) {
 /** Append already-built event objects. One JSON object per line. */
 export function appendEvents(events) {
   if (!events || !events.length) return;
+  // gh#175: a per-session event trail, and a tree nobody is working in has no session to trail.
+  // Found by the call-site sweep AFTER the four siblings were done — the exact absent-edit shape
+  // the sweep is mandatory for, in the change that ships against it.
+  //
+  // ASKS ABOUT THE TREE IT IS ABOUT TO WRITE, not about the frozen ROOT. activityDir() re-derives
+  // its root per call so tests can move CLAUDE_PROJECT_DIR; guarding ROOT instead would suppress a
+  // write to a DIFFERENT tree than the one probed. Gate 2 caught it as a red CI run — every CI
+  // checkout is detached, so a frozen-ROOT guard fired against temp-dir writes and the CLI could
+  // never show it, because there one root is fixed at startup and the two can never diverge.
+  if (isDetachedTree(activityRoot())) return;
   try {
     const dir = activityDir();
     fs.mkdirSync(dir, { recursive: true });

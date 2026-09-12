@@ -4,6 +4,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { execFileSync } from "node:child_process";
 
 export const ROOT = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 export const CONDUCTOR_DIR = path.join(ROOT, ".conductor");
@@ -1277,6 +1278,48 @@ export function rootDivergence({ env = process.env, cwd = process.cwd() } = {}) 
  *  absent. The engine banner is suppressed whenever CLAUDE_PROJECT_DIR is set, which means the
  *  single condition that redirects every write is also the condition that makes the engine
  *  quietest. A safety line that inherits that is no safety line. */
+/** gh#175 — say that this write lands in a tree a deploy can discard.
+ *
+ *  WARNS AND STILL WRITES. pm is an instruction layer: it reports, it does not decide. Detachment
+ *  is a deliberately cheap signal with accepted false positives — a bisect, a review of an old
+ *  tag, and every CI checkout, since `actions/checkout` leaves HEAD detached at the sha — so
+ *  refusing would break legitimate work to protect against a case the operator can see once it is
+ *  named. And since no override ships, a refusal would be unescapable, which is strictly worse
+ *  than a line on stderr.
+ *
+ *  NAMES WHAT WAS WRITTEN, not "the write". `upgrade` writes five things, four of them tracked in
+ *  a typical repository, while the sibling suppression removes some of the others — a generic
+ *  message would tell the operator a write will be discarded while pointing at the one write that
+ *  no longer happens.
+ *
+ *  NAMES THE TAG when HEAD is exactly at one: `detached at v2.11.0` identifies a deployment to a
+ *  reader where `detached` alone does not. `--tags` is load-bearing, because without it `describe`
+ *  considers annotated tags only and a deploy that checks out a LIGHTWEIGHT tag is ordinary. The
+ *  tag is CONTEXT in the message and never a CONDITION on the check — requiring a tag match would
+ *  miss every deploy that checks out a sha, and a signal with silent false negatives is what this
+ *  change exists to remove.
+ *
+ *  Takes the WRITES STRING rather than the verb, so this module imports nothing new — the caller
+ *  already holds `VERB_EFFECTS` and constants.mjs stays free of a cycle back through it.
+ *
+ *  Delivered on STDERR, on the invocation. This capability already requires that a warning is
+ *  consumed where it reaches a session; one composed into brief.txt or PROJECT.md is written by a
+ *  hook and read back by nothing. */
+export function warnDetachedTree(writes) {
+  let tag = "";
+  try {
+    tag = execFileSync("git", ["describe", "--tags", "--exact-match", "HEAD"],
+      { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+  } catch { /* no exact tag, or no git — the message stands without it */ }
+  process.stderr.write(
+    `conductor: ⚠ DETACHED CHECKOUT${tag ? ` (at ${tag})` : ""} — this tree is not on a branch, so ` +
+    "a deploy that checks it out again discards what this command writes.\n" +
+    `conductor:   about to write: ${writes || "state"}\n` +
+    "conductor:   session bookkeeping is NOT written here (commit watermark, detour log, brief " +
+    "snapshot, session claim, activity log), so any of those named above will not happen.\n" +
+    "conductor:   if you meant the workspace, run this in the checkout that is on a branch.\n");
+}
+
 export function warnRootDivergence(stream = process.stderr) {
   const d = rootDivergence();
   if (!d) return null;
