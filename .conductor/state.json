@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "lessons-index-cannot-drift-silently",
+  "active": null,
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -6666,7 +6666,7 @@
       "id": "lessons-index-cannot-drift-silently",
       "title": "docs/lessons/README.md claimed to be generated from the files and stays honest while six lessons were missing from it, and six of the twelve declared detect: matchers are bare regexes that JSON.parse rejects, so half the corpus's matchers have never fired. Index every lesson from its own frontmatter, add the rule: field four lessons lacked (the engine renders it as the advice bullet), and guard both plus the detect: shape with scripts/test/lessons-index.test.mjs. The product half — that a malformed detect: is discarded with no report on any surface — is cfdude/pm#194, not this.",
       "priority": "P2",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -6677,10 +6677,23 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "88dd9c42231c1d4f19b514ffa39778e252790f5a"
+      ],
       "createdAt": "2026-09-12T06:42:05.418Z",
-      "touchedAt": "2026-09-12T06:42:10.474Z",
-      "startedAt": "2026-09-12T06:42:10.472Z"
+      "touchedAt": "2026-09-12T06:48:21.282Z",
+      "startedAt": "2026-09-12T06:42:10.472Z",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-12T06:48:21.279Z",
+        "reason": "Shipped on dev at 88dd9c4. All 23 lessons indexed in docs/lessons/README.md from their own frontmatter, all 23 satisfy the four-field contract (four had title: and no rule:, which adviceText renders as the advice bullet), and scripts/test/lessons-index.test.mjs guards the index, the contract and the detect: shape with six assertions. Three of them were neutered and watched to fail before being trusted. The six bare-regex detect: matchers are grandfathered by name in a closed list rather than fixed here — four of them match file CONTENT, which matchLessons() has no field for, so they need a capability that does not exist. That half is cfdude/pm#194."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-12T06:48:21.279Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-12T06:48:21.279Z"
     }
   ],
   "detourStack": [],
@@ -6691,7 +6704,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 639,
+  "revision": 641,
   "reviewMode": "thorough",
   "releases": [
     {
