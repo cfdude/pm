@@ -8,6 +8,71 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.42.0] — 2026-09-12
+
+**A deployed checkout is not a workspace.** `.conductor/state.json` is git-tracked by design — it is
+the backup, and `git restore` is the documented undo — so a repository that deploys by checking
+*itself* out carries that file in the deployed copy, and pm's dormancy guard read that tree as a
+place to work. One file was answering two different questions, and in a self-deploying repository
+those diverge.
+
+Measured in a real production checkout: a commit watermark, a brief snapshot and an activity log had
+accumulated there, all git-ignored so `git status` stayed clean. And a fleet upgrade then stamped a
+new `pmVersion` and rewrote the managed rules block into it — four **tracked** files, in a tree
+whose next `git checkout --force` discards them.
+
+### Added
+
+* **A detached HEAD suppresses session bookkeeping.** The commit watermark, the detour log, the
+  brief snapshot, the session claim and the activity log all record work in progress, and a tree
+  nobody is working in has none. Silent — a file that does not appear asserts nothing, where a line
+  on every hook invocation would be noise. The set is defined by a CRITERION, not a list
+  (per-checkout, engine-owned, a record of work in progress rather than of the project), and all
+  fifteen `.conductor/` write sites are settled against it: five suppressed, four deliberately still
+  writing with their reasons in the spec, the rest removals needing no guard.
+* **A verb that writes says the tree is detached**, naming the files and the tag when HEAD is
+  exactly at one — `detached at v2.11.0` identifies a deployment where `detached` alone does not.
+  It warns and still writes: pm reports, it does not decide. Read-only verbs stay silent, on the
+  same `verb-effects` gate 0.40.0 used to stop the sibling warning crying wolf on the 17 of them.
+
+### Fixed
+
+* **`--artifact` evidence was invisible to `gateHasEvidence`**, so a correctly-run Gate 1 reported as
+  `gate-recorded-as-bookkeeping`. 0.41.0 added the evidence form and updated the writer and the
+  renderer; two other readers of the same field kept the range-only definition. The predicate is NOT
+  widened — two of its callers dereference `entry.headSha` on the next line — the two call sites
+  asking it the wrong question are. The arm's premise inverts for Gate 1: for Gate 2 the loop is
+  commit then review, while a Gate 1 recorded with artifacts necessarily post-dates the commit that
+  FIXES what the review found.
+
+### Notes
+
+* **The probe discriminates the exit status rather than testing for non-zero.** `git symbolic-ref
+  --quiet HEAD` exits 1 when detached, 128 when the directory is not a repository, and throws when
+  git is absent. `catch → detached` would make a non-repository SUPPRESS writes — the opposite of
+  the safe direction, since a false record is visible and removable while a false suppression
+  silently disables the trail.
+* **Every CI run is a detached tree**, because `actions/checkout` leaves HEAD detached at the sha.
+  Accepted rather than carved out: those trees are ephemeral, so suppressing session bookkeeping
+  there is right rather than merely tolerable. It is also why no opt-out ships — the population that
+  would need one wants neither the writes nor the flag.
+* **Gate 2 caught a defect that could not fail locally.** The suppression guard probed the frozen
+  `ROOT` while one of its write paths re-derives its root per call, so in-process the guard asked
+  about one tree and the write landed in another. The CLI fixes one root at startup and the two can
+  never diverge there; CI checks out detached, so pm's own suite would have gone red on the PR.
+  Fixed by making the probe answer about the tree it is asked about.
+* **Three verbs reported writes that suppression removed** and were fixed in the same gate:
+  `claim --repo` announced a marker it never wrote — and with `--steal`, a takeover that never
+  happened, printing the *other* session's expiry so the message read as plausible; `log-detour`
+  discarded the boolean whose own docstring says it exists to stop precisely that; `snapshot` said
+  "snapshot written".
+* **What this deliberately does NOT do:** it does not change the dormancy guard, and it does not
+  stop a mutating verb writing. `/pm:upgrade` in a deployed checkout still stamps tracked files the
+  next deploy discards. The warning is the mitigation, not a refusal, and both doc surfaces say so.
+* One member deferred: `#192` — a gate verdict cannot be withdrawn, so one recorded on the wrong
+  epic is permanent. Found during this release's own closeout, and not shipped unreviewed.
+* No `state.json` schema change and no migration.
+
 ## [0.41.0] — 2026-09-09
 
 **Backlog health, and the papercuts 0.40.0's own closeout surfaced.** Ten items in one release

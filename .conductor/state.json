@@ -6651,7 +6651,7 @@
       "externalUpdatedAt": "2026-09-12T01:29:22Z",
       "attributedCommits": [],
       "createdAt": "2026-09-12T01:29:33.093Z",
-      "touchedAt": "2026-09-12T01:37:09.384Z",
+      "touchedAt": "2026-09-12T06:09:28.399Z",
       "notes": [
         {
           "at": "2026-09-12T01:29:35.731Z",
@@ -6659,7 +6659,6 @@
           "text": "lane: superpowers not <none — suggest-lane returns null> — the intake tie-break resolves an unrouted question away from claude-code. Recoverable this time ONLY because the write was uncommitted; committed it would have been permanent. Must mirror --withdraw-commit's asymmetry: withdrawing every verdict reads gate-withdrawn, not none-recorded, and the archive gate still refuses."
         }
       ],
-      "release": "0.42.0",
       "startedAt": "2026-09-12T01:37:09.382Z",
       "trackerRefreshNeeded": true
     }
@@ -6672,7 +6671,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 636,
+  "revision": 637,
   "reviewMode": "thorough",
   "releases": [
     {
@@ -6835,7 +6834,13 @@
     {
       "id": "0.42.0",
       "intent": "The record stops writing where nobody is working, and the backlog items 0.41.0's grooming rescoped. Starts with #175 — pm reads a deployed detached checkout as a workspace because state.json is tracked, so breadcrumbs land in production trees and an upgrade there is discarded by the next deploy, both silently.",
-      "deferred": [],
+      "deferred": [
+        {
+          "epic": "gh-cfdude-pm-192",
+          "reason": "Registered during this release's own closeout and not implemented. It is a real gap — a gate verdict has no withdrawal, so one recorded on the wrong epic is permanent — but shipping a new flag unreviewed past a passing Gate 2 is exactly what this project refuses. Follows in the next release with its own gates.",
+          "recordedAt": "2026-09-12T06:09:28.396Z"
+        }
+      ],
       "target": "0.42.0"
     }
   ],
