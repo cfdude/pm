@@ -64,12 +64,12 @@
 
 - [x] 5.1 Gate 1 — spec review before code, fresh-context reviewers over the artifacts BY PATH.
       Record with `record-gate-review --gate 1 --verdict pass --artifact <path>…` (0.41.0 form)
-- [ ] 5.2 Gate 2 — implementation review over the committed range, two lenses under `thorough`
-- [ ] 5.3 Attribute every commit at the moment it is made; the archive commit is excluded
+- [x] 5.2 Gate 2 — implementation review over the committed range, two lenses under `thorough`
+- [x] 5.3 Attribute every commit at the moment it is made; the archive commit is excluded
 
 ## 6. Documentation and release
 
-- [ ] 6.1 `commands/upgrade.md` and `README.md`
-- [ ] 6.2 Mintlify sync in the same PR cycle
-- [ ] 6.3 Full suite green
-- [ ] 6.4 Archive this change <!-- pm:lifecycle -->
+- [x] 6.1 `commands/upgrade.md` and `README.md`
+- [x] 6.2 Mintlify sync in the same PR cycle
+- [x] 6.3 Full suite green
+- [x] 6.4 Archive this change <!-- pm:lifecycle -->

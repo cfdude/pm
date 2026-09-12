@@ -216,6 +216,56 @@ both timekeeping fields, so a sweep that fills in dates across an entire archive
 every one of those epics as last-touched on the day you ran it — during the release migration or
 during a later standalone re-run.
 
+## Running pm in a deployed checkout — a detached HEAD
+
+**New in 0.42.0.** If your repository deploys by checking *itself* out — `git checkout --detach
+--force <tag>` into a serving directory, with development in a separate clone or worktree — then
+the deployed copy contains `.conductor/state.json` too, because that file is **git-tracked by
+design**: it is the backup, and `git restore .conductor/state.json` is the documented undo above.
+
+pm's dormancy guard asks whether that file exists. So until 0.42.0, one file was answering two
+different questions — *is this repository pm-managed* and *is this tree a place to work* — and in a
+self-deploying repository those diverge.
+
+Two things follow, and both were silent:
+
+- Session bookkeeping landed in the deployed tree. Measured in a real production checkout: a commit
+  watermark, a brief snapshot and an activity log, all git-ignored, so `git status` showed nothing.
+- A `/pm:upgrade` run there **reported success and then vanished at the next release**, because the
+  deploy's `git checkout --force` discards it.
+
+### What 0.42.0 does
+
+**Session bookkeeping is not written when HEAD is detached.** The commit watermark, the detour log,
+the brief snapshot, the session claim and the activity log all record work in progress, and a tree
+nobody is working in has none. Suppression is silent — a file that does not appear asserts nothing.
+
+**A verb that writes says the tree is detached.** It still writes; pm reports rather than deciding.
+The message names the tag when HEAD is exactly at one, because `detached at v2.11.0` identifies a
+deployment where `detached` alone does not:
+
+```
+conductor: ⚠ DETACHED CHECKOUT (at v2.11.0) — this tree is not on a branch, so a deploy that
+           checks it out again discards what this command writes.
+conductor:   about to write: state.json (migrations, pmVersion), the platform rules file …
+conductor:   session bookkeeping is NOT written here …
+conductor:   if you meant the workspace, run this in the checkout that is on a branch.
+```
+
+Read-only verbs stay silent: reading a deployed checkout's record is a legitimate thing to want.
+
+<Note>
+**Detachment is the whole signal — the tag is context, not a condition.** Requiring a tag match
+would be more precise about "deployment" and would miss every deploy that checks out a sha. The
+cases detachment over-catches — a bisect, reviewing an old release, **and every CI run**, since
+`actions/checkout` leaves HEAD detached — are cases where suppressing session bookkeeping is right
+anyway: those trees are ephemeral or read-only by intent.
+</Note>
+
+**If you see that warning and did not mean to be there**, run the command again in the checkout
+that is on a branch. Nothing is lost — the deployed tree's copy is discarded by the next deploy,
+which is what the warning is telling you.
+
 ## If an upgrade goes wrong — git is the rollback
 
 There is no undo verb, and there does not need to be one: `.conductor/state.json` is

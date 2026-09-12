@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "detached-head-is-not-a-workspace",
+  "active": "gh-cfdude-pm-192",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -5774,7 +5774,7 @@
       "id": "gh-cfdude-pm-175",
       "title": "pm treats a deployed detached checkout as conductor-managed, because state.json is tracked",
       "priority": "P1",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [],
@@ -5801,7 +5801,7 @@
         }
       ],
       "createdAt": "2026-09-08T17:55:42-07:00",
-      "touchedAt": "2026-09-12T00:04:10.342Z",
+      "touchedAt": "2026-09-12T01:28:11.996Z",
       "release": "0.42.0",
       "startedAt": "2026-09-11T07:06:51.636Z",
       "trackerRefresh": {
@@ -5809,7 +5809,18 @@
         "summary": "Re-read before drawing the change. Still OPEN, zero comments, label bug, updatedAt unmoved since filing — no third-party context accumulated. The proposal's own re-measurement of the cited tree is where the new evidence came from, not the item.",
         "recordedAt": "2026-09-12T00:04:08.127Z",
         "externalUpdatedAt": "2026-09-06T20:36:31Z"
-      }
+      },
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-09-12T01:28:11.994Z",
+        "reason": "Superseded by detached-head-is-not-a-workspace, which IS the fix and carries the gates, the commits and the specs. This epic is the tracker mirror of the report — one piece of work registered twice, the shape the 0.41.0 grooming pass resolved seven times. The reporter's diagnosis is preserved in the change's proposal: 'this file exists' was doing double duty as 'this tree is a workspace'; their cheapest suggestion is what shipped; and their --git-common-dir warning held for a stronger reason than they gave — the two trees are separate CLONES, so that probe is blind there rather than inverted."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-12T01:28:11.993Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-12T01:28:11.994Z"
     },
     {
       "id": "gh-cfdude-pm-173",
@@ -6489,7 +6500,7 @@
       "id": "detached-head-is-not-a-workspace",
       "title": "detached-head-is-not-a-workspace",
       "priority": "P1",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -6497,16 +6508,22 @@
           "type": "relates-to",
           "epic": "gh-cfdude-pm-175",
           "reason": "this change IS the fix for that issue — the issue is the report, this is the work"
+        },
+        {
+          "type": "supersedes",
+          "epic": "gh-cfdude-pm-175",
+          "reason": "that epic is the tracker mirror of the report; this change is the work"
         }
       ],
       "reconcileNeeded": false,
       "attributedCommits": [
         "e6f4849",
         "672d55e",
-        "a20b1e5"
+        "a20b1e5",
+        "cfb51d9"
       ],
       "createdAt": "2026-09-11T07:06:45.967Z",
-      "touchedAt": "2026-09-12T00:30:21.832Z",
+      "touchedAt": "2026-09-12T01:28:09.787Z",
       "release": "0.42.0",
       "gateReview": {
         "gate1": {
@@ -6532,6 +6549,18 @@
             ],
             "reviewer": "two independent fresh-context lenses (review mode: thorough) — A: correctness, testability and whether the design survives contact, 4 Critical 6 Important. B: absent edits and untrue assertions, 2 Critical 6 Important. BOTH independently found the same two Criticals: the proposal's evidence was stale and the cited tree disproved its own central claim, and the breadcrumb requirement was a CLOSED four-item list while its rationale defined a larger set (eight write sites exist; session-claim.json and render-stamp.json were both missing, the second being the one measured dirty in production). Lens A additionally caught that the probe's 'exits non-zero' would make a non-repository suppress writes, contradicting this change's own scenario, and that the spec's 'mutates' predicate differs from the design's reuse of the shipped '!== read-only' gate on exactly the unknown-verb case the suite asserts. All findings closed; this is the FIRST gate-1 verdict recorded with --artifact rather than a fabricated commit range, which is the 0.41.0 capability being used for its own purpose."
           }
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-12T01:28:05.442Z",
+          "baseSha": "672d55e",
+          "headSha": "cfb51d9",
+          "reviewer": "two independent fresh-context lenses (thorough) — A: correctness, spec alignment and whether the tests prove what they claim, 3 Critical 5 Important. B: absent edits and what the change breaks elsewhere, 2 Critical 5 Important. Five Criticals, all closed. THE ONE THAT COULD NOT FAIL LOCALLY: appendEvents guarded the FROZEN ROOT while activityDir re-derives per call, so in-process the guard asked about one tree and the write landed in another — green in the CLI where one root is fixed at startup, and RED ON CI, where actions/checkout leaves HEAD detached at the sha. Reproduced both ways (57/1 detached, 58/0 attached) and fixed at the principle: the probe now takes the root it is asked about and caches per root. THREE VERBS reported writes that suppression removed — claim --repo announced a marker it never wrote and with --steal a takeover that never happened, printing the OTHER session's expiry so the message read as plausible; log-detour discarded the boolean whose docstring says it exists to prevent exactly that; snapshot said 'snapshot written'. The warning also named writes that no longer happen, fixed by declaring detachedNoOp on the effects table the gate already reads rather than a new verb list — which also stopped three stderr lines and a git spawn on EVERY Bash tool call, since commit-nudge is PostToolUse-wired. Four tests proved less than they claimed and were strengthened. Suite 1307/1307, and conductor-33 verified green under a DETACHED root, which is the shape CI runs.",
+          "superseded": {
+            "verdict": "ungated",
+            "reviewedAt": "2026-09-12T01:28:03.071Z",
+            "recordedBy": "archive-drift-heal"
+          }
         }
       },
       "withdrawnCommits": [
@@ -6546,7 +6575,18 @@
           "withdrawnAt": "2026-09-12T00:30:21.829Z"
         }
       ],
-      "startedAt": "2026-09-12T00:04:10.339Z"
+      "startedAt": "2026-09-12T00:04:10.339Z",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-12T01:28:09.785Z",
+        "reason": "Shipped in 0.42.0. A detached HEAD suppresses session bookkeeping (commit watermark, detour log, brief snapshot, session claim, activity log) and a verb that writes says the tree is detached, naming the tag when HEAD is exactly at one. Gate 1 pass at two lenses over the artifacts by path; Gate 2 pass at two lenses over 672d55e..cfb51d9 with five Criticals closed — the sharpest a guard on the FROZEN root while the write re-derived per call, green in the CLI and red on CI. Deliberately does NOT change isInitialized() or stop a mutating verb writing: state.json's tracking is load-bearing, and the warning is the mitigation rather than a refusal."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-12T01:28:09.784Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-12T01:28:09.785Z"
     },
     {
       "id": "gh-cfdude-pm-191",
@@ -6590,6 +6630,38 @@
         "declined": []
       },
       "completedAt": "2026-09-11T08:16:14.039Z"
+    },
+    {
+      "id": "gh-cfdude-pm-192",
+      "title": "A gate verdict cannot be withdrawn, so one recorded on the wrong epic is permanent",
+      "priority": "P2",
+      "status": "active",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-cfdude-pm-175",
+          "reason": "found while closing that epic — transcribing its gates was the wrong call and there was no way back"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "192",
+      "externalUrl": "https://github.com/cfdude/pm/issues/192",
+      "externalUpdatedAt": "2026-09-12T01:29:22Z",
+      "attributedCommits": [],
+      "createdAt": "2026-09-12T01:29:33.093Z",
+      "touchedAt": "2026-09-12T01:37:09.384Z",
+      "notes": [
+        {
+          "at": "2026-09-12T01:29:35.731Z",
+          "actor": "agent",
+          "text": "lane: superpowers not <none — suggest-lane returns null> — the intake tie-break resolves an unrouted question away from claude-code. Recoverable this time ONLY because the write was uncommitted; committed it would have been permanent. Must mirror --withdraw-commit's asymmetry: withdrawing every verdict reads gate-withdrawn, not none-recorded, and the archive gate still refuses."
+        }
+      ],
+      "release": "0.42.0",
+      "startedAt": "2026-09-12T01:37:09.382Z",
+      "trackerRefreshNeeded": true
     }
   ],
   "detourStack": [],
@@ -6600,7 +6672,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 626,
+  "revision": 636,
   "reviewMode": "thorough",
   "releases": [
     {
