@@ -30,9 +30,12 @@
       null), then add it beside `gateHasEvidence`. Every surface below calls it; none re-derives it
 - [ ] 2.3 RED then GREEN: withdrawing a Gate 2 `pass` removes `gateReview.gate2` and appends
       `{gate, entry, reason, withdrawnAt}` whose `entry` deep-equals the stored verdict. The GREEN step
-      registers `withdraw-gate-review` in `EPIC_FLAGS` (`key:null`, `write:"custom"`, NOT yet
-      repeatable) and implements a single-gate write, with no refusals, in `updateEpic` beside the
-      `--withdraw-commit` block, before the archive gate
+      registers `withdraw-gate-review` in `EPIC_FLAGS` (`key:null`, `write:"custom"`, `requires` naming
+      the gate number, NOT yet repeatable) and implements a single-gate write, with no refusals, in
+      `updateEpic` beside the `--withdraw-commit` block, before the archive gate. The SAME commit carries
+      8.1's conductor-13 exercise entry (with its `pre` step) and 8.2's usage line and `commands/epic.md`
+      row, because conductor-36 fails the suite on a registered flag with no doc row and the pre-commit
+      hook runs the suite
 - [ ] 2.4 REGRESSION GUARD (passes once 2.3 moves the whole entry): a Gate 1 carrying `superseded` moves whole; nothing is promoted
 - [ ] 2.5 REGRESSION GUARD: withdrawing one gate leaves the other deep-equal
 - [ ] 2.6 RED then GREEN: `--withdraw-gate-review 1 --withdraw-gate-review 2` withdraws both, two
@@ -157,10 +160,10 @@ keep passing.
 
 ## 8. Harness and docs
 
-- [ ] 8.1 Extend conductor-13's documented-flag harness with a full-argv `pre` step, so the
+- [ ] 8.1 (lands with 2.3) Extend conductor-13's documented-flag harness with a full-argv `pre` step, so the
       `--withdraw-gate-review` entry records a gate verdict (`record-gate-review subject --gate 2 …`)
       before the flag runs — an entry asserting only the refusal is ruled out by that table's comments
-- [ ] 8.2 The hand-written usage line in `update-epic.mjs` (conductor-13 reads flags from it);
+- [ ] 8.2 (lands with 2.3) The hand-written usage line in `update-epic.mjs` (conductor-13 reads flags from it);
       `commands/epic.md` flag table (conductor-36 enforces the registry⇒doc row)
 - [ ] 8.3 `README.md` — the command table, and the archive-gate prose naming the withdrawn state; correct
       `--withdraw-commit <sha> --reason` to `--withdrawal-reason`, wrong since 0.38.0
