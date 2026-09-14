@@ -32,10 +32,10 @@
       `{gate, entry, reason, withdrawnAt}` whose `entry` deep-equals the stored verdict. The GREEN step
       registers `withdraw-gate-review` in `EPIC_FLAGS` (`key:null`, `write:"custom"`, `repeats:true`) and
       implements the write in `updateEpic` beside the `--withdraw-commit` block, before the archive gate
-- [ ] 2.4 RED then GREEN: a Gate 1 carrying `superseded` moves whole; nothing is promoted
-- [ ] 2.5 RED then GREEN: withdrawing one gate leaves the other deep-equal
+- [ ] 2.4 REGRESSION GUARD (passes once 2.3 moves the whole entry): a Gate 1 carrying `superseded` moves whole; nothing is promoted
+- [ ] 2.5 REGRESSION GUARD: withdrawing one gate leaves the other deep-equal
 - [ ] 2.6 RED then GREEN: `--withdraw-gate-review 1 --withdraw-gate-review 2` withdraws both, two entries
-- [ ] 2.7 RED then GREEN: re-recording after a withdrawal starts clean — no `superseded`, withdrawal kept
+- [ ] 2.7 REGRESSION GUARD (no code change; design.md asserts it): re-recording after a withdrawal starts clean — no `superseded`, withdrawal kept
 - [ ] 2.8 RED then GREEN: read-back after `render()` — the gate absent AND a matching withdrawal entry,
       else exit non-zero "did NOT land". Force the failure by exporting the read-back check as a pure
       function over (request, state read back) and unit-testing it with a state that still carries the
@@ -43,7 +43,9 @@
 
 ## 3. Refusals
 
-Each test supplies every other input valid and asserts `state.json` byte-identical. Order per design.md.
+Each test supplies every other input valid, asserts `state.json` byte-identical, and asserts the
+refusal's CAUSE string (not only a non-zero exit, which an unknown-flag refusal would also satisfy).
+Order per design.md.
 
 - [ ] 3.1 RED then GREEN: `--withdrawal-reason` with neither withdrawal flag, refused before `loadState`,
       naming both flags — an explicit companion-flag refusal in `updateEpic`, not `requires` text (which
@@ -60,7 +62,7 @@ Each test supplies every other input valid and asserts `state.json` byte-identic
 - [ ] 4.1 RED then GREEN: `deliveredObligations`'s Gate 2 detail names a withdrawn Gate 2 and quotes the
       reason; the archive gate on an unarchived epic shows it
 - [ ] 4.2 RED then GREEN: `archived-openspec-epic-with-no-gate-1` names a withdrawn Gate 1
-- [ ] 4.3 REGRESSION GUARD (written after 4.1): re-recording clears the state — the archive with `--outcome delivered
+- [ ] 4.3 REGRESSION GUARD (written after 5.3): re-recording clears the state — the archive with `--outcome delivered
       --no-deferrals` exits 0, and PROJECT.md, the brief and `integrity` name no withdrawn Gate 2
 - [ ] 4.4 RED then GREEN: ONE helper in `archive-gate.mjs` decides which epics a gate table lists and
       renders the cell `withdrawn — <reason>`; `render` and `buildBrief` both call it, each keeping its
@@ -85,11 +87,13 @@ Each test supplies every other input valid and asserts `state.json` byte-identic
       intent of `scripts/test/conductor-15.test.mjs:1417`. `archived-with-no-gate-2-review` and the
       brief's notice word the withdrawn kind with its reason and never say "no review recorded by anyone";
       assert each names the epic by its real id
-- [ ] 5.4 RED then GREEN: an epic reached by the heal route (withdraw while open → change archived on disk
+- [ ] 5.4 REGRESSION GUARD (passes once 5.1 and 5.3 land): an epic reached by the heal route (withdraw while open → change archived on disk
       → heal, outcome `unknown`) is named as withdrawn by both surfaces
-- [ ] 5.5 RED then GREEN: the not-yet-healed window — withdraw while open, move the change under
+- [ ] 5.5 REGRESSION GUARD (pins 5.3's `isArchived` arm): the not-yet-healed window — withdraw while open, move the change under
       `openspec/changes/archive/`, then compose the brief and `integrity` WITHOUT a mutating verb; both
       name the epic
+- [ ] 5.5a REGRESSION GUARD: a brief carrying the withdrawn-kind notice is delivered, and a later brief
+      with the withdrawal unchanged names the epic again
 - [ ] 5.6 REGRESSION GUARD (written after 5.3): the withdrawn kind names neither a `claude-code`-lane archived epic nor an
       openspec epic neither archived in state nor on disk, each with a withdrawn Gate 2
 - [ ] 5.7 REGRESSION GUARD: an archived `superseded` openspec epic with a withdrawn Gate 2 (reached by the
@@ -106,7 +110,8 @@ keep passing.
 
 - [ ] 6.1 REGRESSION GUARD: `--withdraw-gate-review 2 --withdrawal-reason x --status archived --outcome
       delivered --no-deferrals` on an openspec epic with a covering passing Gate 2 and no outstanding work
-      is refused, state byte-identical
+      is refused with a message stating Gate 2 was withdrawn and quoting `x`; state byte-identical; not
+      archived
 - [ ] 6.2 REGRESSION GUARD: `--withdraw-gate-review 2 --withdrawal-reason x` on an archived agent-recorded
       `delivered` openspec epic with a covering passing Gate 2 and no outstanding work is refused; the
       printed invocation carries `--correct-disposition`; the message states Gate 2 was withdrawn and
@@ -141,7 +146,9 @@ keep passing.
       file present
 - [ ] 7.4 **Attribute every commit** at the moment it lands:
       `update-epic gate-verdict-withdrawal --attribute-commit <sha>`. The archive commit is excluded
-- [ ] 7.5 **Dispositions** — archive per 9.3, with `--no-deferrals` unless a deferral is registered
+- [ ] 7.5 **Dispositions** — archive with 9.3's exact flags (its two `--declined-deferral`s), adding a
+      `--deferral "<epicId>:<section>"` for any deferral registered while the work ran; never
+      `--no-deferrals`, which would erase the two declines
 - [ ] 7.6 **Route what the work taught** — a practice → register an epic; tooling friction →
       `/pm:feedback [bug|feature] "<summary>"`; a process failure → a lesson file in `docs/lessons/`.
       Name which each is
@@ -176,5 +183,5 @@ keep passing.
 - [ ] 9.3 Archive this change <!-- pm:lifecycle --> — `/opsx:archive gate-verdict-withdrawal`, then
       `update-epic gate-verdict-withdrawal --status archived --outcome delivered` with
       `--declined-deferral "withdraw-cross-spec-review::a spec change already stales that verdict"
-      --declined-deferral "un-withdraw verb::re-recording is the way back"` plus any `--deferral` 7.5
-      registers
+      --declined-deferral "un-withdraw verb::re-recording is the way back"`, plus a `--deferral` for any
+      deferral registered while the work ran

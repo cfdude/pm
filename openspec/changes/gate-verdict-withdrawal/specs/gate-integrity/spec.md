@@ -327,8 +327,8 @@ in the requirement above binds it.
 - **WHEN** the archive-drift heal flips a `claude-code`- or `superpowers`-lane epic to `archived`
 - **THEN** the epic carries `outcome: unknown` with `recordedBy: "archive-drift-heal"` and **no**
   `gateReview.gate2` entry, so it is never named as an ungated archive — Gate 2 is not an obligation
-  of that lane, and a condition asserting a review it never owed would be permanent noise on the
-  majority of the epics this function touches
+  of that lane, and a condition asserting a review it never owed would be noise on the majority of the
+  epics this function touches, clearable only by recording a Gate 2 nobody owed
 
 #### Scenario: A healed lane-less epic is treated as openspec-lane by the heal
 
@@ -447,6 +447,12 @@ noise everyone filters.
 - **WHEN** a briefing carrying that notice is delivered into a session and a later briefing is
   composed with the epic's `ungated` verdict unchanged
 - **THEN** the later briefing names the epic again, because the condition still holds
+
+#### Scenario: Delivering the withdrawn notice does not clear it either
+
+- **WHEN** a briefing naming an epic under the withdrawn kind is delivered into a session and a later
+  briefing is composed with that epic's withdrawal unchanged
+- **THEN** the later briefing names the epic again
 
 #### Scenario: A real verdict supersedes the bypass entry
 

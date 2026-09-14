@@ -202,7 +202,14 @@ These change two EXISTING requirements, so the delta carries them as MODIFIED, r
     path" becomes "clearing path", because there are now two notices to clear.
   - It gains the "outside completion scope" paragraph (naming the backfill exclusion
     `inCompletionScope` already applies), the withdrawn kind, the two-filter rationale, the wording
-    rules, and seven scenarios.
+    rules, and seven scenarios (the six listed under the requirement plus "Delivering the withdrawn
+    notice does not clear it either").
+  - Two rewordings of kept base prose: the audit sentence "so an audit can still see that the epic was
+    archived ungated before it was reviewed" becomes "…see what the epic carried before it was
+    reviewed", because a withdrawal is now also kept; and the write-conflict contrast paragraph is
+    restructured into shorter sentences with its meaning unchanged.
+  - The heal requirement's non-openspec scenario: "permanent … unactionable" becomes "noise …, clearable
+    only by recording a Gate 2 nobody owed", matching the corrected prose.
 
 **Arm 2 of "The archive transition is gated on every path that can reach it"** says the heal records
 that it bypassed Gate 2. For an epic with a withdrawn Gate 2 the heal writes no `ungated`. Arm 2 is
