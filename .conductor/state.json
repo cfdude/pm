@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "gate-verdict-withdrawal",
+  "active": "archive-gate-reads-what-it-writes",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -6745,9 +6745,9 @@
     },
     {
       "id": "gate-verdict-withdrawal",
-      "title": "A recorded gate verdict can be withdrawn, and the withdrawal is recorded — update-epic --withdraw-gate-review <1|2> --withdrawal-reason. The entry moves to withdrawnGateReviews[] so no reader mistakes a withdrawn pass for a pass, and a withdrawn gate is a named state (never absence) that the archive gate and integrity refuse by name. Also closes a SHIPPED bypass Gate 1 reproduced: one update-epic call carrying --withdraw-commit and --status archived archives delivered with zero attributions, because archiveGate runs before the withdrawal block.",
+      "title": "A recorded gate verdict can be withdrawn, and the withdrawal is recorded — update-epic --withdraw-gate-review <1|2> --withdrawal-reason. The entry moves to withdrawnGateReviews[] so no reader mistakes a withdrawn pass for a pass, and a withdrawn gate is a named state (never absence) on the gate, integrity, render, brief and heal. Depends on archive-gate-reads-what-it-writes, whose two archive-gate requirements bind the new flag as a field write.",
       "priority": "P2",
-      "status": "active",
+      "status": "paused",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -6760,15 +6760,20 @@
           "type": "relates-to",
           "epic": "gh-163-gate-verdicts-openspec-only",
           "reason": "#163 removed record-gate-review's lane refusal, so any lane can carry a verdict to withdraw; this change's restated heal requirement corrects a spec sentence that has been false since"
+        },
+        {
+          "type": "may-invalidate",
+          "epic": "archive-gate-reads-what-it-writes",
+          "reason": "Gate 1 round 2 showed the archive-gate ordering defect is the whole update-epic verb (lane, attribute-commit, add-story, withdraw-commit bypasses; story-done false refusal; post-archive regressions), not the withdrawal flags — it gets its own change, and the withdrawal spec inherits its two requirements"
         }
       ],
-      "reconcileNeeded": false,
+      "reconcileNeeded": true,
       "attributedCommits": [
         "b2dec93e23af0c44bb4e8b936474f1bbf9bef30a"
       ],
       "createdAt": "2026-09-14T18:09:05.963Z",
       "startedAt": "2026-09-14T18:09:05.964Z",
-      "touchedAt": "2026-09-14T18:15:32.277Z",
+      "touchedAt": "2026-09-14T18:40:19.042Z",
       "notes": [
         {
           "at": "2026-09-14T18:09:07.941Z",
@@ -6944,9 +6949,66 @@
           "text": "lane: superpowers not (none routed) — suggest-lane returned no lane; the repo heuristic for a single-subsystem defect fix. Re-decide at triage."
         }
       ]
+    },
+    {
+      "id": "archive-gate-reads-what-it-writes",
+      "title": "update-epic decides the archive on the record it writes: the gate runs after every field write (closing one-call bypasses via --lane/--attribute-commit/--add-story/--withdraw-commit and the --story --done false refusal), and an update to an archived delivered epic may not break an obligation its archive met",
+      "priority": "P2",
+      "status": "active",
+      "role": "detour",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gate-verdict-withdrawal",
+          "reason": "split out of its Gate 1 round 2 — the ordering defect is the whole verb, not the withdrawal flags; gate-verdict-withdrawal inherits both requirements"
+        },
+        {
+          "type": "resolves-blocker-for",
+          "epic": "gate-verdict-withdrawal",
+          "reason": "Gate 1 round 2 showed the archive-gate ordering defect is the whole update-epic verb (lane, attribute-commit, add-story, withdraw-commit bypasses; story-done false refusal; post-archive regressions), not the withdrawal flags — it gets its own change, and the withdrawal spec inherits its two requirements"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "197",
+      "externalUrl": "https://github.com/cfdude/pm/issues/197",
+      "externalUpdatedAt": "2026-09-14T18:39:33Z",
+      "attributedCommits": [],
+      "createdAt": "2026-09-14T18:39:51.910Z",
+      "touchedAt": "2026-09-14T18:40:05.741Z",
+      "release": "0.43.0",
+      "startedAt": "2026-09-14T18:40:05.739Z",
+      "trackerRefreshNeeded": true
+    },
+    {
+      "id": "archived-delivered-gate2-regression-report",
+      "title": "No integrity check names an archived delivered openspec-lane epic whose Gate 2 is no longer a covering pass — reachable by record-gate-review recording fail after archive, and by disk-side task changes, neither of which archive-gate-reads-what-it-writes re-gates",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "archive-gate-reads-what-it-writes",
+          "reason": "the standing-condition half its design deliberately leaves out"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-14T18:39:53.765Z",
+      "touchedAt": "2026-09-14T18:39:53.768Z"
     }
   ],
-  "detourStack": [],
+  "detourStack": [
+    {
+      "pausedEpic": "gate-verdict-withdrawal",
+      "pausedAt": "2026-09-14T18:40:05.738Z",
+      "reason": "Gate 1 round 2 showed the archive-gate ordering defect is the whole update-epic verb (lane, attribute-commit, add-story, withdraw-commit bypasses; story-done false refusal; post-archive regressions), not the withdrawal flags — it gets its own change, and the withdrawal spec inherits its two requirements",
+      "spawnedDetour": "archive-gate-reads-what-it-writes",
+      "reconcileOnResume": true
+    }
+  ],
   "pmVersion": "0.42.0",
   "tracker": {
     "system": "github-issues",
@@ -6954,7 +7016,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 664,
+  "revision": 669,
   "reviewMode": "thorough",
   "releases": [
     {
