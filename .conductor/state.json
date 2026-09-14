@@ -6778,11 +6778,12 @@
         "48f75d7",
         "b282a2f",
         "f7ae09d",
-        "8f0057d"
+        "8f0057d",
+        "d5fde94"
       ],
       "createdAt": "2026-09-14T18:09:05.963Z",
       "startedAt": "2026-09-14T18:09:05.964Z",
-      "touchedAt": "2026-09-14T20:32:08.431Z",
+      "touchedAt": "2026-09-14T20:40:25.479Z",
       "notes": [
         {
           "at": "2026-09-14T18:09:07.941Z",
@@ -7004,10 +7005,11 @@
         "a809c86",
         "b282a2f",
         "f7ae09d",
-        "8f0057d"
+        "8f0057d",
+        "d5fde94"
       ],
       "createdAt": "2026-09-14T18:39:51.910Z",
-      "touchedAt": "2026-09-14T20:32:06.338Z",
+      "touchedAt": "2026-09-14T20:40:23.452Z",
       "release": "0.43.0",
       "startedAt": "2026-09-14T18:40:05.739Z",
       "gateReview": {
@@ -7111,7 +7113,14 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-14T20:30:30.075Z",
-      "touchedAt": "2026-09-14T20:30:30.079Z"
+      "touchedAt": "2026-09-14T20:44:13.176Z",
+      "notes": [
+        {
+          "at": "2026-09-14T20:44:13.173Z",
+          "actor": "agent",
+          "text": "Widen: archiveGate() will also print a withdrawal reason raw (gate-verdict-withdrawal 4.1), the same forgery shape — cover reasons too"
+        }
+      ]
     }
   ],
   "detourStack": [
@@ -7130,7 +7139,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 695,
+  "revision": 698,
   "reviewMode": "thorough",
   "releases": [
     {

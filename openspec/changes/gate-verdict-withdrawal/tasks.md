@@ -66,8 +66,9 @@ Order per design.md.
 
 ## 4. Withdrawn is a state, never absence
 
-- [ ] 4.1 RED then GREEN: `deliveredObligations`'s Gate 2 detail names a withdrawn Gate 2 and quotes the
-      reason; the archive gate on an unarchived epic shows it
+- [ ] 4.1 RED then GREEN: `deliveredObligations`'s Gate 2 entry names a withdrawn Gate 2 in `detail` and
+      carries the reason in `items` (never in `detail`); the archive gate on an unarchived epic shows the
+      reason, and the regression refusal shows it JSON-quoted
 - [ ] 4.2 RED then GREEN: `archived-openspec-epic-with-no-gate-1` names a withdrawn Gate 1
 - [ ] 4.3 REGRESSION GUARD (written after 5.3): re-recording clears the state — the archive with `--outcome delivered
       --no-deferrals` exits 0, and PROJECT.md, the brief and `integrity` name no withdrawn Gate 2
@@ -96,8 +97,9 @@ Order per design.md.
       word it with its reason. Assert each names the epic by its real id, and that the whole block,
       headings and titles included, matches no `/no (gate 2 )?review/i` — for `integrity`, the CLI text
       from the new check's title line to the next check's line or the blank line before the totals (so
-      `formatIntegrity`'s title is covered); for the brief, from the nearest heading ABOVE the withdrawn
-      entry (an umbrella heading included) to the next blank line. The SAME commit adds
+      `formatIntegrity`'s title is covered); for the brief, from the nearest NON-INDENTED line above the
+      withdrawn entry (brief blocks are blank-delimited with unindented headings, so an umbrella heading
+      with an indented sub-heading is still scanned) to the next blank line. The SAME commit adds
       `archived-with-withdrawn-gate-2` and its explanation to
       `openspec/changes/archive/2026-08-25-conductor-tells-the-truth/integrity-day-one.md`, because
       conductor-15 test 9.14 requires every registered check id there and the pre-commit hook runs the

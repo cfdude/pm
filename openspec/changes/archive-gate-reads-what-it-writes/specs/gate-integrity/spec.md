@@ -138,8 +138,9 @@ given with no value echoes with no value, a repeated flag echoes once per occurr
 `--flag=value` token echoes as one token. Every echoed token MUST be quoted so that the printed line, with only its placeholders
 filled, runs in a POSIX shell with each token arriving whole, including a value containing an
 apostrophe. The printed invocation MUST stay on ONE physical line. A token containing a newline or other
-control character is NOT echoed: its position carries the placeholder `<re-enter --<flag> value: it
-contains a line break or control character>`, and the refusal says which flag's value must be
+control character is NOT echoed as a value: its position carries the flag followed by the placeholder
+`<re-enter this value: it contains a line break or control character>` (an inline `--flag=value` token
+keeps its `--flag=` prefix), and the refusal says which flag's value must be
 re-entered. A shell cannot reliably rebuild such a value on one line (command substitution strips a
 trailing newline), and a promise of byte-for-byte reconstruction there would be false.
 - It MUST carry `--correct-disposition "<why the recorded one was wrong>"` if and only if the recorded

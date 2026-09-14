@@ -113,7 +113,7 @@ demand both bind `delivered` only (`archive-gate.mjs:277`, `:320`). The fleet's 
 and every other outcome are unaffected.
 
 **`deliveredObligations(epic, {carriedTo})`** returns an array of failing `{kind: "gate2" | "handoff",
-detail}`, empty when met, Gate 2 first. The Gate 2 block (present, `pass`, not `stale`, not
+detail, items}`, empty when met, Gate 2 first. The Gate 2 block (present, `pass`, not `stale`, not
 `attribution-withdrawn`) and the handoff block of `archiveGate()` are extracted into it. It does NOT
 test the outcome, and it takes `carriedTo` as an argument rather than reading a disposition:
 - the gate calls it only for a requested `delivered`, passing the REQUEST's `--carried-to`, because
@@ -162,7 +162,7 @@ disposition flag, and the re-run would then silently lose that change. The token
 gain `--status archived --outcome <outcome> --reason "<why>"`. Each echoed token is single-quoted for a
 POSIX shell, with `'` written as `'\''`, so a multi-word or apostrophe-bearing value survives a
 copy-paste. A token containing a newline or another control character is NOT echoed; its position
-carries a `<re-enter --<flag> value …>` placeholder and the refusal names the flag. A first draft
+keeps the flag and carries a `<re-enter this value …>` placeholder in place of the value (an inline `--flag=value` keeps its `--flag=` prefix). A first draft
 rendered such tokens as `"$(printf '%b' '…')"`, and the cross-spec re-review showed why that fails:
 command substitution strips trailing newlines, and `--notes` is not trimmed, so the re-run would record
 a different value while claiming fidelity. Values shown OUTSIDE the invocation, in the detail line, are

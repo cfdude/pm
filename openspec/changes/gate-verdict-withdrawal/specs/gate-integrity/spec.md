@@ -398,9 +398,10 @@ reports its own integrity, and their notice MUST NOT be consumed on delivery.
 The two kinds are disjoint, because a gate carrying `ungated` is never in the withdrawn state. They
 are ONE definition, computed in one place and read by the integrity report and the briefing alike.
 Each surface MUST present the withdrawn kind under its own heading: its own integrity check id and
-title, and its own briefing heading. No heading or title printed above a withdrawn-kind entry,
-an umbrella heading shared with the ungated kind included, may state or imply that no review was
-recorded.
+title, and its own briefing heading. Neither the withdrawn kind's own heading or check title,
+nor any heading whose block encloses a withdrawn-kind entry (an umbrella heading shared with the
+ungated kind), may state or imply that no review was recorded. A heading of a separate block printed
+earlier is not above the entry in this sense.
 
 Each reader MUST word the kinds differently. "No Gate 2 review recorded by anyone" is true of the
 ungated kind and false of the withdrawn one, whose notice names the withdrawal and quotes the latest

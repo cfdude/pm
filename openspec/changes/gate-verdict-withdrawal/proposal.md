@@ -77,7 +77,8 @@ _None._
   the usage line.
 - `scripts/lib/constants.mjs`: `EPIC_FLAGS` rows, `withdrawnGate()`, and `KNOWN_GATE_NUMBERS` moved
   here from `scripts/lib/gate-review-writeback.mjs` (which then imports it).
-- `scripts/lib/archive-gate.mjs`: the withdrawn-Gate-2 message inside `deliveredObligations()`, and the
+- `scripts/lib/archive-gate.mjs`: the withdrawn-Gate-2 `detail` and the reason in `items` inside
+  `deliveredObligations()`, and the
   shared gate-table helper (here, not in `constants.mjs`, because it needs `stalenessMarking`).
 - `scripts/lib/integrity.mjs`: `ungatedArchives` kinds, the no-Gate-1 detail, the `recordedShas`
   comment.
