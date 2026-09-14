@@ -6771,11 +6771,12 @@
       "attributedCommits": [
         "b2dec93e23af0c44bb4e8b936474f1bbf9bef30a",
         "7aa45a6",
-        "4f13f00"
+        "4f13f00",
+        "b1c4aa9"
       ],
       "createdAt": "2026-09-14T18:09:05.963Z",
       "startedAt": "2026-09-14T18:09:05.964Z",
-      "touchedAt": "2026-09-14T18:59:57.859Z",
+      "touchedAt": "2026-09-14T19:15:43.193Z",
       "notes": [
         {
           "at": "2026-09-14T18:09:07.941Z",
@@ -6977,10 +6978,11 @@
       "externalUpdatedAt": "2026-09-14T18:39:33Z",
       "attributedCommits": [
         "b2bdd04",
-        "1b0fe47"
+        "1b0fe47",
+        "8bf6758"
       ],
       "createdAt": "2026-09-14T18:39:51.910Z",
-      "touchedAt": "2026-09-14T18:59:55.930Z",
+      "touchedAt": "2026-09-14T19:15:41.026Z",
       "release": "0.43.0",
       "startedAt": "2026-09-14T18:40:05.739Z",
       "trackerRefreshNeeded": true
@@ -7002,7 +7004,14 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-14T18:39:53.765Z",
-      "touchedAt": "2026-09-14T18:52:22.282Z"
+      "touchedAt": "2026-09-14T19:29:54.974Z",
+      "notes": [
+        {
+          "at": "2026-09-14T19:29:54.971Z",
+          "actor": "agent",
+          "text": "Overlap to design for: gate-verdict-withdrawal's withdrawn kind of 'archived-with-no-gate-2-review' will already name archived delivered openspec epics whose Gate 2 is withdrawn — this check must not report them a second time under a competing wording"
+        }
+      ]
     },
     {
       "id": "status-write-undone-by-heal-reports-updated",
@@ -7040,7 +7049,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 675,
+  "revision": 678,
   "reviewMode": "thorough",
   "releases": [
     {

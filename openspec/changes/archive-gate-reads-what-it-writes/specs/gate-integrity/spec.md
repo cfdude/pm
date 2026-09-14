@@ -84,8 +84,8 @@ written; one that reads a different record decides nothing.
 
 ### Requirement: An update to an archived epic does not break an obligation its archive met
 
-This requirement binds an `update-epic` invocation when ALL of these hold, each read from the epic as
-stored BEFORE the invocation:
+This requirement binds an `update-epic` invocation when ALL of these hold (the outcome and the status
+are read from the epic as stored BEFORE the invocation):
 
 - the epic's recorded outcome is `delivered`;
 - the invocation does not carry `--status archived`;
@@ -117,13 +117,18 @@ update to them would lock notes, links and priority on a record for a defect the
 record met, and name that obligation. It MUST NOT contain the text `cannot archive`, which opens every
 archive-gate refusal. The printed invocation below MUST be the only line of the refusal that begins
 with `  update-epic `, and no other line may name `--carried-to`, `--outcome` or `--reason`, flags that
-take effect only alongside `--status archived`.
+take effect only alongside `--status archived`. Where the invocation carried a non-archived `--status`,
+the refusal MUST say that status is dropped from the printed invocation because the change directory
+archived on disk re-archives the epic.
 
 **The printed invocation.** The refusal MUST print a runnable invocation that makes the same change
-and records the disposition it implies: the invocation's own flags, minus `--status`, `--outcome`,
-`--reason`, `--carried-to`, `--correct-disposition` and the deferral flags, plus `--status archived
---outcome <outcome> --reason "<why>"`. Every echoed value MUST be quoted so that the printed line, with
-only its placeholders filled, runs in a POSIX shell with each value arriving whole.
+and records the disposition it implies. It is the invocation's own argument tokens, as given, minus
+`--status`, `--outcome`, `--reason`, `--carried-to`, `--correct-disposition` and the deferral flags
+(with their values), plus `--status archived --outcome <outcome> --reason "<why>"`. A boolean flag
+echoes bare, a repeated flag echoes once per occurrence, and an inline `--flag=value` token echoes as
+one token. Every echoed token MUST be quoted so that the printed line, with only its placeholders
+filled, runs in a POSIX shell with each token arriving whole, including a value containing an
+apostrophe.
 - It MUST carry `--correct-disposition "<why the recorded one was wrong>"` if and only if the recorded
   disposition is agent-recorded. An engine-stamped disposition is replaced by recording an outcome,
   and the correction flag is refused against it.
@@ -183,10 +188,11 @@ sees it. Reproduced on 0.42.0:
 
 #### Scenario: Restoring a record the check accepted is judged like any other change
 
-- **WHEN** an archived `delivered` openspec-lane epic with a Gate 2 `fail` recorded after archive runs
+- **WHEN** an archived openspec-lane epic with an agent-recorded `delivered` disposition and a Gate 2
+  `fail` recorded after archive runs
   `update-epic <id> --lane claude-code`, which is accepted, and then `update-epic <id> --lane openspec`
 - **THEN** the second call is refused naming the Gate 2 demand, and the invocation it prints, filled
-  with a non-`delivered` outcome, exits 0
+  with `--outcome superseded`, a reason and a correction reason, exits 0
 
 #### Scenario: An already-failing handoff does not mask a Gate 2 the update breaks
 
@@ -238,10 +244,13 @@ sees it. Reproduced on 0.42.0:
 
 #### Scenario: The printed invocation runs
 
-- **WHEN** the invocation printed for an agent-recorded `delivered` epic is run with its placeholders
-  filled as `--outcome superseded`, a reason, and a correction reason
-- **THEN** it exits zero, and the epic is an archived `superseded` openspec-lane epic whose prior
-  `delivered` disposition is kept under `superseded`
+- **WHEN** an archived agent-recorded `delivered` `claude-code`-lane epic with no Gate 2 ever recorded
+  runs `update-epic <id> --lane openspec --notes "Rob's move" --clear-links --add-story "two words"
+  --add-story=--x`, which is refused, and the invocation it prints is run through `sh -c` with its
+  placeholders filled as `--outcome superseded`, a reason, and a correction reason
+- **THEN** it exits zero; the epic is an archived `superseded` openspec-lane epic whose prior
+  `delivered` disposition is kept under `superseded`; its latest note is `Rob's move`; it has no links;
+  and it gained exactly the two stories `two words` and `--x`
 
 #### Scenario: Leaving the archive is not refused where nothing re-archives the epic
 

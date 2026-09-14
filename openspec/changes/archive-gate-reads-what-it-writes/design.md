@@ -21,7 +21,10 @@ form is accepted. The gate's rule is the one this change needs, and it holds wit
 | `--lane claude-code --status archived …` (openspec, no Gate 2) | the openspec record → refused | the claude-code record → accepted |
 
 The last row is not a loophole. Re-routing an epic out of the openspec lane is a legitimate
-correction that two calls already reach.
+correction that two calls already reach. The same argument covers a one-call `--clear plan --status
+archived --outcome delivered` on an epic whose plan has outstanding tasks: with the plan detached the
+source falls through (`epic-progress.mjs:253`), exactly as it does in two calls. The detached plan is
+announced, and task 1.6a pins the behavior.
 
 ## Half 1 — the gate runs last
 
@@ -119,13 +122,20 @@ detail}`, byte-identical, so its message tests pass unchanged.
 `--carried-to`, `--outcome` and `--reason` are silently dropped (update-epic.mjs refuses only the three
 deferral flags and `--correct-disposition` there), so quoting that remedy would send the user round the same refusal. The refusal says
 the update would break an obligation the archived record met, gives the `detail`, and offers one
-command: the printed invocation.
+command: the printed invocation. `detail` is the obligation's finding only (the missing Gate 2, the
+uncovered commits, the outstanding stories by name). The remedy sentences stay in `archiveGate()`'s own
+message renderer and never reach this refusal.
 
-**The printed invocation** is the call's own flags, minus `--status` and every disposition flag
-(`--outcome`, `--reason`, `--carried-to`, `--correct-disposition`, the deferral flags), plus `--status
-archived --outcome <outcome> --reason "<why>"`. Every echoed value is single-quoted for a POSIX shell,
-so a multi-word `--notes` or `--withdrawal-reason` survives a copy-paste. It is printed alone on a line
-beginning `  update-epic `, which is what lets a test tell the command from the prose.
+**The printed invocation** is built from the call's raw argument TOKENS, never from parsed flags.
+Parsed flags lose shape: booleans parse as `true` (and `--clear-links 'true'` is refused), repeatable
+flags become arrays, and an inline `--notes=--x` would re-parse as a flag. The tokens pass through
+minus `--status` and every disposition flag with its value (`--outcome`, `--reason`, `--carried-to`,
+`--correct-disposition`, the deferral flags, using the flag registry's arity to drop the value), and
+gain `--status archived --outcome <outcome> --reason "<why>"`. Each echoed token is single-quoted for a
+POSIX shell, with `'` written as `'\''`, so a multi-word or apostrophe-bearing value survives a
+copy-paste. The line is printed alone, beginning `  update-epic `, which lets a test tell the command
+from the prose. A dropped non-archived `--status` is said out loud: the change directory archived on
+disk re-archives the epic, so `activate()` and the status write would not have happened anyway.
 
 - It adds `--correct-disposition "<why the recorded one was wrong>"` **only** when
   `isEngineStamped(epic.disposition)` is false: `correctionError()` refuses to correct an engine stamp.
@@ -149,8 +159,9 @@ Refusing at those sites would falsify the record or block an unrelated operation
 condition is held by the registered epic `archived-delivered-gate2-regression-report` (an integrity check
 naming every archived `delivered` epic that fails a delivered obligation), and the paths are:
 
-- **`record-gate-review` recording a `fail` over a `pass`.** A verdict is evidence; refusing a true
-  review because the record it leaves is inconvenient would falsify the record.
+- **`record-gate-review` recording a `fail` over a `pass`, or a `pass` whose `headSha` does not cover
+  the attributions.** A verdict is evidence; refusing a true review because the record it leaves is
+  inconvenient would falsify the record.
 - **The heal re-archiving an epic that genuinely left the archive and was changed while open.** The
   heal reflects disk and receives no disposition. It keeps the old `delivered` one by an existing
   requirement, and refusing would make the record contradict disk.
@@ -171,6 +182,12 @@ Also out of scope:
 ## The inverse of each operation added
 
 - Moving the gate adds no operation.
+- **An archived `delivered` epic cannot gain a story, done or not** (re-review lens A). `--add-story`
+  alone is refused by Half 2, and `--add-story s --story <n> --done` in one call fails the story-index
+  check, which runs before the append (`update-epic.mjs:276`; `parseStoryFlags` has no done form).
+  This is deliberate and not shipped as an inverse. A story added to work already recorded as
+  delivered is new work, and new work is a new epic. The honest routes are that new epic, or
+  recording the disposition the change implies with the printed invocation.
 - The Half 2 refusal's exits are the printed invocation (which ends at the full gate) and a genuine
   unarchive (whose re-archive through the verb ends at the full gate; through the heal it is the path
   held above).
