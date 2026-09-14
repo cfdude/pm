@@ -6973,9 +6973,11 @@
       "externalId": "197",
       "externalUrl": "https://github.com/cfdude/pm/issues/197",
       "externalUpdatedAt": "2026-09-14T18:39:33Z",
-      "attributedCommits": [],
+      "attributedCommits": [
+        "b2bdd04"
+      ],
       "createdAt": "2026-09-14T18:39:51.910Z",
-      "touchedAt": "2026-09-14T18:40:05.741Z",
+      "touchedAt": "2026-09-14T18:42:20.833Z",
       "release": "0.43.0",
       "startedAt": "2026-09-14T18:40:05.739Z",
       "trackerRefreshNeeded": true
@@ -7016,7 +7018,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 669,
+  "revision": 670,
   "reviewMode": "thorough",
   "releases": [
     {
