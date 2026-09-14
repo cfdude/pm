@@ -127,7 +127,7 @@ RED tasks fail on today's engine. REGRESSION GUARD tasks pass today and must kee
 
 ## 4. Required task items
 
-- [ ] 4.1 **Call-site completeness sweep** — derived with `rg` at sweep time:
+- [x] 4.1 **Call-site completeness sweep** — derived with `rg` at sweep time:
       - every caller of `archiveGate`, `deliveredObligations` and `dispositionInvocation`;
       - every WRITER, across `scripts/lib/`, of each input the obligations or the check's trigger read:
         `status`, `lane`, `planPath`, `specPath`, `stories`, `attributedCommits`, `withdrawnCommits`,
@@ -141,12 +141,12 @@ RED tasks fail on today's engine. REGRESSION GUARD tasks pass today and must kee
 - [x] 4.1a Every existing test that updates an archived `delivered` epic (conductor-13's documented-flag
       harness among them) passes unchanged, or is corrected and named in the commit message; extend
       `dispositionInvocation()` without changing its existing callers' output
-- [ ] 4.2 **Inverse of every operation added** — the regression refusal's exits are the printed
+- [x] 4.2 **Inverse of every operation added** — the regression refusal's exits are the printed
       invocation and a genuine unarchive, each ending at the full gate or at a path held by
       `archived-delivered-gate2-regression-report`; state it in the commit
-- [ ] 4.3 **Verify against the commit** — `git show --stat <sha>` for every task commit; each claimed
+- [x] 4.3 **Verify against the commit** — `git show --stat <sha>` for every task commit; each claimed
       file present
-- [ ] 4.4 **Attribute every commit** as it lands:
+- [x] 4.4 **Attribute every commit** as it lands:
       `update-epic archive-gate-reads-what-it-writes --attribute-commit <sha>`. The archive commit is
       excluded
 - [ ] 4.5 **Dispositions** <!-- pm:lifecycle --> — archive with `update-epic archive-gate-reads-what-it-writes --status archived --outcome delivered --deferral
