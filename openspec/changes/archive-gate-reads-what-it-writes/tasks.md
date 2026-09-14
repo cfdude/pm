@@ -54,7 +54,7 @@ descending from the fixture's `headSha` in the fixture repo.
       first; `items` carries user-supplied values such as story titles, never baked into `detail`);
       unit-test it on six fixtures (met; no Gate 2; stale; outstanding story; both failing; a
       non-`delivered` outcome, which it does not test and reports on the same record identically)
-- [ ] 2.2 REFACTOR: `archiveGate()` renders its messages from it; the existing gate-message tests pass
+- [x] 2.2 REFACTOR: `archiveGate()` renders its messages from it; the existing gate-message tests pass
       byte-for-byte
 
 ## 3. An archived epic's obligations do not regress
