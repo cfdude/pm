@@ -451,22 +451,12 @@ export function updateEpic() {
     }
   }
 
-  // Note `status === "archived"`, not "the status CHANGED to archived": an epic already at
-  // `archived` runs the full gate again on this invocation and records the disposition the
-  // agent supplies. Re-archiving is an established shape here — `completedAt` below is already
-  // guarded on `!epic.completedAt` precisely because this verb can be run twice — and it is
-  // the only moment the documented `/opsx:archive` -> heal -> record flow can say `delivered`.
-  if (status === "archived") {
-    const verdict = archiveGate(epic, {
-      outcome: str(f.outcome), reason: str(f.reason),
-      carriedTo: str(f["carried-to"]), deferralAssertion: asserted, correction,
-    });
-    if (!verdict.ok) { process.stderr.write(`conductor: ${verdict.message}\n`); process.exit(1); }
-    // The gate BUILDS the record and this command writes it, so the disposition an epic ends
-    // with is the one the gate validated — there is no second construction site to drift.
-    if (verdict.disposition) epic.disposition = verdict.disposition;
-    if (verdict.deferralAssertion) epic.deferralAssertion = verdict.deferralAssertion;
-  }
+  // ANNOUNCEMENTS OF A WRITE are buffered, never printed where the write happens. The archive
+  // gate runs AFTER every field write below (it must decide on the record this call leaves), so
+  // a line printed at the write would announce a cleared rank, parent or tombstone on a call the
+  // gate then refuses — a report of a change that did not happen. Flushed only once every
+  // refusal has had its turn, immediately before saveState().
+  const announcements = [];
 
   // #166 — withdraw an attribution. Runs BEFORE the field writes below so a refusal leaves the
   // epic untouched, the same ordering every other guard in this file uses.
@@ -531,7 +521,7 @@ export function updateEpic() {
   // not hold two opposite claims about one file, and this is the un-ignore path (derived from
   // an action the operator already takes, rather than a new verb nobody would find).
   for (const p of claimArtifacts(state, epic)) {
-    process.stderr.write(`conductor: cleared the sync-ignore tombstone on '${p}' — \`${epic.id}\` now claims it\n`);
+    announcements.push(`conductor: cleared the sync-ignore tombstone on '${p}' — \`${epic.id}\` now claims it\n`);
   }
   // A manual `rank` is a placement among ONE band's peers, so it does not survive a move to
   // another band — it would collide with that band's own 1..N numbering, and the number would
@@ -543,7 +533,7 @@ export function updateEpic() {
   const newPriority = str(f.priority);
   if (newPriority !== undefined) {
     if (newPriority !== epic.priority && epic.rank !== undefined) {
-      process.stderr.write(`conductor: cleared \`${epic.id}\`'s rank (${epic.rank}) — it was a ` +
+      announcements.push(`conductor: cleared \`${epic.id}\`'s rank (${epic.rank}) — it was a ` +
         `placement among ${epic.priority} epics, and this moves it to ${newPriority}. ` +
         `Re-run \`reorder\` on the ${newPriority} band to place it.\n`);
       delete epic.rank;
@@ -599,9 +589,38 @@ export function updateEpic() {
     const had = row.key in epic;
     delete epic[row.key];
     if (had && row.clearNote) {
-      process.stderr.write(`conductor: cleared \`${id}\`'s ${row.flag} — ${row.clearNote}\n`);
+      announcements.push(`conductor: cleared \`${id}\`'s ${row.flag} — ${row.clearNote}\n`);
     }
   }
+
+  // THE ARCHIVE GATE RUNS HERE, after every field write and unset above, so it decides on the
+  // record this invocation LEAVES. It used to run before them, and one call could therefore
+  // archive a record the gate refuses (`--lane openspec --status archived` on a claude-code epic
+  // with no Gate 2; an `--attribute-commit` the verdict does not cover; an `--add-story`; a
+  // `--withdraw-commit`) and refuse one it accepts (`--story 1 --done --status archived` on the
+  // last outstanding story). Nothing between here and saveState() reads what it decides on: the
+  // completedAt stamp, the claim clear and the active-pointer sync all run after it. Every
+  // refusal still exits before saveState(), so a refused call writes nothing.
+  //
+  // Note `status === "archived"`, not "the status CHANGED to archived": an epic already at
+  // `archived` runs the full gate again on this invocation and records the disposition the
+  // agent supplies. Re-archiving is an established shape here — `completedAt` below is already
+  // guarded on `!epic.completedAt` precisely because this verb can be run twice — and it is
+  // the only moment the documented `/opsx:archive` -> heal -> record flow can say `delivered`.
+  if (status === "archived") {
+    const verdict = archiveGate(epic, {
+      outcome: str(f.outcome), reason: str(f.reason),
+      carriedTo: str(f["carried-to"]), deferralAssertion: asserted, correction,
+    });
+    if (!verdict.ok) { process.stderr.write(`conductor: ${verdict.message}\n`); process.exit(1); }
+    // The gate BUILDS the record and this command writes it, so the disposition an epic ends
+    // with is the one the gate validated — there is no second construction site to drift.
+    if (verdict.disposition) epic.disposition = verdict.disposition;
+    if (verdict.deferralAssertion) epic.deferralAssertion = verdict.deferralAssertion;
+  }
+
+  // Every refusal has now had its turn: the write is going to happen, so say what it cleared.
+  for (const line of announcements) process.stderr.write(line);
 
   // Stamp completedAt the moment an epic transitions TO archived (not merely re-saved
   // while already archived) — supports velocity tracking off startedAt/completedAt.

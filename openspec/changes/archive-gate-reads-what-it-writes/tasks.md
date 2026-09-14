@@ -23,28 +23,28 @@ message names that file, so the demonstration is checkable afterwards. New
 file `scripts/test/archive-gate-order.test.mjs`, importing `helpers.mjs`. A "descendant" is a commit
 descending from the fixture's `headSha` in the fixture repo.
 
-- [ ] 1.1 RED: `--lane openspec --status archived --outcome delivered --no-deferrals` on a
+- [x] 1.1 RED: `--lane openspec --status archived --outcome delivered --no-deferrals` on a
       `claude-code` epic with no Gate 2 is refused
-- [ ] 1.2 RED: `--attribute-commit <descendant> --status archived …` on an openspec epic whose passing
+- [x] 1.2 RED: `--attribute-commit <descendant> --status archived …` on an openspec epic whose passing
       Gate 2 `headSha` is its last attribution is refused naming the sha
-- [ ] 1.3 RED: `--add-story s --status archived …` on a `claude-code` epic whose stories are all done is
+- [x] 1.3 RED: `--add-story s --status archived …` on a `claude-code` epic whose stories are all done is
       refused
-- [ ] 1.4 RED: `--withdraw-commit <only sha> --withdrawal-reason x --status archived …` on an openspec
+- [x] 1.4 RED: `--withdraw-commit <only sha> --withdrawal-reason x --status archived …` on an openspec
       epic with a covering passing Gate 2 is refused
-- [ ] 1.5 RED: `--story 1 --done --status archived …` where story 1 is the only outstanding story
+- [x] 1.5 RED: `--story 1 --done --status archived …` where story 1 is the only outstanding story
       exits 0 (today's false refusal)
-- [ ] 1.6 RED: `--lane claude-code --status archived --outcome delivered …` on an openspec epic with
+- [x] 1.6 RED: `--lane claude-code --status archived --outcome delivered …` on an openspec epic with
       no Gate 2 and no outstanding work exits 0
-- [ ] 1.6a RED: `--clear plan --status archived --outcome delivered --no-deferrals` on a `claude-code`
+- [x] 1.6a RED: `--clear plan --status archived --outcome delivered --no-deferrals` on a `claude-code`
       epic whose only source is a plan with outstanding tasks exits 0 and announces the cleared plan
-- [ ] 1.7 RED: the fixture of "A refused call announces no cleared field" (claude-code lane, no
+- [x] 1.7 RED: the fixture of "A refused call announces no cleared field" (claude-code lane, no
       stories, ranked P2, a parent, a sync-ignored plan whose tasks are all ticked) is refused and prints
       none of the three lines (fails today: the call is accepted and announces all three); REGRESSION
       GUARD half: the variant without `--lane openspec` exits 0 and prints all three
-- [ ] 1.8 GREEN: move `archiveGate()` in `updateEpic` to after the `--clear` loop and before the
+- [x] 1.8 GREEN: move `archiveGate()` in `updateEpic` to after the `--clear` loop and before the
       `completedAt` stamp; route the tombstone, rank and `clearNote` stderr writes through an
       `announcements` array flushed after the gate and the Half 2 check pass, before `saveState()`
-- [ ] 1.9 Every existing test passes unchanged, or is corrected and named in the commit message with
+- [x] 1.9 Every existing test passes unchanged, or is corrected and named in the commit message with
       why it pinned wrong behavior
 
 ## 2. One definition of the delivered obligations
