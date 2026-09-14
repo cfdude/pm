@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": null,
+  "active": "capture-pipe-lesson-matcher",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -6694,6 +6694,26 @@
         "declined": []
       },
       "completedAt": "2026-09-12T06:48:21.279Z"
+    },
+    {
+      "id": "capture-pipe-lesson-matcher",
+      "title": "Give filter-at-read-time-not-at-capture-time a detect: matcher — a test run or git commit piped into tail/head/grep/rg on a command's first line. The lesson recurred within hours of being written (a multi-line git commit piped to tail reported success while the pre-commit hook had refused it), and a retrieval-only lesson did not reach the moment. The matcher is first-line-only by design and would NOT have caught that multi-line instance; the lesson now says so rather than implying coverage.",
+      "priority": "P2",
+      "status": "active",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "lessons-index-cannot-drift-silently",
+          "reason": "same corpus, same session — that epic made matchers checkable, this one adds one"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-14T17:38:02.198Z",
+      "startedAt": "2026-09-14T17:38:02.223Z",
+      "touchedAt": "2026-09-14T17:38:02.238Z"
     }
   ],
   "detourStack": [],
@@ -6704,7 +6724,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 642,
+  "revision": 643,
   "reviewMode": "thorough",
   "releases": [
     {

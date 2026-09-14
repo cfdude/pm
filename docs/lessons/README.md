@@ -31,7 +31,7 @@ trigger fires, not before.
 | [`cite-a-symbol-not-a-line-number`](cite-a-symbol-not-a-line-number.md) | You are recording evidence for a finding — in an epic's notes, a disposition reason, a grooming verdict, a lesson's `enforced_in`, or a review comment — and you are about to write `file.mjs:123`. | Cite a symbol, a heading or a quoted phrase — never `file.ext:123`. A line number rots within days, and one frozen in a disposition reason or an archived epic is wrong permanently. | — |
 | [`commit-without-push-is-one-disk`](commit-without-push-is-one-disk.md) | About to dispatch a wave of agents, end a work session, or step away — and the branch is ahead of its remote. | Push at every wave boundary and before stepping away. A commit is durable on ONE machine; a push is the backup. | 🔔 |
 | [`editing-inside-a-generated-block`](editing-inside-a-generated-block.md) | About to hand-edit a file that a tool also generates — CLAUDE.md, AGENTS.md, PROJECT.md, any managed region. | Hand-written content goes BELOW the END marker, never inside the managed block. | 🔔 |
-| [`filter-at-read-time-not-at-capture-time`](filter-at-read-time-not-at-capture-time.md) | About to run a test suite, build, or long command in the background and pipe it through `tail`, `head`, `grep` or `rg` to keep the output small. | Redirect the WHOLE stream to a file, then filter when you read it. A filter in the capture pipeline discards the evidence permanently; a filter at read time costs nothing and can be re-run with a different pattern. | — |
+| [`filter-at-read-time-not-at-capture-time`](filter-at-read-time-not-at-capture-time.md) | About to run a test suite, build, or long command in the background and pipe it through `tail`, `head`, `grep` or `rg` to keep the output small. | Redirect the WHOLE stream to a file, then filter when you read it. A filter in the capture pipeline discards the evidence permanently; a filter at read time costs nothing and can be re-run with a different pattern. | 🔔 |
 | [`git-commit-takes-the-whole-index`](git-commit-takes-the-whole-index.md) | About to commit while any other process (subagent, watcher, script) may be staging files. | Never run a bare `git commit` while another process may be staging. Use `git commit -- <paths>`, or check `git diff --cached --stat` immediately before. | — |
 | [`hardcoded-live-data-claims-rot`](hardcoded-live-data-claims-rot.md) | Writing a test, task, or spec whose verification names a count drawn from live data. | State verifications relatively. Quote counts as dated snapshots, never as the assertion. | — |
 | [`local-only-git-objects`](local-only-git-objects.md) | Pinning a commit hash into a test, doc, or fixture, or relying on `git` history being present in the checkout that runs it. | Derive hashes from `rev-list` at run time, never pin them; and if a test reads git history, the CI checkout must be `fetch-depth: 0`. | — |
@@ -56,8 +56,8 @@ dash. `a-fixture-reconstructed-…`, `a-silent-noop-edit-reports-success`, `an-u
 `cite-a-symbol-not-a-line-number`, `second-resolution-timestamps-…` and
 `stacked-background-commits-…` each declare a `detect:` written as a **bare regex** where the
 contract wants a JSON object (`{"tool":"Bash","commandMatches":"…"}`). `JSON.parse` throws,
-`matchableLessons()` skips them, and nothing anywhere reports it — half the matchers in the
-repository that owns the mechanism have never fired. Tracked as
+`matchableLessons()` skips them, and nothing anywhere reports it — when found, six of the twelve
+matchers in the repository that owns the mechanism had never fired. Tracked as
 [#194](https://github.com/cfdude/pm/issues/194). Four of the six additionally match on file
 *content*, which `matchLessons()` has no field for: it sees `tool`, `file_path`, and the command's
 first line only. Those need a capability before they can be expressed at all.
@@ -75,7 +75,7 @@ A lessons file nobody reads is a data graveyard — the same objection that made
 | `cite-a-symbol-not-a-line-number` | Nothing mechanical — a line number is well-formed text and no test can tell a fresh one from a rotted one. This is a habit, which is why it is a lesson. |
 | `commit-without-push-is-one-disk` | wave-boundary checklist in the orchestrator's own procedure; detect matcher fires when dispatching agents |
 | `editing-inside-a-generated-block` | subagent brief template; product gap noted for pm |
-| `filter-at-read-time-not-at-capture-time` | habit — no mechanism |
+| `filter-at-read-time-not-at-capture-time` | detect matcher on a test run or git commit piped into tail/head/grep/rg on the command's FIRST line. It cannot see a pipe after a multi-line commit message — the exact shape of the repeat on 2026-09-14 — so it stays a habit for that case. |
 | `git-commit-takes-the-whole-index` | subagent brief template (hard constraint) |
 | `hardcoded-live-data-claims-rot` | tasks.md authoring brief |
 | `local-only-git-objects` | scripts/test/conductor-15.test.mjs (requireHistory), .github/workflows/ci.yml |
