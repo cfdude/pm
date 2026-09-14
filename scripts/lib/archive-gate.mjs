@@ -194,6 +194,53 @@ export function unconsideredOutcomes(epics) {
     .map(e => ({ epic: e, invocation: dispositionInvocation(e.id) }));
 }
 
+/**
+ * THE ONE DEFINITION of the obligations a `delivered` outcome carries, returned as the list of
+ * those that FAIL on `epic` (empty when every one is met), Gate 2 first:
+ *
+ *   gate2    openspec lane: a present, passing Gate 2 that is neither `stale` nor
+ *            `attribution-withdrawn` (gateStaleness).
+ *   handoff  no outstanding work (outstandingSummary), unless `carriedTo` names a receiver.
+ *
+ * Two callers, and the point of extracting it is that they cannot disagree about what "met"
+ * means: archiveGate() (for a REQUESTED `delivered`, passing the request's `--carried-to`, since
+ * the epic has no new disposition yet) and update-epic's archived-epic regression check (for a
+ * STORED `delivered`, passing the stored `disposition.carriedTo`). So this function does NOT test
+ * the outcome, and takes `carriedTo` as an argument rather than reading a disposition.
+ *
+ * Each entry is `{kind, detail, items}`. `detail` is the FINDING only — never a remedy, since the
+ * two callers offer different ones — and never a user-supplied value: story titles travel as
+ * DATA in `items`, and each renderer quotes them its own way.
+ */
+export function deliveredObligations(epic, { carriedTo } = {}) {
+  const failing = [];
+  if (isOpenspecLane(epic)) {
+    const gate2 = epic.gateReview && epic.gateReview.gate2;
+    if (!gate2 || gate2.verdict !== "pass") {
+      failing.push({ kind: "gate2", detail: "missing a passing Gate 2 (implementation review) verdict", items: [] });
+    } else {
+      const staleness = gateStaleness(epic, gate2);
+      if (staleness.state === "stale") {
+        failing.push({ kind: "gate2", items: [], detail:
+          `its passing Gate 2 reviewed up to ${staleness.headSha}, which does not cover the ` +
+          `commit(s) attributed to this epic since: ${staleness.uncovered.join(", ")}` });
+      } else if (staleness.state === "attribution-withdrawn") {
+        failing.push({ kind: "gate2", items: [], detail:
+          `it carries a passing Gate 2 and attributes no commits, having withdrawn ` +
+          `${staleness.withdrawn.length} (${staleness.withdrawn.map(w => w.sha).join(", ")})` });
+      }
+    }
+  }
+  if (!carriedTo) {
+    const summary = outstandingSummary(epic);
+    if (summary.outstanding > 0) {
+      failing.push({ kind: "handoff", items: summary.items,
+        detail: `${summary.outstanding} of ${summary.claimed} task(s) outstanding` });
+    }
+  }
+  return failing;
+}
+
 export function archiveGate(epic, request = {}) {
   // The interactive verb must name how the work ended. Every OTHER archive path — the
   // archive-drift heal, the archive backfill and the two archived-at-creation paths — supplies

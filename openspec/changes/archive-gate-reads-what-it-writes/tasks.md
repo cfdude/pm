@@ -49,7 +49,7 @@ descending from the fixture's `headSha` in the fixture repo.
 
 ## 2. One definition of the delivered obligations
 
-- [ ] 2.1 RED then GREEN: export `deliveredObligations(epic, {carriedTo})` from `archive-gate.mjs`,
+- [x] 2.1 RED then GREEN: export `deliveredObligations(epic, {carriedTo})` from `archive-gate.mjs`,
       returning the failing `{kind: "gate2"|"handoff", detail, items}` entries (empty when met, Gate 2
       first; `items` carries user-supplied values such as story titles, never baked into `detail`);
       unit-test it on six fixtures (met; no Gate 2; stale; outstanding story; both failing; a
