@@ -112,10 +112,18 @@ records for a defect the update did not cause.
 demand both bind `delivered` only (`archive-gate.mjs:277`, `:320`). The fleet's `unknown` archived epics
 and every other outcome are unaffected.
 
-**`deliveredObligations(epic, {carriedTo})`** returns an array of failing `{kind: "gate2" | "handoff", detail}`, empty when met, Gate 2 first. The
-Gate 2 block (present, `pass`, not `stale`, not `attribution-withdrawn`) and the handoff block of
-`archiveGate()` are extracted into it. `archiveGate()` renders its existing messages from `{kind,
-detail}`, byte-identical, so its message tests pass unchanged.
+**`deliveredObligations(epic, {carriedTo})`** returns an array of failing `{kind: "gate2" | "handoff",
+detail}`, empty when met, Gate 2 first. The Gate 2 block (present, `pass`, not `stale`, not
+`attribution-withdrawn`) and the handoff block of `archiveGate()` are extracted into it. It does NOT
+test the outcome, and it takes `carriedTo` as an argument rather than reading a disposition:
+- the gate calls it only for a requested `delivered`, passing the REQUEST's `--carried-to`, because
+  the epic has no new disposition yet;
+- the regression check calls it only when `outcomeOf(snapshot) === "delivered"`, passing the STORED
+  `disposition.carriedTo`.
+
+`archiveGate()` keeps its own remedy sentences. It re-derives which one applies from the epic, as it
+does today: the staleness state for the three Gate 2 remedies, `summary.source` for the handoff
+remedy. So its messages stay byte-identical and its message tests pass unchanged.
 
 **The regression refusal writes its own message** (Gate 1 lens A I1). The gate's messages open
 "cannot archive …" and the handoff remedy names `--carried-to`. On a call without `--status archived`,
@@ -126,11 +134,25 @@ command: the printed invocation. `detail` is the obligation's finding only (the 
 uncovered commits, the outstanding stories by name). The remedy sentences stay in `archiveGate()`'s own
 message renderer and never reach this refusal.
 
+**The disposition tail is rendered by the existing `dispositionInvocation()`** (`archive-gate.mjs:165`),
+extended to take options: the echoed prefix tokens, whether to add `--correct-disposition`, and whether
+the epic already carries a deferral assertion. Its comment exists "so no caller types the vocabulary
+into a string of its own", and a second renderer would break that. Its existing callers
+(`unconsideredOutcomes`, `integrity.mjs:460`) keep their output unchanged: they print a bare
+`--no-deferrals` for engine-stamped `unknown` records. That text is a suggestion of a claim this
+change would not print, and it is recorded as its own epic,
+`disposition-invocation-prints-bare-no-deferrals`, rather than widened into this change, because
+changing it moves the integrity report's and the brief's text.
+
 **The printed invocation** is built from the call's raw argument TOKENS, never from parsed flags.
 Parsed flags lose shape: booleans parse as `true` (and `--clear-links 'true'` is refused), repeatable
 flags become arrays, and an inline `--notes=--x` would re-parse as a flag. The tokens pass through
 minus `--status` and every disposition flag with its value (`--outcome`, `--reason`, `--carried-to`,
-`--correct-disposition`, the deferral flags, using the flag registry's arity to drop the value), and
+`--correct-disposition`, the deferral flags). The registry has no arity field. What counts as a
+flag's value is decided the way `requireKnownFlags` walks argv (`add-epic.mjs:158-163`): an inline
+`--reason=--x` token carries its own value and drops alone, and a separate next token drops only where
+`isFlagToken(next)` is false. A "drop the next token" rule would swallow the flag after an inline
+disposition flag, and the re-run would then silently lose that change. The tokens then
 gain `--status archived --outcome <outcome> --reason "<why>"`. Each echoed token is single-quoted for a
 POSIX shell, with `'` written as `'\''`, so a multi-word or apostrophe-bearing value survives a
 copy-paste. The line is printed alone, beginning `  update-epic `, which lets a test tell the command

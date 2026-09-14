@@ -124,9 +124,11 @@ archived on disk re-archives the epic.
 **The printed invocation.** The refusal MUST print a runnable invocation that makes the same change
 and records the disposition it implies. It is the invocation's own argument tokens, as given, minus
 `--status`, `--outcome`, `--reason`, `--carried-to`, `--correct-disposition` and the deferral flags
-(with their values), plus `--status archived --outcome <outcome> --reason "<why>"`. A boolean flag
-echoes bare, a repeated flag echoes once per occurrence, and an inline `--flag=value` token echoes as
-one token. Every echoed token MUST be quoted so that the printed line, with only its placeholders
+(with their values), plus `--status archived --outcome <outcome> --reason "<why>"`. Which token is a
+dropped flag's value follows the engine's own flag walk: an inline `--flag=value` token drops alone,
+and a following token drops with its flag only where that token is not itself flag-shaped. A flag
+given with no value echoes with no value, a repeated flag echoes once per occurrence, and an inline
+`--flag=value` token echoes as one token. Every echoed token MUST be quoted so that the printed line, with only its placeholders
 filled, runs in a POSIX shell with each token arriving whole, including a value containing an
 apostrophe.
 - It MUST carry `--correct-disposition "<why the recorded one was wrong>"` if and only if the recorded
@@ -163,14 +165,17 @@ sees it. Reproduced on 0.42.0:
 - **WHEN** the epic of the previous scenario has its change directory under
   `openspec/changes/archive/`, and `update-epic <id> --status queued --attribute-commit <a commit
   descending from that headSha>` runs
-- **THEN** it exits non-zero naming the uncovered commit, and `state.json` is byte-identical
+- **THEN** it exits non-zero naming the uncovered commit, the refusal says `--status` is dropped from
+  the printed invocation because the change directory archived on disk re-archives the epic, and
+  `state.json` is byte-identical
 
 #### Scenario: Adding a story to an archived delivered epic is refused without naming a dead remedy
 
 - **WHEN** an archived `delivered` `claude-code`-lane epic whose stories are all done runs
   `update-epic <id> --add-story "s"`
 - **THEN** it exits non-zero naming the outstanding story, no line of the refusal other than the one
-  beginning `  update-epic ` names `--carried-to`, and `state.json` is byte-identical
+  beginning `  update-epic ` names `--carried-to`, `--outcome` or `--reason`, and `state.json` is
+  byte-identical
 
 #### Scenario: Withdrawing the only attribution of an archived delivered epic is refused
 
@@ -245,8 +250,8 @@ sees it. Reproduced on 0.42.0:
 #### Scenario: The printed invocation runs
 
 - **WHEN** an archived agent-recorded `delivered` `claude-code`-lane epic with no Gate 2 ever recorded
-  runs `update-epic <id> --lane openspec --notes "Rob's move" --clear-links --add-story "two words"
-  --add-story=--x`, which is refused, and the invocation it prints is run through `sh -c` with its
+  runs `update-epic <id> --lane openspec --notes "Rob's move" --clear-links --reason=--x --add-story
+  "two words" --add-story=--x`, which is refused, and the invocation it prints is run through `sh -c` with its
   placeholders filled as `--outcome superseded`, a reason, and a correction reason
 - **THEN** it exits zero; the epic is an archived `superseded` openspec-lane epic whose prior
   `delivered` disposition is kept under `superseded`; its latest note is `Rob's move`; it has no links;

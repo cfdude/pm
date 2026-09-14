@@ -31,7 +31,7 @@ descending from the fixture's `headSha` in the fixture repo.
       no Gate 2 and no outstanding work exits 0
 - [ ] 1.6a RED: `--clear plan --status archived --outcome delivered --no-deferrals` on a `claude-code`
       epic whose only source is a plan with outstanding tasks exits 0 and announces the cleared plan
-- [ ] 1.7 RED: the fixture of "A refused call announces no cleared field" (claude-code lane, no
+- [ ] 1.7 REGRESSION GUARD (for 1.8, which moves the three lines): the fixture of "A refused call announces no cleared field" (claude-code lane, no
       stories, ranked P2, a parent, a sync-ignored plan whose tasks are all ticked) prints none of the
       three lines when refused; the variant without `--lane openspec` exits 0 and prints all three
 - [ ] 1.8 GREEN: move `archiveGate()` in `updateEpic` to after the `--clear` loop and before the
@@ -44,7 +44,8 @@ descending from the fixture's `headSha` in the fixture repo.
 
 - [ ] 2.1 RED then GREEN: export `deliveredObligations(epic, {carriedTo})` from `archive-gate.mjs`,
       returning the failing `{kind: "gate2"|"handoff", detail}` entries (empty when met, Gate 2 first);
-      unit-test it on five fixtures (met; no Gate 2; stale; outstanding story; both failing)
+      unit-test it on six fixtures (met; no Gate 2; stale; outstanding story; both failing; a
+      non-`delivered` outcome, which it does not test and reports on the same record identically)
 - [ ] 2.2 REFACTOR: `archiveGate()` renders its messages from it; the existing gate-message tests pass
       byte-for-byte
 
@@ -59,7 +60,8 @@ RED tasks fail on today's engine. REGRESSION GUARD tasks pass today and must kee
 - [ ] 3.2 RED: archived `delivered` openspec epic with covering passing Gate 2 → `--attribute-commit
       <descendant>` refused naming the sha
 - [ ] 3.3 RED: the same epic with its change directory under `openspec/changes/archive/` →
-      `--status queued --attribute-commit <descendant>` refused, state byte-identical (the heal route)
+      `--status queued --attribute-commit <descendant>` refused, state byte-identical, and the refusal
+      says `--status` was dropped and why (the heal route)
 - [ ] 3.4 RED: archived `delivered` `claude-code` epic, stories all done → `--add-story s` refused; no
       line other than the one beginning `  update-epic ` names `--carried-to`, `--outcome` or `--reason`
 - [ ] 3.4a RED: archived `delivered` openspec epic with its change archived on disk → `--status active
@@ -81,7 +83,8 @@ RED tasks fail on today's engine. REGRESSION GUARD tasks pass today and must kee
       `upgrade`), stories done → `--add-story s` refused; the printed invocation carries no
       `--correct-disposition` and carries `<--no-deferrals | --deferral "<epicId>:<section>">`
 - [ ] 3.10 RED: the "printed invocation runs" fixture (`--lane openspec --notes "Rob's move"
-      --clear-links --add-story "two words" --add-story=--x`), refused, its printed line filled with
+      --clear-links --reason=--x --add-story "two words" --add-story=--x`), refused, its printed line
+      filled with
       `--outcome superseded`, a reason and a correction reason, run through `sh -c` → exits 0; prior
       disposition under `superseded`; latest note `Rob's move`; no links; exactly the two stories
 - [ ] 3.10a RED: the ratchet — archived `delivered` openspec epic with a Gate 2 `fail` recorded after
@@ -110,7 +113,7 @@ RED tasks fail on today's engine. REGRESSION GUARD tasks pass today and must kee
 ## 4. Required task items
 
 - [ ] 4.1 **Call-site completeness sweep** — derived with `rg` at sweep time:
-      - every caller of `archiveGate` and `deliveredObligations`;
+      - every caller of `archiveGate`, `deliveredObligations` and `dispositionInvocation`;
       - every WRITER, across `scripts/lib/`, of each input the obligations or the check's trigger read:
         `status`, `lane`, `planPath`, `specPath`, `stories`, `attributedCommits`, `withdrawnCommits`,
         `gateReview.gate2`, `disposition` and `disposition.carriedTo`. That list includes
@@ -123,12 +126,15 @@ RED tasks fail on today's engine. REGRESSION GUARD tasks pass today and must kee
 - [ ] 4.2 **Inverse of every operation added** — the regression refusal's exits are the printed
       invocation and a genuine unarchive, each ending at the full gate or at a path held by
       `archived-delivered-gate2-regression-report`; state it in the commit
+- [ ] 4.1a Every existing test that updates an archived `delivered` epic (conductor-13's documented-flag
+      harness among them) passes unchanged, or is corrected and named in the commit message; extend
+      `dispositionInvocation()` without changing its existing callers' output
 - [ ] 4.3 **Verify against the commit** — `git show --stat <sha>` for every task commit; each claimed
       file present
 - [ ] 4.4 **Attribute every commit** as it lands:
       `update-epic archive-gate-reads-what-it-writes --attribute-commit <sha>`. The archive commit is
       excluded
-- [ ] 4.5 **Dispositions** — archive with `update-epic archive-gate-reads-what-it-writes --status archived --outcome delivered --deferral
+- [ ] 4.5 **Dispositions** <!-- pm:lifecycle --> — archive with `update-epic archive-gate-reads-what-it-writes --status archived --outcome delivered --deferral
       "archived-delivered-gate2-regression-report:design.md What this deliberately does not do" --deferral
       "status-write-undone-by-heal-reports-updated:design.md What this deliberately does not do"`
 - [ ] 4.6 **Route what the work taught** — a practice → register an epic; tooling friction →

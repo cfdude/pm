@@ -6772,11 +6772,12 @@
         "b2dec93e23af0c44bb4e8b936474f1bbf9bef30a",
         "7aa45a6",
         "4f13f00",
-        "b1c4aa9"
+        "b1c4aa9",
+        "bbac3cb"
       ],
       "createdAt": "2026-09-14T18:09:05.963Z",
       "startedAt": "2026-09-14T18:09:05.964Z",
-      "touchedAt": "2026-09-14T19:15:43.193Z",
+      "touchedAt": "2026-09-14T19:33:32.058Z",
       "notes": [
         {
           "at": "2026-09-14T18:09:07.941Z",
@@ -6979,10 +6980,11 @@
       "attributedCommits": [
         "b2bdd04",
         "1b0fe47",
-        "8bf6758"
+        "8bf6758",
+        "1a759df"
       ],
       "createdAt": "2026-09-14T18:39:51.910Z",
-      "touchedAt": "2026-09-14T19:15:41.026Z",
+      "touchedAt": "2026-09-14T19:33:29.985Z",
       "release": "0.43.0",
       "startedAt": "2026-09-14T18:40:05.739Z",
       "trackerRefreshNeeded": true
@@ -7031,6 +7033,25 @@
       "attributedCommits": [],
       "createdAt": "2026-09-14T18:52:24.263Z",
       "touchedAt": "2026-09-14T18:52:24.266Z"
+    },
+    {
+      "id": "disposition-invocation-prints-bare-no-deferrals",
+      "title": "dispositionInvocation() (used by unconsideredOutcomes and the integrity check for engine-stamped unknown outcomes) prints a bare --no-deferrals, suggesting a claim the agent has not made — CLAUDE.md required item 6 says --no-deferrals is a claim, not a default; print a deferral placeholder instead",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "archive-gate-reads-what-it-writes",
+          "reason": "found by its Gate 1; that change extends the helper but keeps existing callers' output"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-14T19:44:41.018Z",
+      "touchedAt": "2026-09-14T19:44:41.022Z"
     }
   ],
   "detourStack": [
@@ -7049,7 +7070,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 678,
+  "revision": 681,
   "reviewMode": "thorough",
   "releases": [
     {
