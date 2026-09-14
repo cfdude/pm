@@ -156,8 +156,9 @@ every field write of the verb, so the rule lives with the verb and not with eith
 
 #### Scenario: Withdrawing Gate 1 from an archived delivered epic is accepted
 
-- **WHEN** the same archived `delivered` epic runs `update-epic <id> --withdraw-gate-review 1
-  --withdrawal-reason "x"`
+- **WHEN** the archived `delivered` epic of "Withdrawing Gate 2 from an archived delivered epic is
+  refused", whose Gate 2 was met, runs `update-epic <id> --withdraw-gate-review 1 --withdrawal-reason
+  "x"`
 - **THEN** it exits zero and Gate 1 is in the withdrawn state
 
 #### Scenario: A misplaced verdict is withdrawn and the disposition corrected in one call
@@ -170,8 +171,8 @@ every field write of the verb, so the rule lives with the verb and not with eith
 - **THEN** it exits zero; the epic is `archived` with outcome `superseded`, keeps the prior `delivered`
   disposition under `superseded`, carries no Gate 1 or Gate 2 verdict and two `withdrawnGateReviews`
   entries; and a following `integrity` run reports the epic under NONE of
-  `gate-recorded-as-bookkeeping`, `archived-with-no-gate-2-review`, and
-  `archived-openspec-epic-with-no-gate-1`
+  `gate-recorded-as-bookkeeping`, `archived-with-no-gate-2-review`,
+  `archived-with-withdrawn-gate-2`, and `archived-openspec-epic-with-no-gate-1`
 
 ### Requirement: A withdrawn gate is reported as withdrawn, never as absent
 
@@ -355,8 +356,8 @@ in the requirement above binds it.
 
 #### Scenario: The heal does not stamp over a withdrawn Gate 2
 
-- **WHEN** an openspec-lane epic whose Gate 2 is in the withdrawn state has its change directory
-  moved under `openspec/changes/archive/`, and a mutating verb runs the heal
+- **WHEN** an openspec-lane epic carrying no disposition, whose Gate 2 is in the withdrawn state, has
+  its change directory moved under `openspec/changes/archive/`, and a mutating verb runs the heal
 - **THEN** the epic is `archived` and carries `outcome: unknown` with
   `recordedBy: "archive-drift-heal"`, and `gateReview.gate2` is absent — no `ungated` entry is
   written
@@ -396,6 +397,9 @@ reports its own integrity, and their notice MUST NOT be consumed on delivery.
 
 The two kinds are disjoint, because a gate carrying `ungated` is never in the withdrawn state. They
 are ONE definition, computed in one place and read by the integrity report and the briefing alike.
+Each surface MUST present the withdrawn kind under its own heading: its own integrity check id and
+title, and its own briefing heading. No heading or title printed above a withdrawn-kind entry may
+state or imply that no review was recorded.
 
 Each reader MUST word the kinds differently. "No Gate 2 review recorded by anyone" is true of the
 ungated kind and false of the withdrawn one, whose notice names the withdrawal and quotes the latest
@@ -467,7 +471,8 @@ noise everyone filters.
   on disk and the heal flips it to `archived` with outcome `unknown`, and the integrity report and the
   briefing are composed
 - **THEN** both name the epic by its id, each states Gate 2 was withdrawn and quotes the withdrawal
-  reason, and neither states that no review was recorded
+  reason, and no text in the block that names it, headings and titles included, states that no
+  review was recorded
 
 #### Scenario: A withdrawn entry that superseded an ungated stamp says so
 

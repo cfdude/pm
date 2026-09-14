@@ -6775,11 +6775,12 @@
         "b1c4aa9",
         "bbac3cb",
         "9e06e43",
-        "48f75d7"
+        "48f75d7",
+        "b282a2f"
       ],
       "createdAt": "2026-09-14T18:09:05.963Z",
       "startedAt": "2026-09-14T18:09:05.964Z",
-      "touchedAt": "2026-09-14T19:56:40.574Z",
+      "touchedAt": "2026-09-14T20:03:27.978Z",
       "notes": [
         {
           "at": "2026-09-14T18:09:07.941Z",
@@ -6787,7 +6788,20 @@
           "text": "lane: openspec not (none routed) — modifies the gate-integrity spec capability, adds a state.json field, and changes the archive gate, a safety surface; review mode is thorough"
         }
       ],
-      "release": "0.43.0"
+      "release": "0.43.0",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-14T20:03:27.975Z",
+          "artifacts": [
+            "openspec/changes/gate-verdict-withdrawal/proposal.md",
+            "openspec/changes/gate-verdict-withdrawal/design.md",
+            "openspec/changes/gate-verdict-withdrawal/tasks.md",
+            "openspec/changes/gate-verdict-withdrawal/specs/gate-integrity/spec.md"
+          ],
+          "reviewer": "two fresh-context lenses (code-grounded correctness; spec contract & cross-change consistency), 6 rounds + scoped confirmation, 2026-09-14"
+        }
+      }
     },
     {
       "id": "gh-cfdude-pm-184",
@@ -6985,13 +6999,27 @@
         "8bf6758",
         "1a759df",
         "4d49c60",
-        "a809c86"
+        "a809c86",
+        "b282a2f"
       ],
       "createdAt": "2026-09-14T18:39:51.910Z",
-      "touchedAt": "2026-09-14T19:56:38.486Z",
+      "touchedAt": "2026-09-14T20:03:25.978Z",
       "release": "0.43.0",
       "startedAt": "2026-09-14T18:40:05.739Z",
-      "trackerRefreshNeeded": true
+      "trackerRefreshNeeded": true,
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-14T20:03:25.975Z",
+          "artifacts": [
+            "openspec/changes/archive-gate-reads-what-it-writes/proposal.md",
+            "openspec/changes/archive-gate-reads-what-it-writes/design.md",
+            "openspec/changes/archive-gate-reads-what-it-writes/tasks.md",
+            "openspec/changes/archive-gate-reads-what-it-writes/specs/gate-integrity/spec.md"
+          ],
+          "reviewer": "two fresh-context lenses (code-grounded correctness; spec contract & cross-change consistency), 4 rounds + scoped confirmation, 2026-09-14"
+        }
+      }
     },
     {
       "id": "archived-delivered-gate2-regression-report",
@@ -7074,7 +7102,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 685,
+  "revision": 689,
   "reviewMode": "thorough",
   "releases": [
     {

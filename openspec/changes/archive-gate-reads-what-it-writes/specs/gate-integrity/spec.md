@@ -107,7 +107,10 @@ other obligation's state. A whole-record comparison would let an already-failing
 Gate 2 the invocation breaks.
 
 The archive gate and this check MUST decide the obligations from ONE definition, so they cannot
-disagree about what "met" means.
+disagree about what "met" means. Sharing the definition does not make this check the archive
+transition's handoff guard: `epic-disposition`'s rule that the handoff refusal names `--carried-to`
+and the lifecycle marker binds the interactive archive verb's refusal only, and this refusal is not
+one.
 
 An obligation the record already failed before the invocation MUST NOT be a ground for refusal.
 Archived records from before a rule existed fail rules they were never held to, and refusing every
@@ -116,8 +119,11 @@ update to them would lock notes, links and priority on a record for a defect the
 **The refusal's wording.** It MUST state that the update would break an obligation the archived
 record met, and name that obligation. It MUST NOT contain the text `cannot archive`, which opens every
 archive-gate refusal. The printed invocation below MUST be the only line of the refusal that begins
-with `  update-epic `, and no other line may name `--carried-to`, `--outcome` or `--reason`, flags that
-take effect only alongside `--status archived`. Where the invocation carried a non-archived `--status`,
+with `  update-epic `, and no ENGINE-WRITTEN text on any other line may name `--carried-to`,
+`--outcome` or `--reason`, flags that take effect only alongside `--status archived`. Values a user
+supplied (story titles, reasons, notes) that appear outside the printed invocation MUST be printed
+quoted with newlines escaped, so a value can neither start a line of its own nor be mistaken for
+engine prose. Where the invocation carried a non-archived `--status`,
 the refusal MUST say that status is dropped from the printed invocation because the change directory
 archived on disk re-archives the epic.
 
@@ -207,6 +213,14 @@ sees it. Reproduced on 0.42.0:
   `carriedTo` so its handoff demand fails, and `update-epic <id> --withdraw-commit <that sha>
   --withdrawal-reason "x"` runs
 - **THEN** it exits non-zero naming the Gate 2 demand, and `state.json` is byte-identical
+
+#### Scenario: A user-supplied value cannot forge a line of the refusal
+
+- **WHEN** an archived `delivered` `claude-code`-lane epic whose stories are all done runs
+  `update-epic <id> --add-story` with a title containing `--carried-to`, a newline, and
+  `  update-epic x`
+- **THEN** it is refused, exactly one line of the refusal begins `  update-epic `, and the title appears
+  quoted with its newline escaped
 
 #### Scenario: A refused update announces no cleared field
 

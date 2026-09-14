@@ -65,6 +65,8 @@ RED tasks fail on today's engine. REGRESSION GUARD tasks pass today and must kee
       says `--status` was dropped and why (the heal route)
 - [ ] 3.4 RED: archived `delivered` `claude-code` epic, stories all done → `--add-story s` refused; no
       line other than the one beginning `  update-epic ` names `--carried-to`, `--outcome` or `--reason`
+- [ ] 3.4b RED: a story title containing `--carried-to`, a newline and `  update-epic x` → refused;
+      exactly one line begins `  update-epic `; the title is printed quoted with the newline escaped
 - [ ] 3.4a RED: archived `delivered` openspec epic with its change archived on disk → `--status active
       --attribute-commit <descendant>` refused; the refusal says the `--status` was dropped and why
 - [ ] 3.5 RED: archived `delivered` openspec epic, one covered attribution → `--withdraw-commit <it>
@@ -109,8 +111,9 @@ RED tasks fail on today's engine. REGRESSION GUARD tasks pass today and must kee
       directory → `--status queued --lane openspec` exits 0 and leaves it `queued`; then
       `--status archived --outcome delivered --reason r --correct-disposition c --no-deferrals` is
       refused for the missing Gate 2
-- [ ] 3.15 REGRESSION GUARD: a non-archived epic with nothing archived on disk never runs the check (a queued epic's `--lane openspec`
-      output and state are unchanged from today)
+- [ ] 3.15 REGRESSION GUARD: an unarchived epic carrying a `delivered` disposition (archived, then
+      `--status queued` with nothing archived on disk) runs `--add-story s` without `--status` and exits
+      0 — this fails if the trigger's `snapshot.status === "archived"` half is dropped
 
 ## 4. Required task items
 

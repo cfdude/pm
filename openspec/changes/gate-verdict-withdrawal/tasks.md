@@ -91,9 +91,10 @@ Order per design.md.
       The `ungated` kind's predicate is unchanged. ADD the `withdrawn` kind:
       `(e.status === "archived" || isArchived(e.id)) && isOpenspecLane(e) && inCompletionScope(e) &&
       withdrawnGate(e, 2)`. Update its callers `integrity.mjs:201` and `briefing.mjs:218`, and keep the
-      intent of `scripts/test/conductor-15.test.mjs:1417`. `archived-with-no-gate-2-review` and the
-      brief's notice word the withdrawn kind with its reason and never say "no review recorded by anyone";
-      assert each names the epic by its real id
+      intent of `scripts/test/conductor-15.test.mjs:1417`. The withdrawn kind is reported under its OWN
+      integrity check id `archived-with-withdrawn-gate-2` (own title) and its OWN brief heading; both
+      word it with its reason. Assert each names the epic by its real id, and that the whole block,
+      headings and titles included, matches no `/no (gate 2 )?review/i`
 - [ ] 5.4 REGRESSION GUARD (passes once 5.1 and 5.3 land): an epic reached by the heal route (withdraw while open → change archived on disk
       → heal, outcome `unknown`) is named as withdrawn by both surfaces
 - [ ] 5.5 REGRESSION GUARD (pins 5.3's `isArchived` arm): the not-yet-healed window — withdraw while open, move the change under
@@ -134,7 +135,8 @@ keep passing.
       --correct-disposition z --no-deferrals` exits 0 → the epic is `superseded`, keeps the prior
       `delivered` under `superseded`, carries no Gate 1 or Gate 2 verdict and exactly two
       `withdrawnGateReviews` entries → `integrity` names it under none of `gate-recorded-as-bookkeeping`,
-      `archived-with-no-gate-2-review`, `archived-openspec-epic-with-no-gate-1`
+      `archived-with-no-gate-2-review`, `archived-with-withdrawn-gate-2`,
+      `archived-openspec-epic-with-no-gate-1`
 
 ## 7. Required task items
 
