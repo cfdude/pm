@@ -182,3 +182,67 @@ test("1.7 regression guard: an accepted call still announces what it cleared", (
     assert.match(r.stderr, re, `the accepted call did not announce the ${what} clear: ${r.stderr}`);
   }
 });
+
+// ═══════════════ Requirement: an update to an archived epic does not break an obligation its archive met ═══════════════
+
+/** An archived claude-code epic with an AGENT-recorded `delivered` disposition (and therefore a
+ *  deferral assertion), no Gate 2 ever recorded. `stories` are added and marked done first. */
+function archivedDeliveredClaudeCode(cwd, id, { stories = [], priority } = {}) {
+  run(["add-epic", "--id", id, "--lane", "claude-code", ...(priority ? ["--priority", priority] : [])], { cwd });
+  stories.forEach((title, i) => {
+    run(["update-epic", id, "--add-story", title], { cwd });
+    run(["update-epic", id, "--story", String(i + 1), "--done"], { cwd });
+  });
+  run(["update-epic", id, ...ARCHIVE_DELIVERED], { cwd });
+  assert.equal(epicOf(cwd, id).disposition.outcome, "delivered");
+}
+
+/** An archived openspec epic, agent-recorded `delivered`, over a passing Gate 2 covering its one
+ *  attributed commit. */
+function archivedDeliveredOpenspec(id) {
+  const r = coveredOpenspecEpic(id);
+  run(["update-epic", id, ...ARCHIVE_DELIVERED], { cwd: r.cwd });
+  assert.equal(epicOf(r.cwd, id).status, "archived");
+  return r;
+}
+
+const archiveOnDisk = (cwd, id) =>
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive", `2026-09-14-${id}`), { recursive: true });
+
+test("3.11 regression guard: a record that already failed Gate 2 is not locked", () => {
+  const { cwd } = archivedDeliveredOpenspec("g11");
+  run(["record-gate-review", "g11", "--gate", "2", "--verdict", "fail"], { cwd });
+  const later = descendant(cwd);
+  accepted(cwd, ["update-epic", "g11", "--attribute-commit", later]);
+  assert.equal(epicOf(cwd, "g11").attributedCommits.at(-1), later);
+});
+
+test("3.12 regression guard: an epic that ended another way, or at unknown, carries no obligation", () => {
+  const cwd = bareRepo();
+  run(["add-epic", "--id", "sup", "--lane", "claude-code"], { cwd });
+  run(["update-epic", "sup", "--status", "archived", "--outcome", "superseded", "--reason", "r", "--no-deferrals"], { cwd });
+  accepted(cwd, ["update-epic", "sup", "--lane", "openspec", "--add-story", "s"]);
+
+  run(["add-epic", "--id", "unk", "--lane", "claude-code", "--status", "archived"], { cwd });
+  assert.equal(epicOf(cwd, "unk").disposition.outcome, "unknown");
+  assert.ok(epicOf(cwd, "unk").disposition.recordedBy, "the fixture is engine-stamped");
+  accepted(cwd, ["update-epic", "unk", "--lane", "openspec"]);
+});
+
+test("3.14 regression guard: leaving the archive is not refused where nothing re-archives the epic", () => {
+  const cwd = bareRepo();
+  archivedDeliveredClaudeCode(cwd, "g14");
+  accepted(cwd, ["update-epic", "g14", "--status", "queued", "--lane", "openspec"]);
+  assert.equal(epicOf(cwd, "g14").status, "queued");
+  const r = refused(cwd, ["update-epic", "g14", "--status", "archived", "--outcome", "delivered", "--reason", "r",
+    "--correct-disposition", "c", "--no-deferrals"]);
+  assert.match(r.stderr, /passing Gate 2/);
+});
+
+test("3.15 regression guard: an unarchived epic carrying a delivered disposition updates freely", () => {
+  const cwd = bareRepo();
+  archivedDeliveredClaudeCode(cwd, "g15");
+  accepted(cwd, ["update-epic", "g15", "--status", "queued"]);
+  accepted(cwd, ["update-epic", "g15", "--add-story", "s"]);
+  assert.equal(epicOf(cwd, "g15").stories.at(-1).title, "s");
+});
