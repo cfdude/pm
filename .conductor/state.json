@@ -6769,11 +6769,12 @@
       ],
       "reconcileNeeded": true,
       "attributedCommits": [
-        "b2dec93e23af0c44bb4e8b936474f1bbf9bef30a"
+        "b2dec93e23af0c44bb4e8b936474f1bbf9bef30a",
+        "7aa45a6"
       ],
       "createdAt": "2026-09-14T18:09:05.963Z",
       "startedAt": "2026-09-14T18:09:05.964Z",
-      "touchedAt": "2026-09-14T18:40:19.042Z",
+      "touchedAt": "2026-09-14T18:44:10.998Z",
       "notes": [
         {
           "at": "2026-09-14T18:09:07.941Z",
@@ -6984,7 +6985,7 @@
     },
     {
       "id": "archived-delivered-gate2-regression-report",
-      "title": "No integrity check names an archived delivered openspec-lane epic whose Gate 2 is no longer a covering pass — reachable by record-gate-review recording fail after archive, and by disk-side task changes, neither of which archive-gate-reads-what-it-writes re-gates",
+      "title": "No integrity check names an archived delivered epic that fails a delivered obligation (Gate 2 not a covering pass, or outstanding work with no handoff) reached by paths no gate sees: record-gate-review recording fail after archive, the heal re-archiving a changed epic with its kept delivered disposition, remove-epic stripping disposition.carriedTo, and disk-side task changes",
       "priority": "P3",
       "status": "planned",
       "role": "epic",
@@ -6999,7 +7000,26 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-14T18:39:53.765Z",
-      "touchedAt": "2026-09-14T18:39:53.768Z"
+      "touchedAt": "2026-09-14T18:52:22.282Z"
+    },
+    {
+      "id": "status-write-undone-by-heal-reports-updated",
+      "title": "update-epic --status <non-archived> on an epic whose change directory is archived on disk prints 'updated' while render()'s heal immediately restores archived — a false-success report on the write surface",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "archive-gate-reads-what-it-writes",
+          "reason": "found by its Gate 1 lens A; the check keys on the same isArchived predicate"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-14T18:52:24.263Z",
+      "touchedAt": "2026-09-14T18:52:24.266Z"
     }
   ],
   "detourStack": [
@@ -7018,7 +7038,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 670,
+  "revision": 673,
   "reviewMode": "thorough",
   "releases": [
     {

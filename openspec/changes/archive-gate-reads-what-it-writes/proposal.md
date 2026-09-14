@@ -27,21 +27,24 @@ Both halves share one cause: the gate reads a record the invocation does not lea
 ## What Changes
 
 - **The gate runs last.** `archiveGate()` moves to after every field write and unset of the
-  invocation, just before the completion stamp, the claim clear and `saveState()`. One call is then
-  decided exactly as the same flags split into consecutive calls, mutations first.
-- **A refused call announces nothing.** Three stderr lines currently print before the gate:
-  the sync-ignore tombstone clear, the rank clear, and the `--clear-*` notes. They are buffered and
-  printed only once the write is going to happen.
-- **An update to an already-archived epic may not break an obligation its archive met.** When the
-  stored status is `archived` and the call does not carry `--status`, the engine evaluates the
-  delivered-outcome obligations against the record before and after the call. It refuses the call
-  where the record met an obligation before and fails it after. The obligations are the Gate 2
-  demand and the handoff demand. An obligation that already failed before the call is not frozen:
-  the legacy record is reported, not locked. The refusal names the remedy that fits the recorded
-  disposition's provenance, because `correctionError` refuses to "correct" an engine stamp.
+  invocation, just before the completion stamp, the claim clear and `saveState()`. The gate then
+  decides on the record the call actually writes.
+- **A refused call announces nothing.** Three stderr lines currently print before the gate: the
+  sync-ignore tombstone clear, the rank clear, and the `--clear` notes. They are buffered and printed
+  only once the write is going to happen.
+- **An update to an archived `delivered` epic may not break an obligation its archive met.** The check
+  runs when the stored status is `archived`, the call does not archive, and the record will still be
+  archived afterwards. "Still archived" means no `--status` at all, or a change directory archived on
+  disk: the heal the call's own render runs re-archives it, which is how `--status queued` slipped past
+  a first draft. The engine compares the Gate 2 demand and the handoff demand **one at a time**, before
+  and after the call, and refuses where an obligation that was met now fails. An obligation that
+  already failed is not a ground for refusal, so a legacy record is reported, not locked. The refusal
+  writes its own message and prints one runnable invocation that records a disposition. That
+  invocation carries `--correct-disposition` only for an agent-recorded disposition, and a deferral
+  placeholder only where none is recorded.
 - **One source for the obligations.** The Gate 2 and handoff blocks of `archiveGate()` are extracted
-  into an exported `deliveredObligation(epic, {carriedTo})`, returning the first failing obligation
-  or null. The gate and the regression check both call it.
+  into an exported `deliveredObligations(epic, {carriedTo})`, which returns every failing obligation
+  (empty when met). The gate and the regression check both call it.
 
 ## Capabilities
 
@@ -57,7 +60,7 @@ _None._
 ## Impact
 
 - `scripts/lib/update-epic.mjs`: gate position, buffered announcements, the regression check.
-- `scripts/lib/archive-gate.mjs`: `deliveredObligation()` extracted; `archiveGate()` calls it.
+- `scripts/lib/archive-gate.mjs`: `deliveredObligations()` extracted; `archiveGate()` calls it.
 - `scripts/test/`: a new test file for both requirements, plus any existing test that pinned the old
   ordering (none found by `rg` at proposal time; re-derived at apply).
 - `commands/epic.md`, `README.md`, `skills/conductor/SKILL.md`: the archive and update behavior.
