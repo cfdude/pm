@@ -65,8 +65,9 @@ RED tasks fail on today's engine. REGRESSION GUARD tasks pass today and must kee
       says `--status` was dropped and why (the heal route)
 - [ ] 3.4 RED: archived `delivered` `claude-code` epic, stories all done → `--add-story s` refused; no
       line other than the one beginning `  update-epic ` names `--carried-to`, `--outcome` or `--reason`
-- [ ] 3.4b RED: a story title containing `--carried-to`, a newline and `  update-epic x` → refused;
-      exactly one line begins `  update-epic `; the title is printed quoted with the newline escaped
+- [ ] 3.4b RED: a story title `t --carried-to<newline>  update-epic x` (not starting with `--`) → refused;
+      exactly one line begins `  update-epic `; the title is JSON-quoted on the detail line; the printed
+      invocation, filled and run through `sh -c`, exits 0 and records the title byte-for-byte
 - [ ] 3.4a RED: archived `delivered` openspec epic with its change archived on disk → `--status active
       --attribute-commit <descendant>` refused; the refusal says the `--status` was dropped and why
 - [ ] 3.5 RED: archived `delivered` openspec epic, one covered attribution → `--withdraw-commit <it>
@@ -105,7 +106,8 @@ RED tasks fail on today's engine. REGRESSION GUARD tasks pass today and must kee
       (no `cannot archive`); the printed invocation alone on a line beginning `  update-epic `, with
       rendered by the extended `dispositionInvocation()`: raw tokens echoed minus `--status` and disposition flags, their values dropped by the `requireKnownFlags`
       walk (an inline `--flag=v` drops alone; a following token drops only where `!isFlagToken(next)`), each
-      single-quoted with `'` → `'\''`, branching on `isEngineStamped` and on an existing
+      single-quoted with `'` → `'\''` (a token with a control character as `"$(printf '%b' '…')"`, so
+      the invocation stays one physical line), user values on the detail line JSON-quoted, branching on `isEngineStamped` and on an existing
       `deferralAssertion`; `detail` excludes the gate's remedy text
 - [ ] 3.14 REGRESSION GUARD: archived `delivered` `claude-code` epic, no Gate 2, no archived change
       directory → `--status queued --lane openspec` exits 0 and leaves it `queued`; then

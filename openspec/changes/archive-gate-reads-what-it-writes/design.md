@@ -158,7 +158,12 @@ flag's value is decided the way `requireKnownFlags` walks argv (`add-epic.mjs:15
 disposition flag, and the re-run would then silently lose that change. The tokens then
 gain `--status archived --outcome <outcome> --reason "<why>"`. Each echoed token is single-quoted for a
 POSIX shell, with `'` written as `'\''`, so a multi-word or apostrophe-bearing value survives a
-copy-paste. The line is printed alone, beginning `  update-epic `, which lets a test tell the command
+copy-paste. A token containing a newline or another control character is rendered as
+`"$(printf '%b' '<the token with \n-style escapes>')"` instead, which keeps the invocation on one
+physical line in POSIX sh (`$'…'` is not POSIX). Values echoed OUTSIDE the invocation, in the detail
+line, are printed JSON-quoted, which escapes newlines. The Half 1 handoff refusal prints story titles
+raw (`archive-gate.mjs:333`) and could be forged the same way; its message is untouched by this change
+and the gap is registered as `handoff-refusal-prints-story-titles-raw`, not fixed here. The line is printed alone, beginning `  update-epic `, which lets a test tell the command
 from the prose. A dropped non-archived `--status` is said out loud: the change directory archived on
 disk re-archives the epic, so `activate()` and the status write would not have happened anyway.
 

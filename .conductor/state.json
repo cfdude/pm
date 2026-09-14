@@ -6776,11 +6776,12 @@
         "bbac3cb",
         "9e06e43",
         "48f75d7",
-        "b282a2f"
+        "b282a2f",
+        "f7ae09d"
       ],
       "createdAt": "2026-09-14T18:09:05.963Z",
       "startedAt": "2026-09-14T18:09:05.964Z",
-      "touchedAt": "2026-09-14T20:03:27.978Z",
+      "touchedAt": "2026-09-14T20:25:52.096Z",
       "notes": [
         {
           "at": "2026-09-14T18:09:07.941Z",
@@ -7000,13 +7001,13 @@
         "1a759df",
         "4d49c60",
         "a809c86",
-        "b282a2f"
+        "b282a2f",
+        "f7ae09d"
       ],
       "createdAt": "2026-09-14T18:39:51.910Z",
-      "touchedAt": "2026-09-14T20:03:25.978Z",
+      "touchedAt": "2026-09-14T20:26:39.198Z",
       "release": "0.43.0",
       "startedAt": "2026-09-14T18:40:05.739Z",
-      "trackerRefreshNeeded": true,
       "gateReview": {
         "gate1": {
           "verdict": "pass",
@@ -7019,6 +7020,11 @@
           ],
           "reviewer": "two fresh-context lenses (code-grounded correctness; spec contract & cross-change consistency), 4 rounds + scoped confirmation, 2026-09-14"
         }
+      },
+      "trackerRefresh": {
+        "verdict": "unchanged",
+        "recordedAt": "2026-09-14T20:26:39.194Z",
+        "externalUpdatedAt": "2026-09-14T18:39:33Z"
       }
     },
     {
@@ -7084,6 +7090,25 @@
       "attributedCommits": [],
       "createdAt": "2026-09-14T19:44:41.018Z",
       "touchedAt": "2026-09-14T19:44:41.022Z"
+    },
+    {
+      "id": "handoff-refusal-prints-story-titles-raw",
+      "title": "archiveGate()'s handoff refusal prints outstanding story titles raw (archive-gate.mjs:333), so a title containing a newline and '  update-epic …' forges a line of the refusal; print user-supplied titles quoted with newlines escaped",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "archive-gate-reads-what-it-writes",
+          "reason": "found by the 0.43.0 cross-spec review; that change quotes values in its own refusal only"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-14T20:30:30.075Z",
+      "touchedAt": "2026-09-14T20:30:30.079Z"
     }
   ],
   "detourStack": [
@@ -7102,7 +7127,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 689,
+  "revision": 693,
   "reviewMode": "thorough",
   "releases": [
     {

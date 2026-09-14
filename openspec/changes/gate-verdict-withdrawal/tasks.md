@@ -94,7 +94,13 @@ Order per design.md.
       intent of `scripts/test/conductor-15.test.mjs:1417`. The withdrawn kind is reported under its OWN
       integrity check id `archived-with-withdrawn-gate-2` (own title) and its OWN brief heading; both
       word it with its reason. Assert each names the epic by its real id, and that the whole block,
-      headings and titles included, matches no `/no (gate 2 )?review/i`
+      headings and titles included, matches no `/no (gate 2 )?review/i` — for `integrity`, the CLI text
+      from the new check's title line to the next check's line (so `formatIntegrity`'s title is
+      covered); for the brief, from the withdrawn heading to the next blank line. The SAME commit adds
+      `archived-with-withdrawn-gate-2` and its explanation to
+      `openspec/changes/archive/2026-08-25-conductor-tells-the-truth/integrity-day-one.md`, because
+      conductor-15 test 9.14 requires every registered check id there and the pre-commit hook runs the
+      suite. 5.8's "archived ungated" wording must not match that regex
 - [ ] 5.4 REGRESSION GUARD (passes once 5.1 and 5.3 land): an epic reached by the heal route (withdraw while open → change archived on disk
       → heal, outcome `unknown`) is named as withdrawn by both surfaces
 - [ ] 5.5 REGRESSION GUARD (pins 5.3's `isArchived` arm): the not-yet-healed window — withdraw while open, move the change under
@@ -170,7 +176,9 @@ keep passing.
       before the flag runs — an entry asserting only the refusal is ruled out by that table's comments
 - [ ] 8.2 (lands with 2.3) The hand-written usage line in `update-epic.mjs` (conductor-13 reads flags from it);
       `commands/epic.md` flag table (conductor-36 enforces the registry⇒doc row)
-- [ ] 8.3 `README.md` — the command table, and the archive-gate prose naming the withdrawn state; correct
+- [ ] 8.3 `README.md` — the command table, the archive-gate prose naming the withdrawn state, and the
+      integrity-check list gaining `archived-with-withdrawn-gate-2`; `commands/status.md`'s UNGATED
+      ARCHIVES bullet gaining the withdrawn heading; correct
       `--withdraw-commit <sha> --reason` to `--withdrawal-reason`, wrong since 0.38.0
 - [ ] 8.4 `skills/conductor/SKILL.md` — the flag in the two-gate mechanical-check section; a
       `withdrawnGateReviews?` schema entry beside `withdrawnCommits?`; the `gateReview?` schema line
