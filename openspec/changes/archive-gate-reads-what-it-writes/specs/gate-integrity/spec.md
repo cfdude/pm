@@ -30,7 +30,7 @@ written; one that reads a different record decides nothing.
 
 #### Scenario: A lane switch and an archive in one call cannot bypass Gate 2
 
-- **WHEN** a `claude-code`-lane epic with no Gate 2 verdict and no outstanding work runs
+- **WHEN** a `claude-code`-lane epic with no Gate 2 ever recorded and no outstanding work runs
   `update-epic <id> --lane openspec --status archived --outcome delivered --no-deferrals`
 - **THEN** it exits non-zero naming the missing passing Gate 2, `state.json` is byte-identical, and
   the epic is not archived
@@ -53,7 +53,8 @@ written; one that reads a different record decides nothing.
 - **WHEN** an openspec-lane epic attributes exactly one commit and carries a passing Gate 2 covering
   it, and `update-epic <id> --withdraw-commit <that sha> --withdrawal-reason "x" --status archived
   --outcome delivered --no-deferrals` runs
-- **THEN** it exits non-zero, `state.json` is byte-identical, and the epic is not archived
+- **THEN** it exits non-zero naming the withdrawn attribution, `state.json` is byte-identical, and the
+  epic is not archived
 
 #### Scenario: Finishing the last story and archiving in one call is accepted
 
@@ -63,14 +64,14 @@ written; one that reads a different record decides nothing.
 
 #### Scenario: Leaving the openspec lane and archiving in one call is accepted
 
-- **WHEN** an openspec-lane epic with no Gate 2 verdict and no outstanding work runs
+- **WHEN** an openspec-lane epic with no Gate 2 ever recorded and no outstanding work runs
   `update-epic <id> --lane claude-code --status archived --outcome delivered --no-deferrals`
 - **THEN** it exits zero and the epic is an archived `delivered` `claude-code`-lane epic
 
 #### Scenario: A refused call announces no cleared field
 
 - **WHEN** a `claude-code`-lane epic with no stories, ranked in P2, carrying a `parent`, whose
-  sync-ignored plan file has every task ticked and which has no Gate 2 verdict, runs
+  sync-ignored plan file has every task ticked and which has no Gate 2 ever recorded, runs
   `update-epic <id> --priority P1 --clear parent --plan <that path> --lane openspec --status archived
   --outcome delivered --no-deferrals`
 - **THEN** it exits non-zero, stderr carries none of the rank-clear, parent-clear or tombstone-clear
@@ -83,14 +84,15 @@ written; one that reads a different record decides nothing.
 
 ### Requirement: An update to an archived epic does not break an obligation its archive met
 
-This requirement binds an `update-epic` invocation when ALL of these hold:
+This requirement binds an `update-epic` invocation when ALL of these hold, each read from the epic as
+stored BEFORE the invocation:
 
-- the epic's stored status is `archived`;
+- the epic's recorded outcome is `delivered`;
 - the invocation does not carry `--status archived`;
-- the record will still be archived when the invocation returns, meaning either the invocation
-  carries no `--status`, or the epic's change directory is archived on disk (the predicate on which
-  the archive-drift heal, run by the invocation's own render, re-archives it);
-- the epic's recorded outcome is `delivered`.
+- the record will be archived when the invocation returns: EITHER the epic's change directory is
+  archived on disk (the predicate on which the archive-drift heal, run by the invocation's own
+  render, archives it, whatever its stored status), OR its stored status is `archived` and the
+  invocation carries no `--status`.
 
 For such an invocation, `update-epic` MUST compare the delivered-outcome obligations on the record
 before the invocation with those on the record it would leave. The obligations are:
@@ -112,13 +114,16 @@ Archived records from before a rule existed fail rules they were never held to, 
 update to them would lock notes, links and priority on a record for a defect the update did not cause.
 
 **The refusal's wording.** It MUST state that the update would break an obligation the archived
-record met, and name that obligation. It MUST NOT present itself as an archive refusal. It MUST NOT
-name a flag as a remedy that takes effect only alongside `--status archived` unless that flag appears
-inside the printed invocation below.
+record met, and name that obligation. It MUST NOT contain the text `cannot archive`, which opens every
+archive-gate refusal. The printed invocation below MUST be the only line of the refusal that begins
+with `  update-epic `, and no other line may name `--carried-to`, `--outcome` or `--reason`, flags that
+take effect only alongside `--status archived`.
 
 **The printed invocation.** The refusal MUST print a runnable invocation that makes the same change
-and records the disposition it implies: the invocation's own flags, minus any non-archived
-`--status`, plus `--status archived --outcome <outcome> --reason "<why>"`.
+and records the disposition it implies: the invocation's own flags, minus `--status`, `--outcome`,
+`--reason`, `--carried-to`, `--correct-disposition` and the deferral flags, plus `--status archived
+--outcome <outcome> --reason "<why>"`. Every echoed value MUST be quoted so that the printed line, with
+only its placeholders filled, runs in a POSIX shell with each value arriving whole.
 - It MUST carry `--correct-disposition "<why the recorded one was wrong>"` if and only if the recorded
   disposition is agent-recorded. An engine-stamped disposition is replaced by recording an outcome,
   and the correction flag is refused against it.
@@ -136,10 +141,10 @@ sees it. Reproduced on 0.42.0:
 
 #### Scenario: Switching an archived delivered epic into the openspec lane is refused
 
-- **WHEN** an archived `delivered` `claude-code`-lane epic with no Gate 2 verdict runs
-  `update-epic <id> --lane openspec`
-- **THEN** it exits non-zero naming the missing passing Gate 2, its message does not read as an archive
-  refusal, and `state.json` is byte-identical
+- **WHEN** an archived `delivered` `claude-code`-lane epic with no Gate 2 ever recorded runs
+  `update-epic <id> --lane openspec --notes "moved to the openspec lane"`
+- **THEN** it exits non-zero naming the missing passing Gate 2, its message does not contain
+  `cannot archive`, and `state.json` is byte-identical
 
 #### Scenario: Attributing a commit an archived delivered epic's Gate 2 does not cover is refused
 
@@ -159,14 +164,29 @@ sees it. Reproduced on 0.42.0:
 
 - **WHEN** an archived `delivered` `claude-code`-lane epic whose stories are all done runs
   `update-epic <id> --add-story "s"`
-- **THEN** it exits non-zero naming the outstanding story, its prose names no `--carried-to` outside
-  the printed invocation, and `state.json` is byte-identical
+- **THEN** it exits non-zero naming the outstanding story, no line of the refusal other than the one
+  beginning `  update-epic ` names `--carried-to`, and `state.json` is byte-identical
 
 #### Scenario: Withdrawing the only attribution of an archived delivered epic is refused
 
 - **WHEN** an archived `delivered` openspec-lane epic attributes exactly one commit, covered by its
   passing Gate 2, and `update-epic <id> --withdraw-commit <that sha> --withdrawal-reason "x"` runs
-- **THEN** it exits non-zero, and `state.json` is byte-identical
+- **THEN** it exits non-zero naming the Gate 2 demand, and `state.json` is byte-identical
+
+#### Scenario: A queued epic the heal will archive does not escape the check
+
+- **WHEN** an openspec-lane epic archived `delivered` over a passing Gate 2 covering its one attributed
+  commit is set `--status queued` while nothing is archived on disk, its change directory is then
+  moved under `openspec/changes/archive/`, and `update-epic <id> --attribute-commit <a commit
+  descending from that headSha>` runs
+- **THEN** it exits non-zero naming the uncovered commit, and `state.json` is byte-identical
+
+#### Scenario: Restoring a record the check accepted is judged like any other change
+
+- **WHEN** an archived `delivered` openspec-lane epic with a Gate 2 `fail` recorded after archive runs
+  `update-epic <id> --lane claude-code`, which is accepted, and then `update-epic <id> --lane openspec`
+- **THEN** the second call is refused naming the Gate 2 demand, and the invocation it prints, filled
+  with a non-`delivered` outcome, exits 0
 
 #### Scenario: An already-failing handoff does not mask a Gate 2 the update breaks
 
@@ -225,7 +245,7 @@ sees it. Reproduced on 0.42.0:
 
 #### Scenario: Leaving the archive is not refused where nothing re-archives the epic
 
-- **WHEN** an archived `delivered` `claude-code`-lane epic with no Gate 2 and no change directory
+- **WHEN** an archived `delivered` `claude-code`-lane epic with no Gate 2 ever recorded and no change directory
   archived on disk runs `update-epic <id> --status queued --lane openspec`
 - **THEN** it exits zero and the epic is `queued`, and a later `update-epic <id> --status archived
   --outcome delivered --reason r --correct-disposition c --no-deferrals` is refused for the missing

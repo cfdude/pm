@@ -33,10 +33,10 @@ Both halves share one cause: the gate reads a record the invocation does not lea
   sync-ignore tombstone clear, the rank clear, and the `--clear` notes. They are buffered and printed
   only once the write is going to happen.
 - **An update to an archived `delivered` epic may not break an obligation its archive met.** The check
-  runs when the stored status is `archived`, the call does not archive, and the record will still be
-  archived afterwards. "Still archived" means no `--status` at all, or a change directory archived on
-  disk: the heal the call's own render runs re-archives it, which is how `--status queued` slipped past
-  a first draft. The engine compares the Gate 2 demand and the handoff demand **one at a time**, before
+  runs when the recorded outcome is `delivered`, the call does not archive, and the record will be
+  archived when the call returns. That means either the change directory is archived on disk (the heal
+  the call's own render runs will archive it, whatever the stored status: how `--status queued`
+  slipped past two drafts), or the stored status is `archived` and the call carries no `--status`. The engine compares the Gate 2 demand and the handoff demand **one at a time**, before
   and after the call, and refuses where an obligation that was met now fails. An obligation that
   already failed is not a ground for refusal, so a legacy record is reported, not locked. The refusal
   writes its own message and prints one runnable invocation that records a disposition. That
@@ -63,7 +63,8 @@ _None._
 - `scripts/lib/archive-gate.mjs`: `deliveredObligations()` extracted; `archiveGate()` calls it.
 - `scripts/test/`: a new test file for both requirements, plus any existing test that pinned the old
   ordering (none found by `rg` at proposal time; re-derived at apply).
-- `commands/epic.md`, `README.md`, `skills/conductor/SKILL.md`: the archive and update behavior.
+- `commands/epic.md`, `README.md`, `skills/conductor/SKILL.md`, `agents/hierarchy-child-executor.md`:
+  the archive and update behavior.
 - `CHANGELOG.md` `[Unreleased]`.
 - No state migration. No schema change.
 - **`gate-verdict-withdrawal` depends on this change.** It is paused behind it on the detour stack,

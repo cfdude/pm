@@ -37,11 +37,13 @@ nothing.
   gate assigns both after it passes.
 - `isOpenspecLane(epic)`, `gateReview.gate2`, `gateStaleness()` (`attributedCommits` /
   `withdrawnCommits`): what the move is *for*.
-- `outstandingSummary()` → `epicProgress()`: `stories`, `planPath`, `specPath`, the lane. It reads
+- `outstandingSummary()` → `epicProgress()`: `stories`, `planPath`, the lane (for the openspec
+  `tasks.md` source). It reads
   `epic.status` too (written at `:521`, before the new position), but only to suppress a
   missing-source `warn`, never a count.
 
-**The announcements.** Exactly three stderr lines print between the old position and the save:
+**The announcements.** Three stderr lines print between the old position and the new one (a fourth,
+the claim clear, already prints after the new position and only on an accepted archive):
 
 - the sync-ignore tombstone clear (`:534`);
 - the rank clear (`:546`);
@@ -57,22 +59,28 @@ An update to an epic that is already `archived` never reaches the gate. Reproduc
 `update-epic a3 --lane openspec` on an archived `delivered` claude-code epic exits 0 and leaves a
 `delivered` openspec-lane epic with no Gate 2.
 
-**When it runs** (it is mutually exclusive with the gate, which needs `--status archived`). All four
-conditions must hold:
+**When it runs** (it is mutually exclusive with the gate, which needs `--status archived`). Every
+condition reads `snapshot`, never `epic`, because `--status` has already overwritten `epic.status` at
+`update-epic.mjs:521` by the time the check runs:
 
-- the stored status is `archived`;
-- `str(f.status) !== "archived"`;
-- `str(f.status) === undefined || isArchived(epic.id)`;
-- `outcomeOf(epic) === "delivered"`.
+```
+outcomeOf(snapshot) === "delivered"
+  && str(f.status) !== "archived"
+  && (isArchived(id) || (snapshot.status === "archived" && f.status === undefined))
+```
 
-The third line is what both Gate 1 lenses found missing from the first draft. `update-epic` ends by
+The `isArchived(id)` half is what the Gate 1 lenses found missing, twice. `update-epic` ends by
 calling `render()`, and `render()` runs `reconcileArchived()`, which re-archives any epic whose change
 directory is archived on disk. It keeps the existing disposition and runs no gate. So
 `--status queued --attribute-commit <descendant>` on such an epic disabled both the gate and a check
 keyed on "no `--status`", and the heal put the epic straight back: archived, `delivered`, stale Gate 2
-(reproduced by both lenses). Keying on `isArchived()`, the heal's own predicate imported from
-`epic-progress.mjs`, means the check runs exactly when the record will still be archived after the
-invocation's render. A genuine unarchive, one with nothing on disk to re-archive it, stays unrefused.
+(reproduced by both lenses). The second time, re-review lens A reproduced the same result starting
+from a STORED `queued` epic: unarchive it while nothing is archived on disk, then move its change under
+`archive/`, then attribute a descendant. The heal archived it `delivered` with a stale Gate 2, because
+the first revision still required stored status `archived`. So `isArchived()`, the heal's own predicate
+imported from `epic-progress.mjs`, stands alone: whenever the call's render will archive the record,
+the check runs, whatever the stored status. A genuine unarchive, with nothing on disk to archive it,
+stays unrefused.
 
 **The comparison:**
 
@@ -108,13 +116,16 @@ detail}`, byte-identical, so its message tests pass unchanged.
 
 **The regression refusal writes its own message** (Gate 1 lens A I1). The gate's messages open
 "cannot archive …" and the handoff remedy names `--carried-to`. On a call without `--status archived`,
-`--carried-to`, `--outcome` and `--reason` are silently dropped (update-epic.mjs guards only the three
-deferral flags), so quoting that remedy would send the user round the same refusal. The refusal says
+`--carried-to`, `--outcome` and `--reason` are silently dropped (update-epic.mjs refuses only the three
+deferral flags and `--correct-disposition` there), so quoting that remedy would send the user round the same refusal. The refusal says
 the update would break an obligation the archived record met, gives the `detail`, and offers one
 command: the printed invocation.
 
-**The printed invocation** is the call's own flags, minus any non-archived `--status`, plus
-`--status archived --outcome <outcome> --reason "<why>"`.
+**The printed invocation** is the call's own flags, minus `--status` and every disposition flag
+(`--outcome`, `--reason`, `--carried-to`, `--correct-disposition`, the deferral flags), plus `--status
+archived --outcome <outcome> --reason "<why>"`. Every echoed value is single-quoted for a POSIX shell,
+so a multi-word `--notes` or `--withdrawal-reason` survives a copy-paste. It is printed alone on a line
+beginning `  update-epic `, which is what lets a test tell the command from the prose.
 
 - It adds `--correct-disposition "<why the recorded one was wrong>"` **only** when
   `isEngineStamped(epic.disposition)` is false: `correctionError()` refuses to correct an engine stamp.
@@ -126,7 +137,10 @@ command: the printed invocation.
 
 Prose may add how to leave the obligation met where that exists (a lane switch can be preceded by
 recording Gate 2, which `record-gate-review` has accepted on any lane since #163). It never promises a
-command: a Gate 2 withdrawal, for one, cannot leave its own obligation met.
+command: a Gate 2 withdrawal, for one, cannot leave its own obligation met. The Half 1 handoff refusal's
+existing `--story <n> --done` remedy is dead in ONE call with `--add-story` (the index is checked
+before the append, `update-epic.mjs:276`); it works as a second call, and this change leaves that
+message alone.
 
 ## What this deliberately does not do
 
@@ -160,6 +174,16 @@ Also out of scope:
 - The Half 2 refusal's exits are the printed invocation (which ends at the full gate) and a genuine
   unarchive (whose re-archive through the verb ends at the full gate; through the heal it is the path
   held above).
+- **It is a ratchet, deliberately** (re-review lens A). The check compares against the record just
+  before the call, so on a record that already failed Gate 2 (a `fail` recorded after archive),
+  `--lane claude-code` is accepted, because it meets the obligation. `--lane openspec` straight
+  afterwards is refused, although it restores the record the check had accepted. That is the intended
+  reading, not an oversight. The check holds no history, and the restored record claims `delivered`
+  on the openspec lane with a failed Gate 2, which is the false record it exists to stop being
+  written anew. The routes back are honest ones: record a passing Gate 2 if a real review passed, then
+  switch the lane; or record the disposition the failed review implies with the printed invocation.
+  A scenario pins it. `--clear plan` followed by `--plan <p>` with outstanding tasks behaves the same
+  way.
 
 ## Risks
 

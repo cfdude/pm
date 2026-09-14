@@ -6770,11 +6770,12 @@
       "reconcileNeeded": true,
       "attributedCommits": [
         "b2dec93e23af0c44bb4e8b936474f1bbf9bef30a",
-        "7aa45a6"
+        "7aa45a6",
+        "4f13f00"
       ],
       "createdAt": "2026-09-14T18:09:05.963Z",
       "startedAt": "2026-09-14T18:09:05.964Z",
-      "touchedAt": "2026-09-14T18:44:10.998Z",
+      "touchedAt": "2026-09-14T18:59:57.859Z",
       "notes": [
         {
           "at": "2026-09-14T18:09:07.941Z",
@@ -6975,10 +6976,11 @@
       "externalUrl": "https://github.com/cfdude/pm/issues/197",
       "externalUpdatedAt": "2026-09-14T18:39:33Z",
       "attributedCommits": [
-        "b2bdd04"
+        "b2bdd04",
+        "1b0fe47"
       ],
       "createdAt": "2026-09-14T18:39:51.910Z",
-      "touchedAt": "2026-09-14T18:42:20.833Z",
+      "touchedAt": "2026-09-14T18:59:55.930Z",
       "release": "0.43.0",
       "startedAt": "2026-09-14T18:40:05.739Z",
       "trackerRefreshNeeded": true
@@ -7038,7 +7040,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 673,
+  "revision": 675,
   "reviewMode": "thorough",
   "releases": [
     {
