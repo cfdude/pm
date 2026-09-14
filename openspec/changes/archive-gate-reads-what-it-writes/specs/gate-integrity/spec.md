@@ -120,10 +120,8 @@ update to them would lock notes, links and priority on a record for a defect the
 record met, and name that obligation. It MUST NOT contain the text `cannot archive`, which opens every
 archive-gate refusal. The printed invocation below MUST be the only line of the refusal that begins
 with `  update-epic `, and no ENGINE-WRITTEN text on any other line may name `--carried-to`,
-`--outcome` or `--reason`, flags that take effect only alongside `--status archived`. Values a user
-supplied (story titles, reasons, notes) that appear outside the printed invocation MUST be printed
-quoted with newlines escaped, so a value can neither start a line of its own nor be mistaken for
-engine prose. Where the invocation carried a non-archived `--status`,
+`--outcome` or `--reason`, flags that take effect only alongside `--status archived`. A value a user
+supplied (a story title, a reason, a note) MUST NOT start a line of the refusal. Where the invocation carried a non-archived `--status`,
 the refusal MUST say that status is dropped from the printed invocation because the change directory
 archived on disk re-archives the epic.
 
@@ -138,10 +136,8 @@ given with no value echoes with no value, a repeated flag echoes once per occurr
 `--flag=value` token echoes as one token. Every echoed token MUST be quoted so that the printed line, with only its placeholders
 filled, runs in a POSIX shell with each token arriving whole, including a value containing an
 apostrophe. The printed invocation MUST stay on ONE physical line. A token containing a newline or other
-control character is NOT echoed as a value: its position carries the flag followed by the placeholder
-`<re-enter this value: it contains a line break or control character>` (an inline `--flag=value` token
-keeps its `--flag=` prefix), and the refusal says which flag's value must be
-re-entered. A shell cannot reliably rebuild such a value on one line (command substitution strips a
+control character is NOT echoed as a value: its position carries the flag and a placeholder, and the
+refusal says which flag's value must be re-entered. A shell cannot reliably rebuild such a value on one line (command substitution strips a
 trailing newline), and a promise of byte-for-byte reconstruction there would be false.
 - It MUST carry `--correct-disposition "<why the recorded one was wrong>"` if and only if the recorded
   disposition is agent-recorded. An engine-stamped disposition is replaced by recording an outcome,
@@ -224,9 +220,9 @@ sees it. Reproduced on 0.42.0:
 - **WHEN** an archived agent-recorded `delivered` `claude-code`-lane epic whose stories are all done
   runs `update-epic <id> --add-story` with a title that does not begin with `--` and contains
   `--carried-to`, a newline, and `  update-epic x`
-- **THEN** it is refused; exactly one line of the refusal begins `  update-epic `; the title appears
-  quoted with its newline escaped on the detail line; and the printed invocation carries the re-enter
-  placeholder for that `--add-story` value instead of echoing it
+- **THEN** it is refused; exactly one line of the refusal begins `  update-epic `; no line of the refusal
+  begins with any part of the title after its newline; and the printed invocation carries a placeholder
+  for that `--add-story` value instead of echoing it
 
 #### Scenario: A refused update announces no cleared field
 

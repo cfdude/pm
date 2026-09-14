@@ -16,7 +16,10 @@
 Each test supplies every other input valid and asserts `state.json` byte-identical on refusal. The
 pre-commit hook runs the whole suite, so each RED test lands in the SAME commit as the GREEN step that
 turns it green (1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.6a and 1.7 with 1.8; 3.1, 3.2, 3.3, 3.4, 3.4a, 3.4b,
-3.5, 3.5a, 3.6, 3.7, 3.8, 3.9, 3.10 and 3.10a with 3.13); the RED is demonstrated before that commit. New
+3.5, 3.5a, 3.6, 3.7, 3.8, 3.9, 3.10 and 3.10a with 3.13). This departs from one commit per task, and
+it is forced by the hook, not chosen. The RED is demonstrated before that commit: the failing run of
+the new test file against the pre-GREEN engine is saved in the change directory as `red-<task>.txt` and the GREEN commit
+message names that file, so the demonstration is checkable afterwards. New
 file `scripts/test/archive-gate-order.test.mjs`, importing `helpers.mjs`. A "descendant" is a commit
 descending from the fixture's `headSha` in the fixture repo.
 
