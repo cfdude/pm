@@ -1,12 +1,12 @@
 ## 0. Before any code
 
-- [ ] 0.1 Gate 1 — two fresh-context lenses over these artifacts BY PATH; record with
+- [x] 0.1 Gate 1 — two fresh-context lenses over these artifacts BY PATH; record with
       `record-gate-review archive-gate-reads-what-it-writes --gate 1 --verdict pass --reviewer "<identity>"
       --artifact openspec/changes/archive-gate-reads-what-it-writes/proposal.md --artifact
       openspec/changes/archive-gate-reads-what-it-writes/design.md --artifact
       openspec/changes/archive-gate-reads-what-it-writes/tasks.md --artifact
       openspec/changes/archive-gate-reads-what-it-writes/specs/gate-integrity/spec.md`
-- [ ] 0.2 **Cross-spec review** (required task item 5) — owed: 0.43.0 holds this change's spec and
+- [x] 0.2 **Cross-spec review** (required task item 5) — owed: 0.43.0 holds this change's spec and
       `gate-verdict-withdrawal`'s, two files on `gate-integrity`. Run the `cross-spec-review` skill
       after both changes pass Gate 1, and again after any later amendment to either; record with
       `record-cross-spec-review 0.43.0 --verdict pass|fail --reviewer "<identity>"`

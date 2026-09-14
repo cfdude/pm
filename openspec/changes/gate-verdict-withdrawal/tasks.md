@@ -1,12 +1,12 @@
 ## 0. Before any code
 
-- [ ] 0.1 Gate 1 — two fresh-context reviewers over these artifacts BY PATH; record with
+- [x] 0.1 Gate 1 — two fresh-context reviewers over these artifacts BY PATH; record with
       `record-gate-review gate-verdict-withdrawal --gate 1 --verdict pass --reviewer "<identity>"
       --artifact openspec/changes/gate-verdict-withdrawal/proposal.md --artifact
       openspec/changes/gate-verdict-withdrawal/design.md --artifact
       openspec/changes/gate-verdict-withdrawal/tasks.md --artifact
       openspec/changes/gate-verdict-withdrawal/specs/gate-integrity/spec.md`
-- [ ] 0.2 **Cross-spec review** (required task item 5) — owed: 0.43.0 holds this spec and
+- [x] 0.2 **Cross-spec review** (required task item 5) — owed: 0.43.0 holds this spec and
       `archive-gate-reads-what-it-writes`'s, two files on `gate-integrity`. Run the `cross-spec-review`
       skill after both pass Gate 1, and again if the reconcile gate in 1.1 amends either spec; record
       with `record-cross-spec-review 0.43.0 --verdict pass|fail --reviewer "<identity>"`

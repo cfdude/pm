@@ -6779,11 +6779,12 @@
         "b282a2f",
         "f7ae09d",
         "8f0057d",
-        "d5fde94"
+        "d5fde94",
+        "d046e02"
       ],
       "createdAt": "2026-09-14T18:09:05.963Z",
       "startedAt": "2026-09-14T18:09:05.964Z",
-      "touchedAt": "2026-09-14T20:40:25.479Z",
+      "touchedAt": "2026-09-14T20:53:55.247Z",
       "notes": [
         {
           "at": "2026-09-14T18:09:07.941Z",
@@ -6795,14 +6796,25 @@
       "gateReview": {
         "gate1": {
           "verdict": "pass",
-          "reviewedAt": "2026-09-14T20:03:27.975Z",
+          "reviewedAt": "2026-09-14T20:53:55.244Z",
           "artifacts": [
             "openspec/changes/gate-verdict-withdrawal/proposal.md",
             "openspec/changes/gate-verdict-withdrawal/design.md",
             "openspec/changes/gate-verdict-withdrawal/tasks.md",
             "openspec/changes/gate-verdict-withdrawal/specs/gate-integrity/spec.md"
           ],
-          "reviewer": "two fresh-context lenses (code-grounded correctness; spec contract & cross-change consistency), 6 rounds + scoped confirmation, 2026-09-14"
+          "reviewer": "re-recorded over artifacts amended after the first Gate 1 (f7ae09d..2b971c9): amendments reviewed by the 0.43.0 cross-spec rounds (coherence + falsifiability lenses, initial + 3 re-rounds); final trim 2b971c9 removes requirements only, adjudicated by the orchestrator, 2026-09-14",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-09-14T20:03:27.975Z",
+            "artifacts": [
+              "openspec/changes/gate-verdict-withdrawal/proposal.md",
+              "openspec/changes/gate-verdict-withdrawal/design.md",
+              "openspec/changes/gate-verdict-withdrawal/tasks.md",
+              "openspec/changes/gate-verdict-withdrawal/specs/gate-integrity/spec.md"
+            ],
+            "reviewer": "two fresh-context lenses (code-grounded correctness; spec contract & cross-change consistency), 6 rounds + scoped confirmation, 2026-09-14"
+          }
         }
       }
     },
@@ -7006,23 +7018,36 @@
         "b282a2f",
         "f7ae09d",
         "8f0057d",
-        "d5fde94"
+        "d5fde94",
+        "d046e02",
+        "2b971c9e425b36d3188fe4b050d023e9748103d6"
       ],
       "createdAt": "2026-09-14T18:39:51.910Z",
-      "touchedAt": "2026-09-14T20:40:23.452Z",
+      "touchedAt": "2026-09-14T20:53:53.196Z",
       "release": "0.43.0",
       "startedAt": "2026-09-14T18:40:05.739Z",
       "gateReview": {
         "gate1": {
           "verdict": "pass",
-          "reviewedAt": "2026-09-14T20:03:25.975Z",
+          "reviewedAt": "2026-09-14T20:53:53.193Z",
           "artifacts": [
             "openspec/changes/archive-gate-reads-what-it-writes/proposal.md",
             "openspec/changes/archive-gate-reads-what-it-writes/design.md",
             "openspec/changes/archive-gate-reads-what-it-writes/tasks.md",
             "openspec/changes/archive-gate-reads-what-it-writes/specs/gate-integrity/spec.md"
           ],
-          "reviewer": "two fresh-context lenses (code-grounded correctness; spec contract & cross-change consistency), 4 rounds + scoped confirmation, 2026-09-14"
+          "reviewer": "re-recorded over artifacts amended after the first Gate 1 (f7ae09d..2b971c9): amendments reviewed by the 0.43.0 cross-spec rounds (coherence + falsifiability lenses, initial + 3 re-rounds); final trim 2b971c9 removes requirements only, adjudicated by the orchestrator, 2026-09-14",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-09-14T20:03:25.975Z",
+            "artifacts": [
+              "openspec/changes/archive-gate-reads-what-it-writes/proposal.md",
+              "openspec/changes/archive-gate-reads-what-it-writes/design.md",
+              "openspec/changes/archive-gate-reads-what-it-writes/tasks.md",
+              "openspec/changes/archive-gate-reads-what-it-writes/specs/gate-integrity/spec.md"
+            ],
+            "reviewer": "two fresh-context lenses (code-grounded correctness; spec contract & cross-change consistency), 4 rounds + scoped confirmation, 2026-09-14"
+          }
         }
       },
       "trackerRefresh": {
@@ -7139,7 +7164,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 698,
+  "revision": 704,
   "reviewMode": "thorough",
   "releases": [
     {
@@ -7315,7 +7340,22 @@
       "id": "0.43.0",
       "intent": "Gate verdicts get the inverse every other correctable record has, and the shipped withdraw-commit bypass closes with it. Starts with #192.",
       "deferred": [],
-      "target": "0.43.0"
+      "target": "0.43.0",
+      "crossSpecReview": {
+        "verdict": "pass",
+        "reviewedAt": "2026-09-14T20:53:57.226Z",
+        "specs": [
+          {
+            "key": "archive-gate-reads-what-it-writes/specs/gate-integrity/spec.md",
+            "sha256": "2a3d52e3f64f7ab103a13fe5e98d9474bbcd4f55fff8328ac57b48a089578a54"
+          },
+          {
+            "key": "gate-verdict-withdrawal/specs/gate-integrity/spec.md",
+            "sha256": "3e71975c636dd6111b9707456750329deea9669023e7412da6222d5276f499b7"
+          }
+        ],
+        "reviewer": "two fresh-context lenses (coherence/contradiction; falsifiability/dependency-order), initial + 3 re-rounds; round-3 BLOCKS fixed d046e02; remaining round-3 items adjudicated POLISH (rendering detail, no contradiction) and trimmed from the spec 2b971c9, 2026-09-14"
+      }
     }
   ],
   "archiveBackfilledAt": "2026-08-27T04:52:42.658Z"
