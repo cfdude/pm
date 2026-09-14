@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "capture-pipe-lesson-matcher",
+  "active": "gate-verdict-withdrawal",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -6635,7 +6635,7 @@
       "id": "gh-cfdude-pm-192",
       "title": "A gate verdict cannot be withdrawn, so one recorded on the wrong epic is permanent",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -6651,7 +6651,7 @@
       "externalUpdatedAt": "2026-09-12T01:29:22Z",
       "attributedCommits": [],
       "createdAt": "2026-09-12T01:29:33.093Z",
-      "touchedAt": "2026-09-12T06:42:10.474Z",
+      "touchedAt": "2026-09-14T18:09:09.922Z",
       "notes": [
         {
           "at": "2026-09-12T01:29:35.731Z",
@@ -6660,7 +6660,22 @@
         }
       ],
       "startedAt": "2026-09-12T01:37:09.382Z",
-      "trackerRefreshNeeded": true
+      "trackerRefresh": {
+        "verdict": "unchanged",
+        "recordedAt": "2026-09-14T18:08:46.795Z",
+        "externalUpdatedAt": "2026-09-12T01:29:22Z"
+      },
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-09-14T18:09:09.919Z",
+        "reason": "Superseded at registration by the openspec change gate-verdict-withdrawal, which carries the specs, the gates and the commits. Ended now rather than at close on purpose: #192 was filed because closing #175's tracker mirror as delivered forced gate transcription onto it, and a mirror that stays open until the work ships invites the same transcription. The issue's diagnosis and suggested fix are preserved in the change's proposal and design."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-14T18:09:09.919Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-14T18:09:09.919Z"
     },
     {
       "id": "lessons-index-cannot-drift-silently",
@@ -6699,7 +6714,7 @@
       "id": "capture-pipe-lesson-matcher",
       "title": "Give filter-at-read-time-not-at-capture-time a detect: matcher — a test run or git commit piped into tail/head/grep/rg on a command's first line. The lesson recurred within hours of being written (a multi-line git commit piped to tail reported success while the pre-commit hook had refused it), and a retrieval-only lesson did not reach the moment. The matcher is first-line-only by design and would NOT have caught that multi-line instance; the lesson now says so rather than implying coverage.",
       "priority": "P2",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -6710,10 +6725,56 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "dbf42ee615ffad094eef497f7945af2b7b815fcd"
+      ],
       "createdAt": "2026-09-14T17:38:02.198Z",
       "startedAt": "2026-09-14T17:38:02.223Z",
-      "touchedAt": "2026-09-14T17:38:02.238Z"
+      "touchedAt": "2026-09-14T18:08:28.521Z",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-14T18:08:28.519Z",
+        "reason": "Shipped on dev at dbf42ee. filter-at-read-time-not-at-capture-time carries a detect matcher for a test run or git commit that starts a command segment and is piped into tail/head/grep/rg. Checked against twelve command shapes after two rounds — the first version false-fired on a search pattern containing 'git commit', the second refused the & in 2>&1. First-line-only by design, so it does not catch a pipe after a multi-line commit message, the shape of the repeat that prompted it; the lesson says so."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-14T18:08:28.519Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-14T18:08:28.519Z"
+    },
+    {
+      "id": "gate-verdict-withdrawal",
+      "title": "A recorded gate verdict can be withdrawn, and the withdrawal is recorded — update-epic --withdraw-gate-review <1|2> --withdrawal-reason. The entry moves to withdrawnGateReviews[] so no reader mistakes a withdrawn pass for a pass, and a withdrawn gate is a named state (never absence) that the archive gate and integrity refuse by name. Also closes a SHIPPED bypass Gate 1 reproduced: one update-epic call carrying --withdraw-commit and --status archived archives delivered with zero attributions, because archiveGate runs before the withdrawal block.",
+      "priority": "P2",
+      "status": "active",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "supersedes",
+          "epic": "gh-cfdude-pm-192",
+          "reason": "the tracker mirror of this change — one piece of work registered twice is the shape that produced #192 itself, so it ends at registration rather than at close"
+        },
+        {
+          "type": "relates-to",
+          "epic": "gh-163-gate-verdicts-openspec-only",
+          "reason": "#163 removed record-gate-review's lane refusal, so any lane can carry a verdict to withdraw; this change's restated heal requirement corrects a spec sentence that has been false since"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-14T18:09:05.963Z",
+      "startedAt": "2026-09-14T18:09:05.964Z",
+      "touchedAt": "2026-09-14T18:09:14.053Z",
+      "notes": [
+        {
+          "at": "2026-09-14T18:09:07.941Z",
+          "actor": "agent",
+          "text": "lane: openspec not (none routed) — modifies the gate-integrity spec capability, adds a state.json field, and changes the archive gate, a safety surface; review mode is thorough"
+        }
+      ],
+      "release": "0.43.0"
     }
   ],
   "detourStack": [],
@@ -6724,7 +6785,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 643,
+  "revision": 651,
   "reviewMode": "thorough",
   "releases": [
     {
@@ -6895,6 +6956,12 @@
         }
       ],
       "target": "0.42.0"
+    },
+    {
+      "id": "0.43.0",
+      "intent": "Gate verdicts get the inverse every other correctable record has, and the shipped withdraw-commit bypass closes with it. Starts with #192.",
+      "deferred": [],
+      "target": "0.43.0"
     }
   ],
   "archiveBackfilledAt": "2026-08-27T04:52:42.658Z"
