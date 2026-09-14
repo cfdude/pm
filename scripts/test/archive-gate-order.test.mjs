@@ -246,3 +246,180 @@ test("3.15 regression guard: an unarchived epic carrying a delivered disposition
   accepted(cwd, ["update-epic", "g15", "--add-story", "s"]);
   assert.equal(epicOf(cwd, "g15").stories.at(-1).title, "s");
 });
+
+const INVOCATION_PREFIX = "  update-epic ";
+const lines = (text) => text.split("\n");
+/** The printed invocation: the ONE line of the refusal beginning `  update-epic `. */
+function invocationOf(stderr) {
+  const hits = lines(stderr).filter(l => l.startsWith(INVOCATION_PREFIX));
+  assert.equal(hits.length, 1, `exactly one line begins '${INVOCATION_PREFIX}':\n${stderr}`);
+  return hits[0];
+}
+const DEFERRAL_PLACEHOLDER = '<--no-deferrals | --deferral "<epicId>:<section>">';
+
+/** Fill the printed invocation's placeholders and run it through `sh -c`. */
+function runFilled(cwd, invocation) {
+  const filled = invocation
+    .replace(/^ {2}update-epic /, `node '${ENGINE}' update-epic `)
+    .replace(/--outcome <[^>]*>/, "--outcome superseded")
+    .replace('--reason "<why>"', "--reason 'the change moved it out of delivered'")
+    .replace('--correct-disposition "<why the recorded one was wrong>"', "--correct-disposition 'delivered no longer describes it'");
+  const r = spawnSync("sh", ["-c", filled], {
+    cwd, encoding: "utf8",
+    env: { ...process.env, CLAUDE_PROJECT_DIR: cwd, PM_CACHE_ROOT: EMPTY_CACHE },
+  });
+  assert.equal(r.status, 0, `the filled invocation must run:\n${filled}\nstderr: ${r.stderr}`);
+  return r;
+}
+
+test("3.1 switching an archived delivered epic into the openspec lane is refused", () => {
+  const cwd = bareRepo();
+  archivedDeliveredClaudeCode(cwd, "r1");
+  const r = refused(cwd, ["update-epic", "r1", "--lane", "openspec", "--notes", "moved to the openspec lane"]);
+  assert.match(r.stderr, /Gate 2/, "the refusal names the Gate 2 demand");
+  assert.ok(!r.stderr.includes("cannot archive"), `the refusal is not an archive-gate refusal:\n${r.stderr}`);
+  invocationOf(r.stderr);
+});
+
+test("3.2 attributing a commit an archived delivered epic's Gate 2 does not cover is refused", () => {
+  const { cwd } = archivedDeliveredOpenspec("r2");
+  const later = descendant(cwd);
+  const r = refused(cwd, ["update-epic", "r2", "--attribute-commit", later]);
+  assert.ok(r.stderr.includes(later), `the refusal names ${later}:\n${r.stderr}`);
+});
+
+test("3.3 a non-archived status does not escape the check while the heal will re-archive", () => {
+  const { cwd } = archivedDeliveredOpenspec("r3");
+  archiveOnDisk(cwd, "r3");
+  const later = descendant(cwd);
+  const r = refused(cwd, ["update-epic", "r3", "--status", "queued", "--attribute-commit", later]);
+  assert.ok(r.stderr.includes(later), `the refusal names ${later}:\n${r.stderr}`);
+  assert.match(r.stderr, /--status queued is dropped from the printed invocation, because the change directory archived on disk re-archives/);
+  assert.doesNotMatch(invocationOf(r.stderr), /--status'? '?queued/, "the printed invocation carries no --status queued");
+});
+
+test("3.4 adding a story to an archived delivered epic is refused without naming a dead remedy", () => {
+  const cwd = bareRepo();
+  archivedDeliveredClaudeCode(cwd, "r4", { stories: ["s0"] });
+  const r = refused(cwd, ["update-epic", "r4", "--add-story", "s"]);
+  assert.match(r.stderr, /handoff/, "the refusal names the handoff demand");
+  assert.ok(r.stderr.includes('"s"'), `the refusal names the outstanding story:\n${r.stderr}`);
+  for (const line of lines(r.stderr).filter(l => !l.startsWith(INVOCATION_PREFIX))) {
+    assert.doesNotMatch(line, /--carried-to|--outcome|--reason/, `a dead remedy is named outside the invocation: ${line}`);
+  }
+});
+
+test("3.4b a user-supplied value cannot forge a line of the refusal", () => {
+  const cwd = bareRepo();
+  archivedDeliveredClaudeCode(cwd, "r4b", { stories: ["s0"] });
+  const title = "t --carried-to\n  update-epic x";
+  const r = refused(cwd, ["update-epic", "r4b", "--add-story", title]);
+  const invocation = invocationOf(r.stderr);
+  assert.ok(!lines(r.stderr).some(l => l.startsWith("  update-epic x")), "no line begins with the title's second line");
+  assert.ok(r.stderr.includes(JSON.stringify(title)), `the title is JSON-quoted on the detail line:\n${r.stderr}`);
+  assert.match(invocation, /'--add-story' <re-enter this value>/, "the invocation carries a placeholder for the value");
+  assert.ok(!invocation.includes("carried-to"), "the value itself is not echoed");
+  assert.match(r.stderr, /--add-story value/, "the refusal says which flag's value must be re-entered");
+});
+
+test("3.4a an active status does not escape the check while the heal will re-archive", () => {
+  const { cwd } = archivedDeliveredOpenspec("r4a");
+  archiveOnDisk(cwd, "r4a");
+  const later = descendant(cwd);
+  const r = refused(cwd, ["update-epic", "r4a", "--status", "active", "--attribute-commit", later]);
+  assert.match(r.stderr, /--status active is dropped from the printed invocation, because the change directory archived on disk re-archives/);
+});
+
+test("3.5 withdrawing the only attribution of an archived delivered epic is refused", () => {
+  const { cwd, first } = archivedDeliveredOpenspec("r5");
+  const r = refused(cwd, ["update-epic", "r5", "--withdraw-commit", first, "--withdrawal-reason", "x"]);
+  assert.match(r.stderr, /Gate 2 demand/);
+});
+
+test("3.5a a queued epic the heal will archive does not escape the check", () => {
+  const { cwd } = archivedDeliveredOpenspec("r5a");
+  accepted(cwd, ["update-epic", "r5a", "--status", "queued"]);
+  assert.equal(epicOf(cwd, "r5a").status, "queued", "nothing on disk re-archived it");
+  archiveOnDisk(cwd, "r5a");
+  const later = descendant(cwd);
+  const r = refused(cwd, ["update-epic", "r5a", "--attribute-commit", later]);
+  assert.ok(r.stderr.includes(later), `the refusal names ${later}:\n${r.stderr}`);
+});
+
+test("3.6 an already-failing handoff does not mask a Gate 2 the update breaks", () => {
+  const { cwd, first } = coveredOpenspecEpic("r6");
+  run(["update-epic", "r6", "--add-story", "left for z"], { cwd });
+  run(["add-epic", "--id", "z", "--lane", "claude-code"], { cwd });
+  run(["update-epic", "r6", "--status", "archived", "--outcome", "delivered", "--carried-to", "z", "--no-deferrals"], { cwd });
+  run(["remove-epic", "z"], { cwd });
+  assert.ok(!("carriedTo" in epicOf(cwd, "r6").disposition), "remove-epic stripped the receiver");
+  const r = refused(cwd, ["update-epic", "r6", "--withdraw-commit", first, "--withdrawal-reason", "x"]);
+  assert.match(r.stderr, /Gate 2 demand/);
+});
+
+test("3.7 a refused update announces no cleared field", () => {
+  const cwd = bareRepo();
+  archivedDeliveredClaudeCode(cwd, "r7", { priority: "P2" });
+  const s = readState(cwd);
+  s.epics.find(e => e.id === "r7").rank = 1;
+  writeState(cwd, s);
+  const r = refused(cwd, ["update-epic", "r7", "--priority", "P1", "--lane", "openspec"]);
+  assert.doesNotMatch(r.stderr, /cleared `r7`'s rank/);
+});
+
+test("3.8 the invocation printed for an agent-recorded disposition names the correction", () => {
+  const cwd = bareRepo();
+  archivedDeliveredClaudeCode(cwd, "r8");
+  const invocation = invocationOf(refused(cwd, ["update-epic", "r8", "--lane", "openspec"]).stderr);
+  assert.ok(invocation.includes('--correct-disposition "<why the recorded one was wrong>"'), invocation);
+  assert.ok(!invocation.includes(DEFERRAL_PLACEHOLDER), "the epic already carries a deferral assertion");
+  assert.doesNotMatch(invocation, /--no-deferrals/);
+});
+
+test("3.9 the invocation printed for an engine-stamped disposition does not name the correction", () => {
+  const cwd = bareRepo();
+  writeState(cwd, {
+    version: 1, pmVersion: "0.26.0", active: null, detourStack: [],
+    epics: [{ id: "r9", title: "r9", priority: "P1", status: "archived", role: "epic", lane: "openspec",
+      links: [], reconcileNeeded: false, stories: [{ title: "s0", done: true }],
+      gateReview: { gate2: { verdict: "pass", reviewedAt: "2026-08-01T00:00:00.000Z" } } }],
+  });
+  run(["upgrade"], { cwd });
+  const d = epicOf(cwd, "r9").disposition;
+  assert.equal(d.outcome, "delivered");
+  assert.equal(d.recordedBy, "migration", "the fixture is migration-stamped");
+  const invocation = invocationOf(refused(cwd, ["update-epic", "r9", "--add-story", "s"]).stderr);
+  assert.ok(!invocation.includes("--correct-disposition"), invocation);
+  assert.ok(invocation.includes(DEFERRAL_PLACEHOLDER), invocation);
+});
+
+test("3.10 the printed invocation runs", () => {
+  const cwd = bareRepo();
+  run(["add-epic", "--id", "other", "--lane", "claude-code"], { cwd });
+  archivedDeliveredClaudeCode(cwd, "r10");
+  run(["update-epic", "r10", "--link", "relates-to:other:fixture link"], { cwd });
+  assert.equal(epicOf(cwd, "r10").links.length, 1);
+  const r = refused(cwd, ["update-epic", "r10", "--lane", "openspec", "--notes", "Rob's move", "--clear-links",
+    "--reason=--x", "--add-story", "two words", "--add-story=--x"]);
+  runFilled(cwd, invocationOf(r.stderr));
+  const e = epicOf(cwd, "r10");
+  assert.equal(e.status, "archived");
+  assert.equal(e.lane, "openspec");
+  assert.equal(e.disposition.outcome, "superseded");
+  assert.equal(e.disposition.superseded.outcome, "delivered", "the prior delivered disposition is kept");
+  assert.equal(e.notes.at(-1).text, "Rob's move");
+  assert.deepEqual(e.links, []);
+  assert.deepEqual(e.stories.map(s => s.title), ["two words", "--x"]);
+});
+
+test("3.10a the ratchet: restoring a record the check accepted is judged like any other change", () => {
+  const { cwd } = archivedDeliveredOpenspec("r10a");
+  run(["record-gate-review", "r10a", "--gate", "2", "--verdict", "fail"], { cwd });
+  accepted(cwd, ["update-epic", "r10a", "--lane", "claude-code"]);
+  const r = refused(cwd, ["update-epic", "r10a", "--lane", "openspec"]);
+  assert.match(r.stderr, /Gate 2 demand/);
+  runFilled(cwd, invocationOf(r.stderr));
+  const e = epicOf(cwd, "r10a");
+  assert.equal(e.lane, "openspec");
+  assert.equal(e.disposition.outcome, "superseded");
+});

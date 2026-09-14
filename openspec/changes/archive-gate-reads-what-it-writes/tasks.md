@@ -62,51 +62,51 @@ descending from the fixture's `headSha` in the fixture repo.
 RED tasks fail on today's engine. REGRESSION GUARD tasks pass today and must keep passing after
 3.13's GREEN.
 
-- [ ] 3.1 RED: archived `delivered` `claude-code` epic, no Gate 2 ever recorded → `--lane openspec
+- [x] 3.1 RED: archived `delivered` `claude-code` epic, no Gate 2 ever recorded → `--lane openspec
       --notes "moved to the openspec lane"` refused naming Gate 2; the message does not contain
       `cannot archive`; exactly one line begins `  update-epic `
-- [ ] 3.2 RED: archived `delivered` openspec epic with covering passing Gate 2 → `--attribute-commit
+- [x] 3.2 RED: archived `delivered` openspec epic with covering passing Gate 2 → `--attribute-commit
       <descendant>` refused naming the sha
-- [ ] 3.3 RED: the same epic with its change directory under `openspec/changes/archive/` →
+- [x] 3.3 RED: the same epic with its change directory under `openspec/changes/archive/` →
       `--status queued --attribute-commit <descendant>` refused, state byte-identical, and the refusal
       says `--status` was dropped and why (the heal route)
-- [ ] 3.4 RED: archived `delivered` `claude-code` epic, stories all done → `--add-story s` refused; no
+- [x] 3.4 RED: archived `delivered` `claude-code` epic, stories all done → `--add-story s` refused; no
       line other than the one beginning `  update-epic ` names `--carried-to`, `--outcome` or `--reason`
-- [ ] 3.4b RED: a story title `t --carried-to<newline>  update-epic x` (not starting with `--`) on an
+- [x] 3.4b RED: a story title `t --carried-to<newline>  update-epic x` (not starting with `--`) on an
       agent-recorded epic → refused; exactly one line begins `  update-epic `; the title is JSON-quoted
       on the detail line; the printed invocation carries the re-enter placeholder for `--add-story`
-- [ ] 3.4a RED: archived `delivered` openspec epic with its change archived on disk → `--status active
+- [x] 3.4a RED: archived `delivered` openspec epic with its change archived on disk → `--status active
       --attribute-commit <descendant>` refused; the refusal says the `--status` was dropped and why
-- [ ] 3.5 RED: archived `delivered` openspec epic, one covered attribution → `--withdraw-commit <it>
+- [x] 3.5 RED: archived `delivered` openspec epic, one covered attribution → `--withdraw-commit <it>
       --withdrawal-reason x` refused naming the Gate 2 demand
-- [ ] 3.5a RED: the queued heal window — archive `delivered` over a covering Gate 2, `--status queued`
+- [x] 3.5a RED: the queued heal window — archive `delivered` over a covering Gate 2, `--status queued`
       with nothing archived on disk (accepted), move the change under `openspec/changes/archive/`, then
       `--attribute-commit <descendant>` is refused, state byte-identical
-- [ ] 3.6 RED: per obligation — the "already-failing handoff does not mask" fixture (archived
+- [x] 3.6 RED: per obligation — the "already-failing handoff does not mask" fixture (archived
       `delivered --carried-to z` with an outstanding story, then `remove-epic z`) → `--withdraw-commit
       <its only sha> --withdrawal-reason x` refused naming the Gate 2 demand
-- [ ] 3.7 RED: archived `delivered` `claude-code` epic, no Gate 2, ranked P2 → `--priority P1 --lane
+- [x] 3.7 RED: archived `delivered` `claude-code` epic, no Gate 2, ranked P2 → `--priority P1 --lane
       openspec` refused with no rank-clear line on stderr
-- [ ] 3.8 RED: 3.1's refusal on an agent-recorded disposition (archived via the verb with
+- [x] 3.8 RED: 3.1's refusal on an agent-recorded disposition (archived via the verb with
       `--no-deferrals`) prints an invocation carrying `--correct-disposition` and no deferral
       placeholder
-- [ ] 3.9 RED: a migration-stamped `delivered` epic (pre-0.27.0 state with a passing Gate 2, through
+- [x] 3.9 RED: a migration-stamped `delivered` epic (pre-0.27.0 state with a passing Gate 2, through
       `upgrade`), stories done → `--add-story s` refused; the printed invocation carries no
       `--correct-disposition` and carries `<--no-deferrals | --deferral "<epicId>:<section>">`
-- [ ] 3.10 RED: the "printed invocation runs" fixture (`--lane openspec --notes "Rob's move"
+- [x] 3.10 RED: the "printed invocation runs" fixture (`--lane openspec --notes "Rob's move"
       --clear-links --reason=--x --add-story "two words" --add-story=--x`), refused, its printed line
       filled with
       `--outcome superseded`, a reason and a correction reason, run through `sh -c` → exits 0; prior
       disposition under `superseded`; latest note `Rob's move`; no links; exactly the two stories
-- [ ] 3.10a RED: the ratchet — archived `delivered` openspec epic with a Gate 2 `fail` recorded after
+- [x] 3.10a RED: the ratchet — archived `delivered` openspec epic with a Gate 2 `fail` recorded after
       archive and an agent-recorded disposition: `--lane claude-code` exits 0; `--lane openspec` then
       refused naming Gate 2; its printed invocation filled with `--outcome superseded`, a reason and a
       correction reason exits 0
-- [ ] 3.11 REGRESSION GUARD: archived `delivered` openspec epic with a Gate 2 `fail` recorded by
+- [x] 3.11 REGRESSION GUARD: archived `delivered` openspec epic with a Gate 2 `fail` recorded by
       `record-gate-review` after archive → `--attribute-commit <sha>` exits 0
-- [ ] 3.12 REGRESSION GUARD: archived `superseded` `claude-code` epic → `--lane openspec --add-story s`
+- [x] 3.12 REGRESSION GUARD: archived `superseded` `claude-code` epic → `--lane openspec --add-story s`
       exits 0; archived `unknown` engine-stamped epic → `--lane openspec` exits 0
-- [ ] 3.13 GREEN: `structuredClone(epic)` immediately after lookup; the check at the gate's position
+- [x] 3.13 GREEN: `structuredClone(epic)` immediately after lookup; the check at the gate's position
       when `outcomeOf(snapshot) === "delivered" && str(f.status) !== "archived" && (isArchived(id) ||
       (snapshot.status === "archived" && f.status === undefined))` — every read from `snapshot`, never
       `epic`; refuse where an obligation kind failing after is not failing before; its own message
@@ -117,11 +117,11 @@ RED tasks fail on today's engine. REGRESSION GUARD tasks pass today and must kee
       placeholder, so the invocation stays one physical line), user values on the detail line JSON-quoted
       from `items`, branching on `isEngineStamped` and on an existing
       `deferralAssertion`; `detail` excludes the gate's remedy text
-- [ ] 3.14 REGRESSION GUARD: archived `delivered` `claude-code` epic, no Gate 2, no archived change
+- [x] 3.14 REGRESSION GUARD: archived `delivered` `claude-code` epic, no Gate 2, no archived change
       directory → `--status queued --lane openspec` exits 0 and leaves it `queued`; then
       `--status archived --outcome delivered --reason r --correct-disposition c --no-deferrals` is
       refused for the missing Gate 2
-- [ ] 3.15 REGRESSION GUARD: an unarchived epic carrying a `delivered` disposition (archived, then
+- [x] 3.15 REGRESSION GUARD: an unarchived epic carrying a `delivered` disposition (archived, then
       `--status queued` with nothing archived on disk) runs `--add-story s` without `--status` and exits
       0 — this fails if the trigger's `snapshot.status === "archived"` half is dropped
 
@@ -138,7 +138,7 @@ RED tasks fail on today's engine. REGRESSION GUARD tasks pass today and must kee
       For each writer, state whether it can run on an archived epic, and whether this change binds
       it or design.md's "What this deliberately does not do" justifies it.
       DATA references: none added
-- [ ] 4.1a Every existing test that updates an archived `delivered` epic (conductor-13's documented-flag
+- [x] 4.1a Every existing test that updates an archived `delivered` epic (conductor-13's documented-flag
       harness among them) passes unchanged, or is corrected and named in the commit message; extend
       `dispositionInvocation()` without changing its existing callers' output
 - [ ] 4.2 **Inverse of every operation added** — the regression refusal's exits are the printed

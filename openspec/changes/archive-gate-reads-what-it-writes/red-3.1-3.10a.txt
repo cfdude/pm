@@ -1,0 +1,632 @@
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Q8Vzlt/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Q8Vzlt/PROJECT.md
+conductor: added epic 'a1' (claude-code, queued)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-HWbk82/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-HWbk82/PROJECT.md
+conductor: added epic 'a2' (openspec, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: updated 'a2'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-HWbk82/PROJECT.md
+conductor: recorded gate 2 review 'pass' for 'a2'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Fm5W5q/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Fm5W5q/PROJECT.md
+conductor: added epic 'a3' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Fm5W5q/PROJECT.md
+conductor: updated 'a3'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Fm5W5q/PROJECT.md
+conductor: updated 'a3'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ELBGAL/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ELBGAL/PROJECT.md
+conductor: added epic 'a4' (openspec, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: updated 'a4'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ELBGAL/PROJECT.md
+conductor: recorded gate 2 review 'pass' for 'a4'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-2fKNId/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-2fKNId/PROJECT.md
+conductor: added epic 'a5' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-2fKNId/PROJECT.md
+conductor: updated 'a5'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ugT2Hb/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ugT2Hb/PROJECT.md
+conductor: added epic 'a6' (openspec, queued)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-8raKC3/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-8raKC3/PROJECT.md
+conductor: added epic 'a6a' (claude-code, queued)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-kkNGIh/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-kkNGIh/PROJECT.md
+conductor: added epic 'par' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-kkNGIh/PROJECT.md
+conductor: added epic 'a7' (claude-code, queued)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-zDnezr/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-zDnezr/PROJECT.md
+conductor: added epic 'par' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-zDnezr/PROJECT.md
+conductor: added epic 'a7' (claude-code, queued)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-UgnGRk/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-UgnGRk/PROJECT.md
+conductor: added epic 'g11' (openspec, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: updated 'g11'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-UgnGRk/PROJECT.md
+conductor: recorded gate 2 review 'pass' for 'g11'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-UgnGRk/PROJECT.md
+conductor: updated 'g11'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-UgnGRk/PROJECT.md
+conductor: recorded gate 2 review 'fail' for 'g11'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-wFElhs/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-wFElhs/PROJECT.md
+conductor: added epic 'sup' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-wFElhs/PROJECT.md
+conductor: updated 'sup'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-wFElhs/PROJECT.md
+conductor: added epic 'unk' (claude-code, archived)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-sqszdx/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-sqszdx/PROJECT.md
+conductor: added epic 'g14' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-sqszdx/PROJECT.md
+conductor: updated 'g14'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-a1GJZB/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-a1GJZB/PROJECT.md
+conductor: added epic 'g15' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-a1GJZB/PROJECT.md
+conductor: updated 'g15'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-sUGOvC/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-sUGOvC/PROJECT.md
+conductor: added epic 'r1' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-sUGOvC/PROJECT.md
+conductor: updated 'r1'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-IuPxxK/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-IuPxxK/PROJECT.md
+conductor: added epic 'r2' (openspec, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: updated 'r2'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-IuPxxK/PROJECT.md
+conductor: recorded gate 2 review 'pass' for 'r2'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-IuPxxK/PROJECT.md
+conductor: updated 'r2'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-d3HAjc/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-d3HAjc/PROJECT.md
+conductor: added epic 'r3' (openspec, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: updated 'r3'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-d3HAjc/PROJECT.md
+conductor: recorded gate 2 review 'pass' for 'r3'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-d3HAjc/PROJECT.md
+conductor: updated 'r3'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-cr8DFn/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-cr8DFn/PROJECT.md
+conductor: added epic 'r4' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-cr8DFn/PROJECT.md
+conductor: updated 'r4'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-cr8DFn/PROJECT.md
+conductor: updated 'r4'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-cr8DFn/PROJECT.md
+conductor: updated 'r4'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-OnT6CB/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-OnT6CB/PROJECT.md
+conductor: added epic 'r4b' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-OnT6CB/PROJECT.md
+conductor: updated 'r4b'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-OnT6CB/PROJECT.md
+conductor: updated 'r4b'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-OnT6CB/PROJECT.md
+conductor: updated 'r4b'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-KZLnGR/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-KZLnGR/PROJECT.md
+conductor: added epic 'r4a' (openspec, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: updated 'r4a'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-KZLnGR/PROJECT.md
+conductor: recorded gate 2 review 'pass' for 'r4a'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-KZLnGR/PROJECT.md
+conductor: updated 'r4a'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-7LpWFG/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-7LpWFG/PROJECT.md
+conductor: added epic 'r5' (openspec, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: updated 'r5'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-7LpWFG/PROJECT.md
+conductor: recorded gate 2 review 'pass' for 'r5'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-7LpWFG/PROJECT.md
+conductor: updated 'r5'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-jLKVTM/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-jLKVTM/PROJECT.md
+conductor: added epic 'r5a' (openspec, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: updated 'r5a'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-jLKVTM/PROJECT.md
+conductor: recorded gate 2 review 'pass' for 'r5a'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-jLKVTM/PROJECT.md
+conductor: updated 'r5a'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-UWQfkl/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-UWQfkl/PROJECT.md
+conductor: added epic 'r6' (openspec, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: updated 'r6'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-UWQfkl/PROJECT.md
+conductor: recorded gate 2 review 'pass' for 'r6'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-UWQfkl/PROJECT.md
+conductor: updated 'r6'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-UWQfkl/PROJECT.md
+conductor: added epic 'z' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-UWQfkl/PROJECT.md
+conductor: updated 'r6'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-UWQfkl/PROJECT.md
+conductor: removed 1 epic(s): z
+conductor: stripped 1 dangling reference(s) to removed epic(s), held by: epic `r6` disposition.carriedTo
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-3D8GXR/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-3D8GXR/PROJECT.md
+conductor: added epic 'r7' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-3D8GXR/PROJECT.md
+conductor: updated 'r7'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-wYlBSq/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-wYlBSq/PROJECT.md
+conductor: added epic 'r8' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-wYlBSq/PROJECT.md
+conductor: updated 'r8'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-VKPOJ1/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: refreshed rules block in CLAUDE.md (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-VKPOJ1/PROJECT.md
+conductor: upgraded (3 migration(s)), pmVersion now 0.42.0
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-9D15SJ/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-9D15SJ/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-9D15SJ/PROJECT.md
+conductor: added epic 'r10' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-9D15SJ/PROJECT.md
+conductor: updated 'r10'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-9D15SJ/PROJECT.md
+conductor: updated 'r10'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-KJ7Eu8/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-KJ7Eu8/PROJECT.md
+conductor: added epic 'r10a' (openspec, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: updated 'r10a'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-KJ7Eu8/PROJECT.md
+conductor: recorded gate 2 review 'pass' for 'r10a'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-KJ7Eu8/PROJECT.md
+conductor: updated 'r10a'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-KJ7Eu8/PROJECT.md
+conductor: recorded gate 2 review 'fail' for 'r10a'
+✔ 1.1 a lane switch and an archive in one call cannot bypass Gate 2 (161.578333ms)
+✔ 1.2 an attribution and an archive in one call cannot bypass staleness (415.915458ms)
+✔ 1.3 an added story and an archive in one call cannot bypass the handoff (255.88875ms)
+✔ 1.4 a commit withdrawal and an archive in one call cannot bypass the gate (317.094042ms)
+✔ 1.5 finishing the last story and archiving in one call is accepted (207.071875ms)
+✔ 1.6 leaving the openspec lane and archiving in one call is accepted (152.400834ms)
+✔ 1.6a detaching a plan with outstanding tasks and archiving in one call is accepted, and announced (152.44075ms)
+✔ 1.7 a refused call announces no cleared field (206.006375ms)
+✔ 1.7 regression guard: an accepted call still announces what it cleared (206.470083ms)
+✔ 3.11 regression guard: a record that already failed Gate 2 is not locked (449.6195ms)
+✔ 3.12 regression guard: an epic that ended another way, or at unknown, carries no obligation (324.047833ms)
+✔ 3.14 regression guard: leaving the archive is not refused where nothing re-archives the epic (260.837125ms)
+✔ 3.15 regression guard: an unarchived epic carrying a delivered disposition updates freely (255.983208ms)
+✖ 3.1 switching an archived delivered epic into the openspec lane is refused (210.491167ms)
+✖ 3.2 attributing a commit an archived delivered epic's Gate 2 does not cover is refused (466.963541ms)
+✖ 3.3 a non-archived status does not escape the check while the heal will re-archive (452.295167ms)
+✖ 3.4 adding a story to an archived delivered epic is refused without naming a dead remedy (320.303583ms)
+✖ 3.4b a user-supplied value cannot forge a line of the refusal (304.926625ms)
+✖ 3.4a an active status does not escape the check while the heal will re-archive (468.548834ms)
+✖ 3.5 withdrawing the only attribution of an archived delivered epic is refused (377.360542ms)
+✖ 3.5a a queued epic the heal will archive does not escape the check (525.685583ms)
+✖ 3.6 an already-failing handoff does not mask a Gate 2 the update breaks (528.136917ms)
+✖ 3.7 a refused update announces no cleared field (211.804834ms)
+✖ 3.8 the invocation printed for an agent-recorded disposition names the correction (203.024583ms)
+✖ 3.9 the invocation printed for an engine-stamped disposition does not name the correction (171.702083ms)
+✖ 3.10 the printed invocation runs (330.467125ms)
+✖ 3.10a the ratchet: restoring a record the check accepted is judged like any other change (479.439708ms)
+ℹ tests 27
+ℹ suites 0
+ℹ pass 13
+ℹ fail 14
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8462.250417
+
+✖ failing tests:
+
+test at scripts/test/archive-gate-order.test.mjs:275:1
+✖ 3.1 switching an archived delivered epic into the openspec lane is refused (210.491167ms)
+  AssertionError [ERR_ASSERTION]: expected a refusal, got exit 0.
+  stdout: 
+  stderr: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-sUGOvC/PROJECT.md
+  conductor: updated 'r1'
+  
+      at refused (file:///Users/robsherman/Documents/Repos/pm/scripts/test/archive-gate-order.test.mjs:33:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/archive-gate-order.test.mjs:278:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/archive-gate-order.test.mjs:284:1
+✖ 3.2 attributing a commit an archived delivered epic's Gate 2 does not cover is refused (466.963541ms)
+  AssertionError [ERR_ASSERTION]: expected a refusal, got exit 0.
+  stdout: 
+  stderr: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-IuPxxK/PROJECT.md
+  conductor: updated 'r2'
+  
+      at refused (file:///Users/robsherman/Documents/Repos/pm/scripts/test/archive-gate-order.test.mjs:33:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/archive-gate-order.test.mjs:287:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/archive-gate-order.test.mjs:291:1
+✖ 3.3 a non-archived status does not escape the check while the heal will re-archive (452.295167ms)
+  AssertionError [ERR_ASSERTION]: expected a refusal, got exit 0.
+  stdout: 
+  stderr: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-d3HAjc/PROJECT.md
+  conductor: updated 'r3'
+  
+      at refused (file:///Users/robsherman/Documents/Repos/pm/scripts/test/archive-gate-order.test.mjs:33:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/archive-gate-order.test.mjs:295:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/archive-gate-order.test.mjs:301:1
+✖ 3.4 adding a story to an archived delivered epic is refused without naming a dead remedy (320.303583ms)
+  AssertionError [ERR_ASSERTION]: expected a refusal, got exit 0.
+  stdout: 
+  stderr: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-cr8DFn/PROJECT.md
+  conductor: updated 'r4'
+  
+      at refused (file:///Users/robsherman/Documents/Repos/pm/scripts/test/archive-gate-order.test.mjs:33:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/archive-gate-order.test.mjs:304:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/archive-gate-order.test.mjs:312:1
+✖ 3.4b a user-supplied value cannot forge a line of the refusal (304.926625ms)
+  AssertionError [ERR_ASSERTION]: expected a refusal, got exit 0.
+  stdout: 
+  stderr: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-OnT6CB/PROJECT.md
+  conductor: updated 'r4b'
+  
+      at refused (file:///Users/robsherman/Documents/Repos/pm/scripts/test/archive-gate-order.test.mjs:33:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/archive-gate-order.test.mjs:316:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/archive-gate-order.test.mjs:325:1
+✖ 3.4a an active status does not escape the check while the heal will re-archive (468.548834ms)
+  AssertionError [ERR_ASSERTION]: expected a refusal, got exit 0.
+  stdout: 
+  stderr: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-KZLnGR/PROJECT.md
+  conductor: updated 'r4a'
+  
+      at refused (file:///Users/robsherman/Documents/Repos/pm/scripts/test/archive-gate-order.test.mjs:33:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/archive-gate-order.test.mjs:329:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/archive-gate-order.test.mjs:333:1
+✖ 3.5 withdrawing the only attribution of an archived delivered epic is refused (377.360542ms)
+  AssertionError [ERR_ASSERTION]: expected a refusal, got exit 0.
+  stdout: 
+  stderr: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-7LpWFG/PROJECT.md
+  conductor: updated 'r5'
+  
+      at refused (file:///Users/robsherman/Documents/Repos/pm/scripts/test/archive-gate-order.test.mjs:33:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/archive-gate-order.test.mjs:335:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/archive-gate-order.test.mjs:339:1
+✖ 3.5a a queued epic the heal will archive does not escape the check (525.685583ms)
+  AssertionError [ERR_ASSERTION]: expected a refusal, got exit 0.
+  stdout: 
+  stderr: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-jLKVTM/PROJECT.md
+  conductor: updated 'r5a'
+  
+      at refused (file:///Users/robsherman/Documents/Repos/pm/scripts/test/archive-gate-order.test.mjs:33:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/archive-gate-order.test.mjs:345:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/archive-gate-order.test.mjs:349:1
+✖ 3.6 an already-failing handoff does not mask a Gate 2 the update breaks (528.136917ms)
+  AssertionError [ERR_ASSERTION]: expected a refusal, got exit 0.
+  stdout: 
+  stderr: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-UWQfkl/PROJECT.md
+  conductor: updated 'r6'
+  
+      at refused (file:///Users/robsherman/Documents/Repos/pm/scripts/test/archive-gate-order.test.mjs:33:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/archive-gate-order.test.mjs:356:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/archive-gate-order.test.mjs:360:1
+✖ 3.7 a refused update announces no cleared field (211.804834ms)
+  AssertionError [ERR_ASSERTION]: expected a refusal, got exit 0.
+  stdout: 
+  stderr: conductor: cleared `r7`'s rank (1) — it was a placement among P2 epics, and this moves it to P1. Re-run `reorder` on the P1 band to place it.
+  conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-3D8GXR/PROJECT.md
+  conductor: updated 'r7'
+  
+      at refused (file:///Users/robsherman/Documents/Repos/pm/scripts/test/archive-gate-order.test.mjs:33:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/archive-gate-order.test.mjs:366:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/archive-gate-order.test.mjs:370:1
+✖ 3.8 the invocation printed for an agent-recorded disposition names the correction (203.024583ms)
+  AssertionError [ERR_ASSERTION]: expected a refusal, got exit 0.
+  stdout: 
+  stderr: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-wYlBSq/PROJECT.md
+  conductor: updated 'r8'
+  
+      at refused (file:///Users/robsherman/Documents/Repos/pm/scripts/test/archive-gate-order.test.mjs:33:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/archive-gate-order.test.mjs:373:35)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/archive-gate-order.test.mjs:379:1
+✖ 3.9 the invocation printed for an engine-stamped disposition does not name the correction (171.702083ms)
+  AssertionError [ERR_ASSERTION]: expected a refusal, got exit 0.
+  stdout: 
+  stderr: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-VKPOJ1/PROJECT.md
+  conductor: updated 'r9'
+  
+      at refused (file:///Users/robsherman/Documents/Repos/pm/scripts/test/archive-gate-order.test.mjs:33:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/archive-gate-order.test.mjs:391:35)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/archive-gate-order.test.mjs:396:1
+✖ 3.10 the printed invocation runs (330.467125ms)
+  AssertionError [ERR_ASSERTION]: expected a refusal, got exit 0.
+  stdout: 
+  stderr: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-9D15SJ/PROJECT.md
+  conductor: updated 'r10'
+  
+      at refused (file:///Users/robsherman/Documents/Repos/pm/scripts/test/archive-gate-order.test.mjs:33:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/archive-gate-order.test.mjs:402:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/archive-gate-order.test.mjs:415:1
+✖ 3.10a the ratchet: restoring a record the check accepted is judged like any other change (479.439708ms)
+  AssertionError [ERR_ASSERTION]: expected a refusal, got exit 0.
+  stdout: 
+  stderr: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-KJ7Eu8/PROJECT.md
+  conductor: updated 'r10a'
+  
+      at refused (file:///Users/robsherman/Documents/Repos/pm/scripts/test/archive-gate-order.test.mjs:33:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/archive-gate-order.test.mjs:419:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }

@@ -159,12 +159,29 @@ export function stalenessMarking(epic, entry) {
  *  real disposition is exactly the silence this release removes. */
 export const AGENT_OUTCOMES = KNOWN_OUTCOMES.filter(o => o !== "unknown");
 
+/** The deferral placeholder the invocation carries where an epic holds no deferral assertion.
+ *  A placeholder and never a bare `--no-deferrals`: that flag is a CLAIM about the change, and
+ *  printing it as a default would put a claim in the caller's mouth. */
+export const DEFERRAL_PLACEHOLDER = `<--no-deferrals | --deferral "<epicId>:<section>">`;
+
 /** The invocation that would record a disposition for ONE epic — rendered once, so no caller
  *  types the vocabulary into a string of its own. Both halves in one invocation, because the
- *  gate above refuses either half alone. */
-export const dispositionInvocation = (id) =>
-  `update-epic ${id} --status archived --outcome <${AGENT_OUTCOMES.join("|")}> ` +
-  `--reason "<why>" --no-deferrals`;
+ *  gate above refuses either half alone.
+ *
+ *  OPTIONS DEFAULT TO TODAY'S TEXT: a call with only `(id)` prints exactly what it always did,
+ *  so `unconsideredOutcomes()` and the integrity report are unchanged. update-epic's
+ *  archived-epic regression refusal passes the options:
+ *    echoed      tokens already shell-quoted by the caller, placed after the id — the change the
+ *                refused call was making;
+ *    correction  add `--correct-disposition` (true only for an AGENT-recorded disposition, since
+ *                the correction flag is refused against an engine stamp);
+ *    deferrals   "bare" (the default, `--no-deferrals`), "asserted" (the epic already carries an
+ *                assertion: print nothing) or "placeholder" (print DEFERRAL_PLACEHOLDER). */
+export const dispositionInvocation = (id, { echoed = [], correction = false, deferrals = "bare" } = {}) =>
+  `update-epic ${id}${echoed.length ? ` ${echoed.join(" ")}` : ""} --status archived ` +
+  `--outcome <${AGENT_OUTCOMES.join("|")}> --reason "<why>"` +
+  (correction ? ` --correct-disposition "<why the recorded one was wrong>"` : "") +
+  (deferrals === "bare" ? " --no-deferrals" : deferrals === "placeholder" ? ` ${DEFERRAL_PLACEHOLDER}` : "");
 
 /** THE WALKER: the archived epics whose outcome NOBODY CONSIDERED, each with the invocation that
  *  would record one. Lives here rather than in disposition.mjs because the remedy is this
