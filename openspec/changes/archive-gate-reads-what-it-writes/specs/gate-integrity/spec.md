@@ -137,8 +137,11 @@ and a following token drops with its flag only where that token is not itself fl
 given with no value echoes with no value, a repeated flag echoes once per occurrence, and an inline
 `--flag=value` token echoes as one token. Every echoed token MUST be quoted so that the printed line, with only its placeholders
 filled, runs in a POSIX shell with each token arriving whole, including a value containing an
-apostrophe. The printed invocation MUST stay on ONE physical line: a token containing a newline or
-other control character is rendered so that the shell reconstructs it, never as a raw line break.
+apostrophe. The printed invocation MUST stay on ONE physical line. A token containing a newline or other
+control character is NOT echoed: its position carries the placeholder `<re-enter --<flag> value: it
+contains a line break or control character>`, and the refusal says which flag's value must be
+re-entered. A shell cannot reliably rebuild such a value on one line (command substitution strips a
+trailing newline), and a promise of byte-for-byte reconstruction there would be false.
 - It MUST carry `--correct-disposition "<why the recorded one was wrong>"` if and only if the recorded
   disposition is agent-recorded. An engine-stamped disposition is replaced by recording an outcome,
   and the correction flag is refused against it.
@@ -217,13 +220,12 @@ sees it. Reproduced on 0.42.0:
 
 #### Scenario: A user-supplied value cannot forge a line of the refusal
 
-- **WHEN** an archived `delivered` `claude-code`-lane epic whose stories are all done runs
-  `update-epic <id> --add-story` with a title containing `--carried-to`, a newline, and
-  `  update-epic x`
+- **WHEN** an archived agent-recorded `delivered` `claude-code`-lane epic whose stories are all done
+  runs `update-epic <id> --add-story` with a title that does not begin with `--` and contains
+  `--carried-to`, a newline, and `  update-epic x`
 - **THEN** it is refused; exactly one line of the refusal begins `  update-epic `; the title appears
-  quoted with its newline escaped on the detail line; and the printed invocation, filled as
-  `--outcome superseded` with a reason and a correction reason and run through `sh -c`, exits zero and
-  records a story whose title equals the original, newline included
+  quoted with its newline escaped on the detail line; and the printed invocation carries the re-enter
+  placeholder for that `--add-story` value instead of echoing it
 
 #### Scenario: A refused update announces no cleared field
 

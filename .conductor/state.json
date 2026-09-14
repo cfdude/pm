@@ -6777,11 +6777,12 @@
         "9e06e43",
         "48f75d7",
         "b282a2f",
-        "f7ae09d"
+        "f7ae09d",
+        "8f0057d"
       ],
       "createdAt": "2026-09-14T18:09:05.963Z",
       "startedAt": "2026-09-14T18:09:05.964Z",
-      "touchedAt": "2026-09-14T20:25:52.096Z",
+      "touchedAt": "2026-09-14T20:32:08.431Z",
       "notes": [
         {
           "at": "2026-09-14T18:09:07.941Z",
@@ -7002,10 +7003,11 @@
         "4d49c60",
         "a809c86",
         "b282a2f",
-        "f7ae09d"
+        "f7ae09d",
+        "8f0057d"
       ],
       "createdAt": "2026-09-14T18:39:51.910Z",
-      "touchedAt": "2026-09-14T20:26:39.198Z",
+      "touchedAt": "2026-09-14T20:32:06.338Z",
       "release": "0.43.0",
       "startedAt": "2026-09-14T18:40:05.739Z",
       "gateReview": {
@@ -7025,7 +7027,8 @@
         "verdict": "unchanged",
         "recordedAt": "2026-09-14T20:26:39.194Z",
         "externalUpdatedAt": "2026-09-14T18:39:33Z"
-      }
+      },
+      "trackerRefreshNeeded": true
     },
     {
       "id": "archived-delivered-gate2-regression-report",
@@ -7127,7 +7130,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 693,
+  "revision": 695,
   "reviewMode": "thorough",
   "releases": [
     {

@@ -95,8 +95,9 @@ Order per design.md.
       integrity check id `archived-with-withdrawn-gate-2` (own title) and its OWN brief heading; both
       word it with its reason. Assert each names the epic by its real id, and that the whole block,
       headings and titles included, matches no `/no (gate 2 )?review/i` — for `integrity`, the CLI text
-      from the new check's title line to the next check's line (so `formatIntegrity`'s title is
-      covered); for the brief, from the withdrawn heading to the next blank line. The SAME commit adds
+      from the new check's title line to the next check's line or the blank line before the totals (so
+      `formatIntegrity`'s title is covered); for the brief, from the nearest heading ABOVE the withdrawn
+      entry (an umbrella heading included) to the next blank line. The SAME commit adds
       `archived-with-withdrawn-gate-2` and its explanation to
       `openspec/changes/archive/2026-08-25-conductor-tells-the-truth/integrity-day-one.md`, because
       conductor-15 test 9.14 requires every registered check id there and the pre-commit hook runs the
@@ -129,7 +130,8 @@ keep passing.
 - [ ] 6.2 REGRESSION GUARD: `--withdraw-gate-review 2 --withdrawal-reason x` on an archived agent-recorded
       `delivered` openspec epic with a covering passing Gate 2 and no outstanding work is refused; the
       printed invocation carries `--correct-disposition`; the message states Gate 2 was withdrawn and
-      quotes `x`, and does not say Gate 2 is missing
+      quotes `x`, and does not say Gate 2 is missing. Repeat with a reason containing a newline and
+      `  update-epic y`: exactly one line begins `  update-epic `
 - [ ] 6.3 REGRESSION GUARD: `--withdraw-gate-review 1 --withdrawal-reason x` on the same archived
       `delivered` epic exits 0 — Gate 1 is not an obligation
 - [ ] 6.4 REGRESSION GUARD: an archived `delivered` openspec epic with a Gate 2 `fail` recorded by
@@ -177,10 +179,13 @@ keep passing.
 - [ ] 8.2 (lands with 2.3) The hand-written usage line in `update-epic.mjs` (conductor-13 reads flags from it);
       `commands/epic.md` flag table (conductor-36 enforces the registry⇒doc row)
 - [ ] 8.3 `README.md` — the command table, the archive-gate prose naming the withdrawn state, and the
-      integrity-check list gaining `archived-with-withdrawn-gate-2`; `commands/status.md`'s UNGATED
+      prose sentence naming the integrity checks gaining `archived-with-withdrawn-gate-2`; `commands/status.md`'s UNGATED
       ARCHIVES bullet gaining the withdrawn heading; correct
       `--withdraw-commit <sha> --reason` to `--withdrawal-reason`, wrong since 0.38.0
-- [ ] 8.4 `skills/conductor/SKILL.md` — the flag in the two-gate mechanical-check section; a
+- [ ] 8.4 (note in the SKILL.md flag entry) running the verb on a LIVE archived epic of this
+      repository adds an integrity finding that conductor-15 test 9.14 requires explained in
+      `integrity-day-one.md` — the #192 shape; say so where the flag is documented.
+      `skills/conductor/SKILL.md` — the flag in the two-gate mechanical-check section; a
       `withdrawnGateReviews?` schema entry beside `withdrawnCommits?`; the `gateReview?` schema line
       noting a gate may be in the withdrawn state. `agents/hierarchy-child-executor.md` — its
       missing-Gate-2 guidance covers the withdrawn wording

@@ -13,7 +13,9 @@
 
 ## 1. The gate reads the written record
 
-Each test supplies every other input valid and asserts `state.json` byte-identical on refusal. New
+Each test supplies every other input valid and asserts `state.json` byte-identical on refusal. The
+pre-commit hook runs the whole suite, so each RED test lands in the SAME commit as the GREEN step that
+turns it green (1.1–1.7 with 1.8; 3.1–3.10a with 3.13); the RED is demonstrated before that commit. New
 file `scripts/test/archive-gate-order.test.mjs`, importing `helpers.mjs`. A "descendant" is a commit
 descending from the fixture's `headSha` in the fixture repo.
 
@@ -44,7 +46,8 @@ descending from the fixture's `headSha` in the fixture repo.
 ## 2. One definition of the delivered obligations
 
 - [ ] 2.1 RED then GREEN: export `deliveredObligations(epic, {carriedTo})` from `archive-gate.mjs`,
-      returning the failing `{kind: "gate2"|"handoff", detail}` entries (empty when met, Gate 2 first);
+      returning the failing `{kind: "gate2"|"handoff", detail, items}` entries (empty when met, Gate 2
+      first; `items` carries user-supplied values such as story titles, never baked into `detail`);
       unit-test it on six fixtures (met; no Gate 2; stale; outstanding story; both failing; a
       non-`delivered` outcome, which it does not test and reports on the same record identically)
 - [ ] 2.2 REFACTOR: `archiveGate()` renders its messages from it; the existing gate-message tests pass
@@ -65,9 +68,9 @@ RED tasks fail on today's engine. REGRESSION GUARD tasks pass today and must kee
       says `--status` was dropped and why (the heal route)
 - [ ] 3.4 RED: archived `delivered` `claude-code` epic, stories all done → `--add-story s` refused; no
       line other than the one beginning `  update-epic ` names `--carried-to`, `--outcome` or `--reason`
-- [ ] 3.4b RED: a story title `t --carried-to<newline>  update-epic x` (not starting with `--`) → refused;
-      exactly one line begins `  update-epic `; the title is JSON-quoted on the detail line; the printed
-      invocation, filled and run through `sh -c`, exits 0 and records the title byte-for-byte
+- [ ] 3.4b RED: a story title `t --carried-to<newline>  update-epic x` (not starting with `--`) on an
+      agent-recorded epic → refused; exactly one line begins `  update-epic `; the title is JSON-quoted
+      on the detail line; the printed invocation carries the re-enter placeholder for `--add-story`
 - [ ] 3.4a RED: archived `delivered` openspec epic with its change archived on disk → `--status active
       --attribute-commit <descendant>` refused; the refusal says the `--status` was dropped and why
 - [ ] 3.5 RED: archived `delivered` openspec epic, one covered attribution → `--withdraw-commit <it>
@@ -106,8 +109,9 @@ RED tasks fail on today's engine. REGRESSION GUARD tasks pass today and must kee
       (no `cannot archive`); the printed invocation alone on a line beginning `  update-epic `, with
       rendered by the extended `dispositionInvocation()`: raw tokens echoed minus `--status` and disposition flags, their values dropped by the `requireKnownFlags`
       walk (an inline `--flag=v` drops alone; a following token drops only where `!isFlagToken(next)`), each
-      single-quoted with `'` → `'\''` (a token with a control character as `"$(printf '%b' '…')"`, so
-      the invocation stays one physical line), user values on the detail line JSON-quoted, branching on `isEngineStamped` and on an existing
+      single-quoted with `'` → `'\''` (a token with a control character replaced by the re-enter
+      placeholder, so the invocation stays one physical line), user values on the detail line JSON-quoted
+      from `items`, branching on `isEngineStamped` and on an existing
       `deferralAssertion`; `detail` excludes the gate's remedy text
 - [ ] 3.14 REGRESSION GUARD: archived `delivered` `claude-code` epic, no Gate 2, no archived change
       directory → `--status queued --lane openspec` exits 0 and leaves it `queued`; then

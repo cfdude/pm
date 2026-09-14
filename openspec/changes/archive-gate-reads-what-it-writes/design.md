@@ -132,8 +132,11 @@ remedy. So its messages stay byte-identical and its message tests pass unchanged
 deferral flags and `--correct-disposition` there), so quoting that remedy would send the user round the same refusal. The refusal says
 the update would break an obligation the archived record met, gives the `detail`, and offers one
 command: the printed invocation. `detail` is the obligation's finding only (the missing Gate 2, the
-uncovered commits, the outstanding stories by name). The remedy sentences stay in `archiveGate()`'s own
-message renderer and never reach this refusal.
+uncovered commits, the outstanding stories). User-supplied values are not baked into `detail`:
+`deliveredObligations()` returns them as data (`items`: outstanding story titles; the withdrawal reason
+where a later change adds one), and each renderer quotes its own. `archiveGate()` renders titles raw,
+exactly as today, so its messages stay byte-identical. The regression refusal JSON-quotes them. The
+remedy sentences stay in `archiveGate()`'s own message renderer and never reach this refusal.
 
 **The disposition tail is rendered by the existing `dispositionInvocation()`** (`archive-gate.mjs:165`),
 extended to take options: the echoed prefix tokens, whether to add `--correct-disposition`, and whether
@@ -158,10 +161,12 @@ flag's value is decided the way `requireKnownFlags` walks argv (`add-epic.mjs:15
 disposition flag, and the re-run would then silently lose that change. The tokens then
 gain `--status archived --outcome <outcome> --reason "<why>"`. Each echoed token is single-quoted for a
 POSIX shell, with `'` written as `'\''`, so a multi-word or apostrophe-bearing value survives a
-copy-paste. A token containing a newline or another control character is rendered as
-`"$(printf '%b' '<the token with \n-style escapes>')"` instead, which keeps the invocation on one
-physical line in POSIX sh (`$'…'` is not POSIX). Values echoed OUTSIDE the invocation, in the detail
-line, are printed JSON-quoted, which escapes newlines. The Half 1 handoff refusal prints story titles
+copy-paste. A token containing a newline or another control character is NOT echoed; its position
+carries a `<re-enter --<flag> value …>` placeholder and the refusal names the flag. A first draft
+rendered such tokens as `"$(printf '%b' '…')"`, and the cross-spec re-review showed why that fails:
+command substitution strips trailing newlines, and `--notes` is not trimmed, so the re-run would record
+a different value while claiming fidelity. Values shown OUTSIDE the invocation, in the detail line, are
+printed JSON-quoted, which escapes newlines. The Half 1 handoff refusal prints story titles
 raw (`archive-gate.mjs:333`) and could be forged the same way; its message is untouched by this change
 and the gap is registered as `handoff-refusal-prints-story-titles-raw`, not fixed here. The line is printed alone, beginning `  update-epic `, which lets a test tell the command
 from the prose. A dropped non-archived `--status` is said out loud: the change directory archived on
