@@ -44,8 +44,8 @@ finding, and this field predates that rule.
 - **Bound by the archive gate like every other field write**, through
   `archive-gate-reads-what-it-writes`, which this change depends on and follows:
   - A withdrawal combined with `--status archived` is decided on the record it leaves.
-  - A Gate 2 withdrawal on an already-archived `delivered` epic is refused as an obligation
-    regression, printing the invocation that withdraws and records the right disposition in one call.
+  - A Gate 2 withdrawal on an already-archived `delivered` epic whose Gate 2 was met is refused as an
+    obligation regression (compared one obligation at a time), printing the invocation that withdraws and records the right disposition in one call.
 
   This change adds no archive-gate rule of its own.
 - **The heal does not stamp `ungated` over a withdrawn Gate 2.** The standing condition gains a
@@ -74,15 +74,18 @@ _None._
 - `scripts/lib/update-epic.mjs`: the new flag, its refusals, write and read-back, placed beside the
   `--withdraw-commit` block (before the gate, which `archive-gate-reads-what-it-writes` moves last);
   the usage line.
-- `scripts/lib/constants.mjs`: `EPIC_FLAGS` rows, `KNOWN_GATE_NUMBERS`, `withdrawnGate()`.
-- `scripts/lib/archive-gate.mjs`: the withdrawn-Gate-2 message inside `deliveredObligation()`, and the
+- `scripts/lib/constants.mjs`: `EPIC_FLAGS` rows, `withdrawnGate()`, and `KNOWN_GATE_NUMBERS` moved
+  here from `scripts/lib/gate-review-writeback.mjs` (which then imports it).
+- `scripts/lib/archive-gate.mjs`: the withdrawn-Gate-2 message inside `deliveredObligations()`, and the
   shared gate-table helper (here, not in `constants.mjs`, because it needs `stalenessMarking`).
 - `scripts/lib/integrity.mjs`: `ungatedArchives` kinds, the no-Gate-1 detail, the `recordedShas`
   comment.
-- `scripts/lib/epic-progress.mjs`: the heal.
+- `scripts/lib/epic-progress.mjs`: the heal, and its code comment repeating the #163-false lane
+  rationale.
 - `scripts/lib/render.mjs`, `scripts/lib/briefing.mjs`: the shared gate-table helper.
 - `scripts/lib/activity-log.mjs`, `scripts/lib/activity-report.mjs`, `commands/activity.md`: the event.
 - `scripts/lib/rules.mjs` and its emitted-block fixtures: withdrawals as recorded writes.
 - `scripts/test/conductor-13.test.mjs`: a full-argv `pre` step in the documented-flag harness.
-- `commands/epic.md`, `README.md`, `skills/conductor/SKILL.md`, `CHANGELOG.md`.
+- `commands/epic.md`, `README.md`, `skills/conductor/SKILL.md`, `agents/hierarchy-child-executor.md`
+  (its missing-Gate-2 guidance), `CHANGELOG.md`.
 - No migration: `withdrawnGateReviews` is additive and absent-tolerant.

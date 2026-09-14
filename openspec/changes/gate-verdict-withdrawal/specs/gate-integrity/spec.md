@@ -68,14 +68,15 @@ Each of these MUST be refused with no write, and each refusal MUST name its caus
 5. a gate with no stored verdict (`gateReview.gateN` absent);
 6. a gate whose stored verdict is `ungated`.
 
-Refusals 5 and 6 are disjoint: 5 is an absent entry, 6 is a present entry with one particular verdict,
-and no input satisfies both. Each scenario below supplies every other input valid, so it exercises
-exactly one refusal.
+They are evaluated in the order listed. Refusals 5 and 6 apply only to gate values that passed 3 and
+4, and are disjoint: 5 is an absent entry, 6 is a present entry with one particular verdict. Each
+scenario below supplies every other input valid, so it exercises exactly one refusal.
 
 - Refusing where there is nothing to withdraw keeps the flag from becoming a general "reset the gate"
   lever.
-- An `ungated` entry is an engine record that nobody recorded as a review. Withdrawing it would let an
-  archived epic shed its standing condition with no review recorded anywhere.
+- An `ungated` entry is an engine record that no review happened. It is not a review, so recording it
+  as a review taken back would be a false record, and it would relabel "never reviewed" as
+  "withdrawn" on every surface.
 - A reason flag accepted alone is a silent no-op: today it passes, is never read, and writes nothing.
 
 #### Scenario: The reason flag alone
@@ -120,9 +121,8 @@ exactly one refusal.
 `--withdraw-gate-review` MUST be a field write of the interactive archive verb in the sense of
 "The interactive archive verb gates the record the invocation writes" and "An update to an archived
 epic does not break an obligation its archive met". Both requirements bind it as written, with no
-exception. This requirement adds only what the withdrawal itself contributes: wherever the Gate 2
-obligation fails because Gate 2 is in the withdrawn state, the message MUST say Gate 2 was withdrawn
-and quote the withdrawal reason.
+exception, and this requirement adds no rule to either. How their refusals word a withdrawn Gate 2 is
+defined once, by "A withdrawn gate is reported as withdrawn, never as absent".
 
 A Gate 1 withdrawal carries no archive obligation, so neither requirement refuses it.
 
@@ -134,16 +134,23 @@ every field write of the verb, so the rule lives with the verb and not with eith
 - **WHEN** an openspec-lane epic carries a passing Gate 2 covering its attributed commits and no
   outstanding work, and `update-epic <id> --withdraw-gate-review 2 --withdrawal-reason "x"
   --status archived --outcome delivered --no-deferrals` runs
-- **THEN** it exits non-zero, the message states Gate 2 was withdrawn and quotes `x`, `state.json` is
-  byte-identical, and the epic is not archived
+- **THEN** it exits non-zero, `state.json` is byte-identical, and the epic is not archived
 
 #### Scenario: Withdrawing Gate 2 from an archived delivered epic is refused
 
-- **WHEN** an openspec-lane epic is `archived` with an agent-recorded `delivered` disposition and a
-  passing Gate 2 covering its attributed commits, and `update-epic <id> --withdraw-gate-review 2
-  --withdrawal-reason "x"` runs without `--status`
+- **WHEN** an openspec-lane epic is `archived` with an agent-recorded `delivered` disposition, a
+  passing Gate 2 covering its attributed commits and no outstanding work, and `update-epic <id>
+  --withdraw-gate-review 2 --withdrawal-reason "x"` runs without `--status`
 - **THEN** it exits non-zero, prints the invocation that also records a disposition carrying
   `--correct-disposition`, and `state.json` is byte-identical
+
+#### Scenario: An archived delivered epic whose Gate 2 already failed can have it withdrawn
+
+- **WHEN** an openspec-lane epic is `archived` `delivered`, and a Gate 2 `fail` was recorded against it
+  by `record-gate-review` after it was archived, and `update-epic <id> --withdraw-gate-review 2
+  --withdrawal-reason "x"` runs
+- **THEN** it exits zero, because the record already failed its Gate 2 obligation before the call, and
+  the epic is named by the withdrawn kind of the standing condition
 
 #### Scenario: Withdrawing Gate 1 from an archived delivered epic is accepted
 
@@ -185,6 +192,12 @@ epic archive cleanly on the neighbouring field.
   work, is archived with `--outcome delivered --no-deferrals`
 - **THEN** the archive is refused, the message states Gate 2 was withdrawn and quotes the withdrawal
   reason, and `state.json` is byte-identical
+
+#### Scenario: The regression refusal names a withdrawn Gate 2 by name
+
+- **WHEN** the refusal of "Withdrawing Gate 2 from an archived delivered epic is refused" fires
+- **THEN** its message states Gate 2 was withdrawn and quotes the reason, and does not state that Gate 2
+  is missing
 
 #### Scenario: A withdrawn Gate 1 is named by the no-Gate-1 check
 
@@ -255,8 +268,7 @@ never mixes path names with the identities of people and agents who actually rev
 obligation: the heal and the integrity checks treat only openspec-lane epics as owing it. An `ungated`
 entry on a `claude-code` or `superpowers` epic would assert a missing review that lane was never
 required to have, and the only way to clear it would be recording a Gate 2 nobody owed — a standing
-condition that is noise by construction, worse than the backfill flood the requirement below forbids.
-The heal reaches every lane and the lanes it reaches most are not openspec: it is a live, reachable
+condition that is noise by construction. The heal reaches every lane and the lanes it reaches most are not openspec: it is a live, reachable
 shape, not a hypothetical one — this repository holds 68 archived epics of which 65 are not
 openspec-lane, and the dual-lane registration defect deliberately left unfixed this release keeps
 producing superpowers-lane epics whose ids are date-prefixed variants of openspec ones.
@@ -269,8 +281,8 @@ record that its rendering says it owes.
 **The bypass half MUST NOT be written onto an epic whose Gate 2 is in the withdrawn state** — no
 `gateReview.gate2`, and at least one `withdrawnGateReviews` entry for Gate 2. `ungated` means nobody
 reviewed the work. For an epic whose review was recorded and then taken back, that is a different and
-false claim, and a later real verdict would push the withdrawal one level past the one-level
-`superseded` history. The standing condition is still reported, as a withdrawn Gate 2, by the
+false claim. A stored `ungated` would also end the withdrawn state, so every surface would word the
+epic as never reviewed. The standing condition is still reported, as a withdrawn Gate 2, by the
 requirement below, and its clearing path is unchanged: record a real verdict.
 
 Splitting the halves by lane does not split the write: it remains **one** write, and an epic of any
@@ -374,20 +386,27 @@ The conductor reports two kinds of this standing condition. Both SHALL be named 
 reports its own integrity, and their notice MUST NOT be consumed on delivery.
 
 - **The ungated kind:** an epic in completion scope carrying an `ungated` Gate 2.
-- **The withdrawn kind:** an epic whose status is `archived`, whose lane is openspec (an absent lane
-  normalized as openspec), which is in completion scope, and whose Gate 2 is in the withdrawn state.
+- **The withdrawn kind:** an epic that is archived, whose lane is openspec (an absent lane normalized
+  as openspec), which is in completion scope, and whose Gate 2 is in the withdrawn state. "Archived"
+  here means its stored status is `archived` OR its change directory is archived on disk. The
+  integrity report reads stored epics and the briefing reads epics resolved against disk, and without
+  that OR they would disagree about an epic between `/opsx:archive` and the next heal.
 
 The two kinds are disjoint, because a gate carrying `ungated` is never in the withdrawn state. They
 are ONE definition, computed in one place and read by the integrity report and the briefing alike.
 
 Each reader MUST word the kinds differently. "No Gate 2 review recorded by anyone" is true of the
-ungated kind and false of the withdrawn one, whose notice names the withdrawal and quotes its reason.
-A withdrawn entry whose own `superseded` history holds an `ungated` stamp MUST say so, so "never
-reviewed" is not hidden behind "withdrawn".
+ungated kind and false of the withdrawn one, whose notice names the withdrawal and quotes the latest
+withdrawal's reason. Where ANY Gate 2 withdrawal entry holds an `ungated` stamp in its `superseded`
+history, the notice MUST say so, so "never reviewed" is not hidden behind "withdrawn", even after a
+later re-record and second withdrawal.
 
-The withdrawn kind's lane and status filters are explicit because nothing else supplies them. Only
-the heal writes `ungated`, and only onto archived openspec-lane epics, so the ungated kind needs no
-filter of its own. A withdrawal, by contrast, can be recorded on any lane and at any status.
+**The two kinds filter differently, and on purpose.** The ungated kind is keyed on a stamp: a durable
+record that an archive bypassed Gate 2. The heal writes that stamp only onto openspec-lane epics it
+archives, but a later lane switch or status change does not undo the bypass, so the stamp stays
+reported wherever the epic moves. That is today's behavior, and this change keeps it. The withdrawn
+kind is keyed on a state that can arise on any lane and at any status. It is reported only where
+Gate 2 is owed at archive, which is the set the heal would have stamped.
 
 An epic outside completion scope — one that ended `killed`, `superseded`, `abandoned`, `declined`
 or `unreconstructable` — owes no Gate 2 and is named by neither kind.
@@ -402,8 +421,8 @@ archive backfill registration and the two archived-at-creation paths are forbidd
 writing a `gate2` entry at all, so no epic any of them registers can ever be named by this notice.
 That is what keeps a standing, unclearable condition from being asserted en masse against changes
 archived before the conductor could have guarded them. The heal's lane binding does the same job for
-the lanes that have no Gate 2 to record: a non-openspec-lane epic never acquires the entry, so it is
-never named by the ungated kind.
+the lanes that have no Gate 2 to record: the heal never stamps a non-openspec-lane epic, so no such
+epic is named by the ungated kind unless it was stamped as openspec-lane and switched lanes afterwards.
 
 Recording a real Gate 2 verdict with evidence SHALL supersede an `ungated` entry and SHALL end the
 withdrawn state, and that is what clears either notice. The superseded entry and the withdrawal MUST
@@ -446,6 +465,21 @@ noise everyone filters.
 - **THEN** each states both that Gate 2 was withdrawn and that the epic was archived ungated before
   the withdrawn review was recorded
 
+#### Scenario: The ungated history survives a second withdrawal
+
+- **WHEN** the heal stamped an epic's Gate 2 `ungated`, a `pass` was recorded and withdrawn, a second
+  `pass` was recorded and withdrawn, and the integrity report and the briefing are composed
+- **THEN** each still states that the epic was archived ungated, although the latest withdrawal entry
+  holds no `ungated` stamp
+
+#### Scenario: Both surfaces agree before the heal has run
+
+- **WHEN** an openspec-lane epic's Gate 2 is withdrawn while it is open, its change directory is then
+  moved under `openspec/changes/archive/`, and the briefing and the integrity report are composed
+  before any mutating verb runs the heal
+- **THEN** both name the epic as withdrawn, because the withdrawn kind counts an epic whose change is
+  archived on disk as archived
+
 #### Scenario: A withdrawn Gate 2 on an epic that ended another way is not named
 
 - **WHEN** an archived openspec-lane epic with outcome `superseded` has its Gate 2 in the withdrawn
@@ -454,8 +488,8 @@ noise everyone filters.
 
 #### Scenario: A withdrawn Gate 2 outside the openspec lane or the archive is not named
 
-- **WHEN** an archived `claude-code`-lane epic and an unarchived openspec-lane epic each have Gate 2 in
-  the withdrawn state, and the integrity report and the briefing are composed
+- **WHEN** an archived `claude-code`-lane epic and an openspec-lane epic that is neither archived in state nor archived on
+  disk each have Gate 2 in the withdrawn state, and the integrity report and the briefing are composed
 - **THEN** neither surface names either epic
 
 #### Scenario: A backfilled archived epic is never named as an ungated archive

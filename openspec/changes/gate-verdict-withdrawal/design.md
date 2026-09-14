@@ -48,8 +48,9 @@ ships two requirements this flag inherits without restating:
   any other, placed beside the `--withdraw-commit` block. Combined with `--status archived --outcome
   delivered`, a Gate 2 withdrawal is refused by the gate's Gate 2 demand.
 - **An update to an archived `delivered` epic does not break an obligation its archive met.**
-  `deliveredObligation()` reads `gateReview.gate2`. So withdrawing a covering passing Gate 2 from an
-  archived `delivered` openspec-lane epic is a regression, and it is refused. The refusal prints the
+  `deliveredObligations()` reads `gateReview.gate2` and compares obligations one at a time. So
+  withdrawing a covering passing Gate 2 from an archived `delivered` openspec-lane epic is a Gate 2
+  regression, and it is refused even where the handoff already fails. The refusal prints the
   invocation that also records a disposition, carrying `--correct-disposition` only where the
   recorded one is agent-recorded.
 - **A Gate 1 withdrawal never trips either rule.** Gate 1 is not an archive obligation.
@@ -57,9 +58,10 @@ ships two requirements this flag inherits without restating:
   the heal's `unknown` stamp. Those epics carry no obligation, and the standing condition below
   reports them instead.
 
-This change adds one thing to that machinery: `deliveredObligation()`'s Gate 2 message, when
-`withdrawnGate(epic, 2)` holds, says Gate 2 was withdrawn and quotes the reason rather than saying it
-is missing.
+This change adds no rule to that machinery. It adds wording: wherever either rule's Gate 2 detail
+comes from `deliveredObligations()` and `withdrawnGate(epic, 2)` holds, the detail says Gate 2 was
+withdrawn and quotes the reason rather than saying it is missing. The spec states that once, in the
+withdrawn-state requirement, and the field-write requirement cross-references it.
 
 The `#175`-shaped remedy is one invocation:
 
@@ -104,16 +106,19 @@ only Gate 2, while the read-back checked only Gate 2. That is the `attribute-com
 `constants.mjs` already warns about.
 
 Repeated distinct gates are both withdrawn under the one `--withdrawal-reason`; the same gate twice is
-refused. The gate vocabulary comes from an exported `KNOWN_GATE_NUMBERS`, not retyped.
+refused. The gate vocabulary is `KNOWN_GATE_NUMBERS`, which today is a module-local constant in
+`gate-review-writeback.mjs:11`. It MOVES to `constants.mjs` and both `record-gate-review` and this flag
+import it, so it is never typed twice.
 
 It works on **any lane**: `record-gate-review` has had no lane refusal since #163, so any lane can
 carry a verdict to withdraw. The heal and the integrity checks stay openspec-lane, as they are today.
 
 ## Refusals
 
-All run before any write, and none is a precondition of another. Refusal 1 runs before `loadState`.
-Refusals 5 and 6 are **disjoint by definition**: 5 is `gateReview.gateN` absent, 6 is present with
-verdict `ungated`. No input can satisfy both, and the engine checks them in this order:
+All run before any write, in this order, and refusal 1 runs before `loadState`. The order is
+normative where it matters: refusals 5 and 6 are evaluated only for gate values that passed 3 and 4
+(gate `3` has no stored entry, so it would otherwise also satisfy 5). Refusals 5 and 6 are **disjoint
+by definition**: 5 is `gateReview.gateN` absent, 6 is present with verdict `ungated`.
 
 1. **`--withdrawal-reason` with neither withdrawal flag.** Names both flags. The precedent is
    `--done requires --story <n>`.
@@ -123,15 +128,16 @@ verdict `ungated`. No input can satisfy both, and the engine checks them in this
 5. **No stored verdict** for the gate. This keeps the flag from becoming a reset lever.
 6. **A stored `ungated` verdict.** Keyed on `verdict === "ungated"`, the test `ungatedArchives` uses,
    and NOT on `recordedBy`: conductor-13 asserts no `scripts/lib` module reads `.recordedBy` off an
-   epic. An `ungated` stamp is cleared by recording a real verdict.
+   epic. An `ungated` stamp is not a review, so recording it as a review taken back is false and would
+   relabel "never reviewed" as "withdrawn". It is cleared by recording a real verdict.
 
 ## Surfaces, settled one by one
 
 | Surface | After the move | Change |
 |---|---|---|
-| `deliveredObligation` (Gate 2, `delivered`, openspec) | `!gate2` → fails | Message names the withdrawal and quotes the reason. Every caller (the archive gate and the regression check) inherits it |
+| `deliveredObligations` (Gate 2, `delivered`, openspec) | `!gate2` → fails | Its Gate 2 detail names the withdrawal and quotes the reason. Every caller (the archive gate and the regression check) inherits it |
 | `archived-openspec-epic-with-no-gate-1` | fires only with a Gate 2 `pass` | Detail names a withdrawn Gate 1. With BOTH withdrawn it is quiet by its own premise, and the standing condition below covers the epic |
-| `ungatedArchives` → `archived-with-no-gate-2-review` and the brief's notice | `ungated` kind only | Returns `{epic, kind, withdrawal}`. The **`ungated` kind is unchanged**: `gate2.verdict === "ungated" && inCompletionScope(e)`, with no lane or status filter, because only the heal writes that stamp. The **`withdrawn` kind is new and filtered explicitly**: `e.status === "archived" && isOpenspecLane(e) && inCompletionScope(e) && withdrawnGate(e, 2)`. Both readers word the kinds differently, since "no review recorded by anyone" is false for a withdrawn one. A withdrawn entry whose `superseded` holds an `ungated` stamp says so |
+| `ungatedArchives` → `archived-with-no-gate-2-review` and the brief's notice | `ungated` kind only | Returns `{epic, kind, withdrawal}`. The **`ungated` kind is unchanged** in code: `gate2.verdict === "ungated" && inCompletionScope(e)`, no lane or status filter. It is keyed on a stamp that records a bypass, and the stamp stays reported wherever the epic later moves. The **`withdrawn` kind is new and filtered explicitly**: `(e.status === "archived" \|\| isArchived(e.id)) && isOpenspecLane(e) && inCompletionScope(e) && withdrawnGate(e, 2)`. The `isArchived` half exists because `integrity.mjs:201` passes stored epics and `briefing.mjs:218` passes `resolveEpics()` epics, whose status is already resolved against disk; without it the two readers disagree between `/opsx:archive` and the next heal (Gate 1 round 3, lens A). Both readers word the kinds differently. "Archived ungated" is said where ANY Gate 2 withdrawal entry's `superseded` holds an `ungated` stamp, so a second withdrawal cannot hide it. Callers to update for the new return shape: `integrity.mjs:201`, `briefing.mjs:218`, and the intent of `scripts/test/conductor-15.test.mjs:1417` |
 | `reconcileArchived` (heal) | `!gate2` → would stamp `ungated` | Skips the stamp when `withdrawnGate(e, 2)`; disposition half unchanged |
 | `gate-recorded-as-bookkeeping` | entry gone | None: clearing it for a misplaced verdict is the use case |
 | `heal-archived-epic-passed-gate-2`, `delivered-epic-attributed-no-commits` | no `pass` → quiet | None |
@@ -147,8 +153,8 @@ verdict `ungated`. No input can satisfy both, and the engine checks them in this
 
 The heal stamps `ungated` onto an openspec-lane epic whose change was archived on disk and whose
 Gate 2 is absent. With the entry moved out that condition holds. Left unchanged, the heal would write
-a fresh `ungated`, meaning "nobody reviewed this", which is a different and false claim. A later real
-verdict would then push the withdrawal a level past the one-level `superseded` history.
+a fresh `ungated`, meaning "nobody reviewed this", which is a different and false claim. A stored
+`ungated` would also end the withdrawn state, so every surface would word the epic as never reviewed.
 
 So the heal skips the stamp where `withdrawnGate(e, 2)` holds, and `ungatedArchives` reports that
 epic as `kind: "withdrawn"`: same standing condition, same clearing path, a truthful record. The
@@ -157,21 +163,43 @@ about one gate.
 
 **This is the route that produces an archived epic with a withdrawn Gate 2.** Withdraw while the epic
 is open, then archive on disk and let the heal run. The heal stamps outcome `unknown`, which is in
-completion scope, so the epic is named. A verb can reach "archived `delivered` with a withdrawn Gate 2"
-only from a record that already failed its Gate 2 obligation, such as a stale verdict. The gate refuses
-it on the way in, and the regression check refuses it from a record that met the obligation. Tests
-reach the standing condition through the heal route, never by writing state directly.
+completion scope, so the epic is named. "Archived `delivered` with a withdrawn Gate 2" is reachable
+two ways. A verb reaches it only from a record whose Gate 2 obligation already failed, for example a
+`fail` recorded by `record-gate-review` after archive: the gate refuses it on the way in, and the
+per-obligation regression check refuses it from a record whose Gate 2 was met, whatever its handoff.
+The heal reaches it by re-archiving an epic that genuinely left the archive and changed, a path
+`archive-gate-reads-what-it-writes` hands to `archived-delivered-gate2-regression-report`. Tests reach
+the standing condition through the heal route and the recorded-`fail` route, never by writing state
+directly.
 
 These change two EXISTING requirements, so the delta carries them as MODIFIED, restated whole:
 
-- **The heal requirement.** Its first scenario gains the withdrawal exception in its WHEN, so the
-  kept scenario and the new one cannot disagree on one input. The restatement also corrects a sentence
-  false since #163: "`record-gate-review` refuses a verdict to an epic of any other lane". The bypass
-  half's lane binding still holds, for the reason that remains true: the heal and integrity do not
-  treat a non-openspec lane as owing Gate 2, so an `ungated` entry there would be a condition nothing
-  treats as clearable.
-- **The standing-condition requirement.** The `ungated` kind keeps today's definition word for word.
-  The `withdrawn` kind is added beside it with its explicit filter.
+- **The heal requirement.** Every change against the base, disclosed:
+  - The bypass-half bullet adds "only epics whose Gate 2 is not in the withdrawn state", and a new
+    paragraph forbids stamping over a withdrawn Gate 2.
+  - The first scenario's WHEN narrows from "no passing Gate 2 verdict" to "no `gateReview.gate2` and
+    no Gate 2 withdrawal". The narrowing to an absent entry matches the code
+    (`epic-progress.mjs:127`), and it removes a latent conflict with "An existing verdict is never
+    overwritten", which a stored `fail` satisfied both of.
+  - The lane-less scenario's WHEN gains the same absent-entry condition.
+  - The non-openspec rationale, in prose and in its scenario, drops the sentence false since #163
+    ("`record-gate-review` refuses a verdict to an epic of any other lane") and the "worse than the
+    backfill flood" comparison that rested on it. The lane binding still holds, because the lane was
+    never owed Gate 2.
+  - One new scenario (the withdrawn stamp is skipped). The draft's "unchanged where nothing was
+    withdrawn" scenario is dropped as a duplicate of the narrowed first scenario.
+- **The standing-condition requirement.** Every change against the base, disclosed:
+  - The ungated kind's text adds "in completion scope", matching what `ungatedArchives` has done since
+    completion scope was introduced. The base spec's text never said it, and the code does not change.
+  - It gains the "outside completion scope" paragraph, the withdrawn kind, the two-filter rationale,
+    the wording rules, and six scenarios.
+
+**Left as it is, deliberately:** base `gate-integrity` "Every site deciding openspec-lane membership
+normalizes an absent lane" still names "`record-gate-review`'s lane refusal" among three sites. That
+sentence describes the sites that existed when the requirement was written; its rule ("every site
+MUST normalize") is still true, and restating an unrelated requirement to reword history would widen
+this change for no behavior. The same false rationale in the code comment at `epic-progress.mjs:123`
+IS corrected (task 6.1), because a comment misleads the next person editing that code.
 
 ## What this deliberately does not do
 
@@ -196,4 +224,4 @@ These change two EXISTING requirements, so the delta carries them as MODIFIED, r
   than an entry that asserts the refusal, which that table's own comments rule out.
 - **This change's plan depends on another change's shipped behavior.** Its reconcile gate runs on POP
   and re-validates these artifacts against what `archive-gate-reads-what-it-writes` actually shipped,
-  above all the name and signature of `deliveredObligation()`.
+  above all the name and signature of `deliveredObligations()`.
