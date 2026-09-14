@@ -30,11 +30,13 @@
       null), then add it beside `gateHasEvidence`. Every surface below calls it; none re-derives it
 - [ ] 2.3 RED then GREEN: withdrawing a Gate 2 `pass` removes `gateReview.gate2` and appends
       `{gate, entry, reason, withdrawnAt}` whose `entry` deep-equals the stored verdict. The GREEN step
-      registers `withdraw-gate-review` in `EPIC_FLAGS` (`key:null`, `write:"custom"`, `repeats:true`) and
-      implements the write in `updateEpic` beside the `--withdraw-commit` block, before the archive gate
+      registers `withdraw-gate-review` in `EPIC_FLAGS` (`key:null`, `write:"custom"`, NOT yet
+      repeatable) and implements a single-gate write, with no refusals, in `updateEpic` beside the
+      `--withdraw-commit` block, before the archive gate
 - [ ] 2.4 REGRESSION GUARD (passes once 2.3 moves the whole entry): a Gate 1 carrying `superseded` moves whole; nothing is promoted
 - [ ] 2.5 REGRESSION GUARD: withdrawing one gate leaves the other deep-equal
-- [ ] 2.6 RED then GREEN: `--withdraw-gate-review 1 --withdraw-gate-review 2` withdraws both, two entries
+- [ ] 2.6 RED then GREEN: `--withdraw-gate-review 1 --withdraw-gate-review 2` withdraws both, two
+      entries — GREEN adds `repeats:true` and the loop (RED: without it `parseFlags` keeps only Gate 2)
 - [ ] 2.7 REGRESSION GUARD (no code change; design.md asserts it): re-recording after a withdrawal starts clean — no `superseded`, withdrawal kept
 - [ ] 2.8 RED then GREEN: read-back after `render()` — the gate absent AND a matching withdrawal entry,
       else exit non-zero "did NOT land". Force the failure by exporting the read-back check as a pure
@@ -79,7 +81,7 @@ Order per design.md.
 - [ ] 5.1 RED then GREEN: `reconcileArchived` skips the `ungated` stamp when `withdrawnGate(e, 2)`;
       the disposition half and the status flip are unchanged. Correct the code comment at
       `epic-progress.mjs:123` that repeats "record-gate-review refuses a verdict to any other lane"
-- [ ] 5.2 Assert the heal is byte-identical where nothing was withdrawn
+- [ ] 5.2 REGRESSION GUARD: assert the heal is byte-identical where nothing was withdrawn
 - [ ] 5.3 RED then GREEN: `ungatedArchives` returns `{epic, kind: "ungated"|"withdrawn", withdrawal}`.
       The `ungated` kind's predicate is unchanged. ADD the `withdrawn` kind:
       `(e.status === "archived" || isArchived(e.id)) && isOpenspecLane(e) && inCompletionScope(e) &&
@@ -146,7 +148,7 @@ keep passing.
       file present
 - [ ] 7.4 **Attribute every commit** at the moment it lands:
       `update-epic gate-verdict-withdrawal --attribute-commit <sha>`. The archive commit is excluded
-- [ ] 7.5 **Dispositions** — archive with 9.3's exact flags (its two `--declined-deferral`s), adding a
+- [ ] 7.5 **Dispositions** <!-- pm:lifecycle --> — archive with 9.3's exact flags (its two `--declined-deferral`s), adding a
       `--deferral "<epicId>:<section>"` for any deferral registered while the work ran; never
       `--no-deferrals`, which would erase the two declines
 - [ ] 7.6 **Route what the work taught** — a practice → register an epic; tooling friction →
