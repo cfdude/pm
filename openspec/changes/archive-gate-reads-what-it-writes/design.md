@@ -137,8 +137,10 @@ message renderer and never reach this refusal.
 **The disposition tail is rendered by the existing `dispositionInvocation()`** (`archive-gate.mjs:165`),
 extended to take options: the echoed prefix tokens, whether to add `--correct-disposition`, and whether
 the epic already carries a deferral assertion. Its comment exists "so no caller types the vocabulary
-into a string of its own", and a second renderer would break that. Its existing callers
-(`unconsideredOutcomes`, `integrity.mjs:460`) keep their output unchanged: they print a bare
+into a string of its own", and a second renderer would break that. Its options default so that
+a call with only `(id)` prints exactly today's text; the new caller passes the options, and gets no
+deferral text where the epic already carries an assertion, or the placeholder where it does not. Its
+existing callers (`unconsideredOutcomes`, `integrity.mjs:460`) keep their output unchanged: they print a bare
 `--no-deferrals` for engine-stamped `unknown` records. That text is a suggestion of a claim this
 change would not print, and it is recorded as its own epic,
 `disposition-invocation-prints-bare-no-deferrals`, rather than widened into this change, because

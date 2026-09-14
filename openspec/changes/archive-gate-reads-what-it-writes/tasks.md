@@ -31,9 +31,10 @@ descending from the fixture's `headSha` in the fixture repo.
       no Gate 2 and no outstanding work exits 0
 - [ ] 1.6a RED: `--clear plan --status archived --outcome delivered --no-deferrals` on a `claude-code`
       epic whose only source is a plan with outstanding tasks exits 0 and announces the cleared plan
-- [ ] 1.7 REGRESSION GUARD (for 1.8, which moves the three lines): the fixture of "A refused call announces no cleared field" (claude-code lane, no
-      stories, ranked P2, a parent, a sync-ignored plan whose tasks are all ticked) prints none of the
-      three lines when refused; the variant without `--lane openspec` exits 0 and prints all three
+- [ ] 1.7 RED: the fixture of "A refused call announces no cleared field" (claude-code lane, no
+      stories, ranked P2, a parent, a sync-ignored plan whose tasks are all ticked) is refused and prints
+      none of the three lines (fails today: the call is accepted and announces all three); REGRESSION
+      GUARD half: the variant without `--lane openspec` exits 0 and prints all three
 - [ ] 1.8 GREEN: move `archiveGate()` in `updateEpic` to after the `--clear` loop and before the
       `completedAt` stamp; route the tombstone, rank and `clearNote` stderr writes through an
       `announcements` array flushed after the gate and the Half 2 check pass, before `saveState()`
@@ -100,7 +101,8 @@ RED tasks fail on today's engine. REGRESSION GUARD tasks pass today and must kee
       (snapshot.status === "archived" && f.status === undefined))` — every read from `snapshot`, never
       `epic`; refuse where an obligation kind failing after is not failing before; its own message
       (no `cannot archive`); the printed invocation alone on a line beginning `  update-epic `, with
-      raw tokens echoed minus `--status` and disposition flags (with values, by registry arity), each
+      raw tokens echoed minus `--status` and disposition flags, their values dropped by the `requireKnownFlags`
+      walk (an inline `--flag=v` drops alone; a following token drops only where `!isFlagToken(next)`), each
       single-quoted with `'` → `'\''`, branching on `isEngineStamped` and on an existing
       `deferralAssertion`; `detail` excludes the gate's remedy text
 - [ ] 3.14 REGRESSION GUARD: archived `delivered` `claude-code` epic, no Gate 2, no archived change
@@ -123,12 +125,12 @@ RED tasks fail on today's engine. REGRESSION GUARD tasks pass today and must kee
       For each writer, state whether it can run on an archived epic, and whether this change binds
       it or design.md's "What this deliberately does not do" justifies it.
       DATA references: none added
-- [ ] 4.2 **Inverse of every operation added** — the regression refusal's exits are the printed
-      invocation and a genuine unarchive, each ending at the full gate or at a path held by
-      `archived-delivered-gate2-regression-report`; state it in the commit
 - [ ] 4.1a Every existing test that updates an archived `delivered` epic (conductor-13's documented-flag
       harness among them) passes unchanged, or is corrected and named in the commit message; extend
       `dispositionInvocation()` without changing its existing callers' output
+- [ ] 4.2 **Inverse of every operation added** — the regression refusal's exits are the printed
+      invocation and a genuine unarchive, each ending at the full gate or at a path held by
+      `archived-delivered-gate2-regression-report`; state it in the commit
 - [ ] 4.3 **Verify against the commit** — `git show --stat <sha>` for every task commit; each claimed
       file present
 - [ ] 4.4 **Attribute every commit** as it lands:
