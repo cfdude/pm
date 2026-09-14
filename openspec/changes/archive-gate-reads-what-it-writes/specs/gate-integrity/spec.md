@@ -124,7 +124,8 @@ archived on disk re-archives the epic.
 **The printed invocation.** The refusal MUST print a runnable invocation that makes the same change
 and records the disposition it implies. It is the invocation's own argument tokens, as given, minus
 `--status`, `--outcome`, `--reason`, `--carried-to`, `--correct-disposition` and the deferral flags
-(with their values), plus `--status archived --outcome <outcome> --reason "<why>"`. Which token is a
+(with their values), plus `--status archived`, an `--outcome` placeholder naming the agent outcomes,
+and `--reason "<why>"`. Which token is a
 dropped flag's value follows the engine's own flag walk: an inline `--flag=value` token drops alone,
 and a following token drops with its flag only where that token is not itself flag-shaped. A flag
 given with no value echoes with no value, a repeated flag echoes once per occurrence, and an inline

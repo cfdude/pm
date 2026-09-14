@@ -101,7 +101,7 @@ RED tasks fail on today's engine. REGRESSION GUARD tasks pass today and must kee
       (snapshot.status === "archived" && f.status === undefined))` — every read from `snapshot`, never
       `epic`; refuse where an obligation kind failing after is not failing before; its own message
       (no `cannot archive`); the printed invocation alone on a line beginning `  update-epic `, with
-      raw tokens echoed minus `--status` and disposition flags, their values dropped by the `requireKnownFlags`
+      rendered by the extended `dispositionInvocation()`: raw tokens echoed minus `--status` and disposition flags, their values dropped by the `requireKnownFlags`
       walk (an inline `--flag=v` drops alone; a following token drops only where `!isFlagToken(next)`), each
       single-quoted with `'` → `'\''`, branching on `isEngineStamped` and on an existing
       `deferralAssertion`; `detail` excludes the gate's remedy text
@@ -138,7 +138,8 @@ RED tasks fail on today's engine. REGRESSION GUARD tasks pass today and must kee
       excluded
 - [ ] 4.5 **Dispositions** <!-- pm:lifecycle --> — archive with `update-epic archive-gate-reads-what-it-writes --status archived --outcome delivered --deferral
       "archived-delivered-gate2-regression-report:design.md What this deliberately does not do" --deferral
-      "status-write-undone-by-heal-reports-updated:design.md What this deliberately does not do"`
+      "status-write-undone-by-heal-reports-updated:design.md What this deliberately does not do" --deferral
+      "disposition-invocation-prints-bare-no-deferrals:design.md Half 2 printed invocation"`
 - [ ] 4.6 **Route what the work taught** — a practice → register an epic; tooling friction →
       `/pm:feedback [bug|feature] "<summary>"`; a process failure → a lesson in `docs/lessons/`. Name
       which each is

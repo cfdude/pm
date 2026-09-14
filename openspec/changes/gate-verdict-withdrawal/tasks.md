@@ -32,14 +32,16 @@
       `{gate, entry, reason, withdrawnAt}` whose `entry` deep-equals the stored verdict. The GREEN step
       registers `withdraw-gate-review` in `EPIC_FLAGS` (`key:null`, `write:"custom"`, `requires` naming
       the gate number, NOT yet repeatable) and implements a single-gate write, with no refusals, in
-      `updateEpic` beside the `--withdraw-commit` block, before the archive gate. The SAME commit carries
+      `updateEpic` beside the `--withdraw-commit` block, before the archive gate (the only refusal it
+      brings is `requires`' built-in missing-value error). The SAME commit carries
       8.1's conductor-13 exercise entry (with its `pre` step) and 8.2's usage line and `commands/epic.md`
       row, because conductor-36 fails the suite on a registered flag with no doc row and the pre-commit
       hook runs the suite
 - [ ] 2.4 REGRESSION GUARD (passes once 2.3 moves the whole entry): a Gate 1 carrying `superseded` moves whole; nothing is promoted
 - [ ] 2.5 REGRESSION GUARD: withdrawing one gate leaves the other deep-equal
 - [ ] 2.6 RED then GREEN: `--withdraw-gate-review 1 --withdraw-gate-review 2` withdraws both, two
-      entries — GREEN adds `repeats:true` and the loop (RED: without it `parseFlags` keeps only Gate 2)
+      entries — GREEN adds `repeats:true`, the loop, and "repeatable" on the `commands/epic.md` row (RED:
+      without it `parseFlags` keeps only Gate 2)
 - [ ] 2.7 REGRESSION GUARD (no code change; design.md asserts it): re-recording after a withdrawal starts clean — no `superseded`, withdrawal kept
 - [ ] 2.8 RED then GREEN: read-back after `render()` — the gate absent AND a matching withdrawal entry,
       else exit non-zero "did NOT land". Force the failure by exporting the read-back check as a pure
@@ -160,7 +162,8 @@ keep passing.
 
 ## 8. Harness and docs
 
-- [ ] 8.1 (lands with 2.3) Extend conductor-13's documented-flag harness with a full-argv `pre` step, so the
+- [ ] 8.1 (lands with 2.3) Extend conductor-13's documented-flag harness with a full-argv `pre` step (the
+      entry passing `--withdrawal-reason`, so 3.2's refusal never breaks it), so the
       `--withdraw-gate-review` entry records a gate verdict (`record-gate-review subject --gate 2 …`)
       before the flag runs — an entry asserting only the refusal is ruled out by that table's comments
 - [ ] 8.2 (lands with 2.3) The hand-written usage line in `update-epic.mjs` (conductor-13 reads flags from it);

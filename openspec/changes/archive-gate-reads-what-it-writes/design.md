@@ -121,8 +121,9 @@ test the outcome, and it takes `carriedTo` as an argument rather than reading a 
 - the regression check calls it only when `outcomeOf(snapshot) === "delivered"`, passing the STORED
   `disposition.carriedTo`.
 
-`archiveGate()` keeps its own remedy sentences. It re-derives which one applies from the epic, as it
-does today: the staleness state for the three Gate 2 remedies, `summary.source` for the handoff
+`archiveGate()` embeds each entry's `detail` in its message, so the withdrawn wording a later change
+puts into `detail` reaches both callers, and keeps its own remedy sentences around it. It re-derives
+which remedy applies from the epic, as it does today: the staleness state for the three Gate 2 remedies, `summary.source` for the handoff
 remedy. So its messages stay byte-identical and its message tests pass unchanged.
 
 **The regression refusal writes its own message** (Gate 1 lens A I1). The gate's messages open
@@ -150,7 +151,7 @@ changing it moves the integrity report's and the brief's text.
 Parsed flags lose shape: booleans parse as `true` (and `--clear-links 'true'` is refused), repeatable
 flags become arrays, and an inline `--notes=--x` would re-parse as a flag. The tokens pass through
 minus `--status` and every disposition flag with its value (`--outcome`, `--reason`, `--carried-to`,
-`--correct-disposition`, the deferral flags). The registry has no arity field. What counts as a
+`--correct-disposition`, the deferral flags). The registry declares only whether a flag is `valueless`, not how many tokens it takes. What counts as a
 flag's value is decided the way `requireKnownFlags` walks argv (`add-epic.mjs:158-163`): an inline
 `--reason=--x` token carries its own value and drops alone, and a separate next token drops only where
 `isFlagToken(next)` is false. A "drop the next token" rule would swallow the flag after an inline
