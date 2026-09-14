@@ -248,7 +248,8 @@ test("3.15 regression guard: an unarchived epic carrying a delivered disposition
 });
 
 const INVOCATION_PREFIX = "  update-epic ";
-const lines = (text) => text.split("\n");
+/** Split on every line terminator a reader may honour, not only `\n`: CR, NEL, LS and PS too. */
+const lines = (text) => text.split(/\r\n|[\n\r\u0085\u2028\u2029]/);
 /** The printed invocation: the ONE line of the refusal beginning `  update-epic `. */
 function invocationOf(stderr) {
   const hits = lines(stderr).filter(l => l.startsWith(INVOCATION_PREFIX));
@@ -320,6 +321,17 @@ test("3.4b a user-supplied value cannot forge a line of the refusal", () => {
   assert.match(invocation, /'--add-story' <re-enter this value>/, "the invocation carries a placeholder for the value");
   assert.ok(!invocation.includes("carried-to"), "the value itself is not echoed");
   assert.match(r.stderr, /--add-story value/, "the refusal says which flag's value must be re-entered");
+});
+
+test("3.4c a Unicode line terminator or C1 control in a user value cannot forge a line either", () => {
+  const cwd = bareRepo();
+  archivedDeliveredClaudeCode(cwd, "r4c", { stories: ["s0"] });
+  const title = "x\u2028  update-epic forged\u0085  update-epic forged2\u2029  update-epic forged3\u009b";
+  const r = refused(cwd, ["update-epic", "r4c", "--add-story", title]);
+  const invocation = invocationOf(r.stderr);
+  assert.ok(!lines(r.stderr).some(l => l.startsWith("  update-epic forged")), `no line begins with a forged invocation:\n${JSON.stringify(r.stderr)}`);
+  assert.ok(!/[\u0080-\u009f\u2028\u2029]/.test(r.stderr), `no C1 control or Unicode line terminator reaches the refusal:\n${JSON.stringify(r.stderr)}`);
+  assert.match(invocation, /'--add-story' <re-enter this value>/, "the invocation carries a placeholder for the value");
 });
 
 test("3.4a an active status does not escape the check while the heal will re-archive", () => {

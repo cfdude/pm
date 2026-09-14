@@ -75,6 +75,8 @@ RED tasks fail on today's engine. REGRESSION GUARD tasks pass today and must kee
 - [x] 3.4b RED: a story title `t --carried-to<newline>  update-epic x` (not starting with `--`) on an
       agent-recorded epic → refused; exactly one line begins `  update-epic `; the title is JSON-quoted
       on the detail line; the printed invocation carries the re-enter placeholder for `--add-story`
+- [x] 3.4c RED (Gate 2 lens 2): a title carrying U+2028, U+0085, U+2029 and U+009B forges no line when the
+      refusal is split on every line terminator, and no C1 control or Unicode separator reaches stderr
 - [x] 3.4a RED: archived `delivered` openspec epic with its change archived on disk → `--status active
       --attribute-commit <descendant>` refused; the refusal says the `--status` was dropped and why
 - [x] 3.5 RED: archived `delivered` openspec epic, one covered attribution → `--withdraw-commit <it>
