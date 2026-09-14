@@ -55,8 +55,9 @@ ships two requirements this flag inherits without restating:
   recorded one is agent-recorded.
 - **A Gate 1 withdrawal never trips either rule.** Gate 1 is not an archive obligation.
 - **Neither does a withdrawal from an archived epic whose outcome is not `delivered`,** including
-  the heal's `unknown` stamp. Those epics carry no obligation, and the standing condition below
-  reports them instead.
+  the heal's `unknown` stamp. Those epics carry no obligation. The standing condition below reports
+  the `unknown` ones, which are in completion scope; `killed`, `superseded` and the other explained
+  outcomes owe no Gate 2 and are reported by nothing, correctly.
 
 This change adds no rule to that machinery. It adds wording: wherever either rule's Gate 2 detail
 comes from `deliveredObligations()` and `withdrawnGate(epic, 2)` holds, the detail says Gate 2 was
@@ -142,7 +143,7 @@ by definition**: 5 is `gateReview.gateN` absent, 6 is present with verdict `unga
 | `gate-recorded-as-bookkeeping` | entry gone | None: clearing it for a misplaced verdict is the use case |
 | `heal-archived-epic-passed-gate-2`, `delivered-epic-attributed-no-commits` | no `pass` → quiet | None |
 | `verdict-range-omits-cited-commits`, `recordedShas` | entry gone → not checked | None. Mirrors `withdrawnCommits`; the decision is written into `recordedShas`'s own "a third holder added later must be added HERE" comment, not only here |
-| `render`, `buildBrief` gate tables | an epic whose gates are all withdrawn drops out of `gate1 \|\| gate2` | ONE helper in `archive-gate.mjs` (which already imports `stalenessMarking`; `constants.mjs` may not) decides which epics appear and renders the cell literal `withdrawn — <reason>`. Both surfaces call it. Each keeps its own row cap (`NEXT_CAP` stays in the brief) |
+| `render`, `buildBrief` gate tables | an epic whose gates are all withdrawn drops out of `gate1 \|\| gate2` | ONE helper in `archive-gate.mjs` (which defines `stalenessMarking`; `constants.mjs` may not import it) decides which epics appear and renders the cell literal `withdrawn — <reason>`. Both surfaces call it. Each keeps its own row cap (`NEXT_CAP` stays in the brief) |
 | `diffEvents` (activity log) | a vanished verdict emits nothing | Emits `gate-withdrawn` **on growth of `withdrawnGateReviews`**, never on a verdict disappearing, so a hand-edit that deletes `gate2` is not logged as an engine withdrawal |
 | `activity-report.mjs` GATES section | only collects `gate-review` | Collects `gate-withdrawn`; `activity-log.mjs`'s kind-list comment and `commands/activity.md` name it |
 | `stampArchivedOutcomes` | reads `pass` | None; see the assumption above |
@@ -191,15 +192,30 @@ These change two EXISTING requirements, so the delta carries them as MODIFIED, r
 - **The standing-condition requirement.** Every change against the base, disclosed:
   - The ungated kind's text adds "in completion scope", matching what `ungatedArchives` has done since
     completion scope was introduced. The base spec's text never said it, and the code does not change.
-  - It gains the "outside completion scope" paragraph, the withdrawn kind, the two-filter rationale,
-    the wording rules, and six scenarios.
+    The first scenario's WHEN gains the same words.
+  - The base sentence "a non-openspec-lane epic is never named by this notice, because it never
+    acquires the entry" becomes "…unless it was stamped as openspec-lane and switched lanes
+    afterwards". The base sentence was already false once `--lane` could change an archived epic's
+    lane (reproduced in Gate 1 round 3); this corrects it, and the code does not change.
+  - The clearing paragraph: "SHALL supersede an `ungated` entry" gains "and SHALL end the withdrawn
+    state", "the superseded entry MUST remain readable" gains "and the withdrawal", and "supersession
+    path" becomes "clearing path", because there are now two notices to clear.
+  - It gains the "outside completion scope" paragraph (naming the backfill exclusion
+    `inCompletionScope` already applies), the withdrawn kind, the two-filter rationale, the wording
+    rules, and seven scenarios.
+
+**Arm 2 of "The archive transition is gated on every path that can reach it"** says the heal records
+that it bypassed Gate 2. For an epic with a withdrawn Gate 2 the heal writes no `ungated`. Arm 2 is
+still met: the heal's `archive-drift-heal` disposition stamp records how the epic reached `archived`,
+and the `withdrawnGateReviews` entry records what happened to its Gate 2. Together they leave nothing
+silent, which is the arm's purpose.
 
 **Left as it is, deliberately:** base `gate-integrity` "Every site deciding openspec-lane membership
 normalizes an absent lane" still names "`record-gate-review`'s lane refusal" among three sites. That
 sentence describes the sites that existed when the requirement was written; its rule ("every site
 MUST normalize") is still true, and restating an unrelated requirement to reword history would widen
 this change for no behavior. The same false rationale in the code comment at `epic-progress.mjs:123`
-IS corrected (task 6.1), because a comment misleads the next person editing that code.
+IS corrected (task 5.1), because a comment misleads the next person editing that code.
 
 ## What this deliberately does not do
 

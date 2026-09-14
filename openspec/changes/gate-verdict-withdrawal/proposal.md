@@ -44,14 +44,15 @@ finding, and this field predates that rule.
 - **Bound by the archive gate like every other field write**, through
   `archive-gate-reads-what-it-writes`, which this change depends on and follows:
   - A withdrawal combined with `--status archived` is decided on the record it leaves.
-  - A Gate 2 withdrawal on an already-archived `delivered` epic whose Gate 2 was met is refused as an
-    obligation regression (compared one obligation at a time), printing the invocation that withdraws and records the right disposition in one call.
+  - A Gate 2 withdrawal on an archived `delivered` epic whose Gate 2 was met, while the record stays
+    archived, is refused as an obligation regression (compared one obligation at a time). The refusal
+    prints the invocation that withdraws and records the right disposition in one call.
 
   This change adds no archive-gate rule of its own.
 - **The heal does not stamp `ungated` over a withdrawn Gate 2.** The standing condition gains a
   second kind for an archived openspec-lane epic in completion scope whose Gate 2 is withdrawn. It has
   the same clearing path and truthful wording. The existing `ungated` kind is unchanged.
-- **A spec sentence false since #163 is corrected:** "`record-gate-review` refuses a verdict to an
+- **A spec sentence false since #163 is corrected in the heal requirement:** "`record-gate-review` refuses a verdict to an
   epic of any other lane".
 - **A doc defect on this surface:** `README.md` shows `--withdraw-commit <sha> --reason`; the flag has
   been `--withdrawal-reason` since 0.38.0.

@@ -100,7 +100,7 @@ scenario below supplies every other input valid, so it exercises exactly one ref
 
 - **WHEN** `update-epic <id> --withdraw-gate-review 2 --withdraw-gate-review 2 --withdrawal-reason "x"`
   runs on an epic carrying a stored Gate 2 `pass`
-- **THEN** it exits non-zero, and `state.json` is byte-identical
+- **THEN** it exits non-zero naming Gate 2 as given twice, and `state.json` is byte-identical
 
 #### Scenario: Nothing to withdraw
 
@@ -134,7 +134,9 @@ every field write of the verb, so the rule lives with the verb and not with eith
 - **WHEN** an openspec-lane epic carries a passing Gate 2 covering its attributed commits and no
   outstanding work, and `update-epic <id> --withdraw-gate-review 2 --withdrawal-reason "x"
   --status archived --outcome delivered --no-deferrals` runs
-- **THEN** it exits non-zero, `state.json` is byte-identical, and the epic is not archived
+- **THEN** it exits non-zero with a message stating Gate 2 was withdrawn and quoting `x` (the wording
+  "A withdrawn gate is reported as withdrawn, never as absent" defines), `state.json` is
+  byte-identical, and the epic is not archived
 
 #### Scenario: Withdrawing Gate 2 from an archived delivered epic is refused
 
@@ -398,8 +400,10 @@ are ONE definition, computed in one place and read by the integrity report and t
 Each reader MUST word the kinds differently. "No Gate 2 review recorded by anyone" is true of the
 ungated kind and false of the withdrawn one, whose notice names the withdrawal and quotes the latest
 withdrawal's reason. Where ANY Gate 2 withdrawal entry holds an `ungated` stamp in its `superseded`
-history, the notice MUST say so, so "never reviewed" is not hidden behind "withdrawn", even after a
-later re-record and second withdrawal.
+field, the notice MUST say so, so a withdrawal never hides "never reviewed", even after a later
+re-record and second withdrawal. The guarantee reaches as far as the record does: `record-gate-review`
+keeps one level of `superseded`, so an `ungated` stamp superseded twice before any withdrawal is not
+in the record to report.
 
 **The two kinds filter differently, and on purpose.** The ungated kind is keyed on a stamp: a durable
 record that an archive bypassed Gate 2. The heal writes that stamp only onto openspec-lane epics it
@@ -409,7 +413,8 @@ kind is keyed on a state that can arise on any lane and at any status. It is rep
 Gate 2 is owed at archive, which is the set the heal would have stamped.
 
 An epic outside completion scope — one that ended `killed`, `superseded`, `abandoned`, `declined`
-or `unreconstructable` — owes no Gate 2 and is named by neither kind.
+or `unreconstructable`, or one registered by the archive backfill — owes no Gate 2 and is named by
+neither kind.
 
 Either kind is a standing record condition, not an episode. The write-conflict contention warning
 describes a run of events that has ended, so it is consumed once a session has seen it. The condition

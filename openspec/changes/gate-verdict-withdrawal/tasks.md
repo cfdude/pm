@@ -55,70 +55,74 @@ Each test supplies every other input valid and asserts `state.json` byte-identic
 - [ ] 3.6 RED then GREEN: a stored `ungated` Gate 2 produced by the heal route — keyed on the VERDICT,
       never on `recordedBy`
 
-## 4. Bound by the archive gate (inherited, asserted here)
+## 4. Withdrawn is a state, never absence
 
-- [ ] 4.1 RED then GREEN: `--withdraw-gate-review 2 --withdrawal-reason x --status archived --outcome
-      delivered --no-deferrals` on an openspec epic with a covering passing Gate 2 and no outstanding work
-      is refused, state byte-identical
-- [ ] 4.2 RED then GREEN: `--withdraw-gate-review 2 --withdrawal-reason x` on an archived agent-recorded
-      `delivered` openspec epic with a covering passing Gate 2 and no outstanding work is refused; the
-      printed invocation carries `--correct-disposition`; the message states Gate 2 was withdrawn and
-      quotes `x`, and does not say Gate 2 is missing
-- [ ] 4.3 RED then GREEN: `--withdraw-gate-review 1 --withdrawal-reason x` on the same archived
-      `delivered` epic exits 0 — Gate 1 is not an obligation
-- [ ] 4.4 RED then GREEN: an archived `delivered` openspec epic with a Gate 2 `fail` recorded by
-      `record-gate-review` after archive → `--withdraw-gate-review 2 --withdrawal-reason x` exits 0, and
-      the epic is named by the withdrawn kind on both surfaces
-- [ ] 4.5 RED then GREEN: the end-to-end remedy — an archived openspec epic whose `delivered`
-      disposition is AGENT-recorded, carrying Gate 1 (recorded with `--artifact`) and Gate 2 recorded 2 s
-      apart → the combined call withdrawing both with `--status archived --outcome superseded --reason y
-      --correct-disposition z --no-deferrals` exits 0 → the epic is `superseded`, keeps the prior
-      `delivered` under `superseded`, carries no Gate 1 or Gate 2 verdict and exactly two
-      `withdrawnGateReviews` entries → `integrity` names it under none of `gate-recorded-as-bookkeeping`,
-      `archived-with-no-gate-2-review`, `archived-openspec-epic-with-no-gate-1`
-
-## 5. Withdrawn is a state, never absence
-
-- [ ] 5.1 RED then GREEN: `deliveredObligations`'s Gate 2 detail names a withdrawn Gate 2 and quotes the
+- [ ] 4.1 RED then GREEN: `deliveredObligations`'s Gate 2 detail names a withdrawn Gate 2 and quotes the
       reason; the archive gate on an unarchived epic shows it
-- [ ] 5.2 RED then GREEN: `archived-openspec-epic-with-no-gate-1` names a withdrawn Gate 1
-- [ ] 5.3 RED then GREEN: re-recording clears the state — the archive with `--outcome delivered
+- [ ] 4.2 RED then GREEN: `archived-openspec-epic-with-no-gate-1` names a withdrawn Gate 1
+- [ ] 4.3 REGRESSION GUARD (written after 4.1): re-recording clears the state — the archive with `--outcome delivered
       --no-deferrals` exits 0, and PROJECT.md, the brief and `integrity` name no withdrawn Gate 2
-- [ ] 5.4 RED then GREEN: ONE helper in `archive-gate.mjs` decides which epics a gate table lists and
+- [ ] 4.4 RED then GREEN: ONE helper in `archive-gate.mjs` decides which epics a gate table lists and
       renders the cell `withdrawn — <reason>`; `render` and `buildBrief` both call it, each keeping its
       own row cap. Scenarios: one gate withdrawn; BOTH withdrawn (the epic stays in both tables). Plus
       a conductor-16-style assertion that PROJECT.md and the brief list the same epic ids with the same
       cell text, asserting each rendered id is a real id string (never `undefined`)
-- [ ] 5.5 RED then GREEN: `diffEvents` emits `gate-withdrawn` on GROWTH of `withdrawnGateReviews`;
+- [ ] 4.5 RED then GREEN: `diffEvents` emits `gate-withdrawn` on GROWTH of `withdrawnGateReviews`;
       a write removing `gate2` with no new withdrawal entry emits none
-- [ ] 5.6 RED then GREEN: `activity-report.mjs` lists `gate-withdrawn` in its gates section; add the
+- [ ] 4.6 RED then GREEN: `activity-report.mjs` lists `gate-withdrawn` in its gates section; add the
       kind to `activity-log.mjs`'s kind-list comment and `commands/activity.md`
 
-## 6. The heal and the standing condition
+## 5. The heal and the standing condition
 
-- [ ] 6.1 RED then GREEN: `reconcileArchived` skips the `ungated` stamp when `withdrawnGate(e, 2)`;
+- [ ] 5.1 RED then GREEN: `reconcileArchived` skips the `ungated` stamp when `withdrawnGate(e, 2)`;
       the disposition half and the status flip are unchanged. Correct the code comment at
       `epic-progress.mjs:123` that repeats "record-gate-review refuses a verdict to any other lane"
-- [ ] 6.2 Assert the heal is byte-identical where nothing was withdrawn
-- [ ] 6.3 RED then GREEN: `ungatedArchives` returns `{epic, kind: "ungated"|"withdrawn", withdrawal}`.
+- [ ] 5.2 Assert the heal is byte-identical where nothing was withdrawn
+- [ ] 5.3 RED then GREEN: `ungatedArchives` returns `{epic, kind: "ungated"|"withdrawn", withdrawal}`.
       The `ungated` kind's predicate is unchanged. ADD the `withdrawn` kind:
       `(e.status === "archived" || isArchived(e.id)) && isOpenspecLane(e) && inCompletionScope(e) &&
       withdrawnGate(e, 2)`. Update its callers `integrity.mjs:201` and `briefing.mjs:218`, and keep the
       intent of `scripts/test/conductor-15.test.mjs:1417`. `archived-with-no-gate-2-review` and the
       brief's notice word the withdrawn kind with its reason and never say "no review recorded by anyone";
       assert each names the epic by its real id
-- [ ] 6.4 RED then GREEN: an epic reached by the heal route (withdraw while open → change archived on disk
+- [ ] 5.4 RED then GREEN: an epic reached by the heal route (withdraw while open → change archived on disk
       → heal, outcome `unknown`) is named as withdrawn by both surfaces
-- [ ] 6.5 RED then GREEN: the not-yet-healed window — withdraw while open, move the change under
+- [ ] 5.5 RED then GREEN: the not-yet-healed window — withdraw while open, move the change under
       `openspec/changes/archive/`, then compose the brief and `integrity` WITHOUT a mutating verb; both
       name the epic
-- [ ] 6.6 RED then GREEN: the withdrawn kind names neither a `claude-code`-lane archived epic nor an
+- [ ] 5.6 REGRESSION GUARD (written after 5.3): the withdrawn kind names neither a `claude-code`-lane archived epic nor an
       openspec epic neither archived in state nor on disk, each with a withdrawn Gate 2
-- [ ] 6.7 RED then GREEN: an archived `superseded` openspec epic with a withdrawn Gate 2 (reached by the
-      combined call in 4.5) is named by neither surface
-- [ ] 6.8 RED then GREEN: a withdrawn entry whose `superseded` holds an `ungated` stamp says so on both
+- [ ] 5.7 REGRESSION GUARD: an archived `superseded` openspec epic with a withdrawn Gate 2 (reached by the
+      combined call in 6.5) is named by neither surface
+- [ ] 5.8 RED then GREEN: a withdrawn entry whose `superseded` holds an `ungated` stamp says so on both
       surfaces; and after a re-record and second withdrawal (latest entry holding no `ungated`), both
       still say so
+
+## 6. Bound by the archive gate (inherited, asserted here)
+
+These pin behavior `archive-gate-reads-what-it-writes` already ships plus this change's wording
+(4.1) and standing condition (5.3), so each is a REGRESSION GUARD: it passes when written, and must
+keep passing.
+
+- [ ] 6.1 REGRESSION GUARD: `--withdraw-gate-review 2 --withdrawal-reason x --status archived --outcome
+      delivered --no-deferrals` on an openspec epic with a covering passing Gate 2 and no outstanding work
+      is refused, state byte-identical
+- [ ] 6.2 REGRESSION GUARD: `--withdraw-gate-review 2 --withdrawal-reason x` on an archived agent-recorded
+      `delivered` openspec epic with a covering passing Gate 2 and no outstanding work is refused; the
+      printed invocation carries `--correct-disposition`; the message states Gate 2 was withdrawn and
+      quotes `x`, and does not say Gate 2 is missing
+- [ ] 6.3 REGRESSION GUARD: `--withdraw-gate-review 1 --withdrawal-reason x` on the same archived
+      `delivered` epic exits 0 — Gate 1 is not an obligation
+- [ ] 6.4 REGRESSION GUARD: an archived `delivered` openspec epic with a Gate 2 `fail` recorded by
+      `record-gate-review` after archive → `--withdraw-gate-review 2 --withdrawal-reason x` exits 0, and
+      the epic is named by the withdrawn kind on both surfaces
+- [ ] 6.5 REGRESSION GUARD: the end-to-end remedy — an archived openspec epic whose `delivered`
+      disposition is AGENT-recorded, carrying Gate 1 (recorded with `--artifact`) and Gate 2 recorded 2 s
+      apart → the combined call withdrawing both with `--status archived --outcome superseded --reason y
+      --correct-disposition z --no-deferrals` exits 0 → the epic is `superseded`, keeps the prior
+      `delivered` under `superseded`, carries no Gate 1 or Gate 2 verdict and exactly two
+      `withdrawnGateReviews` entries → `integrity` names it under none of `gate-recorded-as-bookkeeping`,
+      `archived-with-no-gate-2-review`, `archived-openspec-epic-with-no-gate-1`
 
 ## 7. Required task items
 
@@ -170,4 +174,7 @@ Each test supplies every other input valid and asserts `state.json` byte-identic
 - [x] 9.2 `gh-cfdude-pm-192` ended at registration — `update-epic gh-cfdude-pm-192 --status archived
       --outcome superseded --reason "…" --no-deferrals` — so no gate is copied onto the mirror
 - [ ] 9.3 Archive this change <!-- pm:lifecycle --> — `/opsx:archive gate-verdict-withdrawal`, then
-      `update-epic gate-verdict-withdrawal --status archived --outcome delivered --no-deferrals`
+      `update-epic gate-verdict-withdrawal --status archived --outcome delivered` with
+      `--declined-deferral "withdraw-cross-spec-review::a spec change already stales that verdict"
+      --declined-deferral "un-withdraw verb::re-recording is the way back"` plus any `--deferral` 7.5
+      registers
