@@ -61,8 +61,15 @@ export { claimExpiry, isLiveClaim };
 /** The repo-level quiescence marker's path. Re-derived per call for the same reason
  *  write-conflicts.mjs does it: the tests cache-bust by moving CLAUDE_PROJECT_DIR. */
 export function repoClaimPath() {
-  const root = process.env.CLAUDE_PROJECT_DIR || process.cwd();
-  return path.join(root, ".conductor", "session-claim.json");
+  return path.join(repoClaimRoot(), ".conductor", "session-claim.json");
+}
+
+/** The repository the marker is written INTO — derived per call, exactly as its path is. The
+ *  detached-tree check must ask about this root: ROOT in constants.mjs is frozen at import, so a
+ *  process whose import-time root differs from CLAUDE_PROJECT_DIR (a test, a delegated engine, CI's
+ *  detached pull_request checkout) answered about the wrong tree — the 0.42.0 frozen-ROOT defect. */
+function repoClaimRoot() {
+  return process.env.CLAUDE_PROJECT_DIR || process.cwd();
 }
 
 /** A claim record, or null. Shape: {session, claimedAt, ttlMinutes}. */
@@ -85,7 +92,7 @@ export function readRepoClaim() {
 function writeRepoClaim(claim) {
   // gh#175: this file says "THIS session is mid-operation in THIS working tree", which is the
   // session-bookkeeping criterion stated aloud.
-  if (isDetachedTree()) return false;
+  if (isDetachedTree(repoClaimRoot())) return false;
   const p = repoClaimPath();
   fs.mkdirSync(path.dirname(p), { recursive: true });
   // Temp file plus rename in the same directory, so a reader racing this write sees the whole old

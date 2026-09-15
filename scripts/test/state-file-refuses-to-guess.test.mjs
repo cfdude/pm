@@ -777,3 +777,32 @@ test("G2-I4: a temp file whose fsync or rename fails is removed", async () => {
     assert.ok(!fs.existsSync(lockPath(cwd)), `${failing}: no lock left behind`);
   }
 });
+
+test("G2-I1: the repository claim's detached check asks about the repository being written, not the import-time root", () => {
+  // The engine's ROOT is frozen when constants.mjs is imported. Import the claim module while the
+  // process stands in a DETACHED checkout, then point CLAUDE_PROJECT_DIR at a repository on a
+  // branch and claim it: the marker belongs to that repository, so it must be written there. On
+  // 0.43.0's code the detached answer came from the import-time root and the claim was suppressed —
+  // which is how test 5.5 failed whenever the pm checkout itself was detached (CI's PR checkout).
+  const detached = tmpRepo();
+  for (const args of [["init", "-q"], ["commit", "-q", "--allow-empty", "-m", "base"], ["checkout", "-q", "--detach"]]) {
+    gitIn(detached, ...args);
+  }
+  assert.equal(gitIn(detached, "symbolic-ref", "-q", "HEAD").status, 1, "precondition: HEAD is detached");
+  const target = threeEpicRepo();
+  gitIn(target, "init", "-q");
+  gitIn(target, "commit", "-q", "--allow-empty", "-m", "base");
+  const script = path.join(detached, "claim-from-detached.mjs");
+  fs.writeFileSync(script, [
+    `const { claim } = await import(${JSON.stringify(new URL("../lib/claims.mjs", import.meta.url).href)});`,
+    `process.env.CLAUDE_PROJECT_DIR = ${JSON.stringify(target)};`,
+    `process.argv.splice(2, process.argv.length - 2, "claim", "--repo", "--session", "s1");`,
+    "claim();",
+  ].join("\n"));
+  const env = { ...process.env, PM_CACHE_ROOT: EMPTY_CACHE };
+  delete env.CLAUDE_PROJECT_DIR;
+  const r = spawnSync("node", [script], { cwd: detached, env, encoding: "utf8" });
+  assert.equal(r.status, 0, `stderr: ${r.stderr}`);
+  assert.doesNotMatch(r.stderr, /NOT recorded/, `suppressed on the wrong tree's answer: ${r.stderr}`);
+  assert.equal(JSON.parse(fs.readFileSync(repoClaimPath(target), "utf8")).session, "s1");
+});
