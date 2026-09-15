@@ -7367,7 +7367,7 @@
       "id": "release-0-43-0-cut",
       "title": "Cut pm 0.43.0: version bump, CHANGELOG section, Mintlify sync for both member changes (commands/epic and the Changelog page, Real Numbers), release PR into main, fleet pass",
       "priority": "P1",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -7397,7 +7397,18 @@
       ],
       "attributedCommits": [],
       "createdAt": "2026-09-15T02:16:56.476Z",
-      "touchedAt": "2026-09-15T02:16:56.488Z"
+      "touchedAt": "2026-09-15T05:19:19.406Z",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-15T05:19:19.404Z",
+        "reason": "pm 0.43.0 cut 2026-09-14: plugin.json + CHANGELOG (d76ee77), PR #202 squash-merged as e1820a9 after green CI with presquash/pr-202 tagged (248 recorded shas reachable), 1393/1393 post-merge. Mintlify synced live via pm-docs PRs #42 and #43 (changelog, commands/epic, commands/status, commands/activity, Real Numbers). Plugin cache updated; fleet pass: 25 repos upgraded, market-intelligence (detached v3.0.1) correctly skipped; highway-snowflake and cfdude-music commits finished by hand; market-intelligence-dev left staged — its own pre-commit suite has 8 failures + 7 errors unrelated to the conductor files. Real Numbers row source corrected in the release-checklist skill (75607a9)."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-15T05:19:19.402Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-15T05:19:19.404Z"
     },
     {
       "id": "gh-cfdude-pm-201",
@@ -8191,7 +8202,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 794,
+  "revision": 795,
   "reviewMode": "thorough",
   "releases": [
     {
