@@ -191,11 +191,11 @@ keep passing.
       before the flag runs — an entry asserting only the refusal is ruled out by that table's comments
 - [x] 8.2 (lands with 2.3) The hand-written usage line in `update-epic.mjs` (conductor-13 reads flags from it);
       `commands/epic.md` flag table (conductor-36 enforces the registry⇒doc row)
-- [ ] 8.3 `README.md` — the command table, the archive-gate prose naming the withdrawn state, and the
+- [x] 8.3 `README.md` — the command table, the archive-gate prose naming the withdrawn state, and the
       prose sentence naming the integrity checks gaining `archived-with-withdrawn-gate-2`; `commands/status.md`'s UNGATED
       ARCHIVES bullet gaining the withdrawn heading; correct
       `--withdraw-commit <sha> --reason` to `--withdrawal-reason`, wrong since 0.38.0
-- [ ] 8.4 (note in the SKILL.md flag entry) running the verb on a LIVE archived epic of this
+- [x] 8.4 (note in the SKILL.md flag entry) running the verb on a LIVE archived epic of this
       repository adds an integrity finding that conductor-15 test 9.14 requires explained in
       `integrity-day-one.md` — the #192 shape; say so where the flag is documented.
       `skills/conductor/SKILL.md` — the flag in the two-gate mechanical-check section; a
@@ -204,10 +204,10 @@ keep passing.
       missing-Gate-2 guidance covers the withdrawn wording
 - [x] 8.5 `rules.mjs` Reporting item 1 — withdrawals are recorded writes; update the emitted-block
       fixtures the rules tests compare against
-- [ ] 8.6 `CHANGELOG.md` `[Unreleased]` entry. The version bump, the Mintlify Changelog page and Real
+- [x] 8.6 `CHANGELOG.md` `[Unreleased]` entry. The version bump, the Mintlify Changelog page and Real
       Numbers belong to the 0.43.0 release cut under `release-checklist`
 - [ ] 8.7 Mintlify content sync for the flag (`/commands/epic`) in the same PR cycle as the release
-- [ ] 8.8 Full suite green, written to a file and read from the file
+- [x] 8.8 Full suite green, written to a file and read from the file
 
 ## 9. Gates and close
 

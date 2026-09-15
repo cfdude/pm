@@ -15,6 +15,36 @@ Every field write came after it: `--lane`, `--attribute-commit`, `--add-story`, 
 never passes through `--status archived`, so it never met the gate at all. Both halves had one
 cause: the gate read a record the invocation does not leave.
 
+### Added
+
+* **`update-epic <id> --withdraw-gate-review <1|2> --withdrawal-reason "<why>"`** — the inverse of
+  `record-gate-review`, which was the one record in `state.json` with none (cfdude/pm#192).
+  Re-recording can replace a verdict; nothing could say a verdict does not belong on this epic at
+  all. Closing #175, both verdicts were copied onto a tracker-mirror epic, `integrity` reported
+  them recorded 2192 ms apart, the suite went red, and the record was recoverable only because the
+  write was still uncommitted. The whole entry, `superseded` included, moves into
+  `withdrawnGateReviews[]` as `{gate, entry, reason, withdrawnAt}` — recorded, never erased —
+  and the write is read back after render. Repeatable, so both gates go in one call. Re-recording
+  is the way back; there is no un-withdraw.
+* **Refused where it would record nothing true:** `--withdrawal-reason` alone (it used to pass
+  and write nothing), no reason, a gate other than 1 or 2, the same gate twice, no stored verdict,
+  and an `ungated` stamp — which is the engine's record that no review happened, cleared by
+  recording a real verdict.
+* **Withdrawn is a state, never absence.** The obligation reappears, as for a gate never recorded,
+  but every surface says what happened. The archive gate and the archived-epic regression refusal
+  state that Gate 2 was withdrawn and quote the reason, JSON-quoted with control characters escaped;
+  `archived-openspec-epic-with-no-gate-1` names a withdrawn Gate 1; PROJECT.md and the brief render
+  `withdrawn — <reason>` from one shared gate-table helper and keep an epic whose every gate is
+  withdrawn; the activity log records `gate-withdrawn` on growth of `withdrawnGateReviews` only.
+* **A new integrity check, `archived-with-withdrawn-gate-2`, and its own brief heading.** The
+  archive-drift heal no longer stamps `ungated` over a withdrawn Gate 2 — that would relabel a
+  review taken back as one that never happened. An archived openspec-lane epic in completion scope
+  left that way is the standing condition's withdrawn kind, counted as archived in state or on disk,
+  worded as withdrawn, and saying so where it was archived ungated before the withdrawn review.
+* It is a field write the archive gate decides on: a Gate 2 withdrawal in a `delivered` archive
+  call, or on an archived `delivered` epic whose Gate 2 was met, is refused. The #175 remedy is one
+  call that withdraws both gates and records `--outcome superseded` with `--correct-disposition`.
+
 ### Fixed
 
 * **Four one-call bypasses of the archive gate.** On 0.42.0, `update-epic a1 --lane openspec
@@ -27,6 +57,8 @@ cause: the gate read a record the invocation does not leave.
 * **A false refusal in one call.** `--story 1 --done --status archived --outcome delivered
   --no-deferrals` on an epic whose only story was outstanding was refused for the story that same
   call marked done. It is accepted.
+* **README showed `--withdraw-commit <sha> --reason`.** The flag has been `--withdrawal-reason` since
+  0.38.0.
 * **A refused call announced fields it never cleared.** The sync-ignore tombstone clear, the rank
   clear and the `--clear` notes printed before the gate, so a refused call reported changes that
   did not happen. They are buffered and print only once the write is going to happen.
@@ -62,7 +94,7 @@ cause: the gate read a record the invocation does not leave.
   `archived-delivered-gate2-regression-report`.
 * **It is a ratchet, deliberately.** On a record whose Gate 2 already failed, `--lane claude-code` is
   accepted and `--lane openspec` straight after is refused, although it restores the earlier record.
-* No `state.json` schema change and no migration.
+* `withdrawnGateReviews` is additive and absent-tolerant, so there is no migration.
 
 ## [0.42.0] — 2026-09-12
 

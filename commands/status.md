@@ -30,6 +30,12 @@ constraint, not the headings: reshape freely, drop nothing.
   composition and never consumed, so every session sees it until a real passing verdict
   supersedes it. A notice that was consumed on delivery would report the condition to one session
   and hide it from every session after.
+- **WITHDRAWN GATE 2 ARCHIVES**, if any — the same standing condition's other kind: archived
+  openspec-lane epics whose Gate 2 verdict was withdrawn (`update-epic --withdraw-gate-review`) and
+  not recorded again. Its own heading, never under UNGATED ARCHIVES, because "no review" is false of
+  a review that was recorded and taken back; each entry quotes the withdrawal reason, and says so
+  where the epic was archived ungated before the withdrawn review. Cleared the same way: record a
+  real verdict.
 - **HANDOFFS**, from both ends — the epic that carried work out and the epic that inherited it.
   A relationship visible from one side only is how a remainder disappears.
 - each **release**'s `N epics, M deferred`.
