@@ -64,7 +64,7 @@ the GREEN commit stages that file and names it in its message.
 
 ## 2. Hooks never write over an unreadable state file
 
-- [ ] 2.1 RED (lands with 2.2): in the new test file — (a) active epic with `reconcileNeeded`,
+- [x] 2.1 RED (lands with 2.2): in the new test file — (a) active epic with `reconcileNeeded`,
       conflict marker prepended, `gate-guard` with `{}` on stdin → exit 2, stderr names the file and a
       `git` command (today: exit 0); (b) `state.json` with `active` set to an epic id and `epics: {}` →
       exit 2, no `TypeError` in stderr (today: exit 1 with a stack — the crash needs `active` set);
@@ -78,17 +78,17 @@ the GREEN commit stages that file and names it in its message.
       (f) the top-level verb→status mapping with `gate-guard` and `commit-nudge` and a
       `StateUnreadableError` thrown from a stub, expecting 2 (today: no mapping exists). Save
       `red-2.1.txt`
-- [ ] 2.2 GREEN: the hook mapping at `conductor.mjs`'s top-level catch per design D3, keyed on
+- [x] 2.2 GREEN: the hook mapping at `conductor.mjs`'s top-level catch per design D3, keyed on
       `VERB_EFFECTS` `hook: true` (change 1) (`gate-guard`/`commit-nudge` → 2, `brief` → warning-only JSON + 0, all else incl. `snapshot` → 11),
       plus hook-local handling where it keeps `snapshot()` from reaching `render()` and `commitNudge()`
       from reaching heal/render/detour log. `observeCommit()` keeps running first (D3 watermark
       exemption). Export the verb→status mapping so 2.1(f) can call it with a stub. `lessonAdvice()`
       untouched. Verify: 2.1 and 2.3 pass. Touch only the load at the top
       of `gateGuardCheck()` — the reconcile/tracker branches belong to `gates-bind-to-verified-evidence`
-- [ ] 2.3 REGRESSION GUARD (lands with 2.2): tighten 1.2's rewrite of `conductor-26`'s gh#129
+- [x] 2.3 REGRESSION GUARD (lands with 2.2): tighten 1.2's rewrite of `conductor-26`'s gh#129
       unreadable-state rung from "non-zero" to exit 2. The no-git and reflogs-disabled rungs keep
       `doesNotThrow`. The commit message says the gh#129 intent is reversed for that rung only (design D3)
-- [ ] 2.4 `hooks/README.md` gate-guard line: add that an unreadable `state.json` also blocks, and how
+- [x] 2.4 `hooks/README.md` gate-guard line: add that an unreadable `state.json` also blocks, and how
       to fix it (lands with 2.2 — the hook's documented behaviour changes in that commit)
 
 ## 3. Concurrent saves are serialised and fsynced

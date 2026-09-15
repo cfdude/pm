@@ -51,6 +51,8 @@ Fires on EVERY Bash call by design — commit-nudge decides whether a commit hap
 
 gate guard — on by default for any epic with reconcileNeeded:true (unconditional, `set-gate-guard off` does not bypass it). Blocks Edit/Write/NotebookEdit while the active epic still owes a reconcile after a detour POP. Dormant until /pm:init.
 
+It also blocks (exit 2) while `.conductor/state.json` exists but cannot be read — a merge left conflict markers, the file is truncated, or it has the wrong shape — because whether a reconcile is owed cannot be known. Bash is not matched, so fix it from the shell with one of the remedies the message names: `git checkout --ours .conductor/state.json` (or `--theirs`) after a conflicted merge, `git restore .conductor/state.json` to discard local damage, or, for a file git has never had, `mv .conductor/state.json .conductor/state.json.damaged` and re-run `/pm:init`. The other hooks never write over such a file either: `brief` delivers only a warning, `snapshot` writes nothing (and never exits 2, which would block compaction), and `commit-nudge` writes nothing and reports it with exit 2.
+
 ## `PreToolUse` — matcher `Bash|Edit|Write|NotebookEdit`
 
 lesson advisor — surfaces a docs/lessons/ entry whose `detect:` matcher matches the pending tool call, BEFORE the mistake. ADVISORY ONLY: it never blocks and always exits 0, which is why it is a separate entry from the gate guard above. A SEPARATE, WIDER matcher on purpose: half the matchable lessons match on a COMMAND, so Bash must be covered or they are dead on arrival. Silent in projects that have not run /pm:init, and in any project with no docs/lessons/.

@@ -113,6 +113,8 @@ export function brief() {
 export function snapshot() {
   if (!isInitialized()) return;          // DORMANT until /pm:init
   requirePlatformFlag("snapshot");
+  // BEFORE render(): an unreadable state file refuses here, so nothing is rendered and no snapshot
+  // written. Never exit 2 on this hook — on PreCompact that blocks compaction (lib/refusal.mjs).
   const state = loadState();
   render();
   fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
@@ -236,6 +238,10 @@ export function commitNudge() {
   const obs = observeCommit();
   if (obs.verdict === "no-commit") return;   // HEAD says nothing landed here. Assert nothing.
 
+  // BEFORE anything derived from state is written: an unreadable file refuses here, so no heal, no
+  // render and no detour-log line follows (state-file-refuses-to-guess; conductor.mjs maps the
+  // refusal to exit 2 for this hook). observeCommit() above is the one exemption — the watermark is
+  // a fact about HEAD, not a value derived from state.
   const state = loadState();
   const ctx = detourContext(state);
 

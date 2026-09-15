@@ -177,7 +177,8 @@ test("gh#129: degrades to doing nothing — no git, reflogs disabled; an unreada
   const watched = [".conductor/state.json", "PROJECT.md", ".conductor/detours.log"].map(f => path.join(broken, f));
   const before = watched.map(f => (fs.existsSync(f) ? fs.readFileSync(f, "utf8") : null));
   const refused = expectFail(() => nudge(broken, "git commit -m x"));
-  assert.ok(refused && refused.status !== 0, "unreadable state.json: the hook must refuse, not exit 0");
+  // Exit 2 on PostToolUse shows stderr to Claude, who can run the remedy, and cannot block.
+  assert.equal(refused && refused.status, 2, "unreadable state.json: the hook must report with exit 2");
   watched.forEach((f, i) => assert.equal(fs.existsSync(f) ? fs.readFileSync(f, "utf8") : null, before[i],
     `${path.basename(f)} must be unchanged`));
 

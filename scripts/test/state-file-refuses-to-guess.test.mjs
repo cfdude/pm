@@ -153,3 +153,106 @@ test("1.3: with no state.json every hook exits 0, prints nothing and creates no 
   }
   assert.deepEqual([...snapshotTree(cwd).keys()], [...before.keys()], "no file created");
 });
+
+// ─────────────── 2.1 — hooks never write over an unreadable state file ───────────────
+
+/** An initialized, git-tracked repository whose active epic owes a reconcile. */
+function reconcileOwedRepo() {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  writeState(cwd, {
+    version: 1, active: "epic-a", detourStack: [],
+    epics: [{ id: "epic-a", title: "epic-a", priority: "P1", status: "active", role: "epic",
+      lane: "openspec", links: [], reconcileNeeded: true }],
+  });
+  run(["render"], { cwd });
+  return cwd;
+}
+
+const gitIn = (cwd, ...args) => spawnSync("git", args, { cwd, encoding: "utf8" });
+
+test("2.1(a): gate-guard blocks on a conflicted state file, naming the file and a git command", () => {
+  const cwd = reconcileOwedRepo();
+  assert.equal(sh(["gate-guard", "--platform", "claude-code"], { cwd, input: "{}" }).status, 2,
+    "precondition: the clean file blocks on the owed reconcile");
+  fs.writeFileSync(statePath(cwd), CONFLICT_MARKER + fs.readFileSync(statePath(cwd), "utf8"));
+  const r = sh(["gate-guard", "--platform", "claude-code"], { cwd, input: "{}" });
+  assert.equal(r.status, 2, `fail CLOSED, stderr: ${r.stderr}`);
+  assert.match(r.stderr, /\.conductor\/state\.json/);
+  assert.match(r.stderr, /git (checkout|restore|show)/);
+});
+
+test("2.1(b): gate-guard does not crash on a wrong-shape file — exit 2, not a TypeError", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  writeState(cwd, { version: 1, active: "epic-a", epics: {}, detourStack: [] });
+  const r = sh(["gate-guard", "--platform", "claude-code"], { cwd, input: "{}" });
+  assert.equal(r.status, 2, `stderr: ${r.stderr}`);
+  assert.doesNotMatch(r.stderr, /TypeError/);
+  assert.match(r.stderr, /cannot be read/);
+});
+
+test("2.1(c): the session brief carries the warning instead of a guessed record, and writes nothing", () => {
+  const cwd = reconcileOwedRepo();
+  // Enough skipped hook writes that a normal brief would surface the contention warning and
+  // CONSUME its latch — so "no file under .conductor/ changed" cannot pass vacuously.
+  const log = path.join(cwd, ".conductor", "write-conflicts.log");
+  fs.writeFileSync(log, "2026-01-01T00:00:00.000Z\trender\t1\t2\n".repeat(4));
+  fs.writeFileSync(statePath(cwd), "{ not json at all");
+  const before = snapshotTree(path.join(cwd, ".conductor"));
+  const r = sh(["brief", "--platform", "claude-code"], { cwd });
+  assert.equal(r.status, 0, `stderr: ${r.stderr}`);
+  const ctx = JSON.parse(r.stdout).hookSpecificOutput.additionalContext;
+  assert.match(ctx, /\.conductor\/state\.json/);
+  assert.match(ctx, /git (checkout|restore)/);
+  assert.match(ctx, /tracking nothing/i);
+  assert.doesNotMatch(ctx, /epic-a/, "no epic content");
+  assert.doesNotMatch(ctx, /available/, "no version-currency content");
+  assert.doesNotMatch(ctx, /next[- ]up/i, "no next-up content");
+  assert.deepEqual(snapshotTree(path.join(cwd, ".conductor")), before, "no file under .conductor/ written");
+});
+
+test("2.1(d): commit-nudge writes nothing after a commit lands over an unreadable file, and exits 2", () => {
+  const cwd = reconcileOwedRepo();
+  gitIn(cwd, "init", "-q");
+  gitIn(cwd, "add", "-A");
+  gitIn(cwd, "commit", "-q", "-m", "chore: base");
+  const payload = (c) => JSON.stringify({ tool_input: { command: c } });
+  sh(["commit-nudge", "--platform", "claude-code"], { cwd, input: payload("ls") });   // prime the watermark
+  fs.writeFileSync(path.join(cwd, "a.txt"), "1");
+  gitIn(cwd, "add", "a.txt");
+  gitIn(cwd, "commit", "-q", "-m", "fix: small");
+  fs.writeFileSync(statePath(cwd), "{ not json at all");
+  const watched = [statePath(cwd), path.join(cwd, "PROJECT.md"), path.join(cwd, ".conductor", "detours.log")];
+  const before = watched.map(bytes);
+  const r = sh(["commit-nudge", "--platform", "claude-code"], { cwd, input: payload("git commit -m 'fix: small'") });
+  assert.equal(r.status, 2, `stderr: ${r.stderr}`);
+  assert.match(r.stderr, /\.conductor\/state\.json/);
+  watched.forEach((p, i) => assert.ok(sameBytes(before[i], bytes(p)), `${path.basename(p)} changed`));
+});
+
+test("2.1(e) REGRESSION GUARD: a pre-compaction snapshot writes nothing and does not block compaction", () => {
+  const cwd = reconcileOwedRepo();
+  fs.writeFileSync(statePath(cwd), "{ not json at all");
+  const md = path.join(cwd, "PROJECT.md");
+  const brief = path.join(cwd, ".conductor", "brief.txt");
+  const before = [bytes(md), bytes(brief)];
+  const r = sh(["snapshot", "--platform", "claude-code"], { cwd });
+  assert.notEqual(r.status, 0, `stderr: ${r.stderr}`);
+  assert.notEqual(r.status, 2, "exit 2 on PreCompact blocks compaction");
+  assert.ok(sameBytes(before[0], bytes(md)), "PROJECT.md unchanged");
+  assert.ok(sameBytes(before[1], bytes(brief)), "brief.txt unchanged or absent");
+});
+
+test("2.1(f): a refusal raised by code a hook calls still takes the hook's exit status", async () => {
+  const { refusalFor } = await import("../lib/refusal.mjs");
+  const { StateUnreadableError } = await import("../lib/state.mjs");
+  const stub = () => { throw new StateUnreadableError("/x/.conductor/state.json", "it does not parse as JSON"); };
+  for (const verb of ["gate-guard", "commit-nudge"]) {
+    let err = null;
+    try { stub(); } catch (e) { err = e; }
+    const r = refusalFor(verb, err);
+    assert.equal(r && r.exitCode, 2, `${verb} must map an unreadable-state refusal to 2`);
+    assert.match(r.stderr, /\.conductor\/state\.json/);
+  }
+});

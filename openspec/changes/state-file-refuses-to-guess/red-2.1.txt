@@ -1,0 +1,167 @@
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-S03VYc/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-S03VYc/PROJECT.md
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-x1wXYk/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-eBixPi/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-eBixPi/PROJECT.md
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-V63k9u/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-V63k9u/PROJECT.md
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-T3brFP/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-T3brFP/PROJECT.md
+✖ 2.1(a): gate-guard blocks on a conflicted state file, naming the file and a git command (195.025542ms)
+✖ 2.1(b): gate-guard does not crash on a wrong-shape file — exit 2, not a TypeError (92.629334ms)
+✖ 2.1(c): the session brief carries the warning instead of a guessed record, and writes nothing (142.751791ms)
+✖ 2.1(d): commit-nudge writes nothing after a commit lands over an unreadable file, and exits 2 (268.990375ms)
+✔ 2.1(e) REGRESSION GUARD: a pre-compaction snapshot writes nothing and does not block compaction (150.753833ms)
+✖ 2.1(f): a refusal raised by code a hook calls still takes the hook's exit status (1.83125ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 1
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 896.690167
+
+✖ failing tests:
+
+test at scripts/test/state-file-refuses-to-guess.test.mjs:174:1
+✖ 2.1(a): gate-guard blocks on a conflicted state file, naming the file and a git command (195.025542ms)
+  AssertionError [ERR_ASSERTION]: fail CLOSED, stderr: conductor: .conductor/state.json cannot be read — it does not parse as JSON (Unexpected token '<', "<<<<<<< HE"... is not valid JSON). Nothing was written.
+    If a merge left conflict markers:  git checkout --ours .conductor/state.json   (or --theirs)
+    If the markers were committed:     git show <good-rev>:.conductor/state.json > .conductor/state.json
+    To discard local damage:           git restore .conductor/state.json
+    Never committed (git has no copy): mv .conductor/state.json .conductor/state.json.damaged
+                                       then /pm:init   (the damaged bytes are kept beside it)
+    Then re-run the command.
+  
+  
+  11 !== 2
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/state-file-refuses-to-guess.test.mjs:180:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 11,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/state-file-refuses-to-guess.test.mjs:185:1
+✖ 2.1(b): gate-guard does not crash on a wrong-shape file — exit 2, not a TypeError (92.629334ms)
+  AssertionError [ERR_ASSERTION]: stderr: conductor: .conductor/state.json cannot be read — its `epics` member is present and is not an array. Nothing was written.
+    If a merge left conflict markers:  git checkout --ours .conductor/state.json   (or --theirs)
+    If the markers were committed:     git show <good-rev>:.conductor/state.json > .conductor/state.json
+    To discard local damage:           git restore .conductor/state.json
+    Never committed (git has no copy): mv .conductor/state.json .conductor/state.json.damaged
+                                       then /pm:init   (the damaged bytes are kept beside it)
+    Then re-run the command.
+  
+  
+  11 !== 2
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/state-file-refuses-to-guess.test.mjs:190:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 11,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/state-file-refuses-to-guess.test.mjs:195:1
+✖ 2.1(c): the session brief carries the warning instead of a guessed record, and writes nothing (142.751791ms)
+  AssertionError [ERR_ASSERTION]: stderr: conductor: .conductor/state.json cannot be read — it does not parse as JSON (Expected property name or '}' in JSON at position 2 (line 1 column 3)). Nothing was written.
+    If a merge left conflict markers:  git checkout --ours .conductor/state.json   (or --theirs)
+    If the markers were committed:     git show <good-rev>:.conductor/state.json > .conductor/state.json
+    To discard local damage:           git restore .conductor/state.json
+    Never committed (git has no copy): mv .conductor/state.json .conductor/state.json.damaged
+                                       then /pm:init   (the damaged bytes are kept beside it)
+    Then re-run the command.
+  
+  
+  11 !== 0
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/state-file-refuses-to-guess.test.mjs:204:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 11,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/state-file-refuses-to-guess.test.mjs:215:1
+✖ 2.1(d): commit-nudge writes nothing after a commit lands over an unreadable file, and exits 2 (268.990375ms)
+  AssertionError [ERR_ASSERTION]: stderr: conductor: .conductor/state.json cannot be read — it does not parse as JSON (Expected property name or '}' in JSON at position 2 (line 1 column 3)). Nothing was written.
+    If a merge left conflict markers:  git checkout --ours .conductor/state.json   (or --theirs)
+    If the markers were committed:     git show <good-rev>:.conductor/state.json > .conductor/state.json
+    To discard local damage:           git restore .conductor/state.json
+    Never committed (git has no copy): mv .conductor/state.json .conductor/state.json.damaged
+                                       then /pm:init   (the damaged bytes are kept beside it)
+    Then re-run the command.
+  
+  
+  11 !== 2
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/state-file-refuses-to-guess.test.mjs:229:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 11,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/state-file-refuses-to-guess.test.mjs:247:1
+✖ 2.1(f): a refusal raised by code a hook calls still takes the hook's exit status (1.83125ms)
+  AssertionError [ERR_ASSERTION]: gate-guard must map an unreadable-state refusal to 2
+  
+  11 !== 2
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/state-file-refuses-to-guess.test.mjs:255:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 11,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
