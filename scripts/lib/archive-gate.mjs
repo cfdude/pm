@@ -15,7 +15,7 @@
 // READS that quantity rather than computing one of its own. Two counters is how a guard comes
 // to refuse an epic that renders as complete.
 
-import { gateHasEvidence, gateSummary, isOpenspecLane, withdrawnGate } from "./constants.mjs";
+import { escapeControls, gateHasEvidence, gateSummary, isOpenspecLane, withdrawnGate } from "./constants.mjs";
 import { isAncestor, sameCommit } from "./git.mjs";
 import { LIFECYCLE_MARKER, epicProgress, outstandingWork } from "./epic-progress.mjs";
 import { KNOWN_OUTCOMES, agentDisposition, correctionError, dispositionError, isEngineStamped, isStoryDisposed, outcomeOf } from "./disposition.mjs";
@@ -234,20 +234,9 @@ export function unconsideredOutcomes(epics) {
     .map(e => ({ epic: e, invocation: dispositionInvocation(e.id) }));
 }
 
-/* Moved here from update-epic.mjs (gate-verdict-withdrawal 4.1): archiveGate() now prints a
- * user-supplied value too — a Gate 2 withdrawal's reason — and a NEW raw print of a user value would
- * add a second instance of the defect `handoff-refusal-prints-story-titles-raw` already holds. One
- * escaper, imported by both refusals, rather than a copy each. */
-/** A control character — newline above all. A token carrying one is never echoed: a shell cannot
- *  reliably rebuild it on one line (command substitution strips a trailing newline), and an echoed
- *  newline would let a user-supplied value start a line of the refusal. C1 controls (NEL among them)
- *  and the Unicode LINE and PARAGRAPH SEPARATORs count: a reader that honours them (a JS `m` regex,
- *  a terminal, an editor) sees a new line there. */
-export const CONTROL_CHARACTER = /[\u0000-\u001f\u007f-\u009f\u2028\u2029]/;
-/** Render every control character as a `\uXXXX` escape. JSON.stringify alone is not enough: it
- *  leaves C1 controls and U+2028/U+2029 raw. */
-export const escapeControls = (s) => String(s).replace(new RegExp(CONTROL_CHARACTER.source, "g"),
-  c => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`);
+/* CONTROL_CHARACTER and escapeControls live in constants.mjs (every-verb-refuses-what-it-does-not-read):
+ * the pre-dispatch command-line check echoes caller tokens too, and argv-surface.mjs is a leaf that
+ * may import constants.mjs only. Still one escaper for every refusal that prints a user value. */
 
 /**
  * THE ONE DEFINITION of the obligations a `delivered` outcome carries, returned as the list of

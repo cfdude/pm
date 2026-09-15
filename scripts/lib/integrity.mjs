@@ -20,8 +20,8 @@
 
 import { isInitialized, loadState } from "./state.mjs";
 import { archivedChanges, epicProgress, isArchived, strippedChangeId } from "./epic-progress.mjs";
-import { KNOWN_STATUSES, gateArtifacts, gateHasEvidence, isOpenspecLane, releaseMembers, withdrawnGate } from "./constants.mjs";
-import { AGENT_OUTCOMES, dispositionInvocation, escapeControls } from "./archive-gate.mjs";
+import { KNOWN_STATUSES, escapeControls, gateArtifacts, gateHasEvidence, isOpenspecLane, releaseMembers, withdrawnGate } from "./constants.mjs";
+import { AGENT_OUTCOMES, dispositionInvocation } from "./archive-gate.mjs";
 import { commitDate, isAncestor, objectExists, reachableFromAnyRef } from "./git.mjs";
 import { isArchiveBackfilled, outcomeOf, stampedBy } from "./disposition.mjs";
 import { epicReferences, isKnownLinkType, isRenderableLink, KNOWN_LINK_TYPES, supersededEpics } from "./links.mjs";

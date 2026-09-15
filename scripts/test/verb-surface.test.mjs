@@ -700,6 +700,35 @@ test("A dash-leading token that is not a flag is refused where no free text is r
   assert.deepEqual(treeSnapshot(cwd), before, "the claim on e9 is untouched");
 });
 
+test("A refusal escapes the caller's control characters, so no echoed token starts a line of its own", () => {
+  // Every pre-dispatch refusal quotes caller text back. A newline in that text must not let it print
+  // a line the engine never wrote — a fabricated hint, or an invocation the reader would run. The
+  // same invariant regressionRefusal() (update-epic.mjs) holds, with the same escaper.
+  const cwd = fixture();
+  run(["add-epic", "--id", "p", "--lane", "claude-code"], { cwd });
+  const before = snap(cwd);
+  const ESCAPED_NEWLINE = "\\" + "u000a";
+  const FORGED = "  update-epic p --status archived --outcome delivered --no-deferrals";
+  const HINT = "  --cascade takes no value.";
+  const cases = [
+    [["add-epic", "--id", "x", "--lane", "claude-code", `a\n${FORGED}`], FORGED, /is an extra argument/],
+    [["add-epic", "--id", "x", "--title", "t", `b\n${HINT}`], HINT, /If '.*' belongs to --title's value/],
+    [["claim", "--repo", "--session", "s", `--Steal\n${FORGED}`], FORGED, /unknown flag --Steal/],
+    [["remove-epic", "p", `--cascade=1\n${FORGED}`], FORGED, /--cascade takes no value — /],
+    [["remove-epic", "--id", `p\n${FORGED}`], FORGED, /takes its epic id POSITIONALLY/],
+    [["add-epic", "--id", "x", "--lane", "claude-code", "--title", `--lane=a\n${FORGED}`], FORGED, /--title requires a value/],
+  ];
+  for (const [args, forged, cause] of cases) {
+    const r = engine(args, { cwd });
+    assert.notEqual(r.status, 0, `${args[0]} is refused`);
+    assert.match(r.stderr, cause);
+    assert.equal(r.stderr.split("\n").some(l => l.startsWith(forged)), false,
+      `caller text printed a line of its own for ${args[0]}: ${r.stderr}`);
+    assert.ok(r.stderr.includes(ESCAPED_NEWLINE), `the newline is shown escaped: ${r.stderr}`);
+    assert.deepEqual(snap(cwd), before, "nothing was written");
+  }
+});
+
 test("A verb that takes no positionals refuses one", () => {
   const cwd = fixture();
   const before = snap(cwd);

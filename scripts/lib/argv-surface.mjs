@@ -13,7 +13,7 @@
 // load no verb module, and the function is pure (argv and `initialized` in, a verdict out) so each
 // decision is testable without a subprocess.
 
-import { EPIC_FLAGS, VERB_FLAGS, VERB_POSITIONALS, cliFlagsFor, flagInValuePositionMessage, isFlagToken, splitFlagToken } from "./constants.mjs";
+import { EPIC_FLAGS, VERB_FLAGS, VERB_POSITIONALS, cliFlagsFor, escapeControls, flagInValuePositionMessage, isFlagToken, splitFlagToken } from "./constants.mjs";
 import { VERB_EFFECTS } from "./verb-effects.mjs";
 
 export const isHelpToken = (t) => t === "--help" || t === "-h";
@@ -136,7 +136,7 @@ export function checkCommandLine(verb, argv, { initialized = true } = {}) {
   const badFlag = items.find(x => x.kind === "flag" && (!x.declared || (x.valueless && x.inline !== undefined)));
   if (badFlag && !badFlag.declared) return { kind: "refuse", message: undeclaredFlagMessage(verb, badFlag, items) };
   if (badFlag) {
-    return { kind: "refuse", message: `conductor: --${badFlag.name} takes no value — '${badFlag.token}' gives ` +
+    return { kind: "refuse", message: `conductor: --${badFlag.name} takes no value — '${escapeControls(badFlag.token)}' gives ` +
       `it one, and ${verb} would ignore it. Write --${badFlag.name} on its own. Nothing was written.` };
   }
   const positionals = items.filter(x => x.kind === "positional");
@@ -162,15 +162,17 @@ export function checkCommandLine(verb, argv, { initialized = true } = {}) {
 
 /** D4's surplus-positional refusal: the form the verb takes and the first token it does not read,
  *  plus the likeliest cause where one is visible — a value given to a valueless flag, or an
- *  unquoted multi-word value (the token directly follows a flag's value, or the verb reads one text). */
+ *  unquoted multi-word value (the token directly follows a flag's value, or the verb reads one text).
+ *  Every caller token a refusal here quotes back goes through escapeControls(): a newline in it would
+ *  otherwise start a line the engine never wrote — a forged hint or a runnable invocation. */
 function surplusMessage(verb, arity, surplus, items) {
   const prev = items[items.indexOf(surplus) - 1];
   let msg = `conductor: ${verb} takes ${arity.max === 0 ? "no positional arguments" : arity.form} — ` +
-    `'${surplus.token}' is an extra argument it does not read. Nothing was written.`;
+    `'${escapeControls(surplus.token)}' is an extra argument it does not read. Nothing was written.`;
   if (prev && prev.kind === "flag" && prev.valueless && prev.at === surplus.at - 1) {
     msg += `\n  --${prev.name} takes no value.`;
   } else if (prev && prev.kind === "flag" && prev.value !== undefined) {
-    msg += `\n  If '${surplus.token}' belongs to --${prev.name}'s value, quote the whole value.`;
+    msg += `\n  If '${escapeControls(surplus.token)}' belongs to --${prev.name}'s value, quote the whole value.`;
   } else if (VERB_POSITIONALS[verb].freeText && arity.max === 1) {
     msg += `\n  ${verb} reads ONE text argument — quote it.`;
   }
@@ -193,11 +195,11 @@ function undeclaredFlagMessage(verb, flag, items) {
       if (x.kind === "flag" && x.value !== undefined) rest.push(x.value);
     }
     return `conductor: ${verb} takes its epic id POSITIONALLY, not as --id — write ` +
-      `\`${verb} <id> ...\`, i.e. \`${verb} ${value}${rest.length ? ` ${rest.join(" ")}` : ""}\`. ` +
+      `\`${verb} <id> ...\`, i.e. \`${escapeControls(`${verb} ${value}${rest.length ? ` ${rest.join(" ")}` : ""}`)}\`. ` +
       "Nothing was written.";
   }
   const accepted = cliFlagsFor(verb);
-  let msg = `conductor: unknown flag --${flag.name} for ${verb} — ` +
+  let msg = `conductor: unknown flag --${escapeControls(flag.name)} for ${verb} — ` +
     (accepted.length ? `it accepts: ${accepted.map(f => `--${f}`).join(", ")}` : "it accepts no flags");
   if (pos && pos.max > 0) msg += `\nusage: conductor.mjs ${verb} ${pos.form} [flags]`;
   return msg + "\nNothing was written.";

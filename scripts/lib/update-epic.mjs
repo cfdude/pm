@@ -4,7 +4,7 @@
 
 import {
   EPIC_FLAGS, KNOWN_GATE_NUMBERS, KNOWN_LANES, KNOWN_STATUSES, KNOWN_REVIEW_MODES, REVIEW_MODE_RANK,
-  epicFlagsFor, isFlagToken, nullableEpicFlags, splitFlagToken,
+  CONTROL_CHARACTER, epicFlagsFor, escapeControls, isFlagToken, nullableEpicFlags, splitFlagToken,
 } from "./constants.mjs";
 import { activate } from "./active-pointer.mjs";
 import { globalReviewMode } from "./rules.mjs";
@@ -12,7 +12,7 @@ import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave } from "./save-report.mjs";
 import { noteEntry, parentError, parseFlags, parseLinkFlags, parseStoryFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
-import { archiveGate, AGENT_OUTCOMES, CONTROL_CHARACTER, deliveredObligations, dispositionInvocation, escapeControls } from "./archive-gate.mjs";
+import { archiveGate, AGENT_OUTCOMES, deliveredObligations, dispositionInvocation } from "./archive-gate.mjs";
 import { deferralAssertion, isEngineStamped, isStoryDisposed, outcomeOf, storyDisposition, storyDispositionError } from "./disposition.mjs";
 import { isArchived } from "./epic-progress.mjs";
 import { claimArtifacts } from "./source-artifacts.mjs";

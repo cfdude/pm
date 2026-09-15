@@ -998,15 +998,29 @@ export const ACTIVITY_RETENTION_MAX_BYTES = 1_073_741_824;
 export const FLAG_TOKEN = /^--[a-z][a-z0-9-]*(?:=|$)/;
 export const isFlagToken = (t) => typeof t === "string" && FLAG_TOKEN.test(t);
 
+/* One escaper for every refusal that prints a user-supplied value — moved from update-epic.mjs to
+ * archive-gate.mjs (gate-verdict-withdrawal 4.1), then here, because the pre-dispatch check
+ * (argv-surface.mjs, a leaf) quotes caller tokens back as well. */
+/** A control character — newline above all. A token carrying one is never echoed: a shell cannot
+ *  reliably rebuild it on one line (command substitution strips a trailing newline), and an echoed
+ *  newline would let a user-supplied value start a line of the refusal. C1 controls (NEL among them)
+ *  and the Unicode LINE and PARAGRAPH SEPARATORs count: a reader that honours them (a JS `m` regex,
+ *  a terminal, an editor) sees a new line there. */
+export const CONTROL_CHARACTER = /[\u0000-\u001f\u007f-\u009f\u2028\u2029]/;
+/** Render every control character as a `\uXXXX` escape. JSON.stringify alone is not enough: it
+ *  leaves C1 controls and U+2028/U+2029 raw. */
+export const escapeControls = (s) => String(s).replace(new RegExp(CONTROL_CHARACTER.source, "g"),
+  c => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`);
+
 /** gh#182's third rule, as ONE string: "this looks like a flag but arrived where a value was
  *  expected" names the flag being filled, quotes the token, and shows the `=` form that says it
  *  unambiguously. Shared by valuelessFlagError() (add-epic.mjs) and the pre-dispatch command-line
  *  check (argv-surface.mjs, which refuses a `--help` in a value position with it), so the #187
  *  refusal cannot come to read differently depending on which layer caught it. */
 export const flagInValuePositionMessage = (flag, requires, token) =>
-  `conductor: --${flag} requires ${requires} — '${token}' arrived where that value ` +
+  `conductor: --${flag} requires ${requires} — '${escapeControls(token)}' arrived where that value ` +
   `belonged and was read as a flag, not as the value. If it IS the value, write ` +
-  `--${flag}=${token}`;
+  `--${flag}=${escapeControls(token)}`;
 
 /** Split a token that occupies a FLAG position into `[name, inlineValue]`, where `inlineValue`
  *  is `undefined` for the `--name` form and the text after the FIRST `=` for `--name=value`.
