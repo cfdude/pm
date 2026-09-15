@@ -1,0 +1,18 @@
+✖ 2.8 the read-back: a state still carrying the verdict, or lacking the entry, did NOT land (11.60925ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 76.649458
+
+✖ failing tests:
+
+test at scripts/test/gate-verdict-withdrawal.test.mjs:148:1
+✖ 2.8 the read-back: a state still carrying the verdict, or lacking the entry, did NOT land (11.60925ms)
+  TypeError: missingGateWithdrawals is not a function
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/gate-verdict-withdrawal.test.mjs:153:20)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)

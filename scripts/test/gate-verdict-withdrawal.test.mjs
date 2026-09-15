@@ -121,3 +121,42 @@ test("2.5 withdrawing one gate leaves the other deep-equal", () => {
   accepted(cwd, ["update-epic", "w25", "--withdraw-gate-review", "1", "--withdrawal-reason", "x"]);
   assert.deepEqual(epicOf(cwd, "w25").gateReview.gate2, gate2);
 });
+
+test("2.6 --withdraw-gate-review repeats: both gates withdrawn in one call, two entries", () => {
+  const cwd = withVerdicts("w26", { gate1: true, gate2: true });
+  const before = epicOf(cwd, "w26").withdrawnGateReviews || [];
+  accepted(cwd, ["update-epic", "w26", "--withdraw-gate-review", "1", "--withdraw-gate-review", "2", "--withdrawal-reason", "x"]);
+  const e = epicOf(cwd, "w26");
+  assert.ok(!("gate1" in e.gateReview) && !("gate2" in e.gateReview), `both gates are absent: ${JSON.stringify(e.gateReview)}`);
+  const added = e.withdrawnGateReviews.slice(before.length);
+  assert.equal(added.length, 2, "exactly two entries were added");
+  assert.deepEqual(added.map(w => w.gate).sort(), [1, 2]);
+  assert.ok(added.every(w => w.reason === "x"));
+});
+
+test("2.7 re-recording after a withdrawal starts clean, and the withdrawal is kept", () => {
+  const cwd = withVerdicts("w27");
+  accepted(cwd, ["update-epic", "w27", "--withdraw-gate-review", "2", "--withdrawal-reason", "x"]);
+  run(["record-gate-review", "w27", ...PASS2], { cwd });
+  const e = epicOf(cwd, "w27");
+  assert.equal(e.gateReview.gate2.verdict, "pass");
+  assert.ok(!("superseded" in e.gateReview.gate2), "the re-recorded verdict supersedes nothing");
+  assert.equal(e.withdrawnGateReviews.length, 1);
+  assert.equal(e.withdrawnGateReviews[0].reason, "x");
+});
+
+test("2.8 the read-back: a state still carrying the verdict, or lacking the entry, did NOT land", async () => {
+  const { missingGateWithdrawals } = await import("../lib/update-epic.mjs");
+  const at = "2026-09-14T00:00:00.000Z";
+  const asked = [{ gate: 2, reason: "r", withdrawnAt: at }];
+  const landed = { epics: [{ id: "e", gateReview: {}, withdrawnGateReviews: [{ gate: 2, entry: {}, reason: "r", withdrawnAt: at }] }] };
+  assert.deepEqual(missingGateWithdrawals(landed, "e", asked), []);
+  const stillStored = { epics: [{ id: "e", gateReview: { gate2: { verdict: "pass" } },
+    withdrawnGateReviews: [{ gate: 2, entry: {}, reason: "r", withdrawnAt: at }] }] };
+  assert.deepEqual(missingGateWithdrawals(stillStored, "e", asked), [2], "a verdict still stored did not land");
+  const noEntry = { epics: [{ id: "e", gateReview: {} }] };
+  assert.deepEqual(missingGateWithdrawals(noEntry, "e", asked), [2], "no withdrawal entry did not land");
+  const otherReason = { epics: [{ id: "e", gateReview: {}, withdrawnGateReviews: [{ gate: 2, entry: {}, reason: "old", withdrawnAt: at }] }] };
+  assert.deepEqual(missingGateWithdrawals(otherReason, "e", asked), [2], "an entry with another reason is not this one");
+  assert.deepEqual(missingGateWithdrawals({ epics: [] }, "e", asked), [2], "an absent epic holds nothing");
+});

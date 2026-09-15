@@ -48,6 +48,23 @@ export function missingAttributions(state, id, shas) {
   return shas.filter(sha => !held.has(sha));
 }
 
+/** Which of the requested gate withdrawals did NOT land in `state` — read from a state loaded
+ *  FROM DISK after render(), never from the object this command mutated (#140, as for
+ *  missingAttributions above). A request `{gate, reason, withdrawnAt}` landed only where the gate
+ *  holds NO stored verdict AND a `withdrawnGateReviews` entry for that gate carries that reason
+ *  and that timestamp: a verdict still stored, or a withdrawal record missing, is a write the
+ *  caller must not be told happened. Returns the gate numbers that did not land. */
+export function missingGateWithdrawals(state, id, requested) {
+  const epic = (state && Array.isArray(state.epics) ? state.epics : []).find(e => e && e.id === id);
+  return requested.filter(r => {
+    if (!epic) return true;
+    if (epic.gateReview && epic.gateReview[`gate${r.gate}`]) return true;
+    const held = Array.isArray(epic.withdrawnGateReviews) ? epic.withdrawnGateReviews : [];
+    return !held.some(w => w && Number(w.gate) === Number(r.gate) && w.reason === r.reason &&
+      w.withdrawnAt === r.withdrawnAt);
+  }).map(r => Number(r.gate));
+}
+
 /** The flags the archived-epic regression refusal's printed invocation DROPS from the refused
  *  call's tokens: `--status`, because the invocation archives, and every disposition flag, because
  *  the invocation supplies its own placeholders for them. (The deferral flags and
@@ -602,15 +619,20 @@ export function updateEpic() {
   // entry moves — `superseded` included, because promoting it would resurrect a verdict nobody
   // re-asserted — into the append-only sibling `withdrawnGateReviews[]`, recorded rather than
   // erased. An emptied `gateReview` stays `{}`: every reader tests the gates, not the object.
+  // Repeatable: distinct gates are withdrawn together under the one reason, in the order given.
+  const gateWithdrawals = [];
   if (f["withdraw-gate-review"] !== undefined) {
-    const gate = str(f["withdraw-gate-review"]);
-    const key = `gate${gate}`;
     const gates = epic.gateReview && typeof epic.gateReview === "object" ? epic.gateReview : {};
-    const entry = gates[key];
-    delete gates[key];
+    const withdrawnAt = new Date().toISOString();
+    for (const gate of [].concat(f["withdraw-gate-review"]).filter(v => typeof v === "string")) {
+      const key = `gate${gate}`;
+      const withdrawal = { gate: Number(gate), entry: gates[key], reason: str(f["withdrawal-reason"]), withdrawnAt };
+      delete gates[key];
+      epic.withdrawnGateReviews = (Array.isArray(epic.withdrawnGateReviews) ? epic.withdrawnGateReviews : [])
+        .concat([withdrawal]);
+      gateWithdrawals.push(withdrawal);
+    }
     epic.gateReview = gates;
-    epic.withdrawnGateReviews = (Array.isArray(epic.withdrawnGateReviews) ? epic.withdrawnGateReviews : [])
-      .concat([{ gate: Number(gate), entry, reason: str(f["withdrawal-reason"]), withdrawnAt: new Date().toISOString() }]);
   }
 
   if (str(f.title) !== undefined) epic.title = str(f.title);
@@ -830,6 +852,20 @@ export function updateEpic() {
         `conductor: --withdraw-commit did NOT land for ${stillThere.join(", ")} on '${id}' — ` +
         ".conductor/state.json holds no withdrawal record for them afterwards. Do not treat " +
         "this epic's attribution as corrected; re-run the withdrawal.\n");
+      process.exit(1);
+    }
+  }
+  // The gate withdrawal gets the same read-back, for the same #140 reason: render() writes the
+  // file again after saveState(), so a removal can be silently undone after the save verified it.
+  // The check is the pure missingGateWithdrawals() above, so the failure is testable without
+  // forging a race.
+  if (gateWithdrawals.length) {
+    const notLanded = missingGateWithdrawals(loadState(), id, gateWithdrawals);
+    if (notLanded.length) {
+      process.stderr.write(
+        `conductor: --withdraw-gate-review did NOT land for gate ${notLanded.join(", gate ")} on '${id}' — ` +
+        ".conductor/state.json still holds the verdict, or holds no withdrawal record for it, " +
+        "afterwards. Do not treat this epic's gate record as corrected; re-run the withdrawal.\n");
       process.exit(1);
     }
   }

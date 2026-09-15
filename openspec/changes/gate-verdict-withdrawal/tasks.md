@@ -39,11 +39,11 @@
       hook runs the suite
 - [x] 2.4 REGRESSION GUARD (passes once 2.3 moves the whole entry): a Gate 1 carrying `superseded` moves whole; nothing is promoted
 - [x] 2.5 REGRESSION GUARD: withdrawing one gate leaves the other deep-equal
-- [ ] 2.6 RED then GREEN: `--withdraw-gate-review 1 --withdraw-gate-review 2` withdraws both, two
+- [x] 2.6 RED then GREEN: `--withdraw-gate-review 1 --withdraw-gate-review 2` withdraws both, two
       entries — GREEN adds `repeats:true`, the loop, and "repeatable" on the `commands/epic.md` row (RED:
       without it `parseFlags` keeps only Gate 2)
-- [ ] 2.7 REGRESSION GUARD (no code change; design.md asserts it): re-recording after a withdrawal starts clean — no `superseded`, withdrawal kept
-- [ ] 2.8 RED then GREEN: read-back after `render()` — the gate absent AND a matching withdrawal entry,
+- [x] 2.7 REGRESSION GUARD (no code change; design.md asserts it): re-recording after a withdrawal starts clean — no `superseded`, withdrawal kept
+- [x] 2.8 RED then GREEN: read-back after `render()` — the gate absent AND a matching withdrawal entry,
       else exit non-zero "did NOT land". Force the failure by exporting the read-back check as a pure
       function over (request, state read back) and unit-testing it with a state that still carries the
       verdict; the CLI path calls that same function

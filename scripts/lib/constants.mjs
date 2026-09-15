@@ -478,7 +478,11 @@ export const EPIC_FLAGS = [
   // recoverable only because the write was still uncommitted). The entry MOVES, whole, into the
   // sibling `withdrawnGateReviews[]` — recorded, never erased — and its reason is
   // `--withdrawal-reason`, the flag `--withdraw-commit` already owns, never the disposition's.
-  { flag: "withdraw-gate-review", key: null, commands: ["update-epic"], write: "custom",
+  //
+  // REPEATABLE, and load-bearing: parseFlags OVERWRITES a flag not declared `repeats`, so
+  // `--withdraw-gate-review 1 --withdraw-gate-review 2` would silently withdraw only Gate 2 —
+  // the `--attribute-commit` loss one row up, at a third flag.
+  { flag: "withdraw-gate-review", key: null, commands: ["update-epic"], repeats: true, write: "custom",
     requires: "the gate whose verdict is withdrawn (1 or 2)", placeholder: "1|2" },
   // The interactive archive verb's disposition. `key` is `disposition` for both: they are two
   // halves of ONE record the verb builds and writes together, never two epic fields.
