@@ -65,6 +65,15 @@ function dispatchedVerbs() {
  *  verb without a baseline here fails loudly instead of going unswept. */
 const VERB_BASELINE = {
   "add-many": (cwd) => ["add-many", "--from", batchFile(cwd)],
+  // every-verb-refuses-what-it-does-not-read D6: `--platform` is declared on init and the five hook
+  // verbs, each spelled exactly as hooks/hooks.json passes it, so the valueless sweep below reaches
+  // `init --platform` and `brief --platform` — both of which silently fell back to a default.
+  init: () => ["init", "--platform", "claude-code"],
+  brief: () => ["brief", "--platform", "claude-code"],
+  snapshot: () => ["snapshot", "--platform", "claude-code"],
+  "commit-nudge": () => ["commit-nudge", "--platform", "claude-code"],
+  "gate-guard": () => ["gate-guard", "--platform", "claude-code"],
+  "lesson-advice": () => ["lesson-advice", "--platform", "claude-code"],
   // gh-84 / gh-111. The three read-only verbs whose flags were parsed off `process.argv` by hand
   // until the branches met; `purge-logs` needs a selector to get past its own refusal, and
   // `--keep 5` matches nothing on a repo with no logs, so the baseline removes nothing.

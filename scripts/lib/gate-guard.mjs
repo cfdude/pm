@@ -5,6 +5,7 @@
 import { isInitialized, loadState, saveState, readStdin } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
+import { requirePlatformFlag } from "./add-epic.mjs";
 
 /** `set-gate-guard <on|off>` — repo-level opt-in for a hard PreToolUse guard blocking
  *  source writes while the active epic still owes a reconcile. Off by default. This is
@@ -82,6 +83,7 @@ export function setGateGuard() {
 export function gateGuardCheck() {
   if (!isInitialized()) return;         // DORMANT until /pm:init
   readStdin();                          // drain, unused — this check needs no tool_input
+  requirePlatformFlag("gate-guard");    // after the drain, so a refusal leaves no writer holding a pipe
   const state = loadState();
   const activeEpic = state.active ? state.epics.find(e => e.id === state.active) : null;
   // AN EPIC THAT HAS ENDED OWES NOTHING. `state.active` can legitimately name an ARCHIVED epic

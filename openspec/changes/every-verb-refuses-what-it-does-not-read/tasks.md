@@ -34,7 +34,7 @@ Every refusal test asserts the refusal's CAUSE text (not only a non-zero exit) a
       `triage`, `suggest-lane`, `log-detour` and `honcho-memory` and `idFirst` is a boolean on every row. GREEN adds the table. Confirm each verb's arity
       against its own module (`rg -n "process\.argv|argv\[0\]|positionalArgs" scripts/lib/<module>`)
       rather than copying design.md D3, and correct D3's table in the same commit where they differ
-- [ ] 1.2 RED then GREEN: `--platform` on `init` and the five hook verbs. RED: add `VERB_BASELINE`
+- [x] 1.2 RED then GREEN: `--platform` on `init` and the five hook verbs. RED: add `VERB_BASELINE`
       entries in `conductor-31` for `init`, `brief`, `snapshot`, `commit-nudge`, `gate-guard`,
       `lesson-advice` (each `<verb> --platform claude-code`), which makes its valueless-flag sweep run
       `init --platform` and `brief --platform` and fail; plus the spec scenarios "init with an unknown

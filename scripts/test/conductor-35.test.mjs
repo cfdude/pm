@@ -103,7 +103,7 @@ test("help declares a flagless verb explicitly rather than printing an empty lis
   const { FLAGLESS_VERBS } = await import(CONSTANTS);
   const cwd = tmpRepo();
   run(["init"], { cwd });
-  for (const verb of ["integrity", "snapshot", "set-active"]) {
+  for (const verb of ["integrity", "verify-worktrees", "set-active"]) {
     assert.ok(FLAGLESS_VERBS.includes(verb), `fixture assumes ${verb} is flagless`);
     const out = run([verb, "--help"], { cwd });
     assert.match(out, /takes no flags/i,

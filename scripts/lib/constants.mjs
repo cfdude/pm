@@ -767,7 +767,11 @@ export const VERB_FLAGS = [
   // FLAGLESS_VERBS, where it would have been a false claim.
   { flag: "diff-summary", commands: ["render"], valueless: true },
   { flag: "epic", commands: ["rules"] },
-  { flag: "platform", commands: ["rules", "write-rules", "rules-target"],
+  // `init` and the five HOOK verbs join the three that read it (every-verb-refuses-what-it-does-not-read
+  // D6): hooks/hooks.json passes `--platform claude-code` to every hook, so declaring it anywhere
+  // less than all of them would make the check refuse pm's own hook lines. Each validates it before
+  // anything else — `init` before its first write, which is the ordering defect this closes.
+  { flag: "platform", commands: ["rules", "write-rules", "rules-target", "init", "brief", "snapshot", "commit-nudge", "gate-guard", "lesson-advice"],
     placeholder: KNOWN_PLATFORMS.join("|") },
   // #151's detour-stack verbs. `--reason` shares REASON_REQUIRES with the epic registry's row
   // rather than restating the phrase: a deferral's reason is held to the same standard whichever
@@ -892,9 +896,9 @@ export const VERB_POSITIONALS = {
 };
 
 export const FLAGLESS_VERBS = [
-  "init", "brief", "snapshot", "commit-nudge", "sync", "log-detour", "honcho-memory",
-  "reorder", "set-active", "clear-active", "suggest-lane", "set-gate-guard", "gate-guard",
-  "lesson-advice", "verify-worktrees", "verify-state", "integrity", "changesets", "upgrade",
+  "sync", "log-detour", "honcho-memory",
+  "reorder", "set-active", "clear-active", "suggest-lane", "set-gate-guard",
+  "verify-worktrees", "verify-state", "integrity", "changesets", "upgrade",
   // #111's toggle. Its argument is the POSITIONAL `on|off` — `set-activity-log --on` is refused
   // by the same check that refuses `set-activity-log maybe` — so it has no flag surface to
   // declare, and a VERB_FLAGS row for it would be a claim about a parser that does not exist.

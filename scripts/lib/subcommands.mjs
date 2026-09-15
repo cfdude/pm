@@ -20,6 +20,7 @@ import { claimedSourceArtifacts, epicSourceArtifacts, normalizeArtifactPath, syn
 import { ARCHIVE_BACKFILL, engineStamp } from "./disposition.mjs";
 import { ROOT, CONDUCTOR_DIR, BRIEF_PATH, PLANS_DIR, anyInwardProcedureEmittable } from "./constants.mjs";
 import { resolveAndRecordPlatform } from "./platform.mjs";
+import { requirePlatformFlag } from "./add-epic.mjs";
 import { saveHookHeal } from "./hook-write.mjs";
 
 /** Ensure the conductor's GENERATED artifacts are git-ignored.
@@ -67,6 +68,9 @@ export function ensureGitignore() {
 }
 
 export function init() {
+  // FIRST, before saveState(defaultState()): `init --platform bogus` used to create state.json and
+  // THEN refuse, which ended pm's dormancy in a repo whose init had failed.
+  requirePlatformFlag("init");
   if (isInitialized()) {
     process.stderr.write("conductor: already initialized (.conductor/state.json exists)\n");
   } else {
@@ -91,6 +95,7 @@ export function init() {
 
 export function brief() {
   if (!isInitialized()) return;          // DORMANT until /pm:init
+  requirePlatformFlag("brief");
   // consume: true — this IS a briefing actually reaching a session (SessionStart), so a
   // threshold warning surfaced here must be consumed (see briefing.mjs's buildBrief comment).
   const context = buildBrief(loadState(), { consume: true });
@@ -101,6 +106,7 @@ export function brief() {
 
 export function snapshot() {
   if (!isInitialized()) return;          // DORMANT until /pm:init
+  requirePlatformFlag("snapshot");
   const state = loadState();
   render();
   fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
@@ -206,6 +212,9 @@ export function commitNudge() {
   // state.json write on the way. Suppressing the WATERMARK requires suppressing the REACTION.
   if (isDetachedTree()) return;
   const raw = readStdin();
+  // After the drain, so a refused hook line does not leave the writer holding a pipe. In a detached
+  // tree this verb is dormant (above) and so is this refusal.
+  requirePlatformFlag("commit-nudge");
   let cmd = "";
   try {
     const j = JSON.parse(raw);

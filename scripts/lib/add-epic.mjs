@@ -13,6 +13,7 @@ import { EPIC_DEDUP_KEYS, KNOWN_LANES, KNOWN_STATUSES, epicFlagsFor, flagsFor, i
 import { isKnownLinkType, mergeLinks, unknownLinkTypeMessage, linkTypeVocabulary } from "./links.mjs";
 import { creationStamp } from "./disposition.mjs";
 import { rankOf } from "./epic-progress.mjs";
+import { assertKnownPlatform, platformFlag } from "./platform.mjs";
 
 /** The full repeatable set, read from BOTH flag tables — see repeatableFlagNames() in
  *  constants.mjs. Recomputed on every parseFlags() call rather than frozen at module scope, so
@@ -126,6 +127,18 @@ export function valuelessFlagError(command, f) {
 export function requireFlagValues(command, f) {
   const err = valuelessFlagError(command, f);
   if (err) { process.stderr.write(err + "\n"); process.exit(1); }
+}
+
+/** every-verb-refuses-what-it-does-not-read D6 — `--platform` on a verb that DECLARES it (init and
+ *  the five hook verbs) is validated before anything else that verb does: valueless or blank through
+ *  the shared value rule, an unknown platform through assertKnownPlatform(). Declaring a flag without
+ *  validating it would be #152's shape — a valueless `--platform` silently falling back to the
+ *  recorded platform while looking answered. One function, so the six call sites cannot drift apart. */
+export function requirePlatformFlag(command) {
+  const argv = process.argv.slice(3);
+  requireFlagValues(command, parseFlags(argv));
+  const declared = platformFlag(argv);
+  if (declared) assertKnownPlatform(declared);
 }
 
 /** The OTHER half of the flag rule: "is this flag known on this verb at all", refused by name.
