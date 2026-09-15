@@ -304,6 +304,10 @@ declarations added in section 1 are inert without the check.
   `init`'s first write and the rules-block writer; `init`'s platform validation (D6) must stay ahead of
   both. The pre-dispatch check runs before `loadState()`, so an unparseable state.json never affects a
   command-line refusal.
+- **state-file-refuses-to-guess, hooks.** Its hook exit-code mapping should select hook verbs by this
+  change's `hook: true` marker on `VERB_EFFECTS`, not by a list of verb names. It also edits the top of
+  `gateGuardCheck()`, where task 1.2 places the `--platform` check after `readStdin()`; whichever
+  applies second keeps both.
 - **gates-bind-to-verified-evidence** touches record-reconcile, record-gate-review and
   `--attribute-commit`. Any flag it adds must be a registry row, or the check refuses it; any positional
   it adds must update `VERB_POSITIONALS`. If it changes gate-guard's failure posture, D6's

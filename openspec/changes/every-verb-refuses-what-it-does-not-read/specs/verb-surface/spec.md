@@ -10,9 +10,10 @@ acted on.
 ### Requirement: A refused command line writes and creates nothing
 An engine invocation refused on a ground this capability defines — an undeclared flag, a surplus
 positional, a help token in a value position, or a valueless or unknown `--platform` on a verb this
-capability declares it for — SHALL exit non-zero and SHALL NOT create, modify or append to any file the engine writes:
-`.conductor/state.json`, `.conductor/detours.log`, `.conductor/honcho-memories.log`, the activity
-log, `PROJECT.md`, the render stamp, the platform rules file and `.gitignore`. In a repository with no
+capability declares it for — SHALL exit with status 1 and SHALL NOT create, modify or append to any
+file the engine writes: every write site `conductor-record`'s "A detached HEAD suppresses
+session-bookkeeping writes" enumerates, `state.json`'s lock files, `PROJECT.md`, the render stamp, the
+platform rules file and `.gitignore`. In a repository with no
 `.conductor/` directory the refusal SHALL NOT create one, because the existence of `state.json` is
 what ends pm's dormancy and activates every hook in that repository.
 
@@ -23,8 +24,9 @@ this requirement and keep their current behaviour.
 
 #### Scenario: init with an unknown platform creates nothing
 - **WHEN** `init --platform bogus` runs in a git repository that has no `.conductor/` directory
-- **THEN** it exits non-zero naming `--platform` and the known platforms, and none of `.conductor/`,
-  `CLAUDE.md`, `PROJECT.md` or `.gitignore` exists afterwards
+- **THEN** it exits non-zero naming `--platform` and the known platforms, `.conductor/` and `PROJECT.md`
+  do not exist afterwards, and `CLAUDE.md` and `.gitignore` are byte-identical to before (absent if they
+  were absent)
 
 #### Scenario: init with a valueless platform is refused before it creates anything
 - **WHEN** `init --platform` runs with no value in a git repository that has no `.conductor/` directory
@@ -84,7 +86,7 @@ the keys that document may carry are not command-line flags and SHALL be refused
 
 #### Scenario: A typo'd flag on the reconcile write-back records nothing
 - **WHEN** `record-reconcile p --detour d --verdict invalidated --amendmnts "a;b"` runs against an
-  epic whose reconcile gate is armed
+  epic that owes a reconcile
 - **THEN** it exits non-zero naming `--amendmnts` and `record-reconcile`, and no reconcile verdict is
   recorded on the link
 

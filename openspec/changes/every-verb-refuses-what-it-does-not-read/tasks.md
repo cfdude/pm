@@ -44,7 +44,8 @@ Every refusal test asserts the refusal's CAUSE text (not only a non-zero exit) a
       (`verbHelp()` projects `cliFlagsFor()`, so it turns green with the row, not in 3.3). GREEN: grow the `--platform` row, remove the six
       from `FLAGLESS_VERBS`, call `requireFlagValues()` and `assertKnownPlatform()` as `init`'s first
       statements (before `saveState(defaultState())`) and in each hook verb immediately after its
-      dormancy return; add `hook: true` to the five hook verbs' `VERB_EFFECTS` entries with a test that
+      dormancy return — in `gateGuardCheck()` and `lessonAdvice()` after their `readStdin()`, so a
+      refused hook line still drains the payload; add `hook: true` to the five hook verbs' `VERB_EFFECTS` entries with a test that
       the marked set equals the verbs `hooks/hooks.json` invokes. The SAME commit swaps `snapshot` out of
       `conductor-35`'s "help declares a flagless verb explicitly" fixture (it is no longer flagless) for a
       read-only flagless verb such as `verify-worktrees`

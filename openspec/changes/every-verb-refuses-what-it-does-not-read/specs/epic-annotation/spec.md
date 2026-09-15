@@ -9,6 +9,10 @@ nothing is prohibited — the failure is invisible and the text is unrecoverable
 destroyed the entire payload of epics registered specifically so a future session would remember
 why they exist.
 
+An argv-level flag that the `verb-surface` capability declares (`--force`) is not an input this rule
+counts: it belongs to the invocation's state write rather than to the epic, so accepting it without
+persisting anything on the epic is not a violation of this requirement.
+
 The rule binds three input shapes, because these surfaces do not all take flags and a flag a surface
 does support is not always persisted:
 
