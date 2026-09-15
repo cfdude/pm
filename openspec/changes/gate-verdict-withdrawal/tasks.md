@@ -13,11 +13,11 @@
 
 ## 1. Precondition — the archive-gate change has shipped
 
-- [ ] 1.1 `archive-gate-reads-what-it-writes` is archived, `pop-detour gate-verdict-withdrawal` has run,
+- [x] 1.1 `archive-gate-reads-what-it-writes` is archived, `pop-detour gate-verdict-withdrawal` has run,
       and the reconcile gate has recorded its verdict with `record-reconcile gate-verdict-withdrawal
       --detour archive-gate-reads-what-it-writes --verdict valid|invalidated`. Any amendment it names is
       applied to these artifacts BEFORE task 2.1
-- [ ] 1.2 Confirm, against the shipped code rather than design.md, the name, signature and return shape
+- [x] 1.2 Confirm, against the shipped code rather than design.md, the name, signature and return shape
       of `deliveredObligations()` and the position of `archiveGate()` in `updateEpic`; correct every task
       below that names them
 
@@ -67,8 +67,17 @@ Order per design.md.
 ## 4. Withdrawn is a state, never absence
 
 - [ ] 4.1 RED then GREEN: `deliveredObligations`'s Gate 2 entry names a withdrawn Gate 2 in `detail` and
-      carries the reason in `items` (never in `detail`); the archive gate on an unarchived epic shows the
-      reason, and the regression refusal shows it JSON-quoted
+      carries the reason in `items` as `{reason}` (never in `detail`); the archive gate on an unarchived
+      epic shows the reason, and the regression refusal shows it. RECONCILE AMENDMENTS (vs shipped
+      `archive-gate-reads-what-it-writes`): (a) `regressionRefusal()` in `update-epic.mjs` renders `items`
+      story-shaped only (`story <n> "<title>"`), so switch its findings map on `o.kind` — handoff keeps
+      today's form byte-for-byte, gate2 renders `withdrawal reason <escaped JSON>`; (b) `archiveGate()`'s
+      Gate 2 branch prints only `detail` today, so it gains code to print the reason from `items`; (c) both
+      print the reason as `escapeControls(JSON.stringify(reason))`, NOT raw — a new print of a user value
+      does not add a second instance of `handoff-refusal-prints-story-titles-raw`'s defect. Move
+      `CONTROL_CHARACTER` and `escapeControls` from `update-epic.mjs` to an export of `archive-gate.mjs`
+      (update-epic already imports from it). RED: a reason carrying a newline and `  update-epic x`
+      forges no line in either refusal
 - [ ] 4.2 RED then GREEN: `archived-openspec-epic-with-no-gate-1` names a withdrawn Gate 1
 - [ ] 4.3 REGRESSION GUARD (written after 5.3): re-recording clears the state — the archive with `--outcome delivered
       --no-deferrals` exits 0, and PROJECT.md, the brief and `integrity` name no withdrawn Gate 2
@@ -157,7 +166,9 @@ keep passing.
       `withdrawnGateReviews` / `withdrawnGate`. For each: where the withdrawn state holds, where it does
       not, and why. DATA references: `withdrawnGateReviews[].entry` holds shas — record in
       `recordedShas`'s own "a third holder added later must be added HERE" comment that they are
-      deliberately not checked, mirroring `withdrawnCommits`
+      deliberately not checked, mirroring `withdrawnCommits`. Also `INVOCATION_DROPPED_FLAGS`
+      (`update-epic.mjs`): record that `--withdraw-gate-review`/`--withdrawal-reason` are deliberately NOT
+      in it, because design.md's #175 remedy needs them echoed in the printed invocation
 - [ ] 7.2 **Inverse of every operation added** — `--withdraw-gate-review` inverts `record-gate-review`;
       its own inverse is re-recording, not an un-withdraw verb. `record-cross-spec-review` has no
       withdrawal: justified in design.md

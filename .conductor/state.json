@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": null,
+  "active": "gate-verdict-withdrawal",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -6747,7 +6747,7 @@
       "id": "gate-verdict-withdrawal",
       "title": "A recorded gate verdict can be withdrawn, and the withdrawal is recorded — update-epic --withdraw-gate-review <1|2> --withdrawal-reason. The entry moves to withdrawnGateReviews[] so no reader mistakes a withdrawn pass for a pass, and a withdrawn gate is a named state (never absence) on the gate, integrity, render, brief and heal. Depends on archive-gate-reads-what-it-writes, whose two archive-gate requirements bind the new flag as a field write.",
       "priority": "P2",
-      "status": "paused",
+      "status": "active",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -6764,10 +6764,31 @@
         {
           "type": "may-invalidate",
           "epic": "archive-gate-reads-what-it-writes",
-          "reason": "Gate 1 round 2 showed the archive-gate ordering defect is the whole update-epic verb (lane, attribute-commit, add-story, withdraw-commit bypasses; story-done false refusal; post-archive regressions), not the withdrawal flags — it gets its own change, and the withdrawal spec inherits its two requirements"
+          "reason": "Gate 1 round 2 showed the archive-gate ordering defect is the whole update-epic verb (lane, attribute-commit, add-story, withdraw-commit bypasses; story-done false refusal; post-archive regressions), not the withdrawal flags — it gets its own change, and the withdrawal spec inherits its two requirements",
+          "reconciled": {
+            "verdict": "invalidated",
+            "amendments": [
+              "tasks.md 4.1: regressionRefusal() items renderer is story-shaped — switch on o.kind, gate2 renders the withdrawal reason with its own label",
+              "tasks.md 4.1: archiveGate() Gate 2 branch prints only detail — add code printing the reason from items",
+              "tasks.md 4.1 + design.md: print the reason escapeControls(JSON.stringify()) in both refusals, not raw (orchestrator adjudication over the reconciler's raw suggestion) — move CONTROL_CHARACTER/escapeControls to an archive-gate.mjs export",
+              "tasks.md 7.1: add INVOCATION_DROPPED_FLAGS to the sweep and record that the withdrawal flags stay echoed",
+              "epic links: relates-to handoff-refusal-prints-story-titles-raw and archived-delivered-gate2-regression-report (that future check must exclude withdrawn-kind epics)"
+            ],
+            "reconciledAt": "2026-09-15T02:33:22.758Z"
+          }
+        },
+        {
+          "type": "relates-to",
+          "epic": "handoff-refusal-prints-story-titles-raw",
+          "reason": "same defect class — this change prints its new reason escaped rather than add an instance"
+        },
+        {
+          "type": "relates-to",
+          "epic": "archived-delivered-gate2-regression-report",
+          "reason": "that check must exclude withdrawn-kind epics, which archived-with-withdrawn-gate-2 already reports"
         }
       ],
-      "reconcileNeeded": true,
+      "reconcileNeeded": false,
       "attributedCommits": [
         "b2dec93e23af0c44bb4e8b936474f1bbf9bef30a",
         "7aa45a6",
@@ -6785,7 +6806,7 @@
       ],
       "createdAt": "2026-09-14T18:09:05.963Z",
       "startedAt": "2026-09-14T18:09:05.964Z",
-      "touchedAt": "2026-09-14T20:55:57.218Z",
+      "touchedAt": "2026-09-15T02:33:30.854Z",
       "notes": [
         {
           "at": "2026-09-14T18:09:07.941Z",
@@ -7130,12 +7151,17 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-14T18:39:53.765Z",
-      "touchedAt": "2026-09-14T19:29:54.974Z",
+      "touchedAt": "2026-09-15T02:33:38.795Z",
       "notes": [
         {
           "at": "2026-09-14T19:29:54.971Z",
           "actor": "agent",
           "text": "Overlap to design for: gate-verdict-withdrawal's withdrawn kind of 'archived-with-no-gate-2-review' will already name archived delivered openspec epics whose Gate 2 is withdrawn — this check must not report them a second time under a competing wording"
+        },
+        {
+          "at": "2026-09-15T02:33:38.790Z",
+          "actor": "agent",
+          "text": "Reconcile of gate-verdict-withdrawal (2026-09-14): exclude epics whose Gate 2 is withdrawn — integrity's archived-with-withdrawn-gate-2 already reports them; do not double-report."
         }
       ]
     },
@@ -7301,15 +7327,7 @@
       "touchedAt": "2026-09-15T02:16:56.488Z"
     }
   ],
-  "detourStack": [
-    {
-      "pausedEpic": "gate-verdict-withdrawal",
-      "pausedAt": "2026-09-14T18:40:05.738Z",
-      "reason": "Gate 1 round 2 showed the archive-gate ordering defect is the whole update-epic verb (lane, attribute-commit, add-story, withdraw-commit bypasses; story-done false refusal; post-archive regressions), not the withdrawal flags — it gets its own change, and the withdrawal spec inherits its two requirements",
-      "spawnedDetour": "archive-gate-reads-what-it-writes",
-      "reconcileOnResume": true
-    }
-  ],
+  "detourStack": [],
   "pmVersion": "0.42.0",
   "tracker": {
     "system": "github-issues",
@@ -7317,7 +7335,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 727,
+  "revision": 731,
   "reviewMode": "thorough",
   "releases": [
     {

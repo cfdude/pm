@@ -62,7 +62,11 @@ ships two requirements this flag inherits without restating:
 This change adds no rule to that machinery. It adds wording: wherever either rule's Gate 2 detail
 comes from `deliveredObligations()` and `withdrawnGate(epic, 2)` holds, the `detail` says Gate 2 was
 withdrawn rather than missing, and the reason travels in `items` (A keeps user values out of `detail`):
-`archiveGate()` quotes it raw, the regression refusal JSON-quotes it. The spec states that once, in the
+both `archiveGate()` and the regression refusal print it JSON-quoted with every control character escaped
+(`escapeControls`, moved to an export of `archive-gate.mjs`). An earlier draft had `archiveGate()` quote
+it raw to match its story titles; the reconcile against the shipped detour changed that, because a NEW
+raw print of a user value would add a second instance of the defect `handoff-refusal-prints-story-titles-raw`
+already holds. The spec states that once, in the
 withdrawn-state requirement, and the field-write requirement cross-references it.
 
 The `#175`-shaped remedy is one invocation:
