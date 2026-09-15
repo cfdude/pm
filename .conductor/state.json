@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "gate-verdict-withdrawal",
+  "active": null,
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -6747,7 +6747,7 @@
       "id": "gate-verdict-withdrawal",
       "title": "A recorded gate verdict can be withdrawn, and the withdrawal is recorded — update-epic --withdraw-gate-review <1|2> --withdrawal-reason. The entry moves to withdrawnGateReviews[] so no reader mistakes a withdrawn pass for a pass, and a withdrawn gate is a named state (never absence) on the gate, integrity, render, brief and heal. Depends on archive-gate-reads-what-it-writes, whose two archive-gate requirements bind the new flag as a field write.",
       "priority": "P2",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -6803,11 +6803,26 @@
         "d5fde94",
         "d046e02",
         "2b48a09f39dfe8d5b538723fb1726978679cda30",
-        "5c816a4e616a748620bbf3c89418e9c29b1a53e8"
+        "5c816a4e616a748620bbf3c89418e9c29b1a53e8",
+        "317e2fbf388632ebe59e5577318a7919704c08d4",
+        "64f8d7f4ed267cffae9f5af94b3938ba3d9b83b1",
+        "f0ca657cbda27d10991f10f1856bc35676aa8d3e",
+        "e0d53d6e2f1ce4520ba1524081b5bc6af25755da",
+        "566066c10fb919c3d0b83cf5aff94331ea95735e",
+        "71667932bb559648bc71974b3f30fb1267165a47",
+        "b7a5809a4e642cfda8f0811896c56a9570f5f6f0",
+        "101de99ef096dd1fae441bb4ea321e96c1b48279",
+        "f4ecd1e5314b9e07c19e773e10e0f2084fc5d43d",
+        "3da2ad48a8ace56e1dd1c34a175849d0becc96d5",
+        "312da059463e535893d519df1a7525ec3dbcdb1b",
+        "7bfdfb3c96642fa2111d7e286efd2fe389f57875",
+        "1f962d90c0647a3c731163323b0fce6d8b4b70ab",
+        "fc0561fa9c3af0a6e3ff7b2d4397872508923857",
+        "a3e617b0bbf316e63a0e6ffde4eefcdcafe202e3"
       ],
       "createdAt": "2026-09-14T18:09:05.963Z",
       "startedAt": "2026-09-14T18:09:05.964Z",
-      "touchedAt": "2026-09-15T02:37:54.884Z",
+      "touchedAt": "2026-09-15T04:25:06.173Z",
       "notes": [
         {
           "at": "2026-09-14T18:09:07.941Z",
@@ -6838,8 +6853,36 @@
             ],
             "reviewer": "two fresh-context lenses (code-grounded correctness; spec contract & cross-change consistency), 6 rounds + scoped confirmation, 2026-09-14"
           }
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-15T04:24:50.792Z",
+          "baseSha": "dbf42ee615ffad094eef497f7945af2b7b815fcd",
+          "headSha": "a3e617b0bbf316e63a0e6ffde4eefcdcafe202e3",
+          "reviewer": "two fresh-context lenses over 2e91ee2..1f962d9 (spec conformance: fail — padded gate value writes an entry-less withdrawal, untested brief heading; adversarial: fail — same defect), fixed fc0561f; scoped re-review pass (1192-call value probe, mutant-verified heading assertion); a3e617b is a lesson file + index + task tick, no code; 2026-09-14"
         }
-      }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-15T04:25:06.170Z",
+        "reason": "Built for 0.43.0 (ships with the release cut; resolves cfdude/pm#192). update-epic --withdraw-gate-review <1|2> --withdrawal-reason moves the whole verdict, superseded included, into withdrawnGateReviews[] — recorded, not erased — and withdrawn is a named state on the archive gate, integrity (archived-with-withdrawn-gate-2, no-Gate-1 detail), PROJECT.md, the brief, the heal and the activity log. Bound by archive-gate-reads-what-it-writes: a withdrawal breaking a met Gate 2 on an archived delivered epic is refused with the correcting invocation. Gate 1 two lenses + cross-spec pass; reconcile vs the detour invalidated with five task amendments; Gate 2 both lenses failed on a padded gate value writing an entry-less withdrawal (fc0561f), scoped re-review pass. Mintlify task 8.7 carried to release-0-43-0-cut.",
+        "carriedTo": "release-0-43-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-15T04:25:06.169Z",
+        "deferrals": [],
+        "declined": [
+          {
+            "what": "withdraw-cross-spec-review",
+            "reason": "a spec change already stales that verdict"
+          },
+          {
+            "what": "un-withdraw verb",
+            "reason": "re-recording is the way back"
+          }
+        ]
+      },
+      "completedAt": "2026-09-15T04:25:06.170Z"
     },
     {
       "id": "gh-cfdude-pm-184",
@@ -7336,7 +7379,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 732,
+  "revision": 749,
   "reviewMode": "thorough",
   "releases": [
     {

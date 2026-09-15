@@ -180,7 +180,7 @@ keep passing.
       file present
 - [x] 7.4 **Attribute every commit** at the moment it lands:
       `update-epic gate-verdict-withdrawal --attribute-commit <sha>`. The archive commit is excluded
-- [ ] 7.5 **Dispositions** <!-- pm:lifecycle --> — archive with 9.3's exact flags (its two `--declined-deferral`s), adding a
+- [x] 7.5 **Dispositions** <!-- pm:lifecycle --> — archive with 9.3's exact flags (its two `--declined-deferral`s), adding a
       `--deferral "<epicId>:<section>"` for any deferral registered while the work ran; never
       `--no-deferrals`, which would erase the two declines
 - [x] 7.6 **Route what the work taught** — a practice → register an epic; tooling friction →
@@ -215,12 +215,12 @@ keep passing.
 
 ## 9. Gates and close
 
-- [ ] 9.1 Gate 2 — two lenses over the committed range; `record-gate-review gate-verdict-withdrawal
+- [x] 9.1 Gate 2 — two lenses over the committed range; `record-gate-review gate-verdict-withdrawal
       --gate 2 --verdict pass --reviewer "<identity>" --base-sha <parent of first attributed>
       --head-sha <last attributed>`
 - [x] 9.2 `gh-cfdude-pm-192` ended at registration — `update-epic gh-cfdude-pm-192 --status archived
       --outcome superseded --reason "…" --no-deferrals` — so no gate is copied onto the mirror
-- [ ] 9.3 Archive this change <!-- pm:lifecycle --> — `/opsx:archive gate-verdict-withdrawal`, then
+- [x] 9.3 Archive this change <!-- pm:lifecycle --> — `/opsx:archive gate-verdict-withdrawal`, then
       `update-epic gate-verdict-withdrawal --status archived --outcome delivered` with
       `--declined-deferral "withdraw-cross-spec-review::a spec change already stales that verdict"
       --declined-deferral "un-withdraw verb::re-recording is the way back"`, plus a `--deferral` for any
