@@ -8,7 +8,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { recordConflict, clearConflicts } from "./write-conflicts.mjs";
-import { CONFLICT_EXIT_CODE, STATE_LOCK_POLL_MS, STATE_LOCK_WAIT_MS, escapeControls } from "./constants.mjs";
+import { CONFLICT_EXIT_CODE, STATE_LOCK_POLL_MS, STATE_LOCK_STALE_MS, STATE_LOCK_WAIT_MS, escapeControls } from "./constants.mjs";
 import { isArchiveBackfilled } from "./disposition.mjs";
 import { claimArtifacts } from "./source-artifacts.mjs";
 
@@ -359,6 +359,61 @@ export function inspectLock(lockPath = lockPaths().LOCK) {
 
 const sameLock = (a, b) => !!a && !!b && a.ino === b.ino && a.nonce === b.nonce;
 
+/** Is this lock STALE — safe for a breaker to remove? (design D4)
+ *
+ *  AGE is the backstop and applies whatever the lock records, including when its content cannot be
+ *  read: older than STATE_LOCK_STALE_MS, or dated that far in the FUTURE (a backward clock step must
+ *  not wedge the lock). LIVENESS is only an accelerator, and only where the checker can confirm it
+ *  shares the holder's host AND pid namespace: a container reusing the host name sees a live
+ *  holder's pid as absent, so a different (or unconfirmable) namespace is judged by age alone.
+ *  ESRCH is dead; EPERM means the process exists. A holder between its create and its write has
+ *  unparseable content and a fresh mtime, so it is young and not stale. */
+export function isStaleLock(info, now = Date.now()) {
+  if (!info) return false;
+  if (Math.abs(now - info.mtimeMs) > STATE_LOCK_STALE_MS) return true;
+  const c = info.content;
+  if (!c || !Number.isInteger(c.pid) || c.pid <= 0) return false;
+  if (c.host !== os.hostname() || c.pidns !== pidNamespace()) return false;
+  try { process.kill(c.pid, 0); return false; }
+  catch (e) { return !!e && e.code === "ESRCH"; }
+}
+
+/** Remove `judged` — the very lock a caller found stale — and nothing else. Returns whether it
+ *  removed it.
+ *
+ *  SERIALISED by `state.json.lock.break`, created exclusively: at most one process breaks locks at a
+ *  time. While holding it the breaker RE-JUDGES the lock currently at the path and unlinks it only if
+ *  it is still the judged identity (inode AND nonce) and still stale. That closes the Gate 1
+ *  interleaving: B judges L stale; A breaks L and takes N; B cannot act until A has released the
+ *  break file, and on re-judging finds N — another identity, fresh, its holder alive — so B removes
+ *  nothing. No path renames a lock away, so the lock path is never empty while a holder is mid-save.
+ *
+ *  The break file is itself recoverable by age: one older than STATE_LOCK_STALE_MS is unlinked if
+ *  its inode is still the one just stat'ed, and the caller goes back to waiting. */
+export function breakStaleLock(judged) {
+  const { LOCK, BREAK } = lockPaths();
+  let bfd;
+  try { bfd = fs.openSync(BREAK, "wx"); } catch (e) {
+    if (!e || e.code !== "EEXIST") return false;
+    try {
+      const st = fs.statSync(BREAK);
+      if (Math.abs(Date.now() - st.mtimeMs) > STATE_LOCK_STALE_MS && fs.statSync(BREAK).ino === st.ino) {
+        fs.unlinkSync(BREAK);
+      }
+    } catch { /* gone already */ }
+    return false;
+  }
+  let breakIno = null;
+  try { breakIno = fs.fstatSync(bfd).ino; } catch { /* unknown: released by age */ } finally { fs.closeSync(bfd); }
+  try {
+    const current = inspectLock(LOCK);
+    if (!sameLock(current, judged) || !isStaleLock(current)) return false;
+    try { fs.unlinkSync(LOCK); return true; } catch { return false; }
+  } finally {
+    try { if (breakIno !== null && fs.statSync(BREAK).ino === breakIno) fs.unlinkSync(BREAK); } catch { /* gone */ }
+  }
+}
+
 /** How a lock's recorded holder reads in a refusal. */
 function describeHolder(info) {
   const c = info && info.content;
@@ -368,7 +423,8 @@ function describeHolder(info) {
 }
 
 /** Create the lock exclusively and write its content. `{ino, nonce}` when acquired, or
- *  `{timedOut: true, holder}` when a live holder did not release it within STATE_LOCK_WAIT_MS. */
+ *  `{timedOut: true, holder}` when a holder that is not stale did not release it within
+ *  STATE_LOCK_WAIT_MS. A stale lock is broken on the way (isStaleLock, breakStaleLock). */
 function acquireStateLock() {
   const { LOCK } = lockPaths();
   const deadline = Date.now() + STATE_LOCK_WAIT_MS;
@@ -378,6 +434,10 @@ function acquireStateLock() {
       if (!e || e.code !== "EEXIST") throw e;
       const held = inspectLock(LOCK);
       if (held === null) continue;                     // released between the create and the look
+      // A stale lock is broken — serialised, and only the very lock judged — then the create is
+      // retried. A break that did not happen (another breaker, or the lock is no longer the one
+      // judged) falls through to waiting like any held lock.
+      if (isStaleLock(held) && breakStaleLock(held)) continue;
       if (Date.now() >= deadline) return { timedOut: true, holder: held };
       sleepMs(STATE_LOCK_POLL_MS);
       continue;

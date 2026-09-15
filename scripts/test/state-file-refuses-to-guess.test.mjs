@@ -474,3 +474,96 @@ test("3.5: a holder that no longer owns the lock does not rename", async () => {
   assert.ok(fs.existsSync(lockPath(cwd)), "the other writer's lock is not removed");
   fs.unlinkSync(lockPath(cwd));
 });
+
+// ─────────────── 4 — a stale lock is broken, a live one is waited for then refused ───────────────
+
+/** A pid that WAS running on this host and is not any more. */
+function deadPid() {
+  const r = spawnSync("node", ["-e", ""]);
+  return r.pid;
+}
+
+test("4.1: a lock left by a dead process on this host and pid namespace does not wedge the repository", () => {
+  const cwd = threeEpicRepo();
+  placeLock(cwd, { pid: deadPid(), host: os.hostname(), pidns: ourPidns(),
+    acquiredAt: new Date().toISOString(), nonce: "dead-holder" });
+  const r = sh(["add-epic", "--id", "after-dead", "--lane", "claude-code"], { cwd });
+  assert.equal(r.status, 0, `stderr: ${r.stderr}`);
+  assert.ok(JSON.parse(fs.readFileSync(statePath(cwd), "utf8")).epics.some((e) => e.id === "after-dead"));
+  assert.ok(!fs.existsSync(lockPath(cwd)), "the pre-placed lock file is gone");
+});
+
+test("4.1: a lock older than the maximum age is broken, even when its content cannot be read", async () => {
+  const { STATE_LOCK_STALE_MS } = await import("../lib/constants.mjs");
+  const cwd = threeEpicRepo();
+  placeLock(cwd, "{ half-writ", { ageMs: (STATE_LOCK_STALE_MS || 30000) + 60000 });
+  const r = sh(["add-epic", "--id", "after-old", "--lane", "claude-code"], { cwd });
+  assert.equal(r.status, 0, `stderr: ${r.stderr}`);
+  assert.ok(JSON.parse(fs.readFileSync(statePath(cwd), "utf8")).epics.some((e) => e.id === "after-old"));
+  assert.ok(!fs.existsSync(lockPath(cwd)), "the pre-placed lock file is gone");
+});
+
+test("4.1: a holder in an unconfirmed pid namespace, or on another host, is judged by age only", () => {
+  for (const [label, content] of [
+    ["different pidns", { pid: deadPid(), host: os.hostname(), pidns: "pid:[1]-not-ours", nonce: "ns" }],
+    ["different host", { pid: deadPid(), host: `${os.hostname()}-elsewhere`, pidns: ourPidns(), nonce: "host" }],
+  ]) {
+    const cwd = threeEpicRepo();
+    placeLock(cwd, { ...content, acquiredAt: new Date().toISOString() });
+    const before = bytes(statePath(cwd));
+    const r = sh(["update-epic", "e1", "--status", "active"], { cwd });
+    assert.equal(r.status, CONFLICT, `${label}: stderr: ${r.stderr}`);
+    assert.ok(sameBytes(before, bytes(statePath(cwd))), `${label}: state.json byte-identical`);
+    assert.ok(fs.existsSync(lockPath(cwd)), `${label}: the lock was not broken`);
+  }
+});
+
+test("4.3(a): several breakers on one stale lock lose no update — 8 concurrent, three runs", async () => {
+  for (let runNo = 0; runNo < 3; runNo++) {
+    const cwd = tmpRepo();
+    run(["init"], { cwd });
+    placeLock(cwd, { pid: deadPid(), host: os.hostname(), pidns: ourPidns(),
+      acquiredAt: new Date().toISOString(), nonce: `stale-${runNo}` });
+    const ids = Array.from({ length: 8 }, (_, i) => `b${runNo}-${i}`);
+    const results = await spawnAll(cwd, ids.map((id) => ["add-epic", "--id", id, "--lane", "claude-code"]));
+    const onDisk = new Set(JSON.parse(fs.readFileSync(statePath(cwd), "utf8")).epics.map((e) => e.id));
+    for (const r of results) {
+      const id = r.args[2];
+      if (r.status === 0) assert.ok(onDisk.has(id), `run ${runNo}: ${id} exited 0 but is not on disk`);
+      else assert.equal(r.status, CONFLICT, `run ${runNo}: ${id} exited ${r.status}: ${r.stderr}`);
+    }
+    assert.ok(results.some((r) => r.status === 0), `run ${runNo}: the stale lock was broken by someone`);
+    assert.ok(!fs.existsSync(lockPath(cwd)), "no lock left behind");
+  }
+});
+
+test("4.3(b): a breaker that judged a lock stale removes nothing once another breaker has replaced it", async () => {
+  // The Gate 1 interleaving: B judges L stale; A breaks L and acquires N; B then proceeds.
+  const cwd = threeEpicRepo();
+  const stateLib = await import("../lib/state.mjs");
+  placeLock(cwd, { pid: deadPid(), host: os.hostname(), pidns: ourPidns(),
+    acquiredAt: new Date().toISOString(), nonce: "L" });
+  await inRepo(cwd, () => {
+    const judgedByB = stateLib.inspectLock(lockPath(cwd));
+    assert.ok(judgedByB && stateLib.isStaleLock(judgedByB), "precondition: B judges L stale");
+    let bRemoved = null;
+    let nDuringB = null;
+    const s = stateLib.loadState();
+    s.epics.push({ id: "by-a", title: "by-a", status: "queued" });
+    withFsSpy({
+      fsyncSync: (orig) => (fd) => {
+        if (bRemoved === null) {
+          // A holds N (inside its critical section): now B acts on its stale judgement of L.
+          bRemoved = stateLib.breakStaleLock(judgedByB);
+          nDuringB = stateLib.inspectLock(lockPath(cwd));
+        }
+        return orig(fd);
+      },
+    }, () => stateLib.saveState(s));
+    assert.equal(bRemoved, false, "B removes nothing");
+    assert.ok(nDuringB && nDuringB.nonce !== "L", "N was present while B acted");
+  });
+  const epics = JSON.parse(fs.readFileSync(statePath(cwd), "utf8")).epics.map((e) => e.id);
+  assert.ok(epics.includes("by-a"), "A's save is the write that landed");
+  assert.ok(!fs.existsSync(lockPath(cwd)), "A released N");
+});

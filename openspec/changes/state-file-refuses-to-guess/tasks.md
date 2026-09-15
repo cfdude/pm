@@ -130,7 +130,7 @@ the GREEN commit stages that file and names it in its message.
 
 ## 4. A stale lock is broken, a live one is waited for then refused
 
-- [ ] 4.1 RED (lands with 4.2): a lock recording a dead pid on this host and `pidns` (spawn a child,
+- [x] 4.1 RED (lands with 4.2): a lock recording a dead pid on this host and `pidns` (spawn a child,
       record its pid, wait for it to exit) → `add-epic --lane claude-code` exits 0, epic present, and the pre-placed lock
       file is gone; a lock with unparseable content and `mtime` set past `STATE_LOCK_STALE_MS` via
       `fs.utimesSync` → save lands and the pre-placed lock file is gone; a fresh lock recording this
@@ -138,16 +138,16 @@ the GREEN commit stages that file and names it in its message.
       byte-identical); a fresh lock on a different host string → refused as conflict. None passes
       vacuously today: the engine never removes a pre-placed lock file, and never refuses on one. Save
       `red-4.1.txt`
-- [ ] 4.2 GREEN: staleness judgement and the serialised break of design D4 (`state.json.lock.break`,
+- [x] 4.2 GREEN: staleness judgement and the serialised break of design D4 (`state.json.lock.break`,
       re-judge while holding it, unlink only the judged identity, break file recoverable by age).
       Verify: 4.1 passes
-- [ ] 4.3 RED (lands with 4.4): several breakers on one stale lock — (a) process level: place a
+- [x] 4.3 RED (lands with 4.4): several breakers on one stale lock — (a) process level: place a
       stale lock, start 8 concurrent `add-epic --lane claude-code` children with distinct ids, assert every exit-0 id is on
       disk and every other exits 9, run 3 times; (b) deterministic: drive the break helper through the
       Gate 1 interleaving with injected steps (B judges L stale; A breaks L and acquires N; B then
       proceeds) and assert B removes nothing, N is present, and A's save is the only write. Save
       `red-4.3.txt`
-- [ ] 4.4 GREEN: covered by 4.2 if it already passes (land 4.3 as REGRESSION GUARD in 4.2's commit and
+- [x] 4.4 GREEN: covered by 4.2 if it already passes (land 4.3 as REGRESSION GUARD in 4.2's commit and
       say so); otherwise fix the break. Verify: 4.3 passes
 
 ## 5. Advisory-claim lifetime is bounded; an unreadable expiry reads as expired
