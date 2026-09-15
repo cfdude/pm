@@ -28,7 +28,7 @@
 - [x] 2.2 RED then GREEN: unit-test `withdrawnGate(epic, n)` (absent entry + withdrawal → latest
       withdrawal; stored `pass` + withdrawal → null; stored `ungated` + withdrawal → null; no withdrawal →
       null), then add it beside `gateHasEvidence`. Every surface below calls it; none re-derives it
-- [ ] 2.3 RED then GREEN: withdrawing a Gate 2 `pass` removes `gateReview.gate2` and appends
+- [x] 2.3 RED then GREEN: withdrawing a Gate 2 `pass` removes `gateReview.gate2` and appends
       `{gate, entry, reason, withdrawnAt}` whose `entry` deep-equals the stored verdict. The GREEN step
       registers `withdraw-gate-review` in `EPIC_FLAGS` (`key:null`, `write:"custom"`, `requires` naming
       the gate number, NOT yet repeatable) and implements a single-gate write, with no refusals, in
@@ -37,8 +37,8 @@
       8.1's conductor-13 exercise entry (with its `pre` step) and 8.2's usage line and `commands/epic.md`
       row, because conductor-36 fails the suite on a registered flag with no doc row and the pre-commit
       hook runs the suite
-- [ ] 2.4 REGRESSION GUARD (passes once 2.3 moves the whole entry): a Gate 1 carrying `superseded` moves whole; nothing is promoted
-- [ ] 2.5 REGRESSION GUARD: withdrawing one gate leaves the other deep-equal
+- [x] 2.4 REGRESSION GUARD (passes once 2.3 moves the whole entry): a Gate 1 carrying `superseded` moves whole; nothing is promoted
+- [x] 2.5 REGRESSION GUARD: withdrawing one gate leaves the other deep-equal
 - [ ] 2.6 RED then GREEN: `--withdraw-gate-review 1 --withdraw-gate-review 2` withdraws both, two
       entries — GREEN adds `repeats:true`, the loop, and "repeatable" on the `commands/epic.md` row (RED:
       without it `parseFlags` keeps only Gate 2)
@@ -185,11 +185,11 @@ keep passing.
 
 ## 8. Harness and docs
 
-- [ ] 8.1 (lands with 2.3) Extend conductor-13's documented-flag harness with a full-argv `pre` step (the
+- [x] 8.1 (lands with 2.3) Extend conductor-13's documented-flag harness with a full-argv `pre` step (the
       entry passing `--withdrawal-reason`, so 3.2's refusal never breaks it), so the
       `--withdraw-gate-review` entry records a gate verdict (`record-gate-review subject --gate 2 …`)
       before the flag runs — an entry asserting only the refusal is ruled out by that table's comments
-- [ ] 8.2 (lands with 2.3) The hand-written usage line in `update-epic.mjs` (conductor-13 reads flags from it);
+- [x] 8.2 (lands with 2.3) The hand-written usage line in `update-epic.mjs` (conductor-13 reads flags from it);
       `commands/epic.md` flag table (conductor-36 enforces the registry⇒doc row)
 - [ ] 8.3 `README.md` — the command table, the archive-gate prose naming the withdrawn state, and the
       prose sentence naming the integrity checks gaining `archived-with-withdrawn-gate-2`; `commands/status.md`'s UNGATED

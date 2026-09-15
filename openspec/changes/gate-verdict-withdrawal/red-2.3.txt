@@ -1,0 +1,120 @@
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Ydjg5o/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Ydjg5o/PROJECT.md
+conductor: added epic 'w23' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Ydjg5o/PROJECT.md
+conductor: recorded gate 2 review 'pass' for 'w23'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Lz2aq2/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Lz2aq2/PROJECT.md
+conductor: added epic 'w24' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Lz2aq2/PROJECT.md
+conductor: recorded gate 1 review 'pass' for 'w24'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Lz2aq2/PROJECT.md
+conductor: recorded gate 1 review 'fail' for 'w24'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-PEp6cE/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-PEp6cE/PROJECT.md
+conductor: added epic 'w25' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-PEp6cE/PROJECT.md
+conductor: recorded gate 1 review 'pass' for 'w25'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-PEp6cE/PROJECT.md
+conductor: recorded gate 2 review 'pass' for 'w25'
+✔ 2.2 withdrawnGate: an absent entry with a withdrawal answers the LATEST withdrawal (0.37425ms)
+✔ 2.2 withdrawnGate: a stored pass with a withdrawal in its history is NOT withdrawn (0.052333ms)
+✔ 2.2 withdrawnGate: a stored ungated with a withdrawal in its history is NOT withdrawn (0.043ms)
+✔ 2.2 withdrawnGate: no withdrawal is not withdrawn (0.05775ms)
+✖ 2.3 withdrawing a Gate 2 pass moves the whole entry to withdrawnGateReviews (511.696541ms)
+✖ 2.4 a Gate 1 carrying superseded moves whole, and nothing is promoted (514.245833ms)
+✖ 2.5 withdrawing one gate leaves the other deep-equal (735.741833ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 4
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1849.821333
+
+✖ failing tests:
+
+test at scripts/test/gate-verdict-withdrawal.test.mjs:93:1
+✖ 2.3 withdrawing a Gate 2 pass moves the whole entry to withdrawnGateReviews (511.696541ms)
+  AssertionError [ERR_ASSERTION]: expected exit 0.
+  stdout: 
+  stderr: conductor: update-epic: unknown flag(s) --withdraw-gate-review (known: --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --clear-links, --clear, --description, --notes, --external-updated-at, --attribute-commit, --withdraw-commit, --withdrawal-reason, --outcome, --reason, --deferral, --declined-deferral, --no-deferrals, --carried-to, --correct-disposition, --review-mode, --add-story, --story, --done, --wont-do)
+  
+  
+  1 !== 0
+  
+      at accepted (file:///Users/robsherman/Documents/Repos/pm/scripts/test/gate-verdict-withdrawal.test.mjs:40:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/gate-verdict-withdrawal.test.mjs:96:3)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/gate-verdict-withdrawal.test.mjs:106:1
+✖ 2.4 a Gate 1 carrying superseded moves whole, and nothing is promoted (514.245833ms)
+  AssertionError [ERR_ASSERTION]: expected exit 0.
+  stdout: 
+  stderr: conductor: update-epic: unknown flag(s) --withdraw-gate-review (known: --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --clear-links, --clear, --description, --notes, --external-updated-at, --attribute-commit, --withdraw-commit, --withdrawal-reason, --outcome, --reason, --deferral, --declined-deferral, --no-deferrals, --carried-to, --correct-disposition, --review-mode, --add-story, --story, --done, --wont-do)
+  
+  
+  1 !== 0
+  
+      at accepted (file:///Users/robsherman/Documents/Repos/pm/scripts/test/gate-verdict-withdrawal.test.mjs:40:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/gate-verdict-withdrawal.test.mjs:111:3)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/gate-verdict-withdrawal.test.mjs:118:1
+✖ 2.5 withdrawing one gate leaves the other deep-equal (735.741833ms)
+  AssertionError [ERR_ASSERTION]: expected exit 0.
+  stdout: 
+  stderr: conductor: update-epic: unknown flag(s) --withdraw-gate-review (known: --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --clear-links, --clear, --description, --notes, --external-updated-at, --attribute-commit, --withdraw-commit, --withdrawal-reason, --outcome, --reason, --deferral, --declined-deferral, --no-deferrals, --carried-to, --correct-disposition, --review-mode, --add-story, --story, --done, --wont-do)
+  
+  
+  1 !== 0
+  
+      at accepted (file:///Users/robsherman/Documents/Repos/pm/scripts/test/gate-verdict-withdrawal.test.mjs:40:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/gate-verdict-withdrawal.test.mjs:121:3)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

@@ -73,3 +73,51 @@ test("2.2 withdrawnGate: no withdrawal is not withdrawn", () => {
   assert.equal(constants.withdrawnGate({ id: "e", gateReview: {}, withdrawnGateReviews: [] }, 1), null);
   assert.equal(constants.withdrawnGate({ id: "e", withdrawnGateReviews: [withdrawal(1, "other gate")] }, 2), null);
 });
+
+// ═══════════════ the withdrawal write ═══════════════
+
+const PASS2 = ["--gate", "2", "--verdict", "pass", "--base-sha", "aaaaaaa", "--head-sha", "bbbbbbb"];
+const PASS1 = ["--gate", "1", "--verdict", "pass", "--artifact", "openspec/changes/x/proposal.md"];
+
+/** An initialized repository holding one claude-code epic `id` (no task source, so no archive
+ *  obligation interferes) carrying the verdicts named. */
+function withVerdicts(id = "w", { gate1 = false, gate2 = true, lane = "claude-code" } = {}) {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", id, "--lane", lane], { cwd });
+  if (gate1) run(["record-gate-review", id, ...PASS1], { cwd });
+  if (gate2) run(["record-gate-review", id, ...PASS2], { cwd });
+  return cwd;
+}
+
+test("2.3 withdrawing a Gate 2 pass moves the whole entry to withdrawnGateReviews", () => {
+  const cwd = withVerdicts("w23");
+  const stored = epicOf(cwd, "w23").gateReview.gate2;
+  accepted(cwd, ["update-epic", "w23", "--withdraw-gate-review", "2", "--withdrawal-reason", "recorded on the tracker mirror"]);
+  const e = epicOf(cwd, "w23");
+  assert.ok(!("gate2" in e.gateReview), "gateReview.gate2 is absent after the withdrawal");
+  const last = e.withdrawnGateReviews.at(-1);
+  assert.equal(last.gate, 2);
+  assert.equal(last.reason, "recorded on the tracker mirror");
+  assert.ok(!Number.isNaN(Date.parse(last.withdrawnAt)), `withdrawnAt is a timestamp: ${last.withdrawnAt}`);
+  assert.deepEqual(last.entry, stored, "the entry is the verdict exactly as it was stored");
+});
+
+test("2.4 a Gate 1 carrying superseded moves whole, and nothing is promoted", () => {
+  const cwd = withVerdicts("w24", { gate1: true, gate2: false });
+  run(["record-gate-review", "w24", "--gate", "1", "--verdict", "fail"], { cwd });
+  const stored = epicOf(cwd, "w24").gateReview.gate1;
+  assert.ok(stored.superseded, "precondition: the stored Gate 1 carries a superseded entry");
+  accepted(cwd, ["update-epic", "w24", "--withdraw-gate-review", "1", "--withdrawal-reason", "x"]);
+  const e = epicOf(cwd, "w24");
+  assert.ok(!("gate1" in e.gateReview), "the superseded entry is NOT promoted to the stored verdict");
+  assert.deepEqual(e.withdrawnGateReviews.at(-1).entry, stored);
+  assert.deepEqual(e.withdrawnGateReviews.at(-1).entry.superseded, stored.superseded);
+});
+
+test("2.5 withdrawing one gate leaves the other deep-equal", () => {
+  const cwd = withVerdicts("w25", { gate1: true, gate2: true });
+  const gate2 = epicOf(cwd, "w25").gateReview.gate2;
+  accepted(cwd, ["update-epic", "w25", "--withdraw-gate-review", "1", "--withdrawal-reason", "x"]);
+  assert.deepEqual(epicOf(cwd, "w25").gateReview.gate2, gate2);
+});

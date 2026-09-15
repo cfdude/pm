@@ -347,6 +347,22 @@ const EXERCISE = {
       assert.equal(e.withdrawnCommits.at(-1).reason, "reset away");
     },
   },
+  // gate-verdict-withdrawal. No `update-epic` flag records a gate verdict, so a `setup` cannot
+  // produce one: `pre` runs FULL argv steps first, here `record-gate-review`. Without it this
+  // entry would assert the "no stored verdict" refusal rather than the write, which this table's
+  // own rule above forbids. The check asserts BOTH halves — the gate is gone and the sibling
+  // record gained it — because a withdrawal that erased without recording would pass on the gate
+  // alone. It passes `--withdrawal-reason`, so the missing-reason refusal never breaks it.
+  "--withdraw-gate-review": {
+    pre: [["record-gate-review", "subject", "--gate", "2", "--verdict", "pass", "--base-sha", "aaaaaaa", "--head-sha", "bbbbbbb"]],
+    args: ["--withdraw-gate-review", "2", "--withdrawal-reason", "recorded on the wrong epic"],
+    check: (e) => {
+      assert.ok(!("gate2" in e.gateReview), "the withdrawn verdict is still stored");
+      assert.equal(e.withdrawnGateReviews.at(-1).gate, 2);
+      assert.equal(e.withdrawnGateReviews.at(-1).entry.verdict, "pass");
+      assert.equal(e.withdrawnGateReviews.at(-1).reason, "recorded on the wrong epic");
+    },
+  },
   "--add-story": { args: ["--add-story", "a story"], check: (e) => assert.equal(e.stories.at(-1).title, "a story") },
   // --story and --done are a control PAIR: neither is invocable alone, so both are exercised
   // by the same invocation and each asserts the half it is responsible for.
@@ -384,6 +400,7 @@ test("every DOCUMENTED update-epic flag is accepted and its value reads back fro
     run(["init"], { cwd });
     run(["add-epic", "--id", "other", "--lane", "claude-code"], { cwd });
     run(["add-epic", "--id", "subject", "--lane", "claude-code"], { cwd });
+    for (const step of spec.pre || []) run(step, { cwd });
     if (spec.setup) run(["update-epic", "subject", ...spec.setup], { cwd });
     const err = expectFail(() => run(["update-epic", "subject", ...spec.args], { cwd }));
     assert.equal(err, null,

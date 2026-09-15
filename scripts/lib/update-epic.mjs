@@ -187,7 +187,7 @@ export function updateEpic() {
       process.exit(1);
     }
     process.stderr.write("conductor: update-epic requires an epic id as its first POSITIONAL argument\n");
-    process.stderr.write(`usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--lane openspec|superpowers|claude-code|decision|external] [--plan <path>] [--spec <path>] [--link \"<${linkTypeVocabulary()}>:<epic>[:<reason>]\"] [--clear-links] [--clear <field>] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done|--wont-do "<reason>"] [--attribute-commit <sha>] [--withdraw-commit <sha> --withdrawal-reason \"<why>\"] [--outcome ${AGENT_OUTCOMES.join("|")}] [--reason \"<why>\"] [--correct-disposition \"<why the recorded one was wrong>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\" (or ::)] [--declined-deferral \"<what>::<why not>\"] [--no-deferrals] [--description D] [--notes \"<text>\"] [--external-updated-at <iso>]\n`);
+    process.stderr.write(`usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--lane openspec|superpowers|claude-code|decision|external] [--plan <path>] [--spec <path>] [--link \"<${linkTypeVocabulary()}>:<epic>[:<reason>]\"] [--clear-links] [--clear <field>] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done|--wont-do "<reason>"] [--attribute-commit <sha>] [--withdraw-commit <sha> --withdrawal-reason \"<why>\"] [--withdraw-gate-review 1|2 --withdrawal-reason \"<why>\"] [--outcome ${AGENT_OUTCOMES.join("|")}] [--reason \"<why>\"] [--correct-disposition \"<why the recorded one was wrong>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\" (or ::)] [--declined-deferral \"<what>::<why not>\"] [--no-deferrals] [--description D] [--notes \"<text>\"] [--external-updated-at <iso>]\n`);
     process.exit(1);
   }
   const f = parseFlags(argv.slice(1));
@@ -595,6 +595,22 @@ export function updateEpic() {
     epic.attributedCommits = attributed;
     epic.withdrawnCommits = (epic.withdrawnCommits || []).concat(
       shas.map(sha => ({ sha, reason: why, withdrawnAt: new Date().toISOString() })));
+  }
+
+  // gate-verdict-withdrawal — withdraw a recorded gate verdict. A FIELD WRITE like every other
+  // one above the archive gate, so the gate below decides on the record this leaves. The WHOLE
+  // entry moves — `superseded` included, because promoting it would resurrect a verdict nobody
+  // re-asserted — into the append-only sibling `withdrawnGateReviews[]`, recorded rather than
+  // erased. An emptied `gateReview` stays `{}`: every reader tests the gates, not the object.
+  if (f["withdraw-gate-review"] !== undefined) {
+    const gate = str(f["withdraw-gate-review"]);
+    const key = `gate${gate}`;
+    const gates = epic.gateReview && typeof epic.gateReview === "object" ? epic.gateReview : {};
+    const entry = gates[key];
+    delete gates[key];
+    epic.gateReview = gates;
+    epic.withdrawnGateReviews = (Array.isArray(epic.withdrawnGateReviews) ? epic.withdrawnGateReviews : [])
+      .concat([{ gate: Number(gate), entry, reason: str(f["withdrawal-reason"]), withdrawnAt: new Date().toISOString() }]);
   }
 
   if (str(f.title) !== undefined) epic.title = str(f.title);
