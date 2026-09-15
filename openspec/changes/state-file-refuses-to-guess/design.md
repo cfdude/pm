@@ -132,8 +132,9 @@ which cannot help; 10 — Node's.
 | `commit-nudge` (PostToolUse Bash) | when it reaches its `loadState()`: stderr, **exit 2**, no heal, no render, no detour log | Exit 2 on PostToolUse reaches Claude — the actor who can run the remedy — and cannot block. |
 | `lesson-advice` (PreToolUse) | unchanged | Reads only `isInitialized()`. |
 
-Implementation: the mapping is bound at `conductor.mjs`'s top-level catch, BY VERB — `gate-guard` and
-`commit-nudge` → print the message, exit 2; `brief` → print the warning-only JSON, exit 0; every other
+Implementation: the mapping is bound at `conductor.mjs`'s top-level catch and selects hooks by the
+`hook: true` marker `every-verb-refuses-what-it-does-not-read` adds to `VERB_EFFECTS`, not by a verb-name
+list — `gate-guard` and `commit-nudge` → print the message, exit 2; `brief` → print the warning-only JSON, exit 0; every other
 verb, `snapshot` included → exit 11. A hook MAY also catch at its own load, but that is an
 optimisation, not the guarantee: a refusal raised from anything a hook calls must still produce the
 hook's status, and on PreToolUse any code but 2 is fail-open.
@@ -219,7 +220,8 @@ durability on macOS.
 (`onConflict: "skip"`) → `recordConflict({verb, expected, found})` with `found` the disk revision
 read (unlocked) at the timeout, per the existing "Hook writes retry once, then skip" requirement, and
 `{ok: false}`. `saveHookHeal()` retries once, so a hook can wait up to about 4 s (two 2 s waits) under
-sustained contention.
+sustained contention. A heal notice (e.g. change 3's "cleared" notice) prints only when the save
+lands, never when it was skipped on the lock.
 
 **Why reverse 0.26.0:** its objection — a lock held forever — is answered by the age backstop; its
 chosen mechanism was measured insufficient (proposal "Why"). The revision guard stays: the lock
@@ -359,7 +361,11 @@ revert the release; a stray lock file left by a crashed new engine is ignored by
   change owns the unreadable-state branch at the top of `gateGuardCheck()` (the `loadState()` call and
   what happens when it refuses); that change owns everything after the active epic is resolved
   (reconcile and tracker-refresh semantics). Whichever applies second re-anchors on the other's
-  version of the function.
+  version of the function. It also inserts `stampReconcileKeys` into `upgrade()` on every non-refused
+  upgrade — after this change's marker preflight and unreadable-state refusal, so a refused upgrade
+  still writes nothing.
+- **Change 1 also edits the top of `gateGuardCheck()`** (its `--platform` check after `readStdin()`),
+  immediately beside this change's load; re-anchor there too.
 - Neither sibling is expected to touch `claim-shape.mjs`, `rules.mjs writeRules()`, or
   `conductor-record`'s detached-HEAD requirement; a cross-spec reviewer should confirm (task 0.2).
 

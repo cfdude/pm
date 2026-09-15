@@ -24,12 +24,12 @@ Every write of the block into the rules file SHALL act on the marker lines as fo
 - **Any other arrangement** — an END without a BEGIN, a BEGIN without an END, an END before the
   BEGIN, or two or more of either — the write SHALL be refused: the rules file is byte-identical
   afterwards, and the refusal names the file and the line number and kind of every marker line found,
-  and states that removing the stray marker lines (or the extra block) by hand and re-running is the
-  fix.
+  and names a fix reachable through Bash (for example deleting the stray lines with `sed` by line
+  number), because while a reconcile is owed Edit and Write are blocked.
 
 A refused write SHALL NOT be reported as success. A verb that refreshes the block — `write-rules`,
-`init`, `upgrade`, `set-tracker`, `set-review-mode` — SHALL exit with a code that is not 0, not 1
-(the validation code) and not the conflict exit code, and SHALL print no line saying the block was
+`init`, `upgrade`, `set-tracker`, `set-review-mode` — SHALL exit 11 — the code an unreadable state file
+produces, which is not 0, 1 (the validation code) or the conflict exit code — and SHALL print no line saying the block was
 refreshed, appended or created.
 
 `init` and `upgrade` SHALL detect a refused arrangement BEFORE their first write, and a refused `init`
@@ -77,7 +77,7 @@ makes after it were not made, and that after fixing the markers, running `write-
 
 - **WHEN** a repository whose recorded `pmVersion` is older than the running engine has a rules file
   holding a BEGIN marker line and no END marker line, and `upgrade` runs
-- **THEN** it exits with a code that is not 0, 1 or the conflict code, and `state.json` (with its
+- **THEN** it exits 11, and `state.json` (with its
   `pmVersion`), `PROJECT.md`, `.gitignore` and the rules file are byte-identical afterwards
 
 #### Scenario: A single well-formed block is refreshed in place

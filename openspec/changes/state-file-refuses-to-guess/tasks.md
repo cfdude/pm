@@ -34,11 +34,12 @@ the GREEN commit stages that file and names it in its message.
 ## 1. An unreadable state file is refused, never replaced
 
 - [ ] 1.1 RED (lands with 1.2): new `scripts/test/state-file-refuses-to-guess.test.mjs` — a
-      three-epic repo with a conflict-marker line prepended; `add-epic --id new` must exit 11, leave
+      three-epic repo with a conflict-marker line prepended; `add-epic --id new --lane claude-code` must exit 11, leave
       `state.json` byte-identical (compare bytes, not parsed JSON), and name `.conductor/state.json`, a
       `git` remedy and the move-aside-and-`init` remedy in stderr. Plus: a 40-byte truncation run
       through `sync`, `upgrade`, `init` in turn, each exit 11 with `state.json`, `PROJECT.md` and
-      `CLAUDE.md` byte-identical; `owners` on unparseable exits 11 with no report on stdout;
+      `CLAUDE.md` byte-identical (and `.gitignore` byte-identical for `init` and `upgrade` — `init` writes
+      it before loading state today); `owners` on unparseable exits 11 with no report on stdout;
       `epics: {}` refused by `owners` naming `epics`; `verify-state` and `activity` on unparseable do
       not exit 11; and `--force` over an unreadable disk file (load readable state in-process, replace
       the file with unparseable bytes, `saveState` with `--force` in effect) throws
@@ -77,8 +78,8 @@ the GREEN commit stages that file and names it in its message.
       (f) the top-level verb→status mapping with `gate-guard` and `commit-nudge` and a
       `StateUnreadableError` thrown from a stub, expecting 2 (today: no mapping exists). Save
       `red-2.1.txt`
-- [ ] 2.2 GREEN: the per-verb mapping at `conductor.mjs`'s top-level catch per design D3
-      (`gate-guard`/`commit-nudge` → 2, `brief` → warning-only JSON + 0, all else incl. `snapshot` → 11),
+- [ ] 2.2 GREEN: the hook mapping at `conductor.mjs`'s top-level catch per design D3, keyed on
+      `VERB_EFFECTS` `hook: true` (change 1) (`gate-guard`/`commit-nudge` → 2, `brief` → warning-only JSON + 0, all else incl. `snapshot` → 11),
       plus hook-local handling where it keeps `snapshot()` from reaching `render()` and `commitNudge()`
       from reaching heal/render/detour log. `observeCommit()` keeps running first (D3 watermark
       exemption). Export the verb→status mapping so 2.1(f) can call it with a stub. `lessonAdvice()`
@@ -92,7 +93,7 @@ the GREEN commit stages that file and names it in its message.
 
 ## 3. Concurrent saves are serialised and fsynced
 
-- [ ] 3.1 RED (lands with 3.2): in the new test file — 16 concurrent `add-epic` child processes
+- [ ] 3.1 RED (lands with 3.2): in the new test file — 16 concurrent `add-epic --lane claude-code` child processes
       (spawned, not sequential `execFileSync`) with distinct ids; assert every exit-0 invocation's id is
       in `state.json`, every other exits 9, and no stderr contains `did not persist`. Run it 3 times in
       the test (the race is probabilistic; today 3/3 manual runs lost updates). Plus an in-process fs
@@ -112,7 +113,9 @@ the GREEN commit stages that file and names it in its message.
       `pidns`, now), then run `update-epic <id> --status active` as a child → exits 9 within the wait
       budget + slack, `state.json` byte-identical, stderr names the pid; same with `--force` → exits 9,
       `state.json` byte-identical; a hook-driven save through `saveHookHeal()` with the held lock →
-      `{ok:false}`, sidecar gains an entry naming the verb and two revisions. Save `red-3.3.txt`
+      `{ok:false}`, sidecar gains an entry naming the verb and two revisions; and the first case repeated in
+      a tree whose HEAD is detached (`git checkout --detach`) → exits 9, `state.json` byte-identical
+      (conductor-record detached-tree scenario). Save `red-3.3.txt`
 - [ ] 3.4 GREEN: completes with 3.2's wait/refuse path if 3.2 did not already make 3.3 pass; if it
       did, say so in the commit and land 3.3 as REGRESSION GUARD. Verify: 3.3 passes
 - [ ] 3.5 RED (lands with 3.6): the holder's pre-rename ownership check — in-process, acquire through
@@ -128,7 +131,7 @@ the GREEN commit stages that file and names it in its message.
 ## 4. A stale lock is broken, a live one is waited for then refused
 
 - [ ] 4.1 RED (lands with 4.2): a lock recording a dead pid on this host and `pidns` (spawn a child,
-      record its pid, wait for it to exit) → `add-epic` exits 0, epic present, and the pre-placed lock
+      record its pid, wait for it to exit) → `add-epic --lane claude-code` exits 0, epic present, and the pre-placed lock
       file is gone; a lock with unparseable content and `mtime` set past `STATE_LOCK_STALE_MS` via
       `fs.utimesSync` → save lands and the pre-placed lock file is gone; a fresh lock recording this
       host, a dead pid and a DIFFERENT `pidns` → refused as conflict (exit 9, `state.json`
@@ -139,7 +142,7 @@ the GREEN commit stages that file and names it in its message.
       re-judge while holding it, unlink only the judged identity, break file recoverable by age).
       Verify: 4.1 passes
 - [ ] 4.3 RED (lands with 4.4): several breakers on one stale lock — (a) process level: place a
-      stale lock, start 8 concurrent `add-epic` children with distinct ids, assert every exit-0 id is on
+      stale lock, start 8 concurrent `add-epic --lane claude-code` children with distinct ids, assert every exit-0 id is on
       disk and every other exits 9, run 3 times; (b) deterministic: drive the break helper through the
       Gate 1 interleaving with injected steps (B judges L stale; A breaks L and acquires N; B then
       proceeds) and assert B removes nothing, N is present, and A's save is the only write. Save
@@ -177,8 +180,8 @@ the GREEN commit stages that file and names it in its message.
       the BEGIN marker line identical, exactly one BEGIN marker line (today: sentinel gone, `refreshed`).
       Plus: orphan BEGIN with hand text after → exit 11, file byte-identical, stderr names the file and
       the line number; two well-formed pairs via `set-review-mode --mode thorough` → exit 11,
-      byte-identical, all four line numbers, no `refreshed` in stderr; one pair between hand text →
-      outside bytes identical, block content new; no markers → appended; an all-CRLF `CLAUDE.md` with
+      byte-identical, all four line numbers, no `refreshed` in stderr; REGRESSION GUARD (pass today): one
+      pair between hand text → outside bytes identical, block content new; no markers → appended; an all-CRLF `CLAUDE.md` with
       one block → every line ends CRLF afterwards (today: 3 of 380). Save `red-6.1.txt`
 - [ ] 6.2 GREEN: `rulesBlockArrangement()` and line-based `writeRules()` with `RulesBlockAmbiguousError`
       per design D6, mapped to exit 11 in `conductor.mjs`'s catch with the truthful message. No

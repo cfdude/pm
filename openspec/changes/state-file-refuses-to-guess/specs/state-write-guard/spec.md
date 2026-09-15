@@ -43,7 +43,7 @@ overwriting it discards whatever the other side of a merge held.
 #### Scenario: A conflict marker does not wipe the record
 
 - **WHEN** `state.json` holds three epics and a git conflict-marker line is prepended to it, and
-  `add-epic --id new` is run
+  `add-epic --id new --lane claude-code` is run
 - **THEN** the command exits with the unreadable-state code, `state.json` is byte-identical to the
   file before the command, and the error names `.conductor/state.json`, a git remedy, and a remedy
   that needs no git history
@@ -171,7 +171,7 @@ The lock file, and any auxiliary file the locking protocol creates beside it, SH
 
 #### Scenario: Parallel writers never lose an update
 
-- **WHEN** 16 `add-epic` invocations with distinct ids are started concurrently against one
+- **WHEN** 16 `add-epic --lane claude-code` invocations with distinct ids are started concurrently against one
   repository
 - **THEN** every invocation that exits 0 has its epic present in `state.json` afterwards, every other
   invocation exits with the conflict exit code, and no invocation reports that its write did not
@@ -226,7 +226,7 @@ conflict sidecar.
 #### Scenario: A lock left by a dead process does not wedge the repository
 
 - **WHEN** the lock file records a process id that is not running, on this host and in this
-  process-id namespace, and `add-epic` runs
+  process-id namespace, and `add-epic --lane claude-code` runs
 - **THEN** the epic is written, the command exits 0, and no lock file remains afterwards
 
 #### Scenario: A lock older than the maximum age is broken
