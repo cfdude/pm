@@ -57,7 +57,9 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" render --diff-summary
 ```
 
 Renders exactly as above, and additionally prints `epic-relevant: yes` or `epic-relevant: no` to
-stdout. It is a switch, not a value-bearing flag.
+stdout. It is a switch, not a value-bearing flag. It is declared on `render` alone: every other
+verb refuses it before running (`set-active e2 --diff-summary` used to print
+`epic-relevant: yes` too, because the shared renderer read it off the command line).
 
 Two things move in `PROJECT.md` on nearly every render with nothing about the epics having
 changed: the `> Last rendered:` stamp, and the "Recent detours" table, which rotates as entries
@@ -256,6 +258,10 @@ cross-spec verdict in the same wording every other surface uses, and any amendme
 half is the point: membership lives on the epic, so a reader who opened the release object saw
 `deferred[]` populated and members absent — which reads as "exclusions and no members", the
 opposite of the truth. It is a pure read: it saves nothing and re-renders nothing.
+
+`release show` takes at most one further positional; a second is refused before anything runs.
+`release show --force` is refused by the read form itself: `--force` passes the engine's
+command-line check because `release` mutates, and the read form declines every flag.
 
 `show` is RESERVED as the first positional, so a release cannot be named `show` — a keyword whose
 meaning depends on what else you typed is resolved by guesswork, and this engine resolves nothing

@@ -32,7 +32,9 @@ be deliberate.
      hand: `node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" record-reconcile <paused-id>
      --detour <detour-id> --verdict <valid|invalidated> --amendments "<a>;<b>;..."`. This
      attaches `{verdict, amendments, reconciledAt}` onto the paused epic's link to the
-     detour and clears `reconcileNeeded` in one step.
+     detour and clears `reconcileNeeded` in one step. Quote `--amendments`. A misspelled flag is
+     refused before anything is recorded — `--amendmnts "a;b"` used to record `invalidated` with
+     no amendments — and `--help` anywhere on the line prints help and records nothing.
 
 4. **Write a Honcho memory** for the resume. Where the frame carried `reconcileOnResume`,
    `pop-detour` deliberately did NOT emit one — `resumed X, reconciled vs Y` is not true until

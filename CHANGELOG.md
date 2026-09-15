@@ -8,6 +8,123 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**A command line the engine does not read is no longer acted on.** Before this, no single place
+decided what a verb accepts. Appending an undeclared flag to a working invocation of each of the 50
+dispatched verbs, 38 exited 0 and 15 of those wrote `state.json` or `detours.log`; only 12 refused
+the flag by name. A stray positional was dropped the same way: `add-epic … --title My Title` stored
+`My`. One check now runs before dispatch for every verb, and before the banner, the activity
+snapshot and any file write. It reads the verb's declared flags, how many positionals it reads,
+and the argv-level `--force`. Its population is the dispatch table, so a verb added later is bound
+without anyone extending a list.
+
+**And a help token can no longer perform the write.** 0.41.0's fix for cfdude/pm#187 honoured
+`--help`/`-h` only as the first token after the verb, so one later on the line reached the verb as
+data. `remove-epic e2 --help` removed `e2`, `set-gate-guard off --help` disarmed the guard, and 14
+verbs performed their write on a trailing `--help`.
+
+### Fixed
+
+* **cfdude/pm#187's 0.41.0 regression.** A `--help` or `-h` anywhere after the verb, outside a
+  flag's value, prints that verb's help, exits 0 and writes nothing, whatever else the line carries:
+  `remove-epic e2 --bogus --help` prints help rather than refusing `--bogus`. In a value position
+  `--help` is still refused, as #187 requires (`conductor: --title requires a value — '--help'
+  arrived where that value belonged and was read as a flag, not as the value. If it IS the value,
+  write --title=--help`), and `-h` there is the flag's value, as before.
+* **`init` validates `--platform` before it creates anything.** `init --platform bogus` printed
+  `created .conductor/state.json` and then exited 1, ending pm's dormancy in a repo whose init had
+  failed, and a valueless `init --platform` exited 0 on the default. Both are now refused with
+  nothing created: `conductor: --platform must be one of claude-code|hermes|codex` and
+  `conductor: --platform requires a value`.
+* **`--force` is reachable on `add-epic`, `update-epic` and `claim`.** Their own allowlists
+  refused the escape hatch the state-write guard documents. `--force` is now one registry row,
+  marked argv-level, accepted on exactly the verbs `VERB_EFFECTS` declares `mutates` and refused on
+  every read-only verb (`conductor: unknown flag --force for integrity — it accepts no flags`).
+* **`--force` is never read as a positional.** Each verb receives its positionals first, its flags
+  in their original relative order, and argv-level flags last. `log-detour fixed it --force` logs
+  `fixed it`, and `set-active --force e2` activates `e2`. `set-gate-guard --force` prints the same
+  report as bare `set-gate-guard`, where it printed usage; `set-activity-log --force` gives the
+  same usage answer as bare `set-activity-log`, which has no read form.
+* **`update-epic`'s disposition flags are refused outside an archive.** `update-epic e1 --outcome
+  killed --reason no` exited 0 saying every supplied value was already held, and recorded no
+  disposition. `--outcome`, `--reason` and `--carried-to` now share the deferral flags' refusal:
+  `conductor: --outcome, --reason are recorded only when an epic is ARCHIVED, and this invocation
+  does not archive 'e1' — nothing would have been written.`
+* **A bare `set-lane-routing` refuses** instead of writing an empty `laneRouting` block and
+  reporting success: `conductor: set-lane-routing needs an operation — --add "<match>:<lane>",
+  --remove "<match>" or --clear. Nothing was written.`
+* **A shared helper no longer reads a flag on another verb's behalf.** `set-active e2
+  --diff-summary` printed `epic-relevant: yes`; `--diff-summary` is declared on `render` only and
+  refused everywhere else.
+* **`brief --help` no longer says the verb takes no flags** while `hooks/hooks.json` passes it
+  `--platform claude-code`. `--platform` is declared on `init` and all five hook verbs and
+  validated before anything else they do.
+
+### Changed
+
+* **BREAKING — an undeclared flag is refused on every verb**, before anything is written, naming
+  the flag and what the verb accepts:
+  `conductor: unknown flag --levle for set-autonomy — it accepts: --level, --preauthorize, --context, --notify, --force`.
+  Cases it closes: `record-reconcile … --amendmnts "a;b"` recorded `invalidated` with
+  `amendments: []`; `set-autonomy e1 --levle autonomous` wrote `level: off`;
+  `set-tracker … --drection outward` stored `inward`; `add-many --from b.json --external-id X`
+  created the batch, although batch keys are not command-line flags. `--session` is declared on
+  `claim` and `unclaim` only, so it is refused elsewhere; `PM_SESSION` names the session for the
+  activity log.
+* **BREAKING — a surplus positional is refused**, naming the first token the verb does not read.
+  That includes an unquoted multi-word value, which now carries a hint:
+  `conductor: add-epic takes no positional arguments — 'Title' is an extra argument it does not
+  read. Nothing was written.` then `If 'Title' belongs to --title's value, quote the whole value.`
+  `suggest-lane fix a typo`, which routed `fix` alone, is refused with `suggest-lane reads ONE text
+  argument — quote it.`
+* **BREAKING — `remove-epic <id> --cascade true` is refused.** A valueless flag never takes a
+  value, so `true` is a surplus positional (`--cascade takes no value.`). It was accepted because
+  the verb compared the parsed value to `"true"`. Write `--cascade` on its own.
+* **BREAKING — a valueless flag written `--name=value` is refused**, where it was accepted with the
+  value ignored: `conductor: --force takes no value — '--force=1' gives it one, and add-epic would
+  ignore it. Write --force on its own. Nothing was written.`
+* **BREAKING — outside the free-text verbs, a `--`-leading token that is not flag-shaped is
+  refused as an undeclared flag.** `claim`'s own parser skipped `--Steal`, so
+  `claim --repo --session s --Steal` recorded the repo claim. On `triage`, `suggest-lane`,
+  `log-detour` and `honcho-memory` such a token is still text
+  (`log-detour "--no-verify was used on the hotfix"` is logged).
+* **`--id` in place of a positional epic id is diagnosed on every verb that takes one**, not only
+  `update-epic`, and the refusal rewrites the line you meant: `remove-epic --id e2` answers
+  `remove-epic takes its epic id POSITIONALLY, not as --id` and shows `remove-epic e2`.
+* **A positional written after flags is read.** `triage --limit 3 "fix the render stamp"` answers
+  where it printed usage; `claim --steal e1 --session s2` claims `e1`. `triage --limit 5` with no
+  ask still prints usage.
+* **A free-text verb's undeclared-flag refusal carries the quoting hint** too:
+  `log-detour fixed --no-verify usage` adds `If '--no-verify' is part of the text, quote the whole
+  value.`
+* **Refusals escape control characters in the tokens they echo**, so a newline inside a caller's
+  token is shown as an escape and cannot start a line of the refusal.
+* **Help is projected from the declarations the check enforces.** Its first line names the
+  positional form (`conductor.mjs remove-epic <id> — 1 flag.`); a mutating verb lists `--force`
+  under "Accepted on every mutating verb"; a verb whose own parser reads no flags says `no flags of
+  its own`; and "takes no flags" appears only where the check accepts none.
+
+### Notes
+
+* **`gate-guard` fails open on a line it refuses.** In an initialized repo, a hook line carrying an
+  undeclared flag exits 1 after draining stdin, which Claude Code treats as a non-blocking hook
+  error, so that tool call is not guarded. Exit 2 would block every tool call in every session until
+  the plugin was fixed. The suite asserts every line in pm's own `hooks/hooks.json` passes the check,
+  so a mismatch needs a hand-edited hook line or an installed plugin's `hooks.json` driving a
+  checkout engine of another version under `PM_ENGINE_DELEGATION`. In a repo without pm the five
+  hook verbs refuse nothing and stay silent; a help token still prints help.
+* **Help wins.** `remove-epic e2 --help` exits 0 having removed nothing, so a script reading only
+  the exit code sees success. The output is help text, not the success line.
+* **`--force` is accepted and does nothing on `honcho-memory` and `purge-logs`**, mutating verbs
+  whose writes never reach the guarded state write. Refusing it there would need a second list of
+  which mutating verbs save state.
+* A missing required positional and a value's vocabulary (`--verdict maybe`, `set-gate-guard maybe`)
+  stay each verb's own refusal.
+* **Run `/pm:upgrade` in each repo.** It rewrites the managed rules block, so a repo picks up
+  corrected emitted command lines only when it runs. For this change the sweep of every invocation
+  pm emits (command docs, skills, README, `hooks/hooks.json`, the rules block on all three
+  platforms — 487 lines) found none the check refuses, so an existing rules block breaks nothing.
+* No `state.json` schema change, no migration.
+
 ## [0.43.0] — 2026-09-14
 
 **The archive gate reads the record the call writes.** `update-epic` ran the archive gate before

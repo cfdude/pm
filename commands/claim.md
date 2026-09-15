@@ -37,6 +37,13 @@ Writes `epic.claim = {session, claimedAt, ttlMinutes}` in `.conductor/state.json
 - Claiming over someone else's **expired** claim succeeds and reports the takeover on stderr.
 - Claiming over someone else's **live** claim is refused; `--steal` overrides it and says so.
 - An **archived** epic cannot be claimed — the work has ended.
+- **The epic id is the one positional, and it may come after the flags.** `--steal` and `--repo`
+  take no value, so `claim --steal e1 --session s2` claims `e1`. `--id e1` in its place is
+  diagnosed with the line you meant. A token that only looks like a flag is refused rather than
+  skipped — `claim --repo --session s --Steal` used to record the repo claim, and now prints
+  `conductor: unknown flag --Steal for claim — it accepts: --session, --ttl, --steal, --repo, --force`.
+  `--force` belongs to the state write, not to the claim, and does not override a live claim —
+  that is `--steal`.
 
 ## What expires a claim
 

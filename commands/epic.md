@@ -111,6 +111,29 @@ the shared flag registry, not in each command, so a flag added tomorrow inherits
 
 ---
 
+## The command line — help, quoting, `--force`
+
+Every engine verb on this page is held to one pre-dispatch check, which runs before anything is
+written:
+
+- **`--help` or `-h` anywhere after the verb prints that verb's help, exits 0 and writes
+  nothing** — `remove-epic e2 --help` removes nothing. In a flag's value position it is refused
+  instead, because there it is data:
+  `conductor: --title requires a value — '--help' arrived where that value belonged and was read as a flag, not as the value. If it IS the value, write --title=--help`
+- **An undeclared flag is refused by name**, with the flags the verb does accept.
+- **Quote every multi-word value.** A token no flag consumed is a positional, and one beyond what
+  the verb reads is refused before anything is written:
+  `conductor: add-epic takes no positional arguments — 'Title' is an extra argument it does not read. Nothing was written.`
+  followed by `If 'Title' belongs to --title's value, quote the whole value.`
+- **An epic id is positional wherever a verb takes one.** `remove-epic --id e2`, `set-active --id
+  e2` and the rest are diagnosed with the line you meant, not only on `update-epic`.
+- **`--force` is accepted on every mutating verb here** — `add-epic`, `add-many`, `update-epic`,
+  `reorder`, `remove-epic`, `set-active`, `clear-active`, `set-autonomy` and
+  `record-gate-review` — and refused on read-only verbs. It belongs to the guarded write of
+  `.conductor/state.json`, not to any verb's parser, so it may stand anywhere on the line and is
+  never read as an id. `add-epic`, `update-epic` and `claim` used to refuse it outright.
+  `node "$ENGINE" <verb> --help` lists it under "Accepted on every mutating verb".
+
 ## Bulk create — `add-many`
 
 To register a parent epic and its children in one atomic operation (e.g. a sprint of audit
@@ -138,6 +161,9 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" add-many --from /path/to/batc
   chaining, no write race.
 - JSON only (the engine is zero-dependency). `parent` is optional; a bare `{ "epics": [...] }`
   batch works too.
+- **A batch key is not a command-line flag.** `add-many --from b.json --external-id X` is refused
+  before the batch is read (`unknown flag --external-id for add-many — it accepts: --from,
+  --force`); it used to create the batch and drop the flag.
 - **`description`** is the durable rationale, in state-key spelling — a batch entry carries
   `description`, not `--description`, exactly as it carries `externalId` rather than
   `external-id`. A bulk-registered epic is the one that needs it most: a batch entry's title is
@@ -366,6 +392,19 @@ replace one already recorded (detailed below). Naming that second path is the wh
 already overwrote the assertion cleanly, and was merely undiscoverable, so a refusal that points
 at it was enough — no new mechanism was needed.
 
+**The disposition flags share that refusal.** `--outcome`, `--reason` and `--carried-to` are
+recorded only inside the same archive transition. Supplied without `--status archived` they were
+dropped while the command reported that every supplied value was already held — false, and the
+epic carried no disposition. Same refusal, same position (before anything is loaded or written);
+`--correct-disposition` keeps its own. Real output, on an unarchived epic:
+
+```text
+$ update-epic e1 --outcome killed --reason no
+conductor: --outcome, --reason are recorded only when an epic is ARCHIVED, and this invocation does not archive 'e1' — nothing would have been written.
+  To record one: add --status archived --outcome <outcome> --reason "<why>".
+  To CORRECT one already recorded: re-run the archive with --correct-disposition "<why the recorded one was wrong>" alongside the corrected flags.
+```
+
 An engine-written disposition — the migration's stamp, the archive-drift heal's — may be REPLACED
 by an agent recording a real one. Another agent's recorded judgment may not: re-running the verb
 is refused, because replacing a judgment somebody made is exactly what a disposition exists to
@@ -404,7 +443,10 @@ demand, the handoff demand, and the deferral assertion (already-recorded asserti
 The id is positional. Parent/status/lane/link changes are validated like `add-epic` (no
 self-parent, no cycle, known status, known lane, `--link`'s epic must be a known epic id). On an
 unknown id, or any invalid flag value, it exits non-zero and writes nothing — including an
-unrecognized flag name, which used to silently no-op and print a false "updated" success.
+unrecognized flag name, which used to silently no-op and print a false "updated" success, and an
+unquoted multi-word value: `update-epic e1 --title My Title` stored `My` and now refuses `'Title'`
+as an extra argument, with a hint to quote the whole value. Both refusals happen before dispatch
+and apply to every verb on this page — see "The command line" above.
 
 **`--lane` re-routes an epic in place, and `--plan` attaches a plan to one created without
 one.** Both were settable only at creation, so the sole correction for a mis-routed epic was to
@@ -601,6 +643,11 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" remove-epic <id> [--cascade]
   together in one atomic write. The preview table and `--cascade`'s actual blast radius always
   agree — a human confirming from the table is confirming the real deletion set, not just the
   direct children.
+- **`--cascade` takes no value, in either spelling.** `remove-epic p --cascade true` used to be
+  accepted; now `true` is an extra argument
+  (`conductor: remove-epic takes <id> — 'true' is an extra argument it does not read. Nothing was written.`
+  then `--cascade takes no value.`), and `--cascade=true` is refused naming `--cascade`. Write
+  `--cascade` on its own.
 - **`--cascade` is a real "delete N epics" action** — before you run it, show the human the table
   the blocked attempt printed and get explicit confirmation. The engine has no interactive
   prompt of its own; that confirmation step is the agent's job, not the CLI's.

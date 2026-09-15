@@ -342,13 +342,20 @@ names — could not clear those 29, because an epic that ended has no open item 
 
 ## Commands
 
+> **BREAKING (unreleased): every engine verb refuses what it does not read.** An undeclared flag,
+> an unquoted multi-word value, `remove-epic <id> --cascade true` and a `--flag=value` on a
+> valueless flag now exit 1 having written nothing, and a `--help` anywhere outside a flag's value
+> prints help instead of performing the write. See "What a command line may carry" below.
+
 <details>
 <summary><code>/pm:init</code> — Initialize the PM conductor in this repo</summary>
 
 Scaffolds `.conductor/state.json`, registers any existing OpenSpec proposals and Superpowers
 plans as epics, writes the managed rules block into `CLAUDE.md` (or the file the declared
 `--platform` actually reads — see Supported Platforms), and renders `PROJECT.md`.
-Safe to run once per repo; re-running is a no-op if already initialized.
+Safe to run once per repo; re-running is a no-op if already initialized. A valueless or unknown
+`--platform` is refused before anything is created — it used to create `.conductor/state.json`
+first and then exit 1, ending pm's dormancy in a repo whose init had failed.
 
 The rules block carries a **gate procedure of seven numbered, required task items** — the call-site
 completeness sweep (which since 0.40.0 also obliges the INVERSE of every operation the change
@@ -1186,7 +1193,7 @@ node "$ENGINE" update-epic --help
 ```
 
 ```
-conductor.mjs update-epic — 30 flags.
+conductor.mjs update-epic <id> — 31 flags.
 
   --title <a value>
   --lane <openspec|superpowers|claude-code|decision|external>
@@ -1197,26 +1204,38 @@ conductor.mjs update-epic — 30 flags.
   …
   --wont-do <a reason>
 
+  Accepted on every mutating verb (it belongs to the state write, not to this verb):
+  --force  (no value)
+
   Docs: https://pm-plugin.dev/llms.txt
 ```
 
 That block is captured output, not a hand-written illustration — an earlier draft of this section composed one from memory and got the flag order wrong, in a section about help that cannot lie.
 
-Every line is **projected from the same registry rows the unknown-flag guards read**, so help
-cannot advertise a flag the parser refuses — adding a flag grows both in one edit, and a
-hand-written help table could not make that promise. `(no value)` and `(repeatable)` are called
+Every line is **projected from the same declarations the pre-dispatch command-line check
+enforces** (see "What a command line may carry" below), so help cannot advertise a flag the
+engine refuses — adding a flag grows both in one edit, and a hand-written help table could not
+make that promise. The first line names the verb's positional form where it reads one
+(`update-epic <id>`). `(no value)` and `(repeatable)` are called
 out because they change the shape of a correct invocation: a valueless flag given a value is
 refused, and repeating a non-repeatable flag silently keeps only the last one. A flag with a closed set of legal values names them — `--outcome`, `--status`, `--lane`, `--priority`, `--platform` and the rest — so the answer does not live in `scripts/lib/` any more. Flags without a closed set still render `<a value>`; that gap is visible rather than papered over.
 
-A verb that takes no flags **says so** rather than printing an empty list. 23 of the 50 are in
-that group, and "takes none" must not look like "nobody declared this yet".
+A verb that takes no flags **says so** rather than printing an empty list, and it says so only
+when the check accepts none, so "takes none" never looks like "nobody declared this yet" and help
+never claims a verb refuses a flag it accepts. A mutating verb whose own parser reads no flags
+(`set-active`, `log-detour`, `reorder` and the rest) says `no flags of its own` and then lists the
+argv-level `--force`.
 
 `add-many` is the one verb whose registry rows are not all flags — its parser takes only
 `--from`, and the rest describe keys inside the batch JSON. Its help says both, so a reader does
 not conclude the verb is impoverished and go back to the source.
 
-Help never touches state. A help flag reaches no subcommand, which is why `log-detour --help`
-does not write a detour entry described as `--help` — the bug that put the short-circuit there.
+Help never touches state. A `--help` or `-h` **anywhere after the verb** prints that verb's help,
+exits 0 and writes nothing — whatever else the line carries, so `remove-epic e2 --bogus --help`
+prints help rather than refusing `--bogus`. The one exception is a flag's VALUE position:
+`add-epic --id h1 --title --help` is refused (see below), because there the token was data, not a
+request. From 0.41.0 through 0.43.0 only the first token after the verb was honoured, and a trailing help
+token reached the verb as data: `remove-epic e2 --help` removed `e2`.
 
 **Where the two channels differ.** The installed engine is the authority on what *it* accepts and
 is version-exact by construction. [pm-plugin.dev](https://pm-plugin.dev/llms.txt) is authoritative
@@ -1225,6 +1244,81 @@ shows that your engine refuses is a version gap, not a bug. `/pm:changelog` tell
 The docs also expose a free, no-auth MCP server at `https://pm-plugin.dev/mcp`.
 
 Every managed repo receives this same routing in its `CLAUDE.md` rules block on `/pm:upgrade`.
+
+### What a command line may carry
+
+> **BREAKING (unreleased).** A command line the engine does not read is refused, not acted on.
+> An undeclared flag, a surplus positional (an unquoted multi-word value included), a value given
+> to a valueless flag (`remove-epic <id> --cascade true`, `--force=1`) and, outside the free-text
+> verbs, a `--`-leading token that is not a flag (`--Steal`) each exit 1 having written nothing.
+> Every one of them used to exit 0: 38 of the 50 verbs accepted an undeclared flag, and
+> `add-epic … --title My Title` stored `My`.
+
+One check, run before dispatch, decides for **every** dispatched verb what its command line may
+carry. It reads the same declarations help projects — the verb's flags, how many positionals it
+reads, and the argv-level `--force` — and it runs before the banner, the activity snapshot and any
+file write, so a refused line creates nothing (`init` included). Its population is the dispatch
+table, so a verb added later is bound without anyone extending a list. Help tokens are decided
+first, as above.
+
+**An undeclared flag is refused by name**, with what the verb does accept:
+
+```
+$ conductor.mjs set-autonomy e1 --levle autonomous
+conductor: unknown flag --levle for set-autonomy — it accepts: --level, --preauthorize, --context, --notify, --force
+usage: conductor.mjs set-autonomy <id> [flags]
+Nothing was written.
+```
+
+A shared flag is not an exception: `--session` is declared on `claim` and `unclaim` only
+(`PM_SESSION` names the session for the activity log everywhere else), and `--diff-summary` on
+`render` only. An `add-many` batch key (`--external-id`) is not a command-line flag either.
+
+**Quote every multi-word value.** A token no declared flag consumed is a positional, and a
+positional beyond what the verb reads is refused, naming the first surplus token:
+
+```
+$ conductor.mjs add-epic --id t1 --lane claude-code --title My Title
+conductor: add-epic takes no positional arguments — 'Title' is an extra argument it does not read. Nothing was written.
+  If 'Title' belongs to --title's value, quote the whole value.
+```
+
+A free-text verb that reads one text says so (`suggest-lane fix a typo` →
+`suggest-lane reads ONE text argument — quote it.`), and every free-text verb carries the same
+hint when an unquoted word looks like a flag (`log-detour fixed --no-verify usage` →
+`If '--no-verify' is part of the text, quote the whole value.`). On the four free-text verbs — `triage`, `suggest-lane`,
+`log-detour` and `honcho-memory` — a quoted text that begins with `--` but is not shaped like a
+flag (`log-detour "--no-verify was used on the hotfix"`) is still text.
+
+**A valueless flag never takes a value**, written either way:
+
+```
+$ conductor.mjs remove-epic p --cascade true
+conductor: remove-epic takes <id> — 'true' is an extra argument it does not read. Nothing was written.
+  --cascade takes no value.
+$ conductor.mjs remove-epic p --cascade=true
+conductor: --cascade takes no value — '--cascade=true' gives it one, and remove-epic would ignore it. Write --cascade on its own. Nothing was written.
+```
+
+**An epic id is positional wherever a verb takes one**, and `--id` in its place is diagnosed with
+the line you meant (`remove-epic --id e2` → ``write `remove-epic <id> ...`, i.e. `remove-epic e2` ``).
+
+**Order is free.** Positionals and flags may come in any order: the engine hands each verb its
+positionals first, its flags in their original relative order, and argv-level flags last. So
+`triage --limit 3 "fix the render stamp"` and `claim --steal e1 --session s2` read their
+positional, `log-detour fixed it --force` logs `fixed it`, and `set-active --force e2` activates
+`e2`.
+
+**`--force` is accepted on every mutating verb and refused on every read-only one**
+(`integrity --force` → `unknown flag --force for integrity — it accepts no flags`). It belongs to
+the guarded state write, not to any verb's parser, which is why `add-epic`, `update-epic` and
+`claim` now accept it where their own allowlists refused it. On `honcho-memory` and `purge-logs`,
+whose writes never reach the state write, it is accepted and does nothing.
+
+Echoed tokens have their control characters escaped, so a newline inside a token cannot start a
+line of the refusal. What stays each verb's own: a MISSING required positional, and a value's
+vocabulary (`--verdict maybe`, `set-gate-guard maybe`). The five hook verbs refuse nothing in a
+repository that has not run `/pm:init` — see `hooks/README.md`.
 
 ### Which verbs mutate the working tree
 

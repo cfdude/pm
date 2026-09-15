@@ -27,6 +27,12 @@ Initialize the `pm` conductor for the current project.
    If `${CLAUDE_PLUGIN_ROOT}` is empty, locate the engine first:
    `ENGINE="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/scripts/conductor.mjs}"; [ -f "$ENGINE" ] || ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1); node "$ENGINE" init`
 
+   `init` takes no positional arguments and one flag of its own, `--platform
+   <claude-code|hermes|codex>` (see `/pm:upgrade`), plus the `--force` every mutating verb accepts. A valueless or unknown `--platform`, or any other flag, is refused before
+   anything is created, so a failed `init` leaves no `.conductor/` behind to end pm's dormancy:
+   `conductor: --platform must be one of claude-code|hermes|codex`. `init --help` prints its flags
+   and creates nothing.
+
 2. Read `.conductor/state.json` and help the user TRIAGE:
    - set `active` to the epic currently being built,
    - assign each epic a `priority` (P0–P3) and `status` (active | queued | later),

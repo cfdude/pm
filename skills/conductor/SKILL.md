@@ -87,6 +87,22 @@ Below, `$ENGINE` means the path resolved this way.
 verb's own surface rather than the global verb list, and it is derived from the engine's flag
 registry, so it cannot disagree with what the parser accepts. Use it instead of reading source.
 
+**What a command line may carry — the engine checks it before it writes anything.**
+- `--help` or `-h` ANYWHERE after the verb prints that verb's help, exits 0 and writes nothing,
+  whatever else the line carries. Only a flag's value position differs: `--title --help` is
+  refused, because there the token is data.
+- A flag the verb does not declare is refused by name, with the flags it does accept. A shared
+  flag is no exception: `--session` belongs to `claim`/`unclaim` only (`PM_SESSION` elsewhere).
+- **Quote every multi-word value.** An unquoted `--title My Title` leaves `Title` as a surplus
+  positional, and a surplus positional is refused (`If 'Title' belongs to --title's value, quote
+  the whole value.`) — it used to store `My` and exit 0.
+- A valueless flag never takes a value: `remove-epic <id> --cascade true` and `--force=1` are both
+  refused. Outside `triage`, `suggest-lane`, `log-detour` and `honcho-memory`, a `--`-leading token
+  that is not a flag (`--Steal`) is refused as an undeclared flag.
+- An epic id is positional wherever a verb takes one; `--id <x>` in its place is diagnosed with the
+  line you meant. Positionals and flags may come in any order.
+- `--force` is accepted on every mutating verb and refused on read-only ones.
+
 `/pm:init` scaffold · `/pm:status` show · `/pm:next` decide · `/pm:detour` park ·
 `/pm:triage` screen an incoming ask against the whole backlog before registering it ·
 `snapshot` (PreCompact hook only — re-renders PROJECT.md and writes `.conductor/brief.txt`
@@ -1066,10 +1082,12 @@ not just one epic.
 ## Further reference — two channels, and only one of them can lie
 
 **What THIS engine accepts: ask the engine.** `node "$ENGINE" <verb> --help` prints that verb's
-real flag surface — every flag, which ones take no value, which ones repeat — projected from the
-same registry rows the unknown-flag guards read. It is therefore version-exact by construction and
-cannot advertise a flag your engine refuses. Reach for it BEFORE reading engine source, and before
-guessing a flag name. A verb that takes no flags says so explicitly.
+real flag surface — its positional form, every flag, which ones take no value, which ones repeat,
+and `--force` on a mutating verb — projected from the same declarations the pre-dispatch
+command-line check enforces. It is therefore version-exact by construction and cannot advertise a
+flag your engine refuses. Reach for it BEFORE reading engine source, and before guessing a flag
+name. A verb that takes no flags says so explicitly. The help token works anywhere after the verb
+and never performs the verb's write.
 
 **Procedure, concepts and rationale: the docs.** This skill and `README.md` cover the recurring
 essentials. For more — a command's full docs, a guide, a concept page —

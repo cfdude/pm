@@ -79,6 +79,40 @@ ALLOWS by returning silently with empty stdout and exit 0. Its stdout is protoco
 human-readable report printed there would corrupt it. The silence is the allow signal, not a
 broken command.
 
+## The command line
+
+**A help token never toggles the guard.** `set-gate-guard off --help` prints `set-gate-guard`'s
+help, exits 0 and leaves the guard as it was; from 0.41.0 through 0.43.0 it exited 0 having set
+`gateGuard: false`. The same holds for `-h`, and for a help token anywhere after the verb.
+
+**`set-gate-guard` reads one positional, `on` or `off`.** A second one, or a flag it does not
+declare, is refused before anything is written. `--force` is accepted (it is a mutating verb) and
+is never read as the positional: `set-gate-guard --force` prints the same report as bare
+`set-gate-guard`.
+
+**The `gate-guard` hook verb declares `--platform`**, which `hooks/hooks.json` passes as
+`--platform claude-code`, and refuses a valueless or unknown one. Any other flag on its line is
+refused.
+
+**A refused hook line fails OPEN, deliberately.** In a repository that has run `/pm:init`, a
+`gate-guard` line carrying a flag it does not declare exits **1**, after draining the hook payload
+on stdin:
+
+```text
+conductor: unknown flag --bogus for gate-guard — it accepts: --platform
+Nothing was written.
+```
+
+Claude Code treats exit 1 as a non-blocking hook error: the error is shown and the tool call
+proceeds **unguarded**. Exit 2 would block every `Edit`/`Write`/`NotebookEdit` in every session until
+the plugin was fixed, which is the worse failure. Within one plugin version this needs pm's own
+`hooks/hooks.json` to disagree with its own engine, and the test suite asserts every hook line in
+that file passes the check. Two ways remain: a hook line edited by hand, and an installed plugin's
+`hooks.json` driving a checkout engine of a different version under `PM_ENGINE_DELEGATION`. So
+**do not hand-edit `hooks/hooks.json`**; if the guard's hook errors on every tool call, update the
+plugin so its hook file and engine match. In a repository without pm the hook verbs refuse
+nothing and stay silent, as they always have.
+
 If `${CLAUDE_PLUGIN_ROOT}` is empty:
 `ENGINE="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/scripts/conductor.mjs}"; [ -f "$ENGINE" ] || ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1); node "$ENGINE" set-gate-guard on`
 

@@ -56,6 +56,11 @@ If `${CLAUDE_PLUGIN_ROOT}` is empty:
 `--intent` is repeatable; each `<status>:<target>` adds one entry to the map. Re-running
 `set-tracker` merges (only the flags you pass change). It refreshes the CLAUDE.md rules block.
 
+A misspelled flag is refused before anything is written, naming what `set-tracker` accepts —
+`--drection outward` used to exit 0 and store the default `inward`:
+`conductor: unknown flag --drection for set-tracker — it accepts: --role, --system, --repo, --project, --instance, --mechanism, --direction, --intent, --remove, --force`.
+Quote any value that contains a space.
+
 ## Direction — `--direction inward|outward|both`
 
 Which way work flows between this repo and the tracker. It is **explicit configuration**, never

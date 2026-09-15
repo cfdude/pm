@@ -212,15 +212,15 @@ Every refusal test asserts the refusal's CAUSE text (not only a non-zero exit) a
 
 ## 5. Docs — after Gate 2 is clean
 
-- [ ] 5.1 `commands/*.md`: every command doc that shows an invocation — the help-token rule, quoting
+- [x] 5.1 `commands/*.md`: every command doc that shows an invocation — the help-token rule, quoting
       multi-word values, `--force` on mutating verbs (in `commands/epic.md`, as a note on every mutating
       verb OUTSIDE update-epic's own section, which `conductor-13` exercises); `commands/epic.md` update-epic section names the
       disposition flags' not-archiving refusal; `commands/lane-routing.md` the bare refusal; each hook
       verb's `--platform` where a doc covers it. Plus `hooks/README.md`
-- [ ] 5.2 `README.md`: the command reference and a BREAKING note for undeclared flags and surplus
+- [x] 5.2 `README.md`: the command reference and a BREAKING note for undeclared flags and surplus
       positionals
-- [ ] 5.3 `skills/conductor/SKILL.md`: wherever it teaches an engine invocation or `--help`
-- [ ] 5.4 `CHANGELOG.md` `[Unreleased]`: the BREAKING entries, cfdude/pm#187's 0.41.0 regression fixed
+- [x] 5.3 `skills/conductor/SKILL.md`: wherever it teaches an engine invocation or `--help`
+- [x] 5.4 `CHANGELOG.md` `[Unreleased]`: the BREAKING entries, cfdude/pm#187's 0.41.0 regression fixed
       (closing the issue belongs to the release cut), `init`'s ordering fix, `--force` now reachable on
       add-epic/update-epic/claim, and the BREAKING cases design.md Risks names (`--cascade true`); note that
       `/pm:upgrade` rewrites the rules block, so each repo picks up corrected emitted lines only when it

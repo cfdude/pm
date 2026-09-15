@@ -28,6 +28,12 @@ integer — a valueless or non-numeric `--limit` is refused rather than coerced,
 flag is rejected by name. A wrong bound on a recall device silently hides the twin the whole
 command exists to surface.
 
+Quote the ask: it is ONE argument, and a second unquoted word is refused as an extra argument
+rather than silently dropped. It may stand before or after `--limit` — `triage --limit 3 "fix the
+render stamp"` reads the ask — while `triage --limit 5` with no ask still prints usage. A quoted ask
+that begins with `--` but is not shaped like a flag (`"--story <n> is 1-indexed"`) is the ask, not
+a flag.
+
 Read-only — it writes nothing and re-renders nothing. It prints one JSON object:
 
 ```json

@@ -131,6 +131,14 @@ appearing installed while contributing nothing.
 as *absent*, so `write-rules --platform` wrote the RECORDED platform's block while the command
 line looked answered — a wrong file, silently, from an invocation that read as deliberate.
 
+**Six more verbs declare `--platform`: `init` and the five hook verbs** (`brief`, `snapshot`,
+`commit-nudge`, `gate-guard`, `lesson-advice`), because `hooks/hooks.json` passes
+`--platform claude-code` to each. Every one refuses a valueless or unknown value by name, and
+`init` does so before it creates `.conductor/state.json` — `init --platform bogus` used to create
+it and then exit 1, ending pm's dormancy in a repo whose init had failed. Any flag a verb does not
+declare is refused before anything is written, on these verbs as on every other; in a repo
+without pm the hook verbs refuse nothing, as `hooks/README.md` explains.
+
 `rules-target` resolves that platform's own project-context chain **first-EXISTING-file wins** —
 `CLAUDE.md` for Claude Code, `AGENTS.md` for Codex, `HERMES.md` > `AGENTS.md` > `CLAUDE.md` for
 Hermes — and falls back to the chain's LAST entry when none of them exist yet, which is the most

@@ -16,6 +16,13 @@ Do NOT start fixing yet. Follow the `conductor` skill's detour protocol.
      node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" log-detour "<what you fixed>"
      ```
      (Appends a timestamped line + commit SHA to `.conductor/detours.log`.) Then resume.
+     Quote the text. The log is append-only, so the engine refuses a line it would record wrong
+     rather than writing it: an unquoted word shaped like a flag is refused
+     (`log-detour fixed --no-verify usage` →
+     `conductor: unknown flag --no-verify for log-detour — it accepts: --force`, then
+     `If '--no-verify' is part of the text, quote the whole value.`), and `--help` anywhere after
+     the verb prints help instead of appending. `--force` is never part of the text:
+     `log-detour fixed it --force` records `fixed it`.
      No proposal, no stack entry. If invoked as `/pm:detour --minimal "<what>"`, do exactly
      this and stop.
    - **Substantial** — needs its own design, changes shared behavior, or is multi-step →
