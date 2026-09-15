@@ -6780,11 +6780,12 @@
         "f7ae09d",
         "8f0057d",
         "d5fde94",
-        "d046e02"
+        "d046e02",
+        "2b48a09f39dfe8d5b538723fb1726978679cda30"
       ],
       "createdAt": "2026-09-14T18:09:05.963Z",
       "startedAt": "2026-09-14T18:09:05.964Z",
-      "touchedAt": "2026-09-14T20:53:55.247Z",
+      "touchedAt": "2026-09-14T20:55:57.218Z",
       "notes": [
         {
           "at": "2026-09-14T18:09:07.941Z",
@@ -7020,10 +7021,21 @@
         "8f0057d",
         "d5fde94",
         "d046e02",
-        "2b971c9e425b36d3188fe4b050d023e9748103d6"
+        "2b971c9e425b36d3188fe4b050d023e9748103d6",
+        "2b48a09f39dfe8d5b538723fb1726978679cda30",
+        "cc03572db0ccc0979e05fa366223e82bd56b27ca",
+        "893645db85bfd70f9bb7186e78e819559a1049ca",
+        "510de671ff1da0459462a6a71a5a49901c5fe2d9",
+        "083f3568b7298459a5f984a96a309f234bcc1fe8",
+        "70f41965bf00b8c1ce1969dbccb1336daee5fdab",
+        "b9a38265597ca95051ee1ac7153f65ffcb5bc311",
+        "2ada32f64ba9c88d92d3f331666afd55959519e5",
+        "3b9504b004454af0514fa16d0893e26a5d0b9358",
+        "9897cfcc287674acaeb838646fc009b39f1750dd",
+        "422a01252f4f609807e55bc3811f9706fe4c70ba"
       ],
       "createdAt": "2026-09-14T18:39:51.910Z",
-      "touchedAt": "2026-09-14T20:53:53.196Z",
+      "touchedAt": "2026-09-15T02:15:07.145Z",
       "release": "0.43.0",
       "startedAt": "2026-09-14T18:40:05.739Z",
       "gateReview": {
@@ -7047,6 +7059,20 @@
               "openspec/changes/archive-gate-reads-what-it-writes/specs/gate-integrity/spec.md"
             ],
             "reviewer": "two fresh-context lenses (code-grounded correctness; spec contract & cross-change consistency), 4 rounds + scoped confirmation, 2026-09-14"
+          }
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-15T02:15:07.142Z",
+          "baseSha": "9c3b946ad9d6b4b7864ccfadb628bf19921f47f0",
+          "headSha": "422a01252f4f609807e55bc3811f9706fe4c70ba",
+          "reviewer": "re-recorded at the last attributed commit: code reviewed through 9897cfc by two fresh-context lenses + scoped re-review (fixes 3b9504b, 9897cfc); 422a012 is docs only (commands/epic.md, README, SKILL, hierarchy-child-executor, CHANGELOG, tasks ticks), each claim verified against the engine by the docs agent; 2026-09-14",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-09-15T01:55:44.235Z",
+            "baseSha": "9c3b946ad9d6b4b7864ccfadb628bf19921f47f0",
+            "headSha": "9897cfcc287674acaeb838646fc009b39f1750dd",
+            "reviewer": "two fresh-context lenses (spec conformance: pass, 2 Minor; adversarial: fail on U+2028/U+0085/U+2029 bypass) fixed 3b9504b; scoped re-review failed on an untested detail-line escape, fixed 9897cfc with a mutant-verified test; 2026-09-14"
           }
         }
       },
@@ -7138,14 +7164,111 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-14T20:30:30.075Z",
-      "touchedAt": "2026-09-14T20:44:13.176Z",
+      "touchedAt": "2026-09-14T21:51:31.661Z",
       "notes": [
         {
           "at": "2026-09-14T20:44:13.173Z",
           "actor": "agent",
           "text": "Widen: archiveGate() will also print a withdrawal reason raw (gate-verdict-withdrawal 4.1), the same forgery shape — cover reasons too"
+        },
+        {
+          "at": "2026-09-14T21:51:31.658Z",
+          "actor": "agent",
+          "text": "Widen (Gate 2 lens 2, 2026-09-14): archiveGate's Gate 2 refusal also prints a withdrawn sha raw — --attribute-commit accepts any string, so 'deadbeef\\n  update-epic forged' withdrawn with --status archived forges a line. Reuse update-epic.mjs escapeControls (C0, DEL, C1, U+2028/2029)."
         }
       ]
+    },
+    {
+      "id": "gate-staleness-reads-only-last-attribution",
+      "title": "gateStaleness() judges only the LAST attributed commit (archive-gate.mjs:108-112), so attributing an ancestor after an uncovered descendant makes a stale Gate 2 read fresh — the archive gate and the 0.43.0 regression check both accept it",
+      "priority": "P2",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "archive-gate-reads-what-it-writes",
+          "reason": "found by its Gate 2 lens 2; both its guards inherit the hole"
+        },
+        {
+          "type": "relates-to",
+          "epic": "archived-delivered-gate2-regression-report",
+          "reason": "same Gate 2 demand, different bypass"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-14T21:51:27.770Z",
+      "touchedAt": "2026-09-15T01:55:25.728Z",
+      "notes": [
+        {
+          "at": "2026-09-14T21:51:29.762Z",
+          "actor": "agent",
+          "text": "Repro (Gate 2 lens 2, 2026-09-14): archived delivered openspec epic, passing Gate 2 headSha=H; update-epic <id> --attribute-commit <descendant of H> --attribute-commit <root, ancestor of H> exits 0; with --status archived --outcome delivered --no-deferrals it archives. Fix shape: stale iff ANY attributed commit (not withdrawn) is a strict descendant of headSha or not an ancestor-or-equal of it; CLAUDE.md item 4 already says an ancestor last is a wrong endpoint."
+        },
+        {
+          "at": "2026-09-15T01:55:25.724Z",
+          "actor": "agent",
+          "text": "Adjacent (Gate 2 re-review, 2026-09-14): on an archived delivered openspec epic, update-epic <id> --attribute-commit notasha exits 0 and stores it — staleness reads 'unverifiable', which the regression check does not count as a broken obligation."
+        }
+      ]
+    },
+    {
+      "id": "comprehensive-code-review-after-0-43-0",
+      "title": "Independent comprehensive code review of the pm engine, commands, skills and hooks after 0.43.0 merges — every finding registered as a backlog epic (or filed) before any other backlog task starts",
+      "priority": "P1",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "notes": [
+        {
+          "at": "2026-09-15T02:11:33.727Z",
+          "actor": "agent",
+          "text": "Asked by the user 2026-09-14: once the 0.43.0 commits and PR merge, and BEFORE #167/#168/#173/#176 or any other task, run superpowers:requesting-code-review as an independent, fresh-context, whole-repo review (not diff-scoped). Plan: fan out one reviewer per subsystem (update-epic/archive-gate/integrity; render/briefing/rules; sync/trackers/subcommands; hooks; commands/skills/agents docs vs engine; test quality), thorough mode = two lenses each; adjudicate BLOCKS vs POLISH; register each confirmed finding via /pm:triage then add-epic (or comment on an existing epic/issue). Output: a findings table + the epic ids."
+        }
+      ],
+      "attributedCommits": [],
+      "createdAt": "2026-09-15T02:11:33.733Z",
+      "touchedAt": "2026-09-15T02:11:33.739Z"
+    },
+    {
+      "id": "release-0-43-0-cut",
+      "title": "Cut pm 0.43.0: version bump, CHANGELOG section, Mintlify sync for both member changes (commands/epic and the Changelog page, Real Numbers), release PR into main, fleet pass",
+      "priority": "P1",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "archive-gate-reads-what-it-writes",
+          "reason": "carries its Mintlify task 5.4"
+        },
+        {
+          "type": "relates-to",
+          "epic": "gate-verdict-withdrawal",
+          "reason": "carries its Mintlify task"
+        },
+        {
+          "type": "relates-to",
+          "epic": "comprehensive-code-review-after-0-43-0",
+          "reason": "runs after this PR merges"
+        }
+      ],
+      "reconcileNeeded": false,
+      "notes": [
+        {
+          "at": "2026-09-15T02:16:56.472Z",
+          "actor": "agent",
+          "text": "lane: claude-code not superpowers — release mechanics under the release-checklist skill, no design. Holds 5.4 of archive-gate-reads-what-it-writes and gate-verdict-withdrawal's Mintlify task, carried here so the live site does not document 0.43.0 behavior before the plugin ships; the release-checklist skill is the procedure."
+        }
+      ],
+      "attributedCommits": [],
+      "createdAt": "2026-09-15T02:16:56.476Z",
+      "touchedAt": "2026-09-15T02:16:56.488Z"
     }
   ],
   "detourStack": [
@@ -7164,7 +7287,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 704,
+  "revision": 724,
   "reviewMode": "thorough",
   "releases": [
     {

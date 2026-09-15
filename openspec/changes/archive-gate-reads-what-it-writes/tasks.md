@@ -157,7 +157,7 @@ RED tasks fail on today's engine. REGRESSION GUARD tasks pass today and must kee
       "archived-delivered-gate2-regression-report:design.md What this deliberately does not do" --deferral
       "status-write-undone-by-heal-reports-updated:design.md What this deliberately does not do" --deferral
       "disposition-invocation-prints-bare-no-deferrals:design.md Half 2 printed invocation"`
-- [ ] 4.6 **Route what the work taught** — a practice → register an epic; tooling friction →
+- [x] 4.6 **Route what the work taught** — a practice → register an epic; tooling friction →
       `/pm:feedback [bug|feature] "<summary>"`; a process failure → a lesson in `docs/lessons/`. Name
       which each is
 
@@ -174,7 +174,7 @@ RED tasks fail on today's engine. REGRESSION GUARD tasks pass today and must kee
 
 ## 6. Gates and close
 
-- [ ] 6.1 Gate 2 — two lenses over the committed range; `record-gate-review
+- [x] 6.1 Gate 2 — two lenses over the committed range; `record-gate-review
       archive-gate-reads-what-it-writes --gate 2 --verdict pass --reviewer "<identity>" --base-sha
       <parent of first attributed> --head-sha <last attributed>`
 - [ ] 6.2 Archive this change <!-- pm:lifecycle --> — `/opsx:archive archive-gate-reads-what-it-writes`,
