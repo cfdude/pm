@@ -196,14 +196,19 @@ export function buildReport(events, { currentRevision = null, malformed = 0 } = 
 
 export function formatReport(r, { enabled = true, dir = activityDir() } = {}) {
   const L = ["ACTIVITY — what this conductor actually did, from .conductor/activity/.", ""];
-  if (!enabled) {
+  // `enabled: null` is UNKNOWN — .conductor/state.json could not be read — and must read as neither
+  // on nor off: a report silent about the flag reads as a log that is on.
+  if (enabled === null) {
+    L.push("Whether the activity log is on is UNKNOWN: .conductor/state.json cannot be read.");
+    L.push("");
+  } else if (!enabled) {
     L.push("The activity log is OFF for this repo (the default).");
     L.push("Turn it on with `set-activity-log on`. It records nothing retroactively —");
     L.push("anything before that moment is answerable only by forensics, which is the gap it closes.");
     L.push("");
   }
   if (!r.events) {
-    L.push(`No events recorded${enabled ? "" : " (and none will be while it is off)"}. Log directory: ${dir}`);
+    L.push(`No events recorded${enabled === null ? " (the log may be off)" : (enabled ? "" : " (and none will be while it is off)")}. Log directory: ${dir}`);
     return L.join("\n");
   }
   L.push(`${r.events} event(s), ${r.from} → ${r.to}`);
@@ -301,5 +306,5 @@ export function activity() {
     process.stdout.write(JSON.stringify({ enabled: state ? activityEnabled(state) : null, ...report }, null, 2) + "\n");
     return;
   }
-  process.stdout.write(formatReport(report, { enabled: state ? activityEnabled(state) : true }) + "\n");
+  process.stdout.write(formatReport(report, { enabled: state ? activityEnabled(state) : null }) + "\n");
 }

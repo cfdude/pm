@@ -886,3 +886,14 @@ test("G2-I5 claims: claimedAt plus the TTL beyond the representable dates reads 
   assert.equal(claimExpiry(claim), null);
   assert.equal(isLiveClaim(claim), false);
 });
+
+test("G2-minor: activity on an unreadable state.json reports the log's on/off state as unknown, not as on", () => {
+  const cwd = threeEpicRepo();
+  fs.writeFileSync(statePath(cwd), "{ not json at all");
+  const r = sh(["activity"], { cwd });
+  assert.notEqual(r.status, UNREADABLE, `stderr: ${r.stderr}`);
+  assert.match(r.stdout, /UNKNOWN/, `the text report says the state is unknown: ${r.stdout}`);
+  assert.doesNotMatch(r.stdout, /No events recorded\. Log directory/, "the report does not read as a log that is on");
+  const j = sh(["activity", "--json"], { cwd });
+  assert.equal(JSON.parse(j.stdout).enabled, null);
+});

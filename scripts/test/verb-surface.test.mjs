@@ -8,7 +8,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync, spawn, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { ENGINE, EMPTY_CACHE, tmpRepo, run } from "./helpers.mjs";
 
@@ -567,15 +567,31 @@ test("REGRESSION GUARD: A hook verb stays dormant in a repository without pm", (
   }
 });
 
-test("REGRESSION GUARD: a refused gate-guard hook line drains a large payload (no EPIPE)", () => {
+test("REGRESSION GUARD: a refused gate-guard hook line drains a large payload (no EPIPE)", async () => {
+  // ASYNC spawn and stdin.end(), which is how Claude Code feeds a hook — never spawnSync with
+  // `input`. On macOS spawnSync with a large `input` hangs about 1 run in 100 even for a minimal
+  // script containing no pm code (measured: it hung the pre-commit suite for 436 s once), while async
+  // spawn plus stdin.end() hung 0 times in 2300. The old form tested the platform, not the drain.
+  // The timeout turns a hang into a failure instead of a wedged suite.
   const cwd = fixture();
   const payload = JSON.stringify({ tool_name: "Write", tool_input: { file_path: "x", content: "y".repeat(200 * 1024) } });
   assert.ok(Buffer.byteLength(payload) >= 128 * 1024);
-  const r = spawnSync("node", [ENGINE, "gate-guard", "--bogus"], {
-    cwd, input: payload, encoding: "utf8",
-    env: { ...process.env, CLAUDE_PROJECT_DIR: cwd, PM_CACHE_ROOT: EMPTY_CACHE, PM_QUIET_ENGINE_BANNER: "1" },
+  const r = await new Promise((resolve) => {
+    const child = spawn("node", [ENGINE, "gate-guard", "--bogus"], {
+      cwd, env: { ...process.env, CLAUDE_PROJECT_DIR: cwd, PM_CACHE_ROOT: EMPTY_CACHE, PM_QUIET_ENGINE_BANNER: "1" },
+    });
+    let stderr = "";
+    let writeError = null;
+    child.stderr.setEncoding("utf8");
+    child.stderr.on("data", (d) => { stderr += d; });
+    child.stdout.resume();
+    child.stdin.on("error", (e) => { writeError = e; });
+    const timer = setTimeout(() => child.kill("SIGKILL"), 30000);
+    child.on("close", (status, signal) => { clearTimeout(timer); resolve({ status, signal, stderr, writeError }); });
+    child.stdin.end(payload);
   });
-  assert.equal(r.error, undefined, `the writer saw ${r.error && r.error.code}`);
+  assert.equal(r.signal, null, "the hook did not finish within 30 s");
+  assert.equal(r.writeError, null, `the writer saw ${r.writeError && r.writeError.code}`);
   assert.equal(r.status, 1);
   assert.match(r.stderr, /unknown flag --bogus for gate-guard/);
 });
