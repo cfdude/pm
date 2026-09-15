@@ -32,6 +32,16 @@ export function setLaneRouting() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const f = parseFlags(process.argv.slice(3));
   requireFlagValues("set-lane-routing", f);
+  // every-verb-refuses-what-it-does-not-read D8: with NONE of the three operations this used to write
+  // `laneRouting: {overrides: []}` where no block existed and report success — a write nobody asked
+  // for. Refused before loadState(). A read form (set-gate-guard's #159 precedent) was considered and
+  // declined: it is new behaviour with its own output contract, and the defect is only the write.
+  if (f.add === undefined && f.remove === undefined && f.clear === undefined) {
+    process.stderr.write(
+      "conductor: set-lane-routing needs an operation — --add \"<match>:<lane>\", --remove \"<match>\" " +
+      "or --clear. Nothing was written.\n");
+    process.exit(1);
+  }
   const state = loadState();
   const lr = { overrides: [...((state.laneRouting || {}).overrides || [])] };
 

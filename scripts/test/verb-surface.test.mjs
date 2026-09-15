@@ -809,3 +809,18 @@ test("REGRESSION GUARD: every flag a hook line passes is declared, and every hoo
     if (e.hook === true) assert.ok(passesPlatform.has(verb), `hook verb ${verb}'s hook line does not pass --platform`);
   }
 });
+
+// ═══════════════ 3.1 — bare set-lane-routing writes nothing ═══════════════
+
+test("A bare set-lane-routing leaves the record unchanged", () => {
+  const cwd = fixture();
+  assert.equal(JSON.parse(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8")).laneRouting, undefined,
+    "the fixture has no lane routing");
+  const before = treeSnapshot(cwd);
+  const r = engine(["set-lane-routing"], { cwd });
+  assert.notEqual(r.status, 0, "an invocation with no operation must not report success");
+  assert.match(r.stderr, /--add/);
+  assert.match(r.stderr, /--remove/);
+  assert.match(r.stderr, /--clear/);
+  assert.deepEqual(treeSnapshot(cwd), before, "state.json is byte-identical — no empty overrides block");
+});

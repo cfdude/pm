@@ -149,7 +149,7 @@ Every refusal test asserts the refusal's CAUSE text (not only a non-zero exit) a
 
 ## 3. Verb-specific refusals and help
 
-- [ ] 3.1 RED then GREEN: "A bare set-lane-routing leaves the record unchanged" — GREEN refuses in
+- [x] 3.1 RED then GREEN: "A bare set-lane-routing leaves the record unchanged" — GREEN refuses in
       `setLaneRouting()` before `loadState()`, naming `--add`, `--remove`, `--clear` (D8). REGRESSION
       GUARD: `conductor-08`'s "--clear empties the overrides list" still passes
 - [ ] 3.2 RED then GREEN: "An outcome without an archive is refused by name" and "A handoff target
