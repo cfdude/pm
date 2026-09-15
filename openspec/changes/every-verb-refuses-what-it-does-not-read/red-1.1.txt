@@ -1,0 +1,51 @@
+✖ VERB_POSITIONALS is set-equal to the dispatch table (1.968416ms)
+✖ every VERB_POSITIONALS row has a valid arity, a form, and boolean markers (0.121125ms)
+✖ release carries two forms keyed by its first positional (0.092292ms)
+✖ freeText is carried by exactly triage, suggest-lane, log-detour and honcho-memory (0.078833ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 0
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 46.196584
+
+✖ failing tests:
+
+test at scripts/test/verb-surface.test.mjs:43:1
+✖ VERB_POSITIONALS is set-equal to the dispatch table (1.968416ms)
+  AssertionError [ERR_ASSERTION]: constants.mjs must export VERB_POSITIONALS
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/verb-surface.test.mjs:45:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/verb-surface.test.mjs:56:1
+✖ every VERB_POSITIONALS row has a valid arity, a form, and boolean markers (0.121125ms)
+  TypeError: Cannot convert undefined or null to object
+      at Object.entries (<anonymous>)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/verb-surface.test.mjs:58:36)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at scripts/test/verb-surface.test.mjs:65:1
+✖ release carries two forms keyed by its first positional (0.092292ms)
+  TypeError: Cannot read properties of undefined (reading 'release')
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/verb-surface.test.mjs:67:32)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at scripts/test/verb-surface.test.mjs:78:1
+✖ freeText is carried by exactly triage, suggest-lane, log-detour and honcho-memory (0.078833ms)
+  TypeError: Cannot convert undefined or null to object
+      at Object.entries (<anonymous>)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/verb-surface.test.mjs:80:23)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)

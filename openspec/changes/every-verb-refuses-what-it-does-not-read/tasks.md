@@ -27,7 +27,7 @@ Every refusal test asserts the refusal's CAUSE text (not only a non-zero exit) a
 
 ## 1. Declarations — inert until section 2 enforces them
 
-- [ ] 1.1 RED then GREEN: a test asserting `VERB_POSITIONALS` (constants.mjs) is set-equal to the
+- [x] 1.1 RED then GREEN: a test asserting `VERB_POSITIONALS` (constants.mjs) is set-equal to the
       dispatch table read from `conductor.mjs` (reader duplicated from `conductor-31`, as that file's
       comment prescribes) and that every entry has integer `min`, `max` ≥ `min` (or `Infinity`) and a
       non-empty `form`, with `release`'s two forms, and that `freeText: true` is carried by exactly

@@ -835,6 +835,62 @@ export const POSITIONAL_USAGE = {
   release: "release <id> --intent \"<what this release is for>\" …   — create or amend one\n  release show [<id>]                                    — READ it back: intent, target, DERIVED members, deferrals, the cross-spec verdict and any amendments (no id: every release, one line each). `show` is RESERVED as a release id",
 };
 
+/** every-verb-refuses-what-it-does-not-read — how many POSITIONAL arguments each dispatched verb
+ *  reads, declared for EVERY verb the engine dispatches (the suite asserts set-equality with the
+ *  dispatch table, so a verb added without a row fails by name).
+ *
+ *  Positionals were declared nowhere before this: each verb read `argv[0]`, `argv[3]`, a slice or a
+ *  scan, and `parseFlags()` silently skipped every token it did not consume — so `add-epic --title
+ *  My Title` stored `My` and exited 0. The pre-dispatch check in lib/argv-surface.mjs reads this
+ *  table to refuse a token beyond a verb's MAXIMUM. The MINIMUM is declared but enforced by each verb
+ *  itself, because several carry a purpose-built message for it (update-epic's #71 `--id`
+ *  diagnosis, `claim --repo`'s alternative form) that a generic count would replace with a worse one.
+ *
+ *    min, max  — `max` may be `Infinity` for a verb that joins its positionals into one text.
+ *    form      — the positional form help prints; non-empty even at arity 0 so help never guesses.
+ *    idFirst   — the first positional is an EPIC id, so `--id <value>` given instead is diagnosed
+ *                as the positional (#71's diagnosis, generalised). `release` and
+ *                `record-cross-spec-review` take a RELEASE id and `honcho-memory` an action, so all
+ *                three are false: the diagnosis's text says "epic id" and would be wrong there.
+ *    freeText  — the positionals are free text, so a `--`-leading token that is NOT flag-shaped
+ *                (`"--story <n> is 1-indexed"`) is a positional (gh-186's rule). On every other verb
+ *                such a token is refused as an undeclared flag: that verb's own parser skips any
+ *                `--`-leading token, so reading it as a positional would pass the check while the
+ *                verb acted without it.
+ *    byFirst   — `release` only: the one verb whose surface branches on a positional literal. The
+ *                branch's `min`/`max` count ALL positionals, the keyword included.
+ *
+ *  Confirmed against each module with `rg -n "process\.argv|argv\[0\]|positionalArgs" scripts/lib`
+ *  (task 1.1): the verbs absent from that sweep read no positional at all. */
+const P0 = { min: 0, max: 0, form: "(no positional arguments)", idFirst: false, freeText: false };
+const EPIC_ID = { min: 1, max: 1, form: "<id>", idFirst: true, freeText: false };
+export const VERB_POSITIONALS = {
+  init: P0, render: P0, brief: P0, snapshot: P0, "commit-nudge": P0, sync: P0,
+  "add-epic": P0, "add-many": P0, "clear-active": P0, "set-tracker": P0, "set-lane-routing": P0,
+  "set-review-mode": P0, "gate-guard": P0, "lesson-advice": P0, "plan-hierarchy": P0, owners: P0,
+  activity: P0, "purge-logs": P0, "verify-worktrees": P0, "verify-state": P0, "verify-specs": P0,
+  integrity: P0, changesets: P0, "recover-created-at": P0, "unconsidered-outcomes": P0, upgrade: P0,
+  changelog: P0, rules: P0, "write-rules": P0, "rules-target": P0,
+  "update-epic": EPIC_ID, "remove-epic": EPIC_ID, "set-active": EPIC_ID, "set-autonomy": EPIC_ID,
+  "record-reconcile": EPIC_ID, "record-gate-review": EPIC_ID, "record-tracker-refresh": EPIC_ID,
+  "push-detour": EPIC_ID,
+  "record-cross-spec-review": { min: 1, max: 1, form: "<releaseId>", idFirst: false, freeText: false },
+  "set-activity-log": { min: 1, max: 1, form: "on|off", idFirst: false, freeText: false },
+  "suggest-lane": { min: 1, max: 1, form: "\"<free text>\"", idFirst: false, freeText: true },
+  triage: { min: 1, max: 1, form: "\"<the ask, in its own words>\"", idFirst: false, freeText: true },
+  "pop-detour": { min: 0, max: 1, form: "[<epicId>]", idFirst: true, freeText: false },
+  "set-gate-guard": { min: 0, max: 1, form: "[on|off]", idFirst: false, freeText: false },
+  claim: { min: 0, max: 1, form: "[<epicId>]", idFirst: true, freeText: false },
+  unclaim: { min: 0, max: 1, form: "[<epicId>]", idFirst: true, freeText: false },
+  "log-detour": { min: 1, max: Infinity, form: "\"<what you fixed>\"", idFirst: false, freeText: true },
+  reorder: { min: 1, max: Infinity, form: "<id> <id> …", idFirst: true, freeText: false },
+  "honcho-memory": { min: 3, max: Infinity, form: "<push|pop> <epicId> \"<reason>\"", idFirst: false, freeText: true },
+  release: {
+    min: 1, max: 1, form: "<id>", idFirst: false, freeText: false,
+    byFirst: { show: { min: 1, max: 2, form: "show [<id>]" } },
+  },
+};
+
 export const FLAGLESS_VERBS = [
   "init", "brief", "snapshot", "commit-nudge", "sync", "log-detour", "honcho-memory",
   "reorder", "set-active", "clear-active", "suggest-lane", "set-gate-guard", "gate-guard",
