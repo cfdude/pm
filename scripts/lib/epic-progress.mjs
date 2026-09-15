@@ -5,7 +5,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { ROOT, CHANGES_DIR, ARCHIVE_DIR, PLANS_DIR, laneRank, isOpenspecLane } from "./constants.mjs";
+import { ROOT, CHANGES_DIR, ARCHIVE_DIR, PLANS_DIR, laneRank, isOpenspecLane, withdrawnGate } from "./constants.mjs";
 import { engineStamp, isArchiveBackfilled, isStoryDisposed } from "./disposition.mjs";
 import { effectivePriorityOf, priorityRank } from "./dependency-order.mjs";
 
@@ -120,11 +120,18 @@ export function reconcileArchived(state) {
       if (!e.disposition) e.disposition = engineStamp("archive-drift-heal");
       // The BYPASS half binds OPENSPEC-LANE EPICS ONLY, through isOpenspecLane so a lane-less
       // epic — openspec-lane on every other surface — gets the record its rendering says it
-      // owes. `record-gate-review` refuses a verdict to any other lane, so an `ungated` entry
-      // on a claude-code or superpowers epic would be a standing condition with NO clearing
-      // path in the engine at all. No `reviewer` field: that carries an identity, and an audit
-      // query over reviewers must never pick up path names.
-      if (isOpenspecLane(e) && !(e.gateReview && e.gateReview.gate2)) {
+      // owes. Gate 2 is an openspec-lane obligation, so an `ungated` entry on a claude-code or
+      // superpowers epic would assert a missing review that lane was never required to have,
+      // clearable only by recording a Gate 2 nobody owed. (`record-gate-review` has accepted a
+      // verdict on any lane since #163; the lane binding never rested on that.) No `reviewer`
+      // field: that carries an identity, and an audit query over reviewers must never pick up
+      // path names.
+      //
+      // NEVER OVER A WITHDRAWN GATE 2 (gate-verdict-withdrawal). `ungated` says nobody reviewed the
+      // work; for a review that was recorded and taken back that is a different and false claim,
+      // and a stored `ungated` would END the withdrawn state, so every surface would word the epic
+      // as never reviewed. The standing condition still names it, as its withdrawn kind.
+      if (isOpenspecLane(e) && !(e.gateReview && e.gateReview.gate2) && !withdrawnGate(e, 2)) {
         e.gateReview = e.gateReview && typeof e.gateReview === "object" ? e.gateReview : {};
         e.gateReview.gate2 = {
           verdict: "ungated", reviewedAt: new Date().toISOString(), recordedBy: "archive-drift-heal",

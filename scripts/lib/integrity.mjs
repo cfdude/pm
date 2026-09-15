@@ -19,7 +19,7 @@
 // capability exists to end.
 
 import { isInitialized, loadState } from "./state.mjs";
-import { archivedChanges, epicProgress, strippedChangeId } from "./epic-progress.mjs";
+import { archivedChanges, epicProgress, isArchived, strippedChangeId } from "./epic-progress.mjs";
 import { KNOWN_STATUSES, gateArtifacts, gateHasEvidence, isOpenspecLane, releaseMembers, withdrawnGate } from "./constants.mjs";
 import { AGENT_OUTCOMES, dispositionInvocation, escapeControls } from "./archive-gate.mjs";
 import { commitDate, isAncestor, objectExists, reachableFromAnyRef } from "./git.mjs";
@@ -120,7 +120,9 @@ export function recordedShas(state) {
   return out;
 }
 
-/** The epics carrying an `ungated` Gate 2 — archived with no review from anyone.
+/** The standing condition's two KINDS, as `{epic, kind: "ungated"|"withdrawn", withdrawal,
+ *  archivedUngated}`: epics carrying an `ungated` Gate 2 — archived with no review from anyone —
+ *  and archived openspec-lane epics whose Gate 2 is in the WITHDRAWN state.
  *
  *  THE definition, read by the integrity report AND by the briefing, so the two can never name
  *  different sets. It is a pure function of `state.json` and is recomputed at every composition:
@@ -139,9 +141,44 @@ export function recordedShas(state) {
  *  added to prevent. Applied HERE rather than at the check, so the report and the brief can never
  *  name different sets. */
 export function ungatedArchives(epics) {
-  return (epics || []).filter(e =>
-    e && e.gateReview && e.gateReview.gate2 && e.gateReview.gate2.verdict === "ungated" &&
-    inCompletionScope(e));
+  const out = [];
+  for (const e of epics || []) {
+    if (!e) continue;
+    const gate2 = e.gateReview && e.gateReview.gate2;
+    // THE UNGATED KIND — unchanged: keyed on the heal's stamp, a durable record that an archive
+    // bypassed Gate 2, with no lane or status filter, so a later lane switch or status change does
+    // not undo the report of the bypass.
+    if (gate2 && gate2.verdict === "ungated") {
+      if (inCompletionScope(e)) out.push({ epic: e, kind: "ungated", withdrawal: null, archivedUngated: true });
+      continue;
+    }
+    // THE WITHDRAWN KIND (gate-verdict-withdrawal) — keyed on a STATE that can arise on any lane
+    // and at any status, so it is filtered explicitly to where Gate 2 is owed at archive: the set
+    // the heal would have stamped. Disjoint from the ungated kind by construction, because a gate
+    // carrying `ungated` is never withdrawn (withdrawnGate). "Archived" is the stored status OR the
+    // change archived on disk: integrity reads stored epics and the brief reads epics resolved
+    // against disk, and without the OR they disagree between `/opsx:archive` and the next heal.
+    // The disk test runs LAST — isArchived() reads a directory per epic.
+    if (!isOpenspecLane(e) || !inCompletionScope(e)) continue;
+    const withdrawal = withdrawnGate(e, 2);
+    if (!withdrawal || !(e.status === "archived" || isArchived(e.id))) continue;
+    // ANY Gate 2 withdrawal that took back a verdict which had superseded an `ungated` stamp —
+    // not only the latest — so a re-record and a second withdrawal can never hide "never reviewed".
+    const archivedUngated = (Array.isArray(e.withdrawnGateReviews) ? e.withdrawnGateReviews : [])
+      .some(w => w && String(w.gate) === "2" && w.entry && w.entry.superseded &&
+        w.entry.superseded.verdict === "ungated");
+    out.push({ epic: e, kind: "withdrawn", withdrawal, archivedUngated });
+  }
+  return out;
+}
+
+/** The withdrawn kind's notice, worded ONCE for the integrity report and the brief: it names the
+ *  withdrawal, quotes the latest withdrawal's reason JSON-quoted with controls escaped, and says
+ *  where the epic was archived ungated before the withdrawn review. It never says no review was
+ *  recorded — that is true of the ungated kind and false of this one. */
+export function withdrawnArchiveNote({ withdrawal, archivedUngated }) {
+  return `Gate 2 withdrawn (withdrawal reason ${escapeControls(JSON.stringify(String(withdrawal.reason ?? "")))})` +
+    (archivedUngated ? " — and it was archived ungated before the withdrawn review was recorded" : "");
 }
 
 /** The registry. One entry per check: a stable `id` a reader can grep for, a one-line `title`
@@ -198,10 +235,24 @@ export const CHECKS = [
     id: "archived-with-no-gate-2-review",
     title: "an epic archived with an `ungated` Gate 2 — no review from anyone",
     run(state) {
-      return ungatedArchives(state.epics).map(e => ({ epic: e.id, detail:
+      return ungatedArchives(state.epics).filter(x => x.kind === "ungated").map(({ epic: e }) => ({ epic: e.id, detail:
         "archived by the drift heal with no Gate 2 review recorded by anyone. A standing " +
         "condition, not an episode: it holds until a real passing verdict with its commit range " +
         `supersedes it — record-gate-review ${e.id} --gate 2 --verdict pass --base-sha <sha> ` +
+        "--head-sha <sha>" }));
+    },
+  },
+  {
+    // The WITHDRAWN kind of the same standing condition, under its OWN id and title: the sibling's
+    // title says "no review from anyone", which is false of a review that was recorded and taken
+    // back, and must never sit above a withdrawn entry.
+    id: "archived-with-withdrawn-gate-2",
+    title: "an archived openspec-lane epic whose Gate 2 verdict was withdrawn and not recorded again",
+    run(state) {
+      return ungatedArchives(state.epics).filter(x => x.kind === "withdrawn").map(x => ({ epic: x.epic.id, detail:
+        `archived with its ${withdrawnArchiveNote(x)}. A standing condition, not an episode: a ` +
+        "withdrawal takes a verdict back and does not discharge Gate 2, so this holds until a real " +
+        `verdict is recorded — record-gate-review ${x.epic.id} --gate 2 --verdict pass --base-sha <sha> ` +
         "--head-sha <sha>" }));
     },
   },

@@ -93,11 +93,11 @@ Order per design.md.
 
 ## 5. The heal and the standing condition
 
-- [ ] 5.1 RED then GREEN: `reconcileArchived` skips the `ungated` stamp when `withdrawnGate(e, 2)`;
+- [x] 5.1 RED then GREEN: `reconcileArchived` skips the `ungated` stamp when `withdrawnGate(e, 2)`;
       the disposition half and the status flip are unchanged. Correct the code comment at
       `epic-progress.mjs:123` that repeats "record-gate-review refuses a verdict to any other lane"
-- [ ] 5.2 REGRESSION GUARD: assert the heal is byte-identical where nothing was withdrawn
-- [ ] 5.3 RED then GREEN: `ungatedArchives` returns `{epic, kind: "ungated"|"withdrawn", withdrawal}`.
+- [x] 5.2 REGRESSION GUARD: assert the heal is byte-identical where nothing was withdrawn
+- [x] 5.3 RED then GREEN: `ungatedArchives` returns `{epic, kind: "ungated"|"withdrawn", withdrawal}`.
       The `ungated` kind's predicate is unchanged. ADD the `withdrawn` kind:
       `(e.status === "archived" || isArchived(e.id)) && isOpenspecLane(e) && inCompletionScope(e) &&
       withdrawnGate(e, 2)`. Update its callers `integrity.mjs:201` and `briefing.mjs:218`, and keep the
@@ -113,18 +113,18 @@ Order per design.md.
       `openspec/changes/archive/2026-08-25-conductor-tells-the-truth/integrity-day-one.md`, because
       conductor-15 test 9.14 requires every registered check id there and the pre-commit hook runs the
       suite. 5.8's "archived ungated" wording must not match that regex
-- [ ] 5.4 REGRESSION GUARD (passes once 5.1 and 5.3 land): an epic reached by the heal route (withdraw while open → change archived on disk
+- [x] 5.4 REGRESSION GUARD (passes once 5.1 and 5.3 land): an epic reached by the heal route (withdraw while open → change archived on disk
       → heal, outcome `unknown`) is named as withdrawn by both surfaces
-- [ ] 5.5 REGRESSION GUARD (pins 5.3's `isArchived` arm): the not-yet-healed window — withdraw while open, move the change under
+- [x] 5.5 REGRESSION GUARD (pins 5.3's `isArchived` arm): the not-yet-healed window — withdraw while open, move the change under
       `openspec/changes/archive/`, then compose the brief and `integrity` WITHOUT a mutating verb; both
       name the epic
-- [ ] 5.5a REGRESSION GUARD: a brief carrying the withdrawn-kind notice is delivered, and a later brief
+- [x] 5.5a REGRESSION GUARD: a brief carrying the withdrawn-kind notice is delivered, and a later brief
       with the withdrawal unchanged names the epic again
-- [ ] 5.6 REGRESSION GUARD (written after 5.3): the withdrawn kind names neither a `claude-code`-lane archived epic nor an
+- [x] 5.6 REGRESSION GUARD (written after 5.3): the withdrawn kind names neither a `claude-code`-lane archived epic nor an
       openspec epic neither archived in state nor on disk, each with a withdrawn Gate 2
 - [ ] 5.7 REGRESSION GUARD: an archived `superseded` openspec epic with a withdrawn Gate 2 (reached by the
       combined call in 6.5) is named by neither surface
-- [ ] 5.8 RED then GREEN: a withdrawn entry whose `superseded` holds an `ungated` stamp says so on both
+- [x] 5.8 RED then GREEN: a withdrawn entry whose `superseded` holds an `ungated` stamp says so on both
       surfaces; and after a re-record and second withdrawal (latest entry holding no `ungated`), both
       still say so
 

@@ -9,7 +9,7 @@ import { staleMarker } from "./active-pointer.mjs";
 import { isRenderableLink, deferralHistory, deferralNote, daysSince } from "./links.mjs";
 import { correctionMarking, correctionNote, outcomeOf, recordedDispositions } from "./disposition.mjs";
 import { gateTableRows } from "./archive-gate.mjs";
-import { ungatedArchives } from "./integrity.mjs";
+import { ungatedArchives, withdrawnArchiveNote } from "./integrity.mjs";
 import { KNOWN_LANES, anyInwardProcedureEmittable, outwardApplies, releaseLine, releaseSummaries } from "./constants.mjs";
 import { crossSpecLine } from "./cross-spec-review.mjs";
 import { dependencyNotes } from "./dependency-order.mjs";
@@ -215,13 +215,27 @@ export function buildBrief(state, { consume = false } = {}) {
   // No epic the archive backfill or the two creation paths register can ever appear here: they
   // are forbidden from writing a `gate2` entry at all, which is what keeps an unclearable
   // condition from being asserted en masse against changes archived before the conductor existed.
-  const ungated = ungatedArchives(epics);
+  const standing = ungatedArchives(epics);
+  const ungated = standing.filter(x => x.kind === "ungated").map(x => x.epic);
   if (ungated.length) {
     L.push("UNGATED ARCHIVES (archived with no Gate 2 review — clears when a real verdict supersedes it):");
     for (const e of ungated.slice(0, NEXT_CAP)) {
       L.push(`  ⚠ \`${e.id}\` — \`record-gate-review ${e.id} --gate 2 --verdict pass --base-sha <sha> --head-sha <sha>\``);
     }
     if (ungated.length > NEXT_CAP) L.push(`  (+${ungated.length - NEXT_CAP} more — see PROJECT.md)`);
+    L.push("");
+  }
+  // The WITHDRAWN kind, under its OWN heading and blank-delimited block, so the ungated heading
+  // ("archived with no Gate 2 review") never encloses an epic whose review was recorded and then
+  // taken back. Same recomputation, same never-consumed rule.
+  const withdrawnArchives = standing.filter(x => x.kind === "withdrawn");
+  if (withdrawnArchives.length) {
+    L.push("WITHDRAWN GATE 2 ARCHIVES (archived with the Gate 2 verdict taken back — clears when a real verdict is recorded):");
+    for (const x of withdrawnArchives.slice(0, NEXT_CAP)) {
+      L.push(`  ⚠ \`${x.epic.id}\` — ${withdrawnArchiveNote(x)} — ` +
+        `\`record-gate-review ${x.epic.id} --gate 2 --verdict pass --base-sha <sha> --head-sha <sha>\``);
+    }
+    if (withdrawnArchives.length > NEXT_CAP) L.push(`  (+${withdrawnArchives.length - NEXT_CAP} more — see \`integrity\`)`);
     L.push("");
   }
 

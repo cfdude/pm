@@ -400,3 +400,158 @@ test("4.6 the activity report's GATES section lists a withdrawal made through up
   const hits = block.filter(l => /a46 {2}gate2 withdrawn/.test(l));
   assert.equal(hits.length, 1, `exactly one withdrawal listed:\n${block.join("\n")}`);
 });
+
+// ═══════════════ the heal and the standing condition ═══════════════
+
+/** The heal route: an openspec-lane epic registered from a change directory records Gate 2 and
+ *  withdraws it while OPEN; the change is then archived on disk and a mutating verb heals it. */
+function healedWithdrawn(id, reason = "copied from the change epic", { heal = true } = {}) {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const archive = () => {
+    fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive"), { recursive: true });
+    fs.renameSync(path.join(cwd, "openspec", "changes", id),
+      path.join(cwd, "openspec", "changes", "archive", `2026-09-14-${id}`));
+  };
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", id), { recursive: true });
+  fs.writeFileSync(path.join(cwd, "openspec", "changes", id, "tasks.md"), "# tasks\n\n- [x] a\n");
+  run(["sync"], { cwd });
+  run(["record-gate-review", id, ...PASS2], { cwd });
+  accepted(cwd, ["update-epic", id, "--withdraw-gate-review", "2", "--withdrawal-reason", reason]);
+  archive();
+  if (heal) run(["sync"], { cwd });
+  return cwd;
+}
+
+test("5.1 the heal does not stamp ungated over a withdrawn Gate 2", () => {
+  const cwd = healedWithdrawn("h51");
+  const e = epicOf(cwd, "h51");
+  assert.equal(e.status, "archived");
+  assert.equal(e.disposition.outcome, "unknown");
+  assert.equal(e.disposition.recordedBy, "archive-drift-heal");
+  assert.ok(!("gate2" in (e.gateReview || {})), `no ungated entry is written: ${JSON.stringify(e.gateReview)}`);
+  assert.equal(e.withdrawnGateReviews.length, 1, "the withdrawal is untouched");
+});
+
+test("5.2 the heal is unchanged where nothing was withdrawn", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  healArchived(cwd, "h52");
+  const e = epicOf(cwd, "h52");
+  assert.deepEqual(Object.keys(e.gateReview.gate2).sort(), ["recordedBy", "reviewedAt", "verdict"]);
+  assert.equal(e.gateReview.gate2.verdict, "ungated");
+  assert.equal(e.gateReview.gate2.recordedBy, "archive-drift-heal");
+  assert.equal(e.disposition.outcome, "unknown");
+  assert.equal(e.disposition.recordedBy, "archive-drift-heal");
+  assert.ok(!("withdrawnGateReviews" in e));
+});
+
+const NO_REVIEW = /no (gate 2 )?review/i;
+
+/** The brief block enclosing the withdrawn-kind entry for `id`: from the nearest NON-INDENTED line
+ *  above it (brief blocks are blank-delimited with unindented headings) to the next blank line. */
+function briefWithdrawnBlock(brief, id) {
+  const L = brief.split("\n");
+  const at = L.findIndex(l => l.startsWith("  ⚠") && l.includes(`\`${id}\``) && /withdrawn/.test(l));
+  assert.notEqual(at, -1, `the brief names ${id} as withdrawn:\n${brief}`);
+  let start = at;
+  while (start > 0 && /^\s/.test(L[start])) start--;
+  let end = at;
+  while (end < L.length && L[end].trim()) end++;
+  return L.slice(start, end);
+}
+
+/** An archived `delivered` openspec epic whose Gate 2 `fail` was recorded after archive, then
+ *  withdrawn — a verb route to the withdrawn kind that needs no heal. */
+function archivedFailedThenWithdrawn(id, reason) {
+  const cwd = metOpenspec(id);
+  accepted(cwd, ["update-epic", id, ...ARCHIVE_DELIVERED]);
+  run(["record-gate-review", id, "--gate", "2", "--verdict", "fail"], { cwd });
+  accepted(cwd, ["update-epic", id, "--withdraw-gate-review", "2", "--withdrawal-reason", reason]);
+  return cwd;
+}
+
+/** Assert both surfaces name `id` under the withdrawn kind, quote `reason`, and say no review is missing. */
+function assertNamedWithdrawn(cwd, id, reason) {
+  const report = run(["integrity"], { cwd });
+  const block = integrityBlock(report, "archived-with-withdrawn-gate-2");
+  const finding = block.find(l => l.includes(`\`${id}\``));
+  assert.ok(finding, `integrity names ${id} under archived-with-withdrawn-gate-2:\n${block.join("\n")}`);
+  assert.match(finding, /withdrawn/);
+  assert.ok(finding.includes(JSON.stringify(reason)), `integrity quotes the reason:\n${finding}`);
+  for (const l of block) assert.doesNotMatch(l, NO_REVIEW, `the integrity block says no review was recorded: ${l}`);
+  assert.ok(!integrityBlock(report, "archived-with-no-gate-2-review").some(l => l.includes(`\`${id}\``)),
+    "the ungated check does not name a withdrawn Gate 2");
+  const brief = briefWithdrawnBlock(parseBrief(cwd), id);
+  assert.ok(brief.some(l => l.includes(JSON.stringify(reason))), `the brief quotes the reason:\n${brief.join("\n")}`);
+  for (const l of brief) assert.doesNotMatch(l, NO_REVIEW, `the brief block says no review was recorded: ${l}`);
+  return { finding, brief };
+}
+
+test("5.3 the withdrawn kind is its own integrity check and brief heading, worded as withdrawn", () => {
+  const cwd = archivedFailedThenWithdrawn("s53", "the fail was recorded on the wrong epic");
+  assertNamedWithdrawn(cwd, "s53", "the fail was recorded on the wrong epic");
+});
+
+test("5.8 a withdrawn entry that superseded an ungated stamp says so, and survives a second withdrawal", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  healArchived(cwd, "s58");
+  assert.equal(epicOf(cwd, "s58").gateReview.gate2.verdict, "ungated", "precondition: the heal stamped ungated");
+  run(["record-gate-review", "s58", ...PASS2], { cwd });
+  accepted(cwd, ["update-epic", "s58", "--withdraw-gate-review", "2", "--withdrawal-reason", "first"]);
+  const once = assertNamedWithdrawn(cwd, "s58", "first");
+  assert.match(once.finding, /archived ungated/, `integrity says archived ungated:\n${once.finding}`);
+  assert.ok(once.brief.some(l => /archived ungated/.test(l)), `the brief says archived ungated:\n${once.brief.join("\n")}`);
+
+  run(["record-gate-review", "s58", ...PASS2], { cwd });
+  accepted(cwd, ["update-epic", "s58", "--withdraw-gate-review", "2", "--withdrawal-reason", "second"]);
+  assert.ok(!epicOf(cwd, "s58").withdrawnGateReviews.at(-1).entry.superseded, "precondition: the latest entry holds no ungated stamp");
+  const twice = assertNamedWithdrawn(cwd, "s58", "second");
+  assert.match(twice.finding, /archived ungated/);
+  assert.ok(twice.brief.some(l => /archived ungated/.test(l)));
+});
+
+/** Assert neither surface names `id` under either kind of the standing condition. */
+function assertNotNamed(cwd, id) {
+  const report = run(["integrity"], { cwd });
+  for (const check of ["archived-with-withdrawn-gate-2", "archived-with-no-gate-2-review"]) {
+    assert.ok(!integrityBlock(report, check).some(l => l.includes(`\`${id}\``)), `${check} names ${id}`);
+  }
+  const brief = parseBrief(cwd).split("\n");
+  assert.ok(!brief.some(l => l.startsWith("  ⚠") && l.includes(`\`${id}\``)), `the brief names ${id} in a standing-condition block`);
+}
+
+test("5.4 the heal route (withdraw while open, archive on disk, heal) is named as withdrawn by both surfaces", () => {
+  const cwd = healedWithdrawn("s54", "copied from the change epic");
+  assert.equal(epicOf(cwd, "s54").disposition.outcome, "unknown");
+  assertNamedWithdrawn(cwd, "s54", "copied from the change epic");
+});
+
+test("5.5 before the heal runs, both surfaces already name the epic archived on disk", () => {
+  const cwd = healedWithdrawn("s55", "not healed yet", { heal: false });
+  assert.notEqual(epicOf(cwd, "s55").status, "archived", "precondition: the stored status is not archived");
+  const before = stateBytes(cwd);
+  assertNamedWithdrawn(cwd, "s55", "not healed yet");
+  assert.ok(stateBytes(cwd).equals(before), "composing the brief and integrity wrote nothing, so no heal ran");
+});
+
+test("5.5a delivering the withdrawn notice does not clear it", () => {
+  const cwd = healedWithdrawn("s55a", "still withdrawn");
+  parseBrief(cwd);
+  const later = briefWithdrawnBlock(parseBrief(cwd), "s55a");
+  assert.ok(later.some(l => l.includes("`s55a`")), "the later brief names the epic again");
+});
+
+test("5.6 the withdrawn kind names neither a claude-code archived epic nor an unarchived openspec epic", () => {
+  const cwd = withVerdicts("cc56", { lane: "claude-code" });
+  accepted(cwd, ["update-epic", "cc56", ...ARCHIVE_DELIVERED]);
+  run(["add-epic", "--id", "open56", "--lane", "openspec"], { cwd });
+  run(["record-gate-review", "open56", ...PASS2], { cwd });
+  accepted(cwd, ["update-epic", "cc56", "--withdraw-gate-review", "2", "--withdrawal-reason", "x"]);
+  accepted(cwd, ["update-epic", "open56", "--withdraw-gate-review", "2", "--withdrawal-reason", "x"]);
+  assert.equal(epicOf(cwd, "cc56").status, "archived");
+  assert.equal(epicOf(cwd, "open56").status, "queued");
+  assertNotNamed(cwd, "cc56");
+  assertNotNamed(cwd, "open56");
+});
