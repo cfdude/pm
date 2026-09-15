@@ -55,7 +55,8 @@ skip straight to the branch dance at the bottom.
      # NOT `grep -c '^## \['` — that counts the [Unreleased] placeholder as a release, and
      # did, publishing a number one too high on every release up to 0.39.0 before anyone checked.
      node --test scripts/test/*.test.mjs 2>&1 | grep '^ℹ tests'    # tests in the engine
-     wc -l scripts/conductor.mjs                                      # engine LOC
+     wc -l scripts/conductor.mjs scripts/lib/*.mjs | tail -1         # engine LOC — the dispatcher is ~360
+     # lines since the module split; the site's row counts the dispatcher plus scripts/lib (0.43.0).
      # external dependencies is always 0 — enforced by the zero-dependency hard constraint
      ```
      If a metric can't be recomputed this way (e.g. a historical count with no durable log to
