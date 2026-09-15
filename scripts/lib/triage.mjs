@@ -25,6 +25,7 @@ import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { laneSuggestion } from "./lane-routing.mjs";
 import { supersededEpics } from "./links.mjs";
 import { isFlagToken } from "./constants.mjs";
+import { checkedPositionals } from "./argv-surface.mjs";
 
 /** Words shorter than this carry no discriminating power and appear everywhere ("of", "to",
  *  "id", "pm"). A length floor is mechanical; a curated stopword list would be a second thing
@@ -151,7 +152,8 @@ export function candidateSet(epics, ask, { limit = 5 } = {}) {
  *  stating that the decision an intake makes was not made here. */
 export function triage() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
-  const ask = process.argv[3];
+  // The check's classified positional, never `process.argv[3]` (see suggest-lane's reader).
+  const [ask] = checkedPositionals("triage");
   // gh-186. The old test was `ask.startsWith("--")`, which refused any ask whose own words begin
   // with a flag name — and CLAUDE.md makes this call STEP 1 of intake, "the ask, in its own
   // words", before any add-epic. A bug report ABOUT a flag is titled that way; this tracker had

@@ -21,11 +21,8 @@ import { ARCHIVE_BACKFILL, engineStamp } from "./disposition.mjs";
 import { ROOT, CONDUCTOR_DIR, BRIEF_PATH, PLANS_DIR, anyInwardProcedureEmittable } from "./constants.mjs";
 import { resolveAndRecordPlatform } from "./platform.mjs";
 import { requirePlatformFlag } from "./add-epic.mjs";
-import { checkCommandLine } from "./argv-surface.mjs";
-
-/** The positionals the command-line check classified — never the raw argv tail, which carries every
- *  flag too: `log-detour fixed it --force` used to log `fixed it --force`. */
-const checkedPositionals = (verb) => checkCommandLine(verb, process.argv).positionals || [];
+// The positionals the command-line check classified — never the raw argv tail (argv-surface.mjs).
+import { checkedPositionals } from "./argv-surface.mjs";
 import { saveHookHeal } from "./hook-write.mjs";
 
 /** Ensure the conductor's GENERATED artifacts are git-ignored.

@@ -160,6 +160,14 @@ export function checkCommandLine(verb, argv, { initialized = true } = {}) {
   };
 }
 
+/** The positionals the command-line check classified, for every verb that reads a positional by
+ *  place rather than by `argv[0]`'s `--` guard — never the raw argv tail, which carries every flag
+ *  too. Two defects this closes: `log-detour fixed it --force` logged `fixed it --force` (a joined
+ *  tail), and `set-gate-guard --force` printed usage where bare `set-gate-guard` reads the guard,
+ *  because with no positional the canonical rewrite leaves the argv-level flag at `argv[3]`. Read
+ *  from the canonical argv conductor.mjs installed, which classifies identically. */
+export const checkedPositionals = (verb, argv = process.argv) => checkCommandLine(verb, argv).positionals || [];
+
 /** D4's surplus-positional refusal: the form the verb takes and the first token it does not read,
  *  plus the likeliest cause where one is visible — a value given to a valueless flag, or an
  *  unquoted multi-word value (the token directly follows a flag's value, or the verb reads one text).

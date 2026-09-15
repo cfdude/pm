@@ -7,6 +7,7 @@ import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
 import { KNOWN_LANES } from "./constants.mjs";
+import { checkedPositionals } from "./argv-surface.mjs";
 
 export function laneMatchTest(match, text) {
   const hay = String(text).toLowerCase();
@@ -98,7 +99,10 @@ export function laneSuggestion(state, text) {
  *  (>8h/cross-system -> openspec; 2-8h -> superpowers; <2h -> claude-code; etc). */
 export function suggestLane() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
-  const text = process.argv[3];
+  // The check's classified positional, never `process.argv[3]`: that slot holds the first flag when
+  // the line carries no text. Read-only today, so `--force` is refused before it could get here —
+  // bound to the classification anyway, so a later argv-level row cannot reopen it.
+  const [text] = checkedPositionals("suggest-lane");
   if (typeof text !== "string" || !text.length) {
     process.stderr.write("usage: conductor.mjs suggest-lane \"<free text>\"\n"); process.exit(1);
   }

@@ -915,3 +915,23 @@ test("REGRESSION GUARD: A read-only verb's help does not offer --force", () => {
   const cwd = initialized();
   assert.doesNotMatch(run(["integrity", "--help"], { cwd }), /--force/);
 });
+
+// ═══════════════ Gate 2 follow-up — an argv-level flag is never a positional ═══════════════
+
+test("An argv-level flag with no positional is not read as one: set-gate-guard --force and set-activity-log --force behave as their bare forms", () => {
+  // Gate 2: the canonical rewrite puts `--force` at process.argv[3] when the line carries no
+  // positional, and a verb reading argv[3] took it as its positional — `set-gate-guard --force`
+  // printed usage where bare `set-gate-guard` READS the guard.
+  const cwd = fixture();
+  run(["set-gate-guard", "on"], { cwd });
+  for (const verb of ["set-gate-guard", "set-activity-log"]) {
+    const before = snap(cwd);
+    const bare = engine([verb], { cwd });
+    const forced = engine([verb, "--force"], { cwd });
+    assert.deepEqual(
+      { status: forced.status, stdout: forced.stdout, stderr: forced.stderr },
+      { status: bare.status, stdout: bare.stdout, stderr: bare.stderr },
+      `${verb} --force must behave exactly as bare ${verb}`);
+    assert.deepEqual(snap(cwd), before, `${verb} --force writes nothing the bare form does not`);
+  }
+});
