@@ -3768,7 +3768,9 @@
           "text": "0.36.0 (04fdd8a) shipped the instruction half: suggestion demoted to an input, judgment half named as absent, tie-break made directional away from the lightest lane. The primary complaint stays OPEN — routing has no product/milestone layer to weigh and the engine cannot invent one without becoming an integration layer."
         }
       ],
-      "createdAt": "2026-08-25T16:36:38-07:00"
+      "createdAt": "2026-08-25T16:36:38-07:00",
+      "externalUpdatedAt": "2026-08-29T14:55:03Z",
+      "touchedAt": "2026-09-15T04:39:45.282Z"
     },
     {
       "id": "gh-115-gates-blind-to-absent-edit",
@@ -6901,10 +6903,10 @@
       "reconcileNeeded": false,
       "externalId": "184",
       "externalUrl": "https://github.com/cfdude/pm/issues/184",
-      "externalUpdatedAt": "2026-09-09T00:55:25Z",
+      "externalUpdatedAt": "2026-09-15T04:17:21Z",
       "attributedCommits": [],
       "createdAt": "2026-09-14T18:18:09.265Z",
-      "touchedAt": "2026-09-14T18:18:12.120Z",
+      "touchedAt": "2026-09-15T04:39:43.306Z",
       "notes": [
         {
           "at": "2026-09-14T18:18:12.117Z",
@@ -7369,6 +7371,98 @@
       "attributedCommits": [],
       "createdAt": "2026-09-15T02:16:56.476Z",
       "touchedAt": "2026-09-15T02:16:56.488Z"
+    },
+    {
+      "id": "gh-cfdude-pm-201",
+      "title": "integrity: a retrospective FAILING Gate 2 is reported as \"recorded as bookkeeping\"",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "201",
+      "externalUrl": "https://github.com/cfdude/pm/issues/201",
+      "externalUpdatedAt": "2026-09-15T01:56:37Z",
+      "attributedCommits": [],
+      "createdAt": "2026-09-15T04:39:20.782Z",
+      "touchedAt": "2026-09-15T04:39:41.325Z",
+      "notes": [
+        {
+          "at": "2026-09-15T04:39:41.322Z",
+          "actor": "agent",
+          "text": "lane: superpowers — suggest-lane returned no match (repo routing has no rule for it); generic heuristic: single-subsystem engine fix, 2–8h"
+        }
+      ]
+    },
+    {
+      "id": "gh-cfdude-pm-200",
+      "title": "integrity: an archived OpenSpec change cannot be associated with an epic of a different name",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "200",
+      "externalUrl": "https://github.com/cfdude/pm/issues/200",
+      "externalUpdatedAt": "2026-09-15T01:56:36Z",
+      "attributedCommits": [],
+      "createdAt": "2026-09-15T04:39:23.081Z",
+      "touchedAt": "2026-09-15T04:39:39.270Z",
+      "notes": [
+        {
+          "at": "2026-09-15T04:39:39.267Z",
+          "actor": "agent",
+          "text": "lane: superpowers — suggest-lane returned no match (repo routing has no rule for it); generic heuristic: single-subsystem engine fix, 2–8h"
+        }
+      ]
+    },
+    {
+      "id": "gh-cfdude-pm-199",
+      "title": "The post-commit ATTRIBUTION hint always names the active epic, even for a commit that belongs to the paused one",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "199",
+      "externalUrl": "https://github.com/cfdude/pm/issues/199",
+      "externalUpdatedAt": "2026-09-14T20:57:15Z",
+      "attributedCommits": [],
+      "createdAt": "2026-09-15T04:39:25.171Z",
+      "touchedAt": "2026-09-15T04:39:37.284Z",
+      "notes": [
+        {
+          "at": "2026-09-15T04:39:37.281Z",
+          "actor": "agent",
+          "text": "lane: superpowers — suggest-lane returned no match (repo routing has no rule for it); generic heuristic: single-subsystem engine fix, 2–8h"
+        }
+      ]
+    },
+    {
+      "id": "gh-cfdude-pm-198",
+      "title": "A Gate 1 verdict recorded with --artifact stores no content hash, so amending the reviewed artifacts never reads stale",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "198",
+      "externalUrl": "https://github.com/cfdude/pm/issues/198",
+      "externalUpdatedAt": "2026-09-14T20:57:01Z",
+      "attributedCommits": [],
+      "createdAt": "2026-09-15T04:39:27.255Z",
+      "touchedAt": "2026-09-15T04:39:35.265Z",
+      "notes": [
+        {
+          "at": "2026-09-15T04:39:35.261Z",
+          "actor": "agent",
+          "text": "lane: superpowers — suggest-lane returned no match (repo routing has no rule for it); generic heuristic: single-subsystem engine fix, 2–8h"
+        }
+      ]
     }
   ],
   "detourStack": [],
@@ -7379,7 +7473,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 749,
+  "revision": 759,
   "reviewMode": "thorough",
   "releases": [
     {
