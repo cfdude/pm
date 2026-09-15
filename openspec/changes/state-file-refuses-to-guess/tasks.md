@@ -93,13 +93,13 @@ the GREEN commit stages that file and names it in its message.
 
 ## 3. Concurrent saves are serialised and fsynced
 
-- [ ] 3.1 RED (lands with 3.2): in the new test file — 16 concurrent `add-epic --lane claude-code` child processes
+- [x] 3.1 RED (lands with 3.2): in the new test file — 16 concurrent `add-epic --lane claude-code` child processes
       (spawned, not sequential `execFileSync`) with distinct ids; assert every exit-0 invocation's id is
       in `state.json`, every other exits 9, and no stderr contains `did not persist`. Run it 3 times in
       the test (the race is probabilistic; today 3/3 manual runs lost updates). Plus an in-process fs
       spy: wrap `fs.fsyncSync` and `fs.renameSync` on the default `node:fs` object, `saveState` a changed
       state, assert an fsync is recorded before the rename of the temp path. Save `red-3.1.txt`
-- [ ] 3.2 GREEN: the lock in `state.mjs` per design D4 (acquire with `"wx"`, content with nonce and
+- [x] 3.2 GREEN: the lock in `state.mjs` per design D4 (acquire with `"wx"`, content with nonce and
       `pidns`, critical section inside `try … finally`, inode+nonce ownership check before rename,
       temp-file fsync, best-effort directory fsync, release in `finally` that unlinks only our lock — no
       exit handler); constants `STATE_LOCK_WAIT_MS`, `STATE_LOCK_POLL_MS`, `STATE_LOCK_STALE_MS`; lock
@@ -109,20 +109,20 @@ the GREEN commit stages that file and names it in its message.
       fs spy, a save that writes, one that is a no-op, one that throws a conflict, one that throws on an
       unreadable disk file, and one whose read-back fails (injected) — each observed creating the lock,
       and none leaving `.conductor/state.json.lock` behind. Verify: 3.1 and the guard pass
-- [ ] 3.3 RED (lands with 3.4): write a live lock (this test process's own pid, this host, this
+- [x] 3.3 RED (lands with 3.4): write a live lock (this test process's own pid, this host, this
       `pidns`, now), then run `update-epic <id> --status active` as a child → exits 9 within the wait
       budget + slack, `state.json` byte-identical, stderr names the pid; same with `--force` → exits 9,
       `state.json` byte-identical; a hook-driven save through `saveHookHeal()` with the held lock →
       `{ok:false}`, sidecar gains an entry naming the verb and two revisions; and the first case repeated in
       a tree whose HEAD is detached (`git checkout --detach`) → exits 9, `state.json` byte-identical
       (conductor-record detached-tree scenario). Save `red-3.3.txt`
-- [ ] 3.4 GREEN: completes with 3.2's wait/refuse path if 3.2 did not already make 3.3 pass; if it
+- [x] 3.4 GREEN: completes with 3.2's wait/refuse path if 3.2 did not already make 3.3 pass; if it
       did, say so in the commit and land 3.3 as REGRESSION GUARD. Verify: 3.3 passes
-- [ ] 3.5 RED (lands with 3.6): the holder's pre-rename ownership check — in-process, acquire through
+- [x] 3.5 RED (lands with 3.6): the holder's pre-rename ownership check — in-process, acquire through
       `saveState`, and from the temp-file fsync spy replace `.conductor/state.json.lock` with a different
       lock (new nonce) before the rename → `StateConflictError`, `state.json` byte-identical. Today there
       is no lock and the save writes. Save `red-3.5.txt`
-- [ ] 3.6 GREEN: the ownership check of D4, if 3.2 did not already make 3.5 pass (otherwise land 3.5
+- [x] 3.6 GREEN: the ownership check of D4, if 3.2 did not already make 3.5 pass (otherwise land 3.5
       as REGRESSION GUARD in 3.2's commit and say so). Verify: 3.5 passes
 - [ ] 3.7 `ensureGitignore()` gains `.conductor/state.json.lock*` and `.conductor/session-claim.json*`
       (replacing the exact `session-claim.json` entry); extend the existing gitignore test. Verify: the

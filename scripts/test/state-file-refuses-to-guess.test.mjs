@@ -10,8 +10,9 @@
 // replaced after load, an fs spy on the critical section).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { ENGINE, EMPTY_CACHE, tmpRepo, run, writeState } from "./helpers.mjs";
 
@@ -255,4 +256,221 @@ test("2.1(f): a refusal raised by code a hook calls still takes the hook's exit 
     assert.equal(r && r.exitCode, 2, `${verb} must map an unreadable-state refusal to 2`);
     assert.match(r.stderr, /\.conductor\/state\.json/);
   }
+});
+
+// ─────────────── 3 — concurrent saves are serialised and fsynced ───────────────
+
+const lockPath = (cwd) => path.join(cwd, ".conductor", "state.json.lock");
+const CONFLICT = 9;
+
+/** Start `n` engine children at once — spawned, never sequential — and collect every outcome. */
+function spawnAll(cwd, argvs) {
+  return Promise.all(argvs.map((args) => new Promise((resolve) => {
+    const child = spawn("node", [ENGINE, ...args], {
+      cwd, env: { ...process.env, CLAUDE_PROJECT_DIR: cwd, PM_CACHE_ROOT: EMPTY_CACHE },
+    });
+    let stderr = "";
+    child.stderr.on("data", (d) => { stderr += d; });
+    child.stdout.on("data", () => {});
+    child.on("close", (status) => resolve({ args, status, stderr }));
+  })));
+}
+
+/** The pid namespace this process is in, as the engine reads it — null where /proc is absent. */
+function ourPidns() {
+  try { return fs.readlinkSync("/proc/self/ns/pid"); } catch { return null; }
+}
+
+/** Place a lock file by hand, as another writer would have left it. */
+function placeLock(cwd, content, { ageMs = 0 } = {}) {
+  fs.writeFileSync(lockPath(cwd), typeof content === "string" ? content : JSON.stringify(content));
+  if (ageMs) {
+    const t = new Date(Date.now() - ageMs);
+    fs.utimesSync(lockPath(cwd), t, t);
+  }
+}
+
+/** Wrap functions on the default node:fs object for the duration of `fn`, recording every call. */
+function withFsSpy(wrappers, fn) {
+  const saved = {};
+  for (const [name, wrap] of Object.entries(wrappers)) {
+    saved[name] = fs[name];
+    fs[name] = wrap(saved[name]);
+  }
+  try { return fn(); } finally { for (const [name, orig] of Object.entries(saved)) fs[name] = orig; }
+}
+
+/** Run `fn` with CLAUDE_PROJECT_DIR pointed at `cwd` and, optionally, --force on argv. */
+async function inRepo(cwd, fn, { force = false } = {}) {
+  const prevDir = process.env.CLAUDE_PROJECT_DIR;
+  process.env.CLAUDE_PROJECT_DIR = cwd;
+  if (force) process.argv.push("--force");
+  try { return await fn(); } finally {
+    if (force) process.argv.splice(process.argv.lastIndexOf("--force"), 1);
+    if (prevDir === undefined) delete process.env.CLAUDE_PROJECT_DIR; else process.env.CLAUDE_PROJECT_DIR = prevDir;
+  }
+}
+
+test("3.1: parallel writers never lose an update — 16 concurrent add-epic, three runs", async () => {
+  for (let runNo = 0; runNo < 3; runNo++) {
+    const cwd = tmpRepo();
+    run(["init"], { cwd });
+    const ids = Array.from({ length: 16 }, (_, i) => `p${runNo}-${i}`);
+    const results = await spawnAll(cwd, ids.map((id) => ["add-epic", "--id", id, "--lane", "claude-code"]));
+    const onDisk = new Set(JSON.parse(fs.readFileSync(statePath(cwd), "utf8")).epics.map((e) => e.id));
+    for (const r of results) {
+      const id = r.args[2];
+      assert.doesNotMatch(r.stderr, /did not persist/, `run ${runNo} ${id}: ${r.stderr}`);
+      if (r.status === 0) assert.ok(onDisk.has(id), `run ${runNo}: ${id} exited 0 but is not on disk`);
+      else assert.equal(r.status, CONFLICT, `run ${runNo}: ${id} exited ${r.status}: ${r.stderr}`);
+    }
+    assert.ok(results.some((r) => r.status === 0), `run ${runNo}: at least one writer landed`);
+    assert.ok(!fs.existsSync(lockPath(cwd)), "no lock left behind");
+  }
+});
+
+test("3.1: the temp file is fsynced before it is renamed over state.json", async () => {
+  const cwd = threeEpicRepo();
+  const stateLib = await import("../lib/state.mjs");
+  await inRepo(cwd, () => {
+    const calls = [];
+    const fdPath = new Map();
+    withFsSpy({
+      openSync: (orig) => (p, ...rest) => { const fd = orig(p, ...rest); fdPath.set(fd, String(p)); return fd; },
+      fsyncSync: (orig) => (fd) => { calls.push({ op: "fsync", path: fdPath.get(fd) }); return orig(fd); },
+      renameSync: (orig) => (from, to) => { calls.push({ op: "rename", from: String(from), to: String(to) }); return orig(from, to); },
+    }, () => {
+      const s = stateLib.loadState();
+      s.epics.push({ id: "synced", title: "synced", status: "queued", lane: "claude-code" });
+      stateLib.saveState(s);
+    });
+    const renameAt = calls.findIndex((c) => c.op === "rename" && c.to === statePath(cwd));
+    assert.ok(renameAt !== -1, "the save renamed a temp file over state.json");
+    const tmp = calls[renameAt].from;
+    const fsyncAt = calls.findIndex((c) => c.op === "fsync" && c.path === tmp);
+    assert.ok(fsyncAt !== -1 && fsyncAt < renameAt, `an fsync of ${tmp} precedes the rename: ${JSON.stringify(calls)}`);
+  });
+});
+
+test("3.2 REGRESSION GUARD: every way out of a save held the lock and releases it", async () => {
+  const stateLib = await import("../lib/state.mjs");
+  const outcomes = {
+    writes: (cwd) => { const s = stateLib.loadState(); s.epics.push({ id: "w", title: "w", status: "queued" }); stateLib.saveState(s); },
+    noop: (cwd) => { const r = stateLib.saveState(stateLib.loadState()); assert.equal(r.unchanged, true); },
+    conflict: (cwd) => {
+      const s = stateLib.loadState();
+      run(["add-epic", "--id", "other", "--lane", "claude-code"], { cwd });
+      s.epics.push({ id: "c", title: "c", status: "queued" });
+      assert.throws(() => stateLib.saveState(s), { name: "StateConflictError" });
+    },
+    unreadable: (cwd) => {
+      const s = stateLib.loadState();
+      s.epics.push({ id: "u", title: "u", status: "queued" });
+      fs.writeFileSync(statePath(cwd), "{ not json");
+      assert.throws(() => stateLib.saveState(s), { name: "StateUnreadableError" });
+    },
+    readBackFails: (cwd) => {
+      const s = stateLib.loadState();
+      s.epics.push({ id: "r", title: "r", status: "queued" });
+      let renamed = false;
+      withFsSpy({
+        renameSync: (orig) => (from, to) => { const out = orig(from, to); renamed = true; return out; },
+        readFileSync: (orig) => (p, ...rest) => {
+          if (renamed && p === statePath(cwd)) throw Object.assign(new Error("injected"), { code: "EIO" });
+          return orig(p, ...rest);
+        },
+      }, () => assert.throws(() => stateLib.saveState(s), { name: "StatePersistError" }));
+    },
+  };
+  for (const [name, act] of Object.entries(outcomes)) {
+    const cwd = threeEpicRepo();
+    await inRepo(cwd, () => {
+      let lockCreated = false;
+      withFsSpy({
+        openSync: (orig) => (p, flags, ...rest) => {
+          if (String(p) === lockPath(cwd) && flags === "wx") lockCreated = true;
+          return orig(p, flags, ...rest);
+        },
+      }, () => act(cwd));
+      assert.ok(lockCreated, `${name}: the save created the lock`);
+      assert.ok(!fs.existsSync(lockPath(cwd)), `${name}: no lock file remains`);
+    });
+  }
+});
+
+test("3.3: a live, fresh lock is waited for then refused — interactive, --force, hook, detached", async () => {
+  const live = () => ({ pid: process.pid, host: os.hostname(), pidns: ourPidns(),
+    acquiredAt: new Date().toISOString(), nonce: "live-holder-nonce" });
+
+  // Interactive: exit 9 within the wait budget plus slack, nothing written, the holder named.
+  const cwd = threeEpicRepo();
+  placeLock(cwd, live());
+  const before = bytes(statePath(cwd));
+  const t0 = Date.now();
+  const r = sh(["update-epic", "e1", "--status", "active"], { cwd });
+  assert.equal(r.status, CONFLICT, `stderr: ${r.stderr}`);
+  assert.ok(Date.now() - t0 < 2000 + 8000, "refused within the wait budget plus slack");
+  assert.ok(sameBytes(before, bytes(statePath(cwd))), "state.json byte-identical");
+  assert.match(r.stderr, new RegExp(`\\b${process.pid}\\b`), "names the recorded holder's pid");
+
+  // --force bypasses only the revision comparison, never the lock.
+  const forced = sh(["update-epic", "e1", "--status", "active", "--force"], { cwd });
+  assert.equal(forced.status, CONFLICT, `stderr: ${forced.stderr}`);
+  assert.ok(sameBytes(before, bytes(statePath(cwd))), "a forced save does not write through a held lock");
+
+  // A hook write: retry once, then skip, recorded to the sidecar.
+  const { saveHookHeal } = await import("../lib/hook-write.mjs");
+  const stateLib = await import("../lib/state.mjs");
+  const sidecar = path.join(cwd, ".conductor", "write-conflicts.log");
+  const sidecarBefore = fs.existsSync(sidecar) ? fs.readFileSync(sidecar, "utf8") : "";
+  const outcome = await inRepo(cwd, () => {
+    const s = stateLib.loadState();
+    s.epics[0].title = "healed";
+    return saveHookHeal({ state: s, verb: "render", heal: (fresh) => { fresh.epics[0].title = "healed"; return true; } });
+  });
+  assert.equal(outcome.ok, false, "a hook write on a held lock skips");
+  assert.ok(sameBytes(before, bytes(statePath(cwd))));
+  const added = fs.readFileSync(sidecar, "utf8").slice(sidecarBefore.length).split("\n").filter(Boolean);
+  assert.ok(added.length >= 1, "the sidecar gained an entry");
+  assert.match(added[0], /\trender\t\d+\t\d+$/, `names the verb and two revisions: ${added[0]}`);
+
+  // A detached tree: the save is still serialised.
+  const detached = threeEpicRepo();
+  gitIn(detached, "init", "-q");
+  gitIn(detached, "add", "-A");
+  gitIn(detached, "commit", "-q", "-m", "base");
+  gitIn(detached, "checkout", "-q", "--detach");
+  placeLock(detached, live());
+  const dBefore = bytes(statePath(detached));
+  const d = sh(["update-epic", "e1", "--status", "active"], { cwd: detached });
+  assert.equal(d.status, CONFLICT, `detached tree, stderr: ${d.stderr}`);
+  assert.ok(sameBytes(dBefore, bytes(statePath(detached))), "detached tree: state.json byte-identical");
+});
+
+test("3.5: a holder that no longer owns the lock does not rename", async () => {
+  const cwd = threeEpicRepo();
+  const stateLib = await import("../lib/state.mjs");
+  const before = bytes(statePath(cwd));
+  await inRepo(cwd, () => {
+    const s = stateLib.loadState();
+    s.epics.push({ id: "usurped", title: "usurped", status: "queued" });
+    let replaced = false;
+    let thrown = null;
+    withFsSpy({
+      fsyncSync: (orig) => (fd) => {
+        if (!replaced) {
+          replaced = true;
+          try { fs.unlinkSync(lockPath(cwd)); } catch { /* absent today: there is no lock */ }
+          fs.writeFileSync(lockPath(cwd), JSON.stringify({ pid: process.pid, host: os.hostname(),
+            pidns: ourPidns(), acquiredAt: new Date().toISOString(), nonce: "a-different-lock" }));
+        }
+        return orig(fd);
+      },
+    }, () => { try { stateLib.saveState(s); } catch (e) { thrown = e; } });
+    assert.ok(thrown, "the save must refuse");
+    assert.equal(thrown.name, "StateConflictError", `got ${thrown && thrown.stack}`);
+  });
+  assert.ok(sameBytes(before, bytes(statePath(cwd))), "state.json byte-identical");
+  assert.ok(fs.existsSync(lockPath(cwd)), "the other writer's lock is not removed");
+  fs.unlinkSync(lockPath(cwd));
 });

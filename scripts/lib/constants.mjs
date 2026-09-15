@@ -26,6 +26,14 @@ export const CONFLICT_EXIT_CODE = 9;
 // refusal there would be indistinguishable from a Node bootstrap crash; 11 is unassigned. Shared by
 // the unreadable-state refusal and the ambiguous rules-block refusal — the message names the file.
 export const UNREADABLE_INPUT_EXIT_CODE = 11;
+// The state-file lock (state.mjs saveState, design D4). A save holds it for milliseconds, so a
+// writer waits WAIT_MS for a live holder, polling every POLL_MS, and is then refused with the
+// conflict exit code — never a lost update. STALE_MS is the age backstop: a lock older than this
+// (or dated this far in the future — a backward clock step must not wedge it) is broken whatever it
+// records, which is what answers the 0.26.0 objection that a killed session holds a lock forever.
+export const STATE_LOCK_WAIT_MS = 2000;
+export const STATE_LOCK_POLL_MS = 25;
+export const STATE_LOCK_STALE_MS = 30000;
 // Size-triggered rotation, never count-based: enforcing "keep the last N entries" means
 // reading, filtering and rewriting the file, and this is the failure path of a WRITE guard.
 // statSync is O(1) and rename(2) is O(1), so the mechanism never reads the log body.

@@ -3,10 +3,12 @@
 // creation routes through. Depends only on lib/constants.mjs, lib/write-conflicts.mjs and
 // lib/disposition.mjs (all leaf modules — none of them imports state.mjs back).
 
+import crypto from "node:crypto";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { recordConflict, clearConflicts } from "./write-conflicts.mjs";
-import { CONFLICT_EXIT_CODE, escapeControls } from "./constants.mjs";
+import { CONFLICT_EXIT_CODE, STATE_LOCK_POLL_MS, STATE_LOCK_WAIT_MS, escapeControls } from "./constants.mjs";
 import { isArchiveBackfilled } from "./disposition.mjs";
 import { claimArtifacts } from "./source-artifacts.mjs";
 
@@ -99,8 +101,11 @@ function seedCreationFields(epic) {
 
 /** Thrown when a write would clobber a newer revision than the one this caller read. */
 export class StateConflictError extends Error {
-  constructor(expected, found) {
-    super(`state.json changed under this process (read revision ${expected}, found ${found})`);
+  constructor(expected, found, message) {
+    // `message` is for the two conflicts that are not a newer revision — a lock held past the wait,
+    // and a lock this writer no longer owns at its rename. Same class, so they share the conflict
+    // exit code: both are "someone else is writing; retry", and neither wrote anything.
+    super(message || `state.json changed under this process (read revision ${expected}, found ${found})`);
     this.name = "StateConflictError";
     this.expected = expected;
     this.found = found;
@@ -304,100 +309,239 @@ function stampTouched(state, diskBody) {
   }
 }
 
-/** Atomic write with an optimistic revision check.
+// ─────────────────────────────── the state lock (design D4) ───────────────────────────────
+//
+// WHY A LOCK, REVERSING 0.26.0. 0.26.0 rejected a lock file because "a session killed mid-write
+// leaves the lock held forever" and relied on the revision comparison alone. Measured on 0.43.0,
+// that is not sufficient: the comparison and the rename are separate system calls, so two writers
+// can both pass it — 16 parallel `add-epic`, three runs, 9/9/8 reported success against 7/6/6 epics
+// on disk, and one run published the same revision twice. The objection is answered by the stale
+// rule (a lock whose holder is confirmed dead, or older than STATE_LOCK_STALE_MS, is broken); the
+// revision guard STAYS, because the lock serialises the section while the revision still detects a
+// writer whose LOAD predates another's save.
+//
+// Identity of a lock is its inode AND its nonce: inode numbers are reused after unlink on some
+// filesystems, and two locks with the same recorded fields are otherwise indistinguishable.
+
+function lockPaths() {
+  const { STATE_PATH } = getPaths();
+  return { LOCK: `${STATE_PATH}.lock`, BREAK: `${STATE_PATH}.lock.break` };
+}
+
+/** This process's pid namespace where the platform exposes one (Linux), otherwise null. Two
+ *  processes whose `host` and `pidns` both match can judge each other's liveness by pid. */
+function pidNamespace() {
+  try { return fs.readlinkSync("/proc/self/ns/pid"); } catch { return null; }
+}
+
+/** A synchronous sleep with no busy loop and no dependency. */
+function sleepMs(ms) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+/** The lock currently at `lockPath`, read through ONE descriptor so its inode and its content
+ *  belong to the same file: `{ino, mtimeMs, content, nonce}` — `content` null when it does not
+ *  parse (a holder between its create and its write) — or null when there is no lock. */
+export function inspectLock(lockPath = lockPaths().LOCK) {
+  let fd;
+  try { fd = fs.openSync(lockPath, "r"); } catch { return null; }
+  try {
+    const st = fs.fstatSync(fd);
+    let content = null;
+    try {
+      const parsed = JSON.parse(fs.readFileSync(fd, "utf8"));
+      content = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : null;
+    } catch { content = null; }
+    return { ino: st.ino, mtimeMs: st.mtimeMs, content,
+      nonce: content && typeof content.nonce === "string" ? content.nonce : null };
+  } catch { return null; } finally { try { fs.closeSync(fd); } catch { /* already closed */ } }
+}
+
+const sameLock = (a, b) => !!a && !!b && a.ino === b.ino && a.nonce === b.nonce;
+
+/** How a lock's recorded holder reads in a refusal. */
+function describeHolder(info) {
+  const c = info && info.content;
+  if (!c) return "a writer whose lock content could not be read";
+  return `pid ${c.pid} on host ${escapeControls(c.host)}` +
+    (c.acquiredAt ? ` since ${escapeControls(c.acquiredAt)}` : "");
+}
+
+/** Create the lock exclusively and write its content. `{ino, nonce}` when acquired, or
+ *  `{timedOut: true, holder}` when a live holder did not release it within STATE_LOCK_WAIT_MS. */
+function acquireStateLock() {
+  const { LOCK } = lockPaths();
+  const deadline = Date.now() + STATE_LOCK_WAIT_MS;
+  for (;;) {
+    let fd;
+    try { fd = fs.openSync(LOCK, "wx"); } catch (e) {
+      if (!e || e.code !== "EEXIST") throw e;
+      const held = inspectLock(LOCK);
+      if (held === null) continue;                     // released between the create and the look
+      if (Date.now() >= deadline) return { timedOut: true, holder: held };
+      sleepMs(STATE_LOCK_POLL_MS);
+      continue;
+    }
+    const nonce = crypto.randomBytes(16).toString("hex");
+    try {
+      fs.writeFileSync(fd, JSON.stringify({
+        pid: process.pid, host: os.hostname(), pidns: pidNamespace(),
+        acquiredAt: new Date().toISOString(), nonce,
+      }));
+      return { ino: fs.fstatSync(fd).ino, nonce };
+    } finally { fs.closeSync(fd); }
+  }
+}
+
+/** Unlink the lock ONLY if it is still ours — never a lock another writer created after ours was
+ *  removed. Best effort: a release that fails leaves a lock the stale rule recovers. */
+function releaseStateLock(lock) {
+  const { LOCK } = lockPaths();
+  try { if (sameLock(inspectLock(LOCK), lock)) fs.unlinkSync(LOCK); } catch { /* stale rule recovers */ }
+}
+
+/** Atomic, serialised write with an optimistic revision check.
  *
- *  The tmp-file + rename(2) below already guaranteed the WRITE was atomic — a crash never left
- *  a torn state.json. What was unguarded was the read-modify-write CYCLE: two processes that
- *  both loaded the same revision each wrote back wholesale, and the second silently discarded
- *  the first one's change. A lockfile was rejected because a session killed mid-write leaves
- *  the lock held forever; a revision comparison leaves nothing behind.
+ *  The tmp-file + rename(2) guarantees the WRITE is atomic — a crash never leaves a torn
+ *  state.json — and the temp file is fsynced before the rename, so its data is ordered ahead of it.
+ *  (fsync(2), not F_FULLFSYNC: on macOS this is ordering, not a power-loss durability promise.) The
+ *  read-modify-write CYCLE is guarded twice: the revision comparison detects a writer whose load
+ *  predates another's save, and the lock above makes the strict disk read, that comparison, the
+ *  no-op comparison, the write, the rename and the read-back ONE critical section, so two writers
+ *  can no longer both pass the comparison. `--force` bypasses only the comparison, never the lock.
+ *
+ *  Every return and throw inside the section releases the lock in `finally`. There is no
+ *  process.on("exit") handler: every process.exit in the engine's verbs runs after saveState() has
+ *  returned. A signal kill leaves the lock; the stale rule removes it.
  *
  *  opts.onConflict "throw" (default) is for interactive verbs: a human or agent is present and
  *  can re-read and re-apply. "skip" is for HOOK writes — render.mjs's and commitNudge()'s own
  *  reconcileArchived() self-heals — that re-run on the next hook, so losing either costs
  *  nothing, while hard-failing would turn an invisible race into a visible mid-session error for
- *  a write that did not matter.
+ *  a write that did not matter. A lock held past the wait is a conflict under the same policy.
  */
 export function saveState(state, opts = {}) {
   const { onConflict = "throw", verb = "unknown" } = opts;
   const { STATE_PATH, CONDUCTOR_DIR } = getPaths();
   fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
-
   const expected = Number.isInteger(state.revision) ? state.revision : 0;
-  // ONE strict read of the disk file serves the revision comparison AND the no-op comparison
-  // below, and it refuses BEFORE --force is consulted. --force overrides a NEWER READABLE revision,
-  // whose content the caller can be shown; an unreadable file's content is unknown, and overwriting
-  // it discards whatever the other side of a merge held. ABSENT is `{}`: init's first save.
-  const disk = readStateFile(STATE_PATH);
-  if (disk.kind === "unreadable") throw new StateUnreadableError(STATE_PATH, disk.reason);
-  const diskBody = disk.kind === "ok" ? disk.state : {};
-  const found = Number.isInteger(diskBody.revision) ? diskBody.revision : 0;
-  // --force is the deliberate "I know, overwrite it" escape hatch. It is read from argv rather
-  // than threaded through 24 call sites, which is the same shape as platformFlag() in
-  // conductor.mjs. Without an escape hatch people learn to hand-edit state.json to get around
-  // the guard, which is strictly worse than a documented override.
-  const forced = process.argv.includes("--force");
-  if (found !== expected && !forced) {
+
+  const lock = acquireStateLock();
+  if (lock.timedOut) {
+    // `found` is the disk revision read WITHOUT the lock, at the timeout — the only reading there
+    // is, and the sidecar's contract is a verb and two revisions.
+    const peek = readStateFile(STATE_PATH);
+    if (peek.kind === "unreadable") throw new StateUnreadableError(STATE_PATH, peek.reason);
+    const found = peek.kind === "ok" && Number.isInteger(peek.state.revision) ? peek.state.revision : 0;
     if (onConflict === "skip") {
       recordConflict({ verb, expected, found });
-      return { ok: false, expected, found, verb };
+      return { ok: false, expected, found, verb, locked: true };
     }
-    throw new StateConflictError(expected, found);
+    throw new StateConflictError(expected, found,
+      `state.json is locked by another writer (${describeHolder(lock.holder)}) and was not released ` +
+      `within ${STATE_LOCK_WAIT_MS} ms; nothing was written (read revision ${expected}). Retry the command.`);
   }
+  try {
+    // ONE strict read of the disk file serves the revision comparison AND the no-op comparison
+    // below, and it refuses BEFORE --force is consulted. --force overrides a NEWER READABLE
+    // revision, whose content the caller can be shown; an unreadable file's content is unknown, and
+    // overwriting it discards whatever the other side of a merge held. ABSENT is `{}`: init's first
+    // save.
+    const disk = readStateFile(STATE_PATH);
+    if (disk.kind === "unreadable") throw new StateUnreadableError(STATE_PATH, disk.reason);
+    const diskBody = disk.kind === "ok" ? disk.state : {};
+    const found = Number.isInteger(diskBody.revision) ? diskBody.revision : 0;
+    // --force is the deliberate "I know, overwrite it" escape hatch. It is read from argv rather
+    // than threaded through 24 call sites, which is the same shape as platformFlag() in
+    // conductor.mjs. Without an escape hatch people learn to hand-edit state.json to get around
+    // the guard, which is strictly worse than a documented override.
+    const forced = process.argv.includes("--force");
+    if (found !== expected && !forced) {
+      if (onConflict === "skip") {
+        recordConflict({ verb, expected, found });
+        return { ok: false, expected, found, verb };
+      }
+      throw new StateConflictError(expected, found);
+    }
 
-  // A no-op save must be a NO-OP. Bumping the revision for a write that changes nothing breaks
-  // byte-idempotence — two existing tests assert `upgrade` run twice leaves state.json
-  // identical — and rewrites a file for no reason, which is the same pointless-churn class the
-  // tracker already complains about elsewhere. Compare with `revision` excluded from both sides,
-  // since that is the only field this function itself introduces.
-  const { revision: _cur, ...currentBody } = diskBody;
-  const { revision: _next, ...nextBody } = { ...state };
-  if (JSON.stringify(currentBody) === JSON.stringify(nextBody)) {
-    return { ok: true, revision: found, unchanged: true };
+    // A no-op save must be a NO-OP. Bumping the revision for a write that changes nothing breaks
+    // byte-idempotence — two existing tests assert `upgrade` run twice leaves state.json
+    // identical — and rewrites a file for no reason, which is the same pointless-churn class the
+    // tracker already complains about elsewhere. Compare with `revision` excluded from both sides,
+    // since that is the only field this function itself introduces.
+    const { revision: _cur, ...currentBody } = diskBody;
+    const { revision: _next, ...nextBody } = { ...state };
+    if (JSON.stringify(currentBody) === JSON.stringify(nextBody)) {
+      return { ok: true, revision: found, unchanged: true };
+    }
+
+    // AFTER the early return, never before it — see stampTouched(). `next` below is built from
+    // `state` and therefore carries the stamps this mutates in place.
+    stampTouched(state, currentBody);
+
+    // Math.max(found, expected), not just expected: with --force, `expected` is the forcing
+    // writer's STALE value, and a plain `expected + 1` can land BELOW what's already on disk
+    // (found). That reopens the exact lost-update window this guard exists to close, just one
+    // hop removed: a third writer who loaded the post-`found` state now sees its own `expected`
+    // equal the forced write's (too-low) new revision, the guard passes, and the forced write's
+    // change is the one silently discarded. Always advance strictly past whichever of the two is
+    // higher so a forced write can never rewind the revision counter.
+    const next = { ...state, revision: Math.max(found, expected) + 1 };
+    const data = JSON.stringify(next, null, 2) + "\n";
+    const tmpPath = `${STATE_PATH}.tmp-${process.pid}-${Date.now()}`;
+    const tfd = fs.openSync(tmpPath, "w");
+    try {
+      fs.writeFileSync(tfd, data);
+      fs.fsyncSync(tfd);
+    } finally { fs.closeSync(tfd); }
+
+    // STILL OURS? Immediately before the rename, because a holder stalled past the stale age can
+    // have had its lock broken and taken by another writer. Refused as a conflict, writing nothing.
+    if (!sameLock(inspectLock(lockPaths().LOCK), lock)) {
+      try { fs.unlinkSync(tmpPath); } catch { /* best effort */ }
+      if (onConflict === "skip") {
+        recordConflict({ verb, expected, found });
+        return { ok: false, expected, found, verb, locked: true };
+      }
+      throw new StateConflictError(expected, found,
+        "state.json's lock was taken over by another writer before this save could land; nothing was " +
+        `written (read revision ${expected}). Retry the command.`);
+    }
+    fs.renameSync(tmpPath, STATE_PATH);
+    // Best effort: persist the rename's directory entry where the platform allows an fsync of one.
+    try {
+      const dfd = fs.openSync(CONDUCTOR_DIR, "r");
+      try { fs.fsyncSync(dfd); } finally { fs.closeSync(dfd); }
+    } catch { /* not every platform fsyncs a directory descriptor */ }
+
+    // READ BACK WHAT WE JUST WROTE. #140: `update-epic --attribute-commit` reported success for
+    // four commits and the array read `[]` afterwards. This is scoped to the WRITE PATH rather
+    // than to that one flag on purpose — "reported success for a write that did not persist" is
+    // not a property of a flag, and every verb in this engine ends by calling this function, so a
+    // guard bound here covers the twenty-odd of them for one file read. Cost: one readFileSync of
+    // a file the OS just wrote and still holds in cache.
+    //
+    // HONEST SCOPE, because the temptation to overstate it is the whole reason #140 was hard to
+    // read: in the filed incident the working tree DID hold all four values afterwards. This does
+    // not close that incident, whose loss was at `git commit` time and whose mechanism remains
+    // unestablished. It closes the class the engine could not previously distinguish.
+    let diskBytes = null;
+    try { diskBytes = fs.readFileSync(STATE_PATH, "utf8"); } catch { diskBytes = null; }
+    const why = persistFailure({
+      expectedBytes: data, diskBytes,
+      expectedRevision: next.revision, diskRevision: revisionOfText(diskBytes),
+    });
+    // THROWN, never skipped, and deliberately not routed through the onConflict policy: a
+    // revision conflict has a documented benign reading ("someone else's write superseded a write
+    // that did not matter"), and persistFailure() has already handed that reading back as `null`.
+    // What is left has no benign reading — the bytes this process wrote are not on disk and
+    // nothing newer explains it — and silence there is the defect being fixed.
+    if (why) throw new StatePersistError(why, verb);
+
+    state.revision = next.revision;   // keep the caller's object usable for a subsequent save
+    clearConflicts();   // consecutive skips end at the first success
+    return { ok: true, revision: next.revision };
+  } finally {
+    releaseStateLock(lock);
   }
-
-  // AFTER the early return, never before it — see stampTouched(). `next` below is built from
-  // `state` and therefore carries the stamps this mutates in place.
-  stampTouched(state, currentBody);
-
-  // Math.max(found, expected), not just expected: with --force, `expected` is the forcing
-  // writer's STALE value, and a plain `expected + 1` can land BELOW what's already on disk
-  // (found). That reopens the exact lost-update window this guard exists to close, just one
-  // hop removed: a third writer who loaded the post-`found` state now sees its own `expected`
-  // equal the forced write's (too-low) new revision, the guard passes, and the forced write's
-  // change is the one silently discarded. Always advance strictly past whichever of the two is
-  // higher so a forced write can never rewind the revision counter.
-  const next = { ...state, revision: Math.max(found, expected) + 1 };
-  const data = JSON.stringify(next, null, 2) + "\n";
-  const tmpPath = `${STATE_PATH}.tmp-${process.pid}-${Date.now()}`;
-  fs.writeFileSync(tmpPath, data);
-  fs.renameSync(tmpPath, STATE_PATH);
-
-  // READ BACK WHAT WE JUST WROTE. #140: `update-epic --attribute-commit` reported success for
-  // four commits and the array read `[]` afterwards. This is scoped to the WRITE PATH rather
-  // than to that one flag on purpose — "reported success for a write that did not persist" is
-  // not a property of a flag, and every verb in this engine ends by calling this function, so a
-  // guard bound here covers the twenty-odd of them for one file read. Cost: one readFileSync of
-  // a file the OS just wrote and still holds in cache.
-  //
-  // HONEST SCOPE, because the temptation to overstate it is the whole reason #140 was hard to
-  // read: in the filed incident the working tree DID hold all four values afterwards. This does
-  // not close that incident, whose loss was at `git commit` time and whose mechanism remains
-  // unestablished. It closes the class the engine could not previously distinguish.
-  let diskBytes = null;
-  try { diskBytes = fs.readFileSync(STATE_PATH, "utf8"); } catch { diskBytes = null; }
-  const why = persistFailure({
-    expectedBytes: data, diskBytes,
-    expectedRevision: next.revision, diskRevision: revisionOfText(diskBytes),
-  });
-  // THROWN, never skipped, and deliberately not routed through the onConflict policy: a
-  // revision conflict has a documented benign reading ("someone else's write superseded a write
-  // that did not matter"), and persistFailure() has already handed that reading back as `null`.
-  // What is left has no benign reading — the bytes this process wrote are not on disk and
-  // nothing newer explains it — and silence there is the defect being fixed.
-  if (why) throw new StatePersistError(why, verb);
-
-  state.revision = next.revision;   // keep the caller's object usable for a subsequent save
-  clearConflicts();   // consecutive skips end at the first success
-  return { ok: true, revision: next.revision };
 }
