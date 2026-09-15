@@ -9,7 +9,7 @@ import { activate } from "./active-pointer.mjs";
 import { isInitialized, loadState, pushEpic, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
-import { EPIC_DEDUP_KEYS, KNOWN_LANES, KNOWN_STATUSES, epicFlagsFor, flagsFor, isFlagToken, repeatableFlagNames, splitFlagToken, valueBearingFlagsFor } from "./constants.mjs";
+import { EPIC_DEDUP_KEYS, KNOWN_LANES, KNOWN_STATUSES, epicFlagsFor, flagInValuePositionMessage, flagsFor, isFlagToken, repeatableFlagNames, splitFlagToken, valueBearingFlagsFor } from "./constants.mjs";
 import { isKnownLinkType, mergeLinks, unknownLinkTypeMessage, linkTypeVocabulary } from "./links.mjs";
 import { creationStamp } from "./disposition.mjs";
 import { rankOf } from "./epic-progress.mjs";
@@ -111,11 +111,7 @@ export function valuelessFlagError(command, f) {
       // that says it unambiguously. Everything before the dash is unchanged, because existing
       // refusals are asserted on that prefix.
       const token = (f[FLAG_IN_VALUE_POSITION] || {})[flag];
-      if (token) {
-        return `conductor: --${flag} requires ${requires} — '${token}' arrived where that value ` +
-          `belonged and was read as a flag, not as the value. If it IS the value, write ` +
-          `--${flag}=${token}`;
-      }
+      if (token) return flagInValuePositionMessage(flag, requires, token);
       return `conductor: --${flag} requires ${requires}`;
     }
   }

@@ -216,3 +216,121 @@ test("claim and unclaim are not refused for carrying --force", () => {
   assert.doesNotMatch(u.stderr, /unknown flag/, "unclaim must not refuse --force as an undeclared flag");
   assert.equal(u.status, 0, u.stderr);
 });
+
+// ═══════════════ 2.1 — help tokens: the pre-dispatch check's first decision ═══════════════
+
+const ARGV_SURFACE = new URL("../lib/argv-surface.mjs", import.meta.url).href;
+const line = (...tokens) => ["node", "conductor.mjs", ...tokens];
+
+test("checkCommandLine: a help token is recognised before it is classified as a flag", async () => {
+  const { checkCommandLine } = await import(ARGV_SURFACE);
+  assert.equal(checkCommandLine("remove-epic", line("remove-epic", "e2", "--help"), { initialized: true }).kind, "help");
+  assert.equal(checkCommandLine("set-active", line("set-active", "e2", "-h"), { initialized: true }).kind, "help");
+  assert.equal(checkCommandLine("update-epic", line("update-epic", "--help"), { initialized: true }).kind, "help");
+});
+
+test("checkCommandLine: a value-bearing declared flag consumes a non-flag-shaped next token, so -h there is its value", async () => {
+  const { checkCommandLine } = await import(ARGV_SURFACE);
+  const v = checkCommandLine("add-epic", line("add-epic", "--id", "h1", "--title", "-h", "--lane", "claude-code"), { initialized: true });
+  assert.equal(v.kind, "ok", "`-h` after --title is the title, not a help request");
+});
+
+test("checkCommandLine: --help directly after a value-bearing flag that took no value is refused, naming both", async () => {
+  const { checkCommandLine } = await import(ARGV_SURFACE);
+  const v = checkCommandLine("add-epic", line("add-epic", "--id", "h1", "--title", "--help", "--lane", "claude-code"), { initialized: true });
+  assert.equal(v.kind, "refuse");
+  assert.match(v.message, /--title/);
+  assert.match(v.message, /'--help'/);
+  assert.match(v.message, /--title=--help/, "the = form is the escape, as valuelessFlagError() says");
+});
+
+test("checkCommandLine: a valueless flag never consumes the next token", async () => {
+  const { checkCommandLine } = await import(ARGV_SURFACE);
+  assert.equal(checkCommandLine("remove-epic", line("remove-epic", "p", "--cascade", "-h"), { initialized: true }).kind, "help",
+    "`-h` after a valueless flag is in a non-value position");
+});
+
+test("checkCommandLine: a --leading token that is not flag-shaped is a positional on a free-text verb", async () => {
+  const { checkCommandLine } = await import(ARGV_SURFACE);
+  const v = checkCommandLine("triage", line("triage", "--story <n> is 1-indexed"), { initialized: true });
+  assert.equal(v.kind, "ok");
+  assert.deepEqual(v.positionals, ["--story <n> is 1-indexed"]);
+});
+
+test("argv-surface.mjs imports constants.mjs and verb-effects.mjs only", () => {
+  const src = fs.readFileSync(path.join(REPO, "scripts", "lib", "argv-surface.mjs"), "utf8");
+  const imports = [...src.matchAll(/^import\s[^;]*?from\s+"([^"]+)"/gm)].map(m => m[1]).sort();
+  assert.deepEqual(imports, ["./constants.mjs", "./verb-effects.mjs"],
+    "the pre-dispatch path must pull in no verb module");
+});
+
+test("A trailing help token does not remove an epic", () => {
+  const cwd = initialized();
+  run(["add-epic", "--id", "e2", "--lane", "claude-code"], { cwd });
+  const before = snap(cwd);
+  const r = engine(["remove-epic", "e2", "--help"], { cwd });
+  assert.equal(r.status, 0);
+  assert.match(r.stdout, /remove-epic/, "it prints remove-epic's help");
+  assert.doesNotMatch(r.stderr, /removed/);
+  assert.deepEqual(snap(cwd), before, "e2 is still in state.json and nothing else moved");
+});
+
+test("A trailing help token does not append to the detour log", () => {
+  const cwd = initialized();
+  run(["log-detour", "first"], { cwd });
+  const before = snap(cwd);
+  const r = engine(["log-detour", "x", "--help"], { cwd });
+  assert.equal(r.status, 0);
+  assert.match(r.stdout, /log-detour/);
+  assert.deepEqual(snap(cwd), before, "detours.log is byte-identical");
+});
+
+test("A help token does not disarm the gate guard", () => {
+  const cwd = initialized();
+  run(["set-gate-guard", "on"], { cwd });
+  const before = snap(cwd);
+  const r = engine(["set-gate-guard", "off", "--help"], { cwd });
+  assert.equal(r.status, 0);
+  assert.match(r.stdout, /set-gate-guard/);
+  assert.deepEqual(snap(cwd), before);
+  assert.equal(JSON.parse(before[".conductor/state.json"]).gateGuard, true, "the fixture armed the guard");
+});
+
+test("A short help token after a positional does not move the active pointer", () => {
+  const cwd = initialized();
+  run(["add-epic", "--id", "e2", "--lane", "claude-code"], { cwd });
+  const before = snap(cwd);
+  const r = engine(["set-active", "e2", "-h"], { cwd });
+  assert.equal(r.status, 0);
+  assert.match(r.stdout, /set-active/);
+  assert.deepEqual(snap(cwd), before);
+  assert.equal(JSON.parse(before[".conductor/state.json"]).active, null);
+});
+
+test("REGRESSION GUARD: A help token in a value position is still refused", () => {
+  const cwd = initialized();
+  const before = snap(cwd);
+  const r = engine(["add-epic", "--id", "h1", "--title", "--help", "--lane", "claude-code"], { cwd });
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /--title/);
+  assert.match(r.stderr, /--help/);
+  assert.deepEqual(snap(cwd), before, "no epic is created");
+});
+
+test("REGRESSION GUARD: A help token first after the verb is still that verb's help", () => {
+  const cwd = initialized();
+  const r = engine(["update-epic", "--help"], { cwd });
+  assert.equal(r.status, 0);
+  assert.match(r.stdout, /update-epic/);
+  assert.match(r.stdout, /--outcome/);
+});
+
+test("REGRESSION GUARD: A hook verb's help still works without pm", () => {
+  for (const verb of ["brief", "gate-guard"]) {
+    const cwd = gitRepoWithoutPm();
+    const r = engine([verb, "--help"], { cwd, input: "{}" });
+    assert.equal(r.status, 0);
+    assert.match(r.stdout, new RegExp(verb));
+    assert.equal(fs.existsSync(path.join(cwd, ".conductor")), false, `${verb} --help created .conductor/`);
+  }
+});

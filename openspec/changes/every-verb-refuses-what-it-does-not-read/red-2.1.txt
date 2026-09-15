@@ -1,0 +1,268 @@
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-oes8pc/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-vCBmEF/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-yZCrhT/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ZA4r6c/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ZA4r6c/PROJECT.md
+conductor: added epic 'e1' (claude-code, queued)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-0HL4Ff/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-0HL4Ff/PROJECT.md
+conductor: added epic 'e2' (claude-code, queued)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-CpDzQi/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-CpDzQi/PROJECT.md
+conductor: logged minimal detour
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-VhPzPe/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: gate guard is now on
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-YaejX2/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-YaejX2/PROJECT.md
+conductor: added epic 'e2' (claude-code, queued)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-LwfSv5/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-CH51RI/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+✔ VERB_POSITIONALS is set-equal to the dispatch table (2.906417ms)
+✔ every VERB_POSITIONALS row has a valid arity, a form, and boolean markers (0.215125ms)
+✔ release carries two forms keyed by its first positional (0.141584ms)
+✔ freeText is carried by exactly triage, suggest-lane, log-detour and honcho-memory (0.131541ms)
+✔ init with an unknown platform creates nothing (59.291458ms)
+✔ init with a valueless platform is refused before it creates anything (58.556459ms)
+✔ A hook verb refuses an unknown platform (315.992541ms)
+✔ A hook verb's help names the flag its hook passes (288.874208ms)
+✔ the hook marker on VERB_EFFECTS is exactly the verbs hooks/hooks.json invokes (0.572583ms)
+✔ --force is accepted by exactly the mutating verbs, and the argvLevel rows are exactly force (0.485417ms)
+✔ A mutating verb's help names --force (99.031666ms)
+✔ claim and unclaim are not refused for carrying --force (220.46025ms)
+✖ checkCommandLine: a help token is recognised before it is classified as a flag (0.301625ms)
+✖ checkCommandLine: a value-bearing declared flag consumes a non-flag-shaped next token, so -h there is its value (0.13025ms)
+✖ checkCommandLine: --help directly after a value-bearing flag that took no value is refused, naming both (0.102958ms)
+✖ checkCommandLine: a valueless flag never consumes the next token (0.085958ms)
+✖ checkCommandLine: a --leading token that is not flag-shaped is a positional on a free-text verb (0.08425ms)
+✖ argv-surface.mjs imports constants.mjs and verb-effects.mjs only (0.063875ms)
+✖ A trailing help token does not remove an epic (161.046375ms)
+✖ A trailing help token does not append to the detour log (199.863458ms)
+✖ A help token does not disarm the gate guard (155.357375ms)
+✖ A short help token after a positional does not move the active pointer (157.590708ms)
+✔ REGRESSION GUARD: A help token in a value position is still refused (122.727292ms)
+✔ REGRESSION GUARD: A help token first after the verb is still that verb's help (101.283292ms)
+✔ REGRESSION GUARD: A hook verb's help still works without pm (115.054167ms)
+ℹ tests 25
+ℹ suites 0
+ℹ pass 15
+ℹ fail 10
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2121.779167
+
+✖ failing tests:
+
+test at scripts/test/verb-surface.test.mjs:225:1
+✖ checkCommandLine: a help token is recognised before it is classified as a flag (0.301625ms)
+  Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/Users/robsherman/Documents/Repos/pm/scripts/lib/argv-surface.mjs' imported from /Users/robsherman/Documents/Repos/pm/scripts/test/verb-surface.test.mjs
+      at finalizeResolution (node:internal/modules/esm/resolve:272:11)
+      at moduleResolve (node:internal/modules/esm/resolve:879:10)
+      at defaultResolve (node:internal/modules/esm/resolve:1006:11)
+      at #cachedDefaultResolve (node:internal/modules/esm/loader:708:20)
+      at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:728:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:766:56)
+      at #resolve (node:internal/modules/esm/loader:690:17)
+      at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:610:35)
+      at node:internal/modules/esm/loader:639:32
+      at TracingChannel.tracePromise (node:diagnostics_channel:547:22) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///Users/robsherman/Documents/Repos/pm/scripts/lib/argv-surface.mjs'
+  }
+
+test at scripts/test/verb-surface.test.mjs:232:1
+✖ checkCommandLine: a value-bearing declared flag consumes a non-flag-shaped next token, so -h there is its value (0.13025ms)
+  Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/Users/robsherman/Documents/Repos/pm/scripts/lib/argv-surface.mjs' imported from /Users/robsherman/Documents/Repos/pm/scripts/test/verb-surface.test.mjs
+      at finalizeResolution (node:internal/modules/esm/resolve:272:11)
+      at moduleResolve (node:internal/modules/esm/resolve:879:10)
+      at defaultResolve (node:internal/modules/esm/resolve:1006:11)
+      at #cachedDefaultResolve (node:internal/modules/esm/loader:708:20)
+      at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:728:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:766:56)
+      at #resolve (node:internal/modules/esm/loader:690:17)
+      at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:610:35)
+      at node:internal/modules/esm/loader:639:32
+      at TracingChannel.tracePromise (node:diagnostics_channel:547:22) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///Users/robsherman/Documents/Repos/pm/scripts/lib/argv-surface.mjs'
+  }
+
+test at scripts/test/verb-surface.test.mjs:238:1
+✖ checkCommandLine: --help directly after a value-bearing flag that took no value is refused, naming both (0.102958ms)
+  Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/Users/robsherman/Documents/Repos/pm/scripts/lib/argv-surface.mjs' imported from /Users/robsherman/Documents/Repos/pm/scripts/test/verb-surface.test.mjs
+      at finalizeResolution (node:internal/modules/esm/resolve:272:11)
+      at moduleResolve (node:internal/modules/esm/resolve:879:10)
+      at defaultResolve (node:internal/modules/esm/resolve:1006:11)
+      at #cachedDefaultResolve (node:internal/modules/esm/loader:708:20)
+      at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:728:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:766:56)
+      at #resolve (node:internal/modules/esm/loader:690:17)
+      at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:610:35)
+      at node:internal/modules/esm/loader:639:32
+      at TracingChannel.tracePromise (node:diagnostics_channel:547:22) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///Users/robsherman/Documents/Repos/pm/scripts/lib/argv-surface.mjs'
+  }
+
+test at scripts/test/verb-surface.test.mjs:247:1
+✖ checkCommandLine: a valueless flag never consumes the next token (0.085958ms)
+  Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/Users/robsherman/Documents/Repos/pm/scripts/lib/argv-surface.mjs' imported from /Users/robsherman/Documents/Repos/pm/scripts/test/verb-surface.test.mjs
+      at finalizeResolution (node:internal/modules/esm/resolve:272:11)
+      at moduleResolve (node:internal/modules/esm/resolve:879:10)
+      at defaultResolve (node:internal/modules/esm/resolve:1006:11)
+      at #cachedDefaultResolve (node:internal/modules/esm/loader:708:20)
+      at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:728:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:766:56)
+      at #resolve (node:internal/modules/esm/loader:690:17)
+      at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:610:35)
+      at node:internal/modules/esm/loader:639:32
+      at TracingChannel.tracePromise (node:diagnostics_channel:547:22) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///Users/robsherman/Documents/Repos/pm/scripts/lib/argv-surface.mjs'
+  }
+
+test at scripts/test/verb-surface.test.mjs:253:1
+✖ checkCommandLine: a --leading token that is not flag-shaped is a positional on a free-text verb (0.08425ms)
+  Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/Users/robsherman/Documents/Repos/pm/scripts/lib/argv-surface.mjs' imported from /Users/robsherman/Documents/Repos/pm/scripts/test/verb-surface.test.mjs
+      at finalizeResolution (node:internal/modules/esm/resolve:272:11)
+      at moduleResolve (node:internal/modules/esm/resolve:879:10)
+      at defaultResolve (node:internal/modules/esm/resolve:1006:11)
+      at #cachedDefaultResolve (node:internal/modules/esm/loader:708:20)
+      at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:728:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:766:56)
+      at #resolve (node:internal/modules/esm/loader:690:17)
+      at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:610:35)
+      at node:internal/modules/esm/loader:639:32
+      at TracingChannel.tracePromise (node:diagnostics_channel:547:22) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///Users/robsherman/Documents/Repos/pm/scripts/lib/argv-surface.mjs'
+  }
+
+test at scripts/test/verb-surface.test.mjs:260:1
+✖ argv-surface.mjs imports constants.mjs and verb-effects.mjs only (0.063875ms)
+  Error: ENOENT: no such file or directory, open '/Users/robsherman/Documents/Repos/pm/scripts/lib/argv-surface.mjs'
+      at Object.readFileSync (node:fs:621:20)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/verb-surface.test.mjs:261:18)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    errno: -2,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: '/Users/robsherman/Documents/Repos/pm/scripts/lib/argv-surface.mjs'
+  }
+
+test at scripts/test/verb-surface.test.mjs:267:1
+✖ A trailing help token does not remove an epic (161.046375ms)
+  AssertionError [ERR_ASSERTION]: it prints remove-epic's help
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/verb-surface.test.mjs:273:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '',
+    expected: /remove-epic/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/verb-surface.test.mjs:278:1
+✖ A trailing help token does not append to the detour log (199.863458ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /log-detour/. Input:
+  
+  ''
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/verb-surface.test.mjs:284:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '',
+    expected: /log-detour/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/verb-surface.test.mjs:288:1
+✖ A help token does not disarm the gate guard (155.357375ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /set-gate-guard/. Input:
+  
+  ''
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/verb-surface.test.mjs:294:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '',
+    expected: /set-gate-guard/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/verb-surface.test.mjs:299:1
+✖ A short help token after a positional does not move the active pointer (157.590708ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /set-active/. Input:
+  
+  ''
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/verb-surface.test.mjs:305:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '',
+    expected: /set-active/,
+    operator: 'match',
+    diff: 'simple'
+  }

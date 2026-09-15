@@ -68,7 +68,7 @@ Every refusal test asserts the refusal's CAUSE text (not only a non-zero exit) a
 
 ## 2. The pre-dispatch check
 
-- [ ] 2.1 RED then GREEN: help tokens. Unit tests of `checkCommandLine()` in the new leaf module
+- [x] 2.1 RED then GREEN: help tokens. Unit tests of `checkCommandLine()` in the new leaf module
       `scripts/lib/argv-surface.mjs` for D2's classifier (a help token is recognised before a token is
       classified as a flag; a value-bearing declared flag consumes a non-flag-shaped next token, so `-h`
       there is its value; `--help` directly after a value-bearing flag that took no value is a
