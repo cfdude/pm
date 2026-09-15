@@ -245,6 +245,16 @@ test("2.1(e) REGRESSION GUARD: a pre-compaction snapshot writes nothing and does
   assert.ok(sameBytes(before[1], bytes(brief)), "brief.txt unchanged or absent");
 });
 
+test("2.1(f) sweep: every hook verb is settled — in the status table or named as taking the default", async () => {
+  // The default status is fail-OPEN on PreToolUse, so a hook verb added later and left out of both
+  // lists would silently let Edit/Write through over an unreadable file. Bound to the hook set.
+  const { HOOK_ON_UNREADABLE, HOOK_DEFAULT_ON_UNREADABLE } = await import("../lib/refusal.mjs");
+  const { VERB_EFFECTS } = await import("../lib/verb-effects.mjs");
+  const hooks = Object.keys(VERB_EFFECTS).filter((v) => VERB_EFFECTS[v].hook === true).sort();
+  const settled = [...Object.keys(HOOK_ON_UNREADABLE), ...Object.keys(HOOK_DEFAULT_ON_UNREADABLE)].sort();
+  assert.deepEqual(settled, hooks);
+});
+
 test("2.1(f): a refusal raised by code a hook calls still takes the hook's exit status", async () => {
   const { refusalFor } = await import("../lib/refusal.mjs");
   const { StateUnreadableError } = await import("../lib/state.mjs");

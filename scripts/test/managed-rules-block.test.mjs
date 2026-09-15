@@ -117,6 +117,19 @@ test("6.1: a CRLF rules file stays CRLF", () => {
   assert.equal(lf.length, 0, `every line ends CRLF; ${lf.length} of ${segments.length} do not`);
 });
 
+test("6.1: a CRLF rules file with no markers gets a CRLF block appended", () => {
+  const { cwd } = initRepo();
+  fs.writeFileSync(claude(cwd), "# CLAUDE.md\r\n\r\nHand-written only.\r\n");
+  const r = sh(["write-rules"], { cwd });
+  assert.equal(r.status, 0, `stderr: ${r.stderr}`);
+  const after = fs.readFileSync(claude(cwd), "utf8");
+  assert.ok(after.startsWith("# CLAUDE.md\r\n\r\nHand-written only.\r\n"), "the original content is a prefix");
+  const segments = after.split("\n");
+  assert.equal(segments.pop(), "", "the file ends with a line terminator");
+  assert.equal(segments.filter((s) => !s.endsWith("\r")).length, 0, "every line ends CRLF");
+  assert.equal(beginLines(after).length, 1);
+});
+
 // ─────────────── 6.3 ───────────────
 
 test("6.3: an upgrade over a malformed block writes nothing — pmVersion included", () => {

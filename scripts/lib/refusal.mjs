@@ -27,7 +27,15 @@ import { RulesBlockAmbiguousError, rulesBlockAmbiguousMessage } from "./rules.mj
  *
  *  Selected by the `hook: true` marker in VERB_EFFECTS first, so a non-hook verb that happened to
  *  share a name could never inherit a hook's status. */
-const HOOK_ON_UNREADABLE = { "gate-guard": "block", "commit-nudge": "block", brief: "warn" };
+export const HOOK_ON_UNREADABLE = { "gate-guard": "block", "commit-nudge": "block", brief: "warn" };
+
+/** The hook verbs that deliberately take the DEFAULT, each for a stated reason. Exported with the
+ *  table so a test can hold the two together against VERB_EFFECTS's `hook: true` set — the default
+ *  is fail-open on PreToolUse, so a hook verb in neither list is a failure, not a silent 11. */
+export const HOOK_DEFAULT_ON_UNREADABLE = {
+  snapshot: "PreCompact: exit 2 would block compaction, so it takes the unreadable-input code",
+  "lesson-advice": "PreToolUse, but reads only whether state.json exists and never raises the refusal",
+};
 
 function hookUnreadableStatus(verb) {
   const row = Object.prototype.hasOwnProperty.call(VERB_EFFECTS, verb) ? VERB_EFFECTS[verb] : null;
