@@ -286,6 +286,20 @@ the `openspec` lane.
   fabricating one. Gate 1 is not itself required at archive time (it gates code, which
   already happened earlier), though recording it via the same subcommand is good practice and
   `integrity` reports an archived openspec epic that passed Gate 2 with no Gate 1.
+  The gate decides on the record the invocation WRITES: it runs after every field write in the
+  same call, so `--lane`, `--attribute-commit`, `--add-story`, `--withdraw-commit` and
+  `--story <n> --done` alongside `--status archived` all count, and a refused call announces no
+  cleared field.
+- An update to an ARCHIVED `delivered` epic that does not archive (including a non-archived
+  `--status` while its change directory is archived on disk, which the heal re-archives) is
+  REFUSED if it breaks a Gate 2 or handoff obligation the record met, e.g. `--lane openspec` with
+  no Gate 2. Per obligation; one that already failed is no ground, so notes, links and priority
+  stay editable on legacy records. The refusal writes nothing and prints ONE runnable
+  `update-epic` invocation: the call's own tokens minus `--status` and disposition flags, plus
+  `--status archived --outcome <…> --reason "<why>"`, `--correct-disposition` only for an
+  agent-recorded disposition, and a deferral placeholder only when none is asserted. It runs the
+  full gate. Not bound: `record-gate-review` recording a `fail`, the heal, the receiving epic's
+  removal stripping `carriedTo`, and disk-side task edits.
 - **The gate binds every path to `archived`, not just this verb.** `reconcileArchived()` — reached
   from `upgrade`, `render`, the commit nudge and `sync` — used to flip an epic with no lane check
   and no gate check. It now records how it bypassed instead of passing silently.

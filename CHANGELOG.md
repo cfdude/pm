@@ -8,6 +8,62 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**The archive gate reads the record the call writes.** `update-epic` ran the archive gate before
+the invocation's own field writes, so the gate decided on a record the call was about to replace.
+Every field write came after it: `--lane`, `--attribute-commit`, `--add-story`, `--withdraw-commit`,
+`--story <n> --done`, and the `--clear` unsets. And an update to an epic that is already archived
+never passes through `--status archived`, so it never met the gate at all. Both halves had one
+cause: the gate read a record the invocation does not leave.
+
+### Fixed
+
+* **Four one-call bypasses of the archive gate.** On 0.42.0, `update-epic a1 --lane openspec
+  --status archived --outcome delivered --no-deferrals` on a `claude-code` epic with no Gate 2
+  exited 0 and left a `delivered` openspec-lane epic with no Gate 2. Split into two calls, the same
+  flags were refused. The same shape reproduced with an `--attribute-commit` the verdict does not
+  cover, an `--add-story`, and a `--withdraw-commit`. The gate now runs after every field write and
+  unset, just before the completion stamp and the save, so all four are refused. Leaving the
+  openspec lane in the archiving call is accepted, because two calls already reach it.
+* **A false refusal in one call.** `--story 1 --done --status archived --outcome delivered
+  --no-deferrals` on an epic whose only story was outstanding was refused for the story that same
+  call marked done. It is accepted.
+* **A refused call announced fields it never cleared.** The sync-ignore tombstone clear, the rank
+  clear and the `--clear` notes printed before the gate, so a refused call reported changes that
+  did not happen. They are buffered and print only once the write is going to happen.
+
+### Changed
+
+* **An update to an archived `delivered` epic may not break an obligation its archive met.** On
+  0.42.0, `update-epic a3 --lane openspec` on an archived `delivered` `claude-code` epic exited 0,
+  left a record the gate would refuse, and `integrity` named it nowhere. The engine now compares the
+  Gate 2 demand and the handoff demand before and after the call, one at a time, and refuses where
+  one that was met now fails. It runs when the stored outcome is `delivered`, the call does not
+  archive, and the record will be archived when the call returns. That includes a non-archived
+  `--status` on an epic whose change directory is archived on disk, which the call's own render
+  re-archives: two drafts of this check missed that route, and both Gate 1 lenses reproduced it.
+  An obligation that already failed is no ground for refusal, so a legacy record keeps its notes,
+  links and priority editable. Per obligation, not per record: an already-failing handoff does not
+  mask a Gate 2 the call breaks.
+* **The refusal prints one runnable invocation.** It is built from the refused call's tokens,
+  single-quoted, minus `--status` and every disposition flag, plus `--status archived --outcome <…>
+  --reason "<why>"`. It adds `--correct-disposition` only for an agent-recorded disposition, and a
+  deferral placeholder only where none is asserted, never a bare `--no-deferrals`. A value carrying
+  a control character is replaced by `<re-enter this value>`, so no user value can forge a line of
+  the refusal. That invocation runs the full gate on the record it leaves.
+* The Gate 2 and handoff checks live in one exported `deliveredObligations()`, shared by the gate and
+  the regression check. The gate's own messages are byte-identical.
+
+### Notes
+
+* **What this deliberately does not bind:** `record-gate-review` recording a `fail` or an uncovering
+  `pass`, the archive-drift heal re-archiving an epic changed while open, `remove-epic` stripping
+  `disposition.carriedTo`, and disk-side task edits. Refusing at any of them would falsify the
+  record or block unrelated work. The standing condition is held by
+  `archived-delivered-gate2-regression-report`.
+* **It is a ratchet, deliberately.** On a record whose Gate 2 already failed, `--lane claude-code` is
+  accepted and `--lane openspec` straight after is refused, although it restores the earlier record.
+* No `state.json` schema change and no migration.
+
 ## [0.42.0] — 2026-09-12
 
 **A deployed checkout is not a workspace.** `.conductor/state.json` is git-tracked by design — it is

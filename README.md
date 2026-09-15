@@ -482,6 +482,17 @@ Gate 2 (implementation review, before docs) is mechanically required to archive,
 narrated. Scoped strictly to the `openspec` lane; `superpowers`/`claude-code`/`decision`/`external`
 epics are completely unaffected.
 
+**The gate reads the record the call writes.** It runs after every field write in the same
+`update-epic` invocation, so `--lane openspec --status archived …` on a `claude-code` epic with no
+Gate 2 is refused, as are an `--attribute-commit` the verdict does not cover, an `--add-story` and
+a `--withdraw-commit` in the archiving call. `--story <n> --done --status archived …` on the last
+outstanding story is accepted. A refused call announces no cleared field. **An update to an
+archived `delivered` epic that does not archive may not break a Gate 2 or handoff obligation its
+archive met** (for example `--lane openspec` with no Gate 2). The comparison is per obligation, and
+one that already failed is no ground for refusal. The refusal writes nothing and prints one
+runnable `update-epic` invocation that records the disposition the change implies and goes through
+the full gate. See `commands/epic.md`.
+
 **The verdict carries its evidence as data.** `--base-sha`/`--head-sha` record the range that was
 actually reviewed and `--reviewer` records who reviewed it, so a verdict can be checked and can go
 **stale**: if the epic later attributes commits the recorded head does not reach, the archive is

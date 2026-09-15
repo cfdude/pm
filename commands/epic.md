@@ -250,6 +250,89 @@ and `unreconstructable` — is exempt from the Gate 2 and handoff demands by des
 never written, was thrown away, or the evidence of what happened no longer exists, and the
 required reason already answers where the work went.
 
+**The gate decides on the record the call writes, not the one it started from.** It runs after
+every field write and `--clear` unset in the same invocation, so `--lane`, `--attribute-commit`,
+`--add-story`, `--withdraw-commit` and `--story <n> --done` all count. Through 0.42.0 it ran first,
+and one call could get past it: `--lane openspec --status archived --outcome delivered
+--no-deferrals` on a `claude-code` epic with no Gate 2 archived it as a `delivered` openspec-lane
+epic, while the same flags split into two calls were refused. The reverse held too:
+`--story 1 --done --status archived …` was refused for the outstanding story that same call marked
+done. It is now accepted. Leaving the openspec lane in the archiving call (`--lane claude-code
+--status archived …`) is accepted as well, because two calls already got there. A refused call
+also announces nothing. The sync-ignore tombstone clear, the rank clear and the `--clear` notes
+print only once the write is going to happen.
+
+**An update to an archived `delivered` epic may not break an obligation its archive met.** An
+update that does not archive never reaches the gate, so on 0.42.0 `update-epic <id> --lane
+openspec` on an archived `delivered` `claude-code` epic left a `delivered` openspec-lane record
+with no Gate 2, and `integrity` named it nowhere. The engine now checks the Gate 2 demand and the
+handoff demand before and after the call, one obligation at a time, and refuses where one that
+was met now fails. The check runs when all three hold:
+
+- the stored outcome is `delivered`, the only outcome with obligations;
+- the call carries no `--status archived` (that call goes through the gate instead);
+- the record will still be archived when the call returns. Either the stored status is `archived`
+  and the call carries no `--status`, or the change directory is archived on disk. In the second
+  case a non-archived `--status queued` or `--status active` does not help, because the render at
+  the end of the call re-archives the epic whatever status it wrote.
+
+An obligation that already failed is no ground for refusal, so `--notes`, `--link` and
+`--priority` stay editable on a legacy record that never met it. It cannot hide a different one,
+though. On an epic whose handoff already fails, withdrawing its only attribution is still refused
+for the Gate 2 demand it breaks. A genuine unarchive, with nothing archived on disk to undo it, is
+not refused. Real output, on an archived `delivered` `claude-code` epic whose disposition an agent
+recorded:
+
+```text
+$ update-epic r8 --lane openspec --notes "moved to the openspec lane"
+conductor: this update to 'r8' would break an obligation its archived 'delivered' record met, so nothing was written.
+  broken: the Gate 2 demand — missing a passing Gate 2 (implementation review) verdict
+  To make this change, record the disposition it implies. The invocation runs the full archive gate on the record it leaves:
+  update-epic r8 '--lane' 'openspec' '--notes' 'moved to the openspec lane' --status archived --outcome <delivered|killed|superseded|abandoned|declined|unreconstructable> --reason "<why>" --correct-disposition "<why the recorded one was wrong>"
+```
+
+The message is its own, never the gate's `cannot archive …`, and the one runnable invocation is
+the only line beginning `  update-epic `. It is built from the refused call's own tokens,
+single-quoted for a POSIX shell:
+
+- `--status` and every disposition flag (`--outcome`, `--reason`, `--carried-to`,
+  `--correct-disposition`, the deferral flags) are dropped with their values. A dropped
+  non-archived `--status` is said out loud, with the reason.
+- It adds `--status archived --outcome <…> --reason "<why>"`.
+- It adds `--correct-disposition` only when the recorded disposition is an agent's. An engine
+  stamp (the migration's, the heal's) is replaced the ordinary way, and the correction flag is
+  refused against one.
+- It adds `<--no-deferrals | --deferral "<epicId>:<section>">` only when the epic carries no
+  deferral assertion. It never prints a bare `--no-deferrals`, which is a claim and not a default.
+- A value carrying a newline or another control character is not echoed. Its place shows
+  `<re-enter this value>`, the refusal names the flag, and the invocation stays one line.
+  User-supplied values on the `broken:` line, such as story titles, are JSON-quoted.
+
+Filled in and run, that invocation goes through the full archive gate on the record it leaves, so
+it cannot archive anything the gate refuses. Recording a passing Gate 2 before the lane switch
+leaves the obligation met, and then no disposition is needed. The check compares against the record
+just before the call, so it is a ratchet. On a record whose Gate 2 already failed, `--lane
+claude-code` is accepted, and `--lane openspec` straight after is refused, even though that restores
+the earlier record.
+
+What this deliberately does not bind. Four paths can still leave an archived `delivered` record
+failing an obligation with no gate involved, and refusing at any of them would falsify the record
+or block unrelated work. The standing condition is held by the registered epic
+`archived-delivered-gate2-regression-report`:
+
+- `record-gate-review` recording a `fail`, or a `pass` whose `headSha` does not cover the
+  attributions. A verdict is evidence.
+- The archive-drift heal re-archiving an epic that genuinely left the archive and changed while
+  open. The heal reflects disk.
+- `remove-epic <receiver>` stripping `disposition.carriedTo` from an epic with outstanding work.
+  The pointer would dangle otherwise.
+- Unticking a task on disk, which is not a verb.
+
+Also unchanged: `update-epic <id> --status queued` on an epic whose change is archived on disk
+still prints `updated` while the heal leaves it `archived` (held by
+`status-write-undone-by-heal-reports-updated`), and `add-epic`/`add-many` at `archived` stay
+stamped, not gated.
+
 **The two halves of a deferral are separated differently, because they are different shapes.**
 `--deferral` splits on the FIRST colon and that is correct for it: its left half is an EPIC ID,
 which cannot contain one, so `--deferral "t2:design.md § Deferred: the tricky part"` splits where

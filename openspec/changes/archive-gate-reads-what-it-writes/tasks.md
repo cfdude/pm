@@ -163,14 +163,14 @@ RED tasks fail on today's engine. REGRESSION GUARD tasks pass today and must kee
 
 ## 5. Docs
 
-- [ ] 5.1 `commands/epic.md` — the archive section: the gate decides on the record the call writes; an
+- [x] 5.1 `commands/epic.md` — the archive section: the gate decides on the record the call writes; an
       update to an archived `delivered` epic may be refused, and the invocation that refusal prints
-- [ ] 5.2 `README.md`, `skills/conductor/SKILL.md` and `agents/hierarchy-child-executor.md` — the same
+- [x] 5.2 `README.md`, `skills/conductor/SKILL.md` and `agents/hierarchy-child-executor.md` — the same
       facts where the archive gate or its refusal is described
-- [ ] 5.3 `CHANGELOG.md` `[Unreleased]` — fixed (the one-call bypasses and the false refusal) and
+- [x] 5.3 `CHANGELOG.md` `[Unreleased]` — fixed (the one-call bypasses and the false refusal) and
       changed (the regression refusal)
 - [ ] 5.4 Mintlify `/commands/epic` in the 0.43.0 release cycle, under `mintlify-doc-sync`
-- [ ] 5.5 Full suite green, written to a file and read from the file
+- [x] 5.5 Full suite green, written to a file and read from the file
 
 ## 6. Gates and close
 
