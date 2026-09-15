@@ -169,7 +169,7 @@ Every refusal test asserts the refusal's CAUSE text (not only a non-zero exit) a
 
 ## 4. Required task items
 
-- [ ] 4.1 **Call-site completeness sweep** (item 1) — derive with `rg` from the tree at sweep time, never
+- [x] 4.1 **Call-site completeness sweep** (item 1) — derive with `rg` from the tree at sweep time, never
       from design.md, and record the result in `call-site-sweep.md` in this change directory. Sweep:
       every `process.argv` reader in `scripts/conductor.mjs` and `scripts/lib/` (including `render()`'s
       `--diff-summary`, `saveState()`'s `--force`, `platformFlag()`/`resolveAndRecordPlatform()`, the
@@ -186,7 +186,7 @@ Every refusal test asserts the refusal's CAUSE text (not only a non-zero exit) a
       `scripts/lib` — remedies and instructions in `integrity.mjs`, `archive-gate.mjs`, `briefing.mjs`,
       `update-epic.mjs` and any other module `rg -n "update-epic |add-epic |record-[a-z-]+ |set-[a-z-]+ "
       scripts/lib` finds. This change adds no state.json field, and `call-site-sweep.md` says so
-- [ ] 4.2 **Inverse of every operation** (item 1) — enumerate and justify each unshipped inverse:
+- [x] 4.2 **Inverse of every operation** (item 1) — enumerate and justify each unshipped inverse:
       declaring a flag on a verb ⇄ removing its row (removal refuses callers; no verb needed); the
       `--force` row ⇄ its removal by `state-file-refuses-to-guess` (design.md Coordination); a hook verb
       declaring `--platform` ⇄ `hooks/hooks.json` no longer passing it (2.5 asserts both directions); bare `set-lane-routing` refused ⇄ a read form (declined, D8); help printed
@@ -198,7 +198,7 @@ Every refusal test asserts the refusal's CAUSE text (not only a non-zero exit) a
       `update-epic every-verb-refuses-what-it-does-not-read --attribute-commit <sha>`, in landing order.
       The commit moving `openspec/changes/every-verb-refuses-what-it-does-not-read/` under `archive/`
       is NOT attributed
-- [ ] 4.5 **Declare lifecycle bookkeeping** (item 3) — confirm the marker sits on
+- [x] 4.5 **Declare lifecycle bookkeeping** (item 3) — confirm the marker sits on
       the task lines of 4.6 and 6.2 and on no delivery task
 - [ ] 4.6 **Dispositions** (item 6) <!-- pm:lifecycle --> — the archive invocation is 6.2's; add a
       `--deferral "<epicId>:<section>"` for any follow-up registered while the work ran, and never replace
