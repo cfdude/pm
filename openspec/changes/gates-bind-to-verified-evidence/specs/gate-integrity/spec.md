@@ -21,8 +21,9 @@ Vocabulary used by every reconcile requirement in this capability:
 where `<detour>` is armed against `<epic>` and no detour-stack frame pausing `<epic>` for `<detour>`
 is still on the stack. Every other invocation MUST be refused: it exits non-zero, leaves
 `state.json` byte-identical, and its message names the detours the epic currently owes a verdict
-against, or states that it owes none; where the epic holds an unmigrated link, the message names
-`/pm:upgrade`. The self-epic, an epic that was never a detour of `<epic>`,
+against, or states that it owes none. While the epic holds ANY unmigrated `may-invalidate` link, every
+`record-reconcile` on it MUST be refused naming `/pm:upgrade`, whichever detour it names: an obligation
+the unmigrated link carries cannot be counted, so no verdict may clear the flag before it is stamped. The self-epic, an epic that was never a detour of `<epic>`,
 and a detour pushed with `--no-reconcile` are all refused by this rule. `record-reconcile` MUST
 NOT create a link.
 
@@ -110,12 +111,21 @@ refused.
 - **THEN** `record-reconcile p --detour x --verdict valid` is refused naming `d`, and
   the link to `x` carries a false arming record
 
+#### Scenario: A verdict against a new detour cannot clear an unmigrated obligation
+
+- **WHEN** a 0.43.0 state file holds `p` with `reconcileNeeded: true` and a `may-invalidate` link to `d`
+  carrying no arming record, then `push-detour p --detour d2 --reason r --reconcile` and `pop-detour p`
+  run before `upgrade`, and `record-reconcile p --detour d2 --verdict valid` runs
+- **THEN** it exits non-zero naming `/pm:upgrade`, `state.json` is byte-identical, and `p` still owes a
+  reconcile
+
 #### Scenario: An unmigrated link is refused with the upgrade named
 
 - **WHEN** a state file written by 0.43.0 holds `p` with `reconcileNeeded: true` and a
   `may-invalidate` link to `d` carrying no arming record, and `record-reconcile p --detour d
   --verdict valid` runs before `upgrade`
-- **THEN** it exits non-zero naming `/pm:upgrade`, `state.json` is byte-identical, and `render` leaves
+- **THEN** it exits non-zero naming `/pm:upgrade`, `state.json` is byte-identical, and, `p` being the
+  active epic, `render` leaves
   `p` owing a reconcile
 
 #### Scenario: A none amendment records nothing
@@ -136,11 +146,17 @@ otherwise. It SHALL read only `state.json`, SHALL leave a link that already carr
 as it is, and SHALL change nothing else. Running it again changes nothing. A state file written by
 0.43.0 SHALL load and be upgraded by it.
 
+The same stamp SHALL also run on EVERY `upgrade`, whatever `pmVersion` the state already carries, so
+the `/pm:upgrade` a refusal names always stamps a link written later by an older engine (an unreloaded
+session, or another machine sharing `state.json` through git).
+
 Tradeoff, stated rather than hidden: an epic that owes a reconcile while every one of its
 `may-invalidate` links already carries a verdict (a re-push after a verdict under 0.43.0) receives
 only false records, so the survival requirement's exception then clears its flag and says so on
 stderr. Measured before this change: 0 epics owing a reconcile and 2 `may-invalidate` links across
-the 24 pm-managed repositories on the authoring machine.
+the 24 pm-managed repositories on the authoring machine. The stamp can also over-arm: a 0.43.0
+`--no-reconcile` link with no verdict, on an epic that later came to owe through another detour, is
+stamped true, and answering it costs one truthful verdict.
 
 #### Scenario: An owing epic's unanswered link becomes armed
 
@@ -160,6 +176,13 @@ the 24 pm-managed repositories on the authoring machine.
 - **WHEN** a 0.43.0 state file holds `p` with `reconcileNeeded: true` and an unrecorded
   `may-invalidate` link to `d` that already carries a verdict, and `upgrade` runs
 - **THEN** the link to `d` carries a false arming record
+
+#### Scenario: Upgrade stamps a link written after the version was already stamped
+
+- **WHEN** a state file stamped `pmVersion` 0.44.0 holds `p` with `reconcileNeeded: true` and a
+  `may-invalidate` link carrying no arming record to a detour that is archived, and `upgrade` runs
+- **THEN** the link carries a true arming record and `record-reconcile p --detour <that detour>
+  --verdict valid` exits zero
 
 #### Scenario: The migration is idempotent
 

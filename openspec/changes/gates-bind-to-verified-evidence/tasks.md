@@ -97,7 +97,7 @@ Pairs: 4.1–4.6 land with 4.7.
       `rg -n "attributedCommits|headSha|unverifiable|stale" scripts/test` (known at proposal time:
       `gate-artifact-evidence` seeds `attributedCommits: ["HEAD"]`; `delivered-obligations`,
       `archive-gate-order`, `recorded-sha-resolvability`, `conductor-22`, `conductor-25`,
-      `conductor-06` hand-seed states), each converted test named in the commit message; suite green
+      `conductor-06`, `conductor-14`, `gate-verdict-withdrawal` hand-seed states), each converted test named in the commit message; suite green
 
 ## 5. Integrity reports a non-object-name value
 
@@ -112,7 +112,7 @@ Pairs: 5.1 lands with 5.3.
 
 ## 6. A reconcile verdict answers only a detour the epic owes
 
-Pairs: 6.1–6.9e land with 6.10.
+Pairs: 6.1–6.8 and 6.9a–6.9g land with 6.10.
 
 - [ ] 6.1 RED: after push `p`→`d` `--reconcile` and pop, `record-reconcile p --detour p` exits
       non-zero naming `d`; `state.json` byte-identical; `gate-guard` exits 2 (repro 1a)
@@ -128,13 +128,17 @@ Pairs: 6.1–6.9e land with 6.10.
 - [ ] 6.7 RED: push/pop/answer `valid` vs `d`, push/pop `d` again `--reconcile`, answer
       `invalidated` — exits 0, flag false, `valid` still readable on the link (repro `r-repush`)
 - [ ] 6.8 RED: correcting an answered verdict keeps the replaced one readable and does not set the flag
-- [ ] 6.9 RED: owed vs armed `d`, `push-detour p --detour d --reason r --no-reconcile`, pop, `render` —
-      `p` still owes vs `d` and `record-reconcile p --detour d --verdict valid` exits 0
 - [ ] 6.9a RED: owed vs armed `d`, `update-epic p --link "may-invalidate:x:why"` — the `x` link
       carries `reconcileOnResume: false` and `record-reconcile p --detour x` is refused naming `d`
 - [ ] 6.9b RED: a 0.43.0 state file (`reconcileNeeded: true`, keyless unanswered link to `d`) before
       `upgrade` — `record-reconcile p --detour d` exits non-zero naming `/pm:upgrade`, byte-identical,
-      and `render` leaves `p` owing
+      and, `p` being active, `render` leaves `p` owing
+- [ ] 6.9f RED: that 0.43.0 `p`, then `push-detour p --detour d2 --reason r --reconcile` and pop before
+      `upgrade` — `record-reconcile p --detour d2 --verdict valid` exits non-zero naming `/pm:upgrade`,
+      byte-identical, `p` still owes
+- [ ] 6.9g RED: a state file stamped `pmVersion` 0.44.0 holding owing `p` with a keyless
+      `may-invalidate` link to an archived detour — `upgrade`, then `record-reconcile p --detour <it>
+      --verdict valid` exits 0 (lands with 6.10: `stampReconcileKeys` runs on every `upgrade`)
 - [ ] 6.9c RED (migration): that 0.43.0 file through `upgrade` — the `d` link carries `true`, then
       `record-reconcile p --detour d --verdict valid` exits 0 and clears; a keyless link on an epic
       with `reconcileNeeded: false` becomes `false`; a keyless link already carrying a verdict becomes
@@ -146,7 +150,8 @@ Pairs: 6.1–6.9e land with 6.10.
 - [ ] 6.10 GREEN: design Decisions 1–3 in `reconciler-writeback.mjs`, `detour-stack.mjs`, `links.mjs`
       and `migrations.mjs` (arming on the link at push via `linkOnce`, `false` on links `mergeLinks`
       creates, per-link `isArmed()`/`isUnmigrated()`, re-arm, acceptance predicate, `link.superseded`,
-      flag written from `ownedDetours`, the `0.44.0` MIGRATIONS entry); existing record-reconcile tests (`conductor-09`, `conductor-31`) that record
+      flag written from `ownedDetours`, the refusal on any epic holding an unmigrated link, the `0.44.0`
+      MIGRATIONS entry and the per-run `stampReconcileKeys` call in `upgrade()`); existing record-reconcile tests (`conductor-09`, `conductor-31`) that record
       against an unarmed or self detour corrected and named in the commit; suite green
 
 ## 7. A reconcile obligation survives until answered
@@ -171,19 +176,21 @@ Pairs: 7.1–7.4 and 7.4a land with 7.5.
       rewrite the `detour-stack.mjs` header's "ORDERING TRAP" paragraph and the heal's comment to the
       new rule; the `conductor-09` assertion FINDINGS calls unfailable now fails if the heal clears.
       In this same commit, sweep and convert every existing fixture that relies on the old heal —
-      derived with `rg -n "reconcileNeeded" scripts/test` (known at proposal time: `conductor-03`'s
+      derived with `rg -ln "reconcile|detour" scripts/test` (known at proposal time: `conductor-03`'s
       "render never clears an active epic with no frame" fixture `{reconcileNeeded: true, links: []}`,
       `conductor-14`'s `set-gate-guard` block expectation, `conductor-05` fixtures) — each moved onto
       an armed link or re-asserted against the new rule, and named in the commit message; suite green
 
 ## 8. A later detour never overwrites an earlier obligation
 
-Pairs: 8.1–8.2 land with 8.4.
+Pairs: 8.1–8.2 and 8.2a land with 8.4 (8.2a needs the arming of 6.10, the heal of 7.5 and the OR of 8.4).
 
 - [ ] 8.1 RED: owed vs `d`, `push-detour p --detour d2 --reason r --no-reconcile` — flag stays true
       and the report does not state no reconcile is owed on resume (repro 3)
 - [ ] 8.2 RED: then `pop-detour p` — stdout has no `no reconcile was required` line,
       `.conductor/honcho-memories.log` gains no POP line for `p`, stderr names `d`, `gate-guard` exits 2
+- [ ] 8.2a RED: owed vs armed `d`, `push-detour p --detour d --reason r --no-reconcile`, pop, `render` —
+      `p` still owes vs `d` and `record-reconcile p --detour d --verdict valid` exits 0
 - [ ] 8.3 REGRESSION GUARD: an epic owing nothing pushed `--no-reconcile` and popped still emits and
       logs its POP line
 - [ ] 8.4 GREEN: design Decision 6 in `detour-stack.mjs`; suite green

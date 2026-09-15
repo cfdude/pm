@@ -73,7 +73,7 @@ Alternatives rejected:
 Accepted only when all hold, evaluated before `loadState()` returns to any write:
 1. `--detour` differs from the epic;
 2. the epic has a `may-invalidate` link to `--detour` that `isArmed()` accepts (Decision 1); if it is
-   unmigrated instead, the refusal names `/pm:upgrade`;
+   and the epic holds no unmigrated `may-invalidate` link at all (else the refusal names `/pm:upgrade`);
 3. no `detourStack` frame has `pausedEpic === epic && spawnedDetour === --detour`.
 
 Refusals name `ownedDetours(epic)` — the armed, unanswered link targets — or say none is owed.
@@ -101,8 +101,12 @@ flag from frames, and that stays forbidden.
 A `MIGRATIONS` entry keyed `0.44.0` (`migrations.mjs`), additive, idempotent, reading only `state`:
 for every epic, for every `may-invalidate` link WITHOUT a `reconcileOnResume` key, write
 `reconcileOnResume = (epic.reconcileNeeded === true && !link.reconciled)`. Keyed links are untouched,
-so a second run changes nothing. It runs inside `upgrade()` before `reconcileArchived()`, so the heal
-sees stamped links.
+so a second run changes nothing. The entry and `upgrade()` call ONE exported state-only function,
+`stampReconcileKeys(state)`: the entry for the version bump, and `upgrade()` again on EVERY run,
+immediately before `reconcileArchived()`. The per-run call exists because `MIGRATIONS` apply only when
+`release > pmVersion`: a keyless link written after the stamp (an unreloaded 0.43.0 session, or a
+second machine sharing `state.json` through git) would otherwise make the `/pm:upgrade` a refusal names
+a no-op, and with its detour archived nothing else could clear the obligation.
 
 Why a migration and not read-time legacy rules: two rounds of Gate 1 found every remaining Critical
 and Important in the read-time "keyless counts as armed while the epic owes" rule — an epic-wide
@@ -111,7 +115,9 @@ With every link keyed, arming is one per-link boolean. Measured population: 0 ow
 `may-invalidate` links across 24 pm-managed repositories on this machine.
 
 **Before `upgrade` runs** (plugin updated, `/pm:upgrade` not yet run), a keyless link is
-**unmigrated**: never armed; `record-reconcile` against it is refused naming `/pm:upgrade`; it is
+**unmigrated**: never armed; while the epic holds one, EVERY `record-reconcile` on that epic is refused
+naming `/pm:upgrade` (not only one naming the unmigrated detour: a verdict against a new armed detour
+would otherwise set the flag from `ownedDetours`, which cannot count the unmigrated obligation); it is
 never grounds for the heal's no-armed-link clear; and Decision 5 refuses removing it while its epic
 owes. `push-detour --reconcile` onto it writes `true` (an explicit arming is a fact), and
 `--no-reconcile` leaves it keyless rather than guessing. Nothing is lost in the window, and
@@ -120,7 +126,10 @@ lags the installed plugin.
 
 Trade-off (also in the spec): an owing epic whose every link already carries a verdict — a re-push
 after a verdict under 0.43.0, the `r-repush` repro — is stamped all-false, and the heal then clears
-its flag with its stderr notice. The directed rule prefers "no verdict recorded" as the only evidence
+its flag with its stderr notice. Declined here: re-arming, during the stamp, the answered link a live
+0.43.0 `reconcileOnResume` frame names (a re-push still on the stack) — it needs the push's re-arm
+semantics (moving the verdict to `superseded`) inside the stamp, for 0 live frames across 24
+repositories. The directed rule prefers "no verdict recorded" as the only evidence
 of an open obligation over guessing which answered link a later push re-opened.
 
 How each round-2 finding dissolves:
