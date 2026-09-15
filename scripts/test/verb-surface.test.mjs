@@ -935,3 +935,25 @@ test("An argv-level flag with no positional is not read as one: set-gate-guard -
     assert.deepEqual(snap(cwd), before, `${verb} --force writes nothing the bare form does not`);
   }
 });
+
+test("An undeclared flag on a free-text verb is refused with the quote-the-whole-value hint", async () => {
+  // `log-detour fixed --no-verify usage` was accepted as text before this change and is refused now;
+  // the refusal must tell the caller the fix, as the surplus-positional refusal already does.
+  const { checkCommandLine } = await import(ARGV_SURFACE);
+  const lines = [
+    ["log-detour", "fixed", "--no-verify", "usage"],
+    ["honcho-memory", "push", "e1", "skip", "--no-verify"],
+    ["triage", "--no-verify", "flag"],
+    ["suggest-lane", "a", "--no-verify"],
+  ];
+  for (const tokens of lines) {
+    const v = checkCommandLine(tokens[0], line(...tokens), { initialized: true });
+    assert.equal(v.kind, "refuse", tokens.join(" "));
+    assert.match(v.message, /unknown flag --no-verify for /);
+    assert.match(v.message, /'--no-verify'.*quote the whole value/, `${tokens[0]} must carry the hint:\n${v.message}`);
+    assert.match(v.message, /Nothing was written\.$/);
+  }
+  const bounded = checkCommandLine("set-active", line("set-active", "e1", "--no-verify"), { initialized: true });
+  assert.equal(bounded.kind, "refuse");
+  assert.doesNotMatch(bounded.message, /quote the whole value/, "a verb without free text gets no quoting hint");
+});

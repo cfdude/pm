@@ -210,5 +210,10 @@ function undeclaredFlagMessage(verb, flag, items) {
   let msg = `conductor: unknown flag --${escapeControls(flag.name)} for ${verb} — ` +
     (accepted.length ? `it accepts: ${accepted.map(f => `--${f}`).join(", ")}` : "it accepts no flags");
   if (pos && pos.max > 0) msg += `\nusage: conductor.mjs ${verb} ${pos.form} [flags]`;
+  // A free-text verb is where a flag-shaped WORD is likeliest to be text the caller did not quote —
+  // `log-detour fixed --no-verify usage` — so the refusal carries surplusMessage()'s quoting hint.
+  if (pos && pos.freeText) {
+    msg += `\n  If '${escapeControls(flag.token)}' is part of the text, quote the whole value.`;
+  }
   return msg + "\nNothing was written.";
 }
