@@ -71,6 +71,9 @@ must tolerate are small, but none is zero-by-construction.
 - The render heal never clears `reconcileNeeded` on an unarchived epic, except — announced on
   stderr — one holding no `may-invalidate` link at all, which no verdict could ever answer. Moving the
   active pointer off an epic owing a reconcile warns instead of silently erasing the obligation.
+- Every `may-invalidate` link carries an explicit arming record: only `push-detour --reconcile`
+  writes true; `--no-reconcile` pushes and hand-supplied links write false; a 0.44.0 migration
+  stamps links written by earlier releases.
 - `push-detour` ORs the obligation instead of assigning it, re-arms a detour that was already
   answered, and never reports "no reconcile" while an earlier obligation survives; `pop-detour`
   emits no Honcho POP line while any obligation is owed.
@@ -115,8 +118,11 @@ must tolerate are small, but none is zero-by-construction.
   `epicReferences`), `remove-epic.mjs`, `gate-review-writeback.mjs`, `archive-gate.mjs`
   (`gateStaleness`), `git.mjs`, `integrity.mjs`, `constants.mjs` (flag registry). Still
   zero-dependency and zero-network: every new git call reads the local object database.
-- State schema: additive link fields (`reconcileOnResume`, a nested `superseded` verdict) and no
-  migration; a state file written by 0.43.0 loads and its legacy links keep a recordable route.
+- State schema: additive link fields (`reconcileOnResume`, a nested `superseded` verdict) and one
+  `0.44.0` MIGRATIONS entry that gives every `may-invalidate` link an explicit `reconcileOnResume`
+  (true iff its epic owes a reconcile and the link has no verdict). A 0.43.0 state file loads; before
+  `/pm:upgrade` its unstamped links are never armed and never cleared, and a verdict against one is
+  refused naming `/pm:upgrade`. Stored sha values are never rewritten.
 - Docs (Mintlify page sync belongs to the 0.44.0 release cut, not this change): `agents/reconciler.md`, `commands/resume.md`, `commands/detour.md`,
   `skills/conductor/SKILL.md`, `scripts/lib/rules.mjs` (the emitted `record-reconcile` form and the
   attribution endpoint wording), `README.md`, `CHANGELOG.md`.

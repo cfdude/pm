@@ -112,7 +112,7 @@ Pairs: 5.1 lands with 5.3.
 
 ## 6. A reconcile verdict answers only a detour the epic owes
 
-Pairs: 6.1–6.9b land with 6.10.
+Pairs: 6.1–6.9e land with 6.10.
 
 - [ ] 6.1 RED: after push `p`→`d` `--reconcile` and pop, `record-reconcile p --detour p` exits
       non-zero naming `d`; `state.json` byte-identical; `gate-guard` exits 2 (repro 1a)
@@ -128,15 +128,25 @@ Pairs: 6.1–6.9b land with 6.10.
 - [ ] 6.7 RED: push/pop/answer `valid` vs `d`, push/pop `d` again `--reconcile`, answer
       `invalidated` — exits 0, flag false, `valid` still readable on the link (repro `r-repush`)
 - [ ] 6.8 RED: correcting an answered verdict keeps the replaced one readable and does not set the flag
-- [ ] 6.9 REGRESSION GUARD: a state file with `reconcileNeeded: true` and one legacy `may-invalidate`
-      link (no `reconcileOnResume` key, no verdict) accepts `record-reconcile p --detour d` and clears
-- [ ] 6.9a RED: that legacy `p`, then `push-detour p --detour d2 --reason r --no-reconcile` and pop —
-      `record-reconcile p --detour d2` is refused naming `d`; `record-reconcile p --detour d` clears
-- [ ] 6.9b RED: that legacy `p`, pushed for `d2` with `--reconcile` and popped — a verdict against `d2`
-      leaves `p` owing until `d` is answered
-- [ ] 6.10 GREEN: design Decisions 1–3 in `reconciler-writeback.mjs` and `detour-stack.mjs` (arming
-      on the link at push via `linkOnce`, per-link `isArmed()`, re-arm, acceptance predicate, `link.superseded`, flag written from
-      `ownedDetours`); existing record-reconcile tests (`conductor-09`, `conductor-31`) that record
+- [ ] 6.9 RED: owed vs armed `d`, `push-detour p --detour d --reason r --no-reconcile`, pop, `render` —
+      `p` still owes vs `d` and `record-reconcile p --detour d --verdict valid` exits 0
+- [ ] 6.9a RED: owed vs armed `d`, `update-epic p --link "may-invalidate:x:why"` — the `x` link
+      carries `reconcileOnResume: false` and `record-reconcile p --detour x` is refused naming `d`
+- [ ] 6.9b RED: a 0.43.0 state file (`reconcileNeeded: true`, keyless unanswered link to `d`) before
+      `upgrade` — `record-reconcile p --detour d` exits non-zero naming `/pm:upgrade`, byte-identical,
+      and `render` leaves `p` owing
+- [ ] 6.9c RED (migration): that 0.43.0 file through `upgrade` — the `d` link carries `true`, then
+      `record-reconcile p --detour d --verdict valid` exits 0 and clears; a keyless link on an epic
+      with `reconcileNeeded: false` becomes `false`; a keyless link already carrying a verdict becomes
+      `false`
+- [ ] 6.9d REGRESSION GUARD (migration): applying the 0.44.0 entry twice leaves `state.json`
+      unchanged, and a link already carrying a key is untouched
+- [ ] 6.9e REGRESSION GUARD: a 0.43.0 state file loads and every read-only verb (`brief`,
+      `integrity`, `gate-guard`) exits as before on it
+- [ ] 6.10 GREEN: design Decisions 1–3 in `reconciler-writeback.mjs`, `detour-stack.mjs`, `links.mjs`
+      and `migrations.mjs` (arming on the link at push via `linkOnce`, `false` on links `mergeLinks`
+      creates, per-link `isArmed()`/`isUnmigrated()`, re-arm, acceptance predicate, `link.superseded`,
+      flag written from `ownedDetours`, the `0.44.0` MIGRATIONS entry); existing record-reconcile tests (`conductor-09`, `conductor-31`) that record
       against an unarmed or self detour corrected and named in the commit; suite green
 
 ## 7. A reconcile obligation survives until answered
@@ -159,8 +169,12 @@ Pairs: 7.1–7.4 and 7.4a land with 7.5.
       that moves `state.active` off an epic (design Decision 4, site list derived with
       `rg -n "activate\(|state\.active\s*=" scripts/lib` at this commit and pasted into its message);
       rewrite the `detour-stack.mjs` header's "ORDERING TRAP" paragraph and the heal's comment to the
-      new rule; the `conductor-09` assertion FINDINGS calls unfailable now fails if the heal clears;
-      suite green
+      new rule; the `conductor-09` assertion FINDINGS calls unfailable now fails if the heal clears.
+      In this same commit, sweep and convert every existing fixture that relies on the old heal —
+      derived with `rg -n "reconcileNeeded" scripts/test` (known at proposal time: `conductor-03`'s
+      "render never clears an active epic with no frame" fixture `{reconcileNeeded: true, links: []}`,
+      `conductor-14`'s `set-gate-guard` block expectation, `conductor-05` fixtures) — each moved onto
+      an armed link or re-asserted against the new rule, and named in the commit message; suite green
 
 ## 8. A later detour never overwrites an earlier obligation
 
@@ -176,7 +190,7 @@ Pairs: 8.1–8.2 land with 8.4.
 
 ## 9. A write never destroys an owed reconcile's record
 
-Pairs: 9.1–9.3 land with 9.4.
+Pairs: 9.1–9.3a land with 9.4.
 
 - [ ] 9.1 RED: owed vs `d`, `update-epic p --clear-links` exits non-zero naming `record-reconcile`,
       byte-identical
@@ -184,6 +198,8 @@ Pairs: 9.1–9.3 land with 9.4.
       and not telling the reader to resume or pop a detour; byte-identical; `p` still owes vs `d`
 - [ ] 9.3 RED: `update-epic p --link "may-invalidate:d:corrected reason"` on an answered armed link
       keeps the verdict and arming, changes the reason
+- [ ] 9.3a RED: `p`'s armed `d` answered while `p` owes vs armed `d2` — `update-epic p --clear-links`
+      and `remove-epic d` each exit non-zero, byte-identical
 - [ ] 9.4 GREEN: design Decision 5 in `update-epic.mjs`, `links.mjs` (`mergeLinks`,
       `epicReferences` with a reference `kind`), `remove-epic.mjs`'s refusal and `integrity.mjs`'s
       `dangling-epic-reference` detail worded by `kind`; the existing "corrected reason, same position" tests stay green; suite green
@@ -194,9 +210,9 @@ Pairs: 10.1–10.3 land with 10.4.
 
 - [ ] 10.1 RED: `--amendments none` (and `None`) records `[]`
 - [ ] 10.2 RED: `--amendment "rename x; keep y" --amendment "drop z"` records exactly those two
-- [ ] 10.3 RED: `--amendment a --amendments b` exits non-zero with a message naming both flags as
-      conflicting (after change 1 an unregistered `--amendment` is refused as unknown, so the exit
-      alone would pass vacuously), byte-identical
+- [ ] 10.3 RED: `--amendment a --amendments b` exits non-zero, byte-identical, and its message does
+      NOT contain `unknown flag` and does state that the two flags cannot be combined (change 1's
+      unknown-flag refusal already names `--amendments`, so naming the flags alone would pass vacuously)
 - [ ] 10.4 GREEN: register `--amendment` (`repeats: true`) for `record-reconcile` in `VERB_FLAGS`
       (`constants.mjs`) and read it in `reconciler-writeback.mjs`; the parity ledger and the flag
       registry tests pass; suite green
@@ -204,6 +220,8 @@ Pairs: 10.1–10.3 land with 10.4.
 ## 11. Required task items
 
 - [ ] 11.1 **Call-site completeness sweep** — derived with `rg` at sweep time, never from this list:
+      - the `0.44.0` MIGRATIONS entry against every other writer of a `may-invalidate` link, so no
+        path can create a keyless one after the migration;
       - every writer of `reconcileNeeded` and `reconcileOnResume`
         (`rg -n "reconcileNeeded|reconcileOnResume" scripts/lib scripts/conductor.mjs`), each stated as
         setting, clearing or preserving, and every clear justified against the survival requirement;
@@ -226,7 +244,9 @@ Pairs: 10.1–10.3 land with 10.4.
 - [ ] 11.2 **Inverse of every operation added or modified** — arming (inverse: answering, and ending
       the epic); answering (inverse: re-arm by push, correction by re-record — no un-answer verb, and
       say why); write-time resolution (inverse: `--withdraw-commit`, which must reach legacy values);
-      the destroying-write refusals (inverse: `record-reconcile` then the same write). Each unshipped
+      the destroying-write refusals (inverse: `record-reconcile` then the same write); the 0.44.0
+      arming stamp (no inverse shipped: a migration is one-way by construction, and a wrong stamp is
+      corrected by `push-detour --reconcile` or by `record-reconcile`). Each unshipped
       inverse named and justified in the commit message
 - [ ] 11.3 **Verify against the commit** — `git show --stat <sha>` for every task commit; every file
       the task claims is present in THAT commit, including each converted test file and each
@@ -249,7 +269,9 @@ Pairs: 10.1–10.3 land with 10.4.
 
 - [ ] 12.1 `agents/reconciler.md`, `commands/resume.md`, `commands/detour.md` — the armed-detour rule,
       the refusals, what pop prints while owed; ONE emitted amendments form: the reconciler's
-      `AMENDMENTS: none` maps to `--amendments none`, other lines to one `--amendment` each
+      `AMENDMENTS: none` maps to `--amendments none`, other lines to one `--amendment` each; the
+      honest ending for an owing epic whose work was abandoned (`--verdict invalidated` with the outcome
+      as its amendment); `/pm:upgrade` before recording against a link written by 0.43.0
 - [ ] 12.2 `scripts/lib/rules.mjs` emitted text and `skills/conductor/SKILL.md` — the
       `record-reconcile` form; "LAST entry is the endpoint" wording replaced by "every attributed
       commit must be reached by `headSha`"; the declared load-bearing claims updated so the mirror

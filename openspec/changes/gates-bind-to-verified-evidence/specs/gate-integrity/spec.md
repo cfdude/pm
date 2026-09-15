@@ -4,11 +4,15 @@
 
 Vocabulary used by every reconcile requirement in this capability:
 
-- a detour is **armed** against an epic, decided PER LINK on the epic's `may-invalidate` link to
-  that detour: a link on which `push-detour <epic> --detour <detour> --reconcile` recorded that the
-  epic must be re-validated against it is armed; a link on which `push-detour … --no-reconcile`
-  recorded that it need not be is never armed; a link carrying neither record (written before this
-  change, or supplied by hand) is armed only while the epic owes a reconcile;
+- every `may-invalidate` link carries an explicit **arming record**, true or false. Only
+  `push-detour <epic> --detour <detour> --reconcile` writes true. `push-detour … --no-reconcile`
+  writes false on a link it creates and never lowers a true record. Every other write that creates a
+  `may-invalidate` link (`update-epic --link`, `add-epic --link`, an `add-many` entry) writes false.
+  Links written by an earlier release are given their record by the 0.44.0 migration below;
+- a detour is **armed** against an epic when the epic's `may-invalidate` link to it carries a true
+  arming record, decided per link and never from the epic's other links or its flag. A link carrying
+  no arming record at all (a state file not yet upgraded) is **unmigrated**: it is never armed, and
+  it is never grounds for clearing an obligation;
 - an armed detour is **answered** once `record-reconcile` records a verdict against it, and is
   **unanswered** until then;
 - an epic **owes a reconcile** while its `reconcileNeeded` is true.
@@ -17,7 +21,8 @@ Vocabulary used by every reconcile requirement in this capability:
 where `<detour>` is armed against `<epic>` and no detour-stack frame pausing `<epic>` for `<detour>`
 is still on the stack. Every other invocation MUST be refused: it exits non-zero, leaves
 `state.json` byte-identical, and its message names the detours the epic currently owes a verdict
-against, or states that it owes none. The self-epic, an epic that was never a detour of `<epic>`,
+against, or states that it owes none; where the epic holds an unmigrated link, the message names
+`/pm:upgrade`. The self-epic, an epic that was never a detour of `<epic>`,
 and a detour pushed with `--no-reconcile` are all refused by this rule. `record-reconcile` MUST
 NOT create a link.
 
@@ -32,11 +37,6 @@ set `reconcileNeeded` true or clear an obligation owed against another detour.
 **Re-arming.** `push-detour <epic> --detour <detour> --reconcile` against a detour that is already
 answered SHALL make it unanswered again, keeping its previous verdict readable, so the new pause
 owes a new verdict and the epic is never left owing a reconcile with nothing it can record.
-
-**Legacy links.** The per-link rule above is what gives a state file written by the prior release a
-recordable route: its links carry no arming record, so each counts as armed while the epic owes, and
-a detour pushed afterwards with `--no-reconcile` adds no obligation while one pushed with
-`--reconcile` adds exactly one.
 
 **Amendments.** `--amendments` whose entire trimmed value is `none`, in any letter case, SHALL
 record no amendments. A repeatable `--amendment "<text>"` SHALL record each occurrence as exactly
@@ -96,26 +96,27 @@ refused.
 - **THEN** it exits zero, the link carries `invalidated` with the `valid` verdict still readable, and
   `p` does not owe a reconcile
 
-#### Scenario: A legacy owing epic keeps a recordable route
+#### Scenario: A no-reconcile push to the same detour never lowers its arming
 
-- **WHEN** a state file holds epic `p` with `reconcileNeeded: true` and one `may-invalidate` link to
-  `d` carrying no arming record and no verdict, and `record-reconcile p --detour d --verdict valid`
-  runs
-- **THEN** it exits zero and `p` no longer owes a reconcile
+- **WHEN** `p` owes a reconcile against armed detour `d`, then `push-detour p --detour d --reason r
+  --no-reconcile` and `pop-detour p` run, and `render` runs
+- **THEN** `p` still owes a reconcile against `d`, and `record-reconcile p --detour d --verdict valid`
+  exits zero
 
-#### Scenario: A legacy obligation is not hidden by a later no-reconcile detour
+#### Scenario: A hand-supplied link is never armed
 
-- **WHEN** a state file holds `p` with `reconcileNeeded: true` and one `may-invalidate` link to `d`
-  carrying no arming record, then `push-detour p --detour d2 --reason r --no-reconcile` and
-  `pop-detour p` run
-- **THEN** `record-reconcile p --detour d2 --verdict valid` is refused naming `d`, and
-  `record-reconcile p --detour d --verdict valid` exits zero and `p` no longer owes a reconcile
+- **WHEN** `update-epic p --link "may-invalidate:x:why"` runs, where `p` owes a reconcile against
+  armed detour `d` only
+- **THEN** `record-reconcile p --detour x --verdict valid` is refused naming `d`, and
+  the link to `x` carries a false arming record
 
-#### Scenario: A legacy obligation survives a later armed detour
+#### Scenario: An unmigrated link is refused with the upgrade named
 
-- **WHEN** the same state file's `p` is instead pushed for `d2` with `--reconcile` and popped, and
-  `record-reconcile p --detour d2 --verdict valid` runs
-- **THEN** it exits zero and `p` still owes a reconcile until a verdict against `d` is recorded
+- **WHEN** a state file written by 0.43.0 holds `p` with `reconcileNeeded: true` and a
+  `may-invalidate` link to `d` carrying no arming record, and `record-reconcile p --detour d
+  --verdict valid` runs before `upgrade`
+- **THEN** it exits non-zero naming `/pm:upgrade`, `state.json` is byte-identical, and `render` leaves
+  `p` owing a reconcile
 
 #### Scenario: A none amendment records nothing
 
@@ -127,22 +128,63 @@ refused.
 - **WHEN** an accepted verdict is recorded with `--amendment "rename x; keep y" --amendment "drop z"`
 - **THEN** the recorded amendments are exactly `rename x; keep y` and `drop z`, in that order
 
+### Requirement: The 0.44.0 migration gives every reconcile link an explicit arming record
+
+The 0.44.0 `upgrade` migration SHALL give every `may-invalidate` link that carries no arming record
+one: true where its epic's `reconcileNeeded` is true AND the link carries no recorded verdict, false
+otherwise. It SHALL read only `state.json`, SHALL leave a link that already carries a record exactly
+as it is, and SHALL change nothing else. Running it again changes nothing. A state file written by
+0.43.0 SHALL load and be upgraded by it.
+
+Tradeoff, stated rather than hidden: an epic that owes a reconcile while every one of its
+`may-invalidate` links already carries a verdict (a re-push after a verdict under 0.43.0) receives
+only false records, so the survival requirement's exception then clears its flag and says so on
+stderr. Measured before this change: 0 epics owing a reconcile and 2 `may-invalidate` links across
+the 24 pm-managed repositories on the authoring machine.
+
+#### Scenario: An owing epic's unanswered link becomes armed
+
+- **WHEN** a 0.43.0 state file holds `p` with `reconcileNeeded: true` and an unrecorded, unanswered
+  `may-invalidate` link to `d`, and `upgrade` runs
+- **THEN** the link to `d` carries a true arming record, and `record-reconcile p --detour d --verdict
+  valid` exits zero and clears the obligation
+
+#### Scenario: A link on an epic that owes nothing is never armed
+
+- **WHEN** a 0.43.0 state file holds `p` with `reconcileNeeded: false` and an unrecorded
+  `may-invalidate` link to `d2` (written by a `--no-reconcile` push), and `upgrade` runs
+- **THEN** the link to `d2` carries a false arming record
+
+#### Scenario: An answered link is never armed
+
+- **WHEN** a 0.43.0 state file holds `p` with `reconcileNeeded: true` and an unrecorded
+  `may-invalidate` link to `d` that already carries a verdict, and `upgrade` runs
+- **THEN** the link to `d` carries a false arming record
+
+#### Scenario: The migration is idempotent
+
+- **WHEN** `upgrade` has run the 0.44.0 migration and the migration is applied to that state again
+- **THEN** `state.json` is unchanged
+
 ### Requirement: A reconcile obligation survives until a verdict answers it
 
 `reconcileNeeded` SHALL NOT be set false by any write other than an accepted `record-reconcile`,
 with the one exception below. Moving the active pointer — `set-active`, `clear-active`,
 `update-epic --status`, or creating an epic at `active` — every run of the archive-drift heal, and
-archiving the epic MUST leave it as it was. An archived epic is not blocked by it (`gate-guard`
-ignores an archived epic, as today), and an epic returned from `archived` to any other status still
-owes every armed detour left unanswered.
+archiving the epic MUST leave it as it was. `gate-guard` does not block on an archived epic, as today,
+but an archived epic that owes a reconcile is otherwise still bound by it — the refusals of "A write
+never destroys the record of an owed reconcile" still apply — and an epic returned from `archived`
+to any other status still owes every armed detour left unanswered. An owing epic whose work ended
+records its verdict like any other: an `invalidated` verdict is the truthful answer for work that
+will not resume.
 
 **The one exception: an obligation with nothing to answer it against.** Where an epic owes a
-reconcile, holds no `may-invalidate` link a verdict could be recorded against (none that is armed
-under the per-link rule above), and no frame pausing it is on the stack, no `record-reconcile`
+reconcile, holds no armed `may-invalidate` link (answered or not) and no unmigrated one, and no frame
+pausing it is on the stack, no `record-reconcile`
 invocation can be accepted, so the obligation would block the epic permanently. The archive-drift
 heal SHALL clear it and state on stderr that it did, naming the epic. The engine after this change
 cannot produce that state — pushing arms a link, and removing an armed link is refused below — so it
-arises only from a state file written by an earlier release or edited by hand.
+arises only from a hand-edited state file or from the migration tradeoff above.
 
 Because the obligation survives, `gate-guard` SHALL block again whenever the owing epic is the active
 epic once more.
@@ -187,8 +229,7 @@ leave no CLI route to set work aside, which is the hand-edit the detour verbs ex
 #### Scenario: An obligation with no link to answer is cleared, and says so
 
 - **WHEN** a state file holds active epic `p` with `reconcileNeeded: true`, no detour-stack frame,
-  and no `may-invalidate` link other than one on which `--no-reconcile` was recorded, and `render`
-  runs
+  and no `may-invalidate` link other than one carrying a false arming record, and `render` runs
 - **THEN** `p` no longer owes a reconcile, and stderr names `p`
 
 #### Scenario: A pointer move does not trigger that exception
@@ -227,8 +268,8 @@ notice naming every detour the epic owes a verdict against.
 
 ### Requirement: A write never destroys the record of an owed reconcile
 
-While an epic owes a reconcile against an unanswered armed detour, a write that would remove that
-armed link MUST be refused, exiting non-zero with `state.json` byte-identical and a message naming
+While an epic owes a reconcile, a write that would remove any of its armed `may-invalidate` links —
+answered or not — or any unmigrated one MUST be refused, exiting non-zero with `state.json` byte-identical and a message naming
 `record-reconcile`. This binds `update-epic <epic> --clear-links`, and `remove-epic <detour>`, which
 would otherwise strip the link as a dangling reference.
 
@@ -244,7 +285,14 @@ recorded verdict, whether or not anything is owed.
 #### Scenario: Removing an armed detour is refused
 
 - **WHEN** `p` owes a reconcile against armed detour `d`, and `remove-epic d` runs
-- **THEN** it exits non-zero, `state.json` is byte-identical, and `p` still owes a reconcile against `d`
+- **THEN** it exits non-zero naming `record-reconcile`, `state.json` is byte-identical, and `p` still
+  owes a reconcile against `d`
+
+#### Scenario: An answered armed link is protected while another obligation stands
+
+- **WHEN** `p`'s armed detour `d` is answered while `p` still owes against armed detour `d2`, and
+  `update-epic p --clear-links` or `remove-epic d` runs
+- **THEN** each exits non-zero and `state.json` is byte-identical
 
 #### Scenario: Correcting a link's reason keeps its verdict
 
@@ -380,9 +428,11 @@ related to the attributed commits reaches none of them and is stale.
 **A value that is not a commit object name is not a pass.** A verdict SHALL also be stale where its
 `headSha`, or any attributed entry, is not shaped as a hexadecimal commit object name — a ref name or
 other string stored before write-time resolution. Such a value is never resolved as a ref at read
-time, and the archive refusal names it. A hexadecimal value this clone does not hold is different: it
-was a commit when it was written, and a clone that lacks it cannot answer for the record, so where no
-reached-or-not answer can be given the verdict is unverifiable, as below. A resolvable attributed
+time, and the archive refusal names it. A hexadecimal value this clone cannot resolve to exactly one
+commit — absent, ambiguous, or naming an object that is not a commit — is different: a clone that
+cannot resolve it cannot answer for the record, so where no reached-or-not answer can be given the
+verdict is unverifiable, as below. The integrity report and this requirement decide "shaped as a
+hexadecimal commit object name" identically. A resolvable attributed
 commit that `headSha` does not reach makes the verdict stale whatever else is missing.
 
 **Attribution SHALL be an array of commit hashes recorded on the epic.** The emitted gate procedure

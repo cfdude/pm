@@ -30,7 +30,8 @@ once, at write; staleness decided over every attributed commit; legacy records l
 crashing, and never reading fresh when they cannot be checked.
 
 **Non-Goals:**
-- No migration. Neither the link shape nor stored sha values are rewritten (see Decision 7).
+- No migration of stored sha values (Decision 7). The one migration is the arming-record stamp on
+  `may-invalidate` links (Decision 3).
 - No change to which verdicts `integrity`'s existing arms report, beyond the non-object-name arm.
 - `record-reconcile`'s missing unknown-flag refusal (FINDINGS:46) is change 1's. So is every
   argv-shape refusal on the verbs touched here.
@@ -43,14 +44,16 @@ crashing, and never reading fresh when they cannot be checked.
 
 `push-detour --reconcile` writes `reconcileOnResume: true` onto the paused epic's `may-invalidate`
 link to the detour (the frame's field name, deliberately); `--no-reconcile` writes
-`reconcileOnResume: false` on a link it creates, and on an existing link that carries no key, and
-never lowers an existing `true`. `linkOnce()` (`detour-stack.mjs:46`) returns early on an existing
+`reconcileOnResume: false` on a link it creates, never lowers an existing `true`, and never writes a
+key onto an existing unmigrated link (Decision 3). `mergeLinks()` writes `reconcileOnResume: false`
+on a `may-invalidate` link it CREATES (`update-epic --link`, `add-epic --link`, `add-many`) and keeps
+the stored key on a same-target correction (Decision 5). `linkOnce()` (`detour-stack.mjs:46`) returns early on an existing
 link today, so it becomes the site that applies these writes to the link it finds. `link.reconciled`
 (today's `{verdict, amendments, reconciledAt}`) is its answer.
 
-**Armed is decided per link**, by one helper `isArmed(epic, link)`:
-`link.reconcileOnResume === true` → armed; `=== false` → never armed; key absent → armed iff
-`epic.reconcileNeeded === true`. `ownedDetours(epic)` = targets of armed links with no `reconciled`.
+**Armed is decided per link**, by one helper `isArmed(link)`: `link.reconcileOnResume === true`.
+It reads neither the epic's flag nor its other links. `isUnmigrated(link)` = the key is absent.
+`ownedDetours(epic)` = targets of armed links with no `reconciled`.
 
 Why per link and not the epic flag alone: with only `reconcileNeeded`, the engine cannot tell which
 detour a verdict must name. Repro 3's variant — owed against `d`, `--no-reconcile` push to `d2` — would
@@ -69,7 +72,8 @@ Alternatives rejected:
 
 Accepted only when all hold, evaluated before `loadState()` returns to any write:
 1. `--detour` differs from the epic;
-2. the epic has a `may-invalidate` link to `--detour` that `isArmed()` accepts (Decisions 1, 3);
+2. the epic has a `may-invalidate` link to `--detour` that `isArmed()` accepts (Decision 1); if it is
+   unmigrated instead, the refusal names `/pm:upgrade`;
 3. no `detourStack` frame has `pausedEpic === epic && spawnedDetour === --detour`.
 
 Refusals name `ownedDetours(epic)` — the armed, unanswered link targets — or say none is owed.
@@ -80,9 +84,10 @@ Prior answers live in ONE place: `link.superseded`, a sibling of `link.reconcile
 previous `reconciled` object, one level deep (a deeper `superseded` is dropped, as
 `gate-review-writeback.mjs:153-158` does for gate verdicts).
 
-- On accept: if `link.reconciled` exists, it moves to `link.superseded`; the new verdict is written
-  to `link.reconciled`. Then `epic.reconcileNeeded = ownedDetours(epic).length > 0 ||
-  liveReconcileFrame(epic)`.
+- On accept, in this order: if `link.reconciled` exists, it moves to `link.superseded`; the new
+  verdict is written to `link.reconciled`; THEN `epic.reconcileNeeded = ownedDetours(epic).length > 0
+  || liveReconcileFrame(epic)`. `ownedDetours` reads link keys and verdicts, never the flag it feeds,
+  so the order is only "verdict before flag".
 - **Re-arm at push:** `push-detour --reconcile` onto a link holding `reconciled` moves it to
   `link.superseded` and deletes `link.reconciled`, so the link reads unanswered and the earlier
   verdict stays readable. The verdict that later answers it finds no `reconciled` to move.
@@ -91,33 +96,57 @@ The flag write on accept is a write AT the verdict transition, computed from dur
 records — not a render-time derivation. The CLAUDE.md constraint forbids the heal re-deriving the
 flag from frames, and that stays forbidden.
 
-### 3. Legacy links (written by 0.43.0 and earlier)
+### 3. The 0.44.0 migration stamps every link; unmigrated links wait for it
 
-A link is **legacy** when it has no `reconcileOnResume` key. Decision 1's per-link rule is the whole
-legacy treatment: read-time, no migration, and never an epic-wide mode switch. An earlier draft
-switched modes on "no link carries `true`", which wedged: a 0.43.0 file with `p` owing a keyless `d`,
-then a new `push-detour p --detour d2 --no-reconcile` and pop, left nothing armed under one reading
-(every verdict refused, heal skipped, guard exits 2 forever) and armed `d2` under the other. Per link,
-`d` stays armed and `d2` never is; with `--reconcile` on `d2`, both are owed.
+A `MIGRATIONS` entry keyed `0.44.0` (`migrations.mjs`), additive, idempotent, reading only `state`:
+for every epic, for every `may-invalidate` link WITHOUT a `reconcileOnResume` key, write
+`reconcileOnResume = (epic.reconcileNeeded === true && !link.reconciled)`. Keyed links are untouched,
+so a second run changes nothing. It runs inside `upgrade()` before `reconcileArchived()`, so the heal
+sees stamped links.
 
-Measured legacy population: 0 owing epics and 2 `may-invalidate` links across 24 pm-managed
-repositories on this machine. The route this keeps: repro's `r-repush` state (owing, only link
-answered) is recordable.
+Why a migration and not read-time legacy rules: two rounds of Gate 1 found every remaining Critical
+and Important in the read-time "keyless counts as armed while the epic owes" rule — an epic-wide
+mode that a later `--no-reconcile` push, a same-detour push, or a hand-added link could each flip.
+With every link keyed, arming is one per-link boolean. Measured population: 0 owing epics and 2
+`may-invalidate` links across 24 pm-managed repositories on this machine.
 
-Trade-off: while an epic owes, a keyless `may-invalidate` link supplied by hand (`update-epic
---link`) also counts as armed — it adds an obligation, it cannot remove one. And a legacy epic holding two unanswered `may-invalidate` links now owes two verdicts where
-0.43.0's boolean was cleared by one — recordable, so not a wedge, with zero live instances. The engine after this change cannot produce "owes a reconcile with no armed link" — push arms,
-and Decision 5 refuses removing an armed link — so the window is legacy/hand-edited state only.
+**Before `upgrade` runs** (plugin updated, `/pm:upgrade` not yet run), a keyless link is
+**unmigrated**: never armed; `record-reconcile` against it is refused naming `/pm:upgrade`; it is
+never grounds for the heal's no-armed-link clear; and Decision 5 refuses removing it while its epic
+owes. `push-detour --reconcile` onto it writes `true` (an explicit arming is a fact), and
+`--no-reconcile` leaves it keyless rather than guessing. Nothing is lost in the window, and
+`/pm:upgrade` is a CLI verb the guard never blocks; the briefing already nudges when `pmVersion`
+lags the installed plugin.
+
+Trade-off (also in the spec): an owing epic whose every link already carries a verdict — a re-push
+after a verdict under 0.43.0, the `r-repush` repro — is stamped all-false, and the heal then clears
+its flag with its stderr notice. The directed rule prefers "no verdict recorded" as the only evidence
+of an open obligation over guessing which answered link a later push re-opened.
+
+How each round-2 finding dissolves:
+- same-detour `--no-reconcile` push on an owing `p`: the link is `true` (armed by push, or stamped by
+  the migration) and a `--no-reconcile` push never lowers it; pre-upgrade it stays keyless, which the
+  heal never clears on. Spec scenario "A no-reconcile push to the same detour never lowers its arming".
+- a later `--reconcile` re-arming a hand-added or old no-reconcile link: hand-added links are written
+  `false` and the migration stamps an old no-reconcile link (epic not owing) `false`; only a real
+  `--reconcile` push arms, and the obligation it creates is genuine, so `--clear-links` refusing is
+  correct, not a forced fake verdict.
+- answered-but-owing `--clear-links`/`remove-epic d` then heal-clear: Decision 5 now refuses removing
+  ANY armed link (answered or not) or unmigrated link while the epic owes, and an answered armed link
+  still counts for the heal, so the flag survives.
 
 ### 4. The heal, the active pointer, and the warning
 
 `reconcileArchived()` keeps one of today's branches: live frame with `reconcileOnResume` → set. The
 archived → clear branch is DELETED: archive-then-unarchive (`--outcome abandoned`, then `--status
 active`) otherwise cleared the flag with the armed link unanswered, and `gate-guard.mjs` and
-`briefing.mjs` already ignore an archived active epic, so keeping the flag on an archived epic blocks
-nothing. The third branch (not archived, no frame, not active → clear) is REPLACED by a narrower one:
-no live frame and no link `isArmed()` accepts → clear, and push a line onto the heal's stderr notices
-naming the epic. A stale flag that still holds an armed link has one CLI exit, `record-reconcile`.
+`briefing.mjs` already ignore an archived active epic, so keeping the flag never blocks Edit/Write.
+It is NOT inert, and that is deliberate: Decision 5's refusals still bind the archived epic, and
+render still marks its row. The honest ending for abandoned or killed work is a verdict:
+`record-reconcile p --detour d --verdict invalidated --amendment "<outcome>: <why the work will not
+resume>"` — the plan IS invalidated for work that will not resume. The third branch (not archived, no frame, not active → clear) is REPLACED by a narrower one:
+no live frame, no link `isArmed()` accepts (answered or not) and no unmigrated link → clear, and push a
+line onto the heal's stderr notices naming the epic. A stale flag that still holds an armed link has one CLI exit, `record-reconcile`.
 
 Why the narrow branch rather than an explicit discharge verb (`record-reconcile <id> --orphaned
 --reason`): `{reconcileNeeded: true, links: []}` is reachable today (`repro-integrity.txt`: `push`,
@@ -126,7 +155,7 @@ Why the narrow branch rather than an explicit discharge verb (`record-reconcile 
 without an exit the unconditional guard wedges Edit/Write on that epic — the case
 `gate-guard.mjs:96` was written to avoid. After this change the engine cannot create the state
 (pushing arms a link; Decision 5 refuses removing an armed one), so the branch only ever meets
-legacy or hand-edited state; a new flag and its doc surface would buy a recorded discharge for a
+hand-edited state or the migration tradeoff (Decision 3); a new flag and its doc surface would buy a recorded discharge for a
 population measured at zero. Rejected alternative: widening acceptance to any epic in that state,
 which reopens repro 1b.
 
@@ -144,14 +173,15 @@ detour's own edits.
 
 ### 5. Writes that would destroy the record
 
-- `update-epic --clear-links`: refused when `ownedDetours(epic)` is non-empty.
+- `update-epic --clear-links`: refused when the epic owes a reconcile and holds any armed link
+  (answered or not) or any unmigrated link.
 - `mergeLinks()` (`links.mjs:85-96`) replaces the object on a same type+target reason change, which
   drops `reconcileOnResume`, `reconciled` and `superseded`. It will carry every key other than
   `type`/`epic`/`reason` from the stored link onto the supplied one. This binds `update-epic --link`,
   `add-epic --link` (new epics hold no stored link, so a no-op there) and `add-many`.
 - `remove-epic <d>`: `epicReferences()` gives a link reference `drop: null` (the frame precedent at
-  `links.mjs:216-220`) when the link is `may-invalidate`, armed, unanswered, and its holder owes a
-  reconcile, and gives every reference a `kind` (`frame` | `owed-reconcile` | …). The two readers that
+  `links.mjs:216-220`) when the link is `may-invalidate`, armed (answered or not) or unmigrated, and its
+  holder owes a reconcile, and gives every reference a `kind` (`frame` | `owed-reconcile` | …). The two readers that
   word a `drop: null` today assume it is a frame and must word by `kind` instead:
   `remove-epic.mjs:~76-83` ("detour-stack reference(s) … Resume or pop the detour first") names
   `record-reconcile` for an owed-reconcile reference, and `integrity.mjs:~544`
@@ -220,10 +250,12 @@ compares resolved names where both resolve, strings otherwise.
 
 1. `none` / absent array → `unverifiable` / empty → `none-attributed` or `attribution-withdrawn` /
    no range → `unverifiable` — unchanged, same order.
-2. Shape: any of `headSha` or attributed entries not matching `/^[0-9a-f]{4,64}$/` → collected as
-   `malformed` (never passed to git). Malformed is ALWAYS stale.
+2. Shape: any of `headSha` or attributed entries failing `isCommitNameShaped(v)` → collected as
+   `malformed` (never passed to git). Malformed is ALWAYS stale. `isCommitNameShaped` is ONE exported
+   predicate in `git.mjs` (`/^[0-9a-f]{4,64}$/`), shared with Decision 10 so the staleness rule and
+   the integrity arm cannot disagree about what is malformed.
 3. `resolveCommits([headSha, ...attributed hex])` (cached per process by value). Hex values that do
-   not resolve (missing or ambiguous) are `unanswerable`: write-time resolution guaranteed they were
+   not resolve to exactly one commit (missing, ambiguous, or a non-commit object) are `unanswerable`: write-time resolution guaranteed they were
    commits, so a clone lacking one cannot answer, which is `unverifiable`, not a finding.
 4. If `headSha` is hex and resolved: one `git rev-list <resolved attributed…> ^<headSha>` over the
    RESOLVED entries only (a missing argument makes it exit non-zero); every entry whose full name
@@ -242,7 +274,7 @@ Measured (`measure2.mjs`, this repository's record): today's `gateTableRows` ~91
 ### 10. Integrity: non-object-name values
 
 Extend `recorded-sha-the-repository-cannot-resolve` (`integrity.mjs:656`) rather than adding a check:
-a third arm, "not a commit object name", over `attributedCommits` and the CURRENT `gateReview.gateN`
+a third arm, "not a commit object name" (decided by the same `isCommitNameShaped` Decision 9 uses), over `attributedCommits` and the CURRENT `gateReview.gateN`
 `baseSha`/`headSha` only, reported before the object-store probe and independent of it. Its
 `recordedShas()` input already enumerates those holders; the new arm filters to the current ones.
 
@@ -275,8 +307,15 @@ a third arm, "not a commit object name", over `attributedCommits` and the CURREN
 - [The every-entry rule could refuse an epic that attributed a commit on a branch the reviewed head
   does not contain, e.g. a post-squash fix commit] → that IS uncovered work; measured 0 live verdicts
   change classification. Remedy is the documented one: re-review and record over the range.
-- [Keyless links count as armed while an epic owes, so a hand-supplied `may-invalidate` link adds an
-  obligation] → Decision 3; it can add one, never clear one.
+- [An owing epic whose every link already carries a verdict loses its flag at upgrade] → Decision 3;
+  the heal's stderr notice names it; 0 owing epics measured across 24 repositories.
+- [An archived or abandoned epic that still owes keeps `--clear-links`/`remove-epic <detour>` refused
+  and its row marked] → deliberate (Decision 4); the ending is `record-reconcile … --verdict
+  invalidated` with the outcome as its amendment, or `remove-epic <paused epic>` for a registration
+  made in error.
+- [7.5 changes the heal's behaviour on `{reconcileNeeded: true, links: []}`, which existing fixtures
+  rely on (`conductor-03`, `conductor-05`, `conductor-14`)] → tasks 7.5 sweeps
+  `rg -n "reconcileNeeded" scripts/test` and moves each fixture onto an armed link.
 - [`remove-epic p` then `add-epic --id p` yields a clean `p` whose `gate-guard` exits 0] → accepted:
   `remove-epic` is the verb for a record registered in error, the removed record (flag and links) is
   in git history, and refusing removal of an owing epic would leave a mistaken registration
@@ -286,9 +325,9 @@ a third arm, "not a commit object name", over `attributedCommits` and the CURREN
 
 ## Migration Plan
 
-No `MIGRATIONS` entry: every new field is additive and optional, legacy links and legacy sha values
-are read, never rewritten. A 0.43.0 state file loads unchanged. Rollback is reverting the release;
-0.43.0 ignores `reconcileOnResume` and `superseded` on links.
+One `MIGRATIONS` entry, `0.44.0`: the arming-record stamp (Decision 3) — additive (it only adds a
+key to links lacking one), idempotent, reads only `state`, and a 0.43.0 state file loads before and
+after it. Stored sha values are never rewritten. Rollback is reverting the release; 0.43.0 ignores `reconcileOnResume` and `superseded` on links.
 
 ## Coordination
 
