@@ -178,7 +178,7 @@ the file named and nothing written, or is serialised so the loss cannot happen.
   1, also allow). Bash is not matched by that hook, so every remedy stays runnable. `brief`
   (SessionStart) exits 0 with the warning as the only context, in place of a briefing of the empty
   guess. `snapshot` (PreCompact) writes nothing and exits 11 — never 2, which would block
-  compaction. `commit-nudge` (PostToolUse) writes nothing but its HEAD watermark and exits 2, which
+  compaction. `commit-nudge` (PostToolUse), when a commit has landed, writes nothing but its HEAD watermark and exits 2, which
   shows the message to the agent; on 0.43.0 it re-rendered `PROJECT.md` from the empty guess. The
   mapping is keyed on the hook marker in `VERB_EFFECTS`, so a refusal raised anywhere a hook calls
   produces that hook's status. Two tests that asserted the old behaviour as the contract (gh-111's
@@ -218,7 +218,7 @@ the file named and nothing written, or is serialised so the loss cannot happen.
   second machine is unmeasured.
 * **`.gitignore` gains `.conductor/state.json.lock*`, `.conductor/state.json.tmp*` and
   `.conductor/session-claim.json*`** through `ensureGitignore()`, which `init` and `upgrade` run.
-  The last replaces the exact `.conductor/session-claim.json` entry; an existing exact line is left
+  The last is appended alongside the older exact `.conductor/session-claim.json` entry, which is left
   in place. A temp file is left behind only by a save killed between its write and its rename.
 * **A claim taken with a TTL over 7 days by an earlier engine reads as expired** after upgrading.
   Claims are advisory; re-claim.

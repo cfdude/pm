@@ -1474,8 +1474,8 @@ conductor: .conductor/state.json cannot be read — it does not parse as JSON (U
 Meanwhile the hooks never write over it. `gate-guard` **blocks `Edit`/`Write`/`NotebookEdit`**
 (exit 2) until the file is fixed — Bash is not matched by that hook, so run the remedy from the
 shell. `brief` starts the session with only this warning in place of a briefing; `snapshot` writes
-nothing and exits 11 (never 2, which would block compaction); `commit-nudge` writes nothing but
-its HEAD watermark and exits 2, which shows the message to the agent. `verify-state` never loads
+nothing and exits 11 (never 2, which would block compaction); `commit-nudge`, when a commit has
+landed, writes nothing but its HEAD watermark and exits 2 (with no commit it exits 0 without reading state), which shows the message to the agent. `verify-state` never loads
 the file, and `activity` reports the revision and whether the log is on as unknown. An absent
 `state.json` is still plain dormancy.
 
@@ -1504,7 +1504,7 @@ the markers, then run `write-rules` and `render`.
 save waits up to 2 s for a live holder, then refuses (machine-specific values shown as `<…>`):
 
 ```text
-conductor: state.json is locked at .conductor/state.json.lock (pid <pid> on host <host> since <time>) and was not released within 2000 ms; nothing was written (read revision 5). A lock older than 30 s is broken automatically by the next save; if no pm command is running, remove it with `rm .conductor/state.json.lock` and re-run the command.
+conductor: state.json is locked at .conductor/state.json.lock (pid <pid> on host <host> since <time>) and was not released within 2000 ms; nothing was written (read revision <n>). A lock older than 30 s is broken automatically by the next save; if no pm command is running, remove it with `rm .conductor/state.json.lock` and re-run the command.
 ```
 
 A lock older than 30 s, or one whose holder is confirmed dead on this host and in this pid namespace, is broken by the next

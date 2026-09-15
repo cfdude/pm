@@ -192,7 +192,7 @@ dormancy. The message names git remedies (`git checkout --ours|--theirs`, `git s
 conflict to keep** — that is the user's call. Meanwhile `gate-guard` blocks Edit/Write/NotebookEdit
 (exit 2) and Bash is not matched, so the remedies run from the shell; `brief` injects only the
 warning; `snapshot` writes nothing (exit 11, never 2, which would block compaction);
-`commit-nudge` writes nothing but its HEAD watermark (exit 2). `verify-state` never loads the file,
+`commit-nudge` writes nothing but its HEAD watermark (exit 2 when a commit has landed; 0 otherwise, without reading state). `verify-state` never loads the file,
 and `activity` reports the revision and the log's on/off state as unknown.
 
 **Saves are serialised by a lock file.** `saveState()` holds `.conductor/state.json.lock` from the

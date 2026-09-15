@@ -200,7 +200,7 @@ file, then re-run. `--force` does not override it.
 `upgrade` also adds three `.gitignore` entries through the `ensureGitignore()` it already runs:
 `.conductor/state.json.lock*` (the state lock and its break file), `.conductor/state.json.tmp*` (a
 save's temp file, left only by a save killed mid-write) and `.conductor/session-claim.json*`
-(replacing the exact `session-claim.json` entry — an existing exact line is left in place, harmless).
+(appended alongside the older exact `session-claim.json` entry, which is left in place, harmless).
 
 ## What `0.27.0`'s migration does
 
