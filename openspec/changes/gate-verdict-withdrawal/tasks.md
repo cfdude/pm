@@ -25,7 +25,7 @@
 
 - [x] 2.1 REFACTOR (suite green before and after): move `KNOWN_GATE_NUMBERS` from
       `gate-review-writeback.mjs:11` to `constants.mjs`, export it, import it in `gate-review-writeback.mjs`
-- [ ] 2.2 RED then GREEN: unit-test `withdrawnGate(epic, n)` (absent entry + withdrawal → latest
+- [x] 2.2 RED then GREEN: unit-test `withdrawnGate(epic, n)` (absent entry + withdrawal → latest
       withdrawal; stored `pass` + withdrawal → null; stored `ungated` + withdrawal → null; no withdrawal →
       null), then add it beside `gateHasEvidence`. Every surface below calls it; none re-derives it
 - [ ] 2.3 RED then GREEN: withdrawing a Gate 2 `pass` removes `gateReview.gate2` and appends

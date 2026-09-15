@@ -73,6 +73,28 @@ export const isOpenspecLane = (epic) => ((epic && epic.lane) || "openspec") === 
 export const gateHasEvidence = (entry) =>
   !!(entry && typeof entry.baseSha === "string" && typeof entry.headSha === "string");
 
+/** THE definition of the WITHDRAWN state: the most recent `withdrawnGateReviews` entry for gate
+ *  `n` WHEN gate `n` holds no stored verdict, else null. Every surface that words a withdrawal
+ *  calls this; none re-derives it.
+ *
+ *  A gate with a stored verdict is never withdrawn, whatever its history — re-recording returns
+ *  it to normal and the withdrawal stays behind as history. An `ungated` stamp is a stored verdict
+ *  too, so a gate carrying one reads `ungated`, never withdrawn, which is what keeps the two
+ *  standing-condition kinds disjoint by construction.
+ *
+ *  Why a distinct state rather than plain absence: a withdrawal MOVES the entry out of
+ *  `gateReview.gateN`, so every truthiness reader sees no verdict and the obligation reappears —
+ *  the safe direction. But moving alone would make "withdrawn" and "never recorded" read the same,
+ *  the collapse 0.38.0's Gate 2 found letting an epic archive cleanly one field over
+ *  (`attribution-withdrawn` against `none-attributed`). */
+export function withdrawnGate(epic, n) {
+  if (!epic) return null;
+  if (epic.gateReview && epic.gateReview[`gate${n}`]) return null;
+  const mine = (Array.isArray(epic.withdrawnGateReviews) ? epic.withdrawnGateReviews : [])
+    .filter(w => w && String(w.gate) === String(n));
+  return mine.length ? mine[mine.length - 1] : null;
+}
+
 export const NO_GATE_EVIDENCE = "no checkable evidence";
 
 /** The ARTIFACT PATHS a verdict records having reviewed — Gate 1's evidence (gh#177), where a
