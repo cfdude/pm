@@ -479,6 +479,23 @@ test("Every dispatched verb refuses an undeclared flag and writes nothing", () =
   assert.deepEqual(wrong, [], wrong.join("\n"));
 });
 
+test("A help token after every verb's working invocation prints help and writes nothing", () => {
+  // The population the 0.41.0 narrowing of #187 stopped protecting: 14 verbs performed their write
+  // on a trailing --help. docs/lessons/narrowing-a-guard-retests-what-it-protected.md.
+  const wrong = [];
+  for (const [verb, b] of Object.entries(DISPATCH_BASELINE)) {
+    for (const token of ["--help", "-h"]) {
+      const cwd = fixture(b.pre);
+      for (const step of b.local || []) run(step, { cwd });
+      const before = treeSnapshot(cwd);
+      const r = engine([...b.args, token], { cwd, input: b.input || "" });
+      if (r.status !== 0) wrong.push(`${verb} ${token}: exited ${r.status}: ${r.stderr.trim().split("\n")[0]}`);
+      try { assert.deepEqual(treeSnapshot(cwd), before); } catch { wrong.push(`${verb} ${token}: a file changed`); }
+    }
+  }
+  assert.deepEqual(wrong, [], wrong.join("\n"));
+});
+
 test("A typo'd flag on the reconcile write-back records nothing", () => {
   const cwd = fixture([PUSH, ["pop-detour"]]);
   const before = snap(cwd);

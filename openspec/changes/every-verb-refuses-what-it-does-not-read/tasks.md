@@ -203,7 +203,7 @@ Every refusal test asserts the refusal's CAUSE text (not only a non-zero exit) a
 - [ ] 4.6 **Dispositions** (item 6) <!-- pm:lifecycle --> — the archive invocation is 6.2's; add a
       `--deferral "<epicId>:<section>"` for any follow-up registered while the work ran, and never replace
       the declines with `--no-deferrals`
-- [ ] 4.7 **Route what the work taught** (item 7) — name each as practice, friction or process failure.
+- [x] 4.7 **Route what the work taught** (item 7) — name each as practice, friction or process failure.
       Candidates to evaluate, not presumptions: a PROCESS lesson in `docs/lessons/` — narrowing a guard's
       trigger (#187's 0.41.0 fix) must re-test the population the guard protected, evidence: 14 verbs
       performed their write on a trailing `--help` (proposal.md); a PRACTICE — enforcement bound to the

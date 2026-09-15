@@ -76,6 +76,7 @@
  */
 
 import path from "node:path";
+import { isatty } from "node:tty";
 import { fileURLToPath } from "node:url";
 import { pluginVersion } from "./lib/plugin-meta.mjs";
 import {
@@ -172,10 +173,14 @@ if (!cmd || (!Object.prototype.hasOwnProperty.call(VERB_EFFECTS, cmd) && (helpAt
     process.exit(0);
   }
   if (verdict.kind === "refuse") {
-    // A hook verb's payload is on stdin. Drain it before refusing, as gate-guard and lesson-advice
+    // A hook verb's payload is on stdin. Drain it before exiting, as gate-guard and lesson-advice
     // do on their own paths, so the hook writer is not left holding a pipe (an EPIPE on its side).
-    if (VERB_EFFECTS[cmd].hook === true) readStdin();
+    // Never from a terminal: a person typing a refused hook line would wait on a read that only
+    // ends at EOF, with the refusal not yet printed. The message goes first for the same reason.
     process.stderr.write(verdict.message + "\n");
+    // isatty(0), not process.stdin.isTTY: touching process.stdin opens a stream on fd 0 that makes
+    // the synchronous drain read nothing, and the hook writer then sees EPIPE.
+    if (VERB_EFFECTS[cmd].hook === true && !isatty(0)) readStdin();
     process.exit(1);
   }
   // D10 — every verb reads its command line in canonical order: positionals first, then flags with
