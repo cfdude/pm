@@ -251,7 +251,7 @@ the GREEN commit stages that file and names it in its message.
       `disposition.outcome: superseded` (read from `state.json` when this list was written) and this
       epic's `supersedes` links to each — nothing more is owed for them. This change ends with 9.2's
       exact invocation; never `remove-epic`
-- [ ] 7.6 **Route what the work taught** — name each as a PRACTICE (register an epic, with its
+- [x] 7.6 **Route what the work taught** — name each as a PRACTICE (register an epic, with its
       evidence), TOOLING FRICTION (`/pm:feedback [bug|feature] "<summary>"`), or a PROCESS FAILURE (a
       lesson in `docs/lessons/` with `trigger`, `cost`, `enforced_in`). Candidates to consider, not
       presumptions: the 0.26.0 lock rejection that measurement overturned; two tests (gh-111, gh#129)
