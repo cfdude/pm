@@ -70,7 +70,8 @@ that flag's value, exactly as any other non-flag-shaped token is.
 Every verb the engine dispatches SHALL refuse a flag its declared command-line surface does not name:
 exit non-zero, name the verb and the flag, name the flags the verb does accept (or state that it
 accepts none), and write nothing. A flag is a flag-shaped token (`--name` or `--name=value`) in a
-non-value position.
+non-value position; on a verb whose positionals are not free text, any other token beginning with `--`
+in a non-value position (`--Steal`, `--dry_run`) is also refused as an undeclared flag.
 
 This binds EVERY dispatched verb — read-only verbs and hook verbs included, save only a dormant hook
 verb as the `--platform` requirement below provides — and the set of verbs it
@@ -113,8 +114,11 @@ the keys that document may carry are not command-line flags and SHALL be refused
 Every dispatched verb SHALL declare how many positional arguments it reads — a minimum and a maximum,
 where the maximum may be unbounded for a verb that joins its positionals into one text. A positional
 is any token not consumed as a declared flag's value. A token following a VALUELESS flag is never that
-flag's value, so it is a positional. A token beginning with `--` that is not flag-shaped (for example
-one containing a space) is a positional, as `triage` already treats it.
+flag's value, so it is a positional, and a valueless flag given an inline value (`--cascade=true`) is
+refused naming that flag. A token beginning with `--` that is not flag-shaped (for example one containing
+a space) is a positional ONLY on a verb whose positionals are free text — `triage`, `suggest-lane`,
+`log-detour`, `honcho-memory` — as `triage` already treats it; on every other verb it is refused as an
+undeclared flag, because the verb's own parser skips it as a flag and would otherwise act without it.
 
 An invocation carrying more positionals than the verb's maximum SHALL be refused, naming the first
 surplus token, and SHALL write nothing. A missing required positional stays the verb's own refusal.
@@ -138,6 +142,14 @@ on every such verb, not only that one.
 #### Scenario: A value given to a valueless flag is refused by name
 - **WHEN** `remove-epic p --cascade yes` runs against a record where `p` has a child epic
 - **THEN** it exits non-zero naming `yes`, and `p` and its child are still in `state.json`
+
+#### Scenario: An inline value on a valueless flag is refused
+- **WHEN** `remove-epic p --cascade=true` runs against a record where `p` has a child epic
+- **THEN** it exits non-zero naming `--cascade`, and `p` and its child are still in `state.json`
+
+#### Scenario: A dash-leading token that is not a flag is refused where no free text is read
+- **WHEN** `claim --repo --session s --Steal` runs in an initialized repository
+- **THEN** it exits non-zero naming `--Steal`, and no repository claim is recorded
 
 #### Scenario: A verb that takes no positionals refuses one
 - **WHEN** `set-review-mode --mode thorough extra` runs

@@ -86,8 +86,9 @@ actually shipped and documented, not a snapshot of what it was expected to ship.
 the `verb-surface` capability declares argv-level (`--force`) is registered in this same allowlist,
 because a separate list of them would be the parallel list this requirement prohibits. It carries no
 value and writes no epic field, so the documented-surface check — which requires every flag to read a
-value back from state — SHALL exclude argv-level flags, and so SHALL the check that every flag the
-allowlist declares for an epic-mutating command appears in its command document. Their acceptance on
+value back from state — SHALL NOT require an argv-level flag to read one back, and the check that every
+flag the allowlist declares for an epic-mutating command appears in its command document SHALL exclude
+argv-level flags. Their acceptance on
 every command they are declared for is checked by `verb-surface` over the whole dispatch table instead.
 
 This is not housekeeping. The allowlist is a literal list and an unregistered flag exits non-zero

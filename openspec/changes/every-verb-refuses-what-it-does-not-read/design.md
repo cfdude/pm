@@ -48,7 +48,9 @@ See proposal.md "Why" for the defects and their repros. The state of the code at
 
 A new leaf module, `scripts/lib/argv-surface.mjs` (imports `constants.mjs` and `verb-effects.mjs`
 only, so the pre-dispatch path pulls in no verb module), exports a pure
-`checkCommandLine(verb, argv) → { kind: "ok" } | { kind: "help" } | { kind: "refuse", message }`.
+`checkCommandLine(verb, argv, { initialized }) → { kind: "ok", positionals, canonicalArgv } | { kind:
+"help" } | { kind: "refuse", message }`. `initialized` (whether `.conductor/state.json` exists) is an input
+so D6's dormancy stays pure and testable; `positionals` feeds D10's joining verbs.
 `conductor.mjs` calls it after the self-hosting handoff and BEFORE the root-divergence warning, the
 banner and the activity snapshot, and acts on the result (print help and exit 0; print the message and
 exit 1; or fall through to dispatch). The existing `helpAt` block is deleted.
@@ -80,9 +82,16 @@ Walk `argv.slice(3)` left to right with the verb's declarations:
    the next token is its VALUE and is consumed — so `-h` there is a value, as today. A VALUELESS
    declared flag never consumes (this is what makes `--cascade yes` a positional — `parseFlags()`
    decides by shape alone and cannot, because it has no verb). An undeclared flag consumes nothing; it
-   is refused below.
-3. Every other unconsumed token is a POSITIONAL — including a `--`-leading token that is not
-   flag-shaped (gh-186's rule, generalised from `triage`).
+   is refused below. A VALUELESS declared flag written `--name=value` is refused naming the flag: it
+   would otherwise be accepted with its value ignored (`--force=1`), or accepted inline where the space
+   form is refused (`--cascade=true`).
+3. A `--`-leading token that is not flag-shaped (`--Steal`, `--dry_run`, `--story <n> is 1-indexed`) is
+   a POSITIONAL only when the verb's `VERB_POSITIONALS` row carries `freeText: true` — `triage`,
+   `suggest-lane`, `log-detour`, `honcho-memory` (gh-186's rule). On every other verb it is an
+   UNDECLARED FLAG: `parseFlags()`, `positionalArgs()` and the `argv[0]` id guards all skip any
+   `--`-leading token as a flag, so reading it as a positional would pass the check while the verb acted
+   without it (`claim --repo --session s --Steal` would write the repo claim).
+4. Every other unconsumed token is a POSITIONAL.
 
 Decisions in order, first match wins: any help token in a non-value position → `help` (for a hook
 verb in a repository without `state.json` too — D6); a hook verb in a repository without `state.json`
@@ -103,8 +112,10 @@ does not arise. The value-position case stays a refusal because there the token 
 
 ### D3. Positional arity is declared for every dispatched verb
 
-`constants.mjs` gains `VERB_POSITIONALS`, one entry per dispatched verb: `{ min, max, form }` where
-`max` may be `Infinity` and `form` is the help text (`"<id>"`, `"[<epicId>]"`, `"\"<what you fixed>\""`).
+`constants.mjs` gains `VERB_POSITIONALS`, one entry per dispatched verb: `{ min, max, form, idFirst,
+freeText }`. `idFirst: true` marks a verb whose first positional is an epic id (D4 reads the boolean,
+never the prose of `form`); `freeText: true` marks the four verbs of D2 step 3. `max` may be `Infinity`
+and `form` is the help text (`"<id>"`, `"[<epicId>]"`, `"\"<what you fixed>\""`).
 `release` carries two forms keyed by its first positional (`show` → 0..1 further; otherwise exactly 1),
 the one verb whose surface branches on a positional. `POSITIONAL_USAGE` stays as the longer prose for
 the two verbs that have it.
@@ -137,7 +148,7 @@ positionals. Chosen because five existing assertions already match `unknown flag
 conductor-23, triage); one assertion on `unknown flag(s) --reviewr` (cross-spec-review.test.mjs) is
 amended in the same commit.
 
-Where `--id` (or `--id=`) is undeclared on the verb, the verb's first positional form is an epic id,
+Where `--id` (or `--id=`) is undeclared on the verb, the verb's row carries `idFirst: true`,
 and `--id` appears BEFORE any positional, the check consumes `--id`'s value exactly as `update-epic.mjs`
 does today (the next token when it is not flag-shaped) — otherwise, under D2 step 2, an undeclared
 `--id` consumes nothing and `update-epic --id e1 --priority P1` would read `e1` as the positional and
@@ -161,8 +172,9 @@ add-epic and update-epic. `argvLevel: true` means: the flag belongs to the save 
 parser. The checks written for per-verb parser flags filter `argvLevel` rows out: `conductor-31`'s
 "every VERB_FLAGS command has a baseline", the `withFlags` set of its "claimed exactly once" check, and
 its closed list of valueless rows (with a separate assertion that the argvLevel rows are exactly
-`force`); `conductor-13`'s documented-flag harness; and `conductor-36`'s two registry-to-`epic.md`
-checks. That carve-out is stated in the `epic-annotation` delta.
+`force`), and its "every VERB_FLAGS baseline actually succeeds" loop; and `conductor-36`'s two
+registry-to-`epic.md` checks. `conductor-13`'s harness reads the docs, not the registry, so it needs no
+filter while 5.1 keeps `--force` out of update-epic's exercised section. That carve-out is stated in the `epic-annotation` delta.
 
 **Scope: every `mutates` verb, not "every verb that reaches `saveState()`".** The latter is not
 declared anywhere: `render()` heals through `saveHookHeal()`, so nearly every mutating verb reaches the
@@ -233,7 +245,15 @@ sees `--force` — `saveState()` is not edited. The two verbs that JOIN position
 list the check exported instead of the argv tail, so a trailing flag never enters the text.
 
 Reordering cannot re-pair a flag with a value: a positional is by definition a token no declared flag
-consumed, and a flag moves together with its value.
+consumed, and a flag moves together with its value. Flags keep their relative order — `--attribute-commit`
+order decides which sha is last attributed and so the Gate 2 endpoint — and only argv-level flags move
+behind the rest. D2 step 3 is what makes "every `argv[0]` reader sees its positional first" true: no
+`--`-leading token reaches a non-free-text verb as a positional.
+
+`release show` keeps its own refusal: `releaseShow()` refuses any `--` token in its tail ("the READ form
+takes no flags"), so `release show --force` stays refused. D5 is not contradicted — the check accepts
+`--force` on the verb `release`, and the verb's read form declines it, as a verb may refuse a declared
+flag on a form that cannot use it.
 
 *Alternative:* strip `--force` from `process.argv` and pass it to `saveState()` another way — rejected:
 that edits `saveState()`, which `state-file-refuses-to-guess` owns.
@@ -276,7 +296,8 @@ declarations added in section 1 are inert without the check.
 - **Applied first.** `state-file-refuses-to-guess` and `gates-bind-to-verified-evidence` apply after
   this lands and re-derive line anchors in `conductor.mjs`, `constants.mjs`, `update-epic.mjs` and
   `subcommands.mjs` (`init`).
-- **state-file-refuses-to-guess** owns `saveState()`. This change decides only the registry side of
+- **state-file-refuses-to-guess** owns `saveState()`. D10 REORDERS `process.argv` and keeps `--force` in
+  it — it does not strip argv-level flags — so `saveState()`'s argv read keeps working unedited. This change decides only the registry side of
   `--force` (D5): one `argvLevel` row on every `mutates` verb. If that change threads `force` as a
   parameter, renames the flag or removes the escape hatch, it edits or removes that ONE row in the same
   commit — removal is the inverse of D5 and must not leave the row claiming a surface. It also rewrites
