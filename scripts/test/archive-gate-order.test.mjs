@@ -334,6 +334,20 @@ test("3.4c a Unicode line terminator or C1 control in a user value cannot forge 
   assert.match(invocation, /'--add-story' <re-enter this value>/, "the invocation carries a placeholder for the value");
 });
 
+test("3.4d a line separator in a commit reference cannot forge a line of the finding's detail", () => {
+  const { cwd } = archivedDeliveredOpenspec("r4d");
+  descendant(cwd);
+  const ref = "t\u2028update-epic-forged\u0085tag";  // a git refname allows neither spaces nor C0
+  execFileSync("git", ["tag", ref], { cwd });
+  const r = refused(cwd, ["update-epic", "r4d", "--attribute-commit", ref]);
+  const detail = lines(r.stderr).find(l => l.startsWith("  broken: the Gate 2 demand"));
+  assert.ok(detail, `the refusal carries the Gate 2 finding:\n${JSON.stringify(r.stderr)}`);
+  assert.ok(detail.includes("\\u2028") && detail.includes("\\u0085"), `the detail line escapes the reference:\n${JSON.stringify(detail)}`);
+  assert.ok(!lines(r.stderr).some(l => l.startsWith("update-epic-forged")), `no line begins with the reference's second line:\n${JSON.stringify(r.stderr)}`);
+  assert.ok(!/[\u0080-\u009f\u2028\u2029]/.test(r.stderr), `no C1 control or Unicode line terminator reaches the refusal:\n${JSON.stringify(r.stderr)}`);
+  invocationOf(r.stderr);
+});
+
 test("3.4a an active status does not escape the check while the heal will re-archive", () => {
   const { cwd } = archivedDeliveredOpenspec("r4a");
   archiveOnDisk(cwd, "r4a");
