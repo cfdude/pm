@@ -119,7 +119,10 @@ Every refusal test asserts the refusal's CAUSE text (not only a non-zero exit) a
       Delete `requireKnownFlags` and the `*_FLAGS` allowlist constants only where `rg` finds no remaining
       reader. Correct the constants.mjs comment claiming add-many "refuses everything else" and
       `requireKnownFlags`' "only the three verbs…" comment
-- [ ] 2.4 RED then GREEN: surplus positionals and canonical argv. RED: every `DISPATCH_BASELINE`
+- [ ] 2.4 RED then GREEN: surplus positionals and canonical argv. (Gate 1 round 3: this commit also updates
+      `scripts/test/flag-parsing.test.mjs` `owners --json=x`, whose cause-text regex the inline-value
+      refusal no longer matches, and amends 2.1's unit test, which classified a non-flag-shaped `--` token as
+      a positional on every verb.) RED: every `DISPATCH_BASELINE`
       invocation of a verb with a finite `max` gets `zzzstray` appended and is asserted refused by cause
       text naming it (not by exit code alone) with nothing written; plus "An unquoted multi-word title is
       refused, not truncated", "The same truncation is refused on update", "A verb that reads one text
