@@ -343,8 +343,17 @@ function sleepMs(ms) {
  *  belong to the same file: `{ino, mtimeMs, content, nonce}` — `content` null when it does not
  *  parse (a holder between its create and its write) — or null when there is no lock. */
 export function inspectLock(lockPath = lockPaths().LOCK) {
+  // LSTAT BEFORE OPEN. A lock this engine creates is always a regular file (an exclusive create
+  // never follows or makes a symlink), so anything else at the path — a FIFO, a symlink to
+  // anything, a directory — is judged from lstat and NEVER opened: opening a FIFO for reading
+  // blocks until something opens it for writing, which hung every save with no time limit
+  // (Gate 2 re-review). The open below adds O_NONBLOCK and O_NOFOLLOW for the path swapped
+  // between this lstat and that open.
+  let pre;
+  try { pre = fs.lstatSync(lockPath); } catch { return null; }
+  if (!pre.isFile()) return lstatLock(lockPath);
   let fd;
-  try { fd = fs.openSync(lockPath, "r"); } catch { return lstatLock(lockPath); }
+  try { fd = fs.openSync(lockPath, NONBLOCKING_READ); } catch { return lstatLock(lockPath); }
   try {
     const st = fs.fstatSync(fd);
     if (!st.isFile()) return lstatLock(lockPath);
@@ -358,8 +367,10 @@ export function inspectLock(lockPath = lockPaths().LOCK) {
   } catch { return null; } finally { try { fs.closeSync(fd); } catch { /* already closed */ } }
 }
 
-/** A lock path that EXISTS but cannot be read as a lock file — mode 000, a dangling symlink, a
- *  directory — judged from lstat alone: its identity is its inode with no nonce, its age its own
+const NONBLOCKING_READ = fs.constants.O_RDONLY | (fs.constants.O_NONBLOCK || 0) | (fs.constants.O_NOFOLLOW || 0);
+
+/** A lock path that EXISTS but cannot be read as a lock file — mode 000, a symlink (dangling or
+ *  not), a directory, a FIFO — judged from lstat alone: its identity is its inode with no nonce, its age its own
  *  mtime. Null only when nothing is at the path. Without this, "exists" (the exclusive create's
  *  EEXIST) and "no lock" (the failed open) disagreed, and the acquire loop spun at full CPU. */
 function lstatLock(lockPath) {
@@ -446,6 +457,13 @@ function lockRefusalMessage(lock, expected) {
   const directory = lock.directory || (lock.holder && lock.holder.kind === "directory");
   const rm = `${directory ? "rm -r" : "rm"} ${shown}`;
   const stale = STATE_LOCK_STALE_MS / 1000;
+  if (lock.breakHeld) {
+    const bShown = path.relative(process.env.CLAUDE_PROJECT_DIR || process.cwd(), lock.breakHeld.path) || lock.breakHeld.path;
+    return `state.json's lock at ${shown} is stale, but it could not be broken within ${STATE_LOCK_WAIT_MS} ms ` +
+      `because ${bShown} is held — by another save breaking it, or by one that died; nothing was written ` +
+      `(read revision ${expected}). A break file older than ${stale} s is recovered automatically; if no pm ` +
+      `command is running, remove it with \`${lock.breakHeld.directory ? "rm -r" : "rm"} ${bShown}\` and re-run the command.`;
+  }
   if (lock.blocked) {
     return `state.json's lock cannot be taken: ${shown} is ${directory ? "a directory" : "a path"} older than ` +
       `${stale} s that the engine cannot remove; nothing was written (read revision ${expected}). ` +
@@ -462,8 +480,11 @@ function describeHolder(info) {
   const c = info && info.content;
   if (!c) return info && info.kind && info.kind !== "file"
     ? `not a lock file at all — a ${info.kind}` : "a writer whose lock content could not be read";
-  return `pid ${c.pid} on host ${escapeControls(c.host)}` +
-    (c.acquiredAt ? ` since ${escapeControls(c.acquiredAt)}` : "");
+  const parts = [];
+  if (Number.isInteger(c.pid)) parts.push(`pid ${c.pid}`);
+  if (typeof c.host === "string") parts.push(`on host ${escapeControls(c.host)}`);
+  if (typeof c.acquiredAt === "string") parts.push(`since ${escapeControls(c.acquiredAt)}`);
+  return parts.length ? parts.join(" ") : "a writer whose lock records no pid or host";
 }
 
 /** Create the lock exclusively and write its content. `{ino, nonce}` when acquired, or
@@ -479,7 +500,17 @@ function acquireStateLock() {
       // EVERY path below either makes progress (a lock that vanished, a lock broken) or reaches
       // the deadline and the sleep. A `continue` that skipped both spun at full CPU forever on a
       // lock path that exists but cannot be read (Gate 2 C1).
-      if (Date.now() >= deadline) return { timedOut: true, holder: inspectLock(LOCK), path: LOCK };
+      if (Date.now() >= deadline) {
+        const holder = inspectLock(LOCK);
+        // A STALE lock that is still here at the deadline was not broken because the break path is
+        // held — by another breaker, or by one that died. Name that path, not the dead holder.
+        let breakHeld = null;
+        if (holder && isStaleLock(holder)) {
+          try { breakHeld = { path: lockPaths().BREAK, directory: fs.lstatSync(lockPaths().BREAK).isDirectory() }; }
+          catch { breakHeld = null; }
+        }
+        return { timedOut: true, holder, path: LOCK, breakHeld };
+      }
       const held = inspectLock(LOCK);
       if (held === null) continue;                     // released between the create and the look
       // A stale lock is broken — serialised, and only the very lock judged — then the create is

@@ -14,7 +14,7 @@ import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { ENGINE, EMPTY_CACHE, tmpRepo, run, writeState } from "./helpers.mjs";
+import { ENGINE, EMPTY_CACHE, tmpRepo, run, writeState, withArchivedChange } from "./helpers.mjs";
 
 const UNREADABLE = 11;
 const CONFLICT_MARKER = "<<<<<<< HEAD\n";
@@ -896,4 +896,127 @@ test("G2-minor: activity on an unreadable state.json reports the log's on/off st
   assert.doesNotMatch(r.stdout, /No events recorded\. Log directory/, "the report does not read as a log that is on");
   const j = sh(["activity", "--json"], { cwd });
   assert.equal(JSON.parse(j.stdout).enabled, null);
+});
+
+// ─────────────── Gate 2 re-review ───────────────
+
+const mkfifo = (p) => {
+  const r = spawnSync("mkfifo", [p]);
+  assert.equal(r.status, 0, `mkfifo ${p}: ${r.stderr}`);
+};
+
+test("G2-7: a FIFO at the lock path, or a symlink to one, never blocks a save — the verb refuses within the bound, the heal skips", () => {
+  for (const [label, place] of [
+    ["a FIFO", (cwd) => mkfifo(lockPath(cwd))],
+    ["a symlink to a FIFO", (cwd) => { const f = path.join(cwd, "a-fifo"); mkfifo(f); fs.symlinkSync(f, lockPath(cwd)); }],
+  ]) {
+    const cwd = threeEpicRepo();
+    place(cwd);
+    const before = bytes(statePath(cwd));
+    const r = shBounded(["update-epic", "e1", "--status", "active"], { cwd, timeout: 30000 });
+    assert.equal(r.signal, null, `${label}: the save blocked until killed after ${r.ms} ms`);
+    assert.equal(r.status, CONFLICT, `${label}: stderr: ${r.stderr}`);
+    assert.ok(r.ms < 2000 + 8000, `${label}: bounded by the wait, took ${r.ms} ms`);
+    assert.match(r.stderr, /\.conductor\/state\.json\.lock\b/, `${label}: names the lock path: ${r.stderr}`);
+    assert.ok(sameBytes(before, bytes(statePath(cwd))), `${label}: state.json byte-identical`);
+  }
+
+  // The commit-nudge heal: a commit lands that archived the active epic, so the hook owes a
+  // self-heal save — which must skip on the FIFO, not hang every Bash tool call.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  withArchivedChange(cwd, "arch");
+  gitIn(cwd, "init", "-q");
+  gitIn(cwd, "add", "-A");
+  gitIn(cwd, "commit", "-q", "-m", "chore: base");
+  const payload = (c) => JSON.stringify({ tool_input: { command: c } });
+  sh(["commit-nudge", "--platform", "claude-code"], { cwd, input: payload("ls") });
+  fs.writeFileSync(path.join(cwd, "a.txt"), "1");
+  gitIn(cwd, "add", "a.txt");
+  gitIn(cwd, "commit", "-q", "-m", "chore(openspec): archive arch");
+  mkfifo(lockPath(cwd));
+  const t0 = Date.now();
+  const nudge = spawnSync("node", [ENGINE, "commit-nudge", "--platform", "claude-code"], {
+    cwd, input: payload("git commit"), encoding: "utf8", timeout: 40000, killSignal: "SIGKILL",
+    env: { ...process.env, CLAUDE_PROJECT_DIR: cwd, PM_CACHE_ROOT: EMPTY_CACHE },
+  });
+  const ms = Date.now() - t0;
+  assert.equal(nudge.signal, null, `commit-nudge blocked until killed after ${ms} ms`);
+  assert.equal(nudge.status, 0, `stderr: ${nudge.stderr}`);
+  assert.ok(ms < 4 * 2000 + 10000, `the heal's saves each skip after the wait, took ${ms} ms`);
+  const sidecar = path.join(cwd, ".conductor", "write-conflicts.log");
+  assert.match(fs.existsSync(sidecar) ? fs.readFileSync(sidecar, "utf8") : "", /\tcommit-nudge\t/,
+    "the skipped heal is recorded to the conflict sidecar");
+});
+
+test("G2-8: an OLD unreadable lock — a mode-000 file or a dangling symlink — is broken by the next save, which lands", () => {
+  const old = 120000;
+  for (const [label, place] of [
+    ["a mode-000 file", (cwd) => { fs.writeFileSync(lockPath(cwd), "x"); ageBack(lockPath(cwd), old); fs.chmodSync(lockPath(cwd), 0o000); }],
+    ["a dangling symlink", (cwd) => {
+      fs.symlinkSync(path.join(cwd, "nowhere"), lockPath(cwd));
+      const t = new Date(Date.now() - old);
+      fs.lutimesSync(lockPath(cwd), t, t);
+    }],
+    ["a FIFO", (cwd) => { mkfifo(lockPath(cwd)); ageBack(lockPath(cwd), old); }],
+  ]) {
+    const cwd = threeEpicRepo();
+    place(cwd);
+    const r = shBounded(["add-epic", "--id", "after-old-unreadable", "--lane", "claude-code"], { cwd, timeout: 30000 });
+    assert.equal(r.signal, null, `${label}: killed after ${r.ms} ms`);
+    assert.equal(r.status, 0, `${label}: the save must land, stderr: ${r.stderr}`);
+    assert.ok(JSON.parse(fs.readFileSync(statePath(cwd), "utf8")).epics.some((e) => e.id === "after-old-unreadable"),
+      `${label}: the epic is on disk`);
+    let present = true;
+    try { fs.lstatSync(lockPath(cwd)); } catch { present = false; }
+    assert.equal(present, false, `${label}: the old lock path is gone`);
+  }
+});
+
+test("G2-minor: a stale lock that cannot be broken because the break path is held names the break path, never undefined fields", () => {
+  const cwd = threeEpicRepo();
+  placeLock(cwd, { pid: deadPidG2(), host: os.hostname(), pidns: ourPidns(), acquiredAt: new Date().toISOString(), nonce: "stale" });
+  fs.mkdirSync(breakPath(cwd));
+  const r = shBounded(["update-epic", "e1", "--status", "active"], { cwd, timeout: 30000 });
+  assert.equal(r.status, CONFLICT, `stderr: ${r.stderr}`);
+  assert.match(r.stderr, /\.conductor\/state\.json\.lock\.break/, `names the break path: ${r.stderr}`);
+  assert.doesNotMatch(r.stderr, /undefined/, `no undefined fields: ${r.stderr}`);
+
+  const partial = threeEpicRepo();
+  placeLock(partial, { nonce: "no-pid-no-host" });
+  const q = shBounded(["update-epic", "e1", "--status", "active"], { cwd: partial, timeout: 30000 });
+  assert.equal(q.status, CONFLICT, `stderr: ${q.stderr}`);
+  assert.doesNotMatch(q.stderr, /undefined/, `a lock recording no pid or host prints no undefined: ${q.stderr}`);
+});
+
+test("G2-7 layers: a non-regular lock path is never opened, and an open that races a swap to a FIFO does not block", () => {
+  // Two independent layers, each pinned on its own: either alone keeps a FIFO from hanging a save,
+  // so a test of the end-to-end behaviour cannot tell whether both are still there. Run in a child
+  // with a hard kill, because a regression here blocks the process forever.
+  const cwd = threeEpicRepo();
+  mkfifo(lockPath(cwd));
+  const script = path.join(cwd, "layers.mjs");
+  const stateUrl = JSON.stringify(new URL("../lib/state.mjs", import.meta.url).href);
+  fs.writeFileSync(script, [
+    'import fs from "node:fs";',
+    `const stateLib = await import(${stateUrl});`,
+    `const lock = ${JSON.stringify(lockPath(cwd))};`,
+    "const realOpen = fs.openSync; const realLstat = fs.lstatSync;",
+    // Layer 1: lstat first — the FIFO must never reach openSync.
+    "let opened = false;",
+    "fs.openSync = (p, ...rest) => { if (String(p) === lock) opened = true; return realOpen(p, ...rest); };",
+    "const first = stateLib.inspectLock(lock);",
+    'if (opened) { console.log("LAYER1-OPENED"); process.exit(3); }',
+    'if (!first || first.kind !== "other") { console.log("LAYER1-WRONG " + JSON.stringify(first)); process.exit(4); }',
+    "fs.openSync = realOpen;",
+    // Layer 2: the path looked regular at lstat and is a FIFO at open — the open must not block.
+    "fs.lstatSync = (p, ...rest) => { const st = realLstat(p, ...rest); if (String(p) === lock) { st.isFile = () => true; } return st; };",
+    "const second = stateLib.inspectLock(lock);",
+    "fs.lstatSync = realLstat;",
+    'console.log("OK " + JSON.stringify(second && second.kind));',
+  ].join("\n"));
+  const r = spawnSync("node", [script], { cwd, encoding: "utf8", timeout: 15000, killSignal: "SIGKILL" });
+  assert.equal(r.signal, null, "inspectLock blocked on the FIFO until killed");
+  assert.equal(r.status, 0, `stdout: ${r.stdout} stderr: ${r.stderr}`);
+  assert.match(r.stdout, /^OK /m);
 });
