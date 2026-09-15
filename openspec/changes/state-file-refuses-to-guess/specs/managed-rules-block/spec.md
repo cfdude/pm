@@ -38,9 +38,8 @@ render stamp, `.gitignore` and the rules file are byte-identical afterwards. `pm
 a repository as upgraded, so an upgrade that stamped it and then refused would read as done forever
 while its rules block, `PROJECT.md` and `.gitignore` stayed behind.
 
-Any other verb that refuses at its block write SHALL say, truthfully, which of its writes landed and
-which did not — `state.json` was saved; the rules file and every write the verb makes after it were
-not — and that re-running the verb after the fix completes it.
+Any other verb that refuses at its block write SHALL say that the rules file and every write the verb
+makes after it were not made, and that re-running the verb after the fix completes it.
 
 > REFUSE, not heal, for every ambiguous arrangement, including two well-formed pairs. An orphan
 > marker's block could end anywhere, so any repair must guess which hand-written text is managed —
@@ -70,8 +69,7 @@ not — and that re-running the verb after the fix completes it.
 - **WHEN** a rules file holds two well-formed BEGIN/END pairs with hand-written text between them, and
   `set-review-mode --mode thorough` runs
 - **THEN** it exits non-zero, the rules file is byte-identical, the message names all four marker line
-  numbers, no line reports the block as refreshed, and the message says `state.json` was saved and
-  the rules file was not
+  numbers, and no line reports the block as refreshed
 
 #### Scenario: An upgrade over a malformed block writes nothing
 

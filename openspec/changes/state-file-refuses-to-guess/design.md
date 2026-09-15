@@ -181,14 +181,18 @@ indistinguishable. No fsync of the lock content — it buys nothing for a file t
 break (below) and retry; if not, sleep and retry until `STATE_LOCK_WAIT_MS` (2000) elapses. Sleep is
 `Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, STATE_LOCK_POLL_MS)` (25).
 
-**Stale:** `mtime` older than `STATE_LOCK_STALE_MS` (30000), OR (`host` AND `pidns` equal the checker's
+**Stale:** `mtime` more than `STATE_LOCK_STALE_MS` (30000) in the past or in the future (a backward
+clock step must not wedge the lock), OR (`host` AND `pidns` equal the checker's
 AND `process.kill(pid, 0)` throws `ESRCH`; `EPERM` means alive). A container sharing the host name but
-not the pid namespace has a different `pidns` and is judged by age only. Unparseable content (a holder
+not the pid namespace has a different `pidns` and is judged by age only. A matching `pidns` does not
+prove the same kernel (the initial namespace reads the same on every Linux host); two kernels sharing
+one `.conductor/` means a network filesystem, which is not a supported layout. Unparseable content (a holder
 between `open` and `write`) is judged by age only, and is young. A save holds the lock for milliseconds.
 
 **Break, serialised:** create `state.json.lock.break` with `"wx"`. On `EEXIST`, if the break file is
 older than `STATE_LOCK_STALE_MS`, unlink it only if its inode is still the one just stat'ed, then go
-back to waiting; otherwise just go back to waiting. While holding the break file: stat and read the
+back to waiting (check-then-unlink: two processes judging a dead breaker's file can both proceed; the
+replay ends at the holder's pre-rename inode+nonce check as a spurious exit 9, not a loss); otherwise just go back to waiting. While holding the break file: stat and read the
 lock currently at the path; unlink it ONLY IF its identity equals the lock originally judged AND it is
 still stale by the rule above. Release the break file (unlink if its inode is ours), then retry the
 exclusive create.
@@ -285,10 +289,11 @@ upgraded forever with a stale block, stale `PROJECT.md`, no lock gitignore line,
 false hand-edit. `init` is the same shape on a fresh repo. The preflight resolves the target file
 with the platform the verb would record, WITHOUT recording it, then calls `rulesBlockArrangement()`.
 
-For `set-tracker` (three paths) and `set-review-mode`, the refusal happens at `writeRules()` after
-their state save and before their `render()`. The message says so truthfully: `state.json` was saved;
-the rules file and every later write (`PROJECT.md`, the render stamp) were not; re-run the same command
-after the fix (the state save is then a no-op and the rest completes). **Declined:** a preflight in
+For `write-rules`, `set-tracker` (three paths) and `set-review-mode`, the refusal happens at
+`writeRules()`, after whatever state save the verb makes (possibly a no-op, and for `write-rules` one
+that happens only when the platform switched, leaving the new platform recorded) and before any later
+write. The message says only what is true on every path: the rules file and every later write were not
+made; re-running the verb after the fix completes it (a re-run of `write-rules` is then a non-switch). **Declined:** a preflight in
 those too — neither stamps a done-marker, the re-run is idempotent, and every added preflight is one
 more enumerated site.
 
@@ -314,8 +319,8 @@ outcome is a refusal with line numbers, never a deletion.
   deliberate; the message names Bash-reachable remedies, and the brief carries the warning.
 - [A holder alive but stalled past `STATE_LOCK_STALE_MS` — a suspended laptop, a debugger — is judged
   stale by age, and a breaker can remove its lock; if that holder then resumes between its ownership
-  check and its rename, two writers write] → narrowed to that window; no loss is possible without a
-  stall past the maximum age, because breaks are serialised and re-judged. Accepted residual.
+  check and its rename, two writers write] → narrowed to that window; no loss without a stalled or dead
+  holder or breaker, because breaks are serialised and re-judged. Accepted residual.
 - [Age is judged from `mtime`, which on a shared filesystem is another host's clock] → `.conductor/` on
   a network filesystem is not a supported layout; skew only shortens or lengthens the wait.
 - [macOS `fsync` is not `F_FULLFSYNC`] → stated in D4; ordering, not power-loss durability.
@@ -338,8 +343,8 @@ revert the release; a stray lock file left by a crashed new engine is ignored by
 
 ## Coordination
 
-- **`every-verb-refuses-what-it-does-not-read` (applies first).** It is being revised so argv-level
-  flags such as `--force` are stripped before verbs see positionals, and it owns `--force`'s
+- **`every-verb-refuses-what-it-does-not-read` (applies first).** Its D10 reorders argv (positionals
+  first, argv-level flags last) and keeps `--force` in `process.argv` for `saveState()` to read, and it owns `--force`'s
   registration (`verb-surface` "--force is accepted where a write can be forced, and nowhere else").
   This change only requires that a forced save still takes the lock and never overwrites an unreadable
   file — keep whatever mechanism that change lands for reading the flag. This change's forced-save

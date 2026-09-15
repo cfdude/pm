@@ -40,21 +40,22 @@ the GREEN commit stages that file and names it in its message.
       through `sync`, `upgrade`, `init` in turn, each exit 11 with `state.json`, `PROJECT.md` and
       `CLAUDE.md` byte-identical; `owners` on unparseable exits 11 with no report on stdout;
       `epics: {}` refused by `owners` naming `epics`; `verify-state` and `activity` on unparseable do
-      not exit 11. Today: exit 0 and the file holds `["new"]` — save as `red-1.1.txt`
+      not exit 11; and `--force` over an unreadable disk file (load readable state in-process, replace
+      the file with unparseable bytes, `saveState` with `--force` in effect) throws
+      `StateUnreadableError` with the bytes unchanged. Today: exit 0 and the file holds `["new"]`, and
+      the forced save overwrites — save as `red-1.1.txt`
 - [ ] 1.2 GREEN: `readStateFile()` + `StateUnreadableError` in `state.mjs`; `loadState()`,
       `diskRevision()` and `saveState()`'s pre-image read use it (D1); `UNREADABLE_INPUT_EXIT_CODE = 11`
       in `constants.mjs`; `conductor.mjs`'s catch maps it with the D2 message; `init()` loads before
       `ensureGitignore()` when the file exists; `activity` catches the refusal and reports the revision
-      as unknown. Verify: 1.1 passes, full suite green
-- [ ] 1.3 RED (lands with 1.4): an absent `state.json` — all four hooks (`brief`, `snapshot`,
-      `commit-nudge`, `gate-guard`) exit 0 with empty stdout and create no file (REGRESSION GUARD half,
-      passes today); and `--force` over an unreadable disk file: load readable state in-process, replace
-      the file with unparseable bytes, `saveState` with `--force` in effect → throws
-      `StateUnreadableError` and the bytes are unchanged. Today the forced save overwrites — save as
-      `red-1.3.txt`
-- [ ] 1.4 GREEN: the strict disk read inside `saveState()` refuses before the `--force` branch is
-      consulted. Verify: 1.3 passes
-- [ ] 1.5 REGRESSION GUARD (rewrite, lands with 1.2): `scripts/test/conductor-33.test.mjs`
+      as unknown; the strict disk read inside `saveState()` refuses before `--force` is consulted. In
+      the same commit rewrite the unreadable-state rung of `scripts/test/conductor-26.test.mjs`
+      `gh#129: degrades to doing nothing` to assert a non-zero exit and `state.json`, `PROJECT.md` and
+      the detour log unchanged (from here `commit-nudge` exits 11; 2.3 tightens it to 2). Verify: 1.1
+      passes, full suite green
+- [ ] 1.3 REGRESSION GUARD (lands with 1.2): an absent `state.json` — all four hooks (`brief`,
+      `snapshot`, `commit-nudge`, `gate-guard`) exit 0 with empty stdout and create no file
+- [ ] 1.4 REGRESSION GUARD (rewrite, lands with 1.2): `scripts/test/conductor-33.test.mjs`
       `gh-111: an UNREADABLE state.json does not fail the verb either` — keep its intent (the activity
       observer never breaks the run), invert its assertion: `owners` exits 11, stderr carries the
       refusal message and no stack trace. Say in the commit message that the old assertion encoded the
@@ -81,12 +82,9 @@ the GREEN commit stages that file and names it in its message.
       from reaching heal/render/detour log. `observeCommit()` keeps running first (D3 watermark
       exemption). `lessonAdvice()` untouched. Verify: 2.1 and 2.3 pass. Touch only the load at the top
       of `gateGuardCheck()` — the reconcile/tracker branches belong to `gates-bind-to-verified-evidence`
-- [ ] 2.3 REGRESSION GUARD (rewrite, lands with 2.2): `scripts/test/conductor-26.test.mjs`
-      `gh#129: degrades to doing nothing — no git, unreadable state, reflogs disabled` — the
-      unreadable-state rung (`{ not json`, a landed commit) today asserts `doesNotThrow`, which exit 2
-      breaks; rewrite that rung to expect exit 2 and `state.json`, `PROJECT.md` and the detour log
-      unchanged. Keep the no-git and reflogs-disabled rungs as `doesNotThrow`. The commit message says the
-      gh#129 intent is reversed for that rung only (design D3)
+- [ ] 2.3 REGRESSION GUARD (lands with 2.2): tighten 1.2's rewrite of `conductor-26`'s gh#129
+      unreadable-state rung from "non-zero" to exit 2. The no-git and reflogs-disabled rungs keep
+      `doesNotThrow`. The commit message says the gh#129 intent is reversed for that rung only (design D3)
 - [ ] 2.4 `hooks/README.md` gate-guard line: add that an unreadable `state.json` also blocks, and how
       to fix it (lands with 2.2 — the hook's documented behaviour changes in that commit)
 
@@ -177,9 +175,9 @@ the GREEN commit stages that file and names it in its message.
       the BEGIN marker line identical, exactly one BEGIN marker line (today: sentinel gone, `refreshed`).
       Plus: orphan BEGIN with hand text after → exit 11, file byte-identical, stderr names the file and
       the line number; two well-formed pairs via `set-review-mode --mode thorough` → exit 11,
-      byte-identical, all four line numbers, no `refreshed` in stderr, stderr says `state.json` was saved
-      and the rules file was not; one pair between hand text → outside bytes identical, block content
-      new; no markers → appended. Save `red-6.1.txt`
+      byte-identical, all four line numbers, no `refreshed` in stderr; one pair between hand text →
+      outside bytes identical, block content new; no markers → appended; an all-CRLF `CLAUDE.md` with
+      one block → every line ends CRLF afterwards (today: 3 of 380). Save `red-6.1.txt`
 - [ ] 6.2 GREEN: `rulesBlockArrangement()` and line-based `writeRules()` with `RulesBlockAmbiguousError`
       per design D6, mapped to exit 11 in `conductor.mjs`'s catch with the truthful message. No
       `.replace(` on the splice path. Verify: 6.1 passes, and the existing rules-block tests
@@ -199,10 +197,7 @@ the GREEN commit stages that file and names it in its message.
       is spliced in (sentinel ×3). Save `red-6.5.txt`
 - [ ] 6.6 GREEN: covered by 6.2's no-`replace` splice; if 6.5 already passes after 6.2, land it as
       REGRESSION GUARD in 6.2's commit and say so
-- [ ] 6.7 RED (lands with 6.8): an all-CRLF `CLAUDE.md` with one block → after `write-rules` every
-      line ends CRLF (today: 3 of 380). Save `red-6.7.txt`
-- [ ] 6.8 GREEN: terminator detection per D6. Verify: 6.7 passes
-- [ ] 6.9 RED/GREEN or justified omission: `evals/observe.py` locates the block by the substring
+- [ ] 6.7 RED/GREEN or justified omission: `evals/observe.py` locates the block by the substring
       `RULES_BEGIN` (line 22) — a second reader of the same markers. Either make it match whole lines
       the same way, or record in the sweep (7.1) why an eval-harness reader may differ
 
@@ -212,7 +207,8 @@ the GREEN commit stages that file and names it in its message.
       design.md: every caller of `loadState`, `readJSON`, `diskRevision`, `saveState`, `isInitialized`,
       `conflictExitCode`, `StateUnreadableError`, `UNREADABLE_INPUT_EXIT_CODE`, `saveHookHeal`,
       `recordConflict`; every hook entry (`gateGuardCheck`, `brief`, `snapshot`, `commitNudge`,
-      `lessonAdvice`), `observeCommit` (the watermark exemption), the activity-log chokepoint in
+      `lessonAdvice`) and the top-level catch's DEFAULT for a verb it does not name (exit 11 — fail-open
+      for any future PreToolUse hook, so a new hook verb must be added to the mapping), `observeCommit` (the watermark exemption), the activity-log chokepoint in
       `conductor.mjs`, `verifyState` and `activity` (the two named exemptions); `claimExpiry`,
       `isLiveClaim`, `ttlFrom`, `validTtlMinutes`, `CLAIM_MAX_TTL_MINUTES`, `readRepoClaim`,
       `writeRepoClaim`, `clearRepoClaim`, `ownerRows`, `formatOwners`; `writeRules`,
