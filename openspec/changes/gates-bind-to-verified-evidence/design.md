@@ -16,8 +16,9 @@ See proposal.md "Why" for the defects and their reproductions. The constraints t
   it can check"; minting a new capability mid-release would add a seam the cross-spec review has to
   police, and `tracker-sync` is about external trackers.
 - This repository squash-merges. Pre-squash commits survive only on `presquash/*` tags
-  (`.claude/skills/pr-workflow/SKILL.md`), and CI's `actions/checkout` is a detached, history-less
-  clone. Measured: 183 distinct recorded values, all resolve locally; 74 `presquash/*` tags.
+  (`.claude/skills/pr-workflow/SKILL.md`), which are pushed to origin. CI's `actions/checkout` runs
+  with `fetch-depth: 0` (`.github/workflows/ci.yml`) but leaves HEAD detached, so no rule may read the
+  current branch. Measured: 183 distinct recorded values, all resolve locally; 74 `presquash/*` tags.
 
 Line anchors below are against `dev` at 85079e1. Change 1 (`every-verb-refuses-what-it-does-not-read`)
 applies first and moves them; re-derive with `rg` before editing.
@@ -42,9 +43,14 @@ crashing, and never reading fresh when they cannot be checked.
 
 `push-detour --reconcile` writes `reconcileOnResume: true` onto the paused epic's `may-invalidate`
 link to the detour (the frame's field name, deliberately); `--no-reconcile` writes
-`reconcileOnResume: false` on a link it creates and never lowers an existing `true`. A link whose
-`reconcileOnResume` is `true` is **armed**. `link.reconciled` (today's `{verdict, amendments,
-reconciledAt}`) is its answer.
+`reconcileOnResume: false` on a link it creates, and on an existing link that carries no key, and
+never lowers an existing `true`. `linkOnce()` (`detour-stack.mjs:46`) returns early on an existing
+link today, so it becomes the site that applies these writes to the link it finds. `link.reconciled`
+(today's `{verdict, amendments, reconciledAt}`) is its answer.
+
+**Armed is decided per link**, by one helper `isArmed(epic, link)`:
+`link.reconcileOnResume === true` → armed; `=== false` → never armed; key absent → armed iff
+`epic.reconcileNeeded === true`. `ownedDetours(epic)` = targets of armed links with no `reconciled`.
 
 Why per link and not the epic flag alone: with only `reconcileNeeded`, the engine cannot tell which
 detour a verdict must name. Repro 3's variant — owed against `d`, `--no-reconcile` push to `d2` — would
@@ -63,7 +69,7 @@ Alternatives rejected:
 
 Accepted only when all hold, evaluated before `loadState()` returns to any write:
 1. `--detour` differs from the epic;
-2. the epic has a `may-invalidate` link to `--detour` that is armed (or legacy-armed, Decision 3);
+2. the epic has a `may-invalidate` link to `--detour` that `isArmed()` accepts (Decisions 1, 3);
 3. no `detourStack` frame has `pausedEpic === epic && spawnedDetour === --detour`.
 
 Refusals name `ownedDetours(epic)` — the armed, unanswered link targets — or say none is owed.
@@ -87,30 +93,36 @@ flag from frames, and that stays forbidden.
 
 ### 3. Legacy links (written by 0.43.0 and earlier)
 
-A link is **legacy** when it has no `reconcileOnResume` key at all. When an epic owes a reconcile and
-none of its `may-invalidate` links carries `reconcileOnResume: true`, every `may-invalidate` link on
-it (answered or not) counts as armed. Read-time, no migration.
+A link is **legacy** when it has no `reconcileOnResume` key. Decision 1's per-link rule is the whole
+legacy treatment: read-time, no migration, and never an epic-wide mode switch. An earlier draft
+switched modes on "no link carries `true`", which wedged: a 0.43.0 file with `p` owing a keyless `d`,
+then a new `push-detour p --detour d2 --no-reconcile` and pop, left nothing armed under one reading
+(every verdict refused, heal skipped, guard exits 2 forever) and armed `d2` under the other. Per link,
+`d` stays armed and `d2` never is; with `--reconcile` on `d2`, both are owed.
 
 Measured legacy population: 0 owing epics and 2 `may-invalidate` links across 24 pm-managed
 repositories on this machine. The route this keeps: repro's `r-repush` state (owing, only link
 answered) is recordable.
 
-Trade-off: in that legacy state a `may-invalidate` link supplied by hand (`update-epic --link`) also
-counts. And a legacy epic holding two unanswered `may-invalidate` links now owes two verdicts where
+Trade-off: while an epic owes, a keyless `may-invalidate` link supplied by hand (`update-epic
+--link`) also counts as armed — it adds an obligation, it cannot remove one. And a legacy epic holding two unanswered `may-invalidate` links now owes two verdicts where
 0.43.0's boolean was cleared by one — recordable, so not a wedge, with zero live instances. The engine after this change cannot produce "owes a reconcile with no armed link" — push arms,
 and Decision 5 refuses removing an armed link — so the window is legacy/hand-edited state only.
 
 ### 4. The heal, the active pointer, and the warning
 
-`reconcileArchived()` keeps two branches: archived → clear; live frame with `reconcileOnResume` →
-set. The third branch (not archived, no frame, not active → clear) is REPLACED by a narrower one:
-not archived, no live frame, and no `may-invalidate` link at all → clear, and push a line onto the
-heal's stderr notices naming the epic. A stale flag that still holds a link has two CLI exits:
-`record-reconcile` against an armed or legacy link, or ending the epic with a disposition.
+`reconcileArchived()` keeps one of today's branches: live frame with `reconcileOnResume` → set. The
+archived → clear branch is DELETED: archive-then-unarchive (`--outcome abandoned`, then `--status
+active`) otherwise cleared the flag with the armed link unanswered, and `gate-guard.mjs` and
+`briefing.mjs` already ignore an archived active epic, so keeping the flag on an archived epic blocks
+nothing. The third branch (not archived, no frame, not active → clear) is REPLACED by a narrower one:
+no live frame and no link `isArmed()` accepts → clear, and push a line onto the heal's stderr notices
+naming the epic. A stale flag that still holds an armed link has one CLI exit, `record-reconcile`.
 
 Why the narrow branch rather than an explicit discharge verb (`record-reconcile <id> --orphaned
 --reason`): `{reconcileNeeded: true, links: []}` is reachable today (`repro-integrity.txt`: `push`,
-`pop`, `remove-epic d`), and under this change no `record-reconcile` can be accepted for it, so
+`pop`, `remove-epic d`), so is `{reconcileNeeded: true}` with only `reconcileOnResume: false` links
+(hand-edited), and under this change no `record-reconcile` can be accepted for it, so
 without an exit the unconditional guard wedges Edit/Write on that epic — the case
 `gate-guard.mjs:96` was written to avoid. After this change the engine cannot create the state
 (pushing arms a link; Decision 5 refuses removing an armed one), so the branch only ever meets
@@ -124,8 +136,9 @@ single helper, `owedReconcileNotice(state, previousActiveId)`, called after `sav
 site that can move `state.active` off an epic: `setActive`, `clearActive`, `update-epic` (`activate`
 of another epic, or `state.active = null` at `update-epic.mjs:~880`), `add-epic`/`add-many` creating
 an epic at `active`. The call-site list is re-derived at sweep time with
-`rg -n "activate\(|state\.active\s*=" scripts/lib`. `push-detour` is exempt: parking is the
-sanctioned move. The guard (`gate-guard.mjs`) stays keyed on the active epic: writing another epic's
+`rg -n "activate\(|state\.active\s*=" scripts/lib`, which also finds `pop-detour`'s `activate` —
+it moves the pointer off the detour, and warns when that detour itself owes. The one exemption is
+`push-detour` moving the pointer off the epic it parks. The guard (`gate-guard.mjs`) stays keyed on the active epic: writing another epic's
 code is not building on the invalidated plan, and an "any epic owes" guard would block a nested
 detour's own edits.
 
@@ -138,7 +151,11 @@ detour's own edits.
   `add-epic --link` (new epics hold no stored link, so a no-op there) and `add-many`.
 - `remove-epic <d>`: `epicReferences()` gives a link reference `drop: null` (the frame precedent at
   `links.mjs:216-220`) when the link is `may-invalidate`, armed, unanswered, and its holder owes a
-  reconcile. `remove-epic` already refuses on `drop: null`.
+  reconcile, and gives every reference a `kind` (`frame` | `owed-reconcile` | …). The two readers that
+  word a `drop: null` today assume it is a frame and must word by `kind` instead:
+  `remove-epic.mjs:~76-83` ("detour-stack reference(s) … Resume or pop the detour first") names
+  `record-reconcile` for an owed-reconcile reference, and `integrity.mjs:~544`
+  (`dangling-epic-reference`) stops calling every undroppable reference a frame.
 - Removing the PAUSED epic itself is not refused: its record, flag included, goes with it.
 
 ### 6. `pop-detour` and `push-detour` wording
@@ -146,22 +163,28 @@ detour's own edits.
 `pop-detour`: compute `owed = ownedDetours(epic)` after writing the flag. If `epic.reconcileNeeded`,
 print the RECONCILE GATE notice naming every `owed` id (not only `frame.spawnedDetour`) and return
 before `appendHonchoMemory("pop", …)`. Only an epic that owes nothing gets the POP line.
-`push-detour`: `paused.reconcileNeeded = paused.reconcileNeeded === true || reconcileOnResume`. Its
+`push-detour`: `paused.reconcileNeeded = paused.reconcileNeeded === true || reconcileOnResume`,
+written before `isArmed()` is consulted for the report. Its
 report: `— reconcile gate armed for /pm:resume` when `--reconcile`; `— no reconcile for '<d2>'; '<p>'
 still owes a reconcile against <ids>` when `--no-reconcile` while owing; today's `— NO reconcile on
 resume` only when nothing is owed.
 
 Amendments: `--amendments` whose `trim().toLowerCase() === "none"` → `[]`; otherwise split on `;` as
-documented. `--amendment` is registered in `EPIC_FLAGS` (`constants.mjs`) for `record-reconcile`,
-`repeats: true`, so change 1's allowlist projection admits it; each occurrence kept verbatim (not
-trimmed of inner `;`). Both flags together → refused.
+documented. `agents/reconciler.md` emits `AMENDMENTS: none` as its empty form; the docs name
+`--amendments none` as the one emitted spelling, and the rule above covers it. `--amendment` is
+registered in `VERB_FLAGS` (`constants.mjs`) for `record-reconcile`, `repeats: true` — it is not an
+epic field — so change 1's unknown-flag refusal admits it; each occurrence kept verbatim (not trimmed
+of inner `;`). Both flags together → refused.
 
 ### 7. Commit resolution at write
 
 New `git.mjs` export `resolveCommits(values) → {resolved: Map<value, fullName>, unresolved: value[]}`,
 one `git cat-file --batch-check` process fed `<value>^{commit}` per line (a `missing`/`ambiguous`
-line marks the value unresolved), falling back to per-value `rev-parse --verify --quiet
-<value>^{commit}` if `--batch-check` is unavailable. No `cwd` other than `ROOT`.
+line marks the value unresolved). Output is mapped to input BY LINE ORDER, so a value containing
+whitespace or a control character is refused before the process starts (it could split one input
+line into two). No fallback: git has shipped `--batch-check` for over a decade, and a second
+resolution path is a second behaviour. Every new git call sets `GIT_NO_LAZY_FETCH=1` in its env, so a
+partial clone never fetches from its promisor remote. No `cwd` other than `ROOT`.
 
 Called before `loadState()` at: `update-epic --attribute-commit`, `--withdraw-commit`
 (identity only, Decision 8), `record-gate-review --base-sha/--head-sha`. A refusal names every
@@ -198,17 +221,19 @@ compares resolved names where both resolve, strings otherwise.
 1. `none` / absent array → `unverifiable` / empty → `none-attributed` or `attribution-withdrawn` /
    no range → `unverifiable` — unchanged, same order.
 2. Shape: any of `headSha` or attributed entries not matching `/^[0-9a-f]{4,64}$/` → collected as
-   `unresolvable` (never passed to git).
-3. `resolveCommits([headSha, ...attributed])` (cached per process by value). Hex values that do not
-   resolve join `unresolvable` only if at least one value resolved; if none resolved → `unverifiable`.
-4. One `git rev-list <resolved attributed…> ^<headSha>`; every attributed entry whose full name
-   appears in the output is `uncovered`. A non-zero exit → `unverifiable` (never `fresh` — the
-   direction of the bug at `archive-gate.mjs:112`).
-5. `uncovered.length || unresolvable.length` → `{state: "stale", uncovered, unresolvable, headSha}`;
-   else `fresh`.
+   `malformed` (never passed to git). Malformed is ALWAYS stale.
+3. `resolveCommits([headSha, ...attributed hex])` (cached per process by value). Hex values that do
+   not resolve (missing or ambiguous) are `unanswerable`: write-time resolution guaranteed they were
+   commits, so a clone lacking one cannot answer, which is `unverifiable`, not a finding.
+4. If `headSha` is hex and resolved: one `git rev-list <resolved attributed…> ^<headSha>` over the
+   RESOLVED entries only (a missing argument makes it exit non-zero); every entry whose full name
+   appears in the output is `uncovered`. If `headSha` is hex but unresolved, skip `rev-list`. A
+   non-zero exit → treated as unanswerable (never `fresh` — the direction of the bug at
+   `archive-gate.mjs:112`).
+5. `malformed.length || uncovered.length` → `{state: "stale", uncovered, malformed, headSha}`;
+   else any `unanswerable` → `unverifiable`; else `fresh`.
 
-`deliveredObligations()` and `archiveGate()` word `unresolvable` values in the refusal ("… which this
-repository cannot resolve: <values>"); `stalenessMarking()` is unchanged (` ⚠ stale`). Rendering
+`deliveredObligations()` and `archiveGate()` name `malformed` values in the refusal; `stalenessMarking()` is unchanged (` ⚠ stale`). Rendering
 escapes values with the existing `escapeControls`.
 
 Measured (`measure2.mjs`, this repository's record): today's `gateTableRows` ~911 ms; a per-commit
@@ -240,16 +265,22 @@ a third arm, "not a commit object name", over `attributedCommits` and the CURREN
 - [`conductor-13.test.mjs` is the documented-flag harness and feeds a fake value per flag (27 hits)] →
   teach the harness a resolvable default commit from the 1.1 fixture rather than editing each call;
   `archive-gate-reads-what-it-writes` 4.1a hit the same harness for the same reason.
-- [A short legacy hash can become ambiguous as the repository grows and then read stale] → the
-  refusal names it; remedy `--withdraw-commit <that string>` then re-attribute in full. 0 of 183 are
-  ambiguous today.
+- [A hex value this clone lacks — or a short legacy hash that became ambiguous — reads unverifiable
+  and does not refuse the archive] → write-time resolution means every new value was a commit when
+  written; the legacy population is 152 short hashes, 0 of 183 ambiguous today, and `integrity`'s
+  existing absent/orphaned arms report missing objects.
 - [An authoring clone where `gc` removed every recorded commit reads `unverifiable` and archives] →
   the same undecidable case `recorded-sha-the-repository-cannot-resolve` already documents; write-time
   resolution means no NEW record can start in that state.
 - [The every-entry rule could refuse an epic that attributed a commit on a branch the reviewed head
   does not contain, e.g. a post-squash fix commit] → that IS uncovered work; measured 0 live verdicts
   change classification. Remedy is the documented one: re-review and record over the range.
-- [Legacy-armed links admit a hand-supplied `may-invalidate` link in legacy state] → Decision 3.
+- [Keyless links count as armed while an epic owes, so a hand-supplied `may-invalidate` link adds an
+  obligation] → Decision 3; it can add one, never clear one.
+- [`remove-epic p` then `add-epic --id p` yields a clean `p` whose `gate-guard` exits 0] → accepted:
+  `remove-epic` is the verb for a record registered in error, the removed record (flag and links) is
+  in git history, and refusing removal of an owing epic would leave a mistaken registration
+  unremovable.
 - [Warning, not refusing, on pointer moves lets an agent work elsewhere while an obligation stands] →
   the obligation survives, PROJECT.md marks the epic `⚠`, and the guard fires again on return.
 
@@ -261,12 +292,14 @@ are read, never rewritten. A 0.43.0 state file loads unchanged. Rollback is reve
 
 ## Coordination
 
-- **Change 1 (`every-verb-refuses-what-it-does-not-read`)** lands first. This change registers
-  `--amendment` in `EPIC_FLAGS` so change 1's projected allowlist for `record-reconcile` admits it; if
-  change 1 does not give `record-reconcile` an allowlist, FINDINGS:46 stays open there, not here.
-  All line anchors above must be re-derived after it merges.
+- **Change 1 (`every-verb-refuses-what-it-does-not-read`)** lands first and makes `record-reconcile`
+  refuse unknown flags, so an unregistered `--amendment` is refused until this change registers it in
+  `VERB_FLAGS`. All line anchors above must be re-derived after it merges.
 - **Change 2 (`state-file-refuses-to-guess`)** owns the rules-block WRITER. This change edits the
   CONTENT of `scripts/lib/rules.mjs` (the `record-reconcile` invocation form, and attribution-endpoint
   wording now that every entry is compared) and the mirrored declared claims; expect a textual
-  conflict in `rules.mjs`, not a semantic one.
+  conflict in `rules.mjs`, not a semantic one. Change 2 also edits the top of `gate-guard.mjs`; this
+  change does not edit that file's logic (the guard stays keyed on the active, unarchived epic), only
+  its comments if the sweep finds them stale.
+- Mintlify page sync is not a task here; it belongs to the 0.44.0 release cut.
 - `gateStaleness` also serves Gate 1 rendering; no change to that caller.

@@ -82,9 +82,9 @@ must tolerate are small, but none is zero-by-construction.
   refused, naming it.
 - Staleness: a verdict is fresh only when EVERY attributed commit is equal to or an ancestor of
   its `headSha`. A `headSha` on an unrelated branch, an ancestor attributed after an uncovered
-  descendant, and a recorded value this repository cannot resolve while it resolves the rest of the
-  record all read **stale** on every surface and refuse a `delivered` archive. A record where
-  nothing resolves (a clone without that history) stays `unverifiable`, as today.
+  descendant, and a stored value that is not a hexadecimal commit name (a legacy `HEAD`,
+  `not-a-commit`) all read **stale** on every surface and refuse a `delivered` archive. A hexadecimal
+  value this clone does not hold reads `unverifiable`, as today.
 - `--withdraw-commit` matches stored entries by commit identity, not string equality, and can
   still withdraw a legacy value that no longer resolves.
 - `integrity`'s `recorded-sha-the-repository-cannot-resolve` check also reports a recorded value
@@ -117,7 +117,7 @@ must tolerate are small, but none is zero-by-construction.
   zero-dependency and zero-network: every new git call reads the local object database.
 - State schema: additive link fields (`reconcileOnResume`, a nested `superseded` verdict) and no
   migration; a state file written by 0.43.0 loads and its legacy links keep a recordable route.
-- Docs: `agents/reconciler.md`, `commands/resume.md`, `commands/detour.md`,
+- Docs (Mintlify page sync belongs to the 0.44.0 release cut, not this change): `agents/reconciler.md`, `commands/resume.md`, `commands/detour.md`,
   `skills/conductor/SKILL.md`, `scripts/lib/rules.mjs` (the emitted `record-reconcile` form and the
   attribution endpoint wording), `README.md`, `CHANGELOG.md`.
 - Performance: the every-entry rule is batched (one `git rev-list` per verdict — measured 14 calls

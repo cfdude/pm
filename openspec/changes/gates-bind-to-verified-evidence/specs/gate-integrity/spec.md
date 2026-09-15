@@ -4,8 +4,11 @@
 
 Vocabulary used by every reconcile requirement in this capability:
 
-- a detour is **armed** against a paused epic when `push-detour <epic> --detour <detour> --reconcile`
-  records that the epic must be re-validated against it;
+- a detour is **armed** against an epic, decided PER LINK on the epic's `may-invalidate` link to
+  that detour: a link on which `push-detour <epic> --detour <detour> --reconcile` recorded that the
+  epic must be re-validated against it is armed; a link on which `push-detour … --no-reconcile`
+  recorded that it need not be is never armed; a link carrying neither record (written before this
+  change, or supplied by hand) is armed only while the epic owes a reconcile;
 - an armed detour is **answered** once `record-reconcile` records a verdict against it, and is
   **unanswered** until then;
 - an epic **owes a reconcile** while its `reconcileNeeded` is true.
@@ -30,10 +33,10 @@ set `reconcileNeeded` true or clear an obligation owed against another detour.
 answered SHALL make it unanswered again, keeping its previous verdict readable, so the new pause
 owes a new verdict and the epic is never left owing a reconcile with nothing it can record.
 
-**Legacy links.** Where an epic owes a reconcile and none of its `may-invalidate` links carries any
-arming record — a state written before arming was recorded — every one of its `may-invalidate`
-links SHALL count as armed. A state file written by the prior release therefore loads and keeps a
-recordable route.
+**Legacy links.** The per-link rule above is what gives a state file written by the prior release a
+recordable route: its links carry no arming record, so each counts as armed while the epic owes, and
+a detour pushed afterwards with `--no-reconcile` adds no obligation while one pushed with
+`--reconcile` adds exactly one.
 
 **Amendments.** `--amendments` whose entire trimmed value is `none`, in any letter case, SHALL
 record no amendments. A repeatable `--amendment "<text>"` SHALL record each occurrence as exactly
@@ -100,6 +103,20 @@ refused.
   runs
 - **THEN** it exits zero and `p` no longer owes a reconcile
 
+#### Scenario: A legacy obligation is not hidden by a later no-reconcile detour
+
+- **WHEN** a state file holds `p` with `reconcileNeeded: true` and one `may-invalidate` link to `d`
+  carrying no arming record, then `push-detour p --detour d2 --reason r --no-reconcile` and
+  `pop-detour p` run
+- **THEN** `record-reconcile p --detour d2 --verdict valid` is refused naming `d`, and
+  `record-reconcile p --detour d --verdict valid` exits zero and `p` no longer owes a reconcile
+
+#### Scenario: A legacy obligation survives a later armed detour
+
+- **WHEN** the same state file's `p` is instead pushed for `d2` with `--reconcile` and popped, and
+  `record-reconcile p --detour d2 --verdict valid` runs
+- **THEN** it exits zero and `p` still owes a reconcile until a verdict against `d` is recorded
+
 #### Scenario: A none amendment records nothing
 
 - **WHEN** an accepted verdict is recorded with `--amendments none`
@@ -110,27 +127,30 @@ refused.
 - **WHEN** an accepted verdict is recorded with `--amendment "rename x; keep y" --amendment "drop z"`
 - **THEN** the recorded amendments are exactly `rename x; keep y` and `drop z`, in that order
 
-### Requirement: A reconcile obligation survives until a verdict answers it or the epic ends
+### Requirement: A reconcile obligation survives until a verdict answers it
 
-On an epic that is not archived, `reconcileNeeded` SHALL NOT be set false by any write other than an
-accepted `record-reconcile`, with the one exception below. Moving the active pointer —
-`set-active`, `clear-active`, `update-epic --status`, or creating an epic at `active` — and every run
-of the archive-drift heal MUST leave it as it was. An archived epic owes nothing, as today.
+`reconcileNeeded` SHALL NOT be set false by any write other than an accepted `record-reconcile`,
+with the one exception below. Moving the active pointer — `set-active`, `clear-active`,
+`update-epic --status`, or creating an epic at `active` — every run of the archive-drift heal, and
+archiving the epic MUST leave it as it was. An archived epic is not blocked by it (`gate-guard`
+ignores an archived epic, as today), and an epic returned from `archived` to any other status still
+owes every armed detour left unanswered.
 
-**The one exception: an obligation with nothing to answer it against.** Where an unarchived epic
-owes a reconcile, holds no `may-invalidate` link at all, and no frame pausing it is on the stack, no
-`record-reconcile` invocation can be accepted, so the obligation would block the epic permanently.
-The archive-drift heal SHALL clear it and state on stderr that it did, naming the epic. The engine
-after this change cannot produce that state — pushing arms a link, and removing an armed link is
-refused below — so it arises only from a state file written by an earlier release or edited by
-hand.
+**The one exception: an obligation with nothing to answer it against.** Where an epic owes a
+reconcile, holds no `may-invalidate` link a verdict could be recorded against (none that is armed
+under the per-link rule above), and no frame pausing it is on the stack, no `record-reconcile`
+invocation can be accepted, so the obligation would block the epic permanently. The archive-drift
+heal SHALL clear it and state on stderr that it did, naming the epic. The engine after this change
+cannot produce that state — pushing arms a link, and removing an armed link is refused below — so it
+arises only from a state file written by an earlier release or edited by hand.
 
 Because the obligation survives, `gate-guard` SHALL block again whenever the owing epic is the active
 epic once more.
 
-A verb that moves the active pointer off an epic owing a reconcile, other than `push-detour` (which
-parks it deliberately), SHALL complete as it normally would and SHALL state on stderr that the epic
-still owes a reconcile, naming the detours it owes. It is a warning and not a refusal: refusing would
+A verb that moves the active pointer off an epic owing a reconcile SHALL complete as it normally would and SHALL state on stderr that the epic
+still owes a reconcile, naming the detours it owes. The only exemption is `push-detour` moving the
+pointer off the epic it parks; `pop-detour` moving it off a detour that itself owes a reconcile is
+not exempt. It is a warning and not a refusal: refusing would
 leave no CLI route to set work aside, which is the hand-edit the detour verbs exist to remove.
 
 #### Scenario: Clearing the active pointer does not erase the obligation
@@ -146,17 +166,29 @@ leave no CLI route to set work aside, which is the hand-edit the detour verbs ex
 #### Scenario: A status change on another epic does not erase the obligation
 
 - **WHEN** `p` owes a reconcile and is active, and `update-epic other --status active` runs
-- **THEN** `p` still owes a reconcile
+- **THEN** `p` still owes a reconcile, and stderr of that command names `p` and the owed detour
 
-#### Scenario: An archived epic owes nothing
+#### Scenario: Creating an epic at active warns
+
+- **WHEN** `p` owes a reconcile and is active, and `add-epic --id q --title q --status active` runs
+- **THEN** `p` still owes a reconcile, and stderr of that command names `p` and the owed detour
+
+#### Scenario: Archiving and un-archiving does not erase the obligation
+
+- **WHEN** `p` owes a reconcile against armed detour `d`, `update-epic p --status archived --outcome
+  abandoned --reason r --no-deferrals` runs, then `update-epic p --status active` runs
+- **THEN** `p` still owes a reconcile against `d` and `gate-guard` exits 2
+
+#### Scenario: An archived owing epic is not blocked
 
 - **WHEN** an epic that owes a reconcile is archived with a recorded disposition
-- **THEN** it no longer owes a reconcile
+- **THEN** `gate-guard` does not block on it
 
 #### Scenario: An obligation with no link to answer is cleared, and says so
 
-- **WHEN** a state file holds active epic `p` with `reconcileNeeded: true`, no `may-invalidate` link
-  and no detour-stack frame, and `render` runs
+- **WHEN** a state file holds active epic `p` with `reconcileNeeded: true`, no detour-stack frame,
+  and no `may-invalidate` link other than one on which `--no-reconcile` was recorded, and `render`
+  runs
 - **THEN** `p` no longer owes a reconcile, and stderr names `p`
 
 #### Scenario: A pointer move does not trigger that exception
@@ -289,8 +321,8 @@ invocation that attributes and withdraws the same commit, however each is spelle
 
 #### Scenario: The same commit spelled two ways cannot be attributed and withdrawn together
 
-- **WHEN** `update-epic <id> --attribute-commit <C short> --withdraw-commit <C in full>
-  --withdrawal-reason x` runs
+- **WHEN** an epic already attributes commit C in full, and `update-epic <id> --attribute-commit <C
+  short> --withdraw-commit <C in full> --withdrawal-reason x` runs
 - **THEN** it exits non-zero, and `state.json` is byte-identical
 
 ### Requirement: A recorded commit value that is not a commit object name is reported
@@ -345,13 +377,13 @@ attributed after an uncovered descendant make a stale verdict read fresh, and le
 unrelated branch read fresh because it was not an ancestor of anything. A `headSha` that is not
 related to the attributed commits reaches none of them and is stale.
 
-**A value the record holds but this repository cannot use is not a pass.** A verdict SHALL also be
-stale where its `headSha`, or any attributed entry, is not shaped as a commit object name (a ref
-name stored before write-time resolution), or does not resolve while at least one other commit value
-of the same verdict or attribution array does. Such a value is never resolved as a ref at read time.
-The stale rendering and the archive refusal name each such value. Where NONE of those values
-resolves — a clone that does not hold this history — the verdict is unverifiable, as below, because
-that clone cannot answer for the record rather than the record being wrong.
+**A value that is not a commit object name is not a pass.** A verdict SHALL also be stale where its
+`headSha`, or any attributed entry, is not shaped as a hexadecimal commit object name — a ref name or
+other string stored before write-time resolution. Such a value is never resolved as a ref at read
+time, and the archive refusal names it. A hexadecimal value this clone does not hold is different: it
+was a commit when it was written, and a clone that lacks it cannot answer for the record, so where no
+reached-or-not answer can be given the verdict is unverifiable, as below. A resolvable attributed
+commit that `headSha` does not reach makes the verdict stale whatever else is missing.
 
 **Attribution SHALL be an array of commit hashes recorded on the epic.** The emitted gate procedure
 records the last entry as the head of the reviewed range. **The array is written by the named flag
@@ -401,15 +433,16 @@ audit, against 14/14 for anything a required task carries.
 
 #### Scenario: A symbolic head stored before resolution is stale
 
-- **WHEN** an openspec-lane epic's state holds a passing Gate 2 whose `headSha` is the literal `HEAD`
+- **WHEN** an openspec-lane epic's state holds an attribution array of exactly one resolvable commit
+  and a passing Gate 2 whose `headSha` is the literal `HEAD`
 - **THEN** PROJECT.md and the briefing render that verdict as stale, and a `delivered` archive is
   refused naming `HEAD`
 
 #### Scenario: An epic with no recorded attribution is unverifiable, not refused
 
 - **WHEN** an epic carries a passing Gate 2 and has no attribution array at all — it predates this
-  capability — or no git history is available, or none of its verdict's and attribution's commit
-  values resolves in this repository
+  capability — or no git history is available, or its `headSha` or an attributed entry is a
+  hexadecimal value this clone does not hold and no resolvable attributed commit is unreached
 - **THEN** the archive is not refused on staleness grounds, and the verdict is reported as
   unverifiable rather than silently rendered as a covering pass
 

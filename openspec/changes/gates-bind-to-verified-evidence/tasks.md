@@ -25,7 +25,9 @@ GREEN commit message names that file. New test files: `scripts/test/commit-resol
 `scripts/test/reconcile-obligation.test.mjs`, importing `helpers.mjs`.
 
 - [ ] 1.1 REFACTOR: add a `helpers.mjs` fixture that creates one real commit per requested name in
-      the fixture repo and returns its full object name; suite green with no test converted yet
+      the fixture repo and returns its full object name. `tmpRepo()` does not create a git
+      repository (`conductor-13`'s harness uses it), so the fixture runs a hermetic `git init` in the
+      directory first when none exists; suite green with no test converted yet
       (verify: `node --test scripts/test/*.test.mjs` exit 0, output saved and read from the file)
 
 ## 2. A recorded commit is resolved when it is written
@@ -57,8 +59,9 @@ Pairs: 3.1–3.3 land with 3.4.
       entry is gone, and the withdrawal record names the stored entry (repro E)
 - [ ] 3.2 REGRESSION GUARD: a state file attributing the literal `not-a-commit` withdraws it with
       `--withdraw-commit not-a-commit --withdrawal-reason x`
-- [ ] 3.3 RED: `--attribute-commit <C short> --withdraw-commit <C full> --withdrawal-reason x` exits
-      non-zero, `state.json` byte-identical
+- [ ] 3.3 RED: on an epic that ALREADY attributes C in full (otherwise today's "never attributed"
+      refusal passes this vacuously), `--attribute-commit <C short> --withdraw-commit <C full>
+      --withdrawal-reason x` exits non-zero, `state.json` byte-identical
 - [ ] 3.4 GREEN: design Decision 8 in `update-epic.mjs` — identity matching removing the LAST match,
       exact-string fallback for unresolvable values, the contradictory-pair check by identity, and the
       withdrawal read-back comparing the removed entry; existing `--withdraw-commit` tests
@@ -75,19 +78,26 @@ Pairs: 4.1–4.6 land with 4.7.
       commits refuses a `delivered` archive and renders stale (repro C)
 - [ ] 4.3 RED: a state file attributing `not-a-commit` beside a resolving `headSha` refuses a
       `delivered` archive naming `not-a-commit`; renders `⚠ stale`, not `⚠ unverifiable` (repro A)
-- [ ] 4.4 RED: a state file whose Gate 2 `headSha` is the literal `HEAD` renders stale in PROJECT.md
-      and the brief, and refuses `delivered` naming `HEAD` (repro B's legacy form)
-- [ ] 4.5 REGRESSION GUARD: nothing in the record resolves (fixture shas absent from the object
-      store) → `⚠ unverifiable`, archive not refused; absent array → unverifiable; empty array →
-      `no attributed commits`; withdrawn-to-empty → `attribution withdrawn`
+- [ ] 4.4 RED: a state file whose `attributedCommits` is exactly `[<one resolvable fixture commit>]`
+      and whose Gate 2 `headSha` is the literal `HEAD` renders stale in PROJECT.md and the brief, and
+      refuses `delivered` naming `HEAD` (repro B's legacy form)
+- [ ] 4.5 REGRESSION GUARD: a hexadecimal `headSha` or attributed entry absent from the fixture's
+      object store, with no resolvable attributed commit unreached → `⚠ unverifiable`, archive not
+      refused; absent array → unverifiable; empty array → `no attributed commits`; withdrawn-to-empty →
+      `attribution withdrawn`
 - [ ] 4.6 REGRESSION GUARD: `headSha` = last attributed and every earlier entry its ancestor, with
       unrelated commits past it on `main` → fresh and archives; the archived-epic regression check
-      ("An update to an archived epic does not break an obligation its archive met") refuses an
-      update that turns a met Gate 2 into an unresolvable one and does not lock one already failing
+      still refuses `--attribute-commit <descendant>` on an archived `delivered` epic and does not lock
+      one whose Gate 2 already failed
 - [ ] 4.7 GREEN: design Decision 9 in `archive-gate.mjs` `gateStaleness()` (batched `rev-list`,
       per-process cache, no reachability probe) and the refusal wording in `deliveredObligations()`
       and `archiveGate()`; timing of `gateTableRows` over this repository's own state recorded in the
-      commit message against the design's ~911 ms baseline; suite green
+      commit message against the design's ~911 ms baseline. In this same commit, sweep and convert
+      every existing assertion whose staleness classification changes — derived with
+      `rg -n "attributedCommits|headSha|unverifiable|stale" scripts/test` (known at proposal time:
+      `gate-artifact-evidence` seeds `attributedCommits: ["HEAD"]`; `delivered-obligations`,
+      `archive-gate-order`, `recorded-sha-resolvability`, `conductor-22`, `conductor-25`,
+      `conductor-06` hand-seed states), each converted test named in the commit message; suite green
 
 ## 5. Integrity reports a non-object-name value
 
@@ -102,7 +112,7 @@ Pairs: 5.1 lands with 5.3.
 
 ## 6. A reconcile verdict answers only a detour the epic owes
 
-Pairs: 6.1–6.9 land with 6.10.
+Pairs: 6.1–6.9b land with 6.10.
 
 - [ ] 6.1 RED: after push `p`→`d` `--reconcile` and pop, `record-reconcile p --detour p` exits
       non-zero naming `d`; `state.json` byte-identical; `gate-guard` exits 2 (repro 1a)
@@ -120,24 +130,32 @@ Pairs: 6.1–6.9 land with 6.10.
 - [ ] 6.8 RED: correcting an answered verdict keeps the replaced one readable and does not set the flag
 - [ ] 6.9 REGRESSION GUARD: a state file with `reconcileNeeded: true` and one legacy `may-invalidate`
       link (no `reconcileOnResume` key, no verdict) accepts `record-reconcile p --detour d` and clears
+- [ ] 6.9a RED: that legacy `p`, then `push-detour p --detour d2 --reason r --no-reconcile` and pop —
+      `record-reconcile p --detour d2` is refused naming `d`; `record-reconcile p --detour d` clears
+- [ ] 6.9b RED: that legacy `p`, pushed for `d2` with `--reconcile` and popped — a verdict against `d2`
+      leaves `p` owing until `d` is answered
 - [ ] 6.10 GREEN: design Decisions 1–3 in `reconciler-writeback.mjs` and `detour-stack.mjs` (arming
-      on the link at push, re-arm, acceptance predicate, `link.superseded`, flag written from
+      on the link at push via `linkOnce`, per-link `isArmed()`, re-arm, acceptance predicate, `link.superseded`, flag written from
       `ownedDetours`); existing record-reconcile tests (`conductor-09`, `conductor-31`) that record
       against an unarmed or self detour corrected and named in the commit; suite green
 
-## 7. A reconcile obligation survives until answered or ended
+## 7. A reconcile obligation survives until answered
 
-Pairs: 7.1–7.3 and 7.4a land with 7.5.
+Pairs: 7.1–7.4 and 7.4a land with 7.5.
 
 - [ ] 7.1 RED: owed `p` active, `clear-active` then `render` — flag still true, and `clear-active`'s
       stderr names `p` and `d` (repro 2a)
 - [ ] 7.2 RED: `set-active other` then `set-active p` — flag true, `gate-guard` exits 2 (repro 2b)
-- [ ] 7.3 RED: `update-epic other --status active` — `p`'s flag still true after the render
-- [ ] 7.4 REGRESSION GUARD: archiving an owing epic with a recorded disposition clears the flag
-- [ ] 7.4a RED: a state file with active `p`, `reconcileNeeded: true`, no `may-invalidate` link and no
-      frame — `render` clears the flag and stderr names `p` (`repro-integrity.txt` shape); and owed `p`
+- [ ] 7.3 RED: `update-epic other --status active` — `p`'s flag still true after the render, and that
+      command's stderr names `p` and `d`; `add-epic --id q --title q --status active` likewise
+- [ ] 7.4 RED: owed vs `d`, `update-epic p --status archived --outcome abandoned --reason r
+      --no-deferrals`, then `update-epic p --status active` — flag true, `gate-guard` exits 2
+- [ ] 7.4b REGRESSION GUARD: an archived owing epic does not make `gate-guard` block
+- [ ] 7.4a RED: a state file with active `p`, `reconcileNeeded: true`, no frame, and no
+      `may-invalidate` link other than one carrying `reconcileOnResume: false` — `render` clears the flag and stderr names `p` (`repro-integrity.txt` shape); and owed `p`
       holding an armed link keeps the flag through `clear-active` + `render`
-- [ ] 7.5 GREEN: replace `reconcileArchived()`'s third branch with the no-link branch (design Decision 4); `owedReconcileNotice()` at every site
+- [ ] 7.5 GREEN: delete `reconcileArchived()`'s archived → clear branch and replace its third branch
+      with the no-armed-link branch (design Decision 4); `owedReconcileNotice()` at every site
       that moves `state.active` off an epic (design Decision 4, site list derived with
       `rg -n "activate\(|state\.active\s*=" scripts/lib` at this commit and pasted into its message);
       rewrite the `detour-stack.mjs` header's "ORDERING TRAP" paragraph and the heal's comment to the
@@ -162,11 +180,13 @@ Pairs: 9.1–9.3 land with 9.4.
 
 - [ ] 9.1 RED: owed vs `d`, `update-epic p --clear-links` exits non-zero naming `record-reconcile`,
       byte-identical
-- [ ] 9.2 RED: owed vs `d`, `remove-epic d` exits non-zero, byte-identical, `p` still owes vs `d`
+- [ ] 9.2 RED: owed vs `d`, `remove-epic d` exits non-zero with a message naming `record-reconcile`
+      and not telling the reader to resume or pop a detour; byte-identical; `p` still owes vs `d`
 - [ ] 9.3 RED: `update-epic p --link "may-invalidate:d:corrected reason"` on an answered armed link
       keeps the verdict and arming, changes the reason
 - [ ] 9.4 GREEN: design Decision 5 in `update-epic.mjs`, `links.mjs` (`mergeLinks`,
-      `epicReferences`); the existing "corrected reason, same position" tests stay green; suite green
+      `epicReferences` with a reference `kind`), `remove-epic.mjs`'s refusal and `integrity.mjs`'s
+      `dangling-epic-reference` detail worded by `kind`; the existing "corrected reason, same position" tests stay green; suite green
 
 ## 10. Amendments
 
@@ -174,8 +194,10 @@ Pairs: 10.1–10.3 land with 10.4.
 
 - [ ] 10.1 RED: `--amendments none` (and `None`) records `[]`
 - [ ] 10.2 RED: `--amendment "rename x; keep y" --amendment "drop z"` records exactly those two
-- [ ] 10.3 RED: `--amendment a --amendments b` exits non-zero, byte-identical
-- [ ] 10.4 GREEN: register `--amendment` (`repeats: true`) for `record-reconcile` in `EPIC_FLAGS`
+- [ ] 10.3 RED: `--amendment a --amendments b` exits non-zero with a message naming both flags as
+      conflicting (after change 1 an unregistered `--amendment` is refused as unknown, so the exit
+      alone would pass vacuously), byte-identical
+- [ ] 10.4 GREEN: register `--amendment` (`repeats: true`) for `record-reconcile` in `VERB_FLAGS`
       (`constants.mjs`) and read it in `reconciler-writeback.mjs`; the parity ledger and the flag
       registry tests pass; suite green
 
@@ -187,8 +209,12 @@ Pairs: 10.1–10.3 land with 10.4.
         setting, clearing or preserving, and every clear justified against the survival requirement;
       - every site moving `state.active` (`rg -n "activate\(|state\.active\s*=" scripts/lib`), each
         stated as warning or exempt;
-      - every writer and reader of `links[]` entries of type `may-invalidate`, incl. `mergeLinks`,
-        `epicReferences`, `--clear-links`, `add-many`, `deferralHistory`, render and briefing;
+      - every writer and reader of `links[]` entries of type `may-invalidate`, derived with
+        `rg -n "may-invalidate|linkOnce|mergeLinks|epicReferences|\.links\b" scripts/lib` (expected to
+        include `linkOnce` in `detour-stack.mjs`, `mergeLinks`, `epicReferences`, `--clear-links`,
+        `add-many`, `deferralHistory`, render and briefing);
+      - every reader of a `drop: null` reference from `epicReferences` (expected: `remove-epic`,
+        `integrity`), each stated as wording by reference kind;
       - every writer of `attributedCommits`, `withdrawnCommits`, `gateReview.gateN.baseSha/headSha`
         (incl. `superseded`, `withdrawnGateReviews`, migrations, the archive-drift heal) and every
         reader that passes one to git (`rg -n "isAncestor|sameCommit|commitDate|objectExists|reachableFromAnyRef|merge-base|rev-parse|rev-list" scripts/lib`),
@@ -210,9 +236,10 @@ Pairs: 10.1–10.3 land with 10.4.
       archive commit, and any commit that only relocates this change's artifacts, is excluded
 - [ ] 11.5 **Dispositions** <!-- pm:lifecycle --> — `update-epic gates-bind-to-verified-evidence --status archived --outcome delivered --no-deferrals`
       (swap `--no-deferrals` for `--deferral "<epicId>:<section>"` or `--declined-deferral
-      "<what>:<why not>"` for anything Gate 2 defers), then end the absorbed epic:
-      `update-epic gate-staleness-reads-only-last-attribution --status archived --outcome superseded
-      --reason "absorbed by gates-bind-to-verified-evidence (every-entry staleness, 4.1)" --no-deferrals`
+      "<what>:<why not>"` for anything Gate 2 defers), then record and end the absorbed epic:
+      `update-epic gates-bind-to-verified-evidence --link "supersedes:gate-staleness-reads-only-last-attribution:absorbed — every-entry staleness"`
+      and `update-epic gate-staleness-reads-only-last-attribution --status archived --outcome superseded
+      --reason "absorbed by gates-bind-to-verified-evidence: its 2026-09-14 Gate 2 lens 2 repro (ancestor attributed after an uncovered descendant) is task 4.1; its 2026-09-15 note (--attribute-commit notasha stored, read unverifiable, uncounted by the regression check) is tasks 2.1 and 4.3" --no-deferrals`
 - [ ] 11.6 **Route what the work taught** — name each as a practice (register an epic, with its
       evidence), tooling friction (`/pm:feedback [bug|feature] "<summary>"`), or a process failure (a
       lesson in `docs/lessons/` with `trigger`, `cost`, `enforced_in`). At minimum decide whether the
@@ -221,7 +248,8 @@ Pairs: 10.1–10.3 land with 10.4.
 ## 12. Docs (after Gate 2)
 
 - [ ] 12.1 `agents/reconciler.md`, `commands/resume.md`, `commands/detour.md` — the armed-detour rule,
-      the refusals, `--amendment`, `none`, what pop prints while owed
+      the refusals, what pop prints while owed; ONE emitted amendments form: the reconciler's
+      `AMENDMENTS: none` maps to `--amendments none`, other lines to one `--amendment` each
 - [ ] 12.2 `scripts/lib/rules.mjs` emitted text and `skills/conductor/SKILL.md` — the
       `record-reconcile` form; "LAST entry is the endpoint" wording replaced by "every attributed
       commit must be reached by `headSha`"; the declared load-bearing claims updated so the mirror
