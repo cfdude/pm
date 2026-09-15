@@ -98,6 +98,12 @@ function citedShas(entry) {
  *  attribution array would leave every gate verdict's range — the half that makes a verdict
  *  checkable at all — unwatched.
  *
+ *  TWO HOLDERS ARE DELIBERATELY NOT CHECKED, and each is a decision rather than an omission: a
+ *  `withdrawnCommits[].sha` (gh#166) and a `withdrawnGateReviews[].entry`'s `baseSha`/`headSha`
+ *  (gate-verdict-withdrawal). Both are records of something TAKEN BACK — the sha was wrong, or the
+ *  verdict did not belong on this epic — so neither is evidence the record still claims, and
+ *  reporting one orphaned would demand preserving a commit for a claim nobody is making.
+ *
  *  The `where` is carried because a finding that says only "a sha is gone" makes the reader go
  *  find which field held it. */
 export function recordedShas(state) {

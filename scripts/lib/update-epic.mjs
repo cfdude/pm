@@ -69,7 +69,12 @@ export function missingGateWithdrawals(state, id, requested) {
  *  call's tokens: `--status`, because the invocation archives, and every disposition flag, because
  *  the invocation supplies its own placeholders for them. (The deferral flags and
  *  `--correct-disposition` are refused before this point on a non-archiving call, and are listed
- *  so the rule does not depend on that.) */
+ *  so the rule does not depend on that.)
+ *
+ *  `--withdraw-gate-review` and `--withdrawal-reason` are deliberately NOT here: they are the change
+ *  the refused call was making, and the #175-shaped remedy is exactly "withdraw the verdict AND
+ *  record the disposition that implies" in ONE call — dropping them would print an invocation that
+ *  archives without the withdrawal the caller asked for. */
 const INVOCATION_DROPPED_FLAGS = new Set([
   "status", "outcome", "reason", "carried-to", "correct-disposition",
   "deferral", "declined-deferral", "no-deferrals",

@@ -202,7 +202,7 @@ keep passing.
       `withdrawnGateReviews?` schema entry beside `withdrawnCommits?`; the `gateReview?` schema line
       noting a gate may be in the withdrawn state. `agents/hierarchy-child-executor.md` — its
       missing-Gate-2 guidance covers the withdrawn wording
-- [ ] 8.5 `rules.mjs` Reporting item 1 — withdrawals are recorded writes; update the emitted-block
+- [x] 8.5 `rules.mjs` Reporting item 1 — withdrawals are recorded writes; update the emitted-block
       fixtures the rules tests compare against
 - [ ] 8.6 `CHANGELOG.md` `[Unreleased]` entry. The version bump, the Mintlify Changelog page and Real
       Numbers belong to the 0.43.0 release cut under `release-checklist`

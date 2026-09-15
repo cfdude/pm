@@ -658,3 +658,14 @@ test("4.3 re-recording clears the withdrawn state: the archive is accepted and n
   assert.ok(!integrityBlock(run(["integrity"], { cwd }), "archived-with-withdrawn-gate-2").some(l => l.includes("`g43`")));
   assert.ok(!parseBrief(cwd).split("\n").some(l => l.startsWith("  ⚠") && l.includes("`g43`")));
 });
+
+test("8.5 the emitted Reporting section counts a gate withdrawal among the recorded writes", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const block = fs.readFileSync(path.join(cwd, "CLAUDE.md"), "utf8");
+  const start = block.indexOf("## Reporting — pm owns what is recorded");
+  assert.notEqual(start, -1);
+  const item1 = block.slice(start).split(/\n2\. /)[0].replace(/\s+/g, " ");
+  assert.ok(item1.includes("`--withdraw-gate-review`"), `item 1 names the gate withdrawal:\n${item1}`);
+  assert.ok(item1.includes("`--withdraw-commit`"), `item 1 names the attribution withdrawal:\n${item1}`);
+});
