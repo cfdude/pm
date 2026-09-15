@@ -154,9 +154,9 @@ test("gh-182: a repeatable flag still repeats when its values begin with --", ()
     "both occurrences must land, in order — one form must not clobber the other");
 });
 
-// ─────────────── 4. the identical sibling: requireKnownFlags' raw-argv scan ───────────────
+// ─────────────── 4. the identical sibling: the unknown-flag scan (now the pre-dispatch check) ───────────────
 
-test("gh-182: requireKnownFlags' raw-argv scan reads a --value as a value, on all five verbs", () => {
+test("gh-182: the unknown-flag scan reads a --value as a value, on the verbs requireKnownFlags() once guarded", () => {
   // THE DOMINANT DEFECT CLASS. `requireKnownFlags()` (add-epic.mjs) is a SECOND raw-argv scanner
   // and a flat for…of with no index, so it could not skip a value token — it re-emitted the
   // exact bug this issue reports on the five verbs that call it, long after parseFlags was

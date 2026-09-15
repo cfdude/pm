@@ -215,7 +215,9 @@ export function commitNudge() {
   if (isDetachedTree()) return;
   const raw = readStdin();
   // After the drain, so a refused hook line does not leave the writer holding a pipe. In a detached
-  // tree this verb is dormant (above) and so is this refusal.
+  // tree this verb is dormant (above) and so is this --platform VALUE refusal — but not the
+  // pre-dispatch undeclared-flag refusal (lib/argv-surface.mjs), which runs before dispatch and
+  // still fires in a detached tree; only a repository without pm makes that one dormant.
   requirePlatformFlag("commit-nudge");
   let cmd = "";
   try {
