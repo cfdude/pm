@@ -958,6 +958,13 @@ export const FLAGLESS_VERBS = [
 // two hours is exactly the false coordination signal #84 warns is worse than none.
 export const CLAIM_DEFAULT_TTL_MINUTES = 120;
 export const REPO_CLAIM_DEFAULT_TTL_MINUTES = 30;
+// The ONE bound on a claim's lifetime, shared by the verbs that write a claim (claims.mjs ttlFrom)
+// and the reader that judges one (claim-shape.mjs claimExpiry) — state-file-refuses-to-guess D5.
+// A claim is "who owns this right now", renewed by re-claiming, so a week is generous; and a bound
+// this far below the representable date range leaves no overflow arithmetic to reason about. On
+// 0.43.0 `claim --ttl 1e12` wrote a claim whose expiry no reader could compute, and every later
+// `owners`, `integrity` and other-session `claim` crashed with RangeError.
+export const CLAIM_MAX_TTL_MINUTES = 10080;
 
 // ─────────────────── #111: the activity log's two caps ───────────────────
 //

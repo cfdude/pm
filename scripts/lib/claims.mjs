@@ -43,11 +43,11 @@ import fs from "node:fs";
 import path from "node:path";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
-import { CLAIM_DEFAULT_TTL_MINUTES, REPO_CLAIM_DEFAULT_TTL_MINUTES, isFlagToken, splitFlagToken } from "./constants.mjs";
+import { CLAIM_DEFAULT_TTL_MINUTES, CLAIM_MAX_TTL_MINUTES, REPO_CLAIM_DEFAULT_TTL_MINUTES, isFlagToken, splitFlagToken } from "./constants.mjs";
 import { isDetachedTree } from "./git.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { resolveSession, SESSION_HINT } from "./session-identity.mjs";
-import { claimExpiry, isLiveClaim } from "./claim-shape.mjs";
+import { claimExpiry, isLiveClaim, validTtlMinutes } from "./claim-shape.mjs";
 
 export { claimExpiry, isLiveClaim };
 
@@ -88,7 +88,12 @@ function writeRepoClaim(claim) {
   if (isDetachedTree()) return false;
   const p = repoClaimPath();
   fs.mkdirSync(path.dirname(p), { recursive: true });
-  fs.writeFileSync(p, JSON.stringify(claim, null, 2) + "\n");
+  // Temp file plus rename in the same directory, so a reader racing this write sees the whole old
+  // marker or the whole new one — never a torn file that readRepoClaim() would read as "no claim".
+  // Not LOCKED: the marker is advisory and never guarded a read-modify-write (design D5).
+  const tmp = `${p}.tmp-${process.pid}-${Date.now()}`;
+  fs.writeFileSync(tmp, JSON.stringify(claim, null, 2) + "\n");
+  fs.renameSync(tmp, p);
   return true;
 }
 
@@ -115,7 +120,11 @@ function refuseHeld(what, claim, verb) {
 function ttlFrom(f, fallback) {
   if (f.ttl === undefined) return fallback;
   const n = Number(Array.isArray(f.ttl) ? f.ttl[f.ttl.length - 1] : f.ttl);
-  if (!Number.isFinite(n) || n <= 0) die("--ttl requires a positive number of minutes");
+  // Bounded by the same predicate the reader judges with, so nothing this writes can be a claim
+  // no reader can read (state-file-refuses-to-guess D5).
+  if (!validTtlMinutes(n)) {
+    die(`--ttl requires a positive number of minutes, at most ${CLAIM_MAX_TTL_MINUTES} (7 days). Nothing was written.`);
+  }
   return n;
 }
 
@@ -315,14 +324,14 @@ export function formatOwners(rows) {
   const repo = rows.find(r => r.scope === "repo");
   L.push(repo
     ? `repository: ${repo.live ? "BUSY" : "STALE"} — '${repo.session}' since ${repo.claimedAt}, ` +
-      `${repo.live ? "live until" : "expired at"} ${repo.expiresAt}`
+      `${repo.live ? "live until" : "expired at"} ${repo.expiresAt || "an unreadable time"}`
     : "repository: no marker set");
   L.push("");
   const epics = rows.filter(r => r.scope === "epic");
   L.push(`${epics.length} epic claim(s):`);
   for (const r of epics) {
     L.push(`  • \`${r.id}\` — ${r.live ? "HELD" : "STALE"} by '${r.session}' since ${r.claimedAt}, ` +
-      `${r.live ? "live until" : "expired at"} ${r.expiresAt}` +
+      `${r.live ? "live until" : "expired at"} ${r.expiresAt || "an unreadable time"}` +
       (r.epicStatus === "archived" ? "  ⚠ epic is ARCHIVED" : ""));
   }
   const stale = rows.filter(r => !r.live).length;

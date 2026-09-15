@@ -567,3 +567,87 @@ test("4.3(b): a breaker that judged a lock stale removes nothing once another br
   assert.ok(epics.includes("by-a"), "A's save is the write that landed");
   assert.ok(!fs.existsSync(lockPath(cwd)), "A released N");
 });
+
+// ─────────────── 5 — advisory-claim lifetime is bounded; an unreadable expiry reads as expired ───────────────
+
+const MAX_TTL = 10080;
+const repoClaimPath = (cwd) => path.join(cwd, ".conductor", "session-claim.json");
+
+test("5.1: an oversized TTL is refused at input, for an epic claim and the repository claim", () => {
+  const cwd = threeEpicRepo();
+  const before = bytes(statePath(cwd));
+  const r = sh(["claim", "e1", "--session", "s1", "--ttl", "1e12"], { cwd });
+  assert.notEqual(r.status, 0, `stderr: ${r.stderr}`);
+  assert.match(r.stderr, new RegExp(String(MAX_TTL)), `names the maximum, got: ${r.stderr}`);
+  assert.doesNotMatch(r.stderr, /RangeError/);
+  assert.ok(sameBytes(before, bytes(statePath(cwd))), "state.json byte-identical");
+
+  const repo = sh(["claim", "--repo", "--session", "s1", "--ttl", "1e12"], { cwd });
+  assert.notEqual(repo.status, 0, `stderr: ${repo.stderr}`);
+  assert.match(repo.stderr, new RegExp(String(MAX_TTL)));
+  assert.ok(!fs.existsSync(repoClaimPath(cwd)), "session-claim.json not created");
+});
+
+test("5.1: the maximum itself is accepted and the report names its expiry", () => {
+  const cwd = threeEpicRepo();
+  const r = sh(["claim", "e1", "--session", "s1", "--ttl", String(MAX_TTL)], { cwd });
+  assert.equal(r.status, 0, `stderr: ${r.stderr}`);
+  assert.match(r.stderr, /claimed by 's1' until \d{4}-\d{2}-\d{2}T/, r.stderr);
+});
+
+test("5.3: a poisoned epic claim already on disk reads as expired, and no reader throws", () => {
+  const cwd = threeEpicRepo();
+  const s = JSON.parse(fs.readFileSync(statePath(cwd), "utf8"));
+  s.epics.find((e) => e.id === "e1").claim = { session: "s1", claimedAt: new Date().toISOString(), ttlMinutes: 1000000000000 };
+  s.epics.find((e) => e.id === "e2").claim = { session: "s1", claimedAt: new Date().toISOString(), ttlMinutes: MAX_TTL + 1 };
+  writeState(cwd, s);
+
+  const owners = sh(["owners"], { cwd });
+  assert.equal(owners.status, 0, `owners, stderr: ${owners.stderr}`);
+  assert.match(owners.stdout, /`e1` — STALE/, owners.stdout);
+  assert.match(owners.stdout, /`e2` — STALE/, `a TTL one minute above the maximum reads expired: ${owners.stdout}`);
+  assert.doesNotMatch(owners.stdout, /\bnull\b/, "no literal null for an unreadable expiry");
+
+  const integrity = sh(["integrity"], { cwd });
+  assert.doesNotMatch(integrity.stderr, /RangeError|\n\s+at /, `integrity, stderr: ${integrity.stderr}`);
+  assert.ok(integrity.status === 0 || integrity.status === 1, `integrity exits normally, got ${integrity.status}`);
+  assert.match(integrity.stdout + integrity.stderr, /expired at an unreadable time/);
+
+  const take = sh(["claim", "e1", "--session", "s2"], { cwd });
+  assert.equal(take.status, 0, `claim by s2 without --steal, stderr: ${take.stderr}`);
+  assert.match(take.stderr, /its claim had expired/);
+});
+
+test("5.3: a poisoned repository claim already on disk reads as expired", () => {
+  const cwd = threeEpicRepo();
+  fs.writeFileSync(repoClaimPath(cwd),
+    JSON.stringify({ session: "s1", claimedAt: new Date().toISOString(), ttlMinutes: 1000000000000 }) + "\n");
+  const r = sh(["owners"], { cwd });
+  assert.equal(r.status, 0, `stderr: ${r.stderr}`);
+  assert.match(r.stdout, /repository: STALE/, r.stdout);
+  assert.doesNotMatch(r.stdout, /\bnull\b/);
+});
+
+test("5.5: the repository claim is written by temp file plus rename, never directly", async () => {
+  const cwd = threeEpicRepo();
+  const { claim } = await import("../lib/claims.mjs");
+  const target = repoClaimPath(cwd);
+  const writes = [];
+  const renames = [];
+  const argv = process.argv.slice();
+  await inRepo(cwd, () => {
+    process.argv.splice(2, process.argv.length - 2, "claim", "--repo", "--session", "s1");
+    try {
+      withFsSpy({
+        writeFileSync: (orig) => (p, ...rest) => { writes.push(String(p)); return orig(p, ...rest); },
+        renameSync: (orig) => (from, to) => { renames.push([String(from), String(to)]); return orig(from, to); },
+      }, () => claim());
+    } finally { process.argv.splice(0, process.argv.length, ...argv); }
+  });
+  assert.ok(!writes.includes(target), `no direct write to ${target}: ${JSON.stringify(writes)}`);
+  const rename = renames.find(([, to]) => to === target);
+  assert.ok(rename, `a rename over the target: ${JSON.stringify(renames)}`);
+  assert.equal(path.dirname(rename[0]), path.dirname(target), "the temp file is in .conductor/");
+  assert.ok(writes.includes(rename[0]), "the temp file is the one written");
+  assert.equal(JSON.parse(fs.readFileSync(target, "utf8")).session, "s1");
+});

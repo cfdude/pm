@@ -152,25 +152,25 @@ the GREEN commit stages that file and names it in its message.
 
 ## 5. Advisory-claim lifetime is bounded; an unreadable expiry reads as expired
 
-- [ ] 5.1 RED (lands with 5.2): `claim x --session s1 --ttl 1e12` → non-zero, stderr names the
+- [x] 5.1 RED (lands with 5.2): `claim x --session s1 --ttl 1e12` → non-zero, stderr names the
       maximum, `state.json` byte-identical (today: writes, then `RangeError`); `claim --repo --session s1
       --ttl 1e12` → `session-claim.json` not created; `--ttl <CLAIM_MAX_TTL_MINUTES>` accepted and the
       report names an expiry. Save `red-5.1.txt`
-- [ ] 5.2 GREEN: `CLAIM_MAX_TTL_MINUTES` in `constants.mjs`; `validTtlMinutes()` in `claim-shape.mjs`
+- [x] 5.2 GREEN: `CLAIM_MAX_TTL_MINUTES` in `constants.mjs`; `validTtlMinutes()` in `claim-shape.mjs`
       (update its "imports nothing from lib/" header to name `constants.mjs`); `ttlFrom()` refuses with
       it. Verify: 5.1 passes
-- [ ] 5.3 RED (lands with 5.4): write `ttlMinutes: 1000000000000` onto a stored epic claim directly in
+- [x] 5.3 RED (lands with 5.4): write `ttlMinutes: 1000000000000` onto a stored epic claim directly in
       the fixture; `owners` exits 0 and shows the claim STALE with no literal `null`; `integrity` exits
       normally reporting it expired at an unreadable time; `claim x --session s2` succeeds without
       `--steal` reporting the prior claim expired; same poisoned value in `session-claim.json` → `owners`
       exits 0, repository STALE. Also a stored `ttlMinutes` of `CLAIM_MAX_TTL_MINUTES + 1` reads
       expired. Save `red-5.3.txt` (today: all crash with `RangeError`)
-- [ ] 5.4 GREEN: `claimExpiry()` returns null for an out-of-bound TTL and for an unrepresentable date;
+- [x] 5.4 GREEN: `claimExpiry()` returns null for an out-of-bound TTL and for an unrepresentable date;
       `formatOwners()` renders null as `an unreadable time`. Verify: 5.3 passes
-- [ ] 5.5 RED (lands with 5.6): fs spy on `claim --repo` in-process — the write to
+- [x] 5.5 RED (lands with 5.6): fs spy on `claim --repo` in-process — the write to
       `.conductor/session-claim.json` goes to a temp path in `.conductor/` and is renamed over the
       target (today: a direct `writeFileSync` to the target). Save `red-5.5.txt`
-- [ ] 5.6 GREEN: `writeRepoClaim()` writes by temp file plus rename (design D5). Verify: 5.5 passes
+- [x] 5.6 GREEN: `writeRepoClaim()` writes by temp file plus rename (design D5). Verify: 5.5 passes
 
 ## 6. The managed rules block is located by whole-line markers and written literally
 
