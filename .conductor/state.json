@@ -7506,7 +7506,7 @@
       "id": "state-json-unparseable-loads-as-empty",
       "title": "[C] An unparseable state.json loads as an empty record, so the next write wipes every epic and gate-guard fails open",
       "priority": "P1",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -7520,13 +7520,24 @@
       "description": "Code review 0.43.0 (B1, B2, C1; verified by the orchestrator). state.mjs readJSON swallows the parse error, loadState returns defaultState() at revision 0, diskRevision() also reads 0, so the revision guard passes. Repro: 3 epics, prepend a git conflict marker line to state.json, `add-epic --id new` exits 0 and the file holds only [new]. sync (hook-reachable) and upgrade wipe a truncated file too. gate-guard.mjs gateGuardCheck loads the same empty state, so an epic with reconcileNeeded is no longer blocked (exit 0); with epics:{} it crashes (exit 1 = allow). Writes also skip fsync before rename. Fix: loadState refuses (non-zero, naming the file) when state.json exists but does not parse or has the wrong shape; gate-guard exits 2 on that condition; fsync the temp file. A conflicted state.json after a merge is ordinary in a tracked repo.",
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:10:51.012Z",
-      "touchedAt": "2026-09-15T05:10:51.015Z"
+      "touchedAt": "2026-09-15T12:24:56.767Z",
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-09-15T12:24:56.764Z",
+        "reason": "Carried into a 0.44.0 openspec change (see its supersedes link); split by spec so each change gets its own Gate 1/Gate 2 and the release a cross-spec review."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-15T12:24:56.763Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-15T12:24:56.764Z"
     },
     {
       "id": "state-write-race-loses-updates",
       "title": "[C] Concurrent saveState calls still lose updates and both writers report success — the revision check and the rename are not atomic",
       "priority": "P1",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -7540,13 +7551,24 @@
       "description": "Code review 0.43.0 (B1). state.mjs saveState: two processes that loaded revision N both pass diskRevision(), both write N+1, and each read-back sees its own bytes. Repro: 16 parallel add-epic → 13 'added epic' with exit 0, 6 epics on disk; 24 parallel in-process saves → 16 ok, 9 epics, 0 errors. Breaks state-write-guard 'a write built on a superseded revision is refused' (a residual of the archived state-lost-update-concurrent-sessions fix). Fix: an O_EXCL lockfile around check+write+rename, stale lock broken by pid/age.",
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:10:53.148Z",
-      "touchedAt": "2026-09-15T05:10:53.151Z"
+      "touchedAt": "2026-09-15T12:24:58.723Z",
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-09-15T12:24:58.720Z",
+        "reason": "Carried into a 0.44.0 openspec change (see its supersedes link); split by spec so each change gets its own Gate 1/Gate 2 and the release a cross-spec review."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-15T12:24:58.720Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-15T12:24:58.720Z"
     },
     {
       "id": "reconcile-gate-bypasses",
       "title": "[C] The reconcile gate ('no bypass') can be cleared without a real verdict: record-reconcile against any epic, an active-pointer move, or a later --no-reconcile push",
       "priority": "P1",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -7560,13 +7582,24 @@
       "description": "Code review 0.43.0 (A1, A2, B1, C2, E1 — found independently four times). (1) reconciler-writeback.mjs recordReconcile only checks that --detour names an existing epic: `record-reconcile p --detour p --verdict valid` (self) or against an unrelated epic clears reconcileNeeded, gate-guard goes 2→0, and a fabricated may-invalidate link is written while the real one stays unreconciled. (2) epic-progress.mjs reconcileArchived clears reconcileNeeded on any non-active epic: after pop-detour, `clear-active` or `set-active other` then any render erases the obligation; set-active back does not restore it — the exact state-transition-flag rule CLAUDE.md forbids. (3) detour-stack.mjs push assigns paused.reconcileNeeded = reconcileOnResume, so push-detour … --no-reconcile after a pop overwrites a pending obligation, and the Honcho line claims none was required. Also: AMENDMENTS 'none' stored as [\"none\"], amendments split on any ';'. Fix: require --detour to match an existing unreconciled may-invalidate link on an epic with reconcileNeeded:true; OR the flag on push; the heal never clears it; consider refusing set-active/clear-active while the active epic owes a reconcile.",
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:10:55.153Z",
-      "touchedAt": "2026-09-15T05:10:55.156Z"
+      "touchedAt": "2026-09-15T12:25:04.629Z",
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-09-15T12:25:04.626Z",
+        "reason": "Carried into a 0.44.0 openspec change (see its supersedes link); split by spec so each change gets its own Gate 1/Gate 2 and the release a cross-spec review."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-15T12:25:04.626Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-15T12:25:04.626Z"
     },
     {
       "id": "commit-shas-stored-unresolved",
       "title": "[C] Commit identities are stored as typed, so a non-commit or symbolic ref defeats Gate 2 staleness; a headSha off the attributed line reads fresh",
       "priority": "P1",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -7585,13 +7618,24 @@
       "description": "Code review 0.43.0 (A1, A2). (1) `update-epic e --attribute-commit not-a-commit` makes the last entry unresolvable → gateStaleness 'unverifiable' → the archive gate (and the 0.43.0 regression check) accept an archive they refused a moment before. (2) `record-gate-review --base-sha main~1 --head-sha HEAD` stores the literal HEAD, re-resolved at every check, so later unreviewed commits read fresh; PROJECT.md renders pass (main~1..HEAD). (3) archive-gate.mjs gateStaleness `covers !== true → fresh`: a headSha on an unrelated branch archives delivered with a clean pass; the gate-integrity spec says it SHALL be stale. Fix: resolve every sha at write time with `git rev-parse --verify <x>^{commit}` (a local read), store the full sha, refuse what does not resolve; fresh only when the last attributed commit is equal to or an ancestor of headSha. Distinct from gate-staleness-reads-only-last-attribution (array order).",
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:10:57.161Z",
-      "touchedAt": "2026-09-15T05:10:57.165Z"
+      "touchedAt": "2026-09-15T12:25:06.736Z",
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-09-15T12:25:06.733Z",
+        "reason": "Carried into a 0.44.0 openspec change (see its supersedes link); split by spec so each change gets its own Gate 1/Gate 2 and the release a cross-spec review."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-15T12:25:06.733Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-15T12:25:06.733Z"
     },
     {
       "id": "every-verb-validates-its-argv",
       "title": "[C] --help after a positional performs the write (remove-epic e2 --help deletes e2), ~25 verbs accept unknown flags and stray positionals silently",
       "priority": "P1",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -7610,13 +7654,24 @@
       "description": "Code review 0.43.0 (C2, B1, A2, D2, E1; the remove-epic case verified by the orchestrator). conductor.mjs only intercepts a help token at argv position 0/1; `remove-epic e2 --help` exits 0 'removed 1 epic(s): e2'; `log-detour x --help` appends to the append-only log; set-active, set-autonomy, set-gate-guard off, set-activity-log on -h, push-detour … --help all write. The 0.41.0 fix for #187 turned 'exit 0, writes nothing' into 'exit 0, writes anyway'. Same root: verbs without requireKnownFlags — set-review-mode, set-tracker, set-lane-routing (no args writes laneRouting:{overrides:[]}), remove-epic, render, record-reconcile (--amendmnts typo records invalidated with []), record-tracker-refresh (--sumary), unconsidered-outcomes, set-autonomy (--levle). parseFlags drops non-`--` tokens: `add-epic --title My Title` stores 'My'. init reads --platform but is FLAGLESS: bare --platform ignored; `init --platform bogus` creates state.json then exits 1, ending dormancy. update-epic --outcome/--reason/--carried-to without --status archived are dropped with a false 'already holds' message (siblings --deferral/--correct-disposition refuse). help.mjs says hook verbs take no flags while hooks.json passes --platform. Fix: every verb calls requireKnownFlags from the registry; refuse leftover positionals; the help catch runs before any write.",
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:10:59.238Z",
-      "touchedAt": "2026-09-15T05:10:59.241Z"
+      "touchedAt": "2026-09-15T12:24:54.803Z",
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-09-15T12:24:54.800Z",
+        "reason": "Carried into a 0.44.0 openspec change (see its supersedes link); split by spec so each change gets its own Gate 1/Gate 2 and the release a cross-spec review."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-15T12:24:54.800Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-15T12:24:54.800Z"
     },
     {
       "id": "rules-block-writer-destroys-hand-content",
       "title": "[C] write-rules can delete hand-written CLAUDE.md content and still print 'refreshed' — markers matched as substrings, not whole lines",
       "priority": "P1",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -7630,13 +7685,24 @@
       "description": "Code review 0.43.0 (D1). rules.mjs writeRules detects the block with includes(BEGIN prefix) && includes(END) and a lazy regex starting at the first occurrence anywhere. Repro: a prose line mentioning '<!-- BEGIN pm-conductor rules' above '## My rules' above the real block → 'refreshed', the hand-written section is gone. Variants: prose naming both markers splices a second block and the real one is never refreshed again; a deleted END line appends a block and the next refresh swallows the text between; two blocks → only the first refreshed; a string (not function) replacement lets a `$` sequence in a tracker value splice file text in; CRLF files get LF blocks. Fix: whole-line markers, refuse unless exactly one BEGIN/END pair, function replacer, preserve line endings.",
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:01.201Z",
-      "touchedAt": "2026-09-15T05:11:01.204Z"
+      "touchedAt": "2026-09-15T12:25:02.719Z",
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-09-15T12:25:02.717Z",
+        "reason": "Carried into a 0.44.0 openspec change (see its supersedes link); split by spec so each change gets its own Gate 1/Gate 2 and the release a cross-spec review."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-15T12:25:02.716Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-15T12:25:02.717Z"
     },
     {
       "id": "claim-ttl-overflow-crashes-readers",
       "title": "[C] claim --ttl 1e12 is persisted, then owners, integrity and every other session's claim/unclaim crash with RangeError",
       "priority": "P1",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "claude-code",
       "links": [
@@ -7657,7 +7723,18 @@
       ],
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:03.132Z",
-      "touchedAt": "2026-09-15T05:11:03.134Z"
+      "touchedAt": "2026-09-15T12:25:00.697Z",
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-09-15T12:25:00.695Z",
+        "reason": "Carried into a 0.44.0 openspec change (see its supersedes link); split by spec so each change gets its own Gate 1/Gate 2 and the release a cross-spec review."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-15T12:25:00.694Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-15T12:25:00.695Z"
     },
     {
       "id": "autonomy-grants-have-no-revoke",
@@ -8192,6 +8269,86 @@
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:50.956Z",
       "touchedAt": "2026-09-15T05:11:50.959Z"
+    },
+    {
+      "id": "every-verb-refuses-what-it-does-not-read",
+      "title": "Every verb refuses argv it does not read: a help token anywhere writes nothing, unknown flags and stray positionals are refused on all verbs",
+      "priority": "P1",
+      "status": "queued",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "supersedes",
+          "epic": "every-verb-validates-its-argv",
+          "reason": "the openspec change that carries it"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-15T12:24:46.998Z",
+      "touchedAt": "2026-09-15T12:24:52.902Z",
+      "release": "0.44.0"
+    },
+    {
+      "id": "state-file-refuses-to-guess",
+      "title": "The state file refuses to guess: an unparseable state.json is refused not replaced, writes are serialised by a breakable lock, claim expiry is bounded, and write-rules refuses an ambiguous managed block",
+      "priority": "P1",
+      "status": "queued",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "supersedes",
+          "epic": "state-json-unparseable-loads-as-empty",
+          "reason": "carried here"
+        },
+        {
+          "type": "supersedes",
+          "epic": "state-write-race-loses-updates",
+          "reason": "carried here"
+        },
+        {
+          "type": "supersedes",
+          "epic": "claim-ttl-overflow-crashes-readers",
+          "reason": "carried here"
+        },
+        {
+          "type": "supersedes",
+          "epic": "rules-block-writer-destroys-hand-content",
+          "reason": "carried here"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-15T12:24:48.974Z",
+      "touchedAt": "2026-09-15T12:24:52.902Z",
+      "release": "0.44.0"
+    },
+    {
+      "id": "gates-bind-to-verified-evidence",
+      "title": "Gates bind to verified evidence: record-reconcile must answer a real unreconciled detour link, reconcileNeeded survives active-pointer moves and later pushes, and commit shas are resolved and stored full at write time",
+      "priority": "P1",
+      "status": "queued",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "supersedes",
+          "epic": "reconcile-gate-bypasses",
+          "reason": "carried here"
+        },
+        {
+          "type": "supersedes",
+          "epic": "commit-shas-stored-unresolved",
+          "reason": "carried here"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-15T12:24:50.972Z",
+      "touchedAt": "2026-09-15T12:24:52.902Z",
+      "release": "0.44.0"
     }
   ],
   "detourStack": [],
@@ -8202,7 +8359,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 795,
+  "revision": 806,
   "reviewMode": "thorough",
   "releases": [
     {
@@ -8394,6 +8551,12 @@
         ],
         "reviewer": "two fresh-context lenses (coherence/contradiction; falsifiability/dependency-order), initial + 3 re-rounds; round-3 BLOCKS fixed d046e02; remaining round-3 items adjudicated POLISH (rendering detail, no contradiction) and trimmed from the spec 2b971c9, 2026-09-14"
       }
+    },
+    {
+      "id": "0.44.0",
+      "intent": "Fix every Critical from the 0.43.0 comprehensive code review: data-loss paths in the state file and argv handling, and gate bypasses.",
+      "deferred": [],
+      "target": "0.44.0"
     }
   ],
   "archiveBackfilledAt": "2026-08-27T04:52:42.658Z"
