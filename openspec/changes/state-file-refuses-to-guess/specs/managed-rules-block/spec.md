@@ -28,18 +28,27 @@ Every write of the block into the rules file SHALL act on the marker lines as fo
   fix.
 
 A refused write SHALL NOT be reported as success. A verb that refreshes the block — `write-rules`,
-`init`, `upgrade`, `set-tracker`, `set-review-mode` — SHALL exit non-zero when the block write is
-refused and SHALL print no line saying the block was refreshed, appended or created. Writes that verb
-made to other files before the block write are not rolled back; the refusal SHALL say that the rules
-file alone was left untouched.
+`init`, `upgrade`, `set-tracker`, `set-review-mode` — SHALL exit with a code that is not 0, not 1
+(the validation code) and not the conflict exit code, and SHALL print no line saying the block was
+refreshed, appended or created.
+
+`init` and `upgrade` SHALL detect a refused arrangement BEFORE their first write, and a refused `init`
+or `upgrade` SHALL write nothing: `state.json` (its recorded `pmVersion` included), `PROJECT.md`, the
+render stamp, `.gitignore` and the rules file are byte-identical afterwards. `pmVersion` is what marks
+a repository as upgraded, so an upgrade that stamped it and then refused would read as done forever
+while its rules block, `PROJECT.md` and `.gitignore` stayed behind.
+
+Any other verb that refuses at its block write SHALL say, truthfully, which of its writes landed and
+which did not — `state.json` was saved; the rules file and every write the verb makes after it were
+not — and that re-running the verb after the fix completes it.
 
 > REFUSE, not heal, for every ambiguous arrangement, including two well-formed pairs. An orphan
 > marker's block could end anywhere, so any repair must guess which hand-written text is managed —
 > the defect this requirement exists to remove. Two well-formed pairs have an unambiguous extent, but
 > whether the second is a stale duplicate or a user's deliberate copy is not knowable, and the fix is
-> one deletion a human can make with the line numbers in hand. Measured before this change: all 25
-> rules files carrying the marker on the proposing machine hold exactly one whole-line BEGIN/END pair
-> and no substring-only mention, so the refusal fires on none of them today.
+> one deletion a human can make with the line numbers in hand. Measured before this change: every
+> rules file carrying the marker on the proposing machine (27 at Gate 1's recount) holds exactly one
+> whole-line BEGIN and one whole-line END, so the refusal fires on none of them today.
 
 #### Scenario: Prose mentioning the BEGIN marker does not cost hand-written content
 
@@ -61,7 +70,15 @@ file alone was left untouched.
 - **WHEN** a rules file holds two well-formed BEGIN/END pairs with hand-written text between them, and
   `set-review-mode --mode thorough` runs
 - **THEN** it exits non-zero, the rules file is byte-identical, the message names all four marker line
-  numbers, and no line reports the block as refreshed
+  numbers, no line reports the block as refreshed, and the message says `state.json` was saved and
+  the rules file was not
+
+#### Scenario: An upgrade over a malformed block writes nothing
+
+- **WHEN** a repository whose recorded `pmVersion` is older than the running engine has a rules file
+  holding a BEGIN marker line and no END marker line, and `upgrade` runs
+- **THEN** it exits with a code that is not 0, 1 or the conflict code, and `state.json` (with its
+  `pmVersion`), `PROJECT.md`, `.gitignore` and the rules file are byte-identical afterwards
 
 #### Scenario: A single well-formed block is refreshed in place
 

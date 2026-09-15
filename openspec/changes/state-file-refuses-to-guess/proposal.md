@@ -39,15 +39,16 @@ release that closes the seven Criticals the 0.43.0 review found. These are four 
 - **An unreadable state file is refused, never replaced.** An ABSENT `state.json` stays legal
   (dormancy before `/pm:init`, and `init` itself). A PRESENT file that cannot be read, does not parse,
   or has the wrong shape makes every verb that reads state refuse: name the file and the reason, write
-  nothing, exit with a dedicated non-zero code. `--force` does not override it.
+  nothing, exit with a dedicated non-zero code (11). `--force` does not override it.
 - **Hooks never write over an unreadable state file**, and each reports it on the channel its event
   can act on: `gate-guard` (PreToolUse) blocks with exit 2 and names a Bash-reachable remedy; `brief`
   (SessionStart) exits 0 and delivers the warning as the session context in place of a guessed brief;
   `snapshot` (PreCompact) writes nothing and never exits 2, because exit 2 there blocks compaction;
-  `commit-nudge` (PostToolUse) writes nothing.
+  `commit-nudge` (PostToolUse) writes nothing but its HEAD watermark and exits 2.
 - **State saves are serialised by an exclusive lock file** held from the revision check through the
   rename and read-back, with the temp file flushed before the rename. A lock whose holder is gone is
-  broken (holder pid not alive on this host, or lock older than a fixed age); a live one is waited for
+  broken (holder confirmed dead in this host and process-id namespace, or lock older than a fixed age;
+  breakers serialised so none removes a lock it did not judge); a live one is waited for
   briefly and then the save is refused with the existing conflict exit code — never a lost update.
   **This reverses a documented 0.26.0 decision** ("a lockfile was rejected because a session killed
   mid-write leaves the lock held forever"); the stale-break rule is the answer to that objection.
@@ -56,7 +57,8 @@ release that closes the seven Criticals the 0.43.0 review found. These are four 
 - **The managed rules block is located by whole-line markers and written literally.** Exactly one
   BEGIN/END line pair → replaced in place, every byte outside it unchanged; no markers → appended;
   any other arrangement → refused naming the file and every marker's line number, rules file
-  untouched, verb exits non-zero. Line endings follow the file's.
+  untouched, verb exits non-zero; `init` and `upgrade` detect it before their first write, so a refused
+  upgrade never stamps `pmVersion`. Line endings follow the file's.
 
 ## Capabilities
 
@@ -66,9 +68,10 @@ release that closes the seven Criticals the 0.43.0 review found. These are four 
   owns the WRITER — every existing "rules block" requirement is about what the block SAYS.
 
 ### Modified Capabilities
-- `state-write-guard`: the superseded-revision requirement gains serialisation and durability
-  (MODIFIED); ADDED requirements for the lock's break rule, refusing an unreadable state file, and
-  hook behaviour on one.
+- `state-write-guard`: ADDED requirements only — saves serialised and fsynced under a lock, the
+  lock's break rule, refusing an unreadable state file, and hook behaviour on one. The existing
+  superseded-revision requirement is left textually unchanged; the ADDED serialisation requirement is
+  what makes it hold under concurrency.
 - `conductor-record`: ADDED requirement bounding advisory-claim lifetime and pinning that an
   unreadable expiry reads as expired; MODIFIED detached-HEAD requirement, whose table claims to
   enumerate every `.conductor/` write site and must settle the new lock file against its criterion.
@@ -82,8 +85,9 @@ release that closes the seven Criticals the 0.43.0 review found. These are four 
   exit-code mapping). Zero dependencies preserved.
 - Tests: new RED/GREEN pairs per requirement; `scripts/test/conductor-33.test.mjs`'s gh-111 test
   asserting `owners` still answers on an unparseable file asserts the behaviour this change removes
-  and is rewritten.
-- State schema: unchanged; no MIGRATIONS entry. `.gitignore` gains `.conductor/state.json.lock` via
+  and is rewritten, as is `scripts/test/conductor-26.test.mjs`'s gh#129 test asserting `commit-nudge`
+  exits 0 over an unreadable file.
+- State schema: unchanged; no MIGRATIONS entry. `.gitignore` gains `.conductor/state.json.lock*` via
   `ensureGitignore()`, which `upgrade` already re-runs.
 - Behaviour visible to users: a repository with a damaged `state.json` stops working until it is
   fixed (by design); Edit/Write/NotebookEdit are blocked there until then. Coordinated with

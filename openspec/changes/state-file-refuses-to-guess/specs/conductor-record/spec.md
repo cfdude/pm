@@ -74,6 +74,7 @@ outside a closed list.
 | `subcommands.mjs` | `honcho-memories.log` | NO — see below |
 | `render.mjs` | `render-stamp.json` | NO — see below |
 | `state.mjs` | `state.json.lock` | NO — see below |
+| `state.mjs` | `state.json.lock.break` | NO — see below |
 
 **`write-conflicts.log` and its latch are NOT suppressed.** They record that two writers collided,
 which is a fact about the repository rather than about a session, and the latch is consumed by
@@ -92,9 +93,10 @@ dirties a tracked file, which is precisely what the warning in `state-write-guar
 announce. Suppressing it here would make the warning's subject disappear and would leave
 `PROJECT.md` and the stamp disagreeing about when they were produced.
 
-**`state.json.lock` is NOT suppressed.** It is per-checkout and engine-owned, but it is not a record of
-anything: it exists only for the duration of a `state.json` save, and that save is not suppressed in a
-detached tree. Suppressing the lock would leave the save unserialised in exactly the tree whose writes
+**`state.json.lock` and `state.json.lock.break` are NOT suppressed.** They are per-checkout and
+engine-owned, but neither is a record of anything: the lock exists only for the duration of a
+`state.json` save, the break lock only while a stale lock is being removed, and that save is not
+suppressed in a detached tree. Suppressing the lock would leave the save unserialised in exactly the tree whose writes
 already go unnoticed, which is the lost-update window `state-write-guard` closes.
 
 > The dormancy guard asks whether `.conductor/state.json` exists, and that file is git-tracked so

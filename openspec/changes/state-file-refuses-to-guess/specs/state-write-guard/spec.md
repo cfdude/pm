@@ -14,7 +14,9 @@ member that is present and not an array; an element of `epics` that is not a JSO
 refusal in this requirement.
 
 On a present-but-unreadable file, every verb whose behaviour depends on the content of `state.json`
-— reading verbs and writing verbs alike, `init` included — SHALL refuse. A refusal MUST:
+— reading verbs and writing verbs alike, `init` included — SHALL refuse. Two verbs do not depend on
+that content and SHALL NOT refuse: `verify-state`, which reads only the file's modification time,
+and `activity`, which reads only the current revision and SHALL treat it as unknown. A refusal MUST:
 
 - write nothing: `state.json`, `PROJECT.md`, the render stamp, the rules file and `.gitignore` are
   byte-identical afterwards;
@@ -95,7 +97,10 @@ uncaught exception. The exit status of each is fixed by what that event does wit
   SHALL exit with the unreadable-state code, render nothing and write no snapshot file.
 - **`commit-nudge` (PostToolUse on Bash)** SHALL write nothing — no state, no detour log entry, no
   `PROJECT.md` — whenever it would read state and cannot, and SHALL report the condition to the agent
-  by exiting 2, which on PostToolUse cannot block anything.
+  by exiting 2, which on PostToolUse cannot block anything. ONE EXEMPTION: its HEAD watermark
+  (`commit-watch.json`) is observed and written before state is read, and still is. The watermark
+  records where HEAD is, not anything derived from state, so the commit reminder for a commit that
+  landed while the file was unreadable is not shown again once the file is repaired.
 - **`lesson-advice` (PreToolUse)** does not read `state.json` beyond its existence and is unaffected.
 
 These exit statuses SHALL hold however the unreadable-state refusal is raised during the hook's
@@ -113,7 +118,7 @@ requirement closes.
 
 #### Scenario: gate-guard does not crash on a wrong-shape file
 
-- **WHEN** `state.json` holds `epics: {}` and the gate-guard hook runs
+- **WHEN** `state.json` holds `active` naming an epic id and `epics: {}`, and the gate-guard hook runs
 - **THEN** it exits 2 with the unreadable-state message, not 1 with a stack trace
 
 #### Scenario: A refusal raised outside a hook's own load still takes the hook's exit status
@@ -132,7 +137,7 @@ requirement closes.
 
 - **WHEN** a commit lands, `state.json` does not parse, and the PostToolUse commit-nudge hook runs
 - **THEN** it exits 2 naming `.conductor/state.json`, and `state.json`, `PROJECT.md` and the detour
-  log are byte-identical afterwards
+  log are byte-identical afterwards (the HEAD watermark may advance)
 
 #### Scenario: A pre-compaction snapshot writes nothing and does not block compaction
 
@@ -150,12 +155,14 @@ refused as a superseded write, under the existing conflict semantics — interac
 the conflict exit code, hook writes retry once and then skip. A `--force` save SHALL also take the
 lock; `--force` bypasses only the revision comparison.
 
-The temp file's content SHALL be flushed to stable storage before it is renamed over `state.json`.
+The temp file SHALL be fsynced before it is renamed over `state.json`.
 
-The lock SHALL be released on every exit path of the process that holds it, including a
-`process.exit()` called after the save, which skips `finally` blocks.
+The save SHALL release the lock on every path by which it returns or throws — a write, a no-op, a
+refused conflict, an unreadable disk file, a failed read-back. A process killed by a signal while
+holding the lock cannot release it; the stale-lock requirement below is what recovers from that.
 
-The lock file SHALL be listed in the `.gitignore` entries the engine maintains.
+The lock file, and any auxiliary file the locking protocol creates beside it, SHALL be covered by the
+`.gitignore` entries the engine maintains.
 
 > The 0.26.0 design rejected a lock file because a killed session could leave it held forever, and
 > relied on the revision comparison alone. The comparison is necessary but not sufficient: it and
@@ -170,52 +177,82 @@ The lock file SHALL be listed in the `.gitignore` entries the engine maintains.
   invocation exits with the conflict exit code, and no invocation reports that its write did not
   persist
 
-#### Scenario: A forced save waits for the lock
+#### Scenario: A forced save does not write through a held lock
 
-- **WHEN** another process holds a live, fresh lock and a verb saves with `--force`
-- **THEN** the forced save does not write while that lock is held
+- **WHEN** another process holds a live, fresh lock that is not released within the wait, and
+  `update-epic` saves with `--force`
+- **THEN** the command exits with the conflict exit code and `state.json` is byte-identical afterwards
 
-#### Scenario: The temp file is flushed before it replaces the state file
+#### Scenario: The temp file is fsynced before it replaces the state file
 
 - **WHEN** a save writes a changed state
-- **THEN** a flush of the temp file's descriptor is observed before the rename of that temp file over
+- **THEN** an fsync of the temp file's descriptor is observed before the rename of that temp file over
   `state.json`
 
-#### Scenario: A verb that exits non-zero after saving leaves no lock behind
+#### Scenario: Every way out of a save releases the lock
 
-- **WHEN** a verb saves state successfully and then calls `process.exit` with a non-zero code
-- **THEN** the lock file existed while the save was in progress, and no lock file remains afterwards
+- **WHEN** a save returns after writing, returns as a no-op, throws a conflict, throws on an unreadable
+  disk file, and throws on a failed read-back — each in turn
+- **THEN** the lock was held during each save, and no lock file remains after any of them
 
 ### Requirement: A stale lock is broken, and a live one is waited for then refused
 
 A save that finds the lock held SHALL wait for a bounded time for it to be released. It SHALL break
-the lock — and then acquire it through the same exclusive-create — only when the lock is STALE:
+the lock only when the lock is STALE:
 
-- the lock records a holder process on THIS host and that process is not alive; or
+- the lock records a holder process that the checking process can confirm shares its host AND its
+  process-id namespace, and that process is not alive; or
 - the lock is older than a fixed maximum age, whatever it records, including when its content cannot
   be read.
 
-Age is the backstop and process liveness only an accelerator: a holder on another host, a recycled
-process id, or a lock whose content was never written can only be judged by age.
+Age is the backstop and process liveness only an accelerator. A holder on another host, in a process-id
+namespace the checker cannot confirm it shares (a container reusing the host name sees a live holder's
+pid as absent), under a recycled process id, or whose lock content was never written, can only be
+judged by age.
+
+Breaking SHALL be serialised: at most one process breaks locks at a time, and a breaker SHALL
+re-judge the lock currently at the lock path while it holds that exclusivity and remove only the very
+lock it judged stale — never a lock created after its judgement, even one with identical recorded
+content. The breaker's own exclusivity SHALL itself be recoverable by age if its holder dies.
+
+A holder SHALL confirm it still owns the lock immediately before renaming the temp file over
+`state.json`, and SHALL refuse as a conflict, writing nothing, if it does not.
 
 A save that is still waiting when the bounded time elapses, on a lock that is not stale, SHALL NOT
 write. It is refused exactly as a superseded write is: an interactive verb exits with the conflict
 exit code and names the lock's recorded holder; a hook write skips and records the skip to the
 conflict sidecar.
 
-Breaking a stale lock MUST NOT remove a lock another process acquired after the stale one was
-judged. A holder SHALL confirm it still owns the lock immediately before renaming, and refuse as a
-conflict if it does not.
-
 #### Scenario: A lock left by a dead process does not wedge the repository
 
-- **WHEN** the lock file records a process id on this host that is not running, and `add-epic` runs
+- **WHEN** the lock file records a process id that is not running, on this host and in this
+  process-id namespace, and `add-epic` runs
 - **THEN** the epic is written, the command exits 0, and no lock file remains afterwards
 
 #### Scenario: A lock older than the maximum age is broken
 
 - **WHEN** the lock file's content cannot be parsed and its age exceeds the maximum, and a verb saves
 - **THEN** the save lands, the verb exits 0, and the pre-existing lock file is gone afterwards
+
+#### Scenario: A holder in an unconfirmed namespace is judged by age only
+
+- **WHEN** a fresh lock records this host's name, a process id that is not running here, and a
+  process-id namespace different from the checker's, and `update-epic` saves
+- **THEN** the lock is not broken within the wait, the command exits with the conflict exit code, and
+  `state.json` is byte-identical afterwards
+
+#### Scenario: Several breakers on one stale lock lose no update
+
+- **WHEN** a stale lock is in place and several processes, each saving a distinct change, start
+  concurrently
+- **THEN** every process that exits 0 has its change present in `state.json` afterwards, and every
+  other process exits with the conflict exit code
+
+#### Scenario: A holder that no longer owns the lock does not rename
+
+- **WHEN** a save has acquired the lock and, before its rename, the lock at the lock path is replaced
+  by a different lock
+- **THEN** the save exits with the conflict exit code and `state.json` is byte-identical afterwards
 
 #### Scenario: A live, fresh lock is refused as a conflict, not overwritten
 
