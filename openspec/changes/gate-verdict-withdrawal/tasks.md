@@ -79,7 +79,7 @@ Order per design.md.
       (update-epic already imports from it). RED: a reason carrying a newline and `  update-epic x`
       forges no line in either refusal
 - [x] 4.2 RED then GREEN: `archived-openspec-epic-with-no-gate-1` names a withdrawn Gate 1
-- [ ] 4.3 REGRESSION GUARD (written after 5.3): re-recording clears the state — the archive with `--outcome delivered
+- [x] 4.3 REGRESSION GUARD (written after 5.3): re-recording clears the state — the archive with `--outcome delivered
       --no-deferrals` exits 0, and PROJECT.md, the brief and `integrity` name no withdrawn Gate 2
 - [x] 4.4 RED then GREEN: ONE helper in `archive-gate.mjs` decides which epics a gate table lists and
       renders the cell `withdrawn — <reason>`; `render` and `buildBrief` both call it, each keeping its
@@ -122,7 +122,7 @@ Order per design.md.
       with the withdrawal unchanged names the epic again
 - [x] 5.6 REGRESSION GUARD (written after 5.3): the withdrawn kind names neither a `claude-code`-lane archived epic nor an
       openspec epic neither archived in state nor on disk, each with a withdrawn Gate 2
-- [ ] 5.7 REGRESSION GUARD: an archived `superseded` openspec epic with a withdrawn Gate 2 (reached by the
+- [x] 5.7 REGRESSION GUARD: an archived `superseded` openspec epic with a withdrawn Gate 2 (reached by the
       combined call in 6.5) is named by neither surface
 - [x] 5.8 RED then GREEN: a withdrawn entry whose `superseded` holds an `ungated` stamp says so on both
       surfaces; and after a re-record and second withdrawal (latest entry holding no `ungated`), both
@@ -134,21 +134,21 @@ These pin behavior `archive-gate-reads-what-it-writes` already ships plus this c
 (4.1) and standing condition (5.3), so each is a REGRESSION GUARD: it passes when written, and must
 keep passing.
 
-- [ ] 6.1 REGRESSION GUARD: `--withdraw-gate-review 2 --withdrawal-reason x --status archived --outcome
+- [x] 6.1 REGRESSION GUARD: `--withdraw-gate-review 2 --withdrawal-reason x --status archived --outcome
       delivered --no-deferrals` on an openspec epic with a covering passing Gate 2 and no outstanding work
       is refused with a message stating Gate 2 was withdrawn and quoting `x`; state byte-identical; not
       archived
-- [ ] 6.2 REGRESSION GUARD: `--withdraw-gate-review 2 --withdrawal-reason x` on an archived agent-recorded
+- [x] 6.2 REGRESSION GUARD: `--withdraw-gate-review 2 --withdrawal-reason x` on an archived agent-recorded
       `delivered` openspec epic with a covering passing Gate 2 and no outstanding work is refused; the
       printed invocation carries `--correct-disposition`; the message states Gate 2 was withdrawn and
       quotes `x`, and does not say Gate 2 is missing. Repeat with a reason containing a newline and
       `  update-epic y`: exactly one line begins `  update-epic `
-- [ ] 6.3 REGRESSION GUARD: `--withdraw-gate-review 1 --withdrawal-reason x` on the same archived
+- [x] 6.3 REGRESSION GUARD: `--withdraw-gate-review 1 --withdrawal-reason x` on the same archived
       `delivered` epic exits 0 — Gate 1 is not an obligation
-- [ ] 6.4 REGRESSION GUARD: an archived `delivered` openspec epic with a Gate 2 `fail` recorded by
+- [x] 6.4 REGRESSION GUARD: an archived `delivered` openspec epic with a Gate 2 `fail` recorded by
       `record-gate-review` after archive → `--withdraw-gate-review 2 --withdrawal-reason x` exits 0, and
       the epic is named by the withdrawn kind on both surfaces
-- [ ] 6.5 REGRESSION GUARD: the end-to-end remedy — an archived openspec epic whose `delivered`
+- [x] 6.5 REGRESSION GUARD: the end-to-end remedy — an archived openspec epic whose `delivered`
       disposition is AGENT-recorded, carrying Gate 1 (recorded with `--artifact`) and Gate 2 recorded 2 s
       apart → the combined call withdrawing both with `--status archived --outcome superseded --reason y
       --correct-disposition z --no-deferrals` exits 0 → the epic is `superseded`, keeps the prior

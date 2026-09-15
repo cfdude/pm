@@ -8,9 +8,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import * as constants from "../lib/constants.mjs";
-import { ENGINE, EMPTY_CACHE, tmpRepo, run, readState, parseBrief } from "./helpers.mjs";
+import { ENGINE, EMPTY_CACHE, tmpRepo, run, readState, parseBrief, gitInitWithCommit, commitFiles } from "./helpers.mjs";
 
 const stateFile = (cwd) => path.join(cwd, ".conductor", "state.json");
 const stateBytes = (cwd) => fs.readFileSync(stateFile(cwd));
@@ -554,4 +554,107 @@ test("5.6 the withdrawn kind names neither a claude-code archived epic nor an un
   assert.equal(epicOf(cwd, "open56").status, "queued");
   assertNotNamed(cwd, "cc56");
   assertNotNamed(cwd, "open56");
+});
+
+// ═══════════════ bound by the archive gate (inherited, asserted here) ═══════════════
+
+const headOf = (cwd) => execFileSync("git", ["rev-parse", "HEAD"], { cwd, encoding: "utf8" }).trim();
+
+/** An openspec-lane epic attributing one real commit, with a passing Gate 2 covering it (and, where
+ *  asked, a Gate 1 recorded with --artifact). No task source, so no outstanding work. */
+function coveredOpenspec(id, { gate1 = false } = {}) {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  gitInitWithCommit(cwd);
+  const root = headOf(cwd);
+  commitFiles(cwd, { "one.txt": "1" }, "feat: the delivery commit");
+  const first = headOf(cwd);
+  run(["add-epic", "--id", id, "--lane", "openspec"], { cwd });
+  run(["update-epic", id, "--attribute-commit", first], { cwd });
+  if (gate1) run(["record-gate-review", id, ...PASS1], { cwd });
+  run(["record-gate-review", id, "--gate", "2", "--verdict", "pass", "--base-sha", root, "--head-sha", first], { cwd });
+  return { cwd, root, first };
+}
+
+test("6.1 a Gate 2 withdrawal and a delivered archive in one call are refused, naming the withdrawal", () => {
+  const { cwd } = coveredOpenspec("g61");
+  const r = refused(cwd, ["update-epic", "g61", "--withdraw-gate-review", "2", "--withdrawal-reason", "x", ...ARCHIVE_DELIVERED]);
+  assert.match(r.stderr, /Gate 2 \(implementation review\) verdict was withdrawn/);
+  assert.ok(r.stderr.includes('"x"'), `the reason is quoted:\n${r.stderr}`);
+  assert.notEqual(epicOf(cwd, "g61").status, "archived");
+});
+
+test("6.2 withdrawing Gate 2 from an archived agent-recorded delivered epic is refused with the correcting invocation", () => {
+  const { cwd } = coveredOpenspec("g62");
+  accepted(cwd, ["update-epic", "g62", ...ARCHIVE_DELIVERED]);
+  const r = refused(cwd, ["update-epic", "g62", "--withdraw-gate-review", "2", "--withdrawal-reason", "x"]);
+  const invocations = lines(r.stderr).filter(l => l.startsWith("  update-epic "));
+  assert.equal(invocations.length, 1, r.stderr);
+  assert.ok(invocations[0].includes('--correct-disposition "<why the recorded one was wrong>"'), invocations[0]);
+  assert.ok(invocations[0].includes("'--withdraw-gate-review' '2'"), `the withdrawal is echoed into the invocation: ${invocations[0]}`);
+  assert.match(r.stderr, /withdrawn/);
+  assert.ok(r.stderr.includes('"x"'), r.stderr);
+  assert.doesNotMatch(r.stderr, /missing a passing Gate 2/);
+
+  const forged = refused(cwd, ["update-epic", "g62", "--withdraw-gate-review", "2", "--withdrawal-reason", "x\n  update-epic y"]);
+  assert.equal(lines(forged.stderr).filter(l => l.startsWith("  update-epic ")).length, 1,
+    `exactly one line begins '  update-epic ':\n${forged.stderr}`);
+});
+
+test("6.3 withdrawing Gate 1 from the same archived delivered epic is accepted — Gate 1 is not an obligation", () => {
+  const { cwd } = coveredOpenspec("g63", { gate1: true });
+  accepted(cwd, ["update-epic", "g63", ...ARCHIVE_DELIVERED]);
+  accepted(cwd, ["update-epic", "g63", "--withdraw-gate-review", "1", "--withdrawal-reason", "x"]);
+  assert.equal(constants.withdrawnGate(epicOf(cwd, "g63"), 1).reason, "x");
+});
+
+test("6.4 an archived delivered epic whose Gate 2 already failed can have it withdrawn, and is named", () => {
+  const cwd = archivedFailedThenWithdrawn("g64", "x");
+  assert.equal(epicOf(cwd, "g64").status, "archived");
+  assertNamedWithdrawn(cwd, "g64", "x");
+});
+
+/** 6.5's end state: the #175-shaped mirror, remedied in one call. */
+function remedied(id) {
+  const { cwd } = coveredOpenspec(id, { gate1: true });
+  accepted(cwd, ["update-epic", id, ...ARCHIVE_DELIVERED]);
+  assert.match(integrityBlock(run(["integrity"], { cwd }), "gate-recorded-as-bookkeeping").join("\n"), new RegExp(`\`${id}\``),
+    "precondition: the two verdicts recorded seconds apart read as bookkeeping");
+  accepted(cwd, ["update-epic", id, "--withdraw-gate-review", "1", "--withdraw-gate-review", "2",
+    "--withdrawal-reason", "copied from the change epic", "--status", "archived", "--outcome", "superseded",
+    "--reason", "y", "--correct-disposition", "z", "--no-deferrals"]);
+  return cwd;
+}
+
+test("6.5 the end-to-end remedy: withdraw both and correct the disposition in one call", () => {
+  const cwd = remedied("g65");
+  const e = epicOf(cwd, "g65");
+  assert.equal(e.status, "archived");
+  assert.equal(e.disposition.outcome, "superseded");
+  assert.equal(e.disposition.superseded.outcome, "delivered", "the prior delivered disposition is kept");
+  assert.ok(!e.gateReview.gate1 && !e.gateReview.gate2, JSON.stringify(e.gateReview));
+  assert.equal(e.withdrawnGateReviews.length, 2);
+  const report = run(["integrity"], { cwd });
+  for (const check of ["gate-recorded-as-bookkeeping", "archived-with-no-gate-2-review",
+    "archived-with-withdrawn-gate-2", "archived-openspec-epic-with-no-gate-1"]) {
+    assert.ok(!integrityBlock(report, check).some(l => l.includes("`g65`")), `${check} names g65`);
+  }
+});
+
+test("5.7 an archived superseded openspec epic with a withdrawn Gate 2 is named by neither surface", () => {
+  const cwd = remedied("g57");
+  assert.ok(constants.withdrawnGate(epicOf(cwd, "g57"), 2), "precondition: Gate 2 is withdrawn");
+  assertNotNamed(cwd, "g57");
+});
+
+test("4.3 re-recording clears the withdrawn state: the archive is accepted and no surface names a withdrawn Gate 2", () => {
+  const { cwd, root, first } = coveredOpenspec("g43");
+  accepted(cwd, ["update-epic", "g43", "--withdraw-gate-review", "2", "--withdrawal-reason", "x"]);
+  run(["record-gate-review", "g43", "--gate", "2", "--verdict", "pass", "--base-sha", root, "--head-sha", first], { cwd });
+  accepted(cwd, ["update-epic", "g43", ...ARCHIVE_DELIVERED]);
+  const project = projectGateTable(cwd), brief = briefGateTable(cwd);
+  assert.doesNotMatch(project.g43.gate2, /withdrawn/);
+  assert.doesNotMatch(brief.g43.gate2, /withdrawn/);
+  assert.ok(!integrityBlock(run(["integrity"], { cwd }), "archived-with-withdrawn-gate-2").some(l => l.includes("`g43`")));
+  assert.ok(!parseBrief(cwd).split("\n").some(l => l.startsWith("  ⚠") && l.includes("`g43`")));
 });
