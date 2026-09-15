@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "every-verb-refuses-what-it-does-not-read",
+  "active": "state-file-refuses-to-guess",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -8033,7 +8033,14 @@
       "description": "Code review 0.43.0 (A1, D1, D2). render.mjs (titles, detour table reason, recent-detours note, dispositions table escapes | but not newline), briefing.mjs (detour reason forges a NOW: line and EPIC LINKS lines), integrity.mjs delivered-epic-attributed-no-commits prints `${w.sha} (\"${w.reason}\")` raw while its sibling checks use escapeControls(JSON.stringify()). Titles arrive from third-party tracker text via the inward recipe, and /pm:next reads PROJECT.md. Also raw: declinedPairs refusals, story-disposition refusal, release show. Fix: one shared escaper (archive-gate.mjs escapeControls plus | for tables) at every interpolation.",
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:30.671Z",
-      "touchedAt": "2026-09-15T05:11:30.674Z"
+      "touchedAt": "2026-09-15T18:06:32.145Z",
+      "notes": [
+        {
+          "at": "2026-09-15T18:06:32.142Z",
+          "actor": "agent",
+          "text": "Argv Gate 2 lens 2 (2026-09-15), pre-existing: refusals inside verb bodies print caller text raw — remove-epic/update-epic/set-active/claim 'epic \"e9<LF>FORGED\" not found'; release accepts and saves an id containing a newline (release 'r<LF>FORGED' --intent y exits 0). The pre-dispatch refusals escape since 0.44.0."
+        }
+      ]
     },
     {
       "id": "handoff-demand-blind-spots",
@@ -8264,17 +8271,22 @@
           "at": "2026-09-15T05:11:50.956Z",
           "actor": "agent",
           "text": "lane: claude-code — independent small fixes; split any that grows"
+        },
+        {
+          "at": "2026-09-15T18:06:34.184Z",
+          "actor": "agent",
+          "text": "Argv Gate 2 (2026-09-15): platformFlag() returns the first --platform, so a doubled --platform bogus is never checked (init/brief/rules); brief and snapshot never read stdin, so a large hook payload gets EPIPE on success; gate-guard now exits 1 (fail-open) on a hand-edited hooks.json line with a junk flag — design choice, worth a line in commands/gate-guard.md."
         }
       ],
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:50.956Z",
-      "touchedAt": "2026-09-15T05:11:50.959Z"
+      "touchedAt": "2026-09-15T18:06:34.187Z"
     },
     {
       "id": "every-verb-refuses-what-it-does-not-read",
       "title": "Every verb refuses argv it does not read: a help token anywhere writes nothing, unknown flags and stray positionals are refused on all verbs",
       "priority": "P1",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -8290,10 +8302,29 @@
         "f67be9b8d62c4629ed09b1e59b42c3a76d4b04dc",
         "5322c81b9e328197f2db0295a291ec0858138154",
         "02e40dae5f3fae33cb827c0b1abf048f8cc7f6c5",
-        "5bbb2967080c723e936fc9e9d6d72d162fe5ec16"
+        "5bbb2967080c723e936fc9e9d6d72d162fe5ec16",
+        "305cc2f7e3b973b8d98827a1f66287559aebb4a2",
+        "0ff3b7f688dbf5fe79883cf6739a7ca1e1a5ca2c",
+        "82c2a74a0fcbd0d38c55b3128faa4ffed6480fcb",
+        "7c622e40fb98f38b41486076f97abee6349b9528",
+        "2d77a5b58e5f647f0eca49f684ae2fedb20edf06",
+        "d07c89533764903dbce20741dec23712117357ff",
+        "47cafb7e4ef1dd43c6afb0daeaf26213852d1016",
+        "5a382dd170209179a6853e3adb72b977ea8826f6",
+        "6b42bb4a3a30194618b94a32bf72716acf131c29",
+        "3b57b03742386e9ce2f493d66042a1da1439e985",
+        "6b4be329c05e7f52b95f0ccfbc8388c588a9c709",
+        "f11e055b5148709da4ac618623027cffb0762bd9",
+        "5c04871fa06c51a47b1cef4139bff1673fa51335",
+        "1b2b230d296767dc85ad8391671c8b74208b2d02",
+        "4167ba50e9eb58f4c15184b436b7724e998e9183",
+        "b2c5394a44fb0f5e5766827011c316501dccaf7a",
+        "7ce36574dd8b9f0e8d3e0da71cc6f7c6908a9ba9",
+        "dc339e9fba494d2d00cff27ad8e4fd89b0cbd52f",
+        "67b1e8bc0cab8435a7d05c5bc24b481910ded3bd"
       ],
       "createdAt": "2026-09-15T12:24:46.998Z",
-      "touchedAt": "2026-09-15T15:15:17.961Z",
+      "touchedAt": "2026-09-15T18:41:26.293Z",
       "release": "0.44.0",
       "gateReview": {
         "gate1": {
@@ -8319,15 +8350,53 @@
             ],
             "reviewer": "two fresh-context lenses (code-grounded correctness; spec contract & consistency), round 1 fail (1 C, 7 I), round 2 scoped confirmation fail (4 I), round 3 scoped confirmation pass; round-3 minors folded into tasks 2.4; 2026-09-15"
           }
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-15T18:41:14.759Z",
+          "baseSha": "85079e1",
+          "headSha": "67b1e8bc0cab8435a7d05c5bc24b481910ded3bd",
+          "reviewer": "re-recorded at the last attributed commit (task 5.5): code through 7ce3657 reviewed by two fresh-context lenses (both pass, 52 mutants killed) plus follow-ups 4167ba5/b2c5394/7ce3657; delta 7ce3657..67b1e8b (docs dc339e9; help-token sweep test, TTY-safe refusal drain, lesson 67b1e8b) re-reviewed by a fresh-context reviewer: pass, ~60 documented lines run, 5 hook verbs x 200 KB payloads, pty check, sweep mutants killed, 1457/1457; 2026-09-15",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-09-15T18:06:30.071Z",
+            "baseSha": "85079e168dff575f72f2c28fe4be8636dae65384",
+            "headSha": "7ce36574dd8b9f0e8d3e0da71cc6f7c6908a9ba9",
+            "reviewer": "two fresh-context lenses over 305cc2f..1b2b230 (spec conformance: pass, 20/20 mutants killed, 3 Minor; adversarial: pass, 32/32 mutants killed, ~95 command lines diffed 305cc2f vs 1b2b230, 5 Minor); follow-ups 4167ba5 (spec SHALL: argv-level flag never read as a positional), b2c5394, 7ce3657 test-backed and verified by the implementer's RED files; 2026-09-15"
+          }
         }
       },
-      "startedAt": "2026-09-15T15:15:17.958Z"
+      "startedAt": "2026-09-15T15:15:17.958Z",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-15T18:41:26.289Z",
+        "reason": "Built for 0.44.0 (ships with the release cut; fixes cfdude/pm#187's 0.41.0 regression). One pre-dispatch check reads every verb's declared flags and positionals: a help token in any non-value position prints help and writes nothing (remove-epic e2 --help no longer deletes e2), undeclared flags, surplus positionals, --valueless=value and non-flag-shaped --tokens are refused before any write, argv is handed to verbs in canonical order, init validates --platform before creating anything, hook verbs stay silent in repos without pm, --force is declared once on every mutating verb. Gate 1 two lenses + 2 confirmation rounds; cross-spec pass; Gate 2 two lenses pass (52 mutants killed) plus follow-ups and a docs/test re-review."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-15T18:41:26.288Z",
+        "deferrals": [],
+        "declined": [
+          {
+            "what": "a read form for bare set-lane-routing",
+            "reason": "new behaviour with its own output contract; the defect was only the write"
+          },
+          {
+            "what": "refusing --force on mutating verbs that never save state.json",
+            "reason": "no declaration names that set, and deriving it from call graphs is unverifiable"
+          },
+          {
+            "what": "threading render and saveState argv reads as parameters",
+            "reason": "once the check refuses undeclared flags they can only see flags the invoking verb declared"
+          }
+        ]
+      },
+      "completedAt": "2026-09-15T18:41:26.289Z"
     },
     {
       "id": "state-file-refuses-to-guess",
       "title": "The state file refuses to guess: an unparseable state.json is refused not replaced, writes are serialised by a breakable lock, claim expiry is bounded, and write-rules refuses an ambiguous managed block",
       "priority": "P1",
-      "status": "queued",
+      "status": "active",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -8358,10 +8427,11 @@
         "244f566a24ce4ec28bd2a2610e5b26dc521378f0",
         "755a5646624251bbb05886be19ec11be38c0d571",
         "de28b1171caab784b4577808ef68e30e629a1743",
-        "f23084b9dc32e97fcb4d71e426341b4da0703512"
+        "f23084b9dc32e97fcb4d71e426341b4da0703512",
+        "305cc2f7e3b973b8d98827a1f66287559aebb4a2"
       ],
       "createdAt": "2026-09-15T12:24:48.974Z",
-      "touchedAt": "2026-09-15T15:15:03.783Z",
+      "touchedAt": "2026-09-15T18:43:58.003Z",
       "release": "0.44.0",
       "gateReview": {
         "gate1": {
@@ -8390,7 +8460,8 @@
             "reviewer": "two fresh-context lenses (code-grounded correctness; spec contract & tradeoffs), round 1 fail (5 I), round 2 scoped confirmation fail (3 I), round 3 scoped confirmation fail (1 I: set-tracker secondary --remove re-run advice), fixed and verified by the orchestrator against tracker.mjs; 2026-09-15"
           }
         }
-      }
+      },
+      "startedAt": "2026-09-15T18:43:58.000Z"
     },
     {
       "id": "gates-bind-to-verified-evidence",
@@ -8419,10 +8490,11 @@
         "1e04826645051ac7fa9cdab2745537316606d93c",
         "dd00a28c1c68637cb7bd417b04d9683eab926bd7",
         "5e57de1cb78e9de2be2a322c1b49d0fa21174ff2",
-        "9c64fb15c118664e25ebe33e4d1b647a97fb5f93"
+        "9c64fb15c118664e25ebe33e4d1b647a97fb5f93",
+        "305cc2f7e3b973b8d98827a1f66287559aebb4a2"
       ],
       "createdAt": "2026-09-15T12:24:50.972Z",
-      "touchedAt": "2026-09-15T15:15:06.295Z",
+      "touchedAt": "2026-09-15T15:21:18.449Z",
       "release": "0.44.0",
       "gateReview": {
         "gate1": {
@@ -8459,7 +8531,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 831,
+  "revision": 858,
   "reviewMode": "thorough",
   "releases": [
     {

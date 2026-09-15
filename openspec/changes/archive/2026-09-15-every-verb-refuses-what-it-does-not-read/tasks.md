@@ -191,16 +191,16 @@ Every refusal test asserts the refusal's CAUSE text (not only a non-zero exit) a
       `--force` row ⇄ its removal by `state-file-refuses-to-guess` (design.md Coordination); a hook verb
       declaring `--platform` ⇄ `hooks/hooks.json` no longer passing it (2.5 asserts both directions); bare `set-lane-routing` refused ⇄ a read form (declined, D8); help printed
       after a positional ⇄ no inverse (a read)
-- [ ] 4.3 **Verify against the commit** (item 2) — for every task commit run `git show --stat <sha>` and
+- [x] 4.3 **Verify against the commit** (item 2) — for every task commit run `git show --stat <sha>` and
       assert each file the task claims to change appears in it; a claimed file absent from its commit
       fails the task even when the working tree and suite are right
-- [ ] 4.4 **Attribute every commit** (item 4) at the moment it lands:
+- [x] 4.4 **Attribute every commit** (item 4) at the moment it lands:
       `update-epic every-verb-refuses-what-it-does-not-read --attribute-commit <sha>`, in landing order.
       The commit moving `openspec/changes/every-verb-refuses-what-it-does-not-read/` under `archive/`
       is NOT attributed
 - [x] 4.5 **Declare lifecycle bookkeeping** (item 3) — confirm the marker sits on
       the task lines of 4.6 and 6.2 and on no delivery task
-- [ ] 4.6 **Dispositions** (item 6) <!-- pm:lifecycle --> — the archive invocation is 6.2's; add a
+- [x] 4.6 **Dispositions** (item 6) <!-- pm:lifecycle --> — the archive invocation is 6.2's; add a
       `--deferral "<epicId>:<section>"` for any follow-up registered while the work ran, and never replace
       the declines with `--no-deferrals`
 - [x] 4.7 **Route what the work taught** (item 7) — name each as practice, friction or process failure.
@@ -225,7 +225,7 @@ Every refusal test asserts the refusal's CAUSE text (not only a non-zero exit) a
       add-epic/update-epic/claim, and the BREAKING cases design.md Risks names (`--cascade true`); note that
       `/pm:upgrade` rewrites the rules block, so each repo picks up corrected emitted lines only when it
       runs. Mintlify sync belongs to the release cut, not this change
-- [ ] 5.5 Re-record Gate 2 over the docs commits — 4.4 attributes them, which moves the last attributed
+- [x] 5.5 Re-record Gate 2 over the docs commits — 4.4 attributes them, which moves the last attributed
       commit past 6.1's recorded `--head-sha` and would make the verdict stale at the archive gate. Have a
       fresh-context reviewer read the docs-only delta (`git diff <6.1 head>..<last attributed>`), then
       re-run 6.1's `record-gate-review … --gate 2` with the SAME `--base-sha` and `--head-sha <last
@@ -233,13 +233,13 @@ Every refusal test asserts the refusal's CAUSE text (not only a non-zero exit) a
 
 ## 6. Gate 2 and archive
 
-- [ ] 6.1 **Gate 2** — two fresh-context reviewers with different lenses (spec alignment and real tests;
+- [x] 6.1 **Gate 2** — two fresh-context reviewers with different lenses (spec alignment and real tests;
       the call-site sweep and error/edge handling) over `git diff <base>..<head>`, where `<base>` is the
       parent of the first attributed commit and `<head>` the last attributed. Fix Critical and Important,
       re-attribute fix commits, then record each pass:
       `record-gate-review every-verb-refuses-what-it-does-not-read --gate 2 --verdict pass --reviewer "<identity>"
       --base-sha <parent of first attributed> --head-sha <last attributed>`
-- [ ] 6.2 Archive the change <!-- pm:lifecycle --> — `/opsx:archive every-verb-refuses-what-it-does-not-read`,
+- [x] 6.2 Archive the change <!-- pm:lifecycle --> — `/opsx:archive every-verb-refuses-what-it-does-not-read`,
       then `update-epic every-verb-refuses-what-it-does-not-read --status archived --outcome delivered
       --declined-deferral "a read form for bare set-lane-routing::new behaviour with its own output contract; the defect was only the write"
       --declined-deferral "refusing --force on mutating verbs that never save state.json::no declaration names that set, and deriving it from call graphs is unverifiable"
