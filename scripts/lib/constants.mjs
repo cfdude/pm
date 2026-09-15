@@ -98,6 +98,11 @@ export const gateArtifacts = (entry) =>
  *  list to admit `ungated` for storage's sake defeats the whole rule. */
 export const STORABLE_GATE_VERDICTS = ["pass", "fail", "ungated"];
 
+/** The gate numbers a verdict can be recorded against, and withdrawn from. Declared ONCE, here,
+ *  because two flags read it — `record-gate-review --gate` and `update-epic
+ *  --withdraw-gate-review` — and a vocabulary typed twice is two vocabularies. */
+export const KNOWN_GATE_NUMBERS = ["1", "2"];
+
 
 /** The ONE wording every surface uses for a recorded gate verdict, so PROJECT.md and the brief
  *  cannot drift apart. `extra` carries anything a later capability appends per verdict (the

@@ -23,7 +23,7 @@
 
 ## 2. The withdrawal write
 
-- [ ] 2.1 REFACTOR (suite green before and after): move `KNOWN_GATE_NUMBERS` from
+- [x] 2.1 REFACTOR (suite green before and after): move `KNOWN_GATE_NUMBERS` from
       `gate-review-writeback.mjs:11` to `constants.mjs`, export it, import it in `gate-review-writeback.mjs`
 - [ ] 2.2 RED then GREEN: unit-test `withdrawnGate(epic, n)` (absent entry + withdrawal → latest
       withdrawal; stored `pass` + withdrawal → null; stored `ungated` + withdrawal → null; no withdrawal →

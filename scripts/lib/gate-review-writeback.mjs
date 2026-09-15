@@ -2,13 +2,12 @@
 // Records an OpenSpec gate review's verdict durably against an epic. One-directional
 // dependencies only.
 
-import { epicFlagsFor, gateArtifacts, gateHasEvidence } from "./constants.mjs";
+import { KNOWN_GATE_NUMBERS, epicFlagsFor, gateArtifacts, gateHasEvidence } from "./constants.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
 
-const KNOWN_GATE_NUMBERS = ["1", "2"];
 /** What an AGENT may pass to `--verdict`. Exported so a test binds to the list itself rather
  *  than transcribing it, and deliberately NOT the same list as constants.mjs's
  *  STORABLE_GATE_VERDICTS: the engine additionally stores `ungated`, and admitting that value
