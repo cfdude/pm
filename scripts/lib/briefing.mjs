@@ -8,9 +8,9 @@ import { getAutonomy } from "./autonomy.mjs";
 import { staleMarker } from "./active-pointer.mjs";
 import { isRenderableLink, deferralHistory, deferralNote, daysSince } from "./links.mjs";
 import { correctionMarking, correctionNote, outcomeOf, recordedDispositions } from "./disposition.mjs";
-import { stalenessMarking } from "./archive-gate.mjs";
-import { ungatedArchives } from "./integrity.mjs";
-import { KNOWN_LANES, anyInwardProcedureEmittable, gateSummary, outwardApplies, releaseLine, releaseSummaries } from "./constants.mjs";
+import { gateTableRows } from "./archive-gate.mjs";
+import { ungatedArchives, withdrawnArchiveNote } from "./integrity.mjs";
+import { KNOWN_LANES, anyInwardProcedureEmittable, outwardApplies, releaseLine, releaseSummaries } from "./constants.mjs";
 import { crossSpecLine } from "./cross-spec-review.mjs";
 import { dependencyNotes } from "./dependency-order.mjs";
 import { conflictCount, conflictWarningLatched, consumeConflictWarning } from "./write-conflicts.mjs";
@@ -193,14 +193,13 @@ export function buildBrief(state, { consume = false } = {}) {
     L.push("");
   }
 
-  // Same source and the same wording as PROJECT.md's Gate reviews table (gateSummary), so a
-  // verdict cannot read as evidenced on one surface and unevidenced on the other.
-  const gated = epics.filter(e => e.gateReview && (e.gateReview.gate1 || e.gateReview.gate2));
+  // Which epics, and each cell's text, from gateTableRows() — the one decision PROJECT.md renders too,
+  // so a verdict cannot read as evidenced, or a gate as withdrawn, on one surface and not the other.
+  const gated = gateTableRows(epics);
   if (gated.length) {
     L.push("GATE REVIEWS:");
-    for (const e of gated.slice(0, NEXT_CAP)) {
-      L.push(`  • \`${e.id}\` gate 1: ${gateSummary(e.gateReview.gate1, stalenessMarking(e, e.gateReview.gate1))} · ` +
-        `gate 2: ${gateSummary(e.gateReview.gate2, stalenessMarking(e, e.gateReview.gate2))}`);
+    for (const row of gated.slice(0, NEXT_CAP)) {
+      L.push(`  • \`${row.id}\` gate 1: ${row.gate1} · gate 2: ${row.gate2}`);
     }
     if (gated.length > NEXT_CAP) L.push(`  (+${gated.length - NEXT_CAP} more — see PROJECT.md)`);
     L.push("");
@@ -215,13 +214,27 @@ export function buildBrief(state, { consume = false } = {}) {
   // No epic the archive backfill or the two creation paths register can ever appear here: they
   // are forbidden from writing a `gate2` entry at all, which is what keeps an unclearable
   // condition from being asserted en masse against changes archived before the conductor existed.
-  const ungated = ungatedArchives(epics);
+  const standing = ungatedArchives(epics);
+  const ungated = standing.filter(x => x.kind === "ungated").map(x => x.epic);
   if (ungated.length) {
     L.push("UNGATED ARCHIVES (archived with no Gate 2 review — clears when a real verdict supersedes it):");
     for (const e of ungated.slice(0, NEXT_CAP)) {
       L.push(`  ⚠ \`${e.id}\` — \`record-gate-review ${e.id} --gate 2 --verdict pass --base-sha <sha> --head-sha <sha>\``);
     }
     if (ungated.length > NEXT_CAP) L.push(`  (+${ungated.length - NEXT_CAP} more — see PROJECT.md)`);
+    L.push("");
+  }
+  // The WITHDRAWN kind, under its OWN heading and blank-delimited block, so the ungated heading
+  // ("archived with no Gate 2 review") never encloses an epic whose review was recorded and then
+  // taken back. Same recomputation, same never-consumed rule.
+  const withdrawnArchives = standing.filter(x => x.kind === "withdrawn");
+  if (withdrawnArchives.length) {
+    L.push("WITHDRAWN GATE 2 ARCHIVES (archived with the Gate 2 verdict taken back — clears when a real verdict is recorded):");
+    for (const x of withdrawnArchives.slice(0, NEXT_CAP)) {
+      L.push(`  ⚠ \`${x.epic.id}\` — ${withdrawnArchiveNote(x)} — ` +
+        `\`record-gate-review ${x.epic.id} --gate 2 --verdict pass --base-sha <sha> --head-sha <sha>\``);
+    }
+    if (withdrawnArchives.length > NEXT_CAP) L.push(`  (+${withdrawnArchives.length - NEXT_CAP} more — see \`integrity\`)`);
     L.push("");
   }
 

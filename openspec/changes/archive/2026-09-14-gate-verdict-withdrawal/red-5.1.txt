@@ -1,0 +1,35 @@
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ie1yIA/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: synced (1 new epic(s) added as untriaged)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ie1yIA/PROJECT.md
+conductor: recorded gate 2 review 'pass' for 'h51'
+conductor: synced (0 new epic(s) added as untriaged)
+✖ 5.1 the heal does not stamp ungated over a withdrawn Gate 2 (241.938417ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 285.40075
+
+✖ failing tests:
+
+test at scripts/test/gate-verdict-withdrawal.test.mjs:426:1
+✖ 5.1 the heal does not stamp ungated over a withdrawn Gate 2 (241.938417ms)
+  AssertionError [ERR_ASSERTION]: no ungated entry is written: {"gate2":{"verdict":"ungated","reviewedAt":"2026-09-15T03:31:42.524Z","recordedBy":"archive-drift-heal"}}
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/gate-verdict-withdrawal.test.mjs:432:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

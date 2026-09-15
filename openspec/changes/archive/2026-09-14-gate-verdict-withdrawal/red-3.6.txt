@@ -1,0 +1,38 @@
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-fDYoqy/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: synced (1 new epic(s) added as untriaged)
+conductor: synced (0 new epic(s) added as untriaged)
+✖ 3.6 an ungated stamp from the heal is refused — it is cleared by recording a real verdict (207.933667ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 248.597375
+
+✖ failing tests:
+
+test at scripts/test/gate-verdict-withdrawal.test.mjs:217:1
+✖ 3.6 an ungated stamp from the heal is refused — it is cleared by recording a real verdict (207.933667ms)
+  AssertionError [ERR_ASSERTION]: expected a refusal, got exit 0.
+  stdout: 
+  stderr: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-fDYoqy/PROJECT.md
+  conductor: updated 'r36'
+  
+      at refused (file:///Users/robsherman/Documents/Repos/pm/scripts/test/gate-verdict-withdrawal.test.mjs:32:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/gate-verdict-withdrawal.test.mjs:222:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }

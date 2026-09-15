@@ -482,6 +482,24 @@ Gate 2 (implementation review, before docs) is mechanically required to archive,
 narrated. Scoped strictly to the `openspec` lane; `superpowers`/`claude-code`/`decision`/`external`
 epics are completely unaffected.
 
+**The gate reads the record the call writes.** It runs after every field write in the same
+`update-epic` invocation, so `--lane openspec --status archived …` on a `claude-code` epic with no
+Gate 2 is refused, as are an `--attribute-commit` the verdict does not cover, an `--add-story` and
+a `--withdraw-commit` in the archiving call. `--story <n> --done --status archived …` on the last
+outstanding story is accepted. A refused call announces no cleared field. **An update to an
+archived `delivered` epic that does not archive may not break a Gate 2 or handoff obligation its
+archive met** (for example `--lane openspec` with no Gate 2). The comparison is per obligation, and
+one that already failed is no ground for refusal. The refusal writes nothing and prints one
+runnable `update-epic` invocation that records the disposition the change implies and goes through
+the full gate. See `commands/epic.md`.
+
+**A withdrawn Gate 2 is withdrawn, never absent.** `--withdraw-gate-review 2` moves the verdict out,
+so the obligation reappears exactly as for a gate never recorded — a withdrawal discharges nothing —
+but every surface says what happened: the archive gate and the regression refusal state that Gate 2
+was withdrawn and quote the reason, JSON-quoted with control characters escaped, and PROJECT.md and
+the brief render the cell `withdrawn — <reason>` and keep an epic whose every gate is withdrawn in
+their gate tables. Recording a real verdict ends the state.
+
 **The verdict carries its evidence as data.** `--base-sha`/`--head-sha` record the range that was
 actually reviewed and `--reviewer` records who reviewed it, so a verdict can be checked and can go
 **stale**: if the epic later attributes commits the recorded head does not reach, the archive is
@@ -502,6 +520,9 @@ neither.
 An archive that reached `archived` without any review at all now records **`verdict: "ungated"`**
 instead of nothing. That is a standing condition, reported by the brief and by `integrity` until a
 real passing verdict supersedes it — not an episode that a single session's briefing consumes.
+The archive-drift heal never stamps `ungated` over a **withdrawn** Gate 2 — that would relabel a
+review taken back as one that never happened. Such an epic is reported as the same standing
+condition's withdrawn kind, under its own heading and its own `integrity` check, quoting the reason.
 
 </details>
 
@@ -568,7 +589,8 @@ tombstones it identically, naming `--spec` in the un-ignore instruction.
 | `add-many --from <path\|->` | Atomically bulk-create a parent + children from a JSON batch. Each entry may carry a `stories` array — plain titles, or `{"title": "…", "done": true}` — validated in the same up-front pass, so a blank title refuses the whole batch. |
 | `update-epic <id> [--title …] [--status …] [--lane …] [--priority …] [--parent …] [--plan …] [--spec …] [--link …] [--clear-links] [--clear <field>] [--description "…"] [--notes "…"] [--external-id …] [--external-url …] [--external-updated-at <iso>] [--review-mode …] [--add-story "<title>"] [--story <n> --done\|--wont-do "<reason>"]` | Write-back path — title corrections, status/lane/priority changes, links, free-text annotation, tracker linkage, per-epic review-mode escalation, inline story mutation (see below). `--link` **appends** (a repeat of an already-recorded type+target updates that entry's reason in place); `--clear <field>` is the generic unset for any field whose absence is legal, repeatable, naming the FLAG (`--clear plan`, not `planPath`) — including `--clear created-at`, which returns a wrong recovered registration date to UNKNOWN so `recover-created-at` can derive it again from git history (there is deliberately no setting form for it — the date is evidence-derived, never asserted — and `touchedAt` is engine-stamped and deliberately not clearable) — the refusal enumerates the clearable set live, and a set-only field is refused with the registry's own reason. |
 | `update-epic <id> --attribute-commit <sha>` | Record a commit as this epic's work. Repeatable, append-only, in landing order. The engine infers attribution from **nothing** — not the files a commit touches, not an epic id in a message — so an unattributed commit is one the epic's Gate 2 cannot be checked against. **Do not attribute the commit that moves `openspec/changes/<id>/` under `archive/`**: it lands after the reviewed range by construction and makes the epic's own Gate 2 stale at the instant the archive gate reads it. |
-| `update-epic <id> --withdraw-commit <sha> --reason "<why>"` | **Withdraw an attribution** when the commit it named is gone — a `git reset` is a normal operation, and attributing at the moment of each commit means an attribution can outlive its commit through no error of process. Refuses a sha the epic never attributed, and refuses a missing reason. The array stays append-only (its last entry is the endpoint a Gate 2 `headSha` is compared against), so the withdrawal is **recorded** in a sibling `withdrawnCommits` field rather than erased. |
+| `update-epic <id> --withdraw-commit <sha> --withdrawal-reason "<why>"` | **Withdraw an attribution** when the commit it named is gone — a `git reset` is a normal operation, and attributing at the moment of each commit means an attribution can outlive its commit through no error of process. Refuses a sha the epic never attributed, and refuses a missing reason. The array stays append-only (its last entry is the endpoint a Gate 2 `headSha` is compared against), so the withdrawal is **recorded** in a sibling `withdrawnCommits` field rather than erased. |
+| `update-epic <id> --withdraw-gate-review <1\|2> --withdrawal-reason "<why>"` | **Withdraw a recorded gate verdict** that does not belong on this epic — re-recording can replace a verdict, but only this says it was never this epic's. Repeatable, so both gates go in one call under the one reason. The whole entry, `superseded` included, moves into `withdrawnGateReviews` — recorded, never erased — and re-recording is the way back. Refused without a reason, for a gate other than 1 or 2, for the same gate twice, where no verdict is stored, and against an `ungated` stamp (cleared by recording a real verdict); `--withdrawal-reason` alone is refused too. It is a field write the archive gate decides on: a Gate 2 withdrawal in a `delivered` archive call, or on an archived `delivered` epic whose Gate 2 was met, is refused and prints the one call that withdraws AND records the right disposition. |
 | `update-epic <id> --status archived --outcome delivered\|killed\|superseded\|abandoned\|declined\|unreconstructable --reason "<why>" --no-deferrals` | **How work ends** — a terminal disposition with its reason, never deletion. Every outcome except `delivered` requires the reason. The deferral assertion is required in the *same* invocation: swap `--no-deferrals` for `--deferral "<epicId>:<section>"` where work is now held by a registered epic, or `--declined-deferral "<what>::<why not>"` where you are deliberately not doing it — `::` separates the halves explicitly, because both are free text and a single colon inside `<what>` used to truncate it silently. A single colon still works where the value carries only one; two or more with no `::` are refused rather than guessed. Add `--carried-to <epicId> --reason "<which tasks moved>"` to hand off unfinished work. |
 | `remove-epic <id> [--cascade]` | Hard-delete; blocked by default if it has children (`--cascade` removes descendants too). Strips dangling links elsewhere. |
 | `reorder <id> <id> …` | **Manual rank** — place the epics of ONE priority band, top to bottom, in the order given. Ranks are rewritten dense `1..N` on every call, and this is the only thing that writes `rank`. Takes the whole band and refuses a partial one, so the numbering stays contiguous by construction; unranked epics sort after every ranked one. Rank is the LAST sort key (dependencies → priority → **rank**) — it breaks ties that today fall through to alphabetical order, and never outranks a dependency or a priority. `update-epic --priority` clears an epic's rank, since a placement among one band's peers means nothing among another's. |
@@ -861,8 +883,9 @@ Reports records that **cannot be true**: an archived epic whose task source exis
 ticked, one change registered under two lanes (keyed on the date-prefix-stripped id), a gate
 verdict whose recorded range does not reach the commits its note cites, a gate recorded as
 bookkeeping rather than review, a `delivered` epic that attributed no commits, an archived
-openspec-lane epic with a passing Gate 2 and no Gate 1, an epic archived with an `ungated` Gate 2
-(no review from anyone), an epic the archive-drift heal flipped that reads `outcome: unknown`
+openspec-lane epic with a passing Gate 2 and no (or a withdrawn) Gate 1, an epic archived with an `ungated` Gate 2
+(no review from anyone), an archived openspec-lane epic whose Gate 2 was withdrawn and not recorded
+again (`archived-with-withdrawn-gate-2`), an epic the archive-drift heal flipped that reads `outcome: unknown`
 while carrying a passing Gate 2, an epic sitting in a status the engine does not define, a dangling
 epic reference, an archive directory no epic corresponds to, **a recorded commit sha this repository can no longer resolve**, an epic still
 open in a release that has already delivered, and an epic another epic declares it supersedes

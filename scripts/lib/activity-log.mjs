@@ -192,6 +192,8 @@ const frameEpic = (f) => (f && typeof f === "object" ? (f.epic || f.epicId || f.
  *                                                 later (i.e. did the work prove it wrong)
  *    detour-push / detour-pop                   → how many detours interrupted an epic
  *    gate-review                                → when a gate verdict was recorded, in sequence
+ *    gate-withdrawn                             → when a recorded verdict was taken back, in the
+ *                                                 same sequence (growth of withdrawnGateReviews)
  *    epic-claimed / epic-released               → which session did which work (#84's secondary
  *                                                 benefit, made queryable)
  *    state-write                                → the write happened and produced nothing above.
@@ -246,6 +248,14 @@ export function diffEvents(before, after, meta = {}) {
       const pv = prev.gateReview && prev.gateReview[gate] ? prev.gateReview[gate].verdict : null;
       const nv = epic.gateReview && epic.gateReview[gate] ? epic.gateReview[gate].verdict : null;
       if (pv !== nv && nv !== null) out.push(ev("gate-review", { epic: id, gate, verdict: nv }));
+    }
+    // A WITHDRAWAL is keyed on GROWTH of the append-only `withdrawnGateReviews`, never on a verdict
+    // disappearing: a hand-edit that deletes `gate2` is not an engine withdrawal and must not be
+    // logged as one — it stays visible as the out-of-band write it is.
+    const pw = Array.isArray(prev.withdrawnGateReviews) ? prev.withdrawnGateReviews.length : 0;
+    const nw = Array.isArray(epic.withdrawnGateReviews) ? epic.withdrawnGateReviews : [];
+    for (const w of nw.slice(pw)) {
+      out.push(ev("gate-withdrawn", { epic: id, gate: `gate${w && w.gate}` }));
     }
   }
   for (const id of b.keys()) if (!a.has(id)) out.push(ev("epic-removed", { epic: id }));

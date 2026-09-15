@@ -15,7 +15,7 @@
 // READS that quantity rather than computing one of its own. Two counters is how a guard comes
 // to refuse an epic that renders as complete.
 
-import { gateHasEvidence, isOpenspecLane } from "./constants.mjs";
+import { gateHasEvidence, gateSummary, isOpenspecLane, withdrawnGate } from "./constants.mjs";
 import { isAncestor, sameCommit } from "./git.mjs";
 import { LIFECYCLE_MARKER, epicProgress, outstandingWork } from "./epic-progress.mjs";
 import { KNOWN_OUTCOMES, agentDisposition, correctionError, dispositionError, isEngineStamped, isStoryDisposed, outcomeOf } from "./disposition.mjs";
@@ -127,6 +127,29 @@ export function stalenessMarking(epic, entry) {
   }
 }
 
+/** THE gate table PROJECT.md and the brief both render: which epics it lists, and each gate's cell
+ *  text, decided ONCE. It lives here rather than beside gateSummary() in constants.mjs because it
+ *  needs stalenessMarking(), which constants.mjs may not import.
+ *
+ *  An epic is listed where either gate holds a stored verdict OR is in the WITHDRAWN state. The
+ *  table used to filter on `gate1 || gate2`, so an epic whose every verdict was withdrawn dropped
+ *  out of it — a withdrawal reading as a review that never existed, on the two surfaces a reader
+ *  looks at. A withdrawn cell is the literal `withdrawn — <reason>`, control characters escaped so a
+ *  reason can never break the row. Each surface keeps its own row cap. */
+export function gateTableRows(epics) {
+  const cell = (e, n) => {
+    const entry = e.gateReview && e.gateReview[`gate${n}`];
+    const withdrawal = withdrawnGate(e, n);
+    return withdrawal
+      ? `withdrawn — ${escapeControls(String(withdrawal.reason ?? ""))}`
+      : gateSummary(entry, stalenessMarking(e, entry));
+  };
+  return (epics || [])
+    .filter(e => e && ((e.gateReview && (e.gateReview.gate1 || e.gateReview.gate2)) ||
+      withdrawnGate(e, 1) || withdrawnGate(e, 2)))
+    .map(e => ({ id: e.id, gate1: cell(e, 1), gate2: cell(e, 2) }));
+}
+
 /**
  * The archive transition's gate.
  *
@@ -159,12 +182,29 @@ export function stalenessMarking(epic, entry) {
  *  real disposition is exactly the silence this release removes. */
 export const AGENT_OUTCOMES = KNOWN_OUTCOMES.filter(o => o !== "unknown");
 
+/** The deferral placeholder the invocation carries where an epic holds no deferral assertion.
+ *  A placeholder and never a bare `--no-deferrals`: that flag is a CLAIM about the change, and
+ *  printing it as a default would put a claim in the caller's mouth. */
+export const DEFERRAL_PLACEHOLDER = `<--no-deferrals | --deferral "<epicId>:<section>">`;
+
 /** The invocation that would record a disposition for ONE epic — rendered once, so no caller
  *  types the vocabulary into a string of its own. Both halves in one invocation, because the
- *  gate above refuses either half alone. */
-export const dispositionInvocation = (id) =>
-  `update-epic ${id} --status archived --outcome <${AGENT_OUTCOMES.join("|")}> ` +
-  `--reason "<why>" --no-deferrals`;
+ *  gate above refuses either half alone.
+ *
+ *  OPTIONS DEFAULT TO TODAY'S TEXT: a call with only `(id)` prints exactly what it always did,
+ *  so `unconsideredOutcomes()` and the integrity report are unchanged. update-epic's
+ *  archived-epic regression refusal passes the options:
+ *    echoed      tokens already shell-quoted by the caller, placed after the id — the change the
+ *                refused call was making;
+ *    correction  add `--correct-disposition` (true only for an AGENT-recorded disposition, since
+ *                the correction flag is refused against an engine stamp);
+ *    deferrals   "bare" (the default, `--no-deferrals`), "asserted" (the epic already carries an
+ *                assertion: print nothing) or "placeholder" (print DEFERRAL_PLACEHOLDER). */
+export const dispositionInvocation = (id, { echoed = [], correction = false, deferrals = "bare" } = {}) =>
+  `update-epic ${id}${echoed.length ? ` ${echoed.join(" ")}` : ""} --status archived ` +
+  `--outcome <${AGENT_OUTCOMES.join("|")}> --reason "<why>"` +
+  (correction ? ` --correct-disposition "<why the recorded one was wrong>"` : "") +
+  (deferrals === "bare" ? " --no-deferrals" : deferrals === "placeholder" ? ` ${DEFERRAL_PLACEHOLDER}` : "");
 
 /** THE WALKER: the archived epics whose outcome NOBODY CONSIDERED, each with the invocation that
  *  would record one. Lives here rather than in disposition.mjs because the remedy is this
@@ -192,6 +232,75 @@ export function unconsideredOutcomes(epics) {
     .filter(e => e && e.status === "archived" && isEngineStamped(e.disposition) &&
       outcomeOf(e) === "unknown")
     .map(e => ({ epic: e, invocation: dispositionInvocation(e.id) }));
+}
+
+/* Moved here from update-epic.mjs (gate-verdict-withdrawal 4.1): archiveGate() now prints a
+ * user-supplied value too — a Gate 2 withdrawal's reason — and a NEW raw print of a user value would
+ * add a second instance of the defect `handoff-refusal-prints-story-titles-raw` already holds. One
+ * escaper, imported by both refusals, rather than a copy each. */
+/** A control character — newline above all. A token carrying one is never echoed: a shell cannot
+ *  reliably rebuild it on one line (command substitution strips a trailing newline), and an echoed
+ *  newline would let a user-supplied value start a line of the refusal. C1 controls (NEL among them)
+ *  and the Unicode LINE and PARAGRAPH SEPARATORs count: a reader that honours them (a JS `m` regex,
+ *  a terminal, an editor) sees a new line there. */
+export const CONTROL_CHARACTER = /[\u0000-\u001f\u007f-\u009f\u2028\u2029]/;
+/** Render every control character as a `\uXXXX` escape. JSON.stringify alone is not enough: it
+ *  leaves C1 controls and U+2028/U+2029 raw. */
+export const escapeControls = (s) => String(s).replace(new RegExp(CONTROL_CHARACTER.source, "g"),
+  c => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`);
+
+/**
+ * THE ONE DEFINITION of the obligations a `delivered` outcome carries, returned as the list of
+ * those that FAIL on `epic` (empty when every one is met), Gate 2 first:
+ *
+ *   gate2    openspec lane: a present, passing Gate 2 that is neither `stale` nor
+ *            `attribution-withdrawn` (gateStaleness).
+ *   handoff  no outstanding work (outstandingSummary), unless `carriedTo` names a receiver.
+ *
+ * Two callers, and the point of extracting it is that they cannot disagree about what "met"
+ * means: archiveGate() (for a REQUESTED `delivered`, passing the request's `--carried-to`, since
+ * the epic has no new disposition yet) and update-epic's archived-epic regression check (for a
+ * STORED `delivered`, passing the stored `disposition.carriedTo`). So this function does NOT test
+ * the outcome, and takes `carriedTo` as an argument rather than reading a disposition.
+ *
+ * Each entry is `{kind, detail, items}`. `detail` is the FINDING only — never a remedy, since the
+ * two callers offer different ones — and never a user-supplied value: story titles travel as
+ * DATA in `items`, and each renderer quotes them its own way.
+ */
+export function deliveredObligations(epic, { carriedTo } = {}) {
+  const failing = [];
+  if (isOpenspecLane(epic)) {
+    const gate2 = epic.gateReview && epic.gateReview.gate2;
+    const withdrawal = withdrawnGate(epic, 2);
+    if (withdrawal) {
+      // WITHDRAWN IS NOT THE SAME AS NEVER RECORDED. The withdrawal moved the entry out, so the
+      // obligation reappears exactly as for an absent gate — but the finding names what happened.
+      // The reason is a user value, so it travels as DATA in `items` for each renderer to quote.
+      failing.push({ kind: "gate2", items: [{ reason: withdrawal.reason }], detail:
+        "its Gate 2 (implementation review) verdict was withdrawn, and no verdict has been recorded since" });
+    } else if (!gate2 || gate2.verdict !== "pass") {
+      failing.push({ kind: "gate2", detail: "missing a passing Gate 2 (implementation review) verdict", items: [] });
+    } else {
+      const staleness = gateStaleness(epic, gate2);
+      if (staleness.state === "stale") {
+        failing.push({ kind: "gate2", items: [], detail:
+          `its passing Gate 2 reviewed up to ${staleness.headSha}, which does not cover the ` +
+          `commit(s) attributed to this epic since: ${staleness.uncovered.join(", ")}` });
+      } else if (staleness.state === "attribution-withdrawn") {
+        failing.push({ kind: "gate2", items: [], detail:
+          `it carries a passing Gate 2 and attributes no commits, having withdrawn ` +
+          `${staleness.withdrawn.length} (${staleness.withdrawn.map(w => w.sha).join(", ")})` });
+      }
+    }
+  }
+  if (!carriedTo) {
+    const summary = outstandingSummary(epic);
+    if (summary.outstanding > 0) {
+      failing.push({ kind: "handoff", items: summary.items,
+        detail: `${summary.outstanding} of ${summary.claimed} task(s) outstanding` });
+    }
+  }
+  return failing;
 }
 
 export function archiveGate(epic, request = {}) {
@@ -274,38 +383,46 @@ export function archiveGate(epic, request = {}) {
   // a verdict or hand-editing state.json, which are the two failures this release exists to
   // end. For those outcomes the reason the disposition already requires substitutes for the
   // verdict, and the archive proceeds.
-  if (isOpenspecLane(epic) && outcome === "delivered") {
+  //
+  // WHAT the two delivered obligations are lives in deliveredObligations() above, the one
+  // definition this gate and update-epic's archived-epic regression check share. This function
+  // keeps the REMEDIES: it embeds each failing entry's finding (`detail`) in its own message and
+  // re-derives which remedy applies from the epic, so the messages are exactly what they were.
+  const failing = outcome === "delivered" ? deliveredObligations(epic, { carriedTo: request.carriedTo }) : [];
+  const gate2Failure = failing.find(o => o.kind === "gate2");
+  if (gate2Failure) {
     const gate2 = epic.gateReview && epic.gateReview.gate2;
+    const refusal = `cannot archive openspec-lane epic '${epic.id}' — ${gate2Failure.detail}.`;
+    // A withdrawn Gate 2 quotes its reason, JSON-quoted with every control character escaped, so a
+    // reason cannot start a line of the refusal. The obligation is not discharged by a withdrawal.
+    const withdrawn = gate2Failure.items.find(i => i && typeof i.reason === "string");
+    if (withdrawn) {
+      return { ok: false, message:
+        `${refusal} Withdrawal reason: ${escapeControls(JSON.stringify(withdrawn.reason))}. A ` +
+        `withdrawal takes the verdict back; it does not remove the obligation. Run ` +
+        `'record-gate-review ${epic.id} --gate 2 --verdict pass' after a real fresh-context ` +
+        `implementation review, or record the outcome the work actually had.` };
+    }
     if (!gate2 || gate2.verdict !== "pass") {
       return { ok: false, message:
-        `cannot archive openspec-lane epic '${epic.id}' — missing a passing Gate 2 ` +
-        `(implementation review) verdict. Run 'record-gate-review ${epic.id} --gate 2 ` +
+        `${refusal} Run 'record-gate-review ${epic.id} --gate 2 ` +
         `--verdict pass' after a real fresh-context implementation review before archiving.` };
     }
     // A passing verdict that does not reach the commits the epic attributed to itself did not
     // review the code that shipped. Only "stale" refuses: an absent array, an empty one and a
     // git that cannot answer are all reported rather than blocked (gateStaleness).
-    const staleness = gateStaleness(epic, gate2);
-    if (staleness.state === "stale") {
-      return { ok: false, message:
-        `cannot archive openspec-lane epic '${epic.id}' — its passing Gate 2 reviewed up to ` +
-        `${staleness.headSha}, which does not cover the commit(s) attributed to this epic ` +
-        `since: ${staleness.uncovered.join(", ")}. Re-review the full range and record it, or ` +
-        `correct the attribution.` };
-    }
+    //
     // WITHDRAWING EVERY ATTRIBUTION IS NOT A ROUTE THROUGH THIS GATE. Gate 2 found it: an epic
     // whose verdict read `stale` archived cleanly after `--withdraw-commit` emptied the array,
     // because an empty array reads `none-attributed` and that is deliberately not a refusal.
     // A withdrawal says a sha was WRONG, never that the work was never done, so an epic that
     // attributed and then withdrew everything still owes the real range.
-    if (staleness.state === "attribution-withdrawn") {
-      return { ok: false, message:
-        `cannot archive openspec-lane epic '${epic.id}' — it carries a passing Gate 2 and ` +
-        `attributes no commits, having withdrawn ${staleness.withdrawn.length} ` +
-        `(${staleness.withdrawn.map(w => w.sha).join(", ")}). A withdrawal corrects the record; ` +
+    return { ok: false, message: gateStaleness(epic, gate2).state === "attribution-withdrawn"
+      ? `${refusal} A withdrawal corrects the record; ` +
         `it does not remove the obligation. Attribute the commits that actually shipped, then ` +
-        `re-record Gate 2 over the range that covers them.` };
-    }
+        `re-record Gate 2 over the range that covers them.`
+      : `${refusal} Re-review the full range and record it, or ` +
+        `correct the attribution.` };
   }
 
   // The HANDOFF. Binds `delivered` only, for the same reason the Gate 2 demand does: killed,
@@ -317,39 +434,38 @@ export function archiveGate(epic, request = {}) {
   // Keyed on outstandingWork(), never raw checkboxes: a change's own task list carries the task
   // instructing the agent to archive it, unticked at archive time by construction, so a guard
   // counting raw checkbox state would demand a handoff for every fully delivered change.
-  if (outcome === "delivered" && !request.carriedTo) {
-    const summary = outstandingSummary(epic);
-    if (summary.outstanding > 0) {
-      // THE BLOCK IS THE REMINDER, so the unfinished work leads and the ways past it come
-      // second. A refusal that opened with "record a disposition to proceed" would present
-      // disposal as the normal route and get work disposed of that should have been done —
-      // a completion prompt turned into a paperwork step, which is worse than no gate.
-      //
-      // Only the STORIES source can name them: those rows are on the epic and survive archiving.
-      // A checkbox source cannot be read here at all — by this point `openspec/changes/<id>/`
-      // has moved — so it keeps the unnamed form rather than guessing at titles.
-      const named = summary.items.length
-        ? ` The outstanding stor${summary.items.length === 1 ? "y is" : "ies are"}:\n` +
-          summary.items.map(i => `  [ ] ${i.n}. ${i.title}`).join("\n") + "\n"
-        : " ";
-      // The REMEDY IS PER SOURCE, and offering the wrong one is a dead end the caller cannot
-      // detect: an inline story has no task source, so `<!-- pm:lifecycle -->` has nowhere to
-      // be written and the only key was `--carried-to`, naming a receiver for work that was
-      // dropped rather than moved — the fabricated record this very message warns against.
-      const remedy = summary.source === "stories"
-        ? `Finish them, or record what happened to each: --story <n> --done (it shipped) or ` +
-          `--story <n> --wont-do "<reason>" (it will not be done, and why — the row and its ` +
-          `reason stay on the record). If the whole remainder moved to another epic, ` +
-          `--carried-to <epicId> --reason "<which stories moved>" instead.`
-        : `Either record where the work went with --carried-to <epicId> --reason "<which tasks ` +
-          `moved>", or — if the outstanding item is lifecycle bookkeeping rather than delivery ` +
-          `— declare it in the task source by putting the literal ${LIFECYCLE_MARKER} on that ` +
-          `task's own line.`;
-      return { ok: false, message:
-        `cannot archive '${epic.id}' as delivered — ${summary.outstanding} of ` +
-        `${summary.claimed} task(s) outstanding.${named}${remedy} Naming a receiver ` +
-        `for work nobody carried anywhere is a fabricated record.` };
-    }
+  const handoffFailure = failing.find(o => o.kind === "handoff");
+  if (handoffFailure) {
+    // THE BLOCK IS THE REMINDER, so the unfinished work leads and the ways past it come
+    // second. A refusal that opened with "record a disposition to proceed" would present
+    // disposal as the normal route and get work disposed of that should have been done —
+    // a completion prompt turned into a paperwork step, which is worse than no gate.
+    //
+    // Only the STORIES source can name them: those rows are on the epic and survive archiving.
+    // A checkbox source cannot be read here at all — by this point `openspec/changes/<id>/`
+    // has moved — so it keeps the unnamed form rather than guessing at titles. The titles come
+    // from the finding's `items` and are rendered raw here, exactly as they always were.
+    const { items } = handoffFailure;
+    const named = items.length
+      ? ` The outstanding stor${items.length === 1 ? "y is" : "ies are"}:\n` +
+        items.map(i => `  [ ] ${i.n}. ${i.title}`).join("\n") + "\n"
+      : " ";
+    // The REMEDY IS PER SOURCE, and offering the wrong one is a dead end the caller cannot
+    // detect: an inline story has no task source, so `<!-- pm:lifecycle -->` has nowhere to
+    // be written and the only key was `--carried-to`, naming a receiver for work that was
+    // dropped rather than moved — the fabricated record this very message warns against.
+    const remedy = outstandingSummary(epic).source === "stories"
+      ? `Finish them, or record what happened to each: --story <n> --done (it shipped) or ` +
+        `--story <n> --wont-do "<reason>" (it will not be done, and why — the row and its ` +
+        `reason stay on the record). If the whole remainder moved to another epic, ` +
+        `--carried-to <epicId> --reason "<which stories moved>" instead.`
+      : `Either record where the work went with --carried-to <epicId> --reason "<which tasks ` +
+        `moved>", or — if the outstanding item is lifecycle bookkeeping rather than delivery ` +
+        `— declare it in the task source by putting the literal ${LIFECYCLE_MARKER} on that ` +
+        `task's own line.`;
+    return { ok: false, message:
+      `cannot archive '${epic.id}' as delivered — ${handoffFailure.detail}.${named}${remedy} Naming a receiver ` +
+      `for work nobody carried anywhere is a fabricated record.` };
   }
 
   return { ok: true,

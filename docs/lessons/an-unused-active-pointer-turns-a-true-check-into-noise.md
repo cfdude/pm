@@ -5,6 +5,9 @@ trigger: You are working a release with several member epics, closing them one a
 cost: `delivered-release-epic-left-open` fired TWELVE times mid-release — every not-yet-done member
   of an in-flight release — and blocked a commit, because the pre-commit hook runs a suite with
   tests asserting that check is quiet. One `set-active` took it back to zero.
+rule: Run `set-active` on the member you are actually working. An in-flight release with no active
+  pointer makes `delivered-release-epic-left-open` fire once per unfinished member — a true check
+  turned into noise by an operator omission, not by a defect.
 enforced_in: Nothing mechanical. `integrity.mjs`'s own comment states the heuristic and names this
   exact failure; the gap is operator behaviour, which is why this is a lesson and not a guard.
 detect: conductor\.mjs (release|update-epic) [^\n]*--(member|status archived)

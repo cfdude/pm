@@ -1,0 +1,56 @@
+✖ 2.2 withdrawnGate: an absent entry with a withdrawal answers the LATEST withdrawal (0.385583ms)
+✖ 2.2 withdrawnGate: a stored pass with a withdrawal in its history is NOT withdrawn (0.062833ms)
+✖ 2.2 withdrawnGate: a stored ungated with a withdrawal in its history is NOT withdrawn (0.047875ms)
+✖ 2.2 withdrawnGate: no withdrawal is not withdrawn (0.049583ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 0
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 98.757333
+
+✖ failing tests:
+
+test at scripts/test/gate-verdict-withdrawal.test.mjs:49:1
+✖ 2.2 withdrawnGate: an absent entry with a withdrawal answers the LATEST withdrawal (0.385583ms)
+  TypeError: constants.withdrawnGate is not a function
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/gate-verdict-withdrawal.test.mjs:55:26)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+
+test at scripts/test/gate-verdict-withdrawal.test.mjs:61:1
+✖ 2.2 withdrawnGate: a stored pass with a withdrawal in its history is NOT withdrawn (0.062833ms)
+  TypeError: constants.withdrawnGate is not a function
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/gate-verdict-withdrawal.test.mjs:63:26)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+
+test at scripts/test/gate-verdict-withdrawal.test.mjs:66:1
+✖ 2.2 withdrawnGate: a stored ungated with a withdrawal in its history is NOT withdrawn (0.047875ms)
+  TypeError: constants.withdrawnGate is not a function
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/gate-verdict-withdrawal.test.mjs:68:26)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at scripts/test/gate-verdict-withdrawal.test.mjs:71:1
+✖ 2.2 withdrawnGate: no withdrawal is not withdrawn (0.049583ms)
+  TypeError: constants.withdrawnGate is not a function
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/gate-verdict-withdrawal.test.mjs:72:26)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)

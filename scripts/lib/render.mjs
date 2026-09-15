@@ -13,8 +13,8 @@ import { getAutonomy } from "./autonomy.mjs";
 import { parseFlags } from "./add-epic.mjs";
 import { isRenderableLink } from "./links.mjs";
 import { correctionMarking, correctionNote, outcomeOf, recordedDispositions } from "./disposition.mjs";
-import { stalenessMarking } from "./archive-gate.mjs";
-import { DETOURS_LOG, PROJECT_MD, STATE_PATH, RENDER_STAMP_PATH, CONDUCTOR_DIR, gateSummary, releaseLine, releaseSummaries } from "./constants.mjs";
+import { gateTableRows } from "./archive-gate.mjs";
+import { DETOURS_LOG, PROJECT_MD, STATE_PATH, RENDER_STAMP_PATH, CONDUCTOR_DIR, releaseLine, releaseSummaries } from "./constants.mjs";
 import { crossSpecLine } from "./cross-spec-review.mjs";
 import { dependencyNotes } from "./dependency-order.mjs";
 
@@ -237,19 +237,20 @@ export function render() {
   // engine was the archive guard's `gate2` test — so a spec review that never happened looked
   // exactly like one that did. Its absence is a reported condition, never a refusal: Gate 1
   // gates code, and by archive time the code is already written.
-  const gated = epics.filter(e => e.gateReview && (e.gateReview.gate1 || e.gateReview.gate2));
+  // Which epics are listed, and every cell's text, come from gateTableRows() — shared with the
+  // brief, so a withdrawn gate cannot read as withdrawn on one surface and absent on the other.
+  const gated = gateTableRows(epics);
   if (gated.length) {
     md.push("## Gate reviews");
     md.push("");
     md.push("| Epic | Gate 1 (spec) | Gate 2 (implementation) |");
     md.push("|------|---------------|-------------------------|");
-    for (const e of gated) {
+    for (const row of gated) {
       // The staleness predicate is IMPORTED, never re-derived: a verdict that refuses an
       // archive and a verdict that renders as a pass would otherwise be able to disagree.
       // Three no-attribution states render three ways — absent is unverifiable, present-and-
       // empty says nothing was attributed, and an unavailable git is unverifiable too.
-      md.push(`| \`${e.id}\` | ${gateSummary(e.gateReview.gate1, stalenessMarking(e, e.gateReview.gate1))} ` +
-        `| ${gateSummary(e.gateReview.gate2, stalenessMarking(e, e.gateReview.gate2))} |`);
+      md.push(`| \`${row.id}\` | ${row.gate1} | ${row.gate2} |`);
     }
     md.push("");
   }

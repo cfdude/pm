@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "gh-cfdude-pm-192",
+  "active": null,
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -6635,7 +6635,7 @@
       "id": "gh-cfdude-pm-192",
       "title": "A gate verdict cannot be withdrawn, so one recorded on the wrong epic is permanent",
       "priority": "P2",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -6651,7 +6651,7 @@
       "externalUpdatedAt": "2026-09-12T01:29:22Z",
       "attributedCommits": [],
       "createdAt": "2026-09-12T01:29:33.093Z",
-      "touchedAt": "2026-09-12T06:09:28.399Z",
+      "touchedAt": "2026-09-14T18:09:09.922Z",
       "notes": [
         {
           "at": "2026-09-12T01:29:35.731Z",
@@ -6660,18 +6660,726 @@
         }
       ],
       "startedAt": "2026-09-12T01:37:09.382Z",
-      "trackerRefreshNeeded": true
+      "trackerRefresh": {
+        "verdict": "unchanged",
+        "recordedAt": "2026-09-14T18:08:46.795Z",
+        "externalUpdatedAt": "2026-09-12T01:29:22Z"
+      },
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-09-14T18:09:09.919Z",
+        "reason": "Superseded at registration by the openspec change gate-verdict-withdrawal, which carries the specs, the gates and the commits. Ended now rather than at close on purpose: #192 was filed because closing #175's tracker mirror as delivered forced gate transcription onto it, and a mirror that stays open until the work ships invites the same transcription. The issue's diagnosis and suggested fix are preserved in the change's proposal and design."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-14T18:09:09.919Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-14T18:09:09.919Z"
+    },
+    {
+      "id": "lessons-index-cannot-drift-silently",
+      "title": "docs/lessons/README.md claimed to be generated from the files and stays honest while six lessons were missing from it, and six of the twelve declared detect: matchers are bare regexes that JSON.parse rejects, so half the corpus's matchers have never fired. Index every lesson from its own frontmatter, add the rule: field four lessons lacked (the engine renders it as the advice bullet), and guard both plus the detect: shape with scripts/test/lessons-index.test.mjs. The product half — that a malformed detect: is discarded with no report on any surface — is cfdude/pm#194, not this.",
+      "priority": "P2",
+      "status": "archived",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "df-skill-commands-line-drift",
+          "reason": "same defect class — a hand-maintained doc index drifting from the directory or table it claims to mirror, with nothing enforcing it; that one fixed the SKILL.md commands line the same way, with a test"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [
+        "88dd9c42231c1d4f19b514ffa39778e252790f5a"
+      ],
+      "createdAt": "2026-09-12T06:42:05.418Z",
+      "touchedAt": "2026-09-12T06:48:21.282Z",
+      "startedAt": "2026-09-12T06:42:10.472Z",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-12T06:48:21.279Z",
+        "reason": "Shipped on dev at 88dd9c4. All 23 lessons indexed in docs/lessons/README.md from their own frontmatter, all 23 satisfy the four-field contract (four had title: and no rule:, which adviceText renders as the advice bullet), and scripts/test/lessons-index.test.mjs guards the index, the contract and the detect: shape with six assertions. Three of them were neutered and watched to fail before being trusted. The six bare-regex detect: matchers are grandfathered by name in a closed list rather than fixed here — four of them match file CONTENT, which matchLessons() has no field for, so they need a capability that does not exist. That half is cfdude/pm#194."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-12T06:48:21.279Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-12T06:48:21.279Z"
+    },
+    {
+      "id": "capture-pipe-lesson-matcher",
+      "title": "Give filter-at-read-time-not-at-capture-time a detect: matcher — a test run or git commit piped into tail/head/grep/rg on a command's first line. The lesson recurred within hours of being written (a multi-line git commit piped to tail reported success while the pre-commit hook had refused it), and a retrieval-only lesson did not reach the moment. The matcher is first-line-only by design and would NOT have caught that multi-line instance; the lesson now says so rather than implying coverage.",
+      "priority": "P2",
+      "status": "archived",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "lessons-index-cannot-drift-silently",
+          "reason": "same corpus, same session — that epic made matchers checkable, this one adds one"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [
+        "dbf42ee615ffad094eef497f7945af2b7b815fcd"
+      ],
+      "createdAt": "2026-09-14T17:38:02.198Z",
+      "startedAt": "2026-09-14T17:38:02.223Z",
+      "touchedAt": "2026-09-14T18:08:28.521Z",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-14T18:08:28.519Z",
+        "reason": "Shipped on dev at dbf42ee. filter-at-read-time-not-at-capture-time carries a detect matcher for a test run or git commit that starts a command segment and is piped into tail/head/grep/rg. Checked against twelve command shapes after two rounds — the first version false-fired on a search pattern containing 'git commit', the second refused the & in 2>&1. First-line-only by design, so it does not catch a pipe after a multi-line commit message, the shape of the repeat that prompted it; the lesson says so."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-14T18:08:28.519Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-14T18:08:28.519Z"
+    },
+    {
+      "id": "gate-verdict-withdrawal",
+      "title": "A recorded gate verdict can be withdrawn, and the withdrawal is recorded — update-epic --withdraw-gate-review <1|2> --withdrawal-reason. The entry moves to withdrawnGateReviews[] so no reader mistakes a withdrawn pass for a pass, and a withdrawn gate is a named state (never absence) on the gate, integrity, render, brief and heal. Depends on archive-gate-reads-what-it-writes, whose two archive-gate requirements bind the new flag as a field write.",
+      "priority": "P2",
+      "status": "archived",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "supersedes",
+          "epic": "gh-cfdude-pm-192",
+          "reason": "the tracker mirror of this change — one piece of work registered twice is the shape that produced #192 itself, so it ends at registration rather than at close"
+        },
+        {
+          "type": "relates-to",
+          "epic": "gh-163-gate-verdicts-openspec-only",
+          "reason": "#163 removed record-gate-review's lane refusal, so any lane can carry a verdict to withdraw; this change's restated heal requirement corrects a spec sentence that has been false since"
+        },
+        {
+          "type": "may-invalidate",
+          "epic": "archive-gate-reads-what-it-writes",
+          "reason": "Gate 1 round 2 showed the archive-gate ordering defect is the whole update-epic verb (lane, attribute-commit, add-story, withdraw-commit bypasses; story-done false refusal; post-archive regressions), not the withdrawal flags — it gets its own change, and the withdrawal spec inherits its two requirements",
+          "reconciled": {
+            "verdict": "invalidated",
+            "amendments": [
+              "tasks.md 4.1: regressionRefusal() items renderer is story-shaped — switch on o.kind, gate2 renders the withdrawal reason with its own label",
+              "tasks.md 4.1: archiveGate() Gate 2 branch prints only detail — add code printing the reason from items",
+              "tasks.md 4.1 + design.md: print the reason escapeControls(JSON.stringify()) in both refusals, not raw (orchestrator adjudication over the reconciler's raw suggestion) — move CONTROL_CHARACTER/escapeControls to an archive-gate.mjs export",
+              "tasks.md 7.1: add INVOCATION_DROPPED_FLAGS to the sweep and record that the withdrawal flags stay echoed",
+              "epic links: relates-to handoff-refusal-prints-story-titles-raw and archived-delivered-gate2-regression-report (that future check must exclude withdrawn-kind epics)"
+            ],
+            "reconciledAt": "2026-09-15T02:33:22.758Z"
+          }
+        },
+        {
+          "type": "relates-to",
+          "epic": "handoff-refusal-prints-story-titles-raw",
+          "reason": "same defect class — this change prints its new reason escaped rather than add an instance"
+        },
+        {
+          "type": "relates-to",
+          "epic": "archived-delivered-gate2-regression-report",
+          "reason": "that check must exclude withdrawn-kind epics, which archived-with-withdrawn-gate-2 already reports"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [
+        "b2dec93e23af0c44bb4e8b936474f1bbf9bef30a",
+        "7aa45a6",
+        "4f13f00",
+        "b1c4aa9",
+        "bbac3cb",
+        "9e06e43",
+        "48f75d7",
+        "b282a2f",
+        "f7ae09d",
+        "8f0057d",
+        "d5fde94",
+        "d046e02",
+        "2b48a09f39dfe8d5b538723fb1726978679cda30",
+        "5c816a4e616a748620bbf3c89418e9c29b1a53e8",
+        "317e2fbf388632ebe59e5577318a7919704c08d4",
+        "64f8d7f4ed267cffae9f5af94b3938ba3d9b83b1",
+        "f0ca657cbda27d10991f10f1856bc35676aa8d3e",
+        "e0d53d6e2f1ce4520ba1524081b5bc6af25755da",
+        "566066c10fb919c3d0b83cf5aff94331ea95735e",
+        "71667932bb559648bc71974b3f30fb1267165a47",
+        "b7a5809a4e642cfda8f0811896c56a9570f5f6f0",
+        "101de99ef096dd1fae441bb4ea321e96c1b48279",
+        "f4ecd1e5314b9e07c19e773e10e0f2084fc5d43d",
+        "3da2ad48a8ace56e1dd1c34a175849d0becc96d5",
+        "312da059463e535893d519df1a7525ec3dbcdb1b",
+        "7bfdfb3c96642fa2111d7e286efd2fe389f57875",
+        "1f962d90c0647a3c731163323b0fce6d8b4b70ab",
+        "fc0561fa9c3af0a6e3ff7b2d4397872508923857",
+        "a3e617b0bbf316e63a0e6ffde4eefcdcafe202e3"
+      ],
+      "createdAt": "2026-09-14T18:09:05.963Z",
+      "startedAt": "2026-09-14T18:09:05.964Z",
+      "touchedAt": "2026-09-15T04:25:06.173Z",
+      "notes": [
+        {
+          "at": "2026-09-14T18:09:07.941Z",
+          "actor": "agent",
+          "text": "lane: openspec not (none routed) — modifies the gate-integrity spec capability, adds a state.json field, and changes the archive gate, a safety surface; review mode is thorough"
+        }
+      ],
+      "release": "0.43.0",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-14T20:53:55.244Z",
+          "artifacts": [
+            "openspec/changes/gate-verdict-withdrawal/proposal.md",
+            "openspec/changes/gate-verdict-withdrawal/design.md",
+            "openspec/changes/gate-verdict-withdrawal/tasks.md",
+            "openspec/changes/gate-verdict-withdrawal/specs/gate-integrity/spec.md"
+          ],
+          "reviewer": "re-recorded over artifacts amended after the first Gate 1 (f7ae09d..2b971c9): amendments reviewed by the 0.43.0 cross-spec rounds (coherence + falsifiability lenses, initial + 3 re-rounds); final trim 2b971c9 removes requirements only, adjudicated by the orchestrator, 2026-09-14",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-09-14T20:03:27.975Z",
+            "artifacts": [
+              "openspec/changes/gate-verdict-withdrawal/proposal.md",
+              "openspec/changes/gate-verdict-withdrawal/design.md",
+              "openspec/changes/gate-verdict-withdrawal/tasks.md",
+              "openspec/changes/gate-verdict-withdrawal/specs/gate-integrity/spec.md"
+            ],
+            "reviewer": "two fresh-context lenses (code-grounded correctness; spec contract & cross-change consistency), 6 rounds + scoped confirmation, 2026-09-14"
+          }
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-15T04:24:50.792Z",
+          "baseSha": "dbf42ee615ffad094eef497f7945af2b7b815fcd",
+          "headSha": "a3e617b0bbf316e63a0e6ffde4eefcdcafe202e3",
+          "reviewer": "two fresh-context lenses over 2e91ee2..1f962d9 (spec conformance: fail — padded gate value writes an entry-less withdrawal, untested brief heading; adversarial: fail — same defect), fixed fc0561f; scoped re-review pass (1192-call value probe, mutant-verified heading assertion); a3e617b is a lesson file + index + task tick, no code; 2026-09-14"
+        }
+      },
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-15T04:25:06.170Z",
+        "reason": "Built for 0.43.0 (ships with the release cut; resolves cfdude/pm#192). update-epic --withdraw-gate-review <1|2> --withdrawal-reason moves the whole verdict, superseded included, into withdrawnGateReviews[] — recorded, not erased — and withdrawn is a named state on the archive gate, integrity (archived-with-withdrawn-gate-2, no-Gate-1 detail), PROJECT.md, the brief, the heal and the activity log. Bound by archive-gate-reads-what-it-writes: a withdrawal breaking a met Gate 2 on an archived delivered epic is refused with the correcting invocation. Gate 1 two lenses + cross-spec pass; reconcile vs the detour invalidated with five task amendments; Gate 2 both lenses failed on a padded gate value writing an entry-less withdrawal (fc0561f), scoped re-review pass. Mintlify task 8.7 carried to release-0-43-0-cut.",
+        "carriedTo": "release-0-43-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-15T04:25:06.169Z",
+        "deferrals": [],
+        "declined": [
+          {
+            "what": "withdraw-cross-spec-review",
+            "reason": "a spec change already stales that verdict"
+          },
+          {
+            "what": "un-withdraw verb",
+            "reason": "re-recording is the way back"
+          }
+        ]
+      },
+      "completedAt": "2026-09-15T04:25:06.170Z"
+    },
+    {
+      "id": "gh-cfdude-pm-184",
+      "title": "post-commit hook classifies chore(release) commits as MINIMAL detours",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-cfdude-pm-173",
+          "reason": "same heuristic — auto-detour classifying a commit that is not a detour; #173 is pm's own bookkeeping, this is a release commit"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "184",
+      "externalUrl": "https://github.com/cfdude/pm/issues/184",
+      "externalUpdatedAt": "2026-09-09T00:55:25Z",
+      "attributedCommits": [],
+      "createdAt": "2026-09-14T18:18:09.265Z",
+      "touchedAt": "2026-09-14T18:18:12.120Z",
+      "notes": [
+        {
+          "at": "2026-09-14T18:18:12.117Z",
+          "actor": "agent",
+          "text": "lane: superpowers not (none routed) — suggest-lane returned no lane; the repo heuristic for a single-subsystem defect fix. Re-decide at triage."
+        }
+      ]
+    },
+    {
+      "id": "gh-cfdude-pm-195",
+      "title": "A nested conductor logs its own bookkeeping commits as AUTO-DETOURs — headChangedFiles returns git-root paths",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gh-cfdude-pm-173",
+          "reason": "same heuristic, same allowlist — #173 is files missing from CONDUCTOR_OWN_FILES in a flat repo, this is the same allowlist compared against git-root paths in a nested one"
+        },
+        {
+          "type": "relates-to",
+          "epic": "gh-cfdude-pm-184",
+          "reason": "same heuristic — a non-detour commit auto-logged as a detour"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "195",
+      "externalUrl": "https://github.com/cfdude/pm/issues/195",
+      "externalUpdatedAt": "2026-09-14T18:17:00Z",
+      "attributedCommits": [],
+      "createdAt": "2026-09-14T18:18:14.041Z",
+      "touchedAt": "2026-09-14T18:18:15.985Z",
+      "notes": [
+        {
+          "at": "2026-09-14T18:18:15.982Z",
+          "actor": "agent",
+          "text": "lane: superpowers not (none routed) — suggest-lane returned no lane; the repo heuristic for a single-subsystem defect fix. Re-decide at triage."
+        }
+      ]
+    },
+    {
+      "id": "gh-cfdude-pm-196",
+      "title": "OpenSpec drift is reported as no drift when openspec --version is slow, so the drift line flaps in a committed PROJECT.md",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "196",
+      "externalUrl": "https://github.com/cfdude/pm/issues/196",
+      "externalUpdatedAt": "2026-09-14T18:17:01Z",
+      "attributedCommits": [],
+      "createdAt": "2026-09-14T18:18:17.982Z",
+      "touchedAt": "2026-09-14T18:18:20.119Z",
+      "notes": [
+        {
+          "at": "2026-09-14T18:18:20.116Z",
+          "actor": "agent",
+          "text": "lane: superpowers not (none routed) — suggest-lane returned no lane; the repo heuristic for a single-subsystem defect fix. Re-decide at triage."
+        }
+      ]
+    },
+    {
+      "id": "gh-cfdude-pm-194",
+      "title": "A malformed lesson `detect:` is discarded silently — half of pm's own matchers are inert and nothing says so",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "lessons-index-cannot-drift-silently",
+          "reason": "that epic grandfathered the six inert matchers this issue asks the engine to report"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "194",
+      "externalUrl": "https://github.com/cfdude/pm/issues/194",
+      "externalUpdatedAt": "2026-09-12T06:31:42Z",
+      "attributedCommits": [],
+      "createdAt": "2026-09-14T18:18:22.066Z",
+      "touchedAt": "2026-09-14T18:18:24.035Z",
+      "notes": [
+        {
+          "at": "2026-09-14T18:18:24.032Z",
+          "actor": "agent",
+          "text": "lane: superpowers not (none routed) — suggest-lane returned no lane; the repo heuristic for a single-subsystem defect fix. Re-decide at triage."
+        }
+      ]
+    },
+    {
+      "id": "gh-cfdude-pm-190",
+      "title": "A recorded gate verdict has no link to the commits that answered it, so a stale FAIL is indistinguishable from a live one",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gate-verdict-withdrawal",
+          "reason": "both are gate-verdict records that outlive what they judged — a withdrawn verdict and a failing verdict already answered by a later commit"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "190",
+      "externalUrl": "https://github.com/cfdude/pm/issues/190",
+      "externalUpdatedAt": "2026-09-11T07:25:51Z",
+      "attributedCommits": [],
+      "createdAt": "2026-09-14T18:18:25.921Z",
+      "touchedAt": "2026-09-14T18:18:27.858Z",
+      "notes": [
+        {
+          "at": "2026-09-14T18:18:27.856Z",
+          "actor": "agent",
+          "text": "lane: superpowers not (none routed) — suggest-lane returned no lane; the repo heuristic for a single-subsystem defect fix. Re-decide at triage."
+        }
+      ]
+    },
+    {
+      "id": "gh-cfdude-pm-189",
+      "title": "unconsidered-outcomes emits an invocation the archive gate refuses, with no hint of the precondition",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "189",
+      "externalUrl": "https://github.com/cfdude/pm/issues/189",
+      "externalUpdatedAt": "2026-09-11T07:15:59Z",
+      "attributedCommits": [],
+      "createdAt": "2026-09-14T18:18:29.810Z",
+      "touchedAt": "2026-09-14T18:18:31.862Z",
+      "notes": [
+        {
+          "at": "2026-09-14T18:18:31.859Z",
+          "actor": "agent",
+          "text": "lane: superpowers not (none routed) — suggest-lane returned no lane; the repo heuristic for a single-subsystem defect fix. Re-decide at triage."
+        }
+      ]
+    },
+    {
+      "id": "archive-gate-reads-what-it-writes",
+      "title": "update-epic decides the archive on the record it writes: the gate runs after every field write (closing one-call bypasses via --lane/--attribute-commit/--add-story/--withdraw-commit and the --story --done false refusal), and an update to an archived delivered epic may not break an obligation its archive met",
+      "priority": "P2",
+      "status": "archived",
+      "role": "detour",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "gate-verdict-withdrawal",
+          "reason": "split out of its Gate 1 round 2 — the ordering defect is the whole verb, not the withdrawal flags; gate-verdict-withdrawal inherits both requirements"
+        },
+        {
+          "type": "resolves-blocker-for",
+          "epic": "gate-verdict-withdrawal",
+          "reason": "Gate 1 round 2 showed the archive-gate ordering defect is the whole update-epic verb (lane, attribute-commit, add-story, withdraw-commit bypasses; story-done false refusal; post-archive regressions), not the withdrawal flags — it gets its own change, and the withdrawal spec inherits its two requirements"
+        }
+      ],
+      "reconcileNeeded": false,
+      "externalId": "197",
+      "externalUrl": "https://github.com/cfdude/pm/issues/197",
+      "externalUpdatedAt": "2026-09-14T18:39:33Z",
+      "attributedCommits": [
+        "b2bdd04",
+        "1b0fe47",
+        "8bf6758",
+        "1a759df",
+        "4d49c60",
+        "a809c86",
+        "b282a2f",
+        "f7ae09d",
+        "8f0057d",
+        "d5fde94",
+        "d046e02",
+        "2b971c9e425b36d3188fe4b050d023e9748103d6",
+        "2b48a09f39dfe8d5b538723fb1726978679cda30",
+        "cc03572db0ccc0979e05fa366223e82bd56b27ca",
+        "893645db85bfd70f9bb7186e78e819559a1049ca",
+        "510de671ff1da0459462a6a71a5a49901c5fe2d9",
+        "083f3568b7298459a5f984a96a309f234bcc1fe8",
+        "70f41965bf00b8c1ce1969dbccb1336daee5fdab",
+        "b9a38265597ca95051ee1ac7153f65ffcb5bc311",
+        "2ada32f64ba9c88d92d3f331666afd55959519e5",
+        "3b9504b004454af0514fa16d0893e26a5d0b9358",
+        "9897cfcc287674acaeb838646fc009b39f1750dd",
+        "422a01252f4f609807e55bc3811f9706fe4c70ba",
+        "492a84b526c148bd80e377ac6a9cf05cb98d2ee0"
+      ],
+      "createdAt": "2026-09-14T18:39:51.910Z",
+      "touchedAt": "2026-09-15T02:21:34.014Z",
+      "release": "0.43.0",
+      "startedAt": "2026-09-14T18:40:05.739Z",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-14T20:53:53.193Z",
+          "artifacts": [
+            "openspec/changes/archive-gate-reads-what-it-writes/proposal.md",
+            "openspec/changes/archive-gate-reads-what-it-writes/design.md",
+            "openspec/changes/archive-gate-reads-what-it-writes/tasks.md",
+            "openspec/changes/archive-gate-reads-what-it-writes/specs/gate-integrity/spec.md"
+          ],
+          "reviewer": "re-recorded over artifacts amended after the first Gate 1 (f7ae09d..2b971c9): amendments reviewed by the 0.43.0 cross-spec rounds (coherence + falsifiability lenses, initial + 3 re-rounds); final trim 2b971c9 removes requirements only, adjudicated by the orchestrator, 2026-09-14",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-09-14T20:03:25.975Z",
+            "artifacts": [
+              "openspec/changes/archive-gate-reads-what-it-writes/proposal.md",
+              "openspec/changes/archive-gate-reads-what-it-writes/design.md",
+              "openspec/changes/archive-gate-reads-what-it-writes/tasks.md",
+              "openspec/changes/archive-gate-reads-what-it-writes/specs/gate-integrity/spec.md"
+            ],
+            "reviewer": "two fresh-context lenses (code-grounded correctness; spec contract & cross-change consistency), 4 rounds + scoped confirmation, 2026-09-14"
+          }
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-15T02:21:14.419Z",
+          "baseSha": "9c3b946ad9d6b4b7864ccfadb628bf19921f47f0",
+          "headSha": "492a84b526c148bd80e377ac6a9cf05cb98d2ee0",
+          "reviewer": "re-recorded at the last attributed commit: code reviewed through 9897cfc by two fresh-context lenses + scoped re-review (fixes 3b9504b, 9897cfc); 422a012 docs verified against the engine; 492a84b is a lesson file, the lessons index and task ticks — no code; 2026-09-14",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-09-15T02:15:07.142Z",
+            "baseSha": "9c3b946ad9d6b4b7864ccfadb628bf19921f47f0",
+            "headSha": "422a01252f4f609807e55bc3811f9706fe4c70ba",
+            "reviewer": "re-recorded at the last attributed commit: code reviewed through 9897cfc by two fresh-context lenses + scoped re-review (fixes 3b9504b, 9897cfc); 422a012 is docs only (commands/epic.md, README, SKILL, hierarchy-child-executor, CHANGELOG, tasks ticks), each claim verified against the engine by the docs agent; 2026-09-14"
+          }
+        }
+      },
+      "trackerRefresh": {
+        "verdict": "unchanged",
+        "recordedAt": "2026-09-14T20:26:39.194Z",
+        "externalUpdatedAt": "2026-09-14T18:39:33Z"
+      },
+      "trackerRefreshNeeded": true,
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-15T02:21:34.011Z",
+        "reason": "Built for 0.43.0 (ships with the release cut). update-epic now runs the archive gate after every field write, closing the one-call bypasses via --lane/--attribute-commit/--add-story/--withdraw-commit and the --story --done false refusal; a refused call announces no cleared field. An update to an archived delivered epic that breaks a met Gate 2 or handoff obligation is refused per obligation and prints one runnable invocation recording the disposition it implies. Gate 1 two lenses + cross-spec pass; Gate 2 two lenses, adversarial lens failed on U+2028/U+0085 line forging (3b9504b) and a scoped re-review on an untested detail-line escape (9897cfc). Mintlify task 5.4 carried to release-0-43-0-cut so the site does not document it before the plugin ships.",
+        "carriedTo": "release-0-43-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-15T02:21:34.010Z",
+        "deferrals": [
+          {
+            "epic": "archived-delivered-gate2-regression-report",
+            "section": "design.md What this deliberately does not do"
+          },
+          {
+            "epic": "status-write-undone-by-heal-reports-updated",
+            "section": "design.md What this deliberately does not do"
+          },
+          {
+            "epic": "disposition-invocation-prints-bare-no-deferrals",
+            "section": "design.md Half 2 printed invocation"
+          },
+          {
+            "epic": "gate-staleness-reads-only-last-attribution",
+            "section": "Gate 2 lens 2 finding (pre-existing)"
+          }
+        ],
+        "declined": []
+      },
+      "completedAt": "2026-09-15T02:21:34.011Z"
+    },
+    {
+      "id": "archived-delivered-gate2-regression-report",
+      "title": "No integrity check names an archived delivered epic that fails a delivered obligation (Gate 2 not a covering pass, or outstanding work with no handoff) reached by paths no gate sees: record-gate-review recording fail after archive, the heal re-archiving a changed epic with its kept delivered disposition, remove-epic stripping disposition.carriedTo, and disk-side task changes",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "archive-gate-reads-what-it-writes",
+          "reason": "the standing-condition half its design deliberately leaves out"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-14T18:39:53.765Z",
+      "touchedAt": "2026-09-15T02:33:38.795Z",
+      "notes": [
+        {
+          "at": "2026-09-14T19:29:54.971Z",
+          "actor": "agent",
+          "text": "Overlap to design for: gate-verdict-withdrawal's withdrawn kind of 'archived-with-no-gate-2-review' will already name archived delivered openspec epics whose Gate 2 is withdrawn — this check must not report them a second time under a competing wording"
+        },
+        {
+          "at": "2026-09-15T02:33:38.790Z",
+          "actor": "agent",
+          "text": "Reconcile of gate-verdict-withdrawal (2026-09-14): exclude epics whose Gate 2 is withdrawn — integrity's archived-with-withdrawn-gate-2 already reports them; do not double-report."
+        }
+      ]
+    },
+    {
+      "id": "status-write-undone-by-heal-reports-updated",
+      "title": "update-epic --status <non-archived> on an epic whose change directory is archived on disk prints 'updated' while render()'s heal immediately restores archived — a false-success report on the write surface",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "archive-gate-reads-what-it-writes",
+          "reason": "found by its Gate 1 lens A; the check keys on the same isArchived predicate"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-14T18:52:24.263Z",
+      "touchedAt": "2026-09-14T18:52:24.266Z"
+    },
+    {
+      "id": "disposition-invocation-prints-bare-no-deferrals",
+      "title": "dispositionInvocation() (used by unconsideredOutcomes and the integrity check for engine-stamped unknown outcomes) prints a bare --no-deferrals, suggesting a claim the agent has not made — CLAUDE.md required item 6 says --no-deferrals is a claim, not a default; print a deferral placeholder instead",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "archive-gate-reads-what-it-writes",
+          "reason": "found by its Gate 1; that change extends the helper but keeps existing callers' output"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-14T19:44:41.018Z",
+      "touchedAt": "2026-09-14T19:44:41.022Z"
+    },
+    {
+      "id": "handoff-refusal-prints-story-titles-raw",
+      "title": "archiveGate()'s handoff refusal prints outstanding story titles raw (archive-gate.mjs:333), so a title containing a newline and '  update-epic …' forges a line of the refusal; print user-supplied titles quoted with newlines escaped",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "archive-gate-reads-what-it-writes",
+          "reason": "found by the 0.43.0 cross-spec review; that change quotes values in its own refusal only"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-14T20:30:30.075Z",
+      "touchedAt": "2026-09-14T21:51:31.661Z",
+      "notes": [
+        {
+          "at": "2026-09-14T20:44:13.173Z",
+          "actor": "agent",
+          "text": "Widen: archiveGate() will also print a withdrawal reason raw (gate-verdict-withdrawal 4.1), the same forgery shape — cover reasons too"
+        },
+        {
+          "at": "2026-09-14T21:51:31.658Z",
+          "actor": "agent",
+          "text": "Widen (Gate 2 lens 2, 2026-09-14): archiveGate's Gate 2 refusal also prints a withdrawn sha raw — --attribute-commit accepts any string, so 'deadbeef\\n  update-epic forged' withdrawn with --status archived forges a line. Reuse update-epic.mjs escapeControls (C0, DEL, C1, U+2028/2029)."
+        }
+      ]
+    },
+    {
+      "id": "gate-staleness-reads-only-last-attribution",
+      "title": "gateStaleness() judges only the LAST attributed commit (archive-gate.mjs:108-112), so attributing an ancestor after an uncovered descendant makes a stale Gate 2 read fresh — the archive gate and the 0.43.0 regression check both accept it",
+      "priority": "P2",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "archive-gate-reads-what-it-writes",
+          "reason": "found by its Gate 2 lens 2; both its guards inherit the hole"
+        },
+        {
+          "type": "relates-to",
+          "epic": "archived-delivered-gate2-regression-report",
+          "reason": "same Gate 2 demand, different bypass"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-14T21:51:27.770Z",
+      "touchedAt": "2026-09-15T01:55:25.728Z",
+      "notes": [
+        {
+          "at": "2026-09-14T21:51:29.762Z",
+          "actor": "agent",
+          "text": "Repro (Gate 2 lens 2, 2026-09-14): archived delivered openspec epic, passing Gate 2 headSha=H; update-epic <id> --attribute-commit <descendant of H> --attribute-commit <root, ancestor of H> exits 0; with --status archived --outcome delivered --no-deferrals it archives. Fix shape: stale iff ANY attributed commit (not withdrawn) is a strict descendant of headSha or not an ancestor-or-equal of it; CLAUDE.md item 4 already says an ancestor last is a wrong endpoint."
+        },
+        {
+          "at": "2026-09-15T01:55:25.724Z",
+          "actor": "agent",
+          "text": "Adjacent (Gate 2 re-review, 2026-09-14): on an archived delivered openspec epic, update-epic <id> --attribute-commit notasha exits 0 and stores it — staleness reads 'unverifiable', which the regression check does not count as a broken obligation."
+        }
+      ]
+    },
+    {
+      "id": "comprehensive-code-review-after-0-43-0",
+      "title": "Independent comprehensive code review of the pm engine, commands, skills and hooks after 0.43.0 merges — every finding registered as a backlog epic (or filed) before any other backlog task starts",
+      "priority": "P1",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "notes": [
+        {
+          "at": "2026-09-15T02:11:33.727Z",
+          "actor": "agent",
+          "text": "Asked by the user 2026-09-14: once the 0.43.0 commits and PR merge, and BEFORE #167/#168/#173/#176 or any other task, run superpowers:requesting-code-review as an independent, fresh-context, whole-repo review (not diff-scoped). Plan: fan out one reviewer per subsystem (update-epic/archive-gate/integrity; render/briefing/rules; sync/trackers/subcommands; hooks; commands/skills/agents docs vs engine; test quality), thorough mode = two lenses each; adjudicate BLOCKS vs POLISH; register each confirmed finding via /pm:triage then add-epic (or comment on an existing epic/issue). Output: a findings table + the epic ids."
+        }
+      ],
+      "attributedCommits": [],
+      "createdAt": "2026-09-15T02:11:33.733Z",
+      "touchedAt": "2026-09-15T02:11:33.739Z"
+    },
+    {
+      "id": "release-0-43-0-cut",
+      "title": "Cut pm 0.43.0: version bump, CHANGELOG section, Mintlify sync for both member changes (commands/epic and the Changelog page, Real Numbers), release PR into main, fleet pass",
+      "priority": "P1",
+      "status": "planned",
+      "role": "epic",
+      "lane": "claude-code",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "archive-gate-reads-what-it-writes",
+          "reason": "carries its Mintlify task 5.4"
+        },
+        {
+          "type": "relates-to",
+          "epic": "gate-verdict-withdrawal",
+          "reason": "carries its Mintlify task"
+        },
+        {
+          "type": "relates-to",
+          "epic": "comprehensive-code-review-after-0-43-0",
+          "reason": "runs after this PR merges"
+        }
+      ],
+      "reconcileNeeded": false,
+      "notes": [
+        {
+          "at": "2026-09-15T02:16:56.472Z",
+          "actor": "agent",
+          "text": "lane: claude-code not superpowers — release mechanics under the release-checklist skill, no design. Holds 5.4 of archive-gate-reads-what-it-writes and gate-verdict-withdrawal's Mintlify task, carried here so the live site does not document 0.43.0 behavior before the plugin ships; the release-checklist skill is the procedure."
+        }
+      ],
+      "attributedCommits": [],
+      "createdAt": "2026-09-15T02:16:56.476Z",
+      "touchedAt": "2026-09-15T02:16:56.488Z"
     }
   ],
   "detourStack": [],
-  "pmVersion": "0.41.0",
+  "pmVersion": "0.42.0",
   "tracker": {
     "system": "github-issues",
     "repo": "cfdude/pm",
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 637,
+  "revision": 749,
   "reviewMode": "thorough",
   "releases": [
     {
@@ -6842,6 +7550,27 @@
         }
       ],
       "target": "0.42.0"
+    },
+    {
+      "id": "0.43.0",
+      "intent": "Gate verdicts get the inverse every other correctable record has, and the shipped withdraw-commit bypass closes with it. Starts with #192.",
+      "deferred": [],
+      "target": "0.43.0",
+      "crossSpecReview": {
+        "verdict": "pass",
+        "reviewedAt": "2026-09-14T20:53:57.226Z",
+        "specs": [
+          {
+            "key": "archive-gate-reads-what-it-writes/specs/gate-integrity/spec.md",
+            "sha256": "2a3d52e3f64f7ab103a13fe5e98d9474bbcd4f55fff8328ac57b48a089578a54"
+          },
+          {
+            "key": "gate-verdict-withdrawal/specs/gate-integrity/spec.md",
+            "sha256": "3e71975c636dd6111b9707456750329deea9669023e7412da6222d5276f499b7"
+          }
+        ],
+        "reviewer": "two fresh-context lenses (coherence/contradiction; falsifiability/dependency-order), initial + 3 re-rounds; round-3 BLOCKS fixed d046e02; remaining round-3 items adjudicated POLISH (rendering detail, no contradiction) and trimmed from the spec 2b971c9, 2026-09-14"
+      }
     }
   ],
   "archiveBackfilledAt": "2026-08-27T04:52:42.658Z"

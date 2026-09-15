@@ -277,6 +277,22 @@ the `openspec` lane.
   STANDING condition — reported by the brief and by `integrity` at every composition, never
   consumed — and it clears only when a real passing verdict supersedes it. The superseded entry
   is kept, not destroyed.
+- **A verdict that does not belong on this epic is WITHDRAWN, never hand-deleted:** `node "$ENGINE"
+  update-epic <epicId> --withdraw-gate-review <1|2> --withdrawal-reason "<why>"` (repeatable, so
+  both gates go in one call). The whole entry, `superseded` included, moves into
+  `withdrawnGateReviews` — recorded, not erased — and re-recording is the way back; there is no
+  un-withdraw. Refused without a reason, for a gate other than 1 or 2, for the same gate twice,
+  where no verdict is stored, against an `ungated` stamp (record a real verdict instead), and for
+  `--withdrawal-reason` alone. **Withdrawn is a state, not absence**: the obligation reappears, but
+  the archive gate, the regression refusal, `integrity`, PROJECT.md and the brief all say Gate N was
+  withdrawn and quote the reason; the heal never stamps `ungated` over a withdrawn Gate 2, and an
+  archived openspec epic left that way is the standing condition's withdrawn kind
+  (`archived-with-withdrawn-gate-2`). It is a field write the gate decides on, so for a verdict
+  copied onto the wrong epic the remedy is ONE call: withdraw both gates with `--status archived
+  --outcome superseded --reason "…" --correct-disposition "…" --no-deferrals`. **In THIS
+  repository**, running it on a LIVE archived epic adds an integrity finding that conductor-15
+  test 9.14 requires explained in `integrity-day-one.md` — the #192 shape; explain it there in
+  the same commit.
 - `update-epic <id> --status archived` on an `openspec`-lane epic REQUIRES
   `gateReview.gate2.verdict === "pass"`, non-stale, when the outcome is `delivered` — if it's
   missing, `fail`, `ungated` or stale, the transition is rejected with a clear error naming what's
@@ -286,6 +302,20 @@ the `openspec` lane.
   fabricating one. Gate 1 is not itself required at archive time (it gates code, which
   already happened earlier), though recording it via the same subcommand is good practice and
   `integrity` reports an archived openspec epic that passed Gate 2 with no Gate 1.
+  The gate decides on the record the invocation WRITES: it runs after every field write in the
+  same call, so `--lane`, `--attribute-commit`, `--add-story`, `--withdraw-commit` and
+  `--story <n> --done` alongside `--status archived` all count, and a refused call announces no
+  cleared field.
+- An update to an ARCHIVED `delivered` epic that does not archive (including a non-archived
+  `--status` while its change directory is archived on disk, which the heal re-archives) is
+  REFUSED if it breaks a Gate 2 or handoff obligation the record met, e.g. `--lane openspec` with
+  no Gate 2. Per obligation; one that already failed is no ground, so notes, links and priority
+  stay editable on legacy records. The refusal writes nothing and prints ONE runnable
+  `update-epic` invocation: the call's own tokens minus `--status` and disposition flags, plus
+  `--status archived --outcome <…> --reason "<why>"`, `--correct-disposition` only for an
+  agent-recorded disposition, and a deferral placeholder only when none is asserted. It runs the
+  full gate. Not bound: `record-gate-review` recording a `fail`, the heal, the receiving epic's
+  removal stripping `carriedTo`, and disk-side task edits.
 - **The gate binds every path to `archived`, not just this verb.** `reconcileArchived()` — reached
   from `upgrade`, `render`, the commit nudge and `sync` — used to flip an epic with no lane check
   and no gate check. It now records how it bypassed instead of passing silently.
@@ -546,7 +576,7 @@ A user configures theirs in one of two places, and pm honours both: an **output 
 
 | Band | Examples | Bends to the user's output style / communication contract? |
 |---|---|---|
-| **Recorded** | `--outcome`/`--reason`, `--no-deferrals`, gate verdicts, `--attribute-commit`, `--notify`, `record-reconcile`, `record-cross-spec-review` | **No** — these are writes to `.conductor/state.json`, not sentences |
+| **Recorded** | `--outcome`/`--reason`, `--no-deferrals`, gate verdicts and their withdrawal (`--withdraw-gate-review`), `--attribute-commit`/`--withdraw-commit`, `--notify`, `record-reconcile`, `record-cross-spec-review` | **No** — these are writes to `.conductor/state.json`, not sentences |
 | **Parsed** | `hierarchy-child-executor`'s `STATUS/DONE/DECISIONS/CONCERNS`; `merge-conflict-resolver`'s `STATUS/FILES/RESOLUTION_SUMMARY/CONCERNS`; `reconciler`'s `VERDICT/AMENDMENTS/NOTES` | **No** — a wire format between agents. The prose INSIDE a field is ordinary writing and does |
 | **Narrated** | the consolidated end-of-hierarchy report, the end-of-epic autonomy report, the preflight question batch, gate summaries, `/pm:status` narration, `/pm:next`'s recommendation | **Yes** — this is presentation, and it follows the user |
 
@@ -1072,7 +1102,7 @@ gateGuard?    : boolean — repo-level PreToolUse guard toggle; does NOT gate th
 laneRouting?  : { overrides: [{ match, lane }] } — optional per-repo lane overrides, checked
                 before the generic lane heuristic (see "Lane routing overrides" above);
                 set via set-lane-routing, looked up via suggest-lane
-epics[]       : { id, title, priority, status, role, lane, parent?, externalId?, externalUrl?, planPath?, stories[]?, links[], reconcileNeeded?, autonomy?, gateReview?, attributedCommits?, withdrawnCommits?, createdAt?, touchedAt? }
+epics[]       : { id, title, priority, status, role, lane, parent?, externalId?, externalUrl?, planPath?, stories[]?, links[], reconcileNeeded?, autonomy?, gateReview?, withdrawnGateReviews?, attributedCommits?, withdrawnCommits?, createdAt?, touchedAt? }
 createdAt?    : ISO stamp written by `pushEpic()` — the single sink every epic creation routes
                 through — at the moment the epic is registered. ABSENT means UNKNOWN, never
                 today and never another field's value; `recover-created-at` backfills it from
@@ -1081,6 +1111,11 @@ touchedAt?    : ISO stamp advanced inside `saveState()` on each epic whose store
                 actually changed, compared AFTER the no-op early return and with both
                 timekeeping fields excluded from that comparison — so a write that changes
                 nothing advances nothing. Absent on every epic untouched since 0.40.0.
+withdrawnGateReviews? : [{gate, entry, reason, withdrawnAt}] — gate verdicts WITHDRAWN, via
+                `update-epic <id> --withdraw-gate-review <1|2> --withdrawal-reason "<why>"`.
+                `entry` is the removed verdict exactly as stored, `superseded` included.
+                Append-only. A gate with no stored verdict and an entry here is WITHDRAWN
+                (withdrawnGate()), which every surface words as withdrawn, never absent.
 withdrawnCommits? : [{sha, reason, withdrawnAt}] — attributions CORRECTED away, via
                 `update-epic <id> --withdraw-commit <sha> --withdrawal-reason "<why>"`.
                 attributedCommits stays append-only (its last entry is the endpoint a Gate 2
@@ -1088,7 +1123,8 @@ withdrawnCommits? : [{sha, reason, withdrawnAt}] — attributions CORRECTED away
                 than inside it. Withdrawing every sha does NOT clear the Gate 2 obligation —
                 the archive gate reads this field and refuses.
 gateReview?   : { gate1?: {verdict, reviewedAt, baseSha?, headSha?, reviewer?, note?}, gate2?: same } —
-                ANY lane; verdict ∈ pass|fail; set via record-gate-review, which requires both
+                ANY lane; verdict ∈ pass|fail; a gate may instead be in the WITHDRAWN state (absent
+                here, with a withdrawnGateReviews entry); set via record-gate-review, which requires both
                 shas for a `pass` (a legacy `note` is the pre-fields shape, kept unparsed).
                 Recording is lane-agnostic; the archive gate is not — `update-epic --status
                 archived` requires gate2.verdict === "pass" on an openspec-lane epic ONLY

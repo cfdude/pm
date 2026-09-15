@@ -12,6 +12,7 @@
 // way, a non-repository would SUPPRESS writes — the opposite of the safe direction, and a direct
 // contradiction of this change's own spec scenario. Only status 1 is `detached`.
 
+import "./hermetic-git.mjs";   // FIRST: fixture git must ignore the developer's global config
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";

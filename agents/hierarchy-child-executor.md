@@ -35,7 +35,15 @@ self-review, and not just narrating it in your report), write the verdict back d
 "Gate 2 passed" in your final report does NOT satisfy the archive-time check; only the recorded
 `gateReview.gate2.verdict === "pass"` does. If archiving fails with a missing-Gate-2 error, that
 means you skipped recording it (or the review itself) — go back and do the real review, then
-record it, before retrying archive.
+record it, before retrying archive. If it says Gate 2 was WITHDRAWN (quoting a reason), a verdict
+was recorded and then taken back with `--withdraw-gate-review`: a withdrawal discharges nothing, so
+the same remedy applies — a real review recorded again — or, where the work did not end delivered,
+the outcome it actually had. Never re-record the withdrawn verdict without a real review. The gate judges the record the call leaves, so flags in the
+same call count (`--lane`, `--attribute-commit`, `--add-story`, `--story <n> --done`). Once an
+epic is archived `delivered`, an update that breaks a Gate 2 or handoff obligation it met (e.g.
+`--lane openspec` with no Gate 2) is refused and prints one runnable `update-epic` invocation
+recording a disposition. Do not route around it. Either leave the obligation met (record the real
+Gate 2 first) or name the refusal in `CONCERNS`.
 
 a. An action already covered by `preAuthorized`? → proceed, note it.
 b. No backup/restore path for a destructive action? → STOP regardless of anything else.

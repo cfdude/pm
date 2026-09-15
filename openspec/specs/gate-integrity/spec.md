@@ -181,7 +181,8 @@ two halves bind different sets of epics:
   **every lane**, because the heal flips an epic of any lane and the outcome invariant above admits
   no lane exception;
 - the **bypass half** — `gateReview.gate2` with the verdict value `ungated`, a value distinct from
-  `pass` and `fail`, carrying `reviewedAt` and `recordedBy` — binds **openspec-lane epics only**.
+  `pass` and `fail`, carrying `reviewedAt` and `recordedBy` — binds **openspec-lane epics only**, and
+  among those, only epics whose Gate 2 is not in the withdrawn state.
 
 On both halves, `recordedBy` SHALL be the single fixed literal token `archive-drift-heal`, so a test
 and a consumer bind to it exactly rather than to a description of the path. `reviewer` carries a
@@ -189,19 +190,25 @@ reviewer's identity and MUST be absent on an `ungated` entry, so an audit query 
 never mixes path names with the identities of people and agents who actually reviewed something.
 
 **The bypass half MUST NOT be written for a non-openspec-lane epic.** Gate 2 is an openspec-lane
-obligation: `record-gate-review` refuses a verdict to an epic of any other lane, so an `ungated`
-entry on a `claude-code` or `superpowers` epic would be a standing condition with **no** clearing
-path in the engine at all — strictly worse than the backfill flood the requirement below forbids,
-because that one is at least clearable in principle. The heal reaches every lane and the lanes it
-reaches most are not openspec: it is a live, reachable shape, not a hypothetical one — this
-repository holds 68 archived epics of which 65 are not openspec-lane, and the dual-lane registration
-defect deliberately left unfixed this release keeps producing superpowers-lane epics whose ids are
-date-prefixed variants of openspec ones.
+obligation: the heal and the integrity checks treat only openspec-lane epics as owing it. An `ungated`
+entry on a `claude-code` or `superpowers` epic would assert a missing review that lane was never
+required to have, and the only way to clear it would be recording a Gate 2 nobody owed — a standing
+condition that is noise by construction. The heal reaches every lane and the lanes it reaches most are not openspec: it is a live, reachable
+shape, not a hypothetical one — this repository holds 68 archived epics of which 65 are not
+openspec-lane, and the dual-lane registration defect deliberately left unfixed this release keeps
+producing superpowers-lane epics whose ids are date-prefixed variants of openspec ones.
 
 **The heal's openspec-lane test is a site deciding openspec-lane membership** and SHALL normalize an
 absent `lane` exactly as the three sites named in the normalization requirement below do. A lane-less
 epic renders as openspec-lane everywhere, so a strict test here would silently deny it the bypass
 record that its rendering says it owes.
+
+**The bypass half MUST NOT be written onto an epic whose Gate 2 is in the withdrawn state** — no
+`gateReview.gate2`, and at least one `withdrawnGateReviews` entry for Gate 2. `ungated` means nobody
+reviewed the work. For an epic whose review was recorded and then taken back, that is a different and
+false claim. A stored `ungated` would also end the withdrawn state, so every surface would word the
+epic as never reviewed. The standing condition is still reported, as a withdrawn Gate 2, by the
+requirement below, and its clearing path is unchanged: record a real verdict.
 
 Splitting the halves by lane does not split the write: it remains **one** write, and an epic of any
 lane leaves the heal carrying a disposition.
@@ -230,7 +237,8 @@ in the requirement above binds it.
 
 #### Scenario: The archive-drift heal records the bypass and the outcome together
 
-- **WHEN** the archive-drift heal archives an openspec-lane epic that has no passing Gate 2 verdict
+- **WHEN** the archive-drift heal archives an openspec-lane epic that has no `gateReview.gate2` and no
+  `withdrawnGateReviews` entry for Gate 2
 - **THEN** one write leaves the epic with `gateReview.gate2` at verdict `ungated`, carrying its
   timestamp and `recordedBy: "archive-drift-heal"` and no `reviewer`, and with `outcome: unknown`
   carrying `recordedBy: "archive-drift-heal"` as a field — so a later reader can tell it apart from
@@ -241,13 +249,14 @@ in the requirement above binds it.
 
 - **WHEN** the archive-drift heal flips a `claude-code`- or `superpowers`-lane epic to `archived`
 - **THEN** the epic carries `outcome: unknown` with `recordedBy: "archive-drift-heal"` and **no**
-  `gateReview.gate2` entry, so it is never named as an ungated archive — a lane whose epics
-  `record-gate-review` refuses a verdict could never clear such a condition, leaving it permanent
-  and unactionable on the majority of the epics this function touches
+  `gateReview.gate2` entry, so it is never named as an ungated archive — Gate 2 is not an obligation
+  of that lane, and a condition asserting a review it never owed would be noise on the majority of the
+  epics this function touches, clearable only by recording a Gate 2 nobody owed
 
 #### Scenario: A healed lane-less epic is treated as openspec-lane by the heal
 
-- **WHEN** the archive-drift heal flips an epic that has no `lane` field to `archived`
+- **WHEN** the archive-drift heal flips an epic that has no `lane` field, no `gateReview.gate2` and no
+  Gate 2 withdrawal to `archived`
 - **THEN** it receives the bypass half exactly as an epic with `lane: "openspec"` does, because the
   heal's lane test normalizes an absent lane the same way every other openspec-lane decision does
 
@@ -266,6 +275,14 @@ in the requirement above binds it.
 - **THEN** once the run completes the epic is `archived` **and** carries an `outcome`, rather than
   landing archived with none and never being revisited because the version stamp now says the
   migration ran
+
+#### Scenario: The heal does not stamp over a withdrawn Gate 2
+
+- **WHEN** an openspec-lane epic carrying no disposition, whose Gate 2 is in the withdrawn state, has
+  its change directory moved under `openspec/changes/archive/`, and a mutating verb runs the heal
+- **THEN** the epic is `archived` and carries `outcome: unknown` with
+  `recordedBy: "archive-drift-heal"`, and `gateReview.gate2` is absent — no `ungated` entry is
+  written
 
 #### Scenario: An existing verdict is never overwritten by the heal
 
@@ -343,30 +360,66 @@ whether or not the epic's change exists on disk.
 
 ### Requirement: An ungated archive is a standing condition until a real verdict supersedes it
 
-An epic carrying an `ungated` Gate 2 SHALL be named wherever the conductor reports its own
-integrity, and that notice MUST NOT be consumed on delivery. An ungated archive is a standing
-record condition, not an episode: unlike the write-conflict contention warning — which describes a
-run of events that has ended and is therefore consumed once a session has seen it — the condition
-here persists in `state.json` until something changes it, and a notice that consumes would report
-it to one session and hide it from every session after.
+The conductor reports two kinds of this standing condition. Both SHALL be named wherever the conductor
+reports its own integrity, and their notice MUST NOT be consumed on delivery.
+
+- **The ungated kind:** an epic in completion scope carrying an `ungated` Gate 2.
+- **The withdrawn kind:** an epic that is archived, whose lane is openspec (an absent lane normalized
+  as openspec), which is in completion scope, and whose Gate 2 is in the withdrawn state. "Archived"
+  here means its stored status is `archived` OR its change directory is archived on disk. The
+  integrity report reads stored epics and the briefing reads epics resolved against disk, and without
+  that OR they would disagree about an epic between `/opsx:archive` and the next heal.
+
+The two kinds are disjoint, because a gate carrying `ungated` is never in the withdrawn state. They
+are ONE definition, computed in one place and read by the integrity report and the briefing alike.
+Each surface MUST present the withdrawn kind under its own heading: its own integrity check id and
+title, and its own briefing heading. Neither the withdrawn kind's own heading or check title,
+nor any heading whose block encloses a withdrawn-kind entry (an umbrella heading shared with the
+ungated kind), may state or imply that no review was recorded. A heading of a separate block printed
+earlier is not above the entry in this sense.
+
+Each reader MUST word the kinds differently. "No Gate 2 review recorded by anyone" is true of the
+ungated kind and false of the withdrawn one, whose notice names the withdrawal and quotes the latest
+withdrawal's reason. Where ANY Gate 2 withdrawal entry holds an `ungated` stamp in its `superseded`
+field, the notice MUST say so, so a withdrawal never hides "never reviewed", even after a later
+re-record and second withdrawal. The guarantee reaches as far as the record does: `record-gate-review`
+keeps one level of `superseded`, so an `ungated` stamp superseded twice before any withdrawal is not
+in the record to report.
+
+**The two kinds filter differently, and on purpose.** The ungated kind is keyed on a stamp: a durable
+record that an archive bypassed Gate 2. The heal writes that stamp only onto openspec-lane epics it
+archives, but a later lane switch or status change does not undo the bypass, so the stamp stays
+reported wherever the epic moves. That is today's behavior, and this change keeps it. The withdrawn
+kind is keyed on a state that can arise on any lane and at any status. It is reported only where
+Gate 2 is owed at archive, which is the set the heal would have stamped.
+
+An epic outside completion scope — one that ended `killed`, `superseded`, `abandoned`, `declined`
+or `unreconstructable`, or one registered by the archive backfill — owes no Gate 2 and is named by
+neither kind.
+
+Either kind is a standing record condition, not an episode. The write-conflict contention warning
+describes a run of events that has ended, so it is consumed once a session has seen it. The condition
+here persists in `state.json` until something changes it, and a notice that consumed itself would
+report it to one session and hide it from every session after.
 
 Only the archive-drift heal produces `ungated` entries, and only for openspec-lane epics. The
 archive backfill registration and the two archived-at-creation paths are forbidden above from
-writing a `gate2` entry at all, so no epic any of them registers can ever be named by this notice —
-which is what keeps a standing, unclearable condition from being asserted en masse against changes
+writing a `gate2` entry at all, so no epic any of them registers can ever be named by this notice.
+That is what keeps a standing, unclearable condition from being asserted en masse against changes
 archived before the conductor could have guarded them. The heal's lane binding does the same job for
-the lanes that have no Gate 2 to record: a non-openspec-lane epic is never named by this notice,
-because it never acquires the entry.
+the lanes that have no Gate 2 to record: the heal never stamps a non-openspec-lane epic, so no such
+epic is named by the ungated kind unless it was stamped as openspec-lane and switched lanes afterwards.
 
-Recording a real Gate 2 verdict with evidence SHALL supersede an `ungated` entry, and that is what
-clears the notice. The superseded entry MUST remain readable, so an audit can still see that the
-epic was archived ungated before it was reviewed. Without a supersession path the notice would be
-unremediable by design, which is how a standing signal becomes noise everyone filters.
+Recording a real Gate 2 verdict with evidence SHALL supersede an `ungated` entry and SHALL end the
+withdrawn state, and that is what clears either notice. The superseded entry and the withdrawal MUST
+remain readable, so an audit can still see what the epic carried before it was reviewed. Without a
+clearing path the notice would be unremediable by design, which is how a standing signal becomes
+noise everyone filters.
 
 #### Scenario: An ungated archive is visible in the session briefing
 
-- **WHEN** a briefing is composed in a repo containing at least one epic whose recorded Gate 2
-  verdict is `ungated`
+- **WHEN** a briefing is composed in a repo containing at least one epic in completion scope whose
+  recorded Gate 2 verdict is `ungated`
 - **THEN** the briefing names those epics, so the condition is visible in-session rather than
   discoverable only by querying `state.json`
 
@@ -376,12 +429,61 @@ unremediable by design, which is how a standing signal becomes noise everyone fi
   composed with the epic's `ungated` verdict unchanged
 - **THEN** the later briefing names the epic again, because the condition still holds
 
+#### Scenario: Delivering the withdrawn notice does not clear it either
+
+- **WHEN** a briefing naming an epic under the withdrawn kind is delivered into a session and a later
+  briefing is composed with that epic's withdrawal unchanged
+- **THEN** the later briefing names the epic again
+
 #### Scenario: A real verdict supersedes the bypass entry
 
 - **WHEN** the agent records a passing Gate 2 with its evidence against an epic whose `gate2` is
   `ungated`
 - **THEN** the epic stops being reported as an ungated archive, and the record still shows that it
   was archived ungated before the review happened
+
+#### Scenario: An archived epic with a withdrawn Gate 2 is named, and worded as withdrawn
+
+- **WHEN** an openspec-lane epic's Gate 2 is withdrawn while it is open, its change is then archived
+  on disk and the heal flips it to `archived` with outcome `unknown`, and the integrity report and the
+  briefing are composed
+- **THEN** both name the epic by its id, each states Gate 2 was withdrawn and quotes the withdrawal
+  reason, and no text in the block that names it, headings and titles included, states that no
+  review was recorded
+
+#### Scenario: A withdrawn entry that superseded an ungated stamp says so
+
+- **WHEN** an epic named by the withdrawn kind has a withdrawn Gate 2 entry whose `superseded` field
+  holds an `ungated` stamp, and the integrity report and the briefing are composed
+- **THEN** each states both that Gate 2 was withdrawn and that the epic was archived ungated before
+  the withdrawn review was recorded
+
+#### Scenario: The ungated history survives a second withdrawal
+
+- **WHEN** the heal stamped an epic's Gate 2 `ungated`, a `pass` was recorded and withdrawn, a second
+  `pass` was recorded and withdrawn, and the integrity report and the briefing are composed
+- **THEN** each still states that the epic was archived ungated, although the latest withdrawal entry
+  holds no `ungated` stamp
+
+#### Scenario: Both surfaces agree before the heal has run
+
+- **WHEN** an openspec-lane epic's Gate 2 is withdrawn while it is open, its change directory is then
+  moved under `openspec/changes/archive/`, and the briefing and the integrity report are composed
+  before any mutating verb runs the heal
+- **THEN** both name the epic as withdrawn, because the withdrawn kind counts an epic whose change is
+  archived on disk as archived
+
+#### Scenario: A withdrawn Gate 2 on an epic that ended another way is not named
+
+- **WHEN** an archived openspec-lane epic with outcome `superseded` has its Gate 2 in the withdrawn
+  state, and the integrity report and the briefing are composed
+- **THEN** neither names the epic
+
+#### Scenario: A withdrawn Gate 2 outside the openspec lane or the archive is not named
+
+- **WHEN** an archived `claude-code`-lane epic and an openspec-lane epic that is neither archived in state nor archived on
+  disk each have Gate 2 in the withdrawn state, and the integrity report and the briefing are composed
+- **THEN** neither surface names either epic
 
 #### Scenario: A backfilled archived epic is never named as an ungated archive
 
@@ -899,3 +1001,533 @@ guessed would write a disposition nobody made.
 - **WHEN** the integrity surface runs over a state file in which every epic carries a defined
   status
 - **THEN** no unknown-status finding is reported
+
+### Requirement: The interactive archive verb gates the record the invocation writes
+
+When `update-epic` carries `--status archived`, the archive gate MUST evaluate the epic after every
+field write and unset in that invocation, never the epic as it stood before them. The field writes
+include:
+
+- the lane;
+- the plan and spec paths;
+- commit attribution and its withdrawal;
+- added stories, and a story marked done or won't-do;
+- links and priority;
+- every `--clear` unset.
+
+The gate's decision SHALL therefore be the decision it would make if those writes had already been
+applied: refused exactly where that record fails the gate, and accepted exactly where it passes.
+
+The claim is about the GATE's decision. It does not extend to refusals that validate the invocation
+itself: contradictory flags, a story index out of range, a flag that needs another flag. Those keep
+their own rules.
+
+A refused invocation MUST write nothing and MUST print no line announcing a write. That includes the
+sync-ignore tombstone clear, the rank clear, and the `--clear` notes. A refused call that announced a
+cleared rank would report a change that did not happen.
+
+Today the gate reads the epic before those writes. One call can therefore archive a record the gate
+refuses, and refuse a record the gate accepts. The gate exists to decide on the record that gets
+written; one that reads a different record decides nothing.
+
+#### Scenario: A lane switch and an archive in one call cannot bypass Gate 2
+
+- **WHEN** a `claude-code`-lane epic with no Gate 2 ever recorded and no outstanding work runs
+  `update-epic <id> --lane openspec --status archived --outcome delivered --no-deferrals`
+- **THEN** it exits non-zero naming the missing passing Gate 2, `state.json` is byte-identical, and
+  the epic is not archived
+
+#### Scenario: An attribution and an archive in one call cannot bypass staleness
+
+- **WHEN** an openspec-lane epic carries a passing Gate 2 whose `headSha` is its last attributed
+  commit, and `update-epic <id> --attribute-commit <a commit descending from that headSha>
+  --status archived --outcome delivered --no-deferrals` runs
+- **THEN** it exits non-zero naming the uncovered commit, and `state.json` is byte-identical
+
+#### Scenario: An added story and an archive in one call cannot bypass the handoff
+
+- **WHEN** a `claude-code`-lane epic whose stories are all done runs `update-epic <id> --add-story "s"
+  --status archived --outcome delivered --no-deferrals`
+- **THEN** it exits non-zero naming the outstanding story, and `state.json` is byte-identical
+
+#### Scenario: A commit withdrawal and an archive in one call cannot bypass the gate
+
+- **WHEN** an openspec-lane epic attributes exactly one commit and carries a passing Gate 2 covering
+  it, and `update-epic <id> --withdraw-commit <that sha> --withdrawal-reason "x" --status archived
+  --outcome delivered --no-deferrals` runs
+- **THEN** it exits non-zero naming the withdrawn attribution, `state.json` is byte-identical, and the
+  epic is not archived
+
+#### Scenario: Finishing the last story and archiving in one call is accepted
+
+- **WHEN** a `claude-code`-lane epic whose only outstanding story is story 1 runs `update-epic <id>
+  --story 1 --done --status archived --outcome delivered --no-deferrals`
+- **THEN** it exits zero, story 1 is done, and the epic is archived with outcome `delivered`
+
+#### Scenario: Leaving the openspec lane and archiving in one call is accepted
+
+- **WHEN** an openspec-lane epic with no Gate 2 ever recorded and no outstanding work runs
+  `update-epic <id> --lane claude-code --status archived --outcome delivered --no-deferrals`
+- **THEN** it exits zero and the epic is an archived `delivered` `claude-code`-lane epic
+
+#### Scenario: A refused call announces no cleared field
+
+- **WHEN** a `claude-code`-lane epic with no stories, ranked in P2, carrying a `parent`, whose
+  sync-ignored plan file has every task ticked and which has no Gate 2 ever recorded, runs
+  `update-epic <id> --priority P1 --clear parent --plan <that path> --lane openspec --status archived
+  --outcome delivered --no-deferrals`
+- **THEN** it exits non-zero, stderr carries none of the rank-clear, parent-clear or tombstone-clear
+  lines, and `state.json` is byte-identical
+
+#### Scenario: An accepted call still announces what it cleared
+
+- **WHEN** the same epic runs the same flags with `--lane openspec` omitted
+- **THEN** it exits zero and stderr carries the rank-clear, parent-clear and tombstone-clear lines
+
+### Requirement: An update to an archived epic does not break an obligation its archive met
+
+This requirement binds an `update-epic` invocation when ALL of these hold (the outcome and the status
+are read from the epic as stored BEFORE the invocation):
+
+- the epic's recorded outcome is `delivered`;
+- the invocation does not carry `--status archived`;
+- the record will be archived when the invocation returns: EITHER the epic's change directory is
+  archived on disk (the predicate on which the archive-drift heal, run by the invocation's own
+  render, archives it, whatever its stored status), OR its stored status is `archived` and the
+  invocation carries no `--status`.
+
+For such an invocation, `update-epic` MUST compare the delivered-outcome obligations on the record
+before the invocation with those on the record it would leave. The obligations are:
+
+- **the Gate 2 demand** — openspec lane, a present passing Gate 2 that is neither stale nor
+  attribution-withdrawn;
+- **the handoff demand** — no outstanding work, unless the disposition names where it was carried.
+
+The comparison is PER OBLIGATION. The invocation MUST be refused, writing nothing and announcing no
+write, where some obligation the record met before is failed by the record after, whatever the
+other obligation's state. A whole-record comparison would let an already-failing handoff mask a
+Gate 2 the invocation breaks.
+
+The archive gate and this check MUST decide the obligations from ONE definition, so they cannot
+disagree about what "met" means. Sharing the definition does not make this check the archive
+transition's handoff guard: `epic-disposition`'s rule that the handoff refusal names `--carried-to`
+and the lifecycle marker binds the interactive archive verb's refusal only, and this refusal is not
+one.
+
+An obligation the record already failed before the invocation MUST NOT be a ground for refusal.
+Archived records from before a rule existed fail rules they were never held to, and refusing every
+update to them would lock notes, links and priority on a record for a defect the update did not cause.
+
+**The refusal's wording.** It MUST state that the update would break an obligation the archived
+record met, and name that obligation. It MUST NOT contain the text `cannot archive`, which opens every
+archive-gate refusal. The printed invocation below MUST be the only line of the refusal that begins
+with `  update-epic `, and no ENGINE-WRITTEN text on any other line may name `--carried-to`,
+`--outcome` or `--reason`, flags that take effect only alongside `--status archived`. A value a user
+supplied (a story title, a reason, a note) MUST NOT start a line of the refusal. Where the invocation carried a non-archived `--status`,
+the refusal MUST say that status is dropped from the printed invocation because the change directory
+archived on disk re-archives the epic.
+
+**The printed invocation.** The refusal MUST print a runnable invocation that makes the same change
+and records the disposition it implies. It is the invocation's own argument tokens, as given, minus
+`--status`, `--outcome`, `--reason`, `--carried-to`, `--correct-disposition` and the deferral flags
+(with their values), plus `--status archived`, an `--outcome` placeholder naming the agent outcomes,
+and `--reason "<why>"`. Which token is a
+dropped flag's value follows the engine's own flag walk: an inline `--flag=value` token drops alone,
+and a following token drops with its flag only where that token is not itself flag-shaped. A flag
+given with no value echoes with no value, a repeated flag echoes once per occurrence, and an inline
+`--flag=value` token echoes as one token. Every echoed token MUST be quoted so that the printed line, with only its placeholders
+filled, runs in a POSIX shell with each token arriving whole, including a value containing an
+apostrophe. The printed invocation MUST stay on ONE physical line. A token containing a newline or other
+control character is NOT echoed as a value: its position carries the flag and a placeholder, and the
+refusal says which flag's value must be re-entered. A shell cannot reliably rebuild such a value on one line (command substitution strips a
+trailing newline), and a promise of byte-for-byte reconstruction there would be false.
+- It MUST carry `--correct-disposition "<why the recorded one was wrong>"` if and only if the recorded
+  disposition is agent-recorded. An engine-stamped disposition is replaced by recording an outcome,
+  and the correction flag is refused against it.
+- It MUST carry the placeholder `<--no-deferrals | --deferral "<epicId>:<section>">` if and only if
+  the epic has no deferral assertion. A deferral assertion is a claim to be made, not a default to
+  print.
+
+An update to an archived epic never passes through `--status archived`, so the archive gate never
+sees it. Reproduced on 0.42.0:
+- `update-epic <id> --lane openspec` on an archived `delivered` `claude-code` epic exits 0 and leaves a
+  `delivered` openspec-lane epic with no Gate 2, which `integrity` names nowhere.
+- `update-epic <id> --status queued --attribute-commit <descendant>` on an archived `delivered`
+  openspec epic whose change directory is archived on disk exits 0. The heal re-archives it in the same
+  call with a stale Gate 2.
+
+#### Scenario: Switching an archived delivered epic into the openspec lane is refused
+
+- **WHEN** an archived `delivered` `claude-code`-lane epic with no Gate 2 ever recorded runs
+  `update-epic <id> --lane openspec --notes "moved to the openspec lane"`
+- **THEN** it exits non-zero naming the missing passing Gate 2, its message does not contain
+  `cannot archive`, and `state.json` is byte-identical
+
+#### Scenario: Attributing a commit an archived delivered epic's Gate 2 does not cover is refused
+
+- **WHEN** an archived `delivered` openspec-lane epic carries a passing Gate 2 whose `headSha` is its
+  last attributed commit, and `update-epic <id> --attribute-commit <a commit descending from that
+  headSha>` runs
+- **THEN** it exits non-zero naming the uncovered commit, and `state.json` is byte-identical
+
+#### Scenario: A non-archived status does not escape the check while the heal will re-archive
+
+- **WHEN** the epic of the previous scenario has its change directory under
+  `openspec/changes/archive/`, and `update-epic <id> --status queued --attribute-commit <a commit
+  descending from that headSha>` runs
+- **THEN** it exits non-zero naming the uncovered commit, the refusal says `--status` is dropped from
+  the printed invocation because the change directory archived on disk re-archives the epic, and
+  `state.json` is byte-identical
+
+#### Scenario: Adding a story to an archived delivered epic is refused without naming a dead remedy
+
+- **WHEN** an archived `delivered` `claude-code`-lane epic whose stories are all done runs
+  `update-epic <id> --add-story "s"`
+- **THEN** it exits non-zero naming the outstanding story, no line of the refusal other than the one
+  beginning `  update-epic ` names `--carried-to`, `--outcome` or `--reason`, and `state.json` is
+  byte-identical
+
+#### Scenario: Withdrawing the only attribution of an archived delivered epic is refused
+
+- **WHEN** an archived `delivered` openspec-lane epic attributes exactly one commit, covered by its
+  passing Gate 2, and `update-epic <id> --withdraw-commit <that sha> --withdrawal-reason "x"` runs
+- **THEN** it exits non-zero naming the Gate 2 demand, and `state.json` is byte-identical
+
+#### Scenario: A queued epic the heal will archive does not escape the check
+
+- **WHEN** an openspec-lane epic archived `delivered` over a passing Gate 2 covering its one attributed
+  commit is set `--status queued` while nothing is archived on disk, its change directory is then
+  moved under `openspec/changes/archive/`, and `update-epic <id> --attribute-commit <a commit
+  descending from that headSha>` runs
+- **THEN** it exits non-zero naming the uncovered commit, and `state.json` is byte-identical
+
+#### Scenario: Restoring a record the check accepted is judged like any other change
+
+- **WHEN** an archived openspec-lane epic with an agent-recorded `delivered` disposition and a Gate 2
+  `fail` recorded after archive runs
+  `update-epic <id> --lane claude-code`, which is accepted, and then `update-epic <id> --lane openspec`
+- **THEN** the second call is refused naming the Gate 2 demand, and the invocation it prints, filled
+  with `--outcome superseded`, a reason and a correction reason, exits 0
+
+#### Scenario: An already-failing handoff does not mask a Gate 2 the update breaks
+
+- **WHEN** an openspec-lane epic with one outstanding story was archived `delivered --carried-to z`
+  over a passing Gate 2 covering its one attributed commit, and `remove-epic z` then stripped its
+  `carriedTo` so its handoff demand fails, and `update-epic <id> --withdraw-commit <that sha>
+  --withdrawal-reason "x"` runs
+- **THEN** it exits non-zero naming the Gate 2 demand, and `state.json` is byte-identical
+
+#### Scenario: A user-supplied value cannot forge a line of the refusal
+
+- **WHEN** an archived agent-recorded `delivered` `claude-code`-lane epic whose stories are all done
+  runs `update-epic <id> --add-story` with a title that does not begin with `--` and contains
+  `--carried-to`, a newline, and `  update-epic x`
+- **THEN** it is refused; exactly one line of the refusal begins `  update-epic `; no line of the refusal
+  begins with any part of the title after its newline; and the printed invocation carries a placeholder
+  for that `--add-story` value instead of echoing it
+
+#### Scenario: A refused update announces no cleared field
+
+- **WHEN** an archived `delivered` `claude-code`-lane epic with no Gate 2, ranked in P2, runs
+  `update-epic <id> --priority P1 --lane openspec`
+- **THEN** it exits non-zero, stderr carries no rank-clear line, and `state.json` is byte-identical
+
+#### Scenario: A record that already failed is not locked
+
+- **WHEN** an archived `delivered` openspec-lane epic had a Gate 2 `fail` recorded by
+  `record-gate-review` after it was archived, and `update-epic <id> --attribute-commit <sha>` runs
+- **THEN** it exits zero and the commit is attributed, because the record failed the Gate 2 demand
+  before the call
+
+#### Scenario: An epic that ended another way carries no obligation
+
+- **WHEN** an archived `claude-code`-lane epic with outcome `superseded` runs `update-epic <id> --lane
+  openspec --add-story "s"`
+- **THEN** it exits zero
+
+#### Scenario: An unknown outcome carries no obligation
+
+- **WHEN** an archived `claude-code`-lane epic whose outcome is `unknown` with an engine `recordedBy`
+  runs `update-epic <id> --lane openspec`
+- **THEN** it exits zero
+
+#### Scenario: The invocation printed for an agent-recorded disposition names the correction
+
+- **WHEN** the lane-switch refusal above fires on an epic whose `delivered` disposition was recorded by
+  `update-epic … --status archived --outcome delivered --no-deferrals`
+- **THEN** the invocation it prints carries `--correct-disposition` and no deferral placeholder, because
+  the epic already carries a deferral assertion
+
+#### Scenario: The invocation printed for an engine-stamped disposition does not name the correction
+
+- **WHEN** an archived epic whose `delivered` disposition was stamped by the 0.27.0 migration (a
+  pre-0.27.0 state file carrying a passing Gate 2, run through `upgrade`), and whose stories are all
+  done, runs `update-epic <id> --add-story "s"`
+- **THEN** it is refused, and the invocation it prints carries no `--correct-disposition` and carries
+  the deferral placeholder, because a migration stamp records no deferral assertion
+
+#### Scenario: The printed invocation runs
+
+- **WHEN** an archived agent-recorded `delivered` `claude-code`-lane epic with no Gate 2 ever recorded
+  runs `update-epic <id> --lane openspec --notes "Rob's move" --clear-links --reason=--x --add-story
+  "two words" --add-story=--x`, which is refused, and the invocation it prints is run through `sh -c` with its
+  placeholders filled as `--outcome superseded`, a reason, and a correction reason
+- **THEN** it exits zero; the epic is an archived `superseded` openspec-lane epic whose prior
+  `delivered` disposition is kept under `superseded`; its latest note is `Rob's move`; it has no links;
+  and it gained exactly the two stories `two words` and `--x`
+
+#### Scenario: Leaving the archive is not refused where nothing re-archives the epic
+
+- **WHEN** an archived `delivered` `claude-code`-lane epic with no Gate 2 ever recorded and no change directory
+  archived on disk runs `update-epic <id> --status queued --lane openspec`
+- **THEN** it exits zero and the epic is `queued`, and a later `update-epic <id> --status archived
+  --outcome delivered --reason r --correct-disposition c --no-deferrals` is refused for the missing
+  passing Gate 2
+
+### Requirement: A recorded gate verdict can be withdrawn, and the withdrawal is recorded
+
+`update-epic <id> --withdraw-gate-review <1|2> --withdrawal-reason "<why>"` MUST remove the epic's
+stored Gate N verdict from `gateReview.gateN` and MUST append `{gate, entry, reason, withdrawnAt}` to
+the epic's `withdrawnGateReviews` array. `entry` is the removed verdict exactly as it was stored,
+including any `superseded` history it carried. The flag MUST be repeatable, so distinct gates are
+withdrawn in one invocation under its one reason.
+
+A verdict recorded on the wrong epic is not a wrong verdict; it is a verdict in the wrong place.
+Re-recording can replace a verdict but cannot say it does not belong here, which left the gate record
+as the one field in `state.json` with no inverse.
+
+The withdrawal is recorded rather than erased, so the record shows a verdict was recorded and taken
+back rather than that none ever existed. The whole entry moves: flattening it to the issue's
+suggested `{verdict, reviewedAt}` would drop the range, the artifacts and the reviewer an audit of the
+withdrawal needs.
+
+#### Scenario: Withdrawing a recorded verdict moves it to the sibling record
+
+- **WHEN** an epic carries a Gate 2 verdict `pass` with `baseSha` and `headSha`, and
+  `update-epic <id> --withdraw-gate-review 2 --withdrawal-reason "recorded on the tracker mirror"`
+  runs
+- **THEN** `gateReview.gate2` is absent, and the last `withdrawnGateReviews` entry has `gate: 2`, that
+  reason, a `withdrawnAt` timestamp, and an `entry` deep-equal to the verdict as stored before the call
+
+#### Scenario: The superseded history moves with the verdict and is not restored
+
+- **WHEN** Gate 1 was recorded twice, so its stored entry carries a `superseded` entry, and Gate 1 is
+  withdrawn
+- **THEN** `gateReview.gate1` is absent (the superseded entry is NOT promoted to the stored verdict),
+  and the withdrawn `entry` carries the `superseded` field it had
+
+#### Scenario: The other gate is untouched
+
+- **WHEN** an epic carries both a Gate 1 and a Gate 2 verdict and only Gate 1 is withdrawn
+- **THEN** `gateReview.gate2` deep-equals its value before the call
+
+#### Scenario: Both gates in one invocation
+
+- **WHEN** `update-epic <id> --withdraw-gate-review 1 --withdraw-gate-review 2 --withdrawal-reason "x"`
+  runs on an epic carrying both verdicts
+- **THEN** both `gateReview.gate1` and `gateReview.gate2` are absent, and `withdrawnGateReviews` gained
+  exactly two entries, one per gate, each carrying reason `x`
+
+#### Scenario: Re-recording after a withdrawal starts clean
+
+- **WHEN** Gate 2 is withdrawn and then `record-gate-review <id> --gate 2 --verdict pass` runs with a
+  valid range
+- **THEN** `gateReview.gate2` holds the new verdict with no `superseded` field, and the withdrawal is
+  still present in `withdrawnGateReviews`
+
+#### Scenario: The write is read back
+
+- **WHEN** a withdrawal is requested and the state read back after the write still carries that
+  gate's verdict, or carries no withdrawal entry for that gate with that reason
+- **THEN** the verb exits non-zero with a message stating the withdrawal did NOT land
+
+### Requirement: A gate withdrawal is refused where it would record nothing true
+
+Each of these MUST be refused with no write, and each refusal MUST name its cause:
+
+1. `--withdrawal-reason` given with neither `--withdraw-gate-review` nor `--withdraw-commit`;
+2. `--withdraw-gate-review` without a non-blank `--withdrawal-reason`;
+3. a gate value other than `1` or `2`;
+4. the same gate given twice in one invocation;
+5. a gate with no stored verdict (`gateReview.gateN` absent);
+6. a gate whose stored verdict is `ungated`.
+
+They are evaluated in the order listed. Refusals 5 and 6 apply only to gate values that passed 3 and
+4, and are disjoint: 5 is an absent entry, 6 is a present entry with one particular verdict. Each
+scenario below supplies every other input valid, so it exercises exactly one refusal.
+
+- Refusing where there is nothing to withdraw keeps the flag from becoming a general "reset the gate"
+  lever.
+- An `ungated` entry is an engine record that no review happened. It is not a review, so recording it
+  as a review taken back would be a false record, and it would relabel "never reviewed" as
+  "withdrawn" on every surface.
+- A reason flag accepted alone is a silent no-op: today it passes, is never read, and writes nothing.
+
+#### Scenario: The reason flag alone
+
+- **WHEN** `update-epic <id> --withdrawal-reason "x"` runs with neither withdrawal flag
+- **THEN** it exits non-zero naming `--withdraw-gate-review` and `--withdraw-commit`, and `state.json`
+  is byte-identical
+
+#### Scenario: No reason
+
+- **WHEN** `update-epic <id> --withdraw-gate-review 2` runs on an epic carrying a stored Gate 2 `pass`
+- **THEN** it exits non-zero naming `--withdrawal-reason`, and `state.json` is byte-identical
+
+#### Scenario: An invalid gate value
+
+- **WHEN** `update-epic <id> --withdraw-gate-review 3 --withdrawal-reason "x"` runs on an epic carrying
+  stored Gate 1 and Gate 2 `pass` verdicts
+- **THEN** it exits non-zero naming `1` and `2` as the valid values, and `state.json` is byte-identical
+
+#### Scenario: The same gate twice
+
+- **WHEN** `update-epic <id> --withdraw-gate-review 2 --withdraw-gate-review 2 --withdrawal-reason "x"`
+  runs on an epic carrying a stored Gate 2 `pass`
+- **THEN** it exits non-zero naming Gate 2 as given twice, and `state.json` is byte-identical
+
+#### Scenario: Nothing to withdraw
+
+- **WHEN** `update-epic <id> --withdraw-gate-review 1 --withdrawal-reason "x"` runs on an epic with no
+  `gateReview.gate1`
+- **THEN** it exits non-zero stating there is no Gate 1 verdict to withdraw, and `state.json` is
+  byte-identical
+
+#### Scenario: An ungated stamp
+
+- **WHEN** an openspec-lane epic's change was archived on disk and the archive-drift heal stamped its
+  Gate 2 `ungated`, and `update-epic <id> --withdraw-gate-review 2 --withdrawal-reason "x"` runs
+- **THEN** it exits non-zero stating an `ungated` entry is cleared by recording a real verdict, and
+  `state.json` is byte-identical
+
+### Requirement: A gate withdrawal is a field write the archive gate decides on
+
+`--withdraw-gate-review` MUST be a field write of the interactive archive verb in the sense of
+"The interactive archive verb gates the record the invocation writes" and "An update to an archived
+epic does not break an obligation its archive met". Both requirements bind it as written, with no
+exception, and this requirement adds no rule to either. How their refusals word a withdrawn Gate 2 is
+defined once, by "A withdrawn gate is reported as withdrawn, never as absent".
+
+A Gate 1 withdrawal carries no archive obligation, so neither requirement refuses it.
+
+The bypass Gate 1 first found on `--withdraw-commit` was one instance of an ordering defect shared by
+every field write of the verb, so the rule lives with the verb and not with either withdrawal flag.
+
+#### Scenario: A Gate 2 withdrawal and a delivered archive in one call are refused
+
+- **WHEN** an openspec-lane epic carries a passing Gate 2 covering its attributed commits and no
+  outstanding work, and `update-epic <id> --withdraw-gate-review 2 --withdrawal-reason "x"
+  --status archived --outcome delivered --no-deferrals` runs
+- **THEN** it exits non-zero with a message stating Gate 2 was withdrawn and quoting `x` (the wording
+  "A withdrawn gate is reported as withdrawn, never as absent" defines), `state.json` is
+  byte-identical, and the epic is not archived
+
+#### Scenario: Withdrawing Gate 2 from an archived delivered epic is refused
+
+- **WHEN** an openspec-lane epic is `archived` with an agent-recorded `delivered` disposition, a
+  passing Gate 2 covering its attributed commits and no outstanding work, and `update-epic <id>
+  --withdraw-gate-review 2 --withdrawal-reason "x"` runs without `--status`
+- **THEN** it exits non-zero, prints the invocation that also records a disposition carrying
+  `--correct-disposition`, and `state.json` is byte-identical
+
+#### Scenario: An archived delivered epic whose Gate 2 already failed can have it withdrawn
+
+- **WHEN** an openspec-lane epic is `archived` `delivered`, and a Gate 2 `fail` was recorded against it
+  by `record-gate-review` after it was archived, and `update-epic <id> --withdraw-gate-review 2
+  --withdrawal-reason "x"` runs
+- **THEN** it exits zero, because the record already failed its Gate 2 obligation before the call, and
+  the epic is named by the withdrawn kind of the standing condition
+
+#### Scenario: Withdrawing Gate 1 from an archived delivered epic is accepted
+
+- **WHEN** the archived `delivered` epic of "Withdrawing Gate 2 from an archived delivered epic is
+  refused", whose Gate 2 was met, runs `update-epic <id> --withdraw-gate-review 1 --withdrawal-reason
+  "x"`
+- **THEN** it exits zero and Gate 1 is in the withdrawn state
+
+#### Scenario: A misplaced verdict is withdrawn and the disposition corrected in one call
+
+- **WHEN** an openspec-lane epic is `archived` with an agent-recorded `delivered` disposition, carrying
+  a Gate 1 verdict recorded with `--artifact` evidence and a Gate 2 verdict recorded 2 seconds apart, so
+  `integrity` reports it under `gate-recorded-as-bookkeeping`, and `update-epic <id>
+  --withdraw-gate-review 1 --withdraw-gate-review 2 --withdrawal-reason "x" --status archived
+  --outcome superseded --reason "y" --correct-disposition "z" --no-deferrals` runs
+- **THEN** it exits zero; the epic is `archived` with outcome `superseded`, keeps the prior `delivered`
+  disposition under `superseded`, carries no Gate 1 or Gate 2 verdict and two `withdrawnGateReviews`
+  entries; and a following `integrity` run reports the epic under NONE of
+  `gate-recorded-as-bookkeeping`, `archived-with-no-gate-2-review`,
+  `archived-with-withdrawn-gate-2`, and `archived-openspec-epic-with-no-gate-1`
+
+### Requirement: A withdrawn gate is reported as withdrawn, never as absent
+
+A gate is in the **withdrawn** state when `gateReview.gateN` is absent AND at least one
+`withdrawnGateReviews` entry exists for that gate. A gate with a stored verdict, `ungated` included,
+is never in it, whatever its withdrawal history.
+
+On every surface named below, the withdrawn state MUST be distinguishable from a gate that was never
+recorded. A withdrawal MUST NOT discharge an obligation: every refusal and finding an absent gate
+produces MUST still be produced, naming the withdrawal and quoting its reason.
+
+This is the asymmetry `attribution-withdrawn` already has against `none-attributed`. Moving the entry
+out makes every reader see no stored verdict, which is the safe direction. Without a distinct state,
+though, never-recorded and withdrawn look the same, and 0.38.0's Gate 2 found that collapse letting an
+epic archive cleanly on the neighbouring field.
+
+#### Scenario: The archive gate refuses a withdrawn Gate 2 by name
+
+- **WHEN** an unarchived openspec-lane epic whose Gate 2 is in the withdrawn state, with no outstanding
+  work, is archived with `--outcome delivered --no-deferrals`
+- **THEN** the archive is refused, the message states Gate 2 was withdrawn and quotes the withdrawal
+  reason, and `state.json` is byte-identical
+
+#### Scenario: The regression refusal names a withdrawn Gate 2 by name
+
+- **WHEN** the refusal of "Withdrawing Gate 2 from an archived delivered epic is refused" fires
+- **THEN** its message states Gate 2 was withdrawn and quotes the reason, and does not state that Gate 2
+  is missing
+
+#### Scenario: A withdrawn Gate 1 is named by the no-Gate-1 check
+
+- **WHEN** an archived openspec-lane epic in completion scope carries a passing Gate 2 and a Gate 1 in
+  the withdrawn state, and `integrity` runs
+- **THEN** `archived-openspec-epic-with-no-gate-1` reports that epic, and its detail states Gate 1 was
+  withdrawn and quotes the reason
+
+#### Scenario: Re-recording clears the withdrawn state
+
+- **WHEN** an unarchived openspec-lane epic's Gate 2 is withdrawn and then re-recorded as `pass` over
+  a range whose head is the epic's last attributed commit, and the epic has no outstanding work
+- **THEN** `update-epic <id> --status archived --outcome delivered --no-deferrals` exits zero, and
+  neither PROJECT.md nor the brief nor `integrity` names Gate 2 of that epic as withdrawn
+
+#### Scenario: PROJECT.md and the brief show one withdrawn gate
+
+- **WHEN** an epic carries a passing Gate 1 and a Gate 2 in the withdrawn state, and PROJECT.md is
+  rendered and the brief is built
+- **THEN** each shows that epic, by its id, with Gate 2 as `withdrawn — <reason>` and no Gate 2 verdict
+
+#### Scenario: PROJECT.md and the brief keep an epic whose every gate is withdrawn
+
+- **WHEN** an epic's Gate 1 and Gate 2 are both in the withdrawn state, and PROJECT.md is rendered and
+  the brief is built
+- **THEN** each still lists that epic by its id in its gate table, with both gates shown as
+  `withdrawn — <reason>`
+
+#### Scenario: PROJECT.md and the brief agree on the gate table
+
+- **WHEN** a repository holds epics with stored, withdrawn and absent gates, and PROJECT.md is rendered
+  and the brief is built
+- **THEN** the set of epic ids each lists in its gate table is the same, and each epic's gate cell text
+  is identical on both surfaces, up to each surface's own row cap
+
+#### Scenario: The activity log records a withdrawal and nothing that merely looks like one
+
+- **WHEN** the activity log is enabled and a gate is withdrawn through `update-epic`
+- **THEN** exactly one event of kind `gate-withdrawn` naming the epic and gate is appended, and the
+  activity report's gates section lists it
+
+#### Scenario: A verdict removed without a withdrawal record is not logged as a withdrawal
+
+- **WHEN** the activity log is enabled and a state write removes `gateReview.gate2` without adding a
+  `withdrawnGateReviews` entry
+- **THEN** no `gate-withdrawn` event is appended

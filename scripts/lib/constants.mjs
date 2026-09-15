@@ -73,6 +73,28 @@ export const isOpenspecLane = (epic) => ((epic && epic.lane) || "openspec") === 
 export const gateHasEvidence = (entry) =>
   !!(entry && typeof entry.baseSha === "string" && typeof entry.headSha === "string");
 
+/** THE definition of the WITHDRAWN state: the most recent `withdrawnGateReviews` entry for gate
+ *  `n` WHEN gate `n` holds no stored verdict, else null. Every surface that words a withdrawal
+ *  calls this; none re-derives it.
+ *
+ *  A gate with a stored verdict is never withdrawn, whatever its history — re-recording returns
+ *  it to normal and the withdrawal stays behind as history. An `ungated` stamp is a stored verdict
+ *  too, so a gate carrying one reads `ungated`, never withdrawn, which is what keeps the two
+ *  standing-condition kinds disjoint by construction.
+ *
+ *  Why a distinct state rather than plain absence: a withdrawal MOVES the entry out of
+ *  `gateReview.gateN`, so every truthiness reader sees no verdict and the obligation reappears —
+ *  the safe direction. But moving alone would make "withdrawn" and "never recorded" read the same,
+ *  the collapse 0.38.0's Gate 2 found letting an epic archive cleanly one field over
+ *  (`attribution-withdrawn` against `none-attributed`). */
+export function withdrawnGate(epic, n) {
+  if (!epic) return null;
+  if (epic.gateReview && epic.gateReview[`gate${n}`]) return null;
+  const mine = (Array.isArray(epic.withdrawnGateReviews) ? epic.withdrawnGateReviews : [])
+    .filter(w => w && String(w.gate) === String(n));
+  return mine.length ? mine[mine.length - 1] : null;
+}
+
 export const NO_GATE_EVIDENCE = "no checkable evidence";
 
 /** The ARTIFACT PATHS a verdict records having reviewed — Gate 1's evidence (gh#177), where a
@@ -97,6 +119,11 @@ export const gateArtifacts = (entry) =>
  *  `KNOWN_GATE_VERDICTS` in gate-review-writeback.mjs and stays `pass|fail`; widening THAT
  *  list to admit `ungated` for storage's sake defeats the whole rule. */
 export const STORABLE_GATE_VERDICTS = ["pass", "fail", "ungated"];
+
+/** The gate numbers a verdict can be recorded against, and withdrawn from. Declared ONCE, here,
+ *  because two flags read it — `record-gate-review --gate` and `update-epic
+ *  --withdraw-gate-review` — and a vocabulary typed twice is two vocabularies. */
+export const KNOWN_GATE_NUMBERS = ["1", "2"];
 
 
 /** The ONE wording every surface uses for a recorded gate verdict, so PROJECT.md and the brief
@@ -444,7 +471,19 @@ export const EPIC_FLAGS = [
   // DISPOSITION, so a withdrawal forced to borrow it silently rewrote why the epic was delivered,
   // and rendered that way in PROJECT.md. Two records, two reasons, two flags.
   { flag: "withdrawal-reason", key: null, commands: ["update-epic"], write: "custom",
-    requires: "why the attribution is being withdrawn" },
+    requires: "why the attribution (--withdraw-commit) or the gate verdict (--withdraw-gate-review) is being withdrawn" },
+  // gate-verdict-withdrawal — the INVERSE of `record-gate-review`, which was the one record in
+  // state.json with none. Re-recording REPLACES a verdict; nothing could say a verdict does not
+  // belong on this epic at all (cfdude/pm#192: a verdict copied onto a tracker mirror was
+  // recoverable only because the write was still uncommitted). The entry MOVES, whole, into the
+  // sibling `withdrawnGateReviews[]` — recorded, never erased — and its reason is
+  // `--withdrawal-reason`, the flag `--withdraw-commit` already owns, never the disposition's.
+  //
+  // REPEATABLE, and load-bearing: parseFlags OVERWRITES a flag not declared `repeats`, so
+  // `--withdraw-gate-review 1 --withdraw-gate-review 2` would silently withdraw only Gate 2 —
+  // the `--attribute-commit` loss one row up, at a third flag.
+  { flag: "withdraw-gate-review", key: null, commands: ["update-epic"], repeats: true, write: "custom",
+    requires: "the gate whose verdict is withdrawn (1 or 2)", placeholder: "1|2" },
   // The interactive archive verb's disposition. `key` is `disposition` for both: they are two
   // halves of ONE record the verb builds and writes together, never two epic fields.
   { flag: "outcome", key: "disposition", commands: ["update-epic"], write: "custom",

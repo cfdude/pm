@@ -3,7 +3,7 @@
 // existing epic. One-directional dependencies only.
 
 import {
-  EPIC_FLAGS, KNOWN_LANES, KNOWN_STATUSES, KNOWN_REVIEW_MODES, REVIEW_MODE_RANK,
+  EPIC_FLAGS, KNOWN_GATE_NUMBERS, KNOWN_LANES, KNOWN_STATUSES, KNOWN_REVIEW_MODES, REVIEW_MODE_RANK,
   epicFlagsFor, isFlagToken, nullableEpicFlags, splitFlagToken,
 } from "./constants.mjs";
 import { activate } from "./active-pointer.mjs";
@@ -12,8 +12,9 @@ import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave } from "./save-report.mjs";
 import { noteEntry, parentError, parseFlags, parseLinkFlags, parseStoryFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
-import { archiveGate, AGENT_OUTCOMES } from "./archive-gate.mjs";
-import { deferralAssertion, isStoryDisposed, storyDisposition, storyDispositionError } from "./disposition.mjs";
+import { archiveGate, AGENT_OUTCOMES, CONTROL_CHARACTER, deliveredObligations, dispositionInvocation, escapeControls } from "./archive-gate.mjs";
+import { deferralAssertion, isEngineStamped, isStoryDisposed, outcomeOf, storyDisposition, storyDispositionError } from "./disposition.mjs";
+import { isArchived } from "./epic-progress.mjs";
 import { claimArtifacts } from "./source-artifacts.mjs";
 import { linkTypeVocabulary, mergeLinks } from "./links.mjs";
 
@@ -45,6 +46,111 @@ export function missingAttributions(state, id, shas) {
   const epic = (state.epics || []).find(e => e && e.id === id);
   const held = new Set(Array.isArray(epic && epic.attributedCommits) ? epic.attributedCommits : []);
   return shas.filter(sha => !held.has(sha));
+}
+
+/** Which of the requested gate withdrawals did NOT land in `state` — read from a state loaded
+ *  FROM DISK after render(), never from the object this command mutated (#140, as for
+ *  missingAttributions above). A request `{gate, reason, withdrawnAt}` landed only where the gate
+ *  holds NO stored verdict AND a `withdrawnGateReviews` entry for that gate carries that reason
+ *  and that timestamp: a verdict still stored, or a withdrawal record missing, is a write the
+ *  caller must not be told happened. Returns the gate numbers that did not land. */
+export function missingGateWithdrawals(state, id, requested) {
+  const epic = (state && Array.isArray(state.epics) ? state.epics : []).find(e => e && e.id === id);
+  return requested.filter(r => {
+    if (!epic) return true;
+    if (epic.gateReview && epic.gateReview[`gate${r.gate}`]) return true;
+    const held = Array.isArray(epic.withdrawnGateReviews) ? epic.withdrawnGateReviews : [];
+    return !held.some(w => w && Number(w.gate) === Number(r.gate) && w.reason === r.reason &&
+      w.withdrawnAt === r.withdrawnAt);
+  }).map(r => Number(r.gate));
+}
+
+/** The flags the archived-epic regression refusal's printed invocation DROPS from the refused
+ *  call's tokens: `--status`, because the invocation archives, and every disposition flag, because
+ *  the invocation supplies its own placeholders for them. (The deferral flags and
+ *  `--correct-disposition` are refused before this point on a non-archiving call, and are listed
+ *  so the rule does not depend on that.)
+ *
+ *  `--withdraw-gate-review` and `--withdrawal-reason` are deliberately NOT here: they are the change
+ *  the refused call was making, and the #175-shaped remedy is exactly "withdraw the verdict AND
+ *  record the disposition that implies" in ONE call — dropping them would print an invocation that
+ *  archives without the withdrawal the caller asked for. */
+const INVOCATION_DROPPED_FLAGS = new Set([
+  "status", "outcome", "reason", "carried-to", "correct-disposition",
+  "deferral", "declined-deferral", "no-deferrals",
+]);
+
+const REENTER_PLACEHOLDER = "<re-enter this value>";
+
+/** POSIX single-quoting: every token arrives whole, apostrophes included. */
+const shellQuote = (token) => `'${token.replace(/'/g, "'\\''")}'`;
+
+/** The refused call's own tokens, as the printed invocation echoes them. Decided by the same walk
+ *  requireKnownFlags() uses over raw argv, never from parsed flags — parsing loses shape (a
+ *  boolean reads `true`, a repeatable flag becomes an array, `--notes=--x` would re-parse as a
+ *  flag). A flag-position token is `--name` or `--name=value`; an inline value is carried by its
+ *  own token, and a following token is the flag's value only where it is not flag-shaped.
+ *  Returns the quoted tokens and the flags whose value has to be re-entered. */
+function echoedTokens(tokens) {
+  const echoed = [], reenter = [];
+  const value = (flag, v) => {
+    if (CONTROL_CHARACTER.test(v)) { reenter.push(flag); return REENTER_PLACEHOLDER; }
+    return shellQuote(v);
+  };
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i];
+    if (!t.startsWith("--")) { echoed.push(value("(positional)", t)); continue; }
+    const [name, inline] = splitFlagToken(t);
+    const consumesNext = inline === undefined && tokens[i + 1] !== undefined && !isFlagToken(tokens[i + 1]);
+    if (INVOCATION_DROPPED_FLAGS.has(name)) { if (consumesNext) i++; continue; }
+    if (inline !== undefined) {
+      echoed.push(CONTROL_CHARACTER.test(inline)
+        ? `${shellQuote(`--${name}=`)}${value(`--${name}`, inline)}` : shellQuote(t));
+      continue;
+    }
+    echoed.push(shellQuote(t));
+    if (consumesNext) echoed.push(value(`--${name}`, tokens[++i]));
+  }
+  return { echoed, reenter };
+}
+
+/** The archived-epic regression refusal. Its OWN message, never the archive gate's: every gate
+ *  refusal opens "cannot archive", and its remedies name `--carried-to`/`--outcome`/`--reason`,
+ *  which a non-archiving call silently drops — quoting them would send the caller round the same
+ *  refusal. So no line but the printed invocation names those flags, and the invocation is the
+ *  only line beginning `  update-epic `. User-supplied values (story titles) are JSON-quoted, and
+ *  a finding's control characters escaped, so no value can start a line of its own. */
+function regressionRefusal({ id, snapshot, broken, argv, status }) {
+  const quoted = (v) => escapeControls(JSON.stringify(String(v ?? "")));
+  const findings = broken.map(o => {
+    // `items` is shaped BY KIND: the handoff's are stories (rendered exactly as before), and a
+    // withdrawn Gate 2's is its withdrawal reason.
+    const named = !o.items.length ? ""
+      : o.kind === "gate2"
+        ? ` (${o.items.map(i => `withdrawal reason ${quoted(i.reason)}`).join(", ")})`
+        : ` (${o.items.map(i => `story ${i.n} ${quoted(i.title)}`).join(", ")})`;
+    return `  broken: the ${o.kind === "gate2" ? "Gate 2" : "handoff"} demand — ${escapeControls(o.detail)}${named}\n`;
+  }).join("");
+  const { echoed, reenter } = echoedTokens(argv);
+  const invocation = dispositionInvocation(id, {
+    echoed,
+    correction: !isEngineStamped(snapshot.disposition),
+    deferrals: snapshot.deferralAssertion ? "asserted" : "placeholder",
+  });
+  return `conductor: this update to '${id}' would break an obligation its archived 'delivered' ` +
+    "record met, so nothing was written.\n" + findings +
+    (status !== undefined
+      ? `  --status ${status} is dropped from the printed invocation, because the change directory ` +
+        "archived on disk re-archives the epic whatever status this call writes.\n"
+      : "") +
+    (reenter.length
+      ? `  The ${[...new Set(reenter)].join(", ")} value${reenter.length === 1 ? "" : "s"} carried a newline or ` +
+        `another control character and ${reenter.length === 1 ? "is" : "are"} not echoed: re-enter ` +
+        `${reenter.length === 1 ? "it" : "them"} where the invocation shows ${REENTER_PLACEHOLDER}.\n`
+      : "") +
+    "  To make this change, record the disposition it implies. The invocation runs the full archive " +
+    "gate on the record it leaves:\n" +
+    `  ${invocation}\n`;
 }
 
 /** Update an EXISTING epic's title/externalId/externalUrl/parent/status/priority/links.
@@ -97,7 +203,7 @@ export function updateEpic() {
       process.exit(1);
     }
     process.stderr.write("conductor: update-epic requires an epic id as its first POSITIONAL argument\n");
-    process.stderr.write(`usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--lane openspec|superpowers|claude-code|decision|external] [--plan <path>] [--spec <path>] [--link \"<${linkTypeVocabulary()}>:<epic>[:<reason>]\"] [--clear-links] [--clear <field>] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done|--wont-do "<reason>"] [--attribute-commit <sha>] [--withdraw-commit <sha> --withdrawal-reason \"<why>\"] [--outcome ${AGENT_OUTCOMES.join("|")}] [--reason \"<why>\"] [--correct-disposition \"<why the recorded one was wrong>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\" (or ::)] [--declined-deferral \"<what>::<why not>\"] [--no-deferrals] [--description D] [--notes \"<text>\"] [--external-updated-at <iso>]\n`);
+    process.stderr.write(`usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--lane openspec|superpowers|claude-code|decision|external] [--plan <path>] [--spec <path>] [--link \"<${linkTypeVocabulary()}>:<epic>[:<reason>]\"] [--clear-links] [--clear <field>] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done|--wont-do "<reason>"] [--attribute-commit <sha>] [--withdraw-commit <sha> --withdrawal-reason \"<why>\"] [--withdraw-gate-review 1|2 --withdrawal-reason \"<why>\"] [--outcome ${AGENT_OUTCOMES.join("|")}] [--reason \"<why>\"] [--correct-disposition \"<why the recorded one was wrong>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\" (or ::)] [--declined-deferral \"<what>::<why not>\"] [--no-deferrals] [--description D] [--notes \"<text>\"] [--external-updated-at <iso>]\n`);
     process.exit(1);
   }
   const f = parseFlags(argv.slice(1));
@@ -114,9 +220,82 @@ export function updateEpic() {
   // at all. Before loadState(), so a refusal can leave no partial write.
   requireFlagValues("update-epic", f);
   const str = (v) => (typeof v === "string" ? v : undefined);
+  // gate-verdict-withdrawal's refusals 1-4, all BEFORE loadState(): none needs the record, and a
+  // refusal must leave no partial write. The ORDER is normative where it matters — refusals 5 and
+  // 6 below are evaluated only for gate values that passed 3 and 4 (gate `3` has no stored entry,
+  // so it would otherwise also read as "nothing to withdraw").
+  //   1. The reason flag alone: it passed, was never read, and wrote nothing — #79's shape. An
+  //      explicit companion refusal, as `--done requires --story <n>` is, because `requires` on
+  //      the row drives only the missing-VALUE error.
+  // Taken EXACTLY as given, never trimmed: refusal 3 must judge the same value the write uses. A
+  // trimmed check over a raw write accepted " 2", keyed the delete `gate 2`, left the verdict stored
+  // and saved an entry-less withdrawal (Gate 2). `record-gate-review --gate " 2"` refuses likewise.
+  const withdrawnGates = f["withdraw-gate-review"] === undefined
+    ? [] : [].concat(f["withdraw-gate-review"]).filter(v => typeof v === "string");
+  if (f["withdrawal-reason"] !== undefined && f["withdraw-gate-review"] === undefined &&
+      f["withdraw-commit"] === undefined) {
+    process.stderr.write(
+      "conductor: --withdrawal-reason requires --withdraw-gate-review <1|2> or --withdraw-commit " +
+      "<sha> — it is the reason FOR a withdrawal, and on its own it records nothing. Nothing was written.\n");
+    process.exit(1);
+  }
+  if (withdrawnGates.length) {
+    //   2. No reason. Named `--withdrawal-reason`: `--reason` is the disposition's (0.38.0 I1).
+    if (!str(f["withdrawal-reason"])) {
+      process.stderr.write(
+        `conductor: --withdraw-gate-review requires --withdrawal-reason "<why>" — a verdict taken ` +
+        "back without its reason is indistinguishable from one erased. (--reason is the " +
+        "DISPOSITION's, and is not reused here.) Nothing was written.\n");
+      process.exit(1);
+    }
+    //   3. A gate the vocabulary does not hold.
+    const unknownGate = withdrawnGates.find(g => !KNOWN_GATE_NUMBERS.includes(g));
+    if (unknownGate !== undefined) {
+      process.stderr.write(
+        `conductor: --withdraw-gate-review must be one of ${KNOWN_GATE_NUMBERS.join("|")} ` +
+        `(got ${escapeControls(JSON.stringify(unknownGate))}). Nothing was written.\n`);
+      process.exit(1);
+    }
+    //   4. The same gate twice — a second withdrawal of an entry the first already moved.
+    const twice = withdrawnGates.find((g, i) => withdrawnGates.indexOf(g) !== i);
+    if (twice !== undefined) {
+      process.stderr.write(
+        `conductor: Gate ${twice} is given twice to --withdraw-gate-review in one invocation — ` +
+        "each gate's verdict can be withdrawn once. Nothing was written.\n");
+      process.exit(1);
+    }
+  }
   const state = loadState();
   const epic = state.epics.find(e => e.id === id);
   if (!epic) { process.stderr.write(`conductor: epic '${id}' not found\n`); process.exit(1); }
+  // The record as it stood BEFORE this invocation, taken before any mutation. The archived-epic
+  // regression check below compares the obligations on it with those on the record the call
+  // leaves, and reads its trigger from it — `--status` overwrites `epic.status` long before then.
+  const snapshot = structuredClone(epic);
+
+  // gate-verdict-withdrawal's refusals 5 and 6, over gates that passed 1-4 above. DISJOINT by
+  // definition: 5 is an ABSENT entry, 6 a PRESENT one with one particular verdict.
+  for (const g of withdrawnGates) {
+    const stored = epic.gateReview && epic.gateReview[`gate${g}`];
+    //   5. Nothing to withdraw. Keeps the flag from becoming a general "reset the gate" lever.
+    if (!stored) {
+      process.stderr.write(
+        `conductor: '${id}' holds no Gate ${g} verdict to withdraw — withdrawal takes back a ` +
+        "recorded verdict, and there is none. Nothing was written.\n");
+      process.exit(1);
+    }
+    //   6. An `ungated` stamp. Keyed on the VERDICT, the test ungatedArchives() uses, and never
+    //      on `recordedBy` (conductor-13 forbids a lib module reading it off an epic). The stamp is
+    //      the engine's record that NO review happened: recording it as a review taken back would
+    //      be false, and would relabel "never reviewed" as "withdrawn" on every surface.
+    if (stored.verdict === "ungated") {
+      process.stderr.write(
+        `conductor: Gate ${g} of '${id}' is an \`ungated\` entry — the engine's record that no review ` +
+        "happened, not a review that can be taken back. An ungated entry is cleared by recording a " +
+        `real verdict: record-gate-review ${id} --gate ${g} --verdict pass|fail. Nothing was written.\n`);
+      process.exit(1);
+    }
+  }
 
   const parent = str(f.parent);
   if (parent !== undefined) {
@@ -451,22 +630,12 @@ export function updateEpic() {
     }
   }
 
-  // Note `status === "archived"`, not "the status CHANGED to archived": an epic already at
-  // `archived` runs the full gate again on this invocation and records the disposition the
-  // agent supplies. Re-archiving is an established shape here — `completedAt` below is already
-  // guarded on `!epic.completedAt` precisely because this verb can be run twice — and it is
-  // the only moment the documented `/opsx:archive` -> heal -> record flow can say `delivered`.
-  if (status === "archived") {
-    const verdict = archiveGate(epic, {
-      outcome: str(f.outcome), reason: str(f.reason),
-      carriedTo: str(f["carried-to"]), deferralAssertion: asserted, correction,
-    });
-    if (!verdict.ok) { process.stderr.write(`conductor: ${verdict.message}\n`); process.exit(1); }
-    // The gate BUILDS the record and this command writes it, so the disposition an epic ends
-    // with is the one the gate validated — there is no second construction site to drift.
-    if (verdict.disposition) epic.disposition = verdict.disposition;
-    if (verdict.deferralAssertion) epic.deferralAssertion = verdict.deferralAssertion;
-  }
+  // ANNOUNCEMENTS OF A WRITE are buffered, never printed where the write happens. The archive
+  // gate runs AFTER every field write below (it must decide on the record this call leaves), so
+  // a line printed at the write would announce a cleared rank, parent or tombstone on a call the
+  // gate then refuses — a report of a change that did not happen. Flushed only once every
+  // refusal has had its turn, immediately before saveState().
+  const announcements = [];
 
   // #166 — withdraw an attribution. Runs BEFORE the field writes below so a refusal leaves the
   // epic untouched, the same ordering every other guard in this file uses.
@@ -513,6 +682,27 @@ export function updateEpic() {
       shas.map(sha => ({ sha, reason: why, withdrawnAt: new Date().toISOString() })));
   }
 
+  // gate-verdict-withdrawal — withdraw a recorded gate verdict. A FIELD WRITE like every other
+  // one above the archive gate, so the gate below decides on the record this leaves. The WHOLE
+  // entry moves — `superseded` included, because promoting it would resurrect a verdict nobody
+  // re-asserted — into the append-only sibling `withdrawnGateReviews[]`, recorded rather than
+  // erased. An emptied `gateReview` stays `{}`: every reader tests the gates, not the object.
+  // Repeatable: distinct gates are withdrawn together under the one reason, in the order given.
+  const gateWithdrawals = [];
+  if (withdrawnGates.length) {
+    const gates = epic.gateReview && typeof epic.gateReview === "object" ? epic.gateReview : {};
+    const withdrawnAt = new Date().toISOString();
+    for (const gate of withdrawnGates) {
+      const key = `gate${gate}`;
+      const withdrawal = { gate: Number(gate), entry: gates[key], reason: str(f["withdrawal-reason"]), withdrawnAt };
+      delete gates[key];
+      epic.withdrawnGateReviews = (Array.isArray(epic.withdrawnGateReviews) ? epic.withdrawnGateReviews : [])
+        .concat([withdrawal]);
+      gateWithdrawals.push(withdrawal);
+    }
+    epic.gateReview = gates;
+  }
+
   if (str(f.title) !== undefined) epic.title = str(f.title);
   if (str(f["external-id"]) !== undefined) epic.externalId = str(f["external-id"]);
   if (str(f["external-url"]) !== undefined) epic.externalUrl = str(f["external-url"]);
@@ -531,7 +721,7 @@ export function updateEpic() {
   // not hold two opposite claims about one file, and this is the un-ignore path (derived from
   // an action the operator already takes, rather than a new verb nobody would find).
   for (const p of claimArtifacts(state, epic)) {
-    process.stderr.write(`conductor: cleared the sync-ignore tombstone on '${p}' — \`${epic.id}\` now claims it\n`);
+    announcements.push(`conductor: cleared the sync-ignore tombstone on '${p}' — \`${epic.id}\` now claims it\n`);
   }
   // A manual `rank` is a placement among ONE band's peers, so it does not survive a move to
   // another band — it would collide with that band's own 1..N numbering, and the number would
@@ -543,7 +733,7 @@ export function updateEpic() {
   const newPriority = str(f.priority);
   if (newPriority !== undefined) {
     if (newPriority !== epic.priority && epic.rank !== undefined) {
-      process.stderr.write(`conductor: cleared \`${epic.id}\`'s rank (${epic.rank}) — it was a ` +
+      announcements.push(`conductor: cleared \`${epic.id}\`'s rank (${epic.rank}) — it was a ` +
         `placement among ${epic.priority} epics, and this moves it to ${newPriority}. ` +
         `Re-run \`reorder\` on the ${newPriority} band to place it.\n`);
       delete epic.rank;
@@ -599,9 +789,69 @@ export function updateEpic() {
     const had = row.key in epic;
     delete epic[row.key];
     if (had && row.clearNote) {
-      process.stderr.write(`conductor: cleared \`${id}\`'s ${row.flag} — ${row.clearNote}\n`);
+      announcements.push(`conductor: cleared \`${id}\`'s ${row.flag} — ${row.clearNote}\n`);
     }
   }
+
+  // THE ARCHIVE GATE RUNS HERE, after every field write and unset above, so it decides on the
+  // record this invocation LEAVES. It used to run before them, and one call could therefore
+  // archive a record the gate refuses (`--lane openspec --status archived` on a claude-code epic
+  // with no Gate 2; an `--attribute-commit` the verdict does not cover; an `--add-story`; a
+  // `--withdraw-commit`) and refuse one it accepts (`--story 1 --done --status archived` on the
+  // last outstanding story). Nothing between here and saveState() reads what it decides on: the
+  // completedAt stamp, the claim clear and the active-pointer sync all run after it. Every
+  // refusal still exits before saveState(), so a refused call writes nothing.
+  //
+  // Note `status === "archived"`, not "the status CHANGED to archived": an epic already at
+  // `archived` runs the full gate again on this invocation and records the disposition the
+  // agent supplies. Re-archiving is an established shape here — `completedAt` below is already
+  // guarded on `!epic.completedAt` precisely because this verb can be run twice — and it is
+  // the only moment the documented `/opsx:archive` -> heal -> record flow can say `delivered`.
+  if (status === "archived") {
+    const verdict = archiveGate(epic, {
+      outcome: str(f.outcome), reason: str(f.reason),
+      carriedTo: str(f["carried-to"]), deferralAssertion: asserted, correction,
+    });
+    if (!verdict.ok) { process.stderr.write(`conductor: ${verdict.message}\n`); process.exit(1); }
+    // The gate BUILDS the record and this command writes it, so the disposition an epic ends
+    // with is the one the gate validated — there is no second construction site to drift.
+    if (verdict.disposition) epic.disposition = verdict.disposition;
+    if (verdict.deferralAssertion) epic.deferralAssertion = verdict.deferralAssertion;
+  }
+
+  // AN UPDATE TO AN ARCHIVED `delivered` EPIC MAY NOT BREAK AN OBLIGATION ITS ARCHIVE MET. Such an
+  // update never passes through `--status archived`, so the gate above never sees it: on 0.42.0
+  // `--lane openspec` on an archived delivered claude-code epic left a delivered openspec-lane
+  // record with no Gate 2, which integrity names nowhere.
+  //
+  // WHEN, every half read from `snapshot` (the stored record), never from `epic`:
+  //   - the stored outcome is `delivered` — the only outcome that carries obligations;
+  //   - the call does not archive (that case is the gate's, above);
+  //   - the record will be archived when the call returns: EITHER the change directory is
+  //     archived on disk — render()'s reconcileArchived() heal re-archives it whatever status
+  //     this call writes, keeping the delivered disposition and running no gate, which is how
+  //     `--status queued --attribute-commit <descendant>` slipped past two drafts — OR it is
+  //     stored `archived` and the call carries no `--status` at all.
+  // `str(f.status)` in the first half and raw `f.status === undefined` in the last are
+  // deliberately different tests; do not fold them into one.
+  //
+  // PER OBLIGATION, and only a REGRESSION refuses: an obligation the record already failed is no
+  // ground for refusal (a legacy record keeps its notes, links and priority editable), and an
+  // already-failing handoff must not mask a Gate 2 this call breaks.
+  if (outcomeOf(snapshot) === "delivered" && str(f.status) !== "archived" &&
+      (isArchived(id) || (snapshot.status === "archived" && f.status === undefined))) {
+    const carriedToOf = (e) => (e.disposition && e.disposition.carriedTo) || undefined;
+    const before = deliveredObligations(snapshot, { carriedTo: carriedToOf(snapshot) });
+    const after = deliveredObligations(epic, { carriedTo: carriedToOf(epic) });
+    const broken = after.filter(o => !before.some(b => b.kind === o.kind));
+    if (broken.length) {
+      process.stderr.write(regressionRefusal({ id, snapshot, broken, argv: argv.slice(1), status: str(f.status) }));
+      process.exit(1);
+    }
+  }
+
+  // Every refusal has now had its turn: the write is going to happen, so say what it cleared.
+  for (const line of announcements) process.stderr.write(line);
 
   // Stamp completedAt the moment an epic transitions TO archived (not merely re-saved
   // while already archived) — supports velocity tracking off startedAt/completedAt.
@@ -670,6 +920,20 @@ export function updateEpic() {
         `conductor: --withdraw-commit did NOT land for ${stillThere.join(", ")} on '${id}' — ` +
         ".conductor/state.json holds no withdrawal record for them afterwards. Do not treat " +
         "this epic's attribution as corrected; re-run the withdrawal.\n");
+      process.exit(1);
+    }
+  }
+  // The gate withdrawal gets the same read-back, for the same #140 reason: render() writes the
+  // file again after saveState(), so a removal can be silently undone after the save verified it.
+  // The check is the pure missingGateWithdrawals() above, so the failure is testable without
+  // forging a race.
+  if (gateWithdrawals.length) {
+    const notLanded = missingGateWithdrawals(loadState(), id, gateWithdrawals);
+    if (notLanded.length) {
+      process.stderr.write(
+        `conductor: --withdraw-gate-review did NOT land for gate ${notLanded.join(", gate ")} on '${id}' — ` +
+        ".conductor/state.json still holds the verdict, or holds no withdrawal record for it, " +
+        "afterwards. Do not treat this epic's gate record as corrected; re-run the withdrawal.\n");
       process.exit(1);
     }
   }

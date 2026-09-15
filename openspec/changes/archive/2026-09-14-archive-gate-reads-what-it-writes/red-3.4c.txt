@@ -1,0 +1,349 @@
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-827yIW/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-827yIW/PROJECT.md
+conductor: added epic 'a1' (claude-code, queued)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-8PCP2T/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-8PCP2T/PROJECT.md
+conductor: added epic 'a2' (openspec, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: updated 'a2'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-8PCP2T/PROJECT.md
+conductor: recorded gate 2 review 'pass' for 'a2'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-T7GgBW/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-T7GgBW/PROJECT.md
+conductor: added epic 'a3' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-T7GgBW/PROJECT.md
+conductor: updated 'a3'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-T7GgBW/PROJECT.md
+conductor: updated 'a3'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-wfEBML/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-wfEBML/PROJECT.md
+conductor: added epic 'a4' (openspec, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: updated 'a4'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-wfEBML/PROJECT.md
+conductor: recorded gate 2 review 'pass' for 'a4'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-dasrUW/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-dasrUW/PROJECT.md
+conductor: added epic 'a5' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-dasrUW/PROJECT.md
+conductor: updated 'a5'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-H3nMm5/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-H3nMm5/PROJECT.md
+conductor: added epic 'a6' (openspec, queued)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-yP80qI/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-yP80qI/PROJECT.md
+conductor: added epic 'a6a' (claude-code, queued)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-RifsbM/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-RifsbM/PROJECT.md
+conductor: added epic 'par' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-RifsbM/PROJECT.md
+conductor: added epic 'a7' (claude-code, queued)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-97Bn33/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-97Bn33/PROJECT.md
+conductor: added epic 'par' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-97Bn33/PROJECT.md
+conductor: added epic 'a7' (claude-code, queued)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Z2w5Mm/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Z2w5Mm/PROJECT.md
+conductor: added epic 'g11' (openspec, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: updated 'g11'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Z2w5Mm/PROJECT.md
+conductor: recorded gate 2 review 'pass' for 'g11'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Z2w5Mm/PROJECT.md
+conductor: updated 'g11'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Z2w5Mm/PROJECT.md
+conductor: recorded gate 2 review 'fail' for 'g11'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-tCRKdA/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-tCRKdA/PROJECT.md
+conductor: added epic 'sup' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-tCRKdA/PROJECT.md
+conductor: updated 'sup'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-tCRKdA/PROJECT.md
+conductor: added epic 'unk' (claude-code, archived)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-y4XgSk/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-y4XgSk/PROJECT.md
+conductor: added epic 'g14' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-y4XgSk/PROJECT.md
+conductor: updated 'g14'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Oy7tkJ/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Oy7tkJ/PROJECT.md
+conductor: added epic 'g15' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Oy7tkJ/PROJECT.md
+conductor: updated 'g15'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-gKXI9J/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-gKXI9J/PROJECT.md
+conductor: added epic 'r1' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-gKXI9J/PROJECT.md
+conductor: updated 'r1'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-79BofB/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-79BofB/PROJECT.md
+conductor: added epic 'r2' (openspec, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: updated 'r2'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-79BofB/PROJECT.md
+conductor: recorded gate 2 review 'pass' for 'r2'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-79BofB/PROJECT.md
+conductor: updated 'r2'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-DplB4W/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-DplB4W/PROJECT.md
+conductor: added epic 'r3' (openspec, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: updated 'r3'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-DplB4W/PROJECT.md
+conductor: recorded gate 2 review 'pass' for 'r3'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-DplB4W/PROJECT.md
+conductor: updated 'r3'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-iJjhME/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-iJjhME/PROJECT.md
+conductor: added epic 'r4' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-iJjhME/PROJECT.md
+conductor: updated 'r4'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-iJjhME/PROJECT.md
+conductor: updated 'r4'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-iJjhME/PROJECT.md
+conductor: updated 'r4'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-cLDXms/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-cLDXms/PROJECT.md
+conductor: added epic 'r4b' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-cLDXms/PROJECT.md
+conductor: updated 'r4b'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-cLDXms/PROJECT.md
+conductor: updated 'r4b'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-cLDXms/PROJECT.md
+conductor: updated 'r4b'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-pMdq91/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-pMdq91/PROJECT.md
+conductor: added epic 'r4c' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-pMdq91/PROJECT.md
+conductor: updated 'r4c'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-pMdq91/PROJECT.md
+conductor: updated 'r4c'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-pMdq91/PROJECT.md
+conductor: updated 'r4c'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-X0vohE/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-X0vohE/PROJECT.md
+conductor: added epic 'r4a' (openspec, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: updated 'r4a'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-X0vohE/PROJECT.md
+conductor: recorded gate 2 review 'pass' for 'r4a'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-X0vohE/PROJECT.md
+conductor: updated 'r4a'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-xuYCbg/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-xuYCbg/PROJECT.md
+conductor: added epic 'r5' (openspec, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: updated 'r5'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-xuYCbg/PROJECT.md
+conductor: recorded gate 2 review 'pass' for 'r5'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-xuYCbg/PROJECT.md
+conductor: updated 'r5'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-eXBI5M/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-eXBI5M/PROJECT.md
+conductor: added epic 'r5a' (openspec, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: updated 'r5a'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-eXBI5M/PROJECT.md
+conductor: recorded gate 2 review 'pass' for 'r5a'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-eXBI5M/PROJECT.md
+conductor: updated 'r5a'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-fc2i62/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-fc2i62/PROJECT.md
+conductor: added epic 'r6' (openspec, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: updated 'r6'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-fc2i62/PROJECT.md
+conductor: recorded gate 2 review 'pass' for 'r6'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-fc2i62/PROJECT.md
+conductor: updated 'r6'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-fc2i62/PROJECT.md
+conductor: added epic 'z' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-fc2i62/PROJECT.md
+conductor: updated 'r6'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-fc2i62/PROJECT.md
+conductor: removed 1 epic(s): z
+conductor: stripped 1 dangling reference(s) to removed epic(s), held by: epic `r6` disposition.carriedTo
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-QGimMn/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-QGimMn/PROJECT.md
+conductor: added epic 'r7' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-QGimMn/PROJECT.md
+conductor: updated 'r7'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-57Aqbv/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-57Aqbv/PROJECT.md
+conductor: added epic 'r8' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-57Aqbv/PROJECT.md
+conductor: updated 'r8'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-2TTZ0D/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: refreshed rules block in CLAUDE.md (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-2TTZ0D/PROJECT.md
+conductor: upgraded (3 migration(s)), pmVersion now 0.42.0
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-rtWpF0/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-rtWpF0/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-rtWpF0/PROJECT.md
+conductor: added epic 'r10' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-rtWpF0/PROJECT.md
+conductor: updated 'r10'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-rtWpF0/PROJECT.md
+conductor: updated 'r10'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-nmZGI6/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-nmZGI6/PROJECT.md
+conductor: added epic 'r10a' (openspec, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: updated 'r10a'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-nmZGI6/PROJECT.md
+conductor: recorded gate 2 review 'pass' for 'r10a'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-nmZGI6/PROJECT.md
+conductor: updated 'r10a'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-nmZGI6/PROJECT.md
+conductor: recorded gate 2 review 'fail' for 'r10a'
+✔ 1.1 a lane switch and an archive in one call cannot bypass Gate 2 (147.938084ms)
+✔ 1.2 an attribution and an archive in one call cannot bypass staleness (382.1675ms)
+✔ 1.3 an added story and an archive in one call cannot bypass the handoff (243.864333ms)
+✔ 1.4 a commit withdrawal and an archive in one call cannot bypass the gate (318.431375ms)
+✔ 1.5 finishing the last story and archiving in one call is accepted (189.542458ms)
+✔ 1.6 leaving the openspec lane and archiving in one call is accepted (164.487125ms)
+✔ 1.6a detaching a plan with outstanding tasks and archiving in one call is accepted, and announced (156.504334ms)
+✔ 1.7 a refused call announces no cleared field (193.375084ms)
+✔ 1.7 regression guard: an accepted call still announces what it cleared (191.209833ms)
+✔ 3.11 regression guard: a record that already failed Gate 2 is not locked (425.174ms)
+✔ 3.12 regression guard: an epic that ended another way, or at unknown, carries no obligation (291.765833ms)
+✔ 3.14 regression guard: leaving the archive is not refused where nothing re-archives the epic (236.911542ms)
+✔ 3.15 regression guard: an unarchived epic carrying a delivered disposition updates freely (240.816084ms)
+✔ 3.1 switching an archived delivered epic into the openspec lane is refused (192.665083ms)
+✔ 3.2 attributing a commit an archived delivered epic's Gate 2 does not cover is refused (407.485792ms)
+✔ 3.3 a non-archived status does not escape the check while the heal will re-archive (401.063ms)
+✔ 3.4 adding a story to an archived delivered epic is refused without naming a dead remedy (285.824833ms)
+✔ 3.4b a user-supplied value cannot forge a line of the refusal (293.136333ms)
+✖ 3.4c a Unicode line terminator or C1 control in a user value cannot forge a line either (295.353ms)
+✔ 3.4a an active status does not escape the check while the heal will re-archive (398.7965ms)
+✔ 3.5 withdrawing the only attribution of an archived delivered epic is refused (353.695375ms)
+✔ 3.5a a queued epic the heal will archive does not escape the check (453.035167ms)
+✔ 3.6 an already-failing handoff does not mask a Gate 2 the update breaks (521.667125ms)
+✔ 3.7 a refused update announces no cleared field (190.263833ms)
+✔ 3.8 the invocation printed for an agent-recorded disposition names the correction (196.542875ms)
+✔ 3.9 the invocation printed for an engine-stamped disposition does not name the correction (157.158834ms)
+✔ 3.10 the printed invocation runs (354.407834ms)
+✔ 3.10a the ratchet: restoring a record the check accepted is judged like any other change (497.687833ms)
+ℹ tests 28
+ℹ suites 0
+ℹ pass 27
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8224.411958
+
+✖ failing tests:
+
+test at scripts/test/archive-gate-order.test.mjs:326:1
+✖ 3.4c a Unicode line terminator or C1 control in a user value cannot forge a line either (295.353ms)
+  AssertionError [ERR_ASSERTION]: exactly one line begins '  update-epic ':
+  conductor: this update to 'r4c' would break an obligation its archived 'delivered' record met, so nothing was written.
+    broken: the handoff demand — 1 of 1/2 task(s) outstanding (story 2 "x   update-epic forged  update-epic forged2   update-epic forged3")
+    To make this change, record the disposition it implies. The invocation runs the full archive gate on the record it leaves:
+    update-epic r4c '--add-story' 'x   update-epic forged  update-epic forged2   update-epic forged3' --status archived --outcome <delivered|killed|superseded|abandoned|declined|unreconstructable> --reason "<why>" --correct-disposition "<why the recorded one was wrong>"
+  
+  
+  7 !== 1
+  
+      at invocationOf (file:///Users/robsherman/Documents/Repos/pm/scripts/test/archive-gate-order.test.mjs:256:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/archive-gate-order.test.mjs:331:22)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 7,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

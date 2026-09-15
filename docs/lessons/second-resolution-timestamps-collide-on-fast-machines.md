@@ -5,6 +5,9 @@ trigger: You are writing a test whose fixture makes two or more git commits, or 
 cost: One CI failure on a release PR, after the change had already passed Gate 1, a cross-spec
   gate, Gate 2 at three fresh-context lenses, and two full local suite runs at 1206/1206. The
   test had been green on the developer laptop for the whole release.
+rule: Never assert that two timestamps merely differ. Set the times explicitly — GIT_AUTHOR_DATE and
+  GIT_COMMITTER_DATE, or an injected clock — and assert each record against its OWN source. Git's
+  `%cI` is second-resolution, so a fast machine writes both in the same second.
 enforced_in: scripts/test/conductor-39.test.mjs — the fixture now sets GIT_AUTHOR_DATE and
   GIT_COMMITTER_DATE explicitly, spaced a minute apart, and asserts each record against its OWN
   commit rather than merely against "not the other one".

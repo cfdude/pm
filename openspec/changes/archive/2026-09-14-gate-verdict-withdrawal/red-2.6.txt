@@ -1,0 +1,37 @@
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Id7nFg/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Id7nFg/PROJECT.md
+conductor: added epic 'w26' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Id7nFg/PROJECT.md
+conductor: recorded gate 1 review 'pass' for 'w26'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Id7nFg/PROJECT.md
+conductor: recorded gate 2 review 'pass' for 'w26'
+✖ 2.6 --withdraw-gate-review repeats: both gates withdrawn in one call, two entries (432.978917ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 483.8375
+
+✖ failing tests:
+
+test at scripts/test/gate-verdict-withdrawal.test.mjs:125:1
+✖ 2.6 --withdraw-gate-review repeats: both gates withdrawn in one call, two entries (432.978917ms)
+  AssertionError [ERR_ASSERTION]: both gates are absent: {"gate1":{"verdict":"pass","reviewedAt":"2026-09-15T03:08:55.320Z","artifacts":["openspec/changes/x/proposal.md"]}}
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/gate-verdict-withdrawal.test.mjs:130:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
