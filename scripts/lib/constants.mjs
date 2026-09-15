@@ -471,7 +471,7 @@ export const EPIC_FLAGS = [
   // DISPOSITION, so a withdrawal forced to borrow it silently rewrote why the epic was delivered,
   // and rendered that way in PROJECT.md. Two records, two reasons, two flags.
   { flag: "withdrawal-reason", key: null, commands: ["update-epic"], write: "custom",
-    requires: "why the attribution is being withdrawn" },
+    requires: "why the attribution (--withdraw-commit) or the gate verdict (--withdraw-gate-review) is being withdrawn" },
   // gate-verdict-withdrawal — the INVERSE of `record-gate-review`, which was the one record in
   // state.json with none. Re-recording REPLACES a verdict; nothing could say a verdict does not
   // belong on this epic at all (cfdude/pm#192: a verdict copied onto a tracker mirror was

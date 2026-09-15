@@ -54,14 +54,14 @@ Each test supplies every other input valid, asserts `state.json` byte-identical,
 refusal's CAUSE string (not only a non-zero exit, which an unknown-flag refusal would also satisfy).
 Order per design.md.
 
-- [ ] 3.1 RED then GREEN: `--withdrawal-reason` with neither withdrawal flag, refused before `loadState`,
+- [x] 3.1 RED then GREEN: `--withdrawal-reason` with neither withdrawal flag, refused before `loadState`,
       naming both flags — an explicit companion-flag refusal in `updateEpic`, not `requires` text (which
       drives only the missing-value error); update `withdrawal-reason`'s `requires` text to name both flags
-- [ ] 3.2 RED then GREEN: no `--withdrawal-reason`
-- [ ] 3.3 RED then GREEN: gate `3`, `0` and `x` — the message names the values of `KNOWN_GATE_NUMBERS`
-- [ ] 3.4 RED then GREEN: the same gate twice
-- [ ] 3.5 RED then GREEN: no stored verdict for a valid gate
-- [ ] 3.6 RED then GREEN: a stored `ungated` Gate 2 produced by the heal route — keyed on the VERDICT,
+- [x] 3.2 RED then GREEN: no `--withdrawal-reason`
+- [x] 3.3 RED then GREEN: gate `3`, `0` and `x` — the message names the values of `KNOWN_GATE_NUMBERS`
+- [x] 3.4 RED then GREEN: the same gate twice
+- [x] 3.5 RED then GREEN: no stored verdict for a valid gate
+- [x] 3.6 RED then GREEN: a stored `ungated` Gate 2 produced by the heal route — keyed on the VERDICT,
       never on `recordedBy`
 
 ## 4. Withdrawn is a state, never absence

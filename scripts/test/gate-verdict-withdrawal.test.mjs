@@ -160,3 +160,66 @@ test("2.8 the read-back: a state still carrying the verdict, or lacking the entr
   assert.deepEqual(missingGateWithdrawals(otherReason, "e", asked), [2], "an entry with another reason is not this one");
   assert.deepEqual(missingGateWithdrawals({ epics: [] }, "e", asked), [2], "an absent epic holds nothing");
 });
+
+// ═══════════════ refusals — each supplies every other input valid ═══════════════
+
+/** An openspec-lane epic the archive-drift heal archived with no verdict: registered by `sync`
+ *  from a change directory, which is then moved under `archive/` and healed by a second `sync`.
+ *  The only producer of an `ungated` Gate 2. */
+function healArchived(cwd, id, { beforeArchive } = {}) {
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", id), { recursive: true });
+  fs.writeFileSync(path.join(cwd, "openspec", "changes", id, "tasks.md"), "# tasks\n\n- [x] a\n");
+  run(["sync"], { cwd });
+  if (beforeArchive) beforeArchive();
+  fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive"), { recursive: true });
+  fs.renameSync(path.join(cwd, "openspec", "changes", id),
+    path.join(cwd, "openspec", "changes", "archive", `2026-09-14-${id}`));
+  run(["sync"], { cwd });
+}
+
+test("3.1 --withdrawal-reason with neither withdrawal flag is refused, naming both, before state is read", () => {
+  const cwd = withVerdicts("r31");
+  const r = refused(cwd, ["update-epic", "r31", "--withdrawal-reason", "x"]);
+  assert.match(r.stderr, /--withdraw-gate-review/);
+  assert.match(r.stderr, /--withdraw-commit/);
+  const early = refused(cwd, ["update-epic", "no-such-epic", "--withdrawal-reason", "x"]);
+  assert.doesNotMatch(early.stderr, /not found/, "the refusal runs before the epic is looked up in state");
+  assert.match(early.stderr, /--withdraw-gate-review/);
+});
+
+test("3.2 --withdraw-gate-review without a reason is refused, naming --withdrawal-reason", () => {
+  const cwd = withVerdicts("r32");
+  const r = refused(cwd, ["update-epic", "r32", "--withdraw-gate-review", "2"]);
+  assert.match(r.stderr, /--withdrawal-reason/);
+  assert.doesNotMatch(r.stderr, /unknown flag/);
+});
+
+test("3.3 a gate other than 1 or 2 is refused, naming the valid values", () => {
+  const cwd = withVerdicts("r33", { gate1: true, gate2: true });
+  for (const bad of ["3", "0", "x"]) {
+    const r = refused(cwd, ["update-epic", "r33", "--withdraw-gate-review", bad, "--withdrawal-reason", "x"]);
+    assert.match(r.stderr, /--withdraw-gate-review must be one of 1\|2/, `gate ${bad}: ${r.stderr}`);
+  }
+});
+
+test("3.4 the same gate twice in one invocation is refused", () => {
+  const cwd = withVerdicts("r34");
+  const r = refused(cwd, ["update-epic", "r34", "--withdraw-gate-review", "2", "--withdraw-gate-review", "2", "--withdrawal-reason", "x"]);
+  assert.match(r.stderr, /Gate 2 is given twice/);
+});
+
+test("3.5 a gate with no stored verdict is refused", () => {
+  const cwd = withVerdicts("r35", { gate1: false, gate2: true });
+  const r = refused(cwd, ["update-epic", "r35", "--withdraw-gate-review", "1", "--withdrawal-reason", "x"]);
+  assert.match(r.stderr, /no Gate 1 verdict to withdraw/);
+});
+
+test("3.6 an ungated stamp from the heal is refused — it is cleared by recording a real verdict", () => {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  healArchived(cwd, "r36");
+  assert.equal(epicOf(cwd, "r36").gateReview.gate2.verdict, "ungated", "precondition: the heal stamped ungated");
+  const r = refused(cwd, ["update-epic", "r36", "--withdraw-gate-review", "2", "--withdrawal-reason", "x"]);
+  assert.match(r.stderr, /ungated/);
+  assert.match(r.stderr, /cleared by recording a real verdict/);
+});

@@ -3,7 +3,7 @@
 // existing epic. One-directional dependencies only.
 
 import {
-  EPIC_FLAGS, KNOWN_LANES, KNOWN_STATUSES, KNOWN_REVIEW_MODES, REVIEW_MODE_RANK,
+  EPIC_FLAGS, KNOWN_GATE_NUMBERS, KNOWN_LANES, KNOWN_STATUSES, KNOWN_REVIEW_MODES, REVIEW_MODE_RANK,
   epicFlagsFor, isFlagToken, nullableEpicFlags, splitFlagToken,
 } from "./constants.mjs";
 import { activate } from "./active-pointer.mjs";
@@ -221,6 +221,48 @@ export function updateEpic() {
   // at all. Before loadState(), so a refusal can leave no partial write.
   requireFlagValues("update-epic", f);
   const str = (v) => (typeof v === "string" ? v : undefined);
+  // gate-verdict-withdrawal's refusals 1-4, all BEFORE loadState(): none needs the record, and a
+  // refusal must leave no partial write. The ORDER is normative where it matters — refusals 5 and
+  // 6 below are evaluated only for gate values that passed 3 and 4 (gate `3` has no stored entry,
+  // so it would otherwise also read as "nothing to withdraw").
+  //   1. The reason flag alone: it passed, was never read, and wrote nothing — #79's shape. An
+  //      explicit companion refusal, as `--done requires --story <n>` is, because `requires` on
+  //      the row drives only the missing-VALUE error.
+  const withdrawnGates = f["withdraw-gate-review"] === undefined
+    ? [] : [].concat(f["withdraw-gate-review"]).filter(v => typeof v === "string").map(v => v.trim());
+  if (f["withdrawal-reason"] !== undefined && f["withdraw-gate-review"] === undefined &&
+      f["withdraw-commit"] === undefined) {
+    process.stderr.write(
+      "conductor: --withdrawal-reason requires --withdraw-gate-review <1|2> or --withdraw-commit " +
+      "<sha> — it is the reason FOR a withdrawal, and on its own it records nothing. Nothing was written.\n");
+    process.exit(1);
+  }
+  if (withdrawnGates.length) {
+    //   2. No reason. Named `--withdrawal-reason`: `--reason` is the disposition's (0.38.0 I1).
+    if (!str(f["withdrawal-reason"])) {
+      process.stderr.write(
+        `conductor: --withdraw-gate-review requires --withdrawal-reason "<why>" — a verdict taken ` +
+        "back without its reason is indistinguishable from one erased. (--reason is the " +
+        "DISPOSITION's, and is not reused here.) Nothing was written.\n");
+      process.exit(1);
+    }
+    //   3. A gate the vocabulary does not hold.
+    const unknownGate = withdrawnGates.find(g => !KNOWN_GATE_NUMBERS.includes(g));
+    if (unknownGate !== undefined) {
+      process.stderr.write(
+        `conductor: --withdraw-gate-review must be one of ${KNOWN_GATE_NUMBERS.join("|")} ` +
+        `(got '${unknownGate}'). Nothing was written.\n`);
+      process.exit(1);
+    }
+    //   4. The same gate twice — a second withdrawal of an entry the first already moved.
+    const twice = withdrawnGates.find((g, i) => withdrawnGates.indexOf(g) !== i);
+    if (twice !== undefined) {
+      process.stderr.write(
+        `conductor: Gate ${twice} is given twice to --withdraw-gate-review in one invocation — ` +
+        "each gate's verdict can be withdrawn once. Nothing was written.\n");
+      process.exit(1);
+    }
+  }
   const state = loadState();
   const epic = state.epics.find(e => e.id === id);
   if (!epic) { process.stderr.write(`conductor: epic '${id}' not found\n`); process.exit(1); }
@@ -228,6 +270,30 @@ export function updateEpic() {
   // regression check below compares the obligations on it with those on the record the call
   // leaves, and reads its trigger from it — `--status` overwrites `epic.status` long before then.
   const snapshot = structuredClone(epic);
+
+  // gate-verdict-withdrawal's refusals 5 and 6, over gates that passed 1-4 above. DISJOINT by
+  // definition: 5 is an ABSENT entry, 6 a PRESENT one with one particular verdict.
+  for (const g of withdrawnGates) {
+    const stored = epic.gateReview && epic.gateReview[`gate${g}`];
+    //   5. Nothing to withdraw. Keeps the flag from becoming a general "reset the gate" lever.
+    if (!stored) {
+      process.stderr.write(
+        `conductor: '${id}' holds no Gate ${g} verdict to withdraw — withdrawal takes back a ` +
+        "recorded verdict, and there is none. Nothing was written.\n");
+      process.exit(1);
+    }
+    //   6. An `ungated` stamp. Keyed on the VERDICT, the test ungatedArchives() uses, and never
+    //      on `recordedBy` (conductor-13 forbids a lib module reading it off an epic). The stamp is
+    //      the engine's record that NO review happened: recording it as a review taken back would
+    //      be false, and would relabel "never reviewed" as "withdrawn" on every surface.
+    if (stored.verdict === "ungated") {
+      process.stderr.write(
+        `conductor: Gate ${g} of '${id}' is an \`ungated\` entry — the engine's record that no review ` +
+        "happened, not a review that can be taken back. An ungated entry is cleared by recording a " +
+        `real verdict: record-gate-review ${id} --gate ${g} --verdict pass|fail. Nothing was written.\n`);
+      process.exit(1);
+    }
+  }
 
   const parent = str(f.parent);
   if (parent !== undefined) {
