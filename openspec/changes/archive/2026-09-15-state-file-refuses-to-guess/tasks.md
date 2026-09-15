@@ -245,7 +245,7 @@ the GREEN commit stages that file and names it in its message.
 - [x] 7.4 **Attribute every commit** at the moment it lands:
       `update-epic state-file-refuses-to-guess --attribute-commit <sha>`. The commit that moves the change
       under `openspec/changes/archive/` is NOT attributed
-- [ ] 7.5 **Dispositions** <!-- pm:lifecycle --> — the four superseded finding epics
+- [x] 7.5 **Dispositions** <!-- pm:lifecycle --> — the four superseded finding epics
       (`state-json-unparseable-loads-as-empty`, `state-write-race-loses-updates`,
       `claim-ttl-overflow-crashes-readers`, `rules-block-writer-destroys-hand-content`) already carry
       `disposition.outcome: superseded` (read from `state.json` when this list was written) and this
@@ -285,12 +285,12 @@ Real Numbers, belongs to the 0.44.0 release cut under `release-checklist`, not t
 
 ## 9. Gates and close
 
-- [ ] 9.1 Gate 2 — two fresh-context lenses over the committed range (one: spec alignment and the
+- [x] 9.1 Gate 2 — two fresh-context lenses over the committed range (one: spec alignment and the
       call-site sweep's completeness; two: concurrency and failure-path correctness of the lock and the
       hooks), fix Critical and Important, then
       `record-gate-review state-file-refuses-to-guess --gate 2 --verdict pass --reviewer "<identity>"
       --base-sha <parent of first attributed> --head-sha <last attributed>`
-- [ ] 9.2 Archive this change <!-- pm:lifecycle --> — `/opsx:archive state-file-refuses-to-guess`, then
+- [x] 9.2 Archive this change <!-- pm:lifecycle --> — `/opsx:archive state-file-refuses-to-guess`, then
       `update-epic state-file-refuses-to-guess --status archived --outcome delivered --no-deferrals`,
       swapping `--no-deferrals` for `--deferral "<epicId>:<section>"` per deferral registered while the
       work ran, or `--declined-deferral "<what>:<why not>"` per deliberate non-doing

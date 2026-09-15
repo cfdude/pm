@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "state-file-refuses-to-guess",
+  "active": "gates-bind-to-verified-evidence",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -8276,11 +8276,16 @@
           "at": "2026-09-15T18:06:34.184Z",
           "actor": "agent",
           "text": "Argv Gate 2 (2026-09-15): platformFlag() returns the first --platform, so a doubled --platform bogus is never checked (init/brief/rules); brief and snapshot never read stdin, so a large hook payload gets EPIPE on success; gate-guard now exits 1 (fail-open) on a hand-edited hooks.json line with a junk flag — design choice, worth a line in commands/gate-guard.md."
+        },
+        {
+          "at": "2026-09-15T21:57:41.052Z",
+          "actor": "agent",
+          "text": "State-file Gate 2 (2026-09-15): lock refusal wording says 'a other' for a non-regular lock path; a stuck young lock makes each hook heal wait ~4-8 s then skip (by policy)."
         }
       ],
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:50.956Z",
-      "touchedAt": "2026-09-15T18:06:34.187Z"
+      "touchedAt": "2026-09-15T21:57:41.055Z"
     },
     {
       "id": "every-verb-refuses-what-it-does-not-read",
@@ -8396,7 +8401,7 @@
       "id": "state-file-refuses-to-guess",
       "title": "The state file refuses to guess: an unparseable state.json is refused not replaced, writes are serialised by a breakable lock, claim expiry is bounded, and write-rules refuses an ambiguous managed block",
       "priority": "P1",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -8428,10 +8433,28 @@
         "755a5646624251bbb05886be19ec11be38c0d571",
         "de28b1171caab784b4577808ef68e30e629a1743",
         "f23084b9dc32e97fcb4d71e426341b4da0703512",
-        "305cc2f7e3b973b8d98827a1f66287559aebb4a2"
+        "305cc2f7e3b973b8d98827a1f66287559aebb4a2",
+        "a1931f82f62e87a63a80e1be7dda9b06522a828d",
+        "daf2d6c5b02bc7f2e7d222cb6a5a24f7c44df570",
+        "ddd387d39bbca02a8db38114c09ae8b18416e393",
+        "db141abebdcc47e1139828632f913c94c1d96eef",
+        "9a1e647cfd351f5442e6a3fecbd1bee040226814",
+        "1f28f41ed76b48c03a295199fa0f07cc832dd18c",
+        "dd4d92542dc795f1cc74dee5e45466a19145136e",
+        "f395359e14843854da7835b702eb939120fc230f",
+        "078fff3c201af70165b41ab7d18bb996726de298",
+        "b5d47e174133451cb269f7f9a4bcfa39444eb9b0",
+        "cbe5be330b84c63a7ffac586701d9668cf7641ff",
+        "46db07521b54bae527fe8d41d6c9ad2929a92af6",
+        "cf10d76bc1f6e3560f2e480882d64f902a2f0a70",
+        "7b3c25f710f1bd721ad306727d9d48e7a6959ce2",
+        "249885453c52407a1a7b5282a4ee3dbd43d763ee",
+        "d619165d46256b79007d4f7a8f70fdb5e5cd5be6",
+        "ba19925836594dd65d8c87715faef768eea476b5",
+        "99f3e286d1f6e778a381b9e62846b1c7481ff971"
       ],
       "createdAt": "2026-09-15T12:24:48.974Z",
-      "touchedAt": "2026-09-15T18:43:58.003Z",
+      "touchedAt": "2026-09-15T22:29:59.468Z",
       "release": "0.44.0",
       "gateReview": {
         "gate1": {
@@ -8459,15 +8482,40 @@
             ],
             "reviewer": "two fresh-context lenses (code-grounded correctness; spec contract & tradeoffs), round 1 fail (5 I), round 2 scoped confirmation fail (3 I), round 3 scoped confirmation fail (1 I: set-tracker secondary --remove re-run advice), fixed and verified by the orchestrator against tracker.mjs; 2026-09-15"
           }
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-15T22:29:40.488Z",
+          "baseSha": "6f7521bf1e2809e0f0557634ec2e31ac7276a0a7",
+          "headSha": "99f3e286d1f6e778a381b9e62846b1c7481ff971",
+          "reviewer": "re-recorded at the last attributed commit: code through 2498854 passed Gate 2 (two lenses, re-review, orchestrator FIFO/symlink verification); delta 2498854..99f3e28 is docs d619165, lesson ba19925 and four doc corrections from a fresh-context docs re-review (pass: every exit code, refusal excerpt and example run against the engine at HEAD); 2026-09-15",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-09-15T21:57:38.754Z",
+            "baseSha": "6f7521bf1e2809e0f0557634ec2e31ac7276a0a7",
+            "headSha": "249885453c52407a1a7b5282a4ee3dbd43d763ee",
+            "reviewer": "two fresh-context lenses over a1931f8^..078fff3 (conformance: fail 1 C spin loop, 3 I; adversarial: fail same C + detached-claim, directory/lock leak, tmp leak, 12 surviving mutants; 575 stressed writes 0 lost; fleet state and rules files all load), fixed b5d47e1..7b3c25f; scoped re-review fail (FIFO at lock path hangs; one C1 fix unpinned), fixed 2498854; FIFO refusal in 2 s and old dangling-symlink break verified by the orchestrator in a scratch repo; suite 1514/1514 branch and detached; 2026-09-15"
+          }
         }
       },
-      "startedAt": "2026-09-15T18:43:58.000Z"
+      "startedAt": "2026-09-15T18:43:58.000Z",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-15T22:29:59.465Z",
+        "reason": "Built for 0.44.0 (ships with the release cut). An unreadable state.json (conflict markers, truncation, wrong shape) is refused with exit 11 and never replaced, with each hook reporting on its own channel (gate-guard fails closed); saves are serialised by an exclusive lock with fsync, a stale lock broken by dead pid or age under a serialised break, and a non-regular lock path refused instead of opened; claim TTLs are bounded and an unreadable expiry reads expired; write-rules finds its block by whole-line markers, splices literally, keeps CRLF, and refuses an ambiguous arrangement before init/upgrade write anything. Reverses 0.26.0's no-lockfile decision. Gate 1 two lenses + 3 confirmation rounds; cross-spec pass; Gate 2 two lenses (575 stressed writes, 0 lost) with two fix rounds (spin loop, FIFO, detached claim, leaks, 14 mutants) and a docs re-review."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-15T22:29:59.461Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-15T22:29:59.465Z"
     },
     {
       "id": "gates-bind-to-verified-evidence",
       "title": "Gates bind to verified evidence: record-reconcile must answer a real unreconciled detour link, reconcileNeeded survives active-pointer moves and later pushes, and commit shas are resolved and stored full at write time",
       "priority": "P1",
-      "status": "queued",
+      "status": "active",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -8494,7 +8542,7 @@
         "305cc2f7e3b973b8d98827a1f66287559aebb4a2"
       ],
       "createdAt": "2026-09-15T12:24:50.972Z",
-      "touchedAt": "2026-09-15T15:21:18.449Z",
+      "touchedAt": "2026-09-15T22:30:03.721Z",
       "release": "0.44.0",
       "gateReview": {
         "gate1": {
@@ -8520,7 +8568,8 @@
             "reviewer": "two fresh-context lenses (code-grounded bypass hunting; spec contract vs gate-integrity), round 1 fail (3 C, 4 I), round 2 fail (1 C, 4 I) resolved by replacing the read-time legacy rule with a migration, round 3 fail (3 I), round 4 narrow model-based confirmation fail (1 C: RED 6.9g passes today; 1 I: self/missing-link wedge) — both one-clause fixes applied and verified by the orchestrator; 2026-09-15"
           }
         }
-      }
+      },
+      "startedAt": "2026-09-15T22:30:03.716Z"
     }
   ],
   "detourStack": [],
@@ -8531,7 +8580,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 858,
+  "revision": 881,
   "reviewMode": "thorough",
   "releases": [
     {
