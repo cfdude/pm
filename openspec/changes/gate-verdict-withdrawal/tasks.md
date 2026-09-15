@@ -159,7 +159,7 @@ keep passing.
 
 ## 7. Required task items
 
-- [ ] 7.1 **Call-site completeness sweep** — `rg` from the tree at sweep time, not from design.md's table:
+- [x] 7.1 **Call-site completeness sweep** — `rg` from the tree at sweep time, not from design.md's table:
       every reader, writer and remover of `gateReview`, `gate1`, `gate2`, `gateHasEvidence`,
       `gateArtifacts`, `gateSummary`, `gateStaleness`, `stalenessMarking`, `ungatedArchives`,
       `recordedShas`, `archiveGate`, `deliveredObligations`, `KNOWN_GATE_NUMBERS`, and the new
@@ -169,7 +169,7 @@ keep passing.
       deliberately not checked, mirroring `withdrawnCommits`. Also `INVOCATION_DROPPED_FLAGS`
       (`update-epic.mjs`): record that `--withdraw-gate-review`/`--withdrawal-reason` are deliberately NOT
       in it, because design.md's #175 remedy needs them echoed in the printed invocation
-- [ ] 7.2 **Inverse of every operation added** — `--withdraw-gate-review` inverts `record-gate-review`;
+- [x] 7.2 **Inverse of every operation added** — `--withdraw-gate-review` inverts `record-gate-review`;
       its own inverse is re-recording, not an un-withdraw verb. `record-cross-spec-review` has no
       withdrawal: justified in design.md
 - [ ] 7.3 **Verify against the commit** — `git show --stat <sha>` for every task commit; each claimed
