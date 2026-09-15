@@ -556,7 +556,13 @@ export function updateEpic() {
   // instead, and NAME the correction path, because it exists and was merely undiscoverable:
   // re-archiving with --correct-disposition does overwrite the assertion cleanly (verified before
   // this guard was written, which is why this is a refusal rather than a new mechanism).
-  const supplied = ["deferral", "declined-deferral", "no-deferrals"]
+  //
+  // The DISPOSITION flags share the rule (every-verb-refuses-what-it-does-not-read D7): `--outcome`,
+  // `--reason` and `--carried-to` are recorded only inside that same branch, and supplied without
+  // `--status archived` they were dropped while the command said every supplied value was already
+  // held — false. The guard bound the deferral half of the set and not the half beside it.
+  // `--correct-disposition` keeps its own refusal and is not moved here.
+  const supplied = ["outcome", "reason", "carried-to", "deferral", "declined-deferral", "no-deferrals"]
     .filter(k => f[k] !== undefined);
   if (supplied.length && str(f.status) !== "archived") {
     process.stderr.write(

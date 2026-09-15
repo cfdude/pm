@@ -152,7 +152,7 @@ Every refusal test asserts the refusal's CAUSE text (not only a non-zero exit) a
 - [x] 3.1 RED then GREEN: "A bare set-lane-routing leaves the record unchanged" — GREEN refuses in
       `setLaneRouting()` before `loadState()`, naming `--add`, `--remove`, `--clear` (D8). REGRESSION
       GUARD: `conductor-08`'s "--clear empties the overrides list" still passes
-- [ ] 3.2 RED then GREEN: "An outcome without an archive is refused by name" and "A handoff target
+- [x] 3.2 RED then GREEN: "An outcome without an archive is refused by name" and "A handoff target
       without an archive is refused by name" — GREEN adds `outcome`, `reason`, `carried-to` to the
       not-archiving refusal in `update-epic.mjs` (D7). REGRESSION GUARD: "The disposition flags still
       record at the archive", plus `conductor-13`'s `--outcome`/`--reason`/`--carried-to` exercise entries

@@ -824,3 +824,41 @@ test("A bare set-lane-routing leaves the record unchanged", () => {
   assert.match(r.stderr, /--clear/);
   assert.deepEqual(treeSnapshot(cwd), before, "state.json is byte-identical — no empty overrides block");
 });
+
+// ═══════════════ 3.2 — update-epic's disposition flags join the not-archiving refusal ═══════════════
+
+const epicOf = (cwd, id) =>
+  JSON.parse(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8")).epics.find(e => e.id === id);
+
+test("An outcome without an archive is refused by name", () => {
+  const cwd = fixture();
+  const before = treeSnapshot(cwd);
+  const r = engine(["update-epic", "e1", "--outcome", "killed", "--reason", "no"], { cwd });
+  assert.notEqual(r.status, 0, "the flags are dropped otherwise, behind a false 'nothing changed'");
+  assert.match(r.stderr, /--outcome/);
+  assert.match(r.stderr, /--reason/);
+  assert.match(r.stderr, /recorded only when an epic is ARCHIVED/);
+  assert.deepEqual(treeSnapshot(cwd), before);
+  const e1 = epicOf(cwd, "e1");
+  assert.notEqual(e1.status, "archived");
+  assert.ok(!e1.disposition, "e1 carries no disposition");
+});
+
+test("A handoff target without an archive is refused by name", () => {
+  const cwd = fixture();
+  const before = snap(cwd);
+  const r = engine(["update-epic", "e1", "--carried-to", "other"], { cwd });
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /--carried-to/);
+  assert.deepEqual(snap(cwd), before, "state.json is byte-identical");
+});
+
+test("REGRESSION GUARD: The disposition flags still record at the archive", () => {
+  const cwd = fixture();
+  const r = engine(["update-epic", "e1", "--status", "archived", "--outcome", "killed", "--reason", "no", "--no-deferrals"], { cwd });
+  assert.equal(r.status, 0, r.stderr);
+  const e1 = epicOf(cwd, "e1");
+  assert.equal(e1.status, "archived");
+  assert.equal(e1.disposition.outcome, "killed");
+  assert.equal(e1.disposition.reason, "no");
+});

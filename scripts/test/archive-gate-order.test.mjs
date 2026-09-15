@@ -425,8 +425,12 @@ test("3.10 the printed invocation runs", () => {
   archivedDeliveredClaudeCode(cwd, "r10");
   run(["update-epic", "r10", "--link", "relates-to:other:fixture link"], { cwd });
   assert.equal(epicOf(cwd, "r10").links.length, 1);
+  // No `--reason=--x` here any more: a disposition flag without `--status archived` is now refused
+  // by name BEFORE this refusal is reached (every-verb-refuses-what-it-does-not-read task 3.2, the same
+  // not-archiving refusal the deferral flags already had), so a regression-refused call cannot carry
+  // one. INVOCATION_DROPPED_FLAGS still lists it, so the echo does not depend on that ordering.
   const r = refused(cwd, ["update-epic", "r10", "--lane", "openspec", "--notes", "Rob's move", "--clear-links",
-    "--reason=--x", "--add-story", "two words", "--add-story=--x"]);
+    "--add-story", "two words", "--add-story=--x"]);
   runFilled(cwd, invocationOf(r.stderr));
   const e = epicOf(cwd, "r10");
   assert.equal(e.status, "archived");
