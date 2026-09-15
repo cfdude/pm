@@ -13,3 +13,4 @@ evals/.pytest_cache/
 .conductor/activity/
 .conductor/session-claim.json*
 .conductor/state.json.lock*
+.conductor/state.json.tmp*

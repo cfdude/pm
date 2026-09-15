@@ -1,0 +1,108 @@
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-DR9Ksv/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-DR9Ksv/PROJECT.md
+conductor: added epic 'e1' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-DR9Ksv/PROJECT.md
+conductor: added epic 'e2' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-DR9Ksv/PROJECT.md
+conductor: added epic 'e3' (claude-code, queued)
+✖ G2-I4: a temp file whose fsync or rename fails is removed (309.917583ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 354.606125
+
+✖ failing tests:
+
+test at scripts/test/state-file-refuses-to-guess.test.mjs:761:1
+✖ G2-I4: a temp file whose fsync or rename fails is removed (309.917583ms)
+  AssertionError [ERR_ASSERTION]: fsyncSync: no temp file left behind
+  + actual - expected
+  
+  + [
+  +   'state.json.tmp-29097-1789506588823'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/state-file-refuses-to-guess.test.mjs:776:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'state.json.tmp-29097-1789506588823' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-SKzT4h/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-SpRKQk/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-rWpgmN/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-hlR6hd/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: refreshed rules block in CLAUDE.md (platform: claude-code)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: upgraded (0 migration(s)), pmVersion now 0.3.0
+✔ init writes a .gitignore entry for the contention latch — #106 must not repeat in the release that fixes it (98.198916ms)
+✖ init writes .gitignore entries for the conductor's generated logs (100.998917ms)
+✔ init preserves an existing .gitignore instead of overwriting it (98.60625ms)
+✖ upgrade backfills the gitignore entries — the documented update path, not just init (168.21175ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 2
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 510.664209
+
+✖ failing tests:
+
+test at scripts/test/conductor-12.test.mjs:470:1
+✖ init writes .gitignore entries for the conductor's generated logs (100.998917ms)
+  AssertionError [ERR_ASSERTION]: a temp file a killed save leaves behind
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/conductor-12.test.mjs:479:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '.conductor/detours.log\n.conductor/write-conflicts.log\n.conductor/write-conflicts.latch\n.conductor/commit-watch.json\n.conductor/session-claim.json*\n.conductor/state.json.lock*\n.conductor/activity/\n',
+    expected: /^\.conductor\/state\.json\.tmp\*$/m,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/conductor-12.test.mjs:500:1
+✖ upgrade backfills the gitignore entries — the documented update path, not just init (168.21175ms)
+  AssertionError [ERR_ASSERTION]: upgrade back-fills the state temp-file entry
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/conductor-12.test.mjs:514:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'node_modules/\n.conductor/detours.log\n.conductor/write-conflicts.log\n.conductor/write-conflicts.latch\n.conductor/commit-watch.json\n.conductor/session-claim.json*\n.conductor/state.json.lock*\n.conductor/activity/\n',
+    expected: /^\.conductor\/state\.json\.tmp\*$/m,
+    operator: 'match',
+    diff: 'simple'
+  }

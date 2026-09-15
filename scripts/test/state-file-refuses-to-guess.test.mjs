@@ -661,3 +661,119 @@ test("5.5: the repository claim is written by temp file plus rename, never direc
   assert.ok(writes.includes(rename[0]), "the temp file is the one written");
   assert.equal(JSON.parse(fs.readFileSync(target, "utf8")).session, "s1");
 });
+
+// ─────────────── Gate 2 fixes ───────────────
+
+/** Like sh(), with a hard ceiling: a lock that loops forever must fail the test, not hang it. */
+function shBounded(args, { cwd, timeout = 15000 } = {}) {
+  const t0 = Date.now();
+  const r = spawnSync("node", [ENGINE, ...args], {
+    cwd, encoding: "utf8", timeout, killSignal: "SIGKILL",
+    env: { ...process.env, CLAUDE_PROJECT_DIR: cwd, PM_CACHE_ROOT: EMPTY_CACHE },
+  });
+  return { status: r.status, stdout: r.stdout || "", stderr: r.stderr || "", ms: Date.now() - t0, signal: r.signal };
+}
+
+const breakPath = (cwd) => path.join(cwd, ".conductor", "state.json.lock.break");
+const ageBack = (p, ms) => { const t = new Date(Date.now() - ms); fs.utimesSync(p, t, t); };
+
+test("G2-C1: a lock path that exists but cannot be read ends in a bounded refusal naming it, never a spin", () => {
+  const cases = [
+    ["an unreadable lock file", (cwd) => { fs.writeFileSync(lockPath(cwd), "x"); fs.chmodSync(lockPath(cwd), 0o000); }],
+    ["a directory at the lock path", (cwd) => fs.mkdirSync(lockPath(cwd))],
+    ["a dangling symlink at the lock path", (cwd) => fs.symlinkSync(path.join(cwd, "nowhere"), lockPath(cwd))],
+  ];
+  for (const [label, place] of cases) {
+    const cwd = threeEpicRepo();
+    place(cwd);
+    const before = bytes(statePath(cwd));
+    const r = shBounded(["update-epic", "e1", "--status", "active"], { cwd });
+    try {
+      assert.equal(r.signal, null, `${label}: the save must not spin (killed after ${r.ms} ms)`);
+      assert.equal(r.status, CONFLICT, `${label}: stderr: ${r.stderr}`);
+      assert.ok(r.ms < 2000 + 8000, `${label}: bounded by the wait, took ${r.ms} ms`);
+      assert.match(r.stderr, /\.conductor\/state\.json\.lock\b/, `${label}: names the lock path: ${r.stderr}`);
+      assert.match(r.stderr, /30 s/, `${label}: names the expiry: ${r.stderr}`);
+      assert.ok(sameBytes(before, bytes(statePath(cwd))), `${label}: state.json byte-identical`);
+    } finally {
+      try { fs.chmodSync(lockPath(cwd), 0o600); } catch { /* not a file */ }
+    }
+  }
+});
+
+test("G2-C1/I2: an old directory at the lock or break path cannot be removed, so the save refuses at once naming it", () => {
+  const atLock = threeEpicRepo();
+  fs.mkdirSync(lockPath(atLock));
+  ageBack(lockPath(atLock), 120000);
+  const r = shBounded(["update-epic", "e1", "--status", "active"], { cwd: atLock });
+  assert.equal(r.signal, null, `killed after ${r.ms} ms`);
+  assert.equal(r.status, CONFLICT, `stderr: ${r.stderr}`);
+  assert.ok(r.ms < 2000, `refused without waiting out the lock, took ${r.ms} ms`);
+  assert.match(r.stderr, /rm -r\b.*\.conductor\/state\.json\.lock\b/, `names what to remove: ${r.stderr}`);
+
+  const atBreak = threeEpicRepo();
+  placeLock(atBreak, { pid: deadPidG2(), host: os.hostname(), pidns: ourPidns(), acquiredAt: new Date().toISOString(), nonce: "stale" });
+  fs.mkdirSync(breakPath(atBreak));
+  ageBack(breakPath(atBreak), 120000);
+  const b = shBounded(["update-epic", "e1", "--status", "active"], { cwd: atBreak });
+  assert.equal(b.signal, null, `killed after ${b.ms} ms`);
+  assert.equal(b.status, CONFLICT, `stderr: ${b.stderr}`);
+  assert.match(b.stderr, /rm -r\b.*\.conductor\/state\.json\.lock\.break/, `names the break path: ${b.stderr}`);
+});
+
+test("G2-C1: a hook save on an unopenable lock path skips within the bounded wait", async () => {
+  const cwd = threeEpicRepo();
+  fs.mkdirSync(lockPath(cwd));
+  const stateLib = await import("../lib/state.mjs");
+  const t0 = Date.now();
+  const outcome = await inRepo(cwd, () => {
+    const s = stateLib.loadState();
+    s.epics[0].title = "healed";
+    return stateLib.saveState(s, { onConflict: "skip", verb: "render" });
+  });
+  assert.equal(outcome.ok, false);
+  assert.ok(Date.now() - t0 < 2000 + 3000, `bounded, took ${Date.now() - t0} ms`);
+});
+
+function deadPidG2() { return spawnSync("node", ["-e", ""]).pid; }
+
+test("G2-I3: a lock whose content write fails is removed, not left for every writer to wait out", async () => {
+  const cwd = threeEpicRepo();
+  const stateLib = await import("../lib/state.mjs");
+  await inRepo(cwd, () => {
+    const s = stateLib.loadState();
+    s.epics.push({ id: "i3", title: "i3", status: "queued" });
+    let injected = false;
+    withFsSpy({
+      writeFileSync: (orig) => (target, ...rest) => {
+        if (!injected && typeof target === "number") {
+          injected = true;
+          throw Object.assign(new Error("injected lock write failure"), { code: "ENOSPC" });
+        }
+        return orig(target, ...rest);
+      },
+    }, () => assert.throws(() => stateLib.saveState(s), /injected lock write failure/));
+    assert.ok(injected, "precondition: the lock content write was reached");
+    assert.ok(!fs.existsSync(lockPath(cwd)), "the half-created lock is gone");
+  });
+});
+
+test("G2-I4: a temp file whose fsync or rename fails is removed", async () => {
+  const stateLib = await import("../lib/state.mjs");
+  const tmpFiles = (cwd) => fs.readdirSync(path.join(cwd, ".conductor")).filter((n) => n.startsWith("state.json.tmp"));
+  for (const failing of ["fsyncSync", "renameSync"]) {
+    const cwd = threeEpicRepo();
+    await inRepo(cwd, () => {
+      const s = stateLib.loadState();
+      s.epics.push({ id: "i4", title: "i4", status: "queued" });
+      withFsSpy({
+        [failing]: (orig) => (...args) => {
+          if (failing === "renameSync" && String(args[1]) !== statePath(cwd)) return orig(...args);
+          throw Object.assign(new Error(`injected ${failing} failure`), { code: "EIO" });
+        },
+      }, () => assert.throws(() => stateLib.saveState(s), new RegExp(`injected ${failing}`)));
+    });
+    assert.deepEqual(tmpFiles(cwd), [], `${failing}: no temp file left behind`);
+    assert.ok(!fs.existsSync(lockPath(cwd)), `${failing}: no lock left behind`);
+  }
+});

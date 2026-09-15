@@ -344,9 +344,10 @@ function sleepMs(ms) {
  *  parse (a holder between its create and its write) — or null when there is no lock. */
 export function inspectLock(lockPath = lockPaths().LOCK) {
   let fd;
-  try { fd = fs.openSync(lockPath, "r"); } catch { return null; }
+  try { fd = fs.openSync(lockPath, "r"); } catch { return lstatLock(lockPath); }
   try {
     const st = fs.fstatSync(fd);
+    if (!st.isFile()) return lstatLock(lockPath);
     let content = null;
     try {
       const parsed = JSON.parse(fs.readFileSync(fd, "utf8"));
@@ -355,6 +356,18 @@ export function inspectLock(lockPath = lockPaths().LOCK) {
     return { ino: st.ino, mtimeMs: st.mtimeMs, content,
       nonce: content && typeof content.nonce === "string" ? content.nonce : null };
   } catch { return null; } finally { try { fs.closeSync(fd); } catch { /* already closed */ } }
+}
+
+/** A lock path that EXISTS but cannot be read as a lock file — mode 000, a dangling symlink, a
+ *  directory — judged from lstat alone: its identity is its inode with no nonce, its age its own
+ *  mtime. Null only when nothing is at the path. Without this, "exists" (the exclusive create's
+ *  EEXIST) and "no lock" (the failed open) disagreed, and the acquire loop spun at full CPU. */
+function lstatLock(lockPath) {
+  try {
+    const st = fs.lstatSync(lockPath);
+    return { ino: st.ino, mtimeMs: st.mtimeMs, content: null, nonce: null, unreadable: true,
+      kind: st.isDirectory() ? "directory" : (st.isSymbolicLink() ? "symlink" : (st.isFile() ? "file" : "other")) };
+  } catch { return null; }
 }
 
 const sameLock = (a, b) => !!a && !!b && a.ino === b.ino && a.nonce === b.nonce;
@@ -391,33 +404,64 @@ export function isStaleLock(info, now = Date.now()) {
  *  The break file is itself recoverable by age: one older than STATE_LOCK_STALE_MS is unlinked if
  *  its inode is still the one just stat'ed, and the caller goes back to waiting. */
 export function breakStaleLock(judged) {
+  return tryBreakStaleLock(judged).removed;
+}
+
+/** breakStaleLock()'s body, also reporting an OBSTACLE: a path past the stale age that the engine
+ *  cannot remove (a directory at the lock or the break path). The acquire loop refuses on one at
+ *  once, naming it — waiting cannot help, and the age rule would otherwise judge it forever. */
+function tryBreakStaleLock(judged) {
   const { LOCK, BREAK } = lockPaths();
   let bfd;
   try { bfd = fs.openSync(BREAK, "wx"); } catch (e) {
-    if (!e || e.code !== "EEXIST") return false;
+    if (!e || e.code !== "EEXIST") return { removed: false };
     try {
-      const st = fs.statSync(BREAK);
-      if (Math.abs(Date.now() - st.mtimeMs) > STATE_LOCK_STALE_MS && fs.statSync(BREAK).ino === st.ino) {
-        fs.unlinkSync(BREAK);
+      const st = fs.lstatSync(BREAK);
+      if (Math.abs(Date.now() - st.mtimeMs) > STATE_LOCK_STALE_MS && fs.lstatSync(BREAK).ino === st.ino) {
+        try { fs.unlinkSync(BREAK); }
+        catch (u) { if (u && u.code !== "ENOENT") return { removed: false, obstacle: { path: BREAK, directory: st.isDirectory() } }; }
       }
     } catch { /* gone already */ }
-    return false;
+    return { removed: false };
   }
   let breakIno = null;
   try { breakIno = fs.fstatSync(bfd).ino; } catch { /* unknown: released by age */ } finally { fs.closeSync(bfd); }
   try {
     const current = inspectLock(LOCK);
-    if (!sameLock(current, judged) || !isStaleLock(current)) return false;
-    try { fs.unlinkSync(LOCK); return true; } catch { return false; }
+    if (!sameLock(current, judged) || !isStaleLock(current)) return { removed: false };
+    try { fs.unlinkSync(LOCK); return { removed: true }; }
+    catch (u) {
+      return u && u.code === "ENOENT" ? { removed: false }
+        : { removed: false, obstacle: { path: LOCK, directory: current.kind === "directory" } };
+    }
   } finally {
-    try { if (breakIno !== null && fs.statSync(BREAK).ino === breakIno) fs.unlinkSync(BREAK); } catch { /* gone */ }
+    try { if (breakIno !== null && fs.lstatSync(BREAK).ino === breakIno) fs.unlinkSync(BREAK); } catch { /* gone */ }
   }
+}
+
+/** The refusal for a lock this save could not take — naming the path, the stale age, and the shell
+ *  command that removes it, because while a reconcile is owed Edit and Write are blocked. */
+function lockRefusalMessage(lock, expected) {
+  const shown = path.relative(process.env.CLAUDE_PROJECT_DIR || process.cwd(), lock.path) || lock.path;
+  const directory = lock.directory || (lock.holder && lock.holder.kind === "directory");
+  const rm = `${directory ? "rm -r" : "rm"} ${shown}`;
+  const stale = STATE_LOCK_STALE_MS / 1000;
+  if (lock.blocked) {
+    return `state.json's lock cannot be taken: ${shown} is ${directory ? "a directory" : "a path"} older than ` +
+      `${stale} s that the engine cannot remove; nothing was written (read revision ${expected}). ` +
+      `Remove it with \`${rm}\`, then re-run the command.`;
+  }
+  return `state.json is locked at ${shown} (${describeHolder(lock.holder)}) and was not released within ` +
+    `${STATE_LOCK_WAIT_MS} ms; nothing was written (read revision ${expected}). A lock older than ${stale} s ` +
+    `is broken automatically by the next save; if no pm command is running, remove it with \`${rm}\` and ` +
+    "re-run the command.";
 }
 
 /** How a lock's recorded holder reads in a refusal. */
 function describeHolder(info) {
   const c = info && info.content;
-  if (!c) return "a writer whose lock content could not be read";
+  if (!c) return info && info.kind && info.kind !== "file"
+    ? `not a lock file at all — a ${info.kind}` : "a writer whose lock content could not be read";
   return `pid ${c.pid} on host ${escapeControls(c.host)}` +
     (c.acquiredAt ? ` since ${escapeControls(c.acquiredAt)}` : "");
 }
@@ -432,23 +476,39 @@ function acquireStateLock() {
     let fd;
     try { fd = fs.openSync(LOCK, "wx"); } catch (e) {
       if (!e || e.code !== "EEXIST") throw e;
+      // EVERY path below either makes progress (a lock that vanished, a lock broken) or reaches
+      // the deadline and the sleep. A `continue` that skipped both spun at full CPU forever on a
+      // lock path that exists but cannot be read (Gate 2 C1).
+      if (Date.now() >= deadline) return { timedOut: true, holder: inspectLock(LOCK), path: LOCK };
       const held = inspectLock(LOCK);
       if (held === null) continue;                     // released between the create and the look
       // A stale lock is broken — serialised, and only the very lock judged — then the create is
       // retried. A break that did not happen (another breaker, or the lock is no longer the one
-      // judged) falls through to waiting like any held lock.
-      if (isStaleLock(held) && breakStaleLock(held)) continue;
-      if (Date.now() >= deadline) return { timedOut: true, holder: held };
+      // judged) falls through to waiting like any held lock — unless what stands in the way can
+      // never be removed, which waiting cannot fix.
+      if (isStaleLock(held)) {
+        const broke = tryBreakStaleLock(held);
+        if (broke.removed) continue;
+        if (broke.obstacle) return { blocked: true, holder: held, ...broke.obstacle };
+      }
       sleepMs(STATE_LOCK_POLL_MS);
       continue;
     }
     const nonce = crypto.randomBytes(16).toString("hex");
+    let ino = null;
     try {
+      ino = fs.fstatSync(fd).ino;
       fs.writeFileSync(fd, JSON.stringify({
         pid: process.pid, host: os.hostname(), pidns: pidNamespace(),
         acquiredAt: new Date().toISOString(), nonce,
       }));
-      return { ino: fs.fstatSync(fd).ino, nonce };
+      return { ino, nonce };
+    } catch (e) {
+      // The lock was CREATED and its content never written: remove it rather than leave an empty
+      // lock every other writer waits out for STATE_LOCK_STALE_MS (Gate 2 I3). Only the file this
+      // call created — its inode, when that could be read.
+      try { if (ino === null || fs.lstatSync(LOCK).ino === ino) fs.unlinkSync(LOCK); } catch { /* gone */ }
+      throw e;
     } finally { fs.closeSync(fd); }
   }
 }
@@ -487,7 +547,7 @@ export function saveState(state, opts = {}) {
   const expected = Number.isInteger(state.revision) ? state.revision : 0;
 
   const lock = acquireStateLock();
-  if (lock.timedOut) {
+  if (lock.timedOut || lock.blocked) {
     // `found` is the disk revision read WITHOUT the lock, at the timeout — the only reading there
     // is, and the sidecar's contract is a verb and two revisions.
     const peek = readStateFile(STATE_PATH);
@@ -497,9 +557,7 @@ export function saveState(state, opts = {}) {
       recordConflict({ verb, expected, found });
       return { ok: false, expected, found, verb, locked: true };
     }
-    throw new StateConflictError(expected, found,
-      `state.json is locked by another writer (${describeHolder(lock.holder)}) and was not released ` +
-      `within ${STATE_LOCK_WAIT_MS} ms; nothing was written (read revision ${expected}). Retry the command.`);
+    throw new StateConflictError(expected, found, lockRefusalMessage(lock, expected));
   }
   try {
     // ONE strict read of the disk file serves the revision comparison AND the no-op comparison
@@ -549,25 +607,33 @@ export function saveState(state, opts = {}) {
     const next = { ...state, revision: Math.max(found, expected) + 1 };
     const data = JSON.stringify(next, null, 2) + "\n";
     const tmpPath = `${STATE_PATH}.tmp-${process.pid}-${Date.now()}`;
-    const tfd = fs.openSync(tmpPath, "w");
+    let renamed = false;
     try {
-      fs.writeFileSync(tfd, data);
-      fs.fsyncSync(tfd);
-    } finally { fs.closeSync(tfd); }
+      const tfd = fs.openSync(tmpPath, "w");
+      try {
+        fs.writeFileSync(tfd, data);
+        fs.fsyncSync(tfd);
+      } finally { fs.closeSync(tfd); }
 
-    // STILL OURS? Immediately before the rename, because a holder stalled past the stale age can
-    // have had its lock broken and taken by another writer. Refused as a conflict, writing nothing.
-    if (!sameLock(inspectLock(lockPaths().LOCK), lock)) {
-      try { fs.unlinkSync(tmpPath); } catch { /* best effort */ }
-      if (onConflict === "skip") {
-        recordConflict({ verb, expected, found });
-        return { ok: false, expected, found, verb, locked: true };
+      // STILL OURS? Immediately before the rename, because a holder stalled past the stale age can
+      // have had its lock broken and taken by another writer. Refused as a conflict, writing nothing.
+      if (!sameLock(inspectLock(lockPaths().LOCK), lock)) {
+        try { fs.unlinkSync(tmpPath); } catch { /* best effort */ }
+        if (onConflict === "skip") {
+          recordConflict({ verb, expected, found });
+          return { ok: false, expected, found, verb, locked: true };
+        }
+        throw new StateConflictError(expected, found,
+          "state.json's lock was taken over by another writer before this save could land; nothing was " +
+          `written (read revision ${expected}). Retry the command.`);
       }
-      throw new StateConflictError(expected, found,
-        "state.json's lock was taken over by another writer before this save could land; nothing was " +
-        `written (read revision ${expected}). Retry the command.`);
+      fs.renameSync(tmpPath, STATE_PATH);
+      renamed = true;
+    } finally {
+      // A write, fsync, close or rename that throws must not leave the temp file behind (Gate 2 I4).
+      // After a successful rename the path no longer exists and there is nothing to remove.
+      if (!renamed) { try { fs.unlinkSync(tmpPath); } catch { /* never created, or already removed */ } }
     }
-    fs.renameSync(tmpPath, STATE_PATH);
     // Best effort: persist the rename's directory entry where the platform allows an fsync of one.
     try {
       const dfd = fs.openSync(CONDUCTOR_DIR, "r");

@@ -62,6 +62,9 @@ export function ensureGitignore() {
     // The state.json lock and its break file (state.mjs, design D4). Per-checkout and live only
     // for the duration of one save, so a stray one must never show up as an untracked file.
     ".conductor/state.json.lock*",
+    // The save's temp file (state.mjs). Removed on every failure the process survives; a save
+    // killed by a signal between its write and its rename still leaves one behind.
+    ".conductor/state.json.tmp*",
     // #111's activity segments. The whole DIRECTORY, not a glob of segment names: the names are
     // timestamped, so a per-file entry would need one line per segment forever. Same #106 rule —
     // engine-written, per-checkout, and useless to anyone but this working tree.

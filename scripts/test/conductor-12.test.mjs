@@ -476,6 +476,7 @@ test("init writes .gitignore entries for the conductor's generated logs", async 
   assert.match(gi, /^\.conductor\/write-conflicts\.log$/m);
   // state-file-refuses-to-guess: the state lock, its break file, and the repo claim's temp file.
   assert.match(gi, /^\.conductor\/state\.json\.lock\*$/m, "the state lock and its .break file");
+  assert.match(gi, /^\.conductor\/state\.json\.tmp\*$/m, "a temp file a killed save leaves behind");
   assert.match(gi, /^\.conductor\/session-claim\.json\*$/m, "the repo claim and its atomic-write temp file");
 });
 
@@ -510,6 +511,7 @@ test("upgrade backfills the gitignore entries — the documented update path, no
   assert.match(gi, /^\.conductor\/detours\.log$/m);
   assert.match(gi, /^\.conductor\/write-conflicts\.log$/m);
   assert.match(gi, /^\.conductor\/state\.json\.lock\*$/m, "upgrade back-fills the state lock entry");
+  assert.match(gi, /^\.conductor\/state\.json\.tmp\*$/m, "upgrade back-fills the state temp-file entry");
   assert.match(gi, /^\.conductor\/session-claim\.json\*$/m, "upgrade back-fills the repo claim entry");
 });
 
