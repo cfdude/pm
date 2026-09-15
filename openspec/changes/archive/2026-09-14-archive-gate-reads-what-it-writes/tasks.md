@@ -179,6 +179,6 @@ RED tasks fail on today's engine. REGRESSION GUARD tasks pass today and must kee
       <parent of first attributed> --head-sha <last attributed>`
 - [x] 6.2 Archive this change <!-- pm:lifecycle --> — `/opsx:archive archive-gate-reads-what-it-writes`,
       then the disposition in 4.5
-- [ ] 6.3 Resume the paused epic <!-- pm:lifecycle --> — `pop-detour gate-verdict-withdrawal`, run the reconciler against what
+- [x] 6.3 Resume the paused epic <!-- pm:lifecycle --> — `pop-detour gate-verdict-withdrawal`, run the reconciler against what
       shipped, record `record-reconcile gate-verdict-withdrawal --detour archive-gate-reads-what-it-writes
       --verdict valid|invalidated [--amendments "<a>;<b>"]`, and write the POP Honcho line
