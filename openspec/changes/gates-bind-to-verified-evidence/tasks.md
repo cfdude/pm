@@ -131,9 +131,9 @@ Pairs: 6.1–6.8 and 6.9a–6.9g land with 6.10.
       `invalidated` — exits 0, flag false, `valid` still readable on the link (repro `r-repush`)
 - [ ] 6.8 RED: correcting an answered verdict keeps the replaced one readable and does not set the flag
 - [ ] 6.9a RED: owed vs armed `d`, `update-epic p --link "may-invalidate:x:why"` — the `x` link
-      carries `reconcileOnResume: false` and `record-reconcile p --detour x` is refused naming `d`
+      carries `reconcileOnResume: false` and `record-reconcile p --detour x --verdict valid` is refused naming `d`
 - [ ] 6.9b RED: a 0.43.0 state file (`reconcileNeeded: true`, keyless unanswered link to `d`) before
-      `upgrade` — `record-reconcile p --detour d` exits non-zero naming `/pm:upgrade`, byte-identical,
+      `upgrade` — `record-reconcile p --detour d --verdict valid` exits non-zero naming `/pm:upgrade`, byte-identical,
       and, `p` being active, `render` leaves `p` owing
 - [ ] 6.9f RED: that 0.43.0 `p`, then `push-detour p --detour d2 --reason r --reconcile` and pop before
       `upgrade` — `record-reconcile p --detour d2 --verdict valid` exits non-zero naming `/pm:upgrade`,
