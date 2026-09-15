@@ -81,14 +81,14 @@ Order per design.md.
 - [x] 4.2 RED then GREEN: `archived-openspec-epic-with-no-gate-1` names a withdrawn Gate 1
 - [ ] 4.3 REGRESSION GUARD (written after 5.3): re-recording clears the state — the archive with `--outcome delivered
       --no-deferrals` exits 0, and PROJECT.md, the brief and `integrity` name no withdrawn Gate 2
-- [ ] 4.4 RED then GREEN: ONE helper in `archive-gate.mjs` decides which epics a gate table lists and
+- [x] 4.4 RED then GREEN: ONE helper in `archive-gate.mjs` decides which epics a gate table lists and
       renders the cell `withdrawn — <reason>`; `render` and `buildBrief` both call it, each keeping its
       own row cap. Scenarios: one gate withdrawn; BOTH withdrawn (the epic stays in both tables). Plus
       a conductor-16-style assertion that PROJECT.md and the brief list the same epic ids with the same
       cell text, asserting each rendered id is a real id string (never `undefined`)
-- [ ] 4.5 RED then GREEN: `diffEvents` emits `gate-withdrawn` on GROWTH of `withdrawnGateReviews`;
+- [x] 4.5 RED then GREEN: `diffEvents` emits `gate-withdrawn` on GROWTH of `withdrawnGateReviews`;
       a write removing `gate2` with no new withdrawal entry emits none
-- [ ] 4.6 RED then GREEN: `activity-report.mjs` lists `gate-withdrawn` in its gates section; add the
+- [x] 4.6 RED then GREEN: `activity-report.mjs` lists `gate-withdrawn` in its gates section; add the
       kind to `activity-log.mjs`'s kind-list comment and `commands/activity.md`
 
 ## 5. The heal and the standing condition

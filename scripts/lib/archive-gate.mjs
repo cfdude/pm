@@ -15,7 +15,7 @@
 // READS that quantity rather than computing one of its own. Two counters is how a guard comes
 // to refuse an epic that renders as complete.
 
-import { gateHasEvidence, isOpenspecLane, withdrawnGate } from "./constants.mjs";
+import { gateHasEvidence, gateSummary, isOpenspecLane, withdrawnGate } from "./constants.mjs";
 import { isAncestor, sameCommit } from "./git.mjs";
 import { LIFECYCLE_MARKER, epicProgress, outstandingWork } from "./epic-progress.mjs";
 import { KNOWN_OUTCOMES, agentDisposition, correctionError, dispositionError, isEngineStamped, isStoryDisposed, outcomeOf } from "./disposition.mjs";
@@ -125,6 +125,29 @@ export function stalenessMarking(epic, entry) {
     case "attribution-withdrawn": return " ⚠ attribution withdrawn";
     default: return "";
   }
+}
+
+/** THE gate table PROJECT.md and the brief both render: which epics it lists, and each gate's cell
+ *  text, decided ONCE. It lives here rather than beside gateSummary() in constants.mjs because it
+ *  needs stalenessMarking(), which constants.mjs may not import.
+ *
+ *  An epic is listed where either gate holds a stored verdict OR is in the WITHDRAWN state. The
+ *  table used to filter on `gate1 || gate2`, so an epic whose every verdict was withdrawn dropped
+ *  out of it — a withdrawal reading as a review that never existed, on the two surfaces a reader
+ *  looks at. A withdrawn cell is the literal `withdrawn — <reason>`, control characters escaped so a
+ *  reason can never break the row. Each surface keeps its own row cap. */
+export function gateTableRows(epics) {
+  const cell = (e, n) => {
+    const entry = e.gateReview && e.gateReview[`gate${n}`];
+    const withdrawal = withdrawnGate(e, n);
+    return withdrawal
+      ? `withdrawn — ${escapeControls(String(withdrawal.reason ?? ""))}`
+      : gateSummary(entry, stalenessMarking(e, entry));
+  };
+  return (epics || [])
+    .filter(e => e && ((e.gateReview && (e.gateReview.gate1 || e.gateReview.gate2)) ||
+      withdrawnGate(e, 1) || withdrawnGate(e, 2)))
+    .map(e => ({ id: e.id, gate1: cell(e, 1), gate2: cell(e, 2) }));
 }
 
 /**

@@ -155,6 +155,9 @@ export function buildReport(events, { currentRevision = null, malformed = 0 } = 
     // typo — so it is listed rather than counted into a quality metric.
     if (e.kind === "epic-lane") r.reroutes.push({ epic: e.epic, from: e.from, to: e.to, at: e.at });
     if (e.kind === "gate-review") r.gates.push({ epic: e.epic, gate: e.gate, verdict: e.verdict, at: e.at });
+    // A withdrawal sits in the SAME sequence as the verdicts, because "was this verdict taken back,
+    // and when relative to the rest" is a question about that sequence.
+    if (e.kind === "gate-withdrawn") r.gates.push({ epic: e.epic, gate: e.gate, withdrawn: true, at: e.at });
     if (e.session) r.sessions[e.session] = (r.sessions[e.session] || 0) + 1;
   }
 
@@ -232,8 +235,8 @@ export function formatReport(r, { enabled = true, dir = activityDir() } = {}) {
   }
   L.push("");
 
-  L.push("GATES — verdicts in the order they were recorded");
-  L.push(r.gates.length ? r.gates.map(g => `  • ${g.at}  ${g.epic}  ${g.gate}=${g.verdict}`).join("\n")
+  L.push("GATES — verdicts and withdrawals in the order they were recorded");
+  L.push(r.gates.length ? r.gates.map(g => `  • ${g.at}  ${g.epic}  ${g.withdrawn ? `${g.gate} withdrawn` : `${g.gate}=${g.verdict}`}`).join("\n")
     : "  (none recorded in this window)");
   L.push("");
 

@@ -10,7 +10,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import * as constants from "../lib/constants.mjs";
-import { ENGINE, EMPTY_CACHE, tmpRepo, run, readState } from "./helpers.mjs";
+import { ENGINE, EMPTY_CACHE, tmpRepo, run, readState, parseBrief } from "./helpers.mjs";
 
 const stateFile = (cwd) => path.join(cwd, ".conductor", "state.json");
 const stateBytes = (cwd) => fs.readFileSync(stateFile(cwd));
@@ -305,4 +305,98 @@ test("4.2 archived-openspec-epic-with-no-gate-1 names a withdrawn Gate 1 and quo
   assert.ok(finding, `the check reports o42:\n${block.join("\n")}`);
   assert.match(finding, /Gate 1 \(spec review\) verdict was withdrawn/);
   assert.ok(finding.includes(JSON.stringify("reviewed another change")), finding);
+});
+
+/** PROJECT.md's gate table, as `{id: {gate1, gate2}}` in row order. */
+function projectGateTable(cwd) {
+  const md = fs.readFileSync(path.join(cwd, "PROJECT.md"), "utf8").split("\n");
+  const start = md.indexOf("## Gate reviews");
+  if (start === -1) return {};
+  const rows = {};
+  for (const l of md.slice(start + 1)) {
+    if (l.startsWith("## ")) break;
+    const m = l.match(/^\| `([^`]+)` \| (.*) \| (.*) \|$/);
+    if (m) rows[m[1]] = { gate1: m[2], gate2: m[3] };
+  }
+  return rows;
+}
+
+/** The brief's GATE REVIEWS block, as `{id: {gate1, gate2}}`. */
+function briefGateTable(cwd) {
+  const L = parseBrief(cwd).split("\n");
+  const start = L.indexOf("GATE REVIEWS:");
+  if (start === -1) return {};
+  const rows = {};
+  for (const l of L.slice(start + 1)) {
+    if (!l.trim()) break;
+    const m = l.match(/^ {2}• `([^`]+)` gate 1: (.*) · gate 2: (.*)$/);
+    if (m) rows[m[1]] = { gate1: m[2], gate2: m[3] };
+  }
+  return rows;
+}
+
+test("4.4 PROJECT.md and the brief show one withdrawn gate as withdrawn — <reason>", () => {
+  const cwd = withVerdicts("t441", { gate1: true, gate2: true });
+  accepted(cwd, ["update-epic", "t441", "--withdraw-gate-review", "2", "--withdrawal-reason", "on the wrong epic"]);
+  for (const [surface, table] of [["PROJECT.md", projectGateTable(cwd)], ["brief", briefGateTable(cwd)]]) {
+    assert.ok(table.t441, `${surface} lists t441 by its id: ${JSON.stringify(table)}`);
+    assert.equal(table.t441.gate2, "withdrawn — on the wrong epic", surface);
+    assert.match(table.t441.gate1, /^pass /, `${surface} keeps Gate 1's verdict`);
+  }
+});
+
+test("4.4 PROJECT.md and the brief keep an epic whose every gate is withdrawn", () => {
+  const cwd = withVerdicts("t442", { gate1: true, gate2: true });
+  accepted(cwd, ["update-epic", "t442", "--withdraw-gate-review", "1", "--withdraw-gate-review", "2", "--withdrawal-reason", "both copied"]);
+  for (const [surface, table] of [["PROJECT.md", projectGateTable(cwd)], ["brief", briefGateTable(cwd)]]) {
+    assert.deepEqual(table.t442, { gate1: "withdrawn — both copied", gate2: "withdrawn — both copied" }, surface);
+  }
+});
+
+test("4.4 PROJECT.md and the brief agree on the gate table: same ids, same cell text", () => {
+  const cwd = withVerdicts("stored", { gate1: true, gate2: true });
+  run(["add-epic", "--id", "withdrawn", "--lane", "claude-code"], { cwd });
+  run(["record-gate-review", "withdrawn", ...PASS2], { cwd });
+  run(["add-epic", "--id", "absent", "--lane", "claude-code"], { cwd });
+  run(["add-epic", "--id", "half", "--lane", "claude-code"], { cwd });
+  run(["record-gate-review", "half", ...PASS1], { cwd });
+  run(["record-gate-review", "half", ...PASS2], { cwd });
+  accepted(cwd, ["update-epic", "withdrawn", "--withdraw-gate-review", "2", "--withdrawal-reason", "gone"]);
+  accepted(cwd, ["update-epic", "half", "--withdraw-gate-review", "1", "--withdrawal-reason", "half gone"]);
+  const project = projectGateTable(cwd), brief = briefGateTable(cwd);
+  const ids = Object.keys(project);
+  assert.ok(ids.every(id => typeof id === "string" && id !== "undefined" && id.length), `real ids: ${ids}`);
+  assert.deepEqual(ids.sort(), Object.keys(brief).sort(), "both surfaces list the same epics");
+  assert.deepEqual(ids.sort(), ["half", "stored", "withdrawn"]);
+  for (const id of ids) assert.deepEqual(brief[id], project[id], `the cells for ${id} are identical on both surfaces`);
+});
+
+test("4.5 diffEvents emits gate-withdrawn on GROWTH of withdrawnGateReviews, and nothing for a bare removal", async () => {
+  const { diffEvents } = await import("../lib/activity-log.mjs");
+  const verdict = { verdict: "pass", reviewedAt: "2026-09-14T00:00:00.000Z" };
+  const epic = (over) => ({ id: "a45", title: "a45", status: "queued", lane: "openspec", ...over });
+  const before = { revision: 1, epics: [epic({ gateReview: { gate1: verdict, gate2: verdict } })] };
+  const withdrawn = { revision: 2, epics: [epic({ gateReview: { gate1: verdict },
+    withdrawnGateReviews: [{ gate: 2, entry: verdict, reason: "r", withdrawnAt: "2026-09-14T01:00:00.000Z" }] })] };
+  const events = diffEvents(before, withdrawn, { verb: "update-epic" }).filter(e => e.kind === "gate-withdrawn");
+  assert.equal(events.length, 1, JSON.stringify(events));
+  assert.equal(events[0].epic, "a45");
+  assert.equal(events[0].gate, "gate2");
+
+  const bareRemoval = { revision: 2, epics: [epic({ gateReview: { gate1: verdict } })] };
+  assert.deepEqual(diffEvents(before, bareRemoval, {}).filter(e => e.kind === "gate-withdrawn"), [],
+    "a verdict disappearing without a withdrawal record is not logged as a withdrawal");
+});
+
+test("4.6 the activity report's GATES section lists a withdrawal made through update-epic", () => {
+  const cwd = withVerdicts("a46");
+  run(["set-activity-log", "on"], { cwd });
+  accepted(cwd, ["update-epic", "a46", "--withdraw-gate-review", "2", "--withdrawal-reason", "x"]);
+  const report = run(["activity"], { cwd }).split("\n");
+  const start = report.findIndex(l => l.startsWith("GATES"));
+  assert.notEqual(start, -1);
+  const block = [];
+  for (const l of report.slice(start + 1)) { if (!l.trim()) break; block.push(l); }
+  const hits = block.filter(l => /a46 {2}gate2 withdrawn/.test(l));
+  assert.equal(hits.length, 1, `exactly one withdrawal listed:\n${block.join("\n")}`);
 });
