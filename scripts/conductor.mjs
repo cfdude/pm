@@ -178,6 +178,11 @@ if (!cmd || (!Object.prototype.hasOwnProperty.call(VERB_EFFECTS, cmd) && (helpAt
     process.stderr.write(verdict.message + "\n");
     process.exit(1);
   }
+  // D10 — every verb reads its command line in canonical order: positionals first, then flags with
+  // their values in their original relative order, argv-level flags (`--force`) last. So an
+  // `argv[0]` reader sees its positional first (`set-active --force e2`), and saveState()'s own
+  // `process.argv.includes("--force")` keeps working unedited.
+  if (verdict.canonicalArgv) process.argv.splice(3, process.argv.length - 3, ...verdict.canonicalArgv);
 }
 
 // gh#82 — is ROOT the repository the caller is standing in?  Emitted here, ONCE, and for every

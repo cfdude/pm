@@ -190,7 +190,9 @@ test("gh-182: owners' positional scan skips a --value instead of reading it as a
   run(["add-epic", "--id", "e1", "--title", "t", "--lane", "claude-code"], { cwd });
   run(["claim", "e1", "--session", "s"], { cwd });
   const out = runCombined(["owners", "--json=x"], { cwd });
-  assert.match(out, /unknown flag --json for owners|"epics"|epic/,
+  // --json is valueless, so its = form is refused by name (verb-surface) rather than accepted with
+  // the value ignored — which still proves it parsed as a FLAG, not as a positional.
+  assert.match(out, /--json takes no value/,
     "the = form must at least parse into a flag rather than a positional");
 });
 

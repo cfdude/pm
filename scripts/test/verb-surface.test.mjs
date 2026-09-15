@@ -589,3 +589,174 @@ test("--force is not refused on a mutating verb that validates its own flags", (
   }
   assert.deepEqual(wrong, [], wrong.join("\n"));
 });
+
+// ═══════════════ 2.4 — surplus positionals, and the canonical argv every verb reads ═══════════════
+
+const lastDetourText = (cwd) => {
+  const rows = fs.readFileSync(path.join(cwd, ".conductor", "detours.log"), "utf8").trim().split("\n");
+  return rows[rows.length - 1].split("\t").pop();
+};
+
+/** How many positionals each baseline carries, counted by hand rather than by the classifier under
+ *  test: the fill below depends on it. */
+const POSITIONAL_COUNTS = {
+  "log-detour": 1, "push-detour": 1, "honcho-memory": 3, "update-epic": 1, "remove-epic": 1, reorder: 2,
+  "set-active": 1, "suggest-lane": 1, triage: 1, "set-autonomy": 1, "record-reconcile": 1,
+  "record-gate-review": 1, "record-cross-spec-review": 1, "record-tracker-refresh": 1, release: 1,
+  "set-gate-guard": 1, claim: 1, unclaim: 1, "set-activity-log": 1,
+};
+for (const verb of Object.keys(DISPATCH_BASELINE)) if (!(verb in POSITIONAL_COUNTS)) POSITIONAL_COUNTS[verb] = 0;
+
+test("Every verb with a bounded arity refuses a stray positional and writes nothing", async () => {
+  const { VERB_POSITIONALS } = await import(CONSTANTS);
+  const wrong = [];
+  let checked = 0;
+  for (const [verb, b] of Object.entries(DISPATCH_BASELINE)) {
+    if (VERB_POSITIONALS[verb].max === Infinity) continue;
+    checked++;
+    const cwd = fixture(b.pre);
+    for (const step of b.local || []) run(step, { cwd });
+    // A baseline may use fewer positionals than the maximum (`pop-detour` takes an optional one), so
+    // fill up to the maximum first: `zzzstray` is then the first token beyond it on every verb.
+    const count = POSITIONAL_COUNTS[verb];
+    const fill = Array.from({ length: Math.max(0, VERB_POSITIONALS[verb].max - count) }, () => "zzzfill");
+    const before = treeSnapshot(cwd);
+    const r = engine([...b.args, ...fill, "zzzstray"], { cwd, input: b.input || "" });
+    if (r.status === 0) wrong.push(`${verb}: exited 0`);
+    if (!/'zzzstray' is an extra argument/.test(r.stderr)) {
+      wrong.push(`${verb}: the refusal does not name zzzstray: ${r.stderr.trim().split("\n")[0]}`);
+    }
+    try { assert.deepEqual(treeSnapshot(cwd), before); } catch { wrong.push(`${verb}: a file changed`); }
+  }
+  assert.ok(checked >= 40, `only ${checked} verbs swept`);
+  assert.deepEqual(wrong, [], wrong.join("\n"));
+});
+
+test("An unquoted multi-word title is refused, not truncated", () => {
+  const cwd = fixture();
+  const before = snap(cwd);
+  const r = engine(["add-epic", "--id", "t1", "--lane", "claude-code", "--title", "My", "Title"], { cwd });
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /'Title' is an extra argument/);
+  assert.deepEqual(snap(cwd), before, "no epic t1 exists");
+});
+
+test("The same truncation is refused on update", () => {
+  const cwd = fixture();
+  const before = snap(cwd);
+  const r = engine(["update-epic", "e1", "--title", "My", "Title"], { cwd });
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /'Title' is an extra argument/);
+  assert.deepEqual(snap(cwd), before, "e1's title is unchanged");
+});
+
+test("A verb that reads one text positional refuses a second", () => {
+  const cwd = fixture();
+  const r = engine(["suggest-lane", "fix", "a", "typo"], { cwd });
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /'a' is an extra argument/);
+  assert.doesNotMatch(r.stdout, /"lane"/, "no routing for `fix` alone");
+});
+
+test("A value given to a valueless flag is refused by name", () => {
+  const cwd = fixture();
+  run(["add-epic", "--id", "p", "--lane", "claude-code"], { cwd });
+  run(["add-epic", "--id", "kid", "--lane", "claude-code", "--parent", "p"], { cwd });
+  const before = snap(cwd);
+  const r = engine(["remove-epic", "p", "--cascade", "yes"], { cwd });
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /'yes' is an extra argument/);
+  assert.match(r.stderr, /--cascade takes no value/);
+  assert.deepEqual(snap(cwd), before, "p and its child are still in state.json");
+});
+
+test("An inline value on a valueless flag is refused", () => {
+  const cwd = fixture();
+  run(["add-epic", "--id", "p", "--lane", "claude-code"], { cwd });
+  run(["add-epic", "--id", "kid", "--lane", "claude-code", "--parent", "p"], { cwd });
+  const before = snap(cwd);
+  const r = engine(["remove-epic", "p", "--cascade=true"], { cwd });
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /--cascade takes no value/);
+  assert.deepEqual(snap(cwd), before);
+  const f = engine(["add-epic", "--id", "f1", "--lane", "claude-code", "--force=1"], { cwd });
+  assert.notEqual(f.status, 0);
+  assert.match(f.stderr, /--force takes no value/);
+  assert.deepEqual(snap(cwd), before, "no epic f1");
+});
+
+test("A dash-leading token that is not a flag is refused where no free text is read", () => {
+  const cwd = fixture();
+  run(["add-epic", "--id", "e9", "--lane", "claude-code"], { cwd });
+  run(["claim", "e9", "--session", "s"], { cwd });
+  const before = treeSnapshot(cwd);
+  const r = engine(["claim", "--repo", "--session", "s", "--Steal"], { cwd });
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /unknown flag --Steal for claim/);
+  assert.equal(fs.existsSync(path.join(cwd, ".conductor", "session-claim.json")), false, "no repository claim");
+  const u = engine(["unclaim", "e9", "--session", "s", "--Steal"], { cwd });
+  assert.notEqual(u.status, 0);
+  assert.match(u.stderr, /unknown flag --Steal for unclaim/);
+  assert.deepEqual(treeSnapshot(cwd), before, "the claim on e9 is untouched");
+});
+
+test("A verb that takes no positionals refuses one", () => {
+  const cwd = fixture();
+  const before = snap(cwd);
+  const r = engine(["set-review-mode", "--mode", "thorough", "extra"], { cwd });
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /'extra' is an extra argument/);
+  assert.deepEqual(snap(cwd), before, "the review mode is unchanged");
+});
+
+test("--force does not leak into a joined text", () => {
+  const cwd = fixture();
+  const r = engine(["log-detour", "fixed", "it", "--force"], { cwd });
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal(lastDetourText(cwd), "fixed it");
+  const h = engine(["honcho-memory", "push", "e1", "why", "--force"], { cwd });
+  assert.equal(h.status, 0, h.stderr);
+  assert.equal(h.stdout.trim(), "paused e1 for why");
+});
+
+test("--force before a positional does not displace it", () => {
+  const cwd = fixture();
+  run(["add-epic", "--id", "e2", "--lane", "claude-code"], { cwd });
+  const r = engine(["set-active", "--force", "e2"], { cwd });
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8")).active, "e2");
+  run(["set-gate-guard", "on"], { cwd });
+  const g = engine(["set-gate-guard", "--force", "off"], { cwd });
+  assert.equal(g.status, 0, g.stderr);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8")).gateGuard, false);
+});
+
+test("checkCommandLine: a --leading token that is not flag-shaped is an undeclared flag on a verb without free text", async () => {
+  const { checkCommandLine } = await import(ARGV_SURFACE);
+  const v = checkCommandLine("claim", line("claim", "--repo", "--session", "s", "--Steal"), { initialized: true });
+  assert.equal(v.kind, "refuse");
+  assert.match(v.message, /unknown flag --Steal for claim/);
+});
+
+test("checkCommandLine: canonical argv puts positionals first, keeps flag order, and argv-level flags last", async () => {
+  const { checkCommandLine } = await import(ARGV_SURFACE);
+  const v = checkCommandLine("update-epic",
+    line("update-epic", "--force", "--attribute-commit", "a", "e1", "--attribute-commit=b", "--title", "t"), { initialized: true });
+  assert.equal(v.kind, "ok");
+  assert.deepEqual(v.canonicalArgv,
+    ["e1", "--attribute-commit", "a", "--attribute-commit=b", "--title", "t", "--force"]);
+});
+
+test("REGRESSION GUARD: A verb that joins its positionals still accepts many", () => {
+  const cwd = fixture();
+  const r = engine(["log-detour", "fixed", "the", "render", "stamp"], { cwd });
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal(lastDetourText(cwd), "fixed the render stamp");
+});
+
+test("REGRESSION GUARD: A dash-leading text positional is still a positional", () => {
+  const cwd = fixture();
+  const r = engine(["triage", "--story <n> is 1-indexed"], { cwd });
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal(JSON.parse(r.stdout).ask, "--story <n> is 1-indexed");
+});

@@ -1,0 +1,660 @@
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-3sU2ZN/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-7g0SUv/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-M9lM8F/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-62N9iY/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-62N9iY/PROJECT.md
+conductor: added epic 'e1' (claude-code, queued)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-MtdlzI/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-MtdlzI/PROJECT.md
+conductor: added epic 'e2' (claude-code, queued)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-pT9h0A/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-pT9h0A/PROJECT.md
+conductor: logged minimal detour
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-W8K37U/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: gate guard is now on
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-3ONHuj/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-3ONHuj/PROJECT.md
+conductor: added epic 'e2' (claude-code, queued)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-vUWYGt/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-4U4njQ/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-TQa3L9/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-TQa3L9/PROJECT.md
+conductor: added epic 'e1' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-TQa3L9/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-TQa3L9/PROJECT.md
+conductor: added epic 'ext' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-NlWGDe/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-NlWGDe/PROJECT.md
+conductor: added epic 'e1' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-NlWGDe/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-NlWGDe/PROJECT.md
+conductor: added epic 'ext' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-NlWGDe/PROJECT.md
+conductor: paused 'e1' and made detour 'other' active — reconcile gate armed for /pm:resume
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-KKB2Zf/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-KKB2Zf/PROJECT.md
+conductor: added epic 'e1' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-KKB2Zf/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-KKB2Zf/PROJECT.md
+conductor: added epic 'ext' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-KKB2Zf/PROJECT.md
+conductor: paused 'e1' and made detour 'other' active — reconcile gate armed for /pm:resume
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-KKB2Zf/PROJECT.md
+conductor: detour 'other' is still queued, not archived — resuming anyway, but confirm its work is finished and committed before building on the resumed epic
+conductor: resumed 'e1'
+conductor: RECONCILE GATE — 'e1' carries reconcileNeeded. Run the reconciler BEFORE writing code, then `record-reconcile e1 --detour other --verdict valid|invalidated`, then `honcho-memory pop e1 "<detour>; reconcile = …"` for the memory line
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-vGQk6H/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-vGQk6H/PROJECT.md
+conductor: added epic 'e1' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-vGQk6H/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-vGQk6H/PROJECT.md
+conductor: added epic 'ext' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-vGQk6H/PROJECT.md
+conductor: release 'r1' — `r1`: 1 epic, 0 deferred
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-nV3nNt/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-nV3nNt/PROJECT.md
+conductor: added epic 'e1' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-nV3nNt/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-nV3nNt/PROJECT.md
+conductor: added epic 'ext' (claude-code, queued)
+conductor: 'e1' claimed by 's' until 2026-09-15T18:36:02.533Z
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-M3KZwf/PROJECT.md
+conductor: added epic 'e2' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-QIE6f3/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-QIE6f3/PROJECT.md
+conductor: added epic 'kid' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-lttQMm/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-lttQMm/PROJECT.md
+conductor: added epic 'kid' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-GKeKi2/PROJECT.md
+conductor: added epic 'e9' (claude-code, queued)
+conductor: 'e9' claimed by 's' until 2026-09-15T18:36:11.349Z
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-rhJjoU/PROJECT.md
+conductor: added epic 'e2' (claude-code, queued)
+✔ VERB_POSITIONALS is set-equal to the dispatch table (2.239042ms)
+✔ every VERB_POSITIONALS row has a valid arity, a form, and boolean markers (0.210625ms)
+✔ release carries two forms keyed by its first positional (0.133167ms)
+✔ freeText is carried by exactly triage, suggest-lane, log-detour and honcho-memory (0.1265ms)
+✔ init with an unknown platform creates nothing (60.088625ms)
+✔ init with a valueless platform is refused before it creates anything (70.318917ms)
+✔ A hook verb refuses an unknown platform (305.992541ms)
+✔ A hook verb's help names the flag its hook passes (311.701167ms)
+✔ the hook marker on VERB_EFFECTS is exactly the verbs hooks/hooks.json invokes (0.399792ms)
+✔ --force is accepted by exactly the mutating verbs, and the argvLevel rows are exactly force (0.488375ms)
+✔ A mutating verb's help names --force (118.717667ms)
+✔ claim and unclaim are not refused for carrying --force (212.13375ms)
+✔ checkCommandLine: a help token is recognised before it is classified as a flag (0.701583ms)
+✔ checkCommandLine: a value-bearing declared flag consumes a non-flag-shaped next token, so -h there is its value (0.120292ms)
+✔ checkCommandLine: --help directly after a value-bearing flag that took no value is refused, naming both (0.098875ms)
+✔ checkCommandLine: a valueless flag never consumes the next token (0.058583ms)
+✔ checkCommandLine: a --leading token that is not flag-shaped is a positional on a free-text verb (0.06625ms)
+✔ argv-surface.mjs imports constants.mjs and verb-effects.mjs only (0.162458ms)
+✔ A trailing help token does not remove an epic (172.976333ms)
+✔ A trailing help token does not append to the detour log (220.255292ms)
+✔ A help token does not disarm the gate guard (241.251625ms)
+✔ A short help token after a positional does not move the active pointer (188.687709ms)
+✔ REGRESSION GUARD: A help token in a value position is still refused (104.047458ms)
+✔ REGRESSION GUARD: A help token first after the verb is still that verb's help (102.216625ms)
+✔ REGRESSION GUARD: A hook verb's help still works without pm (134.283167ms)
+✔ DISPATCH_BASELINE covers exactly the dispatch table (0.20875ms)
+✔ every DISPATCH_BASELINE invocation exits 0 on its own (5156.327958ms)
+✔ Every dispatched verb refuses an undeclared flag and writes nothing (2649.705667ms)
+✔ A typo'd flag on the reconcile write-back records nothing (48.211833ms)
+✔ A typo'd autonomy flag writes no autonomy block (48.67175ms)
+✔ A read-only verb refuses an undeclared flag (45.102333ms)
+✔ A read-only verb refuses --force (47.698833ms)
+✔ A batch key is not a command-line flag (87.732ms)
+✔ An id given as a flag is diagnosed as the positional (113.3725ms)
+✔ REGRESSION GUARD: A hook verb stays dormant in a repository without pm (295.708125ms)
+✔ REGRESSION GUARD: a refused gate-guard hook line drains a large payload (no EPIPE) (49.158792ms)
+✔ --force is not refused on a mutating verb that validates its own flags (354.147125ms)
+✖ Every verb with a bounded arity refuses a stray positional and writes nothing (3252.183417ms)
+✖ An unquoted multi-word title is refused, not truncated (75.386125ms)
+✖ The same truncation is refused on update (70.95175ms)
+✖ A verb that reads one text positional refuses a second (48.243042ms)
+✖ A value given to a valueless flag is refused by name (178.937708ms)
+✖ An inline value on a valueless flag is refused (202.162959ms)
+✖ A dash-leading token that is not a flag is refused where no free text is read (172.109625ms)
+✖ A verb that takes no positionals refuses one (86.0845ms)
+✖ --force does not leak into a joined text (74.801417ms)
+✖ --force before a positional does not displace it (114.697792ms)
+✖ checkCommandLine: a --leading token that is not flag-shaped is an undeclared flag on a verb without free text (0.180917ms)
+✖ checkCommandLine: canonical argv puts positionals first, keeps flag order, and argv-level flags last (0.148292ms)
+✔ REGRESSION GUARD: A verb that joins its positionals still accepts many (69.36575ms)
+✔ REGRESSION GUARD: A dash-leading text positional is still a positional (67.736ms)
+ℹ tests 51
+ℹ suites 0
+ℹ pass 39
+ℹ fail 12
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 15606.34725
+
+✖ failing tests:
+
+test at scripts/test/verb-surface.test.mjs:610:1
+✖ Every verb with a bounded arity refuses a stray positional and writes nothing (3252.183417ms)
+  AssertionError [ERR_ASSERTION]: init: exited 0
+  init: the refusal does not name zzzstray: conductor: already initialized (.conductor/state.json exists)
+  init: a file changed
+  render: exited 0
+  render: the refusal does not name zzzstray: conductor: PROJECT.md unchanged (skipped rewrite)
+  render: a file changed
+  brief: exited 0
+  brief: the refusal does not name zzzstray: 
+  snapshot: exited 0
+  snapshot: the refusal does not name zzzstray: conductor: PROJECT.md unchanged (skipped rewrite)
+  snapshot: a file changed
+  commit-nudge: exited 0
+  commit-nudge: the refusal does not name zzzstray: 
+  sync: exited 0
+  sync: the refusal does not name zzzstray: conductor: synced (0 new epic(s) added as untriaged) — nothing was written to .conductor/state.json
+  push-detour: the refusal does not name zzzstray: conductor: push-detour requires exactly one of --reconcile or --no-reconcile — whether the detour can invalidate the paused epic's plan is a judgment, and a default would make an absent decision look like a considered one. Say --reconcile unless you are certain the detour touches nothing the paused epic depends on
+  pop-detour: the refusal does not name zzzstray: conductor: the top of the detour stack is 'e1', not 'zzzfill' — the stack is LIFO, so resume 'e1' first
+  add-epic: exited 0
+  add-epic: the refusal does not name zzzstray: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-pXEL9f/PROJECT.md
+  add-epic: a file changed
+  add-many: exited 0
+  add-many: the refusal does not name zzzstray: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-4YEyEl/PROJECT.md
+  add-many: a file changed
+  update-epic: exited 0
+  update-epic: the refusal does not name zzzstray: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-5jqeIo/PROJECT.md
+  update-epic: a file changed
+  remove-epic: exited 0
+  remove-epic: the refusal does not name zzzstray: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ZMqb7d/PROJECT.md
+  remove-epic: a file changed
+  set-active: exited 0
+  set-active: the refusal does not name zzzstray: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Xq4BFH/PROJECT.md
+  set-active: a file changed
+  clear-active: exited 0
+  clear-active: the refusal does not name zzzstray: conductor: PROJECT.md unchanged (skipped rewrite)
+  clear-active: a file changed
+  set-tracker: exited 0
+  set-tracker: the refusal does not name zzzstray: conductor: refreshed rules block in CLAUDE.md (platform: claude-code)
+  set-tracker: a file changed
+  set-lane-routing: exited 0
+  set-lane-routing: the refusal does not name zzzstray: conductor: PROJECT.md unchanged (skipped rewrite)
+  set-lane-routing: a file changed
+  suggest-lane: exited 0
+  suggest-lane: the refusal does not name zzzstray: 
+  triage: exited 0
+  triage: the refusal does not name zzzstray: 
+  set-autonomy: exited 0
+  set-autonomy: the refusal does not name zzzstray: conductor: PROJECT.md unchanged (skipped rewrite)
+  set-autonomy: a file changed
+  record-reconcile: exited 0
+  record-reconcile: the refusal does not name zzzstray: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-vtNJxF/PROJECT.md
+  record-reconcile: a file changed
+  record-gate-review: exited 0
+  record-gate-review: the refusal does not name zzzstray: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-7a2nCe/PROJECT.md
+  record-gate-review: a file changed
+  record-cross-spec-review: exited 0
+  record-cross-spec-review: the refusal does not name zzzstray: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-zCZbgO/PROJECT.md
+  record-cross-spec-review: a file changed
+  record-tracker-refresh: exited 0
+  record-tracker-refresh: the refusal does not name zzzstray: conductor: PROJECT.md unchanged (skipped rewrite)
+  record-tracker-refresh: a file changed
+  set-review-mode: exited 0
+  set-review-mode: the refusal does not name zzzstray: conductor: refreshed rules block in CLAUDE.md (platform: claude-code)
+  set-review-mode: a file changed
+  release: exited 0
+  release: the refusal does not name zzzstray: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-h6zEQS/PROJECT.md
+  release: a file changed
+  set-gate-guard: exited 0
+  set-gate-guard: the refusal does not name zzzstray: conductor: PROJECT.md unchanged (skipped rewrite)
+  set-gate-guard: a file changed
+  gate-guard: exited 0
+  gate-guard: the refusal does not name zzzstray: 
+  lesson-advice: exited 0
+  lesson-advice: the refusal does not name zzzstray: 
+  plan-hierarchy: exited 0
+  plan-hierarchy: the refusal does not name zzzstray: 
+  claim: the refusal does not name zzzstray: conductor: usage: conductor.mjs claim <epic-id> --session <name> [--ttl <minutes>] [--steal]
+  unclaim: the refusal does not name zzzstray: conductor: usage: conductor.mjs unclaim <epic-id> --session <name> [--steal]
+  owners: exited 0
+  owners: the refusal does not name zzzstray: 
+  activity: exited 0
+  activity: the refusal does not name zzzstray: 
+  set-activity-log: exited 0
+  set-activity-log: the refusal does not name zzzstray: conductor: activity log on — writing to /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-T8NueV/.conductor/activity (git-ignored). Read it with `activity`.
+  set-activity-log: a file changed
+  purge-logs: exited 0
+  purge-logs: the refusal does not name zzzstray: 
+  verify-worktrees: exited 0
+  verify-worktrees: the refusal does not name zzzstray: fatal: not a git repository (or any of the parent directories): .git
+  verify-state: exited 0
+  verify-state: the refusal does not name zzzstray: conductor: state.json matches the last render — no hand-edit detected.
+  verify-specs: exited 0
+  verify-specs: the refusal does not name zzzstray: 
+  integrity: exited 0
+  integrity: the refusal does not name zzzstray: 
+  changesets: exited 0
+  changesets: the refusal does not name zzzstray: 
+  recover-created-at: exited 0
+  recover-created-at: the refusal does not name zzzstray: conductor: PROJECT.md unchanged (skipped rewrite)
+  recover-created-at: a file changed
+  unconsidered-outcomes: exited 0
+  unconsidered-outcomes: the refusal does not name zzzstray: 
+  upgrade: exited 0
+  upgrade: the refusal does not name zzzstray: conductor: refreshed rules block in CLAUDE.md (platform: claude-code)
+  upgrade: a file changed
+  changelog: exited 0
+  changelog: the refusal does not name zzzstray: 
+  rules: exited 0
+  rules: the refusal does not name zzzstray: 
+  write-rules: exited 0
+  write-rules: the refusal does not name zzzstray: conductor: refreshed rules block in CLAUDE.md (platform: claude-code)
+  rules-target: exited 0
+  rules-target: the refusal does not name zzzstray: 
+  + actual - expected
+  
+  + [
+  +   'init: exited 0',
+  +   'init: the refusal does not name zzzstray: conductor: already initialized (.conductor/state.json exists)',
+  +   'init: a file changed',
+  +   'render: exited 0',
+  +   'render: the refusal does not name zzzstray: conductor: PROJECT.md unchanged (skipped rewrite)',
+  +   'render: a file changed',
+  +   'brief: exited 0',
+  +   'brief: the refusal does not name zzzstray: ',
+  +   'snapshot: exited 0',
+  +   'snapshot: the refusal does not name zzzstray: conductor: PROJECT.md unchanged (skipped rewrite)',
+  +   'snapshot: a file changed',
+  +   'commit-nudge: exited 0',
+  +   'commit-nudge: the refusal does not name zzzstray: ',
+  +   'sync: exited 0',
+  +   'sync: the refusal does not name zzzstray: conductor: synced (0 new epic(s) added as untriaged) — nothing was written to .conductor/state.json',
+  +   "push-detour: the refusal does not name zzzstray: conductor: push-detour requires exactly one of --reconcile or --no-reconcile — whether the detour can invalidate the paused epic's plan is a judgment, and a default would make an absent decision look like a considered one. Say --reconcile unless you are certain the detour touches nothing the paused epic depends on",
+  +   "pop-detour: the refusal does not name zzzstray: conductor: the top of the detour stack is 'e1', not 'zzzfill' — the stack is LIFO, so resume 'e1' first",
+  +   'add-epic: exited 0',
+  +   'add-epic: the refusal does not name zzzstray: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-pXEL9f/PROJECT.md',
+  +   'add-epic: a file changed',
+  +   'add-many: exited 0',
+  +   'add-many: the refusal does not name zzzstray: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-4YEyEl/PROJECT.md',
+  +   'add-many: a file changed',
+  +   'update-epic: exited 0',
+  +   'update-epic: the refusal does not name zzzstray: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-5jqeIo/PROJECT.md',
+  +   'update-epic: a file changed',
+  +   'remove-epic: exited 0',
+  +   'remove-epic: the refusal does not name zzzstray: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ZMqb7d/PROJECT.md',
+  +   'remove-epic: a file changed',
+  +   'set-active: exited 0',
+  +   'set-active: the refusal does not name zzzstray: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Xq4BFH/PROJECT.md',
+  +   'set-active: a file changed',
+  +   'clear-active: exited 0',
+  +   'clear-active: the refusal does not name zzzstray: conductor: PROJECT.md unchanged (skipped rewrite)',
+  +   'clear-active: a file changed',
+  +   'set-tracker: exited 0',
+  +   'set-tracker: the refusal does not name zzzstray: conductor: refreshed rules block in CLAUDE.md (platform: claude-code)',
+  +   'set-tracker: a file changed',
+  +   'set-lane-routing: exited 0',
+  +   'set-lane-routing: the refusal does not name zzzstray: conductor: PROJECT.md unchanged (skipped rewrite)',
+  +   'set-lane-routing: a file changed',
+  +   'suggest-lane: exited 0',
+  +   'suggest-lane: the refusal does not name zzzstray: ',
+  +   'triage: exited 0',
+  +   'triage: the refusal does not name zzzstray: ',
+  +   'set-autonomy: exited 0',
+  +   'set-autonomy: the refusal does not name zzzstray: conductor: PROJECT.md unchanged (skipped rewrite)',
+  +   'set-autonomy: a file changed',
+  +   'record-reconcile: exited 0',
+  +   'record-reconcile: the refusal does not name zzzstray: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-vtNJxF/PROJECT.md',
+  +   'record-reconcile: a file changed',
+  +   'record-gate-review: exited 0',
+  +   'record-gate-review: the refusal does not name zzzstray: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-7a2nCe/PROJECT.md',
+  +   'record-gate-review: a file changed',
+  +   'record-cross-spec-review: exited 0',
+  +   'record-cross-spec-review: the refusal does not name zzzstray: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-zCZbgO/PROJECT.md',
+  +   'record-cross-spec-review: a file changed',
+  +   'record-tracker-refresh: exited 0',
+  +   'record-tracker-refresh: the refusal does not name zzzstray: conductor: PROJECT.md unchanged (skipped rewrite)',
+  +   'record-tracker-refresh: a file changed',
+  +   'set-review-mode: exited 0',
+  +   'set-review-mode: the refusal does not name zzzstray: conductor: refreshed rules block in CLAUDE.md (platform: claude-code)',
+  +   'set-review-mode: a file changed',
+  +   'release: exited 0',
+  +   'release: the refusal does not name zzzstray: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-h6zEQS/PROJECT.md',
+  +   'release: a file changed',
+  +   'set-gate-guard: exited 0',
+  +   'set-gate-guard: the refusal does not name zzzstray: conductor: PROJECT.md unchanged (skipped rewrite)',
+  +   'set-gate-guard: a file changed',
+  +   'gate-guard: exited 0',
+  +   'gate-guard: the refusal does not name zzzstray: ',
+  +   'lesson-advice: exited 0',
+  +   'lesson-advice: the refusal does not name zzzstray: ',
+  +   'plan-hierarchy: exited 0',
+  +   'plan-hierarchy: the refusal does not name zzzstray: ',
+  +   'claim: the refusal does not name zzzstray: conductor: usage: conductor.mjs claim <epic-id> --session <name> [--ttl <minutes>] [--steal]',
+  +   'unclaim: the refusal does not name zzzstray: conductor: usage: conductor.mjs unclaim <epic-id> --session <name> [--steal]',
+  +   'owners: exited 0',
+  +   'owners: the refusal does not name zzzstray: ',
+  +   'activity: exited 0',
+  +   'activity: the refusal does not name zzzstray: ',
+  +   'set-activity-log: exited 0',
+  +   'set-activity-log: the refusal does not name zzzstray: conductor: activity log on — writing to /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-T8NueV/.conductor/activity (git-ignored). Read it with `activity`.',
+  +   'set-activity-log: a file changed',
+  +   'purge-logs: exited 0',
+  +   'purge-logs: the refusal does not name zzzstray: ',
+  +   'verify-worktrees: exited 0',
+  +   'verify-worktrees: the refusal does not name zzzstray: fatal: not a git repository (or any of the parent directories): .git',
+  +   'verify-state: exited 0',
+  +   'verify-state: the refusal does not name zzzstray: conductor: state.json matches the last render — no hand-edit detected.',
+  +   'verify-specs: exited 0',
+  +   'verify-specs: the refusal does not name zzzstray: ',
+  +   'integrity: exited 0',
+  +   'integrity: the refusal does not name zzzstray: ',
+  +   'changesets: exited 0',
+  +   'changesets: the refusal does not name zzzstray: ',
+  +   'recover-created-at: exited 0',
+  +   'recover-created-at: the refusal does not name zzzstray: conductor: PROJECT.md unchanged (skipped rewrite)',
+  +   'recover-created-at: a file changed',
+  +   'unconsidered-outcomes: exited 0',
+  +   'unconsidered-outcomes: the refusal does not name zzzstray: ',
+  +   'upgrade: exited 0',
+  +   'upgrade: the refusal does not name zzzstray: conductor: refreshed rules block in CLAUDE.md (platform: claude-code)',
+  +   'upgrade: a file changed',
+  +   'changelog: exited 0',
+  +   'changelog: the refusal does not name zzzstray: ',
+  +   'rules: exited 0',
+  +   'rules: the refusal does not name zzzstray: ',
+  +   'write-rules: exited 0',
+  +   'write-rules: the refusal does not name zzzstray: conductor: refreshed rules block in CLAUDE.md (platform: claude-code)',
+  +   'rules-target: exited 0',
+  +   'rules-target: the refusal does not name zzzstray: '
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/verb-surface.test.mjs:632:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'init: exited 0', 'init: the refusal does not name zzzstray: conductor: already initialized (.conductor/state.json exists)', 'init: a file changed', 'render: exited 0', 'render: the refusal does not name zzzstray: conductor: PROJECT.md unchanged (skipped rewrite)', 'render: a file changed', 'brief: exited 0', 'brief: the refusal does not name zzzstray: ', 'snapshot: exited 0', 'snapshot: the refusal does not name zzzstray: conductor: PROJECT.md unchanged (skipped rewrite)', 'snapshot: a file changed', 'commit-nudge: exited 0', 'commit-nudge: the refusal does not name zzzstray: ', 'sync: exited 0', 'sync: the refusal does not name zzzstray: conductor: synced (0 new epic(s) added as untriaged) — nothing was written to .conductor/state.json', "push-detour: the refusal does not name zzzstray: conductor: push-detour requires exactly one of --reconcile or --no-reconcile — whether the detour can invalidate the paused epic's plan is a judgment, and a default would make an absent decision look like a considered one. Say --reconcile unless you are certain the detour touches nothing the paused epic depends on", "pop-detour: the refusal does not name zzzstray: conductor: the top of the detour stack is 'e1', not 'zzzfill' — the stack is LIFO, so resume 'e1' first", 'add-epic: exited 0', 'add-epic: the refusal does not name zzzstray: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-pXEL9f/PROJECT.md', 'add-epic: a file changed', 'add-many: exited 0', 'add-many: the refusal does not name zzzstray: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-4YEyEl/PROJECT.md', 'add-many: a file changed', 'update-epic: exited 0', 'update-epic: the refusal does not name zzzstray: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-5jqeIo/PROJECT.md', 'update-epic: a file changed', 'remove-epic: exited 0', 'remove-epic: the refusal does not name zzzstray: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ZMqb7d/PROJECT.md', 'remove-epic: a file changed', 'set-active: exited 0', 'set-active: the refusal does not name zzzstray: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Xq4BFH/PROJECT.md', 'set-active: a file changed', 'clear-active: exited 0', 'clear-active: the refusal does not name zzzstray: conductor: PROJECT.md unchanged (skipped rewrite)', 'clear-active: a file changed', 'set-tracker: exited 0', 'set-tracker: the refusal does not name zzzstray: conductor: refreshed rules block in CLAUDE.md (platform: claude-code)', 'set-tracker: a file changed', 'set-lane-routing: exited 0', 'set-lane-routing: the refusal does not name zzzstray: conductor: PROJECT.md unchanged (skipped rewrite)', 'set-lane-routing: a file changed', 'suggest-lane: exited 0', 'suggest-lane: the refusal does not name zzzstray: ', 'triage: exited 0', 'triage: the refusal does not name zzzstray: ', 'set-autonomy: exited 0', 'set-autonomy: the refusal does not name zzzstray: conductor: PROJECT.md unchanged (skipped rewrite)', 'set-autonomy: a file changed', 'record-reconcile: exited 0', 'record-reconcile: the refusal does not name zzzstray: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-vtNJxF/PROJECT.md', 'record-reconcile: a file changed', 'record-gate-review: exited 0', 'record-gate-review: the refusal does not name zzzstray: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-7a2nCe/PROJECT.md', 'record-gate-review: a file changed', 'record-cross-spec-review: exited 0', 'record-cross-spec-review: the refusal does not name zzzstray: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-zCZbgO/PROJECT.md', 'record-cross-spec-review: a file changed', 'record-tracker-refresh: exited 0', 'record-tracker-refresh: the refusal does not name zzzstray: conductor: PROJECT.md unchanged (skipped rewrite)', 'record-tracker-refresh: a file changed', 'set-review-mode: exited 0', 'set-review-mode: the refusal does not name zzzstray: conductor: refreshed rules block in CLAUDE.md (platform: claude-code)', 'set-review-mode: a file changed', 'release: exited 0', 'release: the refusal does not name zzzstray: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-h6zEQS/PROJECT.md', 'release: a file changed', 'set-gate-guard: exited 0', 'set-gate-guard: the refusal does not name zzzstray: conductor: PROJECT.md unchanged (skipped rewrite)', 'set-gate-guard: a file changed', 'gate-guard: exited 0', 'gate-guard: the refusal does not name zzzstray: ', 'lesson-advice: exited 0', 'lesson-advice: the refusal does not name zzzstray: ', 'plan-hierarchy: exited 0', 'plan-hierarchy: the refusal does not name zzzstray: ', 'claim: the refusal does not name zzzstray: conductor: usage: conductor.mjs claim <epic-id> --session <name> [--ttl <minutes>] [--steal]', 'unclaim: the refusal does not name zzzstray: conductor: usage: conductor.mjs unclaim <epic-id> --session <name> [--steal]', 'owners: exited 0', 'owners: the refusal does not name zzzstray: ', 'activity: exited 0', 'activity: the refusal does not name zzzstray: ', 'set-activity-log: exited 0', 'set-activity-log: the refusal does not name zzzstray: conductor: activity log on — writing to /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-T8NueV/.conductor/activity (git-ignored). Read it with `activity`.', 'set-activity-log: a file changed', 'purge-logs: exited 0', 'purge-logs: the refusal does not name zzzstray: ', 'verify-worktrees: exited 0', 'verify-worktrees: the refusal does not name zzzstray: fatal: not a git repository (or any of the parent directories): .git', 'verify-state: exited 0', 'verify-state: the refusal does not name zzzstray: conductor: state.json matches the last render — no hand-edit detected.', 'verify-specs: exited 0', 'verify-specs: the refusal does not name zzzstray: ', 'integrity: exited 0', 'integrity: the refusal does not name zzzstray: ', 'changesets: exited 0', 'changesets: the refusal does not name zzzstray: ', 'recover-created-at: exited 0', 'recover-created-at: the refusal does not name zzzstray: conductor: PROJECT.md unchanged (skipped rewrite)', 'recover-created-at: a file changed', 'unconsidered-outcomes: exited 0', ... 12 more items ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/verb-surface.test.mjs:635:1
+✖ An unquoted multi-word title is refused, not truncated (75.386125ms)
+  AssertionError [ERR_ASSERTION]: Expected "actual" to be strictly unequal to: 0
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/verb-surface.test.mjs:639:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/verb-surface.test.mjs:644:1
+✖ The same truncation is refused on update (70.95175ms)
+  AssertionError [ERR_ASSERTION]: Expected "actual" to be strictly unequal to: 0
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/verb-surface.test.mjs:648:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/verb-surface.test.mjs:653:1
+✖ A verb that reads one text positional refuses a second (48.243042ms)
+  AssertionError [ERR_ASSERTION]: Expected "actual" to be strictly unequal to: 0
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/verb-surface.test.mjs:656:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/verb-surface.test.mjs:661:1
+✖ A value given to a valueless flag is refused by name (178.937708ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /'yes' is an extra argument/. Input:
+  
+  "conductor: cannot remove 'p' — it has 1 direct child epic(s) and 1 descendant(s) total:\n" +
+    '  p                        p                                                  claude-code/P?/queued\n' +
+    '  kid                      kid                                                claude-code/P?/queued\n' +
+    "Reassign or remove the descendants first, or re-run with --cascade to remove 'p' and all 1 descendant(s) together.\n"
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/verb-surface.test.mjs:668:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: "conductor: cannot remove 'p' — it has 1 direct child epic(s) and 1 descendant(s) total:\n  p                        p                                                  claude-code/P?/queued\n  kid                      kid                                                claude-code/P?/queued\nReassign or remove the descendants first, or re-run with --cascade to remove 'p' and all 1 descendant(s) together.\n",
+    expected: /'yes' is an extra argument/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/verb-surface.test.mjs:673:1
+✖ An inline value on a valueless flag is refused (202.162959ms)
+  AssertionError [ERR_ASSERTION]: Expected "actual" to be strictly unequal to: 0
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/verb-surface.test.mjs:679:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/verb-surface.test.mjs:688:1
+✖ A dash-leading token that is not a flag is refused where no free text is read (172.109625ms)
+  AssertionError [ERR_ASSERTION]: Expected "actual" to be strictly unequal to: 0
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/verb-surface.test.mjs:694:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/verb-surface.test.mjs:703:1
+✖ A verb that takes no positionals refuses one (86.0845ms)
+  AssertionError [ERR_ASSERTION]: Expected "actual" to be strictly unequal to: 0
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/verb-surface.test.mjs:707:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/verb-surface.test.mjs:712:1
+✖ --force does not leak into a joined text (74.801417ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'fixed it --force'
+  - 'fixed it'
+             ^
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/verb-surface.test.mjs:716:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'fixed it --force',
+    expected: 'fixed it',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/verb-surface.test.mjs:722:1
+✖ --force before a positional does not displace it (114.697792ms)
+  AssertionError [ERR_ASSERTION]: usage: conductor.mjs set-active <id>
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/verb-surface.test.mjs:726:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/verb-surface.test.mjs:734:1
+✖ checkCommandLine: a --leading token that is not flag-shaped is an undeclared flag on a verb without free text (0.180917ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  'ok' !== 'refuse'
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/verb-surface.test.mjs:737:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'ok',
+    expected: 'refuse',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/verb-surface.test.mjs:741:1
+✖ checkCommandLine: canonical argv puts positionals first, keeps flag order, and argv-level flags last (0.148292ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + undefined
+  - [
+  -   'e1',
+  -   '--attribute-commit',
+  -   'a',
+  -   '--attribute-commit=b',
+  -   '--title',
+  -   't',
+  -   '--force'
+  - ]
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/verb-surface.test.mjs:746:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: [ 'e1', '--attribute-commit', 'a', '--attribute-commit=b', '--title', 't', '--force' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

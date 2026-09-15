@@ -21,6 +21,11 @@ import { ARCHIVE_BACKFILL, engineStamp } from "./disposition.mjs";
 import { ROOT, CONDUCTOR_DIR, BRIEF_PATH, PLANS_DIR, anyInwardProcedureEmittable } from "./constants.mjs";
 import { resolveAndRecordPlatform } from "./platform.mjs";
 import { requirePlatformFlag } from "./add-epic.mjs";
+import { checkCommandLine } from "./argv-surface.mjs";
+
+/** The positionals the command-line check classified — never the raw argv tail, which carries every
+ *  flag too: `log-detour fixed it --force` used to log `fixed it --force`. */
+const checkedPositionals = (verb) => checkCommandLine(verb, process.argv).positionals || [];
 import { saveHookHeal } from "./hook-write.mjs";
 
 /** Ensure the conductor's GENERATED artifacts are git-ignored.
@@ -675,7 +680,7 @@ export function sync(quiet = false) {
 
 export function logDetour() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
-  const reason = process.argv.slice(3).join(" ").trim();
+  const reason = checkedPositionals("log-detour").join(" ").trim();
   if (!reason) { process.stderr.write("usage: conductor.mjs log-detour \"<what you fixed>\"\n"); process.exit(1); }
   const state = loadState();
   // gh#175 Gate 2 C2: HONOUR THE RETURN. appendDetourLog()'s docstring says the boolean exists
@@ -724,7 +729,7 @@ export function appendHonchoMemory(action, epicId, reason) {
  *  record of what was emitted even if the agent forgets to actually send it. */
 export function honchoMemory() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
-  const [action, epicId, ...rest] = process.argv.slice(3);
+  const [action, epicId, ...rest] = checkedPositionals("honcho-memory");
   const reason = rest.join(" ").trim();
   if (!action || !epicId || !reason) {
     process.stderr.write("usage: conductor.mjs honcho-memory <push|pop> <epicId> \"<reason>\"\n");

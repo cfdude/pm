@@ -41,10 +41,18 @@ function surfaceOf(verb) {
  *  a POSITIONAL. Help tokens are tested FIRST: `--help` is flag-shaped and would otherwise read as a
  *  flag. A value-bearing DECLARED flag written without `=` consumes the next token when that token
  *  exists and is not flag-shaped — so `-h` there is its value, exactly as parseFlags() reads it. A
- *  valueless flag never consumes; an undeclared flag consumes nothing. */
+ *  valueless flag never consumes (which is what makes `--cascade yes` a positional — parseFlags()
+ *  decides by shape alone and cannot, because it has no verb); an undeclared flag consumes nothing.
+ *
+ *  A `--`-leading token that is NOT flag-shaped (`--Steal`, `--dry_run`, `"--story <n> is …"`) is
+ *  a positional only on a verb whose positionals are free text (gh-186's rule). On every other verb
+ *  it is an UNDECLARED FLAG: parseFlags(), positionalArgs() and the `argv[0]` id guards all skip any
+ *  `--`-leading token, so reading it as a positional would pass this check while the verb acted
+ *  without it — `claim --repo --session s --Steal` would write the repo claim. */
 export function classify(verb, tokens) {
   const spec = surfaceOf(verb);
   const idFirst = !!(VERB_POSITIONALS[verb] && VERB_POSITIONALS[verb].idFirst);
+  const freeText = !!(VERB_POSITIONALS[verb] && VERB_POSITIONALS[verb].freeText);
   const out = [];
   for (let i = 0; i < tokens.length; i++) {
     const t = tokens[i];
@@ -76,9 +84,22 @@ export function classify(verb, tokens) {
       out.push(flag);
       continue;
     }
+    if (t.startsWith("--") && !freeText) {
+      out.push({ kind: "flag", token: t, at: i, name: t.slice(2), inline: undefined, declared: false,
+        valueless: false, argvLevel: false, requires: null });
+      continue;
+    }
     out.push({ kind: "positional", token: t, at: i });
   }
   return out;
+}
+
+/** The positional arity that governs this command line — `release`'s `show` branch where its first
+ *  positional selects it, the verb's own row otherwise. */
+function arityFor(verb, positionals) {
+  const row = VERB_POSITIONALS[verb];
+  const branch = row.byFirst && positionals.length && row.byFirst[positionals[0]];
+  return branch ? { ...row, ...branch } : row;
 }
 
 /** The verdict for one command line: `{ kind: "help" }`, `{ kind: "refuse", message }`, or
@@ -91,7 +112,13 @@ export function classify(verb, tokens) {
  *    2. a hook verb in a repository without pm → ok: its own dormancy returns silently, and a hook
  *       line the engine would refuse must not print an error into a project that never ran init;
  *    3. `--help` in a value position → refuse (the #187 case), with valuelessFlagError()'s words;
- *    4. the first flag the verb does not declare → refuse, naming it and what the verb accepts. */
+ *    4. the first flag finding, in command-line order → refuse: a flag the verb does not declare
+ *       (naming it and what the verb accepts), or a valueless flag written `--name=value` (it would
+ *       otherwise be accepted with its value ignored, `--force=1`, or accepted inline where the
+ *       space form is refused, `--cascade=true`);
+ *    5. more positionals than the verb's MAXIMUM → refuse, naming the first surplus token. The
+ *       minimum stays each verb's own refusal (VERB_POSITIONALS' header says why);
+ *    6. otherwise ok, with the canonical argv the verb is handed (D10). */
 export function checkCommandLine(verb, argv, { initialized = true } = {}) {
   if (!Object.prototype.hasOwnProperty.call(VERB_EFFECTS, verb) ||
       !Object.prototype.hasOwnProperty.call(VERB_POSITIONALS, verb)) {
@@ -106,9 +133,48 @@ export function checkCommandLine(verb, argv, { initialized = true } = {}) {
     const flag = items.find(x => x.kind === "flag" && x.name === misplaced.flag);
     return { kind: "refuse", message: flagInValuePositionMessage(misplaced.flag, flag.requires, misplaced.token) };
   }
-  const undeclared = items.find(x => x.kind === "flag" && !x.declared);
-  if (undeclared) return { kind: "refuse", message: undeclaredFlagMessage(verb, undeclared, items) };
-  return { kind: "ok", positionals: items.filter(x => x.kind === "positional").map(x => x.token) };
+  const badFlag = items.find(x => x.kind === "flag" && (!x.declared || (x.valueless && x.inline !== undefined)));
+  if (badFlag && !badFlag.declared) return { kind: "refuse", message: undeclaredFlagMessage(verb, badFlag, items) };
+  if (badFlag) {
+    return { kind: "refuse", message: `conductor: --${badFlag.name} takes no value — '${badFlag.token}' gives ` +
+      `it one, and ${verb} would ignore it. Write --${badFlag.name} on its own. Nothing was written.` };
+  }
+  const positionals = items.filter(x => x.kind === "positional");
+  const arity = arityFor(verb, positionals.map(x => x.token));
+  if (positionals.length > arity.max) {
+    return { kind: "refuse", message: surplusMessage(verb, arity, positionals[arity.max], items) };
+  }
+  // D10 — the order every verb reads: the positionals in their original order, then every flag with
+  // its value in its original relative order (`--attribute-commit` order decides the Gate 2
+  // endpoint), argv-level flags last. So each `argv[0]` reader sees its positional first, a joined
+  // text never contains `--force`, and saveState()'s `process.argv.includes("--force")` still sees it.
+  // Reordering cannot re-pair a flag with a value: a positional is by definition a token no declared
+  // flag consumed, and a flag moves together with its value.
+  const flagTokens = (argvLevel) => items
+    .filter(x => x.kind === "flag" && x.argvLevel === argvLevel)
+    .flatMap(x => (x.value !== undefined ? [x.token, x.value] : [x.token]));
+  return {
+    kind: "ok",
+    positionals: positionals.map(x => x.token),
+    canonicalArgv: [...positionals.map(x => x.token), ...flagTokens(false), ...flagTokens(true)],
+  };
+}
+
+/** D4's surplus-positional refusal: the form the verb takes and the first token it does not read,
+ *  plus the likeliest cause where one is visible — a value given to a valueless flag, or an
+ *  unquoted multi-word value (the token directly follows a flag's value, or the verb reads one text). */
+function surplusMessage(verb, arity, surplus, items) {
+  const prev = items[items.indexOf(surplus) - 1];
+  let msg = `conductor: ${verb} takes ${arity.max === 0 ? "no positional arguments" : arity.form} — ` +
+    `'${surplus.token}' is an extra argument it does not read. Nothing was written.`;
+  if (prev && prev.kind === "flag" && prev.valueless && prev.at === surplus.at - 1) {
+    msg += `\n  --${prev.name} takes no value.`;
+  } else if (prev && prev.kind === "flag" && prev.value !== undefined) {
+    msg += `\n  If '${surplus.token}' belongs to --${prev.name}'s value, quote the whole value.`;
+  } else if (VERB_POSITIONALS[verb].freeText && arity.max === 1) {
+    msg += `\n  ${verb} reads ONE text argument — quote it.`;
+  }
+  return msg;
 }
 
 /** D4's refusal. `unknown flag --<name> for <verb> — it accepts: …` keeps the prefix five existing
