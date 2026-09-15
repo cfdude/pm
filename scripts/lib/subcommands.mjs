@@ -74,6 +74,10 @@ export function init() {
   // THEN refuse, which ended pm's dormancy in a repo whose init had failed.
   requirePlatformFlag("init");
   if (isInitialized()) {
+    // LOAD FIRST, before ensureGitignore() below — the first write on this branch. A present but
+    // unreadable state.json refuses here (StateUnreadableError), so init never writes over, beside
+    // or around a record it cannot read.
+    loadState();
     process.stderr.write("conductor: already initialized (.conductor/state.json exists)\n");
   } else {
     // save-report: exempt — the file does not exist on this branch (isInitialized() is false), so

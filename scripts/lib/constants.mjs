@@ -20,6 +20,12 @@ export const WRITE_CONFLICTS_LOG = path.join(CONDUCTOR_DIR, "write-conflicts.log
 // alone), so an agent can tell "someone else wrote" from "you passed a bad flag" and retry
 // rather than guess.
 export const CONFLICT_EXIT_CODE = 9;
+// state-file-refuses-to-guess D2: "a file this verb depends on is in a state the engine will not
+// guess about; a human fixes the file". Neither a malformed command (1) nor retryable (9). Chosen
+// OUTSIDE Node's own documented exit codes: 10 is "Internal JavaScript Run-Time Failure", so a pm
+// refusal there would be indistinguishable from a Node bootstrap crash; 11 is unassigned. Shared by
+// the unreadable-state refusal and the ambiguous rules-block refusal — the message names the file.
+export const UNREADABLE_INPUT_EXIT_CODE = 11;
 // Size-triggered rotation, never count-based: enforcing "keep the last N entries" means
 // reading, filtering and rewriting the file, and this is the failure path of a WRITE guard.
 // statSync is O(1) and rename(2) is O(1), so the mechanism never reads the log body.

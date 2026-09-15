@@ -21,7 +21,7 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { run, tmpRepo, writeState, gitRepo, commitFiles } from "./helpers.mjs";
+import { run, tmpRepo, writeState, gitRepo, commitFiles, expectFail } from "./helpers.mjs";
 
 const git = (cwd, ...args) => execFileSync("git", args, { cwd, encoding: "utf8" }).trim();
 const head = (cwd) => git(cwd, "rev-parse", "HEAD");
@@ -160,18 +160,26 @@ test("gh#129: a Bash call that merely mentions git commit stays silent (gh#104 m
     "HEAD did not move: nothing landed, so nothing at all is emitted");
 });
 
-test("gh#129: degrades to doing nothing — no git, unreadable state, reflogs disabled", () => {
+test("gh#129: degrades to doing nothing — no git, reflogs disabled; an unreadable state writes nothing", () => {
   // The hook fires on EVERY Bash tool call in EVERY initialized project. Erroring here is a
-  // mid-session exit-9 for every user, so each rung must exit 0.
+  // mid-session exit-9 for every user, so the no-git and reflogs-disabled rungs must exit 0.
   const noGit = tmpRepo();
   run(["init"], { cwd: noGit });
   assert.doesNotThrow(() => nudge(noGit, "git commit -m x"), "no repository at all");
 
+  // The UNREADABLE-STATE rung is reversed (state-file-refuses-to-guess, design D3). Exit 0 there
+  // re-rendered PROJECT.md from an empty guess of the record, which is the defect, not a
+  // degradation. It must now refuse and write nothing it derives from state.
   const broken = repoWithActive([]);
   prime(broken);
   commitFiles(broken, { "a.txt": "1" }, "feat(x): real work");
   fs.writeFileSync(path.join(broken, ".conductor", "state.json"), "{ not json");
-  assert.doesNotThrow(() => nudge(broken, "git commit -m x"), "unreadable state.json");
+  const watched = [".conductor/state.json", "PROJECT.md", ".conductor/detours.log"].map(f => path.join(broken, f));
+  const before = watched.map(f => (fs.existsSync(f) ? fs.readFileSync(f, "utf8") : null));
+  const refused = expectFail(() => nudge(broken, "git commit -m x"));
+  assert.ok(refused && refused.status !== 0, "unreadable state.json: the hook must refuse, not exit 0");
+  watched.forEach((f, i) => assert.equal(fs.existsSync(f) ? fs.readFileSync(f, "utf8") : null, before[i],
+    `${path.basename(f)} must be unchanged`));
 
   const noReflog = repoWithActive([]);
   git(noReflog, "config", "core.logAllRefUpdates", "false");

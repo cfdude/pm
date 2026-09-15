@@ -13,7 +13,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { tmpRepo, run, runCombined, readState, writeState, expectFail } from "./helpers.mjs";
+import { spawnSync } from "node:child_process";
+import { tmpRepo, run, runCombined, readState, writeState, expectFail, ENGINE, EMPTY_CACHE } from "./helpers.mjs";
 
 const REPO = path.join(path.dirname(new URL(import.meta.url).pathname), "..", "..");
 const INJECT = path.join(REPO, "scripts", "test", "inject-state-conflict.cjs");
@@ -808,16 +809,22 @@ test("gh-111: an unwritable log directory does not fail the verb it is observing
   }
 });
 
-test("gh-111: an UNREADABLE state.json does not fail the verb either — the snapshot is guarded too", () => {
-  // The chokepoint reads state BEFORE dispatch. A repo whose state.json cannot be parsed must
-  // still be able to run `init`-adjacent recovery; a throw there would make the observer the
-  // reason the repo is stuck.
+test("gh-111: an UNREADABLE state.json — the snapshot is guarded, so the VERB refuses, not the observer", () => {
+  // The chokepoint reads state BEFORE dispatch, and the observer must never be what breaks the run.
+  // That intent stands. What changed (state-file-refuses-to-guess): loadState() no longer falls
+  // back to an empty record on unparseable input, so the verb itself refuses with exit 11. This
+  // test used to assert `owners` still answered, which encoded the removed behaviour: an ownership
+  // report of a guessed empty record. The observer's part now is that its own guard swallows the
+  // refusal, so the process ends with the verb's refusal and no stack trace from the snapshot.
   const cwd = loggingRepo();
   fs.writeFileSync(path.join(cwd, ".conductor", "state.json"), "{ not json at all");
-  // loadState() falls back to defaultState() on unparseable input, so this exercises the path
-  // rather than asserting a crash — the assertion is that the verb still completes.
-  const out = runCombined(["owners"], { cwd });
-  assert.match(out, /QUIESCENT|OWNERS/, `owners must still answer, got: ${out}`);
+  const r = spawnSync("node", [ENGINE, "owners"], {
+    cwd, encoding: "utf8", env: { ...process.env, CLAUDE_PROJECT_DIR: cwd, PM_CACHE_ROOT: EMPTY_CACHE },
+  });
+  assert.equal(r.status, 11, `owners must refuse with the unreadable-state code, got ${r.status}: ${r.stderr}`);
+  assert.match(r.stderr, /\.conductor\/state\.json cannot be read/, "stderr carries the refusal");
+  assert.doesNotMatch(r.stderr, /\n\s+at /, "no stack trace: neither the observer nor the verb crashed");
+  assert.equal(r.stdout, "", "no ownership report of a guessed record");
 });
 
 // ─────────────── purge-logs ───────────────

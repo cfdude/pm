@@ -27,7 +27,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { isInitialized, loadState } from "./state.mjs";
+import { isInitialized, loadState, StateUnreadableError } from "./state.mjs";
 import { activityDir, activityEnabled, segments } from "./activity-log.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 
@@ -285,12 +285,21 @@ export function activity() {
   const f = parseFlags(argv);
   requireFlagValues("activity", f);
   const val = (name) => (f[name] === undefined ? null : String(f[name]));
-  const state = loadState();
+  // One of the two verbs the unreadable-state refusal names as EXEMPT (state-file-refuses-to-guess):
+  // the report is read from the activity segments, and state.json supplies only the current
+  // revision and the on/off flag. Neither is guessed when the file cannot be read — the revision
+  // is UNKNOWN (null, which buildReport() already reads as "no out-of-band comparison") and so is
+  // the flag, which is neither reported OFF nor ON.
+  let state = null;
+  try { state = loadState(); } catch (e) {
+    if (!(e instanceof StateUnreadableError)) throw e;
+    process.stderr.write(`conductor: ${e.message} — the current revision and whether the log is on are unknown.\n`);
+  }
   const { events, malformed } = readEvents({ since: val("since"), epic: val("epic") });
-  const report = buildReport(events, { currentRevision: state.revision, malformed });
+  const report = buildReport(events, { currentRevision: state ? state.revision : null, malformed });
   if (f.json === true) {
-    process.stdout.write(JSON.stringify({ enabled: activityEnabled(state), ...report }, null, 2) + "\n");
+    process.stdout.write(JSON.stringify({ enabled: state ? activityEnabled(state) : null, ...report }, null, 2) + "\n");
     return;
   }
-  process.stdout.write(formatReport(report, { enabled: activityEnabled(state) }) + "\n");
+  process.stdout.write(formatReport(report, { enabled: state ? activityEnabled(state) : true }) + "\n");
 }

@@ -20,7 +20,7 @@
       `--force` scenario)? does `gates-bind-to-verified-evidence` amend gate-guard behaviour this change
       pins? do the exit codes (1, 2, 9, 11) collide with anything the siblings introduce? Record:
       `record-cross-spec-review 0.44.0 --verdict pass|fail --reviewer "<identity>"`
-- [ ] 0.3 Precondition — `every-verb-refuses-what-it-does-not-read` is merged. Re-derive every line
+- [x] 0.3 Precondition — `every-verb-refuses-what-it-does-not-read` is merged. Re-derive every line
       anchor this task list and design.md name (`state.mjs`, `conductor.mjs`'s top-level catch,
       `claims.mjs` `ttlFrom`, `gate-guard.mjs`, `subcommands.mjs`) from the tree, and correct any task
       below whose anchor moved. Re-read this change's proposal and tasks before task 1.1 (the epic has
@@ -33,7 +33,7 @@ the GREEN commit stages that file and names it in its message.
 
 ## 1. An unreadable state file is refused, never replaced
 
-- [ ] 1.1 RED (lands with 1.2): new `scripts/test/state-file-refuses-to-guess.test.mjs` — a
+- [x] 1.1 RED (lands with 1.2): new `scripts/test/state-file-refuses-to-guess.test.mjs` — a
       three-epic repo with a conflict-marker line prepended; `add-epic --id new --lane claude-code` must exit 11, leave
       `state.json` byte-identical (compare bytes, not parsed JSON), and name `.conductor/state.json`, a
       `git` remedy and the move-aside-and-`init` remedy in stderr. Plus: a 40-byte truncation run
@@ -45,7 +45,7 @@ the GREEN commit stages that file and names it in its message.
       the file with unparseable bytes, `saveState` with `--force` in effect) throws
       `StateUnreadableError` with the bytes unchanged. Today: exit 0 and the file holds `["new"]`, and
       the forced save overwrites — save as `red-1.1.txt`
-- [ ] 1.2 GREEN: `readStateFile()` + `StateUnreadableError` in `state.mjs`; `loadState()`,
+- [x] 1.2 GREEN: `readStateFile()` + `StateUnreadableError` in `state.mjs`; `loadState()`,
       `diskRevision()` and `saveState()`'s pre-image read use it (D1); `UNREADABLE_INPUT_EXIT_CODE = 11`
       in `constants.mjs`; `conductor.mjs`'s catch maps it with the D2 message; `init()` loads before
       `ensureGitignore()` when the file exists; `activity` catches the refusal and reports the revision
@@ -54,9 +54,9 @@ the GREEN commit stages that file and names it in its message.
       `gh#129: degrades to doing nothing` to assert a non-zero exit and `state.json`, `PROJECT.md` and
       the detour log unchanged (from here `commit-nudge` exits 11; 2.3 tightens it to 2). Verify: 1.1
       passes, full suite green
-- [ ] 1.3 REGRESSION GUARD (lands with 1.2): an absent `state.json` — all four hooks (`brief`,
+- [x] 1.3 REGRESSION GUARD (lands with 1.2): an absent `state.json` — all four hooks (`brief`,
       `snapshot`, `commit-nudge`, `gate-guard`) exit 0 with empty stdout and create no file
-- [ ] 1.4 REGRESSION GUARD (rewrite, lands with 1.2): `scripts/test/conductor-33.test.mjs`
+- [x] 1.4 REGRESSION GUARD (rewrite, lands with 1.2): `scripts/test/conductor-33.test.mjs`
       `gh-111: an UNREADABLE state.json does not fail the verb either` — keep its intent (the activity
       observer never breaks the run), invert its assertion: `owners` exits 11, stderr carries the
       refusal message and no stack trace. Say in the commit message that the old assertion encoded the

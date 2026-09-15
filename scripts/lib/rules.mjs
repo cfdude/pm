@@ -11,7 +11,14 @@
 
 import { DOCS_INDEX_URL, DOCS_MCP_URL } from "./constants.mjs";
 import { AGENT_OUTCOMES } from "./archive-gate.mjs";
-import { loadState } from "./state.mjs";
+import { loadState, StateUnreadableError } from "./state.mjs";
+
+/** These readers fall back to a default when state cannot be consulted — EXCEPT when the file is
+ *  present and unreadable. A rules block rendered from a guessed "no tracker, standard review" would
+ *  be the guess state-file-refuses-to-guess removes, written into a human-owned file. */
+function rethrowUnreadable(e) {
+  if (e instanceof StateUnreadableError) throw e;
+}
 import fs from "node:fs";
 import path from "node:path";
 import {
@@ -23,7 +30,7 @@ import { rulesTarget } from "./platform.mjs";
 
 /** The tracker block from state, or null — used to make emitted instructions tracker-aware. */
 export function currentTracker() {
-  try { const t = loadState().tracker; return t && t.system ? t : null; } catch { return null; }
+  try { const t = loadState().tracker; return t && t.system ? t : null; } catch (e) { rethrowUnreadable(e); return null; }
 }
 
 /** state.secondaryTrackers, or [] — absent/undefined on any pre-existing state.json is a valid
@@ -32,7 +39,7 @@ export function currentSecondaryTrackers() {
   try {
     const st = loadState().secondaryTrackers;
     return Array.isArray(st) ? st : [];
-  } catch { return []; }
+  } catch (e) { rethrowUnreadable(e); return []; }
 }
 
 /** Namespace-prefixed upsert key for a secondary tracker entry — `system:repo:<repo>` or
@@ -89,7 +96,7 @@ export function currentReviewMode(epicId) {
     const override = epic && KNOWN_REVIEW_MODES.includes(epic.reviewMode) ? epic.reviewMode : null;
     if (!override) return global;
     return REVIEW_MODE_RANK[override] > REVIEW_MODE_RANK[global] ? override : global;
-  } catch { return "standard"; }
+  } catch (e) { rethrowUnreadable(e); return "standard"; }
 }
 
 /** The platform's invocation form for a pm command. `pmCmd("codex", "status")` -> "/pm-status".

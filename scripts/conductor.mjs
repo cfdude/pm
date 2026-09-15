@@ -83,7 +83,8 @@ import {
   currentTracker, currentSecondaryTrackers, currentReviewMode, rulesBlock, writeRules,
 } from "./lib/rules.mjs";
 import { resolvePlatform, assertKnownPlatform, platformFlag, resolveAndRecordPlatform, rulesTarget } from "./lib/platform.mjs";
-import { loadState, conflictExitCode, readStdin } from "./lib/state.mjs";
+import { loadState, readStdin } from "./lib/state.mjs";
+import { refusalFor } from "./lib/refusal.mjs";
 import { ROOT, warnRootDivergence, warnDetachedTree } from "./lib/constants.mjs";
 import { isDetachedTree } from "./lib/git.mjs";
 import { VERB_EFFECTS } from "./lib/verb-effects.mjs";
@@ -359,13 +360,16 @@ try {
   process.exit(1);
 }))();
 } catch (err) {
-  // A conflict is retryable; a validation error is not. They must not share an exit code.
-  // Anything else is re-thrown UNCHANGED so a real crash keeps its stack -- swallowing it here
-  // would trade one silent failure for another.
-  const code = conflictExitCode(err);
-  if (code !== null) {
-    process.stderr.write(`conductor: ${err.message}\n`);
-    process.exit(code);
-  }
-  throw err;
+  // A conflict is retryable; a validation error is not; an unreadable state file is neither. They
+  // must not share an exit code — lib/refusal.mjs holds the mapping. Anything else is re-thrown
+  // UNCHANGED so a real crash keeps its stack -- swallowing it here would trade one silent failure
+  // for another.
+  const refusal = refusalFor(cmd, err);
+  if (refusal === null) throw err;
+  if (refusal.stderr) process.stderr.write(refusal.stderr);
+  // exitCode and RETURN, never process.exit(): a hook's refusal can be a JSON payload on stdout
+  // (SessionStart), and exiting straight after a stdout write truncates it at a pipe's buffer
+  // (conductor-38). Nothing after this catch keeps the event loop alive.
+  if (refusal.stdout) process.stdout.write(refusal.stdout);
+  process.exitCode = refusal.exitCode;
 }

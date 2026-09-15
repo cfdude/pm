@@ -6,7 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { recordConflict, clearConflicts } from "./write-conflicts.mjs";
-import { CONFLICT_EXIT_CODE } from "./constants.mjs";
+import { CONFLICT_EXIT_CODE, escapeControls } from "./constants.mjs";
 import { isArchiveBackfilled } from "./disposition.mjs";
 import { claimArtifacts } from "./source-artifacts.mjs";
 
@@ -161,17 +161,86 @@ function revisionOfText(text) {
   } catch { return null; }
 }
 
-/** Read the revision currently on disk without parsing the whole state twice at the call site. */
-function diskRevision() {
-  const { STATE_PATH } = getPaths();
-  const s = readJSON(STATE_PATH, null);
-  return s && typeof s === "object" && Number.isInteger(s.revision) ? s.revision : 0;
+/** Thrown when `.conductor/state.json` is PRESENT and cannot be read as a record
+ *  (state-file-refuses-to-guess). Never thrown for an ABSENT file: absence is dormancy before
+ *  `/pm:init`, and `init`'s own first save.
+ *
+ *  A distinct class from StateConflictError, because the response differs again: a conflict is
+ *  retryable, and this is not — a human has to fix the file, and re-running cannot help. */
+export class StateUnreadableError extends Error {
+  constructor(filePath, reason) {
+    super(`${STATE_DISPLAY_PATH} cannot be read — ${reason}`);
+    this.name = "StateUnreadableError";
+    this.path = filePath;
+    this.reason = reason;
+  }
+}
+
+/** The path every refusal names. Always this, relative to the project root, because STATE_PATH is
+ *  always `<root>/.conductor/state.json` and every remedy below is a command run from that root. */
+const STATE_DISPLAY_PATH = ".conductor/state.json";
+
+/** The whole refusal, as the top-level catch prints it (design D2). Every remedy is a SHELL command:
+ *  gate-guard blocks Edit/Write/NotebookEdit while the file is unreadable, and Bash is not matched by
+ *  it, so a remedy that needed an edit tool would be a wedge. The untracked remedy is not decoration:
+ *  a repository `init`'d and damaged before its first commit has nothing for git to restore, and
+ *  `init` itself refuses while the damaged file is in place. */
+export function unreadableStateMessage(err) {
+  return `conductor: ${err.message}. Nothing was written.\n` +
+    `  If a merge left conflict markers:  git checkout --ours ${STATE_DISPLAY_PATH}   (or --theirs)\n` +
+    `  If the markers were committed:     git show <good-rev>:${STATE_DISPLAY_PATH} > ${STATE_DISPLAY_PATH}\n` +
+    `  To discard local damage:           git restore ${STATE_DISPLAY_PATH}\n` +
+    `  Never committed (git has no copy): mv ${STATE_DISPLAY_PATH} ${STATE_DISPLAY_PATH}.damaged\n` +
+    "                                     then /pm:init   (the damaged bytes are kept beside it)\n" +
+    "  Then re-run the command.\n";
+}
+
+/** Why a parsed state value has the WRONG SHAPE, or null. Exactly the four rules the
+ *  state-write-guard requirement names, and nothing else (design D1): each is a shape that makes a
+ *  reader crash (`state.epics.find is not a function`) or makes a save discard data. A non-integer
+ *  `revision` is NOT one — it reads as 0 on both sides and loses nothing — and neither is an unknown
+ *  key: state.json grows keys every release, and an older engine must load a newer file's superset. */
+function shapeProblem(s) {
+  if (!s || typeof s !== "object" || Array.isArray(s)) return "its top-level value is not a JSON object";
+  if (Object.prototype.hasOwnProperty.call(s, "epics")) {
+    if (!Array.isArray(s.epics)) return "its `epics` member is present and is not an array";
+    const bad = s.epics.findIndex(e => !e || typeof e !== "object" || Array.isArray(e));
+    if (bad !== -1) return `its \`epics\` member holds an element that is not a JSON object (index ${bad})`;
+  }
+  if (Object.prototype.hasOwnProperty.call(s, "detourStack") && !Array.isArray(s.detourStack)) {
+    return "its `detourStack` member is present and is not an array";
+  }
+  return null;
+}
+
+/** THE strict reader for state.json: `{kind: "absent"}`, `{kind: "ok", state}` or
+ *  `{kind: "unreadable", reason}`. loadState() and saveState()'s disk read both go through it, which
+ *  is the whole point: an unreadable file used to read as revision 0 on BOTH sides of the revision
+ *  guard, so the guard passed and a default record was written over it.
+ *
+ *  readJSON() above keeps its swallow on purpose — its other callers read files whose absence or
+ *  damage is legitimately "no value" (the render stamp, plugin metadata). Only THIS file is a record
+ *  that must never be guessed at. `ENOTDIR` is absence too, matching isInitialized()'s existsSync. */
+export function readStateFile(p = getPaths().STATE_PATH) {
+  let text;
+  try { text = fs.readFileSync(p, "utf8"); }
+  catch (e) {
+    if (e && (e.code === "ENOENT" || e.code === "ENOTDIR")) return { kind: "absent" };
+    return { kind: "unreadable", reason: `it could not be read (${escapeControls((e && (e.code || e.message)) || e)})` };
+  }
+  let s;
+  try { s = JSON.parse(text); }
+  catch (e) { return { kind: "unreadable", reason: `it does not parse as JSON (${escapeControls(e.message)})` }; }
+  const shape = shapeProblem(s);
+  return shape ? { kind: "unreadable", reason: shape } : { kind: "ok", state: s };
 }
 
 export function loadState() {
   const { STATE_PATH } = getPaths();
-  const s = readJSON(STATE_PATH, null);
-  const base = s && typeof s === "object" ? { ...defaultState(), ...s } : defaultState();
+  const read = readStateFile(STATE_PATH);
+  if (read.kind === "unreadable") throw new StateUnreadableError(STATE_PATH, read.reason);
+  const s = read.kind === "ok" ? read.state : null;
+  const base = s ? { ...defaultState(), ...s } : defaultState();
   // Absent means 0, which is what lets a state.json written by 0.25.2 load unchanged and take
   // revision 1 on its first write. No migration is needed for that reason.
   base.revision = Number.isInteger(base.revision) ? base.revision : 0;
@@ -216,7 +285,7 @@ function comparableEpic(epic) {
  *  changed.
  *
  *  A record with no pre-image is NEW and is stamped — which is also what makes a first save right,
- *  since readJSON(..., {}) yields no pre-image at all and every epic correctly gets
+ *  since an absent state file yields no pre-image at all and every epic correctly gets
  *  `createdAt == touchedAt`. A record carrying no usable id is stamped for a different reason: we
  *  cannot tell whether it changed, and "not touched" would be an assertion nothing measured. */
 function stampTouched(state, diskBody) {
@@ -255,7 +324,14 @@ export function saveState(state, opts = {}) {
   fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
 
   const expected = Number.isInteger(state.revision) ? state.revision : 0;
-  const found = diskRevision();
+  // ONE strict read of the disk file serves the revision comparison AND the no-op comparison
+  // below, and it refuses BEFORE --force is consulted. --force overrides a NEWER READABLE revision,
+  // whose content the caller can be shown; an unreadable file's content is unknown, and overwriting
+  // it discards whatever the other side of a merge held. ABSENT is `{}`: init's first save.
+  const disk = readStateFile(STATE_PATH);
+  if (disk.kind === "unreadable") throw new StateUnreadableError(STATE_PATH, disk.reason);
+  const diskBody = disk.kind === "ok" ? disk.state : {};
+  const found = Number.isInteger(diskBody.revision) ? diskBody.revision : 0;
   // --force is the deliberate "I know, overwrite it" escape hatch. It is read from argv rather
   // than threaded through 24 call sites, which is the same shape as platformFlag() in
   // conductor.mjs. Without an escape hatch people learn to hand-edit state.json to get around
@@ -274,7 +350,7 @@ export function saveState(state, opts = {}) {
   // identical — and rewrites a file for no reason, which is the same pointless-churn class the
   // tracker already complains about elsewhere. Compare with `revision` excluded from both sides,
   // since that is the only field this function itself introduces.
-  const { revision: _cur, ...currentBody } = readJSON(STATE_PATH, {}) || {};
+  const { revision: _cur, ...currentBody } = diskBody;
   const { revision: _next, ...nextBody } = { ...state };
   if (JSON.stringify(currentBody) === JSON.stringify(nextBody)) {
     return { ok: true, revision: found, unchanged: true };
