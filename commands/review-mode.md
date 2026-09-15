@@ -32,6 +32,35 @@ If `${CLAUDE_PLUGIN_ROOT}` is empty:
 prior mode outright (unlike `set-autonomy`'s additive flags — there is only one active mode at a
 time). It refreshes the CLAUDE.md rules block so the "Current mode" line stays accurate.
 
+### If the rules block cannot be located — exit 11
+
+The block is found by whole marker LINES, and anything other than exactly one BEGIN line followed by
+one END line — an orphan marker, or two blocks — is refused rather than guessed at. With a second
+copy of the block appended to `CLAUDE.md`:
+
+```text
+$ conductor.mjs set-review-mode --mode thorough
+conductor: refused to write the pm rules block into CLAUDE.md — its marker lines are not exactly one BEGIN line followed by one END line, so which text is managed cannot be known:
+  line 3: BEGIN
+  line 379: END
+  line 381: BEGIN
+  line 757: END
+  Delete the stray marker line(s) from the shell, highest line number first, e.g.:
+    sed -i.bak '<N>d' CLAUDE.md
+  (a whole managed block is safe to delete; hand-written text between markers is yours to keep).
+  The rules file, and every write this command makes after it, were NOT made. After fixing the markers, run `write-rules` and then `render` (or /pm:status) to complete it.
+```
+
+Unlike `init` and `upgrade`, this verb refuses AT the block write, after its state save. So
+`state.reviewMode` already reads `thorough`, while `CLAUDE.md` and `PROJECT.md` were not written —
+and `verify-state` reports a hand-edit until they are. That is why the message says to run
+`write-rules` then `render` rather than to re-run the verb. Delete the stray marker lines (here,
+the whole second block), then `write-rules` and `render` (or `/pm:status`); after that `CLAUDE.md`
+carries `Current mode: **thorough**.` and `verify-state` reports no hand-edit.
+
+An unreadable `.conductor/state.json` is refused before anything is written, exit 11, with the git
+remedies (see `/pm:gate-guard`).
+
 ## Your ongoing responsibility once a mode is set
 
 Read the active mode from the rules block (or `state.reviewMode`) before starting a review pass,

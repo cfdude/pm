@@ -113,6 +113,10 @@ that file passes the check. Two ways remain: a hook line edited by hand, and an 
 plugin so its hook file and engine match. In a repository without pm the hook verbs refuse
 nothing and stay silent, as they always have.
 
+That is the opposite polarity from an unreadable `state.json`, which fails **closed** with exit 2
+(below). The difference is what cannot be read: a refused command line is pm's own hook file out of
+step with its engine, while an unreadable state file means whether a reconcile is owed is unknown.
+
 If `${CLAUDE_PLUGIN_ROOT}` is empty:
 `ENGINE="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/scripts/conductor.mjs}"; [ -f "$ENGINE" ] || ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1); node "$ENGINE" set-gate-guard on`
 
@@ -122,3 +126,43 @@ Every `Edit`/`Write`/`NotebookEdit` call is checked: if the currently active epi
 `reconcileNeeded` is `true` (it still owes a reconcile — see the conductor skill's POP
 protocol), the tool call is blocked with a message pointing you at the reconciler agent. Run the
 reconcile gate first. Epics with no pending reconcile are unaffected.
+
+## An unreadable `state.json` blocks — fails CLOSED
+
+If `.conductor/state.json` exists but cannot be read — a merge left conflict markers in it, it is
+truncated, or its shape is wrong (not a JSON object, `epics` present and not an array or holding a
+non-object, `detourStack` present and not an array) — the guard **blocks every
+`Edit`/`Write`/`NotebookEdit` with exit 2** until the file is fixed. Before this, the same file
+with a conflict marker prepended exited 0 and silently disabled the unconditional reconcile block,
+exactly when the record saying whether one is owed could not be read; with `epics: {}` the hook
+crashed with a `TypeError` (exit 1, which Claude Code also treats as allow).
+
+The hook's output with a conflict marker at the top of the file:
+
+```text
+conductor: .conductor/state.json cannot be read — it does not parse as JSON (Unexpected token '<', "<<<<<<< HE"... is not valid JSON). Nothing was written.
+  If a merge left conflict markers:  git checkout --ours .conductor/state.json   (or --theirs)
+  If the markers were committed:     git show <good-rev>:.conductor/state.json > .conductor/state.json
+  To discard local damage:           git restore .conductor/state.json
+  Never committed (git has no copy): mv .conductor/state.json .conductor/state.json.damaged
+                                     then /pm:init   (the damaged bytes are kept beside it)
+  Then re-run the command.
+  gate guard: Edit/Write/NotebookEdit stay blocked until the file is fixed — whether a reconcile is owed cannot be read. Bash is not blocked: run one of the commands above.
+```
+
+**This is not a wedge, because Bash never reaches this hook.** The engine refuses on an unreadable
+file whatever tool the payload names; what keeps Bash open is `hooks/hooks.json`, which registers
+`gate-guard` for the matcher `Edit|Write|NotebookEdit` only. Every remedy the message names is a
+shell command, so fix the file from Bash:
+
+- a merge left conflict markers → `git checkout --ours .conductor/state.json` (or `--theirs`);
+- the markers were committed → `git show <good-rev>:.conductor/state.json > .conductor/state.json`;
+- local damage → `git restore .conductor/state.json`;
+- git has never had the file (a repo damaged before its first commit) →
+  `mv .conductor/state.json .conductor/state.json.damaged`, then `/pm:init`. `init` itself refuses
+  while the damaged file is in place, and the move keeps its bytes beside the new one.
+
+Do not allow an Edit/Write aimed at `state.json` itself as a way out — that was considered and
+declined: it would widen the one unconditional block with a path match on tool input, and every
+remedy above is already reachable through Bash. An ABSENT `state.json` is still dormancy: the hook
+exits 0 silently in a repo that has not run `/pm:init`.

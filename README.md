@@ -837,6 +837,10 @@ reason, the command to run. It never enables anything itself.
 commit `state.json` before upgrading (a restore discards every uncommitted state change since
 the last commit, not only the migration's), then `git restore .conductor/state.json` and
 `/pm:status` to re-render `PROJECT.md` from the restored file.
+
+**An upgrade can refuse, exit 11, and write nothing** — `pmVersion` included — when the rules
+file's managed-block markers are malformed (an orphan BEGIN or END line, or two blocks) or
+`state.json` cannot be read. See *Troubleshooting* under Guard & Automation.
 Rolling back state does not require rolling back the engine — every added field has a
 documented absent-value default, so the current engine behaves identically on an older state
 file. Rolling back the *engine* is a separate plugin-level operation: pin the marketplace
@@ -970,7 +974,10 @@ whole job is coordination.
 epic, 30 for the repo marker). Deliberately a TTL rather than a heartbeat: a heartbeat nothing
 beats is `claimedAt` in a costume, and it makes staleness wrong in both directions. Re-claiming as
 the same session extends it. Claiming over an expired claim needs no `--steal` and reports the
-takeover; archiving an epic clears its claim.
+takeover; archiving an epic clears its claim. `--ttl` is capped at 10080 minutes (7 days) and a
+larger value is refused with nothing written; a stored claim whose expiry cannot be computed —
+including one written with a longer TTL before the cap — reads as expired (`expired at an
+unreadable time`), never as live and never as a crash.
 
 **What reports a stale one:** `owners` when asked, and `integrity`'s `advisory-claim-shape` check
 when nobody thinks to ask — which matters, because a stale claim is by construction left by a
@@ -1400,7 +1407,7 @@ put it in CLAUDE.md if you want the whole hierarchy to honour it.
 | SessionStart (startup / resume / **compact**) | Injects the briefing via `additionalContext` — the index comes back the moment context is summarized away. |
 | PreCompact | Calls `snapshot` (`render` + `.conductor/brief.txt`) right before the context window collapses. |
 | PostToolUse (every `Bash` call) | Calls `commit-nudge`. It OBSERVES the repository rather than reading the command text: it keeps a HEAD watermark (`.conductor/commit-watch.json`, git-ignored) and speaks only when HEAD has moved AND `git reflog` says the move was a commit. So `-m`, `-am`, `-F`, an editor commit and a commit made inside a script are all noticed, while a command that merely *mentions* `git commit` — a `grep`, a heredoc, an `echo` — a rejected commit, a commit that landed in another repo, and a `checkout`/`reset` are all silent. Then it nudges a state update, and auto-detects an unlogged minimal detour from commit shape (only while an epic is active, and excluding routine conductor bookkeeping commits). On an **observed** commit it also names the exact `update-epic <id> --attribute-commit <sha>` for the epic that commit belongs to — the detour epic while a detour is live, never the paused parent — so the per-commit attribution obligation is prompted while it is still actionable rather than only checked at the archive gate. The prompt is louder while the epic's `attributedCommits` is still empty (the last moment the catch-up-in-order rule is available) and one line thereafter, and it is absent entirely where the engine would be guessing: no active epic, an epic with no attribution array, or an unobserved commit. |
-| PreToolUse (gate-guard) | Hard-blocks `Edit`/`Write`/`NotebookEdit` while the active epic owes a reconcile — on by default, unconditional for that case. |
+| PreToolUse (gate-guard) | Hard-blocks `Edit`/`Write`/`NotebookEdit` while the active epic owes a reconcile — on by default, unconditional for that case. Also blocks them while `.conductor/state.json` exists but cannot be read, because whether a reconcile is owed is then unknown; Bash is not matched, so the remedies stay runnable. |
 | PreToolUse (lesson advisor) | Calls `lesson-advice` on `Bash`/`Edit`/`Write`/`NotebookEdit`. Matches the pending tool call against every `docs/lessons/*.md` entry that declares a `detect:` matcher in its frontmatter, and injects that lesson's `rule` **before** the mistake. **Advisory only — it never blocks and always exits 0**, which is why it is a separate entry from the gate guard. Silent in a project with no `docs/lessons/`, and dormant until `/pm:init`. Precision is the constraint, not coverage: a lesson that cannot be matched with near-certainty carries no `detect:` and stays retrieval-only, and only the command's **first line** is matched, so a heredoc body or an `echo` that merely names a command is data rather than a trigger. Adding a matcher is a frontmatter edit, never a code change. |
 
 **Tool currency.** `pm` and `superpowers` are plugins that update themselves, but **OpenSpec is a
@@ -1441,6 +1448,70 @@ spawned at all unless the repo has an `openspec/` directory and a readable gener
 
 </details>
 
+<details>
+<summary>Troubleshooting — a damaged <code>state.json</code>, a refused rules-block write, a held lock</summary>
+
+pm refuses rather than guesses when a file it depends on cannot be read. Three exit codes tell
+you who fixes what: **1** — the command line was wrong; **9** — another writer got there first or
+holds the lock, so retry; **11** — a file is in a state the engine will not guess about, and a
+human fixes the file. The message always names the file.
+
+**A conflicted or damaged `.conductor/state.json` — exit 11.** After a merge leaves conflict
+markers, or the file is truncated or the wrong shape, every verb that reads state refuses and
+writes nothing; `--force` does not override it. Before this, such a file loaded as an empty
+record: `add-epic` over a conflicted three-epic file exited 0 and left only the new epic. Now:
+
+```text
+conductor: .conductor/state.json cannot be read — it does not parse as JSON (Unexpected token '<', "<<<<<<< HE"... is not valid JSON). Nothing was written.
+  If a merge left conflict markers:  git checkout --ours .conductor/state.json   (or --theirs)
+  If the markers were committed:     git show <good-rev>:.conductor/state.json > .conductor/state.json
+  To discard local damage:           git restore .conductor/state.json
+  Never committed (git has no copy): mv .conductor/state.json .conductor/state.json.damaged
+                                     then /pm:init   (the damaged bytes are kept beside it)
+  Then re-run the command.
+```
+
+Meanwhile the hooks never write over it. `gate-guard` **blocks `Edit`/`Write`/`NotebookEdit`**
+(exit 2) until the file is fixed — Bash is not matched by that hook, so run the remedy from the
+shell. `brief` starts the session with only this warning in place of a briefing; `snapshot` writes
+nothing and exits 11 (never 2, which would block compaction); `commit-nudge` writes nothing but
+its HEAD watermark and exits 2, which shows the message to the agent. `verify-state` never loads
+the file, and `activity` reports the revision and whether the log is on as unknown. An absent
+`state.json` is still plain dormancy.
+
+**A refused rules-block write — exit 11.** pm finds its block in `CLAUDE.md` (or `AGENTS.md` /
+`HERMES.md`) by whole marker lines. An orphan BEGIN or END line, or two blocks, is refused with
+every marker's line number and the rules file untouched:
+
+```text
+conductor: refused to write the pm rules block into CLAUDE.md — its marker lines are not exactly one BEGIN line followed by one END line, so which text is managed cannot be known:
+  line 3: BEGIN
+  line 379: END
+  line 381: BEGIN
+  line 757: END
+  Delete the stray marker line(s) from the shell, highest line number first, e.g.:
+    sed -i.bak '<N>d' CLAUDE.md
+  (a whole managed block is safe to delete; hand-written text between markers is yours to keep).
+  The rules file, and every write this command makes after it, were NOT made. After fixing the markers, run `write-rules` and then `render` (or /pm:status) to complete it.
+```
+
+`init` and `upgrade` detect this before their first write and write nothing (their message ends
+`Nothing was written. After fixing the markers, re-run the command.`). `write-rules`,
+`set-tracker` and `set-review-mode` detect it at the block write, after their state save — so fix
+the markers, then run `write-rules` and `render`.
+
+**A held lock — exit 9.** Saves to `state.json` are serialised by `.conductor/state.json.lock`. A
+save waits up to 2 s for a live holder, then refuses (machine-specific values shown as `<…>`):
+
+```text
+conductor: state.json is locked at .conductor/state.json.lock (pid <pid> on host <host> since <time>) and was not released within 2000 ms; nothing was written (read revision 5). A lock older than 30 s is broken automatically by the next save; if no pm command is running, remove it with `rm .conductor/state.json.lock` and re-run the command.
+```
+
+A lock older than 30 s, or one whose holder is confirmed dead on this host and in this pid namespace, is broken by the next
+save without being asked, so a killed session never holds it forever.
+
+</details>
+
 ## Workflow
 
 ```
@@ -1466,7 +1537,11 @@ your-project/
 │                             #   given a second row, and a commit touching only pm's own
 │                             #   generated files is bookkeeping, not detour work. MINIMAL rows
 │                             #   are exempt — they record what you declared, not what git saw.
-│   └── honcho-memories.log  # ready-to-copy Honcho memory lines, timestamped
+│   ├── honcho-memories.log  # ready-to-copy Honcho memory lines, timestamped
+│   ├── state.json.lock      # held only for the milliseconds of one save; .lock.break while a
+│                             #   stale one is broken. Git-ignored (state.json.lock*), as is a
+│                             #   save's state.json.tmp-* left by a save killed mid-write
+│   └── session-claim.json   # the repo claim marker (git-ignored, session-claim.json*)
 ├── CLAUDE.md                # managed rules block (idempotent; delete to opt out)
 │                             # — AGENTS.md instead, on a platform that reads that file (see
 │                             #   Supported Platforms below); pm targets whichever file the

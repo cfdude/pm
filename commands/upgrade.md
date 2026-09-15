@@ -156,6 +156,52 @@ rather than tidy. `state.json` existing is what ends pm's dormancy in a repo, an
 guard, `write-rules` in an empty directory created one — after which `commit-nudge` started
 firing in a project that had never opted in.
 
+**How `write-rules` finds the block.** By whole-line markers: a BEGIN line is one that starts with
+`<!-- BEGIN pm-conductor rules` and ends with `-->`, an END line is exactly
+`<!-- END pm-conductor rules -->`. A marker string anywhere else — in prose, in inline code, after
+indentation — is ordinary text. Exactly one BEGIN line followed by one END line → the block between
+them is replaced and every byte outside it is left unchanged; no marker lines → the block is
+appended; **any other arrangement is refused** (below). The block is spliced in literally, so a
+recorded value containing `$&` or `` $` `` lands verbatim, and it takes the file's line endings: a
+CRLF file stays CRLF. Before this, markers were matched as substrings — a prose line quoting the
+BEGIN marker above a hand-written section made a refresh delete that section and print `refreshed`.
+
+## When `upgrade` refuses — exit 11, and nothing is written
+
+`upgrade` checks two files before its first write and refuses, exit 11, if either is in a state the
+engine will not guess about. A refused upgrade writes **nothing**: `state.json` (its `pmVersion`
+included), `PROJECT.md`, `.gitignore` and the rules file stay byte-identical, so the repository
+keeps reading as not upgraded — which is what the fleet procedure should go on reporting until a
+human fixes it.
+
+**A malformed rules block.** An orphan BEGIN or END marker line, or two blocks. With the END line
+deleted from a repo's `CLAUDE.md` and `pmVersion` at `0.42.0`:
+
+```text
+conductor: refused to write the pm rules block into CLAUDE.md — its marker lines are not exactly one BEGIN line followed by one END line, so which text is managed cannot be known:
+  line 3: BEGIN
+  Delete the stray marker line(s) from the shell, highest line number first, e.g.:
+    sed -i.bak '<N>d' CLAUDE.md
+  (a whole managed block is safe to delete; hand-written text between markers is yours to keep).
+  Nothing was written. After fixing the markers, re-run the command.
+```
+
+`pmVersion` still read `0.42.0` afterwards. The engine refuses rather than repairs because repairing
+an orphan marker means guessing where the managed text ends, and that guess is how hand-written
+text was lost. Two well-formed blocks have an unambiguous extent but not an unambiguous intent.
+Delete the stray lines — or a whole duplicate block — from the shell, highest line number first,
+then re-run `/pm:upgrade`. A marker line inside a fenced code example counts; the outcome is a
+refusal with line numbers, never a deletion.
+
+**An unreadable `.conductor/state.json`.** Conflict markers, truncation or the wrong shape: the
+refusal names the reason and the git remedies (the full message is in `/pm:gate-guard`). Fix the
+file, then re-run. `--force` does not override it.
+
+`upgrade` also adds three `.gitignore` entries through the `ensureGitignore()` it already runs:
+`.conductor/state.json.lock*` (the state lock and its break file), `.conductor/state.json.tmp*` (a
+save's temp file, left only by a save killed mid-write) and `.conductor/session-claim.json*`
+(replacing the exact `session-claim.json` entry — an existing exact line is left in place, harmless).
+
 ## What `0.27.0`'s migration does
 
 One entry, additive, idempotent and backward-compatible — a `state.json` written by `0.26.0` still

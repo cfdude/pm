@@ -50,6 +50,26 @@ Writes `epic.claim = {session, claimedAt, ttlMinutes}` in `.conductor/state.json
 Its own stated TTL, recorded on the claim (`ttlMinutes`), so a claim taken under one default
 keeps its meaning when the default changes. Default **120 minutes** for an epic.
 
+**`--ttl` is bounded: at most 10080 minutes (7 days)**, on `claim` and `claim --repo` alike. A
+larger value, zero, a negative or a non-number is refused with exit 1 and nothing is written —
+not the epic's claim in `state.json`, not `.conductor/session-claim.json`:
+
+```text
+$ conductor.mjs claim e1 --session s1 --ttl 1e12
+conductor: --ttl requires a positive number of minutes, at most 10080 (7 days). Nothing was written.
+```
+
+A claim is "who owns this right now", renewed by re-claiming, so a week is generous. Before the
+bound, `claim --ttl 1e12` wrote the claim and then crashed with `RangeError: Invalid time value`,
+and from then on `owners`, `integrity` and every other session's `claim` crashed the same way.
+
+**A stored claim whose expiry cannot be read is EXPIRED — never live, never a crash.** That covers
+a `ttlMinutes` above the bound (including one an earlier engine wrote before the bound existed), a
+`claimedAt` that does not parse, and a sum that is not a representable date. The writer and the
+reader judge a TTL with the same predicate, so nothing `claim` writes can be a claim no reader can
+read. One consequence after upgrading: a claim taken with a TTL over 7 days reads as expired, so
+re-claim it if the session is still working.
+
 This is deliberately a TTL rather than the `heartbeatAt` the original request suggested. A
 heartbeat nothing beats is `claimedAt` in a costume: it makes the staleness threshold wrong in
 both directions — a live session reads stale after N quiet minutes, and a crashed one reads live
@@ -104,6 +124,22 @@ there.
 Reports the repo marker and every epic claim as `HELD` or `STALE`, with when each expires.
 With no claims at all it says `QUIESCENT` — and says in the same breath what that does *not*
 mean: a session that never claimed is invisible here. It is a cooperative signal, not a lock.
+
+A claim whose expiry cannot be read is reported `STALE` and `expired at an unreadable time`, and
+can be taken over without `--steal`. With `ttlMinutes: 1000000000000` stored on `e1`:
+
+```text
+1 epic claim(s):
+  • `e1` — STALE by 's1' since 2026-09-15T21:59:55.881Z, expired at an unreadable time
+```
+
+`integrity` reports the same claim as `expired at an unreadable time (claimed …, ttl 1000000000000
+min)`, and `claim e1 --session s2` answers `took over 'e1' from session 's1' (its claim had
+expired)`.
+
+The repo marker is written by temp file plus rename in `.conductor/`, so a reader racing a write
+sees the whole old marker or the whole new one — never a torn file read as "no claim". It is not
+locked: the marker is advisory and never guarded a read-modify-write.
 
 `conductor.mjs integrity` is the surface that finds a stale claim **without being asked**, which
 matters because a stale claim is by construction left by a session that is no longer there to

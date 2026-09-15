@@ -171,6 +171,55 @@ file a bug report or feature request for `pm` itself against `cfdude/pm` — wri
 `/pm:changelog` what changed since your version · `/pm:upgrade` refresh rules + run migrations
 + print the changelog delta.
 
+## Writing state — exit codes, the lock, and what the engine refuses to guess
+
+**Read the exit code before you react.** They mean different things and want different responses:
+
+| Exit | Meaning | What you do |
+|---|---|---|
+| 1 | the command line was wrong (bad flag, value out of range — e.g. `claim --ttl` above 10080) | fix the invocation |
+| 2 | a hook blocked (`gate-guard`) or is telling you something (`commit-nudge`) | read stderr; act on it |
+| 9 | a write conflict: another writer saved first, or holds the state lock | reload and retry — it is retryable |
+| 11 | a file this verb depends on is in a state the engine will not guess about | a HUMAN-FIXABLE FILE — retrying cannot help; fix the file the message names |
+
+**An unreadable `state.json` is refused, never replaced — exit 11.** Present but unparseable
+(conflict markers after a merge, truncation) or the wrong shape (top level not an object, `epics`
+or `detourStack` present and not an array, an `epics` element not an object): every verb that
+reads state refuses and writes nothing, and `--force` does not override it. ABSENT is still
+dormancy. The message names git remedies (`git checkout --ours|--theirs`, `git show <good-rev>:…`,
+`git restore`) and, for a file git has never had, `mv .conductor/state.json
+.conductor/state.json.damaged` then `/pm:init`. **Never hand-repair it by guessing which side of a
+conflict to keep** — that is the user's call. Meanwhile `gate-guard` blocks Edit/Write/NotebookEdit
+(exit 2) and Bash is not matched, so the remedies run from the shell; `brief` injects only the
+warning; `snapshot` writes nothing (exit 11, never 2, which would block compaction);
+`commit-nudge` writes nothing but its HEAD watermark (exit 2). `verify-state` never loads the file,
+and `activity` reports the revision and the log's on/off state as unknown.
+
+**Saves are serialised by a lock file.** `saveState()` holds `.conductor/state.json.lock` from the
+revision check through the rename and read-back, and fsyncs the temp file before the rename. A
+live holder is waited for up to 2 s, then the save is refused with exit 9 naming the lock path,
+the holder's pid and host, and the 30 s rule. **Stale rule:** a lock whose mtime is more than 30 s
+in the past (or in the future), or whose holder is confirmed dead on this host in this pid
+namespace, is broken by the next save; breakers are serialised by `.conductor/state.json.lock.break`
+and re-judge before removing anything, so none removes a lock it did not judge. `--force` bypasses
+only the revision comparison, never the lock. The residual the design accepts: a holder stalled
+past 30 s (a suspended laptop, a debugger) can be judged stale and, if it resumes in the instant
+before its rename, two writers write. This reverses 0.26.0's decision against a lock file ("a
+session killed mid-write leaves the lock held forever"); the stale rule is the answer to that
+objection, and the revision guard alone lost updates under 16 parallel writers. The lock files and
+a killed save's `state.json.tmp-*` are git-ignored; do not commit or hand-delete a fresh lock while
+a pm command is running.
+
+**The managed rules block is located by whole marker LINES and written literally.** Exactly one
+BEGIN line then one END line → replaced in place, every byte outside untouched, line endings
+following the file's; no marker lines → appended; any other arrangement (an orphan marker, two
+blocks) → refused, exit 11, naming every marker's line number, rules file untouched. A marker quoted
+in prose or inline code is ordinary text. `init` and `upgrade` check before their first write and
+write nothing — a refused upgrade never stamps `pmVersion`. `write-rules`, `set-tracker` and
+`set-review-mode` refuse AT the block write, after their state save: have the user delete the stray
+lines (shell, highest line number first), then run `write-rules` and `render` — NOT a re-run of
+the verb, since a repeated `set-tracker --remove` exits 1 before its block write.
+
 ## Hierarchy & external trackers
 
 - **Hierarchy:** epics form a single-parent tree via `parent`. Nest with `--parent <id>`

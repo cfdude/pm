@@ -33,6 +33,30 @@ Initialize the `pm` conductor for the current project.
    `conductor: --platform must be one of claude-code|hermes|codex`. `init --help` prints its flags
    and creates nothing.
 
+   **`init` refuses, with exit 11 and nothing written, in two more cases** — both mean a file it
+   depends on is in a state the engine will not guess about, and a human fixes the file:
+
+   - **`.conductor/state.json` exists but cannot be read** (conflict markers, truncation, the
+     wrong shape). `init` loads it before its first write, so it never writes over, beside or
+     around it — not even `.gitignore`. The refusal names the reason and the remedies (see
+     `/pm:gate-guard` for the full message). For a file git has never had, move it aside and
+     re-run: `mv .conductor/state.json .conductor/state.json.damaged`, then `/pm:init`.
+   - **The rules file's managed-block markers are ambiguous.** A BEGIN marker line with no END, an
+     END with no BEGIN, or two blocks. Markers are whole lines — a marker string quoted in prose or
+     inline code is ordinary text. The check runs before anything is created, so a fresh repo gets
+     no `.conductor/`:
+
+     ```text
+     conductor: refused to write the pm rules block into CLAUDE.md — its marker lines are not exactly one BEGIN line followed by one END line, so which text is managed cannot be known:
+       line 3: BEGIN
+       Delete the stray marker line(s) from the shell, highest line number first, e.g.:
+         sed -i.bak '<N>d' CLAUDE.md
+       (a whole managed block is safe to delete; hand-written text between markers is yours to keep).
+       Nothing was written. After fixing the markers, re-run the command.
+     ```
+
+     Delete the stray lines by hand, then run `init` again.
+
 2. Read `.conductor/state.json` and help the user TRIAGE:
    - set `active` to the epic currently being built,
    - assign each epic a `priority` (P0–P3) and `status` (active | queued | later),

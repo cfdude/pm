@@ -263,24 +263,24 @@ the GREEN commit stages that file and names it in its message.
 Mintlify (pm-plugin.dev) page sync for these user-visible changes, including its Changelog page and
 Real Numbers, belongs to the 0.44.0 release cut under `release-checklist`, not to this change.
 
-- [ ] 8.1 `commands/gate-guard.md` — an unreadable `state.json` blocks Edit/Write/NotebookEdit; the
+- [x] 8.1 `commands/gate-guard.md` — an unreadable `state.json` blocks Edit/Write/NotebookEdit; the
       remedies; that Bash is not blocked
-- [ ] 8.2 `commands/claim.md` — the `--ttl` maximum; an unreadable or over-bound stored claim reads as
+- [x] 8.2 `commands/claim.md` — the `--ttl` maximum; an unreadable or over-bound stored claim reads as
       expired
-- [ ] 8.3 `commands/init.md`, `commands/upgrade.md`, `commands/tracker.md`, `commands/review-mode.md` —
+- [x] 8.3 `commands/init.md`, `commands/upgrade.md`, `commands/tracker.md`, `commands/review-mode.md` —
       the rules-block refusal (what arrangement triggers it; `init`/`upgrade` write nothing; for the other
       verbs, fix the markers then run `write-rules` and `render`) and the unreadable-state refusal with exit 11
-- [ ] 8.4 `README.md` — a troubleshooting entry for a conflicted/damaged `state.json` (exit 11, the
+- [x] 8.4 `README.md` — a troubleshooting entry for a conflicted/damaged `state.json` (exit 11, the
       remedies, gate-guard blocks meanwhile) and for a refused rules-block write; the lock files in any
       list of `.conductor/` files
-- [ ] 8.5 `skills/conductor/SKILL.md` — exit codes 9 vs 11, the lock and its stale rule in the
+- [x] 8.5 `skills/conductor/SKILL.md` — exit codes 9 vs 11, the lock and its stale rule in the
       state-write section, the rules-block refusal
-- [ ] 8.6 `CHANGELOG.md` `[Unreleased]` — one entry per requirement, naming the reversal of the 0.26.0
+- [x] 8.6 `CHANGELOG.md` `[Unreleased]` — one entry per requirement, naming the reversal of the 0.26.0
       lock decision, and an UPGRADE NOTE: a repository whose rules block is already malformed (an orphan
       marker line, or two blocks) will have `/pm:upgrade` refuse with the marker line numbers and write
       nothing until the stray lines are removed by hand. The version bump belongs to the 0.44.0 release
       cut
-- [ ] 8.7 Full suite green (`node --test scripts/test/*.test.mjs`), output written to a file and read
+- [x] 8.7 Full suite green (`node --test scripts/test/*.test.mjs`), output written to a file and read
       from the file
 
 ## 9. Gates and close

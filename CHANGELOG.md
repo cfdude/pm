@@ -22,6 +22,13 @@ without anyone extending a list.
 data. `remove-epic e2 --help` removed `e2`, `set-gate-guard off --help` disarmed the guard, and 14
 verbs performed their write on a trailing `--help`.
 
+**And input the engine cannot read is refused, not guessed at.** Four places met a file they could
+not read and guessed, and each guess destroyed or hid the record it was handed, while reporting
+success. A conflicted `state.json` loaded as an empty record; 16 parallel saves reported 9 successes
+over 7 epics on disk; `claim --ttl 1e12` wrote a claim every later reader crashed on; and
+`write-rules` deleted hand-written `CLAUDE.md` text and printed `refreshed`. Each now refuses with
+the file named and nothing written, or is serialised so the loss cannot happen.
+
 ### Fixed
 
 * **cfdude/pm#187's 0.41.0 regression.** A `--help` or `-h` anywhere after the verb, outside a
@@ -58,6 +65,68 @@ verbs performed their write on a trailing `--help`.
 * **`brief --help` no longer says the verb takes no flags** while `hooks/hooks.json` passes it
   `--platform claude-code`. `--platform` is declared on `init` and all five hook verbs and
   validated before anything else they do.
+* **An unreadable `state.json` is refused, never replaced — exit 11.** A present file that cannot
+  be read, does not parse, or has the wrong shape (top level not an object; `epics` present and not
+  an array, or holding a non-object; `detourStack` present and not an array) makes every verb that
+  reads state refuse, write nothing and exit with a new dedicated code, **11**, chosen outside
+  Node's own exit codes. `--force` does not override it. On 0.43.0, `add-epic` over a three-epic
+  file with a conflict marker prepended exited 0 and left only the new epic, and `sync`, `upgrade`
+  and `init` wiped a truncated file the same way. The refusal names the reason and the remedies:
+  `git checkout --ours|--theirs`, `git show <good-rev>:.conductor/state.json >
+  .conductor/state.json`, `git restore`, and, for a file git has never had, `mv
+  .conductor/state.json .conductor/state.json.damaged` then `/pm:init`. `init` loads an existing
+  file before its first write, so it refuses before touching `.gitignore`. An ABSENT `state.json`
+  stays dormancy. Exempt by name: `verify-state`, which never loads the file, and `activity`, which
+  reports the current revision and whether the log is on as unknown.
+* **Concurrent saves are serialised and flushed.** The revision check and the rename were not one
+  critical section: 16 parallel `add-epic`, three runs, printed `added epic` 9, 9 and 8 times while
+  7, 6 and 6 epics reached disk, and one run published the same revision from two writers.
+  `saveState()` now holds an exclusive lock file, `.conductor/state.json.lock`, from the revision
+  check through the rename and read-back, fsyncs the temp file before the rename, and releases the
+  lock on every return and throw path. `--force` bypasses the revision comparison, never the lock.
+  **This reverses 0.26.0's documented decision against a lock file** ("a session killed mid-write
+  leaves the lock held forever"): the stale-break rule below answers that objection, and the
+  revision guard 0.26.0 chose instead was measured insufficient. The revision guard stays — the
+  lock serialises the section; the revision still catches a writer whose load predates another's
+  save.
+* **A stale lock is broken; a live one is waited for, then refused — exit 9, never a lost update.**
+  A save waits up to 2 s for a live holder, then refuses with the conflict code naming the lock
+  path, the holder's pid and host, the 30 s rule, and the `rm .conductor/state.json.lock` to run if
+  no pm command is running. A
+  lock is stale when its mtime is more than 30 s away from now (past or future — a backward clock
+  step must not wedge it), or its holder is confirmed dead on this host in this pid namespace.
+  Breakers are serialised by `.conductor/state.json.lock.break` and re-judge the lock by inode and
+  nonce before removing it, so none removes a lock it did not judge. A hook's save that times out on
+  the lock is skipped and recorded in `write-conflicts.log`, as a hook's revision conflict already
+  was.
+* **An advisory claim's lifetime is bounded, and an unreadable expiry reads as expired.** `claim`
+  and `claim --repo` refuse a `--ttl` above 10080 minutes (7 days), exit 1, writing nothing:
+  `conductor: --ttl requires a positive number of minutes, at most 10080 (7 days). Nothing was
+  written.` On 0.43.0 `claim --ttl 1e12` wrote the claim, crashed with `RangeError: Invalid time
+  value`, and `owners`, `integrity`, another session's `claim` and `unclaim --steal` crashed the
+  same way from then on. A stored claim whose TTL is above the bound, whose `claimedAt` does not
+  parse, or whose expiry is not a representable date now reads as expired: `owners` shows it
+  `STALE … expired at an unreadable time` and another session takes it over without `--steal`.
+  `.conductor/session-claim.json` is written by temp file plus rename, so a racing reader never
+  sees a torn marker.
+* **The managed rules block is located by whole-line markers and replaced only when unambiguous.**
+  Markers were matched as substrings: a prose line quoting `<!-- BEGIN pm-conductor rules` above a
+  hand-written section made `write-rules` delete that section and print `refreshed`; a deleted END
+  line appended a second block whose next refresh swallowed the text between them. A marker is now
+  a whole line. Exactly one BEGIN line then one END line → replaced, every byte outside unchanged;
+  none → appended; anything else → refused, exit 11, naming the file and every marker's line
+  number, rules file untouched. `init` and `upgrade` check before their first write, so a refused
+  upgrade never stamps `pmVersion`; `write-rules`, `set-tracker` and `set-review-mode` refuse at
+  the block write, after their state save, and the message says so: after fixing the markers, run
+  `write-rules` and then `render` (or `/pm:status`) to complete it. A marker inside a fenced code
+  example counts; the outcome is a refusal with line numbers, never a deletion.
+* **The block is written literally.** The splice was a string replacement, where `` $` ``, `$&`
+  and `$'` are substitution patterns: ``set-tracker --system github-issues --repo 'o/n$`'`` copied
+  the file's own prefix into the block, so a sentinel line present once was present three times.
+  Lines are now sliced and joined, with no `String.prototype.replace` on the path.
+* **The block follows the rules file's line endings.** A CRLF `CLAUDE.md` got an LF block (3 CRLF
+  lines of 380 afterwards). A refresh takes the BEGIN line's terminator; an append takes the file's
+  first terminator, LF when it has none.
 
 ### Changed
 
@@ -102,6 +171,23 @@ verbs performed their write on a trailing `--help`.
   positional form (`conductor.mjs remove-epic <id> — 1 flag.`); a mutating verb lists `--force`
   under "Accepted on every mutating verb"; a verb whose own parser reads no flags says `no flags of
   its own`; and "takes no flags" appears only where the check accepts none.
+* **BREAKING — hooks never write over an unreadable `state.json`, and each reports it on the
+  channel its event can act on.** `gate-guard` (PreToolUse) **blocks `Edit`/`Write`/`NotebookEdit`
+  with exit 2** until the file is fixed: on 0.43.0 a conflict marker made it exit 0, silently
+  disabling the unconditional reconcile block, and `epics: {}` crashed it with a `TypeError` (exit
+  1, also allow). Bash is not matched by that hook, so every remedy stays runnable. `brief`
+  (SessionStart) exits 0 with the warning as the only context, in place of a briefing of the empty
+  guess. `snapshot` (PreCompact) writes nothing and exits 11 — never 2, which would block
+  compaction. `commit-nudge` (PostToolUse) writes nothing but its HEAD watermark and exits 2, which
+  shows the message to the agent; on 0.43.0 it re-rendered `PROJECT.md` from the empty guess. The
+  mapping is keyed on the hook marker in `VERB_EFFECTS`, so a refusal raised anywhere a hook calls
+  produces that hook's status. Two tests that asserted the old behaviour as the contract (gh-111's
+  `owners` on an unparseable file, gh#129's `commit-nudge` exit 0) are rewritten to the refusal.
+* **The state lock files are written in a detached checkout.** The detached-HEAD table of
+  `.conductor/` write sites settles `state.json.lock` and `.lock.break` as not session bookkeeping:
+  the save they serialise is not suppressed there, and suppressing the lock would leave it
+  unserialised. The repo claim's detached-tree check now asks about the tree the marker is written
+  into rather than the engine's import-time root.
 
 ### Notes
 
@@ -123,6 +209,26 @@ verbs performed their write on a trailing `--help`.
   corrected emitted command lines only when it runs. For this change the sweep of every invocation
   pm emits (command docs, skills, README, `hooks/hooks.json`, the rules block on all three
   platforms — 487 lines) found none the check refuses, so an existing rules block breaks nothing.
+* **UPGRADE NOTE — a rules block that is already malformed stops `/pm:upgrade`.** A repository
+  whose `CLAUDE.md` (or `AGENTS.md`/`HERMES.md`) holds an orphan BEGIN or END marker line, or two
+  blocks, will have `/pm:upgrade` refuse with exit 11, list every marker's line number, and write
+  nothing — `pmVersion` stays behind, so a fleet sweep keeps reporting the repo as not upgraded —
+  until the stray lines are removed by hand (highest line number first; a whole duplicate block is
+  safe to delete). 27 marker-bearing rules files counted on one machine were all well-formed; a
+  second machine is unmeasured.
+* **`.gitignore` gains `.conductor/state.json.lock*`, `.conductor/state.json.tmp*` and
+  `.conductor/session-claim.json*`** through `ensureGitignore()`, which `init` and `upgrade` run.
+  The last replaces the exact `.conductor/session-claim.json` entry; an existing exact line is left
+  in place. A temp file is left behind only by a save killed between its write and its rename.
+* **A claim taken with a TTL over 7 days by an earlier engine reads as expired** after upgrading.
+  Claims are advisory; re-claim.
+* **A damaged `state.json` now stops pm in that repository until it is fixed, by design**, and
+  Edit/Write/NotebookEdit are blocked there meanwhile.
+* **What the lock does not promise.** On macOS Node exposes no `F_FULLFSYNC`, so the fsync orders
+  the temp file's data ahead of the rename but is not power-loss durability. A holder stalled past
+  30 s (a suspended laptop, a debugger) can be judged stale; if it resumes in the instant between
+  its ownership check and its rename, two writers write. `.conductor/` on a network filesystem is not
+  a supported layout. A hook can wait about 4 s under sustained contention.
 * No `state.json` schema change, no migration.
 
 ## [0.43.0] — 2026-09-14
