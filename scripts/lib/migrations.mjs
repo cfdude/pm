@@ -7,7 +7,7 @@ import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { pluginVersion, newestInstalledVersion, cmpVer, changelogBetween, stampVersion } from "./plugin-meta.mjs";
 import { reconcileArchived } from "./epic-progress.mjs";
-import { writeRules } from "./rules.mjs";
+import { assertRulesBlockWritable, writeRules } from "./rules.mjs";
 import { render } from "./render.mjs";
 import { normalizeLink } from "./links.mjs";
 import { ARCHIVE_BACKFILL, engineStamp, stampedBy } from "./disposition.mjs";
@@ -202,6 +202,11 @@ export function upgrade() {
     process.exit(1);
   }
   const state = loadState();
+  // BEFORE the first write. upgrade stamps pmVersion — what the fleet procedure reads as "this repo
+  // is done" — and then renders and back-fills .gitignore AFTER the block write, so a late refusal
+  // would leave a repository reading as upgraded forever with a stale block, a stale PROJECT.md and
+  // no lock gitignore line (managed-rules-block).
+  assertRulesBlockWritable(resolvePlatform({}, state));
   const stamped = state.pmVersion || "0.0.0";
   let applied = 0;
   // Apply in ascending release order (independent of array authoring order) so a

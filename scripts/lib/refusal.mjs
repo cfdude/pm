@@ -8,6 +8,7 @@
 import { conflictExitCode, StateUnreadableError, unreadableStateMessage } from "./state.mjs";
 import { UNREADABLE_INPUT_EXIT_CODE } from "./constants.mjs";
 import { VERB_EFFECTS } from "./verb-effects.mjs";
+import { RulesBlockAmbiguousError, rulesBlockAmbiguousMessage } from "./rules.mjs";
 
 /** What each HOOK verb does on an unreadable state file, decided by what its hook EVENT does with
  *  an exit status (state-file-refuses-to-guess design D3, against Claude Code's hook docs):
@@ -37,6 +38,7 @@ function hookUnreadableStatus(verb) {
 /** `{ exitCode, stdout, stderr }` for an error the engine refuses on, or null to re-throw.
  *
  *  - a write conflict → the conflict exit code: retryable;
+ *  - an ambiguous rules-block arrangement → UNREADABLE_INPUT_EXIT_CODE;
  *  - an unreadable state file → the hook's status (above), or UNREADABLE_INPUT_EXIT_CODE for every
  *    other verb: a human fixes the file. However the refusal was raised during the invocation —
  *    from the hook's own load or from anything it calls — it lands here, which is what makes the
@@ -44,6 +46,11 @@ function hookUnreadableStatus(verb) {
 export function refusalFor(verb, err) {
   const conflict = conflictExitCode(err);
   if (conflict !== null) return { exitCode: conflict, stdout: "", stderr: `conductor: ${err.message}\n` };
+  // A rules file whose managed-block markers are ambiguous: the same "a human fixes the file" code.
+  // No hook writes the rules block, so no hook status applies.
+  if (err instanceof RulesBlockAmbiguousError) {
+    return { exitCode: UNREADABLE_INPUT_EXIT_CODE, stdout: "", stderr: rulesBlockAmbiguousMessage(err) };
+  }
   if (!(err instanceof StateUnreadableError)) return null;
   const message = unreadableStateMessage(err);
   switch (hookUnreadableStatus(verb)) {

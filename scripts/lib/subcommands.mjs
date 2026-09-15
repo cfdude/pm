@@ -10,7 +10,7 @@ import { defaultState, isInitialized, loadState, pushEpic, saveState, readStdin 
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { stampVersion } from "./plugin-meta.mjs";
 import { render } from "./render.mjs";
-import { writeRules } from "./rules.mjs";
+import { assertRulesBlockWritable, writeRules } from "./rules.mjs";
 import { buildBrief } from "./briefing.mjs";
 import { appendDetourLog, gitShortSha, isDetachedTree } from "./git.mjs";
 import { observeCommit } from "./commit-watch.mjs";
@@ -19,7 +19,7 @@ import { activeChangeIds, archivedChanges, firstHeading, planFiles, reconcileArc
 import { claimedSourceArtifacts, epicSourceArtifacts, normalizeArtifactPath, syncIgnoredArtifacts } from "./source-artifacts.mjs";
 import { ARCHIVE_BACKFILL, engineStamp } from "./disposition.mjs";
 import { ROOT, CONDUCTOR_DIR, BRIEF_PATH, PLANS_DIR, anyInwardProcedureEmittable } from "./constants.mjs";
-import { resolveAndRecordPlatform } from "./platform.mjs";
+import { platformFlag, resolveAndRecordPlatform, resolvePlatform } from "./platform.mjs";
 import { requirePlatformFlag } from "./add-epic.mjs";
 // The positionals the command-line check classified — never the raw argv tail (argv-surface.mjs).
 import { checkedPositionals } from "./argv-surface.mjs";
@@ -81,11 +81,14 @@ export function init() {
   // FIRST, before saveState(defaultState()): `init --platform bogus` used to create state.json and
   // THEN refuse, which ended pm's dormancy in a repo whose init had failed.
   requirePlatformFlag("init");
+  // LOAD FIRST when the file exists, before any write: a present but unreadable state.json refuses
+  // here (StateUnreadableError), so init never writes over, beside or around a record it cannot read.
+  const recorded = isInitialized() ? loadState() : null;
+  // THEN the rules-block preflight, still before the first write (state.json on a fresh repo,
+  // .gitignore otherwise): an ambiguous marker arrangement refuses with nothing created. The target
+  // is resolved with the platform this init would use, WITHOUT recording it.
+  assertRulesBlockWritable(resolvePlatform({ platform: platformFlag(process.argv.slice(3)) }, recorded));
   if (isInitialized()) {
-    // LOAD FIRST, before ensureGitignore() below — the first write on this branch. A present but
-    // unreadable state.json refuses here (StateUnreadableError), so init never writes over, beside
-    // or around a record it cannot read.
-    loadState();
     process.stderr.write("conductor: already initialized (.conductor/state.json exists)\n");
   } else {
     // save-report: exempt — the file does not exist on this branch (isInitialized() is false), so

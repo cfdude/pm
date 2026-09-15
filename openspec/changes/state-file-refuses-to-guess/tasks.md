@@ -174,7 +174,7 @@ the GREEN commit stages that file and names it in its message.
 
 ## 6. The managed rules block is located by whole-line markers and written literally
 
-- [ ] 6.1 RED (lands with 6.2): new `scripts/test/managed-rules-block.test.mjs` — the reviewer's
+- [x] 6.1 RED (lands with 6.2): new `scripts/test/managed-rules-block.test.mjs` — the reviewer's
       repro verbatim: a prose line with `` `<!-- BEGIN pm-conductor rules` `` in inline code, then
       `## My rules` with a sentinel line, then a real block; `write-rules` → exit 0, every byte before
       the BEGIN marker line identical, exactly one BEGIN marker line (today: sentinel gone, `refreshed`).
@@ -183,26 +183,26 @@ the GREEN commit stages that file and names it in its message.
       byte-identical, all four line numbers, no `refreshed` in stderr; REGRESSION GUARD (pass today): one
       pair between hand text → outside bytes identical, block content new; no markers → appended; an all-CRLF `CLAUDE.md` with
       one block → every line ends CRLF afterwards (today: 3 of 380). Save `red-6.1.txt`
-- [ ] 6.2 GREEN: `rulesBlockArrangement()` and line-based `writeRules()` with `RulesBlockAmbiguousError`
+- [x] 6.2 GREEN: `rulesBlockArrangement()` and line-based `writeRules()` with `RulesBlockAmbiguousError`
       per design D6, mapped to exit 11 in `conductor.mjs`'s catch with the truthful message. No
       `.replace(` on the splice path. Verify: 6.1 passes, and the existing rules-block tests
       (`conductor-01`, `platform.test.mjs`, the `rules-0.26.0-*` fixture comparisons) pass unmodified
-- [ ] 6.3 RED (lands with 6.4): `upgrade` in a repo whose `pmVersion` is behind the running engine and
+- [x] 6.3 RED (lands with 6.4): `upgrade` in a repo whose `pmVersion` is behind the running engine and
       whose `CLAUDE.md` holds a BEGIN marker line and no END → exit 11, and `state.json` (its
       `pmVersion` included), `PROJECT.md`, `.gitignore` and `CLAUDE.md` byte-identical; `init` in a
       repo with no `.conductor/` and the same `CLAUDE.md` → exit 11 and no `.conductor/` directory
       created. Today `upgrade` stamps and exits 0. Save `red-6.3.txt`
-- [ ] 6.4 GREEN: the preflight before the first write in `upgrade()` and `init()` per design D6
+- [x] 6.4 GREEN: the preflight before the first write in `upgrade()` and `init()` per design D6
       (resolve the target without recording the platform, then `rulesBlockArrangement()`). Verify: 6.3
       passes
-- [ ] 6.5 RED (lands with 6.6): a sentinel line above one block, then write a block containing
+- [x] 6.5 RED (lands with 6.6): a sentinel line above one block, then write a block containing
       `` $` ``, `$&` and `$'` (drive it through `set-tracker --system github-issues --repo` with such a
       value if 0.3 confirms the argv change still accepts it; otherwise call `writeRules` in-process
       with a stubbed tracker) → sentinel occurs once, each sequence present verbatim. Today: the prefix
       is spliced in (sentinel ×3). Save `red-6.5.txt`
-- [ ] 6.6 GREEN: covered by 6.2's no-`replace` splice; if 6.5 already passes after 6.2, land it as
+- [x] 6.6 GREEN: covered by 6.2's no-`replace` splice; if 6.5 already passes after 6.2, land it as
       REGRESSION GUARD in 6.2's commit and say so
-- [ ] 6.7 RED/GREEN or justified omission: `evals/observe.py` locates the block by the substring
+- [x] 6.7 RED/GREEN or justified omission: `evals/observe.py` locates the block by the substring
       `RULES_BEGIN` (line 22) — a second reader of the same markers. Either make it match whole lines
       the same way, or record in the sweep (7.1) why an eval-harness reader may differ
 

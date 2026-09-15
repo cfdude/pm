@@ -22,6 +22,17 @@ ENGINE = Path(__file__).resolve().parent.parent / "scripts" / "conductor.mjs"
 RULES_BEGIN = "<!-- BEGIN pm-conductor rules"
 
 
+def _has_rules_block(text: str) -> bool:
+    """A BEGIN marker LINE, located the way the engine locates it (managed-rules-block): a line
+    that, with only its terminator removed, starts with the prefix and ends with `-->`. A marker
+    string inside prose or inline code is ordinary content, not the block."""
+    for line in text.split("\n"):
+        line = line.removesuffix("\r")
+        if line.startswith(RULES_BEGIN) and line.endswith("-->"):
+            return True
+    return False
+
+
 def _read_detours(path: Path) -> list[dict]:
     if not path.exists():
         return []
@@ -124,7 +135,7 @@ def observe(project: Path, plugin_dir: str | None = None) -> dict:
         "epic_ids": [e["id"] for e in epics],
         "detours": _read_detours(project / ".conductor" / "detours.log"),
         "rules_block_present": bool(
-            target and target.exists() and RULES_BEGIN in target.read_text()
+            target and target.exists() and _has_rules_block(target.read_text())
         ),
         "rules_block_file": target.name if target else None,
         "user_memory_files_loaded": _user_memory_files_loaded(project),

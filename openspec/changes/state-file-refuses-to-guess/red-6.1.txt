@@ -1,0 +1,134 @@
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Jx6bIT/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-68YAZh/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-4G9DUO/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-6eUfqW/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-gra5xQ/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-XCYGi9/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+✖ 6.1: prose mentioning the BEGIN marker does not cost hand-written content (151.919542ms)
+✖ 6.1: a BEGIN marker without an END is refused, naming the file and the line (148.899584ms)
+✖ 6.1: two managed blocks are refused, naming all four marker lines (148.28175ms)
+✔ 6.1 REGRESSION GUARD: a single well-formed block between hand text is refreshed in place (137.048625ms)
+✔ 6.1 REGRESSION GUARD: a file with no markers gets exactly one block appended (139.916792ms)
+✖ 6.1: a CRLF rules file stays CRLF (138.1465ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 2
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 908.714125
+
+✖ failing tests:
+
+test at scripts/test/managed-rules-block.test.mjs:42:1
+✖ 6.1: prose mentioning the BEGIN marker does not cost hand-written content (151.919542ms)
+  AssertionError [ERR_ASSERTION]: every byte before the BEGIN marker line is identical
+  + actual - expected
+  
+  + 'Our rules file uses the `<!-- BEGIN pm-conductor rules (managed by pm — safe to delete this block) -->\n' +
+  +   '## PM Conductor — operating rules\n'
+  - "Our rules file uses the `<!-- BEGIN pm-conductor rules` marker for pm's block.\n" +
+  -   '\n' +
+  -   '## My rules\n' +
+  -   '\n' +
+  -   'MY-HAND-SENTINEL — never delete this line.\n' +
+  -   '\n'
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/managed-rules-block.test.mjs:50:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'Our rules file uses the `<!-- BEGIN pm-conductor rules (managed by pm — safe to delete this block) -->\n## PM Conductor — operating rules\n',
+    expected: "Our rules file uses the `<!-- BEGIN pm-conductor rules` marker for pm's block.\n\n## My rules\n\nMY-HAND-SENTINEL — never delete this line.\n\n",
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/managed-rules-block.test.mjs:54:1
+✖ 6.1: a BEGIN marker without an END is refused, naming the file and the line (148.899584ms)
+  AssertionError [ERR_ASSERTION]: stderr: conductor: appended rules block to CLAUDE.md (platform: claude-code)
+  
+  
+  0 !== 11
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/managed-rules-block.test.mjs:59:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 11,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/managed-rules-block.test.mjs:66:1
+✖ 6.1: two managed blocks are refused, naming all four marker lines (148.28175ms)
+  AssertionError [ERR_ASSERTION]: stderr: conductor: refreshed rules block in CLAUDE.md (platform: claude-code)
+  conductor: PROJECT.md unchanged (skipped rewrite)
+  conductor: review mode is now 'thorough'
+  
+  
+  0 !== 11
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/managed-rules-block.test.mjs:75:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 11,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/managed-rules-block.test.mjs:107:1
+✖ 6.1: a CRLF rules file stays CRLF (138.1465ms)
+  AssertionError [ERR_ASSERTION]: every line ends CRLF; 377 of 380 do not
+  
+  377 !== 0
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/managed-rules-block.test.mjs:117:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 377,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
