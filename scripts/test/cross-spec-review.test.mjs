@@ -122,9 +122,10 @@ test("record-cross-spec-review refuses an unknown release, an unknown flag and a
     /release 'nope'/);
   assert.match(expectFail(() => run(["record-cross-spec-review", "rel", "--verdict", "maybe"], { cwd })).stderr,
     /pass\|fail/);
-  // The projected allowlist — the shared EPIC_FLAGS registry, never a second literal here.
+  // The projected allowlist — the shared registry, never a second literal here. Refused by the
+  // pre-dispatch command-line check (verb-surface), whose message names the flag and the verb.
   assert.match(expectFail(() => run(["record-cross-spec-review", "rel", "--verdict", "pass", "--reviewr", "x"], { cwd })).stderr,
-    /unknown flag\(s\) --reviewr/);
+    /unknown flag --reviewr for record-cross-spec-review/);
 });
 
 test("re-recording supersedes the prior verdict once, never a growing chain", () => {

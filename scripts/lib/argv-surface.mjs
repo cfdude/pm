@@ -44,6 +44,7 @@ function surfaceOf(verb) {
  *  valueless flag never consumes; an undeclared flag consumes nothing. */
 export function classify(verb, tokens) {
   const spec = surfaceOf(verb);
+  const idFirst = !!(VERB_POSITIONALS[verb] && VERB_POSITIONALS[verb].idFirst);
   const out = [];
   for (let i = 0; i < tokens.length; i++) {
     const t = tokens[i];
@@ -62,6 +63,15 @@ export function classify(verb, tokens) {
       if (s && !s.valueless && inline === undefined && i + 1 < tokens.length &&
           !isFlagToken(tokens[i + 1])) {
         flag.value = tokens[++i];
+      } else if (!s && name === "id" && idFirst && !out.some(x => x.kind === "positional")) {
+        // D4: `--id` where the verb's first positional is an epic id, before any positional, is the
+        // #71 mistake — so its value is consumed exactly as update-epic's diagnosis always consumed
+        // it. Otherwise `update-epic --id e1 --priority P1` would read e1 as the positional and the
+        // diagnosis would never fire.
+        flag.idMistake = true;
+        if (inline === undefined && i + 1 < tokens.length && !isFlagToken(tokens[i + 1]) && !isHelpToken(tokens[i + 1])) {
+          flag.value = tokens[++i];
+        }
       }
       out.push(flag);
       continue;
@@ -80,7 +90,8 @@ export function classify(verb, tokens) {
  *       typed one asked for help, and nothing is written;
  *    2. a hook verb in a repository without pm → ok: its own dormancy returns silently, and a hook
  *       line the engine would refuse must not print an error into a project that never ran init;
- *    3. `--help` in a value position → refuse (the #187 case), with valuelessFlagError()'s words. */
+ *    3. `--help` in a value position → refuse (the #187 case), with valuelessFlagError()'s words;
+ *    4. the first flag the verb does not declare → refuse, naming it and what the verb accepts. */
 export function checkCommandLine(verb, argv, { initialized = true } = {}) {
   if (!Object.prototype.hasOwnProperty.call(VERB_EFFECTS, verb) ||
       !Object.prototype.hasOwnProperty.call(VERB_POSITIONALS, verb)) {
@@ -95,5 +106,33 @@ export function checkCommandLine(verb, argv, { initialized = true } = {}) {
     const flag = items.find(x => x.kind === "flag" && x.name === misplaced.flag);
     return { kind: "refuse", message: flagInValuePositionMessage(misplaced.flag, flag.requires, misplaced.token) };
   }
+  const undeclared = items.find(x => x.kind === "flag" && !x.declared);
+  if (undeclared) return { kind: "refuse", message: undeclaredFlagMessage(verb, undeclared, items) };
   return { kind: "ok", positionals: items.filter(x => x.kind === "positional").map(x => x.token) };
+}
+
+/** D4's refusal. `unknown flag --<name> for <verb> — it accepts: …` keeps the prefix five existing
+ *  assertions match, names what the verb DOES accept (projected, so it cannot drift from what the
+ *  check enforces), and adds the positional form when the verb reads positionals. The `--id` mistake
+ *  gets update-epic's #71 diagnosis instead, generalised to every verb whose first positional is an
+ *  epic id, including its rewrite of the line the caller meant. */
+function undeclaredFlagMessage(verb, flag, items) {
+  const pos = VERB_POSITIONALS[verb];
+  if (flag.idMistake) {
+    const value = flag.inline !== undefined ? flag.inline : (flag.value !== undefined ? flag.value : "<id>");
+    const rest = [];
+    for (const x of items) {
+      if (x === flag) continue;
+      rest.push(x.token);
+      if (x.kind === "flag" && x.value !== undefined) rest.push(x.value);
+    }
+    return `conductor: ${verb} takes its epic id POSITIONALLY, not as --id — write ` +
+      `\`${verb} <id> ...\`, i.e. \`${verb} ${value}${rest.length ? ` ${rest.join(" ")}` : ""}\`. ` +
+      "Nothing was written.";
+  }
+  const accepted = cliFlagsFor(verb);
+  let msg = `conductor: unknown flag --${flag.name} for ${verb} — ` +
+    (accepted.length ? `it accepts: ${accepted.map(f => `--${f}`).join(", ")}` : "it accepts no flags");
+  if (pos && pos.max > 0) msg += `\nusage: conductor.mjs ${verb} ${pos.form} [flags]`;
+  return msg + "\nNothing was written.";
 }

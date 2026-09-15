@@ -82,7 +82,7 @@ import {
   currentTracker, currentSecondaryTrackers, currentReviewMode, rulesBlock, writeRules,
 } from "./lib/rules.mjs";
 import { resolvePlatform, assertKnownPlatform, platformFlag, resolveAndRecordPlatform, rulesTarget } from "./lib/platform.mjs";
-import { loadState, conflictExitCode } from "./lib/state.mjs";
+import { loadState, conflictExitCode, readStdin } from "./lib/state.mjs";
 import { ROOT, warnRootDivergence, warnDetachedTree } from "./lib/constants.mjs";
 import { isDetachedTree } from "./lib/git.mjs";
 import { VERB_EFFECTS } from "./lib/verb-effects.mjs";
@@ -172,6 +172,9 @@ if (!cmd || (!Object.prototype.hasOwnProperty.call(VERB_EFFECTS, cmd) && (helpAt
     process.exit(0);
   }
   if (verdict.kind === "refuse") {
+    // A hook verb's payload is on stdin. Drain it before refusing, as gate-guard and lesson-advice
+    // do on their own paths, so the hook writer is not left holding a pipe (an EPIPE on its side).
+    if (VERB_EFFECTS[cmd].hook === true) readStdin();
     process.stderr.write(verdict.message + "\n");
     process.exit(1);
   }

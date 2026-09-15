@@ -126,8 +126,8 @@ test("gh#81: a MINIMAL detour is a declared event, not a commit — two at one H
   fs.writeFileSync(path.join(cwd, "a.txt"), "1");
   g(cwd, "add", "-A");
   g(cwd, "commit", "-q", "-m", "fix: work");
-  run(["log-detour", "--minimal", "fixed the first thing"], { cwd });
-  run(["log-detour", "--minimal", "fixed the second thing"], { cwd });
+  run(["log-detour", "fixed the first thing"], { cwd });
+  run(["log-detour", "fixed the second thing"], { cwd });
   const rows = detourLog(cwd).trim().split("\n").filter(Boolean).filter(l => l.includes("MINIMAL"));
   assert.equal(rows.length, 2,
     "MINIMAL rows record what the agent declared, not what git observed — deduping them loses a real record");

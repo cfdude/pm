@@ -83,7 +83,7 @@ Every refusal test asserts the refusal's CAUSE text (not only a non-zero exit) a
       is still that verb's help", "A hook verb's help still works without pm" (`brief --help` and
       `gate-guard --help` in a repo with no `.conductor/`), and `positional-and-help-tokens.test.mjs` and
       `conductor-35`'s help sweep passing
-- [ ] 2.2 RED then GREEN: undeclared flags on every dispatched verb, with hook dormancy. RED: a
+- [x] 2.2 RED then GREEN: undeclared flags on every dispatched verb, with hook dormancy. RED: a
       `DISPATCH_BASELINE` table with a working invocation for EVERY verb in `VERB_EFFECTS` (completeness
       asserted against the dispatch table; reuse `scratchpad/propose/every-verb-refuses-what-it-does-not-read/sweep.mjs`'s
       fixtures), first asserted to EXIT 0 on its own (a separate test, as `conductor-31` does for

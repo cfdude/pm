@@ -188,7 +188,9 @@ test("gh-84: a claim held by ANOTHER session blocks no other verb — that is wh
   run(["claim", "e1", "--session", "alpha"], { cwd });
   // Every one of these is a write to the claimed epic, from a process that is not the holder.
   run(["update-epic", "e1", "--title", "renamed by someone else"], { cwd });
-  run(["reorder", "e1", "--before", "e2"], { cwd });
+  // `reorder <id> <id>`: it has no `--before`. This line used to pass one, which reorder never
+  // read and silently dropped — the command line check (verb-surface) now refuses it by name.
+  run(["reorder", "e1", "e2"], { cwd });
   run(["update-epic", "e1", "--priority", "P0"], { cwd });
   run(["set-active", "e1"], { cwd });
   run(["update-epic", "e1", "--add-story", "written by a stranger"], { cwd });

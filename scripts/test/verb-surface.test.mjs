@@ -334,3 +334,228 @@ test("REGRESSION GUARD: A hook verb's help still works without pm", () => {
     assert.equal(fs.existsSync(path.join(cwd, ".conductor")), false, `${verb} --help created .conductor/`);
   }
 });
+
+// ═══════════════ 2.2 — undeclared flags on every dispatched verb ═══════════════
+
+/** Every file under `dir` by relative path and content — the whole tree, so "writes nothing" covers
+ *  state.json's lock files, the render stamp, the rules file and .gitignore without a list here. */
+function treeSnapshot(dir) {
+  const out = {};
+  const walk = (p, rel) => {
+    for (const name of fs.readdirSync(p).sort()) {
+      if (name === ".git") continue;
+      const full = path.join(p, name);
+      if (fs.lstatSync(full).isDirectory()) walk(full, `${rel}${name}/`);
+      else out[`${rel}${name}`] = fs.readFileSync(full, "utf8");
+    }
+  };
+  walk(dir, "");
+  return out;
+}
+
+const PUSH = ["push-detour", "e1", "--detour", "other", "--reason", "blocked", "--reconcile"];
+
+/** The base fixture every baseline starts from: three epics, an external id, and an openspec change
+ *  carrying two spec files (so record-cross-spec-review has a spec set to hash). Built ONCE per
+ *  distinct list of pre-steps and copied per case, timestamps preserved so verify-state sees no drift. */
+const templates = new Map();
+function fixture(pre = []) {
+  const key = JSON.stringify(pre);
+  if (!templates.has(key)) {
+    const cwd = tmpRepo();
+    for (const cap of ["alpha", "beta"]) {
+      const d = path.join(cwd, "openspec", "changes", "xs", "specs", cap);
+      fs.mkdirSync(d, { recursive: true });
+      fs.writeFileSync(path.join(d, "spec.md"), "# spec\n");
+    }
+    fs.writeFileSync(path.join(cwd, "openspec", "changes", "xs", "tasks.md"), "- [ ] one\n");
+    fs.writeFileSync(path.join(cwd, "batch.json"),
+      JSON.stringify({ epics: [{ id: "batched", title: "B", lane: "claude-code" }] }));
+    run(["init"], { cwd });
+    run(["add-epic", "--id", "e1", "--lane", "claude-code", "--priority", "P1"], { cwd });
+    run(["add-epic", "--id", "other", "--lane", "claude-code", "--priority", "P1"], { cwd });
+    run(["add-epic", "--id", "ext", "--lane", "claude-code", "--external-id", "7"], { cwd });
+    for (const step of pre) run(step, { cwd });
+    run(["render"], { cwd });
+    templates.set(key, cwd);
+  }
+  const copy = tmpRepo();
+  fs.cpSync(templates.get(key), copy, { recursive: true, preserveTimestamps: true });
+  return copy;
+}
+
+/** A working invocation of EVERY dispatched verb. Completeness is asserted against the dispatch
+ *  table below; each is first asserted to exit 0 on its own, so a broken fixture can never read as
+ *  a refusal in the sweeps that append to it. Fixtures from the proposal's sweep.mjs. */
+const DISPATCH_BASELINE = {
+  init: { args: ["init"] },
+  render: { args: ["render"] },
+  brief: { args: ["brief"] },
+  snapshot: { args: ["snapshot"] },
+  "commit-nudge": { args: ["commit-nudge"], input: "{}" },
+  sync: { args: ["sync"] },
+  "log-detour": { args: ["log-detour", "x"] },
+  "push-detour": { args: PUSH },
+  "pop-detour": { pre: [PUSH], args: ["pop-detour"] },
+  "honcho-memory": { args: ["honcho-memory", "push", "e1", "why"] },
+  "add-epic": { args: ["add-epic", "--id", "n1", "--lane", "claude-code"] },
+  "add-many": { args: ["add-many", "--from", "batch.json"] },
+  "update-epic": { args: ["update-epic", "e1", "--priority", "P2"] },
+  "remove-epic": { args: ["remove-epic", "other"] },
+  reorder: { args: ["reorder", "other", "e1"] },
+  "set-active": { args: ["set-active", "e1"] },
+  "clear-active": { args: ["clear-active"] },
+  "set-tracker": { args: ["set-tracker", "--system", "github-issues", "--repo", "cfdude/pm"] },
+  "set-lane-routing": { args: ["set-lane-routing", "--add", "cache:claude-code"] },
+  "suggest-lane": { args: ["suggest-lane", "fix typo"] },
+  triage: { args: ["triage", "a caching bug"] },
+  "set-autonomy": { args: ["set-autonomy", "e1", "--level", "off"] },
+  "record-reconcile": { pre: [PUSH, ["pop-detour"]], args: ["record-reconcile", "e1", "--detour", "other", "--verdict", "valid"] },
+  "record-gate-review": { args: ["record-gate-review", "e1", "--gate", "2", "--verdict", "fail"] },
+  "record-cross-spec-review": { pre: [["release", "r1", "--intent", "x", "--member", "xs"]],
+    args: ["record-cross-spec-review", "r1", "--verdict", "pass", "--reviewer", "me"] },
+  "record-tracker-refresh": { args: ["record-tracker-refresh", "ext", "--verdict", "unchanged", "--external-updated-at", "2026-08-01T00:00:00.000Z"] },
+  "set-review-mode": { args: ["set-review-mode", "--mode", "standard"] },
+  release: { args: ["release", "r1", "--intent", "x"] },
+  "set-gate-guard": { args: ["set-gate-guard", "on"] },
+  "gate-guard": { args: ["gate-guard"], input: "{}" },
+  "lesson-advice": { args: ["lesson-advice"], input: "{}" },
+  "plan-hierarchy": { args: ["plan-hierarchy", "--parent", "e1"] },
+  claim: { args: ["claim", "e1", "--session", "s"] },
+  unclaim: { pre: [["claim", "e1", "--session", "s"]], args: ["unclaim", "e1", "--session", "s"] },
+  owners: { args: ["owners"] },
+  activity: { args: ["activity"] },
+  "set-activity-log": { args: ["set-activity-log", "on"] },
+  "purge-logs": { args: ["purge-logs", "--keep", "5"] },
+  "verify-worktrees": { args: ["verify-worktrees"] },
+  // Declared `expectsFailure` in VERB_EFFECTS: its job is to fail on drift. The fixture renders
+  // last and copies preserve timestamps, so here it takes its own non-drift exit, 0.
+  "verify-state": { args: ["verify-state"] },
+  "verify-specs": { args: ["verify-specs"] },
+  integrity: { args: ["integrity"] },
+  changesets: { args: ["changesets"] },
+  "recover-created-at": { args: ["recover-created-at"] },
+  "unconsidered-outcomes": { args: ["unconsidered-outcomes"] },
+  upgrade: { args: ["upgrade"] },
+  changelog: { args: ["changelog", "--since", "0.0.1"] },
+  rules: { args: ["rules"] },
+  "write-rules": { args: ["write-rules"] },
+  "rules-target": { args: ["rules-target"] },
+};
+
+test("DISPATCH_BASELINE covers exactly the dispatch table", () => {
+  const dispatched = dispatchedVerbs();
+  const covered = new Set(Object.keys(DISPATCH_BASELINE));
+  assert.deepEqual([...dispatched].filter(v => !covered.has(v)).sort(), [],
+    "a dispatched verb has no working invocation here, so no sweep below reaches it");
+  assert.deepEqual([...covered].filter(v => !dispatched.has(v)).sort(), []);
+});
+
+test("every DISPATCH_BASELINE invocation exits 0 on its own", () => {
+  const failed = [];
+  for (const [verb, b] of Object.entries(DISPATCH_BASELINE)) {
+    const cwd = fixture(b.pre);
+    const r = engine(b.args, { cwd, input: b.input || "" });
+    if (r.status !== 0) failed.push(`${verb} exited ${r.status}: ${r.stderr.trim().split("\n").slice(-2).join(" | ")}`);
+  }
+  assert.deepEqual(failed, [], failed.join("\n"));
+});
+
+test("Every dispatched verb refuses an undeclared flag and writes nothing", () => {
+  const wrong = [];
+  for (const [verb, b] of Object.entries(DISPATCH_BASELINE)) {
+    const cwd = fixture(b.pre);
+    const before = treeSnapshot(cwd);
+    const r = engine([...b.args, "--zzz-undeclared"], { cwd, input: b.input || "" });
+    if (r.status === 0) wrong.push(`${verb}: exited 0`);
+    if (!new RegExp(`unknown flag --zzz-undeclared for ${verb}\\b`).test(r.stderr)) {
+      wrong.push(`${verb}: the refusal does not name --zzz-undeclared and the verb: ${r.stderr.trim().split("\n")[0]}`);
+    }
+    try { assert.deepEqual(treeSnapshot(cwd), before); } catch { wrong.push(`${verb}: a file changed`); }
+  }
+  assert.deepEqual(wrong, [], wrong.join("\n"));
+});
+
+test("A typo'd flag on the reconcile write-back records nothing", () => {
+  const cwd = fixture([PUSH, ["pop-detour"]]);
+  const before = snap(cwd);
+  const r = engine(["record-reconcile", "e1", "--detour", "other", "--verdict", "invalidated", "--amendmnts", "a;b"], { cwd });
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /unknown flag --amendmnts for record-reconcile/);
+  assert.deepEqual(snap(cwd), before, "no reconcile verdict is recorded on the link");
+});
+
+test("A typo'd autonomy flag writes no autonomy block", () => {
+  const cwd = fixture();
+  const before = snap(cwd);
+  const r = engine(["set-autonomy", "e1", "--levle", "autonomous"], { cwd });
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /unknown flag --levle for set-autonomy/);
+  assert.deepEqual(snap(cwd), before);
+  assert.equal(JSON.parse(before[".conductor/state.json"]).epics.find(e => e.id === "e1").autonomy, undefined);
+});
+
+test("A read-only verb refuses an undeclared flag", () => {
+  const cwd = fixture();
+  const before = snap(cwd);
+  const r = engine(["unconsidered-outcomes", "--bogus"], { cwd });
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /unknown flag --bogus for unconsidered-outcomes/);
+  assert.equal(r.stdout, "", "it prints no report");
+  assert.deepEqual(snap(cwd), before);
+});
+
+test("A read-only verb refuses --force", () => {
+  const cwd = fixture();
+  const before = snap(cwd);
+  const r = engine(["integrity", "--force"], { cwd });
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /unknown flag --force for integrity/);
+  assert.equal(r.stdout, "", "it prints no audit");
+  assert.deepEqual(snap(cwd), before);
+});
+
+test("A batch key is not a command-line flag", () => {
+  const cwd = fixture();
+  const before = snap(cwd);
+  const r = engine(["add-many", "--from", "batch.json", "--external-id", "X"], { cwd });
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /unknown flag --external-id for add-many/);
+  assert.deepEqual(snap(cwd), before, "no epic from the batch is created");
+});
+
+test("An id given as a flag is diagnosed as the positional", () => {
+  const cwd = fixture();
+  run(["add-epic", "--id", "e2", "--lane", "claude-code"], { cwd });
+  const before = snap(cwd);
+  const r = engine(["remove-epic", "--id", "e2"], { cwd });
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /--id/);
+  assert.ok(r.stderr.includes("remove-epic <id>"), `the message shows the positional form: ${r.stderr}`);
+  assert.ok(r.stderr.includes("remove-epic e2"), "and rewrites the line the caller meant");
+  assert.deepEqual(snap(cwd), before, "e2 is still in state.json");
+});
+
+test("REGRESSION GUARD: A hook verb stays dormant in a repository without pm", () => {
+  for (const verb of HOOK_VERBS) {
+    const cwd = gitRepoWithoutPm();
+    const r = engine([verb, "--bogus"], { cwd, input: "{}" });
+    assert.equal(r.status, 0, `${verb} --bogus must stay silent without pm: ${r.stderr}`);
+    assert.equal(r.stdout, "", `${verb} printed output without pm`);
+    assert.equal(r.stderr, "", `${verb} printed an error into a project that never ran init`);
+    assert.equal(fs.existsSync(path.join(cwd, ".conductor")), false);
+  }
+});
+
+test("REGRESSION GUARD: a refused gate-guard hook line drains a large payload (no EPIPE)", () => {
+  const cwd = fixture();
+  const payload = JSON.stringify({ tool_name: "Write", tool_input: { file_path: "x", content: "y".repeat(200 * 1024) } });
+  assert.ok(Buffer.byteLength(payload) >= 128 * 1024);
+  const r = spawnSync("node", [ENGINE, "gate-guard", "--bogus"], {
+    cwd, input: payload, encoding: "utf8",
+    env: { ...process.env, CLAUDE_PROJECT_DIR: cwd, PM_CACHE_ROOT: EMPTY_CACHE, PM_QUIET_ENGINE_BANNER: "1" },
+  });
+  assert.equal(r.error, undefined, `the writer saw ${r.error && r.error.code}`);
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /unknown flag --bogus for gate-guard/);
+});
