@@ -137,8 +137,11 @@ Pairs: 6.1–6.8 and 6.9a–6.9g land with 6.10.
       `upgrade` — `record-reconcile p --detour d2 --verdict valid` exits non-zero naming `/pm:upgrade`,
       byte-identical, `p` still owes
 - [ ] 6.9g RED: a state file stamped `pmVersion` 0.44.0 holding owing `p` with a keyless
-      `may-invalidate` link to an archived detour — `upgrade`, then `record-reconcile p --detour <it>
-      --verdict valid` exits 0 (lands with 6.10: `stampReconcileKeys` runs on every `upgrade`)
+      `may-invalidate` link to an archived detour — `upgrade` leaves that link carrying
+      `reconcileOnResume: true` (today's upgrade adds no key, so this half is what fails), then
+      `record-reconcile p --detour <it> --verdict valid` exits 0. Plus the self-link case: a keyless
+      `may-invalidate:p` link on owing `p` is stamped `false`, and after `d` is answered `p` owes
+      nothing (lands with 6.10: `stampReconcileKeys` runs on every `upgrade`)
 - [ ] 6.9c RED (migration): that 0.43.0 file through `upgrade` — the `d` link carries `true`, then
       `record-reconcile p --detour d --verdict valid` exits 0 and clears; a keyless link on an epic
       with `reconcileNeeded: false` becomes `false`; a keyless link already carrying a verdict becomes

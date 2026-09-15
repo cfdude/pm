@@ -100,7 +100,7 @@ flag from frames, and that stays forbidden.
 
 A `MIGRATIONS` entry keyed `0.44.0` (`migrations.mjs`), additive, idempotent, reading only `state`:
 for every epic, for every `may-invalidate` link WITHOUT a `reconcileOnResume` key, write
-`reconcileOnResume = (epic.reconcileNeeded === true && !link.reconciled)`. Keyed links are untouched,
+`reconcileOnResume = (epic.reconcileNeeded === true && !link.reconciled && link.epic !== epic.id && ids.has(link.epic))` — a self-link or a link to a missing epic is stamped false, because acceptance rule 1 and the unknown-detour refusal make it unanswerable and arming it would wedge the epic (Gate 1 round 4). Keyed links are untouched,
 so a second run changes nothing. The entry and `upgrade()` call ONE exported state-only function,
 `stampReconcileKeys(state)`: the entry for the version bump, and `upgrade()` again on EVERY run,
 immediately before `reconcileArchived()`. The per-run call exists because `MIGRATIONS` apply only when

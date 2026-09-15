@@ -141,8 +141,9 @@ refused.
 ### Requirement: The 0.44.0 migration gives every reconcile link an explicit arming record
 
 The 0.44.0 `upgrade` migration SHALL give every `may-invalidate` link that carries no arming record
-one: true where its epic's `reconcileNeeded` is true AND the link carries no recorded verdict, false
-otherwise. It SHALL read only `state.json`, SHALL leave a link that already carries a record exactly
+one: true where its epic's `reconcileNeeded` is true AND the link carries no recorded verdict AND it
+targets another epic that exists, false otherwise (a link to the epic itself or to a missing epic can
+never be answered, so arming it would wedge the epic). It SHALL read only `state.json`, SHALL leave a link that already carries a record exactly
 as it is, and SHALL change nothing else. Running it again changes nothing. A state file written by
 0.43.0 SHALL load and be upgraded by it.
 
