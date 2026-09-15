@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "archive-gate-reads-what-it-writes",
+  "active": null,
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -6990,7 +6990,7 @@
       "id": "archive-gate-reads-what-it-writes",
       "title": "update-epic decides the archive on the record it writes: the gate runs after every field write (closing one-call bypasses via --lane/--attribute-commit/--add-story/--withdraw-commit and the --story --done false refusal), and an update to an archived delivered epic may not break an obligation its archive met",
       "priority": "P2",
-      "status": "active",
+      "status": "archived",
       "role": "detour",
       "lane": "openspec",
       "links": [
@@ -7032,10 +7032,11 @@
         "2ada32f64ba9c88d92d3f331666afd55959519e5",
         "3b9504b004454af0514fa16d0893e26a5d0b9358",
         "9897cfcc287674acaeb838646fc009b39f1750dd",
-        "422a01252f4f609807e55bc3811f9706fe4c70ba"
+        "422a01252f4f609807e55bc3811f9706fe4c70ba",
+        "492a84b526c148bd80e377ac6a9cf05cb98d2ee0"
       ],
       "createdAt": "2026-09-14T18:39:51.910Z",
-      "touchedAt": "2026-09-15T02:15:07.145Z",
+      "touchedAt": "2026-09-15T02:21:34.014Z",
       "release": "0.43.0",
       "startedAt": "2026-09-14T18:40:05.739Z",
       "gateReview": {
@@ -7063,16 +7064,16 @@
         },
         "gate2": {
           "verdict": "pass",
-          "reviewedAt": "2026-09-15T02:15:07.142Z",
+          "reviewedAt": "2026-09-15T02:21:14.419Z",
           "baseSha": "9c3b946ad9d6b4b7864ccfadb628bf19921f47f0",
-          "headSha": "422a01252f4f609807e55bc3811f9706fe4c70ba",
-          "reviewer": "re-recorded at the last attributed commit: code reviewed through 9897cfc by two fresh-context lenses + scoped re-review (fixes 3b9504b, 9897cfc); 422a012 is docs only (commands/epic.md, README, SKILL, hierarchy-child-executor, CHANGELOG, tasks ticks), each claim verified against the engine by the docs agent; 2026-09-14",
+          "headSha": "492a84b526c148bd80e377ac6a9cf05cb98d2ee0",
+          "reviewer": "re-recorded at the last attributed commit: code reviewed through 9897cfc by two fresh-context lenses + scoped re-review (fixes 3b9504b, 9897cfc); 422a012 docs verified against the engine; 492a84b is a lesson file, the lessons index and task ticks — no code; 2026-09-14",
           "superseded": {
             "verdict": "pass",
-            "reviewedAt": "2026-09-15T01:55:44.235Z",
+            "reviewedAt": "2026-09-15T02:15:07.142Z",
             "baseSha": "9c3b946ad9d6b4b7864ccfadb628bf19921f47f0",
-            "headSha": "9897cfcc287674acaeb838646fc009b39f1750dd",
-            "reviewer": "two fresh-context lenses (spec conformance: pass, 2 Minor; adversarial: fail on U+2028/U+0085/U+2029 bypass) fixed 3b9504b; scoped re-review failed on an untested detail-line escape, fixed 9897cfc with a mutant-verified test; 2026-09-14"
+            "headSha": "422a01252f4f609807e55bc3811f9706fe4c70ba",
+            "reviewer": "re-recorded at the last attributed commit: code reviewed through 9897cfc by two fresh-context lenses + scoped re-review (fixes 3b9504b, 9897cfc); 422a012 is docs only (commands/epic.md, README, SKILL, hierarchy-child-executor, CHANGELOG, tasks ticks), each claim verified against the engine by the docs agent; 2026-09-14"
           }
         }
       },
@@ -7081,7 +7082,36 @@
         "recordedAt": "2026-09-14T20:26:39.194Z",
         "externalUpdatedAt": "2026-09-14T18:39:33Z"
       },
-      "trackerRefreshNeeded": true
+      "trackerRefreshNeeded": true,
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-15T02:21:34.011Z",
+        "reason": "Built for 0.43.0 (ships with the release cut). update-epic now runs the archive gate after every field write, closing the one-call bypasses via --lane/--attribute-commit/--add-story/--withdraw-commit and the --story --done false refusal; a refused call announces no cleared field. An update to an archived delivered epic that breaks a met Gate 2 or handoff obligation is refused per obligation and prints one runnable invocation recording the disposition it implies. Gate 1 two lenses + cross-spec pass; Gate 2 two lenses, adversarial lens failed on U+2028/U+0085 line forging (3b9504b) and a scoped re-review on an untested detail-line escape (9897cfc). Mintlify task 5.4 carried to release-0-43-0-cut so the site does not document it before the plugin ships.",
+        "carriedTo": "release-0-43-0-cut"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-15T02:21:34.010Z",
+        "deferrals": [
+          {
+            "epic": "archived-delivered-gate2-regression-report",
+            "section": "design.md What this deliberately does not do"
+          },
+          {
+            "epic": "status-write-undone-by-heal-reports-updated",
+            "section": "design.md What this deliberately does not do"
+          },
+          {
+            "epic": "disposition-invocation-prints-bare-no-deferrals",
+            "section": "design.md Half 2 printed invocation"
+          },
+          {
+            "epic": "gate-staleness-reads-only-last-attribution",
+            "section": "Gate 2 lens 2 finding (pre-existing)"
+          }
+        ],
+        "declined": []
+      },
+      "completedAt": "2026-09-15T02:21:34.011Z"
     },
     {
       "id": "archived-delivered-gate2-regression-report",
@@ -7287,7 +7317,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 724,
+  "revision": 727,
   "reviewMode": "thorough",
   "releases": [
     {

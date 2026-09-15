@@ -153,7 +153,7 @@ RED tasks fail on today's engine. REGRESSION GUARD tasks pass today and must kee
 - [x] 4.4 **Attribute every commit** as it lands:
       `update-epic archive-gate-reads-what-it-writes --attribute-commit <sha>`. The archive commit is
       excluded
-- [ ] 4.5 **Dispositions** <!-- pm:lifecycle --> — archive with `update-epic archive-gate-reads-what-it-writes --status archived --outcome delivered --deferral
+- [x] 4.5 **Dispositions** <!-- pm:lifecycle --> — archive with `update-epic archive-gate-reads-what-it-writes --status archived --outcome delivered --deferral
       "archived-delivered-gate2-regression-report:design.md What this deliberately does not do" --deferral
       "status-write-undone-by-heal-reports-updated:design.md What this deliberately does not do" --deferral
       "disposition-invocation-prints-bare-no-deferrals:design.md Half 2 printed invocation"`
@@ -177,7 +177,7 @@ RED tasks fail on today's engine. REGRESSION GUARD tasks pass today and must kee
 - [x] 6.1 Gate 2 — two lenses over the committed range; `record-gate-review
       archive-gate-reads-what-it-writes --gate 2 --verdict pass --reviewer "<identity>" --base-sha
       <parent of first attributed> --head-sha <last attributed>`
-- [ ] 6.2 Archive this change <!-- pm:lifecycle --> — `/opsx:archive archive-gate-reads-what-it-writes`,
+- [x] 6.2 Archive this change <!-- pm:lifecycle --> — `/opsx:archive archive-gate-reads-what-it-writes`,
       then the disposition in 4.5
 - [ ] 6.3 Resume the paused epic <!-- pm:lifecycle --> — `pop-detour gate-verdict-withdrawal`, run the reconciler against what
       shipped, record `record-reconcile gate-verdict-withdrawal --detour archive-gate-reads-what-it-writes
