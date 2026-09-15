@@ -124,7 +124,7 @@ the GREEN commit stages that file and names it in its message.
       is no lock and the save writes. Save `red-3.5.txt`
 - [x] 3.6 GREEN: the ownership check of D4, if 3.2 did not already make 3.5 pass (otherwise land 3.5
       as REGRESSION GUARD in 3.2's commit and say so). Verify: 3.5 passes
-- [ ] 3.7 `ensureGitignore()` gains `.conductor/state.json.lock*` and `.conductor/session-claim.json*`
+- [x] 3.7 `ensureGitignore()` gains `.conductor/state.json.lock*` and `.conductor/session-claim.json*`
       (replacing the exact `session-claim.json` entry); extend the existing gitignore test. Verify: the
       test asserts both entries after `init` and after `upgrade` on a repo lacking them
 

@@ -53,7 +53,15 @@ export function ensureGitignore() {
     // publish one machine's transient state to everybody, on top of #106's untracked-file
     // complaint. upgrade() re-runs this (migrations.mjs), so repos initialized before the
     // marker existed pick it up without a MIGRATIONS entry.
-    ".conductor/session-claim.json",
+    //
+    // A GLOB since state-file-refuses-to-guess: the marker is now written by temp file plus rename
+    // in the same directory (claims.mjs), and the temp name starts with the marker's own name.
+    // An existing exact `.conductor/session-claim.json` line is left in place — it is harmless, and
+    // this function never removes a line it manages.
+    ".conductor/session-claim.json*",
+    // The state.json lock and its break file (state.mjs, design D4). Per-checkout and live only
+    // for the duration of one save, so a stray one must never show up as an untracked file.
+    ".conductor/state.json.lock*",
     // #111's activity segments. The whole DIRECTORY, not a glob of segment names: the names are
     // timestamped, so a per-file entry would need one line per segment forever. Same #106 rule —
     // engine-written, per-checkout, and useless to anyone but this working tree.
