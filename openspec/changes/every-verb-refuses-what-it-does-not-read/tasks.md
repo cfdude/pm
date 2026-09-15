@@ -106,7 +106,7 @@ Every refusal test asserts the refusal's CAUSE text (not only a non-zero exit) a
       flag(s)` shape, found with `rg -n -F "unknown flag(s)" scripts/test`. Where an existing test passes a
       flag the registry does not declare and expects success, that is a registry gap: declare the row,
       never loosen the check — list each in the commit message
-- [ ] 2.3 RED then GREEN: `--force` reaches the verbs that still carry their own allowlists. RED (written
+- [x] 2.3 RED then GREEN: `--force` reaches the verbs that still carry their own allowlists. RED (written
       against the tree after 2.2, where those allowlists still refuse it): "--force is not refused on a
       mutating verb that validates its own flags" for `add-epic`, and the same assertion — not refused as
       carrying an undeclared flag; nothing about the forced write itself, which `state-write-guard` owns —

@@ -966,8 +966,9 @@ export const ACTIVITY_SEGMENT_MAX_BYTES = 131_072;
 export const ACTIVITY_RETENTION_MAX_BYTES = 1_073_741_824;
 
 /** gh#182 — THE ONE ANSWER to "is this argv token a flag, or a value that merely starts with
- *  `--`?", shared by every scanner that walks argv: parseFlags() and requireKnownFlags() in
- *  add-epic.mjs, positionalArgs() in claims.mjs, platformFlag() in platform.mjs. It lives HERE
+ *  `--`?", shared by every scanner that walks argv: parseFlags() in add-epic.mjs, classify() in
+ *  argv-surface.mjs (the pre-dispatch command-line check, which replaced requireKnownFlags()),
+ *  positionalArgs() in claims.mjs, platformFlag() in platform.mjs. It lives HERE
  *  because platform.mjs is deliberately a LEAF (see its own comment: importing add-epic.mjs
  *  would close a circular loop around the rules writer) and constants.mjs is the one module all
  *  four already depend on. Four copies of this rule is exactly how the reported bug survived at
@@ -1105,8 +1106,11 @@ export const epicBatchKeys = () =>
  *  and an inferred remainder is how a dozen verbs came to sit outside #149's rule.
  *
  *  `add-many` is the whole set today. Its rows are here so `epicBatchKeys()` can derive the state
- *  keys a batch entry may carry; its parser (`scripts/lib/add-many.mjs`) takes exactly one flag,
- *  `--from`, and refuses everything else. So `flagsFor("add-many")` answering 15 is CORRECT for
+ *  keys a batch entry may carry; its parser (`scripts/lib/add-many.mjs`) reads exactly one flag,
+ *  `--from`. It never refused anything else itself — `add-many --from b.json --zzz` created the batch
+ *  (every-verb-refuses-what-it-does-not-read); the pre-dispatch command-line check
+ *  (lib/argv-surface.mjs) now refuses every other flag, batch keys included, reading
+ *  `cliFlagsFor()` below. So `flagsFor("add-many")` answering 15 is CORRECT for
  *  the allowlist question it exists to answer, and WRONG the moment help reuses it: help would
  *  advertise 14 flags the parser ignores. An authoritative wrong answer is worse than none, which
  *  is the whole reason #158 was filed. */

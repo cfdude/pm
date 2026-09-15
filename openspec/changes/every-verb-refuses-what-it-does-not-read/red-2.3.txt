@@ -1,0 +1,66 @@
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-lVkzqq/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-lVkzqq/PROJECT.md
+conductor: added epic 'e1' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-lVkzqq/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-lVkzqq/PROJECT.md
+conductor: added epic 'ext' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-wGMNtX/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-wGMNtX/PROJECT.md
+conductor: added epic 'e1' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-wGMNtX/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-wGMNtX/PROJECT.md
+conductor: added epic 'ext' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-wGMNtX/PROJECT.md
+conductor: release 'r1' — `r1`: 1 epic, 0 deferred
+conductor: PROJECT.md unchanged (skipped rewrite)
+✖ --force is not refused on a mutating verb that validates its own flags (946.23425ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 988.345958
+
+✖ failing tests:
+
+test at scripts/test/verb-surface.test.mjs:565:1
+✖ --force is not refused on a mutating verb that validates its own flags (946.23425ms)
+  AssertionError [ERR_ASSERTION]: add-epic: conductor: add-epic: unknown flag(s) --force (known: --id, --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --description, --notes, --external-updated-at, --add-story)
+  update-epic: conductor: update-epic: unknown flag(s) --force (known: --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --clear-links, --clear, --description, --notes, --external-updated-at, --attribute-commit, --withdraw-commit, --withdrawal-reason, --withdraw-gate-review, --outcome, --reason, --deferral, --declined-deferral, --no-deferrals, --carried-to, --correct-disposition, --review-mode, --add-story, --story, --done, --wont-do)
+  release: conductor: release: unknown flag(s) --force (known: --reason, --intent, --target, --member, --defer, --unmember, --undefer)
+  record-gate-review: conductor: record-gate-review: unknown flag(s) --force (known: --gate, --verdict, --base-sha, --head-sha, --artifact, --reviewer)
+  record-cross-spec-review: conductor: record-cross-spec-review: unknown flag(s) --force (known: --verdict, --reviewer)
+  + actual - expected
+  
+  + [
+  +   'add-epic: conductor: add-epic: unknown flag(s) --force (known: --id, --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --description, --notes, --external-updated-at, --add-story)',
+  +   'update-epic: conductor: update-epic: unknown flag(s) --force (known: --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --clear-links, --clear, --description, --notes, --external-updated-at, --attribute-commit, --withdraw-commit, --withdrawal-reason, --withdraw-gate-review, --outcome, --reason, --deferral, --declined-deferral, --no-deferrals, --carried-to, --correct-disposition, --review-mode, --add-story, --story, --done, --wont-do)',
+  +   'release: conductor: release: unknown flag(s) --force (known: --reason, --intent, --target, --member, --defer, --unmember, --undefer)',
+  +   'record-gate-review: conductor: record-gate-review: unknown flag(s) --force (known: --gate, --verdict, --base-sha, --head-sha, --artifact, --reviewer)',
+  +   'record-cross-spec-review: conductor: record-cross-spec-review: unknown flag(s) --force (known: --verdict, --reviewer)'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/verb-surface.test.mjs:587:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'add-epic: conductor: add-epic: unknown flag(s) --force (known: --id, --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --description, --notes, --external-updated-at, --add-story)', 'update-epic: conductor: update-epic: unknown flag(s) --force (known: --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --clear-links, --clear, --description, --notes, --external-updated-at, --attribute-commit, --withdraw-commit, --withdrawal-reason, --withdraw-gate-review, --outcome, --reason, --deferral, --declined-deferral, --no-deferrals, --carried-to, --correct-disposition, --review-mode, --add-story, --story, --done, --wont-do)', 'release: conductor: release: unknown flag(s) --force (known: --reason, --intent, --target, --member, --defer, --unmember, --undefer)', 'record-gate-review: conductor: record-gate-review: unknown flag(s) --force (known: --gate, --verdict, --base-sha, --head-sha, --artifact, --reviewer)', 'record-cross-spec-review: conductor: record-cross-spec-review: unknown flag(s) --force (known: --verdict, --reviewer)' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

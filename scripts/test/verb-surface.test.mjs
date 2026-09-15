@@ -428,9 +428,10 @@ const DISPATCH_BASELINE = {
   "set-activity-log": { args: ["set-activity-log", "on"] },
   "purge-logs": { args: ["purge-logs", "--keep", "5"] },
   "verify-worktrees": { args: ["verify-worktrees"] },
-  // Declared `expectsFailure` in VERB_EFFECTS: its job is to fail on drift. The fixture renders
-  // last and copies preserve timestamps, so here it takes its own non-drift exit, 0.
-  "verify-state": { args: ["verify-state"] },
+  // Declared `expectsFailure` in VERB_EFFECTS: its job is to fail on drift. A copied fixture's
+  // state.json mtime is not guaranteed to survive the copy to the precision the render stamp
+  // compares, so the copy is re-rendered first (`local`) and it takes its own non-drift exit, 0.
+  "verify-state": { local: [["render"]], args: ["verify-state"] },
   "verify-specs": { args: ["verify-specs"] },
   integrity: { args: ["integrity"] },
   changesets: { args: ["changesets"] },
@@ -455,6 +456,7 @@ test("every DISPATCH_BASELINE invocation exits 0 on its own", () => {
   const failed = [];
   for (const [verb, b] of Object.entries(DISPATCH_BASELINE)) {
     const cwd = fixture(b.pre);
+    for (const step of b.local || []) run(step, { cwd });
     const r = engine(b.args, { cwd, input: b.input || "" });
     if (r.status !== 0) failed.push(`${verb} exited ${r.status}: ${r.stderr.trim().split("\n").slice(-2).join(" | ")}`);
   }
@@ -465,6 +467,7 @@ test("Every dispatched verb refuses an undeclared flag and writes nothing", () =
   const wrong = [];
   for (const [verb, b] of Object.entries(DISPATCH_BASELINE)) {
     const cwd = fixture(b.pre);
+    for (const step of b.local || []) run(step, { cwd });
     const before = treeSnapshot(cwd);
     const r = engine([...b.args, "--zzz-undeclared"], { cwd, input: b.input || "" });
     if (r.status === 0) wrong.push(`${verb}: exited 0`);
@@ -558,4 +561,31 @@ test("REGRESSION GUARD: a refused gate-guard hook line drains a large payload (n
   assert.equal(r.error, undefined, `the writer saw ${r.error && r.error.code}`);
   assert.equal(r.status, 1);
   assert.match(r.stderr, /unknown flag --bogus for gate-guard/);
+});
+
+// ═══════════════ 2.3 — --force reaches the verbs that carried their own allowlists ═══════════════
+
+test("--force is not refused on a mutating verb that validates its own flags", () => {
+  // Not refused AS CARRYING AN UNDECLARED FLAG — what the forced write then does is
+  // state-write-guard's to define, and nothing here asserts it.
+  const cases = [
+    [[], ["add-epic", "--id", "f1", "--lane", "claude-code", "--force"]],
+    [[], ["update-epic", "e1", "--title", "x", "--force"]],
+    [[], ["release", "r1", "--intent", "x", "--force"]],
+    [[], ["record-gate-review", "e1", "--gate", "2", "--verdict", "fail", "--force"]],
+    [[["release", "r1", "--intent", "x", "--member", "xs"]],
+      ["record-cross-spec-review", "r1", "--verdict", "pass", "--reviewer", "me", "--force"]],
+  ];
+  const wrong = [];
+  for (const [pre, args] of cases) {
+    const cwd = fixture(pre);
+    const r = engine(args, { cwd });
+    if (/unknown flag/.test(r.stderr)) wrong.push(`${args[0]}: ${r.stderr.trim().split("\n")[0]}`);
+    else if (r.status !== 0) wrong.push(`${args[0]} exited ${r.status}: ${r.stderr.trim().split("\n").pop()}`);
+    if (args[0] === "add-epic" && r.status === 0) {
+      assert.ok(JSON.parse(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8")).epics.some(e => e.id === "f1"),
+        "f1 is in state.json");
+    }
+  }
+  assert.deepEqual(wrong, [], wrong.join("\n"));
 });

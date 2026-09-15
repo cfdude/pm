@@ -45,14 +45,14 @@ import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { CLAIM_DEFAULT_TTL_MINUTES, REPO_CLAIM_DEFAULT_TTL_MINUTES, isFlagToken, splitFlagToken } from "./constants.mjs";
 import { isDetachedTree } from "./git.mjs";
-import { parseFlags, requireFlagValues, requireKnownFlags } from "./add-epic.mjs";
+import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { resolveSession, SESSION_HINT } from "./session-identity.mjs";
 import { claimExpiry, isLiveClaim } from "./claim-shape.mjs";
 
 export { claimExpiry, isLiveClaim };
 
 // The `CLAIM_FLAGS`/`UNCLAIM_FLAGS` projections that stood here are gone with the loop that was
-// their only consumer: `requireKnownFlags(command, argv)` derives the list itself, from the
+// their only consumer. The unknown-flag refusal is now the pre-dispatch command-line check (lib/argv-surface.mjs), which reads the
 // UNION of both registries. These verbs' rows sit in EPIC_FLAGS because they write `epic.claim`,
 // and an allowlist reading one table would have narrowed silently to `[]` the day a row moved —
 // a verb accepting nothing, rather than a loud failure. Deriving inside the checker removes both
@@ -119,9 +119,8 @@ function ttlFrom(f, fallback) {
   return n;
 }
 
-// The local copy of this loop is gone: `requireKnownFlags()` in add-epic.mjs is the one
-// implementation, sitting beside `requireFlagValues()` because they are the two halves of the
-// same rule. It derives `flagsFor(command)` itself, so a caller cannot pass the wrong list.
+// The unknown-flag half of the flag rule is the pre-dispatch command-line check (lib/argv-surface.mjs), made before dispatch for every
+// verb; `requireFlagValues()` below is the value half each verb still calls.
 
 // ─────────────────────────────── claim ───────────────────────────────
 
@@ -130,7 +129,6 @@ function ttlFrom(f, fallback) {
 export function claim() {
   if (!isInitialized()) die("run /pm:init first");
   const argv = process.argv.slice(3);
-  requireKnownFlags("claim", argv);
   const f = parseFlags(argv);
   requireFlagValues("claim", f);
 
@@ -215,7 +213,6 @@ export function claim() {
 export function unclaim() {
   if (!isInitialized()) die("run /pm:init first");
   const argv = process.argv.slice(3);
-  requireKnownFlags("unclaim", argv);
   const f = parseFlags(argv);
   requireFlagValues("unclaim", f);
 
@@ -350,7 +347,6 @@ export function owners() {
   // today — but a raw argv scan is how a verb ends up outside the rule, and the next flag this
   // verb grows would inherit that rather than the rule (#152).
   const f = parseFlags(process.argv.slice(3));
-  requireKnownFlags("owners", process.argv.slice(3));
   requireFlagValues("owners", f);
   const rows = ownerRows(loadState(), readRepoClaim());
   if (f.json === true) {

@@ -18,9 +18,9 @@ import { isArchived } from "./epic-progress.mjs";
 import { claimArtifacts } from "./source-artifacts.mjs";
 import { linkTypeVocabulary, mergeLinks } from "./links.mjs";
 
-// The flags update-epic recognizes. Anything else is a rejected error, not a
-// silent no-op — an unrecognized flag (e.g. a typo) used to parse, run, and
-// print "updated" with nothing actually changed.
+// The flags update-epic recognizes, as the registry projects them. Anything else is refused before
+// dispatch by the pre-dispatch command-line check (lib/argv-surface.mjs) — an unrecognized flag (e.g. a typo) used to parse, run, and print
+// "updated" with nothing actually changed. Kept as an export: conductor-13 pins it to the registry.
 //
 // A PROJECTION of the shared EPIC_FLAGS registry, never a literal: this list, add-epic's and
 // add-many's all have to grow for every flag this release adds, and a literal here is exactly
@@ -86,7 +86,7 @@ const REENTER_PLACEHOLDER = "<re-enter this value>";
 const shellQuote = (token) => `'${token.replace(/'/g, "'\\''")}'`;
 
 /** The refused call's own tokens, as the printed invocation echoes them. Decided by the same walk
- *  requireKnownFlags() uses over raw argv, never from parsed flags — parsing loses shape (a
+ *  the command-line check (lib/argv-surface.mjs) makes over raw argv, never from parsed flags — parsing loses shape (a
  *  boolean reads `true`, a repeatable flag becomes an array, `--notes=--x` would re-parse as a
  *  flag). A flag-position token is `--name` or `--name=value`; an inline value is carried by its
  *  own token, and a following token is the flag's value only where it is not flag-shaped.
@@ -173,46 +173,17 @@ export function updateEpic() {
   const argv = process.argv.slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
   // #71: `update-epic --id my-epic --priority P1` is the mistake everyone makes, because every
-  // OTHER epic-writing command takes `--id`. This one's id is POSITIONAL and stays that way —
-  // accepting `--id` as an alias would make the same argument mean two things depending on which
-  // verb you typed. So DIAGNOSE it: name the flag, show the positional form, and rewrite the
-  // exact line the caller meant. A bare usage dump naming ~25 flags answers a question nobody
-  // asked and never mentions `--id` at all, which is why the mistake kept recurring.
-  //
-  // TWO distinct diagnoses. "You put the id behind a flag" and "you gave no id at all" are
-  // different mistakes and get different messages; collapsing them back into one usage dump is
-  // the regression this guards against.
+  // OTHER epic-writing command takes `--id`. This one's id is POSITIONAL and stays that way. The
+  // DIAGNOSIS of that mistake — name the flag, show the positional form, rewrite the line the caller
+  // meant — now lives in the pre-dispatch command-line check (lib/argv-surface.mjs), generalised to every verb whose first positional is an epic id,
+  // so it never reaches this line. What stays here is the OTHER, distinct diagnosis: no id at all.
   if (!id) {
-    // gh#182: the FOURTH raw-argv scanner, and the same two halves. `--id=e1` must be diagnosed
-    // as well as `--id e1`, and the token it consumes as the value must be decided by
-    // isFlagToken() rather than by a leading `--`, so the rewritten line it prints is the line
-    // the caller actually meant.
-    const at = argv.findIndex(a => a === "--id" || a.startsWith("--id="));
-    if (at !== -1) {
-      const [, inline] = splitFlagToken(argv[at]);
-      const consumesNext = inline === undefined
-        && argv[at + 1] !== undefined && !isFlagToken(argv[at + 1]);
-      const value = inline !== undefined ? inline : (consumesNext ? argv[at + 1] : "<id>");
-      // Only drop at+1 when it WAS this flag's value. Dropping it unconditionally silently
-      // deleted the next flag from the suggested line whenever `--id` carried no value at all.
-      const rest = argv.filter((_, i) => i !== at && !(consumesNext && i === at + 1));
-      process.stderr.write(
-        `conductor: update-epic takes its epic id POSITIONALLY, not as --id — write ` +
-        `\`update-epic <id> ...\`, i.e. \`update-epic ${value}${rest.length ? ` ${rest.join(" ")}` : ""}\`. ` +
-        "Nothing was written.\n");
-      process.exit(1);
-    }
     process.stderr.write("conductor: update-epic requires an epic id as its first POSITIONAL argument\n");
     process.stderr.write(`usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--lane openspec|superpowers|claude-code|decision|external] [--plan <path>] [--spec <path>] [--link \"<${linkTypeVocabulary()}>:<epic>[:<reason>]\"] [--clear-links] [--clear <field>] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done|--wont-do "<reason>"] [--attribute-commit <sha>] [--withdraw-commit <sha> --withdrawal-reason \"<why>\"] [--withdraw-gate-review 1|2 --withdrawal-reason \"<why>\"] [--outcome ${AGENT_OUTCOMES.join("|")}] [--reason \"<why>\"] [--correct-disposition \"<why the recorded one was wrong>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\" (or ::)] [--declined-deferral \"<what>::<why not>\"] [--no-deferrals] [--description D] [--notes \"<text>\"] [--external-updated-at <iso>]\n`);
     process.exit(1);
   }
+  // Undeclared flags were refused before dispatch by the pre-dispatch command-line check (lib/argv-surface.mjs).
   const f = parseFlags(argv.slice(1));
-  const unknown = Object.keys(f).filter(k => !UPDATE_EPIC_FLAGS.includes(k));
-  if (unknown.length) {
-    process.stderr.write(`conductor: update-epic: unknown flag(s) --${unknown.join(", --")} ` +
-      `(known: ${UPDATE_EPIC_FLAGS.map(k => `--${k}`).join(", ")})\n`);
-    process.exit(1);
-  }
   // #149 — every value-bearing flag this command accepts must carry a usable value, read from
   // the shared registry. It replaces the per-flag checks this command had grown for `--plan`,
   // `--spec`, `--description` and `--notes` — four of the value-bearing flags it accepts;
