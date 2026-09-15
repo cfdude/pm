@@ -145,7 +145,9 @@ test("gh-152: every DISPATCHED verb is claimed by a flag declaration or declared
   assert.ok(dispatched.size >= 30,
     `the dispatch-table reader yielded only ${dispatched.size} verbs — the reader is broken, not the table`);
 
-  const withFlags = new Set([...EPIC_FLAGS, ...VERB_FLAGS].flatMap(r => r.commands));
+  // argvLevel rows (`--force`) belong to the save layer, not to a verb's parser: a flagless mutating
+  // verb accepts `--force` and still declares "its parser reads no flags" in FLAGLESS_VERBS.
+  const withFlags = new Set([...EPIC_FLAGS, ...VERB_FLAGS].filter(r => !r.argvLevel).flatMap(r => r.commands));
   const flagless = new Set(FLAGLESS_VERBS);
 
   for (const verb of [...dispatched].sort()) {
@@ -217,14 +219,16 @@ test("gh-152: every FLAG the engine reads off a parsed-flags object is declared 
 
 test("gh-152: every command VERB_FLAGS names has a baseline invocation here", async () => {
   const { VERB_FLAGS } = await import(CONSTANTS);
-  const commands = [...new Set(VERB_FLAGS.flatMap(r => r.commands))].sort();
+  // argvLevel rows excluded: `--force` names every mutating verb, and its acceptance is swept over
+  // the whole dispatch table by verb-surface.test.mjs, not by this per-parser baseline table.
+  const commands = [...new Set(VERB_FLAGS.filter(r => !r.argvLevel).flatMap(r => r.commands))].sort();
   assert.deepEqual(commands.filter(c => !(c in VERB_BASELINE)), [],
     "a command added to VERB_FLAGS with no baseline here would be swept by nothing");
 });
 
 test("gh-152: every VERB_FLAGS baseline actually succeeds, so a non-zero exit below means the flag", async () => {
   const { VERB_FLAGS } = await import(CONSTANTS);
-  for (const command of [...new Set(VERB_FLAGS.flatMap(r => r.commands))].sort()) {
+  for (const command of [...new Set(VERB_FLAGS.filter(r => !r.argvLevel).flatMap(r => r.commands))].sort()) {
     const cwd = sweepRepo();
     run(VERB_BASELINE[command](cwd), { cwd });
   }
@@ -284,7 +288,10 @@ test("gh-152: the two verbs that ALREADY answered by hand keep their own stricte
 
 test("gh-152: VERB_FLAGS' valueless rows are a short closed list", async () => {
   const { VERB_FLAGS } = await import(CONSTANTS);
-  const valueless = VERB_FLAGS.filter(f => f.valueless).map(f => `${f.commands.join("/")} --${f.flag}`).sort();
+  // The argvLevel rows are asserted SEPARATELY and exactly: `--force` is valueless on every mutating
+  // verb, and listing that here would make the closed list the length of the dispatch table.
+  assert.deepEqual(VERB_FLAGS.filter(f => f.argvLevel).map(f => f.flag), ["force"]);
+  const valueless = VERB_FLAGS.filter(f => f.valueless && !f.argvLevel).map(f => `${f.commands.join("/")} --${f.flag}`).sort();
   assert.deepEqual(valueless, [
     // gh-84 / gh-111, added when those branches were integrated. Each is a genuine boolean —
     // `--json` selects a rendering, `--dry-run`/`--yes` are the two halves of purge-logs'

@@ -184,3 +184,35 @@ test("the hook marker on VERB_EFFECTS is exactly the verbs hooks/hooks.json invo
   assert.deepEqual(marked, [...hookVerbsInConfig()].sort());
   assert.deepEqual(marked, [...HOOK_VERBS].sort());
 });
+
+// ═══════════════ 1.3 — --force is one argvLevel row, derived from VERB_EFFECTS ═══════════════
+
+test("--force is accepted by exactly the mutating verbs, and the argvLevel rows are exactly force", async () => {
+  const { cliFlagsFor, VERB_FLAGS, EPIC_FLAGS } = await import(CONSTANTS);
+  const { VERB_EFFECTS } = await import(new URL("../lib/verb-effects.mjs", import.meta.url).href);
+  const wrong = [];
+  for (const [verb, e] of Object.entries(VERB_EFFECTS)) {
+    const has = cliFlagsFor(verb).includes("force");
+    if (e.effect === "mutates" && !has) wrong.push(`${verb} mutates and does not accept --force`);
+    if (e.effect !== "mutates" && has) wrong.push(`${verb} is ${e.effect} and accepts --force`);
+  }
+  assert.deepEqual(wrong, [], wrong.join("\n"));
+  assert.deepEqual([...EPIC_FLAGS, ...VERB_FLAGS].filter(r => r.argvLevel).map(r => r.flag), ["force"],
+    "force is the one argv-level flag, declared as ONE row — never a parallel list");
+});
+
+test("A mutating verb's help names --force", () => {
+  const cwd = initialized();
+  assert.match(run(["add-epic", "--help"], { cwd }), /--force/);
+});
+
+test("claim and unclaim are not refused for carrying --force", () => {
+  const cwd = initialized();
+  run(["add-epic", "--id", "e1", "--lane", "claude-code"], { cwd });
+  const c = engine(["claim", "e1", "--session", "s", "--force"], { cwd });
+  assert.doesNotMatch(c.stderr, /unknown flag/, "claim must not refuse --force as an undeclared flag");
+  assert.equal(c.status, 0, c.stderr);
+  const u = engine(["unclaim", "e1", "--session", "s", "--force"], { cwd });
+  assert.doesNotMatch(u.stderr, /unknown flag/, "unclaim must not refuse --force as an undeclared flag");
+  assert.equal(u.status, 0, u.stderr);
+});

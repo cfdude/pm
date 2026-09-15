@@ -386,16 +386,20 @@ test("every update-epic flag the REGISTRY declares appears in commands/epic.md",
   // This is the other direction — registry ⇒ documented — which is what makes the pair complete.
   // Same shape as the ghost sweep 0.37.0 added: assert the INVARIANT over the whole set rather
   // than spot-checking the flag somebody remembered.
-  const { cliFlagsFor } = await import(CONSTANTS);
+  const { cliFlagsFor, VERB_FLAGS } = await import(CONSTANTS);
+  // epic-annotation's argv-level carve-out: `--force` is registered here but writes no epic field,
+  // and its acceptance is swept by verb-surface over the whole dispatch table instead.
+  const argvLevel = new Set(VERB_FLAGS.filter(r => r.argvLevel).map(r => r.flag));
   const doc = fs.readFileSync(path.join(REPO, "commands", "epic.md"), "utf8");
-  const missing = cliFlagsFor("update-epic").filter(f => !doc.includes(`--${f}`));
+  const missing = cliFlagsFor("update-epic").filter(f => !argvLevel.has(f) && !doc.includes(`--${f}`));
   assert.deepEqual(missing, [],
     `declared on update-epic but absent from commands/epic.md: ${missing.map(f => "--" + f).join(", ")}`);
 });
 
 test("every add-epic flag the registry declares appears in commands/epic.md too", async () => {
-  const { cliFlagsFor } = await import(CONSTANTS);
+  const { cliFlagsFor, VERB_FLAGS } = await import(CONSTANTS);
+  const argvLevel = new Set(VERB_FLAGS.filter(r => r.argvLevel).map(r => r.flag));
   const doc = fs.readFileSync(path.join(REPO, "commands", "epic.md"), "utf8");
-  const missing = cliFlagsFor("add-epic").filter(f => !doc.includes(`--${f}`));
+  const missing = cliFlagsFor("add-epic").filter(f => !argvLevel.has(f) && !doc.includes(`--${f}`));
   assert.deepEqual(missing, [], `declared on add-epic but absent from commands/epic.md: ${missing.join(", ")}`);
 });

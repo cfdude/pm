@@ -49,7 +49,7 @@ Every refusal test asserts the refusal's CAUSE text (not only a non-zero exit) a
       the marked set equals the verbs `hooks/hooks.json` invokes. The SAME commit swaps `snapshot` out of
       `conductor-35`'s "help declares a flagless verb explicitly" fixture (it is no longer flagless) for a
       read-only flagless verb such as `verify-worktrees`
-- [ ] 1.3 RED then GREEN: `--force` as one `argvLevel` row. RED: a test that `cliFlagsFor(v)` includes
+- [x] 1.3 RED then GREEN: `--force` as one `argvLevel` row. RED: a test that `cliFlagsFor(v)` includes
       `force` for every `VERB_EFFECTS` verb whose effect is `mutates` and for no `read-only` verb, and that
       the `argvLevel` rows are exactly `force`; "A mutating verb's help names --force" (`add-epic --help`);
       and `claim e1 --session s --force` / `unclaim e1 --session s --force` not refused as carrying an

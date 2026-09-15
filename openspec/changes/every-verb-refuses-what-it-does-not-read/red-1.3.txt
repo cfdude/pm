@@ -1,0 +1,182 @@
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-x7CSnl/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-G3Kp4O/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-CqTfG0/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-67sOzw/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-67sOzw/PROJECT.md
+conductor: added epic 'e1' (claude-code, queued)
+✔ VERB_POSITIONALS is set-equal to the dispatch table (2.23825ms)
+✔ every VERB_POSITIONALS row has a valid arity, a form, and boolean markers (0.231541ms)
+✔ release carries two forms keyed by its first positional (0.661167ms)
+✔ freeText is carried by exactly triage, suggest-lane, log-detour and honcho-memory (0.241958ms)
+✔ init with an unknown platform creates nothing (84.997667ms)
+✔ init with a valueless platform is refused before it creates anything (69.299584ms)
+✔ A hook verb refuses an unknown platform (404.914708ms)
+✔ A hook verb's help names the flag its hook passes (368.208625ms)
+✔ the hook marker on VERB_EFFECTS is exactly the verbs hooks/hooks.json invokes (1.239291ms)
+✖ --force is accepted by exactly the mutating verbs, and the argvLevel rows are exactly force (1.372083ms)
+✖ A mutating verb's help names --force (136.261417ms)
+✖ claim and unclaim are not refused for carrying --force (250.280583ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 9
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1374.435375
+
+✖ failing tests:
+
+test at scripts/test/verb-surface.test.mjs:190:1
+✖ --force is accepted by exactly the mutating verbs, and the argvLevel rows are exactly force (1.372083ms)
+  AssertionError [ERR_ASSERTION]: init mutates and does not accept --force
+  render mutates and does not accept --force
+  snapshot mutates and does not accept --force
+  commit-nudge mutates and does not accept --force
+  sync mutates and does not accept --force
+  log-detour mutates and does not accept --force
+  push-detour mutates and does not accept --force
+  pop-detour mutates and does not accept --force
+  honcho-memory mutates and does not accept --force
+  add-epic mutates and does not accept --force
+  add-many mutates and does not accept --force
+  update-epic mutates and does not accept --force
+  remove-epic mutates and does not accept --force
+  reorder mutates and does not accept --force
+  set-active mutates and does not accept --force
+  clear-active mutates and does not accept --force
+  set-tracker mutates and does not accept --force
+  set-lane-routing mutates and does not accept --force
+  set-autonomy mutates and does not accept --force
+  set-review-mode mutates and does not accept --force
+  set-gate-guard mutates and does not accept --force
+  release mutates and does not accept --force
+  record-reconcile mutates and does not accept --force
+  record-gate-review mutates and does not accept --force
+  record-cross-spec-review mutates and does not accept --force
+  record-tracker-refresh mutates and does not accept --force
+  set-activity-log mutates and does not accept --force
+  purge-logs mutates and does not accept --force
+  claim mutates and does not accept --force
+  unclaim mutates and does not accept --force
+  recover-created-at mutates and does not accept --force
+  upgrade mutates and does not accept --force
+  write-rules mutates and does not accept --force
+  + actual - expected
+  
+  + [
+  +   'init mutates and does not accept --force',
+  +   'render mutates and does not accept --force',
+  +   'snapshot mutates and does not accept --force',
+  +   'commit-nudge mutates and does not accept --force',
+  +   'sync mutates and does not accept --force',
+  +   'log-detour mutates and does not accept --force',
+  +   'push-detour mutates and does not accept --force',
+  +   'pop-detour mutates and does not accept --force',
+  +   'honcho-memory mutates and does not accept --force',
+  +   'add-epic mutates and does not accept --force',
+  +   'add-many mutates and does not accept --force',
+  +   'update-epic mutates and does not accept --force',
+  +   'remove-epic mutates and does not accept --force',
+  +   'reorder mutates and does not accept --force',
+  +   'set-active mutates and does not accept --force',
+  +   'clear-active mutates and does not accept --force',
+  +   'set-tracker mutates and does not accept --force',
+  +   'set-lane-routing mutates and does not accept --force',
+  +   'set-autonomy mutates and does not accept --force',
+  +   'set-review-mode mutates and does not accept --force',
+  +   'set-gate-guard mutates and does not accept --force',
+  +   'release mutates and does not accept --force',
+  +   'record-reconcile mutates and does not accept --force',
+  +   'record-gate-review mutates and does not accept --force',
+  +   'record-cross-spec-review mutates and does not accept --force',
+  +   'record-tracker-refresh mutates and does not accept --force',
+  +   'set-activity-log mutates and does not accept --force',
+  +   'purge-logs mutates and does not accept --force',
+  +   'claim mutates and does not accept --force',
+  +   'unclaim mutates and does not accept --force',
+  +   'recover-created-at mutates and does not accept --force',
+  +   'upgrade mutates and does not accept --force',
+  +   'write-rules mutates and does not accept --force'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/verb-surface.test.mjs:199:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'init mutates and does not accept --force', 'render mutates and does not accept --force', 'snapshot mutates and does not accept --force', 'commit-nudge mutates and does not accept --force', 'sync mutates and does not accept --force', 'log-detour mutates and does not accept --force', 'push-detour mutates and does not accept --force', 'pop-detour mutates and does not accept --force', 'honcho-memory mutates and does not accept --force', 'add-epic mutates and does not accept --force', 'add-many mutates and does not accept --force', 'update-epic mutates and does not accept --force', 'remove-epic mutates and does not accept --force', 'reorder mutates and does not accept --force', 'set-active mutates and does not accept --force', 'clear-active mutates and does not accept --force', 'set-tracker mutates and does not accept --force', 'set-lane-routing mutates and does not accept --force', 'set-autonomy mutates and does not accept --force', 'set-review-mode mutates and does not accept --force', 'set-gate-guard mutates and does not accept --force', 'release mutates and does not accept --force', 'record-reconcile mutates and does not accept --force', 'record-gate-review mutates and does not accept --force', 'record-cross-spec-review mutates and does not accept --force', 'record-tracker-refresh mutates and does not accept --force', 'set-activity-log mutates and does not accept --force', 'purge-logs mutates and does not accept --force', 'claim mutates and does not accept --force', 'unclaim mutates and does not accept --force', 'recover-created-at mutates and does not accept --force', 'upgrade mutates and does not accept --force', 'write-rules mutates and does not accept --force' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/verb-surface.test.mjs:204:1
+✖ A mutating verb's help names --force (136.261417ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /--force/. Input:
+  
+  'conductor.mjs add-epic — 15 flags.\n' +
+    '\n' +
+    '  --id <a value>\n' +
+    '  --title <a value>\n' +
+    '  --lane <openspec|superpowers|claude-code|decision|external>\n' +
+    '  --priority <P0|P1|P2|P3>\n' +
+    '  --status <untriaged|queued|active|paused|later|blocked|planned|archived>\n' +
+    '  --parent <a value>\n' +
+    '  --external-id <a value>\n' +
+    '  --external-url <a value>\n' +
+    '  --plan <a value>\n' +
+    '  --spec <a value>\n' +
+    '  --link <type:epic[:reason]>                   (repeatable)\n' +
+    '  --description <a value>\n' +
+    '  --notes <a value>\n' +
+    '  --external-updated-at <a value>\n' +
+    '  --add-story <a non-empty title>               (repeatable)\n' +
+    '\n' +
+    '  Docs: https://pm-plugin.dev/llms.txt\n'
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/verb-surface.test.mjs:206:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'conductor.mjs add-epic — 15 flags.\n\n  --id <a value>\n  --title <a value>\n  --lane <openspec|superpowers|claude-code|decision|external>\n  --priority <P0|P1|P2|P3>\n  --status <untriaged|queued|active|paused|later|blocked|planned|archived>\n  --parent <a value>\n  --external-id <a value>\n  --external-url <a value>\n  --plan <a value>\n  --spec <a value>\n  --link <type:epic[:reason]>                   (repeatable)\n  --description <a value>\n  --notes <a value>\n  --external-updated-at <a value>\n  --add-story <a non-empty title>               (repeatable)\n\n  Docs: https://pm-plugin.dev/llms.txt\n',
+    expected: /--force/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/verb-surface.test.mjs:209:1
+✖ claim and unclaim are not refused for carrying --force (250.280583ms)
+  AssertionError [ERR_ASSERTION]: claim must not refuse --force as an undeclared flag
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/verb-surface.test.mjs:213:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'conductor: unknown flag --force for claim\n',
+    expected: /unknown flag/,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }

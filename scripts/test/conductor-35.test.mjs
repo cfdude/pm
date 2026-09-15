@@ -56,8 +56,10 @@ function dispatchedVerbs() {
 test("cliFlagsFor: add-many's CLI surface is --from, not its 14 batch-document keys", async () => {
   const { cliFlagsFor, flagsFor } = await import(CONSTANTS);
   const cli = cliFlagsFor("add-many");
-  assert.deepEqual(cli, ["from"],
-    "add-many parses exactly one flag; its EPIC_FLAGS rows are batch STATE keys");
+  // `--force` is the argv-level row every mutating verb accepts (verb-surface D5) — the save
+  // layer's flag, not add-many's parser's — so it is here too and is not a batch key.
+  assert.deepEqual(cli, ["from", "force"],
+    "add-many parses exactly one flag of its own; its EPIC_FLAGS rows are batch STATE keys");
   // The regression this test exists for: the old projection returned 15.
   assert.ok(flagsFor("add-many").length > cli.length,
     "flagsFor must still answer the ALLOWLIST question — this test is about not reusing it for help");
@@ -103,7 +105,7 @@ test("help declares a flagless verb explicitly rather than printing an empty lis
   const { FLAGLESS_VERBS } = await import(CONSTANTS);
   const cwd = tmpRepo();
   run(["init"], { cwd });
-  for (const verb of ["integrity", "verify-worktrees", "set-active"]) {
+  for (const verb of ["integrity", "verify-worktrees", "verify-state"]) {
     assert.ok(FLAGLESS_VERBS.includes(verb), `fixture assumes ${verb} is flagless`);
     const out = run([verb, "--help"], { cwd });
     assert.match(out, /takes no flags/i,

@@ -1,10 +1,13 @@
 // scripts/lib/constants.mjs
 // Shared path/enum constants for the conductor engine. No dependencies on any other
-// lib module — every other module may import from here.
+// lib module — every other module may import from here. The ONE exception is verb-effects.mjs,
+// which itself imports nothing (so no cycle can form): the `--force` row below derives the verbs
+// it is accepted on from VERB_EFFECTS rather than restating them.
 
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
+import { VERB_EFFECTS } from "./verb-effects.mjs";
 
 export const ROOT = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 export const CONDUCTOR_DIR = path.join(ROOT, ".conductor");
@@ -704,12 +707,16 @@ export const PURGE_KINDS = ["activity", "conflicts", "detours", "all"];
 // `set-lane-routing` and a boolean on `set-tracker`. One global row for the spelling would have
 // to pick one reading, and either choice is wrong on one of the two verbs.
 //
-// NOT DECLARED, deliberately: `--force` (read straight from `process.argv` by saveState(), on
-// every verb) and `--help`/`-h` (short-circuited in conductor.mjs before dispatch). They are
-// argv-level, belong to no verb, and a row for them would claim a per-verb surface they do not
-// have. `--platform` IS declared, on the three verbs that read it, because those verbs each
-// resolve it into a real behaviour and a valueless one silently fell back to the recorded
-// platform while looking answered.
+// `--force` IS declared (every-verb-refuses-what-it-does-not-read D5), as ONE row marked
+// `argvLevel: true` at the end of this table: it belongs to the guarded state write (saveState()
+// reads it straight off `process.argv`), not to any verb's parser, and it is accepted on exactly the
+// verbs VERB_EFFECTS declares `mutates` — derived, never listed. Before this it was declared nowhere,
+// so the allowlists on add-epic, update-epic and claim refused the documented escape hatch outright.
+// A row rather than a separate "argv-level flags" list, because epic-annotation forbids a second,
+// parallel allowlist for a subset of flags. Checks written for per-verb PARSER flags filter
+// `argvLevel` rows out. `--help`/`-h` stay undeclared: they are decided before any flag is classified.
+// `--platform` IS declared, on the verbs that read it or are passed it, because a valueless one
+// silently fell back to the recorded platform while looking answered.
 export const VERB_FLAGS = [
   { flag: "from", commands: ["add-many"], requires: "a path, or `-` to read the batch from stdin" },
   { flag: "cascade", commands: ["remove-epic"], valueless: true },
@@ -812,6 +819,12 @@ export const VERB_FLAGS = [
   { flag: "older-than", commands: ["purge-logs"], requires: "a non-negative number of days" },
   { flag: "dry-run", commands: ["purge-logs"], valueless: true },
   { flag: "yes", commands: ["purge-logs"], valueless: true },
+  // THE argv-level row (see the header above). On a mutating verb whose writes never reach the
+  // guarded state write (`honcho-memory`, `purge-logs`) it is accepted and does nothing — the one
+  // accepted-but-unread flag, stated rather than hidden: the alternative is a second, undeclared list
+  // of which mutating verbs save state, derivable only by parsing call graphs.
+  { flag: "force", valueless: true, argvLevel: true,
+    commands: Object.keys(VERB_EFFECTS).filter(v => VERB_EFFECTS[v].effect === "mutates") },
 ];
 
 /** The dispatched verbs that accept NO flags at all — positional arguments or none.
