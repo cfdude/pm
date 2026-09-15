@@ -110,6 +110,9 @@ must tolerate are small, but none is zero-by-construction.
   MODIFIES "A verdict that does not cover the shipped work is stale" (every-entry ancestry,
   unresolvable values) and "Commit attribution is written by a named flag the emitted instructions
   require" (appends the resolved object name, not the literal string).
+- `epic-annotation`: MODIFIES "Supplying a link adds it, and the documented repair stays one write" —
+  the clear-and-re-supply repair is refused on an epic owing a reconcile, and the emitted repair
+  instruction names `record-reconcile` first there.
 
 ## Impact
 

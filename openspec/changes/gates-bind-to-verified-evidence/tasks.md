@@ -13,7 +13,9 @@
       its two siblings' (`every-verb-refuses-what-it-does-not-read`, `state-file-refuses-to-guess`).
       Run the `cross-spec-review` skill after all three pass Gate 1 and again after any later
       amendment; record `record-cross-spec-review 0.44.0 --verdict pass|fail --reviewer "<identity>"`
-- [ ] 0.3 Re-derive every line anchor in design.md with `rg` after change 1 has merged into `dev`,
+- [ ] 0.3 Re-derive every line anchor in design.md with `rg` after changes 1 AND 2 have merged into `dev`
+      (change 2 edits `migrations.mjs` `upgrade()`, the top of `gate-guard.mjs`, `commitNudge` and
+      `conductor.mjs`'s catch),
       and correct design.md in the first implementation commit if any moved
 
 ## 1. Test fixtures that hold real commits
@@ -114,12 +116,12 @@ Pairs: 5.1 lands with 5.3.
 
 Pairs: 6.1–6.8 and 6.9a–6.9g land with 6.10.
 
-- [ ] 6.1 RED: after push `p`→`d` `--reconcile` and pop, `record-reconcile p --detour p` exits
+- [ ] 6.1 RED: after push `p`→`d` `--reconcile` and pop, `record-reconcile p --detour p --verdict valid` exits
       non-zero naming `d`; `state.json` byte-identical; `gate-guard` exits 2 (repro 1a)
-- [ ] 6.2 RED: `record-reconcile p --detour other` exits non-zero and writes no link (repro 1b)
+- [ ] 6.2 RED: `record-reconcile p --detour other --verdict valid` exits non-zero and writes no link (repro 1b)
 - [ ] 6.3 RED: owed vs `d`, then push `p`→`d2` `--no-reconcile` and pop; `record-reconcile p --detour
-      d2` exits non-zero naming `d`
-- [ ] 6.4 RED: with the `p`→`d` frame still on the stack, `record-reconcile p --detour d` exits
+      d2 --verdict valid` exits non-zero naming `d`
+- [ ] 6.4 RED: with the `p`→`d` frame still on the stack, `record-reconcile p --detour d --verdict valid` exits
       non-zero, byte-identical
 - [ ] 6.5 REGRESSION GUARD: owed vs `d` only; `record-reconcile p --detour d --verdict valid` exits 0,
       verdict readable, flag false, `gate-guard` exits 0
@@ -155,7 +157,11 @@ Pairs: 6.1–6.8 and 6.9a–6.9g land with 6.10.
       creates, per-link `isArmed()`/`isUnmigrated()`, re-arm, acceptance predicate, `link.superseded`,
       flag written from `ownedDetours`, the refusal on any epic holding an unmigrated link, the `0.44.0`
       MIGRATIONS entry and the per-run `stampReconcileKeys` call in `upgrade()`); existing record-reconcile tests (`conductor-09`, `conductor-31`) that record
-      against an unarmed or self detour corrected and named in the commit; suite green
+      against an unarmed or self detour corrected and named in the commit; and, in this same commit, every `record-reconcile` call in the suite — derived with
+      `rg -n "record-reconcile" scripts/test` at commit time, change 1's `verb-surface.test.mjs`
+      `DISPATCH_BASELINE` (`record-reconcile e1 --detour other --verdict valid`, no push) included —
+      moved onto a pushed, armed and popped detour; if that shared fixture now arms `other`, re-check
+      the `remove-epic` baseline against 9.4's refusal; suite green
 
 ## 7. A reconcile obligation survives until answered
 
@@ -165,7 +171,7 @@ Pairs: 7.1–7.4 and 7.4a land with 7.5.
       stderr names `p` and `d` (repro 2a)
 - [ ] 7.2 RED: `set-active other` then `set-active p` — flag true, `gate-guard` exits 2 (repro 2b)
 - [ ] 7.3 RED: `update-epic other --status active` — `p`'s flag still true after the render, and that
-      command's stderr names `p` and `d`; `add-epic --id q --title q --status active` likewise
+      command's stderr names `p` and `d`; `add-epic --id q --title q --lane claude-code --status active` likewise
 - [ ] 7.4 RED: owed vs `d`, `update-epic p --status archived --outcome abandoned --reason r
       --no-deferrals`, then `update-epic p --status active` — flag true, `gate-guard` exits 2
 - [ ] 7.4b REGRESSION GUARD: an archived owing epic does not make `gate-guard` block
@@ -200,7 +206,7 @@ Pairs: 8.1–8.2 and 8.2a land with 8.4 (8.2a needs the arming of 6.10, the heal
 
 ## 9. A write never destroys an owed reconcile's record
 
-Pairs: 9.1–9.3a land with 9.4.
+Pairs: 9.1–9.3b land with 9.4.
 
 - [ ] 9.1 RED: owed vs `d`, `update-epic p --clear-links` exits non-zero naming `record-reconcile`,
       byte-identical
@@ -210,9 +216,14 @@ Pairs: 9.1–9.3a land with 9.4.
       keeps the verdict and arming, changes the reason
 - [ ] 9.3a RED: `p`'s armed `d` answered while `p` owes vs armed `d2` — `update-epic p --clear-links`
       and `remove-epic d` each exit non-zero, byte-identical
+- [ ] 9.3b RED: owing `p` holding a malformed link — the integrity finding names `record-reconcile`
+      before the repair, and `update-epic p --clear-links --link "<kept>"` is refused byte-identical
 - [ ] 9.4 GREEN: design Decision 5 in `update-epic.mjs`, `links.mjs` (`mergeLinks`,
       `epicReferences` with a reference `kind`), `remove-epic.mjs`'s refusal and `integrity.mjs`'s
-      `dangling-epic-reference` detail worded by `kind`; the existing "corrected reason, same position" tests stay green; suite green
+      `dangling-epic-reference` detail worded by `kind`; both clear-and-re-supply repair messages
+      (`links.mjs` `unknownLinkTypeMessage`, `integrity.mjs` unknown-link-type finding) name
+      `record-reconcile` first when the epic owes (epic-annotation delta), with a RED 9.3b asserting
+      it and the refused repair; the existing "corrected reason, same position" tests stay green; suite green
 
 ## 10. Amendments
 
@@ -240,6 +251,9 @@ Pairs: 10.1–10.3 land with 10.4.
       - every writer and reader of `links[]` entries of type `may-invalidate`, derived with
         `rg -n "may-invalidate|linkOnce|mergeLinks|epicReferences|\.links\b" scripts/lib` (expected to
         include `linkOnce` in `detour-stack.mjs`, `mergeLinks`, `epicReferences`, `--clear-links`,
+        the two emitted clear-and-re-supply repair messages — `unknownLinkTypeMessage` in `links.mjs`
+        and the unknown-link-type finding in `integrity.mjs` (`rg -n "clear-links" scripts/lib`) — each
+        naming `record-reconcile` first on an owing epic,
         `add-many`, `deferralHistory`, render and briefing);
       - every reader of a `drop: null` reference from `epicReferences` (expected: `remove-epic`,
         `integrity`), each stated as wording by reference kind;

@@ -183,7 +183,10 @@ detour's own edits.
 ### 5. Writes that would destroy the record
 
 - `update-epic --clear-links`: refused when the epic owes a reconcile and holds any armed link
-  (answered or not) or any unmigrated link.
+  (answered or not) or any unmigrated link — including the one-write clear-and-re-supply repair, which
+  the `epic-annotation` delta carves out. Its two emitted instructions (`links.mjs`
+  `unknownLinkTypeMessage`, `integrity.mjs` unknown-link-type finding) name `record-reconcile` first
+  when the epic owes; the `links.mjs` message gains the epic id it needs to ask.
 - `mergeLinks()` (`links.mjs:85-96`) replaces the object on a same type+target reason change, which
   drops `reconcileOnResume`, `reconciled` and `superseded`. It will carry every key other than
   `type`/`epic`/`reason` from the stored link onto the supplied one. This binds `update-epic --link`,
@@ -343,7 +346,8 @@ after it. Stored sha values are never rewritten. Rollback is reverting the relea
 - **Change 1 (`every-verb-refuses-what-it-does-not-read`)** lands first and makes `record-reconcile`
   refuse unknown flags, so an unregistered `--amendment` is refused until this change registers it in
   `VERB_FLAGS`. All line anchors above must be re-derived after it merges.
-- **Change 2 (`state-file-refuses-to-guess`)** owns the rules-block WRITER. This change edits the
+- **Change 2 (`state-file-refuses-to-guess`)** also edits `migrations.mjs` `upgrade()`, where this
+  change adds the per-run `stampReconcileKeys` call. It owns the rules-block WRITER. This change edits the
   CONTENT of `scripts/lib/rules.mjs` (the `record-reconcile` invocation form, and attribution-endpoint
   wording now that every entry is compared) and the mirrored declared claims; expect a textual
   conflict in `rules.mjs`, not a semantic one. Change 2 also edits the top of `gate-guard.mjs`; this

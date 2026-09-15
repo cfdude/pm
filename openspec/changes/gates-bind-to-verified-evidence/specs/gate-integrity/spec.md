@@ -147,7 +147,7 @@ never be answered, so arming it would wedge the epic). It SHALL read only `state
 as it is, and SHALL change nothing else. Running it again changes nothing. A state file written by
 0.43.0 SHALL load and be upgraded by it.
 
-The same stamp SHALL also run on EVERY `upgrade`, whatever `pmVersion` the state already carries, so
+The same stamp SHALL also run on every `upgrade` that is not refused, whatever `pmVersion` the state already carries, so
 the `/pm:upgrade` a refusal names always stamps a link written later by an older engine (an unreloaded
 session, or another machine sharing `state.json` through git).
 
@@ -236,7 +236,7 @@ leave no CLI route to set work aside, which is the hand-edit the detour verbs ex
 
 #### Scenario: Creating an epic at active warns
 
-- **WHEN** `p` owes a reconcile and is active, and `add-epic --id q --title q --status active` runs
+- **WHEN** `p` owes a reconcile and is active, and `add-epic --id q --title q --lane claude-code --status active` runs
 - **THEN** `p` still owes a reconcile, and stderr of that command names `p` and the owed detour
 
 #### Scenario: Archiving and un-archiving does not erase the obligation
@@ -294,8 +294,9 @@ notice naming every detour the epic owes a verdict against.
 
 While an epic owes a reconcile, a write that would remove any of its armed `may-invalidate` links —
 answered or not — or any unmigrated one MUST be refused, exiting non-zero with `state.json` byte-identical and a message naming
-`record-reconcile`. This binds `update-epic <epic> --clear-links`, and `remove-epic <detour>`, which
-would otherwise strip the link as a dangling reference.
+`record-reconcile`. This binds `update-epic <epic> --clear-links` — including the clear-and-re-supply
+repair `epic-annotation` makes one write, which is refused on an owing epic — and `remove-epic
+<detour>`, which would otherwise strip the link as a dangling reference.
 
 Supplying a link whose type and target equal an existing `may-invalidate` link — the documented way
 to correct a reason — SHALL change only the reason, keeping that link's arming record and any
