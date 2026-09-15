@@ -208,7 +208,7 @@ the GREEN commit stages that file and names it in its message.
 
 ## 7. Required task items
 
-- [ ] 7.1 **Call-site completeness sweep** — derived with `rg` from the tree at sweep time, never from
+- [x] 7.1 **Call-site completeness sweep** — derived with `rg` from the tree at sweep time, never from
       design.md: every caller of `loadState`, `readJSON`, `diskRevision`, `saveState`, `isInitialized`,
       `conflictExitCode`, `StateUnreadableError`, `UNREADABLE_INPUT_EXIT_CODE`, `saveHookHeal`,
       `recordConflict`; every hook entry (`gateGuardCheck`, `brief`, `snapshot`, `commitNudge`,
@@ -232,7 +232,7 @@ the GREEN commit stages that file and names it in its message.
       `skills/`, `hooks/` or `.claude-plugin/`, and the new OpenSpec capability `managed-rules-block` is
       not a parity-ledger capability; confirm `node --test scripts/test/parity.test.mjs` is green
       (14/14 when this list was written)
-- [ ] 7.2 **Inverse of every operation added** — acquire ↔ release (shipped, in `finally`); break-lock
+- [x] 7.2 **Inverse of every operation added** — acquire ↔ release (shipped, in `finally`); break-lock
       acquire ↔ break-lock release (shipped) and its age recovery; the stale break is itself the inverse
       of a lock whose holder died; `ensureGitignore` add ↔ remove (not shipped — `ensureGitignore` never
       removes any entry it manages, and a stale ignore line is harmless); rules-block append/refresh ↔
@@ -240,9 +240,9 @@ the GREEN commit stages that file and names it in its message.
       hand); a refused TTL / a refused state file / a refused block write have no inverse because they
       write nothing, except `set-tracker`/`set-review-mode`'s already-saved state, whose inverse is the
       same verb with the previous value. Name and justify any further operation the sweep finds
-- [ ] 7.3 **Verify against the commit** — for every task commit, `git show --stat <sha>` and assert each
+- [x] 7.3 **Verify against the commit** — for every task commit, `git show --stat <sha>` and assert each
       file the task claims (including its `red-<task>.txt`) is in THAT commit
-- [ ] 7.4 **Attribute every commit** at the moment it lands:
+- [x] 7.4 **Attribute every commit** at the moment it lands:
       `update-epic state-file-refuses-to-guess --attribute-commit <sha>`. The commit that moves the change
       under `openspec/changes/archive/` is NOT attributed
 - [ ] 7.5 **Dispositions** <!-- pm:lifecycle --> — the four superseded finding epics
