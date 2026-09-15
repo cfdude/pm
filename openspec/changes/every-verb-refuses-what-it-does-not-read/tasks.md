@@ -141,7 +141,7 @@ Every refusal test asserts the refusal's CAUSE text (not only a non-zero exit) a
       list. REGRESSION GUARDS: "A verb that joins its positionals still accepts many", "A dash-leading text
       positional is still a positional", and `flag-parsing.test.mjs`'s `claim e1 --session "--weird session
       name"` round trip
-- [ ] 2.5 REGRESSION GUARD: "A hook verb accepts its hook configuration's command line" — read every
+- [x] 2.5 REGRESSION GUARD: "A hook verb accepts its hook configuration's command line" — read every
       `command` from `hooks/hooks.json` at test time, substitute `${CLAUDE_PLUGIN_ROOT}`, run each in an
       initialized repo with a payload on stdin, assert none is refused; and assert both directions of 4.2's
       inverse (every flag a hook line passes is declared for that verb; every `hook: true` verb's hook line

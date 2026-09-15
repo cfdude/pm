@@ -760,3 +760,52 @@ test("REGRESSION GUARD: A dash-leading text positional is still a positional", (
   assert.equal(r.status, 0, r.stderr);
   assert.equal(JSON.parse(r.stdout).ask, "--story <n> is 1-indexed");
 });
+
+// ═══════════════ 2.5 — pm's own hook configuration passes the check it ships with ═══════════════
+
+/** Shell-split one hooks.json command line after substituting ${CLAUDE_PLUGIN_ROOT}. */
+function hookArgv(command) {
+  const s = command.split("${CLAUDE_PLUGIN_ROOT}").join(REPO);
+  const out = []; let cur = null, q = null;
+  for (const c of s) {
+    if (q) { if (c === q) q = null; else cur += c; continue; }
+    if (c === "\"" || c === "'") { q = c; cur = cur ?? ""; continue; }
+    if (/\s/.test(c)) { if (cur !== null) { out.push(cur); cur = null; } continue; }
+    cur = (cur ?? "") + c;
+  }
+  if (cur !== null) out.push(cur);
+  return out;
+}
+
+test("REGRESSION GUARD: A hook verb accepts its hook configuration's command line", () => {
+  const cwd = fixture();
+  const payload = JSON.stringify({ hook_event_name: "PreToolUse", tool_name: "Bash", tool_input: { command: "ls" } });
+  const wrong = [];
+  for (const command of hookCommandLines()) {
+    const [bin, script, ...args] = hookArgv(command);
+    assert.equal(bin, "node", `hook line does not run node: ${command}`);
+    assert.equal(script, ENGINE, `hook line does not run this engine: ${command}`);
+    const r = engine(args, { cwd, input: payload });
+    if (r.status !== 0 || /unknown flag|extra argument|takes no value|--platform/.test(r.stderr)) {
+      wrong.push(`${args.join(" ")} -> exit ${r.status}: ${r.stderr.trim().split("\n")[0]}`);
+    }
+  }
+  assert.deepEqual(wrong, [], wrong.join("\n"));
+});
+
+test("REGRESSION GUARD: every flag a hook line passes is declared, and every hook verb's line passes --platform", async () => {
+  const { cliFlagsFor } = await import(CONSTANTS);
+  const { VERB_EFFECTS } = await import(new URL("../lib/verb-effects.mjs", import.meta.url).href);
+  const passesPlatform = new Set();
+  for (const command of hookCommandLines()) {
+    const [, , verb, ...rest] = hookArgv(command);
+    for (const t of rest.filter(x => x.startsWith("--"))) {
+      const name = t.slice(2).split("=")[0];
+      assert.ok(cliFlagsFor(verb).includes(name), `hooks.json passes --${name} to ${verb}, which does not declare it`);
+      if (name === "platform") passesPlatform.add(verb);
+    }
+  }
+  for (const [verb, e] of Object.entries(VERB_EFFECTS)) {
+    if (e.hook === true) assert.ok(passesPlatform.has(verb), `hook verb ${verb}'s hook line does not pass --platform`);
+  }
+});
