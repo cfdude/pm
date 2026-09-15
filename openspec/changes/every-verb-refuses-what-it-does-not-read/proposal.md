@@ -51,16 +51,19 @@ Reproduced at `dev` 85079e1 in hermetic scratch repos
 - ONE pre-dispatch argv check in `scripts/conductor.mjs` binds every dispatched verb, derived from
   the dispatch table, so no verb can opt out by omission and a verb added later is covered.
 - A help token (`--help`/`-h`) in any non-value position prints that verb's help, exits 0 and writes
-  nothing. In the value position of a value-bearing flag it stays a refusal (the #187 case). **BREAKING**
+  nothing — for a hook verb in a repository without pm too. In the value position of a value-bearing flag it stays a refusal (the #187 case). **BREAKING**
   for callers relying on a trailing `--help` performing the write.
 - Every verb refuses a flag its declared surface does not name, before any write, naming the flag
   and what the verb accepts. **BREAKING** for any caller passing an undeclared flag today.
 - Every verb declares its positional arity; a token beyond it — including a value given to a
-  valueless flag — is refused by name. A flag spelled like a verb's positional (`remove-epic --id
+  valueless flag, so `remove-epic <id> --cascade true` (accepted today) — is refused by name.
+  **BREAKING**. A flag spelled like a verb's positional (`remove-epic --id
   e2`) is diagnosed as the positional, generalising update-epic's #71 diagnosis.
 - Bare `set-lane-routing` is refused rather than writing an empty overrides block.
 - `--platform` is declared on `init` and the five hook verbs and validated before any write; `init`
-  validates it before creating `state.json`.
+  validates it before creating `state.json`. Hook verbs still refuse nothing in a repository without pm.
+- The engine hands each verb its positionals first and argv-level flags last, so `--force` never leaks
+  into a joined text (`log-detour fixed it --force`) or displaces a positional (`set-active --force e2`).
 - `--force` is declared as an argv-level flag accepted by every verb declared `mutates` and refused
   on read-only verbs — making `state-write-guard`'s "--force overwrites" true on add-epic, update-epic
   and claim, which refuse it today.
@@ -78,7 +81,8 @@ Reproduced at `dev` 85079e1 in hermetic scratch repos
 ### Modified Capabilities
 - `epic-annotation`: "Every epic-writing surface rejects what it will not persist" defers its
   flag-shape half to `verb-surface` (removing the double ownership) and gains the case of a flag
-  accepted by the verb but not persisted on this invocation — update-epic's disposition flags.
+  accepted by the verb but not persisted on this invocation — update-epic's disposition flags. "One
+  shared flag allowlist…" states the argv-level carve-out from its documented-surface coverage check.
 
 ## Impact
 
@@ -87,7 +91,7 @@ Reproduced at `dev` 85079e1 in hermetic scratch repos
   `scripts/lib/help.mjs`, `scripts/lib/subcommands.mjs` (`init`), `scripts/lib/lane-routing.mjs`,
   `scripts/lib/update-epic.mjs`; the per-verb unknown-flag loops in add-epic, update-epic, releases,
   gate-review-writeback, triage, verify-specs and `requireKnownFlags` callers collapse into the one check.
-- Tests: `conductor-31` (dispatch-derived claims, `VERB_BASELINE`), `conductor-35` (help), `conductor-13`
+- Tests: `conductor-31` (dispatch-derived claims, `VERB_BASELINE`), `conductor-14` (the `--id` diagnosis), `conductor-35` (help), `conductor-13`
   / `conductor-36` (documented-flag harnesses), `flag-parsing`, `positional-and-help-tokens`, and the
   message-shape assertions in `conductor-05`, `conductor-23`, `conductor-33`, `cross-spec-review`, `triage`.
 - Docs: `commands/*.md`, `README.md`, `skills/conductor/SKILL.md`, `hooks/README.md`, `CHANGELOG.md`.

@@ -32,8 +32,8 @@ See proposal.md "Why" for the defects and their repros. The state of the code at
 - Help and enforcement read the same declarations, so neither can describe a surface the other refuses.
 
 **Non-Goals:**
-- Value VOCABULARY checks (`--verdict maybe`, `--priority banana`, a malformed watermark) stay in each
-  verb. Only `--platform` on the six verbs that newly declare it is added here, because declaring a
+- Value VOCABULARY checks (`record-reconcile --verdict maybe`, `set-gate-guard maybe`) stay in each
+  verb, and verbs that validate no vocabulary today are not given one here. Only `--platform` on the six verbs that newly declare it is added here, because declaring a
   flag without validating it would ship the #152 shape.
 - `saveState()`'s treatment of `--force` (what it overrides, how the conflict message mentions it) —
   `state-file-refuses-to-guess` and the planned `code-review-0-43-0-minors` epic own that.
@@ -54,7 +54,12 @@ banner and the activity snapshot, and acts on the result (print help and exit 0;
 exit 1; or fall through to dispatch). The existing `helpAt` block is deleted.
 
 The verb population is `Object.keys(VERB_EFFECTS)`, already asserted set-equal to the dispatch object
-by `conductor-25`. An unknown verb keeps today's behaviour (help → global usage, exit 0; otherwise
+by `conductor-25`. The flag list the check reads for a verb is `cliFlagsFor(verb)` — never `flagsFor()`,
+which for `add-many` answers its batch-document keys.
+
+The activity snapshot's `resolveSession(parseFlags(argv))` (conductor.mjs, pre-dispatch) reads
+`--session` off any verb's line. It now runs after the check, so `--session` on a verb that does not
+declare it is refused — intended: `PM_SESSION` is the supported way to name the session for the log. An unknown verb keeps today's behaviour (help → global usage, exit 0; otherwise
 `USAGE`, exit 1).
 
 *Alternatives.* (a) Call `requireKnownFlags()` at the top of each of the 38 unguarded verbs — rejected:
@@ -79,7 +84,9 @@ Walk `argv.slice(3)` left to right with the verb's declarations:
 3. Every other unconsumed token is a POSITIONAL — including a `--`-leading token that is not
    flag-shaped (gh-186's rule, generalised from `triage`).
 
-Decisions in order, first match wins: any help token in a non-value position → `help`; a help token in
+Decisions in order, first match wins: any help token in a non-value position → `help` (for a hook
+verb in a repository without `state.json` too — D6); a hook verb in a repository without `state.json`
+→ `ok`, and the verb's own dormancy returns silently; a help token in
 a value position → refuse naming the flag and the token (the #187 case, whose wording today comes from
 `valuelessFlagError()` and is kept); the first undeclared flag → refuse (D4); positional count above
 the verb's maximum → refuse naming the first surplus token; otherwise `ok`.
@@ -130,11 +137,15 @@ positionals. Chosen because five existing assertions already match `unknown flag
 conductor-23, triage); one assertion on `unknown flag(s) --reviewr` (cross-spec-review.test.mjs) is
 amended in the same commit.
 
-Where the undeclared flag is `--id` (or `--id=`), the verb's first positional form is an epic id and no
-positional was given, the message is update-epic's existing #71 text generalised to `<verb>`, including
+Where `--id` (or `--id=`) is undeclared on the verb, the verb's first positional form is an epic id,
+and `--id` appears BEFORE any positional, the check consumes `--id`'s value exactly as `update-epic.mjs`
+does today (the next token when it is not flag-shaped) — otherwise, under D2 step 2, an undeclared
+`--id` consumes nothing and `update-epic --id e1 --priority P1` would read `e1` as the positional and
+never diagnose. The message is update-epic's existing #71 text generalised to `<verb>`, including
 its rewrite of the line the caller meant (`update-epic e1 --priority P1`; `<id>` when `--id` carried no
 value). The rewrite logic moves from `update-epic.mjs` into `argv-surface.mjs` verbatim, so
-`flag-parsing.test.mjs`'s two rewrite assertions keep passing; update-epic's copy is deleted in 4.1.
+`flag-parsing.test.mjs`'s two rewrite assertions and `conductor-14`'s "update-epic --id is diagnosed
+by name" keep passing; update-epic's copy is deleted in 2.3.
 
 Surplus positional: `conductor: <verb> takes <form> — '<token>' is an extra argument it does not read.
 Nothing was written.` plus, when the surplus follows a valueless flag, `--<flag> takes no value`, and
@@ -147,13 +158,16 @@ key whose effect is "mutates"> }`, computed at module load (`verb-effects.mjs` h
 cycle). It is a row, not a second list, because `epic-annotation` requires one shared allowlist with no
 parallel list for a subset of flags; a separate "argv-level flags" table would be exactly that list for
 add-epic and update-epic. `argvLevel: true` means: the flag belongs to the save layer, not to the verb's
-parser, so `conductor-31`'s "every VERB_FLAGS command has a baseline" and "every flag read off parsed
-flags is declared" do not apply to it (both filter `argvLevel`).
+parser. The checks written for per-verb parser flags filter `argvLevel` rows out: `conductor-31`'s
+"every VERB_FLAGS command has a baseline", the `withFlags` set of its "claimed exactly once" check, and
+its closed list of valueless rows (with a separate assertion that the argvLevel rows are exactly
+`force`); `conductor-13`'s documented-flag harness; and `conductor-36`'s two registry-to-`epic.md`
+checks. That carve-out is stated in the `epic-annotation` delta.
 
 **Scope: every `mutates` verb, not "every verb that reaches `saveState()`".** The latter is not
 declared anywhere: `render()` heals through `saveHookHeal()`, so nearly every mutating verb reaches the
 save, and deriving the exact set would mean parsing call graphs. Measured consequence: on a mutating
-verb that never saves state.json — `honcho-memory` and `purge-logs`, to be confirmed in task 5.1 —
+verb that never saves state.json — `honcho-memory` and `purge-logs`, to be confirmed in task 4.1 —
 `--force` is accepted and does nothing. That is the one place this change accepts a flag a verb does
 not read, stated rather than hidden; the alternative (refusing `--force` on a verb that CAN hit a
 conflict) would break the documented escape hatch, which `state-write-guard` requires to work.
@@ -171,9 +185,13 @@ something happened.
 `requireFlagValues()` and `assertKnownPlatform()` before anything else — `init` before
 `saveState(defaultState())`, which is the ordering defect.
 
-Hook verbs keep dormancy absolute: when `state.json` is absent, `conductor.mjs` skips the command-line
-check for the five hook verbs — identified by a `hook: true` marker on their `VERB_EFFECTS` entries,
-asserted set-equal to the verbs `hooks/hooks.json` invokes — and the verb returns silently as today. The plugin's hooks run in every project on the machine, and a
+Hook verbs keep dormancy for refusals: when `state.json` is absent, the check returns `ok` instead of
+any refusal for the five hook verbs — identified by a `hook: true` marker on their `VERB_EFFECTS`
+entries, asserted set-equal to the verbs `hooks/hooks.json` invokes — and the verb returns silently as
+today. A help token in a non-value position is decided FIRST, so `brief --help` and `gate-guard --help`
+still print help in an uninitialized repository, as they do today. The carve-out lands in the same
+commit as the undeclared-flag refusal (task 2.2), because that commit alone would otherwise make
+`brief --bogus` print an error in every project on the machine. The plugin's hooks run in every project on the machine, and a
 mismatched hook line must not print an error into projects that never ran `/pm:init`.
 
 *Alternative:* stop passing `--platform` to hook verbs. Rejected: the platform-aware design
@@ -203,27 +221,49 @@ and the other mutating flagless verbs — renders "no flags of its own" and then
 it accepts. `conductor-35`'s "no verb's help advertises a flag that verb refuses" then
 covers the new rows with no new test code.
 
+### D10. Verbs never see an argv-level flag as a positional
+
+`log-detour` joins `argv.slice(3)`, `honcho-memory` joins its tail, and most verbs read their id as
+`argv[0]` only when it does not start with `--`. So `log-detour fixed it --force` would log
+`fixed it --force`, and `set-active --force e2` would print usage. On `ok`, `conductor.mjs` rewrites
+`process.argv` into canonical order from the check's classification: the verb, then the positionals in
+their original order, then every flag with its value, argv-level flags last. Every `argv[0]`/`argv[3]`
+reader then sees its positional first, and `saveState()`'s `process.argv.includes("--force")` still
+sees `--force` — `saveState()` is not edited. The two verbs that JOIN positionals read the positional
+list the check exported instead of the argv tail, so a trailing flag never enters the text.
+
+Reordering cannot re-pair a flag with a value: a positional is by definition a token no declared flag
+consumed, and a flag moves together with its value.
+
+*Alternative:* strip `--force` from `process.argv` and pass it to `saveState()` another way — rejected:
+that edits `saveState()`, which `state-file-refuses-to-guess` owns.
+
 ## Risks / Trade-offs
 
 - **[BREAKING for scripts]** A caller passing an undeclared flag or an unquoted multi-word value now
-  fails. → That caller was already getting a wrong record; the refusal names the token and, for text,
+  fails, and so does `remove-epic <id> --cascade true`, which today's `cascade === "true"` accepts and
+  which is now a surplus positional after a valueless flag. `/pm:upgrade` rewrites the rules block, so
+  repos pick up any emitted line 4.1 corrects. → That caller was already getting a wrong record; the refusal names the token and, for text,
   says to quote it. CHANGELOG states it under BREAKING.
 - **[gate-guard fails open on a refused command line]** In an initialized repo, a `gate-guard` hook
   line the engine refuses exits 1, which Claude Code treats as a non-blocking hook error: that tool call
   is not guarded. Exit 2 would block every tool call in every session until the plugin is fixed.
-  → The only way to reach it is pm's own `hooks/hooks.json` disagreeing with its own engine; task 2.5
-  asserts every hook command line in that file passes the check, so the mismatch cannot ship. Named for
+  → Within one plugin version it needs pm's own `hooks/hooks.json` to disagree with its own engine, and
+  task 2.5 asserts every hook command line in that file passes the check. Under `PM_ENGINE_DELEGATION`
+  an installed plugin's `hooks.json` reaches a checkout engine of a different version, so a mismatch
+  there is possible and shows as a visible hook error on each tool call rather than a silent pass. Named for
   `gates-bind-to-verified-evidence` below.
 - **[stdin not drained on refusal]** `gate-guard` and `lesson-advice` drain stdin first so the hook
   writer is not left holding a pipe; a pre-dispatch refusal exits before that. → For a verb marked
-  `hook: true` the refusal path drains stdin before writing its message (task 2.5 asserts it with a
-  payload on stdin).
+  `hook: true` the refusal path drains stdin before writing its message. Task 2.2 guards it with a
+  payload above the pipe buffer (at least 128 KB); a small payload (421 bytes, 0 of 20 runs) does not
+  reproduce an EPIPE, so no RED is claimed for it.
 - **[inert --force on two verbs]** See D5.
 - **[help wins]** `remove-epic e2 --help` exits 0. A script checking only the exit code sees success
   with nothing removed. → The output is help text, not the success line; D2 records why a refusal was
   not chosen.
 - **[emitted command lines]** pm emits invocations in the rules block, command docs and SKILL.md. Any
-  that passes an undeclared flag or an unquoted multi-word value becomes a refusal. → Task 5.1 sweeps
+  that passes an undeclared flag or an unquoted multi-word value becomes a refusal. → Task 4.1 sweeps
   every emitted invocation mechanically; a broken one is fixed in the same commit as the check.
 
 ## Migration Plan

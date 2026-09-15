@@ -47,79 +47,91 @@ Every refusal test asserts the refusal's CAUSE text (not only a non-zero exit) a
       `conductor-35`'s "help declares a flagless verb explicitly" fixture (it is no longer flagless) for a
       read-only flagless verb such as `verify-worktrees`
 - [ ] 1.3 RED then GREEN: `--force` as one `argvLevel` row. RED: a test that `cliFlagsFor(v)` includes
-      `force` for every `VERB_EFFECTS` verb whose effect is `mutates` and for no `read-only` verb.
-      GREEN: the `VERB_FLAGS` row with `commands` derived from `VERB_EFFECTS` (design.md D5); filter
-      `argvLevel` rows out of `conductor-31`'s "every VERB_FLAGS command has a baseline" check and out of
-      the `withFlags` set in its "every DISPATCHED verb is claimed … exactly once" check (a flagless
-      mutating verb stays in `FLAGLESS_VERBS`: it has no flags of its own); replace constants.mjs's "NOT DECLARED, deliberately:
-      `--force`…" comment. The SAME commit adds a `--force` entry to `conductor-13`'s `EXERCISE` table
-      (`args: ["--title", "Forced", "--force"]`, check the title) and a `--force` mention to
-      `commands/epic.md`, because `conductor-36` requires every `cliFlagsFor("update-epic")` flag in that
-      file and the hook runs the suite; and it swaps `set-active` out of `conductor-35`'s flagless-help
-      fixture for `verify-state`, because `verbHelp()` now lists `--force` for it. `add-epic --force` is still refused by add-epic's own allowlist
-      until 2.3; the behavioural scenario lands in 2.6
+      `force` for every `VERB_EFFECTS` verb whose effect is `mutates` and for no `read-only` verb, and that
+      the `argvLevel` rows are exactly `force`. GREEN: the `VERB_FLAGS` row with `commands` derived from
+      `VERB_EFFECTS` (design.md D5); replace constants.mjs's "NOT DECLARED, deliberately: `--force`…"
+      comment. The SAME commit filters `argvLevel` rows out of every check written for per-verb parser
+      flags, or the hook's suite run fails: `conductor-31`'s "every VERB_FLAGS command has a baseline",
+      the `withFlags` set of its "claimed … exactly once" check (a flagless mutating verb stays in
+      `FLAGLESS_VERBS`), and its closed deepEqual of valueless rows ("VERB_FLAGS' valueless rows are a
+      short closed list"); `conductor-13`'s documented-flag harness; and `conductor-36`'s two
+      registry-to-`commands/epic.md` checks. It adds NO `--force` text to `commands/epic.md` (docs land in
+      5.1, outside update-epic's exercised section). It swaps `set-active` out of
+      `conductor-35`'s flagless-help fixture for `verify-state`, because `verbHelp()` now lists `--force`
+      for it. `add-epic --force` is still refused by add-epic's own allowlist until 2.3
 
 ## 2. The pre-dispatch check
 
 - [ ] 2.1 RED then GREEN: help tokens. Unit tests of `checkCommandLine()` in the new leaf module
-      `scripts/lib/argv-surface.mjs` for D2's classifier (a value-bearing declared flag consumes a
-      non-flag-shaped next token; a valueless one never does; a `--`-leading non-flag-shaped token is a
-      positional; `--help` directly after a value-bearing flag that took no value is a value-position help token;
-      `-h` there is that flag's value; a help token is recognised before a token is classified as a flag), then the subprocess scenarios "A trailing help token does not remove an epic",
+      `scripts/lib/argv-surface.mjs` for D2's classifier (a help token is recognised before a token is
+      classified as a flag; a value-bearing declared flag consumes a non-flag-shaped next token, so `-h`
+      there is its value; `--help` directly after a value-bearing flag that took no value is a
+      value-position help token; a valueless flag never consumes; a `--`-leading non-flag-shaped token is
+      a positional), then the subprocess scenarios "A trailing help token does not remove an epic",
       "…does not append to the detour log", "…does not disarm the gate guard", "A short help token after a
       positional does not move the active pointer". GREEN: the module (imports `constants.mjs` and
       `verb-effects.mjs` only — assert that with a source read), wired into `conductor.mjs` after the
-      self-hosting handoff and before the root-divergence warning, replacing the `helpAt` block.
-      REGRESSION GUARDS in the same commit: "A help token in a value position is still refused", "A help
-      token first after the verb is still that verb's help", and `positional-and-help-tokens.test.mjs`
-      and `conductor-35`'s help sweep unchanged and passing
-- [ ] 2.2 RED then GREEN: undeclared flags on every dispatched verb. RED: a `DISPATCH_BASELINE` table
-      with a working invocation for EVERY verb in `VERB_EFFECTS` (completeness asserted against the
-      dispatch table; reuse `scratchpad/propose/every-verb-refuses-what-it-does-not-read/sweep.mjs`'s
+      self-hosting handoff and before the root-divergence warning, replacing the `helpAt` block. At this
+      commit the check returns only `help`, a value-position refusal, or `ok`. REGRESSION GUARDS in the
+      same commit: "A help token in a value position is still refused", "A help token first after the verb
+      is still that verb's help", "A hook verb's help still works without pm" (`brief --help` and
+      `gate-guard --help` in a repo with no `.conductor/`), and `positional-and-help-tokens.test.mjs` and
+      `conductor-35`'s help sweep passing
+- [ ] 2.2 RED then GREEN: undeclared flags on every dispatched verb, with hook dormancy. RED: a
+      `DISPATCH_BASELINE` table with a working invocation for EVERY verb in `VERB_EFFECTS` (completeness
+      asserted against the dispatch table; reuse `scratchpad/propose/every-verb-refuses-what-it-does-not-read/sweep.mjs`'s
       fixtures), first asserted to EXIT 0 on its own (a separate test, as `conductor-31` does for
       `VERB_BASELINE`, so a broken fixture cannot read as a refusal — `verify-state`, declared
       `expectsFailure`, is asserted by its own non-drift exit instead), then each run with
       `--zzz-undeclared` appended and asserted refused by the refusal's CAUSE text naming the flag — never
-      by exit code alone — with nothing written; plus "A typo'd flag on the reconcile write-back records nothing", "A typo'd autonomy flag
-      writes no autonomy block", "A read-only verb refuses an undeclared flag", "A batch key is not a
-      command-line flag", "An id given as a flag is diagnosed as the positional" (`remove-epic --id e2`).
-      GREEN: the unknown-flag decision with D4's message, and the `--id` diagnosis MOVED from
-      `update-epic.mjs` into the check in this commit (otherwise `flag-parsing.test.mjs`'s two rewrite
-      assertions fail on the new refusal). Amend every assertion on the old `unknown flag(s)` shape,
-      found with `rg -n -F "unknown flag(s)" scripts/test`. Where an existing test passes a flag
-      the registry does not declare and expects success, that is a registry gap: declare the row, never
-      loosen the check — list each in the commit message
-- [ ] 2.3 REFACTOR (suite green before and after; both runs saved as `refactor-2.3-before.txt` /
-      `-after.txt`): delete the per-verb unknown-flag checks the check has made unreachable — the loops in
-      `add-epic.mjs`, `update-epic.mjs` (with its `--id` block), `releases.mjs` (`release`,
-      `record-cross-spec-review`), `gate-review-writeback.mjs`, `triage.mjs`, `verify-specs.mjs`, and
-      the `requireKnownFlags()` calls in `claims.mjs`, `activity-report.mjs`, `purge-logs.mjs`. Enumerate
-      with `rg -n "unknown flag|requireKnownFlags\(" scripts/lib` at the time. Delete `requireKnownFlags`
-      and the `*_FLAGS` allowlist constants only where `rg` finds no remaining reader. Correct the
-      constants.mjs comment claiming add-many "refuses everything else" and `requireKnownFlags`'
-      "only the three verbs…" comment
-- [ ] 2.4 RED then GREEN: surplus positionals. RED: every `DISPATCH_BASELINE` invocation of a verb with a
-      finite `max` gets `zzzstray` appended and is asserted refused by cause text naming it (not by exit
-      code alone) with nothing written; plus
-      "An unquoted multi-word title is refused, not truncated", "The same truncation is refused on update",
-      "A verb that reads one text positional refuses a second", "A value given to a valueless flag is
-      refused by name", "A verb that takes no positionals refuses one". GREEN: D2's maximum check and
-      D4's surplus message. REGRESSION GUARDS: "A verb that joins its positionals still accepts many",
-      "A dash-leading text positional is still a positional", and `flag-parsing.test.mjs`'s
-      `claim e1 --session "--weird session name"` round trip
-- [ ] 2.5 RED then GREEN: hook verbs. RED: `gate-guard --bogus` in an initialized repo with a PreToolUse
-      JSON payload on stdin exits 1 naming `--bogus` without an EPIPE on the writer. GREEN: the refusal
-      path drains stdin for `hook: true` verbs, and `conductor.mjs` skips the check for them when
-      `.conductor/state.json` is absent (D6). REGRESSION GUARDS: "A hook verb stays dormant in a
-      repository without pm" (`brief --bogus`, and the same for the other four); "A hook verb accepts its
-      hook configuration's command line" — read every `command` from `hooks/hooks.json` at test time,
-      substitute `${CLAUDE_PLUGIN_ROOT}`, run each in an initialized repo with a payload on stdin, assert
-      none is refused
-- [ ] 2.6 RED then GREEN: `--force`. RED: "A forced epic creation lands over a superseded revision"
-      (drive the conflict with `scripts/test/inject-state-conflict.cjs`, as `conductor-33` does) and
-      "A read-only verb refuses --force" (`integrity --force`). GREEN: nothing beyond 1.3's row and 2.3's
-      removals should be needed; if the forced write still fails, the cause is in `saveState()` and is
-      reported to `state-file-refuses-to-guess` rather than fixed here
+      by exit code alone — with nothing written; plus "A typo'd flag on the reconcile write-back records
+      nothing", "A typo'd autonomy flag writes no autonomy block", "A read-only verb refuses an undeclared
+      flag", "A read-only verb refuses --force" (`integrity --force`), "A batch key is not a command-line
+      flag", "An id given as a flag is diagnosed as the positional" (`remove-epic --id e2`). GREEN: the
+      undeclared-flag decision reading `cliFlagsFor(verb)` with D4's message; the `--id` diagnosis MOVED
+      from `update-epic.mjs` into the check, consuming `--id`'s value when it precedes any positional (D4),
+      so `flag-parsing.test.mjs`'s rewrite assertions and `conductor-14`'s "update-epic --id is diagnosed
+      by name" keep passing; the hook-verb dormancy carve-out (D6) — refusals suppressed when `state.json`
+      is absent, help still printed; and the stdin drain on a hook verb's refusal path. REGRESSION GUARDS
+      in the same commit: "A hook verb stays dormant in a repository without pm" (`brief --bogus` and the
+      other four), and `gate-guard --bogus` in an initialized repo with a PreToolUse payload of at least
+      128 KB on stdin exits 1 naming `--bogus` with no EPIPE reported by the writer (no RED is claimed: a
+      421-byte payload did not reproduce one in 20 runs). Amend every assertion on the old `unknown
+      flag(s)` shape, found with `rg -n -F "unknown flag(s)" scripts/test`. Where an existing test passes a
+      flag the registry does not declare and expects success, that is a registry gap: declare the row,
+      never loosen the check — list each in the commit message
+- [ ] 2.3 RED then GREEN: `--force` reaches the verbs that still carry their own allowlists. RED (written
+      against the tree after 2.2, where those allowlists still refuse it): "--force is not refused on a
+      mutating verb that validates its own flags" for `add-epic`, and the same assertion — not refused as
+      carrying an undeclared flag; nothing about the forced write itself, which `state-write-guard` owns —
+      for `update-epic e1 --title x --force`, `release r1 --intent x --force`,
+      `record-gate-review e1 --gate 2 --verdict fail --force`, `record-cross-spec-review <rel> … --force`,
+      `claim e1 --session s --force` and `unclaim e1 --session s --force`. GREEN: delete the per-verb
+      unknown-flag checks — the loops in `add-epic.mjs`, `update-epic.mjs` (with its `--id` block),
+      `releases.mjs` (`release`, `record-cross-spec-review`), `gate-review-writeback.mjs`, `triage.mjs`,
+      `verify-specs.mjs`, and the `requireKnownFlags()` calls in `claims.mjs`, `activity-report.mjs`,
+      `purge-logs.mjs`, enumerated with `rg -n "unknown flag|requireKnownFlags\(" scripts/lib` at the time.
+      Delete `requireKnownFlags` and the `*_FLAGS` allowlist constants only where `rg` finds no remaining
+      reader. Correct the constants.mjs comment claiming add-many "refuses everything else" and
+      `requireKnownFlags`' "only the three verbs…" comment
+- [ ] 2.4 RED then GREEN: surplus positionals and canonical argv. RED: every `DISPATCH_BASELINE`
+      invocation of a verb with a finite `max` gets `zzzstray` appended and is asserted refused by cause
+      text naming it (not by exit code alone) with nothing written; plus "An unquoted multi-word title is
+      refused, not truncated", "The same truncation is refused on update", "A verb that reads one text
+      positional refuses a second", "A value given to a valueless flag is refused by name", "A verb that
+      takes no positionals refuses one", "--force does not leak into a joined text" (`log-detour fixed it
+      --force`, and `honcho-memory push e1 why --force` printing `why`), "--force before a positional does
+      not displace it" (`set-active --force e2`, `set-gate-guard --force off`, and `release show --force`
+      behaving as `release show`). GREEN: D2's maximum check and D4's surplus message; D10's canonical
+      rewrite of `process.argv`, and `logDetour()`/`honchoMemory()` joining the check's exported positional
+      list. REGRESSION GUARDS: "A verb that joins its positionals still accepts many", "A dash-leading text
+      positional is still a positional", and `flag-parsing.test.mjs`'s `claim e1 --session "--weird session
+      name"` round trip
+- [ ] 2.5 REGRESSION GUARD: "A hook verb accepts its hook configuration's command line" — read every
+      `command` from `hooks/hooks.json` at test time, substitute `${CLAUDE_PLUGIN_ROOT}`, run each in an
+      initialized repo with a payload on stdin, assert none is refused; and assert both directions of 4.2's
+      inverse (every flag a hook line passes is declared for that verb; every `hook: true` verb's hook line
+      passes `--platform`)
 
 ## 3. Verb-specific refusals and help
 
@@ -155,14 +167,14 @@ Every refusal test asserts the refusal's CAUSE text (not only a non-zero exit) a
       invocation from `scripts/lib/rules.mjs`'s rules block (all platforms), `commands/*.md`,
       `skills/**/SKILL.md`, `README.md` and `hooks/hooks.json` (plus any other platform's hook config
       `rg -n -- "--platform"` finds), fill placeholders, run each through `checkCommandLine()`, and fix
-      every refused line in the commit that fixes it. This change adds no state.json field; state that
-      explicitly
+      every refused line in the commit that fixes it. Include the invocation strings the engine prints from
+      `scripts/lib` — remedies and instructions in `integrity.mjs`, `archive-gate.mjs`, `briefing.mjs`,
+      `update-epic.mjs` and any other module `rg -n "update-epic |add-epic |record-[a-z-]+ |set-[a-z-]+ "
+      scripts/lib` finds. This change adds no state.json field, and `call-site-sweep.md` says so
 - [ ] 4.2 **Inverse of every operation** (item 1) — enumerate and justify each unshipped inverse:
       declaring a flag on a verb ⇄ removing its row (removal refuses callers; no verb needed); the
       `--force` row ⇄ its removal by `state-file-refuses-to-guess` (design.md Coordination); a hook verb
-      declaring `--platform` ⇄ `hooks/hooks.json` no longer passing it (make 2.5's test assert both
-      directions: every flag a hook line passes is declared, and every `hook: true` verb's hook line
-      passes `--platform`); bare `set-lane-routing` refused ⇄ a read form (declined, D8); help printed
+      declaring `--platform` ⇄ `hooks/hooks.json` no longer passing it (2.5 asserts both directions); bare `set-lane-routing` refused ⇄ a read form (declined, D8); help printed
       after a positional ⇄ no inverse (a read)
 - [ ] 4.3 **Verify against the commit** (item 2) — for every task commit run `git show --stat <sha>` and
       assert each file the task claims to change appears in it; a claimed file absent from its commit
@@ -171,7 +183,7 @@ Every refusal test asserts the refusal's CAUSE text (not only a non-zero exit) a
       `update-epic every-verb-refuses-what-it-does-not-read --attribute-commit <sha>`, in landing order.
       The commit moving `openspec/changes/every-verb-refuses-what-it-does-not-read/` under `archive/`
       is NOT attributed
-- [ ] 4.5 **Declare lifecycle bookkeeping** (item 3) <!-- pm:lifecycle --> — confirm the marker sits on
+- [ ] 4.5 **Declare lifecycle bookkeeping** (item 3) — confirm the marker sits on
       the task lines of 4.6 and 6.2 and on no delivery task
 - [ ] 4.6 **Dispositions** (item 6) <!-- pm:lifecycle --> — the archive invocation is 6.2's; add a
       `--deferral "<epicId>:<section>"` for any follow-up registered while the work ran, and never replace
@@ -186,7 +198,8 @@ Every refusal test asserts the refusal's CAUSE text (not only a non-zero exit) a
 ## 5. Docs — after Gate 2 is clean
 
 - [ ] 5.1 `commands/*.md`: every command doc that shows an invocation — the help-token rule, quoting
-      multi-word values, `--force` on mutating verbs; `commands/epic.md` update-epic section names the
+      multi-word values, `--force` on mutating verbs (in `commands/epic.md`, as a note on every mutating
+      verb OUTSIDE update-epic's own section, which `conductor-13` exercises); `commands/epic.md` update-epic section names the
       disposition flags' not-archiving refusal; `commands/lane-routing.md` the bare refusal; each hook
       verb's `--platform` where a doc covers it. Plus `hooks/README.md`
 - [ ] 5.2 `README.md`: the command reference and a BREAKING note for undeclared flags and surplus
@@ -194,7 +207,9 @@ Every refusal test asserts the refusal's CAUSE text (not only a non-zero exit) a
 - [ ] 5.3 `skills/conductor/SKILL.md`: wherever it teaches an engine invocation or `--help`
 - [ ] 5.4 `CHANGELOG.md` `[Unreleased]`: the BREAKING entries, cfdude/pm#187's 0.41.0 regression fixed
       (closing the issue belongs to the release cut), `init`'s ordering fix, `--force` now reachable on
-      add-epic/update-epic/claim. Mintlify sync belongs to the release cut, not this change
+      add-epic/update-epic/claim, and the BREAKING cases design.md Risks names (`--cascade true`); note that
+      `/pm:upgrade` rewrites the rules block, so each repo picks up corrected emitted lines only when it
+      runs. Mintlify sync belongs to the release cut, not this change
 - [ ] 5.5 Re-record Gate 2 over the docs commits — 4.4 attributes them, which moves the last attributed
       commit past 6.1's recorded `--head-sha` and would make the verdict stale at the archive gate. Have a
       fresh-context reviewer read the docs-only delta (`git diff <6.1 head>..<last attributed>`), then

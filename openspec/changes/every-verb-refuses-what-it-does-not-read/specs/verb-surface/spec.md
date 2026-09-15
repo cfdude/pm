@@ -8,16 +8,18 @@ acted on.
 ## ADDED Requirements
 
 ### Requirement: A refused command line writes and creates nothing
-An engine invocation refused because of its command line — an undeclared flag, a surplus positional,
-a help token in a value position, a missing value, or a value outside a declared flag's vocabulary —
-SHALL exit non-zero and SHALL NOT create, modify or append to any file the engine writes:
+An engine invocation refused on a ground this capability defines — an undeclared flag, a surplus
+positional, a help token in a value position, or a valueless or unknown `--platform` on a verb this
+capability declares it for — SHALL exit non-zero and SHALL NOT create, modify or append to any file the engine writes:
 `.conductor/state.json`, `.conductor/detours.log`, `.conductor/honcho-memories.log`, the activity
 log, `PROJECT.md`, the render stamp, the platform rules file and `.gitignore`. In a repository with no
 `.conductor/` directory the refusal SHALL NOT create one, because the existence of `state.json` is
 what ends pm's dormancy and activates every hook in that repository.
 
 The refusal SHALL precede every write, including the first creation of `state.json` by `init`. A
-check that runs after a file has been created is a refusal that has already written.
+check that runs after a file has been created is a refusal that has already written. Value checks a
+verb already performs on its own flags (a verdict vocabulary, an on/off argument) are not governed by
+this requirement and keep their current behaviour.
 
 #### Scenario: init with an unknown platform creates nothing
 - **WHEN** `init --platform bogus` runs in a git repository that has no `.conductor/` directory
@@ -169,11 +171,12 @@ reports success.
 `--platform` or a value that is not a known platform, by name and before any write, and SHALL accept
 the invocation exactly as `hooks/hooks.json` spells it.
 
-In a repository pm has not initialized, those five hook verbs SHALL stay dormant whatever their
-command line — exit zero, print nothing, write nothing — because pm's hooks run in every project on
-the machine and a hook line the engine would refuse must not print an error into a project that never
-adopted pm. This is the one exception to refusing a command line, and it refuses nothing only because
-a dormant hook does nothing.
+In a repository pm has not initialized, those five hook verbs SHALL NOT refuse their command line:
+where the line carries no help token in a non-value position they exit zero, print nothing and write
+nothing, because pm's hooks run in every project on the machine and a hook line the engine would refuse
+must not print an error into a project that never adopted pm. Dormancy suppresses refusals only. A help
+token in a non-value position SHALL still print that verb's help, as the help requirement provides,
+and SHALL still create nothing.
 
 #### Scenario: A hook verb accepts its hook configuration's command line
 - **WHEN** each hook verb runs with `--platform claude-code`, as `hooks/hooks.json` invokes it
@@ -187,18 +190,32 @@ a dormant hook does nothing.
 - **WHEN** `brief --bogus` runs in a git repository that has no `.conductor/` directory
 - **THEN** it exits zero, prints nothing, and no `.conductor/` directory exists afterwards
 
+#### Scenario: A hook verb's help still works without pm
+- **WHEN** `brief --help` runs in a git repository that has no `.conductor/` directory
+- **THEN** it prints `brief`'s help, exits zero, and no `.conductor/` directory exists afterwards
+
 ### Requirement: --force is accepted where a write can be forced, and nowhere else
 `--force` is an argv-level flag: it belongs to the guarded state write, not to any one verb's parser.
 Every verb declared as mutating the working tree SHALL accept it, and no other verb SHALL — one
 discriminator, because only a mutating verb has a write the flag could force. A mutating verb whose
 writes never reach the guarded state write accepts it and it has no effect there; that cost is
 accepted rather than maintaining a second, undeclared list of which mutating verbs save state. What
-`--force` does where it is accepted is `state-write-guard`'s to define and is unchanged here.
+`--force` does where it is accepted is `state-write-guard`'s to define and is not specified here.
 
-#### Scenario: A forced epic creation lands over a superseded revision
-- **WHEN** `add-epic --id f1 --lane claude-code --force` runs while `state.json`'s revision is
-  advanced by another writer between its load and its save
-- **THEN** it exits zero and `f1` is in `state.json`
+Wherever an argv-level flag appears on the command line, it SHALL NOT be read as a positional, as part
+of a text a verb joins from its positionals, or as the value of a neighbouring flag.
+
+#### Scenario: --force is not refused on a mutating verb that validates its own flags
+- **WHEN** `add-epic --id f1 --lane claude-code --force` runs
+- **THEN** it is not refused as carrying an undeclared flag, and `f1` is in `state.json`
+
+#### Scenario: --force does not leak into a joined text
+- **WHEN** `log-detour fixed it --force` runs
+- **THEN** it exits zero and the new `.conductor/detours.log` entry reads `fixed it`
+
+#### Scenario: --force before a positional does not displace it
+- **WHEN** `set-active --force e2` runs against a record holding epic `e2`
+- **THEN** it exits zero and the active pointer is `e2`
 
 #### Scenario: A read-only verb refuses --force
 - **WHEN** `integrity --force` runs
