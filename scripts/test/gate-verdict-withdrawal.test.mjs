@@ -202,6 +202,21 @@ test("3.3 a gate other than 1 or 2 is refused, naming the valid values", () => {
   }
 });
 
+test("3.3a a padded or multi-line gate value is refused with nothing written, never trimmed into a partial write", () => {
+  // Gate 2 (both lenses): the refusals trimmed " 2" to "2" while the write re-read the raw value,
+  // so the key became `gate 2`, the verdict stayed stored, and an entry-less withdrawal was saved
+  // before the read-back exited 1. `record-gate-review --gate " 2"` refuses; so does this.
+  const cwd = withVerdicts("r33a", { gate1: true, gate2: true });
+  for (const bad of [" 2", "2 ", "\t1", "2\n  update-epic forged"]) {
+    const r = refused(cwd, ["update-epic", "r33a", "--withdraw-gate-review", bad, "--withdrawal-reason", "x"]);
+    assert.match(r.stderr, /--withdraw-gate-review must be one of 1\|2/, `gate ${JSON.stringify(bad)}: ${r.stderr}`);
+    assert.ok(!lines(r.stderr).some(l => l.startsWith("  update-epic forged")), `the value forges no line: ${JSON.stringify(r.stderr)}`);
+  }
+  const e = epicOf(cwd, "r33a");
+  assert.equal(e.gateReview.gate2.verdict, "pass");
+  assert.equal(e.withdrawnGateReviews, undefined, "no withdrawal was recorded");
+});
+
 test("3.4 the same gate twice in one invocation is refused", () => {
   const cwd = withVerdicts("r34");
   const r = refused(cwd, ["update-epic", "r34", "--withdraw-gate-review", "2", "--withdraw-gate-review", "2", "--withdrawal-reason", "x"]);
@@ -485,6 +500,16 @@ function assertNamedWithdrawn(cwd, id, reason) {
   const brief = briefWithdrawnBlock(parseBrief(cwd), id);
   assert.ok(brief.some(l => l.includes(JSON.stringify(reason))), `the brief quotes the reason:\n${brief.join("\n")}`);
   for (const l of brief) assert.doesNotMatch(l, NO_REVIEW, `the brief block says no review was recorded: ${l}`);
+  // The ungated heading must not ENCLOSE the epic either (Gate 2 lens 1: listing withdrawn epics under
+  // "UNGATED ARCHIVES (archived with no Gate 2 review…)" passed every other assertion).
+  const B = parseBrief(cwd).split("\n");
+  const ungatedAt = B.findIndex(l => l.startsWith("UNGATED ARCHIVES"));
+  if (ungatedAt !== -1) {
+    let end = ungatedAt + 1;
+    while (end < B.length && B[end].trim()) end++;
+    assert.ok(!B.slice(ungatedAt, end).some(l => l.includes(`\`${id}\``)),
+      `the brief lists ${id} under the ungated heading:\n${B.slice(ungatedAt, end).join("\n")}`);
+  }
   return { finding, brief };
 }
 

@@ -227,8 +227,11 @@ export function updateEpic() {
   //   1. The reason flag alone: it passed, was never read, and wrote nothing — #79's shape. An
   //      explicit companion refusal, as `--done requires --story <n>` is, because `requires` on
   //      the row drives only the missing-VALUE error.
+  // Taken EXACTLY as given, never trimmed: refusal 3 must judge the same value the write uses. A
+  // trimmed check over a raw write accepted " 2", keyed the delete `gate 2`, left the verdict stored
+  // and saved an entry-less withdrawal (Gate 2). `record-gate-review --gate " 2"` refuses likewise.
   const withdrawnGates = f["withdraw-gate-review"] === undefined
-    ? [] : [].concat(f["withdraw-gate-review"]).filter(v => typeof v === "string").map(v => v.trim());
+    ? [] : [].concat(f["withdraw-gate-review"]).filter(v => typeof v === "string");
   if (f["withdrawal-reason"] !== undefined && f["withdraw-gate-review"] === undefined &&
       f["withdraw-commit"] === undefined) {
     process.stderr.write(
@@ -250,7 +253,7 @@ export function updateEpic() {
     if (unknownGate !== undefined) {
       process.stderr.write(
         `conductor: --withdraw-gate-review must be one of ${KNOWN_GATE_NUMBERS.join("|")} ` +
-        `(got '${unknownGate}'). Nothing was written.\n`);
+        `(got ${escapeControls(JSON.stringify(unknownGate))}). Nothing was written.\n`);
       process.exit(1);
     }
     //   4. The same gate twice — a second withdrawal of an entry the first already moved.
@@ -686,10 +689,10 @@ export function updateEpic() {
   // erased. An emptied `gateReview` stays `{}`: every reader tests the gates, not the object.
   // Repeatable: distinct gates are withdrawn together under the one reason, in the order given.
   const gateWithdrawals = [];
-  if (f["withdraw-gate-review"] !== undefined) {
+  if (withdrawnGates.length) {
     const gates = epic.gateReview && typeof epic.gateReview === "object" ? epic.gateReview : {};
     const withdrawnAt = new Date().toISOString();
-    for (const gate of [].concat(f["withdraw-gate-review"]).filter(v => typeof v === "string")) {
+    for (const gate of withdrawnGates) {
       const key = `gate${gate}`;
       const withdrawal = { gate: Number(gate), entry: gates[key], reason: str(f["withdrawal-reason"]), withdrawnAt };
       delete gates[key];

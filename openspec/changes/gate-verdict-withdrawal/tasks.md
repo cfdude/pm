@@ -59,6 +59,10 @@ Order per design.md.
       drives only the missing-value error); update `withdrawal-reason`'s `requires` text to name both flags
 - [x] 3.2 RED then GREEN: no `--withdrawal-reason`
 - [x] 3.3 RED then GREEN: gate `3`, `0` and `x` — the message names the values of `KNOWN_GATE_NUMBERS`
+- [x] 3.3a RED then GREEN (Gate 2, both lenses): a padded or multi-line gate value (" 2", "2 ", tab, newline)
+      is refused by refusal 3 with nothing written — the value is never trimmed, the write iterates the same
+      validated list, and the rejected value is printed escaped. Plus a guard (5.3): the brief's UNGATED
+      heading never encloses a withdrawn-kind epic (red-5.3-brief-heading.txt, run on the mutant)
 - [x] 3.4 RED then GREEN: the same gate twice
 - [x] 3.5 RED then GREEN: no stored verdict for a valid gate
 - [x] 3.6 RED then GREEN: a stored `ungated` Gate 2 produced by the heal route — keyed on the VERDICT,

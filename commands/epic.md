@@ -205,7 +205,7 @@ of them are declared once in `EPIC_FLAGS` (`scripts/lib/constants.mjs`), which i
 | `--external-updated-at <iso>` | `externalUpdatedAt` | the **tracker's own** timestamp, never a local clock |
 | `--attribute-commit <sha>` | `attributedCommits` | **repeatable**, append-only, in landing order |
 | `--withdraw-commit <sha>` | `attributedCommits`, `withdrawnCommits` | **repeatable**. Removes ONE occurrence of a sha this epic attributed and records why. A `git reset` is a normal operation, so an attribution can outlive its commit; this is the only supported way to correct that. Refuses a sha the epic never attributed. |
-| `--withdrawal-reason "<why>"` | `withdrawnCommits` | Required by `--withdraw-commit`, and deliberately **not** `--reason` — that one is the disposition's, and sharing it made a withdrawal's reason silently become the reason the epic was delivered. |
+| `--withdrawal-reason "<why>"` | `withdrawnCommits`, `withdrawnGateReviews` | Required by `--withdraw-commit` and by `--withdraw-gate-review`, and refused on its own; deliberately **not** `--reason` — that one is the disposition's, and sharing it made a withdrawal's reason silently become the reason the epic was delivered. |
 | `--withdraw-gate-review <1\|2>` | `gateReview`, `withdrawnGateReviews` | **repeatable** — distinct gates are withdrawn together under the one reason. Withdraws a recorded gate verdict that does not belong on this epic, and records why with `--withdrawal-reason`. The WHOLE entry moves, `superseded` included, into `withdrawnGateReviews` — recorded, never erased. |
 | `--outcome <o>` | `disposition` | `delivered\|killed\|superseded\|abandoned\|declined\|unreconstructable` |
 | `--reason "<why>"` | `disposition` | required for every outcome except `delivered` |
