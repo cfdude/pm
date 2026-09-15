@@ -172,3 +172,22 @@ test("6.5: substitution patterns in the block are written verbatim", () => {
   assert.equal(after.split("PREFIX-SENTINEL").length - 1, 1, "PREFIX-SENTINEL occurs exactly once");
   assert.ok(after.includes(repo), "the repo value, with each of $` $& $', is present verbatim");
 });
+
+// ─────────────── G2-I5 — the parser's marker rules, each pinned ───────────────
+
+test("G2-I5 parser: END before BEGIN is refused, a BEGIN without its --> and an END with trailing spaces are content", async () => {
+  const { rulesBlockArrangement } = await import("../lib/rules.mjs");
+  const reversed = rulesBlockArrangement(`# x\n${END}\nbody\n${BEGIN}\n`);
+  assert.equal(reversed.kind, "ambiguous", "END before BEGIN is not one block");
+  assert.deepEqual(reversed.markers, [{ line: 2, kind: "END" }, { line: 4, kind: "BEGIN" }]);
+
+  const unclosed = rulesBlockArrangement("# x\n<!-- BEGIN pm-conductor rules (managed by pm\nbody\n");
+  assert.equal(unclosed.kind, "none", "a BEGIN line that does not end with --> is not a marker");
+
+  const spaced = rulesBlockArrangement(`# x\n${BEGIN}\nbody\n${END}   \n`);
+  assert.equal(spaced.kind, "ambiguous", "an END line with trailing spaces is not the END marker, so BEGIN is orphaned");
+  assert.deepEqual(spaced.markers, [{ line: 2, kind: "BEGIN" }]);
+
+  const crlf = rulesBlockArrangement(`# x\r\n${BEGIN}\r\nbody\r\n${END}\r\n`);
+  assert.equal(crlf.kind, "one", "a CRLF terminator is not part of the marker");
+});

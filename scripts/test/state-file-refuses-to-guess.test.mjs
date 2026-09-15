@@ -806,3 +806,83 @@ test("G2-I1: the repository claim's detached check asks about the repository bei
   assert.doesNotMatch(r.stderr, /NOT recorded/, `suppressed on the wrong tree's answer: ${r.stderr}`);
   assert.equal(JSON.parse(fs.readFileSync(repoClaimPath(target), "utf8")).session, "s1");
 });
+
+// ─────────────── G2-I5 — one test per SHALL clause a mutant survived ───────────────
+
+test("G2-I5 shape: a top-level array, a non-object epics element and a non-array detourStack are each refused", async () => {
+  const stateLib = await import("../lib/state.mjs");
+  const cases = [
+    ["a top-level array", "[]", /top-level value is not a JSON object/],
+    ["a non-object epics element", JSON.stringify({ epics: [{ id: "ok" }, "e2"] }), /element that is not a JSON object \(index 1\)/],
+    ["an array epics element", JSON.stringify({ epics: [[]] }), /element that is not a JSON object \(index 0\)/],
+    ["a non-array detourStack", JSON.stringify({ epics: [], detourStack: {} }), /`detourStack` member/],
+  ];
+  for (const [label, text, reason] of cases) {
+    const cwd = tmpRepo();
+    fs.mkdirSync(path.join(cwd, ".conductor"));
+    fs.writeFileSync(statePath(cwd), text);
+    await inRepo(cwd, () => {
+      assert.throws(() => stateLib.loadState(), (e) => e.name === "StateUnreadableError" && reason.test(e.message),
+        `${label} must be refused naming why`);
+    });
+  }
+});
+
+test("G2-I5 read error: a state.json that exists but cannot be read is refused, never read as absent", async (t) => {
+  if (process.getuid && process.getuid() === 0) { t.skip("root reads a mode-000 file"); return; }
+  const stateLib = await import("../lib/state.mjs");
+  const cwd = threeEpicRepo();
+  fs.chmodSync(statePath(cwd), 0o000);
+  try {
+    await inRepo(cwd, () => {
+      assert.throws(() => stateLib.loadState(), (e) => e.name === "StateUnreadableError" && /could not be read \(EACCES\)/.test(e.message));
+    });
+  } finally { fs.chmodSync(statePath(cwd), 0o600); }
+});
+
+test("G2-I5 liveness: EPERM from the pid probe means the holder is alive", async (t) => {
+  if (process.getuid && process.getuid() === 0) { t.skip("root may signal pid 1"); return; }
+  const stateLib = await import("../lib/state.mjs");
+  let code = null;
+  try { process.kill(1, 0); } catch (e) { code = e.code; }
+  if (code !== "EPERM") { t.skip(`pid 1 probe answered ${code}`); return; }
+  const info = { ino: 1, mtimeMs: Date.now(), nonce: "n",
+    content: { pid: 1, host: os.hostname(), pidns: ourPidns(), nonce: "n" } };
+  assert.equal(stateLib.isStaleLock(info), false, "a pid this process may not signal is alive, not stale");
+});
+
+test("G2-I5 age: a lock dated past the stale age in the FUTURE is stale", async () => {
+  const stateLib = await import("../lib/state.mjs");
+  const { STATE_LOCK_STALE_MS } = await import("../lib/constants.mjs");
+  const future = { ino: 1, nonce: null, content: null, mtimeMs: Date.now() + STATE_LOCK_STALE_MS + 60000 };
+  assert.equal(stateLib.isStaleLock(future), true, "a backward clock step must not wedge the lock");
+  const young = { ino: 1, nonce: null, content: null, mtimeMs: Date.now() + 1000 };
+  assert.equal(stateLib.isStaleLock(young), false, "slightly in the future is not stale");
+});
+
+test("G2-I5 break file: the break is exclusive, and a dead breaker's file is recovered by age", async () => {
+  const stateLib = await import("../lib/state.mjs");
+  const cwd = threeEpicRepo();
+  placeLock(cwd, { pid: deadPidG2(), host: os.hostname(), pidns: ourPidns(), acquiredAt: new Date().toISOString(), nonce: "stale" });
+  await inRepo(cwd, () => {
+    const judged = stateLib.inspectLock(lockPath(cwd));
+    assert.ok(stateLib.isStaleLock(judged), "precondition: the lock is stale");
+    fs.writeFileSync(breakPath(cwd), "another breaker");
+    assert.equal(stateLib.breakStaleLock(judged), false, "a live break file excludes a second breaker");
+    assert.ok(fs.existsSync(lockPath(cwd)), "so the lock is not removed");
+    assert.ok(fs.existsSync(breakPath(cwd)), "and a FRESH break file is left alone");
+    ageBack(breakPath(cwd), 120000);
+    assert.equal(stateLib.breakStaleLock(judged), false, "the recovering call only clears the dead breaker's file");
+    assert.ok(!fs.existsSync(breakPath(cwd)), "an old break file is recovered by age");
+    assert.equal(stateLib.breakStaleLock(judged), true, "and the next break proceeds");
+    assert.ok(!fs.existsSync(lockPath(cwd)));
+  });
+});
+
+test("G2-I5 claims: claimedAt plus the TTL beyond the representable dates reads expired and never throws", async () => {
+  const { claimExpiry, isLiveClaim } = await import("../lib/claim-shape.mjs");
+  const claim = { session: "s", claimedAt: "+275760-09-13T00:00:00.000Z", ttlMinutes: 60 };
+  assert.ok(Number.isFinite(Date.parse(claim.claimedAt)), "precondition: claimedAt itself parses");
+  assert.equal(claimExpiry(claim), null);
+  assert.equal(isLiveClaim(claim), false);
+});
