@@ -8,12 +8,20 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.43.0] — 2026-09-14
+
 **The archive gate reads the record the call writes.** `update-epic` ran the archive gate before
 the invocation's own field writes, so the gate decided on a record the call was about to replace.
 Every field write came after it: `--lane`, `--attribute-commit`, `--add-story`, `--withdraw-commit`,
 `--story <n> --done`, and the `--clear` unsets. And an update to an epic that is already archived
 never passes through `--status archived`, so it never met the gate at all. Both halves had one
 cause: the gate read a record the invocation does not leave.
+
+**And a gate verdict gets the inverse every other correctable record has.** A verdict recorded on the
+wrong epic could be replaced but never taken back, so one copied onto a tracker-mirror epic while
+closing #175 was recoverable only because the write was still uncommitted. It can now be withdrawn,
+with its reason, and the withdrawal is recorded rather than erased. Withdrawing is a field write
+the archive gate above decides on, so it is never a route past that gate.
 
 ### Added
 
