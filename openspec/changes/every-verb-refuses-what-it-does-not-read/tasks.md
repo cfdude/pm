@@ -157,7 +157,7 @@ Every refusal test asserts the refusal's CAUSE text (not only a non-zero exit) a
       not-archiving refusal in `update-epic.mjs` (D7). REGRESSION GUARD: "The disposition flags still
       record at the archive", plus `conductor-13`'s `--outcome`/`--reason`/`--carried-to` exercise entries
       and `conductor-36`'s "a deferral flag without archiving is REFUSED" unchanged
-- [ ] 3.3 RED then GREEN: `remove-epic --help`'s first line naming `<id>`, and `set-active --help`
+- [x] 3.3 RED then GREEN: `remove-epic --help`'s first line naming `<id>`, and `set-active --help`
       stating it has no flags of its own before listing `--force`. GREEN: `verbHelp()` prints
       `VERB_POSITIONALS[verb].form`, says "takes no flags" only when `cliFlagsFor(verb)` is empty, and
       for a `FLAGLESS_VERBS` verb that accepts `--force` says it has no flags of its own before listing

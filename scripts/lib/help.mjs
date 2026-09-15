@@ -13,7 +13,7 @@
 // The one place that symmetry breaks is `add-many`, whose EPIC_FLAGS rows are batch-document
 // state keys rather than CLI flags — hence `cliFlagsFor()` rather than `flagsFor()`. See
 // BATCH_KEY_COMMANDS in constants.mjs.
-import { flagSpecsFor, FLAGLESS_VERBS, POSITIONAL_USAGE, epicBatchKeys, BATCH_KEY_COMMANDS } from "./constants.mjs";
+import { flagSpecsFor, FLAGLESS_VERBS, POSITIONAL_USAGE, VERB_POSITIONALS, epicBatchKeys, BATCH_KEY_COMMANDS } from "./constants.mjs";
 import { DOCS_INDEX_URL, DOCS_MCP_URL } from "./constants.mjs";
 
 /** One flag's line: `--name <what it requires>`, then the modifiers a caller must know to invoke
@@ -32,36 +32,59 @@ function flagLine(spec, width) {
  *  writing a real detour entry with "--help" as its description). */
 export function verbHelp(command) {
   const specs = flagSpecsFor(command);
+  // every-verb-refuses-what-it-does-not-read D9: help reads the SAME declarations the pre-dispatch
+  // command-line check enforces — the positional form from VERB_POSITIONALS, and every flag
+  // cliFlagsFor() accepts, the argv-level `--force` included. The first line names the form
+  // wherever the verb reads positionals, so `remove-epic --help` no longer hides its `<id>`.
+  const pos = VERB_POSITIONALS[command];
+  const head = `conductor.mjs ${command}${pos && pos.max > 0 ? ` ${pos.form}` : ""}`;
+  const own = specs.filter(s => !s.argvLevel);
+  const argvLevel = specs.filter(s => s.argvLevel);
   const out = [];
-
-  if (specs.length === 0) {
-    // EXPLICIT, never an empty list. 23 of 50 verbs legitimately take no flags, and they are
-    // declared in FLAGLESS_VERBS precisely so that "takes none" and "nobody declared this yet"
-    // cannot look the same. Printing nothing here would re-introduce exactly that ambiguity at
-    // the surface a reader actually looks at.
-    const declared = FLAGLESS_VERBS.includes(command);
-    out.push(`conductor.mjs ${command} — takes no flags.`);
-    out.push(declared
-      ? (POSITIONAL_USAGE[command]
-          ? "  " + POSITIONAL_USAGE[command]
-          : "  Positional arguments only, or none. See the command doc for what it expects.")
-      : "  No flags are declared for this verb in the registry.");
-  } else {
-    out.push(`conductor.mjs ${command} — ${specs.length} flag${specs.length === 1 ? "" : "s"}.`);
-    out.push("");
+  const flaglessBody = () => {
+    if (!FLAGLESS_VERBS.includes(command)) { out.push("  No flags are declared for this verb in the registry."); return; }
+    if (POSITIONAL_USAGE[command]) { out.push("  " + POSITIONAL_USAGE[command]); return; }
+    // The form is already on the first line where the verb reads positionals.
+    out.push(pos && pos.max > 0
+      ? "  See the command doc for what the positional arguments mean."
+      : "  It takes no positional arguments either.");
+  };
+  const flagLines = (list) => {
     // Capped. A couple of `requires` phrases are full sentences (`--link`'s names its own
     // remedy), and padding every other line out to match one of those wrecks the column the
     // padding exists to create. A long signature simply carries its marks unaligned.
-    const width = Math.min(44, Math.max(...specs.map(s =>
+    const width = Math.min(44, Math.max(...list.map(s =>
       (s.valueless ? `--${s.flag}` : `--${s.flag} <${s.requires}>`).length)));
-    for (const s of specs) out.push(flagLine(s, width));
+    for (const s of list) out.push(flagLine(s, width));
+  };
+
+  if (specs.length === 0) {
+    // EXPLICIT, never an empty list. A verb that takes no flags says so, and "takes no flags" is
+    // said ONLY here — where cliFlagsFor() is empty — so help can never claim a verb refuses a flag
+    // it accepts. Printing nothing would make "takes none" and "nobody declared this yet" look alike.
+    out.push(`${head} — takes no flags.`);
+    flaglessBody();
+  } else if (own.length === 0) {
+    // A verb whose PARSER reads no flags (FLAGLESS_VERBS keeps meaning exactly that) but which
+    // accepts the argv-level `--force` because it mutates: say both, in that order.
+    out.push(`${head} — no flags of its own.`);
+    flaglessBody();
+  } else {
+    out.push(`${head} — ${own.length} flag${own.length === 1 ? "" : "s"}.`);
+    out.push("");
+    flagLines(own);
+  }
+  if (argvLevel.length) {
+    out.push("");
+    out.push("  Accepted on every mutating verb (it belongs to the state write, not to this verb):");
+    flagLines(argvLevel);
   }
 
   // AND the POSITIONAL surface, for a verb that has BOTH flags and positionals. This branch is
   // the gh#178 half: the map was read only where `specs.length === 0`, so `release`'s read form —
   // the whole point of that change — was absent from the one surface a reader consults. Same map,
   // same wording, both branches; a verb absent from it renders exactly as before.
-  if (specs.length && POSITIONAL_USAGE[command]) {
+  if (own.length && POSITIONAL_USAGE[command]) {
     out.push("");
     out.push("  " + POSITIONAL_USAGE[command]);
   }

@@ -862,3 +862,27 @@ test("REGRESSION GUARD: The disposition flags still record at the archive", () =
   assert.equal(e1.disposition.outcome, "killed");
   assert.equal(e1.disposition.reason, "no");
 });
+
+// ═══════════════ 3.3 — help reads the declarations the check enforces ═══════════════
+
+test("remove-epic --help names its positional form on the first line", () => {
+  const cwd = initialized();
+  const first = run(["remove-epic", "--help"], { cwd }).split("\n")[0];
+  assert.match(first, /remove-epic <id>/, `the first line must show the positional form: ${first}`);
+});
+
+test("set-active --help says it has no flags of its own before listing --force", () => {
+  const cwd = initialized();
+  const out = run(["set-active", "--help"], { cwd });
+  const own = out.search(/no flags of its own/);
+  const force = out.indexOf("--force");
+  assert.notEqual(own, -1, `set-active --help must say it has no flags of its own:\n${out}`);
+  assert.notEqual(force, -1, "…and still list the argv-level flag it accepts");
+  assert.ok(own < force, "the statement comes before the argv-level flag");
+  assert.doesNotMatch(out, /takes no flags/, "it accepts --force, so it does not take NO flags");
+});
+
+test("REGRESSION GUARD: A read-only verb's help does not offer --force", () => {
+  const cwd = initialized();
+  assert.doesNotMatch(run(["integrity", "--help"], { cwd }), /--force/);
+});

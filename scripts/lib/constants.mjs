@@ -1167,6 +1167,7 @@ export const flagSpecsFor = (command) => {
       flag: name,
       valueless: f.valueless === true,
       repeats: f.repeats === true,
+      argvLevel: f.argvLevel === true,
       // PLACEHOLDER first, `requires` only as a fallback. The two have different audiences and
       // conflating them shipped a real defect: `--link`'s `requires` ends "...say so with
       // --clear-links", which is correct in a REFUSAL and made `add-epic --help` advertise
