@@ -183,7 +183,7 @@ keep passing.
 - [ ] 7.5 **Dispositions** <!-- pm:lifecycle --> — archive with 9.3's exact flags (its two `--declined-deferral`s), adding a
       `--deferral "<epicId>:<section>"` for any deferral registered while the work ran; never
       `--no-deferrals`, which would erase the two declines
-- [ ] 7.6 **Route what the work taught** — a practice → register an epic; tooling friction →
+- [x] 7.6 **Route what the work taught** — a practice → register an epic; tooling friction →
       `/pm:feedback [bug|feature] "<summary>"`; a process failure → a lesson file in `docs/lessons/`.
       Name which each is
 
