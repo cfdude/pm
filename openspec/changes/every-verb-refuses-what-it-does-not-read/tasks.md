@@ -1,6 +1,6 @@
 ## 0. Before any code
 
-- [ ] 0.1 **Gate 1** — two fresh-context reviewers with different lenses (spec testability and
+- [x] 0.1 **Gate 1** — two fresh-context reviewers with different lenses (spec testability and
       cross-capability consistency; implementation feasibility against `scripts/conductor.mjs`,
       `scripts/lib/constants.mjs` and the four harnesses named in design.md) over these artifacts BY
       PATH. Fix Critical and Important, re-run `openspec validate every-verb-refuses-what-it-does-not-read
@@ -11,7 +11,7 @@
       --artifact openspec/changes/every-verb-refuses-what-it-does-not-read/tasks.md
       --artifact openspec/changes/every-verb-refuses-what-it-does-not-read/specs/verb-surface/spec.md
       --artifact openspec/changes/every-verb-refuses-what-it-does-not-read/specs/epic-annotation/spec.md`
-- [ ] 0.2 **Cross-spec review** (required task item 5) — release 0.44.0 holds this change's two spec
+- [x] 0.2 **Cross-spec review** (required task item 5) — release 0.44.0 holds this change's two spec
       files plus those of `state-file-refuses-to-guess` and `gates-bind-to-verified-evidence`. Run the
       `cross-spec-review` skill over the release's whole spec set after all three pass Gate 1, and again
       after any concurrent amendment; record with

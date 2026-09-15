@@ -1,6 +1,6 @@
 ## 0. Before any code
 
-- [ ] 0.1 Gate 1 — two fresh-context reviewers with different lenses (one: spec testability and
+- [x] 0.1 Gate 1 — two fresh-context reviewers with different lenses (one: spec testability and
       today's-engine RED-ness of every scenario; two: failure modes of the fixes themselves — the lock's
       stale break, fail-closed gate-guard, refuse-not-heal on the rules block) over these artifacts BY
       PATH. Fix Critical and Important, re-run `openspec validate state-file-refuses-to-guess --strict`,
@@ -12,7 +12,7 @@
       openspec/changes/state-file-refuses-to-guess/specs/state-write-guard/spec.md --artifact
       openspec/changes/state-file-refuses-to-guess/specs/conductor-record/spec.md --artifact
       openspec/changes/state-file-refuses-to-guess/specs/managed-rules-block/spec.md`
-- [ ] 0.2 **Cross-spec review** (required task item 5) — release 0.44.0 holds three changes and this
+- [x] 0.2 **Cross-spec review** (required task item 5) — release 0.44.0 holds three changes and this
       change alone carries three spec files. Run the `cross-spec-review` skill over the WHOLE release's
       spec set once all three changes pass Gate 1, and again after any concurrent amendment. Ask in
       particular: does `every-verb-refuses-what-it-does-not-read` also amend `state-write-guard`'s

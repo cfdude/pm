@@ -1,6 +1,6 @@
 ## 0. Before any code
 
-- [ ] 0.1 Gate 1 — two fresh-context lenses over these artifacts BY PATH (lens A: correctness and
+- [x] 0.1 Gate 1 — two fresh-context lenses over these artifacts BY PATH (lens A: correctness and
       testability of every WHEN/THEN against today's engine; lens B: absent edits — call sites,
       DATA references and inverses the specs do not name); fix every Critical and Important,
       re-validate with `openspec validate gates-bind-to-verified-evidence --strict`, then record
@@ -9,7 +9,7 @@
       openspec/changes/gates-bind-to-verified-evidence/design.md --artifact
       openspec/changes/gates-bind-to-verified-evidence/tasks.md --artifact
       openspec/changes/gates-bind-to-verified-evidence/specs/gate-integrity/spec.md`
-- [ ] 0.2 **Cross-spec review** (required task item 5) — release 0.44.0 holds this change's spec and
+- [x] 0.2 **Cross-spec review** (required task item 5) — release 0.44.0 holds this change's spec and
       its two siblings' (`every-verb-refuses-what-it-does-not-read`, `state-file-refuses-to-guess`).
       Run the `cross-spec-review` skill after all three pass Gate 1 and again after any later
       amendment; record `record-cross-spec-review 0.44.0 --verdict pass|fail --reviewer "<identity>"`

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": null,
+  "active": "every-verb-refuses-what-it-does-not-read",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -8274,7 +8274,7 @@
       "id": "every-verb-refuses-what-it-does-not-read",
       "title": "Every verb refuses argv it does not read: a help token anywhere writes nothing, unknown flags and stray positionals are refused on all verbs",
       "priority": "P1",
-      "status": "queued",
+      "status": "active",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -8289,15 +8289,16 @@
         "6f7521bf1e2809e0f0557634ec2e31ac7276a0a7",
         "f67be9b8d62c4629ed09b1e59b42c3a76d4b04dc",
         "5322c81b9e328197f2db0295a291ec0858138154",
-        "02e40dae5f3fae33cb827c0b1abf048f8cc7f6c5"
+        "02e40dae5f3fae33cb827c0b1abf048f8cc7f6c5",
+        "5bbb2967080c723e936fc9e9d6d72d162fe5ec16"
       ],
       "createdAt": "2026-09-15T12:24:46.998Z",
-      "touchedAt": "2026-09-15T14:01:53.170Z",
+      "touchedAt": "2026-09-15T15:15:17.961Z",
       "release": "0.44.0",
       "gateReview": {
         "gate1": {
           "verdict": "pass",
-          "reviewedAt": "2026-09-15T14:01:53.166Z",
+          "reviewedAt": "2026-09-15T15:15:01.241Z",
           "artifacts": [
             "openspec/changes/every-verb-refuses-what-it-does-not-read/proposal.md",
             "openspec/changes/every-verb-refuses-what-it-does-not-read/design.md",
@@ -8305,9 +8306,22 @@
             "openspec/changes/every-verb-refuses-what-it-does-not-read/specs/epic-annotation/spec.md",
             "openspec/changes/every-verb-refuses-what-it-does-not-read/specs/verb-surface/spec.md"
           ],
-          "reviewer": "two fresh-context lenses (code-grounded correctness; spec contract & consistency), round 1 fail (1 C, 7 I), round 2 scoped confirmation fail (4 I), round 3 scoped confirmation pass; round-3 minors folded into tasks 2.4; 2026-09-15"
+          "reviewer": "re-recorded over artifacts amended after the Gate 1 pass by the 0.44.0 cross-spec review (coherence + falsifiability lenses, round 1 fail 4 BLOCKS, scoped re-review fail 1 BLOCK fixed and verified by grep); Gate 1 history: two fresh-context lenses plus scoped confirmation rounds to pass; 2026-09-15",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-09-15T14:01:53.166Z",
+            "artifacts": [
+              "openspec/changes/every-verb-refuses-what-it-does-not-read/proposal.md",
+              "openspec/changes/every-verb-refuses-what-it-does-not-read/design.md",
+              "openspec/changes/every-verb-refuses-what-it-does-not-read/tasks.md",
+              "openspec/changes/every-verb-refuses-what-it-does-not-read/specs/epic-annotation/spec.md",
+              "openspec/changes/every-verb-refuses-what-it-does-not-read/specs/verb-surface/spec.md"
+            ],
+            "reviewer": "two fresh-context lenses (code-grounded correctness; spec contract & consistency), round 1 fail (1 C, 7 I), round 2 scoped confirmation fail (4 I), round 3 scoped confirmation pass; round-3 minors folded into tasks 2.4; 2026-09-15"
+          }
         }
-      }
+      },
+      "startedAt": "2026-09-15T15:15:17.958Z"
     },
     {
       "id": "state-file-refuses-to-guess",
@@ -8343,15 +8357,16 @@
         "6e1d06746db30ccb01d3dd8246cb5bc63386eae9",
         "244f566a24ce4ec28bd2a2610e5b26dc521378f0",
         "755a5646624251bbb05886be19ec11be38c0d571",
-        "de28b1171caab784b4577808ef68e30e629a1743"
+        "de28b1171caab784b4577808ef68e30e629a1743",
+        "f23084b9dc32e97fcb4d71e426341b4da0703512"
       ],
       "createdAt": "2026-09-15T12:24:48.974Z",
-      "touchedAt": "2026-09-15T14:07:48.242Z",
+      "touchedAt": "2026-09-15T15:15:03.783Z",
       "release": "0.44.0",
       "gateReview": {
         "gate1": {
           "verdict": "pass",
-          "reviewedAt": "2026-09-15T14:07:48.235Z",
+          "reviewedAt": "2026-09-15T15:15:03.780Z",
           "artifacts": [
             "openspec/changes/state-file-refuses-to-guess/proposal.md",
             "openspec/changes/state-file-refuses-to-guess/design.md",
@@ -8360,7 +8375,20 @@
             "openspec/changes/state-file-refuses-to-guess/specs/managed-rules-block/spec.md",
             "openspec/changes/state-file-refuses-to-guess/specs/state-write-guard/spec.md"
           ],
-          "reviewer": "two fresh-context lenses (code-grounded correctness; spec contract & tradeoffs), round 1 fail (5 I), round 2 scoped confirmation fail (3 I), round 3 scoped confirmation fail (1 I: set-tracker secondary --remove re-run advice), fixed and verified by the orchestrator against tracker.mjs; 2026-09-15"
+          "reviewer": "re-recorded over artifacts amended after the Gate 1 pass by the 0.44.0 cross-spec review (coherence + falsifiability lenses, round 1 fail 4 BLOCKS, scoped re-review fail 1 BLOCK fixed and verified by grep); Gate 1 history: two fresh-context lenses plus scoped confirmation rounds to pass; 2026-09-15",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-09-15T14:07:48.235Z",
+            "artifacts": [
+              "openspec/changes/state-file-refuses-to-guess/proposal.md",
+              "openspec/changes/state-file-refuses-to-guess/design.md",
+              "openspec/changes/state-file-refuses-to-guess/tasks.md",
+              "openspec/changes/state-file-refuses-to-guess/specs/conductor-record/spec.md",
+              "openspec/changes/state-file-refuses-to-guess/specs/managed-rules-block/spec.md",
+              "openspec/changes/state-file-refuses-to-guess/specs/state-write-guard/spec.md"
+            ],
+            "reviewer": "two fresh-context lenses (code-grounded correctness; spec contract & tradeoffs), round 1 fail (5 I), round 2 scoped confirmation fail (3 I), round 3 scoped confirmation fail (1 I: set-tracker secondary --remove re-run advice), fixed and verified by the orchestrator against tracker.mjs; 2026-09-15"
+          }
         }
       }
     },
@@ -8389,22 +8417,36 @@
         "a03c45352a03ddcb161cb7c2e8f0153bf2ae68d7",
         "2466682df3bcacaa5ca70a3a4de8b1f10abdce28",
         "1e04826645051ac7fa9cdab2745537316606d93c",
-        "dd00a28c1c68637cb7bd417b04d9683eab926bd7"
+        "dd00a28c1c68637cb7bd417b04d9683eab926bd7",
+        "5e57de1cb78e9de2be2a322c1b49d0fa21174ff2",
+        "9c64fb15c118664e25ebe33e4d1b647a97fb5f93"
       ],
       "createdAt": "2026-09-15T12:24:50.972Z",
-      "touchedAt": "2026-09-15T14:25:05.131Z",
+      "touchedAt": "2026-09-15T15:15:06.295Z",
       "release": "0.44.0",
       "gateReview": {
         "gate1": {
           "verdict": "pass",
-          "reviewedAt": "2026-09-15T14:25:05.125Z",
+          "reviewedAt": "2026-09-15T15:15:06.292Z",
           "artifacts": [
             "openspec/changes/gates-bind-to-verified-evidence/proposal.md",
             "openspec/changes/gates-bind-to-verified-evidence/design.md",
             "openspec/changes/gates-bind-to-verified-evidence/tasks.md",
+            "openspec/changes/gates-bind-to-verified-evidence/specs/epic-annotation/spec.md",
             "openspec/changes/gates-bind-to-verified-evidence/specs/gate-integrity/spec.md"
           ],
-          "reviewer": "two fresh-context lenses (code-grounded bypass hunting; spec contract vs gate-integrity), round 1 fail (3 C, 4 I), round 2 fail (1 C, 4 I) resolved by replacing the read-time legacy rule with a migration, round 3 fail (3 I), round 4 narrow model-based confirmation fail (1 C: RED 6.9g passes today; 1 I: self/missing-link wedge) — both one-clause fixes applied and verified by the orchestrator; 2026-09-15"
+          "reviewer": "re-recorded over artifacts amended after the Gate 1 pass by the 0.44.0 cross-spec review (coherence + falsifiability lenses, round 1 fail 4 BLOCKS, scoped re-review fail 1 BLOCK fixed and verified by grep); Gate 1 history: two fresh-context lenses plus scoped confirmation rounds to pass; 2026-09-15",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-09-15T14:25:05.125Z",
+            "artifacts": [
+              "openspec/changes/gates-bind-to-verified-evidence/proposal.md",
+              "openspec/changes/gates-bind-to-verified-evidence/design.md",
+              "openspec/changes/gates-bind-to-verified-evidence/tasks.md",
+              "openspec/changes/gates-bind-to-verified-evidence/specs/gate-integrity/spec.md"
+            ],
+            "reviewer": "two fresh-context lenses (code-grounded bypass hunting; spec contract vs gate-integrity), round 1 fail (3 C, 4 I), round 2 fail (1 C, 4 I) resolved by replacing the read-time legacy rule with a migration, round 3 fail (3 I), round 4 narrow model-based confirmation fail (1 C: RED 6.9g passes today; 1 I: self/missing-link wedge) — both one-clause fixes applied and verified by the orchestrator; 2026-09-15"
+          }
         }
       }
     }
@@ -8417,7 +8459,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 822,
+  "revision": 831,
   "reviewMode": "thorough",
   "releases": [
     {
@@ -8614,7 +8656,42 @@
       "id": "0.44.0",
       "intent": "Fix every Critical from the 0.43.0 comprehensive code review: data-loss paths in the state file and argv handling, and gate bypasses.",
       "deferred": [],
-      "target": "0.44.0"
+      "target": "0.44.0",
+      "crossSpecReview": {
+        "verdict": "pass",
+        "reviewedAt": "2026-09-15T15:15:09.039Z",
+        "specs": [
+          {
+            "key": "every-verb-refuses-what-it-does-not-read/specs/epic-annotation/spec.md",
+            "sha256": "9393f1f88d49914ba1dc358c4bc825248c7b8e623a0700a0f170107572781693"
+          },
+          {
+            "key": "every-verb-refuses-what-it-does-not-read/specs/verb-surface/spec.md",
+            "sha256": "76a000e127fd852d47e736ee05d61cd992d27ac94b4618a78d23a7c74d927460"
+          },
+          {
+            "key": "gates-bind-to-verified-evidence/specs/epic-annotation/spec.md",
+            "sha256": "5139727157514dd2ea88021de477c848131f14a998837675fb0cf7322abae509"
+          },
+          {
+            "key": "gates-bind-to-verified-evidence/specs/gate-integrity/spec.md",
+            "sha256": "9d296bf27f35b310d6b80f97d9ad179880e5bacbdb8d6ec4eacee84e6b69614e"
+          },
+          {
+            "key": "state-file-refuses-to-guess/specs/conductor-record/spec.md",
+            "sha256": "972d571324dc7d1ab3b2f6bcfaf2e5d0a7d31c1d75cc71cb0dd627298528a5bb"
+          },
+          {
+            "key": "state-file-refuses-to-guess/specs/managed-rules-block/spec.md",
+            "sha256": "c9c98c41527ac695b904b8ba652b9f97731d6bcd37b0c07ed8e35ac7c13229a5"
+          },
+          {
+            "key": "state-file-refuses-to-guess/specs/state-write-guard/spec.md",
+            "sha256": "5cefd0c5191b2bfe890b9e9d66fb0639a967a097ce37c360a4f9048567a77f2f"
+          }
+        ],
+        "reviewer": "two fresh-context lenses (coherence/contradiction; falsifiability/dependency order over apply order argv → state-file → gates): round 1 fail (4 BLOCKS: link-repair contradiction, --force vs persist-or-refuse, 6.10 missed DISPATCH_BASELINE, 6.1–6.4 lacked --verdict); scoped re-review fail (6.9a/6.9b lacked --verdict) fixed and grep-verified; 7 spec files; 2026-09-15"
+      }
     }
   ],
   "archiveBackfilledAt": "2026-08-27T04:52:42.658Z"
