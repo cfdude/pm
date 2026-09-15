@@ -71,8 +71,9 @@ the GREEN commit stages that file and names it in its message.
       none of the epic ids / `available` / next-up text, and `.conductor/` has no new or changed file
       incl. the conflict latch (today: a normal brief of the empty guess); (d) a commit lands, file
       corrupted, `commit-nudge` → exit 2, `state.json`/`PROJECT.md`/`detours.log` byte-identical, the
-      watermark allowed to advance (today: exit 0 and `PROJECT.md` re-rendered); (e) `snapshot` → exit
-      code not 0 and not 2, `PROJECT.md` and `brief.txt` unchanged/absent (today: exit 0, renders);
+      watermark allowed to advance (today: exit 0 and `PROJECT.md` re-rendered); (e) REGRESSION GUARD
+      (already passes after 1.2, where `snapshot` refuses at `loadState()` before `render()`): `snapshot` →
+      exit code not 0 and not 2, `PROJECT.md` and `brief.txt` unchanged/absent;
       (f) the top-level verb→status mapping with `gate-guard` and `commit-nudge` and a
       `StateUnreadableError` thrown from a stub, expecting 2 (today: no mapping exists). Save
       `red-2.1.txt`
@@ -80,7 +81,8 @@ the GREEN commit stages that file and names it in its message.
       (`gate-guard`/`commit-nudge` → 2, `brief` → warning-only JSON + 0, all else incl. `snapshot` → 11),
       plus hook-local handling where it keeps `snapshot()` from reaching `render()` and `commitNudge()`
       from reaching heal/render/detour log. `observeCommit()` keeps running first (D3 watermark
-      exemption). `lessonAdvice()` untouched. Verify: 2.1 and 2.3 pass. Touch only the load at the top
+      exemption). Export the verb→status mapping so 2.1(f) can call it with a stub. `lessonAdvice()`
+      untouched. Verify: 2.1 and 2.3 pass. Touch only the load at the top
       of `gateGuardCheck()` — the reconcile/tracker branches belong to `gates-bind-to-verified-evidence`
 - [ ] 2.3 REGRESSION GUARD (lands with 2.2): tighten 1.2's rewrite of `conductor-26`'s gh#129
       unreadable-state rung from "non-zero" to exit 2. The no-git and reflogs-disabled rungs keep
@@ -263,8 +265,8 @@ Real Numbers, belongs to the 0.44.0 release cut under `release-checklist`, not t
 - [ ] 8.2 `commands/claim.md` — the `--ttl` maximum; an unreadable or over-bound stored claim reads as
       expired
 - [ ] 8.3 `commands/init.md`, `commands/upgrade.md`, `commands/tracker.md`, `commands/review-mode.md` —
-      the rules-block refusal (what arrangement triggers it; `init`/`upgrade` write nothing; the other
-      verbs leave `state.json` saved and must be re-run) and the unreadable-state refusal with exit 11
+      the rules-block refusal (what arrangement triggers it; `init`/`upgrade` write nothing; for the other
+      verbs, fix the markers then run `write-rules` and `render`) and the unreadable-state refusal with exit 11
 - [ ] 8.4 `README.md` — a troubleshooting entry for a conflicted/damaged `state.json` (exit 11, the
       remedies, gate-guard blocks meanwhile) and for a refused rules-block write; the lock files in any
       list of `.conductor/` files

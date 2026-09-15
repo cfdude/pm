@@ -192,7 +192,7 @@ between `open` and `write`) is judged by age only, and is young. A save holds th
 **Break, serialised:** create `state.json.lock.break` with `"wx"`. On `EEXIST`, if the break file is
 older than `STATE_LOCK_STALE_MS`, unlink it only if its inode is still the one just stat'ed, then go
 back to waiting (check-then-unlink: two processes judging a dead breaker's file can both proceed; the
-replay ends at the holder's pre-rename inode+nonce check as a spurious exit 9, not a loss); otherwise just go back to waiting. While holding the break file: stat and read the
+replay ends at the holder's pre-rename inode+nonce check; see Risks for what that does and does not rule out); otherwise just go back to waiting. While holding the break file: stat and read the
 lock currently at the path; unlink it ONLY IF its identity equals the lock originally judged AND it is
 still stale by the rule above. Release the break file (unlink if its inode is ours), then retry the
 exclusive create.
@@ -293,9 +293,11 @@ For `write-rules`, `set-tracker` (three paths) and `set-review-mode`, the refusa
 `writeRules()`, after whatever state save the verb makes (possibly a no-op, and for `write-rules` one
 that happens only when the platform switched, leaving the new platform recorded) and before any later
 write. The message says only what is true on every path: the rules file and every later write were not
-made; re-running the verb after the fix completes it (a re-run of `write-rules` is then a non-switch). **Declined:** a preflight in
-those too — neither stamps a done-marker, the re-run is idempotent, and every added preflight is one
-more enumerated site.
+made; after fixing the markers, `write-rules` then `render` (or `/pm:status`) completes it. Not "re-run
+the verb": `set-tracker --role secondary --remove` re-run exits 1 ("no matching secondary tracker",
+`tracker.mjs`) before its block write, so the block would keep the removed tracker. **Declined:** a
+preflight in those too — none stamps a done-marker, and every added preflight is one more enumerated
+site.
 
 **Declined — code-fence awareness.** A whole-line marker inside a fenced example is counted. The
 outcome is a refusal with line numbers, never a deletion.

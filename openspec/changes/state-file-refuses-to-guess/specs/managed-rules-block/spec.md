@@ -39,7 +39,9 @@ a repository as upgraded, so an upgrade that stamped it and then refused would r
 while its rules block, `PROJECT.md` and `.gitignore` stayed behind.
 
 Any other verb that refuses at its block write SHALL say that the rules file and every write the verb
-makes after it were not made, and that re-running the verb after the fix completes it.
+makes after it were not made, and that after fixing the markers, running `write-rules` and then
+`render` completes it. Re-running the original verb is not named: it does not complete on every path
+(a re-run of `set-tracker --role secondary --remove` refuses because the tracker is already removed).
 
 > REFUSE, not heal, for every ambiguous arrangement, including two well-formed pairs. An orphan
 > marker's block could end anywhere, so any repair must guess which hand-written text is managed —
