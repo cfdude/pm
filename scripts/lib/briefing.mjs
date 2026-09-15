@@ -193,9 +193,8 @@ export function buildBrief(state, { consume = false } = {}) {
     L.push("");
   }
 
-  // Same source and the same wording as PROJECT.md's Gate reviews table (gateSummary), so a
-  // verdict cannot read as evidenced on one surface and unevidenced on the other.
-  // Which epics, and each cell's text, from gateTableRows() — the one decision PROJECT.md renders too.
+  // Which epics, and each cell's text, from gateTableRows() — the one decision PROJECT.md renders too,
+  // so a verdict cannot read as evidenced, or a gate as withdrawn, on one surface and not the other.
   const gated = gateTableRows(epics);
   if (gated.length) {
     L.push("GATE REVIEWS:");

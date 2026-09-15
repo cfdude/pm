@@ -172,9 +172,9 @@ keep passing.
 - [x] 7.2 **Inverse of every operation added** — `--withdraw-gate-review` inverts `record-gate-review`;
       its own inverse is re-recording, not an un-withdraw verb. `record-cross-spec-review` has no
       withdrawal: justified in design.md
-- [ ] 7.3 **Verify against the commit** — `git show --stat <sha>` for every task commit; each claimed
+- [x] 7.3 **Verify against the commit** — `git show --stat <sha>` for every task commit; each claimed
       file present
-- [ ] 7.4 **Attribute every commit** at the moment it lands:
+- [x] 7.4 **Attribute every commit** at the moment it lands:
       `update-epic gate-verdict-withdrawal --attribute-commit <sha>`. The archive commit is excluded
 - [ ] 7.5 **Dispositions** <!-- pm:lifecycle --> — archive with 9.3's exact flags (its two `--declined-deferral`s), adding a
       `--deferral "<epicId>:<section>"` for any deferral registered while the work ran; never
