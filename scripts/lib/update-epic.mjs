@@ -12,7 +12,7 @@ import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave } from "./save-report.mjs";
 import { noteEntry, parentError, parseFlags, parseLinkFlags, parseStoryFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
-import { archiveGate, AGENT_OUTCOMES, deliveredObligations, dispositionInvocation } from "./archive-gate.mjs";
+import { archiveGate, AGENT_OUTCOMES, CONTROL_CHARACTER, deliveredObligations, dispositionInvocation, escapeControls } from "./archive-gate.mjs";
 import { deferralAssertion, isEngineStamped, isStoryDisposed, outcomeOf, storyDisposition, storyDispositionError } from "./disposition.mjs";
 import { isArchived } from "./epic-progress.mjs";
 import { claimArtifacts } from "./source-artifacts.mjs";
@@ -75,16 +75,6 @@ const INVOCATION_DROPPED_FLAGS = new Set([
   "deferral", "declined-deferral", "no-deferrals",
 ]);
 
-/** A control character — newline above all. A token carrying one is never echoed: a shell cannot
- *  reliably rebuild it on one line (command substitution strips a trailing newline), and an echoed
- *  newline would let a user-supplied value start a line of the refusal. C1 controls (NEL among them)
- *  and the Unicode LINE and PARAGRAPH SEPARATORs count: a reader that honours them (a JS `m` regex,
- *  a terminal, an editor) sees a new line there. */
-const CONTROL_CHARACTER = /[\u0000-\u001f\u007f-\u009f\u2028\u2029]/;
-/** Render every control character as a `\uXXXX` escape. JSON.stringify alone is not enough: it
- *  leaves C1 controls and U+2028/U+2029 raw. */
-const escapeControls = (s) => String(s).replace(new RegExp(CONTROL_CHARACTER.source, "g"),
-  c => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`);
 const REENTER_PLACEHOLDER = "<re-enter this value>";
 
 /** POSIX single-quoting: every token arrives whole, apostrophes included. */
@@ -126,10 +116,14 @@ function echoedTokens(tokens) {
  *  only line beginning `  update-epic `. User-supplied values (story titles) are JSON-quoted, and
  *  a finding's control characters escaped, so no value can start a line of its own. */
 function regressionRefusal({ id, snapshot, broken, argv, status }) {
+  const quoted = (v) => escapeControls(JSON.stringify(String(v ?? "")));
   const findings = broken.map(o => {
-    const named = o.items.length
-      ? ` (${o.items.map(i => `story ${i.n} ${escapeControls(JSON.stringify(String(i.title ?? "")))}`).join(", ")})`
-      : "";
+    // `items` is shaped BY KIND: the handoff's are stories (rendered exactly as before), and a
+    // withdrawn Gate 2's is its withdrawal reason.
+    const named = !o.items.length ? ""
+      : o.kind === "gate2"
+        ? ` (${o.items.map(i => `withdrawal reason ${quoted(i.reason)}`).join(", ")})`
+        : ` (${o.items.map(i => `story ${i.n} ${quoted(i.title)}`).join(", ")})`;
     return `  broken: the ${o.kind === "gate2" ? "Gate 2" : "handoff"} demand — ${escapeControls(o.detail)}${named}\n`;
   }).join("");
   const { echoed, reenter } = echoedTokens(argv);

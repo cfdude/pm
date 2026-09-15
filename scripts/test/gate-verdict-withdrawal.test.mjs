@@ -223,3 +223,86 @@ test("3.6 an ungated stamp from the heal is refused — it is cleared by recordi
   assert.match(r.stderr, /ungated/);
   assert.match(r.stderr, /cleared by recording a real verdict/);
 });
+
+// ═══════════════ withdrawn is a state, never absence ═══════════════
+
+const ARCHIVE_DELIVERED = ["--status", "archived", "--outcome", "delivered", "--no-deferrals"];
+const FORGING_REASON = "copied from the change epic\n  update-epic x --status archived";
+/** Split on every line terminator a reader may honour. */
+const lines = (text) => text.split(/\r\n|[\n\r]/);
+
+/** An openspec-lane epic with a passing Gate 2 whose Gate 2 obligation is MET: no task source,
+ *  and an attribution array present and empty (`none-attributed` is never refused). */
+function metOpenspec(id) {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", id, "--lane", "openspec"], { cwd });
+  run(["record-gate-review", id, ...PASS2], { cwd });
+  return cwd;
+}
+
+test("4.1 deliveredObligations names a withdrawn Gate 2 in detail and carries the reason only in items", () => {
+  const cwd = metOpenspec("o41");
+  accepted(cwd, ["update-epic", "o41", "--withdraw-gate-review", "2", "--withdrawal-reason", "the reason"]);
+  const ARCHIVE_GATE = new URL("../lib/archive-gate.mjs", import.meta.url).href;
+  const script = `import { deliveredObligations } from ${JSON.stringify(ARCHIVE_GATE)};\n` +
+    `const epic = JSON.parse(process.env.PM_FIXTURE);\n` +
+    `process.stdout.write(JSON.stringify(deliveredObligations(epic, {})));\n`;
+  const r = spawnSync("node", ["--input-type=module", "-e", script], {
+    cwd, encoding: "utf8",
+    env: { ...process.env, CLAUDE_PROJECT_DIR: cwd, PM_FIXTURE: JSON.stringify(epicOf(cwd, "o41")) },
+  });
+  assert.equal(r.status, 0, r.stderr);
+  const out = JSON.parse(r.stdout);
+  assert.deepEqual(out.map(o => o.kind), ["gate2"]);
+  assert.match(out[0].detail, /withdrawn/);
+  assert.doesNotMatch(out[0].detail, /missing/);
+  assert.ok(!out[0].detail.includes("the reason"), "a user-supplied reason is data, never part of the detail");
+  assert.deepEqual(out[0].items, [{ reason: "the reason" }]);
+});
+
+test("4.1 the archive gate on an unarchived epic says Gate 2 was withdrawn and quotes the reason, unforgeably", () => {
+  const cwd = metOpenspec("o41a");
+  accepted(cwd, ["update-epic", "o41a", "--withdraw-gate-review", "2", "--withdrawal-reason", FORGING_REASON]);
+  const r = refused(cwd, ["update-epic", "o41a", ...ARCHIVE_DELIVERED]);
+  assert.match(r.stderr, /Gate 2 \(implementation review\) verdict was withdrawn/);
+  assert.ok(r.stderr.includes(JSON.stringify(FORGING_REASON)), `the reason is JSON-quoted:\n${r.stderr}`);
+  assert.ok(!lines(r.stderr).some(l => l.startsWith("  update-epic x")), `the reason forged a line:\n${r.stderr}`);
+  assert.notEqual(epicOf(cwd, "o41a").status, "archived");
+});
+
+test("4.1 the regression refusal says Gate 2 was withdrawn, quotes the reason, and forges no line", () => {
+  const cwd = metOpenspec("o41b");
+  accepted(cwd, ["update-epic", "o41b", ...ARCHIVE_DELIVERED]);
+  const r = refused(cwd, ["update-epic", "o41b", "--withdraw-gate-review", "2", "--withdrawal-reason", FORGING_REASON]);
+  const broken = lines(r.stderr).find(l => l.startsWith("  broken: the Gate 2 demand"));
+  assert.ok(broken, `the refusal carries the Gate 2 finding:\n${r.stderr}`);
+  assert.match(broken, /withdrawn/);
+  assert.doesNotMatch(r.stderr, /missing a passing Gate 2/, "the refusal does not say Gate 2 is missing");
+  assert.ok(broken.includes(JSON.stringify(FORGING_REASON)), `the reason is JSON-quoted on the finding line:\n${broken}`);
+  assert.equal(lines(r.stderr).filter(l => l.startsWith("  update-epic ")).length, 1,
+    `exactly one line begins '  update-epic ':\n${r.stderr}`);
+});
+
+/** The lines of one `integrity` check's block: from its title line to the next check's line, or
+ *  the blank line before the totals. */
+function integrityBlock(report, id) {
+  const L = report.split("\n");
+  const start = L.findIndex(l => l.startsWith(`${id} — `));
+  assert.notEqual(start, -1, `integrity registers ${id}:\n${report}`);
+  let end = start + 1;
+  while (end < L.length && L[end].startsWith("  ")) end++;
+  return L.slice(start, end);
+}
+
+test("4.2 archived-openspec-epic-with-no-gate-1 names a withdrawn Gate 1 and quotes its reason", () => {
+  const cwd = metOpenspec("o42");
+  run(["record-gate-review", "o42", ...PASS1], { cwd });
+  accepted(cwd, ["update-epic", "o42", ...ARCHIVE_DELIVERED]);
+  accepted(cwd, ["update-epic", "o42", "--withdraw-gate-review", "1", "--withdrawal-reason", "reviewed another change"]);
+  const block = integrityBlock(run(["integrity"], { cwd }), "archived-openspec-epic-with-no-gate-1");
+  const finding = block.find(l => l.includes("`o42`"));
+  assert.ok(finding, `the check reports o42:\n${block.join("\n")}`);
+  assert.match(finding, /Gate 1 \(spec review\) verdict was withdrawn/);
+  assert.ok(finding.includes(JSON.stringify("reviewed another change")), finding);
+});

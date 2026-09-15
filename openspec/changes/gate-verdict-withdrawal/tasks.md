@@ -66,7 +66,7 @@ Order per design.md.
 
 ## 4. Withdrawn is a state, never absence
 
-- [ ] 4.1 RED then GREEN: `deliveredObligations`'s Gate 2 entry names a withdrawn Gate 2 in `detail` and
+- [x] 4.1 RED then GREEN: `deliveredObligations`'s Gate 2 entry names a withdrawn Gate 2 in `detail` and
       carries the reason in `items` as `{reason}` (never in `detail`); the archive gate on an unarchived
       epic shows the reason, and the regression refusal shows it. RECONCILE AMENDMENTS (vs shipped
       `archive-gate-reads-what-it-writes`): (a) `regressionRefusal()` in `update-epic.mjs` renders `items`
@@ -78,7 +78,7 @@ Order per design.md.
       `CONTROL_CHARACTER` and `escapeControls` from `update-epic.mjs` to an export of `archive-gate.mjs`
       (update-epic already imports from it). RED: a reason carrying a newline and `  update-epic x`
       forges no line in either refusal
-- [ ] 4.2 RED then GREEN: `archived-openspec-epic-with-no-gate-1` names a withdrawn Gate 1
+- [x] 4.2 RED then GREEN: `archived-openspec-epic-with-no-gate-1` names a withdrawn Gate 1
 - [ ] 4.3 REGRESSION GUARD (written after 5.3): re-recording clears the state — the archive with `--outcome delivered
       --no-deferrals` exits 0, and PROJECT.md, the brief and `integrity` name no withdrawn Gate 2
 - [ ] 4.4 RED then GREEN: ONE helper in `archive-gate.mjs` decides which epics a gate table lists and

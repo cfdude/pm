@@ -15,7 +15,7 @@
 // READS that quantity rather than computing one of its own. Two counters is how a guard comes
 // to refuse an epic that renders as complete.
 
-import { gateHasEvidence, isOpenspecLane } from "./constants.mjs";
+import { gateHasEvidence, isOpenspecLane, withdrawnGate } from "./constants.mjs";
 import { isAncestor, sameCommit } from "./git.mjs";
 import { LIFECYCLE_MARKER, epicProgress, outstandingWork } from "./epic-progress.mjs";
 import { KNOWN_OUTCOMES, agentDisposition, correctionError, dispositionError, isEngineStamped, isStoryDisposed, outcomeOf } from "./disposition.mjs";
@@ -211,6 +211,21 @@ export function unconsideredOutcomes(epics) {
     .map(e => ({ epic: e, invocation: dispositionInvocation(e.id) }));
 }
 
+/* Moved here from update-epic.mjs (gate-verdict-withdrawal 4.1): archiveGate() now prints a
+ * user-supplied value too — a Gate 2 withdrawal's reason — and a NEW raw print of a user value would
+ * add a second instance of the defect `handoff-refusal-prints-story-titles-raw` already holds. One
+ * escaper, imported by both refusals, rather than a copy each. */
+/** A control character — newline above all. A token carrying one is never echoed: a shell cannot
+ *  reliably rebuild it on one line (command substitution strips a trailing newline), and an echoed
+ *  newline would let a user-supplied value start a line of the refusal. C1 controls (NEL among them)
+ *  and the Unicode LINE and PARAGRAPH SEPARATORs count: a reader that honours them (a JS `m` regex,
+ *  a terminal, an editor) sees a new line there. */
+export const CONTROL_CHARACTER = /[\u0000-\u001f\u007f-\u009f\u2028\u2029]/;
+/** Render every control character as a `\uXXXX` escape. JSON.stringify alone is not enough: it
+ *  leaves C1 controls and U+2028/U+2029 raw. */
+export const escapeControls = (s) => String(s).replace(new RegExp(CONTROL_CHARACTER.source, "g"),
+  c => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`);
+
 /**
  * THE ONE DEFINITION of the obligations a `delivered` outcome carries, returned as the list of
  * those that FAIL on `epic` (empty when every one is met), Gate 2 first:
@@ -233,7 +248,14 @@ export function deliveredObligations(epic, { carriedTo } = {}) {
   const failing = [];
   if (isOpenspecLane(epic)) {
     const gate2 = epic.gateReview && epic.gateReview.gate2;
-    if (!gate2 || gate2.verdict !== "pass") {
+    const withdrawal = withdrawnGate(epic, 2);
+    if (withdrawal) {
+      // WITHDRAWN IS NOT THE SAME AS NEVER RECORDED. The withdrawal moved the entry out, so the
+      // obligation reappears exactly as for an absent gate — but the finding names what happened.
+      // The reason is a user value, so it travels as DATA in `items` for each renderer to quote.
+      failing.push({ kind: "gate2", items: [{ reason: withdrawal.reason }], detail:
+        "its Gate 2 (implementation review) verdict was withdrawn, and no verdict has been recorded since" });
+    } else if (!gate2 || gate2.verdict !== "pass") {
       failing.push({ kind: "gate2", detail: "missing a passing Gate 2 (implementation review) verdict", items: [] });
     } else {
       const staleness = gateStaleness(epic, gate2);
@@ -348,6 +370,16 @@ export function archiveGate(epic, request = {}) {
   if (gate2Failure) {
     const gate2 = epic.gateReview && epic.gateReview.gate2;
     const refusal = `cannot archive openspec-lane epic '${epic.id}' — ${gate2Failure.detail}.`;
+    // A withdrawn Gate 2 quotes its reason, JSON-quoted with every control character escaped, so a
+    // reason cannot start a line of the refusal. The obligation is not discharged by a withdrawal.
+    const withdrawn = gate2Failure.items.find(i => i && typeof i.reason === "string");
+    if (withdrawn) {
+      return { ok: false, message:
+        `${refusal} Withdrawal reason: ${escapeControls(JSON.stringify(withdrawn.reason))}. A ` +
+        `withdrawal takes the verdict back; it does not remove the obligation. Run ` +
+        `'record-gate-review ${epic.id} --gate 2 --verdict pass' after a real fresh-context ` +
+        `implementation review, or record the outcome the work actually had.` };
+    }
     if (!gate2 || gate2.verdict !== "pass") {
       return { ok: false, message:
         `${refusal} Run 'record-gate-review ${epic.id} --gate 2 ` +

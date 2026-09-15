@@ -20,8 +20,8 @@
 
 import { isInitialized, loadState } from "./state.mjs";
 import { archivedChanges, epicProgress, strippedChangeId } from "./epic-progress.mjs";
-import { KNOWN_STATUSES, gateArtifacts, gateHasEvidence, isOpenspecLane, releaseMembers } from "./constants.mjs";
-import { AGENT_OUTCOMES, dispositionInvocation } from "./archive-gate.mjs";
+import { KNOWN_STATUSES, gateArtifacts, gateHasEvidence, isOpenspecLane, releaseMembers, withdrawnGate } from "./constants.mjs";
+import { AGENT_OUTCOMES, dispositionInvocation, escapeControls } from "./archive-gate.mjs";
 import { commitDate, isAncestor, objectExists, reachableFromAnyRef } from "./git.mjs";
 import { isArchiveBackfilled, outcomeOf, stampedBy } from "./disposition.mjs";
 import { epicReferences, isKnownLinkType, isRenderableLink, KNOWN_LINK_TYPES, supersededEpics } from "./links.mjs";
@@ -252,9 +252,15 @@ export const CHECKS = [
         // a refusal at the archive transition would be demanding a spec review of work that has
         // already shipped, which is theatre. Reporting it is what makes a recorded Gate 1 read
         // by anything at all.
-        out.push({ epic: e.id, detail:
-          "archived with a passing Gate 2 and no Gate 1 (spec review) verdict — the spec review " +
-          "either did not happen or was never recorded" });
+        // A WITHDRAWN Gate 1 is named as withdrawn, never as absent: "did not happen or was never
+        // recorded" is false of a review that was recorded and then taken back.
+        const withdrawal = withdrawnGate(e, 1);
+        out.push({ epic: e.id, detail: withdrawal
+          ? "archived with a passing Gate 2, and its Gate 1 (spec review) verdict was withdrawn " +
+            `(withdrawal reason ${escapeControls(JSON.stringify(String(withdrawal.reason ?? "")))}) with none ` +
+            "recorded since"
+          : "archived with a passing Gate 2 and no Gate 1 (spec review) verdict — the spec review " +
+            "either did not happen or was never recorded" });
       }
       return out;
     },
