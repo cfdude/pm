@@ -8285,9 +8285,11 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "6f7521bf1e2809e0f0557634ec2e31ac7276a0a7"
+      ],
       "createdAt": "2026-09-15T12:24:46.998Z",
-      "touchedAt": "2026-09-15T12:24:52.902Z",
+      "touchedAt": "2026-09-15T12:54:58.988Z",
       "release": "0.44.0"
     },
     {
@@ -8320,9 +8322,11 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "6e1d06746db30ccb01d3dd8246cb5bc63386eae9"
+      ],
       "createdAt": "2026-09-15T12:24:48.974Z",
-      "touchedAt": "2026-09-15T12:24:52.902Z",
+      "touchedAt": "2026-09-15T12:56:55.032Z",
       "release": "0.44.0"
     },
     {
@@ -8345,9 +8349,11 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "c2875d32b7e4af38f7f1fa3cd0e6f253f7602828"
+      ],
       "createdAt": "2026-09-15T12:24:50.972Z",
-      "touchedAt": "2026-09-15T12:24:52.902Z",
+      "touchedAt": "2026-09-15T12:58:50.510Z",
       "release": "0.44.0"
     }
   ],
@@ -8359,7 +8365,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 806,
+  "revision": 809,
   "reviewMode": "thorough",
   "releases": [
     {
