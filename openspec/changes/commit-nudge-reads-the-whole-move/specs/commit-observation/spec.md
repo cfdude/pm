@@ -1,105 +1,115 @@
 ## Purpose
 
-What pm's commit hook observes about the commits a single agent tool call made, which of those
-commits it may report, when it writes a row to the detour trail (`.conductor/detours.log`), how an
-amended commit is treated, and how a row the engine logged automatically is retracted.
+What pm's commit hook observes about the commits that landed since its previous observation, which
+of those commits it may report, when it writes a row to the detour trail (`.conductor/detours.log`),
+how an amended commit is treated, and how a row the engine logged automatically is retracted.
 
 ## ADDED Requirements
 
-### Requirement: Every commit a tool call creates is reported, in the order it landed
+### Requirement: Every commit recorded since the last observation is reported, in the order it landed
 
 Vocabulary used by every requirement in this capability:
 
-- a **tool call** is one Bash tool invocation, bounded by the hook run before it executes and the
-  hook run after it returns — whether it returned successfully or failed;
-- a commit **lands in** a tool call when the HEAD reflog records its creation (a `commit`,
-  `commit (initial)` or `commit (amend)` entry) after the position recorded before that call and no
-  later than the position read after it;
-- a commit is **reported** when the hook's output names it.
+- an **observation** is one run of the commit hook after a Bash tool call, on success or on failure;
+- a commit **landed since the last observation** when HEAD's reflog gained an entry whose action
+  begins with the word `commit` (including `commit (initial)`, `commit (amend)`, `commit (merge)` and
+  `commit (cherry-pick)`) after the reflog position the previous observation recorded;
+- a commit is **reported** when the hook's output names it;
+- a commit is **live** when it is reachable from at least one branch (`refs/heads/*`).
 
-After a tool call, the hook SHALL report every commit that landed in it, oldest first, whatever
-else the call did afterwards to HEAD (checkout, switch, reset, pull, rebase). The plugin's hook
-configuration SHALL run the hook before each Bash tool call and after it both on success and on
-failure. A commit SHALL be reported at most once per checkout, however many hook runs observe it.
-Only the commit-creating reflog actions above are reported; `revert`, `cherry-pick`, `merge` and
-`rebase` entries are not, exactly as today.
+The plugin's hook configuration SHALL run the commit hook after every Bash tool call, on success and
+on failure, and the hook's output SHALL name the event it is answering exactly as the payload named
+it. The hook SHALL report every live commit that landed since the last observation, oldest first,
+whatever else happened to HEAD afterwards. A commit that landed but is not live SHALL be named as
+rewritten or abandoned, and SHALL get no detour-trail row and no `--attribute-commit`. A commit SHALL
+be reported at most once per checkout, however many observations read it. Where the recorded
+reflog position cannot be found again — the reflog shrank, or the entry at the recorded position
+differs — nothing is reported as landed from the reflog on that observation.
 
 #### Scenario: A commit followed by a checkout in the same call is reported
 
-- **WHEN** one tool call makes a commit, then runs `git checkout -b tmp` and `git checkout main`
-- **THEN** the hook after that call reports that commit, and the detour-trail rules below are
-  applied to it
+- **WHEN** one Bash call makes a commit, then runs `git checkout -b tmp` and `git checkout main`
+- **THEN** the hook reports that commit
 
 #### Scenario: Two commits in one call are both reported in landing order
 
-- **WHEN** one tool call makes two commits
+- **WHEN** one Bash call makes two commits
 - **THEN** the hook reports both, the older first, and any attribution command it prints names both
   commits in that order
 
-#### Scenario: A commit inside a failing call is reported
+#### Scenario: A commit rewritten by a rebase in the same call is not attributed
 
-- **WHEN** a Bash call makes a commit and then exits non-zero, and the commit hook runs with that
-  call's post-call failure payload
-- **THEN** the hook reports the commit exactly as it would after a successful call
+- **WHEN** one Bash call runs `git commit` and then `git pull --rebase`, which rewrites that commit
+- **THEN** the hook names the original commit as rewritten or abandoned, writes no detour-trail row
+  for it, and prints no `--attribute-commit` naming it
 
-#### Scenario: The hook configuration covers every event of a Bash call
+#### Scenario: A commit reset away in the same call is not attributed
+
+- **WHEN** one Bash call makes a commit and then runs `git reset --hard HEAD~1`
+- **THEN** the hook names the commit as rewritten or abandoned, writes no row, and prints no
+  `--attribute-commit` naming it
+
+#### Scenario: A commit inside a failing call is reported on the failure event
+
+- **WHEN** a Bash call makes a commit and exits non-zero, and the hook runs with that call's
+  `PostToolUseFailure` payload
+- **THEN** the hook reports the commit, and its output names `PostToolUseFailure` as the event
+
+#### Scenario: The hook configuration covers both post-call events
 
 - **WHEN** the plugin's hook configuration is read
-- **THEN** the commit hook is wired for Bash on the pre-call event, the post-call success event and
-  the post-call failure event
+- **THEN** the commit hook is wired for Bash on `PostToolUse` and on `PostToolUseFailure`, and on no
+  pre-call event
 
-#### Scenario: A commit is not reported twice
+#### Scenario: Overlapping observations never drop or repeat a commit
 
-- **WHEN** two overlapping tool calls both observe the same commit landing, or the post-call hook
-  runs a second time for the same call
-- **THEN** the commit is reported by exactly one hook run and the detour trail holds at most one
+- **WHEN** two observations read the reflog concurrently, a commit lands, and both record their
+  position in either order, and a third observation follows
+- **THEN** the commit is reported by exactly one of the three, and the detour trail holds at most one
   commit-derived row for it
 
-### Requirement: A commit that did not land in the call is never logged or attributed against it
+### Requirement: A reported commit is stated as landed since the last observation, not proven to be this call's
 
-A commit that landed outside every observed tool call — made in another terminal, by another
-session between calls, or by a call whose post-call hook never ran — SHALL NOT be written to the
-detour trail by a later call's hook and SHALL NOT appear in an attribution command that hook
-prints. The hook MAY name such commits as landed outside the call. Where no pre-call position was
-recorded for the call, no commit the hook observes can be shown to have landed in it, and the same
-rule applies to all of them.
+The hook cannot tell a commit made by the Bash call it answers from one made in another terminal or
+by a parallel call in the same interval. Whenever it reports a commit, its output SHALL state that the
+commit landed since the previous observation and may have been made outside this call. It SHALL NOT
+state or imply that the call it answers made the commit. Where it writes an automatic detour-trail
+row, its output SHALL name `retract-detour` as the correction for a row that is wrong.
 
-#### Scenario: A commit from another terminal is not claimed by the next call
+#### Scenario: The report states the provenance limit
 
-- **WHEN** a commit lands between two tool calls, outside either, and the next tool call makes no
-  commit
-- **THEN** that call's hook writes no detour-trail row and prints no `--attribute-commit` naming the
-  commit
+- **WHEN** a commit lands and the hook reports it
+- **THEN** the output states the commit landed since the last observation and may come from another
+  terminal or a parallel call
 
-#### Scenario: A call with no recorded pre-call position claims nothing
+#### Scenario: A commit from another terminal carries the same statement
 
-- **WHEN** the post-call hook runs for a call whose pre-call hook recorded no position, and HEAD's
-  reflog shows a commit since the last observation
-- **THEN** no detour-trail row is written for that commit and no `--attribute-commit` names it
+- **WHEN** a commit is made between two Bash calls, outside either, and the next call makes no commit
+- **THEN** the next observation reports it with that statement, and an automatic row written for it
+  is accompanied by the `retract-detour` correction
 
 ### Requirement: An amended commit is replaced, not added
 
-When a commit that landed is an amend, the commit it replaced SHALL be treated as superseded by
-it. Any commit-derived detour-trail row for the replaced commit SHALL be retracted by the engine,
-as the retraction requirement below defines, with a reason naming the replacing commit, before the
-replacing commit is classified. The hook SHALL NOT print an `--attribute-commit` naming the
-replaced commit. Where the replaced commit is in any epic's attribution array, the hook SHALL print,
-before any attribution command for the replacing commit, a runnable `update-epic <that epic>
---withdraw-commit <replaced> --withdrawal-reason "<…>"` command; the engine SHALL NOT withdraw it
-itself.
+When a live commit that landed is an amend, the commit it replaced (the reflog entry's previous
+value) SHALL be treated as superseded. Any commit-derived detour-trail row for the replaced commit
+SHALL be retracted by the engine, as the retraction requirement below defines, with a reason naming
+the replacing commit, before the replacing commit is classified. The hook SHALL NOT print an
+`--attribute-commit` naming the replaced commit. Where the replaced commit is in any epic's
+attribution array, the hook SHALL print, before any attribution command, a runnable
+`update-epic <that epic> --withdraw-commit <replaced> --withdrawal-reason "<…>"`; the engine SHALL NOT
+withdraw it itself.
 
 #### Scenario: Amending a logged commit leaves one visible row
 
-- **WHEN** a commit is auto-logged to the detour trail and the next call amends it
-- **THEN** `PROJECT.md`'s detour table shows a row for the amending commit and none for the
-  replaced one, and the log still holds the replaced commit's original row followed by its
-  retraction
+- **WHEN** a commit is auto-logged to the detour trail and a later call amends it
+- **THEN** `PROJECT.md`'s detour table shows a row for the amending commit and none for the replaced
+  one, and the log still holds the replaced commit's original row followed by its retraction
 
 #### Scenario: Amending an attributed commit names the withdrawal
 
 - **WHEN** a commit attributed to epic E is amended
-- **THEN** the hook prints `update-epic E --withdraw-commit <replaced>` with a withdrawal reason
-  before any attribution command, and E's attribution array is unchanged by the hook
+- **THEN** the hook prints `update-epic E --withdraw-commit <replaced>` with a withdrawal reason before
+  any attribution command, and E's attribution array is unchanged by the hook
 
 ### Requirement: The detour trail does not auto-log an epic's own work or pm's own bookkeeping
 
@@ -114,8 +124,7 @@ pm's own generated files.
   within the own artifacts of epics paused on the detour stack.
 - Neither row SHALL be written for a commit whose changed paths are all pm's own generated files,
   in a conductor at the git root or in a subdirectory of it.
-- Where a commit's changed paths cannot be read, both rows keep today's behaviour: a false row is
-  retractable, a false suppression is invisible.
+- Where a commit's changed paths cannot be read, both rows keep today's behaviour.
 
 This SHALL NOT be decided from a commit's subject prefix or scope.
 
@@ -129,6 +138,12 @@ This SHALL NOT be decided from a commit's subject prefix or scope.
 
 - **WHEN** no detour is live, epic A is active, and a `chore(openspec):` commit touches only
   `openspec/changes/A/tasks.md`
+- **THEN** no AUTO-DETOUR row is written
+
+#### Scenario: A commit touching the active epic's plan file is not a detour
+
+- **WHEN** no detour is live, epic A is active with a plan path, and a `chore(…):` commit touches that
+  plan file
 - **THEN** no AUTO-DETOUR row is written
 
 #### Scenario: A commit confined to a paused epic's artifacts is not detour work
@@ -151,15 +166,19 @@ This SHALL NOT be decided from a commit's subject prefix or scope.
 
 ### Requirement: An auto-logged detour row is retracted by a verb, and the rendered record follows
 
-`retract-detour <sha> --reason "<why>"` SHALL be the inverse of the hook's automatic logging. It
-SHALL be accepted only where `<sha>` resolves to a commit that has a commit-derived row
-(`AUTO-DETOUR` or `DETOUR-COMMIT`) in the detour trail not already retracted, and a non-empty
-reason is given; every other invocation exits non-zero, names why, and writes nothing. An accepted
+A row **matches** a commit when the commit's full object name begins with the sha the row holds,
+whatever that row's abbreviation length. Retraction, amend retraction and the trail's duplicate
+check SHALL all use this match.
+
+`retract-detour <sha> --reason "<why>"` SHALL be the inverse of the hook's automatic logging. It SHALL
+be accepted only where `<sha>` resolves to a commit, a commit-derived row (`AUTO-DETOUR` or
+`DETOUR-COMMIT`) matching it is not already retracted, and a non-empty reason is given. Every other
+invocation exits non-zero with a message naming which of those failed, and writes nothing. An accepted
 retraction SHALL append a retraction row naming the commit and the reason, SHALL NOT remove or
-rewrite any existing row, and SHALL re-render `PROJECT.md` in the same invocation so the retracted
-row no longer appears there. A retracted commit SHALL still count as logged, so a later hook run
-does not log it again. `MINIMAL` rows are not retractable by this verb. The hook's own message after
-an automatic row SHALL name this verb and SHALL NOT instruct editing or removing a line of the log.
+rewrite any existing row, and SHALL re-render `PROJECT.md` in the same invocation so no retracted row
+appears there. A retracted commit SHALL still count as logged, so a later observation does not log it
+again. `MINIMAL` rows are not retractable by this verb. The hook's message after an automatic row
+SHALL name this verb and SHALL NOT instruct editing or removing a line of the log.
 
 #### Scenario: Retracting an auto-logged row removes it from PROJECT.md
 
@@ -168,11 +187,18 @@ an automatic row SHALL name this verb and SHALL NOT instruct editing or removing
 - **THEN** it exits 0, the log keeps the original row and gains one retraction row, and `PROJECT.md`
   re-rendered by that invocation shows no row for the commit
 
-#### Scenario: A retraction with nothing to retract is refused
+#### Scenario: Rows of different abbreviation lengths match the same commit
 
-- **WHEN** `retract-detour` names a commit with no commit-derived row, a commit already retracted,
-  or gives no reason
-- **THEN** it exits non-zero naming which, and `detours.log` and `PROJECT.md` are byte-identical
+- **WHEN** the log holds a 7-character row and an 8-character row for two commits, and
+  `retract-detour` is given each commit's full name in turn
+- **THEN** each invocation retracts the row for its commit, and neither retracts the other's
+
+#### Scenario: Each refusal names its reason
+
+- **WHEN** `retract-detour` names a sha that resolves to no commit, a commit with no commit-derived
+  row, a commit whose row is already retracted, a commit with only a `MINIMAL` row, or gives no reason
+- **THEN** each exits non-zero with a message naming that specific reason, and `detours.log` and
+  `PROJECT.md` are byte-identical
 
 #### Scenario: The hook points at the verb, not at a hand-edit
 

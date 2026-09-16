@@ -1,6 +1,6 @@
 ## Why
 
-The PostToolUse `commit-nudge` hook is the engine's only observer of commits, and it reads one
+The `commit-nudge` hook (PostToolUse) is the engine's only observer of commits, and it reads one
 thing: the top entry of the HEAD reflog, compared against a watermark left by the previous hook
 run. That single read is wrong in both directions — it misses commits a tool call made and it
 claims commits the call did not make — and the detour trail it feeds has had
@@ -9,7 +9,7 @@ comments, 2026-09-09 to 2026-09-15).
 
 Every defect below was reproduced on the 0.44.0 engine in a hermetic scratch repository
 (`scratchpad/propose45/commit-nudge-reads-the-whole-move/`, `lib.sh` + fixtures `r1`, `r1a`, `r4`,
-`r5-flat`, `r5-nested`, `r6`), with an active epic `epic-a` and the hook invoked the way
+`r5-flat`, `r5-nested`, `r6`, `rrb`), with an active epic `epic-a` and the hook invoked the way
 `hooks/hooks.json` invokes it:
 
 1. **A commit followed by a checkout in the same call is never reported.** `r1a`: commit
@@ -23,7 +23,9 @@ Every defect below was reproduced on the 0.44.0 engine in a hermetic scratch rep
    epic's record permanently short.
 3. **A commit from another terminal is claimed by the next unrelated call.** `r1`: commit
    `chore: from another terminal` outside any tool call, then a hook run for an unrelated command
-   → AUTO-DETOUR row against `epic-a` and an attribution command for it.
+   → AUTO-DETOUR row against `epic-a` and an attribution command for it. **This change does not
+   close defect 3** (see What Changes): it states it in the hook's output and gives the row a verb
+   to retract it.
 4. **`commit --amend` double-logs.** `r1`: `fix: amend me` (6bd2266) logged; `--amend` → a second
    row for 58985ed, while 6bd2266 is on no branch. The hint asks to attribute 58985ed and says
    nothing about 6bd2266 if it was already attributed.
@@ -48,51 +50,72 @@ Every defect below was reproduced on the 0.44.0 engine in a hermetic scratch rep
    line"; `detours.log` is git-ignored while the `PROJECT.md` it renders is tracked, so the removal
    is local and the false row is what gets committed (#173's comment).
 
+Two cases today's engine gets right only by being silent, and which any reflog walk must not break
+(fixture `rrb`, a clone with an upstream commit): `git commit` then `git pull --rebase` leaves the
+original commit (e7c562d) reachable from no branch — `git for-each-ref --contains` lists 0 refs — and
+`git commit` then `git reset --hard HEAD~1` does the same. Today's hook prints nothing for either,
+because it reads only the top reflog entry. A walk that reported every `commit` entry would name
+both dead shas as attributable.
+
 ## What Changes
 
-- The hook bounds each Bash tool call with a per-call HEAD reflog snapshot taken at PreToolUse,
-  and at PostToolUse **and PostToolUseFailure** reports every commit the reflog records inside that
-  window, in the order they landed — regardless of checkouts, resets or pulls after them.
-- Commits that landed outside any observed call (another terminal, a cancelled or backgrounded
-  call) are never written to the detour trail and never named in an attribution command.
-- An amend is a replacement: the replaced commit's trail row is retracted by the engine, and where
-  the replaced commit is attributed the hint names the withdrawal before the new attribution.
-- The AUTO-DETOUR heuristic stops logging a commit that touches the active epic's own artifacts;
-  the DETOUR-COMMIT branch stops logging a commit confined to a paused epic's own artifacts; both
-  compare changed paths against the conductor root, not the git root.
-- **New verb `retract-detour <sha> --reason "<why>"`** — the inverse of auto-logging. Appends a
-  retraction row (the trail stays append-only), re-renders `PROJECT.md`, and replaces the hook's
-  "edit/remove the line" instruction.
-- The ATTRIBUTION hint names every candidate epic (detour epic, each paused epic, any epic whose own
-  artifacts the commit touches first), states the choice is the agent's, and still writes nothing.
+- The post-call hook, wired on `PostToolUse` **and** `PostToolUseFailure` (no pre-call hook), keeps
+  a reflog anchor — the byte size of HEAD's reflog file and its full last line — and reports every
+  entry since the anchor whose action begins with `commit`, oldest first, whatever happened to HEAD
+  afterwards. A shrunk or mismatched reflog is unverifiable and reports nothing from the reflog.
+- Duplicate reports are prevented by a set of reported shas, so overlapping hook runs never drop or
+  repeat a commit.
+- Only commits reachable from a branch get a detour-trail row or an attribution command; the rest are
+  named as rewritten or abandoned.
+- The hook states that a reported commit landed since the last observation and may come from another
+  terminal or a parallel call. Defect 3 is a stated residual, not a fix; `retract-detour` corrects a
+  wrong automatic row.
+- An amend is a replacement: the replaced commit's row is retracted by the engine, and where the
+  replaced commit is attributed the hint names the withdrawal.
+- The AUTO-DETOUR heuristic stops logging a commit that touches the active epic's own artifacts; the
+  DETOUR-COMMIT branch stops logging a commit confined to a paused epic's own artifacts; both compare
+  changed paths from the conductor root.
+- **New verb `retract-detour <sha> --reason "<why>"`** — the inverse of automatic logging: appends a
+  retraction row, re-renders `PROJECT.md`, and replaces the "edit/remove the line" instruction. Row
+  matching is by prefix of the full sha, because row abbreviation lengths drift (personal-finance-paper's
+  `detours.log` holds 7- and 8-character rows).
+- The ATTRIBUTION hint names the detour epic, each paused epic, or the active epic — every candidate,
+  each with its own command, stating the choice is the agent's. Changed paths only order those
+  candidates; they never add one, and with no candidate the hint stays silent as today.
+- The hook's output envelope names the event it answers (`PostToolUse` or `PostToolUseFailure`).
+- A new observation record, `.conductor/commit-observe.json`, so an unreloaded 0.44.0 session writing
+  `commit-watch.json` cannot clobber it.
 
 ## Capabilities
 
 ### New Capabilities
-- `commit-observation`: what the commit hook observes per tool call, which commits it may report,
-  when it writes a detour-trail row, how an amend is treated, and how a commit-derived row is
-  retracted.
+- `commit-observation`: what the post-call commit hook observes since its last observation, which
+  commits it may report and with what provenance statement, when it writes a detour-trail row, how an
+  amend is treated, and how a commit-derived row is retracted.
 
 ### Modified Capabilities
-- `gate-integrity`: ADDED requirement — the post-commit attribution hint may rank candidate epics
-  but never decides one, beside "Commit attribution is written by a named flag the emitted
-  instructions require".
+- `gate-integrity`: ADDED requirement — the post-commit attribution hint names every candidate epic
+  among the detour, paused and active epics, may order them by changed paths, and decides none.
 - `state-write-guard`: MODIFIED "Hooks never write over an unreadable state file and report it where
-  it can be acted on" — `commit-nudge` now runs on three events; before a Bash call it never reads
-  state and never exits 2 (exit 2 on PreToolUse denies the call; today's engine given a PreToolUse
-  payload after a commit, with `state.json` unparseable, exits 2 — reproduced in fixture `rpre`).
-- `conductor-record`: MODIFIED "A detached HEAD suppresses session-bookkeeping writes" — the per-call
-  snapshot and the retraction row join the suppressed write sites.
+  it can be acted on" — `commit-nudge` runs on `PostToolUse` and `PostToolUseFailure`, and its one
+  write exemption is the new observation record.
+- `conductor-record`: MODIFIED "A detached HEAD suppresses session-bookkeeping writes" — the
+  observation record and the retraction row are the suppressed write sites.
 
 ## Impact
 
-- `scripts/lib/commit-watch.mjs` (reflog window, per-call snapshot), `scripts/lib/subcommands.mjs`
+- `scripts/lib/commit-watch.mjs` (reflog anchor, reported set, reachability), `scripts/lib/subcommands.mjs`
   (`commitNudge`, `runNudge`, `attributionNudge`, `attributionTarget`, `headChangedFiles`,
-  `isConductorOwnFiles`, `looksLikeUnloggedMinimalDetour`), `scripts/lib/git.mjs`
-  (`appendDetourLog` takes a sha; retraction rows; dedupe), `scripts/lib/render.mjs` (retracted rows
-  hidden), a new `retract-detour` verb (`conductor.mjs` dispatch, flag registry, positional table,
-  `verb-effects.mjs`, help), `hooks/hooks.json` (PreToolUse and PostToolUseFailure wiring),
-  `ensureGitignore` (snapshot directory), `commands/detour.md` (the doc that already covers `log-detour`, so no new command file and no `docs/parity-ledger.json` row).
-- Cost: one extra `node` process per Bash call (PreToolUse). Measured: 10 no-op `commit-nudge` runs
-  took 621 ms on this machine, about 62 ms each.
+  `isConductorOwnFiles`, `looksLikeUnloggedMinimalDetour`, `ensureGitignore`), `scripts/lib/git.mjs`
+  (`appendDetourLog` takes a sha; prefix match; retraction rows), `scripts/lib/render.mjs` (retracted
+  rows hidden), a new `retract-detour` verb (`conductor.mjs` dispatch and USAGE, flag registry,
+  positional table, `verb-effects.mjs`, help), `hooks/hooks.json` (`PostToolUseFailure`),
+  `hooks/README.md`, `commands/detour.md` (already covers `log-detour`, so no new command file and no
+  `docs/parity-ledger.json` row), `skills/conductor/SKILL.md`, `README.md`.
+- Cost: no new hook process on a successful Bash call. A failed Bash call gains one `commit-nudge`
+  process, measured at 63 ms per no-op run (mean of 20 on this machine). Inside the hook, reading the
+  reflog anchor is one `git rev-parse --git-path logs/HEAD` plus a file read (a shell running
+  `rev-parse` and a 300-byte `tail` measured 11 ms per run, mean of 20). Reachability costs one
+  `git for-each-ref --contains` per reported commit, only when a commit landed.
+- Picked up with `/reload-plugins`; until then a session keeps 0.44.0's hook and engine.
 - No `state.json` schema change; no migration. `detours.log` gains one row kind.

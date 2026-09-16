@@ -12,8 +12,7 @@ outside a closed list.
 
 | write site | file | suppressed? |
 | --- | --- | --- |
-| `commit-watch.mjs` | `commit-watch.json` | YES — a watermark for a session's own commits |
-| `commit-watch.mjs` | `commit-watch/<tool call id>.json` | YES — a per-call snapshot of where HEAD's reflog stood before a session's own tool call |
+| `commit-watch.mjs` | `commit-observe.json` | YES — the reflog anchor and reported-commit set for a session's own commits |
 | `git.mjs` retraction | `detours.log` (a retraction row) | YES — the same file and criterion as the row it retracts |
 | `git.mjs` `appendDetourLog()` | `detours.log` | YES — a record of interrupting active work |
 | `subcommands.mjs` | `brief.txt` | YES — a snapshot for the next session in this tree |
@@ -63,10 +62,11 @@ already go unnoticed, which is the lost-update window `state-write-guard` closes
 - **THEN** the hook exits 0 and produces its normal output, AND no commit watermark file is created
   or updated in that tree
 
-#### Scenario: The pre-call commit snapshot is not written in a detached tree
+#### Scenario: The commit observation record is not written in a detached tree
 
-- **WHEN** the commit hook runs with a PreToolUse payload in a working tree whose HEAD is detached
-- **THEN** the hook exits 0 and prints nothing, AND no per-call snapshot file is created in that tree
+- **WHEN** a commit lands and the commit hook runs with a `PostToolUseFailure` payload in a working
+  tree whose HEAD is detached
+- **THEN** the hook exits 0, AND no `commit-observe.json` is created or updated in that tree
 
 #### Scenario: The detour log is not written in a detached tree
 

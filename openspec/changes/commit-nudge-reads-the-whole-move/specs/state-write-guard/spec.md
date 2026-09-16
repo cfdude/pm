@@ -19,14 +19,11 @@ uncaught exception. The exit status of each is fixed by what that event does wit
 - **`commit-nudge` after a Bash call (PostToolUse and PostToolUseFailure on Bash)** SHALL write
   nothing — no state, no detour log entry, no `PROJECT.md` — whenever it would read state and cannot,
   and SHALL report the condition to the agent by exiting 2, which on neither event can block
-  anything. ONE EXEMPTION: its commit-observation records (the HEAD watermark and reported position in
-  `commit-watch.json`, and the removal of the call's own pre-call snapshot) are written before state
-  is read, and still are. They record where HEAD is, not anything derived from state, so the commit
+  anything. ONE EXEMPTION: its commit-observation record (`.conductor/commit-observe.json`: the reflog anchor
+  and the set of reported commits) is written before state is read. It records where HEAD's reflog
+  is, not anything derived from state, so the commit
   reminder for a commit that landed while the file was unreadable is not shown again once the file
   is repaired.
-- **`commit-nudge` before a Bash call (PreToolUse on Bash)** SHALL NOT read `state.json` and SHALL
-  NOT exit 2 on any path, because exit 2 on PreToolUse denies the tool call — and a Bash call is the
-  remedy for an unreadable file. It writes only its pre-call snapshot.
 - **`lesson-advice` (PreToolUse)** does not read `state.json` beyond its existence and is unaffected.
 
 These exit statuses SHALL hold however the unreadable-state refusal is raised during the hook's
@@ -65,19 +62,12 @@ requirement closes.
 - **THEN** it exits 2 naming `.conductor/state.json`, and `state.json`, `PROJECT.md` and the detour
   log are byte-identical afterwards (the HEAD watermark may advance)
 
-#### Scenario: The pre-call commit hook never blocks a Bash call
-
-- **WHEN** a commit has landed since the last hook run, `state.json` does not parse, and
-  `commit-nudge` runs with a PreToolUse payload for a Bash call
-- **THEN** it exits with a status other than 2, and `state.json`, `PROJECT.md` and the detour log are
-  byte-identical afterwards
-
 #### Scenario: commit-nudge after a failed call writes nothing over an unreadable file
 
 - **WHEN** a commit lands in a Bash call that fails, `state.json` does not parse, and `commit-nudge`
   runs with the PostToolUseFailure payload
 - **THEN** it exits 2 naming `.conductor/state.json`, and `state.json`, `PROJECT.md` and the detour
-  log are byte-identical afterwards
+  log are byte-identical afterwards, and so is 0.44.0's watermark `.conductor/commit-watch.json`
 
 #### Scenario: A pre-compaction snapshot writes nothing and does not block compaction
 
