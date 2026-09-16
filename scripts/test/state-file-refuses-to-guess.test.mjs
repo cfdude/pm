@@ -174,7 +174,17 @@ function reconcileOwedRepo() {
   return cwd;
 }
 
-const gitIn = (cwd, ...args) => spawnSync("git", args, { cwd, encoding: "utf8" });
+// The fixture repos carry their OWN identity, and a setup step that fails fails the test. A CI
+// runner (and a bare node:18 container) has no global user.name/user.email, so an unchecked
+// `git commit` there fails silently: HEAD stays unborn, `checkout --detach` fails with it, and
+// the test then asserts against a repository that never reached the state it set up.
+const GIT_FIXTURE_CONFIG = ["-c", "user.name=Test", "-c", "user.email=test@example.com", "-c", "commit.gpgsign=false"];
+const gitProbe = (cwd, ...args) => spawnSync("git", [...GIT_FIXTURE_CONFIG, ...args], { cwd, encoding: "utf8" });
+const gitIn = (cwd, ...args) => {
+  const r = gitProbe(cwd, ...args);
+  assert.equal(r.status, 0, `fixture setup: git ${args.join(" ")} failed: ${r.stderr}`);
+  return r;
+};
 
 test("2.1(a): gate-guard blocks on a conflicted state file, naming the file and a git command", () => {
   const cwd = reconcileOwedRepo();
@@ -792,7 +802,7 @@ test("G2-I1: the repository claim's detached check asks about the repository bei
   for (const args of [["init", "-q"], ["commit", "-q", "--allow-empty", "-m", "base"], ["checkout", "-q", "--detach"]]) {
     gitIn(detached, ...args);
   }
-  assert.equal(gitIn(detached, "symbolic-ref", "-q", "HEAD").status, 1, "precondition: HEAD is detached");
+  assert.equal(gitProbe(detached, "symbolic-ref", "-q", "HEAD").status, 1, "precondition: HEAD is detached");
   const target = threeEpicRepo();
   gitIn(target, "init", "-q");
   gitIn(target, "commit", "-q", "--allow-empty", "-m", "base");
