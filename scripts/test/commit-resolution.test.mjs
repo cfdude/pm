@@ -264,3 +264,53 @@ test("5.2 REGRESSION GUARD: re-recording the verdict clears the finding, and a r
   assert.equal(epicOf(cwd, "e").gateReview.gate2.superseded.headSha, "HEAD", "the superseded verdict still holds HEAD");
   assert.deepEqual(nonObjectNameFindings(cwd), [], "no finding of this kind names the epic");
 });
+
+// ═══════════════ Gate 2 follow-up: a stored value is never read by git as an option ═══════════════
+
+test("g2-1 a stored value shaped like a git option creates no file through integrity, brief or render", () => {
+  const { cwd, shas: [root, a] } = repoWith(["root", "a"]);
+  run(["add-epic", "--id", "f", "--lane", "openspec"], { cwd });
+  const outDir = fs.mkdtempSync(path.join(path.dirname(cwd), "pm-optinject-"));
+  const viaAttributed = path.join(outDir, "via-attributed");
+  const viaHead = path.join(outDir, "via-head");
+  const s = readState(cwd);
+  const e = s.epics.find(x => x.id === "e");
+  // An UNEVIDENCED Gate 2 dated in the future, so the bookkeeping arm reads the last attributed
+  // commit's date; the attributed value is an option.
+  e.attributedCommits = [`--output=${viaAttributed}`];
+  e.gateReview = { gate2: { verdict: "pass", reviewedAt: "2099-01-01T00:00:00.000Z" } };
+  // An EVIDENCED Gate 2 whose note cites a real commit, so the cited-commits arm asks ancestry
+  // against a headSha that is an option.
+  const f = s.epics.find(x => x.id === "f");
+  f.attributedCommits = [a];
+  f.gateReview = { gate2: { verdict: "pass", reviewedAt: "2099-01-01T00:00:00.000Z", baseSha: root,
+    headSha: `--output=${viaHead}`, note: `reviewed ${a}` } };
+  writeState(cwd, s);
+  for (const verb of [["integrity"], ["brief"], ["render"]]) attempt(cwd, verb);
+  assert.equal(fs.existsSync(viaAttributed), false, "a stored attributed value was passed to git as an option");
+  assert.equal(fs.existsSync(viaHead), false, "a stored headSha was passed to git as an option");
+});
+
+test("g2-m5 integrity reports a legacy headSha carrying whitespace, which every other surface reads stale", () => {
+  const { cwd, shas: [root, a] } = repoWith(["root", "a"]);
+  gatedEpic(cwd, root, a, [a]);
+  const s = readState(cwd);
+  s.epics.find(x => x.id === "e").gateReview.gate2.headSha = ` ${a} `;
+  writeState(cwd, s);
+  assert.match(renderedProject(cwd), /⚠ stale/, "precondition: the verdict renders stale");
+  const found = nonObjectNameFindings(cwd);
+  assert.equal(found.length, 1, `integrity names the padded value: ${JSON.stringify(found)}`);
+  assert.match(found[0], /gate2\.headSha/);
+});
+
+test("g2-m3 an uppercase hexadecimal value is a commit name: it resolves, reads fresh, and is not reported", () => {
+  const { cwd, shas: [root, a] } = repoWith(["root", "a"]);
+  gatedEpic(cwd, root, a, [a]);
+  const s = readState(cwd);
+  const e = s.epics.find(x => x.id === "e");
+  e.attributedCommits = [a.toUpperCase()];
+  e.gateReview.gate2.headSha = a.toUpperCase();
+  writeState(cwd, s);
+  assert.doesNotMatch(renderedProject(cwd), /⚠ stale|⚠ unverifiable/, "an uppercase full name is fresh");
+  assert.deepEqual(nonObjectNameFindings(cwd), [], "an uppercase full name is not reported as a ref");
+});

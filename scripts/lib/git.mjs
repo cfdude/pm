@@ -123,40 +123,21 @@ export function appendDetourLog(kind, epic, note) {
  *  `state.json` and must never be interpolated into a command line.
  *
  *  Local only, per the engine's architectural law — merge-base reads this repository's own
- *  object database and contacts nothing. */
+ *  object database and contacts nothing.
+ *
+ *  A value NOT SHAPED as a commit name answers `null` without reaching git, and every revision is
+ *  passed after `--end-of-options` (gates-bind-to-verified-evidence Gate 2): a stored
+ *  `--output=<path>` handed to git as an argument is an OPTION, and one reaching `git show` wrote
+ *  a file wherever the record said. argv arrays stop shell injection, not option injection. */
 export function isAncestor(a, b) {
-  if (typeof a !== "string" || typeof b !== "string" || !a || !b) return null;
+  if (!isCommitNameShaped(a) || !isCommitNameShaped(b)) return null;
   try {
-    execFileSync("git", ["merge-base", "--is-ancestor", a, b],
+    execFileSync("git", ["merge-base", "--is-ancestor", "--end-of-options", a, b],
       { cwd: ROOT, stdio: ["ignore", "ignore", "ignore"] });
     return true;
   } catch (e) {
     return e && e.status === 1 ? false : null;
   }
-}
-
-/** Do `a` and `b` name the SAME commit, whatever length each is written at?
- *
- *  Git accepts any unambiguous prefix, so the same commit legitimately appears as `22b52f2` in one
- *  record and `22b52f2c9d…` in another. A raw `===` says those differ, and the staleness check that
- *  followed it then asked `isAncestor(X, X)` — which is TRUE, since a commit is its own ancestor —
- *  and concluded the verdict was stale. A gate refusing an archive over a formatting difference is
- *  the failure this release exists to end, so identity is resolved through git rather than assumed
- *  from the string.
- *
- *  `null` when git cannot answer, the same third answer `isAncestor` gives and meaning the same
- *  thing. Local only. */
-export function sameCommit(a, b) {
-  if (typeof a !== "string" || typeof b !== "string" || !a || !b) return null;
-  if (a === b) return true;
-  const full = (r) => {
-    try {
-      return execFileSync("git", ["rev-parse", "--verify", `${r}^{commit}`],
-        { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
-    } catch { return null; }
-  };
-  const fa = full(a), fb = full(b);
-  return fa && fb ? fa === fb : null;
 }
 
 /** The committer date of `sha`, as an ISO-8601 string, or null.
@@ -174,9 +155,10 @@ export function sameCommit(a, b) {
  *  Local only, per the engine's architectural law — this reads the object database and contacts
  *  nothing. */
 export function commitDate(sha) {
-  if (typeof sha !== "string" || !sha) return null;
+  // Shape-gated and after `--end-of-options`, as isAncestor() above: a stored value is never an option.
+  if (!isCommitNameShaped(sha)) return null;
   try {
-    const out = execFileSync("git", ["show", "-s", "--format=%cI", sha],
+    const out = execFileSync("git", ["show", "-s", "--format=%cI", "--end-of-options", sha],
       { cwd: ROOT, stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
     return out || null;
   } catch { return null; }
@@ -184,8 +166,7 @@ export function commitDate(sha) {
 
 /** Does this repository's object database currently hold `sha` as a commit?
  *
- *  `rev-parse --verify <sha>^{commit}` rather than `cat-file -e`, matching sameCommit()'s idiom
- *  above: peeling to `^{commit}` makes a tag or a blob whose name happens to be spelled here
+ *  `rev-parse --verify <sha>^{commit}` rather than `cat-file -e`: peeling to `^{commit}` makes a tag or a blob whose name happens to be spelled here
  *  answer false rather than true.
  *
  *  This is deliberately TWO-valued, and that is not a departure from isAncestor()'s three. It
@@ -199,9 +180,10 @@ export function commitDate(sha) {
  *  execFileSync with an argv array, never a shell string: these values reach us from
  *  `state.json`. Local only — reads the object database and contacts nothing. */
 export function objectExists(sha) {
-  if (typeof sha !== "string" || !sha) return false;
+  // Shape-gated and after `--end-of-options`, as isAncestor() above: a stored value is never an option.
+  if (!isCommitNameShaped(sha)) return false;
   try {
-    execFileSync("git", ["rev-parse", "--verify", "--quiet", `${sha}^{commit}`],
+    execFileSync("git", ["rev-parse", "--verify", "--quiet", "--end-of-options", `${sha}^{commit}`],
       { cwd: ROOT, stdio: ["ignore", "ignore", "ignore"] });
     return true;
   } catch { return false; }
@@ -218,10 +200,11 @@ export function objectExists(sha) {
  *  objectExists() has already confirmed — so "git could not answer" and "no ref contains it"
  *  cannot both be live at that point. Local only. */
 export function reachableFromAnyRef(sha) {
-  if (typeof sha !== "string" || !sha) return false;
+  // Shape-gated, and the value rides inside its own `--contains=` token: never a separate argument.
+  if (!isCommitNameShaped(sha)) return false;
   try {
     const out = execFileSync("git",
-      ["for-each-ref", "--contains", sha, "--count=1", "--format=%(refname)"],
+      ["for-each-ref", `--contains=${sha}`, "--count=1", "--format=%(refname)"],
       { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
     return out.length > 0;
   } catch { return false; }
@@ -284,7 +267,8 @@ export const FULL_COMMIT_NAME = /^[0-9a-f]{40}([0-9a-f]{24})?$/;
  *  ref at read time: which commit a moving ref named when it was written is not recoverable from
  *  the record. A value passing it is a commit name this clone may or may not hold. */
 export function isCommitNameShaped(v) {
-  return typeof v === "string" && /^[0-9a-f]{4,64}$/.test(v);
+  // Either case: git reads hexadecimal object names case-insensitively (Gate 2 m3).
+  return typeof v === "string" && /^[0-9a-fA-F]{4,64}$/.test(v);
 }
 
 /** Resolve commit values against THIS repository's object database, in ONE git process.
@@ -378,7 +362,7 @@ export function commitsNotReachedBy(commits, head) {
   if (unreachedCache.has(key)) return unreachedCache.get(key);
   let answer;
   try {
-    const out = execFileSync("git", ["rev-list", ...list, "^" + head], {
+    const out = execFileSync("git", ["rev-list", "--end-of-options", ...list, "^" + head], {
       cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 256 * 1024 * 1024,
       env: { ...process.env, GIT_NO_LAZY_FETCH: "1" },
     });

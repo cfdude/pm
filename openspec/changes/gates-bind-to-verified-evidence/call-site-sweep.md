@@ -95,13 +95,20 @@ Readers that hand a value to git (`rg -n "isAncestor|sameCommit|commitDate|objec
 | `update-epic.mjs:252/262/681` | resolving-at-write / identity (stored entries resolved only when shaped) |
 | `gate-review-writeback.mjs:112` | resolving-at-write |
 | `integrity.mjs:755-756` recorded-sha arms 1-2 | reading-full, shape-gated since efaa8b8 (arm 3 reports the rest) |
-| `integrity.mjs:229` `verdict-range-omits-cited-commits` → `isAncestor(sha, entry.headSha)` | legacy-tolerant, NOT shape-gated — a legacy `headSha: "HEAD"` is resolved at read time here. **Justified, not fixed:** design Non-Goals — "No change to which verdicts integrity's existing arms report, beyond the non-object-name arm"; arm 3 names that value on the same run |
-| `integrity.mjs:387` `commitDate(last attributed)` | legacy-tolerant, not shape-gated — same Non-Goal and same arm-3 report |
-| `worktree-hygiene.mjs:72`, `commit-watch.mjs:62-65`, `created-at.mjs:60-63`, `git.mjs:10` | not recorded values (worktree heads, HEAD, repository probes) — out of scope |
+| `integrity.mjs:229` `verdict-range-omits-cited-commits` → `isAncestor(sha, entry.headSha)` | shape-gated in `isAncestor()` itself since the Gate 2 follow-up: a value not shaped as a commit name answers `null` (no finding, as for any unanswerable pair) and never reaches git; revisions follow `--end-of-options` |
+| `integrity.mjs:387` `commitDate(last attributed)` | shape-gated in `commitDate()` (non-commit-name → `null`, "arm does not apply"), `--end-of-options` before the revision |
+| `worktree-hygiene.mjs:72` `isAncestorOfCurrentHead` | a worktree head from `git worktree list`, not a stored value — still moved from a shell string to argv, shape-gated and after `--end-of-options` |
+| `commit-watch.mjs:62-65`, `created-at.mjs:60-63`, `git.mjs:10` | not recorded values (HEAD, repository probes) — out of scope |
 
-Finding, not fixed here: `git.mjs` `sameCommit()` has no caller since 4139a5c (its one caller,
-`gateStaleness`, moved to `resolveCommits`). Dead export; left for Gate 2 to rule on rather than
-widened into this sweep's commit.
+**Gate 2 correction.** An earlier version of this table excused rows 229 and 387 under the design's
+Non-Goal ("no change to which verdicts integrity's existing arms report"). That Non-Goal is about
+WHICH VERDICTS are reported, and it never covered what git does with the argument: a stored
+`attributedCommits: ["--output=<path>"]` reached `git show` as an OPTION and created `<path>` when
+`integrity` ran. Every git call taking a stored value — `isAncestor`, `commitDate`, `objectExists`,
+`reachableFromAnyRef` (value inside `--contains=`), `commitsNotReachedBy` (full names only) — now
+refuses a value not shaped as a commit name before spawning git and passes revisions after
+`--end-of-options`; `resolveCommits` feeds values on stdin, never as arguments. Enumerated with
+`rg -n 'execFileSync\("git"|execSync\(' scripts/lib`. `sameCommit()` had no caller and was deleted.
 
 Emitted text still describing the LAST-entry rule — `rules.mjs:266` and the attribution nudge in
 `subcommands.mjs:361-366` — is task 12.2's (docs, after Gate 2), not an engine site.

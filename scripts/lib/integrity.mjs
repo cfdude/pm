@@ -108,8 +108,10 @@ function citedShas(entry) {
  *  find which field held it. */
 export function recordedShas(state) {
   const out = [];
+  // NOT trimmed (Gate 2 m5): a padded legacy value is not a commit name — gateStaleness reads it
+  // stale — and trimming it here made this report the only surface that saw a clean sha.
   const push = (epic, where, sha) => {
-    if (typeof sha === "string" && sha.trim()) out.push({ epic, where, sha: sha.trim() });
+    if (typeof sha === "string" && sha !== "") out.push({ epic, where, sha });
   };
   for (const e of state.epics || []) {
     if (!e) continue;

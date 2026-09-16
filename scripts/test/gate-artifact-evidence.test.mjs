@@ -20,9 +20,18 @@
 // widening it would hand them `undefined`, which is the same defect one layer down. This check
 // asks a different question: "does this verdict carry evidence of a real review AT ALL".
 
+import "./hermetic-git.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { runIntegrity } from "../lib/integrity.mjs";
+import { ROOT } from "../lib/constants.mjs";
+
+// REAL commits of the repository the engine reads (gates-bind-to-verified-evidence 4.7 / Gate 2 m7):
+// the arms here ask git for a commit's date, and a stored `HEAD` or fake `aaaaaaa` is now never
+// handed to git at all, so a literal would disarm the check this file exists to exercise.
+const HEAD_SHA = execFileSync("git", ["rev-parse", "HEAD"], { cwd: ROOT, encoding: "utf8" }).trim();
+const PARENT_SHA = execFileSync("git", ["rev-parse", "HEAD~1"], { cwd: ROOT, encoding: "utf8" }).trim();
 
 const findingsFor = (id, state) => {
   const c = runIntegrity(state).find(x => x.id === id);
@@ -33,7 +42,7 @@ const findingsFor = (id, state) => {
 const epic = (gate1) => ({
   version: 1, active: null, detourStack: [], epics: [{
     id: "spec-epic", title: "t", priority: "P1", status: "queued", role: "epic",
-    lane: "openspec", links: [], attributedCommits: ["HEAD"], gateReview: { gate1 },
+    lane: "openspec", links: [], attributedCommits: [HEAD_SHA], gateReview: { gate1 },
   }],
 });
 
@@ -70,7 +79,7 @@ test("gh-191: an EMPTY artifact array is not evidence", () => {
 test("gh-191: the range exemption is unchanged", () => {
   const st = epic({
     verdict: "pass", reviewedAt: new Date(Date.now() + 86400000).toISOString(),
-    baseSha: "aaaaaaa", headSha: "bbbbbbb",
+    baseSha: PARENT_SHA, headSha: HEAD_SHA,
   });
   assert.deepEqual(findingsFor("gate-recorded-as-bookkeeping", st), [],
     "Gate 2's evidence form keeps working exactly as before");
