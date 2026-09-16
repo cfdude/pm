@@ -97,8 +97,10 @@ Pairs: 5.1–5.3a land with 5.4.
 - [ ] 5.4 GREEN: an emitted invocation whose identifier (epic id, release id, tracker
       system/project/repo) holds a CONTROL CHARACTER is not printed; the prose line of design D4a
       replaces it (an id merely failing `EPIC_ID_FORMAT` is echoed as today) — sites: `integrity.mjs`
-      remedies, `briefing.mjs` `record-gate-review` lines, `commitNudge`'s emitted line, `rules.mjs`
-      `gh issue list --repo`, `sync`'s near-match hint; and escape every governed value in a refusal or
+      remedies, `briefing.mjs` `record-gate-review` lines, `commitNudge`'s emitted line,
+      `sync`'s near-match hint (the message names the record and says no verb can rename it; no hand-edit
+      instruction; `gh issue list --repo` excluded — change 2's repo-shape check stops it first);
+      and escape every governed value in a refusal or
       report line: the handoff refusal's story titles (`archive-gate.mjs`),
       `delivered-epic-attributed-no-commits`'s sha and reason and `archive-directory-has-no-epic`'s
       directory (`integrity.mjs`), `add-many.mjs`'s `bad id` and story messages, `claims.mjs` and
@@ -143,7 +145,8 @@ Pairs: 7.1 lands with 7.2.
       the `SOURCE_RECIPES` (add-many `--from` fields, plan heading, change-directory and plan-file names,
       `.changesets` fragment, workspace lesson frontmatter, `PM_SESSION`); each recipe declared
       `rendered: true` (its tag must appear escaped on some surface), `notRendered: "<why>"`, or
-      `exempt: "<refusing check>"`; legacy stored values; every surface incl. `write-rules` and the
+      `exempt: "<refusing check>"` (an exempt recipe still runs, must exit non-zero, and its refusal
+      output is swept); legacy stored values; every surface incl. `write-rules` and the
       decoded strings of every hook verb; assertions (a)–(f); each recipe asserts its own exit status.
       Any governed-value site the sweep exposes is fixed in this commit and listed in its message.
       Size, measured at f49871a: 120 value-bearing flag entries summed over verbs plus 4 free-text
@@ -181,7 +184,9 @@ Pairs: 7.1 lands with 7.2.
       create refusal (inverse: none needed — nothing was stored). DECIDED, not deferred: no
       release-rename verb is shipped and none is filed — nothing is stranded today (the Gate 1 review
       verified a legacy release id is still updated and removed), and this change stores nothing new
-      that would need renaming; the tracker-scope refusal (inverse: `set-tracker --role secondary
+      that would need renaming; no rename verb for a stored epic id, release id or tracker scope holding a
+      control character (DECLINED: D4a's message says no verb can rename it; population measured at zero
+      in this repository's `state.json`, and D4/D5/D8 stop new ones); the tracker-scope refusal (inverse: `set-tracker --role secondary
       --remove`, deliberately NOT refused so a legacy entry stays removable; a primary is overwritten by
       the next `set-tracker`); escaping (inverse: none — output only, the stored value is unchanged).
       Each unshipped inverse named and justified in the commit message

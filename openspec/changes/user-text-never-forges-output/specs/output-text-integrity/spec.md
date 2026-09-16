@@ -28,7 +28,8 @@ Terms used throughout this capability:
 
 A governed value SHALL NOT contribute a line terminator to any prose output surface. On those surfaces
 every control character inside a governed value SHALL appear as a visible escape that contains no
-control character, and the value's other characters SHALL appear unchanged.
+control character, and the value's other characters SHALL appear unchanged except as the table-cell
+requirement below adds for a value placed in a `PROJECT.md` table cell.
 `.conductor/honcho-memories.log` SHALL hold exactly one line per entry.
 
 An emitted runnable invocation — a command line an output presents for its reader to run — SHALL NOT
@@ -38,7 +39,8 @@ carries a placeholder, as `gate-integrity`'s printed-invocation rule already req
 archived-epic regression refusal; this capability does not modify that requirement. Where that value
 is an identifier (an epic id, a release id, a tracker system, project or repository), no placeholder
 can be filled on one line, so the output SHALL print no runnable invocation for it and SHALL say instead,
-naming the escaped identifier, that it cannot be given on one command line and what to do about it.
+naming the record and the escaped identifier, that the identifier holds a control character and that no
+verb can rename it. The output SHALL NOT instruct the reader to edit `.conductor/state.json` by hand.
 An identifier holding no control character is echoed as it is today.
 
 Governed values stored before this requirement — including an identifier the input rules below would
@@ -71,9 +73,9 @@ now refuse — SHALL still be read and rendered, never refused on read.
 - **THEN** no line of `owners`' output begins with `FORGED`
 
 #### Scenario: A plan heading cannot carry a line separator into PROJECT.md
-- **WHEN** a plan file whose first heading contains U+2028 followed by `FORGED` is registered by `sync`,
+- **WHEN** a plan file whose first heading contains U+0085 followed by `FORGED` is registered by `sync`,
   that epic is made active, and `render` runs
-- **THEN** `PROJECT.md` contains no U+2028
+- **THEN** `PROJECT.md` contains no U+0085
 
 #### Scenario: An unknown id is quoted back on one line
 - **WHEN** the detour stack holds one frame, and each of `update-epic`, `remove-epic`, `set-active`,
@@ -158,8 +160,9 @@ register an entry SHALL NOT say so of an entry `sync` skips.
 #### Scenario: An uppercase plan filename still registers, and a held one is not reported
 - **WHEN** the plans directory holds `MASTER-platform-stabilization.md`, not yet registered, and
   `Legacy-Plan.md`, already held by an epic with id `Legacy-Plan`, and `sync` runs
-- **THEN** `state.json` holds an epic `MASTER-platform-stabilization`, and stderr names neither file as
-  skipped
+- **THEN** `state.json` holds an epic `MASTER-platform-stabilization`, and stderr carries no
+  control-character-or-whitespace skip line for either file (the existing already-claimed or
+  id-already-exists line for `Legacy-Plan.md` is unaffected)
 
 ### Requirement: A release id that does not match the id format is never created
 Creating a release SHALL require its id to match `^[a-z0-9][a-z0-9._-]*$`, checked before any other
@@ -201,5 +204,6 @@ entry stored before this requirement can still be removed. The shape of a `--rep
   and no line of stderr begins with `## FORGED` or `FORGED`
 
 #### Scenario: A secondary tracker repository with a newline is refused
-- **WHEN** `set-tracker --role secondary --system github-issues --repo "o/r<LF>FORGED"` runs
-- **THEN** it exits non-zero and `state.json` is byte-identical to before
+- **WHEN** `set-tracker --role secondary --system gitlab --repo "o/r<LF>FORGED"` runs
+- **THEN** it exits non-zero, `state.json` is byte-identical to before, and no line of stderr begins with
+  `FORGED`

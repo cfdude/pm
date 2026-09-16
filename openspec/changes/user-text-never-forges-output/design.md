@@ -130,8 +130,10 @@ The rule lives in a test whose populations come from registries, per
   `changesets`, a workspace `docs/lessons` frontmatter `rule` read by `lesson-advice`, and `PM_SESSION`.
 - **Every recipe proves it was rendered.** Each recipe is exactly one of: `{ run, rendered: true }` — the
   test asserts that the recipe's tag appears, escaped, on at least one surface; `{ run, notRendered:
-  "<why no surface prints this value>" }`; or `{ exempt: "<the check that refuses the value>" }` (a
-  vocabulary, the id format, commit resolution, D8), in which case the refusal's own output is a surface.
+  "<why no surface prints this value>" }`; or `{ run, exempt: "<the check that refuses the value>" }` (a
+  vocabulary, the id format, commit resolution, D8). An `exempt` recipe still RUNS: the test asserts its
+  exit is non-zero and sweeps that refusal's stdout and stderr as a surface, so an exemption can never
+  mean "nothing was tested".
   A recipe whose `run` exits other than as declared fails the test. This closes the trivial pass: a
   value that no surface prints cannot satisfy the sweep by printing nothing, unless someone writes down
   why.
@@ -199,15 +201,16 @@ or `Legacy Release` id is echoed as today.
   checked and is NOT modified.
 - An identifier — epic id, release id, tracker system/project/repo — cannot be re-entered through a
   one-line placeholder, because what must be typed is the stored value. So the output prints NO runnable
-  invocation for it, and says instead, naming the escaped identifier: `'<escaped id>' holds a control
-  character and cannot be given on one command line — correct it in .conductor/state.json by hand
-  (a shell with ANSI-C quoting, $'…', can also address it)`. Sites: `integrity`'s
-  `update-epic ${e.id} --attribute-commit <sha>` remedies, the brief's `record-gate-review ${e.id} …`
-  lines, `commit-nudge`'s emitted line, `release`'s create hint, the rules block's `gh issue list --repo`,
-  `sync`'s near-match `update-epic ${near.id} --plan …` hint.
-- This is a deliberate exception to sibling `emitted-commands-run-as-written`'s rule that every remedy
-  runs as written with its placeholders filled: for a control-character identifier no filled one-line
-  form exists, so no command is emitted to test. Stated in both changes' Coordination.
+  invocation for it, and says instead, naming the record: `<record kind> '<escaped id>' holds a control
+  character; no verb can rename it`. It never instructs a hand-edit of `.conductor/state.json`
+  (sibling `emitted-commands-run-as-written`'s conductor-record requirement: nothing pm ships tells an
+  agent to hand-edit it). Sites: `integrity`'s `update-epic ${e.id} --attribute-commit <sha>` remedies,
+  the brief's `record-gate-review ${e.id} …` lines, `commit-nudge`'s emitted line, `release`'s create
+  hint, `sync`'s near-match `update-epic ${near.id} --plan …` hint. The rules block's
+  `gh issue list --repo` is NOT a site: the sibling's repo-shape check means a repo holding a control
+  character never reaches that line.
+- Because no command is printed, nothing here violates the sibling's rule that every printed remedy
+  runs; the missing rename verb is an inverse decision, recorded in task 8.2.
 After D4, D5 and D8 only legacy values reach this branch.
 
 ### D5. Release id format at creation, checked first
@@ -260,12 +263,16 @@ from before this change are escaped in the rules block's prose and handled by D4
 - **Surfaces not reached by an invocation.** A refusal branch the sweep never triggers (deep in a
   verb) is not covered by D3 — the call-site sweep (task 8.1) is the net for those.
 - **Cell escaping changes raw text** in cells holding `|` or `\` (none in tables today). GitHub-flavored
-  Markdown renders `\\` as `\` and `\|` as `|`, so rendered output is unchanged; raw text gains
-  backslashes, and inside a cell an escaped control character carries a doubled backslash in the raw
+  Markdown renders `\\` as `\` and `\|` as `|`, so text between ordinary characters renders unchanged;
+  but a doubled backslash changes rendering before another Markdown character or inside a code span
+  (this repository's `.conductor/detours.log` line 25 holds a backslash before a backtick, which the
+  Recent-detours table will now render differently). Raw text gains backslashes, and inside a cell an escaped control character carries a doubled backslash in the raw
   text and a single one when rendered.
-- **A control-character identifier gets no command.** The reader is told to fix `state.json` by hand;
-  that is worse ergonomics than a runnable line, and it is the only honest option, since no one-line
-  command can name it in a POSIX shell. Only legacy values can reach it.
+- **A control-character identifier gets no command.** The reader is told the record exists and that no
+  verb can rename it — no runnable line and no hand-edit instruction. Worse ergonomics than a runnable
+  line, and the only honest option, since no one-line command can name it in a POSIX shell. Only legacy
+  values can reach it; this repository's `state.json` holds none (measured: zero string values with a
+  control character).
 
 ## Coordination
 
@@ -275,9 +282,10 @@ from before this change are escaped in the rules block's prose and handled by D4
   tracker recipes). Apply order is 1 → 2 → 3: rebase onto 2's wording and escape the values inside it; do
   not revert its text. Two explicit boundaries: (1) change 2 owns the `--repo owner/name` shape check at
   `set-tracker`; this change owns the control-character refusal for `--system`, `--project` and `--repo`
-  (D8). (2) D4a is an exception to change 2's "remedies run with placeholders filled" rule: for an
-  identifier holding a control character, no runnable command is emitted at all. Both need saying in
-  change 2's design as well.
+  (D8). (2) For an identifier holding a control character, D4a prints no runnable command and no
+  hand-edit instruction — only that no verb can rename it — so it neither conflicts with change 2's
+  "every printed remedy runs" rule nor with its "nothing tells an agent to hand-edit state.json" rule.
+  The rules block's `gh issue list --repo` is left to change 2's repo-shape check.
 - `commit-nudge-reads-the-whole-move` (change 1) edits `subcommands.mjs` `commitNudge` and
   `commit-watch.mjs`; this change edits `sync`, `backfillArchive` and `honchoMemoryLine` in the same
   file. `commit-nudge` is a hook surface in D3, so its decoded output — including the epic ids it prints
