@@ -8364,11 +8364,16 @@
           "at": "2026-09-16T20:28:40.982Z",
           "actor": "agent",
           "text": "Gates Gate 2 (2026-09-16), deferred minors: remove-epic xx --cascade is refused naming record-reconcile when both the owing epic and its detour are descendants being removed; two hand-edited may-invalidate links from p to the same d — each verdict lands on the first, the second stays owed (engine paths de-duplicate); rules item 3 wording 'If the popped frame had reconcileOnResume' is narrower than the engine (an earlier armed detour also prints RECONCILE GATE); the 15.5 mirror guard is blind in commands/epic.md where claims repeat."
+        },
+        {
+          "at": "2026-09-16T22:57:51.024Z",
+          "actor": "agent",
+          "text": "0.45.0 emitted-commands proposal (2026-09-16) moved here: primary set-tracker --remove is a silent no-op; set-tracker --intent badpair dropped without a message; verify-worktrees and verify-state have no command doc."
         }
       ],
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:50.956Z",
-      "touchedAt": "2026-09-16T20:28:40.986Z"
+      "touchedAt": "2026-09-16T22:57:51.027Z"
     },
     {
       "id": "every-verb-refuses-what-it-does-not-read",
@@ -8745,9 +8750,11 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "b136774f9c426de5312d530ae32c56a190399375"
+      ],
       "createdAt": "2026-09-16T22:37:13.627Z",
-      "touchedAt": "2026-09-16T22:37:15.554Z",
+      "touchedAt": "2026-09-16T23:00:28.375Z",
       "release": "0.45.0"
     },
     {
@@ -8780,9 +8787,11 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "c8d0d4ef0bc63742bf2ef2000deb753edc2b448e"
+      ],
       "createdAt": "2026-09-16T22:37:14.255Z",
-      "touchedAt": "2026-09-16T22:37:15.554Z",
+      "touchedAt": "2026-09-16T23:03:08.410Z",
       "release": "0.45.0"
     },
     {
@@ -8805,9 +8814,11 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "c6185d151e67de6764c052e7b46ce4777e6e6542"
+      ],
       "createdAt": "2026-09-16T22:37:14.698Z",
-      "touchedAt": "2026-09-16T22:37:15.554Z",
+      "touchedAt": "2026-09-16T23:06:35.933Z",
       "release": "0.45.0"
     }
   ],
@@ -8819,7 +8830,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 923,
+  "revision": 927,
   "reviewMode": "thorough",
   "releases": [
     {
