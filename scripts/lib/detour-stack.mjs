@@ -16,12 +16,14 @@
 // `reconcileNeeded`. `rg detourStack scripts/` finds only readers. The pop itself was step 2's
 // hand-edit, so fixing PUSH alone would have left the identical sibling site untouched.
 //
-// THE ORDERING TRAP, and the reason both halves are ONE state object and ONE saveState:
-// reconcileArchived() (epic-progress.mjs) clears `reconcileNeeded` on any epic that has no live
-// frame and is not `state.active`. POP removes the frame BEFORE reconciliation runs, so the
-// resumed epic is in exactly that window — and it survives only because it IS `state.active`.
-// Setting the active pointer in a second write, or calling render() between the two, lets the
-// self-heal erase the obligation the pop just created. See conductor-31's pop tests.
+// ONE state object and ONE saveState for both halves. The ORDERING TRAP this paragraph used to
+// describe — reconcileArchived() clearing `reconcileNeeded` on any epic with no live frame that was
+// not `state.active`, so a pop survived only because it set the pointer in the same write — is GONE
+// (gates-bind-to-verified-evidence Decision 4): the heal no longer clears on pointer or status, and
+// the obligation is recorded per detour on the paused epic's `may-invalidate` link, armed at PUSH.
+// The heal's one remaining clear is an owing epic holding no armed or unmigrated link and no frame
+// — nothing a verdict could answer — and a push always arms the link first. One write is still the
+// right shape: a transition half-written is a record that disagrees with itself.
 //
 // One-directional dependencies only. Honcho memory is FORMATTED and LOGGED here and never sent:
 // the engine is an instruction layer and never opens a network connection (see conductor.mjs).
@@ -30,7 +32,7 @@ import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
-import { activate } from "./active-pointer.mjs";
+import { activate, owedReconcileNotice } from "./active-pointer.mjs";
 import { deferralHistory, deferralNote } from "./links.mjs";
 import { appendHonchoMemory } from "./subcommands.mjs";
 
@@ -218,9 +220,12 @@ export function popDetour() {
   stack.pop();
   state.detourStack = stack;
   if (frame.reconcileOnResume) epic.reconcileNeeded = true;
+  const previousActive = state.active;
   activate(state, pausedEpic);
 
   const saved = saveState(state, { verb: "pop-detour" });
+  // NOT exempt: the pointer moves off the DETOUR, and a detour can itself owe a reconcile.
+  owedReconcileNotice(state, previousActive);
   render();
 
   const detourId = typeof frame.spawnedDetour === "string" ? frame.spawnedDetour : null;

@@ -7,6 +7,7 @@ import { isArchived } from "./epic-progress.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
+import { ownedDetours } from "./links.mjs";
 
 /** Enforce the single-active invariant: `id` becomes the one active epic AND the
  *  top-level `.active` pointer. Any OTHER epic left at status "active" is demoted to
@@ -45,6 +46,28 @@ export function activate(state, id, { freshlyRead = false } = {}) {
   state.active = id;
 }
 
+/** The warning every verb that moves `state.active` OFF an epic owing a reconcile prints after its
+ *  save (gates-bind-to-verified-evidence Decision 4). A WARNING, not a refusal — precedent
+ *  pop-detour's unarchived-detour warning: refusing would leave no CLI route to set work aside,
+ *  which is the hand-edit the detour verbs exist to remove. The obligation itself is untouched, and
+ *  gate-guard blocks again when the epic is active once more.
+ *
+ *  Called at: set-active, clear-active, update-epic (activating another epic, or moving the pointer
+ *  off its own epic), add-epic and add-many creating an epic at active, and pop-detour (the pointer
+ *  moves off the DETOUR, which can itself owe). The one exemption is push-detour moving the pointer
+ *  off the epic it parks: that pause is the obligation's own origin, and its report says so. */
+export function owedReconcileNotice(state, previousActiveId) {
+  if (typeof previousActiveId !== "string" || !previousActiveId || state.active === previousActiveId) return;
+  const e = (state.epics || []).find(x => x && x.id === previousActiveId);
+  if (!e || e.reconcileNeeded !== true) return;
+  const owed = ownedDetours(e);
+  process.stderr.write(
+    `conductor: '${e.id}' is no longer the active epic and still owes a reconcile` +
+    (owed.length ? ` against ${owed.map(d => `'${d}'`).join(", ")}` : "") +
+    " — the obligation is kept, and gate-guard blocks edits again when it is active. Answer it with " +
+    `\`record-reconcile ${e.id} --detour <detourId> --verdict valid|invalidated\`.\n`);
+}
+
 const STALE_DAYS = 14;
 
 /** Days elapsed since `startedAt`, or null if the epic has no startedAt (never activated)
@@ -75,8 +98,10 @@ export function setActive() {
   if (t.status === "archived" || isArchived(id)) {
     process.stderr.write(`conductor: epic '${id}' is archived — cannot make it active\n`); process.exit(1);
   }
+  const previous = state.active;
   activate(state, id);
   const saved = saveState(state);
+  owedReconcileNotice(state, previous);
   render();
   reportSave(saved, {
     changed: `conductor: active is now '${id}'`,
@@ -88,12 +113,14 @@ export function setActive() {
 export function clearActive() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const state = loadState();
+  const previous = state.active;
   if (state.active) {
     const a = state.epics.find(e => e.id === state.active);
     if (a && a.status === "active") a.status = "queued";
   }
   state.active = null;
   const saved = saveState(state);
+  owedReconcileNotice(state, previous);
   render();
   reportSave(saved, {
     changed: "conductor: active cleared",

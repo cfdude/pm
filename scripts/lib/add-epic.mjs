@@ -5,7 +5,7 @@
 // parentError are general-purpose and imported by most other lib modules; they live
 // here because that's where the "add-epic" comment section originally put them.
 
-import { activate } from "./active-pointer.mjs";
+import { activate, owedReconcileNotice } from "./active-pointer.mjs";
 import { isInitialized, loadState, pushEpic, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
@@ -450,6 +450,7 @@ export function addEpic() {
   if (str(f["external-id"]) !== undefined) epic.externalId = str(f["external-id"]);
   if (str(f["external-url"]) !== undefined) epic.externalUrl = str(f["external-url"]);
   if (str(f["external-updated-at"]) !== undefined) epic.externalUpdatedAt = str(f["external-updated-at"]);
+  const previousActive = state.active;
   pushEpic(state, epic);
   // keep .active in sync on creation. `freshlyRead` when this very command carried the item's
   // updated timestamp: the agent just read it, so an immediate re-read obligation would be noise.
@@ -457,6 +458,7 @@ export function addEpic() {
     activate(state, id, { freshlyRead: str(f["external-updated-at"]) !== undefined });
   }
   const saved = saveState(state);
+  owedReconcileNotice(state, previousActive);
   render();
   reportSave(saved, {
     changed: `conductor: added epic '${id}' (${lane}, ${status})`,

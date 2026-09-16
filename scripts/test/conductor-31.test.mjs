@@ -468,6 +468,11 @@ test("gh-151: a HAND-WRITTEN legacy frame still resumes with its reconcile oblig
   const cwd = detourRepo();
   const s = readState(cwd);
   s.epics.find(e => e.id === "parent").status = "paused";
+  // The old hand-edit protocol wrote the may-invalidate link beside the frame, with no arming record
+  // (it predates one). That UNMIGRATED link is what keeps the obligation through the heal until
+  // /pm:upgrade stamps it (gates-bind-to-verified-evidence); a frame with no link at all would leave
+  // nothing a verdict could answer, and the heal now clears that case out loud.
+  s.epics.find(e => e.id === "parent").links = [{ type: "may-invalidate", epic: "fixit", reason: "hand-written by the old protocol" }];
   s.epics.find(e => e.id === "fixit").status = "archived";
   s.active = "fixit";
   s.detourStack = [{

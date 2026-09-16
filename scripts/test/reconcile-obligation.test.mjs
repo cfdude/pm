@@ -62,7 +62,7 @@ const verdict = (cwd, detour, v = "valid", extra = []) => ["record-reconcile", "
 test("6.1 a verdict against the paused epic itself is refused naming the owed detour", () => {
   const cwd = owingRepo();
   const r = refused(cwd, verdict(cwd, "p"));
-  assert.match(r.stderr, /\bd\b/, `the refusal names d: ${r.stderr}`);
+  assert.ok(r.stderr.includes("'d'"), `the refusal names d: ${r.stderr}`);
   assert.equal(guard(cwd), 2, "gate-guard still blocks");
 });
 
@@ -76,7 +76,7 @@ test("6.3 a detour pushed without reconcile does not answer an armed one", () =>
   const cwd = owingRepo();
   push(cwd, "d2", false); pop(cwd);
   const r = refused(cwd, verdict(cwd, "d2"));
-  assert.match(r.stderr, /\bd\b/, `the refusal names d: ${r.stderr}`);
+  assert.ok(r.stderr.includes("'d'"), `the refusal names d: ${r.stderr}`);
 });
 
 test("6.4 a verdict while the detour's frame is still on the stack is refused", () => {
@@ -131,7 +131,7 @@ test("6.9a a hand-supplied may-invalidate link is never armed", () => {
   accepted(cwd, ["update-epic", "p", "--link", "may-invalidate:x:why"]);
   assert.equal(linkOf(cwd, "p", "x").reconcileOnResume, false, "the hand-supplied link carries a false arming record");
   const r = refused(cwd, verdict(cwd, "x"));
-  assert.match(r.stderr, /\bd\b/, `the refusal names d: ${r.stderr}`);
+  assert.ok(r.stderr.includes("'d'"), `the refusal names d: ${r.stderr}`);
 });
 
 /** Strip every arming record from p's links — the shape a 0.43.0 engine wrote. */
@@ -221,4 +221,71 @@ test("6.9e REGRESSION GUARD: a 0.43.0 state file loads and the read-only verbs e
   assert.equal(attempt(cwd, ["integrity"]).status, 0);
   assert.equal(guard(cwd), 2, "the active owing epic still blocks");
   assert.ok(stateBytes(cwd).equals(before), "read-only verbs wrote nothing");
+});
+
+// ═══════════════ Requirement: A reconcile obligation survives until a verdict answers it ═══════════════
+
+const namesPD = (text) => text.includes("'p'") && text.includes("'d'");
+
+test("7.1 clearing the active pointer does not erase the obligation, and says so", () => {
+  const cwd = owingRepo();
+  const r = accepted(cwd, ["clear-active"]);
+  assert.ok(namesPD(r.stderr) && /reconcile/.test(r.stderr), `clear-active's stderr names p and d: ${r.stderr}`);
+  run(["render"], { cwd });
+  assert.equal(owes(cwd), true);
+});
+
+test("7.2 activating another epic and returning restores the block", () => {
+  const cwd = owingRepo();
+  accepted(cwd, ["set-active", "other"]);
+  accepted(cwd, ["set-active", "p"]);
+  assert.equal(owes(cwd), true);
+  assert.equal(guard(cwd), 2);
+});
+
+test("7.3 a status change on another epic, or creating one at active, warns and keeps the obligation", () => {
+  const cwd = owingRepo();
+  const r = accepted(cwd, ["update-epic", "other", "--status", "active"]);
+  assert.ok(namesPD(r.stderr) && /reconcile/.test(r.stderr), `update-epic's stderr names p and d: ${r.stderr}`);
+  run(["render"], { cwd });
+  assert.equal(owes(cwd), true);
+  accepted(cwd, ["set-active", "p"]);
+  const q = accepted(cwd, ["add-epic", "--id", "q", "--title", "q", "--lane", "claude-code", "--status", "active"]);
+  assert.ok(namesPD(q.stderr) && /reconcile/.test(q.stderr), `add-epic's stderr names p and d: ${q.stderr}`);
+  run(["render"], { cwd });
+  assert.equal(owes(cwd), true);
+});
+
+test("7.4 archiving and un-archiving does not erase the obligation", () => {
+  const cwd = owingRepo();
+  accepted(cwd, ["update-epic", "p", "--status", "archived", "--outcome", "abandoned", "--reason", "r", "--no-deferrals"]);
+  accepted(cwd, ["update-epic", "p", "--status", "active"]);
+  assert.equal(owes(cwd), true);
+  assert.equal(guard(cwd), 2);
+});
+
+test("7.4b REGRESSION GUARD: an archived owing epic does not make gate-guard block", () => {
+  const cwd = owingRepo();
+  accepted(cwd, ["update-epic", "p", "--status", "archived", "--outcome", "abandoned", "--reason", "r", "--no-deferrals"]);
+  const s = readState(cwd);
+  s.active = "p";   // the pointer can legitimately name an archived epic for a stretch
+  writeState(cwd, s);
+  assert.equal(guard(cwd), 0);
+});
+
+test("7.4a an obligation with no link a verdict could answer is cleared by render, which says so; an armed one is not", () => {
+  const cwd = repo();
+  const s = readState(cwd);
+  Object.assign(s.epics.find(e => e.id === "p"), { reconcileNeeded: true,
+    links: [{ type: "may-invalidate", epic: "d", reason: "hand-added", reconcileOnResume: false }] });
+  writeState(cwd, s);
+  const r = attempt(cwd, ["render"]);
+  assert.equal(r.status, 0);
+  assert.equal(owes(cwd), false, "nothing could ever answer it, so it is cleared");
+  assert.ok(r.stderr.includes("'p'"), `the heal names p: ${r.stderr}`);
+
+  const armed = owingRepo();
+  accepted(armed, ["clear-active"]);
+  run(["render"], { cwd: armed });
+  assert.equal(owes(armed), true, "an armed link keeps the obligation through clear-active + render");
 });

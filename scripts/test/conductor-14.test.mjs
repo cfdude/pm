@@ -801,7 +801,10 @@ test("the tracker-refresh block honors the gate-guard setting", () => {
 
 test("turning the guard off does not weaken the unconditional reconcile block", () => {
   for (const setting of ["on", "off"]) {
-    const cwd = repoWithActiveEpic({ reconcileNeeded: true });
+    // On an ARMED link: `set-gate-guard` renders, and the heal clears an obligation that holds no
+    // link a verdict could answer (gates-bind-to-verified-evidence) — `links: []` was that case.
+    const cwd = repoWithActiveEpic({ reconcileNeeded: true,
+      links: [{ type: "may-invalidate", epic: "a-detour", reason: "r", reconcileOnResume: true }] });
     run(["set-gate-guard", setting], { cwd });
     const r = guardBlocks(cwd);
     assert.equal(r.blocked, true, `reconcile must block with the guard ${setting}`);

@@ -164,7 +164,11 @@ function reconcileOwedRepo() {
   writeState(cwd, {
     version: 1, active: "epic-a", detourStack: [],
     epics: [{ id: "epic-a", title: "epic-a", priority: "P1", status: "active", role: "epic",
-      lane: "openspec", links: [], reconcileNeeded: true }],
+      lane: "openspec", reconcileNeeded: true,
+      // ARMED, so the render below keeps the obligation (gates-bind-to-verified-evidence): an owing
+      // epic holding no link a verdict could answer is cleared by the heal.
+      links: [{ type: "may-invalidate", epic: "detour-a", reason: "r", reconcileOnResume: true }] },
+      { id: "detour-a", title: "detour-a", priority: "P1", status: "archived", role: "detour", lane: "claude-code", links: [] }],
   });
   run(["render"], { cwd });
   return cwd;

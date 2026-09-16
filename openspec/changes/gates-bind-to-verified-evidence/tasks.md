@@ -167,18 +167,18 @@ Pairs: 6.1–6.8 and 6.9a–6.9g land with 6.10.
 
 Pairs: 7.1–7.4 and 7.4a land with 7.5.
 
-- [ ] 7.1 RED: owed `p` active, `clear-active` then `render` — flag still true, and `clear-active`'s
+- [x] 7.1 RED: owed `p` active, `clear-active` then `render` — flag still true, and `clear-active`'s
       stderr names `p` and `d` (repro 2a)
-- [ ] 7.2 RED: `set-active other` then `set-active p` — flag true, `gate-guard` exits 2 (repro 2b)
-- [ ] 7.3 RED: `update-epic other --status active` — `p`'s flag still true after the render, and that
+- [x] 7.2 RED: `set-active other` then `set-active p` — flag true, `gate-guard` exits 2 (repro 2b)
+- [x] 7.3 RED: `update-epic other --status active` — `p`'s flag still true after the render, and that
       command's stderr names `p` and `d`; `add-epic --id q --title q --lane claude-code --status active` likewise
-- [ ] 7.4 RED: owed vs `d`, `update-epic p --status archived --outcome abandoned --reason r
+- [x] 7.4 RED: owed vs `d`, `update-epic p --status archived --outcome abandoned --reason r
       --no-deferrals`, then `update-epic p --status active` — flag true, `gate-guard` exits 2
-- [ ] 7.4b REGRESSION GUARD: an archived owing epic does not make `gate-guard` block
-- [ ] 7.4a RED: a state file with active `p`, `reconcileNeeded: true`, no frame, and no
+- [x] 7.4b REGRESSION GUARD: an archived owing epic does not make `gate-guard` block
+- [x] 7.4a RED: a state file with active `p`, `reconcileNeeded: true`, no frame, and no
       `may-invalidate` link other than one carrying `reconcileOnResume: false` — `render` clears the flag and stderr names `p` (`repro-integrity.txt` shape); and owed `p`
       holding an armed link keeps the flag through `clear-active` + `render`
-- [ ] 7.5 GREEN: delete `reconcileArchived()`'s archived → clear branch and replace its third branch
+- [x] 7.5 GREEN: delete `reconcileArchived()`'s archived → clear branch and replace its third branch
       with the no-armed-link branch (design Decision 4); `owedReconcileNotice()` at every site
       that moves `state.active` off an epic (design Decision 4, site list derived with
       `rg -n "activate\(|state\.active\s*=" scripts/lib` at this commit and pasted into its message);

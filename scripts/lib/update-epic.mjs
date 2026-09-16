@@ -6,7 +6,7 @@ import {
   EPIC_FLAGS, KNOWN_GATE_NUMBERS, KNOWN_LANES, KNOWN_STATUSES, KNOWN_REVIEW_MODES, REVIEW_MODE_RANK,
   CONTROL_CHARACTER, epicFlagsFor, escapeControls, isFlagToken, nullableEpicFlags, splitFlagToken,
 } from "./constants.mjs";
-import { activate } from "./active-pointer.mjs";
+import { activate, owedReconcileNotice } from "./active-pointer.mjs";
 import { globalReviewMode } from "./rules.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave } from "./save-report.mjs";
@@ -892,6 +892,7 @@ export function updateEpic() {
   }
 
   // Keep .active consistent with status — the two must never disagree.
+  const previousActive = state.active;
   if (epic.status === "active") activate(state, id);
   else if (state.active === id) state.active = null;
 
@@ -902,6 +903,7 @@ export function updateEpic() {
   // and not the two paths this change adds — a no-op link supply and a no-op clear are
   // INSTANCES of it, not its scope.
   const saved = saveState(state);
+  owedReconcileNotice(state, previousActive);
   render();
 
   // The success message is printed only after the record on disk is READ BACK and confirmed to

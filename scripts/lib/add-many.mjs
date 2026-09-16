@@ -4,7 +4,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { activate } from "./active-pointer.mjs";
+import { activate, owedReconcileNotice } from "./active-pointer.mjs";
 import { newStory, parentError, parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { isInitialized, loadState, pushEpic, saveState, readStdin } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
@@ -167,10 +167,12 @@ export function addMany() {
   // single-active invariant was silently skipped on this path alone, which is the absent-edit
   // defect class this release exists to close. Done AFTER every entry is pushed so the last
   // active entry in the batch wins and the demotion sees the whole batch.
+  const previousActive = state.active;
   for (const e of incoming) {
     if ((e.status || "queued") === "active") activate(state, e.id);
   }
   const saved = saveState(state);
+  owedReconcileNotice(state, previousActive);
   render();
   reportSave(saved, {
     changed: `conductor: add-many added ${incoming.length} epic(s)`,
