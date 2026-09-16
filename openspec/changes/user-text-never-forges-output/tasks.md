@@ -1,0 +1,187 @@
+## 0. Before any code
+
+- [ ] 0.1 Gate 1 — two fresh-context lenses over these artifacts BY PATH (lens A: every WHEN/THEN
+      testable and failing on today's engine where tasks mark it RED; lens B: absent edits — output
+      sites, id-storing paths, DATA references and inverses the specs do not name); fix every Critical
+      and Important, re-validate with `openspec validate user-text-never-forges-output --strict`, then
+      record `record-gate-review user-text-never-forges-output --gate 1 --verdict pass --reviewer
+      "<identity>" --artifact openspec/changes/user-text-never-forges-output/proposal.md --artifact
+      openspec/changes/user-text-never-forges-output/design.md --artifact
+      openspec/changes/user-text-never-forges-output/tasks.md --artifact
+      openspec/changes/user-text-never-forges-output/specs/output-text-integrity/spec.md`
+- [ ] 0.2 **Cross-spec review** (required task item 5) — release 0.45.0 holds this change's spec and
+      its two siblings' (`commit-nudge-reads-the-whole-move`, `emitted-commands-run-as-written`). Run
+      the `cross-spec-review` skill after all three pass Gate 1 and again after any later amendment;
+      record `record-cross-spec-review 0.45.0 --verdict pass|fail --reviewer "<identity>"`
+- [ ] 0.3 Re-derive every line anchor in design.md with `rg` after changes 1 AND 2 have merged into
+      `dev` (change 1 edits `subcommands.mjs` `commitNudge`; change 2 edits remedy text in
+      `integrity.mjs` and `archive-gate.mjs`), and correct design.md in the first implementation
+      commit if any moved
+
+## 1. One id format, one table-cell escaper
+
+The pre-commit hook runs the whole suite, so every RED test below lands in the SAME commit as the
+GREEN task that turns it green; the pairs are named per section. Before that commit, the new test run
+against the pre-GREEN engine is saved in this change directory as `red-<task>.txt`, and the GREEN
+commit message names that file. New test file: `scripts/test/output-text-integrity.test.mjs`, fixture
+repos via `helpers.mjs`/`hermetic-git.mjs` (own git identity, `commit.gpgsign=false`, fail loudly on
+setup error).
+
+Pairs: 1.2 lands with 1.3.
+
+- [ ] 1.1 REFACTOR: export `EPIC_ID_FORMAT` from `constants.mjs`; `add-epic.mjs`, `add-many.mjs` and
+      `verify-specs.mjs` import it (`rg -n "a-z0-9\]\[a-z0-9" scripts/lib` returns only
+      `constants.mjs` afterwards); suite green, output saved to a file and read from the file
+- [ ] 1.2 RED: unit — `escapeTableCell` escapes every control character exactly as `escapeControls`
+      does and every `|` as `\|`; `escapeControls` is idempotent over its own output
+- [ ] 1.3 GREEN: add `escapeTableCell` beside `escapeControls` (design D1)
+
+## 2. PROJECT.md tables keep their cells
+
+Pairs: 2.1–2.3 land with 2.4.
+
+- [ ] 2.1 RED: spec "A detour reason with a pipe and a newline stays in its cell" (repro A)
+- [ ] 2.2 RED: spec "A disposition reason with a newline stays in its row" (repro B)
+- [ ] 2.3 RED: spec "A minimal detour note with a pipe stays in its cell" (repro I)
+- [ ] 2.4 GREEN: `tableRow(...cells)` in `render.mjs`; every data row of Detour stack, Epics,
+      Dispositions, Gate reviews and Recent detours built through it; remove the Dispositions reason's
+      own `|` replace; add the D3 source guard (no data-row `md.push` beginning `|` outside `tableRow`)
+
+## 3. PROJECT.md, the brief and `release show` never gain a line
+
+Pairs: 3.1–3.4 land with 3.5.
+
+- [ ] 3.1 RED: spec "A detour reason cannot forge a NOW line in the brief" — PROJECT.md and the decoded
+      brief halves (the log half is 4.1)
+- [ ] 3.2 RED: spec "A backlog title cannot forge a heading" (repro C)
+- [ ] 3.3 RED: spec "An already-stored malformed release id renders without forging" — the fixture
+      writes the release into `state.json` directly (design D3 legacy exception, say so in the test)
+- [ ] 3.4 RED: spec "Line separators other than LF are escaped too"
+- [ ] 3.5 GREEN: `escapeControls` at every interpolation of a non-engine value in `render.mjs`,
+      `briefing.mjs` and `releases.mjs` (`releaseLine`, `releaseShow`), and in the shared helpers both
+      surfaces call (`outcomeOf`, `correctionNote`, `correctionMarking`, `crossSpecLine`,
+      `gateTableRows`, `withdrawnArchiveNote`, starvation/dependency notes) — derived with
+      `rg -n '\$\{' scripts/lib/render.mjs scripts/lib/briefing.mjs scripts/lib/releases.mjs` and each
+      interpolation classified engine-composed or escaped in the commit message
+
+## 4. The Honcho memory line is one line
+
+Pairs: 4.1 lands with 4.2.
+
+- [ ] 4.1 RED: spec "A detour reason cannot forge a NOW line in the brief" — the
+      `honcho-memories.log` half, plus `honcho-memory push e1 "<P>"` stdout (repro A)
+- [ ] 4.2 GREEN: `honchoMemoryLine()` escapes the reason and the epic id (design D7)
+
+## 5. Refusals quote values on one line
+
+Pairs: 5.1–5.3a land with 5.4.
+
+- [ ] 5.1 RED: spec "An unknown id is quoted back on one line" — all six verbs, `state.json`
+      byte-identical (repro F)
+- [ ] 5.2 RED: spec "A story title cannot forge an invocation in the archive refusal" (repro D)
+- [ ] 5.3 RED: spec "A withdrawal reason cannot forge an integrity line" (repro E) — real commits via
+      the helpers fixture, never a placeholder sha
+- [ ] 5.3a RED: spec "A malformed stored id is never escaped into an emitted command" (legacy id
+      written into `state.json` directly — design D3 exception)
+- [ ] 5.4 GREEN: emitted invocations interpolating a stored id use the `<epicId>` placeholder when the
+      id does not match `EPIC_ID_FORMAT` (design D4a); and escape every stored or caller value in a refusal or report line: the handoff refusal's
+      story titles (`archive-gate.mjs`), `delivered-epic-attributed-no-commits`'s sha and reason and
+      `archive-directory-has-no-epic`'s directory (`integrity.mjs`), `add-many.mjs`'s `bad id` and
+      story messages, and every `not found` / top-of-stack / does-not-exist refusal derived with
+      `rg -n "not found|does not exist|top of the detour stack" scripts/lib scripts/conductor.mjs`
+
+## 6. Ids are refused at input
+
+Pairs: 6.1–6.5 land with 6.6 and 6.7 (one commit; they share the fixture).
+
+- [ ] 6.1 RED: spec "sync skips a change directory whose name holds a newline" (repro H)
+- [ ] 6.2 RED: spec "sync skips a plan file whose name holds a newline" (repro H)
+- [ ] 6.3 RED: spec "The archive backfill skips a malformed archive directory" — including the
+      `integrity` wording half
+- [ ] 6.4 RED: spec "A release id with a newline is refused" (repro G)
+- [ ] 6.5 REGRESSION GUARD: specs "A well-formed release id is still created" and "An already-stored
+      malformed release is still updatable"; plus `add-epic --id "e1<LF>x"` and an `add-many` batch
+      with such an id still refuse with nothing written
+- [ ] 6.6 GREEN: `pushEpic()` throws `InvalidEpicIdError`; `sync` (active changes, plan files) and
+      `backfillArchive` test the derived id first and skip with the escaped stderr line; the
+      `archive-directory-has-no-epic` detail distinguishes a non-matching directory (design D4)
+- [ ] 6.7 GREEN: `release()` create branch refuses a non-matching id before any write (design D5)
+
+## 7. The rule is held by registries, not by this task list
+
+Pairs: 7.1 lands with 7.2.
+
+- [ ] 7.1 RED: `POISON_RECIPES` completeness — its key set equals every `valueBearingFlagsFor(verb)`
+      entry plus every `freeText` positional; saved red run shows the missing keys
+- [ ] 7.2 GREEN: the sweep of design D3 — recipes for every key (or `exempt` naming the refusing
+      check), legacy stored values, every surface, assertions (a)–(e); each recipe asserts its own
+      exit status. Size, measured at f49871a: 120 value-bearing flag entries summed over verbs plus 4
+      free-text positionals — re-derive at 7.1; many share one recipe body
+- [ ] 7.3 REGRESSION GUARD (mutation check): temporarily remove one escape from `briefing.mjs` (the
+      detour reason) and one `tableRow` use from `render.mjs`; confirm the sweep fails on each, save
+      both runs as `red-7.3-mutant.txt`, restore; nothing of the mutation is committed
+
+## 8. Required task items
+
+- [ ] 8.1 **Call-site completeness sweep** — derived with `rg` at sweep time, never from this list:
+      - every interpolation into an output string: `rg -n "process\.(stdout|stderr)\.write|die\(|fail\(|md\.push|L\.push|out\.push" scripts/lib scripts/conductor.mjs`,
+        each interpolated value classified engine-composed or escaped; an unescaped non-engine value is
+        a FINDING;
+      - every caller of `escapeControls` and `escapeTableCell` (`rg -n "escapeControls|escapeTableCell"`),
+        each stated as line or cell context, and no `escapeTableCell` result passed through it twice;
+      - every creator of an epic (`rg -n "pushEpic\(|epics\.push\(" scripts/lib`) and of a release
+        (`rg -n "releases\.push\(|state\.releases\s*=" scripts/lib`), each stated as validating or
+        routed through the sink;
+      - DATA references holding an epic or release id that a caller can write: `parent`,
+        `links[].epic`, `disposition.carriedTo`, deferral epic ids, `release` membership,
+        `detourStack[].pausedEpic/spawnedDetour`, `active` — for each, the write site (does it require
+        the target to exist, and so inherit the format?), the read sites (escaped?), and the REMOVE
+        site. `add-many` links' epic half is unvalidated (design, add-many.mjs comment) — state whether
+        it can now store a non-matching id and justify or fix;
+      - every append-only log line writer (`rg -n "appendFileSync" scripts/lib`), each stated as
+        one-line-guaranteed or not.
+      A site where the rule does not hold is a FINDING unless justified in the commit.
+- [ ] 8.2 **Inverse of every operation added or modified** — the id refusal at `pushEpic` (inverse:
+      `remove-epic`, unchanged; a skipped directory's inverse is renaming it, no verb); the release
+      create refusal (inverse: none needed — nothing was stored; an existing malformed release has no
+      rename verb, name that gap and decide whether to file it); escaping (inverse: none — output only,
+      the stored value is unchanged, say so). Each unshipped inverse named and justified in the commit
+      message
+- [ ] 8.3 **Verify against the commit** — `git show --stat <sha>` for every task commit; every file the
+      task claims is present in THAT commit, including the test file and each `red-<task>.txt`
+- [ ] 8.4 **Attribute every commit** as it lands: `update-epic user-text-never-forges-output
+      --attribute-commit <sha>`. The archive commit, and any commit that only relocates this change's
+      artifacts, is excluded
+- [ ] 8.5 **Dispositions** <!-- pm:lifecycle --> — `update-epic user-text-never-forges-output --status
+      archived --outcome delivered --no-deferrals` (swap `--no-deferrals` for `--deferral
+      "<epicId>:<section>"` or `--declined-deferral "<what>:<why not>"` for anything Gate 2 defers).
+      The superseded epics `user-text-unescaped-in-render-brief-integrity` and
+      `handoff-refusal-prints-story-titles-raw` are already archived as superseded — confirm, do not
+      re-end them
+- [ ] 8.6 **Route what the work taught** — name each as a practice (register an epic, with its
+      evidence), tooling friction (`/pm:feedback [bug|feature] "<summary>"`), or a process failure (a
+      lesson in `docs/lessons/` with `trigger`, `cost`, `enforced_in`). At minimum decide: whether a
+      partial escape that passed review (the Dispositions `|`-only escape) is a lesson, and whether
+      the registry-bound poison sweep is a practice other pm users should have
+
+## 9. Docs (after Gate 2)
+
+- [ ] 9.1 `commands/sync.md` — a change directory, plan file or archive directory whose name is not a
+      valid id is skipped and named, and must be renamed to register
+- [ ] 9.2 `commands/epic.md` and the release command doc (`rg -l "release <id>" commands`) — the id
+      format for releases at creation; free text is stored as written and escaped on display
+- [ ] 9.3 `skills/conductor/SKILL.md` and `README.md` where the id format or PROJECT.md rendering is
+      described (`rg -n "a-z0-9\]\[|PROJECT.md" skills/conductor/SKILL.md README.md`)
+- [ ] 9.4 `CHANGELOG.md` `[Unreleased]` — Fixed (forged lines in PROJECT.md, brief, integrity,
+      refusals; forged table cells; ids with control characters stored by sync, backfill and release)
+      and Changed (sync skips non-matching names; release ids validated at creation)
+- [ ] 9.5 Full suite green, written to a file and read from the file
+
+## 10. Gate 2 and close
+
+- [ ] 10.1 Gate 2 — two fresh-context lenses over the committed range (A: spec alignment and real
+      tests; B: absent edits against 8.1's sweep); fix Critical and Important; record
+      `record-gate-review user-text-never-forges-output --gate 2 --verdict pass --reviewer
+      "<identity>" --base-sha <parent of first attributed> --head-sha <last attributed>`
+- [ ] 10.2 Archive this change <!-- pm:lifecycle --> — `/opsx:archive user-text-never-forges-output`,
+      then the disposition in 8.5
