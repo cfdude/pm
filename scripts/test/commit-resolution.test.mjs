@@ -230,3 +230,37 @@ test("4.6 REGRESSION GUARD: a head reaching every attributed commit is fresh pas
   writeState(cwd, s);
   accepted(cwd, ["update-epic", "e", "--attribute-commit", later]);
 });
+
+// ═══════════════ Requirement: A recorded commit value that is not a commit object name is reported ═══════════════
+
+const NOT_AN_OBJECT_NAME = /not a commit object name/;
+/** The integrity lines of the non-object-name arm. */
+const nonObjectNameFindings = (cwd) => attempt(cwd, ["integrity"]).stdout.split("\n").filter(l => NOT_AN_OBJECT_NAME.test(l));
+
+test("5.1 integrity reports a symbolic Gate 2 headSha by epic, field and value, and writes nothing", () => {
+  const { cwd, shas: [root, a] } = repoWith(["root", "a"]);
+  gatedEpic(cwd, root, a, [a]);
+  const s = readState(cwd);
+  s.epics.find(x => x.id === "e").gateReview.gate2.headSha = "HEAD";
+  writeState(cwd, s);
+  const before = stateBytes(cwd);
+  const found = nonObjectNameFindings(cwd);
+  assert.equal(found.length, 1, `one finding of this kind: ${JSON.stringify(found)}`);
+  assert.match(found[0], /`?e`?/);
+  assert.match(found[0], /gate2\.headSha/);
+  assert.match(found[0], /HEAD/);
+  assert.ok(stateBytes(cwd).equals(before), "integrity writes nothing");
+});
+
+test("5.2 REGRESSION GUARD: re-recording the verdict clears the finding, and a resolving short hash is never named", () => {
+  const { cwd, shas: [root, a] } = repoWith(["root", "a"]);
+  gatedEpic(cwd, root, a, [a]);
+  const s = readState(cwd);
+  const e = s.epics.find(x => x.id === "e");
+  e.gateReview.gate2.headSha = "HEAD";
+  e.attributedCommits = [a.slice(0, 9)];
+  writeState(cwd, s);
+  accepted(cwd, ["record-gate-review", "e", "--gate", "2", "--verdict", "pass", "--base-sha", root, "--head-sha", a]);
+  assert.equal(epicOf(cwd, "e").gateReview.gate2.superseded.headSha, "HEAD", "the superseded verdict still holds HEAD");
+  assert.deepEqual(nonObjectNameFindings(cwd), [], "no finding of this kind names the epic");
+});

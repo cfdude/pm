@@ -22,7 +22,7 @@ import { isInitialized, loadState } from "./state.mjs";
 import { archivedChanges, epicProgress, isArchived, strippedChangeId } from "./epic-progress.mjs";
 import { KNOWN_STATUSES, escapeControls, gateArtifacts, gateHasEvidence, isOpenspecLane, releaseMembers, withdrawnGate } from "./constants.mjs";
 import { AGENT_OUTCOMES, dispositionInvocation } from "./archive-gate.mjs";
-import { commitDate, isAncestor, objectExists, reachableFromAnyRef } from "./git.mjs";
+import { commitDate, isAncestor, isCommitNameShaped, objectExists, reachableFromAnyRef } from "./git.mjs";
 import { isArchiveBackfilled, outcomeOf, stampedBy } from "./disposition.mjs";
 import { epicReferences, isKnownLinkType, isRenderableLink, KNOWN_LINK_TYPES, supersededEpics } from "./links.mjs";
 import { claimExpiry, isLiveClaim } from "./claim-shape.mjs";
@@ -703,10 +703,41 @@ export const CHECKS = [
      *  - The probe is ALL-OR-NOTHING, so it is a cliff: the first time exactly one recorded sha
      *    resolves in an otherwise history-less clone, arm 2 reports every other one. If this
      *    check ever fires en masse in CI, that is the cause — not a mass deletion.
+     *
+     *  ARM 3 — NOT A COMMIT OBJECT NAME (gates-bind-to-verified-evidence Decision 10). A value that
+     *  is not SHAPED as a hexadecimal commit name — `HEAD`, `main~1`, `not-a-commit` — was stored
+     *  before write-time resolution existed. It is reported BEFORE the object-store probe and
+     *  independently of it, and it is NEVER handed to git: `HEAD` resolves, so the arms above would
+     *  call it present and reachable, which is exactly how a moving ref hid here. Decided by
+     *  isCommitNameShaped(), the one predicate the staleness rule also uses, so a verdict this arm
+     *  names is the verdict every surface renders stale. Scoped to what recordedShas() already
+     *  enumerates — the attribution array and each CURRENT gate verdict's range — so withdrawing the
+     *  attribution or re-recording the verdict clears it; a superseded or withdrawn record is history
+     *  kept on purpose. Reported, never rewritten: which commit a moving ref named when it was written
+     *  is not recoverable from the record.
      */
     run(state) {
-      const records = recordedShas(state);
-      if (!records.length) return [];
+      const all = recordedShas(state);
+      if (!all.length) return [];
+      const out = [];
+      const malformedByEpic = new Map();
+      for (const r of all) {
+        if (isCommitNameShaped(r.sha)) continue;
+        if (!malformedByEpic.has(r.epic)) malformedByEpic.set(r.epic, []);
+        malformedByEpic.get(r.epic).push(r);
+      }
+      for (const [epic, list] of malformedByEpic) {
+        out.push({ epic, detail:
+          `${list.length} recorded value(s) are not a commit object name — a ref or string stored ` +
+          "before commit values were resolved when written, so no commit can be checked against it " +
+          "and every surface reads the verdict stale. Withdraw the attribution " +
+          `(\`update-epic ${epic} --withdraw-commit <value> --withdrawal-reason "<why>"\`) or re-record ` +
+          `the verdict over resolvable shas (\`record-gate-review ${epic} --gate <n> --verdict <v> ` +
+          "--base-sha <sha> --head-sha <sha>`). " +
+          [...new Set(list.map(r => `${r.where} ${escapeControls(JSON.stringify(r.sha))}`))].join(", ") });
+      }
+      const records = all.filter(r => isCommitNameShaped(r.sha));
+      if (!records.length) return out;
       // One pair of git calls per DISTINCT sha, not per record: the same commit is routinely
       // both attributed and named as a verdict's head.
       const seen = new Map();
@@ -727,7 +758,6 @@ export const CHECKS = [
         grouped.get(r.epic)[arm].push(r);
       }
       const cite = (list) => [...new Set(list.map(r => `${r.where} \`${r.sha.slice(0, 7)}\``))].join(", ");
-      const out = [];
       for (const [epic, arms] of grouped) {
         if (arms.orphaned.length) {
           out.push({ epic, detail:

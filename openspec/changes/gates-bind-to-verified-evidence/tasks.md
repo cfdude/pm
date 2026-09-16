@@ -105,11 +105,11 @@ Pairs: 4.1–4.6 land with 4.7.
 
 Pairs: 5.1 lands with 5.3.
 
-- [ ] 5.1 RED: a state file whose Gate 2 `headSha` is `HEAD` — `integrity` names the epic, the field
+- [x] 5.1 RED: a state file whose Gate 2 `headSha` is `HEAD` — `integrity` names the epic, the field
       and `HEAD`; `state.json` unchanged
-- [ ] 5.2 REGRESSION GUARD: after re-recording that Gate 2 over resolvable shas, no finding of this
+- [x] 5.2 REGRESSION GUARD: after re-recording that Gate 2 over resolvable shas, no finding of this
       kind names the epic; a resolving short hash is never named by it
-- [ ] 5.3 GREEN: the third arm of `recorded-sha-the-repository-cannot-resolve` (design Decision 10);
+- [x] 5.3 GREEN: the third arm of `recorded-sha-the-repository-cannot-resolve` (design Decision 10);
       suite green
 
 ## 6. A reconcile verdict answers only a detour the epic owes
