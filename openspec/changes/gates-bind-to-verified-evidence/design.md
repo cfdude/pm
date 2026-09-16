@@ -20,8 +20,8 @@ See proposal.md "Why" for the defects and their reproductions. The constraints t
   with `fetch-depth: 0` (`.github/workflows/ci.yml`) but leaves HEAD detached, so no rule may read the
   current branch. Measured: 183 distinct recorded values, all resolve locally; 74 `presquash/*` tags.
 
-Line anchors below are against `dev` at 85079e1. Change 1 (`every-verb-refuses-what-it-does-not-read`)
-applies first and moves them; re-derive with `rg` before editing.
+Line anchors below were re-derived with `rg` against `dev` at 50485a3, after changes 1
+(`every-verb-refuses-what-it-does-not-read`) and 2 (`state-file-refuses-to-guess`) merged (task 0.3).
 
 ## Goals / Non-Goals
 
@@ -78,11 +78,11 @@ Accepted only when all hold, evaluated before `loadState()` returns to any write
 
 Refusals name `ownedDetours(epic)` — the armed, unanswered link targets — or say none is owed.
 The verb never pushes a link (today's `if (!link) epic.links.push(...)` at
-`reconciler-writeback.mjs:42-46` is deleted).
+`reconciler-writeback.mjs:43-46` is deleted).
 
 Prior answers live in ONE place: `link.superseded`, a sibling of `link.reconciled` holding the
 previous `reconciled` object, one level deep (a deeper `superseded` is dropped, as
-`gate-review-writeback.mjs:153-158` does for gate verdicts).
+`gate-review-writeback.mjs:144-148` does for gate verdicts).
 
 - On accept, in this order: if `link.reconciled` exists, it moves to `link.superseded`; the new
   verdict is written to `link.reconciled`; THEN `epic.reconcileNeeded = ownedDetours(epic).length > 0
@@ -162,7 +162,7 @@ Why the narrow branch rather than an explicit discharge verb (`record-reconcile 
 `pop`, `remove-epic d`), so is `{reconcileNeeded: true}` with only `reconcileOnResume: false` links
 (hand-edited), and under this change no `record-reconcile` can be accepted for it, so
 without an exit the unconditional guard wedges Edit/Write on that epic — the case
-`gate-guard.mjs:96` was written to avoid. After this change the engine cannot create the state
+`gate-guard.mjs:92-104` was written to avoid. After this change the engine cannot create the state
 (pushing arms a link; Decision 5 refuses removing an armed one), so the branch only ever meets
 hand-edited state or the migration tradeoff (Decision 3); a new flag and its doc surface would buy a recorded discharge for a
 population measured at zero. Rejected alternative: widening acceptance to any epic in that state,
@@ -172,7 +172,7 @@ Warn, not refuse, on pointer moves — precedent `detour-stack.mjs:164-167` ("re
 a stack … with no CLI way out … It warns, which is the honest shape"). The warning is emitted by a
 single helper, `owedReconcileNotice(state, previousActiveId)`, called after `saveState` at every
 site that can move `state.active` off an epic: `setActive`, `clearActive`, `update-epic` (`activate`
-of another epic, or `state.active = null` at `update-epic.mjs:~880`), `add-epic`/`add-many` creating
+of another epic, or `state.active = null` at `update-epic.mjs:858`), `add-epic`/`add-many` creating
 an epic at `active`. The call-site list is re-derived at sweep time with
 `rg -n "activate\(|state\.active\s*=" scripts/lib`, which also finds `pop-detour`'s `activate` —
 it moves the pointer off the detour, and warns when that detour itself owes. The one exemption is
@@ -187,15 +187,15 @@ detour's own edits.
   the `epic-annotation` delta carves out. Its two emitted instructions (`links.mjs`
   `unknownLinkTypeMessage`, `integrity.mjs` unknown-link-type finding) name `record-reconcile` first
   when the epic owes; the `links.mjs` message gains the epic id it needs to ask.
-- `mergeLinks()` (`links.mjs:85-96`) replaces the object on a same type+target reason change, which
+- `mergeLinks()` (`links.mjs:85-95`) replaces the object on a same type+target reason change, which
   drops `reconcileOnResume`, `reconciled` and `superseded`. It will carry every key other than
   `type`/`epic`/`reason` from the stored link onto the supplied one. This binds `update-epic --link`,
   `add-epic --link` (new epics hold no stored link, so a no-op there) and `add-many`.
 - `remove-epic <d>`: `epicReferences()` gives a link reference `drop: null` (the frame precedent at
-  `links.mjs:216-220`) when the link is `may-invalidate`, armed (answered or not) or unmigrated, and its
+  `links.mjs:277-280`) when the link is `may-invalidate`, armed (answered or not) or unmigrated, and its
   holder owes a reconcile, and gives every reference a `kind` (`frame` | `owed-reconcile` | …). The two readers that
   word a `drop: null` today assume it is a frame and must word by `kind` instead:
-  `remove-epic.mjs:~76-83` ("detour-stack reference(s) … Resume or pop the detour first") names
+  `remove-epic.mjs:78-84` ("detour-stack reference(s) … Resume or pop the detour first") names
   `record-reconcile` for an owed-reconcile reference, and `integrity.mjs:~544`
   (`dangling-epic-reference`) stops calling every undroppable reference a frame.
 - Removing the PAUSED epic itself is not refused: its record, flag included, goes with it.
@@ -241,10 +241,10 @@ false, `rev-parse` resolves even after the tag is deleted while the object remai
 helper for the orphaned arm of integrity.
 
 Consequences to handle in the same commits:
-- `missingAttributions()` (`update-epic.mjs:44-48`) compares resolved names, not the typed strings —
+- `missingAttributions()` (`update-epic.mjs:45-49`) compares resolved names, not the typed strings —
   otherwise a short typed sha stored in full reads "NOT in state.json" and exits 1.
-- The withdrawal read-back (`update-epic.mjs:~912-924`) compares the removed entry, not the typed value.
-- The attribution nudge (`subcommands.mjs:312`) keeps printing whatever sha it holds; it now resolves.
+- The withdrawal read-back (`update-epic.mjs:889-902`) compares the removed entry, not the typed value.
+- The attribution nudge (`subcommands.mjs:349`) keeps printing whatever sha it holds; it now resolves.
 
 No migration: resolvability is clone-local (tags, `gc`), and the existing spec already forbids a
 migration that collapses distinguishable states (`gate-integrity` "The migration SHALL NOT add the array").

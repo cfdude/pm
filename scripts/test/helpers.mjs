@@ -332,3 +332,46 @@ export const stripAlwaysOn = (block) =>
     block.replace(
       new RegExp(`\\n*${REFRESH_GATE_HEADING}[\\s\\S]*?(?=\\n<!-- END pm-conductor rules -->)`), ""),
   );
+
+// ───────── gates-bind-to-verified-evidence: fixture repositories that hold REAL commits ─────────
+
+/** One real commit per requested name in the fixture repository at `cwd`, returned as their FULL
+ *  object names in the order asked. The engine resolves every commit value it records at write time
+ *  (`--attribute-commit`, `--withdraw-commit`, `--base-sha`, `--head-sha`), so a test that fed it
+ *  `aaaaaaa` or `root` was exercising the refusal, not the rule it meant to.
+ *
+ *  `tmpRepo()` does not create a repository, so one is initialised here — hermetically, through the
+ *  env hermetic-git.mjs sets — when `cwd` holds none. Commits are made with PLUMBING
+ *  (`commit-tree` + `update-ref`), never `git commit`: nothing a test left in the index or the
+ *  working tree is swept into a fixture commit, and no hook runs.
+ *
+ *  Chained by default: each commit's parent is HEAD at the time (none on an unborn HEAD), so the
+ *  names come back as a linear history, first the oldest. `{ orphan: true }` makes each one a
+ *  root commit sharing no history with anything — the "unrelated branch" shape — and leaves HEAD
+ *  where it was. */
+export function fixtureCommits(cwd, names, { orphan = false } = {}) {
+  const git = (args, input) => execFileSync("git", args,
+    { cwd, encoding: "utf8", input, stdio: ["pipe", "pipe", "ignore"] }).trim();
+  let inRepo = false;
+  try { inRepo = git(["rev-parse", "--show-toplevel"]) === fs.realpathSync(cwd); } catch { inRepo = false; }
+  if (!inRepo) {
+    git(["init", "-q"]);
+    git(["config", "user.email", "test@example.com"]);
+    git(["config", "user.name", "Test"]);
+  }
+  const tree = git(["mktree"], "");
+  const out = [];
+  for (const name of names) {
+    let parent = null;
+    if (!orphan) { try { parent = git(["rev-parse", "--verify", "--quiet", "HEAD^{commit}"]); } catch { parent = null; } }
+    const sha = git(["commit-tree", tree, ...(parent ? ["-p", parent] : []), "-m", String(name)]);
+    if (!orphan) git(["update-ref", "HEAD", sha]);
+    out.push(sha);
+  }
+  return out;
+}
+
+/** The single-commit form of fixtureCommits(). */
+export function fixtureCommit(cwd, name = "fixture", opts) {
+  return fixtureCommits(cwd, [name], opts)[0];
+}

@@ -13,7 +13,7 @@
       its two siblings' (`every-verb-refuses-what-it-does-not-read`, `state-file-refuses-to-guess`).
       Run the `cross-spec-review` skill after all three pass Gate 1 and again after any later
       amendment; record `record-cross-spec-review 0.44.0 --verdict pass|fail --reviewer "<identity>"`
-- [ ] 0.3 Re-derive every line anchor in design.md with `rg` after changes 1 AND 2 have merged into `dev`
+- [x] 0.3 Re-derive every line anchor in design.md with `rg` after changes 1 AND 2 have merged into `dev`
       (change 2 edits `migrations.mjs` `upgrade()`, the top of `gate-guard.mjs`, `commitNudge` and
       `conductor.mjs`'s catch),
       and correct design.md in the first implementation commit if any moved
@@ -26,7 +26,7 @@ run against the pre-GREEN engine is saved in this change directory as `red-<task
 GREEN commit message names that file. New test files: `scripts/test/commit-resolution.test.mjs` and
 `scripts/test/reconcile-obligation.test.mjs`, importing `helpers.mjs`.
 
-- [ ] 1.1 REFACTOR: add a `helpers.mjs` fixture that creates one real commit per requested name in
+- [x] 1.1 REFACTOR: add a `helpers.mjs` fixture that creates one real commit per requested name in
       the fixture repo and returns its full object name. `tmpRepo()` does not create a git
       repository (`conductor-13`'s harness uses it), so the fixture runs a hermetic `git init` in the
       directory first when none exists; suite green with no test converted yet
