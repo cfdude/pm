@@ -89,3 +89,40 @@ test("2.5 a range bound that is not a commit is refused naming it, and no verdic
   assert.match(r.stderr, /root/, "the refusal names the unresolved bound");
   assert.equal(epicOf(cwd, "e").gateReview, undefined, "no verdict was recorded");
 });
+
+// ═══════════════ Requirement: A commit withdrawal matches the attributed commit, not its spelling ═══════════════
+
+/** Rewrite one epic in state.json as a state file an earlier release could have written. */
+function seedEpic(cwd, id, patch) {
+  const s = readState(cwd);
+  Object.assign(s.epics.find(e => e.id === id), patch);
+  writeState(cwd, s);
+}
+
+test("3.1 a full hash withdraws the short legacy entry of the same commit, and the record names the stored entry", () => {
+  const { cwd, shas: [, one] } = repoWith();
+  const short = one.slice(0, 7);
+  seedEpic(cwd, "e", { attributedCommits: [short] });
+  accepted(cwd, ["update-epic", "e", "--withdraw-commit", one, "--withdrawal-reason", "x"]);
+  const e = epicOf(cwd, "e");
+  assert.deepEqual(e.attributedCommits, [], "the short entry naming the same commit is gone");
+  assert.equal(e.withdrawnCommits.length, 1);
+  assert.equal(e.withdrawnCommits[0].sha, short, "the withdrawal record carries the entry that was removed");
+});
+
+test("3.2 REGRESSION GUARD: a legacy entry that does not resolve is withdrawn by its exact spelling", () => {
+  const { cwd } = repoWith();
+  seedEpic(cwd, "e", { attributedCommits: ["not-a-commit"] });
+  accepted(cwd, ["update-epic", "e", "--withdraw-commit", "not-a-commit", "--withdrawal-reason", "x"]);
+  const e = epicOf(cwd, "e");
+  assert.deepEqual(e.attributedCommits, []);
+  assert.equal(e.withdrawnCommits[0].sha, "not-a-commit");
+});
+
+test("3.3 the same commit spelled two ways cannot be attributed and withdrawn in one invocation", () => {
+  const { cwd, shas: [, one] } = repoWith();
+  accepted(cwd, ["update-epic", "e", "--attribute-commit", one]);
+  const r = refused(cwd, ["update-epic", "e", "--attribute-commit", one.slice(0, 8),
+    "--withdraw-commit", one, "--withdrawal-reason", "x"]);
+  assert.match(r.stderr, /cannot attribute and withdraw/, `refused as a contradiction, not a crash: ${r.stderr}`);
+});

@@ -17,7 +17,7 @@ import { deferralAssertion, isEngineStamped, isStoryDisposed, outcomeOf, storyDi
 import { isArchived } from "./epic-progress.mjs";
 import { claimArtifacts } from "./source-artifacts.mjs";
 import { linkTypeVocabulary, mergeLinks } from "./links.mjs";
-import { resolveCommits, unresolvedCommitsMessage } from "./git.mjs";
+import { isCommitNameShaped, resolveCommits, unresolvedCommitsMessage } from "./git.mjs";
 
 // The flags update-epic recognizes, as the registry projects them. Anything else is refused before
 // dispatch by the pre-dispatch command-line check (lib/argv-surface.mjs) — an unrecognized flag (e.g. a typo) used to parse, run, and print
@@ -253,6 +253,13 @@ export function updateEpic() {
     if (unresolved.length) { process.stderr.write(unresolvedCommitsMessage(unresolved, "--attribute-commit")); process.exit(1); }
     attributed = attributedTyped.map(v => resolved.get(v));
   }
+  // --withdraw-commit <sha>: resolved here too, for IDENTITY only (Decision 8). A value that does
+  // not resolve is NOT refused — a legacy entry that no longer resolves (`not-a-commit`, a commit
+  // this clone lost) must stay withdrawable by its exact spelling, or the one correction for a bad
+  // record would be unreachable for exactly the records that need it.
+  const withdrawTyped = f["withdraw-commit"] === undefined
+    ? [] : [].concat(f["withdraw-commit"]).filter(v => typeof v === "string");
+  const withdrawResolved = withdrawTyped.length ? resolveCommits(withdrawTyped).resolved : new Map();
   const state = loadState();
   const epic = state.epics.find(e => e.id === id);
   if (!epic) { process.stderr.write(`conductor: epic '${id}' not found\n`); process.exit(1); }
@@ -627,8 +634,9 @@ export function updateEpic() {
 
   // #166 — withdraw an attribution. Runs BEFORE the field writes below so a refusal leaves the
   // epic untouched, the same ordering every other guard in this file uses.
+  const withdrawnEntries = [];
   if (f["withdraw-commit"] !== undefined) {
-    const shas = [].concat(f["withdraw-commit"]).filter(v => typeof v === "string");
+    const shas = withdrawTyped;
     // ITS OWN reason flag. `--reason` serves the DISPOSITION, and Gate 2 confirmed that borrowing
     // it made a withdrawal's reason become the reason the epic was delivered.
     const why = str(f["withdrawal-reason"]);
@@ -640,34 +648,53 @@ export function updateEpic() {
       process.exit(1);
     }
     // CONTRADICTORY IN ONE INVOCATION. Attribution appends further down, so attributing and
-    // withdrawing the same sha in one call left it in BOTH arrays and reported success.
-    const alsoAttributed = [].concat(f["attribute-commit"] === undefined ? [] : f["attribute-commit"])
-      .filter(v => typeof v === "string" && shas.includes(v));
+    // withdrawing the same sha in one call left it in BOTH arrays and reported success. Compared by
+    // COMMIT IDENTITY where both sides resolve — `<C short>` and `<C full>` are the same commit —
+    // and by spelling otherwise. Every attributed value resolved above, or the call was refused.
+    const alsoAttributed = attributedTyped.filter((v, i) => shas.some(w =>
+      withdrawResolved.has(w) ? withdrawResolved.get(w) === attributed[i] : w === v));
     if (alsoAttributed.length) {
       process.stderr.write(
         `conductor: cannot attribute and withdraw ${alsoAttributed.join(", ")} in one ` +
         `invocation — the two record contradictory things about the same commit.\n`);
       process.exit(1);
     }
-    const attributed = Array.isArray(epic.attributedCommits) ? epic.attributedCommits.slice() : [];
-    const missing = shas.filter(sha => !attributed.includes(sha));
+    const remaining = Array.isArray(epic.attributedCommits) ? epic.attributedCommits.slice() : [];
+    // STORED entries resolve by identity only when they are SHAPED as a commit name: a legacy `HEAD`
+    // in the record names whatever HEAD was when it was typed, and resolving it now would match it
+    // against today's HEAD. Such an entry is matched by its exact spelling alone.
+    const storedResolved = resolveCommits(remaining.filter(isCommitNameShaped)).resolved;
+    // ONE OCCURRENCE PER REQUEST, and the LAST one. The array does not de-duplicate, so a commit can
+    // appear twice; removing the last match means the record's tail moves only when the tail itself
+    // is what you withdrew. Matched by COMMIT IDENTITY first (a full hash withdraws the short entry
+    // of the same commit), then by exact spelling (a value that does not resolve still withdraws the
+    // entry written exactly that way). The withdrawal record carries the ENTRY REMOVED, not the
+    // value typed — that entry is what the record held.
+    const removed = [], missing = [];
+    for (const sha of shas) {
+      const full = withdrawResolved.get(sha);
+      let at = -1;
+      if (full) {
+        for (let i = remaining.length - 1; i >= 0; i--) {
+          if (storedResolved.get(remaining[i]) === full) { at = i; break; }
+        }
+      }
+      if (at === -1) at = remaining.lastIndexOf(sha);
+      if (at === -1) { missing.push(sha); continue; }
+      removed.push(remaining[at]);
+      remaining.splice(at, 1);
+    }
     if (missing.length) {
       process.stderr.write(
         `conductor: '${id}' never attributed ${missing.join(", ")} — nothing to withdraw. ` +
-        `It currently attributes: ${attributed.length ? attributed.join(", ") : "(none)"}.\n`);
+        `It currently attributes: ${epic.attributedCommits && epic.attributedCommits.length ? epic.attributedCommits.join(", ") : "(none)"}.\n`);
       process.exit(1);
     }
-    // ONE OCCURRENCE PER REQUEST. The array does not de-duplicate, so a sha can appear twice;
-    // filtering removed EVERY copy for a single request, deleting two entries and moving the
-    // endpoint a Gate 2 headSha is compared against. Removing the LAST occurrence means the
-    // endpoint moves only when the endpoint itself is what you withdrew.
-    for (const sha of shas) {
-      const at = attributed.lastIndexOf(sha);
-      if (at !== -1) attributed.splice(at, 1);
-    }
-    epic.attributedCommits = attributed;
+    const withdrawnAt = new Date().toISOString();
+    epic.attributedCommits = remaining;
     epic.withdrawnCommits = (epic.withdrawnCommits || []).concat(
-      shas.map(sha => ({ sha, reason: why, withdrawnAt: new Date().toISOString() })));
+      removed.map(sha => ({ sha, reason: why, withdrawnAt })));
+    withdrawnEntries.push(...removed.map(sha => ({ sha, withdrawnAt })));
   }
 
   // gate-verdict-withdrawal — withdraw a recorded gate verdict. A FIELD WRITE like every other
@@ -899,12 +926,13 @@ export function updateEpic() {
   // writes the file again after saveState(), so a removal is exactly as vulnerable to being
   // silently undone as an append (#140's mechanism). Reporting a withdrawal that did not land
   // would be the false-write class this whole release is about, in the verb that fixes it.
-  if (f["withdraw-commit"] !== undefined) {
-    const asked = [].concat(f["withdraw-commit"]).filter(v => typeof v === "string");
+  if (withdrawnEntries.length) {
+    // The ENTRIES REMOVED are what was written, keyed by this invocation's timestamp so an earlier
+    // withdrawal of the same entry cannot stand in for this one.
     const after = loadState().epics.find(e => e.id === id);
-    const stillThere = asked.filter(sha =>
+    const stillThere = withdrawnEntries.filter(({ sha, withdrawnAt }) =>
       (after && Array.isArray(after.withdrawnCommits) ? after.withdrawnCommits : [])
-        .every(w => w.sha !== sha));
+        .every(w => w.sha !== sha || w.withdrawnAt !== withdrawnAt)).map(w => w.sha);
     if (stillThere.length) {
       process.stderr.write(
         `conductor: --withdraw-commit did NOT land for ${stillThere.join(", ")} on '${id}' — ` +

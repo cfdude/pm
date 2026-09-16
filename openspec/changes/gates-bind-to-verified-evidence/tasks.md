@@ -57,14 +57,14 @@ Pairs: 2.1–2.5 land with 2.6.
 
 Pairs: 3.1–3.3 land with 3.4.
 
-- [ ] 3.1 RED: attributed short C, `--withdraw-commit <C full> --withdrawal-reason x` exits 0, the
+- [x] 3.1 RED: attributed short C, `--withdraw-commit <C full> --withdrawal-reason x` exits 0, the
       entry is gone, and the withdrawal record names the stored entry (repro E)
-- [ ] 3.2 REGRESSION GUARD: a state file attributing the literal `not-a-commit` withdraws it with
+- [x] 3.2 REGRESSION GUARD: a state file attributing the literal `not-a-commit` withdraws it with
       `--withdraw-commit not-a-commit --withdrawal-reason x`
-- [ ] 3.3 RED: on an epic that ALREADY attributes C in full (otherwise today's "never attributed"
+- [x] 3.3 RED: on an epic that ALREADY attributes C in full (otherwise today's "never attributed"
       refusal passes this vacuously), `--attribute-commit <C short> --withdraw-commit <C full>
       --withdrawal-reason x` exits non-zero, `state.json` byte-identical
-- [ ] 3.4 GREEN: design Decision 8 in `update-epic.mjs` — identity matching removing the LAST match,
+- [x] 3.4 GREEN: design Decision 8 in `update-epic.mjs` — identity matching removing the LAST match,
       exact-string fallback for unresolvable values, the contradictory-pair check by identity, and the
       withdrawal read-back comparing the removed entry; existing `--withdraw-commit` tests
       (`gate-verdict-withdrawal.test.mjs`, `conductor-36`) converted to the fixture; suite green
