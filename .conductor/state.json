@@ -6782,7 +6782,8 @@
               "epic links: relates-to handoff-refusal-prints-story-titles-raw and archived-delivered-gate2-regression-report (that future check must exclude withdrawn-kind epics)"
             ],
             "reconciledAt": "2026-09-15T02:33:22.758Z"
-          }
+          },
+          "reconcileOnResume": false
         },
         {
           "type": "relates-to",
@@ -6829,7 +6830,7 @@
       ],
       "createdAt": "2026-09-14T18:09:05.963Z",
       "startedAt": "2026-09-14T18:09:05.964Z",
-      "touchedAt": "2026-09-15T04:25:06.173Z",
+      "touchedAt": "2026-09-16T21:11:27.010Z",
       "notes": [
         {
           "at": "2026-09-14T18:09:07.941Z",
@@ -8645,14 +8646,14 @@
     }
   ],
   "detourStack": [],
-  "pmVersion": "0.43.0",
+  "pmVersion": "0.44.0",
   "tracker": {
     "system": "github-issues",
     "repo": "cfdude/pm",
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 908,
+  "revision": 909,
   "reviewMode": "thorough",
   "releases": [
     {
