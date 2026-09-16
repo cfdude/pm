@@ -361,3 +361,23 @@ test("g2-M17 every git call resolving or walking recorded commits sets GIT_NO_LA
       `${fn}'s git call must not fetch from a promisor remote`);
   }
 });
+
+test("g2-3 git calls whose input is already filtered to commit-name hex pass no --end-of-options, so an old git cannot fail them open", () => {
+  // `--end-of-options` is git >= 2.24; an older git exits 129 on it, commitsNotReachedBy() then answers
+  // null, gateStaleness reads unverifiable, and the archive gate (which refuses only `stale`) lets a
+  // stale Gate 2 through. Every call below filters its values to hexadecimal commit names BEFORE
+  // spawning git, so no value can be read as an option and the flag buys nothing but that failure.
+  for (const rel of ["../lib/git.mjs", "../lib/worktree-hygiene.mjs"]) {
+    const src = fs.readFileSync(new URL(rel, import.meta.url), "utf8");
+    assert.equal(src.includes('"--end-of-options"'), false, `${rel} still passes --end-of-options to git`);
+  }
+  const git = fs.readFileSync(new URL("../lib/git.mjs", import.meta.url), "utf8");
+  for (const [fn, guard] of [["isAncestor", "isCommitNameShaped"], ["commitDate", "isCommitNameShaped"],
+    ["objectExists", "isCommitNameShaped"], ["reachableFromAnyRef", "isCommitNameShaped"], ["commitsNotReachedBy", "FULL_COMMIT_NAME"]]) {
+    const start = git.indexOf(`export function ${fn}(`);
+    assert.notEqual(start, -1, `${fn} is still exported`);
+    const body = git.slice(start, git.indexOf("\nexport ", start + 1));
+    assert.ok(body.indexOf(guard) !== -1 && body.indexOf(guard) < body.indexOf('execFileSync("git"'),
+      `${fn} filters its values with ${guard} before it spawns git`);
+  }
+});

@@ -70,9 +70,9 @@ export function verifyWorktrees() {
 export function isAncestorOfCurrentHead(sha) {
   try {
     // A worktree head read from `git worktree list`, not a stored value — but never interpolated into
-    // a shell line, and never read as an option either.
+    // a shell line, and never read as an option either (hex-gated; no `--end-of-options`, see git.mjs).
     if (typeof sha !== "string" || !/^[0-9a-fA-F]{4,64}$/.test(sha)) return false;
-    execFileSync("git", ["merge-base", "--is-ancestor", "--end-of-options", sha, "HEAD"], { cwd: ROOT, stdio: "ignore" });
+    execFileSync("git", ["merge-base", "--is-ancestor", sha, "HEAD"], { cwd: ROOT, stdio: "ignore" });
     return true;
   } catch {
     return false;

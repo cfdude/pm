@@ -125,14 +125,17 @@ export function appendDetourLog(kind, epic, note) {
  *  Local only, per the engine's architectural law — merge-base reads this repository's own
  *  object database and contacts nothing.
  *
- *  A value NOT SHAPED as a commit name answers `null` without reaching git, and every revision is
- *  passed after `--end-of-options` (gates-bind-to-verified-evidence Gate 2): a stored
- *  `--output=<path>` handed to git as an argument is an OPTION, and one reaching `git show` wrote
- *  a file wherever the record said. argv arrays stop shell injection, not option injection. */
+ *  A value NOT SHAPED as a commit name answers `null` without reaching git (gates-bind-to-verified-
+ *  evidence Gate 2): a stored `--output=<path>` handed to git as an argument is an OPTION, and one
+ *  reaching `git show` wrote a file wherever the record said. argv arrays stop shell injection, not
+ *  option injection. The shape gate is the WHOLE defence and `--end-of-options` is deliberately not
+ *  passed: a hex value cannot begin with `-`, and git < 2.24 exits 129 on that flag, which would turn
+ *  every answer here into "cannot answer" — for commitsNotReachedBy() an unverifiable verdict the
+ *  archive gate does not refuse, i.e. a stale Gate 2 let through. */
 export function isAncestor(a, b) {
   if (!isCommitNameShaped(a) || !isCommitNameShaped(b)) return null;
   try {
-    execFileSync("git", ["merge-base", "--is-ancestor", "--end-of-options", a, b],
+    execFileSync("git", ["merge-base", "--is-ancestor", a, b],
       { cwd: ROOT, stdio: ["ignore", "ignore", "ignore"] });
     return true;
   } catch (e) {
@@ -155,10 +158,10 @@ export function isAncestor(a, b) {
  *  Local only, per the engine's architectural law — this reads the object database and contacts
  *  nothing. */
 export function commitDate(sha) {
-  // Shape-gated and after `--end-of-options`, as isAncestor() above: a stored value is never an option.
+  // Shape-gated, as isAncestor() above: a hex value is never an option, so no `--end-of-options`.
   if (!isCommitNameShaped(sha)) return null;
   try {
-    const out = execFileSync("git", ["show", "-s", "--format=%cI", "--end-of-options", sha],
+    const out = execFileSync("git", ["show", "-s", "--format=%cI", sha],
       { cwd: ROOT, stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
     return out || null;
   } catch { return null; }
@@ -180,10 +183,10 @@ export function commitDate(sha) {
  *  execFileSync with an argv array, never a shell string: these values reach us from
  *  `state.json`. Local only — reads the object database and contacts nothing. */
 export function objectExists(sha) {
-  // Shape-gated and after `--end-of-options`, as isAncestor() above: a stored value is never an option.
+  // Shape-gated, as isAncestor() above: a hex value is never an option, so no `--end-of-options`.
   if (!isCommitNameShaped(sha)) return false;
   try {
-    execFileSync("git", ["rev-parse", "--verify", "--quiet", "--end-of-options", `${sha}^{commit}`],
+    execFileSync("git", ["rev-parse", "--verify", "--quiet", `${sha}^{commit}`],
       { cwd: ROOT, stdio: ["ignore", "ignore", "ignore"] });
     return true;
   } catch { return false; }
@@ -362,7 +365,7 @@ export function commitsNotReachedBy(commits, head) {
   if (unreachedCache.has(key)) return unreachedCache.get(key);
   let answer;
   try {
-    const out = execFileSync("git", ["rev-list", "--end-of-options", ...list, "^" + head], {
+    const out = execFileSync("git", ["rev-list", ...list, "^" + head], {
       cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 256 * 1024 * 1024,
       env: { ...process.env, GIT_NO_LAZY_FETCH: "1" },
     });

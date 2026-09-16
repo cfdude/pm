@@ -228,6 +228,12 @@ line into two). No fallback: git has shipped `--batch-check` for over a decade, 
 resolution path is a second behaviour. Every new git call sets `GIT_NO_LAZY_FETCH=1` in its env, so a
 partial clone never fetches from its promisor remote. No `cwd` other than `ROOT`.
 
+**Git version floor (Gate 2 re-review).** None for correctness: every call is gated to hexadecimal
+commit names before spawning git and passes no `--end-of-options` (git < 2.24 exits 129 on it, which
+would read `unverifiable` and let a stale Gate 2 through the archive gate). `GIT_NO_LAZY_FETCH` is
+honoured from git 2.44; on an older git a PARTIAL clone may still lazily fetch a missing object, so
+the zero-network guarantee for partial clones holds from 2.44.
+
 Called before `loadState()` at: `update-epic --attribute-commit`, `--withdraw-commit`
 (identity only, Decision 8), `record-gate-review --base-sha/--head-sha`. A refusal names every
 unresolved value in one message. Stored value = full object name (40 hex, or 64 in a SHA-256

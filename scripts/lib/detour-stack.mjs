@@ -253,7 +253,11 @@ export function popDetour() {
     unchanged: `conductor: '${pausedEpic}' was already resumed on exactly these terms — ` +
       `${STATE_UNCHANGED}`,
   });
-  if (epic.reconcileNeeded === true) {
+  // READ BACK AFTER render(): its heal can clear an obligation nothing could answer (a hand-set flag
+  // over a --no-reconcile frame) and save that, so deciding from the copy loaded before it printed a
+  // RECONCILE GATE instruction the engine then refuses (Gate 2 re-review, minor 2).
+  const resumed = loadState().epics.find(e => e && e.id === pausedEpic) || epic;
+  if (resumed.reconcileNeeded === true) {
     // The Honcho POP line says "reconciled vs X", which is not yet true. Emitting it here would
     // be the engine writing a claim nobody has made — the same defect the reconcile gate exists
     // to prevent — so the line is deferred to after the verdict, and the command that emits it
@@ -262,7 +266,7 @@ export function popDetour() {
     // Keyed on the EPIC'S obligation after the pop, not on this frame (Decision 6): an earlier
     // armed detour still unanswered owes a verdict whatever this frame said, and every owed detour
     // is named — not only the one just popped.
-    const owed = ownedDetours(epic);
+    const owed = ownedDetours(resumed);
     const targets = owed.length ? owed : [detourId || "<detourId>"];
     process.stderr.write(
       `conductor: RECONCILE GATE — '${pausedEpic}' carries reconcileNeeded` +

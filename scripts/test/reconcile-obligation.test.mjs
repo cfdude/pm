@@ -524,3 +524,15 @@ test("g2-M26e set-active warns about the owing epic it moves off", () => {
   assert.ok(r.stderr.includes("'p'") && r.stderr.includes("'d'") && /still owes a reconcile/.test(r.stderr),
     `set-active's stderr names p and d: ${r.stderr}`);
 });
+
+test("g2-4 pop-detour reads the obligation AFTER the heal: no record-reconcile instruction when the saved flag is false", () => {
+  const cwd = repo();
+  push(cwd, "d", false);                                     // a --no-reconcile frame
+  const s = readState(cwd);
+  s.epics.find(e => e.id === "p").reconcileNeeded = true;    // hand-edit: owed, with nothing armed
+  writeState(cwd, s);
+  const r = pop(cwd);
+  assert.equal(owes(cwd), false, "precondition: the heal cleared the unanswerable obligation");
+  assert.doesNotMatch(r.stderr, /RECONCILE GATE|record-reconcile p --detour/,
+    `the pop must not instruct a verdict the engine would refuse: ${r.stderr}`);
+});
