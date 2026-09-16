@@ -471,7 +471,7 @@ export const EPIC_FLAGS = [
   { flag: "attribute-commit", key: "attributedCommits", commands: ["update-epic"], repeats: true, write: "append",
     setOnly: "`--withdraw-commit` is the declared inverse and it RECORDS the withdrawal in a sibling field; a bulk clear would erase the record a correction exists to keep" },
   // #166 — the EXIT from an append-only array. Append-only is right and stays: order carries
-  // meaning and the LAST entry is the endpoint a recorded Gate 2 headSha is compared against. But
+  // meaning (landing order), and a recorded Gate 2 headSha must reach every entry. But
   // "cannot be reordered or de-duplicated" is a different claim from "can never be corrected",
   // and the second was inherited rather than decided. A `git reset` is a normal operation, and
   // the gate procedure requires attributing at the moment of each commit — so an attribution can

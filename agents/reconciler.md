@@ -42,8 +42,8 @@ NOTES: <anything to double-check, or "none">
 
 **These three field names and their order are a wire format, not a style, so they do NOT bend to
 a user's output style or CLAUDE.md communication contract** — the main agent transcribes `VERDICT`
-straight into `record-reconcile --verdict`, whose value space the engine enforces, and joins your
-`AMENDMENTS` lines with `;`. The prose inside each field is ordinary writing and follows that
+straight into `record-reconcile --verdict`, whose value space the engine enforces, and maps your
+`AMENDMENTS` lines onto flags one-for-one (below). The prose inside each field is ordinary writing and follows that
 contract like anything else. (An output style applies to the main conversation only and never
 reaches you; the CLAUDE.md hierarchy does.)
 
@@ -54,10 +54,23 @@ reaches you; the CLAUDE.md hierarchy does.)
   `AMENDMENTS` line.
 
 Do not edit files yourself. Do not write feature code. Return findings only; the main agent
-applies the amendments to the proposal/tasks.md AND records this verdict durably by running
-`node "$ENGINE" record-reconcile <paused-epic-id> --detour <detour-epic-id> --verdict
-<valid|invalidated> --amendments "<a>;<b>;..."` (each `AMENDMENTS` line joined with `;`) —
-this writes `{verdict, amendments, reconciledAt}` onto the paused epic's link to the detour
-in `.conductor/state.json` (creating a `may-invalidate` link if none exists yet) and clears
-`reconcileNeeded`, so your judgment survives past this conversation instead of only ever
-living in the transcript.
+applies the amendments to the proposal/tasks.md AND records this verdict durably. There is ONE
+emitted form of that call:
+
+- `AMENDMENTS: none` →
+  `node "$ENGINE" record-reconcile <paused-epic-id> --detour <detour-epic-id> --verdict <valid|invalidated> --amendments none`
+  — `none` (any case) records an empty amendment list, not an amendment reading "none".
+- any other `AMENDMENTS` → one `--amendment "<line>"` per line, each kept verbatim:
+  `node "$ENGINE" record-reconcile <paused-epic-id> --detour <detour-epic-id> --verdict invalidated --amendment "<line 1>" --amendment "<line 2>"`
+  — a `;` inside a line stays inside that amendment. `--amendment` and `--amendments` together are
+  refused.
+
+This writes `{verdict, amendments, reconciledAt}` onto the paused epic's `may-invalidate` link to
+the detour in `.conductor/state.json`, so your judgment survives past this conversation instead of
+only ever living in the transcript. The engine accepts the verdict ONLY against a detour the epic
+was paused for with `push-detour --reconcile` (the link carries `reconcileOnResume: true`), and only
+once that detour's frame has been popped. It never creates a link: a `--detour` naming the paused
+epic itself, an unrelated epic, or a `--no-reconcile` detour is refused, naming the detours actually
+owed. `reconcileNeeded` clears only when no armed detour is left unanswered. Recording again against
+the same detour is a correction — the earlier verdict moves to `superseded` on the link rather than
+being overwritten.

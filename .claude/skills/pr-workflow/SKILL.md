@@ -66,13 +66,28 @@ existed and had to be untangled after the fact.
    head — after the branch is deleted the head oid is still on the PR record, but there is no
    reason to rely on that.
 
-6. **Squash-merge once green** (never `--delete-branch` — `dev` is persistent, not a
+6. **Record Gate 2 BEFORE the squash-merge, from the authoring clone.** Since 0.44.0
+   `record-gate-review --base-sha/--head-sha` (and `update-epic --attribute-commit`) resolve each
+   value against THIS clone's object database and store the full object name; a value the clone
+   does not hold is refused with nothing written. After the squash, the reviewed commits are
+   reachable only from the `presquash/pr-<n>` tag, so any clone that has not fetched that tag —
+   one made with `--no-tags` or `--single-branch`, or every clone if step 5 was skipped — refuses
+   the range (a default `git clone` made after the tag was pushed does hold them):
+   ```text
+   conductor: --base-sha/--head-sha values "<base>", "<head>" do not resolve to exactly one commit in this repository's object database — not a commit, ambiguous, or absent from this clone. A recorded commit is resolved when it is written and stored as its full object name, so a value nobody can check is never recorded. Nothing was written.
+   ```
+   Record it in the clone that made the commits, while `dev` still holds them. If that is no
+   longer possible, fetch the tags first — `git fetch origin 'refs/tags/presquash/*:refs/tags/presquash/*'`
+   — and then record. Never substitute the squash commit's sha for the reviewed head: the
+   pre-squash commits the epic attributed are not its ancestors, so the verdict reads stale.
+
+7. **Squash-merge once green** (never `--delete-branch` — `dev` is persistent, not a
    throwaway feature branch):
    ```bash
    gh pr merge <n> --repo cfdude/pm --squash --delete-branch=false
    ```
 
-7. **Sync both local branches to the new `main` tip, and re-verify tests post-merge**
+8. **Sync both local branches to the new `main` tip, and re-verify tests post-merge**
    (confirms the squash commit itself is sound, not just the pre-merge state):
    ```bash
    git checkout main && git fetch origin && git reset --hard origin/main
@@ -83,7 +98,7 @@ existed and had to be untangled after the fact.
    squash-merge, `dev`'s and `main`'s histories have diverged (the squash commit has no common
    ancestor with `dev`'s pre-squash commits), so a fast-forward fails with "diverging branches."
 
-8. **Verify every recorded sha is still reachable.** One command; it is the check the tag
+9. **Verify every recorded sha is still reachable.** One command; it is the check the tag
    exists to satisfy, and running it is how you find out the tag step was missed:
    ```bash
    python3 - <<'EOF'

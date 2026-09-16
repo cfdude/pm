@@ -29,6 +29,13 @@ over 7 epics on disk; `claim --ttl 1e12` wrote a claim every later reader crashe
 `write-rules` deleted hand-written `CLAUDE.md` text and printed `refreshed`. Each now refuses with
 the file named and nothing written, or is serialised so the loss cannot happen.
 
+**And two gates bind to evidence the engine checked.** The reconcile gate after a detour could be
+cleared by a verdict against the wrong detour, erased by moving the active pointer, and overwritten
+by a later push. Gate 2's staleness check read a commit value stored exactly as typed, compared only
+the last attributed entry, and read a head on an unrelated branch as fresh. Each let an epic past a
+gate that should have held it. The obligation is now recorded per detour on the link, and every
+commit value is resolved when it is written.
+
 ### Fixed
 
 * **cfdude/pm#187's 0.41.0 regression.** A `--help` or `-h` anywhere after the verb, outside a
@@ -128,6 +135,37 @@ the file named and nothing written, or is serialised so the loss cannot happen.
   lines of 380 afterwards). A refresh takes the BEGIN line's terminator; an append takes the file's
   first terminator, LF when it has none.
 
+* **Three ways to clear a reconcile nobody answered.** After `push-detour p --detour d --reconcile`
+  and `pop-detour p`: `record-reconcile p --detour p` (or `--detour <any other epic>`) wrote a new
+  `may-invalidate` link, cleared `reconcileNeeded`, and let `gate-guard` through; `clear-active` or
+  `set-active <other>` cleared it through the render heal, and so did archive-then-unarchive; and a
+  later `push-detour p --detour d2 --no-reconcile` overwrote it, after which the pop logged
+  `resumed p, reconciled vs d2; no reconcile was required`. A verdict is now accepted only against a
+  detour pushed `--reconcile` whose frame has been popped, and never creates a link:
+  `conductor: 'p' cannot answer a reconcile against itself — 'p' owes a verdict against: 'd'. Nothing was written.`
+  The heal never clears the flag because of the pointer or the status, a pointer move off an owing
+  epic warns, `push-detour` ORs the flag, and `pop-detour` names every detour still owed.
+* **The writes that destroyed an owed reconcile's record.** `update-epic p --clear-links` (the
+  clear-and-re-supply repair included) and `remove-epic d` stripped the only link the verdict could
+  be recorded against, leaving an obligation nothing could answer; both are refused while `p` owes,
+  naming `record-reconcile`. A same-target `--link` reason correction replaced the link wholesale and
+  dropped its verdict; it now keeps every other key. The two emitted repair messages name
+  `record-reconcile` first on an owing epic.
+* **Four ways a commit value let a refused archive through.** `--attribute-commit not-a-commit` read
+  `unverifiable`, which the archive gate does not refuse; `--head-sha HEAD` was stored as the literal
+  `HEAD`, a different commit on every read; a Gate 2 whose `headSha` was on an unrelated branch read
+  fresh; and attributing an ancestor after an uncovered descendant read fresh because only the last
+  entry was compared. Each is refused now:
+  `conductor: cannot archive openspec-lane epic 'e' — its passing Gate 2 reviewed up to 87886d787d1182cec964bdddfdb21aeb58d32e13, which does not reach the commit(s) attributed to this epic: 1b27861d8a50e310ff9f8f0e82574c9d187dd4f9. Re-review the full range and record it, or correct the attribution.`
+* **`--withdraw-commit <full sha>` refused a stored short sha of the same commit** as "never
+  attributed". It matches by commit identity, and by exact spelling where the value does not
+  resolve, so a legacy `not-a-commit` stays withdrawable.
+* **`--amendments none` was stored as the amendment `["none"]`**, and an amendment containing `;` was
+  split into several. `none` now records no amendments, and the new repeatable `--amendment` records
+  one verbatim amendment per occurrence.
+* **Recording a reconcile verdict twice overwrote the first.** The earlier verdict moves to
+  `superseded` on the link; re-pushing `--reconcile` to an answered detour re-arms it the same way.
+
 ### Changed
 
 * **BREAKING — an undeclared flag is refused on every verb**, before anything is written, naming
@@ -189,6 +227,33 @@ the file named and nothing written, or is serialised so the loss cannot happen.
   unserialised. The repo claim's detached-tree check now asks about the tree the marker is written
   into rather than the engine's import-time root.
 
+* **BREAKING — `update-epic --attribute-commit` and `record-gate-review --base-sha/--head-sha`
+  refuse a value that is not a commit in this clone.** Each value is resolved against the local
+  object database at write time and stored as its full object name, so `HEAD`, a short sha or an
+  annotated tag records the commit it names at that moment; `not-a-commit`, `root`, or a sha the
+  clone does not hold refuses the whole invocation, naming every such value:
+  `conductor: --attribute-commit value "not-a-commit" does not resolve to exactly one commit in this repository's object database — not a commit, ambiguous, or absent from this clone. A recorded commit is resolved when it is written and stored as its full object name, so a value nobody can check is never recorded. Nothing was written.`
+  A clone without the reviewed commits (after a squash-merge, one without the `presquash/*` tags)
+  can no longer record that range: record Gate 2 from the authoring clone before the squash-merge,
+  or fetch the tags first. `--withdraw-commit` resolves too, but only to match, and never refuses.
+* **A Gate 2 verdict is fresh only when its `headSha` reaches EVERY attributed commit** — equal to it
+  or an ancestor of it — in one `git rev-list` per verdict. A legacy stored value that is not a
+  hexadecimal commit name (`HEAD`, `not-a-commit`) is never resolved at read time and reads
+  `⚠ stale`; a hexadecimal value this clone does not hold still reads `⚠ unverifiable`.
+* **`integrity`'s `recorded-sha-the-repository-cannot-resolve` reports a recorded value that is not
+  a commit object name at all** (`gate2.headSha "HEAD"`), with the withdraw or re-record command
+  that clears it. No migration rewrites stored values.
+* **Every `may-invalidate` link carries an arming record, `reconcileOnResume`.** Only
+  `push-detour --reconcile` writes `true`; a `--no-reconcile` push and a link supplied by hand write
+  `false`. `record-reconcile` accepts a verdict only against an armed link, and `reconcileNeeded`
+  clears only when no armed detour is left unanswered.
+* **The render heal's one remaining clear is announced.** An epic owing a reconcile with no frame
+  and no armed or unmigrated `may-invalidate` link can never be answered, so the flag is cleared and
+  stderr says so: `conductor: cleared the reconcile obligation on 'q' — it holds no may-invalidate link a verdict could be recorded against and no detour frame pausing it, so no record-reconcile could ever be accepted and it would have blocked the epic permanently`.
+* **The emitted rules block and its mirrors** give one `record-reconcile` form (`--amendments none`,
+  or one `--amendment` per line) and replace "the LAST entry is the endpoint a recorded Gate 2
+  `headSha` is compared against" with "every attributed commit must be reached by" that head.
+
 ### Notes
 
 * **`gate-guard` fails open on a line it refuses.** In an initialized repo, a hook line carrying an
@@ -229,7 +294,23 @@ the file named and nothing written, or is serialised so the loss cannot happen.
   30 s (a suspended laptop, a debugger) can be judged stale; if it resumes in the instant between
   its ownership check and its rename, two writers write. `.conductor/` on a network filesystem is not
   a supported layout. A hook can wait about 4 s under sustained contention.
-* No `state.json` schema change, no migration.
+* **A `0.44.0` MIGRATIONS entry: the link arming stamp.** It gives every `may-invalidate` link
+  without a key an explicit `reconcileOnResume` — `true` where its epic owes a reconcile, the link has
+  no verdict, and it targets another epic that exists; `false` otherwise. Additive and idempotent: a
+  keyed link is never touched, and `upgrade` runs the same stamp on every run so a keyless link
+  written later by an unreloaded older session is stamped too. A 0.43.0 state file loads; until
+  `/pm:upgrade` runs, every `record-reconcile` on an epic holding a keyless link is refused naming
+  `/pm:upgrade`. The stamp cannot tell an old `--no-reconcile` link from an old `--reconcile` one, so
+  an owing epic can come out owing a verdict against both. An owing epic whose every link already
+  carries a verdict is stamped all-false, and the heal clears its flag with the notice above.
+* **The link schema is additive:** `reconcileOnResume` and `superseded` on `may-invalidate` links.
+  The other two changes in this release add no schema change and no migration.
+* **Staying owed is deliberate.** An archived or abandoned epic that still owes keeps
+  `--clear-links` and `remove-epic <detour>` refused. End it with `record-reconcile <id> --detour <d>
+  --verdict invalidated --amendment "abandoned: <why>"`; `remove-epic <id>` remains for an epic
+  registered in error.
+* **A git without `GIT_NO_LAZY_FETCH` support** may still lazily fetch a missing object in a partial
+  clone during resolution; every other clone reads only its local object database.
 
 ## [0.43.0] — 2026-09-14
 

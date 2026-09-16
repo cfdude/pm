@@ -271,7 +271,7 @@ export function commitNudge() {
   // On the unverifiable rung `obs.head` can be a perfectly real sha while nothing is known to
   // have landed (no watermark yet, reflogs off, HEAD unreadable): naming it there would be
   // gh#104 in a new costume, asserting a commit the repository never confirmed — against an
-  // APPEND-ONLY array whose last entry is the Gate 2 endpoint. Absence of the clause is the
+  // APPEND-ONLY array a Gate 2 headSha must reach every entry of. Absence of the clause is the
   // degradation, and it costs nothing.
   const attribution = obs.verdict === "landed" ? attributionNudge(state, ctx, obs.head) : null;
 
@@ -362,9 +362,9 @@ function attributionNudge(state, ctx, sha) {
     return `ATTRIBUTION — \`${epic.id}\` has attributed no commits yet, so this is the last ` +
       "moment its catch-up rule is available: attribute every commit of this epic's work that " +
       "already landed, IN THE ORDER THEY LANDED, and then this one — " +
-      `\`${cmd}\`. The array is append-only and its LAST entry is the endpoint a Gate 2 ` +
-      "`headSha` is compared against, so catching up after attributing forward is not " +
-      `recoverable. ${exclusion}`;
+      `\`${cmd}\`. The array is append-only and a recorded Gate 2 \`headSha\` must reach EVERY ` +
+      "entry, so a commit left unattributed is work that gate is never checked against. " +
+      `${exclusion}`;
   }
   return `ATTRIBUTION — record this commit against its epic now, before the next one: ` +
     `\`${cmd}\`. ${exclusion}`;

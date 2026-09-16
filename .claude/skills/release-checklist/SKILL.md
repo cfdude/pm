@@ -67,6 +67,11 @@ skip straight to the branch dance at the bottom.
 5. **The `pm` repo's own branch dance.** Follow the `pr-workflow` skill — commit on `dev`, PR
    into `main`, wait for CI green, squash-merge, sync both branches. Never commit a version
    bump directly to `main` — this bit a session once already.
+   **Gate 2 for every change in the release is recorded before that squash-merge, from the
+   authoring clone** (`pr-workflow` step 6). `record-gate-review --base-sha/--head-sha` resolves
+   both bounds in the clone it runs in and refuses a commit that clone does not hold, so a range
+   recorded after the squash from a clone without the `presquash/*` tags is refused, not stored. If the authoring
+   clone is gone, `git fetch origin 'refs/tags/presquash/*:refs/tags/presquash/*'` first.
 
 6. **If this repo's own `.conductor/state.json` needs a state-only update** (marking a story
     done, restamping `pmVersion` via `/pm:upgrade`) as a result of the release: edit with the

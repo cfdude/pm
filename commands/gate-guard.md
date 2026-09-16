@@ -19,7 +19,27 @@ policy was reconsidered and approved.
 
 **There is no bypass for this specific case.** `set-gate-guard off` no longer silences the
 reconcile-owed block — the only way past it is to actually run the reconcile gate (delegate to
-the reconciler agent per the conductor skill's POP protocol), which clears `reconcileNeeded`.
+the reconciler agent per the conductor skill's POP protocol), which clears `reconcileNeeded`
+once `record-reconcile` has answered every detour the epic was paused for with `--reconcile`.
+
+**Nor can an ordinary verb erase the obligation.** Through 0.43.0 the render heal cleared
+`reconcileNeeded` on any epic that was archived or was not the active epic, so `clear-active`,
+`set-active <other>`, or archive-then-unarchive silently switched this block off, and a verdict
+against the wrong detour cleared it too. Now the obligation is recorded per detour on the paused
+epic's `may-invalidate` link and survives all of those: moving the active pointer off an owing epic
+prints a warning naming the detours owed, and the block returns when the epic is active again.
+`record-reconcile` accepts a verdict only against an armed detour whose frame has been popped.
+
+**The one clear the heal still makes is announced.** An epic carrying `reconcileNeeded: true` with
+no detour frame pausing it and no armed or pre-0.44.0 `may-invalidate` link has nothing a verdict
+could ever be recorded against, so leaving the flag would block edits permanently. The engine
+cannot produce that state itself (a push always arms a link, and removing an armed one is refused);
+it comes from a hand-edited file or from the 0.44.0 stamp on an owing epic whose every link already
+carried a verdict. The heal clears it and says so on stderr:
+
+```text
+conductor: cleared the reconcile obligation on 'q' — it holds no may-invalidate link a verdict could be recorded against and no detour frame pausing it, so no record-reconcile could ever be accepted and it would have blocked the epic permanently
+```
 
 ## Opt-OUT for the tracker-refresh case
 

@@ -334,8 +334,14 @@ the `openspec` lane.
   was actually reviewed. If the epic later attributes commits the recorded head does not reach,
   the archive is refused by name until the range is re-reviewed or the attribution is corrected.
   A review of `a..b` on an epic that then shipped `b..c` used to be byte-identical to one that
-  covered everything. Pass `--head-sha` in the same abbreviated form `attributedCommits` already
-  holds — identity is tested on the raw strings first, and only then resolved through git.
+  covered everything. Both bounds are resolved when recorded and stored as full object names:
+  `--head-sha HEAD` records the commit HEAD was at that moment, and a bound that is not a commit in
+  THIS clone (`root`, a sha from a clone that does not hold the reviewed range) refuses the whole
+  invocation. So record Gate 2 from the authoring clone, before a squash-merge, or fetch the
+  `presquash/*` tags first. A verdict is fresh only when its `headSha` reaches EVERY attributed
+  commit (equal to it or an ancestor of it) — a head on an unrelated branch reaches none, and a
+  legacy stored value that is not a hexadecimal commit name (`HEAD`, `not-a-commit`) reads stale on
+  every surface. A hexadecimal value this clone does not hold reads `unverifiable`.
 - **An archive that reached `archived` with no review records `verdict: "ungated"`** rather than
   nothing. That is the archive-drift heal's own record of the bypass; it carries `recordedBy` and
   no `reviewer` (a path name must never surface in an audit query over reviewers). It is a
@@ -453,13 +459,14 @@ bullet reached 3/15.
    The engine infers attribution from nothing — not
    the files a commit touches, not an epic id in a message — so an unrecorded commit is a commit
    the epic's Gate 2 cannot be checked against. The per-task conventional commit of an OpenSpec
-   apply loop always qualifies. Work already in flight is covered too, but **only before the first
-   attribution**: catch up in the order the commits landed, then keep attributing forward. The
-   array is append-only — the engine neither reorders nor de-duplicates it — so catching up AFTER
-   attributing forward leaves an ancestor as the last entry, and the last entry is the endpoint a
-   recorded Gate 2 `headSha` is compared against. If forward attribution has already begun,
-   attribute forward only and say so; a wrong endpoint reads as a stale verdict and refuses the
-   archive. **One exclusion:** the commit that moves
+   apply loop always qualifies. Work already in flight is covered too: catch up in the order the
+   commits landed, then keep attributing forward. Each value is resolved when it is written and
+   stored as its full object name — `HEAD` or a tag records the commit it names at that moment, and
+   a value that is not a commit in this clone is refused with nothing written. The array is
+   append-only — the engine neither reorders nor de-duplicates it — and **every attributed commit
+   must be reached by** a recorded Gate 2 `headSha` (equal to that head or an ancestor of it),
+   whatever position it holds: one the reviewed head does not reach reads as a stale verdict and
+   refuses the archive. **One exclusion:** the commit that moves
    `openspec/changes/<id>/` under `archive/`, and any commit that only relocates or deletes a
    change's artifacts rather than implementing its work, is lifecycle bookkeeping and
    MUST NOT be attributed — that move lands after the reviewed range by construction, so attributing it makes
@@ -598,23 +605,37 @@ The step otherwise lost after compaction. Do not skip it.
    ```
    It removes the top frame, resumes the paused epic (`status: "active"`, `active` pointing at
    it), and — where the frame had `reconcileOnResume` — writes `reconcileNeeded: true` in the
-   SAME write. That ordering is load-bearing: POP removes the frame before reconciliation runs,
-   so a separate write would let the archive-drift self-heal clear the obligation it had just
-   created. The optional epic id is an ASSERTION, not a selector — the stack is LIFO, so naming
+   SAME write. The obligation is also recorded per detour on the paused epic's `may-invalidate`
+   link (`reconcileOnResume: true`, written by `push-detour --reconcile`), which is what survives
+   the frame's removal and what a verdict must name. The render heal never clears it because the
+   active pointer moved or the epic was archived: `clear-active`, `set-active <other>`, and
+   archive-then-unarchive all leave it owed (a pointer move off an owing epic warns). The one clear
+   is an owing epic with no frame and no armed or pre-0.44.0 `may-invalidate` link — nothing a
+   verdict could ever answer — and it is announced on stderr. The optional epic id is an ASSERTION, not a selector — the stack is LIFO, so naming
    an epic that is not on top is refused rather than popping a different one.
-3. If `reconcileOnResume` was true, RECONCILE before writing code: delegate to the
-   **reconciler** agent with the paused id + detour id. It re-reads the paused proposal,
+3. If `pop-detour` printed `RECONCILE GATE`, RECONCILE before writing code — it names EVERY
+   detour the epic still owes, including an earlier `--reconcile` detour a later `--no-reconcile`
+   push did not cancel. For each: delegate to the **reconciler** agent with the paused id + detour id. It re-reads the paused proposal,
    diffs what the detour shipped, and reports back `VERDICT: valid|invalidated` +
    `AMENDMENTS:` (one per line) — see `agents/reconciler.md`.
    - Invalidated → amend the proposal + `tasks.md` first.
    - Still valid → say so explicitly.
-   - Either way, **write the verdict back durably** — this is what actually clears
-     `reconcileNeeded` now (don't hand-clear it): `node "$ENGINE" record-reconcile
-     <paused-id> --detour <detour-id> --verdict <valid|invalidated> --amendments
-     "<a>;<b>;..."`. This attaches `{verdict, amendments, reconciledAt}` to the paused
-     epic's link to the detour in `.conductor/state.json` (creating a `may-invalidate`
-     link if one doesn't already exist), so the judgment survives past this
-     conversation instead of only ever living in the transcript.
+   - Either way, **write the verdict back durably** (don't hand-clear the flag). ONE form:
+     `AMENDMENTS: none` → `node "$ENGINE" record-reconcile <paused-id> --detour <detour-id>
+     --verdict <valid|invalidated> --amendments none`; any other report → one
+     `--amendment "<line>"` per AMENDMENTS line, each kept verbatim (a `;` inside stays inside;
+     the two flags together are refused). This attaches `{verdict, amendments, reconciledAt}`
+     to the paused epic's `may-invalidate` link to that detour, so the judgment survives past
+     this conversation. It NEVER creates a link: the verdict is refused, with nothing written
+     and the owed detours named, against the paused epic itself, an unrelated epic, a
+     `--no-reconcile` detour, or a detour whose frame is still on the stack.
+     `reconcileNeeded` clears only when no armed detour is left unanswered; re-recording
+     against the same detour moves the earlier verdict to `superseded`. A link written before
+     0.44.0 (no `reconcileOnResume` key) refuses every verdict on its epic naming `/pm:upgrade`,
+     which stamps it. Work that will not resume ends with a verdict too:
+     `--verdict invalidated --amendment "abandoned: <why>"`. While the epic owes,
+     `update-epic <paused-id> --clear-links` and `remove-epic <detour-id>` are refused
+     (`remove-epic` is for an epic registered in error, and even then waits for the verdict).
    - **Hard backstop (on by default):** a PreToolUse hook mechanically blocks
      `Edit`/`Write`/`NotebookEdit` while `reconcileNeeded` is still true on the active epic —
      this is unconditional, regardless of the repo's `gateGuard` setting; see `/pm:gate-guard`.
@@ -1185,14 +1206,18 @@ withdrawnGateReviews? : [{gate, entry, reason, withdrawnAt}] — gate verdicts W
                 (withdrawnGate()), which every surface words as withdrawn, never absent.
 withdrawnCommits? : [{sha, reason, withdrawnAt}] — attributions CORRECTED away, via
                 `update-epic <id> --withdraw-commit <sha> --withdrawal-reason "<why>"`.
-                attributedCommits stays append-only (its last entry is the endpoint a Gate 2
-                headSha is compared against), so a withdrawal is recorded beside it rather
-                than inside it. Withdrawing every sha does NOT clear the Gate 2 obligation —
+                attributedCommits stays append-only, so a withdrawal is recorded beside it
+                rather than inside it. `sha` is the stored entry removed; a value that resolves
+                matches by commit identity (a full sha withdraws a legacy short entry of the
+                same commit), and one that does not still withdraws an entry spelled exactly so. Withdrawing every sha does NOT clear the Gate 2 obligation —
                 the archive gate reads this field and refuses.
 gateReview?   : { gate1?: {verdict, reviewedAt, baseSha?, headSha?, reviewer?, note?}, gate2?: same } —
                 ANY lane; verdict ∈ pass|fail; a gate may instead be in the WITHDRAWN state (absent
                 here, with a withdrawnGateReviews entry); set via record-gate-review, which requires both
                 shas for a `pass` (a legacy `note` is the pre-fields shape, kept unparsed).
+                baseSha/headSha, like every attributedCommits entry, are written as the FULL
+                object name the typed value resolved to; a value that does not resolve is
+                refused at write time. Fresh only when headSha reaches every attributed commit.
                 Recording is lane-agnostic; the archive gate is not — `update-epic --status
                 archived` requires gate2.verdict === "pass" on an openspec-lane epic ONLY
 autonomy?     : { level: "off"|"autonomous", preAuthorized[], context[], notifications[] } — per epic
@@ -1214,6 +1239,11 @@ tracker.statusIntent   : { <conductor-status>: "<semantic target>" } — NOT a l
 link.type ∈ depends-on | supersedes | may-invalidate | relates-to | blocks | resolves-blocker-for
                (the CLOSED vocabulary — `KNOWN_LINK_TYPES` in lib/constants.mjs; anything else
                 is refused at write time)
+               (a `may-invalidate` link also carries `reconcileOnResume` — the ARMING record:
+                true only from `push-detour --reconcile`, false from `--no-reconcile` and from
+                any hand-supplied link, stamped by the 0.44.0 migration on older links — plus
+                `reconciled: {verdict, amendments, reconciledAt}` once answered and
+                `superseded` holding the previous verdict after a correction or re-arm)
                (`supersedes` = this epic REPLACES that one — recorded at intake when triage
                 finds the same ask already registered; end the superseded epic with
                 `--outcome superseded` in the same breath, or the consolidation is only half done)

@@ -339,13 +339,14 @@ bullet reached 3/15.
    `update-epic <id> --attribute-commit <sha>`. The engine infers attribution from nothing — not
    the files a commit touches, not an epic id in a message — so an unrecorded commit is a commit
    the epic's Gate 2 cannot be checked against. The per-task conventional commit of an OpenSpec
-   apply loop always qualifies. Work already in flight is covered too, but **only before the first
-   attribution**: catch up in the order the commits landed, then keep attributing forward. The
-   array is append-only — the engine neither reorders nor de-duplicates it — so catching up AFTER
-   attributing forward leaves an ancestor as the last entry, and the last entry is the endpoint a
-   recorded Gate 2 `headSha` is compared against. If forward attribution has already begun,
-   attribute forward only and say so; a wrong endpoint reads as a stale verdict and refuses the
-   archive. **One exclusion:** the commit that moves
+   apply loop always qualifies. Work already in flight is covered too: catch up in the order the
+   commits landed, then keep attributing forward. Each value is resolved when it is written and
+   stored as its full object name — `HEAD` or a tag records the commit it names at that moment, and
+   a value that is not a commit in this clone is refused with nothing written. The array is
+   append-only — the engine neither reorders nor de-duplicates it — and **every attributed commit
+   must be reached by** a recorded Gate 2 `headSha` (equal to that head or an ancestor of it),
+   whatever position it holds: one the reviewed head does not reach reads as a stale verdict and
+   refuses the archive. **One exclusion:** the commit that moves
    `openspec/changes/<id>/` under `archive/`, and any commit that only relocates or deletes a
    change's artifacts rather than implementing its work, is lifecycle bookkeeping and
    MUST NOT be attributed — that move lands after the reviewed range by construction, so attributing it makes

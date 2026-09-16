@@ -154,7 +154,7 @@ export function pushDetour() {
     reconcileOnResume,
   });
   // The two links the PUSH protocol has always documented. `may-invalidate` is the one
-  // record-reconcile hangs its verdict on (it creates it if absent — now it will not have to),
+  // record-reconcile hangs its verdict on (it never creates one — the arming record is written here),
   // and deferralHistory() counts it, so writing it here is what makes the deferral disclosure
   // below true for a push that is later resumed and pushed again.
   linkOnce(paused, "may-invalidate", detourId, reason, { arm: reconcileOnResume });

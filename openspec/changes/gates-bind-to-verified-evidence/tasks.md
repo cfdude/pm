@@ -291,24 +291,24 @@ Pairs: 10.1–10.3 land with 10.4.
 
 ## 12. Docs (after Gate 2)
 
-- [ ] 12.1 `agents/reconciler.md`, `commands/resume.md`, `commands/detour.md` — the armed-detour rule,
+- [x] 12.1 `agents/reconciler.md`, `commands/resume.md`, `commands/detour.md` — the armed-detour rule,
       the refusals, what pop prints while owed; ONE emitted amendments form: the reconciler's
       `AMENDMENTS: none` maps to `--amendments none`, other lines to one `--amendment` each; the
       honest ending for an owing epic whose work was abandoned (`--verdict invalidated` with the outcome
       as its amendment); `/pm:upgrade` before recording against a link written by 0.43.0
-- [ ] 12.2 `scripts/lib/rules.mjs` emitted text and `skills/conductor/SKILL.md` — the
+- [x] 12.2 `scripts/lib/rules.mjs` emitted text and `skills/conductor/SKILL.md` — the
       `record-reconcile` form; "LAST entry is the endpoint" wording replaced by "every attributed
       commit must be reached by `headSha`"; the declared load-bearing claims updated so the mirror
       guard stays meaningful
-- [ ] 12.3 `commands/epic.md` and `commands/gate-guard.md` — write-time resolution of
+- [x] 12.3 `commands/epic.md` and `commands/gate-guard.md` — write-time resolution of
       `--attribute-commit`/`--withdraw-commit` and the range flags (incl. that a clone without the
       reviewed range refuses the range flags); the pointer-move warning; the no-link heal notice
-- [ ] 12.3a `.claude/skills/release-checklist/SKILL.md` and `.claude/skills/pr-workflow/SKILL.md` —
+- [x] 12.3a `.claude/skills/release-checklist/SKILL.md` and `.claude/skills/pr-workflow/SKILL.md` —
       record Gate 2 from the authoring clone before the squash-merge, or fetch `presquash/*` tags first
-- [ ] 12.4 `README.md` where these flags or the reconcile gate are described
-- [ ] 12.5 `CHANGELOG.md` `[Unreleased]` — Fixed (three reconcile bypasses, four sha bypasses) and
+- [x] 12.4 `README.md` where these flags or the reconcile gate are described
+- [x] 12.5 `CHANGELOG.md` `[Unreleased]` — Fixed (three reconcile bypasses, four sha bypasses) and
       Changed (write-time resolution refuses fake shas; staleness over every entry)
-- [ ] 12.6 Full suite green, written to a file and read from the file
+- [x] 12.6 Full suite green, written to a file and read from the file
 
 ## 13. Gate 2 and close
 

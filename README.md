@@ -440,14 +440,23 @@ writes the frame with `reconcileOnResume`, records both protocol links (detour
 the Honcho line — all in ONE guarded write, so it inherits the write-conflict guard and the
 read-back verification. **Exactly one of `--reconcile` / `--no-reconcile` is required and there
 is no default**: whether the detour can invalidate the paused epic's plan is a judgment, and a
-default would make an absent decision look like a considered one.
+default would make an absent decision look like a considered one. The choice is recorded on the
+parent's `may-invalidate` link as `reconcileOnResume` — only `--reconcile` writes `true`, and a
+link supplied by hand is written `false` — so the obligation is owed per detour. A `--no-reconcile`
+push never cancels an earlier obligation (`reconcileNeeded` is ORed), and pushing `--reconcile` to
+a detour already answered re-arms it, moving the earlier verdict to `superseded`.
 
 `pop-detour` removes the top frame, resumes the epic, and writes `reconcileNeeded` in the *same*
-write — the frame is gone before reconciliation runs, so a second write would let the
-archive-drift self-heal clear the obligation. The optional epic id is an assertion, not a
-selector: the stack is LIFO, so naming an epic that is not on top is refused. It emits the POP
-Honcho line only when nothing needs reconciling, because "reconciled vs X" is not true until the
-verdict exists.
+write. The optional epic id is an assertion, not a selector: the stack is LIFO, so naming an epic
+that is not on top is refused. While the resumed epic owes ANY reconcile it prints the RECONCILE
+GATE naming every detour owed, and emits no POP Honcho line, because "reconciled vs X" is not true
+until the verdict exists.
+
+**The obligation cannot be erased by an ordinary verb.** `clear-active`, `set-active <other>`
+and archive-then-unarchive all leave it owed — moving the active pointer off an owing epic warns —
+and `update-epic <epic> --clear-links` and `remove-epic <detour>` are refused while it stands. The
+render heal clears it only where nothing could answer it (no frame, no armed or pre-0.44.0
+`may-invalidate` link), and says so on stderr.
 
 `honcho-memory <push\|pop> <epicId> "<reason>"` formats the exact ready-to-copy Honcho memory
 line for a PUSH/POP and appends a timestamped copy to `.conductor/honcho-memories.log` — the
@@ -462,7 +471,22 @@ reconcile verdict.
 
 Pops the detour stack and runs the mandatory **reconcile gate**: a fresh-context `reconciler`
 agent re-validates the paused epic against what the detour actually shipped, then writes its
-verdict back durably via `record-reconcile` (not just into the conversation transcript).
+verdict back durably via `record-reconcile` (not just into the conversation transcript):
+
+```bash
+record-reconcile <paused-id> --detour <detour-id> --verdict valid|invalidated --amendments none
+record-reconcile <paused-id> --detour <detour-id> --verdict invalidated --amendment "<one>" --amendment "<two>"
+```
+
+`--amendments none` (the reconciler's `AMENDMENTS: none`) records no amendments; each repeatable
+`--amendment` is one amendment kept verbatim; the two together are refused. The verdict is accepted
+only against a detour the epic was paused for with `--reconcile`, after that detour's frame is
+popped — the epic itself, an unrelated epic and a `--no-reconcile` detour are refused, naming what
+is owed, and the verb never creates a link. `reconcileNeeded` clears only when no armed detour is
+left unanswered; recording again against the same detour moves the earlier verdict to
+`superseded`. A link written before 0.44.0 refuses every verdict on its epic until `/pm:upgrade`
+stamps it. Work that will not resume ends the obligation honestly with `--verdict invalidated
+--amendment "abandoned: <why>"`.
 
 </details>
 
@@ -513,6 +537,15 @@ actually reviewed and `--reviewer` records who reviewed it, so a verdict can be 
 refused by name until the range is re-reviewed or the attribution is corrected. Before 0.27.0 a
 review of `a..b` on an epic that then shipped `b..c` was byte-identical to one that covered
 everything.
+
+**Both bounds are resolved when recorded** and stored as full object names: `--head-sha HEAD`
+records the commit HEAD was then, and a bound that is not a commit in this clone (`root`, a range
+from a clone without the `presquash/*` tags) refuses the call with nothing written — record Gate 2
+from the authoring clone before a squash-merge. **Fresh means the head reaches EVERY attributed
+commit**, not only the last: an ancestor attributed after an uncovered descendant, a head on an
+unrelated branch, and a legacy stored value that is not a hexadecimal commit name (`HEAD`) all read
+`⚠ stale` and refuse a `delivered` archive. A hexadecimal value this clone does not hold reads
+`unverifiable`.
 
 **Which evidence a `pass` requires depends on the gate.** Gate 2 is the implementation review and
 requires the sha pair. Gate 1 is the **spec** review and runs before `/opsx:apply`, so there is no
@@ -595,13 +628,13 @@ tombstones it identically, naming `--spec` in the un-ignore instruction.
 | `add --id X --title "…" --lane L --priority P [--status S] [--parent ID] [--external-id KEY] [--add-story "<milestone>" …]` | Register any epic in any lane; optionally nest under a parent or link a tracker issue. `--add-story` is **repeatable**, so a plan's milestones land in the same write as the epic instead of one `update-epic` call at a time afterwards. |
 | `add-many --from <path\|->` | Atomically bulk-create a parent + children from a JSON batch. Each entry may carry a `stories` array — plain titles, or `{"title": "…", "done": true}` — validated in the same up-front pass, so a blank title refuses the whole batch. |
 | `update-epic <id> [--title …] [--status …] [--lane …] [--priority …] [--parent …] [--plan …] [--spec …] [--link …] [--clear-links] [--clear <field>] [--description "…"] [--notes "…"] [--external-id …] [--external-url …] [--external-updated-at <iso>] [--review-mode …] [--add-story "<title>"] [--story <n> --done\|--wont-do "<reason>"]` | Write-back path — title corrections, status/lane/priority changes, links, free-text annotation, tracker linkage, per-epic review-mode escalation, inline story mutation (see below). `--link` **appends** (a repeat of an already-recorded type+target updates that entry's reason in place); `--clear <field>` is the generic unset for any field whose absence is legal, repeatable, naming the FLAG (`--clear plan`, not `planPath`) — including `--clear created-at`, which returns a wrong recovered registration date to UNKNOWN so `recover-created-at` can derive it again from git history (there is deliberately no setting form for it — the date is evidence-derived, never asserted — and `touchedAt` is engine-stamped and deliberately not clearable) — the refusal enumerates the clearable set live, and a set-only field is refused with the registry's own reason. |
-| `update-epic <id> --attribute-commit <sha>` | Record a commit as this epic's work. Repeatable, append-only, in landing order. The engine infers attribution from **nothing** — not the files a commit touches, not an epic id in a message — so an unattributed commit is one the epic's Gate 2 cannot be checked against. **Do not attribute the commit that moves `openspec/changes/<id>/` under `archive/`**: it lands after the reviewed range by construction and makes the epic's own Gate 2 stale at the instant the archive gate reads it. |
-| `update-epic <id> --withdraw-commit <sha> --withdrawal-reason "<why>"` | **Withdraw an attribution** when the commit it named is gone — a `git reset` is a normal operation, and attributing at the moment of each commit means an attribution can outlive its commit through no error of process. Refuses a sha the epic never attributed, and refuses a missing reason. The array stays append-only (its last entry is the endpoint a Gate 2 `headSha` is compared against), so the withdrawal is **recorded** in a sibling `withdrawnCommits` field rather than erased. |
+| `update-epic <id> --attribute-commit <sha>` | Record a commit as this epic's work. Repeatable, append-only, in landing order. Resolved at write time and stored as the full object name (`HEAD` or a tag records the commit it names now); a value that is not a commit in this clone is refused with nothing written. The engine infers attribution from **nothing** — not the files a commit touches, not an epic id in a message — so an unattributed commit is one the epic's Gate 2 cannot be checked against. **Do not attribute the commit that moves `openspec/changes/<id>/` under `archive/`**: it lands after the reviewed range by construction and makes the epic's own Gate 2 stale at the instant the archive gate reads it. |
+| `update-epic <id> --withdraw-commit <sha> --withdrawal-reason "<why>"` | **Withdraw an attribution** when the commit it named is gone — a `git reset` is a normal operation, and attributing at the moment of each commit means an attribution can outlive its commit through no error of process. Refuses a sha the epic never attributed, and refuses a missing reason. Matched by commit identity where the value resolves (a full sha withdraws a legacy short entry of the same commit), and by exact spelling otherwise, so a legacy value that no longer resolves stays withdrawable. The array stays append-only, so the withdrawal is **recorded** in a sibling `withdrawnCommits` field rather than erased. |
 | `update-epic <id> --withdraw-gate-review <1\|2> --withdrawal-reason "<why>"` | **Withdraw a recorded gate verdict** that does not belong on this epic — re-recording can replace a verdict, but only this says it was never this epic's. Repeatable, so both gates go in one call under the one reason. The whole entry, `superseded` included, moves into `withdrawnGateReviews` — recorded, never erased — and re-recording is the way back. Refused without a reason, for a gate other than 1 or 2, for the same gate twice, where no verdict is stored, and against an `ungated` stamp (cleared by recording a real verdict); `--withdrawal-reason` alone is refused too. It is a field write the archive gate decides on: a Gate 2 withdrawal in a `delivered` archive call, or on an archived `delivered` epic whose Gate 2 was met, is refused and prints the one call that withdraws AND records the right disposition. |
 | `update-epic <id> --status archived --outcome delivered\|killed\|superseded\|abandoned\|declined\|unreconstructable --reason "<why>" --no-deferrals` | **How work ends** — a terminal disposition with its reason, never deletion. Every outcome except `delivered` requires the reason. The deferral assertion is required in the *same* invocation: swap `--no-deferrals` for `--deferral "<epicId>:<section>"` where work is now held by a registered epic, or `--declined-deferral "<what>::<why not>"` where you are deliberately not doing it — `::` separates the halves explicitly, because both are free text and a single colon inside `<what>` used to truncate it silently. A single colon still works where the value carries only one; two or more with no `::` are refused rather than guessed. Add `--carried-to <epicId> --reason "<which tasks moved>"` to hand off unfinished work. |
 | `remove-epic <id> [--cascade]` | Hard-delete; blocked by default if it has children (`--cascade` removes descendants too). Strips dangling links elsewhere. |
 | `reorder <id> <id> …` | **Manual rank** — place the epics of ONE priority band, top to bottom, in the order given. Ranks are rewritten dense `1..N` on every call, and this is the only thing that writes `rank`. Takes the whole band and refuses a partial one, so the numbering stays contiguous by construction; unranked epics sort after every ranked one. Rank is the LAST sort key (dependencies → priority → **rank**) — it breaks ties that today fall through to alphabetical order, and never outranks a dependency or a priority. `update-epic --priority` clears an epic's rank, since a placement among one band's peers means nothing among another's. |
-| `set-active <id>` / `clear-active` | Set/clear the top-level active epic. |
+| `set-active <id>` / `clear-active` | Set/clear the top-level active epic. Moving the pointer off an epic that owes a reconcile warns and keeps the obligation. |
 
 **Link types are a closed vocabulary, and only two of them do anything.** `--link
 "<type>:<epic>[:<reason>]"` validates both halves — an unknown `<type>` is refused with the
