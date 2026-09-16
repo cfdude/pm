@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "gates-bind-to-verified-evidence",
+  "active": null,
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -7294,7 +7294,7 @@
       "id": "gate-staleness-reads-only-last-attribution",
       "title": "gateStaleness() judges only the LAST attributed commit (archive-gate.mjs:108-112), so attributing an ancestor after an uncovered descendant makes a stale Gate 2 read fresh — the archive gate and the 0.43.0 regression check both accept it",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -7312,7 +7312,7 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-14T21:51:27.770Z",
-      "touchedAt": "2026-09-15T01:55:25.728Z",
+      "touchedAt": "2026-09-16T20:28:42.024Z",
       "notes": [
         {
           "at": "2026-09-14T21:51:29.762Z",
@@ -7324,7 +7324,18 @@
           "actor": "agent",
           "text": "Adjacent (Gate 2 re-review, 2026-09-14): on an archived delivered openspec epic, update-epic <id> --attribute-commit notasha exits 0 and stores it — staleness reads 'unverifiable', which the regression check does not count as a broken obligation."
         }
-      ]
+      ],
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-09-16T20:28:42.020Z",
+        "reason": "absorbed by gates-bind-to-verified-evidence: its 2026-09-14 Gate 2 lens 2 repro (ancestor attributed after an uncovered descendant) is task 4.1; its 2026-09-15 note (--attribute-commit notasha stored, read unverifiable, uncounted by the regression check) is tasks 2.1 and 4.3"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-16T20:28:42.020Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-16T20:28:42.020Z"
     },
     {
       "id": "comprehensive-code-review-after-0-43-0",
@@ -8281,11 +8292,16 @@
           "at": "2026-09-15T21:57:41.052Z",
           "actor": "agent",
           "text": "State-file Gate 2 (2026-09-15): lock refusal wording says 'a other' for a non-regular lock path; a stuck young lock makes each hook heal wait ~4-8 s then skip (by policy)."
+        },
+        {
+          "at": "2026-09-16T20:28:40.982Z",
+          "actor": "agent",
+          "text": "Gates Gate 2 (2026-09-16), deferred minors: remove-epic xx --cascade is refused naming record-reconcile when both the owing epic and its detour are descendants being removed; two hand-edited may-invalidate links from p to the same d — each verdict lands on the first, the second stays owed (engine paths de-duplicate); rules item 3 wording 'If the popped frame had reconcileOnResume' is narrower than the engine (an earlier armed detour also prints RECONCILE GATE); the 15.5 mirror guard is blind in commands/epic.md where claims repeat."
         }
       ],
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:50.956Z",
-      "touchedAt": "2026-09-15T21:57:41.055Z"
+      "touchedAt": "2026-09-16T20:28:40.986Z"
     },
     {
       "id": "every-verb-refuses-what-it-does-not-read",
@@ -8515,7 +8531,7 @@
       "id": "gates-bind-to-verified-evidence",
       "title": "Gates bind to verified evidence: record-reconcile must answer a real unreconciled detour link, reconcileNeeded survives active-pointer moves and later pushes, and commit shas are resolved and stored full at write time",
       "priority": "P1",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -8528,6 +8544,11 @@
           "type": "supersedes",
           "epic": "commit-shas-stored-unresolved",
           "reason": "carried here"
+        },
+        {
+          "type": "supersedes",
+          "epic": "gate-staleness-reads-only-last-attribution",
+          "reason": "absorbed — every-entry staleness"
         }
       ],
       "reconcileNeeded": false,
@@ -8539,10 +8560,31 @@
         "dd00a28c1c68637cb7bd417b04d9683eab926bd7",
         "5e57de1cb78e9de2be2a322c1b49d0fa21174ff2",
         "9c64fb15c118664e25ebe33e4d1b647a97fb5f93",
-        "305cc2f7e3b973b8d98827a1f66287559aebb4a2"
+        "305cc2f7e3b973b8d98827a1f66287559aebb4a2",
+        "d50c389aa0e39cddfbf26f28fb1ef44790d21be9",
+        "3132babb381623e5f8d5496915d66d9e8ff1b09d",
+        "3067eb0bf8ff5a4f987a71f78c1dfde0753f4eba",
+        "4139a5c6e812ef1c5d49c9bd0b7826bb5f3e4283",
+        "efaa8b8a6ceb835121a2969cb946b96e22ee7b0d",
+        "709554e78697ed7b6fe3e8a800d8066614d1f90e",
+        "31222746383881314a3a76f6775085bc6d0fd616",
+        "b93e41cca8be0ebb484887d209a65d48878a053f",
+        "cfcb85143f14d28cedefa16ef6a209b499e30047",
+        "e5401427e5c472a28bc9a36dfd3d0a507da26f65",
+        "48e460cd25e21dd42e060a798b35cb4a085c0e66",
+        "b3ff40ea4fbf8a11f1cd430ca95e082a16ef1766",
+        "b3ff40ea4fbf8a11f1cd430ca95e082a16ef1766",
+        "67dbee6e4227609d20577e11635255dbd3d1a8c8",
+        "b441ac5ede1956dacf7dee033c8ae1e89f5d9f90",
+        "7e04a692c627b0d519176b77f8c3a181ffad37f5",
+        "96dd87d17f10bee7b0af37419cc89bb4f70becd7",
+        "e3b65ab9a174fe4cd8f41195f906234a7af85d68",
+        "f519879c846c103352d3cc6481c887b582165f36",
+        "d3666821927865c2732c2f3d497f984fcde2c93d",
+        "f89c58abd12e9d6eb7ccd5a21306a975bbaf6a85"
       ],
       "createdAt": "2026-09-15T12:24:50.972Z",
-      "touchedAt": "2026-09-15T22:30:03.721Z",
+      "touchedAt": "2026-09-16T20:28:49.771Z",
       "release": "0.44.0",
       "gateReview": {
         "gate1": {
@@ -8567,9 +8609,39 @@
             ],
             "reviewer": "two fresh-context lenses (code-grounded bypass hunting; spec contract vs gate-integrity), round 1 fail (3 C, 4 I), round 2 fail (1 C, 4 I) resolved by replacing the read-time legacy rule with a migration, round 3 fail (3 I), round 4 narrow model-based confirmation fail (1 C: RED 6.9g passes today; 1 I: self/missing-link wedge) — both one-clause fixes applied and verified by the orchestrator; 2026-09-15"
           }
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-16T20:28:23.898Z",
+          "baseSha": "6e1d06746db30ccb01d3dd8246cb5bc63386eae9",
+          "headSha": "f89c58abd12e9d6eb7ccd5a21306a975bbaf6a85",
+          "reviewer": "re-recorded at the last attributed commit: code through e3b65ab passed Gate 2 (two lenses, scoped re-review, two follow-ups); delta e3b65ab..f89c58a (docs f519879 incl. emitted rules/nudge text, lesson d366682) re-reviewed by a fresh-context reviewer: fail on one Important (nudge still taught the old catch-up rule) fixed in f89c58a with affected tests 141/141 and verified by the orchestrator; every other documented behavior reproduced; 2026-09-16",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-09-16T19:46:54.329Z",
+            "baseSha": "6e1d06746db30ccb01d3dd8246cb5bc63386eae9",
+            "headSha": "e3b65ab9a174fe4cd8f41195f906234a7af85d68",
+            "reviewer": "two fresh-context lenses over d50c389^..67dbee6 (conformance: fail — option injection via stored value into git show, ~10 untested SHALLs; adversarial: fail — 8 surviving mutants; code otherwise held under ~20 reconcile sequences, commit-resolution attacks and a 27-repo fleet replay with 0 verdicts reclassified), fixed b441ac5/7e04a69; scoped re-review pass (option-shaped values in every stored field across 22 verb runs create nothing; mutants killed; suite 1582/1582); two re-review minors fixed 96dd87d (old-git fail-open, stale pop instruction); design wording e3b65ab; 2026-09-16"
+          }
         }
       },
-      "startedAt": "2026-09-15T22:30:03.716Z"
+      "startedAt": "2026-09-15T22:30:03.716Z",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-16T20:28:49.767Z",
+        "reason": "Built for 0.44.0 (ships with the release cut). record-reconcile answers only an armed, owed detour (never self, unrelated, --no-reconcile or still-paused); reconcileNeeded survives pointer moves, archiving and later pushes and is cleared only by a verdict; removals and link clears that would destroy an owed reconcile's record are refused; a 0.44.0 migration (and every upgrade) stamps link arming. Commit values are resolved to full object names when written (not-a-commit, HEAD and fakes refused), staleness requires headSha to reach every attributed entry, stored values never reach git as options. Gate 1 two lenses + 3 confirmation rounds (legacy rule replaced by a migration); cross-spec pass; Gate 2 two lenses (20 reconcile sequences, 27-repo replay, 0 verdicts reclassified) with injection and mutant fixes, scoped re-review, and a docs re-review."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-16T20:28:49.732Z",
+        "deferrals": [
+          {
+            "epic": "code-review-0-43-0-minors",
+            "section": "Gate 2 minors (cascade over-refusal, duplicate hand-edited links, rules item 3 wording, epic.md mirror guard)"
+          }
+        ],
+        "declined": []
+      },
+      "completedAt": "2026-09-16T20:28:49.767Z"
     }
   ],
   "detourStack": [],
@@ -8580,7 +8652,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 881,
+  "revision": 908,
   "reviewMode": "thorough",
   "releases": [
     {

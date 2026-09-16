@@ -325,6 +325,14 @@ combinable in ONE invocation, so that repair remains a single atomic write. They
 mutually exclusive, which would leave the repair as two writes with a zero-link window between
 them, and a rejection on the second write would leave the epic with no links at all.
 
+**One exception: an epic that owes a reconcile.** While an epic owes a reconcile AND holds an armed or
+unmigrated `may-invalidate` link (the condition `gate-integrity` "A write never destroys the record of
+an owed reconcile" refuses on), a clear of its links is refused whatever else the invocation supplies, because it would
+remove the link the owed verdict must be recorded against — `gate-integrity` "A write never destroys
+the record of an owed reconcile". The repair is not lost, only ordered: every engine message that
+instructs a reader to repair a link by clearing and re-supplying SHALL, when the epic it names owes a
+reconcile, name `record-reconcile` as the step before the repair.
+
 #### Scenario: A second link is added, not substituted
 - **WHEN** a link is supplied to an epic that already records one
 - **THEN** the epic records both
@@ -339,12 +347,19 @@ them, and a rejection on the second write would leave the epic with no links at 
 - **THEN** the epic's recorded links are unchanged
 
 #### Scenario: Repairing a malformed link is one atomic write
-- **WHEN** an agent clears an epic's links and supplies the corrected set in one invocation
+- **WHEN** an agent clears the links of an epic that owes no reconcile and supplies the corrected set
+  in one invocation
 - **THEN** the invocation is accepted, and the epic's links are replaced in a single write
 
 #### Scenario: An emitted repair instruction matches the behaviour
 - **WHEN** the engine emits a message instructing a reader how to repair a malformed link
 - **THEN** following that message as written removes the malformed link
+
+#### Scenario: The repair on an owing epic names the verdict first
+- **WHEN** an epic that owes a reconcile holds a malformed link, and the engine emits the repair
+  instruction for it
+- **THEN** the instruction names `record-reconcile` before the clear-and-re-supply invocation, and the
+  clear-and-re-supply invocation run before any verdict is refused with `state.json` byte-identical
 
 ### Requirement: A write that changes nothing says so
 An epic-writing invocation whose effect on the record is empty SHALL say so, rather than reporting

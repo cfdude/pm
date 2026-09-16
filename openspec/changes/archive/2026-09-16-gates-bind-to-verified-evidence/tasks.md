@@ -278,7 +278,7 @@ Pairs: 10.1–10.3 land with 10.4.
 - [x] 11.4 **Attribute every commit** as it lands: `update-epic gates-bind-to-verified-evidence
       --attribute-commit <sha>` — full sha, which the engine will now resolve and store in full. The
       archive commit, and any commit that only relocates this change's artifacts, is excluded
-- [ ] 11.5 **Dispositions** <!-- pm:lifecycle --> — `update-epic gates-bind-to-verified-evidence --status archived --outcome delivered --no-deferrals`
+- [x] 11.5 **Dispositions** <!-- pm:lifecycle --> — `update-epic gates-bind-to-verified-evidence --status archived --outcome delivered --no-deferrals`
       (swap `--no-deferrals` for `--deferral "<epicId>:<section>"` or `--declined-deferral
       "<what>:<why not>"` for anything Gate 2 defers), then record and end the absorbed epic:
       `update-epic gates-bind-to-verified-evidence --link "supersedes:gate-staleness-reads-only-last-attribution:absorbed — every-entry staleness"`
@@ -312,9 +312,9 @@ Pairs: 10.1–10.3 land with 10.4.
 
 ## 13. Gate 2 and close
 
-- [ ] 13.1 Gate 2 — two fresh-context lenses over the committed range (A: spec alignment and real
+- [x] 13.1 Gate 2 — two fresh-context lenses over the committed range (A: spec alignment and real
       tests; B: absent edits against 11.1's sweep); fix Critical and Important; record
       `record-gate-review gates-bind-to-verified-evidence --gate 2 --verdict pass --reviewer "<identity>"
       --base-sha <parent of first attributed> --head-sha <last attributed>`
-- [ ] 13.2 Archive this change <!-- pm:lifecycle --> — `/opsx:archive gates-bind-to-verified-evidence`,
+- [x] 13.2 Archive this change <!-- pm:lifecycle --> — `/opsx:archive gates-bind-to-verified-evidence`,
       then the dispositions in 11.5
