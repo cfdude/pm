@@ -26,8 +26,8 @@ conductor: a gate 1 'pass' requires the artifacts it reviewed — missing --arti
 gate1 (child doc form) exit=1
 conductor: a gate 2 'pass' requires the commit range it covered — missing --base-sha and --head-sha. Record the range the reviewer actually read (a 'fail' may omit it).
 gate2 (child doc / archive-gate remedy form) exit=1
-conductor: recorded — but 27e5d7d7e9b0e411a515588ff5c5c387e6ea7438..27e5d7d7e9b0e411a515588ff5c5c387e6ea7438 is an IMPLEMENTATION range on a gate 1 verdict, and every consumer that reads that field treats it as one. Gate 1 reviews artifacts by path: --artifact <path> (repeatable) is the evidence a spec review has.
-conductor: rendered /Users/robsherman/Documents/Repos/pm/openspec/changes/emitted-commands-run-as-written/work/b/PROJECT.md
+conductor: recorded — but c27415ca5106da512ece6d8235b4f21d042330c9..c27415ca5106da512ece6d8235b4f21d042330c9 is an IMPLEMENTATION range on a gate 1 verdict, and every consumer that reads that field treats it as one. Gate 1 reviews artifacts by path: --artifact <path> (repeatable) is the evidence a spec review has.
+conductor: rendered /private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/propose45/emitted-commands-run-as-written/work/b/PROJECT.md
 conductor: recorded gate 1 review 'pass' for 'local-one'
 gate1 sha-only (SKILL.md/review-mode.md form) exit=0
 
@@ -37,14 +37,14 @@ reviewMode after --clear: undefined
 
 ### B4-B6 github-issues primary, inward only, repo with a shell metacharacter; then vendor switch
 conductor: refreshed rules block in CLAUDE.md (platform: claude-code)
-conductor: rendered /Users/robsherman/Documents/Repos/pm/openspec/changes/emitted-commands-run-as-written/work/c/PROJECT.md
+conductor: rendered /private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/propose45/emitted-commands-run-as-written/work/c/PROJECT.md
 conductor: tracker set (github-issues)
 exit=0
 372:1. `gh issue list --repo a/b; touch pwned --state open --json number,title,url,updatedAt,labels`.
 414:## Sync after completing tracker-linked work
 417:writeback steps above), immediately re-sync with your tracker(s) — run `/pm:sync` — to pull
 conductor: refreshed rules block in CLAUDE.md (platform: claude-code)
-conductor: rendered /Users/robsherman/Documents/Repos/pm/openspec/changes/emitted-commands-run-as-written/work/c/PROJECT.md
+conductor: rendered /private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/propose45/emitted-commands-run-as-written/work/c/PROJECT.md
 conductor: tracker set (jira ABC)
 exit=0
 366:## Inward tracker sync (jira · a/b; touch pwned)
@@ -83,3 +83,10 @@ TRACKER SYNC (jira · ABC):
 
 ### gh accepts --limit 1000
 items returned: 109
+
+### B9 legacy github-issues primary with no recorded direction, switched to jira
+before: ## GitHub issue sync (o/n)
+before: ## Sync after completing tracker-linked work
+conductor: tracker set (jira ABC)
+tracker: {"system":"jira","repo":"o/n","projectKey":"ABC"}
+after: ## External tracker sync (jira · ABC)

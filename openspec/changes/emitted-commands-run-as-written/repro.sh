@@ -3,7 +3,10 @@
 set -u
 E=${E:-/Users/robsherman/Documents/Repos/pm/scripts/conductor.mjs}
 export GIT_TEMPLATE_DIR="" GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=commit.gpgsign GIT_CONFIG_VALUE_0=false PM_QUIET_ENGINE_BANNER=1
-W="$(cd "$(dirname "$0")" && pwd)/work"; rm -rf "$W"; mkdir -p "$W"
+# Scratch repos live OUTSIDE the pm checkout: set PM_REPRO_WORK to a scratch directory, or a fresh
+# temp dir is used. Never point it inside the repository.
+W="${PM_REPRO_WORK:-$(mktemp -d)}"; mkdir -p "$W"
+case "$W" in "$(cd "$(dirname "$0")" && git rev-parse --show-toplevel)"*) echo "PM_REPRO_WORK is inside the repo"; exit 98;; esac
 fresh() { rm -rf "$W/$1"; mkdir "$W/$1"; cd "$W/$1"; git init -q; git config user.name t; git config user.email t@t
   export CLAUDE_PROJECT_DIR="$PWD"; echo x > a; git add a; git commit -qm init || { echo "SETUP FAILED"; exit 99; }; node "$E" init >init.out 2>&1 || { echo "INIT FAILED"; exit 99; }; export CLAUDE_PROJECT_DIR="$PWD"; }
 say() { echo; echo "### $*"; }
@@ -73,3 +76,11 @@ node "$E" rules 2>/dev/null | rg "^## " | rg -i "sync" | sed 's/^/rules-block sy
 node "$E" record-tracker-refresh local-one --verdict unchanged --external-updated-at 2026-09-01T00:00:00Z >/dev/null 2>&1; echo "record-tracker-refresh exit=$?"
 echo "after:"; tb
 say "gh accepts --limit 1000"; gh issue list --repo cfdude/pm --state all --limit 1000 --json number 2>&1 | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log("items returned:",JSON.parse(s).length))'
+
+say "B9 legacy github-issues primary with no recorded direction, switched to jira"
+fresh f
+node --input-type=module -e 'import fs from "node:fs"; const p=".conductor/state.json"; const s=JSON.parse(fs.readFileSync(p,"utf8")); s.tracker={system:"github-issues",repo:"o/n"}; fs.writeFileSync(p, JSON.stringify(s,null,2));'
+node "$E" rules 2>/dev/null | rg "^## .*[Ss]ync" | sed 's/^/before: /'
+node "$E" set-tracker --system jira --project ABC 2>&1 | tail -1
+node -e 'console.log("tracker:", JSON.stringify(require("./.conductor/state.json").tracker))'
+node "$E" rules 2>/dev/null | rg "^## .*[Ss]ync" | sed 's/^/after: /'

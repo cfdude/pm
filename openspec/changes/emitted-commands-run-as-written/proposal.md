@@ -9,8 +9,8 @@ ran 487 emitted lines through `checkCommandLine()` and found "no emitted line ne
 §5) — because every defect below is a well-formed command line refused by DOMAIN logic, or a recipe
 that runs and quietly does the wrong thing. Nothing in the suite executes what pm emits.
 
-Every defect was reproduced on the 0.44.0 engine in hermetic scratch repositories by
-`repro.sh` in this change directory; its transcript is `repro.txt`.
+Every defect was reproduced on the 0.44.0 engine in hermetic scratch repositories (created outside
+the checkout) by `repro.sh` in this change directory; its transcript is `repro.txt`.
 
 **Remedies the engine prints and then refuses** (`repro.txt` §D1–D3):
 - `integrity`'s `delivered-release-epic-left-open` prints `update-epic os-two --status archived
@@ -35,6 +35,12 @@ Every defect was reproduced on the 0.44.0 engine in hermetic scratch repositorie
   refused (`--id required, format ^[a-z0-9][a-z0-9._-]*$`, exit 1).
 - `set-tracker --system github-issues --repo 'a/b; touch pwned'` is accepted and emitted into a shell
   line unquoted: `` `gh issue list --repo a/b; touch pwned --state open …` ``.
+- Every registration line wraps third-party text in double quotes with no instruction:
+  `--title "<issue-title>"` and `suggest-lane "<issue-title>"`. An issue titled with `"`, `$(…)` or a
+  backtick changes the command the agent runs; plain single quotes break on an apostrophe.
+- Switching a legacy primary with no recorded direction from github-issues to jira turns outward
+  creation ON: the inward section disappears and an "External tracker sync (jira · ABC)" section
+  appears, because an unrecorded direction resolves by system (`repro.txt` §B9).
 - Switching a primary's vendor keeps the old scope: after `set-tracker --system jira --project ABC`
   the recorded `repo` survives, `trackerScope()` prefers it, and the jira section is headed
   `(jira · a/b; touch pwned)` with `add-epic --id jira-a-b-touch-pwned-<issue-number>`.
@@ -54,8 +60,6 @@ Every defect was reproduced on the 0.44.0 engine in hermetic scratch repositorie
   pass|fail [--reviewer]`: exit 1 on both gates. `skills/conductor/SKILL.md:117-119,322,1216` and
   `commands/review-mode.md:72` say a pass needs the sha range on EITHER gate; on Gate 1 that records
   an implementation range with a "wrong kind of evidence" notice (exit 0), never `--artifact`.
-- `SKILL.md:1080` says hierarchy children never write `state.json`; the child doc has the child
-  record its gate verdicts and archive itself — two writers of one file, in parallel.
 - `commands/review-mode.md:99` says an epic override has no unset; `update-epic <id> --clear
   review-mode` clears it (repro: `reviewMode after --clear: undefined`).
 - `commands/upgrade.md:226` names `/pm:integrity` (no such command); `commands/cross-spec-review.md:85`
@@ -79,28 +83,35 @@ earlier (`anyInwardProcedureEmittable`); its dangling text for an inward-only pr
 
 ## What Changes
 
-- **One renderer per remedy, epic-aware.** The Gate 2 remedy is rendered from one declaration that
-  always carries the range flags. The disposition invocation takes the EPIC, not its id, and offers
-  only outcomes the archive gate accepts for it, naming what blocks `delivered` where something
-  does. `integrity`'s delivered-release remedy consults the same obligations.
+- **One renderer per remedy, epic-aware.** The gate-verdict remedy is rendered from one declaration
+  that carries the evidence its gate requires (range for Gate 2, `--artifact` for Gate 1). The
+  disposition invocation takes the EPIC, not its id, and offers only outcomes the archive gate
+  accepts for it, naming what blocks `delivered` where something does — except update-epic's
+  refusal of an edit that would break an archived `delivered` record, which keeps `delivered` and
+  names the Gate 2 re-record first. `integrity`'s delivered-release remedy consults the same
+  obligations.
 - **A permanent emitted-invocation sweep test.** Every engine invocation pm emits (rules block over
   every platform × tracker role/system/direction, brief, `integrity`, archive-gate refusals,
   `unconsidered-outcomes`, `init`, commit nudge) and every one in shipped docs (`commands/*.md`,
   `skills/**/SKILL.md`, `agents/*.md`, `README.md`) passes the pre-dispatch check; every engine-printed
-  remedy is additionally EXECUTED, placeholders filled, against a fixture that reproduces its
-  finding, and must succeed. Deliberate non-runnable examples carry an in-source marker; the
-  population is derived, never listed in the test. `/pm:<name>` references must name a shipped
+  remedy is additionally EXECUTED, placeholders filled BY MEANING, against a fixture that reproduces
+  its finding — and the producer is re-run to assert the finding is GONE, not only that the remedy
+  exited 0. Each alternative a remedy offers runs in its own fresh fixture. Deliberate refused examples carry an in-source marker naming the
+  refusal class they demonstrate; the population is derived from the engine's exported registries,
+  never listed in the test. `/pm:<name>` references must name a shipped
   command or skill.
 - **Tracker recipes:** one declaration of the inward list step for primary and secondary (fields
   include `updatedAt`, an explicit `--limit`, and a truncation stop before the closed-item step); a
   watermark step in the secondary section; a derived id that is valid for non-numeric item keys;
   `set-tracker` refuses a github-issues `--repo` that is not `owner/name`, and no emitter
-  interpolates one into a shell line; a primary vendor switch drops scope the call does not re-give;
+  interpolates one into a shell line; a primary vendor switch drops scope the call does not re-give and never silently turns on the
+  outward direction; item-sourced placeholders (title, url) are shell-quoted by an instruction the
+  recipe carries;
   the completion-sync reminder no longer points at absent steps; `/pm:epic list` is gone.
 - **Brief tracker lines:** the mirror line states what it checked, not a mirror it cannot attribute;
   the never-re-read line names a remedy that clears every epic it counts.
-- **Docs:** every gate-recording form matches the gate; hierarchy runs have ONE state writer (the
-  orchestrator); review-mode unset, `/pm:integrity`, checkout-path and pm-repo-only instructions
+- **Docs:** every gate-recording form matches the gate (including the hierarchy child's); review-mode
+  unset, `/pm:integrity`, checkout-path and pm-repo-only instructions
   corrected; `commands/tracker.md` responsibilities scoped by direction.
 - **No hand-edit instructions anywhere pm ships**: `init` stderr, commit nudge, `SKILL.md`,
   `commands/init.md` name the verbs (`set-active`, `update-epic --priority/--status`).
@@ -108,30 +119,39 @@ earlier (`anyInwardProcedureEmittable`); its dangling text for an inward-only pr
   silently a no-op (a missing inverse) and `--intent badpair` is silently dropped — reproduced
   (`repro.txt` §B4-B6) but neither corrupts an emitted command; `verify-worktrees`/`verify-state`
   have no command doc.
+- **Moved out to its own epic, `hierarchy-run-has-one-state-writer`:** a single writer of
+  `state.json` in hierarchy runs (`SKILL.md:1080` says children never write it; the child doc has
+  the child record gate verdicts and archive). It is a new design, not an emitted-command fix, with
+  open questions of its own: the rules block orders children to attribute commits, the `tasks.md` a
+  child is handed carries gate and archive tasks, a merge commit makes a child-recorded Gate 2
+  stale, and evidence would travel back in prose. This change only corrects the child doc's
+  gate-recording FORM.
 
 ## Capabilities
 
 ### New Capabilities
 - `emitted-instructions`: what pm guarantees about the invocations and remedies it emits and ships —
-  accepted by the installed engine, remedies that run against the state that produced them, gate
-  evidence forms that match the gate, and one state writer in a hierarchy run.
+  accepted by the installed engine, remedies that clear the finding that printed them, and gate
+  evidence forms that match the gate.
 
 ### Modified Capabilities
 - `tracker-sync`: "Every command pm emits must run as written" extended to every tracker
   role/system/direction (fields, truncation, non-numeric keys, repo shape); "Primary tracker
-  configuration" drops a stale scope on vendor switch; "The brief reports only locally computable
-  freshness" requires a remedy that clears the count; ADDED a secondary watermark step, a repo-shape
+  configuration" drops a stale scope on vendor switch and keeps the direction the user had; "The
+  brief reports only locally computable freshness" requires a remedy that clears the count and an
+  outward key-recording line that stamps a watermark; ADDED a secondary watermark step, a repo-shape
   rule, and a brief mirror line that claims only what it checked.
 - `epic-disposition`: "The archive can be asked which of its records carry no considered outcome" —
-  the invocation offers only outcomes the gate accepts and names what blocks `delivered`.
+  the invocation offers only outcomes the gate accepts and names what blocks `delivered`; the
+  archived-delivered regression refusal is explicitly excepted.
 - `conductor-record`: ADDED — no instruction pm ships directs a write to the state of record except
   through an engine verb.
 
 ## Impact
 
 - Engine: `scripts/lib/rules.mjs` (tracker sections), `archive-gate.mjs` (`dispositionInvocation`,
-  Gate 2 remedy), `integrity.mjs` (two remedy strings), `unconsidered.mjs`, `update-epic.mjs` (one
-  caller), `briefing.mjs:271-310` (two tracker lines), `tracker.mjs` (repo shape, vendor switch),
+  gate remedy, exported obligation kinds), `integrity.mjs` (remedy strings), `unconsidered.mjs`,
+  `update-epic.mjs` (regression refusal remedy), `argv-surface.mjs` (a refusal class on each refusal), `briefing.mjs` (an exported list of its remedy-bearing warnings; two tracker lines at 271-310), `tracker.mjs` (repo shape, vendor switch),
   `constants.mjs` (`mirroredEpicIdPrefix` placeholder, `trackerScope` unchanged),
   `subcommands.mjs` (`init` stderr, one sentence of `runNudge`).
 - Output shape: `unconsidered-outcomes` JSON gains a per-entry field (additive); emitted rules text

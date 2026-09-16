@@ -26,95 +26,138 @@
 The pre-commit hook runs the whole suite, so every RED test lands in the SAME commit as the GREEN
 task that turns it green; pairs are named per section. Before that commit, the new test run against
 the pre-GREEN engine is saved in this change directory as `red-<task>.txt`, and the GREEN commit
-message names that file. New test file: `scripts/test/emitted-invocations.test.mjs`.
-
-Pairs: 1.2–1.3 land with 1.4.
+message names that file. New test file: `scripts/test/emitted-invocations.test.mjs`. Fixture repos
+are created under the OS temp dir by the test helpers, never inside the checkout.
 
 A doc edit a RED test requires lands in that test's GREEN commit (the suite cannot go green
 without it); narrative docs describing the new behaviour wait for section 10, after Gate 2.
 
+Pairs: 1.2–1.5 land with 1.6.
+
 - [ ] 1.1 REFACTOR: the extractor, placeholder filler and source enumerator (design Decision 1,
-      Layer A) inside the new test file, with self-tests only: each source class yields at least one
-      invocation, the dispatch-table verb set is read from `conductor.mjs`, the skipped-`…` count is
-      asserted under a bound, and prose beginning with a verb name ("integrity check") is not
-      extracted; suite green (verify: `node --test scripts/test/*.test.mjs` exit 0, output saved to
-      a file and read from the file)
-- [ ] 1.2 RED: Layer A over shipped docs — fails naming `/pm:integrity` (`commands/upgrade.md`),
-      `node scripts/conductor.mjs` (`commands/cross-spec-review.md`), and each unmarked deliberate
-      refused example
-- [ ] 1.3 RED: a marker on an ACCEPTED invocation fails naming the stale marker (constructed doc
-      fixture in a temp dir, fed through the same enumerator)
-- [ ] 1.4 GREEN: add `<!-- pm:refused-example -->` beside each deliberate refused example and the
-      pm-developer note at `skills/conductor/SKILL.md:70`; fix `commands/upgrade.md:226` and
-      `commands/cross-spec-review.md:85` to the installed-engine form; Layer A over the rules block
-      matrix, brief, `init` stderr and the commit nudge also green; 1.2–1.3 pass, suite green
+      Layer A extraction rules) inside the new test file, with self-tests only on constructed text:
+      a wrapped code span is one span; `(--reconcile | --no-reconcile)` yields two invocations; a
+      top-level `A | B | C` form yields three; `<how they inform each other>` is one placeholder; a
+      fenced `# comment` and a bare `…` are dropped; a `text` fence and prose beginning with a verb name
+      are not extracted; each real source class yields at least one invocation; suite green (verify:
+      `node --test scripts/test/*.test.mjs` exit 0, output saved to a file and read from the file)
+- [ ] 1.2 RED: `checkCommandLine()` returns a `class` on each refusal kind (`unknown-flag`,
+      `extra-positional`, `id-as-flag`, `value-on-valueless-flag`, `help-in-value-position`), asserted
+      once per kind in `verb-surface.test.mjs`
+- [ ] 1.3 RED: Layer A over shipped docs — fails naming `/pm:integrity` (`commands/upgrade.md`),
+      `node scripts/conductor.mjs` (`commands/cross-spec-review.md`), and each unmarked refused example
+      in design Decision 1's table
+- [ ] 1.4 RED: marker rules on constructed docs in a temp dir — a `pm:refused <class>` marker on an
+      accepted invocation fails; one whose class differs from the engine's fails; a marker not directly
+      after a code span fails as unattached; a marked span followed on the same line by an unmarked
+      refused span fails on the second
+- [ ] 1.5 RED: Layer A over the rules block for every platform × the tracker matrix, `init` stderr and
+      the commit-nudge message — passes today except where section 3 changes the text; saved as the
+      baseline, not a failure (brief, `integrity`, `unconsidered-outcomes` and archive-gate refusals
+      join Layer A in 2.9, once their fixtures exist)
+- [ ] 1.6 GREEN: the `class` field in `argv-surface.mjs`; the 19 `pm:refused <class>` markers, the
+      `pm:engine-message` marker at `README.md:1327` and the `pm:checkout-path` marker at
+      `skills/conductor/SKILL.md:70`, each directly after its span; `commands/upgrade.md:226` and
+      `commands/cross-spec-review.md:85` in installed-engine form; the test's refusal list saved as
+      `sweep-layer-a.txt` and any difference from design's table stated in the commit; 1.2–1.5 pass,
+      suite green
 
-## 2. Layer B and remedies that run (emitted-instructions R2; epic-disposition MODIFIED)
+## 2. Layer B and remedies that clear their condition (emitted-instructions R2; epic-disposition MODIFIED)
 
-Pairs: 2.1–2.6 land with 2.7.
+Pairs: 2.1–2.8 land with 2.9.
 
-- [ ] 2.1 RED: Layer B harness — fixture builders keyed by `integrity.mjs`'s exported `CHECKS` ids and
-      by `deliveredObligations()` kinds; a key with no builder fails naming it; every extracted
-      remedy in a builder's output is filled and RUN in that fixture repo (hermetic git, real
-      commits) and must exit 0
-- [ ] 2.2 RED: archive refused for a missing Gate 2 and for a withdrawn Gate 2 — the printed remedy,
-      filled with the fixture's real range, exits 0 (today: exit 1, no range flags)
-- [ ] 2.3 RED: `delivered-release-epic-left-open` on an openspec member with no Gate 2 — every command
-      the finding offers, run in the order given, exits 0 and does not offer a bare
-      `--outcome delivered` first (`repro.txt` §D1-D2)
+- [ ] 2.1 RED: Layer B harness over three EXPORTED registries — `CHECKS` (integrity),
+      `DELIVERED_OBLIGATIONS` (archive-gate) and `BRIEF_REMEDIES` (briefing) — plus the
+      `unconsidered-outcomes` and regression-refusal printers; a registry id with no builder fails
+      naming it; the declared-`unconstructable` count is asserted equal to 0. Each builder follows
+      design Decision 1's five-step protocol: reproduce and observe → extract → fill BY MEANING → run
+      in order, each exit 0 → re-run the producer and assert the condition is gone. Each alternative
+      runs in its own fresh fixture. (Fails today: the two registries are not exported.)
+- [ ] 2.2 RED: stale Gate 2 (a commit attributed after the reviewed head) — the archive refusal's
+      remedy filled with base = parent of the first attributed commit and head = the last attributed
+      commit exits 0 and the same archive then succeeds; missing and withdrawn Gate 2 likewise
+- [ ] 2.3 RED: `delivered-release-epic-left-open` on an openspec member with no Gate 2 — alternative 1
+      (archive) in one fixture: Gate 2 precondition named first, each command exits 0, `integrity` no
+      longer reports the member; alternative 2 (`release --defer`) in a second fresh fixture, same
+      assertion (`repro.txt` §D1-D2)
 - [ ] 2.4 RED: `unconsidered-outcomes` on an engine-stamped openspec-lane epic with no Gate 2 — the
-      invocation's choices exclude `delivered`, `deliveredBlockedBy` names `gate2` with its remedy, and
-      the invocation run with each offered outcome and a reason exits 0 (gh-189; `repro.txt` §D3)
-- [ ] 2.5 RED: `epic-in-undefined-status` on an openspec-lane epic with no Gate 2 — the printed
-      archive invocation excludes `delivered`
-- [ ] 2.6 REGRESSION GUARD: a `claude-code`-lane unconsidered entry still offers `delivered`,
-      `deliveredBlockedBy` is `[]`, and running it with `delivered` exits 0; update-epic's regression
-      refusal still prints its echoed tokens and `--correct-disposition`
-- [ ] 2.7 GREEN: `gate2Remedy(id)` and its seven callers; `dispositionInvocation(epic, opts)` and
-      `blockedDelivered(epic)` and their three callers; `deliveredBlockedBy` in `unconsidered.mjs`; the
-      delivered-release finding consults `deliveredObligations`; `closedItemStep()`'s Gate 2 sentence
-      (design Decision 2); 2.1–2.6 pass, suite green
+      invocation's choices exclude `delivered`, `deliveredBlockedBy` names `gate2-missing` with its
+      remedy; one fresh fixture per offered outcome, each exits 0 and the epic leaves the set (gh-189;
+      `repro.txt` §D3)
+- [ ] 2.5 RED: `epic-in-undefined-status` on an openspec-lane epic with no Gate 2 — the printed archive
+      invocation excludes `delivered`; each alternative clears the finding in its own fixture
+- [ ] 2.6 RED: regression refusal — `--attribute-commit` of a later commit on an archived `delivered`
+      openspec-lane epic is refused; the refusal names the Gate 2 re-record first and its invocation
+      still offers `delivered`; following both with the range filled by meaning exits 0 and the
+      original `--attribute-commit` then succeeds
+- [ ] 2.7 RED: `recorded-sha-the-repository-cannot-resolve` (orphan-branch commit recorded, branch
+      deleted, `git reflog expire --expire=now --all`, `git gc --prune=now`) and the malformed-value arm
+      on a Gate 1 range — the Gate 1 remedy carries `--artifact`, not a range, and clears the finding
+- [ ] 2.8 REGRESSION GUARD: a `claude-code`-lane unconsidered entry still offers `delivered` with
+      `deliveredBlockedBy: []` and clears when run with `delivered`; the regression refusal still
+      prints its echoed tokens, `--correct-disposition` and exactly one line beginning `  update-epic `
+- [ ] 2.9 GREEN: `DELIVERED_OBLIGATIONS` and `BRIEF_REMEDIES` exported and consumed by
+      `deliveredObligations()` and `buildBrief()`; `gateRemedy(id, gate)` at every Gate-remedy site
+      (design Decision 2, incl. the `+`-split forms at `archive-gate.mjs:426,430-431` and the
+      gate-aware `integrity.mjs:750-752`); `dispositionInvocation(epic, {keepDelivered})` and
+      `blockedDelivered(epic)`; `deliveredBlockedBy`; the delivered-release and regression-refusal
+      remedy lines; `closedItemStep()`'s Gate 2 sentence; Layer A extended to the outputs these
+      fixtures produce; 2.1–2.8 pass, suite green
 
 ## 3. Tracker recipes (tracker-sync MODIFIED "Every command pm emits must run as written"; ADDED secondary watermark)
 
-Pairs: 3.1–3.8 land with 3.9.
+Pairs: 3.1–3.9 land with 3.10.
 
 - [ ] 3.1 RED: Layer C — for every inward section the matrix emits (primary github-issues/jira ×
       inward/both; github-issues and jira secondaries), the registration line filled from a synthetic
-      item of that system's key shape exits 0; `<issue-updated-at>` is filled only when that section's
-      listing step names an updated field (today the github-issues secondary cannot be filled)
+      item of that system's key shape, following the section's quoting instruction, run through
+      `sh -c`, exits 0; `<issue-updated-at>` is filled only when that section's listing step names an
+      updated field (today the github-issues secondary cannot be filled)
 - [ ] 3.2 RED: jira keys `ABC-123` and `ABC-124` register as two distinct epics; the same key twice is
       refused as a duplicate (`repro.txt` §B3)
-- [ ] 3.3 RED: every github-issues listing step names `--limit`, and the procedure carries the
+- [ ] 3.3 RED: an item titled ``it's "done" $(touch pwned) `id` `` — the title reads back byte-identical,
+      no `pwned` file exists, and every inward section carries the quoting sentence above its
+      registration line
+- [ ] 3.4 RED: every github-issues listing step names `--limit`, and the procedure carries the
       truncation stop before its closed-item step
-- [ ] 3.4 RED: every secondary section carries the watermark step before its closed-item step
-- [ ] 3.5 RED: no emitted section names `/pm:epic list`
-- [ ] 3.6 RED: the completion-sync reminder's "steps above" reference resolves — for an inward-only
+- [ ] 3.5 RED: no emitted section names `/pm:epic list` — asserted against the rendered rules block,
+      because Layer A's `/pm:<name>` check reads only `epic`, which exists
+- [ ] 3.6 RED: every secondary section carries the watermark step before its closed-item step
+- [ ] 3.7 RED: the completion-sync reminder's "steps above" reference resolves — for an inward-only
       github-issues primary with no secondary the block names no absent writeback step (replaces the
       heading-only assertion; `repro.txt` §B4-B6)
-- [ ] 3.7 RED: the outward section's record-the-key line carries `--external-updated-at`
-- [ ] 3.8 REGRESSION GUARD: the github-issues primary's existing recipe test in `conductor-14` and the
+- [ ] 3.8 RED: the outward section's record-the-key line carries `--external-updated-at`, and an epic
+      recorded by that line, filled, is not counted never-re-read by the brief
+- [ ] 3.9 REGRESSION GUARD: the github-issues primary's existing recipe test in `conductor-14` and the
       0.26.0 rules fixtures (`scripts/test/fixtures/rules-0.26.0-*.txt`) — update the fixtures only
       where this change's text changes, and say which lines in the commit
-- [ ] 3.9 GREEN: `inwardListStep()` and `watermarkStep()` shared by primary and secondary; the
-      `<issue-key-slug>`/`<issue-key>` placeholders for non-github systems; the reminder clause; the
-      dedup wording; the outward line (design Decision 3); 3.1–3.8 pass, suite green
+- [ ] 3.10 GREEN: `inwardListStep()` and `watermarkStep()` shared by primary and secondary; the quoting
+      sentence and unquoted item placeholders; the `<issue-key-slug>`/`<issue-key>` placeholders for
+      non-github systems; the reminder clause; the dedup wording; the outward line (design Decision 3);
+      3.1–3.9 pass, suite green
 
 ## 4. `set-tracker`: repository shape and vendor switch (tracker-sync MODIFIED "Primary tracker configuration"; ADDED repo shape)
 
-Pairs: 4.1–4.4 land with 4.5.
+Pairs: 4.1–4.4 land with 4.7.
 
 - [ ] 4.1 RED: `set-tracker --system github-issues --repo 'a/b; touch pwned'` exits non-zero naming the
       shape, for `--role primary` and `--role secondary`; `state.json` byte-identical
-- [ ] 4.2 RED: a hand-written legacy state carrying that repo loads for every read verb, and the rules
-      block contains no shell line with the value (fixture passes the strict reader's shape rules)
+- [ ] 4.2 RED: a hand-written legacy state carrying that repo on the primary loads for every read verb,
+      and the rules block contains no shell line with the value (fixture passes the strict reader)
 - [ ] 4.3 RED: a github-issues primary `repo: "o/n"` switched with `--system jira --project ABC` records
       no `repo`, the output names `repo` as dropped, and the jira section and id name `ABC`
-- [ ] 4.4 REGRESSION GUARD: `set-tracker --system jira --direction both` on a jira primary keeps
+- [ ] 4.4 RED: a legacy github-issues primary with NO recorded direction switched with `--system jira
+      --project ABC` records `direction: "inward"`, prints that it was kept from the previous tracker,
+      and the rules block has no outward section (`repro.txt` §B9); a legacy jira primary with no
+      direction switched to `linear` records `outward`; an explicit `--direction both` on the switch
+      records `both`
+- [ ] 4.5 REGRESSION GUARD: `set-tracker --role secondary --system github-issues --repo 'a/b; touch
+      pwned' --remove` on a legacy entry exits 0 and removes it (passes today; must survive 4.7)
+- [ ] 4.6 REGRESSION GUARD: `set-tracker --system jira --direction both` on a jira primary keeps
       `projectKey`; `set-tracker --intent paused:todo` still merges
-- [ ] 4.5 GREEN: `isGithubRepo()` in `constants.mjs`, required by `usesGhIssueList()` and by
-      `set-tracker` for both roles; the vendor-switch drop with its message (design Decision 4);
-      4.1–4.4 pass, suite green
+- [ ] 4.7 GREEN: `isGithubRepo()` in `constants.mjs`, required by `usesGhIssueList()` and by
+      `set-tracker` for both roles except `--remove`; the vendor-switch scope drop and direction record
+      with their messages (design Decision 4); 4.1–4.6 pass, suite green
 
 ## 5. Brief tracker lines (tracker-sync MODIFIED freshness; ADDED mirror line)
 
@@ -123,11 +166,11 @@ Pairs: 5.1–5.2 land with 5.4.
 - [ ] 5.1 RED: outward jira primary + github-issues secondary, the only active epic linked to a GitHub
       item — the brief does not say every active epic is mirrored to jira (`repro.txt` §B7)
 - [ ] 5.2 RED: an outward-primary-linked epic counted never-re-read in a repo whose only inward
-      procedure is a secondary's — running the remedy the line names for it (filled) removes it from
-      the count
+      procedure is a secondary's — the remedy the line names, filled, removes it from the count
+      (`repro.txt` §B8); runs as a `BRIEF_REMEDIES` Layer B builder
 - [ ] 5.3 REGRESSION GUARD: with no secondary tracker the mirror line's text is unchanged; the
       direction-gated emission conditions in `tracker-sync` still hold
-- [ ] 5.4 GREEN: the two lines at `briefing.mjs:271-310` (design Decision 5); 5.1–5.3 pass, suite green
+- [ ] 5.4 GREEN: the two lines as `BRIEF_REMEDIES` entries (design Decision 5); 5.1–5.3 pass, suite green
 
 ## 6. No hand-edit instructions (conductor-record ADDED)
 
@@ -137,28 +180,27 @@ Starts after change 1 has merged (task 0.3). Pairs: 6.1–6.3 land with 6.4.
       .conductor/state.json" (`repro.txt` §A1)
 - [ ] 6.2 RED: the non-detour, not-auto-logged commit-nudge message names `update-epic` and not
       `.conductor/state.json`
-- [ ] 6.3 RED: the hand-edit scanner (design Decision 7) over shipped docs — fails on
-      `skills/conductor/SKILL.md:734,738` and `commands/init.md:60-63`; a sentence carrying a negation
-      or `<!-- pm:explains-hand-edit -->` passes (constructed fixture for both)
+- [ ] 6.3 RED: the hand-edit scanner exactly as design Decision 7 defines it (units, sentences,
+      imperative position, negations, rules a and b) over shipped docs reports exactly
+      `commands/init.md:61`, `skills/conductor/SKILL.md:734` and `:738`; constructed fixtures show a
+      negated sentence, a wrapped negation on the previous line, a bare field name outside a
+      `state.json` lead-in, and a `pm:explains-hand-edit` sentence each NOT reported
 - [ ] 6.4 GREEN: `init()` stderr; the one sentence of `runNudge`'s message; `SKILL.md:734,738`;
       `commands/init.md` step 2 naming `set-active`/`update-epic --priority`/`update-epic --status`;
-      markers only where the scanner's hit explains a hand-edit rather than directing one; 6.1–6.3
-      pass, suite green
+      6.1–6.3 pass, suite green
 
-## 7. Gate forms and one state writer (emitted-instructions R3, R4)
+## 7. Gate forms in shipped docs (emitted-instructions R3)
 
-Pairs: 7.1–7.2 land with 7.3.
+Pairs: 7.1 lands with 7.2. The single-writer rule for hierarchy runs is NOT here — it moved to
+`hierarchy-run-has-one-state-writer`.
 
 - [ ] 7.1 RED: every passing `record-gate-review` form in shipped docs — Gate 1 forms carry
       `--artifact`, Gate 2 forms carry both range flags, no `--gate 1|2` pass form (fails on
-      `agents/hierarchy-child-executor.md:33`, `SKILL.md:117-119,322,1216`, `commands/review-mode.md:72`)
-- [ ] 7.2 RED: `agents/hierarchy-child-executor.md` extracts no invocation of a verb whose
-      `VERB_EFFECTS` entry is `effect: "mutates"`; the conductor skill's batch-processing step names
-      `record-gate-review` and the archive disposition for the orchestrator
-- [ ] 7.3 GREEN: `commands/epic.md:731-741`'s two-gate form at every 7.1 site; the child doc reports
-      gate verdicts with evidence inside `DONE` (wire fields and order unchanged) and drops its
-      pm-repo-only README/test paragraph; `SKILL.md`'s orchestrator step records them after the merge
-      (design Decision 6); 7.1–7.2 pass, suite green
+      `agents/hierarchy-child-executor.md:33`, `SKILL.md:117-119,322,1216`, `commands/review-mode.md:72`);
+      the child doc's forms, filled, exit 0 in a fixture
+- [ ] 7.2 GREEN: `commands/epic.md:731-741`'s two-gate form at every 7.1 site, with the child doc's WHO
+      unchanged; the child doc's pm-repo-only README/test paragraph and `SKILL.md:994` replaced (design
+      Decision 6); 7.1 passes, suite green
 
 ## 8. Cost of the sweep
 
@@ -169,8 +211,17 @@ Pairs: 7.1–7.2 land with 7.3.
 ## 9. Required task items
 
 - [ ] 9.1 **Call-site completeness sweep** — derived with `rg` at sweep time, never from this list:
-      - every printer of a Gate 2 remedy (`rg -n "gate 2 --verdict pass" scripts/lib`) — each through
-        `gate2Remedy` or justified;
+      - every printer of a gate-verdict remedy, derived MULTI-LINE because remedy strings are split
+        across `+`: `rg -n -U -e "--gate 2[^;]*?--verdict" -e "--gate <n>" -e "record-gate-review \$\{"
+        scripts/lib` — each through `gateRemedy(id, gate)` or justified, and each gate-agnostic site
+        stated as gate-aware;
+      - every writer and reader of the new exports `DELIVERED_OBLIGATIONS` and `BRIEF_REMEDIES`
+        (`rg -n "DELIVERED_OBLIGATIONS|BRIEF_REMEDIES|deliveredObligations\(" scripts`), and every brief
+        line printing an engine verb that is NOT a `BRIEF_REMEDIES` entry, justified;
+      - every item-sourced placeholder in emitted text (`rg -n "<issue-(title|url|key)>" scripts/lib`),
+        each covered by the quoting sentence;
+      - every reader of a tracker's `direction` (`rg -n "directionOf|\.direction\b" scripts/lib`), each
+        stated as unaffected by the vendor-switch record;
       - every caller of `dispositionInvocation`, `deliveredObligations`, `unconsideredOutcomes`
         (`rg -n "dispositionInvocation|deliveredObligations|unconsideredOutcomes" scripts/lib`), and every
         other site printing `--outcome` choices (`rg -n "AGENT_OUTCOMES" scripts/lib`, incl.
@@ -188,8 +239,10 @@ Pairs: 7.1–7.2 land with 7.3.
       and read by the brief and the refresh gate.
       A site where a rule does not hold is a FINDING unless justified in the commit.
 - [ ] 9.2 **Inverse of every operation added or modified** — the vendor-switch drop (inverse:
-      re-supplying the field; no restore verb, and say why: the dropped value is printed); the repo
-      refusal (inverse: none needed — nothing is written); omitting `delivered` (inverse: recording Gate
+      re-supplying the field; no restore verb, and say why: the dropped value is printed); the
+      vendor-switch direction record (inverse: `set-tracker --direction <d>`); the repo
+      refusal (inverse: none needed — nothing is written; `--remove` stays exempt so a legacy entry is
+      never stranded); omitting `delivered` (inverse: recording Gate
       2 re-offers it on the next call); primary `set-tracker --remove` — ALREADY missing before this
       change, reproduced, and carried to `code-review-0-43-0-minors` rather than shipped here. Each
       unshipped inverse named and justified in the commit message
@@ -217,16 +270,17 @@ Pairs: 7.1–7.2 land with 7.3.
 
 - [ ] 10.1 `commands/tracker.md` — "ongoing responsibilities" split by direction; the worked listing
       step with `--limit`, `updatedAt` and the truncation stop; the secondary watermark step; the
-      non-github key placeholder; the `--repo` shape and the vendor-switch drop
+      non-github key placeholder; the quoting rule for item values; the `--repo` shape (and its
+      `--remove` exemption); the vendor-switch scope drop and direction record
 - [ ] 10.2 `commands/unconsidered-outcomes.md` — `deliveredBlockedBy`, and that an openspec-lane epic
       never reviewed at Gate 2 is not offered `delivered`
 - [ ] 10.3 `commands/review-mode.md:99` — an override clears with `update-epic <id> --clear review-mode`
 - [ ] 10.4 `skills/conductor/SKILL.md` — tracker section (limit, watermark on secondaries, key
-      placeholder), the hierarchy single-writer narrative, the brief's two tracker lines
-- [ ] 10.5 `README.md` where tracker sync, `unconsidered-outcomes`, gate recording or hierarchy runs are
-      described
+      placeholder, quoting item values, direction kept on a vendor switch), the brief's two tracker
+      lines, `deliveredBlockedBy`
+- [ ] 10.5 `README.md` where tracker sync, `unconsidered-outcomes` or gate recording are described
 - [ ] 10.6 `CHANGELOG.md` `[Unreleased]` — Fixed (remedies that were refused; secondary recipe, jira ids,
-      30-item cap, unquoted repo, stale scope on vendor switch; docs teaching refused gate forms and
+      30-item cap, unquoted repo and item titles, stale scope and silent outward switch on vendor change; docs teaching refused gate forms and
       hand-edits) and Added (`deliveredBlockedBy`; the emitted-invocation sweep)
 - [ ] 10.7 Full suite green, written to a file and read from the file
 

@@ -29,8 +29,14 @@ the remedy that meets it. gh-189 measured the cost: of 20 epics reported, all 12
 entries were refused when `delivered` was substituted, and nothing in the output said they would be.
 Where the blocking obligation is a Gate 2 that the epic predates, the entry states that recording
 `delivered` requires a real Gate 2 review of that work — the finding is about process, not a
-bookkeeping obstacle. Every other shared rendering of the disposition invocation — an `integrity`
-remedy, update-epic's refusal of a regressing edit — SHALL apply the same rule.
+bookkeeping obstacle. The `integrity` remedy for an epic in an undefined status SHALL apply the
+same rule.
+
+**One rendering is excepted: update-epic's refusal of an edit that would break an archived
+`delivered` record.** That epic's outcome is already `delivered` and was considered; the refusal
+exists so the edit can be made without losing it. Its remedy SHALL keep `delivered` and SHALL name
+first the re-record that restores the broken obligation (for a Gate 2, the verdict over the range
+that now covers the attributed commits), then the disposition invocation.
 
 #### Scenario: The unconsidered set is enumerable with its remedy
 - **WHEN** an agent asks the engine which archived epics carry no considered outcome
@@ -58,6 +64,12 @@ remedy, update-epic's refusal of a regressing edit — SHALL apply the same rule
 - **WHEN** the unconsidered set holds a `claude-code`-lane epic
 - **THEN** its invocation offers `delivered` and names no blocking obligation, and running it with
   `delivered` exits zero
+
+#### Scenario: The archived-delivered regression refusal keeps delivered
+- **WHEN** an `--attribute-commit` on an archived `delivered` openspec-lane epic is refused because
+  its passing Gate 2 would no longer reach the attributed commits
+- **THEN** the refusal names the Gate 2 re-record first, its printed invocation still offers
+  `delivered`, and following both in order with the range filled by meaning exits zero
 
 #### Scenario: The integrity remedy for an undefined status follows the same rule
 - **WHEN** `integrity` reports an openspec-lane epic with no passing Gate 2 sitting in an undefined

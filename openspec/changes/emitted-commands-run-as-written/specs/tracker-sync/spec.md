@@ -23,6 +23,10 @@ system — and not only the github-issues primary the suite used to execute. In 
   keys that are not bare numbers (`ABC-123`), and distinct keys SHALL derive distinct ids.
 - A recorded tracker value SHALL NOT be interpolated into an emitted shell command unless it has a
   shape that cannot alter that command.
+- A placeholder the agent fills from the external ITEM (its title, its url) is third-party text. The
+  procedure SHALL instruct the agent to shell-quote every such value when filling it, and SHALL say
+  how, so that a title carrying `"`, `$(…)`, a backtick or an apostrophe is stored exactly and
+  executes nothing.
 - The procedure SHALL name only commands that exist.
 
 #### Scenario: The emitted registration recipe executes verbatim
@@ -54,9 +58,18 @@ system — and not only the github-issues primary the suite used to execute. In 
 - **WHEN** the recorded github-issues repository is not an `owner/name` pair
 - **THEN** no emitted shell command contains that value
 
+#### Scenario: A hostile or ordinary item title is stored exactly
+- **WHEN** the registration line of any emitted inward section is filled, following the section's
+  own quoting instruction, from an item titled ``it's "done" $(touch pwned) `id` `` and run through a
+  shell
+- **THEN** it exits zero, the epic's title reads back byte-identical to the item title, and no
+  `pwned` file exists (today the recipe wraps the title in double quotes and gives no instruction)
+
 #### Scenario: The dedup step names no absent command
 - **WHEN** any inward section is emitted
-- **THEN** it names no `/pm:` command form that pm does not ship (today it names `/pm:epic list`)
+- **THEN** it names no `/pm:` command form that pm does not ship (today it names `/pm:epic list`) —
+  asserted against the rules block directly, because a shipped-command existence check reads only
+  the name `epic`, which exists
 
 ### Requirement: Primary tracker configuration
 `set-tracker` with `--role primary` (the default when `--role` is omitted) SHALL write/merge
@@ -74,6 +87,13 @@ system different from the one recorded, the recorded scope fields (`repo`, `proj
 name each field it dropped. A scope belongs to the tracker it was recorded for; carried across a
 vendor switch it becomes the new tracker's scope, and every emitted heading, listing step and
 derived id then names the old tracker.
+
+**A change of system SHALL NOT change the direction the repo resolves to unless the command says
+so.** A primary with no recorded `direction` resolves by system (`github-issues` inward, any other
+outward), so switching the system alone would silently turn outward creation on or off. When the
+command changes the system and supplies no `--direction`, it SHALL record the direction the tracker
+resolved to BEFORE the switch, and its output SHALL name the direction recorded and why. An
+explicitly recorded direction is kept unchanged.
 
 #### Scenario: Setting a tracker without --role
 - **WHEN** the agent runs `set-tracker --system jira --instance onvex --project JOB --mechanism
@@ -105,6 +125,13 @@ derived id then names the old tracker.
   --system jira --project ABC`
 - **THEN** `state.tracker` carries no `repo`, the output names `repo` as dropped, and the emitted
   inward section and derived id name `ABC` (today they name `o/n`)
+
+#### Scenario: Switching vendor does not turn on outward creation
+- **WHEN** a github-issues primary with no recorded direction is changed with `set-tracker --system
+  jira --project ABC`
+- **THEN** `state.tracker.direction` is `inward`, the output names it as kept from the prior tracker,
+  and the rules block carries no outward "External tracker sync" section (today the switch resolves
+  `outward` and emits it)
 
 #### Scenario: Re-stating the same system keeps its scope
 - **WHEN** `set-tracker --system jira --direction both` runs against a jira primary with
@@ -159,6 +186,12 @@ touches that epic.
 - **THEN** it contains no claim about how many external items have changed since they were last
   read
 
+#### Scenario: An outward-recorded key starts with a watermark
+- **WHEN** the rules block is emitted for a primary whose direction includes `outward`
+- **THEN** its line for recording a newly created issue's key carries `--external-updated-at` with the
+  created issue's own timestamp, and an epic recorded that way is not counted never-re-read (today
+  the line carries no watermark)
+
 #### Scenario: The named remedy clears an outward-linked epic
 - **WHEN** the brief counts an epic linked through an outward-only primary in a repo whose only
   inward procedure is a secondary's, and the agent follows the remedy the line names for it
@@ -182,6 +215,8 @@ watermark from the listing alone.
 ### Requirement: A github-issues repository is recorded as an owner/name pair
 `set-tracker` SHALL refuse, for either role, a `--repo` on a `github-issues` tracker that is not an
 `owner/name` pair of characters GitHub permits in those names, exiting non-zero and writing nothing.
+`--remove` is exempt: it matches the recorded value exactly and writes nothing new, so a legacy
+malformed entry stays removable.
 A value recorded before this rule that does not have that shape SHALL NOT fail any read; emitters
 treat it as absent for the purpose of building a shell command.
 
@@ -189,6 +224,11 @@ treat it as absent for the purpose of building a shell command.
 - **WHEN** the agent runs `set-tracker --system github-issues --repo 'a/b; touch pwned'`
 - **THEN** it exits non-zero naming the expected shape, and `state.json` is byte-identical (today it
   is accepted)
+
+#### Scenario: A legacy malformed secondary is removable
+- **WHEN** a state file carries a github-issues secondary whose `repo` is `a/b; touch pwned`, and the
+  agent runs `set-tracker --role secondary --system github-issues --repo 'a/b; touch pwned' --remove`
+- **THEN** it exits zero and the entry is gone
 
 #### Scenario: A legacy malformed repository still loads
 - **WHEN** a state file recorded before this rule carries such a repository
