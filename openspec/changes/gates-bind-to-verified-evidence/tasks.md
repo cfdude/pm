@@ -229,12 +229,12 @@ Pairs: 9.1–9.3b land with 9.4.
 
 Pairs: 10.1–10.3 land with 10.4.
 
-- [ ] 10.1 RED: `--amendments none` (and `None`) records `[]`
-- [ ] 10.2 RED: `--amendment "rename x; keep y" --amendment "drop z"` records exactly those two
-- [ ] 10.3 RED: `--amendment a --amendments b` exits non-zero, byte-identical, and its message does
+- [x] 10.1 RED: `--amendments none` (and `None`) records `[]`
+- [x] 10.2 RED: `--amendment "rename x; keep y" --amendment "drop z"` records exactly those two
+- [x] 10.3 RED: `--amendment a --amendments b` exits non-zero, byte-identical, and its message does
       NOT contain `unknown flag` and does state that the two flags cannot be combined (change 1's
       unknown-flag refusal already names `--amendments`, so naming the flags alone would pass vacuously)
-- [ ] 10.4 GREEN: register `--amendment` (`repeats: true`) for `record-reconcile` in `VERB_FLAGS`
+- [x] 10.4 GREEN: register `--amendment` (`repeats: true`) for `record-reconcile` in `VERB_FLAGS`
       (`constants.mjs`) and read it in `reconciler-writeback.mjs`; the parity ledger and the flag
       registry tests pass; suite green
 

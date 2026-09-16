@@ -379,3 +379,26 @@ test("9.3b on an owing epic the repair instructions name record-reconcile first,
     `the write-time repair message names record-reconcile first: ${w.stderr}`);
   refused(cwd, ["update-epic", "p", "--clear-links", "--link", "may-invalidate:d:kept"]);
 });
+
+// ═══════════════ Amendments ═══════════════
+
+test("10.1 --amendments none (any case) records no amendments", () => {
+  for (const spelling of ["none", "None"]) {
+    const cwd = owingRepo();
+    accepted(cwd, verdict(cwd, "d", "valid", ["--amendments", spelling]));
+    assert.deepEqual(linkOf(cwd, "p", "d").reconciled.amendments, []);
+  }
+});
+
+test("10.2 a repeated --amendment keeps each amendment whole, in order", () => {
+  const cwd = owingRepo();
+  accepted(cwd, verdict(cwd, "d", "valid", ["--amendment", "rename x; keep y", "--amendment", "drop z"]));
+  assert.deepEqual(linkOf(cwd, "p", "d").reconciled.amendments, ["rename x; keep y", "drop z"]);
+});
+
+test("10.3 --amendment and --amendments together are refused as a combination, not as an unknown flag", () => {
+  const cwd = owingRepo();
+  const r = refused(cwd, verdict(cwd, "d", "valid", ["--amendment", "a", "--amendments", "b"]));
+  assert.doesNotMatch(r.stderr, /unknown flag/);
+  assert.match(r.stderr, /cannot be combined/);
+});

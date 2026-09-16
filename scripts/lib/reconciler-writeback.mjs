@@ -21,7 +21,15 @@ export function recordReconcile() {
   if (!id || !detourId || !verdict) {
     process.stderr.write(
       "usage: conductor.mjs record-reconcile <epicId> --detour <detourId> " +
-      "--verdict valid|invalidated [--amendments \"<a>;<b>\"]\n");
+      "--verdict valid|invalidated [--amendments \"<a>;<b>\" | --amendment \"<a>\" ...]\n");
+    process.exit(1);
+  }
+  // Both amendment spellings in one call would make the record depend on which one this code reads
+  // first. Refused before anything is read, naming the combination (not an unknown flag).
+  if (f.amendment !== undefined && f.amendments !== undefined) {
+    process.stderr.write(
+      "conductor: --amendment and --amendments cannot be combined — give each amendment as its own " +
+      "--amendment, or all of them as one `;`-separated --amendments. Nothing was written.\n");
     process.exit(1);
   }
   if (!KNOWN_RECONCILE_VERDICTS.includes(verdict)) {
@@ -71,9 +79,16 @@ export function recordReconcile() {
       "the verdict against it");
   }
 
-  const amendments = typeof f.amendments === "string"
-    ? f.amendments.split(";").map(s => s.trim()).filter(Boolean)
-    : [];
+  // `--amendments none` (any case) is the reconciler's EMPTY form (`AMENDMENTS: none`), and records
+  // none — it used to be stored as the amendment `["none"]`. Otherwise split on `;` as documented.
+  // `--amendment` repeats and each occurrence is ONE amendment, verbatim.
+  const amendments = f.amendment !== undefined
+    ? [].concat(f.amendment).filter(v => typeof v === "string" && v.trim() !== "")
+    : typeof f.amendments === "string"
+      ? (f.amendments.trim().toLowerCase() === "none"
+        ? []
+        : f.amendments.split(";").map(s => s.trim()).filter(Boolean))
+      : [];
 
   // RE-RECORDING IS A CORRECTION, never an overwrite: a verdict already on the link moves to
   // `superseded` (one level deep, as a gate verdict's does) before the new one is written.

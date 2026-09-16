@@ -774,6 +774,10 @@ export const VERB_FLAGS = [
   // shape, is the real fix; neither is worth doing blind at the moment this was found.
   { flag: "verdict", commands: ["record-reconcile", "record-tracker-refresh"] },
   { flag: "amendments", commands: ["record-reconcile"] },
+  // gates-bind-to-verified-evidence Decision 6: ONE amendment per occurrence, kept verbatim, so an
+  // amendment whose own text carries a `;` is not split into several. Beside `--amendments` (the
+  // reconciler's `;`-joined wire form), never instead of it; the two together are refused.
+  { flag: "amendment", commands: ["record-reconcile"], repeats: true },
   { flag: "summary", commands: ["record-tracker-refresh"] },
   { flag: "external-updated-at", commands: ["record-tracker-refresh"] },
   { flag: "since", commands: ["changelog"] },
