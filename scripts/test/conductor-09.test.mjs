@@ -71,8 +71,12 @@ test("record-reconcile on an unknown detour id exits non-zero and writes nothing
   const cwd = tmpRepo(); run(["init"], { cwd });
   run(["add-epic", "--id", "paused-epic", "--lane", "claude-code"], { cwd });
   const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
-  assert.ok(expectFail(() => run(
-    ["record-reconcile", "paused-epic", "--detour", "ghost-detour", "--verdict", "valid"], { cwd })));
+  const err = expectFail(() => run(
+    ["record-reconcile", "paused-epic", "--detour", "ghost-detour", "--verdict", "valid"], { cwd }));
+  assert.ok(err);
+  // Named as a missing epic, not diagnosed as an unarmed detour (gates-bind-to-verified-evidence
+  // kept this refusal; without the assertion the arming refusal made the test pass vacuously).
+  assert.match(String(err.stderr || err.message), /detour epic 'ghost-detour' not found/);
   assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
 });
 
