@@ -22,9 +22,12 @@ on failure, and the hook's output SHALL name the event it is answering exactly a
 it. The hook SHALL report every live commit that landed since the last observation, oldest first,
 whatever else happened to HEAD afterwards. A commit that landed but is not live SHALL be named as
 rewritten or abandoned, and SHALL get no detour-trail row and no `--attribute-commit`. A commit SHALL
-be reported at most once per checkout, however many observations read it. Where the recorded
-reflog position cannot be found again — the reflog shrank, or the entry at the recorded position
-differs — nothing is reported as landed from the reflog on that observation.
+be reported at most once per checkout, however many observations read it, including observations
+that run concurrently; an observation that cannot report without risking a second report of the same
+commit SHALL report nothing and leave that commit for a later observation. Entries removed from the
+front of the reflog (reflog expiry, `git gc`) SHALL NOT cause a commit that landed after the recorded
+position to go unreported. Only where the recorded entry itself is no longer in the reflog is nothing
+reported as landed from the reflog on that observation.
 
 #### Scenario: A commit followed by a checkout in the same call is reported
 
@@ -36,6 +39,12 @@ differs — nothing is reported as landed from the reflog on that observation.
 - **WHEN** one Bash call makes two commits
 - **THEN** the hook reports both, the older first, and any attribution command it prints names both
   commits in that order
+
+#### Scenario: Reflog expiry between observations loses no commit
+
+- **WHEN** an observation runs, a commit lands, the oldest HEAD reflog entry is then removed (as
+  reflog expiry or `git gc` removes entries from the front), and the next observation runs
+- **THEN** that observation reports the commit
 
 #### Scenario: A commit rewritten by a rebase in the same call is not attributed
 
@@ -90,8 +99,8 @@ row, its output SHALL name `retract-detour` as the correction for a row that is 
 
 ### Requirement: An amended commit is replaced, not added
 
-When a live commit that landed is an amend, the commit it replaced (the reflog entry's previous
-value) SHALL be treated as superseded. Any commit-derived detour-trail row for the replaced commit
+For every `commit (amend)` entry that landed since the last observation, live or not, the commit it
+replaced (the reflog entry's previous value) SHALL be treated as superseded. Any commit-derived detour-trail row for the replaced commit
 SHALL be retracted by the engine, as the retraction requirement below defines, with a reason naming
 the replacing commit, before the replacing commit is classified. The hook SHALL NOT print an
 `--attribute-commit` naming the replaced commit. Where the replaced commit is in any epic's
@@ -104,6 +113,13 @@ withdraw it itself.
 - **WHEN** a commit is auto-logged to the detour trail and a later call amends it
 - **THEN** `PROJECT.md`'s detour table shows a row for the amending commit and none for the replaced
   one, and the log still holds the replaced commit's original row followed by its retraction
+
+#### Scenario: A chain of amends retracts and withdraws the original
+
+- **WHEN** commit C1 is auto-logged and attributed to epic E, and one later call amends it to C2 and
+  amends again to C3
+- **THEN** C1's row is retracted, the hook prints `--withdraw-commit` for C1 and no
+  `--attribute-commit` for C1 or C2, and `PROJECT.md` shows no row for C1 or C2
 
 #### Scenario: Amending an attributed commit names the withdrawal
 
@@ -171,8 +187,10 @@ whatever that row's abbreviation length. Retraction, amend retraction and the tr
 check SHALL all use this match.
 
 `retract-detour <sha> --reason "<why>"` SHALL be the inverse of the hook's automatic logging. It SHALL
-be accepted only where `<sha>` resolves to a commit, a commit-derived row (`AUTO-DETOUR` or
-`DETOUR-COMMIT`) matching it is not already retracted, and a non-empty reason is given. Every other
+be accepted only where a commit-derived row (`AUTO-DETOUR` or `DETOUR-COMMIT`) matching `<sha>` is not
+already retracted and a non-empty reason is given. `<sha>` matches a row when it resolves to a commit
+whose full name begins with the row's sha, or, where it resolves to no commit (a rewritten commit
+since pruned), when either of `<sha>` and the row's sha begins with the other. Every other
 invocation exits non-zero with a message naming which of those failed, and writes nothing. An accepted
 retraction SHALL append a retraction row naming the commit and the reason, SHALL NOT remove or
 rewrite any existing row, and SHALL re-render `PROJECT.md` in the same invocation so no retracted row
@@ -193,10 +211,15 @@ SHALL name this verb and SHALL NOT instruct editing or removing a line of the lo
   `retract-detour` is given each commit's full name in turn
 - **THEN** each invocation retracts the row for its commit, and neither retracts the other's
 
+#### Scenario: A row whose commit no longer exists can be retracted
+
+- **WHEN** the log holds an AUTO-DETOUR row for a commit that was rewritten and pruned, and
+  `retract-detour` is given that row's sha
+- **THEN** it exits 0 and appends a retraction for that row
+
 #### Scenario: Each refusal names its reason
 
-- **WHEN** `retract-detour` names a sha that resolves to no commit, a commit with no commit-derived
-  row, a commit whose row is already retracted, a commit with only a `MINIMAL` row, or gives no reason
+- **WHEN** `retract-detour` names a sha that matches no row, a commit with no commit-derived row, a commit whose row is already retracted, a commit with only a `MINIMAL` row, or gives no reason
 - **THEN** each exits non-zero with a message naming that specific reason, and `detours.log` and
   `PROJECT.md` are byte-identical
 

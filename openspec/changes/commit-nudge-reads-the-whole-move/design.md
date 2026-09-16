@@ -48,10 +48,16 @@ attribution hint lists candidates without deciding.
 ### 1. A reflog anchor, not a HEAD watermark
 
 After each observation the hook records an anchor: the byte size of the file named by
-`git rev-parse --git-path logs/HEAD` and that file's full last line. The next observation stats the
-file; if it is smaller than the anchor size, or the line ending at the anchor offset is not byte-equal
-to the anchored line, the observation is **unverifiable** and reports nothing from the reflog (it
-re-anchors). Otherwise it reads the bytes after the anchor offset, one reflog line each:
+`git rev-parse --git-path logs/HEAD` (a path git prints relative to the working directory — `../../.git/logs/HEAD`
+in a nested conductor — so it is resolved against the conductor root, the hook's `cwd`) and that
+file's full last line. The next observation locates the anchor BY CONTENT: the last occurrence of the
+anchored line that ends at or before the recorded size. Expiry (`git reflog expire`, `git gc`,
+`gc --auto`, a fetch's auto-gc) removes entries from the FRONT of the file, so the anchored line
+survives at a smaller offset and new entries still follow it; appends only ever land after the
+recorded size, so bounding the search by it keeps an identical later line (same old, new, second and
+message) from being mistaken for the anchor. Only when no such occurrence exists is the observation
+**unverifiable**: it reports nothing from the reflog and re-anchors. Otherwise it reads the bytes after
+that occurrence, one reflog line each:
 `<old> <new> <ident> <time> <tz>\t<message>`. Entries whose message matches `^commit\b` are candidates,
 oldest first.
 
@@ -64,28 +70,41 @@ oldest first.
 
 With no anchor recorded (first run, or a repository initialised before this release), the hook records
 one and takes today's unverifiable rung for that run, including `unverifiableSubject`'s text heuristic,
-which exists so the archived-epic self-heal runs without git. Reflogs disabled
-(`core.logAllRefUpdates=false`) leave the file absent: unverifiable, as today.
+which exists so the archived-epic self-heal runs without git. `core.logAllRefUpdates=false` does not
+stop git appending to an EXISTING `logs/HEAD` (measured: 12 lines to 13 after a commit), so observation
+works there too; only a repository with no `logs/HEAD` at all is unverifiable, as today.
 
 ### 2. A new record file: `.conductor/commit-observe.json`
 
 `{ "anchor": { "size": <n>, "line": "<last line>" }, "reported": ["<full sha>", …] }`, written by
-temp-file-and-rename. A new file, not a new key in `commit-watch.json`, because plugin versions install
+temp-file-and-rename inside the lock of Decision 3. `ensureGitignore` ignores `.conductor/commit-observe.json*`, so
+the lock and a temp file left by a killed hook are ignored too, and the file joins `CONDUCTOR_OWN_FILES`
+for the same reason `commit-watch.json` is there. A new file, not a new key in `commit-watch.json`, because plugin versions install
 side by side and a session that has not run `/reload-plugins` keeps running 0.44.0's hook and engine,
 which rewrites `commit-watch.json` as `{head}` on every Bash call and would erase any key added to it.
-The new engine never reads or writes `commit-watch.json`. `ensureGitignore` gains the new path;
-`upgrade()` already re-runs it. The old file is left in place (no engine removes it; see 8.2).
+The new engine never reads or writes `commit-watch.json`. `upgrade()` already re-runs `ensureGitignore`. The old file is left in place (no engine removes it; see 8.2).
 
-### 3. Report once: a set of reported shas
+### 3. Report once: a set of reported shas, read and written under one lock
 
-A commit is reported only if its full sha is not in `reported`; reporting adds it. The anchor alone is
-not a dedupe key: lens A showed a single "last reported position" drops a commit permanently when two
-observations overlap and the one that read less writes last. With a set, an anchor that regresses in
-that race only causes re-reading, and re-read commits are filtered. Bound: the set keeps the 500 most
-recently added shas; a sha evicted from it can only be re-reported if an anchor regresses by more than
-500 commits. Residual race: two observations that both read the set before either writes can both
-report one commit; the trail still holds one row (Decision 9's match), and the duplicate is advisory
-text.
+A commit is reported only if its full sha is not in `reported`; reporting adds it. The whole
+observation — read `{anchor, reported}`, walk the reflog, decide what to report, write the new record —
+runs while holding an exclusive lock, `.conductor/commit-observe.json.lock`, created with `O_EXCL`
+(`fs.openSync(path, "wx")`). Gate 1 round 2 simulated the unlocked form: a run holding an older anchor
+also writes an older `reported`, erasing a sha another run just added, and a third run reports it
+again. Under the lock no run reads a record another run is about to supersede, so the anchor never
+moves backwards and `reported` never loses an entry it still needs.
+
+Contention: the hook retries for at most 200 ms, then SKIPS the observation entirely — no report, no
+write, no output. The commits stay after the anchor and the next observation reports them, so a skip
+delays a report and never drops or repeats one. A lock older than 10 s is taken as left by a killed
+hook and broken (an observation is a reflog read and one small write). Not 0.44.0's state lock
+(`state.mjs` `lockPaths`): that lock waits up to `STATE_LOCK_WAIT_MS` and then refuses, and a hook
+must neither wait that long on every Bash call nor turn contention into an error. Writes to
+`state.json` later in the same run still take the state lock, as today.
+
+The single-position form is rejected (lens A: it drops a commit when overlapping runs write out of
+order). Bound: the set keeps the 500 most recently added shas; because the anchor never regresses, an
+evicted sha lies behind the anchor and is never read again.
 
 ### 4. Live commits only
 
@@ -114,13 +133,16 @@ mapping in `refusal.mjs` needs no change: exit 2 is advisory on both events.
 
 ### 7. Amend handling
 
-For a live `commit (amend)` entry, the replaced commit is that line's `<old>` field. In order:
+For EVERY `commit (amend)` entry in the window, live or dead, the replaced commit is that line's `<old>`
+field. Before any commit is classified, for each such entry in landing order:
 (a) retract every non-retracted commit-derived row matching the replaced commit, reason
 `amended into <short new sha>`; (b) for each epic whose `attributedCommits` holds the replaced full sha,
 print `update-epic <id> --withdraw-commit <replaced> --withdrawal-reason "amended into <new>"`;
-(c) classify the replacing commit normally. An amend chain within one observation (commit, amend,
-amend) reports only the final live commit; each intermediate is dead by Decision 4 and handled by (a)
-and (b). The engine never runs the withdrawal.
+then (c) classify the live commits normally. So C1 amended to C2 and again to C3 in one call retracts
+and withdraws C1, handles C2 the same way (it has no row; a withdrawal only if something attributed it),
+and reports C3; an amend followed by `reset --hard` retracts and withdraws the amended commit even
+though the amending commit is itself dead. Keying on the live amend alone, as the round-1 draft did,
+left C1's row visible and attributed. The engine never runs the withdrawal.
 
 ### 8. Changed paths and own artifacts
 
@@ -161,8 +183,10 @@ sentence is printed once.
 
 `retract-detour <sha> --reason "<why>"`. Positional table: exactly one, not free text. Flag registry:
 `--reason` on this verb, keeping `REASON_REQUIRES` semantics for `push-detour` intact. `verb-effects.mjs`:
-`mutates`, writes `.conductor/detours.log (append-only), PROJECT.md`. Refusal messages, each distinct:
-not a commit; no AUTO-DETOUR or DETOUR-COMMIT row for it (naming a MINIMAL-only row where that is the
+`mutates`, writes `.conductor/detours.log (append-only), PROJECT.md`. Row matching: a `<sha>` that resolves is matched by
+Decision 9; one that resolves to no commit (rewritten, then pruned) is matched against the stored row
+text, a row matching when either sha begins with the other. Refusal messages, each distinct:
+no matching row; no AUTO-DETOUR or DETOUR-COMMIT row for it (naming a MINIMAL-only row where that is the
 case); already retracted; reason missing or empty. In a detached tree `appendDetourLog` writes nothing
 (gh#175), so the verb exits non-zero saying no retraction was written.
 

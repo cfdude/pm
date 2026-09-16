@@ -38,7 +38,7 @@ commit message names that file. New test file: `scripts/test/commit-observation.
 
 ## 2. Every live commit since the last observation is reported
 
-Pairs: 2.1–2.4 land with 2.5; 2.6–2.7 land with 2.8.
+Pairs: 2.1–2.4a land with 2.5; 2.6–2.7 land with 2.8.
 
 - [ ] 2.1 RED: observe → commit → `checkout -b tmp` → `checkout main` → observe: the output names the
       commit (fails today: empty output, proposal defect 1)
@@ -51,16 +51,22 @@ Pairs: 2.1–2.4 land with 2.5; 2.6–2.7 land with 2.8.
       the envelope says `PostToolUse`); with `state.json` unparseable it exits 2 naming the file, and
       `state.json`, `PROJECT.md`, `detours.log` and `.conductor/commit-watch.json` are byte-identical
       (fails today: `commit-watch.json` advances)
-- [ ] 2.4 RED: overlapping observations — observation A reads the anchor and set, a commit lands,
-      observation B runs to completion, A then writes its older anchor, a third observation runs: the
-      commit is reported exactly once across the three and `detours.log` holds at most one
-      commit-derived row for it (drive A's interleaving through an exported function, not timing).
-      Also: a reflog file truncated below the anchor, and one whose line at the anchor offset differs,
-      each report nothing from the reflog and re-anchor
-- [ ] 2.5 GREEN: `commit-watch.mjs` reflog anchor, `commit-observe.json` with the reported set,
-      `hooks.json` `PostToolUseFailure` entry, envelope echoes the event, `ensureGitignore` gains
-      `.conductor/commit-observe.json`; the engine never reads or writes `commit-watch.json`
-      (design Decisions 1–3, 6). Suite green
+- [ ] 2.4 RED: overlapping observations, in the order Gate 1 round 2 simulated — observation A reads
+      the record, a commit lands, observation B runs to completion, then A writes: the commit is reported
+      exactly once across A, B and a third observation, the anchor never moves backwards, and
+      `detours.log` holds at most one commit-derived row for it (drive the interleaving through an
+      exported function, not timing). Also: with the lock held by another process, an observation
+      reports nothing and writes nothing, and the next observation after release reports the commit; a
+      lock file older than 10 s is broken. Also: a reflog whose anchored line is gone reports nothing
+      from the reflog and re-anchors
+- [ ] 2.4a RED: observe, commit, delete the oldest HEAD reflog entry (`git reflog delete` of the last
+      `HEAD@{n}`, the front of `logs/HEAD`), observe: the commit is reported (fails against an offset
+      anchor: the anchored line moved to a smaller offset)
+- [ ] 2.5 GREEN: `commit-watch.mjs` reflog anchor located by content and resolved against the conductor
+      root, `commit-observe.json` with the reported set under the `O_EXCL` lock, `hooks.json`
+      `PostToolUseFailure` entry, envelope echoes the event, `ensureGitignore` gains
+      `.conductor/commit-observe.json*`, `CONDUCTOR_OWN_FILES` gains `.conductor/commit-observe.json`;
+      the engine never reads or writes `commit-watch.json` (design Decisions 1–3, 6). Suite green
 - [ ] 2.6 RED: in the clone fixture, commit X then `git pull --rebase` over an upstream commit, observe:
       X is named as rewritten or abandoned, no `detours.log` row, no `--attribute-commit` naming X
       (passes today by silence, fixture `rrb`; RED against 2.5's walk)
@@ -83,7 +89,7 @@ Pairs: 3.1–3.2 land with 3.3.
 
 ## 4. `retract-detour`
 
-Section 5 depends on this section's retraction row. Pairs: 4.1–4.4 land with 4.5.
+Section 5 depends on this section's retraction row. Pairs: 4.1–4.4 (with 4.2a) land with 4.5.
 
 - [ ] 4.1 RED: `retract-detour <sha> --reason "own work"` on an AUTO-DETOUR row: exit 0, the log keeps
       the row and gains one `RETRACTED` row, `PROJECT.md` from that invocation shows no row for it; an
@@ -91,7 +97,10 @@ Section 5 depends on this section's retraction row. Pairs: 4.1–4.4 land with 4
 - [ ] 4.2 RED: a `detours.log` holding a 7-character and an 8-character commit-derived row for two
       different commits: `retract-detour <full sha>` retracts only its own commit's row, for each; a
       re-fired observation for either commit writes no new row (fails today)
-- [ ] 4.3 RED: each refusal names its specific reason — unresolvable sha, a commit with no
+- [ ] 4.2a RED: an AUTO-DETOUR row whose commit was rewritten and then pruned (`git reflog expire
+      --expire=now --all` plus `git gc --prune=now`, so the sha resolves to nothing): `retract-detour
+      <that row's sha>` exits 0 and appends its retraction (fails today: unknown verb)
+- [ ] 4.3 RED: each refusal names its specific reason — a sha matching no row, a commit with no
       commit-derived row, a commit with only a `MINIMAL` row, an already-retracted commit, a missing
       `--reason`, an empty `--reason` — asserting the message text for each, with exit non-zero and
       `detours.log` and `PROJECT.md` byte-identical (fails today: exit code and bytes pass, the messages
@@ -106,7 +115,7 @@ Section 5 depends on this section's retraction row. Pairs: 4.1–4.4 land with 4
 
 ## 5. An amend replaces
 
-Pairs: 5.1–5.3 land with 5.4.
+Pairs: 5.1–5.3a land with 5.4.
 
 - [ ] 5.1 RED: commit auto-logged, a later call amends it, observe: `PROJECT.md` shows the amending
       commit only; `detours.log` holds the original row then its retraction (fails today: two visible
@@ -115,9 +124,13 @@ Pairs: 5.1–5.3 land with 5.4.
       output prints `update-epic E --withdraw-commit <replaced>` with `--withdrawal-reason` before any
       attribution command, never `--attribute-commit <replaced>`; E's `attributedCommits` byte-identical
       after the hook (fails today)
-- [ ] 5.3 REGRESSION GUARD: one call runs `checkout -b tmp`, `checkout main`, `commit --amend`: the
-      replaced commit named is the one HEAD held before the amend; an amend chain in one call reports
-      only the final commit
+- [ ] 5.3 RED: C1 auto-logged and attributed to E, then one call amends to C2 and again to C3: C1's
+      row is retracted, `--withdraw-commit` is printed for C1, no `--attribute-commit` names C1 or C2, and
+      `PROJECT.md` shows a row only for C3; and C1 auto-logged and attributed, then one call amends to C2
+      and runs `reset --hard HEAD~1`: C1's row is retracted and its withdrawal printed (fails against a
+      live-amend-only rule)
+- [ ] 5.3a REGRESSION GUARD: one call runs `checkout -b tmp`, `checkout main`, `commit --amend`: the
+      replaced commit named is the one HEAD held before the amend
 - [ ] 5.4 GREEN: amend handling (Decision 7). Suite green
 
 ## 6. Detour rows: own artifacts and conductor-root paths
@@ -185,7 +198,8 @@ Pairs: 7.1–7.2 land with 7.4.
       shipped); retraction (no un-retract: re-declare with `log-detour`, design Decision 11); amend
       auto-retraction (same); adding to `reported` (inverse: the bound's eviction only — a manual
       un-report has no use, since a reported commit's rows are retracted, not re-reported); the anchor
-      (overwritten each observation; no inverse needed); `PostToolUseFailure` wiring (inverse: removing
+      (overwritten each observation; no inverse needed); the observe lock (inverse: release on exit, and
+      the 10 s stale break for a killed hook); `PostToolUseFailure` wiring (inverse: removing
       it restores today's rung); `commit-watch.json` left behind by 0.44.0 (not removed by any engine:
       git-ignored and inert, and removing it would break an unreloaded 0.44.0 session sharing the
       checkout). Each unshipped inverse named and justified in the commit message
