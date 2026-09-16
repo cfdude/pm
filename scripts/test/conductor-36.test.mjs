@@ -253,10 +253,10 @@ test("the withdrawal is RECORDED, not erased — a correction is a judgment", ()
   assert.ok(e.withdrawnCommits[0].withdrawnAt, "and when");
 });
 
-test("it lands in a SIBLING field, so the last attributed entry stays the Gate 2 endpoint", () => {
-  // attributedCommits is append-only because ORDER carries meaning: the last entry is what a
-  // recorded Gate 2 headSha is compared against. A withdrawn entry left in the array would move
-  // that endpoint, so the record of the withdrawal goes beside it rather than inside it.
+test("it lands in a SIBLING field, so the attributed array holds only live attributions", () => {
+  // attributedCommits is what a recorded Gate 2 headSha must reach, entry by entry. A withdrawn
+  // entry left in the array would still be demanded of every verdict, so the record of the
+  // withdrawal goes beside it rather than inside it.
   const cwd = repoWithEpic();
   const [A, B, C] = fixtureCommits(cwd, ["A", "B", "C"]);
   for (const sha of [A, B, C]) {

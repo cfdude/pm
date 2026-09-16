@@ -4,10 +4,9 @@
 //
 // `update-epic <id> --attribute-commit <sha>` is asked for at the moment a commit is made and,
 // until now, checked for only at the archive gate. By then the commits were made hours or days
-// and possibly several sessions earlier, and the array is APPEND-ONLY: its last entry is the
-// endpoint a Gate 2 `headSha` is compared against, so a catch-up performed after forward
-// attribution has begun leaves an ancestor as the endpoint and is not recoverable. The detector
-// therefore fired at the one moment its finding could no longer be acted on.
+// and possibly several sessions earlier, and a Gate 2 `headSha` must reach every attributed
+// entry, so a commit never attributed is work that gate is never checked against. The detector
+// fired only at the archive gate, long after the commit could easily be recalled.
 //
 // The nudge closes that, and it is deliberately the SMALLEST thing that does: one clause
 // appended to the advisory commit-nudge ALREADY emits on a real commit. It adds no new hook, no
@@ -64,14 +63,14 @@ test("gh#129: an epic that has attributed nothing yet gets the catch-up rule; on
   commitFiles(first, { "a.txt": "1" }, "feat(x): real work");
   const firstCtx = ctxOf(nudge(first, "git commit -m x"));
   assert.match(firstCtx, /ORDER THEY LANDED/,
-    "an empty array is the LAST moment the catch-up rule is available — say so there");
+    "an empty array is when catching up is most likely owed — say so there");
 
   const later = repoWithActive(["0000000000000000000000000000000000000000"]);
   prime(later);
   commitFiles(later, { "a.txt": "1" }, "feat(x): real work");
   const laterCtx = ctxOf(nudge(later, "git commit -m x"));
   assert.doesNotMatch(laterCtx, /ORDER THEY LANDED/,
-    "forward attribution has begun: catching up now is the thing item 4 forbids, so never say it");
+    "forward attribution has begun: the loud catch-up form is for the empty array only");
   assert.match(laterCtx, /--attribute-commit/, "but the per-commit obligation still stands");
 });
 

@@ -94,7 +94,7 @@ A lessons file nobody reads is a data graveyard — the same objection that made
 | `second-resolution-timestamps-collide-on-fast-machines` | scripts/test/conductor-39.test.mjs — the fixture now sets GIT_AUTHOR_DATE and GIT_COMMITTER_DATE explicitly, spaced a minute apart, and asserts each record against its OWN commit rather than merely against "not the other one". |
 | `shared-checkout-parallel-agents` | subagent brief template; CLAUDE.md § Subagents & worktrees |
 | `slash-commands-run-the-installed-plugin` | subagent brief template; conductor.mjs self-hosting handoff (bootstrap-limited) |
-| `squash-merge-orphans-the-evidence` | .claude/skills/pr-workflow/SKILL.md step 5 + step 8 verification; CONTRIBUTING.md § Branch workflow |
+| `squash-merge-orphans-the-evidence` | .claude/skills/pr-workflow/SKILL.md step 5 + step 9 verification; CONTRIBUTING.md § Branch workflow |
 | `stacked-background-commits-collide-on-the-lock` | habit — the wait-then-verify wrapper at `scratchpad/final-commit.sh`; pm's own pre-commit hook already holds a suite lock and prints "another worktree is running the suite — waiting", which is the mechanism this lesson wants and which does NOT cover the index lock. |
 | `tcc-denial-breaks-getcwd` | habit — the four-probe table below; no mechanism |
 | `validate-the-value-you-write` | scripts/lib/update-epic.mjs withdrawnGates; test 3.3a |

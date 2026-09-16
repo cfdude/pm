@@ -1150,8 +1150,8 @@ test("--attribute-commit appends a hash that reads back from state.json", () => 
   assert.deepEqual(readState(cwd).epics.find(e => e.id === "subject").attributedCommits, [one]);
   run(["update-epic", "subject", "--attribute-commit", two], { cwd });
   assert.deepEqual(readState(cwd).epics.find(e => e.id === "subject").attributedCommits,
-    [one, two], "appends in the order given — the LAST entry is what a verdict's " +
-    "headSha is compared against, so order is the meaning");
+    [one, two], "appends in the order given — a verdict's headSha must reach every " +
+    "entry, and the array is append-only");
 });
 
 test("two hashes in ONE invocation both land, in the order given", () => {

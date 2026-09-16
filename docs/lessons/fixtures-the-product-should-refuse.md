@@ -7,7 +7,7 @@ cost: pm accepted any string as a commit sha and any epic as a reconcile detour 
   0.43.0 review found both were gate bypasses: `--attribute-commit not-a-commit` flipped a refused
   archive to accepted, and `record-reconcile p --detour p` cleared the reconcile gate. The suite never
   noticed because its fixtures relied on exactly that acceptance: the commit that added write-time
-  resolution (3132bab) removed 54 lines seeding placeholder shas, and conductor-09's "record-reconcile creates the
+  resolution (3132bab) removed over fifty lines seeding placeholder shas, and conductor-09's "record-reconcile creates the
   link if one doesn't already exist" test pinned the bypass as intended behaviour and had to be inverted.
   Converting fixtures to real commits and armed detours produced 37 test-file entries across the
   commits of gates-bind-to-verified-evidence.

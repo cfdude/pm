@@ -323,10 +323,11 @@ function attributionTarget(state, ctx) {
  *
  *  SELF-EXTINGUISHING WITHOUT ANY BOOKKEEPING OF ITS OWN: the escalated form keys on
  *  `attributedCommits.length === 0`, which is state the AGENT wrote. Attribute once and the
- *  loud form is gone for the life of the epic. That empty array is also the only state in which
- *  item 4's catch-up rule is still available — after the first append, catching up would leave
- *  an ancestor as the last entry — so the escalation lands at the one moment it changes the
- *  outcome rather than on every commit forever.
+ *  loud form is gone for the life of the epic. An empty array is the state in which catching up is
+ *  most likely still owed (nothing of the epic's work is recorded yet), so the escalation lands
+ *  there rather than on every commit forever. Since gates-bind-to-verified-evidence a verdict must
+ *  reach EVERY attributed entry, so a later catch-up is still correct; it is simply less likely
+ *  to be needed.
  *
  *  NOISE BUDGET, stated plainly: this is willing to be ignored on the steady-state rung. One
  *  short sentence per real commit under an active epic, on a message that already prints, is
@@ -359,8 +360,8 @@ function attributionNudge(state, ctx, sha) {
     "lands after the reviewed range, so attributing it makes this epic's own Gate 2 read stale.";
 
   if (epic.attributedCommits.length === 0) {
-    return `ATTRIBUTION — \`${epic.id}\` has attributed no commits yet, so this is the last ` +
-      "moment its catch-up rule is available: attribute every commit of this epic's work that " +
+    return `ATTRIBUTION — \`${epic.id}\` has attributed no commits yet: ` +
+      "attribute every commit of this epic's work that " +
       "already landed, IN THE ORDER THEY LANDED, and then this one — " +
       `\`${cmd}\`. The array is append-only and a recorded Gate 2 \`headSha\` must reach EVERY ` +
       "entry, so a commit left unattributed is work that gate is never checked against. " +
