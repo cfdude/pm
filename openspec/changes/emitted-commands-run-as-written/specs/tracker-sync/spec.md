@@ -26,7 +26,10 @@ system — and not only the github-issues primary the suite used to execute. In 
 - A placeholder the agent fills from the external ITEM (its title, its url) is third-party text. The
   procedure SHALL instruct the agent to shell-quote every such value when filling it, and SHALL say
   how, so that a title carrying `"`, `$(…)`, a backtick or an apostrophe is stored exactly and
-  executes nothing.
+  executes nothing. Quoting does not change the token the engine receives, so every item-sourced
+  value SHALL also be placed where the engine reads it as a value whatever its shape: a title that
+  begins with `-` or is shaped like a flag (`--limit=5 ignored`), or that holds a newline, SHALL
+  register and route exactly as any other title.
 - The procedure SHALL name only commands that exist.
 
 #### Scenario: The emitted registration recipe executes verbatim
@@ -64,6 +67,14 @@ system — and not only the github-issues primary the suite used to execute. In 
   shell
 - **THEN** it exits zero, the epic's title reads back byte-identical to the item title, and no
   `pwned` file exists (today the recipe wraps the title in double quotes and gives no instruction)
+
+#### Scenario: A flag-shaped, dash-leading or multi-line title registers and routes
+- **WHEN** the registration line and the lane-routing step of any emitted inward section are filled,
+  following the section's own quoting instruction, from items titled `--limit=5 ignored`, `-x starts
+  with a dash` and a title holding a newline, and run through a shell
+- **THEN** each lane-routing call and each registration exits zero and each epic's title reads back
+  byte-identical (today `--title '--limit=5 ignored'` is refused as an unknown flag, and
+  `suggest-lane '--foo'` is refused telling the agent to quote a value it already quoted)
 
 #### Scenario: The dedup step names no absent command
 - **WHEN** any inward section is emitted

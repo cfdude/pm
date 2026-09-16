@@ -68,6 +68,14 @@ done, the message SHALL name that precondition first, with the command that meet
 engine will refuse MUST NOT be printed as the way out. Where a message offers alternatives ("…, or
 …"), each alternative SHALL clear the condition on its own.
 
+**One exception: a record no verb can change.** Where the condition lies in a stored identifier no
+verb can rename (an epic id, release id or tracker scope holding a control character, stored before
+input refused such values), there is no runnable remedy. The message SHALL name the record and say
+that no verb can rename it, and SHALL print no command as a remedy for it; the suite asserts that
+message instead of executing one. It SHALL NOT tell the reader to edit `.conductor/state.json`.
+Clearing the condition still requires the fixture epic to exist afterwards everywhere else: a remedy
+that clears a finding by removing the record it was about does not count as clearing it.
+
 A given remedy SHALL read the same at every site that prints it, and SHALL carry the evidence its
 gate requires: a commit range for Gate 2, artifact paths for Gate 1. A site that cannot know which
 gate it is naming SHALL print the form for each.
@@ -103,6 +111,16 @@ adding one is a visible change to the test.
 - **WHEN** `integrity` reports a recorded range value that is not a commit object name on a Gate 1
   verdict
 - **THEN** the remedy it prints for re-recording that verdict carries `--artifact`, not a range
+
+#### Scenario: A record no verb can rename prints no remedy
+- **WHEN** a finding concerns an epic whose stored id holds a control character
+- **THEN** the message names that record and says no verb can rename it, prints no command for it,
+  and does not direct a hand-edit of `.conductor/state.json`
+
+#### Scenario: Deleting the evidence is not a fix
+- **WHEN** a remedy's commands are followed and the condition is no longer reported
+- **THEN** the suite also asserts the epic the condition concerned still exists, so a remedy that
+  removed the epic fails
 
 #### Scenario: A registry entry without a fixture fails
 - **WHEN** an `integrity` check, a delivered obligation kind or a brief remedy-bearing warning is

@@ -159,12 +159,20 @@ For each entry the test holds a fixture builder keyed by id. The protocol, per b
    purpose; `--reason "<why>"` a fixed string.
 4. Run the invocations in the order printed; each must exit 0.
 5. Re-run the PRODUCER and assert the condition is no longer reported for that epic (for a refusal,
-   re-run the refused command and assert it now succeeds).
+   re-run the refused command and assert it now succeeds), AND assert the epic still exists — a remedy
+   that clears a finding by removing its evidence fails.
+A condition about a stored identifier no verb can rename (change 3's control-character identifiers)
+prints no remedy by design; its builder asserts the message names the record and says no verb can
+rename it, and that no command is extracted from it.
 A builder may declare `prints: none` (the test asserts the output carries no invocation) or
 `unconstructable: "<why>"`. The test asserts the number of `unconstructable` declarations equals a
 constant that is **0**; adding one means raising that constant in the same commit. All 17 checks are
 buildable, including `recorded-sha-the-repository-cannot-resolve`: record a real commit made on an
-orphan branch, delete the branch, `git reflog expire --expire=now --all`, `git gc --prune=now`.
+orphan branch, delete the branch, `git reflog expire --expire=now --all`, `git gc --prune=now` — AND
+attribute one commit that stays reachable. The check probes whether git can answer at all: when no
+recorded sha resolves it skips the absent arm (`integrity.mjs:772`, `if (arm === "absent" &&
+resolvable === 0) continue`), so a fixture holding only the destroyed sha reports nothing and the
+builder would assert against silence.
 
 **Layer C — tracker recipes execute for every role and system.** `conductor-14`'s github-issues
 primary execution (`conductor-14.test.mjs:641`) is generalised: for every inward section in the
@@ -253,11 +261,20 @@ registered by the old recipe verbatim (it was refused); an agent that improvised
 still deduplicated by step 2's `externalUrl` match, which runs before registration.
 
 **Item-sourced values are shell-quoted by instruction.** `<issue-title>` and `<issue-url>` are
-third-party text. The recipe stops wrapping them in double quotes (`--title <issue-title>`,
-`suggest-lane <issue-title>`) and states once, above the registration line: "Fill every placeholder
+third-party text. The recipe stops wrapping them in double quotes and places each where the engine reads it as a
+VALUE whatever its shape — quoting changes what the shell passes, never the token the engine
+classifies, and `FLAG_TOKEN` (`^--[a-z][a-z0-9-]*(?:=|$)`) reads `--limit=5 ignored` as a flag even
+inside quotes. So the registration line emits `--title=<issue-title>` (inline form: the whole
+`--title=…` token is ONE word, and a value after `=` is never reclassified; measured:
+`--title='--limit=5 ignored'` is accepted and stored exactly) and `--external-url=<issue-url>`, and
+lane routing emits `suggest-lane -- <issue-title>` (verb-surface ADDED: a lone `--` ends flags on a
+free-text verb). The quoting rule applies to the whole value after `=` or after `--`. It states once,
+above the registration line: "Fill every placeholder
 taken from the item — `<issue-title>`, `<issue-url>` — as ONE shell-quoted word: wrap the value in
 single quotes and write each `'` inside it as `'\''`. Never use double quotes: `$(…)`, backticks and
-`"` inside them change the command." The engine-derived placeholders (`<issue-number>`,
+`"` inside them change the command. Keep `--title=` and `--` exactly where they are: they are what let
+a title that starts with `-` reach the engine as a title." A newline inside single quotes is literal,
+so a multi-line title stays one word. The engine-derived placeholders (`<issue-number>`,
 `<issue-key-slug>`, `<lane>`) and the timestamp need no quoting — their shapes are fixed.
 *Alternative rejected:* a Non-Goal. The recipe is pm's text and the defect is a command an agent runs
 as written; single quotes with the `'\''` rule are POSIX and work in every shell pm documents.
@@ -280,7 +297,8 @@ never-re-read count.
 
 - `isGithubRepo(value)` in `constants.mjs`: `^[A-Za-z0-9](?:[A-Za-z0-9-]*)\/[A-Za-z0-9._-]+$`.
   `set-tracker` refuses a github-issues `--repo` failing it, for both roles, before anything is
-  written — EXCEPT with `--remove`, which matches the recorded value exactly
+  written, quoting the refused value through `escapeControls` (`constants.mjs`) so the refusal
+  cannot itself carry a control character — EXCEPT with `--remove`, which matches the recorded value exactly
   (`secondaryTrackerKey`) and writes nothing new, so a legacy malformed secondary stays removable
   (verified today: removal of `a/b; touch pwned` exits 0; kept as a regression guard).
   `usesGhIssueList()` requires the shape, so a legacy malformed value falls through to the
@@ -389,6 +407,15 @@ quoting instruction, jira id placeholder), the vendor-switch messages, and the n
 - **`commit-nudge-reads-the-whole-move` (change 1)** owns `runNudge` in `subcommands.mjs`. This change
   edits only the final sentence of its non-detour message (`:495-496` today) and `init()`'s stderr
   (`:110-113`), after change 1 merges; task 0.3 re-derives both anchors.
+- **`user-text-never-forges-output` (change 3) — identifiers no verb can rename.** Change 3 refuses a
+  control character in an identifier at input and, for one stored before that rule, prints a message
+  naming the record and saying no verb can rename it, with no runnable remedy and no hand-edit
+  instruction. This change's R2 and `conductor-record` requirement carry that as an explicit
+  exception, and Layer B asserts the message rather than executing a remedy. This change's `--repo`
+  shape check also refuses any control character in a github-issues repo at input, and
+  `usesGhIssueList()` requires the shape, so a control-character repo never reaches the emitted
+  `gh issue list --repo` line — the shell-line half of change 3's D4a for that field is already closed
+  here; change 3's prose escaping of the scope still applies.
 - **`user-text-never-forges-output` (change 3)** edits `briefing.mjs`, `integrity.mjs` and
   `archive-gate.mjs` to escape user-supplied values. Disjoint concerns: this change edits the remedy
   COMMANDS (`gateRemedy`, `dispositionInvocation`, the delivered-release and malformed-value findings),

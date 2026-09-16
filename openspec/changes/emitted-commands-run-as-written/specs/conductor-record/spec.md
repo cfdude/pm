@@ -8,10 +8,20 @@ binds everything the engine prints (`init`'s output, the commit nudge, the brief
 document pm ships (`commands/*.md`, `skills/**/SKILL.md`, `agents/*.md`, `README.md`). Reading the
 file is not a write and stays allowed.
 
+Where no verb can make the change — a stored identifier holding a control character, which no verb
+renames — the text SHALL say that no verb can make it and name the record, and SHALL still not direct
+a hand-edit. Saying there is no verb is the truth; offering the file as the workaround is the
+instruction this requirement removes.
+
 A hand-edit skips everything a verb supplies: validation, the write lock, the revision guard, the
 read-back, and — on a POP — the same-write `reconcileNeeded` stamp the rules block exists to protect.
 The rules block already says "NEVER hand-edit"; text elsewhere saying otherwise is two instructions
 that cannot both be followed.
+
+#### Scenario: A change no verb can make is named, not delegated to a hand-edit
+- **WHEN** the engine reports a stored epic id holding a control character
+- **THEN** its output says no verb can rename that record and does not tell the reader to edit
+  `.conductor/state.json`
 
 #### Scenario: init's closing line names verbs
 - **WHEN** `init` completes in a fresh repository

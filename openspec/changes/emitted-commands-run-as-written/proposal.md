@@ -37,7 +37,10 @@ the checkout) by `repro.sh` in this change directory; its transcript is `repro.t
   line unquoted: `` `gh issue list --repo a/b; touch pwned --state open …` ``.
 - Every registration line wraps third-party text in double quotes with no instruction:
   `--title "<issue-title>"` and `suggest-lane "<issue-title>"`. An issue titled with `"`, `$(…)` or a
-  backtick changes the command the agent runs; plain single quotes break on an apostrophe.
+  backtick changes the command the agent runs; plain single quotes break on an apostrophe. Quoting
+  alone is not enough either: the engine classifies `--limit=5 ignored` as a flag even inside quotes,
+  so `--title '--limit=5 ignored'` exits 1 and `suggest-lane '--foo'` exits 1 telling the agent to
+  quote the value it already quoted; `--title='--limit=5 ignored'` is accepted.
 - Switching a legacy primary with no recorded direction from github-issues to jira turns outward
   creation ON: the inward section disappears and an "External tracker sync (jira · ABC)" section
   appears, because an unrecorded direction resolves by system (`repro.txt` §B9).
@@ -135,6 +138,8 @@ earlier (`anyInwardProcedureEmittable`); its dangling text for an inward-only pr
   evidence forms that match the gate.
 
 ### Modified Capabilities
+- `verb-surface`: ADDED — a lone `--` ends flags on a free-text verb, so `suggest-lane` can route a
+  title shaped like a flag; the free-text refusal names `--` instead of telling the agent to quote.
 - `tracker-sync`: "Every command pm emits must run as written" extended to every tracker
   role/system/direction (fields, truncation, non-numeric keys, repo shape); "Primary tracker
   configuration" drops a stale scope on vendor switch and keeps the direction the user had; "The

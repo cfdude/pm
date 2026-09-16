@@ -12,8 +12,9 @@
       openspec/changes/emitted-commands-run-as-written/specs/emitted-instructions/spec.md --artifact
       openspec/changes/emitted-commands-run-as-written/specs/tracker-sync/spec.md --artifact
       openspec/changes/emitted-commands-run-as-written/specs/epic-disposition/spec.md --artifact
-      openspec/changes/emitted-commands-run-as-written/specs/conductor-record/spec.md`
-- [ ] 0.2 **Cross-spec review** (required task item 5) — release 0.45.0 holds this change's four spec
+      openspec/changes/emitted-commands-run-as-written/specs/conductor-record/spec.md --artifact
+      openspec/changes/emitted-commands-run-as-written/specs/verb-surface/spec.md`
+- [ ] 0.2 **Cross-spec review** (required task item 5) — release 0.45.0 holds this change's five spec
       files and its siblings' (`commit-nudge-reads-the-whole-move`, `user-text-never-forges-output`).
       Run the `cross-spec-review` skill after all three pass Gate 1 and again after any later
       amendment; record `record-cross-spec-review 0.45.0 --verdict pass|fail --reviewer "<identity>"`
@@ -71,7 +72,8 @@ Pairs: 2.1–2.8 land with 2.9.
       `unconsidered-outcomes` and regression-refusal printers; a registry id with no builder fails
       naming it; the declared-`unconstructable` count is asserted equal to 0. Each builder follows
       design Decision 1's five-step protocol: reproduce and observe → extract → fill BY MEANING → run
-      in order, each exit 0 → re-run the producer and assert the condition is gone. Each alternative
+      in order, each exit 0 → re-run the producer, assert the condition is gone AND the epic still
+      exists. A stored identifier no verb can rename asserts its no-remedy message instead. Each alternative
       runs in its own fresh fixture. (Fails today: the two registries are not exported.)
 - [ ] 2.2 RED: stale Gate 2 (a commit attributed after the reviewed head) — the archive refusal's
       remedy filled with base = parent of the first attributed commit and head = the last attributed
@@ -91,7 +93,9 @@ Pairs: 2.1–2.8 land with 2.9.
       still offers `delivered`; following both with the range filled by meaning exits 0 and the
       original `--attribute-commit` then succeeds
 - [ ] 2.7 RED: `recorded-sha-the-repository-cannot-resolve` (orphan-branch commit recorded, branch
-      deleted, `git reflog expire --expire=now --all`, `git gc --prune=now`) and the malformed-value arm
+      deleted, `git reflog expire --expire=now --all`, `git gc --prune=now`, plus one reachable
+      attributed commit so the check's resolvability probe does not skip the absent arm — first
+      assert the finding IS reported) and the malformed-value arm
       on a Gate 1 range — the Gate 1 remedy carries `--artifact`, not a range, and clears the finding
 - [ ] 2.8 REGRESSION GUARD: a `claude-code`-lane unconsidered entry still offers `delivered` with
       `deliveredBlockedBy: []` and clears when run with `delivered`; the regression refusal still
@@ -106,7 +110,7 @@ Pairs: 2.1–2.8 land with 2.9.
 
 ## 3. Tracker recipes (tracker-sync MODIFIED "Every command pm emits must run as written"; ADDED secondary watermark)
 
-Pairs: 3.1–3.9 land with 3.10.
+Pairs: 3.1–3.9 (incl. 3.3a) land with 3.10.
 
 - [ ] 3.1 RED: Layer C — for every inward section the matrix emits (primary github-issues/jira ×
       inward/both; github-issues and jira secondaries), the registration line filled from a synthetic
@@ -115,9 +119,14 @@ Pairs: 3.1–3.9 land with 3.10.
       updated field (today the github-issues secondary cannot be filled)
 - [ ] 3.2 RED: jira keys `ABC-123` and `ABC-124` register as two distinct epics; the same key twice is
       refused as a duplicate (`repro.txt` §B3)
-- [ ] 3.3 RED: an item titled ``it's "done" $(touch pwned) `id` `` — the title reads back byte-identical,
-      no `pwned` file exists, and every inward section carries the quoting sentence above its
-      registration line
+- [ ] 3.3 RED: items titled ``it's "done" $(touch pwned) `id` ``, `--limit=5 ignored`, `-x starts with a
+      dash`, and a title holding a newline — each registration and each `suggest-lane` call, filled per
+      the section's quoting sentence and run through `sh -c`, exits 0; titles read back byte-identical;
+      no `pwned` file exists; every inward section emits `--title=`, `--external-url=` and
+      `suggest-lane --`
+- [ ] 3.3a RED (verb-surface ADDED): `suggest-lane -- '--limit=5 ignored'` exits 0 routing on that text;
+      `suggest-lane -- fix a typo` still refuses naming `a`; `triage --foo`'s refusal names `--`; a lone
+      `--` on a non-free-text verb is treated as today
 - [ ] 3.4 RED: every github-issues listing step names `--limit`, and the procedure carries the
       truncation stop before its closed-item step
 - [ ] 3.5 RED: no emitted section names `/pm:epic list` — asserted against the rendered rules block,
@@ -132,7 +141,8 @@ Pairs: 3.1–3.9 land with 3.10.
       0.26.0 rules fixtures (`scripts/test/fixtures/rules-0.26.0-*.txt`) — update the fixtures only
       where this change's text changes, and say which lines in the commit
 - [ ] 3.10 GREEN: `inwardListStep()` and `watermarkStep()` shared by primary and secondary; the quoting
-      sentence and unquoted item placeholders; the `<issue-key-slug>`/`<issue-key>` placeholders for
+      sentence, `--title=`/`--external-url=` and `suggest-lane --`; the lone-`--` rule and refusal hint
+      in `argv-surface.mjs` for the four free-text verbs; the `<issue-key-slug>`/`<issue-key>` placeholders for
       non-github systems; the reminder clause; the dedup wording; the outward line (design Decision 3);
       3.1–3.9 pass, suite green
 
@@ -141,7 +151,7 @@ Pairs: 3.1–3.9 land with 3.10.
 Pairs: 4.1–4.4 land with 4.7.
 
 - [ ] 4.1 RED: `set-tracker --system github-issues --repo 'a/b; touch pwned'` exits non-zero naming the
-      shape, for `--role primary` and `--role secondary`; `state.json` byte-identical
+      shape (and a repo holding a control character is refused with the value escaped in the message), for `--role primary` and `--role secondary`; `state.json` byte-identical
 - [ ] 4.2 RED: a hand-written legacy state carrying that repo on the primary loads for every read verb,
       and the rules block contains no shell line with the value (fixture passes the strict reader)
 - [ ] 4.3 RED: a github-issues primary `repo: "o/n"` switched with `--system jira --project ABC` records
@@ -220,6 +230,8 @@ Pairs: 7.1 lands with 7.2. The single-writer rule for hierarchy runs is NOT here
         line printing an engine verb that is NOT a `BRIEF_REMEDIES` entry, justified;
       - every item-sourced placeholder in emitted text (`rg -n "<issue-(title|url|key)>" scripts/lib`),
         each covered by the quoting sentence;
+      - every reader of the free-text verb set and of a lone `--` (`rg -n "freeText|FREE_TEXT|\"--\"" scripts/lib/argv-surface.mjs scripts/lib/add-epic.mjs scripts/lib/help.mjs`),
+        each stated as honouring or not needing the end-of-flags rule;
       - every reader of a tracker's `direction` (`rg -n "directionOf|\.direction\b" scripts/lib`), each
         stated as unaffected by the vendor-switch record;
       - every caller of `dispositionInvocation`, `deliveredObligations`, `unconsideredOutcomes`
