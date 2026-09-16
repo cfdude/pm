@@ -7264,7 +7264,7 @@
       "id": "handoff-refusal-prints-story-titles-raw",
       "title": "archiveGate()'s handoff refusal prints outstanding story titles raw (archive-gate.mjs:333), so a title containing a newline and '  update-epic …' forges a line of the refusal; print user-supplied titles quoted with newlines escaped",
       "priority": "P3",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -7277,7 +7277,7 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-14T20:30:30.075Z",
-      "touchedAt": "2026-09-14T21:51:31.661Z",
+      "touchedAt": "2026-09-16T22:37:17.830Z",
       "notes": [
         {
           "at": "2026-09-14T20:44:13.173Z",
@@ -7289,7 +7289,18 @@
           "actor": "agent",
           "text": "Widen (Gate 2 lens 2, 2026-09-14): archiveGate's Gate 2 refusal also prints a withdrawn sha raw — --attribute-commit accepts any string, so 'deadbeef\\n  update-epic forged' withdrawn with --status archived forges a line. Reuse update-epic.mjs escapeControls (C0, DEL, C1, U+2028/2029)."
         }
-      ]
+      ],
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-09-16T22:37:17.828Z",
+        "reason": "Carried into a 0.45.0 openspec change (see its supersedes link)."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-16T22:37:17.827Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-16T22:37:17.828Z"
     },
     {
       "id": "gate-staleness-reads-only-last-attribution",
@@ -7911,20 +7922,20 @@
         {
           "type": "relates-to",
           "epic": "gh-cfdude-pm-194",
-          "reason": "sibling — #194 covers a malformed bare-regex detect only"
+          "reason": "same matcher surface — malformed detect discarded silently"
         }
       ],
       "reconcileNeeded": false,
       "description": "Code review 0.43.0 (C1, C2). lessons.mjs matchLessons compiles commandMatches with no complexity or input bound: detect {tool:Bash, commandMatches:'^(a+)+$'} on a 31-char command burned 60.4s CPU in the hook, on every Bash/Edit/Write call. An unknown key applies no predicate: {tool:Bash, commandMatch:'gh pr merge'} matched `ls`. CRLF frontmatter (/^---\\n/), a tool array and a bad regex are silently inert. Fix: allowlist detect keys, reject nested quantifiers or cap the matched text, accept CRLF, report rejects outside the hook.",
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:20.243Z",
-      "touchedAt": "2026-09-15T05:11:20.247Z"
+      "touchedAt": "2026-09-16T22:37:15.145Z"
     },
     {
       "id": "commit-watch-misses-commits",
       "title": "commit-watch reads only the top reflog entry: commit-then-checkout is missed, two commits name only HEAD, out-of-band commits and amends are misattributed",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -7948,13 +7959,24 @@
       "description": "Code review 0.43.0 (C1, C2). commit-watch.mjs classifyMovement: `git commit …; git checkout -b tmp; git checkout main` in one call → no nudge, no log row (also commit && switch -c, commit && pull --rebase). Two commits in one call → the nudge names only HEAD; attribution is append-only so the record is permanently short. A commit from another terminal is logged as AUTO-DETOUR against the active epic on the next unrelated call; `commit --amend` writes a second row and prompts attributing a new sha after the orphaned one. Fix: walk rev-list baseline..head and report every commit; per-call PreToolUse snapshot; treat amend as replacement.",
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:22.325Z",
-      "touchedAt": "2026-09-15T05:11:22.329Z"
+      "touchedAt": "2026-09-16T22:37:15.930Z",
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-09-16T22:37:15.928Z",
+        "reason": "Carried into a 0.45.0 openspec change (see its supersedes link)."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-16T22:37:15.927Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-16T22:37:15.928Z"
     },
     {
       "id": "emitted-text-says-hand-edit-state",
       "title": "Engine-emitted and shipped instructions still tell agents to hand-edit .conductor/state.json (commit nudge, SKILL.md, init.md, init stderr)",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -7968,7 +7990,18 @@
       "description": "Code review 0.43.0 (C1, D2, E1). subcommands.mjs runNudge prints after every commit 'Otherwise update .conductor/state.json if an epic's status or stories changed'; skills/conductor/SKILL.md §Keeping the index honest: 'On PUSH/POP/priority change: edit state.json (or use the verbs above)' and 'update state.json status'; commands/init.md tells the agent to set active/priority/status by reading state.json; init's stderr 'Triage epics in .conductor/state.json'. All contradict the rules block's NEVER hand-edit and skip the same-write reconcileNeeded stamp on POP. Fix: name push-detour/pop-detour/update-epic --priority/set-active everywhere.",
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:24.328Z",
-      "touchedAt": "2026-09-15T05:11:24.332Z"
+      "touchedAt": "2026-09-16T22:37:16.302Z",
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-09-16T22:37:16.300Z",
+        "reason": "Carried into a 0.45.0 openspec change (see its supersedes link)."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-16T22:37:16.299Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-16T22:37:16.300Z"
     },
     {
       "id": "disposition-references-unvalidated",
@@ -8026,7 +8059,7 @@
       "id": "user-text-unescaped-in-render-brief-integrity",
       "title": "Newlines and pipes in titles, detour reasons, disposition and withdrawal reasons forge lines in PROJECT.md, the brief and integrity",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -8045,14 +8078,25 @@
       "description": "Code review 0.43.0 (A1, D1, D2). render.mjs (titles, detour table reason, recent-detours note, dispositions table escapes | but not newline), briefing.mjs (detour reason forges a NOW: line and EPIC LINKS lines), integrity.mjs delivered-epic-attributed-no-commits prints `${w.sha} (\"${w.reason}\")` raw while its sibling checks use escapeControls(JSON.stringify()). Titles arrive from third-party tracker text via the inward recipe, and /pm:next reads PROJECT.md. Also raw: declinedPairs refusals, story-disposition refusal, release show. Fix: one shared escaper (archive-gate.mjs escapeControls plus | for tables) at every interpolation.",
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:30.671Z",
-      "touchedAt": "2026-09-15T18:06:32.145Z",
+      "touchedAt": "2026-09-16T22:37:17.455Z",
       "notes": [
         {
           "at": "2026-09-15T18:06:32.142Z",
           "actor": "agent",
           "text": "Argv Gate 2 lens 2 (2026-09-15), pre-existing: refusals inside verb bodies print caller text raw — remove-epic/update-epic/set-active/claim 'epic \"e9<LF>FORGED\" not found'; release accepts and saves an id containing a newline (release 'r<LF>FORGED' --intent y exits 0). The pre-dispatch refusals escape since 0.44.0."
         }
-      ]
+      ],
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-09-16T22:37:17.453Z",
+        "reason": "Carried into a 0.45.0 openspec change (see its supersedes link)."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-16T22:37:17.452Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-16T22:37:17.453Z"
     },
     {
       "id": "handoff-demand-blind-spots",
@@ -8078,7 +8122,7 @@
       "id": "tracker-sync-recipes-broken",
       "title": "Tracker sync recipes that cannot run as written: secondary pull lacks updatedAt, Jira keys fail the id format, gh issue list caps at 30, and direction text leaks",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -8092,7 +8136,18 @@
       "description": "Code review 0.43.0 (D1, D2, E1). rules.mjs: secondary `gh issue list --json number,title,url,labels` omits updatedAt though the add-epic line needs --external-updated-at, and there is no watermark step (commands/tracker.md:132 too); the test fills the placeholder with a constant. Once any secondary exists an outward-primary-linked epic reads 'never re-read' and nothing clears it. Inward recipe `add-epic --id jira-abc-<issue-number>` fails for key ABC-123 (format ^[a-z0-9]…); only github-issues recipes are executed in tests. No --limit: gh defaults to 30, items past 30 are never registered and the closed-item step proposes archiving them. The completion-sync reminder references writeback steps an inward primary never emits; its test checks a heading. commands/tracker.md 'ongoing responsibilities' tell every tracker to create issues regardless of direction. briefing.mjs prints '✓ all active epics are mirrored to jira' for an epic linked to a secondary (externalId single slot). A scope-less secondary emits add-epic --id null-<…>. --repo is emitted unquoted (set-tracker accepts 'a/b; touch x'). set-tracker has no requireKnownFlags, primary --remove is silently ignored, --intent badpair dropped. rules and rules.mjs name /pm:epic list which does not exist. Fix: declare the list step once with updatedAt and --limit, slug keys, add watermark steps, scope tracker.md by direction, count primary mirrors by URL scope, validate owner/name, add primary remove.",
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:34.836Z",
-      "touchedAt": "2026-09-15T05:11:34.839Z"
+      "touchedAt": "2026-09-16T22:37:16.677Z",
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-09-16T22:37:16.675Z",
+        "reason": "Carried into a 0.45.0 openspec change (see its supersedes link)."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-16T22:37:16.674Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-16T22:37:16.675Z"
     },
     {
       "id": "activity-log-detour-events-lose-epic",
@@ -8152,7 +8207,7 @@
       "id": "agent-docs-teach-stale-gate-evidence",
       "title": "Agent- and skill-facing docs teach gate-recording forms the engine refuses, and the orchestrator and child docs disagree on who writes state",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -8166,7 +8221,18 @@
       "description": "Code review 0.43.0 (E1). agents/hierarchy-child-executor.md prints `record-gate-review <id> --gate 1|2 --verdict pass|fail [--reviewer]`, which exits 1 on both gates; skills/conductor/SKILL.md (3 places) and commands/review-mode.md say a pass requires --base-sha/--head-sha for Gate 1 (Gate 1 needs --artifact). SKILL.md's orchestrator section says children never write state.json, while the child doc has the child record verdicts and archive itself — parallel children then write the main checkout's state concurrently (ROOT = CLAUDE_PROJECT_DIR||cwd). Also drift: review-mode.md 'no unset' (update-epic --clear review-mode exists); SKILL set-gate-guard scope; upgrade.md names /pm:integrity; SKILL tracker shape omits direction; cross-spec-review.md runs node scripts/conductor.mjs (pm checkout only); SKILL/child doc ship pm-repo-only test instructions to users; verify-worktrees/verify-state have no command doc; --help omits required positional ids. Fix: copy epic.md's two-gate form; pick one state writer for hierarchy runs; fix the drift list.",
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:41.008Z",
-      "touchedAt": "2026-09-15T05:11:41.011Z"
+      "touchedAt": "2026-09-16T22:37:17.083Z",
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-09-16T22:37:17.080Z",
+        "reason": "Carried into a 0.45.0 openspec change (see its supersedes link)."
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-16T22:37:17.080Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-16T22:37:17.080Z"
     },
     {
       "id": "commit-gate-tests-working-tree-not-index",
@@ -8643,6 +8709,106 @@
         "declined": []
       },
       "completedAt": "2026-09-16T20:28:49.767Z"
+    },
+    {
+      "id": "commit-nudge-reads-the-whole-move",
+      "title": "The commit nudge reads the whole HEAD movement: every commit a call made is named, out-of-band commits and amends are not misattributed, bookkeeping commits are not logged as detours, nested conductors compare paths relative to their own root, and the attribution hint names every candidate epic",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "supersedes",
+          "epic": "commit-watch-misses-commits",
+          "reason": "carried here"
+        },
+        {
+          "type": "relates-to",
+          "epic": "gh-cfdude-pm-173",
+          "reason": "auto-detour on bookkeeping commits"
+        },
+        {
+          "type": "relates-to",
+          "epic": "gh-cfdude-pm-184",
+          "reason": "chore(release) and task-tick commits logged as detours"
+        },
+        {
+          "type": "relates-to",
+          "epic": "gh-cfdude-pm-195",
+          "reason": "nested conductor path roots"
+        },
+        {
+          "type": "relates-to",
+          "epic": "gh-cfdude-pm-199",
+          "reason": "attribution hint names only the active epic"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-16T22:37:13.627Z",
+      "touchedAt": "2026-09-16T22:37:15.554Z",
+      "release": "0.45.0"
+    },
+    {
+      "id": "emitted-commands-run-as-written",
+      "title": "Every command pm emits runs as written and never asks for a hand-edit: tracker sync recipes (secondary updatedAt and watermark, non-GitHub keys, --limit, direction scoping), remedies the engine refuses, and agent/skill docs teaching stale gate evidence or hand-edits of state.json",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "supersedes",
+          "epic": "emitted-text-says-hand-edit-state",
+          "reason": "carried here"
+        },
+        {
+          "type": "supersedes",
+          "epic": "tracker-sync-recipes-broken",
+          "reason": "carried here"
+        },
+        {
+          "type": "supersedes",
+          "epic": "agent-docs-teach-stale-gate-evidence",
+          "reason": "carried here"
+        },
+        {
+          "type": "relates-to",
+          "epic": "gh-cfdude-pm-189",
+          "reason": "unconsidered-outcomes emits an invocation the archive gate refuses"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-16T22:37:14.255Z",
+      "touchedAt": "2026-09-16T22:37:15.554Z",
+      "release": "0.45.0"
+    },
+    {
+      "id": "user-text-never-forges-output",
+      "title": "User-supplied text never forges a line of pm's output: one shared escaper for titles, reasons, notes, shas and ids across PROJECT.md, the brief, integrity, the archive gate and every refusal",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "supersedes",
+          "epic": "user-text-unescaped-in-render-brief-integrity",
+          "reason": "carried here"
+        },
+        {
+          "type": "supersedes",
+          "epic": "handoff-refusal-prints-story-titles-raw",
+          "reason": "carried here"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-16T22:37:14.698Z",
+      "touchedAt": "2026-09-16T22:37:15.554Z",
+      "release": "0.45.0"
     }
   ],
   "detourStack": [],
@@ -8653,7 +8819,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 912,
+  "revision": 923,
   "reviewMode": "thorough",
   "releases": [
     {
@@ -8886,6 +9052,12 @@
         ],
         "reviewer": "two fresh-context lenses (coherence/contradiction; falsifiability/dependency order over apply order argv → state-file → gates): round 1 fail (4 BLOCKS: link-repair contradiction, --force vs persist-or-refuse, 6.10 missed DISPATCH_BASELINE, 6.1–6.4 lacked --verdict); scoped re-review fail (6.9a/6.9b lacked --verdict) fixed and grep-verified; 7 spec files; 2026-09-15"
       }
+    },
+    {
+      "id": "0.45.0",
+      "intent": "Important findings from the 0.43.0 review, first batch: the commit nudge, commands pm emits, and user text in pm's output. Cluster 4 (missing inverses) and #167/#168/#176 are 0.46.0.",
+      "deferred": [],
+      "target": "0.45.0"
     }
   ],
   "archiveBackfilledAt": "2026-08-27T04:52:42.658Z"
