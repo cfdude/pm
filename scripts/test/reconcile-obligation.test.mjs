@@ -289,3 +289,41 @@ test("7.4a an obligation with no link a verdict could answer is cleared by rende
   run(["render"], { cwd: armed });
   assert.equal(owes(armed), true, "an armed link keeps the obligation through clear-active + render");
 });
+
+// ═══════════════ Requirement: A later detour never overwrites an earlier reconcile obligation ═══════════════
+
+const honchoLog = (cwd) => { try { return fs.readFileSync(path.join(cwd, ".conductor", "honcho-memories.log"), "utf8"); } catch { return ""; } };
+
+test("8.1 a no-reconcile push keeps the pending obligation and does not say none is owed", () => {
+  const cwd = owingRepo();
+  const r = push(cwd, "d2", false);
+  assert.equal(owes(cwd), true);
+  assert.doesNotMatch(r.stdout + r.stderr, /NO reconcile on resume/);
+});
+
+test("8.2 the pop does not claim a reconcile nobody recorded", () => {
+  const cwd = owingRepo();
+  push(cwd, "d2", false);
+  const before = honchoLog(cwd);
+  const r = pop(cwd);
+  assert.doesNotMatch(r.stdout, /no reconcile was required/);
+  assert.doesNotMatch(honchoLog(cwd).slice(before.length), /resumed p/, "no POP line is logged for p");
+  assert.ok(r.stderr.includes("'d'"), `stderr names d as owed: ${r.stderr}`);
+  assert.equal(guard(cwd), 2);
+});
+
+test("8.2a a no-reconcile push to the same armed detour never lowers its arming", () => {
+  const cwd = owingRepo();
+  push(cwd, "d", false); pop(cwd);
+  run(["render"], { cwd });
+  assert.equal(owes(cwd), true);
+  accepted(cwd, verdict(cwd, "d"));
+});
+
+test("8.3 REGRESSION GUARD: a pop that owes nothing still emits and logs its memory line", () => {
+  const cwd = repo();
+  push(cwd, "d", false);
+  const r = pop(cwd);
+  assert.match(r.stdout, /resumed p, reconciled vs d; no reconcile was required/);
+  assert.match(honchoLog(cwd), /resumed p, reconciled vs d; no reconcile was required/);
+});

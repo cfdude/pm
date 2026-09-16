@@ -33,7 +33,7 @@ import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
 import { activate, owedReconcileNotice } from "./active-pointer.mjs";
-import { deferralHistory, deferralNote } from "./links.mjs";
+import { deferralHistory, deferralNote, ownedDetours } from "./links.mjs";
 import { appendHonchoMemory } from "./subcommands.mjs";
 
 const die = (msg) => { process.stderr.write(`conductor: ${msg}\n`); process.exit(1); };
@@ -139,7 +139,12 @@ export function pushDetour() {
   // Set at the TRANSITION, not derived. reconcileArchived() re-derives it from the live frame
   // while the frame exists, so the two agree here; what makes writing it necessary is POP, where
   // the frame is gone and the flag must survive anyway.
-  paused.reconcileNeeded = reconcileOnResume;
+  //
+  // ORed, never assigned (gates-bind-to-verified-evidence Decision 6). Assigning let a later
+  // `--no-reconcile` push overwrite an obligation still owed against an earlier detour, and the pop
+  // that followed then logged "no reconcile was required" — a false record of an answer nobody gave.
+  const alreadyOwed = paused.reconcileNeeded === true;
+  paused.reconcileNeeded = alreadyOwed || reconcileOnResume;
   state.detourStack = Array.isArray(state.detourStack) ? state.detourStack : [];
   state.detourStack.push({
     pausedEpic: id,
@@ -159,9 +164,17 @@ export function pushDetour() {
   const saved = saveState(state, { verb: "push-detour" });
   render();
 
+  // "NO reconcile on resume" only where NOTHING is owed: a --no-reconcile push on an epic that still
+  // owes an earlier verdict says so, naming the detours it owes.
+  const owedBefore = ownedDetours(paused);
+  const pushReport = reconcileOnResume
+    ? " — reconcile gate armed for /pm:resume"
+    : alreadyOwed
+      ? ` — no reconcile for '${detourId}'; '${id}' still owes a reconcile` +
+        (owedBefore.length ? ` against ${owedBefore.map(d => `'${d}'`).join(", ")}` : "")
+      : " — NO reconcile on resume";
   reportSave(saved, {
-    changed: `conductor: paused '${id}' and made detour '${detourId}' active` +
-      `${reconcileOnResume ? " — reconcile gate armed for /pm:resume" : " — NO reconcile on resume"}`,
+    changed: `conductor: paused '${id}' and made detour '${detourId}' active${pushReport}`,
     // A frame carries `pausedAt`, so a PUSH always differs from disk. Bound rather than
     // exempted for the same reason add-epic is: the argument for "cannot no-op" is about
     // today's frame shape, not about this verb.
@@ -240,16 +253,23 @@ export function popDetour() {
     unchanged: `conductor: '${pausedEpic}' was already resumed on exactly these terms — ` +
       `${STATE_UNCHANGED}`,
   });
-  if (frame.reconcileOnResume) {
+  if (epic.reconcileNeeded === true) {
     // The Honcho POP line says "reconciled vs X", which is not yet true. Emitting it here would
     // be the engine writing a claim nobody has made — the same defect the reconcile gate exists
     // to prevent — so the line is deferred to after the verdict, and the command that emits it
     // is named rather than left to memory.
+    //
+    // Keyed on the EPIC'S obligation after the pop, not on this frame (Decision 6): an earlier
+    // armed detour still unanswered owes a verdict whatever this frame said, and every owed detour
+    // is named — not only the one just popped.
+    const owed = ownedDetours(epic);
+    const targets = owed.length ? owed : [detourId || "<detourId>"];
     process.stderr.write(
-      `conductor: RECONCILE GATE — '${pausedEpic}' carries reconcileNeeded. Run the reconciler ` +
-      `BEFORE writing code, then \`record-reconcile ${pausedEpic} --detour ${detourId || "<detourId>"} ` +
-      "--verdict valid|invalidated\`, then `honcho-memory pop " + pausedEpic +
-      " \"<detour>; reconcile = …\"` for the memory line\n");
+      `conductor: RECONCILE GATE — '${pausedEpic}' carries reconcileNeeded` +
+      (owed.length ? ` and owes a verdict against ${owed.map(d => `'${d}'`).join(", ")}` : "") +
+      ". Run the reconciler BEFORE writing code, then " +
+      targets.map(d => `\`record-reconcile ${pausedEpic} --detour ${d} --verdict valid|invalidated\``).join(", ") +
+      ", then `honcho-memory pop " + pausedEpic + " \"<detour>; reconcile = …\"` for the memory line\n");
     return;
   }
   // Nothing to reconcile, so the resume is complete and the memory line is true now.

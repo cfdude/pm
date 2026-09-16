@@ -194,15 +194,15 @@ Pairs: 7.1–7.4 and 7.4a land with 7.5.
 
 Pairs: 8.1–8.2 and 8.2a land with 8.4 (8.2a needs the arming of 6.10, the heal of 7.5 and the OR of 8.4).
 
-- [ ] 8.1 RED: owed vs `d`, `push-detour p --detour d2 --reason r --no-reconcile` — flag stays true
+- [x] 8.1 RED: owed vs `d`, `push-detour p --detour d2 --reason r --no-reconcile` — flag stays true
       and the report does not state no reconcile is owed on resume (repro 3)
-- [ ] 8.2 RED: then `pop-detour p` — stdout has no `no reconcile was required` line,
+- [x] 8.2 RED: then `pop-detour p` — stdout has no `no reconcile was required` line,
       `.conductor/honcho-memories.log` gains no POP line for `p`, stderr names `d`, `gate-guard` exits 2
-- [ ] 8.2a RED: owed vs armed `d`, `push-detour p --detour d --reason r --no-reconcile`, pop, `render` —
+- [x] 8.2a RED: owed vs armed `d`, `push-detour p --detour d --reason r --no-reconcile`, pop, `render` —
       `p` still owes vs `d` and `record-reconcile p --detour d --verdict valid` exits 0
-- [ ] 8.3 REGRESSION GUARD: an epic owing nothing pushed `--no-reconcile` and popped still emits and
+- [x] 8.3 REGRESSION GUARD: an epic owing nothing pushed `--no-reconcile` and popped still emits and
       logs its POP line
-- [ ] 8.4 GREEN: design Decision 6 in `detour-stack.mjs`; suite green
+- [x] 8.4 GREEN: design Decision 6 in `detour-stack.mjs`; suite green
 
 ## 9. A write never destroys an owed reconcile's record
 
