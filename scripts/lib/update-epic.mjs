@@ -16,7 +16,7 @@ import { archiveGate, AGENT_OUTCOMES, deliveredObligations, dispositionInvocatio
 import { deferralAssertion, isEngineStamped, isStoryDisposed, outcomeOf, storyDisposition, storyDispositionError } from "./disposition.mjs";
 import { isArchived } from "./epic-progress.mjs";
 import { claimArtifacts } from "./source-artifacts.mjs";
-import { linkTypeVocabulary, mergeLinks } from "./links.mjs";
+import { holdsOwedReconcileRecord, linkTypeVocabulary, mergeLinks, ownedDetours } from "./links.mjs";
 import { isCommitNameShaped, resolveCommits, unresolvedCommitsMessage } from "./git.mjs";
 
 // The flags update-epic recognizes, as the registry projects them. Anything else is refused before
@@ -334,6 +334,20 @@ export function updateEpic() {
       process.stderr.write("conductor: --clear-links takes no value\n"); process.exit(1);
     }
     clearedLinks = true;
+    // REFUSED on an epic owing a reconcile that holds the link the verdict must be recorded against
+    // (gates-bind-to-verified-evidence Decision 5) — including the one-write clear-and-re-supply
+    // repair: re-supplying a link writes a false arming record, so the obligation would be left
+    // with nothing a verdict could answer. The repair is ordered, not lost: verdict first.
+    if (holdsOwedReconcileRecord(epic)) {
+      const owed = ownedDetours(epic);
+      process.stderr.write(
+        `conductor: --clear-links on '${id}' is refused — '${id}' owes a reconcile and its links hold the ` +
+        "record that verdict must be written against" +
+        (owed.length ? ` (owed against ${owed.map(d => `'${d}'`).join(", ")})` : "") +
+        `. Record it first: \`record-reconcile ${id} --detour <detourId> --verdict valid|invalidated\`` +
+        " (or /pm:upgrade first if a link predates 0.44.0), then clear. Nothing was written.\n");
+      process.exit(1);
+    }
   }
   if (f.link !== undefined) {
     // The "--link requires a value, and --clear-links is the one that empties" refusal that
@@ -342,7 +356,8 @@ export function updateEpic() {
     // accepted a valueless `--link`, filtered it to `[]` and created the epic. Keeping a second
     // copy here would be unreachable code asserting a rule the registry already carries.
     try {
-      suppliedLinks = parseLinkFlags(f.link, new Set(state.epics.map(e => e.id)));
+      suppliedLinks = parseLinkFlags(f.link, new Set(state.epics.map(e => e.id)),
+        { owingEpic: holdsOwedReconcileRecord(epic) ? id : undefined });
     } catch (e) {
       process.stderr.write(`conductor: ${e.message}\n`); process.exit(1);
     }

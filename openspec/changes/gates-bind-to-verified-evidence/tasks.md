@@ -208,17 +208,17 @@ Pairs: 8.1–8.2 and 8.2a land with 8.4 (8.2a needs the arming of 6.10, the heal
 
 Pairs: 9.1–9.3b land with 9.4.
 
-- [ ] 9.1 RED: owed vs `d`, `update-epic p --clear-links` exits non-zero naming `record-reconcile`,
+- [x] 9.1 RED: owed vs `d`, `update-epic p --clear-links` exits non-zero naming `record-reconcile`,
       byte-identical
-- [ ] 9.2 RED: owed vs `d`, `remove-epic d` exits non-zero with a message naming `record-reconcile`
+- [x] 9.2 RED: owed vs `d`, `remove-epic d` exits non-zero with a message naming `record-reconcile`
       and not telling the reader to resume or pop a detour; byte-identical; `p` still owes vs `d`
-- [ ] 9.3 RED: `update-epic p --link "may-invalidate:d:corrected reason"` on an answered armed link
+- [x] 9.3 RED: `update-epic p --link "may-invalidate:d:corrected reason"` on an answered armed link
       keeps the verdict and arming, changes the reason
-- [ ] 9.3a RED: `p`'s armed `d` answered while `p` owes vs armed `d2` — `update-epic p --clear-links`
+- [x] 9.3a RED: `p`'s armed `d` answered while `p` owes vs armed `d2` — `update-epic p --clear-links`
       and `remove-epic d` each exit non-zero, byte-identical
-- [ ] 9.3b RED: owing `p` holding a malformed link — the integrity finding names `record-reconcile`
+- [x] 9.3b RED: owing `p` holding a malformed link — the integrity finding names `record-reconcile`
       before the repair, and `update-epic p --clear-links --link "<kept>"` is refused byte-identical
-- [ ] 9.4 GREEN: design Decision 5 in `update-epic.mjs`, `links.mjs` (`mergeLinks`,
+- [x] 9.4 GREEN: design Decision 5 in `update-epic.mjs`, `links.mjs` (`mergeLinks`,
       `epicReferences` with a reference `kind`), `remove-epic.mjs`'s refusal and `integrity.mjs`'s
       `dangling-epic-reference` detail worded by `kind`; both clear-and-re-supply repair messages
       (`links.mjs` `unknownLinkTypeMessage`, `integrity.mjs` unknown-link-type finding) name

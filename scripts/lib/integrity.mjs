@@ -24,7 +24,7 @@ import { KNOWN_STATUSES, escapeControls, gateArtifacts, gateHasEvidence, isOpens
 import { AGENT_OUTCOMES, dispositionInvocation } from "./archive-gate.mjs";
 import { commitDate, isAncestor, isCommitNameShaped, objectExists, reachableFromAnyRef } from "./git.mjs";
 import { isArchiveBackfilled, outcomeOf, stampedBy } from "./disposition.mjs";
-import { epicReferences, isKnownLinkType, isRenderableLink, KNOWN_LINK_TYPES, supersededEpics } from "./links.mjs";
+import { epicReferences, holdsOwedReconcileRecord, isKnownLinkType, isRenderableLink, KNOWN_LINK_TYPES, supersededEpics } from "./links.mjs";
 import { claimExpiry, isLiveClaim } from "./claim-shape.mjs";
 
 /** The outcomes that are their own explanation. Each carries a REQUIRED reason saying why the
@@ -473,7 +473,13 @@ export const CHECKS = [
           if (!isRenderableLink(l) || isKnownLinkType(l.type)) continue;
           out.push({ epic: e.id, detail:
             `link \`${l.type}→${l.epic}\` — '${l.type}' is not one of ${KNOWN_LINK_TYPES.join(", ")}, ` +
-            "so every consumer that switches on the type ignores it. Fix it with " +
+            "so every consumer that switches on the type ignores it. " +
+            // On an owing epic the clear is refused until the owed verdict is recorded (Decision 5).
+            (holdsOwedReconcileRecord(e)
+              ? `'${e.id}' owes a reconcile, so record that verdict FIRST — \`record-reconcile ${e.id} ` +
+                "--detour <detourId> --verdict valid|invalidated` — because the repair below is refused while it owes. "
+              : "") +
+            "Fix it with " +
             `\`update-epic ${e.id} --clear-links --link "<type>:<epic>[:<reason>]" ...\` — every ` +
             "link you want kept, in ONE invocation. `--link` alone APPENDS, so a corrected type " +
             "is a new edge and would leave this one exactly where it is." });
@@ -541,7 +547,10 @@ export const CHECKS = [
         .filter(r => !held.has(r.epic))
         .map(r => ({ epic: r.holder || undefined, detail:
           `${r.where} names \`${r.epic}\`, which is not an epic in this record` +
-          (r.drop ? "" : " — a detour-stack frame, so `/pm:resume` would pop a frame that " +
+          (r.drop ? "" : r.kind === "owed-reconcile"
+            ? " — the link a reconcile this epic owes is recorded against; `record-reconcile` answers it " +
+              "against that id, and the link cannot be stripped while the obligation stands"
+            : " — a detour-stack frame, so `/pm:resume` would pop a frame that " +
             "names nothing") }));
     },
   },

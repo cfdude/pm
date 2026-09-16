@@ -150,7 +150,7 @@ export function requirePlatformFlag(command) {
  *  add-epic, update-epic and add-many all reach the store through here — which is why the check
  *  lives at the shared function rather than at each verb. The read paths deliberately stay
  *  permissive; see isRenderableLink() in links.mjs for why. */
-export function parseLinkFlags(raw, knownEpicIds) {
+export function parseLinkFlags(raw, knownEpicIds, { owingEpic } = {}) {
   return (raw || []).filter(s => typeof s === "string").map(s => {
     const [type, epic, ...rest] = s.split(":");
     if (!type || !epic) {
@@ -165,7 +165,7 @@ export function parseLinkFlags(raw, knownEpicIds) {
       throw new Error(`bad --link '${s}': '${epic}' is not a known epic id`);
     }
     if (!isKnownLinkType(type)) {
-      throw new Error(unknownLinkTypeMessage(s, type));
+      throw new Error(unknownLinkTypeMessage(s, type, { owingEpic }));
     }
     const reason = rest.join(":").trim();
     return reason ? { type, epic, reason } : { type, epic };

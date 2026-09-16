@@ -327,3 +327,55 @@ test("8.3 REGRESSION GUARD: a pop that owes nothing still emits and logs its mem
   assert.match(r.stdout, /resumed p, reconciled vs d; no reconcile was required/);
   assert.match(honchoLog(cwd), /resumed p, reconciled vs d; no reconcile was required/);
 });
+
+// ═══════════════ Requirement: A write never destroys the record of an owed reconcile ═══════════════
+
+test("9.1 clearing links on an owing epic is refused naming record-reconcile", () => {
+  const cwd = owingRepo();
+  const r = refused(cwd, ["update-epic", "p", "--clear-links"]);
+  assert.match(r.stderr, /record-reconcile/);
+});
+
+test("9.2 removing an armed detour is refused naming record-reconcile, not a detour pop", () => {
+  const cwd = owingRepo();
+  const r = refused(cwd, ["remove-epic", "d"]);
+  assert.match(r.stderr, /record-reconcile/);
+  assert.doesNotMatch(r.stderr, /Resume or pop the detour/);
+  assert.equal(owes(cwd), true);
+  assert.ok(linkOf(cwd, "p", "d"), "the link to d is still there");
+});
+
+test("9.3 correcting a link's reason keeps its verdict and arming", () => {
+  const cwd = owingRepo();
+  accepted(cwd, verdict(cwd, "d"));
+  accepted(cwd, ["update-epic", "p", "--link", "may-invalidate:d:corrected reason"]);
+  const l = linkOf(cwd, "p", "d");
+  assert.equal(l.reason, "corrected reason");
+  assert.equal(l.reconciled.verdict, "valid");
+  assert.equal(l.reconcileOnResume, true);
+  assert.equal(owes(cwd), false);
+});
+
+test("9.3a an answered armed link is protected while another obligation stands", () => {
+  const cwd = repo();
+  push(cwd, "d"); pop(cwd);
+  push(cwd, "d2"); pop(cwd);
+  accepted(cwd, verdict(cwd, "d"));
+  refused(cwd, ["update-epic", "p", "--clear-links"]);
+  refused(cwd, ["remove-epic", "d"]);
+});
+
+test("9.3b on an owing epic the repair instructions name record-reconcile first, and the repair is refused", () => {
+  const cwd = owingRepo();
+  const s = readState(cwd);
+  s.epics.find(e => e.id === "p").links.push({ type: "depends_on", epic: "x" });
+  writeState(cwd, s);
+  const integ = attempt(cwd, ["integrity"]).stdout;
+  const finding = integ.split("\n").find(l => l.includes("depends_on")) || "";
+  assert.ok(finding.includes("record-reconcile"), `the finding names record-reconcile: ${finding}`);
+  assert.ok(finding.indexOf("record-reconcile") < finding.indexOf("--clear-links"), "record-reconcile comes before the repair");
+  const w = refused(cwd, ["update-epic", "p", "--link", "depends_on:x"]);
+  assert.ok(w.stderr.includes("record-reconcile") && w.stderr.indexOf("record-reconcile") < w.stderr.lastIndexOf("--clear-links"),
+    `the write-time repair message names record-reconcile first: ${w.stderr}`);
+  refused(cwd, ["update-epic", "p", "--clear-links", "--link", "may-invalidate:d:kept"]);
+});

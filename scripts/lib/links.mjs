@@ -31,9 +31,9 @@ export const LINK_TYPES_READ = [
     drives: "triage's superseded marker and the superseded-epic-never-ended check" },
 ];
 
-/** Written by the engine as protocol state, and read back BY EPIC ID rather than by type:
- *  `record-reconcile` creates the link to hang a verdict on and finds it with
- *  `l.epic === detourId`. So it is known and it is meaningful to a reader, but nothing
+/** Written by the engine as protocol state — `push-detour` writes it, carrying its arming record —
+ *  and read back BY EPIC ID: `record-reconcile` finds the armed link to `--detour` and hangs its
+ *  verdict on it (it never creates one, since gates-bind-to-verified-evidence). So it is known and it is meaningful to a reader, but nothing
  *  switches on it — filing it under "semantic" would be exactly the overclaim gh#100 is about. */
 export const LINK_TYPES_WRITTEN = [
   // pm:link-vocabulary
@@ -94,7 +94,12 @@ export function mergeLinks(existing, supplied) {
     // (`update-epic --link`, `add-epic --link`, an `add-many` entry) is never one a verdict owes.
     if (at === -1) { merged.push(l.type === "may-invalidate" ? { ...l, reconcileOnResume: false } : l); continue; }
     if (reasonOf(merged[at]) === reasonOf(l)) continue;   // identical — the stored object stands
-    merged[at] = l;                                        // corrected reason, same position
+    // Corrected reason, same position — and EVERY OTHER KEY the stored link carries survives the
+    // correction (gates-bind-to-verified-evidence Decision 5). Replacing the object wholesale dropped
+    // a may-invalidate link's arming record, its verdict and its superseded verdict, so the
+    // documented way to fix a reason silently erased an owed reconcile's record.
+    const { type: _t, epic: _e, reason: _r, ...kept } = merged[at];
+    merged[at] = { ...l, ...kept };
   }
   return merged;
 }
@@ -120,11 +125,17 @@ export function linkTypeVocabulary() {
  *  exactly where it was and the finding would persist forever. An emitted command that no longer
  *  runs as written is a defect this engine forbids elsewhere, so the wording names the one shape
  *  that still repairs: clear and re-supply, in one invocation. */
-export function unknownLinkTypeMessage(raw, type) {
+export function unknownLinkTypeMessage(raw, type, { owingEpic } = {}) {
   return `bad --link '${raw}': '${type}' is not a known link type.\n` +
     `  reads (these change behaviour): ${LINK_TYPES_READ.map(t => `${t.type} — ${t.drives}`).join("; ")}\n` +
     `  protocol state: ${LINK_TYPES_WRITTEN.map(t => t.type).join(", ")}\n` +
     `  annotation only: ${LINK_TYPES_ANNOTATION.join(", ")}\n` +
+    // On an epic OWING a reconcile the clear below is refused (it would remove the link the owed
+    // verdict must be recorded against), so the repair is ordered, not lost: verdict first.
+    (owingEpic
+      ? `  '${owingEpic}' owes a reconcile, so its links cannot be cleared yet: record the verdict FIRST ` +
+        `with \`record-reconcile ${owingEpic} --detour <detourId> --verdict valid|invalidated\`, then repair.\n`
+      : "") +
     "  `--link` APPENDS (a repeat of an existing type+target updates that entry's reason in " +
     "place). So if this came from a link already in the record, correcting the type ADDS a " +
     "second edge and leaves the bad one: replace the set instead — `--clear-links` and every " +
@@ -259,6 +270,15 @@ export function stampReconcileKeys(state) {
   return stamped;
 }
 
+/** Does `epic` owe a reconcile AND hold a link whose removal would destroy that obligation's record —
+ *  an armed may-invalidate link (answered or not) or an unmigrated one? The condition every write
+ *  that could remove a link is refused on (Decision 5): `update-epic --clear-links`, `remove-epic` of
+ *  the detour, and the clear-and-re-supply repair the two emitted messages describe. */
+export function holdsOwedReconcileRecord(epic) {
+  return !!epic && epic.reconcileNeeded === true &&
+    (Array.isArray(epic.links) ? epic.links : []).some(l => isArmed(l) || isUnmigrated(l));
+}
+
 /** Is the project currently inside a detour? (active epic is a detour, or stack non-empty) */
 export function detourContext(state) {
   if (state.detourStack && state.detourStack.length) {
@@ -298,7 +318,10 @@ export function detourContext(state) {
  *  source-artifacts.mjs. */
 export function epicReferences(state) {
   const refs = [];
-  const add = (holder, where, epic, drop) => { if (typeof epic === "string" && epic) refs.push({ holder, where, epic, drop }); };
+  // Every reference carries a KIND, so a reader wording an undroppable one (`drop: null`) can say
+  // WHY it cannot be dropped instead of assuming it is a detour frame: `frame` | `owed-reconcile` |
+  // `record`.
+  const add = (holder, where, epic, drop, kind = "record") => { if (typeof epic === "string" && epic) refs.push({ holder, where, epic, drop, kind }); };
 
   if (state && typeof state.active === "string") {
     add(null, "state.active", state.active, () => { state.active = null; });
@@ -306,6 +329,13 @@ export function epicReferences(state) {
   for (const e of (state && state.epics) || []) {
     if (!e || typeof e !== "object") continue;
     for (const l of Array.isArray(e.links) ? [...e.links] : []) {
+      // A may-invalidate link an OWING epic's reconcile is recorded against — armed (answered or
+      // not) or unmigrated — is not droppable: stripping it leaves an obligation no verdict can ever
+      // answer (gates-bind-to-verified-evidence Decision 5). `remove-epic` refuses on it.
+      if (e.reconcileNeeded === true && (isArmed(l) || isUnmigrated(l))) {
+        add(e.id, `epic \`${e.id}\` links[] (a reconcile it owes is recorded against it)`, l.epic, null, "owed-reconcile");
+        continue;
+      }
       add(e.id, `epic \`${e.id}\` links[]`, l && l.epic, () => { e.links = e.links.filter(x => x !== l); });
     }
     add(e.id, `epic \`${e.id}\` parent`, e.parent, () => { delete e.parent; });
@@ -344,8 +374,8 @@ export function epicReferences(state) {
   }
   for (const f of (state && state.detourStack) || []) {
     if (!f || typeof f !== "object") continue;
-    add(null, "a detour-stack frame's pausedEpic", f.pausedEpic, null);
-    add(null, "a detour-stack frame's spawnedDetour", f.spawnedDetour, null);
+    add(null, "a detour-stack frame's pausedEpic", f.pausedEpic, null, "frame");
+    add(null, "a detour-stack frame's spawnedDetour", f.spawnedDetour, null, "frame");
   }
   return refs;
 }
