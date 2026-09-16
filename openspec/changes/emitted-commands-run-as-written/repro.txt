@@ -1,0 +1,85 @@
+
+### A1 init stderr names a hand-edit
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+
+### B1-B3 jira primary (both) + github-issues secondary: rules block
+395:   (`/pm:epic list` or read `.conductor/state.json`) — if so, skip it (already
+403:   `add-epic --id jira-abc-<issue-number> --title "<issue-title>" --status untriaged --external-id <issue-number> --external-url <issue-url> --external-updated-at <issue-updated-at> --lane <lane> --priority P2`
+416:5. For every epic ALREADY linked to an item here, compare that item's tracker-side
+434:## Secondary tracker sync (github-issues · cfdude/pm)
+443:1. `gh issue list --repo cfdude/pm --state open --json number,title,url,labels`.
+446:   (`/pm:epic list` or read `.conductor/state.json`) — if so, skip it (already mirrored;
+455:   `add-epic --id gh-cfdude-pm-<issue-number> --title "<issue-title>" --status untriaged --external-id <issue-number> --external-url <issue-url> --external-updated-at <issue-updated-at> --lane <lane> --priority P2`
+464:4. For every epic linked to an item HERE that did NOT appear in the open list you just
+
+### B3 the jira recipe filled from key ABC-123
+conductor: --id required, format ^[a-z0-9][a-z0-9._-]*$
+exit=1
+
+### B7 brief: mirror claim + never-re-read remedy
+11:TRACKER SYNC (jira · ABC):
+12:  ✓ all active epics are mirrored to jira
+13:  ⚠ 1 tracker-linked epic(s) never re-read since mirroring — run `/pm:sync`
+
+### C gate forms taught by docs
+conductor: a gate 1 'pass' requires the artifacts it reviewed — missing --artifact <path> (repeatable). Gate 1 is the SPEC review and runs before any code exists, so its evidence is the proposal, design, specs and tasks the reviewer actually read (a 'fail' may omit it).
+gate1 (child doc form) exit=1
+conductor: a gate 2 'pass' requires the commit range it covered — missing --base-sha and --head-sha. Record the range the reviewer actually read (a 'fail' may omit it).
+gate2 (child doc / archive-gate remedy form) exit=1
+conductor: recorded — but 27e5d7d7e9b0e411a515588ff5c5c387e6ea7438..27e5d7d7e9b0e411a515588ff5c5c387e6ea7438 is an IMPLEMENTATION range on a gate 1 verdict, and every consumer that reads that field treats it as one. Gate 1 reviews artifacts by path: --artifact <path> (repeatable) is the evidence a spec review has.
+conductor: rendered /Users/robsherman/Documents/Repos/pm/openspec/changes/emitted-commands-run-as-written/work/b/PROJECT.md
+conductor: recorded gate 1 review 'pass' for 'local-one'
+gate1 sha-only (SKILL.md/review-mode.md form) exit=0
+
+### C review-mode.md says there is no unset
+clear exit=0
+reviewMode after --clear: undefined
+
+### B4-B6 github-issues primary, inward only, repo with a shell metacharacter; then vendor switch
+conductor: refreshed rules block in CLAUDE.md (platform: claude-code)
+conductor: rendered /Users/robsherman/Documents/Repos/pm/openspec/changes/emitted-commands-run-as-written/work/c/PROJECT.md
+conductor: tracker set (github-issues)
+exit=0
+372:1. `gh issue list --repo a/b; touch pwned --state open --json number,title,url,updatedAt,labels`.
+414:## Sync after completing tracker-linked work
+417:writeback steps above), immediately re-sync with your tracker(s) — run `/pm:sync` — to pull
+conductor: refreshed rules block in CLAUDE.md (platform: claude-code)
+conductor: rendered /Users/robsherman/Documents/Repos/pm/openspec/changes/emitted-commands-run-as-written/work/c/PROJECT.md
+conductor: tracker set (jira ABC)
+exit=0
+366:## Inward tracker sync (jira · a/b; touch pwned)
+382:   `add-epic --id jira-a-b-touch-pwned-<issue-number> --title "<issue-title>" --status untriaged --external-id <issue-number> --external-url <issue-url> --external-updated-at <issue-updated-at> --lane <lane> --priority P2`
+primary --remove exit=0
+tracker after primary --remove: {"system":"jira","repo":"a/b; touch pwned","direction":"inward","projectKey":"ABC"}
+--intent badpair exit=0
+
+### gh default page size
+  -L, --limit int          Maximum number of issues to fetch (default 30)
+
+### D1-D2 integrity remedy for an openspec release member, and the refusal's own remedy
+  • `os-two` — still `queued` in release `r1`, which has already delivered — and it is not in that release's deferred[], so the record says neither that it shipped nor that it was cut. Give it the ending it actually had: update-epic os-two --status archived --outcome delivered --no-deferrals — or, if it was cut, record that instead: release r1 --defer os-two --reason "<why>"
+conductor: cannot archive openspec-lane epic 'os-two' — missing a passing Gate 2 (implementation review) verdict. Run 'record-gate-review os-two --gate 2 --verdict pass' after a real fresh-context implementation review before archiving.
+integrity remedy exit=1
+conductor: a gate 2 'pass' requires the commit range it covered — missing --base-sha and --head-sha. Record the range the reviewer actually read (a 'fail' may omit it).
+archive-gate remedy exit=1
+
+### D3 unconsidered-outcomes offers delivered for an openspec-lane epic with no Gate 2 (#189)
+      "invocation": "update-epic old-os --status archived --outcome <delivered|killed|superseded|abandoned|declined|unreconstructable> --reason \"<why>\" --no-deferrals"
+conductor: cannot archive openspec-lane epic 'old-os' — missing a passing Gate 2 (implementation review) verdict. Run 'record-gate-review old-os --gate 2 --verdict pass' after a real fresh-context implementation review before archiving.
+delivered exit=1
+
+### B8 outward-only primary + secondary: the never-re-read count, what /pm:sync cannot clear, and what does
+before:
+TRACKER SYNC (jira · ABC):
+  ✓ all active epics are mirrored to jira
+  ⚠ 1 tracker-linked epic(s) never re-read since mirroring — run `/pm:sync`
+rules-block sync heading: ## External tracker sync (jira · ABC)
+rules-block sync heading: ## Secondary tracker sync (github-issues · cfdude/pm)
+rules-block sync heading: ## Sync after completing tracker-linked work
+record-tracker-refresh exit=0
+after:
+TRACKER SYNC (jira · ABC):
+  ✓ all active epics are mirrored to jira
+
+### gh accepts --limit 1000
+items returned: 109
