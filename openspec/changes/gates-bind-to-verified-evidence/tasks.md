@@ -116,43 +116,43 @@ Pairs: 5.1 lands with 5.3.
 
 Pairs: 6.1–6.8 and 6.9a–6.9g land with 6.10.
 
-- [ ] 6.1 RED: after push `p`→`d` `--reconcile` and pop, `record-reconcile p --detour p --verdict valid` exits
+- [x] 6.1 RED: after push `p`→`d` `--reconcile` and pop, `record-reconcile p --detour p --verdict valid` exits
       non-zero naming `d`; `state.json` byte-identical; `gate-guard` exits 2 (repro 1a)
-- [ ] 6.2 RED: `record-reconcile p --detour other --verdict valid` exits non-zero and writes no link (repro 1b)
-- [ ] 6.3 RED: owed vs `d`, then push `p`→`d2` `--no-reconcile` and pop; `record-reconcile p --detour
+- [x] 6.2 RED: `record-reconcile p --detour other --verdict valid` exits non-zero and writes no link (repro 1b)
+- [x] 6.3 RED: owed vs `d`, then push `p`→`d2` `--no-reconcile` and pop; `record-reconcile p --detour
       d2 --verdict valid` exits non-zero naming `d`
-- [ ] 6.4 RED: with the `p`→`d` frame still on the stack, `record-reconcile p --detour d --verdict valid` exits
+- [x] 6.4 RED: with the `p`→`d` frame still on the stack, `record-reconcile p --detour d --verdict valid` exits
       non-zero, byte-identical
-- [ ] 6.5 REGRESSION GUARD: owed vs `d` only; `record-reconcile p --detour d --verdict valid` exits 0,
+- [x] 6.5 REGRESSION GUARD: owed vs `d` only; `record-reconcile p --detour d --verdict valid` exits 0,
       verdict readable, flag false, `gate-guard` exits 0
-- [ ] 6.6 RED: push/pop `d` then push/pop `d2`, both `--reconcile`; a verdict vs `d` leaves the flag
+- [x] 6.6 RED: push/pop `d` then push/pop `d2`, both `--reconcile`; a verdict vs `d` leaves the flag
       true and `gate-guard` exiting 2 until `d2` is answered
-- [ ] 6.7 RED: push/pop/answer `valid` vs `d`, push/pop `d` again `--reconcile`, answer
+- [x] 6.7 RED: push/pop/answer `valid` vs `d`, push/pop `d` again `--reconcile`, answer
       `invalidated` — exits 0, flag false, `valid` still readable on the link (repro `r-repush`)
-- [ ] 6.8 RED: correcting an answered verdict keeps the replaced one readable and does not set the flag
-- [ ] 6.9a RED: owed vs armed `d`, `update-epic p --link "may-invalidate:x:why"` — the `x` link
+- [x] 6.8 RED: correcting an answered verdict keeps the replaced one readable and does not set the flag
+- [x] 6.9a RED: owed vs armed `d`, `update-epic p --link "may-invalidate:x:why"` — the `x` link
       carries `reconcileOnResume: false` and `record-reconcile p --detour x --verdict valid` is refused naming `d`
-- [ ] 6.9b RED: a 0.43.0 state file (`reconcileNeeded: true`, keyless unanswered link to `d`) before
+- [x] 6.9b RED: a 0.43.0 state file (`reconcileNeeded: true`, keyless unanswered link to `d`) before
       `upgrade` — `record-reconcile p --detour d --verdict valid` exits non-zero naming `/pm:upgrade`, byte-identical,
       and, `p` being active, `render` leaves `p` owing
-- [ ] 6.9f RED: that 0.43.0 `p`, then `push-detour p --detour d2 --reason r --reconcile` and pop before
+- [x] 6.9f RED: that 0.43.0 `p`, then `push-detour p --detour d2 --reason r --reconcile` and pop before
       `upgrade` — `record-reconcile p --detour d2 --verdict valid` exits non-zero naming `/pm:upgrade`,
       byte-identical, `p` still owes
-- [ ] 6.9g RED: a state file stamped `pmVersion` 0.44.0 holding owing `p` with a keyless
+- [x] 6.9g RED: a state file stamped `pmVersion` 0.44.0 holding owing `p` with a keyless
       `may-invalidate` link to an archived detour — `upgrade` leaves that link carrying
       `reconcileOnResume: true` (today's upgrade adds no key, so this half is what fails), then
       `record-reconcile p --detour <it> --verdict valid` exits 0. Plus the self-link case: a keyless
       `may-invalidate:p` link on owing `p` is stamped `false`, and after `d` is answered `p` owes
       nothing (lands with 6.10: `stampReconcileKeys` runs on every `upgrade`)
-- [ ] 6.9c RED (migration): that 0.43.0 file through `upgrade` — the `d` link carries `true`, then
+- [x] 6.9c RED (migration): that 0.43.0 file through `upgrade` — the `d` link carries `true`, then
       `record-reconcile p --detour d --verdict valid` exits 0 and clears; a keyless link on an epic
       with `reconcileNeeded: false` becomes `false`; a keyless link already carrying a verdict becomes
       `false`
-- [ ] 6.9d REGRESSION GUARD (migration): applying the 0.44.0 entry twice leaves `state.json`
+- [x] 6.9d REGRESSION GUARD (migration): applying the 0.44.0 entry twice leaves `state.json`
       unchanged, and a link already carrying a key is untouched
-- [ ] 6.9e REGRESSION GUARD: a 0.43.0 state file loads and every read-only verb (`brief`,
+- [x] 6.9e REGRESSION GUARD: a 0.43.0 state file loads and every read-only verb (`brief`,
       `integrity`, `gate-guard`) exits as before on it
-- [ ] 6.10 GREEN: design Decisions 1–3 in `reconciler-writeback.mjs`, `detour-stack.mjs`, `links.mjs`
+- [x] 6.10 GREEN: design Decisions 1–3 in `reconciler-writeback.mjs`, `detour-stack.mjs`, `links.mjs`
       and `migrations.mjs` (arming on the link at push via `linkOnce`, `false` on links `mergeLinks`
       creates, per-link `isArmed()`/`isUnmigrated()`, re-arm, acceptance predicate, `link.superseded`,
       flag written from `ownedDetours`, the refusal on any epic holding an unmigrated link, the `0.44.0`

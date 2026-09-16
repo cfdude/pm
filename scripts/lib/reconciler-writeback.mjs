@@ -6,6 +6,7 @@ import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
+import { isArmed, isUnmigrated, liveReconcileFrame, ownedDetours } from "./links.mjs";
 
 const KNOWN_RECONCILE_VERDICTS = ["valid", "invalidated"];
 
@@ -30,22 +31,59 @@ export function recordReconcile() {
   const state = loadState();
   const epic = state.epics.find(e => e.id === id);
   if (!epic) { process.stderr.write(`conductor: epic '${id}' not found\n`); process.exit(1); }
-  if (!state.epics.some(e => e.id === detourId)) {
-    process.stderr.write(`conductor: detour epic '${detourId}' not found\n`); process.exit(1);
+
+  // ACCEPTANCE (gates-bind-to-verified-evidence Decision 2). A verdict answers ONLY a detour this
+  // epic's obligation was ARMED for by `push-detour --reconcile`. The verb used to push a
+  // `may-invalidate` link to whatever `--detour` named and clear the flag, so a verdict against the
+  // epic itself, an unrelated epic, or a `--no-reconcile` detour cleared an obligation owed against
+  // another detour, and `gate-guard` let the edit through. Every refusal below exits before any
+  // write and names what IS owed, so the caller learns the one invocation that is accepted.
+  const owed = ownedDetours(epic);
+  const owedPhrase = owed.length
+    ? `'${id}' owes a verdict against: ${owed.map(d => `'${d}'`).join(", ")}`
+    : `'${id}' owes no reconcile verdict against any detour`;
+  const refuse = (why) => { process.stderr.write(`conductor: ${why} — ${owedPhrase}. Nothing was written.\n`); process.exit(1); };
+  //  0. An UNMIGRATED link — one written before arming records existed — may carry an obligation
+  //     nothing can count, so EVERY verdict on this epic waits for the stamp, whichever detour it
+  //     names: a verdict against a new armed detour would otherwise set the flag from ownedDetours()
+  //     and silently drop the unmigrated one.
+  const unmigrated = (Array.isArray(epic.links) ? epic.links : []).filter(isUnmigrated);
+  if (unmigrated.length) {
+    process.stderr.write(
+      `conductor: '${id}' holds ${unmigrated.length} may-invalidate link(s) written before reconcile ` +
+      `arming was recorded (${unmigrated.map(l => `'${l.epic}'`).join(", ")}). Run /pm:upgrade first ` +
+      "(`upgrade`): it stamps each link with whether a reconcile is owed against it, and only then " +
+      "can a verdict be matched to the detour it answers. Nothing was written.\n");
+    process.exit(1);
+  }
+  //  1. Never the epic itself.
+  if (detourId === id) refuse(`'${id}' cannot answer a reconcile against itself`);
+  //  2. Only a detour this epic's link ARMS.
+  const link = (Array.isArray(epic.links) ? epic.links : []).find(l => l && l.type === "may-invalidate" && l.epic === detourId);
+  if (!isArmed(link)) {
+    refuse(`'${detourId}' is not a detour '${id}' was paused for with --reconcile, so there is no ` +
+      "reconcile obligation for this verdict to answer");
+  }
+  //  3. Not while that detour's frame is still on the stack: the detour has not been resumed from,
+  //     so its work is not finished and nothing has yet been reconciled against it.
+  if ((state.detourStack || []).some(fr => fr && fr.pausedEpic === id && fr.spawnedDetour === detourId)) {
+    refuse(`'${id}' is still paused for '${detourId}' — pop the detour (/pm:resume) before recording ` +
+      "the verdict against it");
   }
 
   const amendments = typeof f.amendments === "string"
     ? f.amendments.split(";").map(s => s.trim()).filter(Boolean)
     : [];
 
-  epic.links = Array.isArray(epic.links) ? epic.links : [];
-  let link = epic.links.find(l => l && l.epic === detourId);
-  if (!link) {
-    link = { type: "may-invalidate", epic: detourId };
-    epic.links.push(link);
-  }
+  // RE-RECORDING IS A CORRECTION, never an overwrite: a verdict already on the link moves to
+  // `superseded` (one level deep, as a gate verdict's does) before the new one is written.
+  const correction = !!link.reconciled;
+  if (correction) link.superseded = link.reconciled;
   link.reconciled = { verdict, amendments, reconciledAt: new Date().toISOString() };
-  epic.reconcileNeeded = false;
+  // The flag is written AT THE VERDICT TRANSITION, from durable per-link records and the live stack —
+  // verdict first, then flag. A correction never RAISES it: answering again says nothing new is owed.
+  const stillOwed = ownedDetours(epic).length > 0 || liveReconcileFrame(state, id);
+  epic.reconcileNeeded = correction ? (epic.reconcileNeeded === true && stillOwed) : stillOwed;
 
   const saved = saveState(state);
   render();

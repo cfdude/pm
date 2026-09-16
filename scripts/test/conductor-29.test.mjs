@@ -162,7 +162,11 @@ test("every known type is accepted on write", () => {
   const expected = [];
   for (const t of KNOWN_LINK_TYPES) {
     run(["update-epic", "b", "--link", `${t}:a:why`], { cwd });
-    expected.push({ type: t, epic: "a", reason: "why" });
+    // A hand-supplied may-invalidate link carries an explicit FALSE arming record: only
+    // push-detour --reconcile arms a reconcile obligation (gates-bind-to-verified-evidence).
+    expected.push(t === "may-invalidate"
+      ? { type: t, epic: "a", reason: "why", reconcileOnResume: false }
+      : { type: t, epic: "a", reason: "why" });
     assert.deepEqual(readState(cwd).epics.find(e => e.id === "b").links, expected);
   }
 });

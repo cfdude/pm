@@ -43,10 +43,32 @@ const PUSH_USAGE =
 /** Add a link once. The PUSH protocol writes two, and re-running a push that half-succeeded
  *  must not leave an epic carrying the same edge twice. Matched on type AND epic: an epic can
  *  legitimately hold two differently-typed links to the same other epic. */
-function linkOnce(epic, type, otherId, reason) {
+function linkOnce(epic, type, otherId, reason, { arm } = {}) {
   epic.links = Array.isArray(epic.links) ? epic.links : [];
-  if (epic.links.some(l => l && l.type === type && l.epic === otherId)) return;
-  epic.links.push(reason ? { type, epic: otherId, reason } : { type, epic: otherId });
+  const found = epic.links.find(l => l && l.type === type && l.epic === otherId);
+  if (type !== "may-invalidate") {
+    if (!found) epic.links.push(reason ? { type, epic: otherId, reason } : { type, epic: otherId });
+    return;
+  }
+  // THE ARMING RECORD (gates-bind-to-verified-evidence Decision 1), applied to the link this push
+  // CREATES or FINDS — it used to return early on an existing link, so a re-push wrote nothing.
+  //   --reconcile on a new link: armed. On an existing one: armed, and a verdict it already carries
+  //     moves to `superseded` (RE-ARM) so the new pause owes a new verdict and the earlier one stays
+  //     readable. An explicit arming is a fact, so an unmigrated link is armed too.
+  //   --no-reconcile on a new link: false. On an existing one: NOTHING — it never lowers a true
+  //     record, and it never writes a key onto an unmigrated link, which would be a guess.
+  if (!found) {
+    const link = reason ? { type, epic: otherId, reason } : { type, epic: otherId };
+    link.reconcileOnResume = arm === true;
+    epic.links.push(link);
+    return;
+  }
+  if (arm !== true) return;
+  if (found.reconciled) {
+    found.superseded = found.reconciled;
+    delete found.reconciled;
+  }
+  found.reconcileOnResume = true;
 }
 
 /** `push-detour <pausedEpicId> --detour <detourEpicId> --reason "<why>" (--reconcile |
@@ -128,7 +150,7 @@ export function pushDetour() {
   // record-reconcile hangs its verdict on (it creates it if absent — now it will not have to),
   // and deferralHistory() counts it, so writing it here is what makes the deferral disclosure
   // below true for a push that is later resumed and pushed again.
-  linkOnce(paused, "may-invalidate", detourId, reason);
+  linkOnce(paused, "may-invalidate", detourId, reason, { arm: reconcileOnResume });
   linkOnce(detour, "resolves-blocker-for", id, reason);
   activate(state, detourId);
 

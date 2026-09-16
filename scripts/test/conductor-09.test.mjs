@@ -12,10 +12,13 @@ test("record-reconcile writes a structured verdict onto the paused epic's link t
   const cwd = tmpRepo(); run(["init"], { cwd });
   run(["add-epic", "--id", "paused-epic", "--lane", "claude-code"], { cwd });
   run(["add-epic", "--id", "detour-epic", "--lane", "claude-code"], { cwd });
-  run(["update-epic", "paused-epic", "--link", "may-invalidate:detour-epic"], { cwd });
-  let s = readState(cwd);
-  s.epics.find(e => e.id === "paused-epic").reconcileNeeded = true;
-  writeState(cwd, s);
+  // The obligation is ARMED by the push and owed after the pop (gates-bind-to-verified-evidence).
+  // This used to hand-add the link with --link and set the flag in state.json — a link a verdict
+  // can no longer answer, because a hand-supplied may-invalidate link is never armed.
+  run(["set-active", "paused-epic"], { cwd });
+  run(["push-detour", "paused-epic", "--detour", "detour-epic", "--reason", "blocked", "--reconcile"], { cwd });
+  run(["pop-detour", "paused-epic"], { cwd });
+  assert.equal(readState(cwd).epics.find(e => e.id === "paused-epic").reconcileNeeded, true);
 
   run(["record-reconcile", "paused-epic", "--detour", "detour-epic",
     "--verdict", "invalidated", "--amendments", "rewrite story 2;drop story 4"], { cwd });
@@ -30,19 +33,21 @@ test("record-reconcile writes a structured verdict onto the paused epic's link t
   assert.match(link.reconciled.reconciledAt, /^\d{4}-\d{2}-\d{2}T/);
 });
 
-test("record-reconcile creates the link to the detour if one doesn't already exist", () => {
+test("record-reconcile NEVER creates a link: a detour the epic was not paused for is refused, and nothing is written", () => {
+  // INVERTED by gates-bind-to-verified-evidence. This test pinned the behaviour that was the
+  // bypass: the verb pushed a may-invalidate link to whatever --detour named and cleared the flag,
+  // so a verdict against an unrelated epic answered an obligation owed against a real detour.
   const cwd = tmpRepo(); run(["init"], { cwd });
   run(["add-epic", "--id", "paused-epic", "--lane", "claude-code"], { cwd });
   run(["add-epic", "--id", "detour-epic", "--lane", "claude-code"], { cwd });
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
 
-  run(["record-reconcile", "paused-epic", "--detour", "detour-epic", "--verdict", "valid"], { cwd });
-
+  const err = expectFail(() => run(["record-reconcile", "paused-epic", "--detour", "detour-epic", "--verdict", "valid"], { cwd }));
+  assert.ok(err, "a verdict against a detour nobody armed is refused");
+  assert.match(String(err.stderr || err.message), /owes no reconcile verdict/);
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before, "nothing was written");
   const epic = readState(cwd).epics.find(e => e.id === "paused-epic");
-  const link = epic.links.find(l => l.epic === "detour-epic");
-  assert.ok(link, "link should be created");
-  assert.equal(link.type, "may-invalidate");
-  assert.equal(link.reconciled.verdict, "valid");
-  assert.deepEqual(link.reconciled.amendments, []);
+  assert.equal((epic.links || []).some(l => l.epic === "detour-epic"), false, "no link was created");
 });
 
 test("record-reconcile rejects an unknown verdict", () => {

@@ -9,7 +9,7 @@ import { pluginVersion, newestInstalledVersion, cmpVer, changelogBetween, stampV
 import { reconcileArchived } from "./epic-progress.mjs";
 import { assertRulesBlockWritable, writeRules } from "./rules.mjs";
 import { render } from "./render.mjs";
-import { normalizeLink } from "./links.mjs";
+import { normalizeLink, stampReconcileKeys } from "./links.mjs";
 import { ARCHIVE_BACKFILL, engineStamp, stampedBy } from "./disposition.mjs";
 import { resolvePlatform } from "./platform.mjs";
 import { ensureGitignore } from "./subcommands.mjs";
@@ -94,6 +94,14 @@ const MIGRATIONS = [
     apply(state) {
       recoverCreatedAtDates(state);
     },
+  },
+  {
+    release: "0.44.0",
+    note: "give every may-invalidate link an explicit reconcileOnResume arming record",
+    // gates-bind-to-verified-evidence Decision 3. Additive (a key only where none exists), idempotent
+    // (a keyed link is never touched) and reads only `state`. The SAME function runs again on every
+    // upgrade below; this entry is what the version bump carries.
+    apply(state) { stampReconcileKeys(state); },
   },
 ];
 
@@ -215,6 +223,11 @@ export function upgrade() {
   for (const m of ordered) {
     if (cmpVer(m.release, stamped) > 0) { m.apply(state); applied++; }
   }
+  // EVERY non-refused run, not only the 0.44.0 bump: MIGRATIONS apply only when release > pmVersion,
+  // and a keyless may-invalidate link can be written AFTER the stamp (an unreloaded older session, a
+  // second machine sharing state.json). The refusal that names /pm:upgrade must never name a no-op.
+  // Immediately before the heal, so the heal reads every link keyed.
+  stampReconcileKeys(state);
   reconcileArchived(state);
   stampVersion(state);
   const saved = saveState(state);

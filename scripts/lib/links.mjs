@@ -88,7 +88,11 @@ export function mergeLinks(existing, supplied) {
   for (const l of Array.isArray(supplied) ? supplied : []) {
     if (!l || typeof l !== "object") continue;
     const at = merged.findIndex(x => x && x.type === l.type && x.epic === l.epic);
-    if (at === -1) { merged.push(l); continue; }
+    // A `may-invalidate` link this merge CREATES is written with an explicit FALSE arming record,
+    // whatever the supplied object carried (gates-bind-to-verified-evidence Decision 1): only
+    // `push-detour --reconcile` arms a reconcile obligation, and a hand-supplied edge
+    // (`update-epic --link`, `add-epic --link`, an `add-many` entry) is never one a verdict owes.
+    if (at === -1) { merged.push(l.type === "may-invalidate" ? { ...l, reconcileOnResume: false } : l); continue; }
     if (reasonOf(merged[at]) === reasonOf(l)) continue;   // identical — the stored object stands
     merged[at] = l;                                        // corrected reason, same position
   }
@@ -189,6 +193,70 @@ export function supersededEpics(epics) {
     }
   }
   return out;
+}
+
+// ─────────────── the reconcile obligation, recorded per detour on the link (gates-bind-to-verified-evidence) ───────────────
+//
+// Every `may-invalidate` link carries an explicit ARMING RECORD, `reconcileOnResume` (the frame's
+// field name, deliberately). Only `push-detour --reconcile` writes `true`; a `--no-reconcile` push
+// and every hand-supplied link write `false`; the 0.44.0 stamp below gives a link an earlier release
+// wrote its record. Armed-ness is decided PER LINK and never from the epic's other links or its
+// `reconcileNeeded` flag, so a verdict can be required to name the detour the obligation is owed
+// against — the epic flag alone cannot say which one that is.
+
+/** A `may-invalidate` link whose arming record is true: a detour a verdict can answer. */
+export function isArmed(link) {
+  return !!link && link.type === "may-invalidate" && link.reconcileOnResume === true;
+}
+
+/** A `may-invalidate` link carrying NO arming record — written by a release before 0.44.0 and not
+ *  yet stamped by `/pm:upgrade`. Never armed, never grounds for clearing an obligation, and while an
+ *  epic holds one every verdict on it is refused naming the upgrade: the obligation it may carry
+ *  cannot be counted. */
+export function isUnmigrated(link) {
+  return !!link && typeof link === "object" && link.type === "may-invalidate" &&
+    !Object.prototype.hasOwnProperty.call(link, "reconcileOnResume");
+}
+
+/** The detours `epic` owes a verdict against: targets of its armed links that carry no verdict.
+ *  Reads link keys and verdicts only — never `reconcileNeeded`, the flag it feeds. */
+export function ownedDetours(epic) {
+  return (epic && Array.isArray(epic.links) ? epic.links : [])
+    .filter(l => isArmed(l) && !l.reconciled && typeof l.epic === "string")
+    .map(l => l.epic);
+}
+
+/** Does a live detour-stack frame still pause `epicId` with reconcile-on-resume? */
+export function liveReconcileFrame(state, epicId) {
+  return ((state && state.detourStack) || []).some(f => f && f.pausedEpic === epicId && f.reconcileOnResume);
+}
+
+/** THE 0.44.0 arming stamp, state-only, additive and idempotent — called by the `0.44.0` MIGRATIONS
+ *  entry AND by `upgrade()` on every non-refused run (a keyless link can be written after the version
+ *  was stamped: an unreloaded 0.43.0 session, or a second machine sharing state.json through git, and
+ *  the `/pm:upgrade` a refusal names must never be a no-op for it).
+ *
+ *  For every `may-invalidate` link WITHOUT a key: `true` iff its epic owes a reconcile, the link carries
+ *  no verdict, and it targets ANOTHER epic that exists — a self-link or a link to a missing epic can
+ *  never be answered, so arming it would wedge the epic. A keyed link is never touched. Returns the
+ *  number of links stamped.
+ *
+ *  Declined, as a stated trade-off: an owing epic whose every link already carries a verdict (a
+ *  re-push after a verdict under 0.43.0) is stamped all-false, and the heal then clears its flag and
+ *  says so. The one-way nature is the inverse's answer: a wrong stamp is corrected by
+ *  `push-detour --reconcile` (which arms) or by `record-reconcile` (which answers). */
+export function stampReconcileKeys(state) {
+  let stamped = 0;
+  const ids = new Set(((state && state.epics) || []).filter(e => e && typeof e === "object").map(e => e.id));
+  for (const e of (state && state.epics) || []) {
+    if (!e || typeof e !== "object" || !Array.isArray(e.links)) continue;
+    for (const l of e.links) {
+      if (!isUnmigrated(l)) continue;
+      l.reconcileOnResume = e.reconcileNeeded === true && !l.reconciled && l.epic !== e.id && ids.has(l.epic);
+      stamped++;
+    }
+  }
+  return stamped;
 }
 
 /** Is the project currently inside a detour? (active epic is a detour, or stack non-empty) */

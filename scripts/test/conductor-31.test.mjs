@@ -226,10 +226,19 @@ test("gh-152: every command VERB_FLAGS names has a baseline invocation here", as
     "a command added to VERB_FLAGS with no baseline here would be swept by nothing");
 });
 
+/** State a baseline needs before it can SUCCEED, where the fixture alone does not hold it. A
+ *  reconcile verdict is accepted only against a detour the epic was pushed for with --reconcile and
+ *  then popped (gates-bind-to-verified-evidence), so its baseline arms one first. Only the success
+ *  sweep runs these: the valueless sweep below is refused before any of that state is read. */
+const BASELINE_PRE = {
+  "record-reconcile": [["push-detour", "e1", "--detour", "other", "--reason", "blocked", "--reconcile"], ["pop-detour", "e1"]],
+};
+
 test("gh-152: every VERB_FLAGS baseline actually succeeds, so a non-zero exit below means the flag", async () => {
   const { VERB_FLAGS } = await import(CONSTANTS);
   for (const command of [...new Set(VERB_FLAGS.filter(r => !r.argvLevel).flatMap(r => r.commands))].sort()) {
     const cwd = sweepRepo();
+    for (const step of BASELINE_PRE[command] || []) run(step, { cwd });
     run(VERB_BASELINE[command](cwd), { cwd });
   }
 });
