@@ -272,10 +272,10 @@ Pairs: 10.1–10.3 land with 10.4.
       arming stamp (no inverse shipped: a migration is one-way by construction, and a wrong stamp is
       corrected by `push-detour --reconcile` or by `record-reconcile`). Each unshipped
       inverse named and justified in the commit message
-- [ ] 11.3 **Verify against the commit** — `git show --stat <sha>` for every task commit; every file
+- [x] 11.3 **Verify against the commit** — `git show --stat <sha>` for every task commit; every file
       the task claims is present in THAT commit, including each converted test file and each
       `red-<task>.txt`
-- [ ] 11.4 **Attribute every commit** as it lands: `update-epic gates-bind-to-verified-evidence
+- [x] 11.4 **Attribute every commit** as it lands: `update-epic gates-bind-to-verified-evidence
       --attribute-commit <sha>` — full sha, which the engine will now resolve and store in full. The
       archive commit, and any commit that only relocates this change's artifacts, is excluded
 - [ ] 11.5 **Dispositions** <!-- pm:lifecycle --> — `update-epic gates-bind-to-verified-evidence --status archived --outcome delivered --no-deferrals`

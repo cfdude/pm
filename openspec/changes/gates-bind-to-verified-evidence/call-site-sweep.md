@@ -50,7 +50,7 @@ Every former clear is gone: the heal's "archived → clear" and "not active → 
 deleted (3122274); `record-reconcile`'s unconditional `= false` was replaced (709554e); `push-detour`'s
 assignment became an OR (b93e41c).
 
-`reconcileOnResume` — on a LINK: written at `links.mjs:95` (false), `links.mjs:267` (stamp),
+`reconcileOnResume` — on a LINK: written at `links.mjs:95` (false), `links.mjs:266` (stamp),
 `detour-stack.mjs:64/73` (push); read at `links.mjs:220/229` (`isArmed`/`isUnmigrated`). On a FRAME
 (pre-existing field): written at `detour-stack.mjs:154`; read at `detour-stack.mjs:235`,
 `links.mjs:242` (`liveReconcileFrame`), `epic-progress.mjs:160`, `briefing.mjs:123`, `render.mjs:79`.
