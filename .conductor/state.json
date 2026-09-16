@@ -6409,10 +6409,10 @@
       "reconcileNeeded": false,
       "externalId": "185",
       "externalUrl": "https://github.com/cfdude/pm/issues/185",
-      "externalUpdatedAt": "2026-09-10T02:10:58Z",
+      "externalUpdatedAt": "2026-09-15T05:12:12Z",
       "attributedCommits": [],
       "createdAt": "2026-09-10T02:55:15.265Z",
-      "touchedAt": "2026-09-15T05:12:07.571Z",
+      "touchedAt": "2026-09-16T21:14:43.048Z",
       "release": "0.41.0",
       "notes": [
         {
@@ -6909,10 +6909,10 @@
       "reconcileNeeded": false,
       "externalId": "184",
       "externalUrl": "https://github.com/cfdude/pm/issues/184",
-      "externalUpdatedAt": "2026-09-15T04:17:21Z",
+      "externalUpdatedAt": "2026-09-15T18:33:12Z",
       "attributedCommits": [],
       "createdAt": "2026-09-14T18:18:09.265Z",
-      "touchedAt": "2026-09-15T04:39:43.306Z",
+      "touchedAt": "2026-09-16T21:14:42.070Z",
       "notes": [
         {
           "at": "2026-09-14T18:18:12.117Z",
@@ -7047,10 +7047,10 @@
       "reconcileNeeded": false,
       "externalId": "189",
       "externalUrl": "https://github.com/cfdude/pm/issues/189",
-      "externalUpdatedAt": "2026-09-11T07:15:59Z",
+      "externalUpdatedAt": "2026-09-15T05:12:13Z",
       "attributedCommits": [],
       "createdAt": "2026-09-14T18:18:29.810Z",
-      "touchedAt": "2026-09-15T05:12:09.725Z",
+      "touchedAt": "2026-09-16T21:14:43.869Z",
       "notes": [
         {
           "at": "2026-09-14T18:18:31.859Z",
@@ -8653,7 +8653,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 909,
+  "revision": 912,
   "reviewMode": "thorough",
   "releases": [
     {
