@@ -240,7 +240,7 @@ Pairs: 10.1–10.3 land with 10.4.
 
 ## 11. Required task items
 
-- [ ] 11.1 **Call-site completeness sweep** — derived with `rg` at sweep time, never from this list:
+- [x] 11.1 **Call-site completeness sweep** — derived with `rg` at sweep time, never from this list:
       - the `0.44.0` MIGRATIONS entry against every other writer of a `may-invalidate` link, so no
         path can create a keyless one after the migration;
       - every writer of `reconcileNeeded` and `reconcileOnResume`
@@ -265,7 +265,7 @@ Pairs: 10.1–10.3 land with 10.4.
       link's `epic` is already swept by `epicReferences`) — state where each is written, read and
       removed.
       A site where a rule does not hold is a FINDING unless justified in the commit.
-- [ ] 11.2 **Inverse of every operation added or modified** — arming (inverse: answering, and ending
+- [x] 11.2 **Inverse of every operation added or modified** — arming (inverse: answering, and ending
       the epic); answering (inverse: re-arm by push, correction by re-record — no un-answer verb, and
       say why); write-time resolution (inverse: `--withdraw-commit`, which must reach legacy values);
       the destroying-write refusals (inverse: `record-reconcile` then the same write); the 0.44.0
