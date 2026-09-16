@@ -8,6 +8,10 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.44.0] — 2026-09-16
+
+Every Critical finding from the independent review of 0.43.0, fixed in three changes.
+
 **A command line the engine does not read is no longer acted on.** Before this, no single place
 decided what a verb accepts. Appending an undeclared flag to a working invocation of each of the 50
 dispatched verbs, 38 exited 0 and 15 of those wrote `state.json` or `detours.log`; only 12 refused
