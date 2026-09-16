@@ -36,7 +36,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { tmpRepo, run, readState, expectFail } from "./helpers.mjs";
+import { tmpRepo, run, readState, expectFail, fixtureCommits } from "./helpers.mjs";
 import { fileURLToPath } from "node:url";
 
 const CONSTANTS = new URL("../lib/constants.mjs", import.meta.url).href;
@@ -185,8 +185,9 @@ test("a gate verdict records on a non-openspec lane", () => {
   // That rule is lane-agnostic already, which is half the argument for this change: the engine
   // demanded verifiable evidence from a verdict it then refused to accept outside one lane.
   const cwd = repoWithEpic("sp1", "superpowers");
+  const [A, B] = fixtureCommits(cwd, ["A", "B"]);
   run(["record-gate-review", "sp1", "--gate", "2", "--verdict", "pass",
-       "--base-sha", "aaaaaaa", "--head-sha", "bbbbbbb",
+       "--base-sha", A, "--head-sha", B,
        "--reviewer", "two fresh-context lenses"], { cwd });
   const g = readState(cwd).epics.find(e => e.id === "sp1").gateReview.gate2;
   assert.equal(g.verdict, "pass");
@@ -195,11 +196,12 @@ test("a gate verdict records on a non-openspec lane", () => {
 
 test("evidence shas record on a non-openspec lane too — the point is checkability", () => {
   const cwd = repoWithEpic("sp1", "superpowers");
+  const [A, B] = fixtureCommits(cwd, ["A", "B"]);
   run(["record-gate-review", "sp1", "--gate", "2", "--verdict", "pass",
-       "--base-sha", "aaaaaaa", "--head-sha", "bbbbbbb", "--reviewer", "r"], { cwd });
+       "--base-sha", A, "--head-sha", B, "--reviewer", "r"], { cwd });
   const g = readState(cwd).epics.find(e => e.id === "sp1").gateReview.gate2;
-  assert.equal(g.baseSha, "aaaaaaa");
-  assert.equal(g.headSha, "bbbbbbb");
+  assert.equal(g.baseSha, A);
+  assert.equal(g.headSha, B);
 });
 
 test("the ARCHIVE GATE stays openspec-only — recording a verdict must not add an obligation", () => {
@@ -230,21 +232,23 @@ test("--withdraw-commit removes a sha the epic attributed, with a required reaso
   // moment of each commit means an attribution can outlive its commit through no error of
   // process.
   const cwd = repoWithEpic();
-  run(["update-epic", "t1", "--attribute-commit", "aaaaaaa"], { cwd });
-  run(["update-epic", "t1", "--attribute-commit", "bbbbbbb"], { cwd });
-  run(["update-epic", "t1", "--withdraw-commit", "aaaaaaa",
+  const [A, B] = fixtureCommits(cwd, ["A", "B"]);
+  run(["update-epic", "t1", "--attribute-commit", A], { cwd });
+  run(["update-epic", "t1", "--attribute-commit", B], { cwd });
+  run(["update-epic", "t1", "--withdraw-commit", A,
        "--withdrawal-reason", "the commit was reset; its message described work it did not contain"], { cwd });
   const e = readState(cwd).epics.find(x => x.id === "t1");
-  assert.deepEqual(e.attributedCommits, ["bbbbbbb"], "the withdrawn sha is gone");
+  assert.deepEqual(e.attributedCommits, [B], "the withdrawn sha is gone");
 });
 
 test("the withdrawal is RECORDED, not erased — a correction is a judgment", () => {
   const cwd = repoWithEpic();
-  run(["update-epic", "t1", "--attribute-commit", "aaaaaaa"], { cwd });
-  run(["update-epic", "t1", "--withdraw-commit", "aaaaaaa", "--withdrawal-reason", "reset away"], { cwd });
+  const [A] = fixtureCommits(cwd, ["A"]);
+  run(["update-epic", "t1", "--attribute-commit", A], { cwd });
+  run(["update-epic", "t1", "--withdraw-commit", A, "--withdrawal-reason", "reset away"], { cwd });
   const e = readState(cwd).epics.find(x => x.id === "t1");
   assert.equal(e.withdrawnCommits.length, 1);
-  assert.equal(e.withdrawnCommits[0].sha, "aaaaaaa");
+  assert.equal(e.withdrawnCommits[0].sha, A);
   assert.equal(e.withdrawnCommits[0].reason, "reset away");
   assert.ok(e.withdrawnCommits[0].withdrawnAt, "and when");
 });
@@ -254,40 +258,44 @@ test("it lands in a SIBLING field, so the last attributed entry stays the Gate 2
   // recorded Gate 2 headSha is compared against. A withdrawn entry left in the array would move
   // that endpoint, so the record of the withdrawal goes beside it rather than inside it.
   const cwd = repoWithEpic();
-  for (const sha of ["aaaaaaa", "bbbbbbb", "ccccccc"]) {
+  const [A, B, C] = fixtureCommits(cwd, ["A", "B", "C"]);
+  for (const sha of [A, B, C]) {
     run(["update-epic", "t1", "--attribute-commit", sha], { cwd });
   }
-  run(["update-epic", "t1", "--withdraw-commit", "bbbbbbb", "--withdrawal-reason", "wrong epic"], { cwd });
+  run(["update-epic", "t1", "--withdraw-commit", B, "--withdrawal-reason", "wrong epic"], { cwd });
   const e = readState(cwd).epics.find(x => x.id === "t1");
-  assert.deepEqual(e.attributedCommits, ["aaaaaaa", "ccccccc"], "order of the survivors is kept");
-  assert.equal(e.attributedCommits.at(-1), "ccccccc", "and the endpoint is unmoved");
+  assert.deepEqual(e.attributedCommits, [A, C], "order of the survivors is kept");
+  assert.equal(e.attributedCommits.at(-1), C, "and the endpoint is unmoved");
 });
 
 test("withdrawing a sha the epic never attributed is REFUSED, not a silent no-op", () => {
   const cwd = repoWithEpic();
-  run(["update-epic", "t1", "--attribute-commit", "aaaaaaa"], { cwd });
-  const err = refusal(() => run(["update-epic", "t1", "--withdraw-commit", "ddddddd",
+  const [A, D] = fixtureCommits(cwd, ["A", "D"]);
+  run(["update-epic", "t1", "--attribute-commit", A], { cwd });
+  const err = refusal(() => run(["update-epic", "t1", "--withdraw-commit", D,
     "--withdrawal-reason", "r"], { cwd }));
-  assert.match(err, /ddddddd/, "the refusal must name the sha it could not find");
-  assert.deepEqual(readState(cwd).epics.find(x => x.id === "t1").attributedCommits, ["aaaaaaa"]);
+  assert.match(err, new RegExp(D), "the refusal must name the sha it could not find");
+  assert.deepEqual(readState(cwd).epics.find(x => x.id === "t1").attributedCommits, [A]);
 });
 
 test("a withdrawal without a reason is REFUSED — the same rule as every other correction", () => {
   const cwd = repoWithEpic();
-  run(["update-epic", "t1", "--attribute-commit", "aaaaaaa"], { cwd });
-  const err = refusal(() => run(["update-epic", "t1", "--withdraw-commit", "aaaaaaa"], { cwd }));
+  const [A] = fixtureCommits(cwd, ["A"]);
+  run(["update-epic", "t1", "--attribute-commit", A], { cwd });
+  const err = refusal(() => run(["update-epic", "t1", "--withdraw-commit", A], { cwd }));
   assert.match(err, /withdrawal-reason/i);
-  assert.deepEqual(readState(cwd).epics.find(x => x.id === "t1").attributedCommits, ["aaaaaaa"]);
+  assert.deepEqual(readState(cwd).epics.find(x => x.id === "t1").attributedCommits, [A]);
 });
 
 test("--withdraw-commit repeats, so one reset can be undone across its epics in one call", () => {
   const cwd = repoWithEpic();
-  for (const sha of ["aaaaaaa", "bbbbbbb", "ccccccc"]) {
+  const [A, B, C] = fixtureCommits(cwd, ["A", "B", "C"]);
+  for (const sha of [A, B, C]) {
     run(["update-epic", "t1", "--attribute-commit", sha], { cwd });
   }
-  run(["update-epic", "t1", "--withdraw-commit", "aaaaaaa", "--withdraw-commit", "ccccccc",
+  run(["update-epic", "t1", "--withdraw-commit", A, "--withdraw-commit", C,
        "--withdrawal-reason", "both reset away"], { cwd });
-  assert.deepEqual(readState(cwd).epics.find(x => x.id === "t1").attributedCommits, ["bbbbbbb"]);
+  assert.deepEqual(readState(cwd).epics.find(x => x.id === "t1").attributedCommits, [B]);
 });
 
 // ═══════════════ Gate 2 findings — the withdrawal's own defects ═══════════════
@@ -298,10 +306,11 @@ test("C1: withdrawing every attribution must NOT quietly satisfy a stale archive
   // Withdrawing every sha moved the epic from the first to the second, so an archive the gate had
   // been refusing SUCCEEDED. A withdrawal is a correction, never a way through a gate.
   const cwd = repoWithEpic("os1", "openspec");
-  run(["update-epic", "os1", "--attribute-commit", "aaaaaaa"], { cwd });
+  const [BASE, HEAD, A] = fixtureCommits(cwd, ["BASE", "HEAD", "A"]);
+  run(["update-epic", "os1", "--attribute-commit", A], { cwd });
   run(["record-gate-review", "os1", "--gate", "2", "--verdict", "pass",
-       "--base-sha", "0000000", "--head-sha", "1111111"], { cwd });
-  run(["update-epic", "os1", "--withdraw-commit", "aaaaaaa",
+       "--base-sha", BASE, "--head-sha", HEAD], { cwd });
+  run(["update-epic", "os1", "--withdraw-commit", A,
        "--withdrawal-reason", "reset away"], { cwd });
   const err = refusal(() => run(["update-epic", "os1", "--status", "archived",
     "--outcome", "delivered", "--no-deferrals"], { cwd }));
@@ -311,10 +320,11 @@ test("C1: withdrawing every attribution must NOT quietly satisfy a stale archive
 
 test("C1: integrity distinguishes never-attributed from attributed-then-withdrawn", () => {
   const cwd = repoWithEpic("sp1", "superpowers");
-  run(["update-epic", "sp1", "--attribute-commit", "aaaaaaa"], { cwd });
+  const [BASE, A] = fixtureCommits(cwd, ["BASE", "A"]);
+  run(["update-epic", "sp1", "--attribute-commit", A], { cwd });
   run(["record-gate-review", "sp1", "--gate", "2", "--verdict", "pass",
-       "--base-sha", "0000000", "--head-sha", "aaaaaaa"], { cwd });
-  run(["update-epic", "sp1", "--withdraw-commit", "aaaaaaa",
+       "--base-sha", BASE, "--head-sha", A], { cwd });
+  run(["update-epic", "sp1", "--withdraw-commit", A,
        "--withdrawal-reason", "the branch was reset"], { cwd });
   // The check keys on a DELIVERED epic carrying a passing Gate 2, so the epic has to end first.
   run(["update-epic", "sp1", "--status", "archived", "--outcome", "delivered",
@@ -337,9 +347,10 @@ test("I1: the withdrawal reason has its OWN flag and cannot rewrite the disposit
   // --reason serves the disposition. Forcing a withdrawal to borrow it meant the reason a sha
   // was withdrawn silently became the reason the epic was DELIVERED, and rendered that way.
   const cwd = repoWithEpic();
-  run(["update-epic", "t1", "--attribute-commit", "aaaaaaa"], { cwd });
+  const [A] = fixtureCommits(cwd, ["A"]);
+  run(["update-epic", "t1", "--attribute-commit", A], { cwd });
   run(["update-epic", "t1", "--status", "archived", "--outcome", "delivered", "--no-deferrals",
-       "--withdraw-commit", "aaaaaaa", "--withdrawal-reason", "the sha was reset away"], { cwd });
+       "--withdraw-commit", A, "--withdrawal-reason", "the sha was reset away"], { cwd });
   const e = readState(cwd).epics.find(x => x.id === "t1");
   assert.notEqual(e.disposition.reason, "the sha was reset away",
     "the withdrawal's reason must not land on the disposition");
@@ -348,29 +359,32 @@ test("I1: the withdrawal reason has its OWN flag and cannot rewrite the disposit
 
 test("I2: attributing and withdrawing the SAME sha in one call is refused", () => {
   const cwd = repoWithEpic();
-  const err = refusal(() => run(["update-epic", "t1", "--attribute-commit", "aaaaaaa",
-    "--withdraw-commit", "aaaaaaa", "--withdrawal-reason", "r"], { cwd }));
-  assert.match(err, /aaaaaaa/, "the refusal must name the contradictory sha");
+  const [A] = fixtureCommits(cwd, ["A"]);
+  const err = refusal(() => run(["update-epic", "t1", "--attribute-commit", A,
+    "--withdraw-commit", A, "--withdrawal-reason", "r"], { cwd }));
+  assert.match(err, new RegExp(A), "the refusal must name the contradictory sha");
 });
 
 test("I3: one withdrawal removes ONE occurrence, so the endpoint moves only when asked", () => {
   // attributedCommits does not de-duplicate, so a sha can appear twice. Removing every
   // occurrence for one request silently deleted two entries and moved the Gate 2 endpoint.
   const cwd = repoWithEpic();
-  for (const sha of ["ccccccc", "ddddddd", "ccccccc"]) {
+  const [C, D] = fixtureCommits(cwd, ["C", "D"]);
+  for (const sha of [C, D, C]) {
     run(["update-epic", "t1", "--attribute-commit", sha], { cwd });
   }
-  run(["update-epic", "t1", "--withdraw-commit", "ccccccc", "--withdrawal-reason", "one of them"], { cwd });
+  run(["update-epic", "t1", "--withdraw-commit", C, "--withdrawal-reason", "one of them"], { cwd });
   const e = readState(cwd).epics.find(x => x.id === "t1");
-  assert.equal(e.attributedCommits.filter(s => s === "ccccccc").length, 1,
+  assert.equal(e.attributedCommits.filter(s => s === C).length, 1,
     "exactly one occurrence removed");
   assert.equal(e.withdrawnCommits.length, 1, "and exactly one withdrawal recorded");
 });
 
 test("the reason is still required — it just has its own flag now", () => {
   const cwd = repoWithEpic();
-  run(["update-epic", "t1", "--attribute-commit", "aaaaaaa"], { cwd });
-  const err = refusal(() => run(["update-epic", "t1", "--withdraw-commit", "aaaaaaa"], { cwd }));
+  const [A] = fixtureCommits(cwd, ["A"]);
+  run(["update-epic", "t1", "--attribute-commit", A], { cwd });
+  const err = refusal(() => run(["update-epic", "t1", "--withdraw-commit", A], { cwd }));
   assert.match(err, /withdrawal-reason/);
 });
 

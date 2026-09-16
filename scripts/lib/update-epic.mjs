@@ -17,6 +17,7 @@ import { deferralAssertion, isEngineStamped, isStoryDisposed, outcomeOf, storyDi
 import { isArchived } from "./epic-progress.mjs";
 import { claimArtifacts } from "./source-artifacts.mjs";
 import { linkTypeVocabulary, mergeLinks } from "./links.mjs";
+import { resolveCommits, unresolvedCommitsMessage } from "./git.mjs";
 
 // The flags update-epic recognizes, as the registry projects them. Anything else is refused before
 // dispatch by the pre-dispatch command-line check (lib/argv-surface.mjs) — an unrecognized flag (e.g. a typo) used to parse, run, and print
@@ -236,6 +237,22 @@ export function updateEpic() {
       process.exit(1);
     }
   }
+  // --attribute-commit <sha>: RESOLVED HERE, before loadState(), so a value that is not a commit
+  // refuses the whole invocation with nothing written (gates-bind-to-verified-evidence Decision 7).
+  // It used to be appended exactly as typed: `not-a-commit` read `unverifiable` and let a refused
+  // archive through, and `HEAD` named a different commit every time the record was read. The
+  // stored value is the FULL object name the typed one resolved to at this moment.
+  const attributedTyped = f["attribute-commit"] === undefined
+    ? [] : [].concat(f["attribute-commit"]).filter(v => typeof v === "string" && v.trim()).map(v => v.trim());
+  if (f["attribute-commit"] !== undefined && !attributedTyped.length) {
+    process.stderr.write("conductor: --attribute-commit requires a commit sha\n"); process.exit(1);
+  }
+  let attributed = [];
+  if (attributedTyped.length) {
+    const { resolved, unresolved } = resolveCommits(attributedTyped);
+    if (unresolved.length) { process.stderr.write(unresolvedCommitsMessage(unresolved, "--attribute-commit")); process.exit(1); }
+    attributed = attributedTyped.map(v => resolved.get(v));
+  }
   const state = loadState();
   const epic = state.epics.find(e => e.id === id);
   if (!epic) { process.stderr.write(`conductor: epic '${id}' not found\n`); process.exit(1); }
@@ -450,14 +467,8 @@ export function updateEpic() {
     process.stderr.write("conductor: --wont-do requires --story <n>\n"); process.exit(1);
   }
 
-  // --attribute-commit <sha>: append, in the order given, the commits this epic's work landed
-  // in. The last entry is the endpoint a recorded Gate 2 `headSha` is compared against, so the
-  // ORDER is the meaning and the engine appends exactly what it is handed.
-  const attributed = f["attribute-commit"] === undefined
-    ? [] : [].concat(f["attribute-commit"]).filter(v => typeof v === "string" && v.trim());
-  if (f["attribute-commit"] !== undefined && !attributed.length) {
-    process.stderr.write("conductor: --attribute-commit requires a commit sha\n"); process.exit(1);
-  }
+  // --attribute-commit <sha>: resolved before loadState() above, and appended here in the order
+  // given as the full object names they resolved to.
 
   // The archive transition's conditions live in archive-gate.mjs, which every path that can
   // leave an epic at `archived` imports. They were inline here, which is precisely how they
@@ -728,7 +739,7 @@ export function updateEpic() {
   if (reviewMode !== undefined) epic.reviewMode = reviewMode;
   if (attributed.length) {
     if (!Array.isArray(epic.attributedCommits)) epic.attributedCommits = [];
-    epic.attributedCommits.push(...attributed.map(v => v.trim()));
+    epic.attributedCommits.push(...attributed);
   }
   // `--description` REPLACES (durable rationale, one value); `--notes` APPENDS (an activity
   // trail). Writing either never touches the other, and an earlier note is never rewritten or
@@ -870,7 +881,9 @@ export function updateEpic() {
   // hold what this invocation claims to have written. Everything above verifies its own write;
   // this verifies the COMMAND, after render() has had its turn at the file too.
   if (attributed.length) {
-    const wrote = attributed.map(v => v.trim());
+    // The RESOLVED names, which are what was written — comparing the typed strings would report a
+    // short hash stored in full as "NOT in state.json" and exit 1 on a write that landed.
+    const wrote = attributed;
     const missing = missingAttributions(loadState(), id, wrote);
     if (missing.length) {
       process.stderr.write(

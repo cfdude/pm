@@ -36,17 +36,17 @@ GREEN commit message names that file. New test files: `scripts/test/commit-resol
 
 Pairs: 2.1–2.5 land with 2.6.
 
-- [ ] 2.1 RED: `update-epic <id> --attribute-commit not-a-commit` exits non-zero naming it;
+- [x] 2.1 RED: `update-epic <id> --attribute-commit not-a-commit` exits non-zero naming it;
       `state.json` byte-identical (repro A's first step)
-- [ ] 2.2 RED: `record-gate-review <id> --gate 2 --verdict pass --base-sha main~1 --head-sha HEAD
+- [x] 2.2 RED: `record-gate-review <id> --gate 2 --verdict pass --base-sha main~1 --head-sha HEAD
       --reviewer r`, then a new commit — stored `baseSha`/`headSha` equal the full names of `main~1`
       and `HEAD` at call time (repro B)
-- [ ] 2.3 RED: `--attribute-commit <unique short hash of C>` stores C's full name, and exits 0 (the
+- [x] 2.3 RED: `--attribute-commit <unique short hash of C>` stores C's full name, and exits 0 (the
       read-back does not report it missing)
-- [ ] 2.4 REGRESSION GUARD: a commit reachable only from a `presquash/*` tag, attributed while another
+- [x] 2.4 REGRESSION GUARD: a commit reachable only from a `presquash/*` tag, attributed while another
       branch is checked out, is accepted and stored in full (`repro-tagonly.sh` shape)
-- [ ] 2.5 RED: `--base-sha root --head-sha <commit>` exits non-zero naming `root`; no verdict recorded
-- [ ] 2.6 GREEN: `resolveCommits()` in `git.mjs` (design Decision 7) called before `loadState()` in
+- [x] 2.5 RED: `--base-sha root --head-sha <commit>` exits non-zero naming `root`; no verdict recorded
+- [x] 2.6 GREEN: `resolveCommits()` in `git.mjs` (design Decision 7) called before `loadState()` in
       `update-epic` (`--attribute-commit`) and `record-gate-review` (both range flags, both gates);
       store full names; `missingAttributions()` compares resolved names; convert every test that
       feeds a fake sha to these flags to the 1.1 fixture in this same commit (sweep:

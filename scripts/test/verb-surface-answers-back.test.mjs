@@ -15,7 +15,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
-import { run, tmpRepo, readState, expectFail, ENGINE, EMPTY_CACHE } from "./helpers.mjs";
+import { run, tmpRepo, readState, expectFail, ENGINE, EMPTY_CACHE, fixtureCommits } from "./helpers.mjs";
 
 const CONSTANTS = new URL("../lib/constants.mjs", import.meta.url).href;
 const STATE = new URL("../lib/state.mjs", import.meta.url).href;
@@ -173,11 +173,12 @@ test("gh-177: a Gate 1 FAIL needs no evidence, exactly as a Gate 2 fail does not
 
 test("gh-177: a Gate 1 pass carrying a SHA range STILL records â€” and says it is the wrong kind", () => {
   const cwd = repo();
+  const [base, head] = fixtureCommits(cwd, ["base", "head"]);
   const out = combined(cwd, ["record-gate-review", "one", "--gate", "1", "--verdict", "pass",
-    "--base-sha", "aaa1111", "--head-sha", "bbb2222"]);
+    "--base-sha", base, "--head-sha", head]);
   const g1 = epicOf(cwd, "one").gateReview.gate1;
-  assert.equal(g1.baseSha, "aaa1111", "every form that worked before must still work");
-  assert.equal(g1.headSha, "bbb2222");
+  assert.equal(g1.baseSha, base, "every form that worked before must still work");
+  assert.equal(g1.headSha, head);
   assert.match(out, /--artifact/,
     "recording it is right; saying nothing about an implementation range on a spec review is not");
 });
@@ -201,8 +202,9 @@ test("gh-177: an artifact-evidenced verdict renders as its artifacts, not as 'âš
 
 test("gh-177: a Gate 1 verdict recorded before this change loads unchanged and is not rewritten", () => {
   const cwd = repo();
+  const [base, head] = fixtureCommits(cwd, ["base", "head"]);
   run(["record-gate-review", "one", "--gate", "1", "--verdict", "pass",
-    "--base-sha", "aaa1111", "--head-sha", "bbb2222"], { cwd });
+    "--base-sha", base, "--head-sha", head], { cwd });
   const before = JSON.stringify(epicOf(cwd, "one").gateReview.gate1);
   // Any later write re-serializes the whole record; the prior verdict must survive it verbatim.
   run(["update-epic", "one", "--notes", "unrelated"], { cwd });

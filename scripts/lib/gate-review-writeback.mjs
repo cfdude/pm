@@ -7,6 +7,7 @@ import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
+import { resolveCommits, unresolvedCommitsMessage } from "./git.mjs";
 
 /** What an AGENT may pass to `--verdict`. Exported so a test binds to the list itself rather
  *  than transcribing it, and deliberately NOT the same list as constants.mjs's
@@ -33,8 +34,13 @@ export function recordGateReview() {
   // shipped `b..c` was byte-identical in the record to a review that covered everything, and
   // reviewer identity buried in a free-text note cannot be queried apart from any other remark.
   const reviewer = typeof f.reviewer === "string" ? f.reviewer : undefined;
-  const baseSha = typeof f["base-sha"] === "string" ? f["base-sha"] : undefined;
-  const headSha = typeof f["head-sha"] === "string" ? f["head-sha"] : undefined;
+  // RESOLVED before loadState(), on either gate and either verdict (gates-bind-to-verified-evidence
+  // Decision 7): a range bound is stored as the FULL object name it named at this moment, so
+  // `--head-sha HEAD` records the commit HEAD was, never the literal ref, and a bound that is not a
+  // commit (`root`) refuses the whole invocation.
+  const typedBase = typeof f["base-sha"] === "string" ? f["base-sha"] : undefined;
+  const typedHead = typeof f["head-sha"] === "string" ? f["head-sha"] : undefined;
+  let baseSha = typedBase, headSha = typedHead;
   // GATE 1's evidence (gh#177): the artifact PATHS the reviewer actually read. Repeatable, so it
   // arrives as an array; a single occurrence arrives as a string because parseFlags' repeatable
   // set is a global union and this normalizes either shape rather than trusting one.
@@ -70,6 +76,7 @@ export function recordGateReview() {
   // "make the flags optional". Gate 1's evidence is `--artifact`; the sha pair remains ACCEPTED
   // there so that every invocation that worked before still works, and every verdict already
   // recorded still loads.
+  let rangeOnGate1 = false;
   if (verdict === "pass") {
     const hasRange = gateHasEvidence({ baseSha, headSha });
     if (gate === "2" && !hasRange) {
@@ -95,12 +102,26 @@ export function recordGateReview() {
     // rather than corrected — but it is the wrong KIND of evidence for a spec review, and
     // `integrity`'s `verdict-range-omits-cited-commits` arm reads gate 1's range exactly as it
     // reads gate 2's.
-    if (gate === "1" && hasRange && !artifacts.length) {
-      process.stderr.write(
-        `conductor: recorded — but ${baseSha}..${headSha} is an IMPLEMENTATION range on a gate 1 ` +
-        "verdict, and every consumer that reads that field treats it as one. Gate 1 reviews " +
-        "artifacts by path: --artifact <path> (repeatable) is the evidence a spec review has.\n");
+    if (gate === "1" && hasRange && !artifacts.length) rangeOnGate1 = true;
+  }
+  // Resolution AFTER the evidence refusals (which read only whether a bound was supplied, so a pass
+  // missing one is still told which) and BEFORE the gate 1 range notice, so nothing says "recorded"
+  // for an invocation that is about to be refused.
+  const bounds = [typedBase, typedHead].filter(v => v !== undefined);
+  if (bounds.length) {
+    const { resolved, unresolved } = resolveCommits(bounds);
+    if (unresolved.length) {
+      process.stderr.write(unresolvedCommitsMessage(unresolved, "--base-sha/--head-sha"));
+      process.exit(1);
     }
+    if (typedBase !== undefined) baseSha = resolved.get(typedBase);
+    if (typedHead !== undefined) headSha = resolved.get(typedHead);
+  }
+  if (rangeOnGate1) {
+    process.stderr.write(
+      `conductor: recorded — but ${baseSha}..${headSha} is an IMPLEMENTATION range on a gate 1 ` +
+      "verdict, and every consumer that reads that field treats it as one. Gate 1 reviews " +
+      "artifacts by path: --artifact <path> (repeatable) is the evidence a spec review has.\n");
   }
   const state = loadState();
   const epic = state.epics.find(e => e.id === id);

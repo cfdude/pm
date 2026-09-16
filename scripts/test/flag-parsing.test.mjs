@@ -20,7 +20,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 
-import { expectFail, readState, run, runCombined, tmpRepo } from "./helpers.mjs";
+import { expectFail, fixtureCommits, readState, run, runCombined, tmpRepo } from "./helpers.mjs";
 
 const TITLE = "--story <n> is 1-indexed but --help says only '<a value>'";
 
@@ -79,9 +79,10 @@ test("gh-182: --flag= with nothing after it is refused, exactly as --flag \"\" i
 test("gh-182: the = form reaches a REPEATABLE flag as a repeat, not as an overwrite", () => {
   const cwd = repo();
   run(["add-epic", "--id", "e1", "--title", "t", "--lane", "claude-code"], { cwd });
-  run(["update-epic", "e1", "--attribute-commit=aaaaaaa", "--attribute-commit=bbbbbbb"], { cwd });
+  const [a, b] = fixtureCommits(cwd, ["a", "b"]);
+  run(["update-epic", "e1", `--attribute-commit=${a}`, `--attribute-commit=${b}`], { cwd });
   assert.deepEqual(readState(cwd).epics.find(e => e.id === "e1").attributedCommits,
-    ["aaaaaaa", "bbbbbbb"]);
+    [a, b]);
 });
 
 // ───────────────────────── 3. the guards that must NOT weaken ─────────────────────────

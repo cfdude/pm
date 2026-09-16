@@ -335,11 +335,17 @@ test("3.4c a Unicode line terminator or C1 control in a user value cannot forge 
 });
 
 test("3.4d a line separator in a commit reference cannot forge a line of the finding's detail", () => {
-  const { cwd } = archivedDeliveredOpenspec("r4d");
-  descendant(cwd);
-  const ref = "t\u2028update-epic-forged\u0085tag";  // a git refname allows neither spaces nor C0
-  execFileSync("git", ["tag", ref], { cwd });
-  const r = refused(cwd, ["update-epic", "r4d", "--attribute-commit", ref]);
+  // A commit value is RESOLVED when it is written, so a reference carrying a line separator is
+  // refused at --attribute-commit (resolveCommits) and can no longer reach the record through a
+  // flag. It can still sit in a record written before resolution existed, and the Gate 2 finding
+  // still interpolates it — as a withdrawn sha — so that is where this escaping is exercised.
+  const { cwd, first } = archivedDeliveredOpenspec("r4d");
+  const ref = "t\u2028update-epic-forged\u0085tag";
+  const s = readState(cwd);
+  s.epics.find(e => e.id === "r4d").withdrawnCommits =
+    [{ sha: ref, reason: "recorded before commit resolution", withdrawnAt: "2026-09-01T00:00:00.000Z" }];
+  writeState(cwd, s);
+  const r = refused(cwd, ["update-epic", "r4d", "--withdraw-commit", first, "--withdrawal-reason", "reset away"]);
   const detail = lines(r.stderr).find(l => l.startsWith("  broken: the Gate 2 demand"));
   assert.ok(detail, `the refusal carries the Gate 2 finding:\n${JSON.stringify(r.stderr)}`);
   assert.ok(detail.includes("\\u2028") && detail.includes("\\u0085"), `the detail line escapes the reference:\n${JSON.stringify(detail)}`);

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { tmpRepo, run, runCombined, readState, writeState, projectMd, parseBrief, fixturePluginRoot, gitInitWithCommit, expectFail, stripAlwaysOn, REFRESH_GATE_HEADING } from "./helpers.mjs";
+import { tmpRepo, run, runCombined, readState, writeState, projectMd, parseBrief, fixturePluginRoot, gitInitWithCommit, expectFail, stripAlwaysOn, REFRESH_GATE_HEADING, fixtureCommits } from "./helpers.mjs";
 
 // conductor-tells-the-truth, groups 7–9: the 0.27.0 migration, the archive backfill, and the
 // read-only integrity checks. Split from conductor-13/14 for the same reason those were split
@@ -1284,8 +1284,9 @@ test("9.11: the archive proceeds and the missing spec review is a finding, never
   fs.mkdirSync(path.join(cwd, "openspec", "changes", "no-spec-review"), { recursive: true });
   fs.writeFileSync(path.join(cwd, "openspec", "changes", "no-spec-review", "tasks.md"), "# tasks\n\n- [x] a\n");
   run(["sync"], { cwd });
+  const [base, head] = fixtureCommits(cwd, ["base", "head"]);
   run(["record-gate-review", "no-spec-review", "--gate", "2", "--verdict", "pass",
-    "--base-sha", "aaaaaaa", "--head-sha", "bbbbbbb"], { cwd });
+    "--base-sha", base, "--head-sha", head], { cwd });
   // The archive is ACCEPTED with no gate1 — Gate 1 gates code, and by archive time the code is
   // written, so refusing here would demand a spec review of work that has already shipped.
   run(["update-epic", "no-spec-review", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd });
@@ -1368,8 +1369,9 @@ test("9.13: two consecutive briefings both name the ungated epic, and a real ver
     "the same condition is named wherever the conductor reports its own integrity");
 
   // A real passing verdict with its commit range supersedes the bypass entry.
+  const [base, head] = fixtureCommits(cwd, ["base", "head"]);
   run(["record-gate-review", "archived-unreviewed", "--gate", "2", "--verdict", "pass",
-    "--base-sha", "aaaaaaa", "--head-sha", "bbbbbbb"], { cwd });
+    "--base-sha", base, "--head-sha", head], { cwd });
   const third = parseBrief(cwd);
   assert.ok(!third.includes("UNGATED ARCHIVES"), "a real verdict clears the notice");
   const gate2 = readState(cwd).epics.find(e => e.id === "archived-unreviewed").gateReview.gate2;

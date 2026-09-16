@@ -10,7 +10,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFileSync, spawnSync } from "node:child_process";
 import * as constants from "../lib/constants.mjs";
-import { ENGINE, EMPTY_CACHE, tmpRepo, run, readState, parseBrief, gitInitWithCommit, commitFiles } from "./helpers.mjs";
+import { ENGINE, EMPTY_CACHE, tmpRepo, run, readState, parseBrief, gitInitWithCommit, commitFiles, fixtureCommits } from "./helpers.mjs";
 
 const stateFile = (cwd) => path.join(cwd, ".conductor", "state.json");
 const stateBytes = (cwd) => fs.readFileSync(stateFile(cwd));
@@ -76,7 +76,15 @@ test("2.2 withdrawnGate: no withdrawal is not withdrawn", () => {
 
 // ═══════════════ the withdrawal write ═══════════════
 
-const PASS2 = ["--gate", "2", "--verdict", "pass", "--base-sha", "aaaaaaa", "--head-sha", "bbbbbbb"];
+/** A Gate 2 pass over a real base..head pair. --base-sha/--head-sha resolve at write time, so the
+ *  pair is a linear chain of fixture commits made once per repository and reused on every
+ *  re-recording there — the same two values each time, as the former literal pair was. */
+const pass2Commits = new Map();
+function pass2(cwd) {
+  if (!pass2Commits.has(cwd)) pass2Commits.set(cwd, fixtureCommits(cwd, ["gate-2 base", "gate-2 head"]));
+  const [base, head] = pass2Commits.get(cwd);
+  return ["--gate", "2", "--verdict", "pass", "--base-sha", base, "--head-sha", head];
+}
 const PASS1 = ["--gate", "1", "--verdict", "pass", "--artifact", "openspec/changes/x/proposal.md"];
 
 /** An initialized repository holding one claude-code epic `id` (no task source, so no archive
@@ -86,7 +94,7 @@ function withVerdicts(id = "w", { gate1 = false, gate2 = true, lane = "claude-co
   run(["init"], { cwd });
   run(["add-epic", "--id", id, "--lane", lane], { cwd });
   if (gate1) run(["record-gate-review", id, ...PASS1], { cwd });
-  if (gate2) run(["record-gate-review", id, ...PASS2], { cwd });
+  if (gate2) run(["record-gate-review", id, ...pass2(cwd)], { cwd });
   return cwd;
 }
 
@@ -137,7 +145,7 @@ test("2.6 --withdraw-gate-review repeats: both gates withdrawn in one call, two 
 test("2.7 re-recording after a withdrawal starts clean, and the withdrawal is kept", () => {
   const cwd = withVerdicts("w27");
   accepted(cwd, ["update-epic", "w27", "--withdraw-gate-review", "2", "--withdrawal-reason", "x"]);
-  run(["record-gate-review", "w27", ...PASS2], { cwd });
+  run(["record-gate-review", "w27", ...pass2(cwd)], { cwd });
   const e = epicOf(cwd, "w27");
   assert.equal(e.gateReview.gate2.verdict, "pass");
   assert.ok(!("superseded" in e.gateReview.gate2), "the re-recorded verdict supersedes nothing");
@@ -252,7 +260,7 @@ function metOpenspec(id) {
   const cwd = tmpRepo();
   run(["init"], { cwd });
   run(["add-epic", "--id", id, "--lane", "openspec"], { cwd });
-  run(["record-gate-review", id, ...PASS2], { cwd });
+  run(["record-gate-review", id, ...pass2(cwd)], { cwd });
   return cwd;
 }
 
@@ -371,11 +379,11 @@ test("4.4 PROJECT.md and the brief keep an epic whose every gate is withdrawn", 
 test("4.4 PROJECT.md and the brief agree on the gate table: same ids, same cell text", () => {
   const cwd = withVerdicts("stored", { gate1: true, gate2: true });
   run(["add-epic", "--id", "withdrawn", "--lane", "claude-code"], { cwd });
-  run(["record-gate-review", "withdrawn", ...PASS2], { cwd });
+  run(["record-gate-review", "withdrawn", ...pass2(cwd)], { cwd });
   run(["add-epic", "--id", "absent", "--lane", "claude-code"], { cwd });
   run(["add-epic", "--id", "half", "--lane", "claude-code"], { cwd });
   run(["record-gate-review", "half", ...PASS1], { cwd });
-  run(["record-gate-review", "half", ...PASS2], { cwd });
+  run(["record-gate-review", "half", ...pass2(cwd)], { cwd });
   accepted(cwd, ["update-epic", "withdrawn", "--withdraw-gate-review", "2", "--withdrawal-reason", "gone"]);
   accepted(cwd, ["update-epic", "half", "--withdraw-gate-review", "1", "--withdrawal-reason", "half gone"]);
   const project = projectGateTable(cwd), brief = briefGateTable(cwd);
@@ -431,7 +439,7 @@ function healedWithdrawn(id, reason = "copied from the change epic", { heal = tr
   fs.mkdirSync(path.join(cwd, "openspec", "changes", id), { recursive: true });
   fs.writeFileSync(path.join(cwd, "openspec", "changes", id, "tasks.md"), "# tasks\n\n- [x] a\n");
   run(["sync"], { cwd });
-  run(["record-gate-review", id, ...PASS2], { cwd });
+  run(["record-gate-review", id, ...pass2(cwd)], { cwd });
   accepted(cwd, ["update-epic", id, "--withdraw-gate-review", "2", "--withdrawal-reason", reason]);
   archive();
   if (heal) run(["sync"], { cwd });
@@ -523,13 +531,13 @@ test("5.8 a withdrawn entry that superseded an ungated stamp says so, and surviv
   run(["init"], { cwd });
   healArchived(cwd, "s58");
   assert.equal(epicOf(cwd, "s58").gateReview.gate2.verdict, "ungated", "precondition: the heal stamped ungated");
-  run(["record-gate-review", "s58", ...PASS2], { cwd });
+  run(["record-gate-review", "s58", ...pass2(cwd)], { cwd });
   accepted(cwd, ["update-epic", "s58", "--withdraw-gate-review", "2", "--withdrawal-reason", "first"]);
   const once = assertNamedWithdrawn(cwd, "s58", "first");
   assert.match(once.finding, /archived ungated/, `integrity says archived ungated:\n${once.finding}`);
   assert.ok(once.brief.some(l => /archived ungated/.test(l)), `the brief says archived ungated:\n${once.brief.join("\n")}`);
 
-  run(["record-gate-review", "s58", ...PASS2], { cwd });
+  run(["record-gate-review", "s58", ...pass2(cwd)], { cwd });
   accepted(cwd, ["update-epic", "s58", "--withdraw-gate-review", "2", "--withdrawal-reason", "second"]);
   assert.ok(!epicOf(cwd, "s58").withdrawnGateReviews.at(-1).entry.superseded, "precondition: the latest entry holds no ungated stamp");
   const twice = assertNamedWithdrawn(cwd, "s58", "second");
@@ -572,7 +580,7 @@ test("5.6 the withdrawn kind names neither a claude-code archived epic nor an un
   const cwd = withVerdicts("cc56", { lane: "claude-code" });
   accepted(cwd, ["update-epic", "cc56", ...ARCHIVE_DELIVERED]);
   run(["add-epic", "--id", "open56", "--lane", "openspec"], { cwd });
-  run(["record-gate-review", "open56", ...PASS2], { cwd });
+  run(["record-gate-review", "open56", ...pass2(cwd)], { cwd });
   accepted(cwd, ["update-epic", "cc56", "--withdraw-gate-review", "2", "--withdrawal-reason", "x"]);
   accepted(cwd, ["update-epic", "open56", "--withdraw-gate-review", "2", "--withdrawal-reason", "x"]);
   assert.equal(epicOf(cwd, "cc56").status, "archived");
