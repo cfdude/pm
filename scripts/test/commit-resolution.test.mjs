@@ -9,7 +9,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync, spawnSync } from "node:child_process";
-import { ENGINE, EMPTY_CACHE, tmpRepo, run, readState, writeState, fixtureCommits, fixtureCommit } from "./helpers.mjs";
+import { ENGINE, EMPTY_CACHE, tmpRepo, run, readState, writeState, parseBrief, fixtureCommits, fixtureCommit } from "./helpers.mjs";
 
 const stateFile = (cwd) => path.join(cwd, ".conductor", "state.json");
 const stateBytes = (cwd) => fs.readFileSync(stateFile(cwd));
@@ -125,4 +125,108 @@ test("3.3 the same commit spelled two ways cannot be attributed and withdrawn in
   const r = refused(cwd, ["update-epic", "e", "--attribute-commit", one.slice(0, 8),
     "--withdraw-commit", one, "--withdrawal-reason", "x"]);
   assert.match(r.stderr, /cannot attribute and withdraw/, `refused as a contradiction, not a crash: ${r.stderr}`);
+});
+
+// ═══════════════ Requirement: A verdict that does not cover the shipped work is stale ═══════════════
+
+const ARCHIVE_DELIVERED = ["--status", "archived", "--outcome", "delivered", "--no-deferrals"];
+const gate2Row = (text) => (text.split("\n").find(l => l.includes("`e`") || /\| *e *\|/.test(l)) || "");
+
+/** `e` attributing `attributed` (via the verb), with a passing Gate 2 over root..head. */
+function gatedEpic(cwd, root, head, attributed) {
+  for (const sha of attributed) accepted(cwd, ["update-epic", "e", "--attribute-commit", sha]);
+  accepted(cwd, ["record-gate-review", "e", "--gate", "2", "--verdict", "pass", "--base-sha", root, "--head-sha", head]);
+}
+const renderedProject = (cwd) => { run(["render"], { cwd }); return fs.readFileSync(path.join(cwd, "PROJECT.md"), "utf8"); };
+
+test("4.1 an ancestor attributed after an uncovered descendant does not make the verdict fresh", () => {
+  const { cwd, shas: [root, a, d] } = repoWith(["root", "a", "descendant"]);
+  gatedEpic(cwd, root, a, [d, a]);
+  const r = refused(cwd, ["update-epic", "e", ...ARCHIVE_DELIVERED]);
+  assert.ok(r.stderr.includes(d), `the refusal names the uncovered descendant ${d}: ${r.stderr}`);
+  assert.match(renderedProject(cwd), /⚠ stale/);
+});
+
+test("4.2 a head sharing no history with the attributed commits is stale", () => {
+  const { cwd, shas: [root, a] } = repoWith(["root", "a"]);
+  const unrelated = fixtureCommit(cwd, "unrelated", { orphan: true });
+  gatedEpic(cwd, root, unrelated, [a]);
+  refused(cwd, ["update-epic", "e", ...ARCHIVE_DELIVERED]);
+  assert.match(renderedProject(cwd), /⚠ stale/);
+});
+
+test("4.3 a legacy attributed value that is not a commit name is stale, not unverifiable", () => {
+  const { cwd, shas: [root, a] } = repoWith(["root", "a"]);
+  gatedEpic(cwd, root, a, [a]);
+  seedEpic(cwd, "e", { attributedCommits: ["not-a-commit"] });
+  const r = refused(cwd, ["update-epic", "e", ...ARCHIVE_DELIVERED]);
+  assert.match(r.stderr, /not-a-commit/, "the refusal names the malformed value");
+  const md = renderedProject(cwd);
+  assert.match(md, /⚠ stale/);
+  assert.doesNotMatch(md, /⚠ unverifiable/);
+});
+
+test("4.4 a legacy symbolic headSha renders stale on both surfaces and refuses delivered naming it", () => {
+  const { cwd, shas: [root, a] } = repoWith(["root", "a"]);
+  gatedEpic(cwd, root, a, [a]);
+  const s = readState(cwd);
+  const e = s.epics.find(x => x.id === "e");
+  e.attributedCommits = [a];
+  e.gateReview.gate2.headSha = "HEAD";
+  writeState(cwd, s);
+  assert.match(renderedProject(cwd), /⚠ stale/, "PROJECT.md renders the verdict stale");
+  assert.match(parseBrief(cwd), /gate 2: pass[^\n]*⚠ stale/, "the brief renders the verdict stale");
+  const r = refused(cwd, ["update-epic", "e", ...ARCHIVE_DELIVERED]);
+  assert.match(r.stderr, /HEAD/, "the refusal names the symbolic value");
+});
+
+test("4.5 REGRESSION GUARD: a hex value this clone does not hold reads unverifiable and does not refuse", () => {
+  const absent = "0123456789abcdef0123456789abcdef01234567";
+  {
+    const { cwd, shas: [root, a] } = repoWith(["root", "a"]);
+    gatedEpic(cwd, root, a, [a]);
+    seedEpic(cwd, "e", { gateReview: { gate2: { ...readState(cwd).epics.find(x => x.id === "e").gateReview.gate2, headSha: absent } } });
+    assert.match(renderedProject(cwd), /⚠ unverifiable/, "an absent hex head is unverifiable");
+    accepted(cwd, ["update-epic", "e", ...ARCHIVE_DELIVERED]);
+  }
+  {
+    const { cwd, shas: [root, a] } = repoWith(["root", "a"]);
+    gatedEpic(cwd, root, a, [a]);
+    seedEpic(cwd, "e", { attributedCommits: [a, absent] });
+    assert.match(renderedProject(cwd), /⚠ unverifiable/, "an absent hex entry, with every resolvable one reached, is unverifiable");
+    accepted(cwd, ["update-epic", "e", ...ARCHIVE_DELIVERED]);
+  }
+  {
+    const { cwd, shas: [root, a] } = repoWith(["root", "a"]);
+    gatedEpic(cwd, root, a, []);
+    const s = readState(cwd); delete s.epics.find(x => x.id === "e").attributedCommits; writeState(cwd, s);
+    assert.match(renderedProject(cwd), /⚠ unverifiable/, "an absent array is unverifiable");
+  }
+  {
+    const { cwd, shas: [root, a] } = repoWith(["root", "a"]);
+    gatedEpic(cwd, root, a, []);
+    assert.match(renderedProject(cwd), /no attributed commits/, "an empty array is none-attributed");
+  }
+  {
+    const { cwd, shas: [root, a] } = repoWith(["root", "a"]);
+    gatedEpic(cwd, root, a, [a]);
+    accepted(cwd, ["update-epic", "e", "--withdraw-commit", a, "--withdrawal-reason", "wrong commit"]);
+    assert.match(renderedProject(cwd), /⚠ attribution withdrawn/, "withdrawn-to-empty is attribution-withdrawn");
+  }
+});
+
+test("4.6 REGRESSION GUARD: a head reaching every attributed commit is fresh past unrelated later commits, and the archived-epic regression check still binds", () => {
+  const { cwd, shas: [root, a, b] } = repoWith(["root", "a", "b"]);
+  gatedEpic(cwd, root, b, [a, b]);
+  fixtureCommits(cwd, ["unrelated-1", "unrelated-2"]);
+  const md = renderedProject(cwd);
+  assert.doesNotMatch(md, /⚠ stale|⚠ unverifiable/, "the verdict is fresh");
+  accepted(cwd, ["update-epic", "e", ...ARCHIVE_DELIVERED]);
+  const later = fixtureCommit(cwd, "later");
+  refused(cwd, ["update-epic", "e", "--attribute-commit", later]);
+  // An archived delivered record whose Gate 2 had ALREADY failed is not locked by that failure.
+  const s = readState(cwd);
+  s.epics.find(x => x.id === "e").gateReview.gate2.verdict = "fail";
+  writeState(cwd, s);
+  accepted(cwd, ["update-epic", "e", "--attribute-commit", later]);
 });

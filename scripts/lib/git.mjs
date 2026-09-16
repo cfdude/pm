@@ -358,3 +358,33 @@ export function unresolvedCommitsMessage(unresolved, flags) {
     "resolved when it is written and stored as its full object name, so a value nobody can check " +
     "is never recorded. Nothing was written.\n";
 }
+
+/** Which of `commits` (FULL object names) are NOT reached by `head` (a full object name) — equal to
+ *  it or one of its ancestors counts as reached. ONE `git rev-list <commits…> ^<head>` for the whole
+ *  set (gates-bind-to-verified-evidence Decision 9): a per-commit `merge-base --is-ancestor` loop
+ *  measured 139 git calls / ~711 ms over this repository's record, against 14 calls / ~70 ms batched.
+ *
+ *  `null` when git could not answer — a missing object makes rev-list exit non-zero — and a caller
+ *  must read `null` as UNANSWERABLE, never as "all reached": that is the direction of the bug a
+ *  `covers !== true → fresh` branch shipped. Reachability from a branch or any ref is never asked.
+ *
+ *  Cached per process by (head, commits): full object names are immutable. */
+const unreachedCache = new Map();
+export function commitsNotReachedBy(commits, head) {
+  const list = [...new Set((commits || []).filter(c => FULL_COMMIT_NAME.test(c)))];
+  if (!FULL_COMMIT_NAME.test(head || "")) return null;
+  if (!list.length) return new Set();
+  const key = head + " " + [...list].sort().join(" ");
+  if (unreachedCache.has(key)) return unreachedCache.get(key);
+  let answer;
+  try {
+    const out = execFileSync("git", ["rev-list", ...list, "^" + head], {
+      cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 256 * 1024 * 1024,
+      env: { ...process.env, GIT_NO_LAZY_FETCH: "1" },
+    });
+    const listed = new Set(out.split("\n").map(l => l.trim()).filter(Boolean));
+    answer = new Set(list.filter(c => listed.has(c)));
+  } catch { answer = null; }
+  unreachedCache.set(key, answer);
+  return answer;
+}

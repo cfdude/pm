@@ -73,25 +73,25 @@ Pairs: 3.1–3.3 land with 3.4.
 
 Pairs: 4.1–4.6 land with 4.7.
 
-- [ ] 4.1 RED: attributed `[descendant of A, A]`, passing Gate 2 at A, `--status archived --outcome
+- [x] 4.1 RED: attributed `[descendant of A, A]`, passing Gate 2 at A, `--status archived --outcome
       delivered --no-deferrals` exits non-zero naming the descendant; PROJECT.md renders `⚠ stale`
       (repro D; absorbs `gate-staleness-reads-only-last-attribution`)
-- [ ] 4.2 RED: a passing Gate 2 whose `headSha` is a commit sharing no history with the attributed
+- [x] 4.2 RED: a passing Gate 2 whose `headSha` is a commit sharing no history with the attributed
       commits refuses a `delivered` archive and renders stale (repro C)
-- [ ] 4.3 RED: a state file attributing `not-a-commit` beside a resolving `headSha` refuses a
+- [x] 4.3 RED: a state file attributing `not-a-commit` beside a resolving `headSha` refuses a
       `delivered` archive naming `not-a-commit`; renders `⚠ stale`, not `⚠ unverifiable` (repro A)
-- [ ] 4.4 RED: a state file whose `attributedCommits` is exactly `[<one resolvable fixture commit>]`
+- [x] 4.4 RED: a state file whose `attributedCommits` is exactly `[<one resolvable fixture commit>]`
       and whose Gate 2 `headSha` is the literal `HEAD` renders stale in PROJECT.md and the brief, and
       refuses `delivered` naming `HEAD` (repro B's legacy form)
-- [ ] 4.5 REGRESSION GUARD: a hexadecimal `headSha` or attributed entry absent from the fixture's
+- [x] 4.5 REGRESSION GUARD: a hexadecimal `headSha` or attributed entry absent from the fixture's
       object store, with no resolvable attributed commit unreached → `⚠ unverifiable`, archive not
       refused; absent array → unverifiable; empty array → `no attributed commits`; withdrawn-to-empty →
       `attribution withdrawn`
-- [ ] 4.6 REGRESSION GUARD: `headSha` = last attributed and every earlier entry its ancestor, with
+- [x] 4.6 REGRESSION GUARD: `headSha` = last attributed and every earlier entry its ancestor, with
       unrelated commits past it on `main` → fresh and archives; the archived-epic regression check
       still refuses `--attribute-commit <descendant>` on an archived `delivered` epic and does not lock
       one whose Gate 2 already failed
-- [ ] 4.7 GREEN: design Decision 9 in `archive-gate.mjs` `gateStaleness()` (batched `rev-list`,
+- [x] 4.7 GREEN: design Decision 9 in `archive-gate.mjs` `gateStaleness()` (batched `rev-list`,
       per-process cache, no reachability probe) and the refusal wording in `deliveredObligations()`
       and `archiveGate()`; timing of `gateTableRows` over this repository's own state recorded in the
       commit message against the design's ~911 ms baseline. In this same commit, sweep and convert
