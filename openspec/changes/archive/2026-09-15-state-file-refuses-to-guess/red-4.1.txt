@@ -1,0 +1,96 @@
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-QpKXkx/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-QpKXkx/PROJECT.md
+conductor: added epic 'e1' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-QpKXkx/PROJECT.md
+conductor: added epic 'e2' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-QpKXkx/PROJECT.md
+conductor: added epic 'e3' (claude-code, queued)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-3S0NkO/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-3S0NkO/PROJECT.md
+conductor: added epic 'e1' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-3S0NkO/PROJECT.md
+conductor: added epic 'e2' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-3S0NkO/PROJECT.md
+conductor: added epic 'e3' (claude-code, queued)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-dQYFMN/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-dQYFMN/PROJECT.md
+conductor: added epic 'e1' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-dQYFMN/PROJECT.md
+conductor: added epic 'e2' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-dQYFMN/PROJECT.md
+conductor: added epic 'e3' (claude-code, queued)
+✖ 4.1: a lock left by a dead process on this host and pid namespace does not wedge the repository (296.778458ms)
+✖ 4.1: a lock older than the maximum age is broken, even when its content cannot be read (263.767334ms)
+✖ 4.1: a holder in an unconfirmed pid namespace, or on another host, is judged by age only (321.611958ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 0
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 922.672584
+
+✖ failing tests:
+
+test at scripts/test/state-file-refuses-to-guess.test.mjs:485:1
+✖ 4.1: a lock left by a dead process on this host and pid namespace does not wedge the repository (296.778458ms)
+  AssertionError [ERR_ASSERTION]: the pre-placed lock file is gone
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/state-file-refuses-to-guess.test.mjs:492:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/state-file-refuses-to-guess.test.mjs:495:1
+✖ 4.1: a lock older than the maximum age is broken, even when its content cannot be read (263.767334ms)
+  AssertionError [ERR_ASSERTION]: the pre-placed lock file is gone
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/state-file-refuses-to-guess.test.mjs:502:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/state-file-refuses-to-guess.test.mjs:505:1
+✖ 4.1: a holder in an unconfirmed pid namespace, or on another host, is judged by age only (321.611958ms)
+  AssertionError [ERR_ASSERTION]: different pidns: stderr: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-dQYFMN/PROJECT.md
+  conductor: updated 'e1'
+  
+  
+  0 !== 9
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/state-file-refuses-to-guess.test.mjs:514:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 9,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

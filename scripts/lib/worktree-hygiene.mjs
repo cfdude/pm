@@ -5,7 +5,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { execSync } from "node:child_process";
+import { execFileSync, execSync } from "node:child_process";
 import { isInitialized, loadState, readJSON } from "./state.mjs";
 import { ROOT, RENDER_STAMP_PATH, STATE_PATH } from "./constants.mjs";
 
@@ -69,7 +69,10 @@ export function verifyWorktrees() {
  *  git-plumbing hiccup degrades to "not flagged" rather than crashing verify-worktrees. */
 export function isAncestorOfCurrentHead(sha) {
   try {
-    execSync(`git merge-base --is-ancestor ${sha} HEAD`, { cwd: ROOT, stdio: "ignore" });
+    // A worktree head read from `git worktree list`, not a stored value — but never interpolated into
+    // a shell line, and never read as an option either (hex-gated; no `--end-of-options`, see git.mjs).
+    if (typeof sha !== "string" || !/^[0-9a-fA-F]{4,64}$/.test(sha)) return false;
+    execFileSync("git", ["merge-base", "--is-ancestor", sha, "HEAD"], { cwd: ROOT, stdio: "ignore" });
     return true;
   } catch {
     return false;

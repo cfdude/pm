@@ -55,6 +55,11 @@ stop at this skill's steps alone.
            print(m.group())                  # wrap each hit in backticks before pasting
    ```
 
+   **Read the page back before saving when it took more than one edit.** Measured on 0.43.0: two
+   `edit_page` calls on one page in one session each returned `replacementsMade: 1`, and the first
+   was absent from the merged file — a second PR had to restore it. `read` the page and confirm
+   every edit is present before `save`.
+
 5. **Save as a PR, merge it live in the same pass — never leave it open for later review:**
    ```bash
    # mcp__Mintlify__save({ title, mode: "pr", body })  →  returns prUrl

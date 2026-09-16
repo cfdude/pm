@@ -4,23 +4,24 @@
 
 import {
   EPIC_FLAGS, KNOWN_GATE_NUMBERS, KNOWN_LANES, KNOWN_STATUSES, KNOWN_REVIEW_MODES, REVIEW_MODE_RANK,
-  epicFlagsFor, isFlagToken, nullableEpicFlags, splitFlagToken,
+  CONTROL_CHARACTER, epicFlagsFor, escapeControls, isFlagToken, nullableEpicFlags, splitFlagToken,
 } from "./constants.mjs";
-import { activate } from "./active-pointer.mjs";
+import { activate, owedReconcileNotice } from "./active-pointer.mjs";
 import { globalReviewMode } from "./rules.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave } from "./save-report.mjs";
 import { noteEntry, parentError, parseFlags, parseLinkFlags, parseStoryFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
-import { archiveGate, AGENT_OUTCOMES, CONTROL_CHARACTER, deliveredObligations, dispositionInvocation, escapeControls } from "./archive-gate.mjs";
+import { archiveGate, AGENT_OUTCOMES, deliveredObligations, dispositionInvocation } from "./archive-gate.mjs";
 import { deferralAssertion, isEngineStamped, isStoryDisposed, outcomeOf, storyDisposition, storyDispositionError } from "./disposition.mjs";
 import { isArchived } from "./epic-progress.mjs";
 import { claimArtifacts } from "./source-artifacts.mjs";
-import { linkTypeVocabulary, mergeLinks } from "./links.mjs";
+import { holdsOwedReconcileRecord, linkTypeVocabulary, mergeLinks, ownedDetours } from "./links.mjs";
+import { isCommitNameShaped, resolveCommits, unresolvedCommitsMessage } from "./git.mjs";
 
-// The flags update-epic recognizes. Anything else is a rejected error, not a
-// silent no-op — an unrecognized flag (e.g. a typo) used to parse, run, and
-// print "updated" with nothing actually changed.
+// The flags update-epic recognizes, as the registry projects them. Anything else is refused before
+// dispatch by the pre-dispatch command-line check (lib/argv-surface.mjs) — an unrecognized flag (e.g. a typo) used to parse, run, and print
+// "updated" with nothing actually changed. Kept as an export: conductor-13 pins it to the registry.
 //
 // A PROJECTION of the shared EPIC_FLAGS registry, never a literal: this list, add-epic's and
 // add-many's all have to grow for every flag this release adds, and a literal here is exactly
@@ -86,7 +87,7 @@ const REENTER_PLACEHOLDER = "<re-enter this value>";
 const shellQuote = (token) => `'${token.replace(/'/g, "'\\''")}'`;
 
 /** The refused call's own tokens, as the printed invocation echoes them. Decided by the same walk
- *  requireKnownFlags() uses over raw argv, never from parsed flags — parsing loses shape (a
+ *  the command-line check (lib/argv-surface.mjs) makes over raw argv, never from parsed flags — parsing loses shape (a
  *  boolean reads `true`, a repeatable flag becomes an array, `--notes=--x` would re-parse as a
  *  flag). A flag-position token is `--name` or `--name=value`; an inline value is carried by its
  *  own token, and a following token is the flag's value only where it is not flag-shaped.
@@ -173,46 +174,17 @@ export function updateEpic() {
   const argv = process.argv.slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
   // #71: `update-epic --id my-epic --priority P1` is the mistake everyone makes, because every
-  // OTHER epic-writing command takes `--id`. This one's id is POSITIONAL and stays that way —
-  // accepting `--id` as an alias would make the same argument mean two things depending on which
-  // verb you typed. So DIAGNOSE it: name the flag, show the positional form, and rewrite the
-  // exact line the caller meant. A bare usage dump naming ~25 flags answers a question nobody
-  // asked and never mentions `--id` at all, which is why the mistake kept recurring.
-  //
-  // TWO distinct diagnoses. "You put the id behind a flag" and "you gave no id at all" are
-  // different mistakes and get different messages; collapsing them back into one usage dump is
-  // the regression this guards against.
+  // OTHER epic-writing command takes `--id`. This one's id is POSITIONAL and stays that way. The
+  // DIAGNOSIS of that mistake — name the flag, show the positional form, rewrite the line the caller
+  // meant — now lives in the pre-dispatch command-line check (lib/argv-surface.mjs), generalised to every verb whose first positional is an epic id,
+  // so it never reaches this line. What stays here is the OTHER, distinct diagnosis: no id at all.
   if (!id) {
-    // gh#182: the FOURTH raw-argv scanner, and the same two halves. `--id=e1` must be diagnosed
-    // as well as `--id e1`, and the token it consumes as the value must be decided by
-    // isFlagToken() rather than by a leading `--`, so the rewritten line it prints is the line
-    // the caller actually meant.
-    const at = argv.findIndex(a => a === "--id" || a.startsWith("--id="));
-    if (at !== -1) {
-      const [, inline] = splitFlagToken(argv[at]);
-      const consumesNext = inline === undefined
-        && argv[at + 1] !== undefined && !isFlagToken(argv[at + 1]);
-      const value = inline !== undefined ? inline : (consumesNext ? argv[at + 1] : "<id>");
-      // Only drop at+1 when it WAS this flag's value. Dropping it unconditionally silently
-      // deleted the next flag from the suggested line whenever `--id` carried no value at all.
-      const rest = argv.filter((_, i) => i !== at && !(consumesNext && i === at + 1));
-      process.stderr.write(
-        `conductor: update-epic takes its epic id POSITIONALLY, not as --id — write ` +
-        `\`update-epic <id> ...\`, i.e. \`update-epic ${value}${rest.length ? ` ${rest.join(" ")}` : ""}\`. ` +
-        "Nothing was written.\n");
-      process.exit(1);
-    }
     process.stderr.write("conductor: update-epic requires an epic id as its first POSITIONAL argument\n");
     process.stderr.write(`usage: conductor.mjs update-epic <id> [--title T] [--external-id X] [--external-url U] [--parent P] [--status S] [--priority P] [--lane openspec|superpowers|claude-code|decision|external] [--plan <path>] [--spec <path>] [--link \"<${linkTypeVocabulary()}>:<epic>[:<reason>]\"] [--clear-links] [--clear <field>] [--review-mode off|standard|thorough] [--add-story \"<title>\"] [--story <n> --done|--wont-do "<reason>"] [--attribute-commit <sha>] [--withdraw-commit <sha> --withdrawal-reason \"<why>\"] [--withdraw-gate-review 1|2 --withdrawal-reason \"<why>\"] [--outcome ${AGENT_OUTCOMES.join("|")}] [--reason \"<why>\"] [--correct-disposition \"<why the recorded one was wrong>\"] [--carried-to <epicId>] [--deferral \"<epicId>:<section>\" (or ::)] [--declined-deferral \"<what>::<why not>\"] [--no-deferrals] [--description D] [--notes \"<text>\"] [--external-updated-at <iso>]\n`);
     process.exit(1);
   }
+  // Undeclared flags were refused before dispatch by the pre-dispatch command-line check (lib/argv-surface.mjs).
   const f = parseFlags(argv.slice(1));
-  const unknown = Object.keys(f).filter(k => !UPDATE_EPIC_FLAGS.includes(k));
-  if (unknown.length) {
-    process.stderr.write(`conductor: update-epic: unknown flag(s) --${unknown.join(", --")} ` +
-      `(known: ${UPDATE_EPIC_FLAGS.map(k => `--${k}`).join(", ")})\n`);
-    process.exit(1);
-  }
   // #149 — every value-bearing flag this command accepts must carry a usable value, read from
   // the shared registry. It replaces the per-flag checks this command had grown for `--plan`,
   // `--spec`, `--description` and `--notes` — four of the value-bearing flags it accepts;
@@ -265,6 +237,29 @@ export function updateEpic() {
       process.exit(1);
     }
   }
+  // --attribute-commit <sha>: RESOLVED HERE, before loadState(), so a value that is not a commit
+  // refuses the whole invocation with nothing written (gates-bind-to-verified-evidence Decision 7).
+  // It used to be appended exactly as typed: `not-a-commit` read `unverifiable` and let a refused
+  // archive through, and `HEAD` named a different commit every time the record was read. The
+  // stored value is the FULL object name the typed one resolved to at this moment.
+  const attributedTyped = f["attribute-commit"] === undefined
+    ? [] : [].concat(f["attribute-commit"]).filter(v => typeof v === "string" && v.trim()).map(v => v.trim());
+  if (f["attribute-commit"] !== undefined && !attributedTyped.length) {
+    process.stderr.write("conductor: --attribute-commit requires a commit sha\n"); process.exit(1);
+  }
+  let attributed = [];
+  if (attributedTyped.length) {
+    const { resolved, unresolved } = resolveCommits(attributedTyped);
+    if (unresolved.length) { process.stderr.write(unresolvedCommitsMessage(unresolved, "--attribute-commit")); process.exit(1); }
+    attributed = attributedTyped.map(v => resolved.get(v));
+  }
+  // --withdraw-commit <sha>: resolved here too, for IDENTITY only (Decision 8). A value that does
+  // not resolve is NOT refused — a legacy entry that no longer resolves (`not-a-commit`, a commit
+  // this clone lost) must stay withdrawable by its exact spelling, or the one correction for a bad
+  // record would be unreachable for exactly the records that need it.
+  const withdrawTyped = f["withdraw-commit"] === undefined
+    ? [] : [].concat(f["withdraw-commit"]).filter(v => typeof v === "string");
+  const withdrawResolved = withdrawTyped.length ? resolveCommits(withdrawTyped).resolved : new Map();
   const state = loadState();
   const epic = state.epics.find(e => e.id === id);
   if (!epic) { process.stderr.write(`conductor: epic '${id}' not found\n`); process.exit(1); }
@@ -339,6 +334,20 @@ export function updateEpic() {
       process.stderr.write("conductor: --clear-links takes no value\n"); process.exit(1);
     }
     clearedLinks = true;
+    // REFUSED on an epic owing a reconcile that holds the link the verdict must be recorded against
+    // (gates-bind-to-verified-evidence Decision 5) — including the one-write clear-and-re-supply
+    // repair: re-supplying a link writes a false arming record, so the obligation would be left
+    // with nothing a verdict could answer. The repair is ordered, not lost: verdict first.
+    if (holdsOwedReconcileRecord(epic)) {
+      const owed = ownedDetours(epic);
+      process.stderr.write(
+        `conductor: --clear-links on '${id}' is refused — '${id}' owes a reconcile and its links hold the ` +
+        "record that verdict must be written against" +
+        (owed.length ? ` (owed against ${owed.map(d => `'${d}'`).join(", ")})` : "") +
+        `. Record it first: \`record-reconcile ${id} --detour <detourId> --verdict valid|invalidated\`` +
+        " (or /pm:upgrade first if a link predates 0.44.0), then clear. Nothing was written.\n");
+      process.exit(1);
+    }
   }
   if (f.link !== undefined) {
     // The "--link requires a value, and --clear-links is the one that empties" refusal that
@@ -347,7 +356,8 @@ export function updateEpic() {
     // accepted a valueless `--link`, filtered it to `[]` and created the epic. Keeping a second
     // copy here would be unreachable code asserting a rule the registry already carries.
     try {
-      suppliedLinks = parseLinkFlags(f.link, new Set(state.epics.map(e => e.id)));
+      suppliedLinks = parseLinkFlags(f.link, new Set(state.epics.map(e => e.id)),
+        { owingEpic: holdsOwedReconcileRecord(epic) ? id : undefined });
     } catch (e) {
       process.stderr.write(`conductor: ${e.message}\n`); process.exit(1);
     }
@@ -479,14 +489,8 @@ export function updateEpic() {
     process.stderr.write("conductor: --wont-do requires --story <n>\n"); process.exit(1);
   }
 
-  // --attribute-commit <sha>: append, in the order given, the commits this epic's work landed
-  // in. The last entry is the endpoint a recorded Gate 2 `headSha` is compared against, so the
-  // ORDER is the meaning and the engine appends exactly what it is handed.
-  const attributed = f["attribute-commit"] === undefined
-    ? [] : [].concat(f["attribute-commit"]).filter(v => typeof v === "string" && v.trim());
-  if (f["attribute-commit"] !== undefined && !attributed.length) {
-    process.stderr.write("conductor: --attribute-commit requires a commit sha\n"); process.exit(1);
-  }
+  // --attribute-commit <sha>: resolved before loadState() above, and appended here in the order
+  // given as the full object names they resolved to.
 
   // The archive transition's conditions live in archive-gate.mjs, which every path that can
   // leave an epic at `archived` imports. They were inline here, which is precisely how they
@@ -585,7 +589,13 @@ export function updateEpic() {
   // instead, and NAME the correction path, because it exists and was merely undiscoverable:
   // re-archiving with --correct-disposition does overwrite the assertion cleanly (verified before
   // this guard was written, which is why this is a refusal rather than a new mechanism).
-  const supplied = ["deferral", "declined-deferral", "no-deferrals"]
+  //
+  // The DISPOSITION flags share the rule (every-verb-refuses-what-it-does-not-read D7): `--outcome`,
+  // `--reason` and `--carried-to` are recorded only inside that same branch, and supplied without
+  // `--status archived` they were dropped while the command said every supplied value was already
+  // held — false. The guard bound the deferral half of the set and not the half beside it.
+  // `--correct-disposition` keeps its own refusal and is not moved here.
+  const supplied = ["outcome", "reason", "carried-to", "deferral", "declined-deferral", "no-deferrals"]
     .filter(k => f[k] !== undefined);
   if (supplied.length && str(f.status) !== "archived") {
     process.stderr.write(
@@ -639,8 +649,9 @@ export function updateEpic() {
 
   // #166 — withdraw an attribution. Runs BEFORE the field writes below so a refusal leaves the
   // epic untouched, the same ordering every other guard in this file uses.
+  const withdrawnEntries = [];
   if (f["withdraw-commit"] !== undefined) {
-    const shas = [].concat(f["withdraw-commit"]).filter(v => typeof v === "string");
+    const shas = withdrawTyped;
     // ITS OWN reason flag. `--reason` serves the DISPOSITION, and Gate 2 confirmed that borrowing
     // it made a withdrawal's reason become the reason the epic was delivered.
     const why = str(f["withdrawal-reason"]);
@@ -652,34 +663,53 @@ export function updateEpic() {
       process.exit(1);
     }
     // CONTRADICTORY IN ONE INVOCATION. Attribution appends further down, so attributing and
-    // withdrawing the same sha in one call left it in BOTH arrays and reported success.
-    const alsoAttributed = [].concat(f["attribute-commit"] === undefined ? [] : f["attribute-commit"])
-      .filter(v => typeof v === "string" && shas.includes(v));
+    // withdrawing the same sha in one call left it in BOTH arrays and reported success. Compared by
+    // COMMIT IDENTITY where both sides resolve — `<C short>` and `<C full>` are the same commit —
+    // and by spelling otherwise. Every attributed value resolved above, or the call was refused.
+    const alsoAttributed = attributedTyped.filter((v, i) => shas.some(w =>
+      withdrawResolved.has(w) ? withdrawResolved.get(w) === attributed[i] : w === v));
     if (alsoAttributed.length) {
       process.stderr.write(
         `conductor: cannot attribute and withdraw ${alsoAttributed.join(", ")} in one ` +
         `invocation — the two record contradictory things about the same commit.\n`);
       process.exit(1);
     }
-    const attributed = Array.isArray(epic.attributedCommits) ? epic.attributedCommits.slice() : [];
-    const missing = shas.filter(sha => !attributed.includes(sha));
+    const remaining = Array.isArray(epic.attributedCommits) ? epic.attributedCommits.slice() : [];
+    // STORED entries resolve by identity only when they are SHAPED as a commit name: a legacy `HEAD`
+    // in the record names whatever HEAD was when it was typed, and resolving it now would match it
+    // against today's HEAD. Such an entry is matched by its exact spelling alone.
+    const storedResolved = resolveCommits(remaining.filter(isCommitNameShaped)).resolved;
+    // ONE OCCURRENCE PER REQUEST, and the LAST one. The array does not de-duplicate, so a commit can
+    // appear twice; removing the last match means the record's tail moves only when the tail itself
+    // is what you withdrew. Matched by COMMIT IDENTITY first (a full hash withdraws the short entry
+    // of the same commit), then by exact spelling (a value that does not resolve still withdraws the
+    // entry written exactly that way). The withdrawal record carries the ENTRY REMOVED, not the
+    // value typed — that entry is what the record held.
+    const removed = [], missing = [];
+    for (const sha of shas) {
+      const full = withdrawResolved.get(sha);
+      let at = -1;
+      if (full) {
+        for (let i = remaining.length - 1; i >= 0; i--) {
+          if (storedResolved.get(remaining[i]) === full) { at = i; break; }
+        }
+      }
+      if (at === -1) at = remaining.lastIndexOf(sha);
+      if (at === -1) { missing.push(sha); continue; }
+      removed.push(remaining[at]);
+      remaining.splice(at, 1);
+    }
     if (missing.length) {
       process.stderr.write(
         `conductor: '${id}' never attributed ${missing.join(", ")} — nothing to withdraw. ` +
-        `It currently attributes: ${attributed.length ? attributed.join(", ") : "(none)"}.\n`);
+        `It currently attributes: ${epic.attributedCommits && epic.attributedCommits.length ? epic.attributedCommits.join(", ") : "(none)"}.\n`);
       process.exit(1);
     }
-    // ONE OCCURRENCE PER REQUEST. The array does not de-duplicate, so a sha can appear twice;
-    // filtering removed EVERY copy for a single request, deleting two entries and moving the
-    // endpoint a Gate 2 headSha is compared against. Removing the LAST occurrence means the
-    // endpoint moves only when the endpoint itself is what you withdrew.
-    for (const sha of shas) {
-      const at = attributed.lastIndexOf(sha);
-      if (at !== -1) attributed.splice(at, 1);
-    }
-    epic.attributedCommits = attributed;
+    const withdrawnAt = new Date().toISOString();
+    epic.attributedCommits = remaining;
     epic.withdrawnCommits = (epic.withdrawnCommits || []).concat(
-      shas.map(sha => ({ sha, reason: why, withdrawnAt: new Date().toISOString() })));
+      removed.map(sha => ({ sha, reason: why, withdrawnAt })));
+    withdrawnEntries.push(...removed.map(sha => ({ sha, withdrawnAt })));
   }
 
   // gate-verdict-withdrawal — withdraw a recorded gate verdict. A FIELD WRITE like every other
@@ -751,7 +781,7 @@ export function updateEpic() {
   if (reviewMode !== undefined) epic.reviewMode = reviewMode;
   if (attributed.length) {
     if (!Array.isArray(epic.attributedCommits)) epic.attributedCommits = [];
-    epic.attributedCommits.push(...attributed.map(v => v.trim()));
+    epic.attributedCommits.push(...attributed);
   }
   // `--description` REPLACES (durable rationale, one value); `--notes` APPENDS (an activity
   // trail). Writing either never touches the other, and an earlier note is never rewritten or
@@ -877,6 +907,7 @@ export function updateEpic() {
   }
 
   // Keep .active consistent with status — the two must never disagree.
+  const previousActive = state.active;
   if (epic.status === "active") activate(state, id);
   else if (state.active === id) state.active = null;
 
@@ -887,13 +918,16 @@ export function updateEpic() {
   // and not the two paths this change adds — a no-op link supply and a no-op clear are
   // INSTANCES of it, not its scope.
   const saved = saveState(state);
+  owedReconcileNotice(state, previousActive);
   render();
 
   // The success message is printed only after the record on disk is READ BACK and confirmed to
   // hold what this invocation claims to have written. Everything above verifies its own write;
   // this verifies the COMMAND, after render() has had its turn at the file too.
   if (attributed.length) {
-    const wrote = attributed.map(v => v.trim());
+    // The RESOLVED names, which are what was written — comparing the typed strings would report a
+    // short hash stored in full as "NOT in state.json" and exit 1 on a write that landed.
+    const wrote = attributed;
     const missing = missingAttributions(loadState(), id, wrote);
     if (missing.length) {
       process.stderr.write(
@@ -909,12 +943,13 @@ export function updateEpic() {
   // writes the file again after saveState(), so a removal is exactly as vulnerable to being
   // silently undone as an append (#140's mechanism). Reporting a withdrawal that did not land
   // would be the false-write class this whole release is about, in the verb that fixes it.
-  if (f["withdraw-commit"] !== undefined) {
-    const asked = [].concat(f["withdraw-commit"]).filter(v => typeof v === "string");
+  if (withdrawnEntries.length) {
+    // The ENTRIES REMOVED are what was written, keyed by this invocation's timestamp so an earlier
+    // withdrawal of the same entry cannot stand in for this one.
     const after = loadState().epics.find(e => e.id === id);
-    const stillThere = asked.filter(sha =>
+    const stillThere = withdrawnEntries.filter(({ sha, withdrawnAt }) =>
       (after && Array.isArray(after.withdrawnCommits) ? after.withdrawnCommits : [])
-        .every(w => w.sha !== sha));
+        .every(w => w.sha !== sha || w.withdrawnAt !== withdrawnAt)).map(w => w.sha);
     if (stillThere.length) {
       process.stderr.write(
         `conductor: --withdraw-commit did NOT land for ${stillThere.join(", ")} on '${id}' — ` +

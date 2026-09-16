@@ -1,0 +1,37 @@
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-PYjYep/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-PYjYep/PROJECT.md
+conductor: added epic 'e1' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-PYjYep/PROJECT.md
+conductor: added epic 'e2' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-PYjYep/PROJECT.md
+conductor: added epic 'e3' (claude-code, queued)
+✖ G2-I3: a lock whose content write fails is removed, not left for every writer to wait out (332.832042ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 376.584041
+
+✖ failing tests:
+
+test at scripts/test/state-file-refuses-to-guess.test.mjs:740:1
+✖ G2-I3: a lock whose content write fails is removed, not left for every writer to wait out (332.832042ms)
+  AssertionError [ERR_ASSERTION]: the half-created lock is gone
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/state-file-refuses-to-guess.test.mjs:757:12
+      at inRepo (file:///Users/robsherman/Documents/Repos/pm/scripts/test/state-file-refuses-to-guess.test.mjs:318:22)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/state-file-refuses-to-guess.test.mjs:743:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

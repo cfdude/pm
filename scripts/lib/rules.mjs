@@ -11,7 +11,14 @@
 
 import { DOCS_INDEX_URL, DOCS_MCP_URL } from "./constants.mjs";
 import { AGENT_OUTCOMES } from "./archive-gate.mjs";
-import { loadState } from "./state.mjs";
+import { loadState, StateUnreadableError } from "./state.mjs";
+
+/** These readers fall back to a default when state cannot be consulted — EXCEPT when the file is
+ *  present and unreadable. A rules block rendered from a guessed "no tracker, standard review" would
+ *  be the guess state-file-refuses-to-guess removes, written into a human-owned file. */
+function rethrowUnreadable(e) {
+  if (e instanceof StateUnreadableError) throw e;
+}
 import fs from "node:fs";
 import path from "node:path";
 import {
@@ -23,7 +30,7 @@ import { rulesTarget } from "./platform.mjs";
 
 /** The tracker block from state, or null — used to make emitted instructions tracker-aware. */
 export function currentTracker() {
-  try { const t = loadState().tracker; return t && t.system ? t : null; } catch { return null; }
+  try { const t = loadState().tracker; return t && t.system ? t : null; } catch (e) { rethrowUnreadable(e); return null; }
 }
 
 /** state.secondaryTrackers, or [] — absent/undefined on any pre-existing state.json is a valid
@@ -32,7 +39,7 @@ export function currentSecondaryTrackers() {
   try {
     const st = loadState().secondaryTrackers;
     return Array.isArray(st) ? st : [];
-  } catch { return []; }
+  } catch (e) { rethrowUnreadable(e); return []; }
 }
 
 /** Namespace-prefixed upsert key for a secondary tracker entry — `system:repo:<repo>` or
@@ -89,7 +96,7 @@ export function currentReviewMode(epicId) {
     const override = epic && KNOWN_REVIEW_MODES.includes(epic.reviewMode) ? epic.reviewMode : null;
     if (!override) return global;
     return REVIEW_MODE_RANK[override] > REVIEW_MODE_RANK[global] ? override : global;
-  } catch { return "standard"; }
+  } catch (e) { rethrowUnreadable(e); return "standard"; }
 }
 
 /** The platform's invocation form for a pm command. `pmCmd("codex", "status")` -> "/pm-status".
@@ -246,19 +253,25 @@ export const GATE_PROCEDURE_ITEMS = [
   },
   {
     title: "Attribute every commit to its epic.",
-    mustSay: ["only before the first attribution", "MUST NOT be attributed"],
+    // gates-bind-to-verified-evidence: the staleness rule reads EVERY entry, so "the LAST entry is
+    // the endpoint" is no longer true and its claim is replaced by the rule that is. The resolution
+    // claim guards the other half of that change: a mirror still saying the value is stored as typed
+    // would teach an agent that `HEAD` records a moving ref.
+    mustSay: ["every attributed commit must be reached by", "stored as its full object name",
+      "MUST NOT be attributed"],
     lines: [
       "At the moment each commit is made, record it:",
       "   `update-epic <id> --attribute-commit <sha>`. The engine infers attribution from NOTHING —",
       "   not the files a commit touches, not an epic id in a message — so an unrecorded commit is",
       "   a commit the epic's Gate 2 cannot be checked against. The per-task conventional commit of",
-      "   an OpenSpec apply loop always qualifies. Work already in flight is covered too, but ONLY",
-      "   BEFORE the first attribution: catch up in the order the commits landed, then keep",
-      "   attributing forward. The array is append-only — the engine neither reorders nor",
-      "   de-duplicates it — so catching up AFTER attributing forward leaves an ancestor as the",
-      "   last entry, and the LAST entry is the endpoint a recorded Gate 2 `headSha` is compared",
-      "   against. If forward attribution has already begun, attribute forward only and say so;",
-      "   a wrong endpoint reads as a stale verdict and refuses the archive.",
+      "   an OpenSpec apply loop always qualifies. Work already in flight is covered too: catch up",
+      "   in the order the commits landed, then keep attributing forward. Each value is resolved",
+      "   when it is written and stored as its full object name — `HEAD` or a tag records the",
+      "   commit it names at that moment, and a value that is not a commit in this clone is",
+      "   refused with nothing written. The array is append-only — the engine neither reorders nor",
+      "   de-duplicates it — and every attributed commit must be reached by a recorded Gate 2",
+      "   `headSha` (equal to that head or an ancestor of it), whatever position it holds: one the reviewed",
+      "   head does not reach reads as a stale verdict and refuses the archive.",
       "   ONE EXCLUSION, and it is not a judgment call: the commit that moves",
       "   `openspec/changes/<id>/` under `archive/`, and any commit that only relocates or deletes a",
       "   change's artifacts rather than implementing its work, is lifecycle bookkeeping and",
@@ -561,10 +574,13 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     "   resumes the epic and writes `reconcileNeeded` in the SAME write, which is what makes the",
     "   obligation survive the frame's removal. If the popped frame had",
     "   `reconcileOnResume`, run the reconcile gate (reconciler agent) BEFORE writing code,",
-    "   then write its verdict back durably with `record-reconcile <id> --detour <id>",
-    "   --verdict valid|invalidated [--amendments \"<a>;<b>\"]` — this attaches",
-    "   `{verdict, amendments, reconciledAt}` to the paused epic's link to the detour and",
-    "   clears `reconcileNeeded`, instead of the judgment only ever living in conversation.",
+    "   then write its verdict back durably with `record-reconcile <id> --detour <detourId>",
+    "   --verdict valid|invalidated --amendments none` (the reconciler's `AMENDMENTS: none`), or",
+    "   one `--amendment \"<line>\"` per other AMENDMENTS line — this attaches",
+    "   `{verdict, amendments, reconciledAt}` to the paused epic's link to that detour, instead of",
+    "   the judgment only ever living in conversation. It is accepted only for a detour pushed",
+    "   `--reconcile` and already popped, and `reconcileNeeded` clears only when no such detour is",
+    "   left unanswered; `pop-detour` names every detour owed.",
     "4. **Honcho** — on every PUSH and POP, also write a one-line memory to Honcho",
     "   (\"paused X for Y\" / \"resumed X, reconciled vs Y\") so the relationship survives outside",
     "   this repo. `push-detour` prints the PUSH line for you and logs it to",
@@ -879,12 +895,106 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
   return lines.join("\n");
 }
 
+/** The managed block's arrangement in a rules file's TEXT (managed-rules-block capability).
+ *
+ *  Works on LINES, never substrings: a BEGIN marker line is one that, with only its terminator
+ *  removed, starts with RULES_BEGIN_PREFIX and ends with `-->`; an END marker line is exactly
+ *  RULES_END. A marker string anywhere else — in prose, inline code, after indentation — is ordinary
+ *  content. The prefix stays the anchor so a block written by an older version (a different
+ *  parenthetical) is still found.
+ *
+ *  Returns `{kind: "none", lines}`, `{kind: "one", i, j, lines}` (0-based line indexes of the BEGIN
+ *  and END lines) or `{kind: "ambiguous", markers, lines}` with every marker's 1-based line number
+ *  and kind. `lines` KEEP their terminators, so joining a slice reproduces those bytes exactly.
+ *
+ *  REFUSE, not heal, for every ambiguous arrangement (design D6): an orphan marker's block could end
+ *  anywhere, so a repair must guess which hand-written text is managed; two well-formed pairs have an
+ *  unambiguous extent but not an unambiguous intent. Code fences are not parsed: a whole-line marker
+ *  inside a fenced example counts, and the outcome is a refusal with line numbers, never a deletion. */
+export function rulesBlockArrangement(text) {
+  const lines = [];
+  let start = 0;
+  for (let k = 0; k < text.length; k++) {
+    if (text.charCodeAt(k) === 10) { lines.push(text.slice(start, k + 1)); start = k + 1; }
+  }
+  if (start < text.length) lines.push(text.slice(start));
+  const markers = [];
+  lines.forEach((line, index) => {
+    const bare = line.endsWith("\r\n") ? line.slice(0, -2) : (line.endsWith("\n") ? line.slice(0, -1) : line);
+    if (bare.startsWith(RULES_BEGIN_PREFIX) && bare.endsWith("-->")) markers.push({ line: index + 1, kind: "BEGIN", index });
+    else if (bare === RULES_END) markers.push({ line: index + 1, kind: "END", index });
+  });
+  if (markers.length === 0) return { kind: "none", lines };
+  if (markers.length === 2 && markers[0].kind === "BEGIN" && markers[1].kind === "END") {
+    return { kind: "one", i: markers[0].index, j: markers[1].index, lines };
+  }
+  return { kind: "ambiguous", markers: markers.map(({ line, kind }) => ({ line, kind })), lines };
+}
+
+/** Thrown when a rules file's marker lines are in any arrangement other than none or exactly one
+ *  BEGIN followed by one END. conductor.mjs maps it to exit 11 (lib/refusal.mjs) — "a file this verb
+ *  depends on is in a state the engine will not guess about; a human fixes the file".
+ *
+ *  `preflight` says WHERE it was raised, because the truthful sentence about what was written
+ *  differs: `init` and `upgrade` detect it before their first write, so nothing was; every other
+ *  verb raises it at the block write, after whatever state save it already made. */
+export class RulesBlockAmbiguousError extends Error {
+  constructor(file, markers, { preflight = false } = {}) {
+    super(`the pm rules block in ${file} cannot be located: ${markers.length} marker line(s) in an ambiguous arrangement`);
+    this.name = "RulesBlockAmbiguousError";
+    this.file = file;
+    this.markers = markers;
+    this.preflight = preflight;
+  }
+}
+
+/** The whole refusal as the top-level catch prints it. The fix is a SHELL command, because while a
+ *  reconcile is owed the gate guard blocks Edit and Write. Lines are deleted highest first, so
+ *  each deletion leaves the numbers still to delete unchanged. */
+export function rulesBlockAmbiguousMessage(err) {
+  const shown = path.relative(ROOT, err.file) || path.basename(err.file);
+  const L = [
+    `conductor: refused to write the pm rules block into ${shown} — its marker lines are not exactly ` +
+      "one BEGIN line followed by one END line, so which text is managed cannot be known:",
+    ...err.markers.map(m => `  line ${m.line}: ${m.kind}`),
+    "  Delete the stray marker line(s) from the shell, highest line number first, e.g.:",
+    `    sed -i.bak '<N>d' ${shown}`,
+    "  (a whole managed block is safe to delete; hand-written text between markers is yours to keep).",
+  ];
+  if (err.preflight) {
+    L.push("  Nothing was written. After fixing the markers, re-run the command.");
+  } else {
+    L.push("  The rules file, and every write this command makes after it, were NOT made. After fixing the " +
+      "markers, run `write-rules` and then `render` (or /pm:status) to complete it.");
+  }
+  return L.join("\n") + "\n";
+}
+
+/** The refusal BEFORE a first write, for the two verbs whose late refusal would leave a repository
+ *  reading as done: `upgrade` stamps `pmVersion` (what the fleet procedure reads as upgraded) and then
+ *  renders and back-fills .gitignore after the block write; `init` has the same shape on a fresh
+ *  repository. Resolves the target with the platform the verb would use and records nothing. */
+export function assertRulesBlockWritable(platform = "claude-code") {
+  const target = rulesTarget(platform, ROOT);
+  let existing = "";
+  try { existing = fs.readFileSync(target, "utf8"); } catch { return; }
+  const arrangement = rulesBlockArrangement(existing);
+  if (arrangement.kind === "ambiguous") {
+    throw new RulesBlockAmbiguousError(target, arrangement.markers, { preflight: true });
+  }
+}
+
 /** Write (or refresh) the managed rules block into whichever file `platform`'s precedence
  *  chain resolves to (see rulesTarget()) -- NOT always CLAUDE.md. A repo that already has an
  *  AGENTS.md and is driven by Hermes must get the block IN AGENTS.md: Hermes resolves project
  *  context first-match-wins over HERMES.md > AGENTS.md > CLAUDE.md, so writing CLAUDE.md there
  *  would be silently invisible to it. Returns the absolute path written, so callers can report
- *  it; existing callers that ignore the return value are unaffected. */
+ *  it; existing callers that ignore the return value are unaffected.
+ *
+ *  The block is located by whole-line markers (rulesBlockArrangement) and spliced in by slicing
+ *  lines — never String.prototype.replace, whose replacement string interprets `$\``, `$&` and `$'`
+ *  and copied the file's own prefix into the block when a recorded value contained one. An
+ *  ambiguous arrangement throws RulesBlockAmbiguousError before anything is written or reported. */
 export function writeRules(platform = "claude-code") {
   const target = rulesTarget(platform, ROOT);
   const name = path.basename(target);
@@ -892,17 +1002,28 @@ export function writeRules(platform = "claude-code") {
   let existing = "";
   try { existing = fs.readFileSync(target, "utf8"); } catch { /* target does not exist yet */ }
 
+  const arrangement = rulesBlockArrangement(existing);
+  if (arrangement.kind === "ambiguous") throw new RulesBlockAmbiguousError(target, arrangement.markers);
+
   const block = rulesBlock(currentTracker(), currentReviewMode(), currentSecondaryTrackers(), platform);
   let next;
-  if (existing.includes(RULES_BEGIN_PREFIX) && existing.includes(RULES_END)) {
-    // Refresh in place. Match from the stable PREFIX, not the full decorated RULES_BEGIN, so
-    // a block written by an older version (different parenthetical) is still found and
-    // upgraded rather than duplicated -- see the comment on RULES_BEGIN_PREFIX.
-    const re = new RegExp(`${RULES_BEGIN_PREFIX.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}[\\s\\S]*?${RULES_END.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\n?`);
-    next = existing.replace(re, block);
+  if (arrangement.kind === "one") {
+    // Refresh in place: every byte before the BEGIN line and after the END line is untouched, and
+    // the block takes the BEGIN line's terminator so a CRLF file never becomes mixed.
+    const { i, j, lines } = arrangement;
+    const body = lines[i].endsWith("\r\n") ? block.split("\n").join("\r\n") : block;
+    next = lines.slice(0, i).join("") + body + lines.slice(j + 1).join("");
     process.stderr.write(`conductor: refreshed rules block in ${name} (platform: ${platform})\n`);
   } else if (existing.trim()) {
-    next = existing.replace(/\n*$/, "\n\n") + block;
+    // Append with the file's own line ending: its first terminator, LF when it has none.
+    const firstLf = existing.indexOf("\n");
+    if (firstLf > 0 && existing[firstLf - 1] === "\r") {
+      let end = existing.length;
+      while (end > 0 && (existing[end - 1] === "\n" || existing[end - 1] === "\r")) end--;
+      next = existing.slice(0, end) + "\r\n\r\n" + block.split("\n").join("\r\n");
+    } else {
+      next = existing.replace(/\n*$/, "\n\n") + block;
+    }
     process.stderr.write(`conductor: appended rules block to ${name} (platform: ${platform})\n`);
   } else {
     next = `# ${name}\n\n` + block;

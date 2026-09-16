@@ -20,7 +20,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 
-import { expectFail, readState, run, runCombined, tmpRepo } from "./helpers.mjs";
+import { expectFail, fixtureCommits, readState, run, runCombined, tmpRepo } from "./helpers.mjs";
 
 const TITLE = "--story <n> is 1-indexed but --help says only '<a value>'";
 
@@ -79,9 +79,10 @@ test("gh-182: --flag= with nothing after it is refused, exactly as --flag \"\" i
 test("gh-182: the = form reaches a REPEATABLE flag as a repeat, not as an overwrite", () => {
   const cwd = repo();
   run(["add-epic", "--id", "e1", "--title", "t", "--lane", "claude-code"], { cwd });
-  run(["update-epic", "e1", "--attribute-commit=aaaaaaa", "--attribute-commit=bbbbbbb"], { cwd });
+  const [a, b] = fixtureCommits(cwd, ["a", "b"]);
+  run(["update-epic", "e1", `--attribute-commit=${a}`, `--attribute-commit=${b}`], { cwd });
   assert.deepEqual(readState(cwd).epics.find(e => e.id === "e1").attributedCommits,
-    ["aaaaaaa", "bbbbbbb"]);
+    [a, b]);
 });
 
 // ───────────────────────── 3. the guards that must NOT weaken ─────────────────────────
@@ -154,9 +155,9 @@ test("gh-182: a repeatable flag still repeats when its values begin with --", ()
     "both occurrences must land, in order — one form must not clobber the other");
 });
 
-// ─────────────── 4. the identical sibling: requireKnownFlags' raw-argv scan ───────────────
+// ─────────────── 4. the identical sibling: the unknown-flag scan (now the pre-dispatch check) ───────────────
 
-test("gh-182: requireKnownFlags' raw-argv scan reads a --value as a value, on all five verbs", () => {
+test("gh-182: the unknown-flag scan reads a --value as a value, on the verbs requireKnownFlags() once guarded", () => {
   // THE DOMINANT DEFECT CLASS. `requireKnownFlags()` (add-epic.mjs) is a SECOND raw-argv scanner
   // and a flat for…of with no index, so it could not skip a value token — it re-emitted the
   // exact bug this issue reports on the five verbs that call it, long after parseFlags was
@@ -190,7 +191,9 @@ test("gh-182: owners' positional scan skips a --value instead of reading it as a
   run(["add-epic", "--id", "e1", "--title", "t", "--lane", "claude-code"], { cwd });
   run(["claim", "e1", "--session", "s"], { cwd });
   const out = runCombined(["owners", "--json=x"], { cwd });
-  assert.match(out, /unknown flag --json for owners|"epics"|epic/,
+  // --json is valueless, so its = form is refused by name (verb-surface) rather than accepted with
+  // the value ignored — which still proves it parsed as a FLAG, not as a positional.
+  assert.match(out, /--json takes no value/,
     "the = form must at least parse into a flag rather than a positional");
 });
 

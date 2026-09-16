@@ -8,6 +8,7 @@ import path from "node:path";
 import { ROOT, CHANGES_DIR, ARCHIVE_DIR, PLANS_DIR, laneRank, isOpenspecLane, withdrawnGate } from "./constants.mjs";
 import { engineStamp, isArchiveBackfilled, isStoryDisposed } from "./disposition.mjs";
 import { effectivePriorityOf, priorityRank } from "./dependency-order.mjs";
+import { isArmed, isUnmigrated } from "./links.mjs";
 
 /** Active openspec change ids = subdirs of openspec/changes except `archive`. */
 export function activeChangeIds() {
@@ -146,27 +147,40 @@ export function reconcileArchived(state) {
     // pointer no longer refers to a real, in-flight epic.
     if (!a || a.status === "archived" || isArchived(state.active)) { state.active = null; changed = true; }
   }
-  // reconcileNeeded is a genuine state-TRANSITION flag, not a pure function of current
-  // state: POP protocol removes the detour-stack frame BEFORE reconciliation runs (per
-  // the conductor skill), so "is there still a live frame for this epic" is false during
-  // the exact window (just-resumed, reconcile not yet done) the flag needs to stay true.
-  // Recompute only the cases that ARE safely derivable from current state:
+  // reconcileNeeded is a genuine state-TRANSITION flag, not a pure function of current state:
+  // POP removes the detour-stack frame BEFORE reconciliation runs, so "is there still a live frame"
+  // is false during the exact window the flag must stay true. It is written at push, at pop and at
+  // an accepted verdict, and this heal NEVER clears it on the evidence of the pointer or the status
+  // (gates-bind-to-verified-evidence Decision 4). Both of the branches that used to — "archived →
+  // clear" and "not active → clear" — let an ordinary verb erase an obligation nobody answered:
+  // `clear-active` or `set-active other` moved the pointer out of the window, and archive-then-
+  // unarchive cleared it outright. gate-guard and the briefing already ignore an archived epic, so
+  // keeping the flag there blocks no edit.
   const pendingReconcile = new Set(
-    (state.detourStack || []).filter(f => f.reconcileOnResume).map(f => f.pausedEpic)
+    (state.detourStack || []).filter(f => f && f.reconcileOnResume).map(f => f.pausedEpic)
   );
+  // ANY live frame pausing an epic — with reconcile-on-resume or not — blocks the one clear below:
+  // the pause is not over, and its message says no frame pauses the epic (Gate 2 m1).
+  const pausedByAnyFrame = new Set((state.detourStack || []).filter(f => f).map(f => f.pausedEpic));
   for (const e of state.epics) {
-    if (e.status === "archived") {
-      // Done/abandoned — reconcile is moot regardless of how it got set.
-      if (e.reconcileNeeded) { e.reconcileNeeded = false; changed = true; }
-    } else if (pendingReconcile.has(e.id)) {
+    if (pendingReconcile.has(e.id)) {
       // Still paused with a live frame demanding reconcile — ensure it's flagged.
       if (!e.reconcileNeeded) { e.reconcileNeeded = true; changed = true; }
-    } else if (e.reconcileNeeded && e.id !== state.active) {
-      // Not archived, no live frame, AND not the current active epic: this can only be
-      // orphaned/forgotten state (a hand-edit, or leftover from an aborted flow) — the
-      // legitimate post-pop-pre-reconcile window is exactly `e.id === state.active`,
-      // which this branch deliberately never touches.
-      e.reconcileNeeded = false; changed = true;
+    } else if (e.reconcileNeeded === true) {
+      // THE ONE CLEAR, and it is announced: an obligation with NOTHING a verdict could answer — no
+      // live frame, no armed may-invalidate link (answered or not), no unmigrated one. No
+      // `record-reconcile` can ever be accepted for it, so leaving it would wedge Edit/Write on the
+      // epic with no CLI way out. The engine cannot produce this state (pushing arms a link, and
+      // removing an armed one is refused); it arises from a hand-edited file or from the 0.44.0
+      // stamp's stated trade-off (an owing epic whose every link already carried a verdict).
+      const links = Array.isArray(e.links) ? e.links : [];
+      if (!pausedByAnyFrame.has(e.id) && !links.some(l => isArmed(l) || isUnmigrated(l))) {
+        e.reconcileNeeded = false; changed = true;
+        process.stderr.write(
+          `conductor: cleared the reconcile obligation on '${e.id}' — it holds no may-invalidate link a ` +
+          "verdict could be recorded against and no detour frame pausing it, so no record-reconcile " +
+          "could ever be accepted and it would have blocked the epic permanently\n");
+      }
     }
   }
   return changed;

@@ -74,13 +74,26 @@ export function removeEpic() {
   // A detour frame is CONTROL state, not a record. Dropping it discards a paused epic's resume
   // path; keeping it leaves `/pm:resume` popping a frame that names nothing. Neither is a
   // sweep, so this refuses and says which frame holds the epic.
+  // Worded BY KIND (gates-bind-to-verified-evidence Decision 5): a frame is resumed or popped, and
+  // a link an owed reconcile is recorded against is answered with record-reconcile. Telling the
+  // reader to pop a detour that is not on the stack would be a remedy that does nothing.
   const blocking = refs.filter(r => !r.drop);
   if (blocking.length) {
+    const frames = blocking.filter(r => r.kind === "frame");
+    const owed = blocking.filter(r => r.kind === "owed-reconcile");
+    const cite = (list) => list.map(r => `${r.where} → \`${r.epic}\``).join("; ");
     process.stderr.write(
       `conductor: cannot remove ${[...toRemove].map(i => `'${i}'`).join(", ")} — still held by ` +
-      `${blocking.length} detour-stack reference(s): ` +
-      blocking.map(r => `${r.where} → \`${r.epic}\``).join("; ") + ".\n" +
-      "Resume or pop the detour first (/pm:resume), then remove.\n");
+      `${blocking.length} reference(s) that cannot be stripped.\n` +
+      (frames.length
+        ? `  ${frames.length} detour-stack reference(s): ${cite(frames)}. Resume or pop the detour first (/pm:resume), then remove.\n`
+        : "") +
+      (owed.length
+        ? `  ${owed.length} reconcile obligation link(s): ${cite(owed)}. Removing it would leave the owed ` +
+          "verdict nothing to be recorded against. Answer it first — " +
+          [...new Set(owed.map(r => `\`record-reconcile ${r.holder} --detour ${r.epic} --verdict valid|invalidated\``))].join(", ") +
+          " — then remove.\n"
+        : ""));
     process.exit(1);
   }
 

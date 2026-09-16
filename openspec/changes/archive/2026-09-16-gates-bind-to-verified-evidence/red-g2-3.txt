@@ -1,0 +1,30 @@
+✖ g2-3 git calls whose input is already filtered to commit-name hex pass no --end-of-options, so an old git cannot fail them open (0.8725ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 44.391042
+
+✖ failing tests:
+
+test at scripts/test/commit-resolution.test.mjs:365:1
+✖ g2-3 git calls whose input is already filtered to commit-name hex pass no --end-of-options, so an old git cannot fail them open (0.8725ms)
+  AssertionError [ERR_ASSERTION]: ../lib/git.mjs still passes --end-of-options to git
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-resolution.test.mjs:372:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

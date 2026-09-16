@@ -4,7 +4,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { tmpRepo, run, readState, writeState, expectFail, runHookAgainstFixture, ENGINE } from "./helpers.mjs";
+import { tmpRepo, run, readState, writeState, expectFail, runHookAgainstFixture, ENGINE, fixtureCommits } from "./helpers.mjs";
 
 // ──────────────── reconciler structured writeback: record-reconcile ────────────────
 
@@ -12,10 +12,13 @@ test("record-reconcile writes a structured verdict onto the paused epic's link t
   const cwd = tmpRepo(); run(["init"], { cwd });
   run(["add-epic", "--id", "paused-epic", "--lane", "claude-code"], { cwd });
   run(["add-epic", "--id", "detour-epic", "--lane", "claude-code"], { cwd });
-  run(["update-epic", "paused-epic", "--link", "may-invalidate:detour-epic"], { cwd });
-  let s = readState(cwd);
-  s.epics.find(e => e.id === "paused-epic").reconcileNeeded = true;
-  writeState(cwd, s);
+  // The obligation is ARMED by the push and owed after the pop (gates-bind-to-verified-evidence).
+  // This used to hand-add the link with --link and set the flag in state.json — a link a verdict
+  // can no longer answer, because a hand-supplied may-invalidate link is never armed.
+  run(["set-active", "paused-epic"], { cwd });
+  run(["push-detour", "paused-epic", "--detour", "detour-epic", "--reason", "blocked", "--reconcile"], { cwd });
+  run(["pop-detour", "paused-epic"], { cwd });
+  assert.equal(readState(cwd).epics.find(e => e.id === "paused-epic").reconcileNeeded, true);
 
   run(["record-reconcile", "paused-epic", "--detour", "detour-epic",
     "--verdict", "invalidated", "--amendments", "rewrite story 2;drop story 4"], { cwd });
@@ -30,19 +33,21 @@ test("record-reconcile writes a structured verdict onto the paused epic's link t
   assert.match(link.reconciled.reconciledAt, /^\d{4}-\d{2}-\d{2}T/);
 });
 
-test("record-reconcile creates the link to the detour if one doesn't already exist", () => {
+test("record-reconcile NEVER creates a link: a detour the epic was not paused for is refused, and nothing is written", () => {
+  // INVERTED by gates-bind-to-verified-evidence. This test pinned the behaviour that was the
+  // bypass: the verb pushed a may-invalidate link to whatever --detour named and cleared the flag,
+  // so a verdict against an unrelated epic answered an obligation owed against a real detour.
   const cwd = tmpRepo(); run(["init"], { cwd });
   run(["add-epic", "--id", "paused-epic", "--lane", "claude-code"], { cwd });
   run(["add-epic", "--id", "detour-epic", "--lane", "claude-code"], { cwd });
+  const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
 
-  run(["record-reconcile", "paused-epic", "--detour", "detour-epic", "--verdict", "valid"], { cwd });
-
+  const err = expectFail(() => run(["record-reconcile", "paused-epic", "--detour", "detour-epic", "--verdict", "valid"], { cwd }));
+  assert.ok(err, "a verdict against a detour nobody armed is refused");
+  assert.match(String(err.stderr || err.message), /owes no reconcile verdict/);
+  assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before, "nothing was written");
   const epic = readState(cwd).epics.find(e => e.id === "paused-epic");
-  const link = epic.links.find(l => l.epic === "detour-epic");
-  assert.ok(link, "link should be created");
-  assert.equal(link.type, "may-invalidate");
-  assert.equal(link.reconciled.verdict, "valid");
-  assert.deepEqual(link.reconciled.amendments, []);
+  assert.equal((epic.links || []).some(l => l.epic === "detour-epic"), false, "no link was created");
 });
 
 test("record-reconcile rejects an unknown verdict", () => {
@@ -66,8 +71,12 @@ test("record-reconcile on an unknown detour id exits non-zero and writes nothing
   const cwd = tmpRepo(); run(["init"], { cwd });
   run(["add-epic", "--id", "paused-epic", "--lane", "claude-code"], { cwd });
   const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
-  assert.ok(expectFail(() => run(
-    ["record-reconcile", "paused-epic", "--detour", "ghost-detour", "--verdict", "valid"], { cwd })));
+  const err = expectFail(() => run(
+    ["record-reconcile", "paused-epic", "--detour", "ghost-detour", "--verdict", "valid"], { cwd }));
+  assert.ok(err);
+  // Named as a missing epic, not diagnosed as an unarmed detour (gates-bind-to-verified-evidence
+  // kept this refusal; without the assertion the arming refusal made the test pass vacuously).
+  assert.match(String(err.stderr || err.message), /detour epic 'ghost-detour' not found/);
   assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
 });
 
@@ -111,10 +120,11 @@ test("every dispatch-table subcommand is mentioned somewhere in skills/conductor
 
 test("record-gate-review writes a structured verdict for the given gate onto an openspec-lane epic", () => {
   const cwd = tmpRepo(); run(["init"], { cwd });
+  const [a, b] = fixtureCommits(cwd, ["a", "b"]);
   run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
 
   run(["record-gate-review", "spec-epic", "--gate", "1", "--verdict", "pass",
-    "--base-sha", "aaaaaaa", "--head-sha", "bbbbbbb",
+    "--base-sha", a, "--head-sha", b,
     "--reviewer", "fresh-context review of proposal.md"], { cwd });
 
   const epic = readState(cwd).epics.find(e => e.id === "spec-epic");
@@ -129,9 +139,10 @@ test("record-gate-review writes a structured verdict for the given gate onto an 
 
 test("record-gate-review supports gate 2 independently of gate 1", () => {
   const cwd = tmpRepo(); run(["init"], { cwd });
+  const [a, b] = fixtureCommits(cwd, ["a", "b"]);
   run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
 
-  run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "pass", "--base-sha", "aaaaaaa", "--head-sha", "bbbbbbb"], { cwd });
+  run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "pass", "--base-sha", a, "--head-sha", b], { cwd });
 
   const epic = readState(cwd).epics.find(e => e.id === "spec-epic");
   assert.equal(epic.gateReview.gate2.verdict, "pass");
@@ -150,12 +161,13 @@ test("record-gate-review ACCEPTS a non-openspec-lane epic (#163)", () => {
   // moves to the refusals that remain (unknown epic id, bad gate, a pass with no range), each
   // covered by its own test in this file. What is gone is the refusal itself.
   const cwd = tmpRepo(); run(["init"], { cwd });
+  const [a, b] = fixtureCommits(cwd, ["a", "b"]);
   run(["add-epic", "--id", "cc-epic", "--lane", "claude-code"], { cwd });
   run(["record-gate-review", "cc-epic", "--gate", "1", "--verdict", "pass",
-       "--base-sha", "aaaaaaa", "--head-sha", "bbbbbbb"], { cwd });
+       "--base-sha", a, "--head-sha", b], { cwd });
   const epic = readState(cwd).epics.find(e => e.id === "cc-epic");
   assert.equal(epic.gateReview.gate1.verdict, "pass");
-  assert.equal(epic.gateReview.gate1.baseSha, "aaaaaaa");
+  assert.equal(epic.gateReview.gate1.baseSha, a);
 });
 
 test("recording a verdict adds NO archive obligation to a non-openspec lane (#163)", () => {
@@ -170,18 +182,20 @@ test("recording a verdict adds NO archive obligation to a non-openspec lane (#16
 
 test("record-gate-review rejects an unknown epic id", () => {
   const cwd = tmpRepo(); run(["init"], { cwd });
+  const [a, b] = fixtureCommits(cwd, ["a", "b"]);
   const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
   assert.ok(expectFail(() => run(
-    ["record-gate-review", "ghost", "--gate", "1", "--verdict", "pass", "--base-sha", "aaaaaaa", "--head-sha", "bbbbbbb"], { cwd })));
+    ["record-gate-review", "ghost", "--gate", "1", "--verdict", "pass", "--base-sha", a, "--head-sha", b], { cwd })));
   assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
 });
 
 test("record-gate-review rejects an invalid gate number", () => {
   const cwd = tmpRepo(); run(["init"], { cwd });
+  const [a, b] = fixtureCommits(cwd, ["a", "b"]);
   run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
   const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
   assert.ok(expectFail(() => run(
-    ["record-gate-review", "spec-epic", "--gate", "3", "--verdict", "pass", "--base-sha", "aaaaaaa", "--head-sha", "bbbbbbb"], { cwd })));
+    ["record-gate-review", "spec-epic", "--gate", "3", "--verdict", "pass", "--base-sha", a, "--head-sha", b], { cwd })));
   assert.equal(fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8"), before);
 });
 
@@ -211,9 +225,10 @@ test("update-epic blocks archiving an openspec-lane epic with a gate2 fail verdi
 
 test("update-epic allows archiving an openspec-lane epic once gate2 has a passing verdict", () => {
   const cwd = tmpRepo(); run(["init"], { cwd });
+  const [a, b] = fixtureCommits(cwd, ["a", "b"]);
   run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
-  run(["record-gate-review", "spec-epic", "--gate", "1", "--verdict", "pass", "--base-sha", "aaaaaaa", "--head-sha", "bbbbbbb"], { cwd });
-  run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "pass", "--base-sha", "aaaaaaa", "--head-sha", "bbbbbbb"], { cwd });
+  run(["record-gate-review", "spec-epic", "--gate", "1", "--verdict", "pass", "--base-sha", a, "--head-sha", b], { cwd });
+  run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "pass", "--base-sha", a, "--head-sha", b], { cwd });
 
   run(["update-epic", "spec-epic", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd });
 

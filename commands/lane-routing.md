@@ -34,6 +34,17 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" set-lane-routing \
 
 Re-running `set-lane-routing` merges: only what you pass changes.
 
+**At least one operation is required.** A bare `set-lane-routing` used to write an empty
+`laneRouting: {overrides: []}` block where none existed and report success. It now exits 1
+before reading or writing anything:
+
+```text
+conductor: set-lane-routing needs an operation — --add "<match>:<lane>", --remove "<match>" or --clear. Nothing was written.
+```
+
+There is no read form; `.conductor/state.json` holds the overrides, and `suggest-lane` below
+applies them.
+
 ## Consult it before assigning a lane
 
 ```bash
@@ -46,6 +57,18 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" suggest-lane "add a brand-new
 
 Overrides are checked in the order they were added; the first match wins. `lane: null` means
 nothing matched — apply the documented generic heuristic as usual.
+
+**Quote the text.** `suggest-lane` reads ONE argument. Unquoted, `suggest-lane fix a typo` used to
+route `fix` alone; it is now refused before anything runs:
+
+```text
+conductor: suggest-lane takes "<free text>" — 'a' is an extra argument it does not read. Nothing was written.
+  suggest-lane reads ONE text argument — quote it.
+```
+
+A quoted text that begins with `--` but is not shaped like a flag (it contains a space, say) is
+still text. `--help` anywhere after either verb prints its
+help and writes nothing.
 
 **`suggest-lane` is an input, not an answer.** It reads THE ASK and nothing else: the words, the
 size, the overrides recorded here. It cannot ask what a person would ask — whether this work

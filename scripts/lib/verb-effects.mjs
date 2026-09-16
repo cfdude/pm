@@ -28,6 +28,11 @@
 //                                             must not look the same.
 //   effect: "mutates"    + writes: "…"      — DECLARED mutating, naming what it touches.
 //
+// `hook: true` marks the verbs pm's own hooks/hooks.json invokes (verb-surface.test.mjs asserts the
+// marked set equals that file's verbs). It is what the pre-dispatch command-line check reads to keep
+// a hook verb DORMANT in a repository without pm: a hook line the engine would refuse must not print
+// an error into every project on the machine. Select hook verbs by this marker, never by a list.
+//
 // MEASURED, 2026-08-29 on 0.32.0, and it corrects #85's own premise: `render` no longer dirties
 // the tree on EVERY call. #81's fix made both of its writes content-conditional — PROJECT.md is
 // skipped when only the "Last rendered" line differs, and the render stamp is skipped when
@@ -37,12 +42,12 @@
 
 export const VERB_EFFECTS = {
   // ─────────────── read-only: safe to run against a repo you do not own ───────────────
-  brief: { effect: "read-only", exercise: [], note: "prints the SessionStart additionalContext JSON" },
+  brief: { effect: "read-only", hook: true, exercise: [], note: "prints the SessionStart additionalContext JSON" },
   changelog: { effect: "read-only", exercise: [], note: "prints the changelog delta between the stamped and installed versions" },
   changesets: { effect: "read-only", exercise: [], note: "lists pending .changesets/*.md fragments" },
-  "gate-guard": { effect: "read-only", exercise: [], note: "PreToolUse decision; reads state and the hook payload on stdin" },
+  "gate-guard": { effect: "read-only", hook: true, exercise: [], note: "PreToolUse decision; reads state and the hook payload on stdin" },
   integrity: { effect: "read-only", exercise: [], note: "audits the record for shapes that cannot be true; reports, never repairs" },
-  "lesson-advice": { effect: "read-only", exercise: [], note: "PreToolUse advisory; reads docs/lessons/ frontmatter and the hook payload on stdin, writes nothing and never blocks" },
+  "lesson-advice": { effect: "read-only", hook: true, exercise: [], note: "PreToolUse advisory; reads docs/lessons/ frontmatter and the hook payload on stdin, writes nothing and never blocks" },
   "plan-hierarchy": { effect: "read-only", exercise: ["--parent", "p"], note: "recomputes execution batches fresh every call; no persistent state" },
   rules: { effect: "read-only", exercise: [], note: "prints the CLAUDE.md rules block to stdout — `write-rules` is the writing half" },
   "rules-target": { effect: "read-only", exercise: [], note: "prints which file this platform's rules block belongs in; deliberately does NOT record the platform" },
@@ -74,7 +79,7 @@ export const VERB_EFFECTS = {
   // ─────────────── mutates: never call these against a repo you are only inspecting ───────────────
   init: { effect: "mutates", writes: ".conductor/state.json, .gitignore, CLAUDE.md, PROJECT.md" },
   render: { effect: "mutates", writes: "PROJECT.md, .conductor/render-stamp.json (both skipped when the content would be identical)" },
-  snapshot: { effect: "mutates", writes: ".conductor/brief.txt, plus render()'s writes" },
+  snapshot: { effect: "mutates", hook: true, writes: ".conductor/brief.txt, plus render()'s writes" },
   // gh#175 `detachedNoOp`: this verb's ENTIRE write set is session bookkeeping, so in a detached
   // tree it writes nothing at all and returns early. Declared HERE rather than as a list of verb
   // names elsewhere, because this table is already the one the warning's gate reads and
@@ -82,7 +87,7 @@ export const VERB_EFFECTS = {
   // a discarded write would be false, and commit-nudge is PostToolUse-wired so it would have
   // warned on EVERY Bash tool call in a deployed checkout — three stderr lines and a `git
   // describe` spawn per call, for a verb that does nothing.
-  "commit-nudge": { effect: "mutates", detachedNoOp: true, writes: ".conductor/commit-watch.json, .conductor/detours.log, state.json's archived-epic self-heal, plus render()'s writes" },
+  "commit-nudge": { effect: "mutates", hook: true, detachedNoOp: true, writes: ".conductor/commit-watch.json, .conductor/detours.log, state.json's archived-epic self-heal, plus render()'s writes" },
   sync: { effect: "mutates", writes: "state.json — registers newly-found openspec changes and plans as untriaged epics" },
   "log-detour": { effect: "mutates", writes: ".conductor/detours.log (append-only)" },
   // #151. The substantial-detour PUSH and POP were a documented HAND-EDIT of state.json until

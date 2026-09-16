@@ -1,5 +1,6 @@
 // scripts/lib/claim-shape.mjs
-// What an advisory claim IS, and how to read one. LEAF module: imports nothing from lib/.
+// What an advisory claim IS, and how to read one. LEAF module: imports only constants.mjs, which is
+// itself a leaf, so integrity.mjs's dependency discipline below still holds.
 //
 // Split out from claims.mjs (the verbs) on purpose. `integrity.mjs`'s own header states the
 // dependency discipline it lives under — it may import constants/epic-progress/disposition/
@@ -8,7 +9,18 @@
 // with two copies of it, so the predicate moved down here rather than the audit growing a
 // second definition of "expired".
 
-/** When `claim` stops being live, as an ISO string — or null when the record is unreadable.
+import { CLAIM_MAX_TTL_MINUTES } from "./constants.mjs";
+
+/** Is `n` a TTL a claim may carry: a finite number of minutes, greater than zero and no greater
+ *  than CLAIM_MAX_TTL_MINUTES? One predicate for the writer's refusal and the reader's judgement. */
+export function validTtlMinutes(n) {
+  return typeof n === "number" && Number.isFinite(n) && n > 0 && n <= CLAIM_MAX_TTL_MINUTES;
+}
+
+/** When `claim` stops being live, as an ISO string — or null when the record is unreadable: a
+ *  `claimedAt` that does not parse, a TTL that is not valid (validTtlMinutes — above the maximum
+ *  included, so a claim an earlier engine wrote with a longer TTL reads as expired), or a sum that
+ *  is not a representable date. NEVER throws: a reader that throws is worse than either reading.
  *
  *  DERIVED, never stored. A stored `expiresAt` alongside a stored `claimedAt` + `ttlMinutes`
  *  would be two places saying one thing, and the record could then contradict itself. */
@@ -17,8 +29,9 @@ export function claimExpiry(claim) {
   const t = Date.parse(claim.claimedAt);
   if (!Number.isFinite(t)) return null;
   const mins = Number(claim.ttlMinutes);
-  if (!Number.isFinite(mins) || mins <= 0) return null;
-  return new Date(t + mins * 60_000).toISOString();
+  if (!validTtlMinutes(mins)) return null;
+  const expiry = new Date(t + mins * 60_000);
+  return Number.isFinite(expiry.getTime()) ? expiry.toISOString() : null;
 }
 
 /** Is this claim still live, as of `now`?

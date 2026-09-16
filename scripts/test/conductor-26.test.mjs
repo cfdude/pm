@@ -4,10 +4,9 @@
 //
 // `update-epic <id> --attribute-commit <sha>` is asked for at the moment a commit is made and,
 // until now, checked for only at the archive gate. By then the commits were made hours or days
-// and possibly several sessions earlier, and the array is APPEND-ONLY: its last entry is the
-// endpoint a Gate 2 `headSha` is compared against, so a catch-up performed after forward
-// attribution has begun leaves an ancestor as the endpoint and is not recoverable. The detector
-// therefore fired at the one moment its finding could no longer be acted on.
+// and possibly several sessions earlier, and a Gate 2 `headSha` must reach every attributed
+// entry, so a commit never attributed is work that gate is never checked against. The detector
+// fired only at the archive gate, long after the commit could easily be recalled.
 //
 // The nudge closes that, and it is deliberately the SMALLEST thing that does: one clause
 // appended to the advisory commit-nudge ALREADY emits on a real commit. It adds no new hook, no
@@ -21,7 +20,7 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { run, tmpRepo, writeState, gitRepo, commitFiles } from "./helpers.mjs";
+import { run, tmpRepo, writeState, gitRepo, commitFiles, expectFail } from "./helpers.mjs";
 
 const git = (cwd, ...args) => execFileSync("git", args, { cwd, encoding: "utf8" }).trim();
 const head = (cwd) => git(cwd, "rev-parse", "HEAD");
@@ -64,14 +63,14 @@ test("gh#129: an epic that has attributed nothing yet gets the catch-up rule; on
   commitFiles(first, { "a.txt": "1" }, "feat(x): real work");
   const firstCtx = ctxOf(nudge(first, "git commit -m x"));
   assert.match(firstCtx, /ORDER THEY LANDED/,
-    "an empty array is the LAST moment the catch-up rule is available — say so there");
+    "an empty array is when catching up is most likely owed — say so there");
 
   const later = repoWithActive(["0000000000000000000000000000000000000000"]);
   prime(later);
   commitFiles(later, { "a.txt": "1" }, "feat(x): real work");
   const laterCtx = ctxOf(nudge(later, "git commit -m x"));
   assert.doesNotMatch(laterCtx, /ORDER THEY LANDED/,
-    "forward attribution has begun: catching up now is the thing item 4 forbids, so never say it");
+    "forward attribution has begun: the loud catch-up form is for the empty array only");
   assert.match(laterCtx, /--attribute-commit/, "but the per-commit obligation still stands");
 });
 
@@ -160,18 +159,27 @@ test("gh#129: a Bash call that merely mentions git commit stays silent (gh#104 m
     "HEAD did not move: nothing landed, so nothing at all is emitted");
 });
 
-test("gh#129: degrades to doing nothing — no git, unreadable state, reflogs disabled", () => {
+test("gh#129: degrades to doing nothing — no git, reflogs disabled; an unreadable state writes nothing", () => {
   // The hook fires on EVERY Bash tool call in EVERY initialized project. Erroring here is a
-  // mid-session exit-9 for every user, so each rung must exit 0.
+  // mid-session exit-9 for every user, so the no-git and reflogs-disabled rungs must exit 0.
   const noGit = tmpRepo();
   run(["init"], { cwd: noGit });
   assert.doesNotThrow(() => nudge(noGit, "git commit -m x"), "no repository at all");
 
+  // The UNREADABLE-STATE rung is reversed (state-file-refuses-to-guess, design D3). Exit 0 there
+  // re-rendered PROJECT.md from an empty guess of the record, which is the defect, not a
+  // degradation. It must now refuse and write nothing it derives from state.
   const broken = repoWithActive([]);
   prime(broken);
   commitFiles(broken, { "a.txt": "1" }, "feat(x): real work");
   fs.writeFileSync(path.join(broken, ".conductor", "state.json"), "{ not json");
-  assert.doesNotThrow(() => nudge(broken, "git commit -m x"), "unreadable state.json");
+  const watched = [".conductor/state.json", "PROJECT.md", ".conductor/detours.log"].map(f => path.join(broken, f));
+  const before = watched.map(f => (fs.existsSync(f) ? fs.readFileSync(f, "utf8") : null));
+  const refused = expectFail(() => nudge(broken, "git commit -m x"));
+  // Exit 2 on PostToolUse shows stderr to Claude, who can run the remedy, and cannot block.
+  assert.equal(refused && refused.status, 2, "unreadable state.json: the hook must report with exit 2");
+  watched.forEach((f, i) => assert.equal(fs.existsSync(f) ? fs.readFileSync(f, "utf8") : null, before[i],
+    `${path.basename(f)} must be unchanged`));
 
   const noReflog = repoWithActive([]);
   git(noReflog, "config", "core.logAllRefUpdates", "false");

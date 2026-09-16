@@ -5,14 +5,15 @@
 // parentError are general-purpose and imported by most other lib modules; they live
 // here because that's where the "add-epic" comment section originally put them.
 
-import { activate } from "./active-pointer.mjs";
+import { activate, owedReconcileNotice } from "./active-pointer.mjs";
 import { isInitialized, loadState, pushEpic, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
-import { EPIC_DEDUP_KEYS, KNOWN_LANES, KNOWN_STATUSES, epicFlagsFor, flagsFor, isFlagToken, repeatableFlagNames, splitFlagToken, valueBearingFlagsFor } from "./constants.mjs";
+import { EPIC_DEDUP_KEYS, KNOWN_LANES, KNOWN_STATUSES, flagInValuePositionMessage, isFlagToken, repeatableFlagNames, splitFlagToken, valueBearingFlagsFor } from "./constants.mjs";
 import { isKnownLinkType, mergeLinks, unknownLinkTypeMessage, linkTypeVocabulary } from "./links.mjs";
 import { creationStamp } from "./disposition.mjs";
 import { rankOf } from "./epic-progress.mjs";
+import { assertKnownPlatform, platformFlag } from "./platform.mjs";
 
 /** The full repeatable set, read from BOTH flag tables — see repeatableFlagNames() in
  *  constants.mjs. Recomputed on every parseFlags() call rather than frozen at module scope, so
@@ -110,11 +111,7 @@ export function valuelessFlagError(command, f) {
       // that says it unambiguously. Everything before the dash is unchanged, because existing
       // refusals are asserted on that prefix.
       const token = (f[FLAG_IN_VALUE_POSITION] || {})[flag];
-      if (token) {
-        return `conductor: --${flag} requires ${requires} — '${token}' arrived where that value ` +
-          `belonged and was read as a flag, not as the value. If it IS the value, write ` +
-          `--${flag}=${token}`;
-      }
+      if (token) return flagInValuePositionMessage(flag, requires, token);
       return `conductor: --${flag} requires ${requires}`;
     }
   }
@@ -128,44 +125,16 @@ export function requireFlagValues(command, f) {
   if (err) { process.stderr.write(err + "\n"); process.exit(1); }
 }
 
-/** The OTHER half of the flag rule: "is this flag known on this verb at all", refused by name.
- *
- *  Companion to requireFlagValues(), and the two answer different questions from different
- *  projections — `flagsFor()` for known-ness, `valueBearingFlagsFor()` for value-ness — which is
- *  why neither may be answered with the other's list.
- *
- *  IT LIVES HERE because the value rule does. The three read-only verbs #84/#111 added arrived
- *  with two of the three carrying a hand-written copy of this loop and the third carrying
- *  nothing at all — `activity --bogus` printed the report and exited 0, so a typo silently
- *  answered a different question from the one asked. A verb reads its declared values through a
- *  COMPUTED accessor (`f[name]`), which conductor-31's region scanner cannot see, so the
- *  allowlist is the only thing standing between an undeclared flag and silence on those verbs.
- *
- *  Only the three verbs that had a check (or needed one) call it today; the older bespoke
- *  `unknown flag(s)` checks on add-epic, update-epic, release, triage and the rest are a
- *  separate, wider consolidation and are deliberately not touched here. */
-/*  gh#182 — THE IDENTICAL SIBLING. This was a flat `for…of` with no index, so it could not skip
- *  a value token: it re-emitted the exact bug gh#182 reports (`unknown flag --weird value for
- *  claim`) on all five verbs that call it, and would have gone on doing so after parseFlags was
- *  fixed, because this scanner reads RAW ARGV rather than parseFlags' output. Every existing
- *  test put its unknown flag LAST in argv, where no value token can follow, so none of them
- *  could see it. It now walks argv with an index and consumes a value exactly as parseFlags
- *  does — same predicate, same splitter, one rule. */
-export function requireKnownFlags(command, argv) {
-  const known = flagsFor(command);
-  for (let i = 0; i < argv.length; i++) {
-    const a = argv[i];
-    if (!a.startsWith("--")) continue;
-    const [k, inline] = splitFlagToken(a);
-    // Consume the value BEFORE deciding, so an unknown flag's value can never be read as a flag
-    // in its own right on the next pass of the loop.
-    if (inline === undefined && argv[i + 1] !== undefined && !isFlagToken(argv[i + 1])) i++;
-    if (known.includes(k)) continue;
-    // `--${k}`, not the raw token: `--titel=x` should name `--titel`, which is the part that is
-    // actually wrong.
-    process.stderr.write(`conductor: unknown flag --${k} for ${command}\n`);
-    process.exit(1);
-  }
+/** every-verb-refuses-what-it-does-not-read D6 — `--platform` on a verb that DECLARES it (init and
+ *  the five hook verbs) is validated before anything else that verb does: valueless or blank through
+ *  the shared value rule, an unknown platform through assertKnownPlatform(). Declaring a flag without
+ *  validating it would be #152's shape — a valueless `--platform` silently falling back to the
+ *  recorded platform while looking answered. One function, so the six call sites cannot drift apart. */
+export function requirePlatformFlag(command) {
+  const argv = process.argv.slice(3);
+  requireFlagValues(command, parseFlags(argv));
+  const declared = platformFlag(argv);
+  if (declared) assertKnownPlatform(declared);
 }
 
 /** Parse `--link "<type>:<epic>[:<reason>]"` strings into validated {type,epic,reason?}
@@ -181,7 +150,7 @@ export function requireKnownFlags(command, argv) {
  *  add-epic, update-epic and add-many all reach the store through here — which is why the check
  *  lives at the shared function rather than at each verb. The read paths deliberately stay
  *  permissive; see isRenderableLink() in links.mjs for why. */
-export function parseLinkFlags(raw, knownEpicIds) {
+export function parseLinkFlags(raw, knownEpicIds, { owingEpic } = {}) {
   return (raw || []).filter(s => typeof s === "string").map(s => {
     const [type, epic, ...rest] = s.split(":");
     if (!type || !epic) {
@@ -196,7 +165,7 @@ export function parseLinkFlags(raw, knownEpicIds) {
       throw new Error(`bad --link '${s}': '${epic}' is not a known epic id`);
     }
     if (!isKnownLinkType(type)) {
-      throw new Error(unknownLinkTypeMessage(s, type));
+      throw new Error(unknownLinkTypeMessage(s, type, { owingEpic }));
     }
     const reason = rest.join(":").trim();
     return reason ? { type, epic, reason } : { type, epic };
@@ -371,19 +340,9 @@ export function parentError(epics, id, parent) {
 export function addEpic() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const f = parseFlags(process.argv.slice(3));
-  // add-epic's FIRST allowlist. Until now it validated no flag surface at all: parseFlags read
-  // the flags the body happened to name and dropped every other one without a word, so
-  // `--notes "<text>"` parsed, exited 0 and wrote nothing (#79). That failure is invisible and
-  // the text is unrecoverable — it destroyed the whole payload of a batch of epics registered
-  // precisely so a later session would remember why they exist. Rejected BEFORE loadState(),
-  // so a refusal cannot leave a partial write behind.
-  const known = epicFlagsFor("add-epic");
-  const unknown = Object.keys(f).filter(k => !known.includes(k));
-  if (unknown.length) {
-    process.stderr.write(`conductor: add-epic: unknown flag(s) --${unknown.join(", --")} ` +
-      `(known: ${known.map(k => `--${k}`).join(", ")})\n`);
-    process.exit(1);
-  }
+  // An undeclared flag never reaches this line: the pre-dispatch command-line check (lib/argv-surface.mjs) refuses it by name before dispatch,
+  // reading this verb's registry rows. #79's failure — `--notes "<text>"` parsed, exited 0 and wrote
+  // nothing — is that check's to prevent now, for this verb and every other one.
   // #149 — every value-bearing flag this command accepts must carry a usable value. One rule
   // from the registry, applied here and at every other write surface, replacing the literal
   // `["description", "notes", "spec"]` this command used to check: `--plan` was absent from that
@@ -491,6 +450,7 @@ export function addEpic() {
   if (str(f["external-id"]) !== undefined) epic.externalId = str(f["external-id"]);
   if (str(f["external-url"]) !== undefined) epic.externalUrl = str(f["external-url"]);
   if (str(f["external-updated-at"]) !== undefined) epic.externalUpdatedAt = str(f["external-updated-at"]);
+  const previousActive = state.active;
   pushEpic(state, epic);
   // keep .active in sync on creation. `freshlyRead` when this very command carried the item's
   // updated timestamp: the agent just read it, so an immediate re-read obligation would be noise.
@@ -498,6 +458,7 @@ export function addEpic() {
     activate(state, id, { freshlyRead: str(f["external-updated-at"]) !== undefined });
   }
   const saved = saveState(state);
+  owedReconcileNotice(state, previousActive);
   render();
   reportSave(saved, {
     changed: `conductor: added epic '${id}' (${lane}, ${status})`,

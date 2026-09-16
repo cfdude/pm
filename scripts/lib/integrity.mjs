@@ -20,11 +20,11 @@
 
 import { isInitialized, loadState } from "./state.mjs";
 import { archivedChanges, epicProgress, isArchived, strippedChangeId } from "./epic-progress.mjs";
-import { KNOWN_STATUSES, gateArtifacts, gateHasEvidence, isOpenspecLane, releaseMembers, withdrawnGate } from "./constants.mjs";
-import { AGENT_OUTCOMES, dispositionInvocation, escapeControls } from "./archive-gate.mjs";
-import { commitDate, isAncestor, objectExists, reachableFromAnyRef } from "./git.mjs";
+import { KNOWN_STATUSES, escapeControls, gateArtifacts, gateHasEvidence, isOpenspecLane, releaseMembers, withdrawnGate } from "./constants.mjs";
+import { AGENT_OUTCOMES, dispositionInvocation } from "./archive-gate.mjs";
+import { commitDate, isAncestor, isCommitNameShaped, objectExists, reachableFromAnyRef } from "./git.mjs";
 import { isArchiveBackfilled, outcomeOf, stampedBy } from "./disposition.mjs";
-import { epicReferences, isKnownLinkType, isRenderableLink, KNOWN_LINK_TYPES, supersededEpics } from "./links.mjs";
+import { epicReferences, holdsOwedReconcileRecord, isKnownLinkType, isRenderableLink, KNOWN_LINK_TYPES, supersededEpics } from "./links.mjs";
 import { claimExpiry, isLiveClaim } from "./claim-shape.mjs";
 
 /** The outcomes that are their own explanation. Each carries a REQUIRED reason saying why the
@@ -108,8 +108,10 @@ function citedShas(entry) {
  *  find which field held it. */
 export function recordedShas(state) {
   const out = [];
+  // NOT trimmed (Gate 2 m5): a padded legacy value is not a commit name — gateStaleness reads it
+  // stale — and trimming it here made this report the only surface that saw a clean sha.
   const push = (epic, where, sha) => {
-    if (typeof sha === "string" && sha.trim()) out.push({ epic, where, sha: sha.trim() });
+    if (typeof sha === "string" && sha !== "") out.push({ epic, where, sha });
   };
   for (const e of state.epics || []) {
     if (!e) continue;
@@ -473,7 +475,13 @@ export const CHECKS = [
           if (!isRenderableLink(l) || isKnownLinkType(l.type)) continue;
           out.push({ epic: e.id, detail:
             `link \`${l.type}→${l.epic}\` — '${l.type}' is not one of ${KNOWN_LINK_TYPES.join(", ")}, ` +
-            "so every consumer that switches on the type ignores it. Fix it with " +
+            "so every consumer that switches on the type ignores it. " +
+            // On an owing epic the clear is refused until the owed verdict is recorded (Decision 5).
+            (holdsOwedReconcileRecord(e)
+              ? `'${e.id}' owes a reconcile, so record that verdict FIRST — \`record-reconcile ${e.id} ` +
+                "--detour <detourId> --verdict valid|invalidated` — because the repair below is refused while it owes. "
+              : "") +
+            "Fix it with " +
             `\`update-epic ${e.id} --clear-links --link "<type>:<epic>[:<reason>]" ...\` — every ` +
             "link you want kept, in ONE invocation. `--link` alone APPENDS, so a corrected type " +
             "is a new edge and would leave this one exactly where it is." });
@@ -541,7 +549,15 @@ export const CHECKS = [
         .filter(r => !held.has(r.epic))
         .map(r => ({ epic: r.holder || undefined, detail:
           `${r.where} names \`${r.epic}\`, which is not an epic in this record` +
-          (r.drop ? "" : " — a detour-stack frame, so `/pm:resume` would pop a frame that " +
+          (r.drop ? "" : r.kind === "owed-reconcile"
+            // This check only reports a reference to a MISSING epic, so an owed-reconcile link here
+            // points at a detour removed by hand — which record-reconcile refuses as not found. The
+            // recovery is to re-register the id, then answer it (Gate 2 m3).
+            ? ` — the link a reconcile this epic owes is recorded against, and its detour \`${r.epic}\` was ` +
+              "removed from the record by hand, so `record-reconcile` refuses it as not found. Re-register " +
+              `it — \`add-epic --id ${r.epic} --lane <lane>\` — then \`record-reconcile ${r.holder} --detour ` +
+              `${r.epic} --verdict valid|invalidated\`; the link cannot be stripped while the obligation stands`
+            : " — a detour-stack frame, so `/pm:resume` would pop a frame that " +
             "names nothing") }));
     },
   },
@@ -703,10 +719,41 @@ export const CHECKS = [
      *  - The probe is ALL-OR-NOTHING, so it is a cliff: the first time exactly one recorded sha
      *    resolves in an otherwise history-less clone, arm 2 reports every other one. If this
      *    check ever fires en masse in CI, that is the cause — not a mass deletion.
+     *
+     *  ARM 3 — NOT A COMMIT OBJECT NAME (gates-bind-to-verified-evidence Decision 10). A value that
+     *  is not SHAPED as a hexadecimal commit name — `HEAD`, `main~1`, `not-a-commit` — was stored
+     *  before write-time resolution existed. It is reported BEFORE the object-store probe and
+     *  independently of it, and it is NEVER handed to git: `HEAD` resolves, so the arms above would
+     *  call it present and reachable, which is exactly how a moving ref hid here. Decided by
+     *  isCommitNameShaped(), the one predicate the staleness rule also uses, so a verdict this arm
+     *  names is the verdict every surface renders stale. Scoped to what recordedShas() already
+     *  enumerates — the attribution array and each CURRENT gate verdict's range — so withdrawing the
+     *  attribution or re-recording the verdict clears it; a superseded or withdrawn record is history
+     *  kept on purpose. Reported, never rewritten: which commit a moving ref named when it was written
+     *  is not recoverable from the record.
      */
     run(state) {
-      const records = recordedShas(state);
-      if (!records.length) return [];
+      const all = recordedShas(state);
+      if (!all.length) return [];
+      const out = [];
+      const malformedByEpic = new Map();
+      for (const r of all) {
+        if (isCommitNameShaped(r.sha)) continue;
+        if (!malformedByEpic.has(r.epic)) malformedByEpic.set(r.epic, []);
+        malformedByEpic.get(r.epic).push(r);
+      }
+      for (const [epic, list] of malformedByEpic) {
+        out.push({ epic, detail:
+          `${list.length} recorded value(s) are not a commit object name — a ref or string stored ` +
+          "before commit values were resolved when written, so no commit can be checked against it " +
+          "and every surface reads the verdict stale. Withdraw the attribution " +
+          `(\`update-epic ${epic} --withdraw-commit <value> --withdrawal-reason "<why>"\`) or re-record ` +
+          `the verdict over resolvable shas (\`record-gate-review ${epic} --gate <n> --verdict <v> ` +
+          "--base-sha <sha> --head-sha <sha>`). " +
+          [...new Set(list.map(r => `${r.where} ${escapeControls(JSON.stringify(r.sha))}`))].join(", ") });
+      }
+      const records = all.filter(r => isCommitNameShaped(r.sha));
+      if (!records.length) return out;
       // One pair of git calls per DISTINCT sha, not per record: the same commit is routinely
       // both attributed and named as a verdict's head.
       const seen = new Map();
@@ -727,7 +774,6 @@ export const CHECKS = [
         grouped.get(r.epic)[arm].push(r);
       }
       const cite = (list) => [...new Set(list.map(r => `${r.where} \`${r.sha.slice(0, 7)}\``))].join(", ");
-      const out = [];
       for (const [epic, arms] of grouped) {
         if (arms.orphaned.length) {
           out.push({ epic, detail:

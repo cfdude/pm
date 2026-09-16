@@ -1,0 +1,47 @@
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-QTSeAI/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-QTSeAI/PROJECT.md
+conductor: added epic 'e1' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-QTSeAI/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-QTSeAI/PROJECT.md
+conductor: added epic 'ext' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-WfTavv/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+✖ A refusal escapes the caller's control characters, so no echoed token starts a line of its own (483.429875ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 527.965875
+
+✖ failing tests:
+
+test at scripts/test/verb-surface.test.mjs:703:1
+✖ A refusal escapes the caller's control characters, so no echoed token starts a line of its own (483.429875ms)
+  AssertionError [ERR_ASSERTION]: caller text printed a line of its own for add-epic: conductor: add-epic takes no positional arguments — 'a
+    update-epic p --status archived --outcome delivered --no-deferrals' is an extra argument it does not read. Nothing was written.
+    If 'a
+    update-epic p --status archived --outcome delivered --no-deferrals' belongs to --lane's value, quote the whole value.
+  
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/verb-surface.test.mjs:725:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

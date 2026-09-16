@@ -10,7 +10,7 @@ import { defaultState, isInitialized, loadState, pushEpic, saveState, readStdin 
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { stampVersion } from "./plugin-meta.mjs";
 import { render } from "./render.mjs";
-import { writeRules } from "./rules.mjs";
+import { assertRulesBlockWritable, writeRules } from "./rules.mjs";
 import { buildBrief } from "./briefing.mjs";
 import { appendDetourLog, gitShortSha, isDetachedTree } from "./git.mjs";
 import { observeCommit } from "./commit-watch.mjs";
@@ -19,7 +19,10 @@ import { activeChangeIds, archivedChanges, firstHeading, planFiles, reconcileArc
 import { claimedSourceArtifacts, epicSourceArtifacts, normalizeArtifactPath, syncIgnoredArtifacts } from "./source-artifacts.mjs";
 import { ARCHIVE_BACKFILL, engineStamp } from "./disposition.mjs";
 import { ROOT, CONDUCTOR_DIR, BRIEF_PATH, PLANS_DIR, anyInwardProcedureEmittable } from "./constants.mjs";
-import { resolveAndRecordPlatform } from "./platform.mjs";
+import { platformFlag, resolveAndRecordPlatform, resolvePlatform } from "./platform.mjs";
+import { requirePlatformFlag } from "./add-epic.mjs";
+// The positionals the command-line check classified — never the raw argv tail (argv-surface.mjs).
+import { checkedPositionals } from "./argv-surface.mjs";
 import { saveHookHeal } from "./hook-write.mjs";
 
 /** Ensure the conductor's GENERATED artifacts are git-ignored.
@@ -50,7 +53,18 @@ export function ensureGitignore() {
     // publish one machine's transient state to everybody, on top of #106's untracked-file
     // complaint. upgrade() re-runs this (migrations.mjs), so repos initialized before the
     // marker existed pick it up without a MIGRATIONS entry.
-    ".conductor/session-claim.json",
+    //
+    // A GLOB since state-file-refuses-to-guess: the marker is now written by temp file plus rename
+    // in the same directory (claims.mjs), and the temp name starts with the marker's own name.
+    // An existing exact `.conductor/session-claim.json` line is left in place — it is harmless, and
+    // this function never removes a line it manages.
+    ".conductor/session-claim.json*",
+    // The state.json lock and its break file (state.mjs, design D4). Per-checkout and live only
+    // for the duration of one save, so a stray one must never show up as an untracked file.
+    ".conductor/state.json.lock*",
+    // The save's temp file (state.mjs). Removed on every failure the process survives; a save
+    // killed by a signal between its write and its rename still leaves one behind.
+    ".conductor/state.json.tmp*",
     // #111's activity segments. The whole DIRECTORY, not a glob of segment names: the names are
     // timestamped, so a per-file entry would need one line per segment forever. Same #106 rule —
     // engine-written, per-checkout, and useless to anyone but this working tree.
@@ -67,6 +81,16 @@ export function ensureGitignore() {
 }
 
 export function init() {
+  // FIRST, before saveState(defaultState()): `init --platform bogus` used to create state.json and
+  // THEN refuse, which ended pm's dormancy in a repo whose init had failed.
+  requirePlatformFlag("init");
+  // LOAD FIRST when the file exists, before any write: a present but unreadable state.json refuses
+  // here (StateUnreadableError), so init never writes over, beside or around a record it cannot read.
+  const recorded = isInitialized() ? loadState() : null;
+  // THEN the rules-block preflight, still before the first write (state.json on a fresh repo,
+  // .gitignore otherwise): an ambiguous marker arrangement refuses with nothing created. The target
+  // is resolved with the platform this init would use, WITHOUT recording it.
+  assertRulesBlockWritable(resolvePlatform({ platform: platformFlag(process.argv.slice(3)) }, recorded));
   if (isInitialized()) {
     process.stderr.write("conductor: already initialized (.conductor/state.json exists)\n");
   } else {
@@ -91,6 +115,7 @@ export function init() {
 
 export function brief() {
   if (!isInitialized()) return;          // DORMANT until /pm:init
+  requirePlatformFlag("brief");
   // consume: true — this IS a briefing actually reaching a session (SessionStart), so a
   // threshold warning surfaced here must be consumed (see briefing.mjs's buildBrief comment).
   const context = buildBrief(loadState(), { consume: true });
@@ -101,6 +126,9 @@ export function brief() {
 
 export function snapshot() {
   if (!isInitialized()) return;          // DORMANT until /pm:init
+  requirePlatformFlag("snapshot");
+  // BEFORE render(): an unreadable state file refuses here, so nothing is rendered and no snapshot
+  // written. Never exit 2 on this hook — on PreCompact that blocks compaction (lib/refusal.mjs).
   const state = loadState();
   render();
   fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
@@ -206,6 +234,11 @@ export function commitNudge() {
   // state.json write on the way. Suppressing the WATERMARK requires suppressing the REACTION.
   if (isDetachedTree()) return;
   const raw = readStdin();
+  // After the drain, so a refused hook line does not leave the writer holding a pipe. In a detached
+  // tree this verb is dormant (above) and so is this --platform VALUE refusal — but not the
+  // pre-dispatch undeclared-flag refusal (lib/argv-surface.mjs), which runs before dispatch and
+  // still fires in a detached tree; only a repository without pm makes that one dormant.
+  requirePlatformFlag("commit-nudge");
   let cmd = "";
   try {
     const j = JSON.parse(raw);
@@ -219,6 +252,10 @@ export function commitNudge() {
   const obs = observeCommit();
   if (obs.verdict === "no-commit") return;   // HEAD says nothing landed here. Assert nothing.
 
+  // BEFORE anything derived from state is written: an unreadable file refuses here, so no heal, no
+  // render and no detour-log line follows (state-file-refuses-to-guess; conductor.mjs maps the
+  // refusal to exit 2 for this hook). observeCommit() above is the one exemption — the watermark is
+  // a fact about HEAD, not a value derived from state.
   const state = loadState();
   const ctx = detourContext(state);
 
@@ -234,7 +271,7 @@ export function commitNudge() {
   // On the unverifiable rung `obs.head` can be a perfectly real sha while nothing is known to
   // have landed (no watermark yet, reflogs off, HEAD unreadable): naming it there would be
   // gh#104 in a new costume, asserting a commit the repository never confirmed — against an
-  // APPEND-ONLY array whose last entry is the Gate 2 endpoint. Absence of the clause is the
+  // APPEND-ONLY array a Gate 2 headSha must reach every entry of. Absence of the clause is the
   // degradation, and it costs nothing.
   const attribution = obs.verdict === "landed" ? attributionNudge(state, ctx, obs.head) : null;
 
@@ -286,10 +323,11 @@ function attributionTarget(state, ctx) {
  *
  *  SELF-EXTINGUISHING WITHOUT ANY BOOKKEEPING OF ITS OWN: the escalated form keys on
  *  `attributedCommits.length === 0`, which is state the AGENT wrote. Attribute once and the
- *  loud form is gone for the life of the epic. That empty array is also the only state in which
- *  item 4's catch-up rule is still available — after the first append, catching up would leave
- *  an ancestor as the last entry — so the escalation lands at the one moment it changes the
- *  outcome rather than on every commit forever.
+ *  loud form is gone for the life of the epic. An empty array is the state in which catching up is
+ *  most likely still owed (nothing of the epic's work is recorded yet), so the escalation lands
+ *  there rather than on every commit forever. Since gates-bind-to-verified-evidence a verdict must
+ *  reach EVERY attributed entry, so a later catch-up is still correct; it is simply less likely
+ *  to be needed.
  *
  *  NOISE BUDGET, stated plainly: this is willing to be ignored on the steady-state rung. One
  *  short sentence per real commit under an active epic, on a message that already prints, is
@@ -322,12 +360,12 @@ function attributionNudge(state, ctx, sha) {
     "lands after the reviewed range, so attributing it makes this epic's own Gate 2 read stale.";
 
   if (epic.attributedCommits.length === 0) {
-    return `ATTRIBUTION — \`${epic.id}\` has attributed no commits yet, so this is the last ` +
-      "moment its catch-up rule is available: attribute every commit of this epic's work that " +
+    return `ATTRIBUTION — \`${epic.id}\` has attributed no commits yet: ` +
+      "attribute every commit of this epic's work that " +
       "already landed, IN THE ORDER THEY LANDED, and then this one — " +
-      `\`${cmd}\`. The array is append-only and its LAST entry is the endpoint a Gate 2 ` +
-      "`headSha` is compared against, so catching up after attributing forward is not " +
-      `recoverable. ${exclusion}`;
+      `\`${cmd}\`. The array is append-only and a recorded Gate 2 \`headSha\` must reach EVERY ` +
+      "entry, so a commit left unattributed is work that gate is never checked against. " +
+      `${exclusion}`;
   }
   return `ATTRIBUTION — record this commit against its epic now, before the next one: ` +
     `\`${cmd}\`. ${exclusion}`;
@@ -666,7 +704,7 @@ export function sync(quiet = false) {
 
 export function logDetour() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
-  const reason = process.argv.slice(3).join(" ").trim();
+  const reason = checkedPositionals("log-detour").join(" ").trim();
   if (!reason) { process.stderr.write("usage: conductor.mjs log-detour \"<what you fixed>\"\n"); process.exit(1); }
   const state = loadState();
   // gh#175 Gate 2 C2: HONOUR THE RETURN. appendDetourLog()'s docstring says the boolean exists
@@ -715,7 +753,7 @@ export function appendHonchoMemory(action, epicId, reason) {
  *  record of what was emitted even if the agent forgets to actually send it. */
 export function honchoMemory() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
-  const [action, epicId, ...rest] = process.argv.slice(3);
+  const [action, epicId, ...rest] = checkedPositionals("honcho-memory");
   const reason = rest.join(" ").trim();
   if (!action || !epicId || !reason) {
     process.stderr.write("usage: conductor.mjs honcho-memory <push|pop> <epicId> \"<reason>\"\n");

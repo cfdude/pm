@@ -1,0 +1,194 @@
+=== MUTANT M08 rev-list failure read as all-reached (archive-gate)
+--- scripts/lib/archive-gate.mjs: "if (unreached === null) unanswerable = unanswerable.concat(reachable);\n    else uncovered" -> "if (false) unanswerable = unanswerable.concat(reachable);\n    else uncovered" (+ companion edit)
+--- node --test --test-name-pattern "^g2-M08" scripts/test/commit-resolution.test.mjs
+--- KILLED
+✖ g2-M08 a failed rev-list (head resolves, an attributed commit's history unreadable) never reads fresh (491.42975ms)
+ℹ pass 0
+ℹ fail 1
+✖ failing tests:
+✖ g2-M08 a failed rev-list (head resolves, an attributed commit's history unreadable) never reads fresh (491.42975ms)
+  AssertionError [ERR_ASSERTION]: git could not answer, so the verdict is unverifiable — never fresh
+
+=== MUTANT M23 rev-list catch answers empty set (git.mjs)
+--- scripts/lib/git.mjs: "} catch { answer = null; }" -> "} catch { answer = new Set(); }"
+--- node --test --test-name-pattern "^g2-M08" scripts/test/commit-resolution.test.mjs
+--- KILLED
+✖ g2-M08 a failed rev-list (head resolves, an attributed commit's history unreadable) never reads fresh (474.145084ms)
+ℹ pass 0
+ℹ fail 1
+✖ failing tests:
+✖ g2-M08 a failed rev-list (head resolves, an attributed commit's history unreadable) never reads fresh (474.145084ms)
+  AssertionError [ERR_ASSERTION]: git could not answer, so the verdict is unverifiable — never fresh
+
+=== MUTANT M15 clear-links guard ignores unmigrated links
+--- scripts/lib/links.mjs: "(Array.isArray(epic.links) ? epic.links : []).some(l => isArmed(l) || isUnmigrated(l));" -> "(Array.isArray(epic.links) ? epic.links : []).some(l => isArmed(l));"
+--- node --test --test-name-pattern "^g2-M15 " scripts/test/reconcile-obligation.test.mjs
+--- KILLED
+✖ g2-M15 before upgrade, --clear-links on an owing epic holding a keyless link is refused (747.575125ms)
+ℹ pass 0
+ℹ fail 1
+✖ failing tests:
+✖ g2-M15 before upgrade, --clear-links on an owing epic holding a keyless link is refused (747.575125ms)
+  AssertionError [ERR_ASSERTION]: expected a refusal, got exit 0.
+
+=== MUTANT M15b stamp arms a link to a missing epic
+--- scripts/lib/links.mjs: "&& l.epic !== e.id && ids.has(l.epic);" -> "&& l.epic !== e.id;"
+--- node --test --test-name-pattern "^g2-M15b" scripts/test/reconcile-obligation.test.mjs
+--- KILLED
+✖ g2-M15b the upgrade stamp never arms a link to a missing epic or to the epic itself (2.226791ms)
+ℹ pass 0
+ℹ fail 1
+✖ failing tests:
+✖ g2-M15b the upgrade stamp never arms a link to a missing epic or to the epic itself (2.226791ms)
+  AssertionError [ERR_ASSERTION]: a link to a missing epic is stamped false
+
+=== MUTANT M15b' stamp arms a self-link
+--- scripts/lib/links.mjs: "&& l.epic !== e.id && ids.has(l.epic);" -> "&& ids.has(l.epic);"
+--- node --test --test-name-pattern "^g2-M15b" scripts/test/reconcile-obligation.test.mjs
+--- KILLED
+✖ g2-M15b the upgrade stamp never arms a link to a missing epic or to the epic itself (2.046875ms)
+ℹ pass 0
+ℹ fail 1
+✖ failing tests:
+✖ g2-M15b the upgrade stamp never arms a link to a missing epic or to the epic itself (2.046875ms)
+  AssertionError [ERR_ASSERTION]: a self-link is stamped false
+
+=== MUTANT M07 heal ignores an answered armed link
+--- scripts/lib/epic-progress.mjs: "!links.some(l => isArmed(l) || isUnmigrated(l))" -> "!links.some(l => (isArmed(l) && !l.reconciled) || isUnmigrated(l))"
+--- node --test --test-name-pattern "^g2-M07 " scripts/test/reconcile-obligation.test.mjs
+--- KILLED
+✖ g2-M07 the heal counts an ANSWERED armed link as armed, and keeps the obligation (811.688292ms)
+ℹ pass 0
+ℹ fail 1
+✖ failing tests:
+✖ g2-M07 the heal counts an ANSWERED armed link as armed, and keeps the obligation (811.688292ms)
+  AssertionError [ERR_ASSERTION]: an answered armed link is still a link a verdict can be recorded against
+
+=== MUTANT M19 re-arm keeps the old verdict as reconciled
+--- scripts/lib/detour-stack.mjs: "    delete found.reconciled;\n" -> ""
+--- node --test --test-name-pattern "^g2-M19" scripts/test/reconcile-obligation.test.mjs
+--- KILLED
+✖ g2-M19 re-arming with --reconcile moves the link's old verdict to superseded and leaves it unanswered (901.177417ms)
+ℹ pass 0
+ℹ fail 1
+✖ failing tests:
+✖ g2-M19 re-arming with --reconcile moves the link's old verdict to superseded and leaves it unanswered (901.177417ms)
+  AssertionError [ERR_ASSERTION]: the re-armed link reads unanswered
+
+=== MUTANT M33 re-arm drops the old verdict instead of superseding it
+--- scripts/lib/detour-stack.mjs: "    found.superseded = found.reconciled;\n" -> ""
+--- node --test --test-name-pattern "^g2-M19" scripts/test/reconcile-obligation.test.mjs
+--- KILLED
+✖ g2-M19 re-arming with --reconcile moves the link's old verdict to superseded and leaves it unanswered (969.492958ms)
+ℹ pass 0
+ℹ fail 1
+✖ failing tests:
+✖ g2-M19 re-arming with --reconcile moves the link's old verdict to superseded and leaves it unanswered (969.492958ms)
+  AssertionError [ERR_ASSERTION]: the earlier verdict moved to superseded
+
+=== MUTANT M23c correction recomputes the flag from stillOwed
+--- scripts/lib/reconciler-writeback.mjs: "epic.reconcileNeeded = correction ? (epic.reconcileNeeded === true && stillOwed) : stillOwed;" -> "epic.reconcileNeeded = stillOwed;"
+--- node --test --test-name-pattern "^g2-M23c" scripts/test/reconcile-obligation.test.mjs
+--- KILLED
+✖ g2-M23c a correction on an epic whose flag is already false does not raise it (598.270458ms)
+ℹ pass 0
+ℹ fail 1
+✖ failing tests:
+✖ g2-M23c a correction on an epic whose flag is already false does not raise it (598.270458ms)
+  AssertionError [ERR_ASSERTION]: a correction never raises the flag
+
+=== MUTANT M29/M10 pop-detour omits the pointer-move notice
+--- scripts/lib/detour-stack.mjs: "  owedReconcileNotice(state, previousActive);\n" -> ""
+--- node --test --test-name-pattern "^g2-M29" scripts/test/reconcile-obligation.test.mjs
+--- KILLED
+✖ g2-M29 pop-detour warns when the pointer leaves a detour that itself owes a reconcile (803.962291ms)
+ℹ pass 0
+ℹ fail 1
+✖ failing tests:
+✖ g2-M29 pop-detour warns when the pointer leaves a detour that itself owes a reconcile (803.962291ms)
+  AssertionError [ERR_ASSERTION]: pop-detour names the owing detour and what it owes: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-8gXflC/PROJECT.md
+
+=== MUTANT M26d add-many omits the pointer-move notice
+--- scripts/lib/add-many.mjs: "  owedReconcileNotice(state, previousActive);\n" -> ""
+--- node --test --test-name-pattern "^g2-M26d" scripts/test/reconcile-obligation.test.mjs
+--- KILLED
+✖ g2-M26d add-many creating an active epic warns about the owing epic it displaces (740.696667ms)
+ℹ pass 0
+ℹ fail 1
+✖ failing tests:
+✖ g2-M26d add-many creating an active epic warns about the owing epic it displaces (740.696667ms)
+  AssertionError [ERR_ASSERTION]: add-many's stderr names p and d: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-tm4Xvw/PROJECT.md
+
+=== MUTANT M26e set-active omits the pointer-move notice
+--- scripts/lib/active-pointer.mjs: "  const saved = saveState(state);\n  owedReconcileNotice(state, previous);\n  render();\n  reportSave(saved, {\n    changed: `conductor: active is now" -> "  const saved = saveState(state);\n  render();\n  reportSave(saved, {\n    changed: `conductor: active is now"
+--- node --test --test-name-pattern "^g2-M26e" scripts/test/reconcile-obligation.test.mjs
+--- KILLED
+✖ g2-M26e set-active warns about the owing epic it moves off (751.149209ms)
+ℹ pass 0
+ℹ fail 1
+✖ failing tests:
+✖ g2-M26e set-active warns about the owing epic it moves off (751.149209ms)
+  AssertionError [ERR_ASSERTION]: set-active's stderr names p and d: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-O12AI0/PROJECT.md
+
+=== MUTANT M06 whitespace clause removed
+--- scripts/lib/git.mjs: "if (!v || /\\s/.test(v) || CONTROL_CHARACTER.test(v))" -> "if (!v || CONTROL_CHARACTER.test(v))"
+--- node --test --test-name-pattern "^g2-M06" scripts/test/commit-resolution.test.mjs
+--- SURVIVED
+✔ g2-M06 a value carrying whitespace or a control character is refused before git reads it (2.267208ms)
+ℹ pass 1
+ℹ fail 0
+
+=== MUTANT M18 control-character clause removed
+--- scripts/lib/git.mjs: "if (!v || /\\s/.test(v) || CONTROL_CHARACTER.test(v))" -> "if (!v || /\\s/.test(v))"
+--- node --test --test-name-pattern "^g2-M06" scripts/test/commit-resolution.test.mjs
+--- KILLED
+✖ g2-M06 a value carrying whitespace or a control character is refused before git reads it (11.328792ms)
+ℹ pass 0
+ℹ fail 1
+✖ failing tests:
+✖ g2-M06 a value carrying whitespace or a control character is refused before git reads it (11.328792ms)
+  AssertionError [ERR_ASSERTION]: neither resolves: "HEAD\u0000x"
+
+=== MUTANT M06+M18 both clauses removed
+--- scripts/lib/git.mjs: "if (!v || /\\s/.test(v) || CONTROL_CHARACTER.test(v))" -> "if (!v)"
+--- node --test --test-name-pattern "^g2-M06" scripts/test/commit-resolution.test.mjs
+--- KILLED
+✖ g2-M06 a value carrying whitespace or a control character is refused before git reads it (10.414708ms)
+ℹ pass 0
+ℹ fail 1
+✖ failing tests:
+✖ g2-M06 a value carrying whitespace or a control character is refused before git reads it (10.414708ms)
+  AssertionError [ERR_ASSERTION]: neither resolves: "HEAD\nHEAD","HEAD\u0000x"
+
+=== MUTANT M07a no ^{commit} peel
+--- scripts/lib/git.mjs: "input: asked.map(v => `${v}^{commit}\\n`)" -> "input: asked.map(v => `${v}\\n`)"
+--- node --test --test-name-pattern "^g2-M07a" scripts/test/commit-resolution.test.mjs
+--- KILLED
+✖ g2-M07a an annotated tag resolves to the commit it names, not to the tag object (309.385334ms)
+ℹ pass 0
+ℹ fail 1
+✖ failing tests:
+✖ g2-M07a an annotated tag resolves to the commit it names, not to the tag object (309.385334ms)
+  AssertionError [ERR_ASSERTION]: expected exit 0.
+
+=== MUTANT M17 rev-list call without GIT_NO_LAZY_FETCH
+--- scripts/lib/git.mjs: "maxBuffer: 256 * 1024 * 1024,\n      env: { ...process.env, GIT_NO_LAZY_FETCH: \"1\" }," -> "maxBuffer: 256 * 1024 * 1024,"
+--- node --test --test-name-pattern "^g2-M17" scripts/test/commit-resolution.test.mjs
+--- KILLED
+✖ g2-M17 every git call resolving or walking recorded commits sets GIT_NO_LAZY_FETCH (1.091833ms)
+ℹ pass 0
+ℹ fail 1
+✖ failing tests:
+✖ g2-M17 every git call resolving or walking recorded commits sets GIT_NO_LAZY_FETCH (1.091833ms)
+  AssertionError [ERR_ASSERTION]: commitsNotReachedBy's git call must not fetch from a promisor remote
+
+=== MUTANT M01 a keyless link counts as armed
+--- scripts/lib/links.mjs: "link.reconcileOnResume === true;" -> "link.reconcileOnResume !== false;"
+--- node --test --test-name-pattern "^g2-M01" scripts/test/reconcile-obligation.test.mjs
+--- KILLED
+✖ g2-M01 a keyless may-invalidate link is never armed, and owes nothing (2.0465ms)
+ℹ pass 0
+ℹ fail 1
+✖ failing tests:
+✖ g2-M01 a keyless may-invalidate link is never armed, and owes nothing (2.0465ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:

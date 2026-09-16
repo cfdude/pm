@@ -1,0 +1,529 @@
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-JPDweN/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-JPDweN/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-JPDweN/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-JPDweN/PROJECT.md
+conductor: added epic 'd2' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-JPDweN/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-JPDweN/PROJECT.md
+conductor: added epic 'x' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-JPDweN/PROJECT.md
+conductor: active is now 'p'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-d6JZU5/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-d6JZU5/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-d6JZU5/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-d6JZU5/PROJECT.md
+conductor: added epic 'd2' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-d6JZU5/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-d6JZU5/PROJECT.md
+conductor: added epic 'x' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-d6JZU5/PROJECT.md
+conductor: active is now 'p'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-GJQXHL/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-GJQXHL/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-GJQXHL/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-GJQXHL/PROJECT.md
+conductor: added epic 'd2' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-GJQXHL/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-GJQXHL/PROJECT.md
+conductor: added epic 'x' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-GJQXHL/PROJECT.md
+conductor: active is now 'p'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-sLgVcQ/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-sLgVcQ/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-sLgVcQ/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-sLgVcQ/PROJECT.md
+conductor: added epic 'd2' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-sLgVcQ/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-sLgVcQ/PROJECT.md
+conductor: added epic 'x' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-sLgVcQ/PROJECT.md
+conductor: active is now 'p'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-EBzXih/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-EBzXih/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-EBzXih/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-EBzXih/PROJECT.md
+conductor: added epic 'd2' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-EBzXih/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-EBzXih/PROJECT.md
+conductor: added epic 'x' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-EBzXih/PROJECT.md
+conductor: active is now 'p'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-icPNYa/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-icPNYa/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-icPNYa/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-icPNYa/PROJECT.md
+conductor: added epic 'd2' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-icPNYa/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-icPNYa/PROJECT.md
+conductor: added epic 'x' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-icPNYa/PROJECT.md
+conductor: active is now 'p'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-YGorw7/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-YGorw7/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-YGorw7/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-YGorw7/PROJECT.md
+conductor: added epic 'd2' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-YGorw7/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-YGorw7/PROJECT.md
+conductor: added epic 'x' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-YGorw7/PROJECT.md
+conductor: active is now 'p'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-YqO9mc/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-YqO9mc/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-YqO9mc/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-YqO9mc/PROJECT.md
+conductor: added epic 'd2' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-YqO9mc/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-YqO9mc/PROJECT.md
+conductor: added epic 'x' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-YqO9mc/PROJECT.md
+conductor: active is now 'p'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-clgvG1/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-clgvG1/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-clgvG1/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-clgvG1/PROJECT.md
+conductor: added epic 'd2' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-clgvG1/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-clgvG1/PROJECT.md
+conductor: added epic 'x' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-clgvG1/PROJECT.md
+conductor: active is now 'p'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-FNbHTU/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-FNbHTU/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-FNbHTU/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-FNbHTU/PROJECT.md
+conductor: added epic 'd2' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-FNbHTU/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-FNbHTU/PROJECT.md
+conductor: added epic 'x' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-FNbHTU/PROJECT.md
+conductor: active is now 'p'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-se7NrY/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-se7NrY/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-se7NrY/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-se7NrY/PROJECT.md
+conductor: added epic 'd2' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-se7NrY/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-se7NrY/PROJECT.md
+conductor: added epic 'x' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-se7NrY/PROJECT.md
+conductor: active is now 'p'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ESnS1p/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ESnS1p/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ESnS1p/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ESnS1p/PROJECT.md
+conductor: added epic 'd2' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ESnS1p/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ESnS1p/PROJECT.md
+conductor: added epic 'x' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ESnS1p/PROJECT.md
+conductor: active is now 'p'
+conductor: refreshed rules block in CLAUDE.md (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ESnS1p/PROJECT.md
+conductor: upgraded (0 migration(s)), pmVersion now 0.44.0 — nothing was written to .conductor/state.json (the rules block and PROJECT.md were re-rendered)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-xyw86Z/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-xyw86Z/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-xyw86Z/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-xyw86Z/PROJECT.md
+conductor: added epic 'd2' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-xyw86Z/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-xyw86Z/PROJECT.md
+conductor: added epic 'x' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-xyw86Z/PROJECT.md
+conductor: active is now 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-xyw86Z/PROJECT.md
+conductor: added epic 'q' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-xyw86Z/PROJECT.md
+conductor: added epic 'r' (claude-code, queued)
+conductor: refreshed rules block in CLAUDE.md (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-xyw86Z/PROJECT.md
+conductor: upgraded (0 migration(s)), pmVersion now 0.44.0
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-2fMHa6/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-2fMHa6/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-2fMHa6/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-2fMHa6/PROJECT.md
+conductor: added epic 'd2' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-2fMHa6/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-2fMHa6/PROJECT.md
+conductor: added epic 'x' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-2fMHa6/PROJECT.md
+conductor: active is now 'p'
+conductor: refreshed rules block in CLAUDE.md (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-2fMHa6/PROJECT.md
+conductor: upgraded (0 migration(s)), pmVersion now 0.44.0
+conductor: refreshed rules block in CLAUDE.md (platform: claude-code)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: upgraded (0 migration(s)), pmVersion now 0.44.0 — nothing was written to .conductor/state.json (the rules block and PROJECT.md were re-rendered)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-sePHMv/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-sePHMv/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-sePHMv/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-sePHMv/PROJECT.md
+conductor: added epic 'd2' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-sePHMv/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-sePHMv/PROJECT.md
+conductor: added epic 'x' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-sePHMv/PROJECT.md
+conductor: active is now 'p'
+✖ 6.1 a verdict against the paused epic itself is refused naming the owed detour (843.028ms)
+✖ 6.2 a verdict against an unrelated epic is refused and writes no link (846.235208ms)
+✖ 6.3 a detour pushed without reconcile does not answer an armed one (999.804833ms)
+✖ 6.4 a verdict while the detour's frame is still on the stack is refused (741.953667ms)
+✔ 6.5 REGRESSION GUARD: the armed detour's verdict clears the obligation (883.981292ms)
+✖ 6.6 two armed detours need two verdicts (959.968958ms)
+✖ 6.7 re-pushing to an answered detour re-arms it, keeping the earlier verdict readable (1059.556042ms)
+✖ 6.8 correcting a recorded verdict keeps the one it replaces and sets no obligation (864.687958ms)
+✖ 6.9a a hand-supplied may-invalidate link is never armed (733.095875ms)
+✖ 6.9b an unmigrated link refuses every verdict naming /pm:upgrade, and render keeps the active epic owing (790.6595ms)
+✖ 6.9f a verdict against a NEW detour cannot clear an unmigrated obligation (1019.824708ms)
+✖ 6.9g upgrade stamps a keyless link written after the version was already stamped; a self-link is stamped false (948.031541ms)
+✖ 6.9c the 0.44.0 migration arms only an owing epic's unanswered link (1062.599583ms)
+✔ 6.9d REGRESSION GUARD: the stamp is idempotent and leaves a keyed link untouched (983.862ms)
+✔ 6.9e REGRESSION GUARD: a 0.43.0 state file loads and the read-only verbs exit as before (935.199334ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 3
+ℹ fail 12
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 13728.682084
+
+✖ failing tests:
+
+test at scripts/test/reconcile-obligation.test.mjs:62:1
+✖ 6.1 a verdict against the paused epic itself is refused naming the owed detour (843.028ms)
+  AssertionError [ERR_ASSERTION]: expected a refusal, got exit 0.
+  stdout: 
+  stderr: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-JPDweN/PROJECT.md
+  conductor: recorded reconcile verdict 'valid' for 'p' vs 'p'
+  
+      at refused (file:///Users/robsherman/Documents/Repos/pm/scripts/test/reconcile-obligation.test.mjs:28:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/reconcile-obligation.test.mjs:64:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/reconcile-obligation.test.mjs:69:1
+✖ 6.2 a verdict against an unrelated epic is refused and writes no link (846.235208ms)
+  AssertionError [ERR_ASSERTION]: expected a refusal, got exit 0.
+  stdout: 
+  stderr: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-d6JZU5/PROJECT.md
+  conductor: recorded reconcile verdict 'valid' for 'p' vs 'other'
+  
+      at refused (file:///Users/robsherman/Documents/Repos/pm/scripts/test/reconcile-obligation.test.mjs:28:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/reconcile-obligation.test.mjs:71:3)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/reconcile-obligation.test.mjs:75:1
+✖ 6.3 a detour pushed without reconcile does not answer an armed one (999.804833ms)
+  AssertionError [ERR_ASSERTION]: expected a refusal, got exit 0.
+  stdout: 
+  stderr: conductor: PROJECT.md unchanged (skipped rewrite)
+  conductor: recorded reconcile verdict 'valid' for 'p' vs 'd2'
+  
+      at refused (file:///Users/robsherman/Documents/Repos/pm/scripts/test/reconcile-obligation.test.mjs:28:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/reconcile-obligation.test.mjs:78:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/reconcile-obligation.test.mjs:82:1
+✖ 6.4 a verdict while the detour's frame is still on the stack is refused (741.953667ms)
+  AssertionError [ERR_ASSERTION]: expected a refusal, got exit 0.
+  stdout: 
+  stderr: conductor: PROJECT.md unchanged (skipped rewrite)
+  conductor: recorded reconcile verdict 'valid' for 'p' vs 'd'
+  
+      at refused (file:///Users/robsherman/Documents/Repos/pm/scripts/test/reconcile-obligation.test.mjs:28:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/reconcile-obligation.test.mjs:85:3)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/reconcile-obligation.test.mjs:96:1
+✖ 6.6 two armed detours need two verdicts (959.968958ms)
+  AssertionError [ERR_ASSERTION]: d2 is still unanswered
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/reconcile-obligation.test.mjs:101:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/reconcile-obligation.test.mjs:107:1
+✖ 6.7 re-pushing to an answered detour re-arms it, keeping the earlier verdict readable (1059.556042ms)
+  TypeError: Cannot read properties of undefined (reading 'verdict')
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/reconcile-obligation.test.mjs:116:29)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at scripts/test/reconcile-obligation.test.mjs:119:1
+✖ 6.8 correcting a recorded verdict keeps the one it replaces and sets no obligation (864.687958ms)
+  TypeError: Cannot read properties of undefined (reading 'verdict')
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/reconcile-obligation.test.mjs:125:29)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at scripts/test/reconcile-obligation.test.mjs:129:1
+✖ 6.9a a hand-supplied may-invalidate link is never armed (733.095875ms)
+  AssertionError [ERR_ASSERTION]: the hand-supplied link carries a false arming record
+  + actual - expected
+  
+  + undefined
+  - false
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/reconcile-obligation.test.mjs:132:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/reconcile-obligation.test.mjs:145:1
+✖ 6.9b an unmigrated link refuses every verdict naming /pm:upgrade, and render keeps the active epic owing (790.6595ms)
+  AssertionError [ERR_ASSERTION]: expected a refusal, got exit 0.
+  stdout: 
+  stderr: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-FNbHTU/PROJECT.md
+  conductor: recorded reconcile verdict 'valid' for 'p' vs 'd'
+  
+      at refused (file:///Users/robsherman/Documents/Repos/pm/scripts/test/reconcile-obligation.test.mjs:28:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/reconcile-obligation.test.mjs:148:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/reconcile-obligation.test.mjs:154:1
+✖ 6.9f a verdict against a NEW detour cannot clear an unmigrated obligation (1019.824708ms)
+  AssertionError [ERR_ASSERTION]: expected a refusal, got exit 0.
+  stdout: 
+  stderr: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-se7NrY/PROJECT.md
+  conductor: recorded reconcile verdict 'valid' for 'p' vs 'd2'
+  
+      at refused (file:///Users/robsherman/Documents/Repos/pm/scripts/test/reconcile-obligation.test.mjs:28:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/reconcile-obligation.test.mjs:158:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/reconcile-obligation.test.mjs:165:1
+✖ 6.9g upgrade stamps a keyless link written after the version was already stamped; a self-link is stamped false (948.031541ms)
+  AssertionError [ERR_ASSERTION]: the keyless unanswered link on an owing epic is armed
+  + actual - expected
+  
+  + undefined
+  - true
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/reconcile-obligation.test.mjs:175:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/reconcile-obligation.test.mjs:181:1
+✖ 6.9c the 0.44.0 migration arms only an owing epic's unanswered link (1062.599583ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + undefined
+  - true
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/reconcile-obligation.test.mjs:194:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

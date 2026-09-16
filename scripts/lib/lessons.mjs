@@ -34,6 +34,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { isInitialized, readStdin } from "./state.mjs";
+import { requirePlatformFlag } from "./add-epic.mjs";
 
 /** The lessons corpus lives at `docs/lessons/` under the project root. Resolved at CALL time,
  *  not at module load, so a test (and a hook fired in a different project) sees its own root. */
@@ -122,8 +123,10 @@ export function lessonAdvice() {
   if (!isInitialized()) return;              // DORMANT until /pm:init
   // Drained BEFORE anything else on this path, exactly as the gate guard does it — the payload
   // is on stdin and a hook that returns without reading it leaves the writer holding a pipe.
+  const payload = readStdin();
+  requirePlatformFlag("lesson-advice");      // after the drain, so a refusal leaves no writer holding a pipe
   let event;
-  try { event = JSON.parse(readStdin()); } catch { return; }
+  try { event = JSON.parse(payload); } catch { return; }
   if (!event || typeof event !== "object") return;
   const lessons = matchableLessons();
   if (!lessons.length) return;               // no corpus, or none of it matchable

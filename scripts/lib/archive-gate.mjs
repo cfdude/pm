@@ -15,8 +15,8 @@
 // READS that quantity rather than computing one of its own. Two counters is how a guard comes
 // to refuse an epic that renders as complete.
 
-import { gateHasEvidence, gateSummary, isOpenspecLane, withdrawnGate } from "./constants.mjs";
-import { isAncestor, sameCommit } from "./git.mjs";
+import { escapeControls, gateHasEvidence, gateSummary, isOpenspecLane, withdrawnGate } from "./constants.mjs";
+import { commitsNotReachedBy, isCommitNameShaped, resolveCommits } from "./git.mjs";
 import { LIFECYCLE_MARKER, epicProgress, outstandingWork } from "./epic-progress.mjs";
 import { KNOWN_OUTCOMES, agentDisposition, correctionError, dispositionError, isEngineStamped, isStoryDisposed, outcomeOf } from "./disposition.mjs";
 
@@ -67,12 +67,26 @@ export function outstandingStories(epic) {
  *                     capability and asserts that nothing has been attributed to it. No verdict
  *                     can be shown stale by an empty array, so the archive is not refused; it
  *                     renders differently from unverifiable because it is a different claim.
- *   "stale"           the recorded `headSha` is a STRICT ANCESTOR of the last attributed
- *                     commit: work landed after the range the reviewer read.
- *   "fresh"           everything else, including the ordinary case where repository HEAD has
- *                     moved far past the verdict through commits belonging to other epics.
- *                     Repository HEAD is deliberately NOT the baseline — an epic archived a
- *                     week after its merge would otherwise read stale through nobody's fault.
+ *   "stale"           the recorded `headSha` does not reach EVERY attributed commit (equal to or an
+ *                     ancestor of it) — work landed outside the range the reviewer read, including
+ *                     a head on an unrelated branch, which reaches none of them — OR the head or an
+ *                     attributed entry is not SHAPED as a commit name at all (a legacy `HEAD`,
+ *                     `not-a-commit`), which is never resolved as a ref at read time.
+ *   "fresh"           every attributed commit is reached, including the ordinary case where
+ *                     repository HEAD has moved far past the verdict through commits belonging to
+ *                     other epics. Repository HEAD is deliberately NOT the baseline — an epic
+ *                     archived a week after its merge would otherwise read stale through nobody's
+ *                     fault — and neither is reachability from any branch or ref.
+ *
+ * A HEXADECIMAL value this clone cannot resolve to exactly one commit is UNANSWERABLE rather than a
+ * finding: write-time resolution guaranteed it was a commit, so a clone lacking it cannot answer for
+ * the record. Unanswerable reads "unverifiable" — but only where nothing is already known stale: a
+ * resolvable attributed commit the head does not reach makes the verdict stale whatever else is
+ * missing.
+ *
+ * EVERY ENTRY, NOT THE LAST (gates-bind-to-verified-evidence Decision 9). Comparing only the last
+ * entry let an ancestor attributed after an uncovered descendant read fresh, and let a head on an
+ * unrelated branch read fresh because it was an ancestor of nothing.
  *
  * `uncovered` names the attributed commits the range does not reach, so a refusal can say what
  * is missing rather than only that something is.
@@ -105,13 +119,22 @@ export function gateStaleness(epic, entry) {
       : { state: "none-attributed", uncovered: [] };
   }
   if (!gateHasEvidence(entry)) return { state: "unverifiable", uncovered: [] };
-  const last = attributed[attributed.length - 1];
-  if (sameCommit(last, entry.headSha) === true) return { state: "fresh", uncovered: [] };
-  const covers = isAncestor(entry.headSha, last);
-  if (covers === null) return { state: "unverifiable", uncovered: [] };
-  if (covers !== true) return { state: "fresh", uncovered: [] };
-  const uncovered = attributed.filter(c => sameCommit(c, entry.headSha) !== true && isAncestor(entry.headSha, c) === true);
-  return { state: "stale", uncovered, headSha: entry.headSha };
+  const head = entry.headSha;
+  // Shape first, and never passed to git: a malformed value is ALWAYS stale.
+  const malformed = [...new Set([head, ...attributed].filter(v => !isCommitNameShaped(v)))];
+  const hexAttributed = attributed.filter(isCommitNameShaped);
+  const { resolved } = resolveCommits([...(isCommitNameShaped(head) ? [head] : []), ...hexAttributed]);
+  let unanswerable = [...new Set([head, ...hexAttributed].filter(v => isCommitNameShaped(v) && !resolved.has(v)))];
+  let uncovered = [];
+  if (resolved.has(head)) {
+    const reachable = hexAttributed.filter(v => resolved.has(v));
+    const unreached = commitsNotReachedBy(reachable.map(v => resolved.get(v)), resolved.get(head));
+    if (unreached === null) unanswerable = unanswerable.concat(reachable);
+    else uncovered = [...new Set(reachable.filter(v => unreached.has(resolved.get(v))))];
+  }
+  if (malformed.length || uncovered.length) return { state: "stale", uncovered, malformed, headSha: head };
+  if (unanswerable.length) return { state: "unverifiable", uncovered: [] };
+  return { state: "fresh", uncovered: [] };
 }
 
 /** The marking a rendered verdict carries, so PROJECT.md, the brief and any refusal describe
@@ -234,20 +257,9 @@ export function unconsideredOutcomes(epics) {
     .map(e => ({ epic: e, invocation: dispositionInvocation(e.id) }));
 }
 
-/* Moved here from update-epic.mjs (gate-verdict-withdrawal 4.1): archiveGate() now prints a
- * user-supplied value too — a Gate 2 withdrawal's reason — and a NEW raw print of a user value would
- * add a second instance of the defect `handoff-refusal-prints-story-titles-raw` already holds. One
- * escaper, imported by both refusals, rather than a copy each. */
-/** A control character — newline above all. A token carrying one is never echoed: a shell cannot
- *  reliably rebuild it on one line (command substitution strips a trailing newline), and an echoed
- *  newline would let a user-supplied value start a line of the refusal. C1 controls (NEL among them)
- *  and the Unicode LINE and PARAGRAPH SEPARATORs count: a reader that honours them (a JS `m` regex,
- *  a terminal, an editor) sees a new line there. */
-export const CONTROL_CHARACTER = /[\u0000-\u001f\u007f-\u009f\u2028\u2029]/;
-/** Render every control character as a `\uXXXX` escape. JSON.stringify alone is not enough: it
- *  leaves C1 controls and U+2028/U+2029 raw. */
-export const escapeControls = (s) => String(s).replace(new RegExp(CONTROL_CHARACTER.source, "g"),
-  c => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`);
+/* CONTROL_CHARACTER and escapeControls live in constants.mjs (every-verb-refuses-what-it-does-not-read):
+ * the pre-dispatch command-line check echoes caller tokens too, and argv-surface.mjs is a leaf that
+ * may import constants.mjs only. Still one escaper for every refusal that prints a user value. */
 
 /**
  * THE ONE DEFINITION of the obligations a `delivered` outcome carries, returned as the list of
@@ -283,9 +295,20 @@ export function deliveredObligations(epic, { carriedTo } = {}) {
     } else {
       const staleness = gateStaleness(epic, gate2);
       if (staleness.state === "stale") {
-        failing.push({ kind: "gate2", items: [], detail:
-          `its passing Gate 2 reviewed up to ${staleness.headSha}, which does not cover the ` +
-          `commit(s) attributed to this epic since: ${staleness.uncovered.join(", ")}` });
+        // Recorded values are ESCAPED: a legacy value stored before write-time resolution can carry
+        // any character, and a refusal must never let one start a line of its own.
+        const esc = (v) => escapeControls(String(v));
+        const parts = [];
+        if (staleness.uncovered.length) {
+          parts.push(`its passing Gate 2 reviewed up to ${esc(staleness.headSha)}, which does not reach ` +
+            `the commit(s) attributed to this epic: ${staleness.uncovered.map(esc).join(", ")}`);
+        }
+        if (staleness.malformed && staleness.malformed.length) {
+          parts.push(`its Gate 2 range or attribution holds a value that is not a commit object name ` +
+            `(${staleness.malformed.map(v => escapeControls(JSON.stringify(v))).join(", ")}) — a ref or string ` +
+            "recorded before write-time resolution, which names no checkable commit");
+        }
+        failing.push({ kind: "gate2", items: [], detail: parts.join("; and ") });
       } else if (staleness.state === "attribution-withdrawn") {
         failing.push({ kind: "gate2", items: [], detail:
           `it carries a passing Gate 2 and attributes no commits, having withdrawn ` +

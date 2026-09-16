@@ -15,7 +15,7 @@
 // One-directional dependencies only: constants → disposition → (add-epic's parseFlags, state,
 // render), the same chain update-epic.mjs walks.
 
-import { epicFlagsFor, findRelease, releaseLine, releaseMembers, releaseSummaries } from "./constants.mjs";
+import { findRelease, releaseLine, releaseMembers, releaseSummaries } from "./constants.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
@@ -25,10 +25,6 @@ import {
   CROSS_SPEC_MIN_SPECS, KNOWN_CROSS_SPEC_VERDICTS, crossSpecLine, crossSpecRequired,
   releaseSpecFiles, specDigest,
 } from "./cross-spec-review.mjs";
-
-/** The flags `release` recognizes — a PROJECTION of the shared EPIC_FLAGS registry, never a
- *  second literal. Registering a flag on `release` in that registry is the whole edit. */
-export const RELEASE_FLAGS = epicFlagsFor("release");
 
 const str = (v) => (typeof v === "string" && v.trim() !== "" ? v.trim() : undefined);
 
@@ -103,13 +99,8 @@ export function release() {
     process.stderr.write("       conductor.mjs release show [<id>]   — READ it back: intent, target, derived members, deferrals, the cross-spec verdict and any amendments\n");
     process.exit(1);
   }
+  // Undeclared flags were refused before dispatch by the pre-dispatch command-line check (lib/argv-surface.mjs).
   const f = parseFlags(argv.slice(1));
-  const unknown = Object.keys(f).filter(k => !RELEASE_FLAGS.includes(k));
-  if (unknown.length) {
-    process.stderr.write(`conductor: release: unknown flag(s) --${unknown.join(", --")} ` +
-      `(known: ${RELEASE_FLAGS.map(k => `--${k}`).join(", ")})\n`);
-    process.exit(1);
-  }
   // #149 — one rule for every value-bearing flag, from the registry. A valueless `--target` or
   // `--member` was dropped by str()/lastStr() and the release was written without it; only
   // `--reason` had a check of its own, and only because a deferral demands one.
@@ -417,11 +408,6 @@ export function releaseShow(rest) {
 
 // ─────────────────── the RELEASE-scope review gate (gh#126) ───────────────────
 
-/** The flags `record-cross-spec-review` recognizes — the same PROJECTION of the shared
- *  EPIC_FLAGS registry every other verb's allowlist is, never a second literal. Registering this
- *  verb on the two entries `record-gate-review` already declares was the whole edit. */
-export const CROSS_SPEC_FLAGS = epicFlagsFor("record-cross-spec-review");
-
 /**
  * `record-cross-spec-review <releaseId> --verdict pass|fail [--reviewer "<identity>"]`
  *
@@ -443,13 +429,8 @@ export function recordCrossSpecReview() {
   const argv = process.argv.slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
   const f = parseFlags(id ? argv.slice(1) : argv);
-  // Rejected BEFORE loadState(), so a refusal cannot leave a partial write behind.
-  const unknown = Object.keys(f).filter(k => !CROSS_SPEC_FLAGS.includes(k));
-  if (unknown.length) {
-    process.stderr.write(`conductor: record-cross-spec-review: unknown flag(s) --${unknown.join(", --")} ` +
-      `(known: ${CROSS_SPEC_FLAGS.map(k => `--${k}`).join(", ")})\n`);
-    process.exit(1);
-  }
+  // Undeclared flags were refused before dispatch by the pre-dispatch command-line check (lib/argv-surface.mjs), reading this verb's two
+  // registry rows — the same shared entries `record-gate-review` declares.
   // #149 — the fifth write surface. A valueless `--reviewer` recorded the cross-spec verdict
   // with no reviewer identity at all, which is exactly what that field exists to prevent.
   requireFlagValues("record-cross-spec-review", f);

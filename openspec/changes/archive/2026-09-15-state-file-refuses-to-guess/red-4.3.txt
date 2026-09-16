@@ -1,0 +1,70 @@
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-77P9VT/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Tdjz6H/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Tdjz6H/PROJECT.md
+conductor: added epic 'e1' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Tdjz6H/PROJECT.md
+conductor: added epic 'e2' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Tdjz6H/PROJECT.md
+conductor: added epic 'e3' (claude-code, queued)
+✖ 4.3(a): several breakers on one stale lock lose no update — 8 concurrent, three runs (146.960792ms)
+✖ 4.3(b): a breaker that judged a lock stale removes nothing once another breaker has replaced it (242.466375ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 430.043417
+
+✖ failing tests:
+
+test at scripts/test/state-file-refuses-to-guess.test.mjs:520:1
+✖ 4.3(a): several breakers on one stale lock lose no update — 8 concurrent, three runs (146.960792ms)
+  AssertionError [ERR_ASSERTION]: run 0: b0-0 exited 1: file:///Users/robsherman/Documents/Repos/pm/scripts/lib/state.mjs:398
+    if (why) throw new StatePersistError(why, verb);
+                   ^
+  
+  StatePersistError: state.json write reported success but did not persist (verb: unknown) — the file on disk does not match what was written at revision 6 (disk revision 6)
+      at saveState (file:///Users/robsherman/Documents/Repos/pm/scripts/lib/state.mjs:398:18)
+      at addEpic (file:///Users/robsherman/Documents/Repos/pm/scripts/lib/add-epic.mjs:459:17)
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/conductor.mjs:361:4
+      at ModuleJob.run (node:internal/modules/esm/module_job:569:25)
+      at async node:internal/modules/esm/loader:650:26
+      at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+    reason: 'the file on disk does not match what was written at revision 6 (disk revision 6)',
+    verb: 'unknown'
+  }
+  
+  Node.js v26.8.2
+  
+  
+  1 !== 9
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/state-file-refuses-to-guess.test.mjs:532:19)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 9,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/state-file-refuses-to-guess.test.mjs:539:1
+✖ 4.3(b): a breaker that judged a lock stale removes nothing once another breaker has replaced it (242.466375ms)
+  TypeError: stateLib.inspectLock is not a function
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/state-file-refuses-to-guess.test.mjs:546:32
+      at inRepo (file:///Users/robsherman/Documents/Repos/pm/scripts/test/state-file-refuses-to-guess.test.mjs:308:22)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/state-file-refuses-to-guess.test.mjs:545:9)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)

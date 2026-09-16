@@ -27,6 +27,12 @@ fs.mkdirSync(path.join(CWD, ".conductor"), { recursive: true });
 const { saveState, loadState, StatePersistError, persistFailure } = await import("../lib/state.mjs");
 const { missingAttributions, updateEpic } = await import("../lib/update-epic.mjs");
 
+const { fixtureCommit } = await import("./helpers.mjs");
+// --attribute-commit resolves its value in the repo at CLAUDE_PROJECT_DIR and stores the FULL
+// object name, so the attributed sha has to be a real commit there, and the read-back compares
+// against that resolved name.
+const SHA = fixtureCommit(CWD, "attributed");
+
 const STATE = path.join(CWD, ".conductor", "state.json");
 const seed = () => {
   fs.writeFileSync(STATE, JSON.stringify({ version: 1, revision: 3, active: null, detourStack: [],
@@ -136,10 +142,10 @@ function runUpdateEpic(args) {
 
 test("140: --attribute-commit reports success only when the sha is on disk afterwards", () => {
   seed();
-  const r = runUpdateEpic(["e1", "--attribute-commit", "abc1234"]);
+  const r = runUpdateEpic(["e1", "--attribute-commit", SHA]);
   assert.equal(r.code, 0, r.err);
   assert.match(r.err, /updated 'e1'/);
-  assert.deepEqual(loadState().epics[0].attributedCommits, ["abc1234"]);
+  assert.deepEqual(loadState().epics[0].attributedCommits, [SHA]);
 });
 
 test("140: an attribution superseded before the command returns FAILS instead of saying 'updated'", () => {
@@ -162,10 +168,10 @@ test("140: an attribution superseded before the command returns FAILS instead of
     fs.writeFileSync(to, JSON.stringify(disk, null, 2) + "\n");
   };
   let r;
-  try { r = runUpdateEpic(["e1", "--attribute-commit", "abc1234"]); }
+  try { r = runUpdateEpic(["e1", "--attribute-commit", SHA]); }
   finally { fs.renameSync = real; }
   assert.equal(r.code, 1, "a verb that reports success for a write that is not there is the defect");
   assert.match(r.err, /NOT in \.conductor\/state\.json/);
-  assert.match(r.err, /abc1234/);
+  assert.match(r.err, new RegExp(SHA));
   assert.doesNotMatch(r.err, /updated 'e1'/, "success must not be claimed alongside the failure");
 });

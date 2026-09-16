@@ -42,13 +42,6 @@ import { isInitialized, loadState } from "./state.mjs";
 import { artifactClaimants, normalizeArtifactPath } from "./source-artifacts.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 
-/** The flags `verify-specs` accepts. A LOCAL list and deliberately not an EPIC_FLAGS entry, for
- *  triage.mjs' stated reason: that registry is the shared surface of the epic-WRITING commands,
- *  and this verb writes no epic. "Not in the registry" is not "needs no allowlist" — parseFlags
- *  reads whatever it is handed, so an unregistered flag would parse, be ignored, and exit 0
- *  having quietly checked the default root instead of the one the caller named. */
-export const VERIFY_SPECS_FLAGS = ["root", "headers"];
-
 /** How far into a document the leading metadata block may start. Generous — a title, a blank
  *  line and a couple of badges — and bounded so a document with no header never has its BODY
  *  scanned for backticked code spans. */
@@ -313,13 +306,8 @@ export function verifySpecs() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const f = parseFlags(process.argv.slice(3));
   requireFlagValues("verify-specs", f);
-  const unknown = Object.keys(f).filter(k => !VERIFY_SPECS_FLAGS.includes(k));
-  if (unknown.length) {
-    process.stderr.write(
-      `conductor: verify-specs: unknown flag(s) ${unknown.map(k => `--${k}`).join(", ")} ` +
-      `(known: ${VERIFY_SPECS_FLAGS.map(k => `--${k}`).join(", ")})\n`);
-    process.exit(1);
-  }
+  // An unregistered flag is refused before dispatch by the pre-dispatch command-line check (lib/argv-surface.mjs); without it the flag would
+  // parse, be ignored, and exit 0 having checked the default root instead of the one named.
   if (f.root !== undefined && typeof f.root !== "string") {
     // A valueless `--root` parses as boolean true. Falling back to the default would check a
     // root the caller did not ask about and report on it as though they had.

@@ -76,16 +76,19 @@
  */
 
 import path from "node:path";
+import { isatty } from "node:tty";
 import { fileURLToPath } from "node:url";
 import { pluginVersion } from "./lib/plugin-meta.mjs";
 import {
   currentTracker, currentSecondaryTrackers, currentReviewMode, rulesBlock, writeRules,
 } from "./lib/rules.mjs";
 import { resolvePlatform, assertKnownPlatform, platformFlag, resolveAndRecordPlatform, rulesTarget } from "./lib/platform.mjs";
-import { loadState, conflictExitCode } from "./lib/state.mjs";
+import { loadState, readStdin } from "./lib/state.mjs";
+import { refusalFor } from "./lib/refusal.mjs";
 import { ROOT, warnRootDivergence, warnDetachedTree } from "./lib/constants.mjs";
 import { isDetachedTree } from "./lib/git.mjs";
 import { VERB_EFFECTS } from "./lib/verb-effects.mjs";
+import { checkCommandLine } from "./lib/argv-surface.mjs";
 import { setActive, clearActive } from "./lib/active-pointer.mjs";
 import { setAutonomy } from "./lib/autonomy.mjs";
 import { parseFlags, planHierarchy, addEpic, requireFlagValues } from "./lib/add-epic.mjs";
@@ -141,40 +144,51 @@ if (delegated !== null) process.exit(delegated);
 
 const cmd = process.argv[2];
 
-// A help flag must never have a side effect. Nothing here parsed --help, so it fell through
-// to whichever subcommand was named and was consumed as DATA: `log-detour --help` wrote a real
-// entry to .conductor/detours.log with "--help" as the detour description, and the log is
-// append-only with no verb to remove it. Handled before dispatch so every subcommand is covered
-// -- log-detour is only where the damage is visible, not where the gap is.
 const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|push-detour|pop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n";
-const helpAt = process.argv.slice(2).findIndex(a => a === "--help" || a === "-h");
-// gh-187. This used to fire on a help token ANYWHERE in argv, so `--title --help` printed help,
-// exited 0 and wrote NOTHING — the silent-success shape this project has spent several releases
-// closing. Narrowed to the position a person actually types it: with no verb at all, or as the
-// FIRST token after the verb. Everywhere else it is data.
+
+// ---------- the command-line check (every-verb-refuses-what-it-does-not-read) ----------
 //
-// The short-circuit keeps both properties it was built for. It is still PRE-DISPATCH, so help
-// works for a verb whose own parsing would reject the rest of the line; and a help token in the
-// position a person types it still reaches no subcommand, so `log-detour --help` cannot append
-// "--help" to the append-only detour log. What changes is only that a token in a VALUE position
-// is no longer mistaken for a request.
-if (!cmd || helpAt === 0 || helpAt === 1) {
-  // #158 — VERB-SCOPED when a verb is named, global otherwise. The short-circuit stays exactly
-  // where it was and keeps its original property: a help flag reaches no subcommand, so it can
-  // still never be consumed as DATA. What changes is only WHICH answer is printed.
-  //
-  // The verb list is read from USAGE rather than from the dispatch object below, because the
-  // dispatch object is not constructed yet at this point in the file and moving it above the
-  // short-circuit would put subcommand imports on the help path. conductor-35 renders help for
-  // every verb the DISPATCH TABLE names, so the two cannot drift apart unnoticed.
-  const knownVerbs = USAGE.replace(/^usage: conductor\.mjs /, "").trim().split("|");
-  if (cmd && knownVerbs.includes(cmd)) {
+// ONE pre-dispatch decision about what the command line may carry, for every dispatched verb, made
+// in lib/argv-surface.mjs from the registry and acted on HERE — before the root-divergence warning,
+// the banner, the activity snapshot and dispatch, so nothing it refuses can have written anything.
+//
+// It replaces gh-187's short-circuit, which honoured a help token only at argv position 0/1. That
+// narrowing turned "exit 0, writes nothing" into "exit 0, writes ANYWAY" for every help token after a
+// positional: `remove-epic e2 --help` removed e2 and `set-gate-guard off --help` disarmed the guard.
+// A help token in any non-value position now prints that verb's help and exits 0 having written
+// nothing; one in a VALUE position is still refused, because there it was data (#187).
+//
+// An UNKNOWN verb keeps today's behaviour exactly: a help token first → global usage, exit 0;
+// otherwise it falls through to dispatch's USAGE, exit 1, having warned where it is pointed.
+const helpAt = process.argv.slice(2).findIndex(a => a === "--help" || a === "-h");
+if (!cmd || (!Object.prototype.hasOwnProperty.call(VERB_EFFECTS, cmd) && (helpAt === 0 || helpAt === 1))) {
+  process.stdout.write(USAGE);
+  process.exit(0);
+}
+{
+  const verdict = checkCommandLine(cmd, process.argv, { initialized: isInitialized() });
+  if (verdict.kind === "help") {
+    // #158 — VERB-SCOPED help, projected from the same declarations the check enforces.
     const { verbHelp } = await import("./lib/help.mjs");
     process.stdout.write(verbHelp(cmd));
     process.exit(0);
   }
-  process.stdout.write(USAGE);
-  process.exit(0);
+  if (verdict.kind === "refuse") {
+    // A hook verb's payload is on stdin. Drain it before exiting, as gate-guard and lesson-advice
+    // do on their own paths, so the hook writer is not left holding a pipe (an EPIPE on its side).
+    // Never from a terminal: a person typing a refused hook line would wait on a read that only
+    // ends at EOF, with the refusal not yet printed. The message goes first for the same reason.
+    process.stderr.write(verdict.message + "\n");
+    // isatty(0), not process.stdin.isTTY: touching process.stdin opens a stream on fd 0 that makes
+    // the synchronous drain read nothing, and the hook writer then sees EPIPE.
+    if (VERB_EFFECTS[cmd].hook === true && !isatty(0)) readStdin();
+    process.exit(1);
+  }
+  // D10 — every verb reads its command line in canonical order: positionals first, then flags with
+  // their values in their original relative order, argv-level flags (`--force`) last. So an
+  // `argv[0]` reader sees its positional first (`set-active --force e2`), and saveState()'s own
+  // `process.argv.includes("--force")` keeps working unedited.
+  if (verdict.canonicalArgv) process.argv.splice(3, process.argv.length - 3, ...verdict.canonicalArgv);
 }
 
 // gh#82 — is ROOT the repository the caller is standing in?  Emitted here, ONCE, and for every
@@ -346,13 +360,16 @@ try {
   process.exit(1);
 }))();
 } catch (err) {
-  // A conflict is retryable; a validation error is not. They must not share an exit code.
-  // Anything else is re-thrown UNCHANGED so a real crash keeps its stack -- swallowing it here
-  // would trade one silent failure for another.
-  const code = conflictExitCode(err);
-  if (code !== null) {
-    process.stderr.write(`conductor: ${err.message}\n`);
-    process.exit(code);
-  }
-  throw err;
+  // A conflict is retryable; a validation error is not; an unreadable state file is neither. They
+  // must not share an exit code — lib/refusal.mjs holds the mapping. Anything else is re-thrown
+  // UNCHANGED so a real crash keeps its stack -- swallowing it here would trade one silent failure
+  // for another.
+  const refusal = refusalFor(cmd, err);
+  if (refusal === null) throw err;
+  if (refusal.stderr) process.stderr.write(refusal.stderr);
+  // exitCode and RETURN, never process.exit(): a hook's refusal can be a JSON payload on stdout
+  // (SessionStart), and exiting straight after a stdout write truncates it at a pipe's buffer
+  // (conductor-38). Nothing after this catch keeps the event loop alive.
+  if (refusal.stdout) process.stdout.write(refusal.stdout);
+  process.exitCode = refusal.exitCode;
 }

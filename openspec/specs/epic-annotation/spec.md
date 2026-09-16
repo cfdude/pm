@@ -56,18 +56,30 @@ nothing is prohibited — the failure is invisible and the text is unrecoverable
 destroyed the entire payload of epics registered specifically so a future session would remember
 why they exist.
 
-The rule binds two input shapes, because these surfaces do not all take flags:
+An argv-level flag that the `verb-surface` capability declares (`--force`) is not an input this rule
+counts: it belongs to the invocation's state write rather than to the epic, so accepting it without
+persisting anything on the epic is not a violation of this requirement.
 
-- A `--flag` an epic-writing command does not support MUST be rejected by name, with the supported
-  flags named alongside it. Creation currently validates no flag surface at all, so `--notes "x"`
-  parses, exits zero, and writes nothing.
-- A KEY in a bulk-creation batch document that the command will not persist MUST be rejected the
-  same way. Bulk creation currently copies a fixed set of properties out of each entry and drops
-  every other key without a word — the same defect at a different shape, and the reason a bulk path
-  cannot be treated as covered by a flag rule.
+The rule binds three input shapes, because these surfaces do not all take flags and a flag a surface
+does support is not always persisted:
 
-A rejection at either shape MUST leave state entirely unchanged; a bulk rejection MUST NOT create
-the valid entries in a batch that also contains an invalid one.
+- A `--flag` an epic-writing command does not declare at all is refused as the `verb-surface`
+  capability requires of every dispatched verb — by name, with the flags the command does accept
+  named alongside it. That capability owns the refusal of undeclared flags and surplus positionals on
+  these surfaces as on every other; this requirement does not restate it.
+- A KEY in a bulk-creation batch document that the command will not persist MUST be rejected by name.
+  Bulk creation previously copied a fixed set of properties out of each entry and dropped every other
+  key without a word — the same defect at a different shape, and the reason a bulk path cannot be
+  treated as covered by a flag rule.
+- A flag the command DOES declare, supplied on an invocation that will not persist it, MUST be refused
+  by name, naming the transition that would record it. Update's disposition flags — `--outcome`,
+  `--reason` and `--carried-to` — are recorded only when the invocation archives the epic; supplied
+  without `--status archived` they were dropped while the command reported that every supplied value
+  was already held, which is false. Their sibling deferral flags are already refused this way, and the
+  rule binds the whole set rather than the half that happens to be guarded.
+
+A rejection at any shape MUST leave state entirely unchanged; a bulk rejection MUST NOT create the
+valid entries in a batch that also contains an invalid one.
 
 #### Scenario: A supported annotation flag persists
 - **WHEN** an epic is created with `--notes "<text>"` and the command exits zero
@@ -89,6 +101,22 @@ the valid entries in a batch that also contains an invalid one.
   persist
 - **THEN** the command exits non-zero naming that key, and none of the three epics is created
 
+#### Scenario: An outcome without an archive is refused by name
+- **WHEN** `update-epic e1 --outcome killed --reason "no"` runs on an unarchived epic, without
+  `--status archived`
+- **THEN** it exits non-zero naming `--outcome` and `--reason` and stating that they are recorded only
+  when the epic is archived, and `e1` carries no disposition and is not archived
+
+#### Scenario: A handoff target without an archive is refused by name
+- **WHEN** `update-epic e1 --carried-to other` runs on an unarchived epic, without `--status archived`
+- **THEN** it exits non-zero naming `--carried-to`, and `state.json` is byte-identical to before
+
+#### Scenario: The disposition flags still record at the archive
+- **WHEN** `update-epic e1 --status archived --outcome killed --reason "no" --no-deferrals` runs on an
+  epic with no outstanding work
+- **THEN** it exits zero, `e1` is archived, and its disposition reads back outcome `killed` and
+  reason `no`
+
 ### Requirement: One shared flag allowlist, grown by every capability that adds a flag
 The flags an epic-mutating command accepts SHALL be declared in a single shared allowlist, and
 every flag that ANY capability in this release introduces for such a command SHALL be registered in
@@ -104,6 +132,15 @@ vacuously on exactly the omission it exists to catch. The documented surface is 
 allowlist, so an unregistered flag surfaces as a documented flag the command rejects. This also
 means the enumeration cannot rot as capabilities are still adding flags: it is whatever the release
 actually shipped and documented, not a snapshot of what it was expected to ship.
+
+**Argv-level flags are the one carve-out from that coverage check, not from the allowlist.** A flag
+the `verb-surface` capability declares argv-level (`--force`) is registered in this same allowlist,
+because a separate list of them would be the parallel list this requirement prohibits. It carries no
+value and writes no epic field, so the documented-surface check — which requires every flag to read a
+value back from state — SHALL NOT require an argv-level flag to read one back, and the check that every
+flag the allowlist declares for an epic-mutating command appears in its command document SHALL exclude
+argv-level flags. Their acceptance on
+every command they are declared for is checked by `verb-surface` over the whole dispatch table instead.
 
 This is not housekeeping. The allowlist is a literal list and an unregistered flag exits non-zero
 naming itself, so whichever capability lands first rejects by name the flags the others introduce —
@@ -133,6 +170,12 @@ release that fixes it is prohibited.
 - **WHEN** the flags an epic-mutating command accepts are enumerated
 - **THEN** they come from one shared list, no flag is accepted by the command without appearing in
   it, and the bulk path's accepted keys are derived from that same list rather than restated
+
+#### Scenario: An argv-level flag is not held to reading a field back
+- **WHEN** the documented-surface coverage check enumerates `update-epic`'s flags and the allowlist
+  declares `--force` argv-level on it
+- **THEN** the check does not require `--force` to read a value back from state, and `--force`'s
+  acceptance on `update-epic` is asserted by `verb-surface`'s dispatch-wide check
 
 ### Requirement: An existing epic's lane and plan association are changeable
 `update-epic` SHALL accept `--lane`, validated against the known lanes exactly as creation
@@ -282,6 +325,14 @@ combinable in ONE invocation, so that repair remains a single atomic write. They
 mutually exclusive, which would leave the repair as two writes with a zero-link window between
 them, and a rejection on the second write would leave the epic with no links at all.
 
+**One exception: an epic that owes a reconcile.** While an epic owes a reconcile AND holds an armed or
+unmigrated `may-invalidate` link (the condition `gate-integrity` "A write never destroys the record of
+an owed reconcile" refuses on), a clear of its links is refused whatever else the invocation supplies, because it would
+remove the link the owed verdict must be recorded against — `gate-integrity` "A write never destroys
+the record of an owed reconcile". The repair is not lost, only ordered: every engine message that
+instructs a reader to repair a link by clearing and re-supplying SHALL, when the epic it names owes a
+reconcile, name `record-reconcile` as the step before the repair.
+
 #### Scenario: A second link is added, not substituted
 - **WHEN** a link is supplied to an epic that already records one
 - **THEN** the epic records both
@@ -296,12 +347,19 @@ them, and a rejection on the second write would leave the epic with no links at 
 - **THEN** the epic's recorded links are unchanged
 
 #### Scenario: Repairing a malformed link is one atomic write
-- **WHEN** an agent clears an epic's links and supplies the corrected set in one invocation
+- **WHEN** an agent clears the links of an epic that owes no reconcile and supplies the corrected set
+  in one invocation
 - **THEN** the invocation is accepted, and the epic's links are replaced in a single write
 
 #### Scenario: An emitted repair instruction matches the behaviour
 - **WHEN** the engine emits a message instructing a reader how to repair a malformed link
 - **THEN** following that message as written removes the malformed link
+
+#### Scenario: The repair on an owing epic names the verdict first
+- **WHEN** an epic that owes a reconcile holds a malformed link, and the engine emits the repair
+  instruction for it
+- **THEN** the instruction names `record-reconcile` before the clear-and-re-supply invocation, and the
+  clear-and-re-supply invocation run before any verdict is refused with `state.json` byte-identical
 
 ### Requirement: A write that changes nothing says so
 An epic-writing invocation whose effect on the record is empty SHALL say so, rather than reporting

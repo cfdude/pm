@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { tmpRepo, run, runCombined, readState, writeState, projectMd, parseBrief, fixturePluginRoot, gitInitWithCommit, expectFail, stripAlwaysOn, REFRESH_GATE_HEADING } from "./helpers.mjs";
+import { tmpRepo, run, runCombined, readState, writeState, projectMd, parseBrief, fixturePluginRoot, gitInitWithCommit, expectFail, stripAlwaysOn, REFRESH_GATE_HEADING, fixtureCommits } from "./helpers.mjs";
 
 // conductor-tells-the-truth, groups 7–9: the 0.27.0 migration, the archive backfill, and the
 // read-only integrity checks. Split from conductor-13/14 for the same reason those were split
@@ -106,20 +106,21 @@ function upgradeAt(cwd, version) {
 
 test("7.1: a 0.26.0 state applies the entries above it, and the second run is a byte-identical no-op", () => {
   const cwd = repoAt0260();
-  // THREE entries now sit above 0.26.0 — the 0.27.0 stamp, the 0.32.0 lift of archive-backfill
-  // registration provenance onto the epic (#133), and the 0.40.0 registration-date recovery. The
+  // FOUR entries now sit above 0.26.0 — the 0.27.0 stamp, the 0.32.0 lift of archive-backfill
+  // registration provenance onto the epic (#133), the 0.40.0 registration-date recovery, and the
+  // 0.44.0 reconcile arming stamp (gates-bind-to-verified-evidence). The
   // count is release-specific and moves with every appended entry; what this test pins is that
   // the missing entries apply, apply ONCE, and that a second run is byte-identical.
   //
   // The pinned version tracks the NEWEST entry rather than sitting below it, or the second run
   // would replay whatever is above it and "a stamped repo replays nothing" would stop being the
   // property under test. (The harsher below-the-entry case is the next test, deliberately.)
-  const first = upgradeAt(cwd, "0.40.0");
-  assert.match(first, /upgraded \(3 migration\(s\)\)/,
-    "a 0.26.0-stamped repo is missing exactly the 0.27.0, 0.32.0 and 0.40.0 entries");
-  assert.equal(readState(cwd).pmVersion, "0.40.0");
+  const first = upgradeAt(cwd, "0.44.0");
+  assert.match(first, /upgraded \(4 migration\(s\)\)/,
+    "a 0.26.0-stamped repo is missing exactly the 0.27.0, 0.32.0, 0.40.0 and 0.44.0 entries");
+  assert.equal(readState(cwd).pmVersion, "0.44.0");
   const after = stateBytes(cwd);
-  const second = upgradeAt(cwd, "0.40.0");
+  const second = upgradeAt(cwd, "0.44.0");
   assert.match(second, /upgraded \(0 migration\(s\)\)/, "a stamped repo replays nothing");
   assert.equal(stateBytes(cwd), after,
     "the second upgrade must be byte-identical — the no-op-save rule means even `revision` " +
@@ -1284,8 +1285,9 @@ test("9.11: the archive proceeds and the missing spec review is a finding, never
   fs.mkdirSync(path.join(cwd, "openspec", "changes", "no-spec-review"), { recursive: true });
   fs.writeFileSync(path.join(cwd, "openspec", "changes", "no-spec-review", "tasks.md"), "# tasks\n\n- [x] a\n");
   run(["sync"], { cwd });
+  const [base, head] = fixtureCommits(cwd, ["base", "head"]);
   run(["record-gate-review", "no-spec-review", "--gate", "2", "--verdict", "pass",
-    "--base-sha", "aaaaaaa", "--head-sha", "bbbbbbb"], { cwd });
+    "--base-sha", base, "--head-sha", head], { cwd });
   // The archive is ACCEPTED with no gate1 — Gate 1 gates code, and by archive time the code is
   // written, so refusing here would demand a spec review of work that has already shipped.
   run(["update-epic", "no-spec-review", "--status", "archived", "--outcome", "delivered", "--no-deferrals"], { cwd });
@@ -1368,8 +1370,9 @@ test("9.13: two consecutive briefings both name the ungated epic, and a real ver
     "the same condition is named wherever the conductor reports its own integrity");
 
   // A real passing verdict with its commit range supersedes the bypass entry.
+  const [base, head] = fixtureCommits(cwd, ["base", "head"]);
   run(["record-gate-review", "archived-unreviewed", "--gate", "2", "--verdict", "pass",
-    "--base-sha", "aaaaaaa", "--head-sha", "bbbbbbb"], { cwd });
+    "--base-sha", base, "--head-sha", head], { cwd });
   const third = parseBrief(cwd);
   assert.ok(!third.includes("UNGATED ARCHIVES"), "a real verdict clears the notice");
   const gate2 = readState(cwd).epics.find(e => e.id === "archived-unreviewed").gateReview.gate2;

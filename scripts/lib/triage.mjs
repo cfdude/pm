@@ -25,6 +25,7 @@ import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { laneSuggestion } from "./lane-routing.mjs";
 import { supersededEpics } from "./links.mjs";
 import { isFlagToken } from "./constants.mjs";
+import { checkedPositionals } from "./argv-surface.mjs";
 
 /** Words shorter than this carry no discriminating power and appear everywhere ("of", "to",
  *  "id", "pm"). A length floor is mechanical; a curated stopword list would be a second thing
@@ -35,11 +36,6 @@ const MIN_TOKEN_LENGTH = 3;
 const COMMON_TOKEN_MAX_SHARE = 0.5;
 /** …but only once the backlog is big enough for a share to be evidence rather than an accident. */
 const COMMON_TOKEN_MIN_EPICS = 8;
-
-/** The flags `triage` accepts. A local list rather than an EPIC_FLAGS entry because triage is a
- *  READ and writes no epic — but an allowlist all the same, for the reason every other verb has
- *  one: a flag nobody validates is a flag silently dropped. */
-const TRIAGE_FLAGS = ["limit"];
 
 /** Split free text into comparable tokens. Everything that is not a letter or digit is a
  *  separator, so `2026-07-14-epic-hierarchy-orchestration`, `conductor.mjs Module Split` and
@@ -156,7 +152,8 @@ export function candidateSet(epics, ask, { limit = 5 } = {}) {
  *  stating that the decision an intake makes was not made here. */
 export function triage() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
-  const ask = process.argv[3];
+  // The check's classified positional, never `process.argv[3]` (see suggest-lane's reader).
+  const [ask] = checkedPositionals("triage");
   // gh-186. The old test was `ask.startsWith("--")`, which refused any ask whose own words begin
   // with a flag name — and CLAUDE.md makes this call STEP 1 of intake, "the ask, in its own
   // words", before any add-epic. A bug report ABOUT a flag is titled that way; this tracker had
@@ -172,17 +169,9 @@ export function triage() {
   }
   const f = parseFlags(process.argv.slice(4));
   requireFlagValues("triage", f);
-  // The same allowlist discipline every epic-writing verb here already has. `triage` writes
-  // nothing, so `--limit` correctly stays OUT of the shared EPIC_FLAGS registry — but "not in the
-  // registry" is not "needs no allowlist": parseFlags reads whatever it is handed and the body
-  // reads only what it names, so an unrecognized flag is dropped in silence and the caller gets a
-  // confident answer to a question they did not ask.
-  const unknown = Object.keys(f).filter(k => !TRIAGE_FLAGS.includes(k));
-  if (unknown.length) {
-    process.stderr.write(`conductor: triage: unknown flag(s) --${unknown.join(", --")} ` +
-      `(known: ${TRIAGE_FLAGS.map(k => `--${k}`).join(", ")})\n`);
-    process.exit(1);
-  }
+  // An unrecognized flag is refused before dispatch by the pre-dispatch command-line check (lib/argv-surface.mjs) (VERB_FLAGS' `--limit` row):
+  // parseFlags reads whatever it is handed, so without it a typo is dropped in silence and the caller
+  // gets a confident answer to a question they did not ask.
   // REFUSED, never coerced. A valueless `--limit` arrives from parseFlags as boolean `true`, and
   // `Number(true)` is 1 — a coercing read answers with exactly ONE candidate and exits 0, which
   // is the #79 shape: plausible output, wrong result, no way to notice. `--limit abc` is the same

@@ -258,10 +258,17 @@ test("render NEVER clears reconcileNeeded on the currently active epic, even wit
   // epic can legitimately still owe reconcile with an EMPTY detourStack. A naive recompute
   // that derives reconcileNeeded purely from live-frame presence would wipe this out at
   // exactly the moment it matters most — this regression test locks that in.
+  //
+  // The obligation sits on an ARMED link (gates-bind-to-verified-evidence): the heal now keeps a
+  // flag whatever the pointer says while a link a verdict can answer exists, and clears — announced —
+  // only an obligation with NO such link. This fixture used `links: []`, which is now exactly that
+  // unanswerable case (reconcile-obligation.test.mjs 7.4a), so it moved onto the shape a pop leaves.
   writeState(cwd, {
     version: 1, active: "just-resumed", detourStack: [],
     epics: [
-      { id: "just-resumed", title: "just-resumed", priority: "P1", status: "active", role: "epic", lane: "claude-code", links: [], reconcileNeeded: true },
+      { id: "just-resumed", title: "just-resumed", priority: "P1", status: "active", role: "epic", lane: "claude-code",
+        links: [{ type: "may-invalidate", epic: "the-detour", reason: "r", reconcileOnResume: true }], reconcileNeeded: true },
+      { id: "the-detour", title: "the-detour", priority: "P1", status: "archived", role: "detour", lane: "claude-code", links: [] },
     ],
   });
   run(["render"], { cwd });

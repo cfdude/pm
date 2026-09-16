@@ -43,16 +43,16 @@ import fs from "node:fs";
 import path from "node:path";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
-import { CLAIM_DEFAULT_TTL_MINUTES, REPO_CLAIM_DEFAULT_TTL_MINUTES, isFlagToken, splitFlagToken } from "./constants.mjs";
+import { CLAIM_DEFAULT_TTL_MINUTES, CLAIM_MAX_TTL_MINUTES, REPO_CLAIM_DEFAULT_TTL_MINUTES, isFlagToken, splitFlagToken } from "./constants.mjs";
 import { isDetachedTree } from "./git.mjs";
-import { parseFlags, requireFlagValues, requireKnownFlags } from "./add-epic.mjs";
+import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { resolveSession, SESSION_HINT } from "./session-identity.mjs";
-import { claimExpiry, isLiveClaim } from "./claim-shape.mjs";
+import { claimExpiry, isLiveClaim, validTtlMinutes } from "./claim-shape.mjs";
 
 export { claimExpiry, isLiveClaim };
 
 // The `CLAIM_FLAGS`/`UNCLAIM_FLAGS` projections that stood here are gone with the loop that was
-// their only consumer: `requireKnownFlags(command, argv)` derives the list itself, from the
+// their only consumer. The unknown-flag refusal is now the pre-dispatch command-line check (lib/argv-surface.mjs), which reads the
 // UNION of both registries. These verbs' rows sit in EPIC_FLAGS because they write `epic.claim`,
 // and an allowlist reading one table would have narrowed silently to `[]` the day a row moved —
 // a verb accepting nothing, rather than a loud failure. Deriving inside the checker removes both
@@ -61,8 +61,15 @@ export { claimExpiry, isLiveClaim };
 /** The repo-level quiescence marker's path. Re-derived per call for the same reason
  *  write-conflicts.mjs does it: the tests cache-bust by moving CLAUDE_PROJECT_DIR. */
 export function repoClaimPath() {
-  const root = process.env.CLAUDE_PROJECT_DIR || process.cwd();
-  return path.join(root, ".conductor", "session-claim.json");
+  return path.join(repoClaimRoot(), ".conductor", "session-claim.json");
+}
+
+/** The repository the marker is written INTO — derived per call, exactly as its path is. The
+ *  detached-tree check must ask about this root: ROOT in constants.mjs is frozen at import, so a
+ *  process whose import-time root differs from CLAUDE_PROJECT_DIR (a test, a delegated engine, CI's
+ *  detached pull_request checkout) answered about the wrong tree — the 0.42.0 frozen-ROOT defect. */
+function repoClaimRoot() {
+  return process.env.CLAUDE_PROJECT_DIR || process.cwd();
 }
 
 /** A claim record, or null. Shape: {session, claimedAt, ttlMinutes}. */
@@ -85,10 +92,15 @@ export function readRepoClaim() {
 function writeRepoClaim(claim) {
   // gh#175: this file says "THIS session is mid-operation in THIS working tree", which is the
   // session-bookkeeping criterion stated aloud.
-  if (isDetachedTree()) return false;
+  if (isDetachedTree(repoClaimRoot())) return false;
   const p = repoClaimPath();
   fs.mkdirSync(path.dirname(p), { recursive: true });
-  fs.writeFileSync(p, JSON.stringify(claim, null, 2) + "\n");
+  // Temp file plus rename in the same directory, so a reader racing this write sees the whole old
+  // marker or the whole new one — never a torn file that readRepoClaim() would read as "no claim".
+  // Not LOCKED: the marker is advisory and never guarded a read-modify-write (design D5).
+  const tmp = `${p}.tmp-${process.pid}-${Date.now()}`;
+  fs.writeFileSync(tmp, JSON.stringify(claim, null, 2) + "\n");
+  fs.renameSync(tmp, p);
   return true;
 }
 
@@ -115,13 +127,16 @@ function refuseHeld(what, claim, verb) {
 function ttlFrom(f, fallback) {
   if (f.ttl === undefined) return fallback;
   const n = Number(Array.isArray(f.ttl) ? f.ttl[f.ttl.length - 1] : f.ttl);
-  if (!Number.isFinite(n) || n <= 0) die("--ttl requires a positive number of minutes");
+  // Bounded by the same predicate the reader judges with, so nothing this writes can be a claim
+  // no reader can read (state-file-refuses-to-guess D5).
+  if (!validTtlMinutes(n)) {
+    die(`--ttl requires a positive number of minutes, at most ${CLAIM_MAX_TTL_MINUTES} (7 days). Nothing was written.`);
+  }
   return n;
 }
 
-// The local copy of this loop is gone: `requireKnownFlags()` in add-epic.mjs is the one
-// implementation, sitting beside `requireFlagValues()` because they are the two halves of the
-// same rule. It derives `flagsFor(command)` itself, so a caller cannot pass the wrong list.
+// The unknown-flag half of the flag rule is the pre-dispatch command-line check (lib/argv-surface.mjs), made before dispatch for every
+// verb; `requireFlagValues()` below is the value half each verb still calls.
 
 // ─────────────────────────────── claim ───────────────────────────────
 
@@ -130,7 +145,6 @@ function ttlFrom(f, fallback) {
 export function claim() {
   if (!isInitialized()) die("run /pm:init first");
   const argv = process.argv.slice(3);
-  requireKnownFlags("claim", argv);
   const f = parseFlags(argv);
   requireFlagValues("claim", f);
 
@@ -215,7 +229,6 @@ export function claim() {
 export function unclaim() {
   if (!isInitialized()) die("run /pm:init first");
   const argv = process.argv.slice(3);
-  requireKnownFlags("unclaim", argv);
   const f = parseFlags(argv);
   requireFlagValues("unclaim", f);
 
@@ -318,14 +331,14 @@ export function formatOwners(rows) {
   const repo = rows.find(r => r.scope === "repo");
   L.push(repo
     ? `repository: ${repo.live ? "BUSY" : "STALE"} — '${repo.session}' since ${repo.claimedAt}, ` +
-      `${repo.live ? "live until" : "expired at"} ${repo.expiresAt}`
+      `${repo.live ? "live until" : "expired at"} ${repo.expiresAt || "an unreadable time"}`
     : "repository: no marker set");
   L.push("");
   const epics = rows.filter(r => r.scope === "epic");
   L.push(`${epics.length} epic claim(s):`);
   for (const r of epics) {
     L.push(`  • \`${r.id}\` — ${r.live ? "HELD" : "STALE"} by '${r.session}' since ${r.claimedAt}, ` +
-      `${r.live ? "live until" : "expired at"} ${r.expiresAt}` +
+      `${r.live ? "live until" : "expired at"} ${r.expiresAt || "an unreadable time"}` +
       (r.epicStatus === "archived" ? "  ⚠ epic is ARCHIVED" : ""));
   }
   const stale = rows.filter(r => !r.live).length;
@@ -350,7 +363,6 @@ export function owners() {
   // today — but a raw argv scan is how a verb ends up outside the rule, and the next flag this
   // verb grows would inherit that rather than the rule (#152).
   const f = parseFlags(process.argv.slice(3));
-  requireKnownFlags("owners", process.argv.slice(3));
   requireFlagValues("owners", f);
   const rows = ownerRows(loadState(), readRepoClaim());
   if (f.json === true) {

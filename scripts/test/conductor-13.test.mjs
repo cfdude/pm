@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { tmpRepo, run, readState, writeState, projectMd, parseBrief, expectFail, writeBatch, gitInitWithCommit, commitFiles } from "./helpers.mjs";
+import { tmpRepo, run, readState, writeState, projectMd, parseBrief, expectFail, writeBatch, gitInitWithCommit, commitFiles, fixtureCommits } from "./helpers.mjs";
 import { AGENT_OUTCOMES } from "../lib/archive-gate.mjs";
 
 // ─────────────── the shared epic-flag registry (EPIC_FLAGS) ───────────────
@@ -274,6 +274,13 @@ function flagsInCommandDoc() {
  *  unavoidable — `--parent` needs a real epic, `--link` a real target, `--story` an existing
  *  story — but the enumeration driving it is the documented surface, so a documented flag with
  *  no entry here is a hard failure naming the flag rather than a silent skip. */
+// Commit values are RESOLVED at write time, so a typed literal sha is refused before the flag it
+// rides on is ever exercised. The table names placeholder tokens instead; the harness creates real
+// commits in each fixture repository and substitutes their full names, and a check receives that
+// token-to-sha map so it asserts the value the engine actually stored.
+const COMMIT = "<fixture-commit>";
+const COMMIT_2 = "<fixture-commit-2>";
+
 const EXERCISE = {
   "--title": { args: ["--title", "Renamed"], check: (e) => assert.equal(e.title, "Renamed") },
   "--external-id": { args: ["--external-id", "JOB-9"], check: (e) => assert.equal(e.externalId, "JOB-9") },
@@ -326,7 +333,7 @@ const EXERCISE = {
   "--no-deferrals": { args: ["--status", "archived", "--outcome", "delivered", "--no-deferrals"], check: (e) => assert.deepEqual(e.deferralAssertion.deferrals, []) },
   "--deferral": { args: ["--status", "archived", "--outcome", "delivered", "--deferral", "other:design.md § Risks"], check: (e) => assert.deepEqual(e.deferralAssertion.deferrals, [{ epic: "other", section: "design.md § Risks" }]) },
   "--declined-deferral": { args: ["--status", "archived", "--outcome", "delivered", "--declined-deferral", "a second zero-fall-through fix:not worth the schema"], check: (e) => assert.deepEqual(e.deferralAssertion.declined, [{ what: "a second zero-fall-through fix", reason: "not worth the schema" }]) },
-  "--attribute-commit": { args: ["--attribute-commit", "abc1234"], check: (e) => assert.deepEqual(e.attributedCommits, ["abc1234"]) },
+  "--attribute-commit": { args: ["--attribute-commit", COMMIT], check: (e, c) => assert.deepEqual(e.attributedCommits, [c[COMMIT]]) },
   // #166. A `setup` is REQUIRED here, not convenience: the verb refuses a sha the epic never
   // attributed, so an exercise without one would assert the refusal rather than the write.
   // The check covers BOTH halves — the array loses the sha, and the sibling record gains it —
@@ -334,16 +341,16 @@ const EXERCISE = {
   // Its own reason, exercised through the verb it belongs to: --withdrawal-reason is not
   // invocable alone, exactly like --story/--done, so both rows assert the half they own.
   "--withdrawal-reason": {
-    setup: ["--attribute-commit", "abc1234"],
-    args: ["--withdraw-commit", "abc1234", "--withdrawal-reason", "reset away"],
+    setup: ["--attribute-commit", COMMIT],
+    args: ["--withdraw-commit", COMMIT, "--withdrawal-reason", "reset away"],
     check: (e) => assert.equal(e.withdrawnCommits.at(-1).reason, "reset away"),
   },
   "--withdraw-commit": {
-    setup: ["--attribute-commit", "abc1234"],
-    args: ["--withdraw-commit", "abc1234", "--withdrawal-reason", "reset away"],
-    check: (e) => {
+    setup: ["--attribute-commit", COMMIT],
+    args: ["--withdraw-commit", COMMIT, "--withdrawal-reason", "reset away"],
+    check: (e, c) => {
       assert.deepEqual(e.attributedCommits, []);
-      assert.equal(e.withdrawnCommits.at(-1).sha, "abc1234");
+      assert.equal(e.withdrawnCommits.at(-1).sha, c[COMMIT]);
       assert.equal(e.withdrawnCommits.at(-1).reason, "reset away");
     },
   },
@@ -354,7 +361,7 @@ const EXERCISE = {
   // record gained it — because a withdrawal that erased without recording would pass on the gate
   // alone. It passes `--withdrawal-reason`, so the missing-reason refusal never breaks it.
   "--withdraw-gate-review": {
-    pre: [["record-gate-review", "subject", "--gate", "2", "--verdict", "pass", "--base-sha", "aaaaaaa", "--head-sha", "bbbbbbb"]],
+    pre: [["record-gate-review", "subject", "--gate", "2", "--verdict", "pass", "--base-sha", COMMIT, "--head-sha", COMMIT_2]],
     args: ["--withdraw-gate-review", "2", "--withdrawal-reason", "recorded on the wrong epic"],
     check: (e) => {
       assert.ok(!("gate2" in e.gateReview), "the withdrawn verdict is still stored");
@@ -400,12 +407,15 @@ test("every DOCUMENTED update-epic flag is accepted and its value reads back fro
     run(["init"], { cwd });
     run(["add-epic", "--id", "other", "--lane", "claude-code"], { cwd });
     run(["add-epic", "--id", "subject", "--lane", "claude-code"], { cwd });
-    for (const step of spec.pre || []) run(step, { cwd });
-    if (spec.setup) run(["update-epic", "subject", ...spec.setup], { cwd });
-    const err = expectFail(() => run(["update-epic", "subject", ...spec.args], { cwd }));
+    const [first, second] = fixtureCommits(cwd, ["fixture", "fixture-2"]);
+    const commits = { [COMMIT]: first, [COMMIT_2]: second };
+    const sub = (argv) => argv.map(a => Object.hasOwn(commits, a) ? commits[a] : a);
+    for (const step of spec.pre || []) run(sub(step), { cwd });
+    if (spec.setup) run(["update-epic", "subject", ...sub(spec.setup)], { cwd });
+    const err = expectFail(() => run(["update-epic", "subject", ...sub(spec.args)], { cwd }));
     assert.equal(err, null,
       `update-epic rejected its own documented flag ${flag}: ${err && String(err.stderr || err.message)}`);
-    spec.check(readState(cwd).epics.find(e => e.id === "subject"));
+    spec.check(readState(cwd).epics.find(e => e.id === "subject"), commits);
   }
 });
 
@@ -902,7 +912,8 @@ test("a gate verdict can be recorded against a lane-less epic", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
   withLanelessEpic(cwd);
-  run(["record-gate-review", "no-lane", "--gate", "2", "--verdict", "pass", "--base-sha", "aaaaaaa", "--head-sha", "bbbbbbb"], { cwd });
+  const [base, head] = fixtureCommits(cwd, ["base", "head"]);
+  run(["record-gate-review", "no-lane", "--gate", "2", "--verdict", "pass", "--base-sha", base, "--head-sha", head], { cwd });
   const epic = readState(cwd).epics.find(e => e.id === "no-lane");
   assert.equal(epic.gateReview.gate2.verdict, "pass",
     "refusing a verdict to an epic every other site treats as openspec-lane leaves it with no " +
@@ -940,12 +951,13 @@ test("a pass records its range and reviewer as separate FIELDS, not as prose", (
   const cwd = tmpRepo();
   run(["init"], { cwd });
   run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
+  const [base, head] = fixtureCommits(cwd, ["base", "head"]);
   run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "pass",
-    "--base-sha", "d168b1e", "--head-sha", "04c54c8", "--reviewer", "fresh-context reviewer"], { cwd });
+    "--base-sha", base, "--head-sha", head, "--reviewer", "fresh-context reviewer"], { cwd });
   const g = readState(cwd).epics.find(e => e.id === "spec-epic").gateReview.gate2;
   assert.equal(g.verdict, "pass");
-  assert.equal(g.baseSha, "d168b1e", "the reviewed range's base must be readable without parsing prose");
-  assert.equal(g.headSha, "04c54c8");
+  assert.equal(g.baseSha, base, "the reviewed range's base must be readable without parsing prose");
+  assert.equal(g.headSha, head);
   assert.equal(g.reviewer, "fresh-context reviewer",
     "reviewer identity is its own field — stored in `note`, an audit query over reviewers " +
     "cannot tell an identity from any other remark");
@@ -955,9 +967,10 @@ test("a pass with no recorded range is refused, naming the missing evidence", ()
   const cwd = tmpRepo();
   run(["init"], { cwd });
   run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
+  const base = fixtureCommits(cwd, ["base"])[0];
   const before = fs.readFileSync(path.join(cwd, ".conductor", "state.json"), "utf8");
   const err = expectFail(() => run(
-    ["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "pass", "--base-sha", "d168b1e"], { cwd }));
+    ["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "pass", "--base-sha", base], { cwd }));
   assert.ok(err, "a pass with no --head-sha claims a review of nothing checkable");
   assert.match(String(err.stderr || err.message), /--head-sha/,
     "the refusal must name the evidence that is missing, not just that something is");
@@ -1072,8 +1085,9 @@ test("a real verdict supersedes the prior entry instead of destroying it", () =>
       } },
     }],
   });
+  const [base, head] = fixtureCommits(cwd, ["base", "head"]);
   run(["record-gate-review", "healed-then-reviewed", "--gate", "2", "--verdict", "pass",
-    "--base-sha", "d168b1e", "--head-sha", "04c54c8"], { cwd });
+    "--base-sha", base, "--head-sha", head], { cwd });
 
   const g = readState(cwd).epics.find(e => e.id === "healed-then-reviewed").gateReview.gate2;
   assert.equal(g.verdict, "pass");
@@ -1086,15 +1100,16 @@ test("supersession preserves ANY prior entry and never nests a second level", ()
   const cwd = tmpRepo();
   run(["init"], { cwd });
   run(["add-epic", "--id", "spec-epic", "--lane", "openspec"], { cwd });
+  const [a, b, c] = fixtureCommits(cwd, ["a", "b", "c"]);
   run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "fail"], { cwd });
   run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "pass",
-    "--base-sha", "aaaaaaa", "--head-sha", "bbbbbbb"], { cwd });
+    "--base-sha", a, "--head-sha", b], { cwd });
   run(["record-gate-review", "spec-epic", "--gate", "2", "--verdict", "pass",
-    "--base-sha", "aaaaaaa", "--head-sha", "ccccccc"], { cwd });
+    "--base-sha", a, "--head-sha", c], { cwd });
 
   const g = readState(cwd).epics.find(e => e.id === "spec-epic").gateReview.gate2;
-  assert.equal(g.headSha, "ccccccc");
-  assert.equal(g.superseded.headSha, "bbbbbbb", "the entry it replaced, whatever its verdict");
+  assert.equal(g.headSha, c);
+  assert.equal(g.superseded.headSha, b, "the entry it replaced, whatever its verdict");
   assert.equal(g.superseded.superseded, undefined,
     "one nested record, not a chain — a growing history here is a different capability");
 });
@@ -1109,16 +1124,17 @@ test("an epic carrying only a gate1 verdict is named on both surfaces, with its 
   const cwd = tmpRepo();
   run(["init"], { cwd });
   run(["add-epic", "--id", "spec-only", "--lane", "openspec"], { cwd });
+  const [base, head] = fixtureCommits(cwd, ["base", "head"]);
   run(["record-gate-review", "spec-only", "--gate", "1", "--verdict", "pass",
-    "--base-sha", "1111111", "--head-sha", "2222222", "--reviewer", "spec reviewer"], { cwd });
+    "--base-sha", base, "--head-sha", head, "--reviewer", "spec reviewer"], { cwd });
 
   const md = projectMd(cwd);
   assert.match(md, /Gate 1/, "PROJECT.md must have somewhere to show a spec review at all");
-  assert.match(md, /1111111\.\.2222222/, "and must show the evidence it recorded");
+  assert.ok(md.includes(`${base}..${head}`), "and must show the evidence it recorded");
   assert.match(md, /spec reviewer/);
 
   const brief = parseBrief(cwd);
-  assert.match(brief, /gate 1: pass \(1111111\.\.2222222\)/,
+  assert.ok(brief.includes(`gate 1: pass (${base}..${head})`),
     "an epic with no gate2 must still appear — filtering the section on gate2 hides exactly " +
     "the epic whose spec review is the only one recorded");
 });
@@ -1129,12 +1145,13 @@ test("--attribute-commit appends a hash that reads back from state.json", () => 
   const cwd = tmpRepo();
   run(["init"], { cwd });
   run(["add-epic", "--id", "subject", "--lane", "openspec"], { cwd });
-  run(["update-epic", "subject", "--attribute-commit", "1a2b3c4"], { cwd });
-  assert.deepEqual(readState(cwd).epics.find(e => e.id === "subject").attributedCommits, ["1a2b3c4"]);
-  run(["update-epic", "subject", "--attribute-commit", "5d6e7f8"], { cwd });
+  const [one, two] = fixtureCommits(cwd, ["one", "two"]);
+  run(["update-epic", "subject", "--attribute-commit", one], { cwd });
+  assert.deepEqual(readState(cwd).epics.find(e => e.id === "subject").attributedCommits, [one]);
+  run(["update-epic", "subject", "--attribute-commit", two], { cwd });
   assert.deepEqual(readState(cwd).epics.find(e => e.id === "subject").attributedCommits,
-    ["1a2b3c4", "5d6e7f8"], "appends in the order given — the LAST entry is what a verdict's " +
-    "headSha is compared against, so order is the meaning");
+    [one, two], "appends in the order given — a verdict's headSha must reach every " +
+    "entry, and the array is append-only");
 });
 
 test("two hashes in ONE invocation both land, in the order given", () => {
@@ -1144,9 +1161,10 @@ test("two hashes in ONE invocation both land, in the order given", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
   run(["add-epic", "--id", "subject", "--lane", "openspec"], { cwd });
-  run(["update-epic", "subject", "--attribute-commit", "aaa1111", "--attribute-commit", "bbb2222"], { cwd });
+  const [one, two] = fixtureCommits(cwd, ["one", "two"]);
+  run(["update-epic", "subject", "--attribute-commit", one, "--attribute-commit", two], { cwd });
   assert.deepEqual(readState(cwd).epics.find(e => e.id === "subject").attributedCommits,
-    ["aaa1111", "bbb2222"], "reports length 1 the moment the flag leaves the repeatable set");
+    [one, two], "reports length 1 the moment the flag leaves the repeatable set");
 });
 
 // ─────────────── absent vs empty attribution ───────────────
@@ -1636,8 +1654,9 @@ test("the documented sequence ends with the real disposition recorded", () => {
   run(["init"], { cwd });
   withTasks(cwd, "shipped-properly", ["- [x] 1.1 Done"]);
   run(["add-epic", "--id", "shipped-properly", "--lane", "openspec"], { cwd });
+  const [base, head] = fixtureCommits(cwd, ["base", "head"]);
   run(["record-gate-review", "shipped-properly", "--gate", "2", "--verdict", "pass",
-    "--base-sha", "aaa1111", "--head-sha", "bbb2222", "--reviewer", "fresh-context reviewer"], { cwd });
+    "--base-sha", base, "--head-sha", head, "--reviewer", "fresh-context reviewer"], { cwd });
 
   // /opsx:archive moves the change directory on disk...
   fs.mkdirSync(path.join(cwd, "openspec", "changes", "archive"), { recursive: true });
@@ -1966,15 +1985,16 @@ test("every DOCUMENTED record-gate-review flag is accepted and reads back from s
   const cwd = tmpRepo();
   run(["init"], { cwd });
   run(["add-epic", "--id", "subject", "--lane", "openspec"], { cwd });
+  const [base, head] = fixtureCommits(cwd, ["base", "head"]);
   const err = expectFail(() => run(["record-gate-review", "subject",
-    "--gate", "2", "--verdict", "pass", "--base-sha", "aaa1111", "--head-sha", "bbb2222",
+    "--gate", "2", "--verdict", "pass", "--base-sha", base, "--head-sha", head,
     "--reviewer", "a fresh-context subagent"], { cwd }));
   assert.equal(err, null,
     `record-gate-review rejected its own documented flags: ${err && String(err.stderr || err.message)}`);
   const g2 = readState(cwd).epics.find(e => e.id === "subject").gateReview.gate2;
   assert.deepEqual(
     { verdict: g2.verdict, baseSha: g2.baseSha, headSha: g2.headSha, reviewer: g2.reviewer },
-    { verdict: "pass", baseSha: "aaa1111", headSha: "bbb2222", reviewer: "a fresh-context subagent" });
+    { verdict: "pass", baseSha: base, headSha: head, reviewer: "a fresh-context subagent" });
   // Every documented flag must be one the allowlist knows, or the allowlist would reject the
   // command's own usage line — which is how a rejection added late breaks a working command.
   const missing = documented.filter(f =>

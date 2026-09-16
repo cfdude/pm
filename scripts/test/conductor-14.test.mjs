@@ -10,7 +10,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
-import { ENGINE, EMPTY_CACHE, run, runCombined, readState, writeState, projectMd, parseBrief, tmpRepo, expectFail, claudeMd, stripAlwaysOn, REFRESH_GATE_HEADING } from "./helpers.mjs";
+import { ENGINE, EMPTY_CACHE, run, runCombined, readState, writeState, projectMd, parseBrief, tmpRepo, expectFail, claudeMd, stripAlwaysOn, REFRESH_GATE_HEADING, fixtureCommits } from "./helpers.mjs";
 
 // ─────────────────────── group 12: epic annotation ───────────────────────
 //
@@ -801,7 +801,10 @@ test("the tracker-refresh block honors the gate-guard setting", () => {
 
 test("turning the guard off does not weaken the unconditional reconcile block", () => {
   for (const setting of ["on", "off"]) {
-    const cwd = repoWithActiveEpic({ reconcileNeeded: true });
+    // On an ARMED link: `set-gate-guard` renders, and the heal clears an obligation that holds no
+    // link a verdict could answer (gates-bind-to-verified-evidence) — `links: []` was that case.
+    const cwd = repoWithActiveEpic({ reconcileNeeded: true,
+      links: [{ type: "may-invalidate", epic: "a-detour", reason: "r", reconcileOnResume: true }] });
     run(["set-gate-guard", setting], { cwd });
     const r = guardBlocks(cwd);
     assert.equal(r.blocked, true, `reconcile must block with the guard ${setting}`);
@@ -996,8 +999,9 @@ test("changing a lane is an in-place field write — nothing else about the epic
   run(["add-epic", "--id", "last", "--lane", "claude-code"], { cwd });
   run(["update-epic", "e1", "--link", "depends-on:first", "--add-story", "s one"], { cwd });
   run(["set-active", "e1"], { cwd });
+  const [base, head] = fixtureCommits(cwd, ["base", "head"]);
   run(["record-gate-review", "e1", "--gate", "1", "--verdict", "pass",
-       "--base-sha", "aaa", "--head-sha", "bbb"], { cwd });
+       "--base-sha", base, "--head-sha", head], { cwd });
 
   const before = readState(cwd);
   const idxBefore = before.epics.findIndex(e => e.id === "e1");
@@ -1058,8 +1062,9 @@ test("--clear-links empties the links and touches nothing else about the epic", 
   run(["add-epic", "--id", "other", "--lane", "claude-code"], { cwd });
   run(["add-epic", "--id", "e1", "--lane", "openspec", "--title", "keep me", "--priority", "P1"], { cwd });
   run(["update-epic", "e1", "--link", "depends-on:other", "--add-story", "s one"], { cwd });
+  const [base, head] = fixtureCommits(cwd, ["base", "head"]);
   run(["record-gate-review", "e1", "--gate", "2", "--verdict", "pass",
-       "--base-sha", "aaa", "--head-sha", "bbb"], { cwd });
+       "--base-sha", base, "--head-sha", head], { cwd });
   run(["update-epic", "e1", "--status", "paused"], { cwd });
   const b = readState(cwd).epics.find(e => e.id === "e1");
   assert.equal(b.links.length, 1, "the fixture must actually have a link to clear");

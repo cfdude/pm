@@ -56,6 +56,26 @@ If `${CLAUDE_PLUGIN_ROOT}` is empty:
 `--intent` is repeatable; each `<status>:<target>` adds one entry to the map. Re-running
 `set-tracker` merges (only the flags you pass change). It refreshes the CLAUDE.md rules block.
 
+**If the rules block cannot be located, `set-tracker` exits 11 after saving the tracker.** The
+block is found by whole marker lines; an orphan BEGIN or END line, or two blocks, is refused with
+every marker's line number, and the rules file is not touched. The refusal comes at the block
+write, so the tracker change is already in `state.json` while `CLAUDE.md` and `PROJECT.md` are not
+written, and `verify-state` reports a hand-edit until they are. Delete the stray marker lines from
+the shell, then run `write-rules` and `render` (or `/pm:status`) — the refusal says exactly that.
+Do not simply re-run `set-tracker`: `set-tracker --role secondary --remove …` run a second time
+finds no matching tracker and exits 1 before its block write, so the block would keep the removed
+tracker. The full refusal is shown in `/pm:review-mode`. An unreadable `.conductor/state.json` is
+refused before anything is written, exit 11, with the git remedies (see `/pm:gate-guard`).
+
+A value is written into the block literally: a `--repo` containing `` $` `` or `$&` lands verbatim.
+Before this, the block was spliced with a string replacement that treats those as substitution
+patterns, and ``--repo 'o/n$`'`` copied the file's own prefix into the block.
+
+A misspelled flag is refused before anything is written, naming what `set-tracker` accepts —
+`--drection outward` used to exit 0 and store the default `inward`:
+`conductor: unknown flag --drection for set-tracker — it accepts: --role, --system, --repo, --project, --instance, --mechanism, --direction, --intent, --remove, --force`.
+Quote any value that contains a space.
+
 ## Direction — `--direction inward|outward|both`
 
 Which way work flows between this repo and the tracker. It is **explicit configuration**, never

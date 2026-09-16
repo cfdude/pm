@@ -27,9 +27,9 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { isInitialized, loadState } from "./state.mjs";
+import { isInitialized, loadState, StateUnreadableError } from "./state.mjs";
 import { activityDir, activityEnabled, segments } from "./activity-log.mjs";
-import { parseFlags, requireFlagValues, requireKnownFlags } from "./add-epic.mjs";
+import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 
 /** Every event, oldest first, optionally scoped. Returns `{events, malformed, segmentsRead}`.
  *
@@ -196,14 +196,19 @@ export function buildReport(events, { currentRevision = null, malformed = 0 } = 
 
 export function formatReport(r, { enabled = true, dir = activityDir() } = {}) {
   const L = ["ACTIVITY — what this conductor actually did, from .conductor/activity/.", ""];
-  if (!enabled) {
+  // `enabled: null` is UNKNOWN — .conductor/state.json could not be read — and must read as neither
+  // on nor off: a report silent about the flag reads as a log that is on.
+  if (enabled === null) {
+    L.push("Whether the activity log is on is UNKNOWN: .conductor/state.json cannot be read.");
+    L.push("");
+  } else if (!enabled) {
     L.push("The activity log is OFF for this repo (the default).");
     L.push("Turn it on with `set-activity-log on`. It records nothing retroactively —");
     L.push("anything before that moment is answerable only by forensics, which is the gap it closes.");
     L.push("");
   }
   if (!r.events) {
-    L.push(`No events recorded${enabled ? "" : " (and none will be while it is off)"}. Log directory: ${dir}`);
+    L.push(`No events recorded${enabled === null ? " (the log may be off)" : (enabled ? "" : " (and none will be while it is off)")}. Log directory: ${dir}`);
     return L.join("\n");
   }
   L.push(`${r.events} event(s), ${r.from} → ${r.to}`);
@@ -277,22 +282,29 @@ export function activity() {
   // on a branch where `VERB_FLAGS` did not exist yet. It also let `--since "   "` through, and a
   // blank window is the same silent drop as a missing one, one step further on.
   const argv = process.argv.slice(3);
-  // BOTH halves, and `activity` had NEITHER: `activity --bogus` printed the report and exited 0,
-  // while its two siblings each refused an unknown flag. The gap matters more here than the
-  // wording suggests — `--since`/`--epic` are read through the computed `val()` accessor below,
-  // which conductor-31's region scanner is structurally blind to, so a flag added later and
-  // never declared would be unrefused AND invisible to the guard. The allowlist is what closes
-  // that, and it is the registry's own projection rather than a literal.
-  requireKnownFlags("activity", argv);
+  // BOTH halves, and `activity` had NEITHER: `activity --bogus` printed the report and exited 0.
+  // `--since`/`--epic` are read through the computed `val()` accessor below, which conductor-31's
+  // region scanner is structurally blind to, so a flag added later and never declared would be
+  // invisible to it. The unknown-flag half is the pre-dispatch command-line check
+  // (lib/argv-surface.mjs), reading this verb's registry rows; the value half is the call below.
   const f = parseFlags(argv);
   requireFlagValues("activity", f);
   const val = (name) => (f[name] === undefined ? null : String(f[name]));
-  const state = loadState();
+  // One of the two verbs the unreadable-state refusal names as EXEMPT (state-file-refuses-to-guess):
+  // the report is read from the activity segments, and state.json supplies only the current
+  // revision and the on/off flag. Neither is guessed when the file cannot be read — the revision
+  // is UNKNOWN (null, which buildReport() already reads as "no out-of-band comparison") and so is
+  // the flag, which is neither reported OFF nor ON.
+  let state = null;
+  try { state = loadState(); } catch (e) {
+    if (!(e instanceof StateUnreadableError)) throw e;
+    process.stderr.write(`conductor: ${e.message} — the current revision and whether the log is on are unknown.\n`);
+  }
   const { events, malformed } = readEvents({ since: val("since"), epic: val("epic") });
-  const report = buildReport(events, { currentRevision: state.revision, malformed });
+  const report = buildReport(events, { currentRevision: state ? state.revision : null, malformed });
   if (f.json === true) {
-    process.stdout.write(JSON.stringify({ enabled: activityEnabled(state), ...report }, null, 2) + "\n");
+    process.stdout.write(JSON.stringify({ enabled: state ? activityEnabled(state) : null, ...report }, null, 2) + "\n");
     return;
   }
-  process.stdout.write(formatReport(report, { enabled: activityEnabled(state) }) + "\n");
+  process.stdout.write(formatReport(report, { enabled: state ? activityEnabled(state) : null }) + "\n");
 }

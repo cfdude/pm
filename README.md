@@ -342,13 +342,20 @@ names — could not clear those 29, because an epic that ended has no open item 
 
 ## Commands
 
+> **BREAKING (unreleased): every engine verb refuses what it does not read.** An undeclared flag,
+> an unquoted multi-word value, `remove-epic <id> --cascade true` and a `--flag=value` on a
+> valueless flag now exit 1 having written nothing, and a `--help` anywhere outside a flag's value
+> prints help instead of performing the write. See "What a command line may carry" below.
+
 <details>
 <summary><code>/pm:init</code> — Initialize the PM conductor in this repo</summary>
 
 Scaffolds `.conductor/state.json`, registers any existing OpenSpec proposals and Superpowers
 plans as epics, writes the managed rules block into `CLAUDE.md` (or the file the declared
 `--platform` actually reads — see Supported Platforms), and renders `PROJECT.md`.
-Safe to run once per repo; re-running is a no-op if already initialized.
+Safe to run once per repo; re-running is a no-op if already initialized. A valueless or unknown
+`--platform` is refused before anything is created — it used to create `.conductor/state.json`
+first and then exit 1, ending pm's dormancy in a repo whose init had failed.
 
 The rules block carries a **gate procedure of seven numbered, required task items** — the call-site
 completeness sweep (which since 0.40.0 also obliges the INVERSE of every operation the change
@@ -433,14 +440,23 @@ writes the frame with `reconcileOnResume`, records both protocol links (detour
 the Honcho line — all in ONE guarded write, so it inherits the write-conflict guard and the
 read-back verification. **Exactly one of `--reconcile` / `--no-reconcile` is required and there
 is no default**: whether the detour can invalidate the paused epic's plan is a judgment, and a
-default would make an absent decision look like a considered one.
+default would make an absent decision look like a considered one. The choice is recorded on the
+parent's `may-invalidate` link as `reconcileOnResume` — only `--reconcile` writes `true`, and a
+link supplied by hand is written `false` — so the obligation is owed per detour. A `--no-reconcile`
+push never cancels an earlier obligation (`reconcileNeeded` is ORed), and pushing `--reconcile` to
+a detour already answered re-arms it, moving the earlier verdict to `superseded`.
 
 `pop-detour` removes the top frame, resumes the epic, and writes `reconcileNeeded` in the *same*
-write — the frame is gone before reconciliation runs, so a second write would let the
-archive-drift self-heal clear the obligation. The optional epic id is an assertion, not a
-selector: the stack is LIFO, so naming an epic that is not on top is refused. It emits the POP
-Honcho line only when nothing needs reconciling, because "reconciled vs X" is not true until the
-verdict exists.
+write. The optional epic id is an assertion, not a selector: the stack is LIFO, so naming an epic
+that is not on top is refused. While the resumed epic owes ANY reconcile it prints the RECONCILE
+GATE naming every detour owed, and emits no POP Honcho line, because "reconciled vs X" is not true
+until the verdict exists.
+
+**The obligation cannot be erased by an ordinary verb.** `clear-active`, `set-active <other>`
+and archive-then-unarchive all leave it owed — moving the active pointer off an owing epic warns —
+and `update-epic <epic> --clear-links` and `remove-epic <detour>` are refused while it stands. The
+render heal clears it only where nothing could answer it (no frame, no armed or pre-0.44.0
+`may-invalidate` link), and says so on stderr.
 
 `honcho-memory <push\|pop> <epicId> "<reason>"` formats the exact ready-to-copy Honcho memory
 line for a PUSH/POP and appends a timestamped copy to `.conductor/honcho-memories.log` — the
@@ -455,7 +471,22 @@ reconcile verdict.
 
 Pops the detour stack and runs the mandatory **reconcile gate**: a fresh-context `reconciler`
 agent re-validates the paused epic against what the detour actually shipped, then writes its
-verdict back durably via `record-reconcile` (not just into the conversation transcript).
+verdict back durably via `record-reconcile` (not just into the conversation transcript):
+
+```bash
+record-reconcile <paused-id> --detour <detour-id> --verdict valid|invalidated --amendments none
+record-reconcile <paused-id> --detour <detour-id> --verdict invalidated --amendment "<one>" --amendment "<two>"
+```
+
+`--amendments none` (the reconciler's `AMENDMENTS: none`) records no amendments; each repeatable
+`--amendment` is one amendment kept verbatim; the two together are refused. The verdict is accepted
+only against a detour the epic was paused for with `--reconcile`, after that detour's frame is
+popped — the epic itself, an unrelated epic and a `--no-reconcile` detour are refused, naming what
+is owed, and the verb never creates a link. `reconcileNeeded` clears only when no armed detour is
+left unanswered; recording again against the same detour moves the earlier verdict to
+`superseded`. A link written before 0.44.0 refuses every verdict on its epic until `/pm:upgrade`
+stamps it. Work that will not resume ends the obligation honestly with `--verdict invalidated
+--amendment "abandoned: <why>"`.
 
 </details>
 
@@ -506,6 +537,15 @@ actually reviewed and `--reviewer` records who reviewed it, so a verdict can be 
 refused by name until the range is re-reviewed or the attribution is corrected. Before 0.27.0 a
 review of `a..b` on an epic that then shipped `b..c` was byte-identical to one that covered
 everything.
+
+**Both bounds are resolved when recorded** and stored as full object names: `--head-sha HEAD`
+records the commit HEAD was then, and a bound that is not a commit in this clone (`root`, a range
+from a clone without the `presquash/*` tags) refuses the call with nothing written — record Gate 2
+from the authoring clone before a squash-merge. **Fresh means the head reaches EVERY attributed
+commit**, not only the last: an ancestor attributed after an uncovered descendant, a head on an
+unrelated branch, and a legacy stored value that is not a hexadecimal commit name (`HEAD`) all read
+`⚠ stale` and refuse a `delivered` archive. A hexadecimal value this clone does not hold reads
+`unverifiable`.
 
 **Which evidence a `pass` requires depends on the gate.** Gate 2 is the implementation review and
 requires the sha pair. Gate 1 is the **spec** review and runs before `/opsx:apply`, so there is no
@@ -588,13 +628,13 @@ tombstones it identically, naming `--spec` in the un-ignore instruction.
 | `add --id X --title "…" --lane L --priority P [--status S] [--parent ID] [--external-id KEY] [--add-story "<milestone>" …]` | Register any epic in any lane; optionally nest under a parent or link a tracker issue. `--add-story` is **repeatable**, so a plan's milestones land in the same write as the epic instead of one `update-epic` call at a time afterwards. |
 | `add-many --from <path\|->` | Atomically bulk-create a parent + children from a JSON batch. Each entry may carry a `stories` array — plain titles, or `{"title": "…", "done": true}` — validated in the same up-front pass, so a blank title refuses the whole batch. |
 | `update-epic <id> [--title …] [--status …] [--lane …] [--priority …] [--parent …] [--plan …] [--spec …] [--link …] [--clear-links] [--clear <field>] [--description "…"] [--notes "…"] [--external-id …] [--external-url …] [--external-updated-at <iso>] [--review-mode …] [--add-story "<title>"] [--story <n> --done\|--wont-do "<reason>"]` | Write-back path — title corrections, status/lane/priority changes, links, free-text annotation, tracker linkage, per-epic review-mode escalation, inline story mutation (see below). `--link` **appends** (a repeat of an already-recorded type+target updates that entry's reason in place); `--clear <field>` is the generic unset for any field whose absence is legal, repeatable, naming the FLAG (`--clear plan`, not `planPath`) — including `--clear created-at`, which returns a wrong recovered registration date to UNKNOWN so `recover-created-at` can derive it again from git history (there is deliberately no setting form for it — the date is evidence-derived, never asserted — and `touchedAt` is engine-stamped and deliberately not clearable) — the refusal enumerates the clearable set live, and a set-only field is refused with the registry's own reason. |
-| `update-epic <id> --attribute-commit <sha>` | Record a commit as this epic's work. Repeatable, append-only, in landing order. The engine infers attribution from **nothing** — not the files a commit touches, not an epic id in a message — so an unattributed commit is one the epic's Gate 2 cannot be checked against. **Do not attribute the commit that moves `openspec/changes/<id>/` under `archive/`**: it lands after the reviewed range by construction and makes the epic's own Gate 2 stale at the instant the archive gate reads it. |
-| `update-epic <id> --withdraw-commit <sha> --withdrawal-reason "<why>"` | **Withdraw an attribution** when the commit it named is gone — a `git reset` is a normal operation, and attributing at the moment of each commit means an attribution can outlive its commit through no error of process. Refuses a sha the epic never attributed, and refuses a missing reason. The array stays append-only (its last entry is the endpoint a Gate 2 `headSha` is compared against), so the withdrawal is **recorded** in a sibling `withdrawnCommits` field rather than erased. |
+| `update-epic <id> --attribute-commit <sha>` | Record a commit as this epic's work. Repeatable, append-only, in landing order. Resolved at write time and stored as the full object name (`HEAD` or a tag records the commit it names now); a value that is not a commit in this clone is refused with nothing written. The engine infers attribution from **nothing** — not the files a commit touches, not an epic id in a message — so an unattributed commit is one the epic's Gate 2 cannot be checked against. **Do not attribute the commit that moves `openspec/changes/<id>/` under `archive/`**: it lands after the reviewed range by construction and makes the epic's own Gate 2 stale at the instant the archive gate reads it. |
+| `update-epic <id> --withdraw-commit <sha> --withdrawal-reason "<why>"` | **Withdraw an attribution** when the commit it named is gone — a `git reset` is a normal operation, and attributing at the moment of each commit means an attribution can outlive its commit through no error of process. Refuses a sha the epic never attributed, and refuses a missing reason. Matched by commit identity where the value resolves (a full sha withdraws a legacy short entry of the same commit), and by exact spelling otherwise, so a legacy value that no longer resolves stays withdrawable. The array stays append-only, so the withdrawal is **recorded** in a sibling `withdrawnCommits` field rather than erased. |
 | `update-epic <id> --withdraw-gate-review <1\|2> --withdrawal-reason "<why>"` | **Withdraw a recorded gate verdict** that does not belong on this epic — re-recording can replace a verdict, but only this says it was never this epic's. Repeatable, so both gates go in one call under the one reason. The whole entry, `superseded` included, moves into `withdrawnGateReviews` — recorded, never erased — and re-recording is the way back. Refused without a reason, for a gate other than 1 or 2, for the same gate twice, where no verdict is stored, and against an `ungated` stamp (cleared by recording a real verdict); `--withdrawal-reason` alone is refused too. It is a field write the archive gate decides on: a Gate 2 withdrawal in a `delivered` archive call, or on an archived `delivered` epic whose Gate 2 was met, is refused and prints the one call that withdraws AND records the right disposition. |
 | `update-epic <id> --status archived --outcome delivered\|killed\|superseded\|abandoned\|declined\|unreconstructable --reason "<why>" --no-deferrals` | **How work ends** — a terminal disposition with its reason, never deletion. Every outcome except `delivered` requires the reason. The deferral assertion is required in the *same* invocation: swap `--no-deferrals` for `--deferral "<epicId>:<section>"` where work is now held by a registered epic, or `--declined-deferral "<what>::<why not>"` where you are deliberately not doing it — `::` separates the halves explicitly, because both are free text and a single colon inside `<what>` used to truncate it silently. A single colon still works where the value carries only one; two or more with no `::` are refused rather than guessed. Add `--carried-to <epicId> --reason "<which tasks moved>"` to hand off unfinished work. |
 | `remove-epic <id> [--cascade]` | Hard-delete; blocked by default if it has children (`--cascade` removes descendants too). Strips dangling links elsewhere. |
 | `reorder <id> <id> …` | **Manual rank** — place the epics of ONE priority band, top to bottom, in the order given. Ranks are rewritten dense `1..N` on every call, and this is the only thing that writes `rank`. Takes the whole band and refuses a partial one, so the numbering stays contiguous by construction; unranked epics sort after every ranked one. Rank is the LAST sort key (dependencies → priority → **rank**) — it breaks ties that today fall through to alphabetical order, and never outranks a dependency or a priority. `update-epic --priority` clears an epic's rank, since a placement among one band's peers means nothing among another's. |
-| `set-active <id>` / `clear-active` | Set/clear the top-level active epic. |
+| `set-active <id>` / `clear-active` | Set/clear the top-level active epic. Moving the pointer off an epic that owes a reconcile warns and keeps the obligation. |
 
 **Link types are a closed vocabulary, and only two of them do anything.** `--link
 "<type>:<epic>[:<reason>]"` validates both halves — an unknown `<type>` is refused with the
@@ -830,6 +870,10 @@ reason, the command to run. It never enables anything itself.
 commit `state.json` before upgrading (a restore discards every uncommitted state change since
 the last commit, not only the migration's), then `git restore .conductor/state.json` and
 `/pm:status` to re-render `PROJECT.md` from the restored file.
+
+**An upgrade can refuse, exit 11, and write nothing** — `pmVersion` included — when the rules
+file's managed-block markers are malformed (an orphan BEGIN or END line, or two blocks) or
+`state.json` cannot be read. See *Troubleshooting* under Guard & Automation.
 Rolling back state does not require rolling back the engine — every added field has a
 documented absent-value default, so the current engine behaves identically on an older state
 file. Rolling back the *engine* is a separate plugin-level operation: pin the marketplace
@@ -963,7 +1007,10 @@ whole job is coordination.
 epic, 30 for the repo marker). Deliberately a TTL rather than a heartbeat: a heartbeat nothing
 beats is `claimedAt` in a costume, and it makes staleness wrong in both directions. Re-claiming as
 the same session extends it. Claiming over an expired claim needs no `--steal` and reports the
-takeover; archiving an epic clears its claim.
+takeover; archiving an epic clears its claim. `--ttl` is capped at 10080 minutes (7 days) and a
+larger value is refused with nothing written; a stored claim whose expiry cannot be computed —
+including one written with a longer TTL before the cap — reads as expired (`expired at an
+unreadable time`), never as live and never as a crash.
 
 **What reports a stale one:** `owners` when asked, and `integrity`'s `advisory-claim-shape` check
 when nobody thinks to ask — which matters, because a stale claim is by construction left by a
@@ -1186,7 +1233,7 @@ node "$ENGINE" update-epic --help
 ```
 
 ```
-conductor.mjs update-epic — 30 flags.
+conductor.mjs update-epic <id> — 31 flags.
 
   --title <a value>
   --lane <openspec|superpowers|claude-code|decision|external>
@@ -1197,26 +1244,38 @@ conductor.mjs update-epic — 30 flags.
   …
   --wont-do <a reason>
 
+  Accepted on every mutating verb (it belongs to the state write, not to this verb):
+  --force  (no value)
+
   Docs: https://pm-plugin.dev/llms.txt
 ```
 
 That block is captured output, not a hand-written illustration — an earlier draft of this section composed one from memory and got the flag order wrong, in a section about help that cannot lie.
 
-Every line is **projected from the same registry rows the unknown-flag guards read**, so help
-cannot advertise a flag the parser refuses — adding a flag grows both in one edit, and a
-hand-written help table could not make that promise. `(no value)` and `(repeatable)` are called
+Every line is **projected from the same declarations the pre-dispatch command-line check
+enforces** (see "What a command line may carry" below), so help cannot advertise a flag the
+engine refuses — adding a flag grows both in one edit, and a hand-written help table could not
+make that promise. The first line names the verb's positional form where it reads one
+(`update-epic <id>`). `(no value)` and `(repeatable)` are called
 out because they change the shape of a correct invocation: a valueless flag given a value is
 refused, and repeating a non-repeatable flag silently keeps only the last one. A flag with a closed set of legal values names them — `--outcome`, `--status`, `--lane`, `--priority`, `--platform` and the rest — so the answer does not live in `scripts/lib/` any more. Flags without a closed set still render `<a value>`; that gap is visible rather than papered over.
 
-A verb that takes no flags **says so** rather than printing an empty list. 23 of the 50 are in
-that group, and "takes none" must not look like "nobody declared this yet".
+A verb that takes no flags **says so** rather than printing an empty list, and it says so only
+when the check accepts none, so "takes none" never looks like "nobody declared this yet" and help
+never claims a verb refuses a flag it accepts. A mutating verb whose own parser reads no flags
+(`set-active`, `log-detour`, `reorder` and the rest) says `no flags of its own` and then lists the
+argv-level `--force`.
 
 `add-many` is the one verb whose registry rows are not all flags — its parser takes only
 `--from`, and the rest describe keys inside the batch JSON. Its help says both, so a reader does
 not conclude the verb is impoverished and go back to the source.
 
-Help never touches state. A help flag reaches no subcommand, which is why `log-detour --help`
-does not write a detour entry described as `--help` — the bug that put the short-circuit there.
+Help never touches state. A `--help` or `-h` **anywhere after the verb** prints that verb's help,
+exits 0 and writes nothing — whatever else the line carries, so `remove-epic e2 --bogus --help`
+prints help rather than refusing `--bogus`. The one exception is a flag's VALUE position:
+`add-epic --id h1 --title --help` is refused (see below), because there the token was data, not a
+request. From 0.41.0 through 0.43.0 only the first token after the verb was honoured, and a trailing help
+token reached the verb as data: `remove-epic e2 --help` removed `e2`.
 
 **Where the two channels differ.** The installed engine is the authority on what *it* accepts and
 is version-exact by construction. [pm-plugin.dev](https://pm-plugin.dev/llms.txt) is authoritative
@@ -1225,6 +1284,81 @@ shows that your engine refuses is a version gap, not a bug. `/pm:changelog` tell
 The docs also expose a free, no-auth MCP server at `https://pm-plugin.dev/mcp`.
 
 Every managed repo receives this same routing in its `CLAUDE.md` rules block on `/pm:upgrade`.
+
+### What a command line may carry
+
+> **BREAKING (unreleased).** A command line the engine does not read is refused, not acted on.
+> An undeclared flag, a surplus positional (an unquoted multi-word value included), a value given
+> to a valueless flag (`remove-epic <id> --cascade true`, `--force=1`) and, outside the free-text
+> verbs, a `--`-leading token that is not a flag (`--Steal`) each exit 1 having written nothing.
+> Every one of them used to exit 0: 38 of the 50 verbs accepted an undeclared flag, and
+> `add-epic … --title My Title` stored `My`.
+
+One check, run before dispatch, decides for **every** dispatched verb what its command line may
+carry. It reads the same declarations help projects — the verb's flags, how many positionals it
+reads, and the argv-level `--force` — and it runs before the banner, the activity snapshot and any
+file write, so a refused line creates nothing (`init` included). Its population is the dispatch
+table, so a verb added later is bound without anyone extending a list. Help tokens are decided
+first, as above.
+
+**An undeclared flag is refused by name**, with what the verb does accept:
+
+```
+$ conductor.mjs set-autonomy e1 --levle autonomous
+conductor: unknown flag --levle for set-autonomy — it accepts: --level, --preauthorize, --context, --notify, --force
+usage: conductor.mjs set-autonomy <id> [flags]
+Nothing was written.
+```
+
+A shared flag is not an exception: `--session` is declared on `claim` and `unclaim` only
+(`PM_SESSION` names the session for the activity log everywhere else), and `--diff-summary` on
+`render` only. An `add-many` batch key (`--external-id`) is not a command-line flag either.
+
+**Quote every multi-word value.** A token no declared flag consumed is a positional, and a
+positional beyond what the verb reads is refused, naming the first surplus token:
+
+```
+$ conductor.mjs add-epic --id t1 --lane claude-code --title My Title
+conductor: add-epic takes no positional arguments — 'Title' is an extra argument it does not read. Nothing was written.
+  If 'Title' belongs to --title's value, quote the whole value.
+```
+
+A free-text verb that reads one text says so (`suggest-lane fix a typo` →
+`suggest-lane reads ONE text argument — quote it.`), and every free-text verb carries the same
+hint when an unquoted word looks like a flag (`log-detour fixed --no-verify usage` →
+`If '--no-verify' is part of the text, quote the whole value.`). On the four free-text verbs — `triage`, `suggest-lane`,
+`log-detour` and `honcho-memory` — a quoted text that begins with `--` but is not shaped like a
+flag (`log-detour "--no-verify was used on the hotfix"`) is still text.
+
+**A valueless flag never takes a value**, written either way:
+
+```
+$ conductor.mjs remove-epic p --cascade true
+conductor: remove-epic takes <id> — 'true' is an extra argument it does not read. Nothing was written.
+  --cascade takes no value.
+$ conductor.mjs remove-epic p --cascade=true
+conductor: --cascade takes no value — '--cascade=true' gives it one, and remove-epic would ignore it. Write --cascade on its own. Nothing was written.
+```
+
+**An epic id is positional wherever a verb takes one**, and `--id` in its place is diagnosed with
+the line you meant (`remove-epic --id e2` → ``write `remove-epic <id> ...`, i.e. `remove-epic e2` ``).
+
+**Order is free.** Positionals and flags may come in any order: the engine hands each verb its
+positionals first, its flags in their original relative order, and argv-level flags last. So
+`triage --limit 3 "fix the render stamp"` and `claim --steal e1 --session s2` read their
+positional, `log-detour fixed it --force` logs `fixed it`, and `set-active --force e2` activates
+`e2`.
+
+**`--force` is accepted on every mutating verb and refused on every read-only one**
+(`integrity --force` → `unknown flag --force for integrity — it accepts no flags`). It belongs to
+the guarded state write, not to any verb's parser, which is why `add-epic`, `update-epic` and
+`claim` now accept it where their own allowlists refused it. On `honcho-memory` and `purge-logs`,
+whose writes never reach the state write, it is accepted and does nothing.
+
+Echoed tokens have their control characters escaped, so a newline inside a token cannot start a
+line of the refusal. What stays each verb's own: a MISSING required positional, and a value's
+vocabulary (`--verdict maybe`, `set-gate-guard maybe`). The five hook verbs refuse nothing in a
+repository that has not run `/pm:init` — see `hooks/README.md`.
 
 ### Which verbs mutate the working tree
 
@@ -1305,8 +1439,8 @@ put it in CLAUDE.md if you want the whole hierarchy to honour it.
 |------|---------|
 | SessionStart (startup / resume / **compact**) | Injects the briefing via `additionalContext` — the index comes back the moment context is summarized away. |
 | PreCompact | Calls `snapshot` (`render` + `.conductor/brief.txt`) right before the context window collapses. |
-| PostToolUse (every `Bash` call) | Calls `commit-nudge`. It OBSERVES the repository rather than reading the command text: it keeps a HEAD watermark (`.conductor/commit-watch.json`, git-ignored) and speaks only when HEAD has moved AND `git reflog` says the move was a commit. So `-m`, `-am`, `-F`, an editor commit and a commit made inside a script are all noticed, while a command that merely *mentions* `git commit` — a `grep`, a heredoc, an `echo` — a rejected commit, a commit that landed in another repo, and a `checkout`/`reset` are all silent. Then it nudges a state update, and auto-detects an unlogged minimal detour from commit shape (only while an epic is active, and excluding routine conductor bookkeeping commits). On an **observed** commit it also names the exact `update-epic <id> --attribute-commit <sha>` for the epic that commit belongs to — the detour epic while a detour is live, never the paused parent — so the per-commit attribution obligation is prompted while it is still actionable rather than only checked at the archive gate. The prompt is louder while the epic's `attributedCommits` is still empty (the last moment the catch-up-in-order rule is available) and one line thereafter, and it is absent entirely where the engine would be guessing: no active epic, an epic with no attribution array, or an unobserved commit. |
-| PreToolUse (gate-guard) | Hard-blocks `Edit`/`Write`/`NotebookEdit` while the active epic owes a reconcile — on by default, unconditional for that case. |
+| PostToolUse (every `Bash` call) | Calls `commit-nudge`. It OBSERVES the repository rather than reading the command text: it keeps a HEAD watermark (`.conductor/commit-watch.json`, git-ignored) and speaks only when HEAD has moved AND `git reflog` says the move was a commit. So `-m`, `-am`, `-F`, an editor commit and a commit made inside a script are all noticed, while a command that merely *mentions* `git commit` — a `grep`, a heredoc, an `echo` — a rejected commit, a commit that landed in another repo, and a `checkout`/`reset` are all silent. Then it nudges a state update, and auto-detects an unlogged minimal detour from commit shape (only while an epic is active, and excluding routine conductor bookkeeping commits). On an **observed** commit it also names the exact `update-epic <id> --attribute-commit <sha>` for the epic that commit belongs to — the detour epic while a detour is live, never the paused parent — so the per-commit attribution obligation is prompted while it is still actionable rather than only checked at the archive gate. The prompt is louder while the epic's `attributedCommits` is still empty (when catching up on already-landed commits is most likely owed) and one line thereafter, and it is absent entirely where the engine would be guessing: no active epic, an epic with no attribution array, or an unobserved commit. |
+| PreToolUse (gate-guard) | Hard-blocks `Edit`/`Write`/`NotebookEdit` while the active epic owes a reconcile — on by default, unconditional for that case. Also blocks them while `.conductor/state.json` exists but cannot be read, because whether a reconcile is owed is then unknown; Bash is not matched, so the remedies stay runnable. |
 | PreToolUse (lesson advisor) | Calls `lesson-advice` on `Bash`/`Edit`/`Write`/`NotebookEdit`. Matches the pending tool call against every `docs/lessons/*.md` entry that declares a `detect:` matcher in its frontmatter, and injects that lesson's `rule` **before** the mistake. **Advisory only — it never blocks and always exits 0**, which is why it is a separate entry from the gate guard. Silent in a project with no `docs/lessons/`, and dormant until `/pm:init`. Precision is the constraint, not coverage: a lesson that cannot be matched with near-certainty carries no `detect:` and stays retrieval-only, and only the command's **first line** is matched, so a heredoc body or an `echo` that merely names a command is data rather than a trigger. Adding a matcher is a frontmatter edit, never a code change. |
 
 **Tool currency.** `pm` and `superpowers` are plugins that update themselves, but **OpenSpec is a
@@ -1347,6 +1481,70 @@ spawned at all unless the repo has an `openspec/` directory and a readable gener
 
 </details>
 
+<details>
+<summary>Troubleshooting — a damaged <code>state.json</code>, a refused rules-block write, a held lock</summary>
+
+pm refuses rather than guesses when a file it depends on cannot be read. Three exit codes tell
+you who fixes what: **1** — the command line was wrong; **9** — another writer got there first or
+holds the lock, so retry; **11** — a file is in a state the engine will not guess about, and a
+human fixes the file. The message always names the file.
+
+**A conflicted or damaged `.conductor/state.json` — exit 11.** After a merge leaves conflict
+markers, or the file is truncated or the wrong shape, every verb that reads state refuses and
+writes nothing; `--force` does not override it. Before this, such a file loaded as an empty
+record: `add-epic` over a conflicted three-epic file exited 0 and left only the new epic. Now:
+
+```text
+conductor: .conductor/state.json cannot be read — it does not parse as JSON (Unexpected token '<', "<<<<<<< HE"... is not valid JSON). Nothing was written.
+  If a merge left conflict markers:  git checkout --ours .conductor/state.json   (or --theirs)
+  If the markers were committed:     git show <good-rev>:.conductor/state.json > .conductor/state.json
+  To discard local damage:           git restore .conductor/state.json
+  Never committed (git has no copy): mv .conductor/state.json .conductor/state.json.damaged
+                                     then /pm:init   (the damaged bytes are kept beside it)
+  Then re-run the command.
+```
+
+Meanwhile the hooks never write over it. `gate-guard` **blocks `Edit`/`Write`/`NotebookEdit`**
+(exit 2) until the file is fixed — Bash is not matched by that hook, so run the remedy from the
+shell. `brief` starts the session with only this warning in place of a briefing; `snapshot` writes
+nothing and exits 11 (never 2, which would block compaction); `commit-nudge`, when a commit has
+landed, writes nothing but its HEAD watermark and exits 2 (with no commit it exits 0 without reading state), which shows the message to the agent. `verify-state` never loads
+the file, and `activity` reports the revision and whether the log is on as unknown. An absent
+`state.json` is still plain dormancy.
+
+**A refused rules-block write — exit 11.** pm finds its block in `CLAUDE.md` (or `AGENTS.md` /
+`HERMES.md`) by whole marker lines. An orphan BEGIN or END line, or two blocks, is refused with
+every marker's line number and the rules file untouched:
+
+```text
+conductor: refused to write the pm rules block into CLAUDE.md — its marker lines are not exactly one BEGIN line followed by one END line, so which text is managed cannot be known:
+  line 3: BEGIN
+  line 379: END
+  line 381: BEGIN
+  line 757: END
+  Delete the stray marker line(s) from the shell, highest line number first, e.g.:
+    sed -i.bak '<N>d' CLAUDE.md
+  (a whole managed block is safe to delete; hand-written text between markers is yours to keep).
+  The rules file, and every write this command makes after it, were NOT made. After fixing the markers, run `write-rules` and then `render` (or /pm:status) to complete it.
+```
+
+`init` and `upgrade` detect this before their first write and write nothing (their message ends
+`Nothing was written. After fixing the markers, re-run the command.`). `write-rules`,
+`set-tracker` and `set-review-mode` detect it at the block write, after their state save — so fix
+the markers, then run `write-rules` and `render`.
+
+**A held lock — exit 9.** Saves to `state.json` are serialised by `.conductor/state.json.lock`. A
+save waits up to 2 s for a live holder, then refuses (machine-specific values shown as `<…>`):
+
+```text
+conductor: state.json is locked at .conductor/state.json.lock (pid <pid> on host <host> since <time>) and was not released within 2000 ms; nothing was written (read revision <n>). A lock older than 30 s is broken automatically by the next save; if no pm command is running, remove it with `rm .conductor/state.json.lock` and re-run the command.
+```
+
+A lock older than 30 s, or one whose holder is confirmed dead on this host and in this pid namespace, is broken by the next
+save without being asked, so a killed session never holds it forever.
+
+</details>
+
 ## Workflow
 
 ```
@@ -1372,7 +1570,11 @@ your-project/
 │                             #   given a second row, and a commit touching only pm's own
 │                             #   generated files is bookkeeping, not detour work. MINIMAL rows
 │                             #   are exempt — they record what you declared, not what git saw.
-│   └── honcho-memories.log  # ready-to-copy Honcho memory lines, timestamped
+│   ├── honcho-memories.log  # ready-to-copy Honcho memory lines, timestamped
+│   ├── state.json.lock      # held only for the milliseconds of one save; .lock.break while a
+│                             #   stale one is broken. Git-ignored (state.json.lock*), as is a
+│                             #   save's state.json.tmp-* left by a save killed mid-write
+│   └── session-claim.json   # the repo claim marker (git-ignored, session-claim.json*)
 ├── CLAUDE.md                # managed rules block (idempotent; delete to opt out)
 │                             # — AGENTS.md instead, on a platform that reads that file (see
 │                             #   Supported Platforms below); pm targets whichever file the

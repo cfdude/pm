@@ -1,0 +1,162 @@
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-rCdCDN/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-rCdCDN/PROJECT.md
+conductor: added epic 'e' (openspec, queued)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-m6NVlk/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-m6NVlk/PROJECT.md
+conductor: added epic 'e' (openspec, queued)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-SQRbWi/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-SQRbWi/PROJECT.md
+conductor: added epic 'e' (openspec, queued)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-mfj77g/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-mfj77g/PROJECT.md
+conductor: added epic 'e' (openspec, queued)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-SyVUbM/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-SyVUbM/PROJECT.md
+conductor: added epic 'e' (openspec, queued)
+✖ 2.1 --attribute-commit of a value that is not a commit is refused naming it, byte-identical (312.942292ms)
+✖ 2.2 a moving ref is stored as the commit it named at the time of the call (345.686375ms)
+✖ 2.3 a unique short hash is stored as its commit's full name, and the read-back passes (304.981ms)
+✖ 2.4 REGRESSION GUARD: a commit reachable only from a presquash/* tag, attributed from another branch, resolves (339.640083ms)
+✖ 2.5 a range bound that is not a commit is refused naming it, and no verdict is recorded (333.922417ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 0
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1681.969125
+
+✖ failing tests:
+
+test at scripts/test/commit-resolution.test.mjs:51:1
+✖ 2.1 --attribute-commit of a value that is not a commit is refused naming it, byte-identical (312.942292ms)
+  AssertionError [ERR_ASSERTION]: expected a refusal, got exit 0.
+  stdout: 
+  stderr: conductor: PROJECT.md unchanged (skipped rewrite)
+  conductor: updated 'e'
+  
+      at refused (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-resolution.test.mjs:29:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-resolution.test.mjs:53:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/commit-resolution.test.mjs:57:1
+✖ 2.2 a moving ref is stored as the commit it named at the time of the call (345.686375ms)
+  AssertionError [ERR_ASSERTION]: main~1 is recorded as the full name it named at call time
+  + actual - expected
+  
+  + 'main~1'
+  - 'd94e572c32d2b8840fea3374be30b26521dc619b'
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-resolution.test.mjs:63:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'main~1',
+    expected: 'd94e572c32d2b8840fea3374be30b26521dc619b',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/commit-resolution.test.mjs:67:1
+✖ 2.3 a unique short hash is stored as its commit's full name, and the read-back passes (304.981ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+  +   '7b1cedb85a'
+  -   '7b1cedb85a3c29f3ac5bb64c0a39ea06f26b59ea'
+    ]
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-resolution.test.mjs:70:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ '7b1cedb85a' ],
+    expected: [ '7b1cedb85a3c29f3ac5bb64c0a39ea06f26b59ea' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/commit-resolution.test.mjs:73:1
+✖ 2.4 REGRESSION GUARD: a commit reachable only from a presquash/* tag, attributed from another branch, resolves (339.640083ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+  +   '456f701c8d7e'
+  -   '456f701c8d7e4cbdbf22f13e5c1de0c8c0a829d8'
+    ]
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-resolution.test.mjs:82:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ '456f701c8d7e' ],
+    expected: [ '456f701c8d7e4cbdbf22f13e5c1de0c8c0a829d8' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/commit-resolution.test.mjs:85:1
+✖ 2.5 a range bound that is not a commit is refused naming it, and no verdict is recorded (333.922417ms)
+  AssertionError [ERR_ASSERTION]: expected a refusal, got exit 0.
+  stdout: 
+  stderr: conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-SyVUbM/PROJECT.md
+  conductor: recorded gate 2 review 'pass' for 'e'
+  
+      at refused (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-resolution.test.mjs:29:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-resolution.test.mjs:87:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }

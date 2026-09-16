@@ -1,0 +1,3 @@
+KILLED    open failure read as no lock (catch -> return null)  (/^G2-8/) — AssertionError [ERR_ASSERTION]: a mode-000 file: the save must land, stderr: conductor: state.json is locked at .conductor/state.json.lock (a writer whose lock 
+KILLED    non-regular file opened (lstat-first check removed)  (/^G2-7 layers/) — AssertionError [ERR_ASSERTION]: stdout: LAYER1-OPENED
+KILLED    the open blocks again (plain read open)  (/^G2-7 layers/) — AssertionError [ERR_ASSERTION]: inspectLock blocked on the FIFO until killed

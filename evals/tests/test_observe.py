@@ -125,3 +125,19 @@ def test_observe_forwards_none_plugin_dir_unchanged_to_plugin_provenance(tmp_pat
     observe_module.observe(bare, plugin_dir=None)
 
     assert captured["plugin_dir"] is None
+
+
+def test_observe_does_not_read_a_prose_mention_of_the_marker_as_the_block(tmp_path: Path):
+    """state-file-refuses-to-guess 6.7: the observer is a second reader of the engine's markers.
+
+    It matched the BEGIN prefix as a SUBSTRING, so a rules file whose only mention of the marker is
+    prose (inline code, a sentence about pm) reported rules_block_present=True. The engine locates
+    the block by whole-line markers (managed-rules-block); the observer must read it the same way.
+    """
+    project = materialize("single-active-epic", tmp_path)
+    target = project / "CLAUDE.md"
+    target.write_text(
+        "# CLAUDE.md\n\nOur rules mention the `<!-- BEGIN pm-conductor rules` marker in prose only.\n"
+    )
+
+    assert observe(project)["rules_block_present"] is False

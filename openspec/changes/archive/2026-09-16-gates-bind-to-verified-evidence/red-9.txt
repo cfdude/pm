@@ -1,0 +1,195 @@
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-TpDSdt/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-TpDSdt/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-TpDSdt/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-TpDSdt/PROJECT.md
+conductor: added epic 'd2' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-TpDSdt/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-TpDSdt/PROJECT.md
+conductor: added epic 'x' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-TpDSdt/PROJECT.md
+conductor: active is now 'p'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ndh5Gc/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ndh5Gc/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ndh5Gc/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ndh5Gc/PROJECT.md
+conductor: added epic 'd2' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ndh5Gc/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ndh5Gc/PROJECT.md
+conductor: added epic 'x' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ndh5Gc/PROJECT.md
+conductor: active is now 'p'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-OpPKot/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-OpPKot/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-OpPKot/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-OpPKot/PROJECT.md
+conductor: added epic 'd2' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-OpPKot/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-OpPKot/PROJECT.md
+conductor: added epic 'x' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-OpPKot/PROJECT.md
+conductor: active is now 'p'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-RldC60/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-RldC60/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-RldC60/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-RldC60/PROJECT.md
+conductor: added epic 'd2' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-RldC60/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-RldC60/PROJECT.md
+conductor: added epic 'x' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-RldC60/PROJECT.md
+conductor: active is now 'p'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-vqcMw2/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-vqcMw2/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-vqcMw2/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-vqcMw2/PROJECT.md
+conductor: added epic 'd2' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-vqcMw2/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-vqcMw2/PROJECT.md
+conductor: added epic 'x' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-vqcMw2/PROJECT.md
+conductor: active is now 'p'
+✖ 9.1 clearing links on an owing epic is refused naming record-reconcile (745.00775ms)
+✖ 9.2 removing an armed detour is refused naming record-reconcile, not a detour pop (737.805042ms)
+✖ 9.3 correcting a link's reason keeps its verdict and arming (809.828084ms)
+✖ 9.3a an answered armed link is protected while another obligation stands (919.1825ms)
+✖ 9.3b on an owing epic the repair instructions name record-reconcile first, and the repair is refused (683.789042ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 0
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3939.548333
+
+✖ failing tests:
+
+test at scripts/test/reconcile-obligation.test.mjs:333:1
+✖ 9.1 clearing links on an owing epic is refused naming record-reconcile (745.00775ms)
+  AssertionError [ERR_ASSERTION]: expected a refusal, got exit 0.
+  stdout: 
+  stderr: conductor: cleared the reconcile obligation on 'p' — it holds no may-invalidate link a verdict could be recorded against and no detour frame pausing it, so no record-reconcile could ever be accepted and it would have blocked the epic permanently
+  conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-TpDSdt/PROJECT.md
+  conductor: updated 'p'
+  
+      at refused (file:///Users/robsherman/Documents/Repos/pm/scripts/test/reconcile-obligation.test.mjs:28:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/reconcile-obligation.test.mjs:335:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/reconcile-obligation.test.mjs:339:1
+✖ 9.2 removing an armed detour is refused naming record-reconcile, not a detour pop (737.805042ms)
+  AssertionError [ERR_ASSERTION]: expected a refusal, got exit 0.
+  stdout: 
+  stderr: conductor: cleared the reconcile obligation on 'p' — it holds no may-invalidate link a verdict could be recorded against and no detour frame pausing it, so no record-reconcile could ever be accepted and it would have blocked the epic permanently
+  conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ndh5Gc/PROJECT.md
+  conductor: removed 1 epic(s): d
+  conductor: stripped 1 dangling reference(s) to removed epic(s), held by: epic `p` links[]
+  
+      at refused (file:///Users/robsherman/Documents/Repos/pm/scripts/test/reconcile-obligation.test.mjs:28:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/reconcile-obligation.test.mjs:341:13)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/reconcile-obligation.test.mjs:348:1
+✖ 9.3 correcting a link's reason keeps its verdict and arming (809.828084ms)
+  TypeError: Cannot read properties of undefined (reading 'verdict')
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/reconcile-obligation.test.mjs:354:29)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at scripts/test/reconcile-obligation.test.mjs:359:1
+✖ 9.3a an answered armed link is protected while another obligation stands (919.1825ms)
+  AssertionError [ERR_ASSERTION]: expected a refusal, got exit 0.
+  stdout: 
+  stderr: conductor: cleared the reconcile obligation on 'p' — it holds no may-invalidate link a verdict could be recorded against and no detour frame pausing it, so no record-reconcile could ever be accepted and it would have blocked the epic permanently
+  conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-RldC60/PROJECT.md
+  conductor: updated 'p'
+  
+      at refused (file:///Users/robsherman/Documents/Repos/pm/scripts/test/reconcile-obligation.test.mjs:28:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/reconcile-obligation.test.mjs:364:3)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/reconcile-obligation.test.mjs:368:1
+✖ 9.3b on an owing epic the repair instructions name record-reconcile first, and the repair is refused (683.789042ms)
+  AssertionError [ERR_ASSERTION]: the finding names record-reconcile:   • `p` — link `depends_on→x` — 'depends_on' is not one of depends-on, supersedes, may-invalidate, relates-to, blocks, resolves-blocker-for, so every consumer that switches on the type ignores it. Fix it with `update-epic p --clear-links --link "<type>:<epic>[:<reason>]" ...` — every link you want kept, in ONE invocation. `--link` alone APPENDS, so a corrected type is a new edge and would leave this one exactly where it is.
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/reconcile-obligation.test.mjs:375:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

@@ -23,7 +23,7 @@ import { isInitialized } from "./state.mjs";
 import { activityDir, segments } from "./activity-log.mjs";
 import { segmentStart } from "./activity-report.mjs";
 import { PURGE_KINDS } from "./constants.mjs";
-import { parseFlags, requireFlagValues, requireKnownFlags } from "./add-epic.mjs";
+import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 
 // Re-exported from its DECLARATION in constants.mjs: `VERB_FLAGS`' `--kind` row names these
 // kinds in its own refusal phrase, so the list has to live where constants.mjs can read it
@@ -106,12 +106,10 @@ function die(msg) { process.stderr.write(`conductor: ${msg}\n`); process.exit(1)
 export function purgeLogs() {
   if (!isInitialized()) die("run /pm:init first");
   const argv = process.argv.slice(3);
-  // The allowlist is the registry's OWN projection through the SHARED checker, never the
-  // `KNOWN = ["kind", "keep", …]` literal and hand-written loop this verb used to carry — the
-  // enumeration defect #152 reports, one question over: `flagsFor()` answers "is this flag known
-  // on this verb", `valueBearingFlagsFor()` answers "does it need a value", and neither may be
-  // answered with the other's list.
-  requireKnownFlags("purge-logs", argv);
+  // Never the `KNOWN = ["kind", "keep", …]` literal and hand-written loop this verb used to carry —
+  // the enumeration defect #152 reports. "Is this flag known on this verb" is answered before
+  // dispatch by the command-line check (lib/argv-surface.mjs) from the registry;
+  // `valueBearingFlagsFor()` answers "does it need a value", through requireFlagValues() below.
   // NAMED `flags`, not `f`: this body already binds `f` as the loop variable for a candidate
   // FILE (`f.size`, `f.path`), so a parsed-flags object called `f` would be shadowed inside
   // every one of those loops. It reads as a live hazard and conductor-31's region scanner reads

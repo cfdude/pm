@@ -57,7 +57,7 @@ test("the watermark IS written on a branch — the control that makes the absenc
 
 test("the detour log is not written in a detached tree, and the verb still reports", () => {
   const cwd = deployed();
-  const out = runCombined(["log-detour", "--minimal", "a thing"], { cwd });
+  const out = runCombined(["log-detour", "a thing"], { cwd });
   assert.ok(!exists(cwd, "detours.log"), "a detour interrupts active work; there is none here");
   // Assert the verb's OWN line, not merely `conductor:` — the detached WARNING matches that too,
   // so the weaker form would pass even if the verb crashed right after warning.
@@ -68,7 +68,7 @@ test("the detour log is not written in a detached tree, and the verb still repor
 
 test("the detour log IS written on a branch", () => {
   const cwd = workspace();
-  runCombined(["log-detour", "--minimal", "a thing"], { cwd });
+  runCombined(["log-detour", "a thing"], { cwd });
   assert.ok(exists(cwd, "detours.log"));
 });
 

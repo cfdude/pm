@@ -28,7 +28,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { tmpRepo, run, readState, writeState, expectFail } from "./helpers.mjs";
+import { tmpRepo, run, readState, writeState, expectFail, fixtureCommits } from "./helpers.mjs";
 
 const CONSTANTS = new URL("../lib/constants.mjs", import.meta.url).href;
 
@@ -42,8 +42,11 @@ const CONSTANTS = new URL("../lib/constants.mjs", import.meta.url).href;
 const BASELINE = {
   "add-epic": () => ["add-epic", "--id", "fresh", "--lane", "claude-code"],
   "update-epic": () => ["update-epic", "e1", "--title", "t"],
-  "record-gate-review": () => ["record-gate-review", "e1", "--gate", "1", "--verdict", "pass",
-    "--base-sha", "aaa", "--head-sha", "bbb"],
+  // The range must be REAL commits in the repo the baseline runs in: --base-sha/--head-sha are
+  // resolved at write time, so a fake value would make the baseline refuse on its own and every
+  // appended valueless flag below would "pass" for a reason that has nothing to do with it.
+  "record-gate-review": (cwd) => ["record-gate-review", "e1", "--gate", "1", "--verdict", "pass",
+    "--base-sha", shasOf(cwd).base, "--head-sha", shasOf(cwd).head],
   "record-cross-spec-review": () => ["record-cross-spec-review", "0.1.0", "--verdict", "pass"],
   release: () => ["release", "0.1.0", "--intent", "why"],
   // gh-84. Both baselines are chosen to exit 0 on the fixture WITHOUT writing to the shared cwd
@@ -56,11 +59,21 @@ const BASELINE = {
   "add-many": null,
 };
 
-/** A repo with two epics, a release holding two spec files, and a spec on disk — enough for
- *  every baseline above to succeed. */
+/** The real commits each sweepRepo() fixture holds, keyed by its directory. */
+const FIXTURE_SHAS = new Map();
+const shasOf = (cwd) => {
+  const s = FIXTURE_SHAS.get(cwd);
+  if (!s) throw new Error(`no fixture commits recorded for ${cwd} — build it with sweepRepo()`);
+  return s;
+};
+
+/** A repo with two epics, a release holding two spec files, a spec on disk and two real commits —
+ *  enough for every baseline above to succeed. */
 function sweepRepo() {
   const cwd = tmpRepo();
   run(["init"], { cwd });
+  const [base, head] = fixtureCommits(cwd, ["base", "head"]);
+  FIXTURE_SHAS.set(cwd, { base, head });
   const specs = path.join(cwd, "docs", "superpowers", "specs");
   fs.mkdirSync(specs, { recursive: true });
   fs.writeFileSync(path.join(specs, "a-design.md"), "# a\n");
@@ -119,7 +132,8 @@ test("gh-149: every value-bearing flag, on every command, refuses a valueless oc
   let checked = 0;
   for (const [command, baseline] of Object.entries(BASELINE)) {
     if (!baseline) continue;
-    run(baseline(), { cwd: sweepRepo() });
+    const fresh = sweepRepo();
+    run(baseline(fresh), { cwd: fresh });
     for (const row of EPIC_FLAGS) {
       if (!row.commands.includes(command) || row.valueless) continue;
       // An `engineWritten` row is not typeable AT ALL (gh#181): it is in no allowlist, so
@@ -129,7 +143,7 @@ test("gh-149: every value-bearing flag, on every command, refuses a valueless oc
       // has no valueless occurrence to refuse.
       if (row.engineWritten) continue;
       for (const args of [[`--${row.flag}`], [`--${row.flag}`, "   "]]) {
-        const err = expectFail(() => run([...baseline(), ...args], { cwd }));
+        const err = expectFail(() => run([...baseline(cwd), ...args], { cwd }));
         assert.ok(err, `${command} ${args.join(" ")} must exit non-zero — a blank value is the ` +
           "same silent drop as a missing one, one step further on");
         assert.match(String(err.stderr || err.message), new RegExp(`--${row.flag} requires `),
@@ -150,7 +164,7 @@ test("gh-149: a REPEATABLE flag is refused when ANY occurrence is valueless, not
   const cwd = sweepRepo();
   const before = stateOf(cwd);
   const err = expectFail(() => run(
-    ["update-epic", "e1", "--attribute-commit", "aaaaaaa", "--attribute-commit"], { cwd }));
+    ["update-epic", "e1", "--attribute-commit", shasOf(cwd).head, "--attribute-commit"], { cwd }));
   assert.ok(err, "a trailing valueless --attribute-commit must be refused, not silently skipped");
   assert.match(String(err.stderr || err.message), /--attribute-commit requires /);
   assert.equal(stateOf(cwd), before, "and the good occurrence must not land on its own");
@@ -170,7 +184,7 @@ test("gh-149: the refusal lands BEFORE any state is loaded or written, on every 
     ["add-epic", "--id", "n", "--lane", "claude-code", "--plan"],
     ["update-epic", "e1", "--plan"],
     ["record-gate-review", "e1", "--gate", "1", "--verdict", "pass",
-      "--base-sha", "a", "--head-sha", "b", "--reviewer"],
+      "--base-sha", shasOf(cwd).base, "--head-sha", shasOf(cwd).head, "--reviewer"],
     ["release", "0.1.0", "--target"],
     ["record-cross-spec-review", "0.1.0", "--verdict", "pass", "--reviewer"],
   ];

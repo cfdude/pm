@@ -1,10 +1,13 @@
 // scripts/lib/constants.mjs
 // Shared path/enum constants for the conductor engine. No dependencies on any other
-// lib module — every other module may import from here.
+// lib module — every other module may import from here. The ONE exception is verb-effects.mjs,
+// which itself imports nothing (so no cycle can form): the `--force` row below derives the verbs
+// it is accepted on from VERB_EFFECTS rather than restating them.
 
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
+import { VERB_EFFECTS } from "./verb-effects.mjs";
 
 export const ROOT = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 export const CONDUCTOR_DIR = path.join(ROOT, ".conductor");
@@ -17,6 +20,20 @@ export const WRITE_CONFLICTS_LOG = path.join(CONDUCTOR_DIR, "write-conflicts.log
 // alone), so an agent can tell "someone else wrote" from "you passed a bad flag" and retry
 // rather than guess.
 export const CONFLICT_EXIT_CODE = 9;
+// state-file-refuses-to-guess D2: "a file this verb depends on is in a state the engine will not
+// guess about; a human fixes the file". Neither a malformed command (1) nor retryable (9). Chosen
+// OUTSIDE Node's own documented exit codes: 10 is "Internal JavaScript Run-Time Failure", so a pm
+// refusal there would be indistinguishable from a Node bootstrap crash; 11 is unassigned. Shared by
+// the unreadable-state refusal and the ambiguous rules-block refusal — the message names the file.
+export const UNREADABLE_INPUT_EXIT_CODE = 11;
+// The state-file lock (state.mjs saveState, design D4). A save holds it for milliseconds, so a
+// writer waits WAIT_MS for a live holder, polling every POLL_MS, and is then refused with the
+// conflict exit code — never a lost update. STALE_MS is the age backstop: a lock older than this
+// (or dated this far in the future — a backward clock step must not wedge it) is broken whatever it
+// records, which is what answers the 0.26.0 objection that a killed session holds a lock forever.
+export const STATE_LOCK_WAIT_MS = 2000;
+export const STATE_LOCK_POLL_MS = 25;
+export const STATE_LOCK_STALE_MS = 30000;
 // Size-triggered rotation, never count-based: enforcing "keep the last N entries" means
 // reading, filtering and rewriting the file, and this is the failure path of a WRITE guard.
 // statSync is O(1) and rename(2) is O(1), so the mechanism never reads the log body.
@@ -454,7 +471,7 @@ export const EPIC_FLAGS = [
   { flag: "attribute-commit", key: "attributedCommits", commands: ["update-epic"], repeats: true, write: "append",
     setOnly: "`--withdraw-commit` is the declared inverse and it RECORDS the withdrawal in a sibling field; a bulk clear would erase the record a correction exists to keep" },
   // #166 — the EXIT from an append-only array. Append-only is right and stays: order carries
-  // meaning and the LAST entry is the endpoint a recorded Gate 2 headSha is compared against. But
+  // meaning (landing order), and a recorded Gate 2 headSha must reach every entry. But
   // "cannot be reordered or de-duplicated" is a different claim from "can never be corrected",
   // and the second was inherited rather than decided. A `git reset` is a normal operation, and
   // the gate procedure requires attributing at the moment of each commit — so an attribution can
@@ -704,12 +721,16 @@ export const PURGE_KINDS = ["activity", "conflicts", "detours", "all"];
 // `set-lane-routing` and a boolean on `set-tracker`. One global row for the spelling would have
 // to pick one reading, and either choice is wrong on one of the two verbs.
 //
-// NOT DECLARED, deliberately: `--force` (read straight from `process.argv` by saveState(), on
-// every verb) and `--help`/`-h` (short-circuited in conductor.mjs before dispatch). They are
-// argv-level, belong to no verb, and a row for them would claim a per-verb surface they do not
-// have. `--platform` IS declared, on the three verbs that read it, because those verbs each
-// resolve it into a real behaviour and a valueless one silently fell back to the recorded
-// platform while looking answered.
+// `--force` IS declared (every-verb-refuses-what-it-does-not-read D5), as ONE row marked
+// `argvLevel: true` at the end of this table: it belongs to the guarded state write (saveState()
+// reads it straight off `process.argv`), not to any verb's parser, and it is accepted on exactly the
+// verbs VERB_EFFECTS declares `mutates` — derived, never listed. Before this it was declared nowhere,
+// so the allowlists on add-epic, update-epic and claim refused the documented escape hatch outright.
+// A row rather than a separate "argv-level flags" list, because epic-annotation forbids a second,
+// parallel allowlist for a subset of flags. Checks written for per-verb PARSER flags filter
+// `argvLevel` rows out. `--help`/`-h` stay undeclared: they are decided before any flag is classified.
+// `--platform` IS declared, on the verbs that read it or are passed it, because a valueless one
+// silently fell back to the recorded platform while looking answered.
 export const VERB_FLAGS = [
   { flag: "from", commands: ["add-many"], requires: "a path, or `-` to read the batch from stdin" },
   { flag: "cascade", commands: ["remove-epic"], valueless: true },
@@ -753,6 +774,10 @@ export const VERB_FLAGS = [
   // shape, is the real fix; neither is worth doing blind at the moment this was found.
   { flag: "verdict", commands: ["record-reconcile", "record-tracker-refresh"] },
   { flag: "amendments", commands: ["record-reconcile"] },
+  // gates-bind-to-verified-evidence Decision 6: ONE amendment per occurrence, kept verbatim, so an
+  // amendment whose own text carries a `;` is not split into several. Beside `--amendments` (the
+  // reconciler's `;`-joined wire form), never instead of it; the two together are refused.
+  { flag: "amendment", commands: ["record-reconcile"], repeats: true },
   { flag: "summary", commands: ["record-tracker-refresh"] },
   { flag: "external-updated-at", commands: ["record-tracker-refresh"] },
   { flag: "since", commands: ["changelog"] },
@@ -767,7 +792,11 @@ export const VERB_FLAGS = [
   // FLAGLESS_VERBS, where it would have been a false claim.
   { flag: "diff-summary", commands: ["render"], valueless: true },
   { flag: "epic", commands: ["rules"] },
-  { flag: "platform", commands: ["rules", "write-rules", "rules-target"],
+  // `init` and the five HOOK verbs join the three that read it (every-verb-refuses-what-it-does-not-read
+  // D6): hooks/hooks.json passes `--platform claude-code` to every hook, so declaring it anywhere
+  // less than all of them would make the check refuse pm's own hook lines. Each validates it before
+  // anything else — `init` before its first write, which is the ordering defect this closes.
+  { flag: "platform", commands: ["rules", "write-rules", "rules-target", "init", "brief", "snapshot", "commit-nudge", "gate-guard", "lesson-advice"],
     placeholder: KNOWN_PLATFORMS.join("|") },
   // #151's detour-stack verbs. `--reason` shares REASON_REQUIRES with the epic registry's row
   // rather than restating the phrase: a deferral's reason is held to the same standard whichever
@@ -808,6 +837,12 @@ export const VERB_FLAGS = [
   { flag: "older-than", commands: ["purge-logs"], requires: "a non-negative number of days" },
   { flag: "dry-run", commands: ["purge-logs"], valueless: true },
   { flag: "yes", commands: ["purge-logs"], valueless: true },
+  // THE argv-level row (see the header above). On a mutating verb whose writes never reach the
+  // guarded state write (`honcho-memory`, `purge-logs`) it is accepted and does nothing — the one
+  // accepted-but-unread flag, stated rather than hidden: the alternative is a second, undeclared list
+  // of which mutating verbs save state, derivable only by parsing call graphs.
+  { flag: "force", valueless: true, argvLevel: true,
+    commands: Object.keys(VERB_EFFECTS).filter(v => VERB_EFFECTS[v].effect === "mutates") },
 ];
 
 /** The dispatched verbs that accept NO flags at all — positional arguments or none.
@@ -835,10 +870,66 @@ export const POSITIONAL_USAGE = {
   release: "release <id> --intent \"<what this release is for>\" …   — create or amend one\n  release show [<id>]                                    — READ it back: intent, target, DERIVED members, deferrals, the cross-spec verdict and any amendments (no id: every release, one line each). `show` is RESERVED as a release id",
 };
 
+/** every-verb-refuses-what-it-does-not-read — how many POSITIONAL arguments each dispatched verb
+ *  reads, declared for EVERY verb the engine dispatches (the suite asserts set-equality with the
+ *  dispatch table, so a verb added without a row fails by name).
+ *
+ *  Positionals were declared nowhere before this: each verb read `argv[0]`, `argv[3]`, a slice or a
+ *  scan, and `parseFlags()` silently skipped every token it did not consume — so `add-epic --title
+ *  My Title` stored `My` and exited 0. The pre-dispatch check in lib/argv-surface.mjs reads this
+ *  table to refuse a token beyond a verb's MAXIMUM. The MINIMUM is declared but enforced by each verb
+ *  itself, because several carry a purpose-built message for it (update-epic's #71 `--id`
+ *  diagnosis, `claim --repo`'s alternative form) that a generic count would replace with a worse one.
+ *
+ *    min, max  — `max` may be `Infinity` for a verb that joins its positionals into one text.
+ *    form      — the positional form help prints; non-empty even at arity 0 so help never guesses.
+ *    idFirst   — the first positional is an EPIC id, so `--id <value>` given instead is diagnosed
+ *                as the positional (#71's diagnosis, generalised). `release` and
+ *                `record-cross-spec-review` take a RELEASE id and `honcho-memory` an action, so all
+ *                three are false: the diagnosis's text says "epic id" and would be wrong there.
+ *    freeText  — the positionals are free text, so a `--`-leading token that is NOT flag-shaped
+ *                (`"--story <n> is 1-indexed"`) is a positional (gh-186's rule). On every other verb
+ *                such a token is refused as an undeclared flag: that verb's own parser skips any
+ *                `--`-leading token, so reading it as a positional would pass the check while the
+ *                verb acted without it.
+ *    byFirst   — `release` only: the one verb whose surface branches on a positional literal. The
+ *                branch's `min`/`max` count ALL positionals, the keyword included.
+ *
+ *  Confirmed against each module with `rg -n "process\.argv|argv\[0\]|positionalArgs" scripts/lib`
+ *  (task 1.1): the verbs absent from that sweep read no positional at all. */
+const P0 = { min: 0, max: 0, form: "(no positional arguments)", idFirst: false, freeText: false };
+const EPIC_ID = { min: 1, max: 1, form: "<id>", idFirst: true, freeText: false };
+export const VERB_POSITIONALS = {
+  init: P0, render: P0, brief: P0, snapshot: P0, "commit-nudge": P0, sync: P0,
+  "add-epic": P0, "add-many": P0, "clear-active": P0, "set-tracker": P0, "set-lane-routing": P0,
+  "set-review-mode": P0, "gate-guard": P0, "lesson-advice": P0, "plan-hierarchy": P0, owners: P0,
+  activity: P0, "purge-logs": P0, "verify-worktrees": P0, "verify-state": P0, "verify-specs": P0,
+  integrity: P0, changesets: P0, "recover-created-at": P0, "unconsidered-outcomes": P0, upgrade: P0,
+  changelog: P0, rules: P0, "write-rules": P0, "rules-target": P0,
+  "update-epic": EPIC_ID, "remove-epic": EPIC_ID, "set-active": EPIC_ID, "set-autonomy": EPIC_ID,
+  "record-reconcile": EPIC_ID, "record-gate-review": EPIC_ID, "record-tracker-refresh": EPIC_ID,
+  "push-detour": EPIC_ID,
+  "record-cross-spec-review": { min: 1, max: 1, form: "<releaseId>", idFirst: false, freeText: false },
+  "set-activity-log": { min: 1, max: 1, form: "on|off", idFirst: false, freeText: false },
+  "suggest-lane": { min: 1, max: 1, form: "\"<free text>\"", idFirst: false, freeText: true },
+  triage: { min: 1, max: 1, form: "\"<the ask, in its own words>\"", idFirst: false, freeText: true },
+  "pop-detour": { min: 0, max: 1, form: "[<epicId>]", idFirst: true, freeText: false },
+  "set-gate-guard": { min: 0, max: 1, form: "[on|off]", idFirst: false, freeText: false },
+  claim: { min: 0, max: 1, form: "[<epicId>]", idFirst: true, freeText: false },
+  unclaim: { min: 0, max: 1, form: "[<epicId>]", idFirst: true, freeText: false },
+  "log-detour": { min: 1, max: Infinity, form: "\"<what you fixed>\"", idFirst: false, freeText: true },
+  reorder: { min: 1, max: Infinity, form: "<id> <id> …", idFirst: true, freeText: false },
+  "honcho-memory": { min: 3, max: Infinity, form: "<push|pop> <epicId> \"<reason>\"", idFirst: false, freeText: true },
+  release: {
+    min: 1, max: 1, form: "<id>", idFirst: false, freeText: false,
+    byFirst: { show: { min: 1, max: 2, form: "show [<id>]" } },
+  },
+};
+
 export const FLAGLESS_VERBS = [
-  "init", "brief", "snapshot", "commit-nudge", "sync", "log-detour", "honcho-memory",
-  "reorder", "set-active", "clear-active", "suggest-lane", "set-gate-guard", "gate-guard",
-  "lesson-advice", "verify-worktrees", "verify-state", "integrity", "changesets", "upgrade",
+  "sync", "log-detour", "honcho-memory",
+  "reorder", "set-active", "clear-active", "suggest-lane", "set-gate-guard",
+  "verify-worktrees", "verify-state", "integrity", "changesets", "upgrade",
   // #111's toggle. Its argument is the POSITIONAL `on|off` — `set-activity-log --on` is refused
   // by the same check that refuses `set-activity-log maybe` — so it has no flag surface to
   // declare, and a VERB_FLAGS row for it would be a claim about a parser that does not exist.
@@ -871,6 +962,13 @@ export const FLAGLESS_VERBS = [
 // two hours is exactly the false coordination signal #84 warns is worse than none.
 export const CLAIM_DEFAULT_TTL_MINUTES = 120;
 export const REPO_CLAIM_DEFAULT_TTL_MINUTES = 30;
+// The ONE bound on a claim's lifetime, shared by the verbs that write a claim (claims.mjs ttlFrom)
+// and the reader that judges one (claim-shape.mjs claimExpiry) — state-file-refuses-to-guess D5.
+// A claim is "who owns this right now", renewed by re-claiming, so a week is generous; and a bound
+// this far below the representable date range leaves no overflow arithmetic to reason about. On
+// 0.43.0 `claim --ttl 1e12` wrote a claim whose expiry no reader could compute, and every later
+// `owners`, `integrity` and other-session `claim` crashed with RangeError.
+export const CLAIM_MAX_TTL_MINUTES = 10080;
 
 // ─────────────────── #111: the activity log's two caps ───────────────────
 //
@@ -893,8 +991,9 @@ export const ACTIVITY_SEGMENT_MAX_BYTES = 131_072;
 export const ACTIVITY_RETENTION_MAX_BYTES = 1_073_741_824;
 
 /** gh#182 — THE ONE ANSWER to "is this argv token a flag, or a value that merely starts with
- *  `--`?", shared by every scanner that walks argv: parseFlags() and requireKnownFlags() in
- *  add-epic.mjs, positionalArgs() in claims.mjs, platformFlag() in platform.mjs. It lives HERE
+ *  `--`?", shared by every scanner that walks argv: parseFlags() in add-epic.mjs, classify() in
+ *  argv-surface.mjs (the pre-dispatch command-line check, which replaced requireKnownFlags()),
+ *  positionalArgs() in claims.mjs, platformFlag() in platform.mjs. It lives HERE
  *  because platform.mjs is deliberately a LEAF (see its own comment: importing add-epic.mjs
  *  would close a circular loop around the rules writer) and constants.mjs is the one module all
  *  four already depend on. Four copies of this rule is exactly how the reported bug survived at
@@ -923,6 +1022,30 @@ export const ACTIVITY_RETENTION_MAX_BYTES = 1_073_741_824;
  *  asserts every row in both tables matches it. All 78 do today. */
 export const FLAG_TOKEN = /^--[a-z][a-z0-9-]*(?:=|$)/;
 export const isFlagToken = (t) => typeof t === "string" && FLAG_TOKEN.test(t);
+
+/* One escaper for every refusal that prints a user-supplied value — moved from update-epic.mjs to
+ * archive-gate.mjs (gate-verdict-withdrawal 4.1), then here, because the pre-dispatch check
+ * (argv-surface.mjs, a leaf) quotes caller tokens back as well. */
+/** A control character — newline above all. A token carrying one is never echoed: a shell cannot
+ *  reliably rebuild it on one line (command substitution strips a trailing newline), and an echoed
+ *  newline would let a user-supplied value start a line of the refusal. C1 controls (NEL among them)
+ *  and the Unicode LINE and PARAGRAPH SEPARATORs count: a reader that honours them (a JS `m` regex,
+ *  a terminal, an editor) sees a new line there. */
+export const CONTROL_CHARACTER = /[\u0000-\u001f\u007f-\u009f\u2028\u2029]/;
+/** Render every control character as a `\uXXXX` escape. JSON.stringify alone is not enough: it
+ *  leaves C1 controls and U+2028/U+2029 raw. */
+export const escapeControls = (s) => String(s).replace(new RegExp(CONTROL_CHARACTER.source, "g"),
+  c => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`);
+
+/** gh#182's third rule, as ONE string: "this looks like a flag but arrived where a value was
+ *  expected" names the flag being filled, quotes the token, and shows the `=` form that says it
+ *  unambiguously. Shared by valuelessFlagError() (add-epic.mjs) and the pre-dispatch command-line
+ *  check (argv-surface.mjs, which refuses a `--help` in a value position with it), so the #187
+ *  refusal cannot come to read differently depending on which layer caught it. */
+export const flagInValuePositionMessage = (flag, requires, token) =>
+  `conductor: --${flag} requires ${requires} — '${escapeControls(token)}' arrived where that value ` +
+  `belonged and was read as a flag, not as the value. If it IS the value, write ` +
+  `--${flag}=${escapeControls(token)}`;
 
 /** Split a token that occupies a FLAG position into `[name, inlineValue]`, where `inlineValue`
  *  is `undefined` for the `--name` form and the text after the FIRST `=` for `--name=value`.
@@ -1022,8 +1145,11 @@ export const epicBatchKeys = () =>
  *  and an inferred remainder is how a dozen verbs came to sit outside #149's rule.
  *
  *  `add-many` is the whole set today. Its rows are here so `epicBatchKeys()` can derive the state
- *  keys a batch entry may carry; its parser (`scripts/lib/add-many.mjs`) takes exactly one flag,
- *  `--from`, and refuses everything else. So `flagsFor("add-many")` answering 15 is CORRECT for
+ *  keys a batch entry may carry; its parser (`scripts/lib/add-many.mjs`) reads exactly one flag,
+ *  `--from`. It never refused anything else itself — `add-many --from b.json --zzz` created the batch
+ *  (every-verb-refuses-what-it-does-not-read); the pre-dispatch command-line check
+ *  (lib/argv-surface.mjs) now refuses every other flag, batch keys included, reading
+ *  `cliFlagsFor()` below. So `flagsFor("add-many")` answering 15 is CORRECT for
  *  the allowlist question it exists to answer, and WRONG the moment help reuses it: help would
  *  advertise 14 flags the parser ignores. An authoritative wrong answer is worse than none, which
  *  is the whole reason #158 was filed. */
@@ -1080,6 +1206,7 @@ export const flagSpecsFor = (command) => {
       flag: name,
       valueless: f.valueless === true,
       repeats: f.repeats === true,
+      argvLevel: f.argvLevel === true,
       // PLACEHOLDER first, `requires` only as a fallback. The two have different audiences and
       // conflating them shipped a real defect: `--link`'s `requires` ends "...say so with
       // --clear-links", which is correct in a REFUSAL and made `add-epic --help` advertise

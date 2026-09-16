@@ -1,0 +1,58 @@
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-GfnIIk/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-GfnIIk/PROJECT.md
+conductor: added epic 'e1' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-GfnIIk/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-GfnIIk/PROJECT.md
+conductor: added epic 'ext' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+✖ An outcome without an archive is refused by name (364.715875ms)
+✖ A handoff target without an archive is refused by name (66.812334ms)
+✔ REGRESSION GUARD: The disposition flags still record at the archive (61.869041ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 1
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 538.47925
+
+✖ failing tests:
+
+test at scripts/test/verb-surface.test.mjs:833:1
+✖ An outcome without an archive is refused by name (364.715875ms)
+  AssertionError [ERR_ASSERTION]: the flags are dropped otherwise, behind a false 'nothing changed'
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/verb-surface.test.mjs:837:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/verb-surface.test.mjs:847:1
+✖ A handoff target without an archive is refused by name (66.812334ms)
+  AssertionError [ERR_ASSERTION]: Expected "actual" to be strictly unequal to: 0
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/verb-surface.test.mjs:851:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }

@@ -1,0 +1,48 @@
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ALmH4M/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ALmH4M/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ALmH4M/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ALmH4M/PROJECT.md
+conductor: added epic 'd2' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ALmH4M/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ALmH4M/PROJECT.md
+conductor: added epic 'x' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ALmH4M/PROJECT.md
+conductor: active is now 'p'
+✖ g2-4 pop-detour reads the obligation AFTER the heal: no record-reconcile instruction when the saved flag is false (660.408708ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 704.771791
+
+✖ failing tests:
+
+test at scripts/test/reconcile-obligation.test.mjs:528:1
+✖ g2-4 pop-detour reads the obligation AFTER the heal: no record-reconcile instruction when the saved flag is false (660.408708ms)
+  AssertionError [ERR_ASSERTION]: the pop must not instruct a verdict the engine would refuse: conductor: cleared the reconcile obligation on 'p' — it holds no may-invalidate link a verdict could be recorded against and no detour frame pausing it, so no record-reconcile could ever be accepted and it would have blocked the epic permanently
+  conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ALmH4M/PROJECT.md
+  conductor: detour 'd' is still queued, not archived — resuming anyway, but confirm its work is finished and committed before building on the resumed epic
+  conductor: resumed 'p'
+  conductor: RECONCILE GATE — 'p' carries reconcileNeeded. Run the reconciler BEFORE writing code, then `record-reconcile p --detour d --verdict valid|invalidated`, then `honcho-memory pop p "<detour>; reconcile = …"` for the memory line
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/reconcile-obligation.test.mjs:536:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'conductor: cleared the reconcile obligation on \'p\' — it holds no may-invalidate link a verdict could be recorded against and no detour frame pausing it, so no record-reconcile could ever be accepted and it would have blocked the epic permanently\nconductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ALmH4M/PROJECT.md\nconductor: detour \'d\' is still queued, not archived — resuming anyway, but confirm its work is finished and committed before building on the resumed epic\nconductor: resumed \'p\'\nconductor: RECONCILE GATE — \'p\' carries reconcileNeeded. Run the reconciler BEFORE writing code, then `record-reconcile p --detour d --verdict valid|invalidated`, then `honcho-memory pop p "<detour>; reconcile = …"` for the memory line\n',
+    expected: /RECONCILE GATE|record-reconcile p --detour/,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }

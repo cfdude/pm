@@ -7,9 +7,9 @@ import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { pluginVersion, newestInstalledVersion, cmpVer, changelogBetween, stampVersion } from "./plugin-meta.mjs";
 import { reconcileArchived } from "./epic-progress.mjs";
-import { writeRules } from "./rules.mjs";
+import { assertRulesBlockWritable, writeRules } from "./rules.mjs";
 import { render } from "./render.mjs";
-import { normalizeLink } from "./links.mjs";
+import { normalizeLink, stampReconcileKeys } from "./links.mjs";
 import { ARCHIVE_BACKFILL, engineStamp, stampedBy } from "./disposition.mjs";
 import { resolvePlatform } from "./platform.mjs";
 import { ensureGitignore } from "./subcommands.mjs";
@@ -94,6 +94,14 @@ const MIGRATIONS = [
     apply(state) {
       recoverCreatedAtDates(state);
     },
+  },
+  {
+    release: "0.44.0",
+    note: "give every may-invalidate link an explicit reconcileOnResume arming record",
+    // gates-bind-to-verified-evidence Decision 3. Additive (a key only where none exists), idempotent
+    // (a keyed link is never touched) and reads only `state`. The SAME function runs again on every
+    // upgrade below; this entry is what the version bump carries.
+    apply(state) { stampReconcileKeys(state); },
   },
 ];
 
@@ -202,6 +210,11 @@ export function upgrade() {
     process.exit(1);
   }
   const state = loadState();
+  // BEFORE the first write. upgrade stamps pmVersion — what the fleet procedure reads as "this repo
+  // is done" — and then renders and back-fills .gitignore AFTER the block write, so a late refusal
+  // would leave a repository reading as upgraded forever with a stale block, a stale PROJECT.md and
+  // no lock gitignore line (managed-rules-block).
+  assertRulesBlockWritable(resolvePlatform({}, state));
   const stamped = state.pmVersion || "0.0.0";
   let applied = 0;
   // Apply in ascending release order (independent of array authoring order) so a
@@ -210,6 +223,11 @@ export function upgrade() {
   for (const m of ordered) {
     if (cmpVer(m.release, stamped) > 0) { m.apply(state); applied++; }
   }
+  // EVERY non-refused run, not only the 0.44.0 bump: MIGRATIONS apply only when release > pmVersion,
+  // and a keyless may-invalidate link can be written AFTER the stamp (an unreloaded older session, a
+  // second machine sharing state.json). The refusal that names /pm:upgrade must never name a no-op.
+  // Immediately before the heal, so the heal reads every link keyed.
+  stampReconcileKeys(state);
   reconcileArchived(state);
   stampVersion(state);
   const saved = saveState(state);

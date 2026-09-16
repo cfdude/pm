@@ -1,0 +1,62 @@
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-piOCoX/PROJECT.md
+conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-piOCoX/PROJECT.md
+conductor: added epic 'e1' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-piOCoX/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-piOCoX/PROJECT.md
+conductor: added epic 'ext' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: gate guard is now on
+✖ An argv-level flag with no positional is not read as one: set-gate-guard --force and set-activity-log --force behave as their bare forms (452.545833ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 493.729583
+
+✖ failing tests:
+
+test at scripts/test/verb-surface.test.mjs:921:1
+✖ An argv-level flag with no positional is not read as one: set-gate-guard --force and set-activity-log --force behave as their bare forms (452.545833ms)
+  AssertionError [ERR_ASSERTION]: set-gate-guard --force must behave exactly as bare set-gate-guard
+  + actual - expected
+  
+    {
+  +   status: 1,
+  +   stderr: 'usage: conductor.mjs set-gate-guard <on|off>\n',
+  +   stdout: ''
+  -   status: 0,
+  -   stderr: '',
+  -   stdout: 'GATE GUARD — on.\n' +
+  -     '\n' +
+  -     '  The reconcile gate is ALWAYS enforced, whatever this flag says: an epic carrying\n' +
+  -     '  `reconcileNeeded` blocks Edit/Write/NotebookEdit until a verdict is recorded, and\n' +
+  -     '  `set-gate-guard off` does not reach that case.\n' +
+  -     '  This flag additionally enforces the TRACKER REFRESH obligation.\n' +
+  -     '\n' +
+  -     '  Nothing is blocked right now: no live active epic, and the guard needs one.\n' +
+  -     "  'on' alone never means something is blocked — the guard also needs a live active\n" +
+  -     '  epic that owes one of those two things.\n' +
+  -     '\n' +
+  -     '  Change it with `set-gate-guard on|off`.\n'
+    }
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/verb-surface.test.mjs:931:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { status: 1, stdout: '', stderr: 'usage: conductor.mjs set-gate-guard <on|off>\n' },
+    expected: { status: 0, stdout: "GATE GUARD — on.\n\n  The reconcile gate is ALWAYS enforced, whatever this flag says: an epic carrying\n  `reconcileNeeded` blocks Edit/Write/NotebookEdit until a verdict is recorded, and\n  `set-gate-guard off` does not reach that case.\n  This flag additionally enforces the TRACKER REFRESH obligation.\n\n  Nothing is blocked right now: no live active epic, and the guard needs one.\n  'on' alone never means something is blocked — the guard also needs a live active\n  epic that owes one of those two things.\n\n  Change it with `set-gate-guard on|off`.\n", stderr: '' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

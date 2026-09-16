@@ -1,0 +1,26 @@
+......F                                                                  [100%]
+=================================== FAILURES ===================================
+____ test_observe_does_not_read_a_prose_mention_of_the_marker_as_the_block _____
+
+tmp_path = PosixPath('/private/var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pytest-of-robsherman/pytest-536/test_observe_does_not_read_a_p0')
+
+    def test_observe_does_not_read_a_prose_mention_of_the_marker_as_the_block(tmp_path: Path):
+        """state-file-refuses-to-guess 6.7: the observer is a second reader of the engine's markers.
+    
+        It matched the BEGIN prefix as a SUBSTRING, so a rules file whose only mention of the marker is
+        prose (inline code, a sentence about pm) reported rules_block_present=True. The engine locates
+        the block by whole-line markers (managed-rules-block); the observer must read it the same way.
+        """
+        project = materialize("single-active-epic", tmp_path)
+        target = project / "CLAUDE.md"
+        target.write_text(
+            "# CLAUDE.md\n\nOur rules mention the `<!-- BEGIN pm-conductor rules` marker in prose only.\n"
+        )
+    
+>       assert observe(project)["rules_block_present"] is False
+E       assert True is False
+
+tests/test_observe.py:143: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_observe.py::test_observe_does_not_read_a_prose_mention_of_the_marker_as_the_block
+1 failed, 6 passed in 3.31s

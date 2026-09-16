@@ -5,6 +5,8 @@
 import { isInitialized, loadState, saveState, readStdin } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
+import { requirePlatformFlag } from "./add-epic.mjs";
+import { checkedPositionals } from "./argv-surface.mjs";
 
 /** `set-gate-guard <on|off>` — repo-level opt-in for a hard PreToolUse guard blocking
  *  source writes while the active epic still owes a reconcile. Off by default. This is
@@ -13,7 +15,9 @@ import { render } from "./render.mjs";
  *  on a detour POP) — opt-in, reversible, never silent. */
 export function setGateGuard() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
-  const val = process.argv[3];
+  // The check's classified positional, never `process.argv[3]`: with no positional the canonical
+  // argv leaves `--force` there, and `set-gate-guard --force` printed usage instead of reading.
+  const [val] = checkedPositionals("set-gate-guard");
   // #159 — BARE INVOCATION READS. `set-gate-guard` wrote and confirmed the write, and nothing
   // anywhere read it back, so "is the guard on?" was answerable only by opening state.json —
   // which is what a read verb exists to avoid.
@@ -82,6 +86,7 @@ export function setGateGuard() {
 export function gateGuardCheck() {
   if (!isInitialized()) return;         // DORMANT until /pm:init
   readStdin();                          // drain, unused — this check needs no tool_input
+  requirePlatformFlag("gate-guard");    // after the drain, so a refusal leaves no writer holding a pipe
   const state = loadState();
   const activeEpic = state.active ? state.epics.find(e => e.id === state.active) : null;
   // AN EPIC THAT HAS ENDED OWES NOTHING. `state.active` can legitimately name an ARCHIVED epic

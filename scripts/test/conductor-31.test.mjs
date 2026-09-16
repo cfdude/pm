@@ -65,6 +65,15 @@ function dispatchedVerbs() {
  *  verb without a baseline here fails loudly instead of going unswept. */
 const VERB_BASELINE = {
   "add-many": (cwd) => ["add-many", "--from", batchFile(cwd)],
+  // every-verb-refuses-what-it-does-not-read D6: `--platform` is declared on init and the five hook
+  // verbs, each spelled exactly as hooks/hooks.json passes it, so the valueless sweep below reaches
+  // `init --platform` and `brief --platform` — both of which silently fell back to a default.
+  init: () => ["init", "--platform", "claude-code"],
+  brief: () => ["brief", "--platform", "claude-code"],
+  snapshot: () => ["snapshot", "--platform", "claude-code"],
+  "commit-nudge": () => ["commit-nudge", "--platform", "claude-code"],
+  "gate-guard": () => ["gate-guard", "--platform", "claude-code"],
+  "lesson-advice": () => ["lesson-advice", "--platform", "claude-code"],
   // gh-84 / gh-111. The three read-only verbs whose flags were parsed off `process.argv` by hand
   // until the branches met; `purge-logs` needs a selector to get past its own refusal, and
   // `--keep 5` matches nothing on a repo with no logs, so the baseline removes nothing.
@@ -136,7 +145,9 @@ test("gh-152: every DISPATCHED verb is claimed by a flag declaration or declared
   assert.ok(dispatched.size >= 30,
     `the dispatch-table reader yielded only ${dispatched.size} verbs — the reader is broken, not the table`);
 
-  const withFlags = new Set([...EPIC_FLAGS, ...VERB_FLAGS].flatMap(r => r.commands));
+  // argvLevel rows (`--force`) belong to the save layer, not to a verb's parser: a flagless mutating
+  // verb accepts `--force` and still declares "its parser reads no flags" in FLAGLESS_VERBS.
+  const withFlags = new Set([...EPIC_FLAGS, ...VERB_FLAGS].filter(r => !r.argvLevel).flatMap(r => r.commands));
   const flagless = new Set(FLAGLESS_VERBS);
 
   for (const verb of [...dispatched].sort()) {
@@ -208,15 +219,26 @@ test("gh-152: every FLAG the engine reads off a parsed-flags object is declared 
 
 test("gh-152: every command VERB_FLAGS names has a baseline invocation here", async () => {
   const { VERB_FLAGS } = await import(CONSTANTS);
-  const commands = [...new Set(VERB_FLAGS.flatMap(r => r.commands))].sort();
+  // argvLevel rows excluded: `--force` names every mutating verb, and its acceptance is swept over
+  // the whole dispatch table by verb-surface.test.mjs, not by this per-parser baseline table.
+  const commands = [...new Set(VERB_FLAGS.filter(r => !r.argvLevel).flatMap(r => r.commands))].sort();
   assert.deepEqual(commands.filter(c => !(c in VERB_BASELINE)), [],
     "a command added to VERB_FLAGS with no baseline here would be swept by nothing");
 });
 
+/** State a baseline needs before it can SUCCEED, where the fixture alone does not hold it. A
+ *  reconcile verdict is accepted only against a detour the epic was pushed for with --reconcile and
+ *  then popped (gates-bind-to-verified-evidence), so its baseline arms one first. Only the success
+ *  sweep runs these: the valueless sweep below is refused before any of that state is read. */
+const BASELINE_PRE = {
+  "record-reconcile": [["push-detour", "e1", "--detour", "other", "--reason", "blocked", "--reconcile"], ["pop-detour", "e1"]],
+};
+
 test("gh-152: every VERB_FLAGS baseline actually succeeds, so a non-zero exit below means the flag", async () => {
   const { VERB_FLAGS } = await import(CONSTANTS);
-  for (const command of [...new Set(VERB_FLAGS.flatMap(r => r.commands))].sort()) {
+  for (const command of [...new Set(VERB_FLAGS.filter(r => !r.argvLevel).flatMap(r => r.commands))].sort()) {
     const cwd = sweepRepo();
+    for (const step of BASELINE_PRE[command] || []) run(step, { cwd });
     run(VERB_BASELINE[command](cwd), { cwd });
   }
 });
@@ -275,7 +297,10 @@ test("gh-152: the two verbs that ALREADY answered by hand keep their own stricte
 
 test("gh-152: VERB_FLAGS' valueless rows are a short closed list", async () => {
   const { VERB_FLAGS } = await import(CONSTANTS);
-  const valueless = VERB_FLAGS.filter(f => f.valueless).map(f => `${f.commands.join("/")} --${f.flag}`).sort();
+  // The argvLevel rows are asserted SEPARATELY and exactly: `--force` is valueless on every mutating
+  // verb, and listing that here would make the closed list the length of the dispatch table.
+  assert.deepEqual(VERB_FLAGS.filter(f => f.argvLevel).map(f => f.flag), ["force"]);
+  const valueless = VERB_FLAGS.filter(f => f.valueless && !f.argvLevel).map(f => `${f.commands.join("/")} --${f.flag}`).sort();
   assert.deepEqual(valueless, [
     // gh-84 / gh-111, added when those branches were integrated. Each is a genuine boolean —
     // `--json` selects a rendering, `--dry-run`/`--yes` are the two halves of purge-logs'
@@ -443,6 +468,11 @@ test("gh-151: a HAND-WRITTEN legacy frame still resumes with its reconcile oblig
   const cwd = detourRepo();
   const s = readState(cwd);
   s.epics.find(e => e.id === "parent").status = "paused";
+  // The old hand-edit protocol wrote the may-invalidate link beside the frame, with no arming record
+  // (it predates one). That UNMIGRATED link is what keeps the obligation through the heal until
+  // /pm:upgrade stamps it (gates-bind-to-verified-evidence); a frame with no link at all would leave
+  // nothing a verdict could answer, and the heal now clears that case out loud.
+  s.epics.find(e => e.id === "parent").links = [{ type: "may-invalidate", epic: "fixit", reason: "hand-written by the old protocol" }];
   s.epics.find(e => e.id === "fixit").status = "archived";
   s.active = "fixit";
   s.detourStack = [{

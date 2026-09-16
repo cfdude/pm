@@ -4,7 +4,7 @@ date: 2026-08-27
 trigger: About to squash-merge a PR in any repo whose records reference commit shas — an attribution array, a review verdict's range, a changelog entry, a design doc citing "fixed in <sha>".
 cost: 36 recorded shas orphaned across two releases — every attributed commit and every gate verdict's range in this repo. Recovered only because `git gc` had not run yet; two PRs' history was already gone for good. The verdicts read perfectly the whole time.
 rule: Tag the pre-squash tip and push the tag BEFORE merging. A squash-merge makes every commit on the branch reachable from nothing, and `gc` deletes them by default two weeks later — from every clone, permanently.
-enforced_in: .claude/skills/pr-workflow/SKILL.md step 5 + step 8 verification; CONTRIBUTING.md § Branch workflow
+enforced_in: .claude/skills/pr-workflow/SKILL.md step 5 + step 9 verification; CONTRIBUTING.md § Branch workflow
 detect: {"tool":"Bash","commandMatches":"gh pr merge .*--squash"}
 tags: [git, verification, false-signal, evidence, process]
 ---
