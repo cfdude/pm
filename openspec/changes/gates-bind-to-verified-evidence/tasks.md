@@ -284,7 +284,7 @@ Pairs: 10.1–10.3 land with 10.4.
       `update-epic gates-bind-to-verified-evidence --link "supersedes:gate-staleness-reads-only-last-attribution:absorbed — every-entry staleness"`
       and `update-epic gate-staleness-reads-only-last-attribution --status archived --outcome superseded
       --reason "absorbed by gates-bind-to-verified-evidence: its 2026-09-14 Gate 2 lens 2 repro (ancestor attributed after an uncovered descendant) is task 4.1; its 2026-09-15 note (--attribute-commit notasha stored, read unverifiable, uncounted by the regression check) is tasks 2.1 and 4.3" --no-deferrals`
-- [ ] 11.6 **Route what the work taught** — name each as a practice (register an epic, with its
+- [x] 11.6 **Route what the work taught** — name each as a practice (register an epic, with its
       evidence), tooling friction (`/pm:feedback [bug|feature] "<summary>"`), or a process failure (a
       lesson in `docs/lessons/` with `trigger`, `cost`, `enforced_in`). At minimum decide whether the
       fake-sha test fixtures that hid write-time validation for ten releases are a lesson
