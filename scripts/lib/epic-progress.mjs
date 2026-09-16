@@ -159,6 +159,9 @@ export function reconcileArchived(state) {
   const pendingReconcile = new Set(
     (state.detourStack || []).filter(f => f && f.reconcileOnResume).map(f => f.pausedEpic)
   );
+  // ANY live frame pausing an epic — with reconcile-on-resume or not — blocks the one clear below:
+  // the pause is not over, and its message says no frame pauses the epic (Gate 2 m1).
+  const pausedByAnyFrame = new Set((state.detourStack || []).filter(f => f).map(f => f.pausedEpic));
   for (const e of state.epics) {
     if (pendingReconcile.has(e.id)) {
       // Still paused with a live frame demanding reconcile — ensure it's flagged.
@@ -171,7 +174,7 @@ export function reconcileArchived(state) {
       // removing an armed one is refused); it arises from a hand-edited file or from the 0.44.0
       // stamp's stated trade-off (an owing epic whose every link already carried a verdict).
       const links = Array.isArray(e.links) ? e.links : [];
-      if (!links.some(l => isArmed(l) || isUnmigrated(l))) {
+      if (!pausedByAnyFrame.has(e.id) && !links.some(l => isArmed(l) || isUnmigrated(l))) {
         e.reconcileNeeded = false; changed = true;
         process.stderr.write(
           `conductor: cleared the reconcile obligation on '${e.id}' — it holds no may-invalidate link a ` +

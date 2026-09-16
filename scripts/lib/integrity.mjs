@@ -550,8 +550,13 @@ export const CHECKS = [
         .map(r => ({ epic: r.holder || undefined, detail:
           `${r.where} names \`${r.epic}\`, which is not an epic in this record` +
           (r.drop ? "" : r.kind === "owed-reconcile"
-            ? " — the link a reconcile this epic owes is recorded against; `record-reconcile` answers it " +
-              "against that id, and the link cannot be stripped while the obligation stands"
+            // This check only reports a reference to a MISSING epic, so an owed-reconcile link here
+            // points at a detour removed by hand — which record-reconcile refuses as not found. The
+            // recovery is to re-register the id, then answer it (Gate 2 m3).
+            ? ` — the link a reconcile this epic owes is recorded against, and its detour \`${r.epic}\` was ` +
+              "removed from the record by hand, so `record-reconcile` refuses it as not found. Re-register " +
+              `it — \`add-epic --id ${r.epic} --lane <lane>\` — then \`record-reconcile ${r.holder} --detour ` +
+              `${r.epic} --verdict valid|invalidated\`; the link cannot be stripped while the obligation stands`
             : " — a detour-stack frame, so `/pm:resume` would pop a frame that " +
             "names nothing") }));
     },

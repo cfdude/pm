@@ -314,3 +314,50 @@ test("g2-m3 an uppercase hexadecimal value is a commit name: it resolves, reads 
   assert.doesNotMatch(renderedProject(cwd), /⚠ stale|⚠ unverifiable/, "an uppercase full name is fresh");
   assert.deepEqual(nonObjectNameFindings(cwd), [], "an uppercase full name is not reported as a ref");
 });
+
+// ═══════════════ Gate 2 follow-up: tests that kill the surviving mutants ═══════════════
+
+const GIT_LIB = new URL("../lib/git.mjs", import.meta.url).href;
+
+test("g2-M08 a failed rev-list (head resolves, an attributed commit's history unreadable) never reads fresh", () => {
+  const { cwd, shas: [root, a] } = repoWith(["root", "a"]);
+  gatedEpic(cwd, root, a, [a]);
+  const tree = git(cwd, ["rev-parse", "HEAD^{tree}"]);
+  const x1 = execFileSync("git", ["commit-tree", tree, "-m", "x1"], { cwd, encoding: "utf8" }).trim();
+  const x2 = execFileSync("git", ["commit-tree", tree, "-p", x1, "-m", "x2"], { cwd, encoding: "utf8" }).trim();
+  seedEpic(cwd, "e", { attributedCommits: [a, x2] });
+  // x2 itself resolves; its parent is gone, so walking it fails.
+  fs.rmSync(path.join(cwd, ".git", "objects", x1.slice(0, 2), x1.slice(2)));
+  const md = renderedProject(cwd);
+  assert.match(md, /gate 2|Gate 2|pass/);
+  assert.match(md, /⚠ unverifiable/, "git could not answer, so the verdict is unverifiable — never fresh");
+});
+
+test("g2-M06 a value carrying whitespace or a control character is refused before git reads it", async () => {
+  const { resolveCommits } = await import(GIT_LIB);
+  const newline = "HEAD\nHEAD";                         // would split into two input lines
+  const nul = "HEAD" + String.fromCharCode(0) + "x";    // git reads it as HEAD
+  const { resolved, unresolved } = resolveCommits([newline, nul]);
+  assert.equal(resolved.size, 0, `neither resolves: ${[...resolved.keys()].map(k => JSON.stringify(k))}`);
+  assert.deepEqual(unresolved.sort(), [newline, nul].sort());
+});
+
+test("g2-M07a an annotated tag resolves to the commit it names, not to the tag object", () => {
+  const { cwd, shas: [, a] } = repoWith(["root", "a"]);
+  git(cwd, ["tag", "-a", "v-annotated", "-m", "annotated", a]);
+  accepted(cwd, ["update-epic", "e", "--attribute-commit", "v-annotated"]);
+  assert.deepEqual(epicOf(cwd, "e").attributedCommits, [a]);
+});
+
+test("g2-M17 every git call resolving or walking recorded commits sets GIT_NO_LAZY_FETCH", () => {
+  const src = fs.readFileSync(new URL("../lib/git.mjs", import.meta.url), "utf8");
+  for (const fn of ["resolveCommits", "commitsNotReachedBy"]) {
+    const start = src.indexOf(`export function ${fn}(`);
+    assert.notEqual(start, -1, `${fn} is still exported from git.mjs`);
+    const next = src.indexOf("\nexport ", start + 1);
+    const body = src.slice(start, next === -1 ? undefined : next);
+    assert.match(body, /execFileSync\("git"/, `${fn} still spawns git`);
+    assert.match(body, /env: \{ \.\.\.process\.env, GIT_NO_LAZY_FETCH: "1" \}/,
+      `${fn}'s git call must not fetch from a promisor remote`);
+  }
+});

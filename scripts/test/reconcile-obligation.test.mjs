@@ -402,3 +402,125 @@ test("10.3 --amendment and --amendments together are refused as a combination, n
   assert.doesNotMatch(r.stderr, /unknown flag/);
   assert.match(r.stderr, /cannot be combined/);
 });
+
+// ═══════════════ Gate 2 follow-up (minors) ═══════════════
+
+test("g2-m1 the heal never clears an obligation while ANY frame still pauses the epic", () => {
+  const cwd = repo();
+  push(cwd, "d", false);                       // a --no-reconcile frame for p stays on the stack
+  const s = readState(cwd);
+  s.epics.find(e => e.id === "p").reconcileNeeded = true;   // owed, with no armed link
+  writeState(cwd, s);
+  const r = attempt(cwd, ["render"]);
+  assert.equal(r.status, 0);
+  assert.equal(owes(cwd), true, "a live frame still pauses p, so the heal's 'no detour frame' claim would be false");
+  assert.doesNotMatch(r.stderr, /cleared the reconcile obligation/);
+});
+
+test("g2-m2 an unmigrated epic names /pm:upgrade even when --detour names no epic", () => {
+  const cwd = owingRepo();
+  as043(cwd);
+  const r = refused(cwd, verdict(cwd, "ghost"));
+  assert.match(r.stderr, /\/pm:upgrade/);
+});
+
+test("g2-m3a integrity words an owed-reconcile link to a hand-removed detour as removed, with the add-epic recovery", () => {
+  const cwd = owingRepo();
+  const s = readState(cwd);
+  s.epics = s.epics.filter(e => e.id !== "d");
+  writeState(cwd, s);
+  const line = attempt(cwd, ["integrity"]).stdout.split("\n").find(l => l.includes("names `d`")) || "";
+  assert.ok(line, "the dangling reference to d is reported");
+  assert.doesNotMatch(line, /record-reconcile` answers it/, "record-reconcile refuses a detour that does not exist");
+  assert.match(line, /add-epic --id d\b/, `the finding names the recovery: ${line}`);
+});
+
+// ═══════════════ Gate 2 follow-up: tests that kill the surviving mutants ═══════════════
+
+const LINKS = new URL("../lib/links.mjs", import.meta.url).href;
+
+test("g2-M01 a keyless may-invalidate link is never armed, and owes nothing", async () => {
+  const { isArmed, ownedDetours } = await import(LINKS);
+  const keyless = { type: "may-invalidate", epic: "d", reason: "written by 0.43.0" };
+  assert.equal(isArmed(keyless), false);
+  assert.deepEqual(ownedDetours({ id: "p", reconcileNeeded: true, links: [keyless] }), []);
+});
+
+test("g2-M15 before upgrade, --clear-links on an owing epic holding a keyless link is refused", () => {
+  const cwd = owingRepo();
+  as043(cwd);
+  const r = refused(cwd, ["update-epic", "p", "--clear-links"]);
+  assert.match(r.stderr, /record-reconcile/);
+});
+
+test("g2-M15b the upgrade stamp never arms a link to a missing epic or to the epic itself", async () => {
+  const { stampReconcileKeys } = await import(LINKS);
+  const state = { epics: [{ id: "p", reconcileNeeded: true, links: [
+    { type: "may-invalidate", epic: "gone", reason: "detour removed by hand" },
+    { type: "may-invalidate", epic: "p", reason: "self link" },
+  ] }] };
+  stampReconcileKeys(state);
+  const [toMissing, toSelf] = state.epics[0].links;
+  assert.equal(toMissing.reconcileOnResume, false, "a link to a missing epic is stamped false");
+  assert.equal(toSelf.reconcileOnResume, false, "a self-link is stamped false");
+});
+
+test("g2-M07 the heal counts an ANSWERED armed link as armed, and keeps the obligation", () => {
+  const cwd = owingRepo();
+  accepted(cwd, verdict(cwd, "d"));
+  const s = readState(cwd);
+  s.epics.find(e => e.id === "p").reconcileNeeded = true;   // owing, holding only an answered armed link
+  writeState(cwd, s);
+  const r = attempt(cwd, ["render"]);
+  assert.equal(r.status, 0);
+  assert.equal(owes(cwd), true, "an answered armed link is still a link a verdict can be recorded against");
+});
+
+test("g2-M19 re-arming with --reconcile moves the link's old verdict to superseded and leaves it unanswered", () => {
+  const cwd = owingRepo();
+  accepted(cwd, verdict(cwd, "d", "valid"));
+  push(cwd, "d"); pop(cwd);
+  const l = linkOf(cwd, "p", "d");
+  assert.equal(l.reconciled, undefined, "the re-armed link reads unanswered");
+  assert.equal(l.superseded && l.superseded.verdict, "valid", "the earlier verdict moved to superseded");
+  assert.equal(l.reconcileOnResume, true);
+});
+
+test("g2-M23c a correction on an epic whose flag is already false does not raise it", () => {
+  const cwd = repo();
+  const s = readState(cwd);
+  Object.assign(s.epics.find(e => e.id === "p"), { reconcileNeeded: false, links: [
+    { type: "may-invalidate", epic: "d", reason: "r", reconcileOnResume: true,
+      reconciled: { verdict: "valid", amendments: [], reconciledAt: "2026-09-01T00:00:00.000Z" } },
+    { type: "may-invalidate", epic: "d2", reason: "r", reconcileOnResume: true },
+  ] });
+  writeState(cwd, s);
+  accepted(cwd, verdict(cwd, "d", "invalidated"));
+  assert.equal(owes(cwd), false, "a correction never raises the flag");
+});
+
+test("g2-M29 pop-detour warns when the pointer leaves a detour that itself owes a reconcile", () => {
+  const cwd = repo();
+  push(cwd, "d");                               // p paused for d; d active
+  push(cwd, "d2", true, "d");                   // d paused for d2; d2 active
+  pop(cwd, "d");                                // d resumes and owes d2
+  const r = pop(cwd, "p");                      // the pointer moves off d
+  assert.ok(r.stderr.includes("'d' is no longer the active epic") && r.stderr.includes("'d2'"),
+    `pop-detour names the owing detour and what it owes: ${r.stderr}`);
+});
+
+test("g2-M26d add-many creating an active epic warns about the owing epic it displaces", () => {
+  const cwd = owingRepo();
+  const batch = path.join(cwd, "batch.json");
+  fs.writeFileSync(batch, JSON.stringify({ epics: [{ id: "q", title: "q", lane: "claude-code", priority: "P1", status: "active" }] }));
+  const r = accepted(cwd, ["add-many", "--from", batch]);
+  assert.ok(r.stderr.includes("'p'") && r.stderr.includes("'d'") && /still owes a reconcile/.test(r.stderr),
+    `add-many's stderr names p and d: ${r.stderr}`);
+});
+
+test("g2-M26e set-active warns about the owing epic it moves off", () => {
+  const cwd = owingRepo();
+  const r = accepted(cwd, ["set-active", "other"]);
+  assert.ok(r.stderr.includes("'p'") && r.stderr.includes("'d'") && /still owes a reconcile/.test(r.stderr),
+    `set-active's stderr names p and d: ${r.stderr}`);
+});

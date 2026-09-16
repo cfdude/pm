@@ -39,12 +39,6 @@ export function recordReconcile() {
   const state = loadState();
   const epic = state.epics.find(e => e.id === id);
   if (!epic) { process.stderr.write(`conductor: epic '${id}' not found\n`); process.exit(1); }
-  // KEPT from before the arming rule: a --detour that names no epic is a typo or a removed record,
-  // and it is refused as that rather than diagnosed as an unarmed detour — and an armed link a
-  // hand-edit left pointing at a missing epic is never answered in its name.
-  if (!state.epics.some(e => e.id === detourId)) {
-    process.stderr.write(`conductor: detour epic '${detourId}' not found\n`); process.exit(1);
-  }
 
   // ACCEPTANCE (gates-bind-to-verified-evidence Decision 2). A verdict answers ONLY a detour this
   // epic's obligation was ARMED for by `push-detour --reconcile`. The verb used to push a
@@ -69,6 +63,13 @@ export function recordReconcile() {
       "(`upgrade`): it stamps each link with whether a reconcile is owed against it, and only then " +
       "can a verdict be matched to the detour it answers. Nothing was written.\n");
     process.exit(1);
+  }
+  //  0b. KEPT from before the arming rule: a --detour that names no epic is a typo or a removed record,
+  // and it is refused as that rather than diagnosed as an unarmed detour — and an armed link a
+  // hand-edit left pointing at a missing epic is never answered in its name. AFTER the unmigrated
+  // refusal (Gate 2 m2), so an epic awaiting /pm:upgrade is told that whatever --detour says.
+  if (!state.epics.some(e => e.id === detourId)) {
+    process.stderr.write(`conductor: detour epic '${detourId}' not found\n`); process.exit(1);
   }
   //  1. Never the epic itself.
   if (detourId === id) refuse(`'${id}' cannot answer a reconcile against itself`);
