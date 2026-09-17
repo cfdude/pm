@@ -684,6 +684,51 @@ test("5.3g (Gate 2 U2-M1) jsonText escapes what JSON.stringify leaves raw, parse
   assert.deepEqual(offenders, [], "every JSON document written to stdout goes through jsonText()");
 });
 
+test("5.3h source guard (Gate 2 U2-M2): no reader matches a detours.log row's epic field against a stored id (design D7)", () => {
+  // detours.log escapes its epic field at WRITE (design D7), so a legacy id holding a control character
+  // is logged in a form that no longer equals the stored id. That is harmless only while no reader
+  // compares the two. The readers are DERIVED (every declaration calling readDetourRows/visibleDetourRows);
+  // a new one fails here until someone checks it against D7 and names it below.
+  const libDir = new URL("../lib/", import.meta.url);
+  const found = [];
+  const bodies = {};
+  for (const f of fs.readdirSync(libDir).filter(n => n.endsWith(".mjs")).sort()) {
+    const src = fs.readFileSync(new URL(f, libDir), "utf8");
+    const heads = [...src.matchAll(/^(?:export\s+)?(?:async\s+)?(?:function\s+([\w$]+)|(?:const|let)\s+([\w$]+)\s*=)/gm)];
+    heads.forEach((m, i) => {
+      const name = m[1] || m[2];
+      const body = src.slice(m.index, i + 1 < heads.length ? heads[i + 1].index : src.length);
+      const calls = body.replace(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g, "");
+      if (name !== "readDetourRows" && /\b(?:readDetourRows|visibleDetourRows)\(/.test(calls)) {
+        found.push(`${f}:${name}`);
+        bodies[`${f}:${name}`] = calls;
+      }
+    });
+  }
+  const READERS = {
+    "git.mjs:visibleDetourRows": "filters rows by kind and sha only",
+    "render.mjs:render": "displays each row through tableRow()",
+    "subcommands.mjs:retractDetour": "copies the matched row's epic field into the RETRACTED row it appends",
+    "subcommands.mjs:supersedeAmended": "copies the matched row's epic field into the RETRACTED row it appends",
+  };
+  assert.deepEqual([...found].sort(), Object.keys(READERS).sort(), "the detours.log readers are exactly the ones checked against design D7");
+  for (const [who, body] of Object.entries(bodies)) {
+    if (who === "render.mjs:render") {
+      const at = body.indexOf("const lines = visibleDetourRows(");
+      assert.ok(at >= 0, "render reads the rows into `lines`");
+      const block = body.slice(at, body.indexOf("catch", at));
+      assert.deepEqual([...block.matchAll(/\blines\b[^\n]*/g)].map(m => m[0].split(/[;{]/)[0].trim()),
+        ["lines = visibleDetourRows().slice(-8)", "lines.length)", "lines)"], "render reads the rows only to print them");
+      assert.match(block, /of lines\) \{\s*md\.push\(tableRow\([^\n]*\)\);\s*\}/, "each row's fields reach only tableRow()");
+      continue;
+    }
+    for (const m of body.matchAll(/[\w\])]\.epic\b[^\n]*/g)) {
+      const line = body.slice(body.lastIndexOf("\n", m.index) + 1, body.indexOf("\n", m.index));
+      assert.match(line, /appendRetraction\([^;]*[\w\]]\.epic\b/, `${who}: a row's epic field is used only as appendRetraction()'s epic — ${line.trim()}`);
+    }
+  }
+});
+
 test("5.3e (Gate 2 T-S2) upgrade over a legacy pmVersion holding a control character forges no line (legacy value, design D3 exception)", () => {
   const cwd = initRepo();
   legacyWrite(cwd, s => { s.pmVersion = "0.1.0" + LF + "FORGED" + NEL + "FORGED"; });

@@ -312,7 +312,10 @@ kind and sha of the value's choosing (a forged `RETRACTED` row hides a real comm
 PROJECT.md). The cost is nil for identity: no reader matches a row's epic field against a stored id —
 checked at Gate 2 with `rg -n "readDetourRows|visibleDetourRows"`: `render()` displays it (through
 `tableRow`) and `retract-detour` / the amend path copy it into the RETRACTED row they append; commit
-identity is the sha field. The note field already had a write-time transformation before this change
+identity is the sha field. That claim is held by a source guard, not by this paragraph (Gate 2 U2-M2,
+test 5.3h): the readers of `readDetourRows`/`visibleDetourRows` are derived and must equal the four
+checked here, a row's epic field in `retractDetour`/`supersedeAmended` may appear only as
+`appendRetraction()`'s argument, and `render()`'s rows reach only `tableRow()`. The note field already had a write-time transformation before this change
 (whitespace collapsed), so the log was never a verbatim copy.
 
 ### D8. A tracker's recorded scope is refused at input
