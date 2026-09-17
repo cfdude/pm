@@ -250,7 +250,9 @@ function regressionRefusal({ id, snapshot, next, broken, argv, status }) {
       : "") +
     (carry.length
       ? "  Its open tasks have no command of their own: tick them in the task source, or keep the handoff " +
-        "the invocation carries, naming the epic they moved to and which tasks moved.\n"
+        "the invocation carries, naming the epic they moved to and which tasks moved. That handoff goes only " +
+        "with `delivered`: for any other outcome, remove it from the invocation and give that outcome's reason " +
+        "instead, since work that was not delivered was not carried anywhere.\n"
       : "") +
     `  ${remedies ? "Or, once it is met, record" : "To make this change, record"} the disposition it implies. ` +
     "The invocation runs the full archive gate on the record it leaves:\n" +

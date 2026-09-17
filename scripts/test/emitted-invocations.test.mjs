@@ -1801,6 +1801,26 @@ for (const [suffix, title] of [
   } }],
 });
 
+test("F-M1 the regression refusal says its handoff applies only with delivered, naming no archive-only flag outside the invocation", () => {
+  // The invocation offers every agent outcome beside the handoff flag; filled with `killed` it saves a
+  // handoff the brief then shows for work that was not delivered. The prose must say which outcome it goes with.
+  const repo = remedyRepo();
+  repo.ok(["add-epic", "--id", "later", "--lane", "claude-code", "--title", "later"]);
+  const ticked = repo.file("docs/superpowers/plans/2026-08-01-hm.md", "# hm\n\n- [x] 1. done\n");
+  const open = repo.file("docs/superpowers/plans/2026-08-02-hm.md", "# hm\n\n- [x] 1. done\n- [ ] 2. still open\n");
+  repo.ok(["add-epic", "--id", "hm", "--lane", "superpowers", "--title", "hm", "--plan", ticked]);
+  repo.ok(archiveDelivered("hm"));
+  const r = repo.run(["update-epic", "hm", "--plan", open]);
+  assert.notEqual(r.status, 0, r.stderr);
+  const lines = r.stderr.split("\n");
+  const prose = lines.find(l => /handoff the invocation carries/.test(l));
+  assert.ok(prose, `the refusal explains the carried handoff:\n${r.stderr}`);
+  assert.match(prose, /only with `delivered`/, `it says the handoff goes only with delivered:\n${prose}`);
+  for (const l of lines.filter(l => !l.startsWith("  update-epic "))) {
+    assert.doesNotMatch(l, /--carried-to|--outcome|--reason/, `no line but the invocation names an archive-only flag:\n${l}`);
+  }
+});
+
 test("2.8 REGRESSION GUARD: a withdrawal on an archived delivered record whose Gate 2 is ALREADY stale still exits 0", () => {
   const repo = remedyRepo();
   const [c1, c2] = openspecEpic(repo, "st", 2);
