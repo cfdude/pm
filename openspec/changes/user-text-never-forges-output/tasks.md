@@ -253,6 +253,14 @@ Pairs: 7.1 lands with 7.2.
         WIDE finding, and both reviewer mutants proven caught in-suite). The two change-directory scripts
         are removed; `sweep-interpolations.txt` stays as the record of the T-S2 run. 7.2 gained the legacy
         recipe `claim --steal` over a live claim whose stored session holds a control character.
+      - **Gate 2 U2-I2.** The three T-S2 escapes with no failing test now have one, each driven RED by
+        undoing that escape alone (`red-g2-U2-I2.txt`): 7.2's rank-clear recipe poisons the STORED priority, a
+        new 7.2 legacy recipe runs `update-epic <legacy id> --clear parent`, and a tool-currency test runs
+        `upgrade` over a change directory whose name holds a control character.
+      - **Gate 2 U2-M1.** JSON stdout: `JSON.stringify` leaves DEL, C1 and U+2028/U+2029 raw, so a legacy status
+        put a line start into `triage`'s stdout (`red-g2-U2-M1.txt`). Fixed, not declined: all 14 stdout
+        JSON documents go through `jsonText()` (`constants.mjs`; same parsed value); test 5.3g guards the
+        bypass; design.md's Non-Goal corrected.
 - [x] 8.2 **Inverse of every operation added or modified** — the id refusal at `pushEpic` (inverse:
       `remove-epic`, unchanged; a skipped directory's inverse is renaming it, no verb); the release
       create refusal (inverse: none needed — nothing was stored). DECIDED, not deferred: no
@@ -269,6 +277,7 @@ Pairs: 7.1 lands with 7.2.
       - Gate 2 T-M5: ONE store is escaped at write, not at output — `.conductor/detours.log`'s epic and
         note fields — because a raw LF/TAB would split an engine-parsed row; recorded as design D7's
         exception, with the check that no reader matches the logged epic against a stored id.
+        That check is a source guard since Gate 2 U2-M2 (test 5.3h; `red-g2-U2-M2-mutant.txt`).
 - [x] 8.3 **Verify against the commit** — `git show --stat <sha>` for every task commit; every file the
       task claims is present in THAT commit, including the test file and each `red-<task>.txt`
 - [x] 8.4 **Attribute every commit** as it lands: `update-epic user-text-never-forges-output
