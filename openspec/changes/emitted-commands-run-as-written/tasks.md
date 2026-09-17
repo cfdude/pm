@@ -346,12 +346,24 @@ Pairs: 7.0–7.1 land with 7.2. The single-writer rule for hierarchy runs is NOT
       (re-decided at Gate 2 E-C1 and kept carried: no verb unconfigures a primary, so refusing
       `--remove` there would print a refusal naming no remedy that clears). Each
       unshipped inverse named and justified in the commit message
-- [ ] 9.3 **Verify against the commit** — `git show --stat <sha>` for every task commit; every file the
+- [x] 9.3 **Verify against the commit** — `git show --stat <sha>` for every task commit; every file the
       task claims is present in THAT commit, including each `red-<task>.txt` and each doc a GREEN task
       edits
-- [ ] 9.4 **Attribute every commit** as it lands: `update-epic emitted-commands-run-as-written
+      — verified at c3e5a33: every `red-*.txt`, `mutant-F-M2.txt`, `sweep-layer-a.txt`, `measure-8.1.txt`
+      and `call-site-sweep.md` was added (`git log --diff-filter=A`) by the GREEN/fix commit that names it
+      (d6f16b9, cd0966c, 913da3a, d901207, 18a9942, 0ef5d99, f5b026c, b577cba, 4b2e4df, eca6030, 10991de,
+      8f1f92e, 964f7c1, 195e1c0, 537f037, 641f717, ec0524c, 9a986ca, 490fdde, 4221809, 87086fe, 75c1e58,
+      96ce9ff, ba826ba); each GREEN commit's claimed engine and doc files checked present with
+      `git show --name-only` (0699240, d6f16b9, cd0966c, 913da3a, d901207, 18a9942, 0ef5d99, f5b026c,
+      ec0524c, c3e5a33) — none missing
+- [x] 9.4 **Attribute every commit** as it lands: `update-epic emitted-commands-run-as-written
       --attribute-commit <sha>`. The archive commit, and any commit that only relocates this change's
       artifacts, is excluded
+      — verified at c3e5a33 over `b136774..HEAD`: every commit doing this change's work is in
+      `attributedCommits` (43 entries, first c8d0d4e, last c3e5a33; `ec0524c` appears twice — the array is
+      append-only and the gate asks reachability only). Not attributed, by design: 736b502 (only deletes
+      scratch repos committed under this change dir), the `chore(conductor)` state-record commits, and
+      commits attributed to the two sibling epics
 - [ ] 9.5 **Dispositions** <!-- pm:lifecycle --> — first append the carried items to the receiving epic:
       `update-epic code-review-0-43-0-minors --notes "carried from emitted-commands-run-as-written: primary set-tracker --remove removes nothing (ignored: bare it changes nothing, with a valid --repo it replaces the repo; no inverse); set-tracker --intent badpair silently dropped; verify-worktrees/verify-state have no command doc"`,
       then `update-epic emitted-commands-run-as-written --status archived --outcome delivered
@@ -359,12 +371,34 @@ Pairs: 7.0–7.1 land with 7.2. The single-writer rule for hierarchy runs is NOT
       `--deferral`/`--declined-deferral` for anything Gate 2 defers). The three superseded finding
       epics are already archived; gh-189 closes through the inward sync's closed-item step after the
       release ships, not here
-- [ ] 9.6 **Route what the work taught** — name each as a practice (register an epic, with its
+- [x] 9.6 **Route what the work taught** — name each as a practice (register an epic, with its
       evidence), tooling friction (`/pm:feedback [bug|feature] "<summary>"`), or a process failure (a
       lesson in `docs/lessons/` with `trigger`, `cost`, `enforced_in`). At minimum decide whether "a
       one-off sweep in a closed change checked argv shape only and 0.44.0 reported zero emitted
       defects while four refused remedies shipped" is a lesson, and whether the marker convention
       belongs in the gate procedure
+      — decided:
+      - PROCESS FAILURE, lesson written: the one-off argv-only sweep →
+        `docs/lessons/a-one-off-sweep-certifies-only-the-day-it-ran.md` (487 lines swept, "no emitted line
+        needed correcting", then 38 of 63 Layer B RED against the pre-change engine). Its shape-only half
+        was already `a-guard-can-check-the-wrong-half`, which gains a sibling-table row rather than a
+        duplicate; the new file owns the one-off-versus-permanent half.
+      - PROCESS FAILURE, lesson written: three Gate 2 review subagents backgrounded a long run and ended
+        their turn "waiting for results" with no report →
+        `docs/lessons/a-subagent-that-backgrounds-its-run-ends-without-a-report.md`. No `detect:` matcher:
+        a dispatch prompt missing one sentence is not recognisable with near-certainty.
+      - DECLINED, not a lesson: Gate 2 spec amendments staled the release cross-spec verdict three times
+        (rounds 7-9: 3, 2, 0 BLOCKS). CLAUDE.md required item 5 already says to re-run "after any round of
+        concurrent amendment", it was followed each time, and the engine's spec-set hash marked the
+        verdict stale on its own — a rule that worked is not a lesson.
+      - PRODUCT PRACTICE, routed to the orchestrator for filing (not filed here): whether the
+        `pm:refused <class>` marker convention belongs in the gate procedure. Not added to this repo's
+        procedure — the suite already fails an unmarked refused example mechanically, so a prose item
+        would restate a test; whether pm's users get an emitted-invocation check of their own docs is a
+        product question.
+      - TOOLING FRICTION, routed to the orchestrator for filing: a positional flag-shaped text refused on
+        a free-text verb (`suggest-lane '--limit=5 ignored'`) prints "quote the whole value" although it
+        was quoted — the hint names a remedy that does not clear; `--ask=` is the one that does
 
 ## 10. Docs (after Gate 2)
 
@@ -419,10 +453,19 @@ Pairs: 7.0–7.1 land with 7.2. The single-writer rule for hierarchy runs is NOT
 
 ## 11. Gate 2 and close
 
-- [ ] 11.1 Gate 2 — two fresh-context lenses over the committed range (A: spec alignment and real
+- [x] 11.1 Gate 2 — two fresh-context lenses over the committed range (A: spec alignment and real
       tests, incl. that each Layer B fixture reproduces its finding rather than an easier state; B:
       absent edits against 9.1's sweep); fix Critical and Important; record
       `record-gate-review emitted-commands-run-as-written --gate 2 --verdict pass --reviewer "<identity>"
       --base-sha <parent of first attributed> --head-sha <last attributed>`
+      — recorded pass over b136774..a552d4f after four rounds:
+      - round 1 (two lenses): FAIL, 1 Critical / 6 Important (E-C1, E-I1..E-I6) plus minors; fixed in
+        eca6030..c90258c
+      - re-review round 2: R-I1, R-M1..R-M4, U-I1 and cross-spec X-B2; fixed in 9a986ca..87086fe
+      - re-review round 3: F-I1, F-M1..F-M4; fixed in 75c1e58..a552d4f (F-M4's doc lines landed with
+        section 10, c3e5a33)
+      - re-review round 4: PASS, recorded at head a552d4f
+      - the docs commit c3e5a33 is attributed after that head, so the verdict must be re-recorded over the
+        new last attributed commit before the archive (11.2)
 - [ ] 11.2 Archive this change <!-- pm:lifecycle --> — `/opsx:archive emitted-commands-run-as-written`,
       then the dispositions in 9.5
