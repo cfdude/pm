@@ -121,8 +121,11 @@ The rule lives in a test whose populations come from registries, per
   `valueBearingFlagsFor(verb)` over every verb with a flag row, plus `"<verb> <positional>"` for every
   `VERB_POSITIONALS` entry with `freeText: true`. A completeness assertion holds the key set equal to
   that registry projection (the same shape as `conductor-31`/`conductor-25`), so a new value-bearing flag
-  without a recipe fails the suite. Size at f49871a: 120 flag entries summed over verbs plus 4 free-text
-  positionals; many share one recipe body.
+  without a recipe fails the suite. Size at f49871a was 120 flag entries summed over verbs plus 4
+  free-text positionals; the count is re-derived after changes 1 and 2 land (task 7.1). Recipes named
+  now for flags those changes add: `retract-detour --reason` (needs a real auto-logged detours.log row,
+  built through the commit-nudge hook; `rendered: true` via the verb's own stdout, or `notRendered` —
+  `render` drops RETRACTED rows) and `suggest-lane --ask` (JSON output, so `notRendered`).
 - **Non-argv inputs.** `SOURCE_RECIPES`, a declared list (no registry exists for these, so the call-site
   sweep, task 8.1, is what keeps it complete): `add-many --from` batch fields (title, description,
   stories, link reasons), a plan file's first heading registered by `sync`, a change directory name and
@@ -143,10 +146,15 @@ The rule lives in a test whose populations come from registries, per
   input, and the test exists to prove the READ side tolerates and neutralises what an older engine
   stored.
 - **Surfaces.** `render` (PROJECT.md); `write-rules` (the managed block of the platform rules file);
-  every hook verb in `VERB_EFFECTS` (`hook: true`), judged on the decoded strings of its JSON;
+  every hook verb in `VERB_EFFECTS` (`hook: true`), judged on the decoded strings of its JSON —
+  `commit-nudge` run as a SEQUENCE, not once with `{}`: after change 1 an observation reports nothing
+  unless an anchor exists and a commit has landed since, so the sweep records the anchor (one
+  observation), makes a real commit, observes, amends a commit attributed to a poisoned epic, and
+  observes again, so its candidate and withdraw lines are actually printed and swept;
   every `VERB_EFFECTS` read-only verb run with its `exercise` argv (non-hook stdout skipped when it parses
   as one JSON document); `release show`, `release show <poisoned id>`; for every `VERB_POSITIONALS`
-  entry that takes an epic id (`EPIC_ID`, `idFirst`) or `<releaseId>`, an invocation with `P` as that id;
+  entry that takes an epic id (`EPIC_ID`, `idFirst`) or `<releaseId>`, an invocation with `P` as that id,
+  and `retract-detour` (added by change 1) with `P` as its sha positional;
   `honcho-memories.log`; and every recipe's own stdout/stderr.
 - **Assertions.** (a) prose: no occurrence of `FORGED` is at the start of a line or immediately after a
   raw line terminator (prose does not escape `|`, so `|FORGED` is legal there); (b) no prose surface
@@ -204,9 +212,12 @@ or `Legacy Release` id is echoed as today.
   invocation for it, and says instead, naming the record: `<record kind> '<escaped id>' holds a control
   character; no verb can rename it`. It never instructs a hand-edit of `.conductor/state.json`
   (sibling `emitted-commands-run-as-written`'s conductor-record requirement: nothing pm ships tells an
-  agent to hand-edit it). Sites: `integrity`'s `update-epic ${e.id} --attribute-commit <sha>` remedies,
-  the brief's `record-gate-review ${e.id} …` lines, `commit-nudge`'s emitted line, `release`'s create
-  hint, `sync`'s near-match `update-epic ${near.id} --plan …` hint. The rules block's
+  agent to hand-edit it). One builder produces that message (the no-remedy builder, beside the remedy
+  builders), and every remedy site calls it when the identifier holds a control character. Sites, as
+  of change 2 (re-derived at task 0.3): the remedy builders in `archive-gate.mjs` — `gateRemedy`,
+  `dispositionInvocation`, `deliveredBlockedBy`, `BRIEF_REMEDIES` — and their callers in `integrity.mjs`
+  and `briefing.mjs`; `commit-nudge`'s candidate and withdraw lines (change 1); `release`'s create hint;
+  `sync`'s near-match `update-epic ${near.id} --plan …` hint. The rules block's
   `gh issue list --repo` is NOT a site: the sibling's repo-shape check means a repo holding a control
   character never reaches that line.
 - Because no command is printed, nothing here violates the sibling's rule that every printed remedy
@@ -240,8 +251,11 @@ caller typed a newline; acceptable, because a memory is a one-line note by defin
 both roles, before `loadState` and before the rules file is touched; exit 1, naming the flag, quoting the
 escaped value. `--role secondary --remove` is not refused, so a legacy entry stays removable (its match
 key is whatever was stored). `--instance`, `--mechanism` and `--intent` are free text and escaped at
-output. The `owner/name` shape of `--repo` belongs to sibling change 2 (its Decision 4); the two checks
-are independent and either may fire first — a value failing both is refused either way. Stored values
+output. The `owner/name` shape of `--repo` belongs to sibling change 2 (its Decision 4). Order is
+explicit: this control-character check runs FIRST, before change 2's shape check, so a value failing
+both gets this refusal. Change 2's test 4.1 asserts only a non-zero exit, the escaped value and no
+write — not which refusal's wording — and 4.5 (`--remove` on a legacy entry) is untouched, so both stay
+green. Stored values
 from before this change are escaped in the rules block's prose and handled by D4a in its commands.
 
 ## Risks / Trade-offs
@@ -285,9 +299,13 @@ from before this change are escaped in the rules block's prose and handled by D4
   (D8). (2) For an identifier holding a control character, D4a prints no runnable command and no
   hand-edit instruction — only that no verb can rename it — so it neither conflicts with change 2's
   "every printed remedy runs" rule nor with its "nothing tells an agent to hand-edit state.json" rule.
-  The rules block's `gh issue list --repo` is left to change 2's repo-shape check.
+  The rules block's `gh issue list --repo` is left to change 2's repo-shape check. (3) The no-remedy
+  exception and its two scenarios ("A record no verb can rename prints no remedy", "A change no verb can
+  make is named") are OWNED here, absorbed from change 2 at the 0.45.0 cross-spec review; change 2 keeps
+  only a cross-reference.
 - `commit-nudge-reads-the-whole-move` (change 1) edits `subcommands.mjs` `commitNudge` and
   `commit-watch.mjs`; this change edits `sync`, `backfillArchive` and `honchoMemoryLine` in the same
-  file. `commit-nudge` is a hook surface in D3, so its decoded output — including the epic ids it prints
-  into an emitted line — is swept once both land; any raw value it prints is fixed here, on top of
-  change 1's wording.
+  file. The epic ids change 1's nudge prints into candidate and withdraw commands are GOVERNED values
+  owned here, not safe by construction: a legacy id can hold a control character. D3 drives the nudge
+  through anchor → commit → amend → observe so those lines are swept, and task 5.3b pins it; any raw
+  value found is fixed here on top of change 1's wording.

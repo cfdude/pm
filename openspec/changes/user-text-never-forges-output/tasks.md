@@ -13,10 +13,11 @@
       its two siblings' (`commit-nudge-reads-the-whole-move`, `emitted-commands-run-as-written`). Run
       the `cross-spec-review` skill after all three pass Gate 1 and again after any later amendment;
       record `record-cross-spec-review 0.45.0 --verdict pass|fail --reviewer "<identity>"`
-- [ ] 0.3 Re-derive every line anchor in design.md with `rg` after changes 1 AND 2 have merged into
-      `dev` (change 1 edits `subcommands.mjs` `commitNudge`; change 2 edits remedy text in
-      `integrity.mjs` and `archive-gate.mjs`), and correct design.md in the first implementation
-      commit if any moved
+- [ ] 0.3 After changes 1 AND 2 have merged into `dev`, re-derive with `rg` every line anchor in
+      design.md AND the site lists of tasks 3.5 and 5.4 and design D4a — including `archive-gate.mjs`,
+      where change 2 moves `gateRemedy`, `dispositionInvocation`, `deliveredBlockedBy` and
+      `BRIEF_REMEDIES`, and change 1's `commitNudge`/`retract-detour` output — and correct them in the
+      first implementation commit
 
 ## 1. One id format, one table-cell escaper
 
@@ -84,7 +85,7 @@ Pairs: 4.1 lands with 4.2.
 
 ## 5. Refusals quote values on one line
 
-Pairs: 5.1–5.3a land with 5.4.
+Pairs: 5.1–5.3b land with 5.4.
 
 - [ ] 5.1 RED: spec "An unknown id is quoted back on one line" — the fixture pushes one detour frame
       first (without it `pop-detour` never reaches the id); all six verbs, `state.json` byte-identical
@@ -92,12 +93,20 @@ Pairs: 5.1–5.3a land with 5.4.
 - [ ] 5.2 RED: spec "A story title cannot forge an invocation in the archive refusal" (repro D)
 - [ ] 5.3 RED: spec "A withdrawal reason cannot forge an integrity line" (repro E) — real commits via
       the helpers fixture, never a placeholder sha
-- [ ] 5.3a RED: spec "A stored id holding a control character is never put into an emitted command"
-      (legacy id written into `state.json` directly — design D3 exception)
+- [ ] 5.3a RED: specs "A stored id holding a control character is never put into an emitted command",
+      "A record no verb can rename prints no remedy" and "A change no verb can make is named, not
+      delegated to a hand-edit" (legacy id written into `state.json` directly — design D3 exception)
+- [ ] 5.3b RED (against the engine after change 1): spec "The commit nudge never prints a command naming
+      a control-character id" — legacy control-character ids on the active detour epic, the paused epic
+      and an attributed epic; record the anchor, make a real commit, amend the attributed commit,
+      observe; assert no printed command names any of the three ids and no line is forged
 - [ ] 5.4 GREEN: an emitted invocation whose identifier (epic id, release id, tracker
       system/project/repo) holds a CONTROL CHARACTER is not printed; the prose line of design D4a
-      replaces it (an id merely failing `EPIC_ID_FORMAT` is echoed as today) — sites: `integrity.mjs`
-      remedies, `briefing.mjs` `record-gate-review` lines, `commitNudge`'s emitted line,
+      replaces it (an id merely failing `EPIC_ID_FORMAT` is echoed as today) — add the no-remedy builder
+      (one function producing that message) and call it from every remedy site: `archive-gate.mjs`
+      `gateRemedy`/`dispositionInvocation`/`deliveredBlockedBy`/`BRIEF_REMEDIES` and their callers in
+      `integrity.mjs` and `briefing.mjs` (list re-derived at 0.3), `commitNudge`'s candidate and
+      withdraw lines,
       `sync`'s near-match hint (the message names the record and says no verb can rename it; no hand-edit
       instruction; `gh issue list --repo` excluded — change 2's repo-shape check stops it first);
       and escape every governed value in a refusal or
@@ -133,24 +142,31 @@ Pairs: 6.1–6.5b land with 6.6, 6.7 and 6.8 (one commit; they share the fixture
 - [ ] 6.7 GREEN: `release()` create branch refuses a non-matching id FIRST — before the
       missing-intent refusal and any write — printing no runnable invocation with it (design D5)
 - [ ] 6.8 GREEN: `set-tracker` refuses a control character in `--system`/`--project`/`--repo` for both
-      roles before `loadState`, except on `--remove` (design D8)
+      roles before `loadState`, except on `--remove`, and BEFORE change 2's owner/name shape check
+      (design D8); change 2's tests 4.1 and 4.5 must stay green
 
 ## 7. The rule is held by registries, not by this task list
 
 Pairs: 7.1 lands with 7.2.
 
 - [ ] 7.1 RED: `POISON_RECIPES` completeness — its key set equals every `valueBearingFlagsFor(verb)`
-      entry plus every `freeText` positional; saved red run shows the missing keys
+      entry plus every `freeText` positional, counted fresh on the post-change-1-and-2 tree (the 120 + 4
+      measured at f49871a is stale); saved red run shows the missing keys, including
+      `retract-detour --reason` and `suggest-lane --ask`
 - [ ] 7.2 GREEN: the sweep of design D3 over ONE accumulated fixture — argv recipes for every key and
       the `SOURCE_RECIPES` (add-many `--from` fields, plan heading, change-directory and plan-file names,
-      `.changesets` fragment, workspace lesson frontmatter, `PM_SESSION`); each recipe declared
+      `.changesets` fragment, workspace lesson frontmatter, `PM_SESSION`) — including
+      `retract-detour --reason` (a real auto-logged row built through the commit-nudge hook;
+      `rendered: true` via its stdout, or `notRendered` because `render` drops RETRACTED rows) and
+      `suggest-lane --ask` (`notRendered`: JSON output); the commit-nudge anchor → commit → amend →
+      observe sequence and `retract-detour` with a poisoned sha positional as surfaces; each recipe declared
       `rendered: true` (its tag must appear escaped on some surface), `notRendered: "<why>"`, or
       `exempt: "<refusing check>"` (an exempt recipe still runs, must exit non-zero, and its refusal
       output is swept); legacy stored values; every surface incl. `write-rules` and the
       decoded strings of every hook verb; assertions (a)–(f); each recipe asserts its own exit status.
       Any governed-value site the sweep exposes is fixed in this commit and listed in its message.
-      Size, measured at f49871a: 120 value-bearing flag entries summed over verbs plus 4 free-text
-      positionals — re-derive at 7.1; many share one recipe body
+      Size: re-derived at 7.1 (it was 120 flag entries plus 4 free-text positionals at f49871a, before
+      changes 1 and 2); many share one recipe body
 - [ ] 7.3 REGRESSION GUARD (mutation check): temporarily remove one escape from `briefing.mjs` (the
       detour reason) and one `tableRow` use from `render.mjs`; confirm the sweep fails on each, save
       both runs as `red-7.3-mutant.txt`, restore; nothing of the mutation is committed

@@ -10,7 +10,9 @@ cell — and which identifiers are refused at input so they are never stored at 
 Terms used throughout this capability:
 
 - A **line terminator** is LF, CR, U+2028, U+2029 or U+0085.
-- A **control character** is any of U+0000 to U+001F, U+007F, U+0080 to U+009F, U+2028 and U+2029.
+- A **control character** is any of U+0000 to U+001F, U+007F, U+0080 to U+009F, U+2028 and U+2029 —
+  the class `escapeControls` has escaped since 0.44.0, and the same class
+  `emitted-commands-run-as-written` means by the term; the two definitions are identical.
 - A **governed value** is a string the engine did not compose itself: a field of `state.json`; a field
   of a `.conductor/` log; the name of a file or directory in the workspace; the contents of a workspace
   file the engine reads (a plan file's heading, a `.changesets` fragment, a `docs/lessons` file's
@@ -38,9 +40,12 @@ command names something else. Where that value is a caller token to be re-entere
 carries a placeholder, as `gate-integrity`'s printed-invocation rule already requires of the
 archived-epic regression refusal; this capability does not modify that requirement. Where that value
 is an identifier (an epic id, a release id, a tracker system, project or repository), no placeholder
-can be filled on one line, so the output SHALL print no runnable invocation for it and SHALL say instead,
-naming the record and the escaped identifier, that the identifier holds a control character and that no
-verb can rename it. The output SHALL NOT instruct the reader to edit `.conductor/state.json` by hand.
+can be filled on one line, so a record holding such an identifier has NO runnable remedy: the output
+SHALL print no command as a remedy for it and SHALL say instead, naming the record and the escaped
+identifier, that the identifier holds a control character and that no verb can rename it. The output
+SHALL NOT instruct the reader to edit `.conductor/state.json` by hand. This is the one exception to
+`emitted-commands-run-as-written`'s rule that a printed remedy clears the condition that printed it,
+and this capability owns it; a suite asserts the message instead of executing a command.
 An identifier holding no control character is echoed as it is today.
 
 Governed values stored before this requirement — including an identifier the input rules below would
@@ -94,6 +99,23 @@ now refuse — SHALL still be read and rendered, never refused on read.
   and an empty attribution array, and `integrity` runs
 - **THEN** no line of its output begins with `x`, and no printed `update-epic` invocation names that
   epic by an escaped or raw id
+
+#### Scenario: A record no verb can rename prints no remedy
+- **WHEN** a finding concerns an epic whose stored id holds a control character
+- **THEN** the message names that record and says no verb can rename it, prints no command for it,
+  and does not direct a hand-edit of `.conductor/state.json`
+
+#### Scenario: A change no verb can make is named, not delegated to a hand-edit
+- **WHEN** the engine reports a stored epic id holding a control character
+- **THEN** its output says no verb can rename that record and does not tell the reader to edit
+  `.conductor/state.json`
+
+#### Scenario: The commit nudge never prints a command naming a control-character id
+- **WHEN** `state.json` already holds three epics whose ids hold a control character — the active detour
+  epic, the epic it paused, and an epic with an attributed commit — the nudge's anchor is recorded, a
+  commit lands, the attributed commit is amended, and `commit-nudge` observes
+- **THEN** no line of its decoded output begins with the text after any of those ids' control
+  characters, and no printed command names any of those three epics by an escaped or raw id
 
 #### Scenario: Line separators other than LF are escaped too
 - **WHEN** a disposition reason contains U+2028, U+0085 and CR each followed by `FORGED`, and `render`
