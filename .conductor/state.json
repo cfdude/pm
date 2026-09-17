@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "emitted-commands-run-as-written",
+  "active": "user-text-never-forges-output",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -8026,7 +8026,14 @@
       "description": "Code review 0.43.0 (A1, A2). update-epic.mjs pairs/carriedTo: `--status archived --outcome delivered --carried-to s1` on s1 with an open story archives (the gate's own message calls this a fabricated record; integrity cannot see a self-reference). `--deferral \":\"` archives and stores {epic:\"\",section:\"\"}, which dangling-epic-reference skips; `--deferral ghost:sec` is accepted. The empty-halves guard added to --declined-deferral never reached --deferral. Siblings --link, --parent, release --member/--defer and push-detour all validate ids. Fix: refuse unknown, empty or self ids for both.",
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:26.374Z",
-      "touchedAt": "2026-09-15T05:11:26.377Z"
+      "touchedAt": "2026-09-17T10:36:33.855Z",
+      "notes": [
+        {
+          "at": "2026-09-17T10:36:33.851Z",
+          "actor": "agent",
+          "text": "0.45.0 emitted-commands-run-as-written (Gate 2 R-I1/U-I1/E-I5) widened the exposure: three printers now offer the `--carried-to <epicId>` placeholder — update-epic's archived-delivered regression refusal, integrity's delivered-release-epic-left-open / heal-archived-epic-passed-gate-2 steps, and unconsidered-outcomes' deliveredBlockedBy handoff remedy — so a filled nonexistent id or the epic's own id is accepted and satisfies the handoff demand through each of them. relates-to: emitted-commands-run-as-written."
+        }
+      ]
     },
     {
       "id": "release-member-moves-silently",
@@ -8374,11 +8381,16 @@
           "at": "2026-09-16T22:57:51.024Z",
           "actor": "agent",
           "text": "0.45.0 emitted-commands proposal (2026-09-16) moved here: primary set-tracker --remove is a silent no-op; set-tracker --intent badpair dropped without a message; verify-worktrees and verify-state have no command doc."
+        },
+        {
+          "at": "2026-09-17T11:31:39.288Z",
+          "actor": "agent",
+          "text": "carried from emitted-commands-run-as-written: primary set-tracker --remove removes nothing (ignored: bare it changes nothing, with a valid --repo it replaces the repo; no inverse); set-tracker --intent badpair silently dropped; verify-worktrees/verify-state have no command doc"
         }
       ],
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:50.956Z",
-      "touchedAt": "2026-09-16T22:57:51.027Z"
+      "touchedAt": "2026-09-17T11:31:39.292Z"
     },
     {
       "id": "every-verb-refuses-what-it-does-not-read",
@@ -8871,7 +8883,7 @@
       "id": "emitted-commands-run-as-written",
       "title": "Every command pm emits runs as written and never asks for a hand-edit: tracker sync recipes (secondary updatedAt and watermark, non-GitHub keys, --limit, direction scoping), remedies the engine refuses, and agent/skill docs teaching stale gate evidence or hand-edits of state.json",
       "priority": "P2",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -8908,10 +8920,43 @@
         "7eb529e765c196e97984746e4b2c911cda3d03da",
         "bbf93428cd3c7c5ea867f6c100f678c43f093218",
         "89c862512ce62512da6a5c07f4fd963650fdb4fa",
-        "1d6e0f8df71695c98b115323d32d4408a650f443"
+        "1d6e0f8df71695c98b115323d32d4408a650f443",
+        "069924020f01c889f069f7b435d99aaadf50e4e5",
+        "d6f16b910ad4c2f4171286487889de3a4cfe3926",
+        "cd0966c6899a98ed7e41297482a85776a74094af",
+        "913da3aaedb0fb06562c54b9d778c0195c116ef2",
+        "d901207ad84edc14aa36dd3087004e7b28f0f75f",
+        "18a994210a7e0230145fb8fb256acd52fef74aed",
+        "0ef5d99b0a98dd9183f49cad66f0f460d5e92495",
+        "f5b026c2f1b6325e5ec682da7c58ab3a3c1bdca7",
+        "4b2e4dff7f34d3bc12ee11f18afbe51a0b733a13",
+        "b577cba595a068e062079da5e1c9dff286095810",
+        "eca6030ddf2b6adce979d5098cc3ddd1d86a6913",
+        "10991de32682ab78ea2a9aea7852dc3586fa9d91",
+        "8f1f92e826f63addd2770910307129a884800df2",
+        "964f7c1ed06458ae03ef60e3c315c7e98eb74ac0",
+        "195e1c0d82f24ea5bacbdb91d359137a9e1394d3",
+        "537f03711a3e777396773415b3b8b17622423804",
+        "fab5450cb8ca90205af632c0d113d10a75ac3797",
+        "641f7176a1be646c67188ceb8069137ca05b0b4a",
+        "ec0524c5309923371759e1cd05f85e3edacae6ff",
+        "ec0524c5309923371759e1cd05f85e3edacae6ff",
+        "c90258c5f385fd8f4c7a511464e41510098b74d3",
+        "9a986caa86be6fd492c67e8b9ac83130d3e9d12f",
+        "490fdde0b5f53280ef713920edbb740bde676c18",
+        "4221809526addd5bb3197a7a79bcc4efd3154848",
+        "8ac78171151549b979460efa77ca4263d4a982cd",
+        "c649f5b6cb317a080c38b6f94c4e5a94f81b0d23",
+        "87086fefb789234b515b90d525894ef7d2f448f0",
+        "75c1e5845891f3845531a9f66ea11e6c723c20f0",
+        "96ce9ff1835547aa58ee1409384f50267aaa8646",
+        "ba826ba1a413a8bd4341600e15ddd6e8643d3761",
+        "a552d4fed765833d43bab907584f5734e9ccdb52",
+        "c3e5a3386f7af6c0b73a23c0b0b8420fa61b5078",
+        "9dcf84f20ddec18e76a61f1b8ec121be0561619e"
       ],
       "createdAt": "2026-09-16T22:37:14.255Z",
-      "touchedAt": "2026-09-17T05:14:03.876Z",
+      "touchedAt": "2026-09-17T11:31:49.719Z",
       "release": "0.45.0",
       "gateReview": {
         "gate1": {
@@ -8941,15 +8986,62 @@
             ],
             "reviewer": "two fresh-context lenses, round 1 fail, round 2 scoped confirmation fail, round 3 narrow confirmation fail on 1-2 precise Important findings fixed in 0dcf49f and verified by the orchestrator against the diff; 2026-09-16"
           }
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-17T11:31:06.355Z",
+          "baseSha": "b136774f9c426de5312d530ae32c56a190399375",
+          "headSha": "9dcf84f20ddec18e76a61f1b8ec121be0561619e",
+          "reviewer": "two fresh-context lenses per round (spec conformance with mutation testing; adversarial run-as-written): round 1 fail (1 C, 6 I), fixes eca6030..c90258c; re-review 1 split (1 I), fixes 9a986ca..87086fe; re-review 2 split (1 I), fixes 75c1e58..a552d4f; re-review 3 pass on both lenses; re-recorded over docs/lessons commits c3e5a33 and 9dcf84f; 2026-09-17",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-09-17T11:01:13.749Z",
+            "baseSha": "b136774f9c426de5312d530ae32c56a190399375",
+            "headSha": "a552d4fed765833d43bab907584f5734e9ccdb52",
+            "reviewer": "two fresh-context lenses per round (spec conformance with mutation testing; adversarial run-as-written): round 1 fail (1 C, 6 I), fixes eca6030..c90258c; re-review 1 split (1 I: regression refusal lacked checkbox handoff), fixes 9a986ca..87086fe; re-review 2 split (1 I: flag de-dup read echoed user tokens), fixes 75c1e58..a552d4f; re-review 3 pass on both lenses (Minors only); 2026-09-17"
+          }
         }
       },
-      "startedAt": "2026-09-17T05:14:03.873Z"
+      "startedAt": "2026-09-17T05:14:03.873Z",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-17T11:31:49.715Z",
+        "reason": "every command pm emits or ships passes the argv check (Layer A), every printed remedy runs and clears its condition in a fixture (Layer B), tracker recipes run as written, set-tracker validates repo shape incl. GHE, printedId() quotes every printed epic id; Gate 2 pass at 9dcf84f"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-17T11:31:49.666Z",
+        "deferrals": [
+          {
+            "epic": "code-review-0-43-0-minors",
+            "section": "proposal.md What Changes (Out of scope)"
+          },
+          {
+            "epic": "disposition-references-unvalidated",
+            "section": "Gate 2 Minor — --carried-to accepts a nonexistent epic or itself, and with a non-delivered outcome"
+          }
+        ],
+        "declined": [
+          {
+            "what": "o/.. and o/-R accepted by the repo shape",
+            "reason": "pre-existing name character class, harmless to the shell; gh rejects them itself"
+          },
+          {
+            "what": "a title holding a placeholder token such as <epicId> makes mechanical first-match filling ambiguous",
+            "reason": "the engine output is correct; only a naive filler misreads it"
+          },
+          {
+            "what": "F-I1 tests for the --notes and --flag= forms",
+            "reason": "the reverted-fix mutation already fails the title test; reviewer rated the extra tests low value"
+          }
+        ]
+      },
+      "completedAt": "2026-09-17T11:31:49.715Z"
     },
     {
       "id": "user-text-never-forges-output",
       "title": "User-supplied text never forges a line of pm's output: one shared escaper for titles, reasons, notes, shas and ids across PROJECT.md, the brief, integrity, the archive gate and every refusal",
       "priority": "P2",
-      "status": "queued",
+      "status": "active",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -8972,10 +9064,13 @@
         "df29ed26b4bc72fb77b61646d61f1ad80275a6bb",
         "a0712405da8fdb23ee7a5a3e3c7090d841213bb3",
         "6ea3d7fe9aaa7a354bf4f951ca455847e65ce310",
-        "1d6e0f8df71695c98b115323d32d4408a650f443"
+        "1d6e0f8df71695c98b115323d32d4408a650f443",
+        "186b7a5f96b86d8c026730f5b60b49f61e2ed1ba",
+        "74d7081050ac596079ff4024979c49a788b836ff",
+        "4321bbc11a0e14e865f608e0846d8fd271d72c0f"
       ],
       "createdAt": "2026-09-16T22:37:14.698Z",
-      "touchedAt": "2026-09-17T01:35:50.930Z",
+      "touchedAt": "2026-09-17T11:31:50.294Z",
       "release": "0.45.0",
       "gateReview": {
         "gate1": {
@@ -9000,7 +9095,8 @@
             "reviewer": "two fresh-context lenses (code-grounded completeness; spec contract & consistency), round 1 fail (1 C, 8 I), round 2 scoped confirmation fail (3 C unfailable/unpassable scenarios, 2 I, 1 cross-change contradiction), round 3 narrow confirmation pass (REDs re-run on 0.44.0); 2026-09-16"
           }
         }
-      }
+      },
+      "startedAt": "2026-09-17T11:31:50.291Z"
     },
     {
       "id": "hierarchy-run-has-one-state-writer",
@@ -9063,6 +9159,38 @@
           "text": "Evidence (0.45.0 Gate 2, scratch repros under the session scratchpad gate2-45-nudge/l2): 200 commits since the anchor took 8 s and printed 24 KB of hook context; a 330-commit window held the lock ~10 s. Partial-line anchor not reproduced. Old-format commit-observe.json {size,line} from unreleased dev builds reads as no anchor (acceptable: never on main). Spec write-site table in conductor-record omits commit-observe.json.lock/.lock.break and the retract-detour non-hex refusal is not listed in the commit-observation refusal scenario — declined at archive to avoid staling the release cross-spec review; fold into this epic's spec touch."
         }
       ]
+    },
+    {
+      "id": "gh-cfdude-pm-207",
+      "title": "A free-text value beginning with -- is refused with 'quote the whole value', which cannot help; the hint should name the = form",
+      "priority": "P3",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "207",
+      "externalUrl": "https://github.com/cfdude/pm/issues/207",
+      "externalUpdatedAt": "2026-09-17T11:31:29Z",
+      "attributedCommits": [],
+      "createdAt": "2026-09-17T11:31:37.673Z",
+      "touchedAt": "2026-09-17T11:31:37.678Z"
+    },
+    {
+      "id": "gh-cfdude-pm-208",
+      "title": "Offer the pm:refused <class> marker convention to repos using pm, so their quoted pm commands are checked against the engine",
+      "priority": "P3",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "208",
+      "externalUrl": "https://github.com/cfdude/pm/issues/208",
+      "externalUpdatedAt": "2026-09-17T11:31:30Z",
+      "attributedCommits": [],
+      "createdAt": "2026-09-17T11:31:38.757Z",
+      "touchedAt": "2026-09-17T11:31:38.761Z"
     }
   ],
   "detourStack": [],
@@ -9073,7 +9201,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 994,
+  "revision": 1039,
   "reviewMode": "thorough",
   "releases": [
     {
@@ -9314,7 +9442,7 @@
       "target": "0.45.0",
       "crossSpecReview": {
         "verdict": "pass",
-        "reviewedAt": "2026-09-17T01:32:49.862Z",
+        "reviewedAt": "2026-09-17T11:01:07.194Z",
         "specs": [
           {
             "key": "commit-nudge-reads-the-whole-move/specs/commit-observation/spec.md",
@@ -9334,26 +9462,73 @@
           },
           {
             "key": "emitted-commands-run-as-written/specs/conductor-record/spec.md",
-            "sha256": "df438a3cd4ef6bf92e1d6809582104bdcb8bb5fc97d193ada62401f20ac67a81"
+            "sha256": "45e3c43dd67eb985b8caf6ec61e82a0074dff6f8f2c8736af2a544aac9130159"
           },
           {
             "key": "emitted-commands-run-as-written/specs/emitted-instructions/spec.md",
-            "sha256": "cc19f6cbe5ac661f9086acf62a148c793cf4f1d86e7afa6978bee46ef5d8c731"
+            "sha256": "9538d779c975669805cd0d0797faa43d923b98a51d8dd349dda6921e37f8bb3d"
           },
           {
             "key": "emitted-commands-run-as-written/specs/epic-disposition/spec.md",
-            "sha256": "35ca6069cae4d2fecfc1a4fd5b4ff16dcf731b8ffac2655f22e16707e7c46119"
+            "sha256": "6234538c954dfaed3002d9f718614c03541602d3428fad7e385df96c87142b1c"
+          },
+          {
+            "key": "emitted-commands-run-as-written/specs/gate-integrity/spec.md",
+            "sha256": "4d8e41e758644d0989d655a9bae2f4e8865d962db3a3a14f6fe90047bc91504a"
           },
           {
             "key": "emitted-commands-run-as-written/specs/tracker-sync/spec.md",
-            "sha256": "5131c8835be05de01c23ae32bbf217770b4b8709b03f74dd72ff3b5cba7b9f2c"
+            "sha256": "a9074515b44e850ce2b3fe06753950f0272ace402316766597a00f0c9bb24428"
           },
           {
             "key": "user-text-never-forges-output/specs/output-text-integrity/spec.md",
-            "sha256": "5bd2150b9ccc479ed45c8e03db46221beef2b9ff4d5e3007d9785d9339093a37"
+            "sha256": "cf278b902d753164faf417f3679b9452ee4f2fbd5c98a612eb14c70be78e63c9"
           }
         ],
-        "reviewer": "two fresh-context lenses per round (coherence/contradiction; falsifiability/dependency order), 6 rounds: r1 fail 7 BLOCKS, r2 fail 3, r3 fail 5, r4 fail 3, r5 split (1 contradiction adjudicated as BLOCK), r6 pass both lenses with REDs and printed remedies reproduced on 0.44.0; 2026-09-16"
+        "reviewer": "fresh-context lenses, rounds 1-9: r1-r6 as previously recorded (pass at r6); Gate 2 fixes then amended emitted-commands specs, so r7 fail (3 BLOCKS), r8 fail (2 BLOCKS: missing gate-integrity delta, control-character repo wording), r9 narrow pass (delta header and all 17 scenarios verified, both changes validate --strict); 2026-09-17",
+        "superseded": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-17T01:32:49.862Z",
+          "specs": [
+            {
+              "key": "commit-nudge-reads-the-whole-move/specs/commit-observation/spec.md",
+              "sha256": "d29e4502e5be55e8185c09e73f2abbdfce7290573563b684b68200a2b9f45123"
+            },
+            {
+              "key": "commit-nudge-reads-the-whole-move/specs/conductor-record/spec.md",
+              "sha256": "c89159e7e0b909dcf20bfa8006a55b31313f08d9ddf52b8e1d743abbd8859ee5"
+            },
+            {
+              "key": "commit-nudge-reads-the-whole-move/specs/gate-integrity/spec.md",
+              "sha256": "f55f933bd44149cb2b0f2bfba3a3a01829d728e14f04cb0f1012aed692cc0f6a"
+            },
+            {
+              "key": "commit-nudge-reads-the-whole-move/specs/state-write-guard/spec.md",
+              "sha256": "32c39e0ed0e91b44718413fab172726f1608daba2231a5f50f260d2022799b9d"
+            },
+            {
+              "key": "emitted-commands-run-as-written/specs/conductor-record/spec.md",
+              "sha256": "df438a3cd4ef6bf92e1d6809582104bdcb8bb5fc97d193ada62401f20ac67a81"
+            },
+            {
+              "key": "emitted-commands-run-as-written/specs/emitted-instructions/spec.md",
+              "sha256": "cc19f6cbe5ac661f9086acf62a148c793cf4f1d86e7afa6978bee46ef5d8c731"
+            },
+            {
+              "key": "emitted-commands-run-as-written/specs/epic-disposition/spec.md",
+              "sha256": "35ca6069cae4d2fecfc1a4fd5b4ff16dcf731b8ffac2655f22e16707e7c46119"
+            },
+            {
+              "key": "emitted-commands-run-as-written/specs/tracker-sync/spec.md",
+              "sha256": "5131c8835be05de01c23ae32bbf217770b4b8709b03f74dd72ff3b5cba7b9f2c"
+            },
+            {
+              "key": "user-text-never-forges-output/specs/output-text-integrity/spec.md",
+              "sha256": "5bd2150b9ccc479ed45c8e03db46221beef2b9ff4d5e3007d9785d9339093a37"
+            }
+          ],
+          "reviewer": "two fresh-context lenses per round (coherence/contradiction; falsifiability/dependency order), 6 rounds: r1 fail 7 BLOCKS, r2 fail 3, r3 fail 5, r4 fail 3, r5 split (1 contradiction adjudicated as BLOCK), r6 pass both lenses with REDs and printed remedies reproduced on 0.44.0; 2026-09-16"
+        }
       }
     }
   ],
