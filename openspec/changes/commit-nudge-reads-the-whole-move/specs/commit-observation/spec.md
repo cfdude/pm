@@ -109,9 +109,11 @@ the replacing commit, before the replacing commit is classified. The hook SHALL 
 `--attribute-commit` naming the replaced commit. Where the replaced commit is in any epic's
 attribution array, the hook SHALL print, before any attribution command, a runnable
 `update-epic <that epic> --withdraw-commit <replaced> --withdrawal-reason "<…>"`; the engine SHALL NOT
-withdraw it itself. Only where `update-epic` would refuse that withdrawal — the epic is archived with outcome
-`delivered` and withdrawing the replaced commit would break an obligation its archived record meets —
-the hook SHALL NOT print that command; it SHALL instead state that the replaced commit is attributed to
+withdraw it itself. Only where `update-epic` would refuse that withdrawal — the stored outcome is
+`delivered`, the record is stored `archived` or its change directory is archived on disk, and the record
+that withdrawal writes (the replaced commit removed from the attribution array and added to the
+withdrawn commits) breaks an obligation the current record meets, decided by the same predicate
+`update-epic`'s refusal calls — the hook SHALL NOT print that command; it SHALL instead state that the replaced commit is attributed to
 a delivered epic whose record the withdrawal would break, and that changing it means recording the
 disposition the change implies, as that refusal directs. Everywhere else, including a delivered epic
 whose record the withdrawal would not break, the command SHALL be printed.
@@ -135,12 +137,26 @@ whose record the withdrawal would not break, the command SHALL be printed.
 - **THEN** the hook prints no `update-epic E --withdraw-commit` line, and its output names E as a
   delivered epic holding the replaced commit and says the change requires recording a disposition
 
+#### Scenario: A delivered epic stored unarchived with its change archived on disk prints no bare withdrawal
+
+- **WHEN** the only commit attributed to openspec-lane epic E4 — stored status `queued`, outcome
+  `delivered`, its change directory archived on disk — is amended and the replaced commit is not live
+- **THEN** the hook prints no `update-epic E4 --withdraw-commit` line, and running that command is
+  refused by `update-epic`
+
 #### Scenario: A delivered epic whose record the withdrawal does not break still gets the command
 
 - **WHEN** a commit attributed to claude-code-lane epic F, archived with outcome `delivered`, is amended
   and the replaced commit is not live
 - **THEN** the hook prints `update-epic F --withdraw-commit <replaced>` with a withdrawal reason, and
   does not say a disposition is required
+
+#### Scenario: An openspec delivered epic keeps the command when its Gate 2 still covers what remains
+
+- **WHEN** openspec-lane epic E2, archived `delivered`, attributes two commits both reached by its Gate 2
+  head, and one of them is amended with the replaced commit not live
+- **THEN** the hook prints `update-epic E2 --withdraw-commit <replaced>` with a withdrawal reason, and
+  running it exits 0
 
 #### Scenario: A chain of amends retracts and withdraws the original
 

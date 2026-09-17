@@ -133,15 +133,22 @@ Pairs: 5.1–5.3a (with 5.2a) land with 5.4.
       live-amend-only rule); and C1 auto-logged and attributed, then one call runs `commit --amend` and
       `reset --hard HEAD@{1}`: C1's row is NOT retracted and no `--withdraw-commit` names C1 (fails
       against an every-amend rule that ignores liveness)
-- [ ] 5.2a RED: a commit attributed to OPENSPEC-lane epic E, archived `delivered` with a Gate 2 verdict
-      the withdrawal would break, amended with the replaced commit dead: no `update-epic E
-      --withdraw-commit` line; the output names E as delivered and says a disposition must be recorded;
-      and running the suppressed command by hand is refused by `update-epic` (proving the pre-check
-      agrees). Same shape on a CLAUDE-CODE-lane delivered epic F: the withdraw line IS printed, no
-      disposition sentence, and running it succeeds (fails against 5.4 without the exception)
+- [ ] 5.2a RED: four epics, each with the replaced commit amended and dead; for each, run the
+      withdraw command by hand and assert its exit status agrees with whether the line was printed.
+      E (openspec, archived `delivered`, ONE attributed commit, passing Gate 2): no `update-epic E
+      --withdraw-commit` line, output names E as delivered and says a disposition must be recorded, the
+      command exits 1. E2 (openspec, archived `delivered`, TWO attributed commits both reached by the
+      Gate 2 head, the amended one withdrawn): the line IS printed and exits 0 (fails against a
+      lane-keyed shortcut). E4 (openspec, stored `queued`, outcome `delivered`, change dir archived on
+      disk, one attributed commit): no line, exits 1 (fails against a stored-`archived`-only test).
+      F (claude-code, archived `delivered`): the line IS printed, no disposition sentence, exits 0.
+      E also fails a hook whose simulated record only removes the sha (it reads `none-attributed` and
+      prints the line). Fails on 0.44.0: the hook prints no withdraw line for any amend, so E2 and F
+      fail (reviewer repro of the hand-run commands on 0.44.0: E 1, E2 0, E4 1, F 0)
 - [ ] 5.3a REGRESSION GUARD: one call runs `checkout -b tmp`, `checkout main`, `commit --amend`: the
       replaced commit named is the one HEAD held before the amend
-- [ ] 5.4 GREEN: amend handling (Decision 7). Suite green
+- [ ] 5.4 GREEN: amend handling (Decision 7), with `deliveredRegression` extracted from
+      `update-epic`'s inline refusal test and called by both. Suite green
 
 ## 6. Detour rows: own artifacts and conductor-root paths
 
@@ -191,6 +198,9 @@ Pairs: 7.1–7.2 land with 7.4.
         (`rg -n "DETOURS_LOG|detours\.log|appendDetourLog|alreadyLogged" scripts`), each stated as
         retraction-aware and prefix-matching, or neither with the reason;
       - every caller of `attributionTarget`/`attributionNudge` (`rg -n "attributionTarget|attributionNudge" scripts`);
+      - every caller of `deliveredRegression` and every remaining inline archived-delivered test
+        (`rg -n "deliveredRegression|deliveredObligations|isArchived\(" scripts/lib`), each stated as
+        calling the predicate or not deciding a withdrawal/regression refusal;
       - every surface describing hook wiring, hook events or the hook envelope
         (`rg -n "PostToolUse|hookEventName|hooks\.json" scripts commands skills hooks README.md docs`),
         including `verb-effects.mjs`'s `commit-nudge` `writes` text and `platform.mjs`;

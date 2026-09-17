@@ -145,11 +145,22 @@ un-retract) and false. Before any commit is classified, for each remaining entry
 `amended into <short new sha>`; (b) for each epic whose `attributedCommits` holds the replaced full sha,
 print `update-epic <id> --withdraw-commit <replaced> --withdrawal-reason "amended into <new>"` —
 except where that command would hit `update-epic`'s archived-delivered regression refusal
-(`regressionRefusal`, update-epic.mjs), decided by the same pre-check the refusal runs: the epic is
-archived with outcome `delivered`, and `deliveredObligations` on the record with the replaced commit
-withdrawn names an obligation that `deliveredObligations` on the current record does not. A delivered
-epic that pre-check clears (a claude-code-lane epic, for one) gets the command as usual. Where it is
-refused, and a printed command the
+(`regressionRefusal`, update-epic.mjs). That decision is ONE exported predicate,
+`deliveredRegression(id, snapshot, next, { status })` in `scripts/lib/update-epic.mjs`, returning the
+obligations `next` breaks (empty = no refusal). It holds BOTH halves of today's inline test at
+update-epic.mjs ~871-872: stored outcome `delivered`, `status` not `archived`, and EITHER the change
+directory is archived on disk (`isArchived(id)`, whatever the stored status) OR the record is stored
+`archived` and `status` is undefined; then it returns every `deliveredObligations(next)` kind absent
+from `deliveredObligations(snapshot)`. `update-epic`'s refusal is rewritten to call it, and the hook
+calls it with `status` undefined (the printed command carries no `--status`), so the two cannot drift.
+`next` is the record `--withdraw-commit` would write: the replaced sha REMOVED from
+`attributedCommits` AND APPENDED to `withdrawnCommits` (as update-epic.mjs ~709-711 does). Removing it
+alone is wrong: an emptied array then reads `none-attributed` instead of `attribution-withdrawn`
+(archive-gate.mjs ~115-119), and the Gate 2 obligation the refusal enforces is missed. So a lane
+shortcut is not the rule: an openspec epic with two attributed commits both covered by its Gate 2
+head clears the predicate when the replaced one is withdrawn, and a `queued` epic whose change
+directory is archived on disk does not. A delivered epic the predicate clears gets the command as
+usual. Where it is refused, and a printed command the
 engine refuses would break emitted-instructions R2; there the hook says in prose that the replaced
 commit is attributed to delivered epic <id> and that changing it means recording the disposition it
 implies, which that refusal prints when the agent attempts it;
