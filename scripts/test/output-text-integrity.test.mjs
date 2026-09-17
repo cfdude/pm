@@ -797,48 +797,77 @@ test("5.3i (Gate 2 V-I1) every stdout JSON document is JSON.stringify's own byte
     "jsonText takes (value, replacer, space): a caller passing spacing passes it third, after null");
 });
 
-test("5.3h source guard (Gate 2 U2-M2): no reader matches a detours.log row's epic field against a stored id (design D7)", () => {
+/** The detours.log readers and every way one of them uses a row's epic field (design D7; Gate 2 U2-M2, widened
+ *  by V-M2). `read(rel)` lets a mutant replace a file. The readers are DERIVED (every declaration calling
+ *  readDetourRows/visibleDetourRows, split with the sweep's own topLevelFunctions()); a new one fails 5.3h
+ *  until someone checks it against D7 and names it in READERS. */
+async function detourReaderFindings(read = (rel) => fs.readFileSync(path.join(REPO_ROOT, rel), "utf8")) {
+  const { sweptFiles, topLevelFunctions } = await import("./output-interpolations.mjs");
+  const found = [], problems = [];
+  const bodies = {};
+  for (const rel of sweptFiles().filter(r => r.startsWith("scripts/lib/"))) {
+    const src = read(rel).replace(/(^|\s)\/\/[^\n]*/g, "$1").replace(/\/\*[\s\S]*?\*\//g, "");
+    for (const fn of topLevelFunctions(src)) {
+      const body = src.slice(fn.start, fn.end);
+      if (fn.name !== "readDetourRows" && /\b(?:readDetourRows|visibleDetourRows)\(/.test(body)) {
+        const who = `${path.basename(rel)}:${fn.name}`;
+        found.push(who);
+        bodies[who] = body;
+      }
+    }
+  }
+  for (const [who, body] of Object.entries(bodies)) {
+    if (who === "render.mjs:render") {
+      const at = body.indexOf("const lines = visibleDetourRows(");
+      if (at < 0) { problems.push("render reads the rows into `lines`"); continue; }
+      const block = body.slice(at, body.indexOf("catch", at));
+      const uses = [...block.matchAll(/\blines\b[^\n]*/g)].map(m => m[0].split(/[;{]/)[0].trim());
+      if (JSON.stringify(uses) !== JSON.stringify(["lines = visibleDetourRows().slice(-8)", "lines.length)", "lines)"])) problems.push(`render reads the rows only to print them: ${uses.join(" | ")}`);
+      // A destructured `epic` in that loop reaches only tableRow(): the loop body is one tableRow push.
+      if (!/of lines\) \{\s*md\.push\(tableRow\([^\n]*\)\);\s*\}/.test(block)) problems.push("render: each row's fields reach only tableRow()");
+      continue;
+    }
+    for (const m of body.matchAll(/[\w\])]\.epic\b[^\n]*/g)) {
+      const line = body.slice(body.lastIndexOf("\n", m.index) + 1, body.indexOf("\n", m.index));
+      if (!/appendRetraction\([^;]*[\w\]]\.epic\b/.test(line)) problems.push(`${who}: a row's epic field is used only as appendRetraction()'s epic — ${line.trim()}`);
+    }
+    // `.epic` is the ONE accepted access form (Gate 2 V-M2): a bracket read, an optional chain or a destructured
+    // `epic` would reach the field without the `.epic` the check above looks for.
+    for (const m of body.matchAll(/\[\s*["'`]epic["'`]\s*\]|\?\.\s*epic\b|\{[^{}]*(?<![.\w$])epic\b(?!\s*\()[^{}]*\}\s*(?:=(?![=>])|\)\s*=>|\s+of\b)/g)) {
+      problems.push(`${who}: a row's epic field is read only as \`.epic\` — ${m[0].replace(/\s+/g, " ").slice(0, 80)}`);
+    }
+  }
+  return { found, problems };
+}
+
+test("5.3h source guard (Gate 2 U2-M2): no reader matches a detours.log row's epic field against a stored id (design D7)", async () => {
   // detours.log escapes its epic field at WRITE (design D7), so a legacy id holding a control character
   // is logged in a form that no longer equals the stored id. That is harmless only while no reader
-  // compares the two. The readers are DERIVED (every declaration calling readDetourRows/visibleDetourRows);
-  // a new one fails here until someone checks it against D7 and names it below.
-  const libDir = new URL("../lib/", import.meta.url);
-  const found = [];
-  const bodies = {};
-  for (const f of fs.readdirSync(libDir).filter(n => n.endsWith(".mjs")).sort()) {
-    const src = fs.readFileSync(new URL(f, libDir), "utf8");
-    const heads = [...src.matchAll(/^(?:export\s+)?(?:async\s+)?(?:function\s+([\w$]+)|(?:const|let)\s+([\w$]+)\s*=)/gm)];
-    heads.forEach((m, i) => {
-      const name = m[1] || m[2];
-      const body = src.slice(m.index, i + 1 < heads.length ? heads[i + 1].index : src.length);
-      const calls = body.replace(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g, "");
-      if (name !== "readDetourRows" && /\b(?:readDetourRows|visibleDetourRows)\(/.test(calls)) {
-        found.push(`${f}:${name}`);
-        bodies[`${f}:${name}`] = calls;
-      }
-    });
-  }
+  // compares the two.
   const READERS = {
     "git.mjs:visibleDetourRows": "filters rows by kind and sha only",
     "render.mjs:render": "displays each row through tableRow()",
     "subcommands.mjs:retractDetour": "copies the matched row's epic field into the RETRACTED row it appends",
     "subcommands.mjs:supersedeAmended": "copies the matched row's epic field into the RETRACTED row it appends",
   };
+  const { found, problems } = await detourReaderFindings();
   assert.deepEqual([...found].sort(), Object.keys(READERS).sort(), "the detours.log readers are exactly the ones checked against design D7");
-  for (const [who, body] of Object.entries(bodies)) {
-    if (who === "render.mjs:render") {
-      const at = body.indexOf("const lines = visibleDetourRows(");
-      assert.ok(at >= 0, "render reads the rows into `lines`");
-      const block = body.slice(at, body.indexOf("catch", at));
-      assert.deepEqual([...block.matchAll(/\blines\b[^\n]*/g)].map(m => m[0].split(/[;{]/)[0].trim()),
-        ["lines = visibleDetourRows().slice(-8)", "lines.length)", "lines)"], "render reads the rows only to print them");
-      assert.match(block, /of lines\) \{\s*md\.push\(tableRow\([^\n]*\)\);\s*\}/, "each row's fields reach only tableRow()");
-      continue;
-    }
-    for (const m of body.matchAll(/[\w\])]\.epic\b[^\n]*/g)) {
-      const line = body.slice(body.lastIndexOf("\n", m.index) + 1, body.indexOf("\n", m.index));
-      assert.match(line, /appendRetraction\([^;]*[\w\]]\.epic\b/, `${who}: a row's epic field is used only as appendRetraction()'s epic — ${line.trim()}`);
-    }
+  assert.deepEqual(problems, []);
+});
+
+test("5.3h mutants (Gate 2 V-M2): a row's epic read as [\"epic\"] or destructured is caught like .epic", async () => {
+  const anchor = "    const rows = readDetourRows();\n    const retracted";
+  const text = fs.readFileSync(path.join(REPO_ROOT, "scripts/lib/subcommands.mjs"), "utf8");
+  assert.equal(text.split(anchor).length - 1, 1, "mutation anchor occurs exactly once in supersedeAmended");
+  const MUTANTS = [
+    "    const logged = rows.find(r => r[\"epic\"] === state.active);\n",
+    "    const { epic: loggedEpic } = rows[0] || {};\n",
+    "    const same = rows.some(({ kind, epic }) => kind && epic === state.active);\n",
+  ];
+  for (const inserted of MUTANTS) {
+    const mutated = text.replace(anchor, () => "    const rows = readDetourRows();\n" + inserted + "    const retracted");
+    const { problems } = await detourReaderFindings((r) => (r === "scripts/lib/subcommands.mjs" ? mutated : fs.readFileSync(path.join(REPO_ROOT, r), "utf8")));
+    assert.ok(problems.some(p => p.startsWith("subcommands.mjs:supersedeAmended")), `not caught: ${inserted.trim()}`);
   }
 });
 
