@@ -30,6 +30,7 @@ import path from "node:path";
 import { isInitialized, loadState, StateUnreadableError } from "./state.mjs";
 import { activityDir, activityEnabled, segments } from "./activity-log.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
+import { escapeControls } from "./constants.mjs";
 
 /** Every event, oldest first, optionally scoped. Returns `{events, malformed, segmentsRead}`.
  *
@@ -209,7 +210,7 @@ export function formatReport(r, { enabled = true, dir = activityDir() } = {}) {
   }
   if (!r.events) {
     L.push(`No events recorded${enabled === null ? " (the log may be off)" : (enabled ? "" : " (and none will be while it is off)")}. Log directory: ${dir}`);
-    return L.join("\n");
+    return L.map(escapeControls).join("\n");
   }
   L.push(`${r.events} event(s), ${r.from} → ${r.to}`);
   // Printed whenever it is non-zero, and never rounded away. A truncated last line is ordinary;
@@ -233,7 +234,9 @@ export function formatReport(r, { enabled = true, dir = activityDir() } = {}) {
 
   L.push("LANES — which lane was chosen at registration");
   const laneRows = Object.entries(r.lanes).sort((a, b) => b[1] - a[1]);
-  L.push(laneRows.length ? laneRows.map(([k, v]) => `  ${k}: ${v}`).join("\n") : "  (no epics registered in this window)");
+  // One L entry per LINE: the report escapes each entry at its join, so an entry must never hold
+  // an engine newline of its own (user-text-never-forges-output).
+  L.push(...(laneRows.length ? laneRows.map(([k, v]) => `  ${k}: ${v}`) : ["  (no epics registered in this window)"]));
   if (r.reroutes.length) {
     L.push(`  ${r.reroutes.length} re-route(s) — evidence the first lane was wrong, not a verdict:`);
     for (const x of r.reroutes) L.push(`  • ${x.epic}: ${x.from} → ${x.to} at ${x.at}`);
@@ -241,8 +244,8 @@ export function formatReport(r, { enabled = true, dir = activityDir() } = {}) {
   L.push("");
 
   L.push("GATES — verdicts and withdrawals in the order they were recorded");
-  L.push(r.gates.length ? r.gates.map(g => `  • ${g.at}  ${g.epic}  ${g.withdrawn ? `${g.gate} withdrawn` : `${g.gate}=${g.verdict}`}`).join("\n")
-    : "  (none recorded in this window)");
+  L.push(...(r.gates.length ? r.gates.map(g => `  • ${g.at}  ${g.epic}  ${g.withdrawn ? `${g.gate} withdrawn` : `${g.gate}=${g.verdict}`}`)
+    : ["  (none recorded in this window)"]));
   L.push("");
 
   L.push("OUT-OF-BAND WRITES — state.json revisions no engine verb accounts for");
@@ -267,7 +270,7 @@ export function formatReport(r, { enabled = true, dir = activityDir() } = {}) {
     L.push("SESSIONS — which identity did how much");
     for (const [s, n] of Object.entries(r.sessions).sort((a, b) => b[1] - a[1])) L.push(`  ${s}: ${n}`);
   }
-  return L.join("\n");
+  return L.map(escapeControls).join("\n");
 }
 
 /** `activity [--since <iso>] [--epic <id>] [--json]` — read-only. */

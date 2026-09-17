@@ -485,12 +485,12 @@ export function updateEpic() {
     const declared = EPIC_FLAGS.find(r => r.flag === name && r.commands.includes("update-epic"));
     if (declared && declared.setOnly) {
       process.stderr.write(
-        `conductor: --clear ${name}: '${escapeControls(name)}' is deliberately set-only — ${declared.setOnly}. ` +
+        `conductor: --clear ${escapeControls(name)}: '${escapeControls(name)}' is deliberately set-only — ${declared.setOnly}. ` +
         "Nothing was written.\n");
       process.exit(1);
     }
     process.stderr.write(
-      `conductor: --clear ${name}: '${escapeControls(name)}' is not a field this command can unset. ` +
+      `conductor: --clear ${escapeControls(name)}: '${escapeControls(name)}' is not a field this command can unset. ` +
       `Clearable fields: ${nullableRows.map(r => `${r.flag} (${r.key})`).join(", ")}. ` +
       "Name the FLAG, not the state key — they are two namespaces. Nothing was written.\n");
     process.exit(1);
@@ -568,7 +568,7 @@ export function updateEpic() {
     const n = Number(f.story);
     const stories = Array.isArray(epic.stories) ? epic.stories : [];
     if (!Number.isInteger(n) || n < 1 || n > stories.length) {
-      process.stderr.write(`conductor: --story ${f.story} is out of range — '${escapeControls(id)}' has ${stories.length} stor${stories.length === 1 ? "y" : "ies"} (1-indexed)\n`);
+      process.stderr.write(`conductor: --story ${escapeControls(f.story)} is out of range — '${escapeControls(id)}' has ${stories.length} stor${stories.length === 1 ? "y" : "ies"} (1-indexed)\n`);
       process.exit(1);
     }
     storyIndex = n - 1;
@@ -655,7 +655,7 @@ export function updateEpic() {
       const colons = (v.match(/:/g) || []).length;
       if (colons === 0) {
         process.stderr.write(
-          `conductor: --declined-deferral "${v}" has no separator — it must read ` +
+          `conductor: --declined-deferral ${escapeControls(JSON.stringify(v))} has no separator — it must read ` +
           `"<what>:<why not>", or "<what>::<why not>" where <what> itself contains a colon. ` +
           `The reason is what distinguishes a deliberate decline from work nobody considered, ` +
           `so it is not optional.\n`);
@@ -663,7 +663,7 @@ export function updateEpic() {
       }
       if (colons > 1) {
         process.stderr.write(
-          `conductor: --declined-deferral "${v}" is ambiguous — it carries ${colons} colons, so ` +
+          `conductor: --declined-deferral ${escapeControls(JSON.stringify(v))} is ambiguous — it carries ${colons} colons, so ` +
           `where <what> ends cannot be inferred. Separate the halves explicitly with "::":\n` +
           `  --declined-deferral "<what>::<why not>"\n` +
           `Splitting on the first colon here would silently truncate <what> and dump the rest ` +
@@ -682,7 +682,7 @@ export function updateEpic() {
       if (!pair.what || !pair.reason) {
         process.stderr.write(
           `conductor: --declined-deferral needs BOTH halves non-empty — got ` +
-          `what="${pair.what}", reason="${pair.reason}". What was declined, and why not: a blank ` +
+          `what=${escapeControls(JSON.stringify(pair.what))}, reason=${escapeControls(JSON.stringify(pair.reason))}. What was declined, and why not: a blank ` +
           `half records a decline nobody can read, which is the silence this assertion removes.\n`);
         process.exit(1);
       }
@@ -782,7 +782,7 @@ export function updateEpic() {
     const { remaining, removed, missing } = planWithdrawal(epic.attributedCommits, shas, withdrawResolved);
     if (missing.length) {
       process.stderr.write(
-        `conductor: '${escapeControls(id)}' never attributed ${missing.join(", ")} — nothing to withdraw. ` +
+        `conductor: '${escapeControls(id)}' never attributed ${escapeControls(missing.join(", "))} — nothing to withdraw. ` +
         `It currently attributes: ${epic.attributedCommits && epic.attributedCommits.length ? epic.attributedCommits.join(", ") : "(none)"}.\n`);
       process.exit(1);
     }
@@ -1008,8 +1008,8 @@ export function updateEpic() {
     const missing = missingAttributions(loadState(), id, wrote);
     if (missing.length) {
       process.stderr.write(
-        `conductor: --attribute-commit wrote ${wrote.join(", ")} to '${escapeControls(id)}' and ` +
-        `${missing.join(", ")} ${missing.length === 1 ? "is" : "are"} NOT in .conductor/state.json ` +
+        `conductor: --attribute-commit wrote ${escapeControls(wrote.join(", "))} to '${escapeControls(id)}' and ` +
+        `${escapeControls(missing.join(", "))} ${missing.length === 1 ? "is" : "are"} NOT in .conductor/state.json ` +
         "afterwards. NOTHING has been recorded for those commits — do not treat this epic's " +
         "attribution as current. Re-run the attribution, then verify with `git show` against the " +
         "COMMIT rather than against the working tree.\n");

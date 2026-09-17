@@ -37,7 +37,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { EPIC_ID_FORMAT, ROOT, SPECS_DIR, printedId, orNoRemedy, commandValue } from "./constants.mjs";
+import { EPIC_ID_FORMAT, ROOT, SPECS_DIR, escapeControls, printedId, orNoRemedy, commandValue } from "./constants.mjs";
 import { isInitialized, loadState } from "./state.mjs";
 import { artifactClaimants, normalizeArtifactPath } from "./source-artifacts.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
@@ -180,7 +180,7 @@ export function formatSpecCoverage(report) {
     L.push("at them with `verify-specs --root <path>`.");
     L.push("");
     if (report.dangling.length) L.push(...danglingBlock(report.dangling));
-    return L.join("\n");
+    return L.map(escapeControls).join("\n");
   }
 
   L.push(`root: \`${report.root}\` — ${report.documents.length} document(s)`);
@@ -205,7 +205,7 @@ export function formatSpecCoverage(report) {
   }
   L.push("");
   if (report.dangling.length) L.push(...danglingBlock(report.dangling));
-  return L.join("\n");
+  return L.map(escapeControls).join("\n");
 }
 
 /** #148's candidate set, as data. For every document under the root, the epic ids its own header
@@ -256,7 +256,7 @@ export function formatHeaderCandidates(report) {
     L.push(`no spec root at \`${report.root}\` — no document was read.`);
     L.push("Point the check at your design documents with `verify-specs --headers --root <path>`.");
     L.push("");
-    return L.join("\n");
+    return L.map(escapeControls).join("\n");
   }
   if (!report.proposals.length) {
     L.push("No uncovered document names an epic that exists — nothing to propose.");
@@ -281,7 +281,7 @@ export function formatHeaderCandidates(report) {
     }
     L.push("");
   }
-  return L.join("\n");
+  return L.map(escapeControls).join("\n");
 }
 
 /** The other half of the set difference: an epic naming a document that is not there.

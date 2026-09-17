@@ -1596,9 +1596,9 @@ export function warnRootDivergence(stream = process.stderr) {
   const d = rootDivergence();
   if (!d) return null;
   stream.write(
-    `conductor: ⚠ WRITING A DIFFERENT REPOSITORY — CLAUDE_PROJECT_DIR points at ${d.target}\n` +
-    `conductor:   You are in ${d.cwd}, which has a conductor of its own. Every path this ` +
-    `command reads or writes belongs to ${d.target}. Unset CLAUDE_PROJECT_DIR to act here instead.\n`
+    `conductor: ⚠ WRITING A DIFFERENT REPOSITORY — CLAUDE_PROJECT_DIR points at ${escapeControls(d.target)}\n` +
+    `conductor:   You are in ${escapeControls(d.cwd)}, which has a conductor of its own. Every path this ` +
+    `command reads or writes belongs to ${escapeControls(d.target)}. Unset CLAUDE_PROJECT_DIR to act here instead.\n`
   );
   return d;
 }

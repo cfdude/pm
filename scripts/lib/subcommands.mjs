@@ -1046,6 +1046,6 @@ export function honchoMemory() {
   // a line the agent pastes into Honcho verbatim.
   if (action === "push") {
     const note = deferralNote(deferralHistory(loadState(), epicId));
-    if (note) process.stderr.write(`conductor: \`${epicId}\` — ${note}\n`);
+    if (note) process.stderr.write(`conductor: \`${escapeControls(epicId)}\` — ${note}\n`);
   }
 }

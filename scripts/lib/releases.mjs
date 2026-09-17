@@ -291,7 +291,7 @@ export function release() {
     delete knownEpic(unmember.epic).release;
     amend(rel, { op: "unmember", epic: unmember.epic, reason: unmember.reason });
     process.stderr.write(
-      `conductor: '${escapeControls(unmember.epic)}' is no longer a member of '${escapeControls(id)}' — ${unmember.reason}. ` +
+      `conductor: '${escapeControls(unmember.epic)}' is no longer a member of '${escapeControls(id)}' — ${escapeControls(unmember.reason)}. ` +
       "It keeps its place in the backlog; nothing about the epic itself changed.\n");
   }
 
@@ -300,8 +300,8 @@ export function release() {
     rel.deferred = rel.deferred.filter(d => !d || d.epic !== undefer.epic);
     amend(rel, { op: "undefer", epic: undefer.epic, reason: undefer.reason, was: was && was.reason });
     process.stderr.write(
-      `conductor: '${escapeControls(undefer.epic)}' is no longer deferred from '${escapeControls(id)}' — ${undefer.reason} ` +
-      `(the exclusion read: ${was && was.reason}). It is NOT a member: say so with --member.\n`);
+      `conductor: '${escapeControls(undefer.epic)}' is no longer deferred from '${escapeControls(id)}' — ${escapeControls(undefer.reason)} ` +
+      `(the exclusion read: ${escapeControls(was && was.reason)}). It is NOT a member: say so with --member.\n`);
   }
 
   const saved = saveState(state);

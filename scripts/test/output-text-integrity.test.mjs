@@ -579,3 +579,436 @@ test("6.5b REGRESSION GUARD: a legacy secondary tracker whose repo holds a contr
   ok(cwd, ["set-tracker", "--role", "secondary", "--system", "gitlab", "--repo", repo, "--remove"]);
   assert.deepEqual(readState(cwd).secondaryTrackers || [], [], "the legacy entry was removed");
 });
+
+// ═══════════════════════════════ 7. the rule is held by registries, not by a task list ═══════════════════════════════
+//
+// design D3. ONE accumulated fixture: every recipe runs, IN DECLARATION ORDER, against one repository,
+// and the surfaces run once over the record they leave — a value one verb stores and only another
+// prints is caught (Gate 1 lens A: `claim --session` stored, `owners` printed). Every recipe is exactly
+// one of `rendered: true` (its tag must appear, escaped, on some surface), `notRendered: "<why>"`, or
+// `exempt: "<the check that refuses it>"` (it still RUNS, must exit non-zero, and its output is swept).
+
+/** The poison of design D3 with a per-input tag, so an assertion can say WHICH input reached a surface. */
+export const poison = (n) => "x" + LF + "FORGED" + LS + "FORGED" + NEL + "FORGED" + CR + "FORGED|FORGED-ZQ" + n + "QZ";
+export const tagOf = (n) => "ZQ" + n + "QZ";
+const tagOfValue = (v) => /ZQ\w+QZ/.exec(v)[0];
+
+/** The registry projection the recipe keys must equal (7.1): every value-bearing flag of every verb,
+ *  plus every free-text positional. Derived at test time, never typed. */
+export async function poisonKeyProjection() {
+  const c = await import(lib("constants.mjs"));
+  const verbs = new Set([...c.EPIC_FLAGS, ...c.VERB_FLAGS].flatMap(f => f.commands));
+  const keys = [];
+  for (const v of [...verbs].sort()) for (const f of c.valueBearingFlagsFor(v)) keys.push(`${v} --${f.flag}`);
+  for (const [v, p] of Object.entries(c.VERB_POSITIONALS)) if (p.freeText) keys.push(`${v} <positional>`);
+  return keys;
+}
+
+const EXEMPT = {
+  vocab: (flag) => `--${flag} takes a fixed vocabulary, and a value outside it is refused`,
+  idFormat: "the epic id format (EPIC_ID_FORMAT) refuses it",
+  releaseFormat: "a new release id must match the id format (design D5)",
+  trackerScope: "set-tracker refuses a control character in a tracker scope (design D8)",
+  commit: "a commit value must resolve to a commit in this repository",
+  knownEpic: (flag) => `--${flag} must name an epic in the record`,
+  number: (flag) => `--${flag} must be a number`,
+  timestamp: (flag) => `--${flag} must be an ISO-8601 timestamp`,
+};
+
+/** Ordered recipe table. `run(ctx, v)` returns the recipe's final `{status, stdout, stderr}`; any setup
+ *  it needs goes through ok(), so a fixture step that stops working fails loudly. */
+export const POISON_RECIPES = [];
+const recipe = (key, spec) => POISON_RECIPES.push({ key, ...spec });
+const planned = ["--lane", "claude-code", "--status", "planned"];
+let seq = 0;
+const fresh = (p) => `${p}-${++seq}`;
+
+// ── add-epic: one fresh planned epic per flag, so its title and description render in the Backlog ──
+recipe("add-epic --id", { exempt: EXEMPT.idFormat, run: (c, v) => pm(c.cwd, ["add-epic", "--id", v, "--lane", "claude-code"]) });
+recipe("add-epic --title", { rendered: true, run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("t"), ...planned, "--title", v]) });
+recipe("add-epic --lane", { exempt: EXEMPT.vocab("lane"), run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("l"), "--lane", v]) });
+recipe("add-epic --priority", { rendered: true, run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("p"), ...planned, "--priority", v]) });   // not a vocabulary: stored and rendered
+recipe("add-epic --status", { exempt: EXEMPT.vocab("status"), run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("s"), "--lane", "claude-code", "--status", v]) });
+recipe("add-epic --parent", { exempt: EXEMPT.knownEpic("parent"), run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("pa"), "--lane", "claude-code", "--parent", v]) });
+recipe("add-epic --external-id", { rendered: true, hookOutput: true, run: (c, v) => refreshOwed(c, (id) => ["add-epic", "--id", id, "--lane", "claude-code", "--external-id", v]) });
+recipe("add-epic --external-url", { rendered: true, hookOutput: true, run: (c, v) => refreshOwed(c, (id) => ["add-epic", "--id", id, "--lane", "claude-code", "--external-id", "X-1", "--external-url", v]) });
+recipe("add-epic --plan", { notRendered: "a plan path is read as a progress source and printed by no surface", run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("pl"), "--lane", "superpowers", "--status", "planned", "--plan", v]) });
+recipe("add-epic --spec", { rendered: true, run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("sp"), ...planned, "--spec", v]) });
+recipe("add-epic --link", { rendered: true, run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("lk"), ...planned, "--link", `relates-to:base:${v}`]) });
+recipe("add-epic --description", { rendered: true, run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("d"), ...planned, "--description", v]) });
+recipe("add-epic --notes", { notRendered: "notes are stored and printed by no surface", run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("n"), ...planned, "--notes", v]) });
+recipe("add-epic --external-updated-at", { notRendered: "an external-updated-at watermark is compared against the tracker, never printed", run: (c, v) => pm(c.cwd, ["add-epic", "--id", fresh("xa"), ...planned, "--external-updated-at", v]) });
+recipe("add-epic --add-story", { rendered: true, expect: "fail", run: (c, v) => {
+  const id = fresh("as");
+  ok(c.cwd, ["add-epic", "--id", id, "--lane", "claude-code", "--add-story", v]);
+  return pm(c.cwd, ["update-epic", id, "--status", "archived", "--outcome", "delivered", "--no-deferrals"]);   // the handoff refusal prints the title
+} });
+
+// ── add-many: the same fields through a batch document (the non-argv half of the same keys) ──
+const batchArgs = (c, entry) => {
+  const p = path.join(c.cwd, `${fresh("batch")}.json`);
+  fs.writeFileSync(p, JSON.stringify({ epics: [entry] }));
+  return ["add-many", "--from", p];
+};
+const batch = (c, entry) => pm(c.cwd, batchArgs(c, entry));
+/** Register a tracker-linked epic, make it active (the refresh debt is incurred at activation), read
+ *  the brief that names its external url or id, then hand the active pointer back. */
+function refreshOwed(c, register) {
+  const id = fresh("ro");
+  ok(c.cwd, register(id));
+  ok(c.cwd, ["set-active", id]);
+  const brief = pm(c.cwd, ["brief", "--platform", "claude-code"]);
+  ok(c.cwd, ["update-epic", id, "--status", "later"]);
+  ok(c.cwd, ["set-active", "base"]);
+  return brief;
+}
+recipe("add-many --id", { exempt: EXEMPT.idFormat, run: (c, v) => batch(c, { id: v, lane: "claude-code" }) });
+recipe("add-many --title", { rendered: true, run: (c, v) => batch(c, { id: fresh("mt"), lane: "claude-code", status: "planned", title: v }) });
+recipe("add-many --lane", { exempt: EXEMPT.vocab("lane"), run: (c, v) => batch(c, { id: fresh("ml"), lane: v }) });
+recipe("add-many --priority", { rendered: true, run: (c, v) => batch(c, { id: fresh("mp"), lane: "claude-code", status: "planned", priority: v }) });
+recipe("add-many --status", { exempt: EXEMPT.vocab("status"), run: (c, v) => batch(c, { id: fresh("ms"), lane: "claude-code", status: v }) });
+recipe("add-many --parent", { exempt: EXEMPT.knownEpic("parent"), run: (c, v) => batch(c, { id: fresh("mpa"), lane: "claude-code", parent: v }) });
+recipe("add-many --external-id", { rendered: true, hookOutput: true, run: (c, v) => refreshOwed(c, (id) => batchArgs(c, { id, lane: "claude-code", externalId: v })) });
+recipe("add-many --external-url", { rendered: true, hookOutput: true, run: (c, v) => refreshOwed(c, (id) => batchArgs(c, { id, lane: "claude-code", externalId: "X-2", externalUrl: v })) });
+recipe("add-many --plan", { notRendered: "a plan path is read as a progress source and printed by no surface", run: (c, v) => batch(c, { id: fresh("mpl"), lane: "superpowers", status: "planned", planPath: v }) });
+recipe("add-many --spec", { rendered: true, run: (c, v) => batch(c, { id: fresh("msp"), lane: "claude-code", status: "planned", specPath: v }) });
+recipe("add-many --link", { rendered: true, run: (c, v) => batch(c, { id: fresh("mlk"), lane: "claude-code", status: "planned", links: [{ type: "relates-to", epic: "base", reason: v }] }) });
+recipe("add-many --description", { rendered: true, run: (c, v) => batch(c, { id: fresh("md"), lane: "claude-code", status: "planned", description: v }) });
+recipe("add-many --external-updated-at", { notRendered: "an external-updated-at watermark is compared against the tracker, never printed", run: (c, v) => batch(c, { id: fresh("mxa"), lane: "claude-code", externalUpdatedAt: v }) });
+recipe("add-many --add-story", { rendered: true, expect: "fail", run: (c, v) => {
+  const id = fresh("mas");
+  const r = batch(c, { id, lane: "claude-code", stories: [v] });
+  assert.equal(r.status, 0, r.stderr);
+  return pm(c.cwd, ["update-epic", id, "--status", "archived", "--outcome", "delivered", "--no-deferrals"]);
+} });
+recipe("add-many --from", { exempt: "--from must name a readable batch document", run: (c, v) => pm(c.cwd, ["add-many", "--from", v]) });
+
+// ── --platform on every verb that takes it: a fixed vocabulary ──
+for (const verb of ["brief", "commit-nudge", "gate-guard", "init", "lesson-advice", "rules", "rules-target", "snapshot", "write-rules"]) {
+  recipe(`${verb} --platform`, { exempt: EXEMPT.vocab("platform"), run: (c, v) => pm(c.cwd, [verb, "--platform", v], { input: "{}" }) });
+}
+
+// ── read verbs ──
+recipe("activity --since", { notRendered: "an unparseable --since filters nothing and is printed by no surface", run: (c, v) => pm(c.cwd, ["activity", "--since", v]) });
+recipe("activity --epic", { notRendered: "--epic only filters the events read; the report does not echo it", run: (c, v) => pm(c.cwd, ["activity", "--epic", v]) });
+recipe("changelog --since", { notRendered: "--since selects changelog sections and is not echoed", run: (c, v) => pm(c.cwd, ["changelog", "--since", v]) });
+recipe("plan-hierarchy --parent", { exempt: EXEMPT.knownEpic("parent"), run: (c, v) => pm(c.cwd, ["plan-hierarchy", "--parent", v]) });
+recipe("rules --epic", { notRendered: "--epic selects the review mode the block states and is not echoed", run: (c, v) => pm(c.cwd, ["rules", "--epic", v]) });
+recipe("triage --limit", { exempt: EXEMPT.number("limit"), run: (c, v) => pm(c.cwd, ["triage", "--limit", v, "an ask"]) });
+recipe("triage <positional>", { notRendered: "triage's stdout is one JSON document (design Non-Goals)", run: (c, v) => pm(c.cwd, ["triage", v]) });
+recipe("suggest-lane --ask", { notRendered: "suggest-lane's stdout is one JSON document (design Non-Goals)", run: (c, v) => pm(c.cwd, ["suggest-lane", "--ask", v]) });
+recipe("suggest-lane <positional>", { notRendered: "suggest-lane's stdout is one JSON document (design Non-Goals)", run: (c, v) => pm(c.cwd, ["suggest-lane", v]) });
+recipe("verify-specs --root", { rendered: true, run: (c, v) => pm(c.cwd, ["verify-specs", "--root", v]) });
+recipe("purge-logs --kind", { exempt: EXEMPT.vocab("kind"), run: (c, v) => pm(c.cwd, ["purge-logs", "--kind", v]) });
+recipe("purge-logs --keep", { exempt: EXEMPT.number("keep"), run: (c, v) => pm(c.cwd, ["purge-logs", "--kind", "detours", "--keep", v]) });
+recipe("purge-logs --over", { exempt: "--over must be a size like 500K", run: (c, v) => pm(c.cwd, ["purge-logs", "--kind", "detours", "--over", v]) });
+recipe("purge-logs --older-than", { exempt: EXEMPT.number("older-than"), run: (c, v) => pm(c.cwd, ["purge-logs", "--kind", "detours", "--older-than", v]) });
+
+// ── claims ──
+recipe("claim --session", { rendered: true, run: (c, v) => pm(c.cwd, ["claim", "cl", "--session", v]) });
+recipe("claim --ttl", { exempt: EXEMPT.number("ttl"), run: (c, v) => pm(c.cwd, ["claim", "cl2", "--session", "s", "--ttl", v]) });
+recipe("unclaim --session", { rendered: true, run: (c, v) => pm(c.cwd, ["unclaim", "cl2", "--session", v]) });
+
+// ── update-epic ──
+recipe("update-epic --title", { rendered: true, run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--title", v]) });
+recipe("update-epic --lane", { exempt: EXEMPT.vocab("lane"), run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--lane", v]) });
+recipe("update-epic --priority", { rendered: true, run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--priority", v]) });
+recipe("update-epic --status", { exempt: EXEMPT.vocab("status"), run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--status", v]) });
+recipe("update-epic --parent", { exempt: EXEMPT.knownEpic("parent"), run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--parent", v]) });
+recipe("update-epic --external-id", { rendered: true, hookOutput: true, run: (c, v) => refreshOwed(c, (id) => { ok(c.cwd, ["add-epic", "--id", id, "--lane", "claude-code"]); return ["update-epic", id, "--external-id", v]; }) });
+recipe("update-epic --external-url", { rendered: true, hookOutput: true, run: (c, v) => refreshOwed(c, (id) => { ok(c.cwd, ["add-epic", "--id", id, "--lane", "claude-code", "--external-id", "X-3"]); return ["update-epic", id, "--external-url", v]; }) });
+recipe("update-epic --plan", { notRendered: "a plan path is read as a progress source and printed by no surface", run: (c, v) => pm(c.cwd, ["update-epic", "ue2", "--plan", v]) });
+recipe("update-epic --spec", { rendered: true, run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--spec", v]) });
+recipe("update-epic --link", { rendered: true, run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--link", `relates-to:base:${v}`]) });
+recipe("update-epic --clear", { exempt: "--clear must name a field this command can unset", run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--clear", v]) });
+recipe("update-epic --description", { rendered: true, run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--description", v]) });
+recipe("update-epic --notes", { notRendered: "notes are stored and printed by no surface", run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--notes", v]) });
+recipe("update-epic --external-updated-at", { notRendered: "an external-updated-at watermark is compared against the tracker, never printed", run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--external-updated-at", v]) });
+recipe("update-epic --attribute-commit", { exempt: EXEMPT.commit, run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--attribute-commit", v]) });
+recipe("update-epic --withdraw-commit", { exempt: EXEMPT.commit, run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--withdraw-commit", v, "--withdrawal-reason", "r"]) });
+recipe("update-epic --withdrawal-reason", { rendered: true, run: (c, v) => {
+  ok(c.cwd, ["record-gate-review", "wg", "--gate", "1", "--verdict", "pass", "--artifact", "README.md"]);
+  return pm(c.cwd, ["update-epic", "wg", "--withdraw-gate-review", "1", "--withdrawal-reason", v]);
+} });
+recipe("update-epic --withdraw-gate-review", { exempt: EXEMPT.vocab("withdraw-gate-review"), run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--withdraw-gate-review", v, "--withdrawal-reason", "r"]) });
+recipe("update-epic --outcome", { exempt: EXEMPT.vocab("outcome"), run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--status", "archived", "--outcome", v, "--reason", "r", "--no-deferrals"]) });
+recipe("update-epic --reason", { rendered: true, run: (c, v) => pm(c.cwd, ["update-epic", "k1", "--status", "archived", "--outcome", "killed", "--reason", v, "--no-deferrals"]) });
+recipe("update-epic --deferral", { notRendered: "a deferral assertion is read by the archive gate and printed by no surface", run: (c, v) => pm(c.cwd, ["update-epic", "k2", "--status", "archived", "--outcome", "killed", "--reason", "r", "--deferral", `base:${v}`]) });
+recipe("update-epic --declined-deferral", { notRendered: "a deferral assertion is read by the archive gate and printed by no surface", run: (c, v) => pm(c.cwd, ["update-epic", "k3", "--status", "archived", "--outcome", "killed", "--reason", "r", "--declined-deferral", `${v}:why not`]) });
+recipe("update-epic --carried-to", { rendered: true, run: (c, v) => pm(c.cwd, ["update-epic", "k4", "--status", "archived", "--outcome", "delivered", "--carried-to", v, "--no-deferrals"]) });
+recipe("update-epic --correct-disposition", { rendered: true, run: (c, v) => (ok(c.cwd, ["update-epic", "k5", "--status", "archived", "--outcome", "killed", "--reason", "r", "--no-deferrals"]), pm(c.cwd, ["update-epic", "k5", "--status", "archived", "--outcome", "abandoned", "--reason", "r2", "--correct-disposition", v, "--no-deferrals"])) });
+recipe("update-epic --review-mode", { exempt: EXEMPT.vocab("review-mode"), run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--review-mode", v]) });
+recipe("update-epic --add-story", { rendered: true, expect: "fail", run: (c, v) => {
+  ok(c.cwd, ["update-epic", "st", "--add-story", v]);
+  return pm(c.cwd, ["update-epic", "st", "--status", "archived", "--outcome", "delivered", "--no-deferrals"]);
+} });
+recipe("update-epic --story", { exempt: EXEMPT.number("story"), run: (c, v) => pm(c.cwd, ["update-epic", "st", "--story", v, "--done"]) });
+recipe("update-epic --wont-do", { notRendered: "a story's won't-do reason is stored and printed by no surface", run: (c, v) => pm(c.cwd, ["update-epic", "st", "--story", "1", "--wont-do", v]) });
+
+// ── gates, reconcile, tracker refresh ──
+recipe("record-gate-review --gate", { exempt: EXEMPT.vocab("gate"), run: (c, v) => pm(c.cwd, ["record-gate-review", "ue", "--gate", v, "--verdict", "pass"]) });
+recipe("record-gate-review --verdict", { exempt: EXEMPT.vocab("verdict"), run: (c, v) => pm(c.cwd, ["record-gate-review", "ue", "--gate", "1", "--verdict", v, "--artifact", "README.md"]) });
+recipe("record-gate-review --base-sha", { exempt: EXEMPT.commit, run: (c, v) => pm(c.cwd, ["record-gate-review", "ue", "--gate", "2", "--verdict", "pass", "--base-sha", v, "--head-sha", c.head]) });
+recipe("record-gate-review --head-sha", { exempt: EXEMPT.commit, run: (c, v) => pm(c.cwd, ["record-gate-review", "ue", "--gate", "2", "--verdict", "pass", "--base-sha", c.root, "--head-sha", v]) });
+recipe("record-gate-review --artifact", { notRendered: "Gate 1 renders an artifact COUNT, never a path", run: (c, v) => pm(c.cwd, ["record-gate-review", "ue", "--gate", "1", "--verdict", "pass", "--artifact", v]) });
+recipe("record-gate-review --reviewer", { rendered: true, run: (c, v) => pm(c.cwd, ["record-gate-review", "ue", "--gate", "1", "--verdict", "pass", "--artifact", "README.md", "--reviewer", v]) });
+recipe("record-reconcile --detour", { exempt: EXEMPT.knownEpic("detour"), run: (c, v) => pm(c.cwd, ["record-reconcile", "base", "--detour", v, "--verdict", "valid", "--amendments", "none"]) });
+recipe("record-reconcile --verdict", { exempt: EXEMPT.vocab("verdict"), run: (c, v) => pm(c.cwd, ["record-reconcile", "base", "--detour", "rd", "--verdict", v, "--amendments", "none"]) });
+recipe("record-reconcile --amendments", { notRendered: "amendments are stored on the reconcile link and printed by no surface", run: (c, v) => pm(c.cwd, ["record-reconcile", "base", "--detour", "rd", "--verdict", "valid", "--amendments", v]) });
+recipe("record-reconcile --amendment", { notRendered: "amendments are stored on the reconcile link and printed by no surface", run: (c, v) => pm(c.cwd, ["record-reconcile", "base", "--detour", "rd", "--verdict", "invalidated", "--amendment", v]) });
+recipe("record-tracker-refresh --verdict", { exempt: EXEMPT.vocab("verdict"), run: (c, v) => pm(c.cwd, ["record-tracker-refresh", "tr", "--verdict", v, "--external-updated-at", "2026-09-01T00:00:00Z"]) });
+recipe("record-tracker-refresh --external-updated-at", { notRendered: "an external-updated-at watermark is compared against the tracker, never printed", run: (c, v) => pm(c.cwd, ["record-tracker-refresh", "tr", "--verdict", "unchanged", "--external-updated-at", v]) });
+recipe("record-tracker-refresh --summary", { notRendered: "a refresh summary is stored and printed by no surface", run: (c, v) => pm(c.cwd, ["record-tracker-refresh", "tr", "--verdict", "material-change", "--external-updated-at", "2026-09-01T00:00:00Z", "--summary", v]) });
+
+// ── releases ──
+recipe("release --intent", { rendered: true, run: (c, v) => pm(c.cwd, ["release", "1.0.0", "--intent", v]) });
+recipe("release --target", { rendered: true, run: (c, v) => pm(c.cwd, ["release", "1.0.0", "--target", v]) });
+recipe("release --member", { exempt: EXEMPT.knownEpic("member"), run: (c, v) => pm(c.cwd, ["release", "1.0.0", "--member", v]) });
+recipe("release --defer", { exempt: EXEMPT.knownEpic("defer"), run: (c, v) => pm(c.cwd, ["release", "1.0.0", "--defer", v, "--reason", "r"]) });
+recipe("release --reason", { rendered: true, run: (c, v) => pm(c.cwd, ["release", "1.0.0", "--defer", "rel1", "--reason", v]) });
+recipe("release --undefer", { rendered: true, run: (c, v) => pm(c.cwd, ["release", "1.0.0", "--undefer", `rel1:${v}`]) });
+recipe("release --unmember", { rendered: true, run: (c, v) => {
+  ok(c.cwd, ["release", "1.0.0", "--member", "rel2"]);
+  return pm(c.cwd, ["release", "1.0.0", "--unmember", `rel2:${v}`]);
+} });
+recipe("record-cross-spec-review --verdict", { exempt: EXEMPT.vocab("verdict"), run: (c, v) => pm(c.cwd, ["record-cross-spec-review", "cs", "--verdict", v]) });
+recipe("record-cross-spec-review --reviewer", { rendered: true, run: (c, v) => pm(c.cwd, ["record-cross-spec-review", "cs", "--verdict", "pass", "--reviewer", v]) });
+
+// ── autonomy, routing, review mode, tracker ──
+recipe("set-autonomy --level", { exempt: EXEMPT.vocab("level"), run: (c, v) => pm(c.cwd, ["set-autonomy", "ue", "--level", v]) });
+recipe("set-autonomy --preauthorize", { notRendered: "autonomy grants, context and notifications are read back by the agent from state.json; no surface prints them", run: (c, v) => pm(c.cwd, ["set-autonomy", "ue", "--preauthorize", `${v}:because`]) });
+recipe("set-autonomy --context", { notRendered: "autonomy grants, context and notifications are read back by the agent from state.json; no surface prints them", run: (c, v) => pm(c.cwd, ["set-autonomy", "ue", "--context", v]) });
+recipe("set-autonomy --notify", { notRendered: "autonomy grants, context and notifications are read back by the agent from state.json; no surface prints them", run: (c, v) => pm(c.cwd, ["set-autonomy", "ue", "--notify", v]) });
+recipe("set-lane-routing --add", { notRendered: "a lane-routing override is read by suggest-lane, whose output is JSON", run: (c, v) => pm(c.cwd, ["set-lane-routing", "--add", `${v}:claude-code`]) });
+recipe("set-lane-routing --remove", { notRendered: "removing an override prints the count removed, not the match", run: (c, v) => pm(c.cwd, ["set-lane-routing", "--remove", v]) });
+recipe("set-review-mode --mode", { exempt: EXEMPT.vocab("mode"), run: (c, v) => pm(c.cwd, ["set-review-mode", "--mode", v]) });
+recipe("set-tracker --role", { exempt: EXEMPT.vocab("role"), run: (c, v) => pm(c.cwd, ["set-tracker", "--role", v, "--system", "jira"]) });
+recipe("set-tracker --system", { exempt: EXEMPT.trackerScope, run: (c, v) => pm(c.cwd, ["set-tracker", "--system", v, "--project", "ABC", "--direction", "inward"]) });
+recipe("set-tracker --repo", { exempt: EXEMPT.trackerScope, run: (c, v) => pm(c.cwd, ["set-tracker", "--role", "secondary", "--system", "gitlab", "--repo", v]) });
+recipe("set-tracker --project", { exempt: EXEMPT.trackerScope, run: (c, v) => pm(c.cwd, ["set-tracker", "--system", "jira", "--project", v, "--direction", "inward"]) });
+recipe("set-tracker --direction", { exempt: EXEMPT.vocab("direction"), run: (c, v) => pm(c.cwd, ["set-tracker", "--system", "jira", "--project", "ABC", "--direction", v]) });
+recipe("set-tracker --instance", { notRendered: "a tracker's instance is stored for the agent and printed by no surface", run: (c, v) => pm(c.cwd, ["set-tracker", "--system", "jira", "--project", "ABC", "--direction", "outward", "--instance", v]) });
+recipe("set-tracker --mechanism", { notRendered: "a tracker's mechanism is stored for the agent and printed by no surface", run: (c, v) => pm(c.cwd, ["set-tracker", "--system", "jira", "--project", "ABC", "--mechanism", v]) });
+recipe("set-tracker --intent", { notRendered: "a status intent is stored for the agent and printed by no surface", run: (c, v) => pm(c.cwd, ["set-tracker", "--system", "jira", "--project", "ABC", "--intent", `archived:${v}`]) });
+
+// ── detours and memories ──
+recipe("push-detour --detour", { exempt: EXEMPT.knownEpic("detour"), run: (c, v) => pm(c.cwd, ["push-detour", "base", "--detour", v, "--reason", "r", "--no-reconcile"]) });
+recipe("push-detour --reason", { rendered: true, run: (c, v) => pm(c.cwd, ["push-detour", "base", "--detour", "rd", "--reason", v, "--reconcile"]) });
+recipe("log-detour <positional>", { rendered: true, run: (c, v) => pm(c.cwd, ["log-detour", v]) });
+recipe("honcho-memory <positional>", { rendered: true, run: (c, v) => pm(c.cwd, ["honcho-memory", "push", "base", v]) });
+recipe("retract-detour --reason", { notRendered: "render drops RETRACTED rows, and the verb does not echo the reason", run: (c, v) => {
+  const sha = c.repo.commit({ [`src/${fresh("f")}.txt`]: "x" }, "fix: a detour commit");
+  c.repo.observe("PostToolUse", "git commit -m x");
+  assert.match(c.repo.detours(), new RegExp(sha.slice(0, 7)), "fixture: the hook logged a row for the commit");
+  return pm(c.cwd, ["retract-detour", sha, "--reason", v]);
+} });
+
+// ── the non-argv inputs (design D3 SOURCE_RECIPES): no registry declares these, so the call-site sweep
+//    (task 8.1, `rg -n "readFileSync|readdirSync|process\.env" scripts/lib`) is what keeps the list whole ──
+export const SOURCE_RECIPES = [
+  { key: "a plan file's first heading, registered by sync (printed by `release show` as a member title)", rendered: true, run: (c, v) => {
+    const plans = path.join(c.cwd, "docs", "superpowers", "plans");
+    fs.mkdirSync(plans, { recursive: true });
+    // A heading is one line, and `.` stops at LS/PS, so the tag leads and the separators follow it.
+    fs.writeFileSync(path.join(plans, "src-heading.md"), `# ${tagOfValue(v)} ${NEL}FORGED ${v.replace(/[\n\r]/g, " ")}\n\n- [ ] one\n`);
+    ok(c.cwd, ["sync"]);
+    return pm(c.cwd, ["release", "1.0.0", "--member", "src-heading"]);
+  } },
+  { key: "a change directory's name (skipped by sync, named on stderr)", rendered: true, run: (c, v) => {
+    fs.mkdirSync(path.join(c.cwd, "openspec", "changes", v), { recursive: true });
+    return pm(c.cwd, ["sync"]);
+  } },
+  { key: "a plan file's name (skipped by sync, named on stderr)", rendered: true, run: (c, v) => {
+    fs.writeFileSync(path.join(c.cwd, "docs", "superpowers", "plans", `${v}.md`), "# p\n");
+    return pm(c.cwd, ["sync"]);
+  } },
+  { key: "a .changesets fragment read by `changesets`", notRendered: "changesets prints one JSON document (design Non-Goals)", run: (c, v) => {
+    fs.mkdirSync(path.join(c.cwd, ".changesets"), { recursive: true });
+    fs.writeFileSync(path.join(c.cwd, ".changesets", "frag.md"), v);
+    return pm(c.cwd, ["changesets"]);
+  } },
+  { key: "a workspace docs/lessons frontmatter `rule` read by lesson-advice", rendered: true, run: (c, v) => {
+    fs.mkdirSync(path.join(c.cwd, "docs", "lessons"), { recursive: true });
+    // Frontmatter is one `key: value` line, so only a separator that is not LF/CR can reach the rule.
+    fs.writeFileSync(path.join(c.cwd, "docs", "lessons", "poisoned.md"),
+      "---\nlesson: poisoned\nrule: advise " + tagOfValue(v) + NEL + "FORGED " + v.replace(/[\n\r]/g, " ") +
+      "\ndetect: {\"tool\":\"Bash\",\"commandMatches\":\"poison-me\"}\n---\n\nbody\n");
+    return pm(c.cwd, ["lesson-advice", "--platform", "claude-code"], { input: JSON.stringify({ tool_name: "Bash", tool_input: { command: "poison-me" } }) });
+  } },
+  { key: "PM_SESSION", rendered: true, run: (c, v) => pm(c.cwd, ["claim", "cl3"], { env: { PM_SESSION: v } }) },
+];
+
+/** Every string inside a JSON document, recursively — a hook's output judged after decoding. */
+const jsonStrings = (x) => (typeof x === "string" ? [x] : Array.isArray(x) ? x.flatMap(jsonStrings)
+  : x && typeof x === "object" ? Object.values(x).flatMap(jsonStrings) : []);
+const isOneJsonDocument = (s) => { try { JSON.parse(s); return s.trim() !== ""; } catch { return false; } };
+
+test("7.1 POISON_RECIPES covers exactly the registry projection, each recipe declared exactly one way", async () => {
+  const keys = POISON_RECIPES.map(r => r.key);
+  const want = await poisonKeyProjection();
+  assert.deepEqual(keys.filter((k, i) => keys.indexOf(k) !== i), [], "no key has two recipes");
+  assert.deepEqual(want.filter(k => !keys.includes(k)), [], "value-bearing flags and free-text positionals with no recipe");
+  assert.deepEqual(keys.filter(k => !want.includes(k)), [], "recipes keyed by nothing the registries declare");
+  for (const r of [...POISON_RECIPES, ...SOURCE_RECIPES]) {
+    const kinds = ["rendered", "notRendered", "exempt"].filter(k => r[k] !== undefined);
+    assert.equal(kinds.length, 1, `${r.key}: declared exactly one of rendered / notRendered / exempt (got ${kinds.join(", ") || "none"})`);
+  }
+});
+
+/** Invocation tokens in an IDENTIFIER position: the epic id of an id-first verb, a release id, and the
+ *  value of every flag that names an epic, a release or a tracker scope (assertion (e)). */
+const ID_FLAGS = new Set(["--id", "--detour", "--parent", "--carried-to", "--member", "--defer", "--repo", "--system", "--project"]);
+async function identifierTokens(inv) {
+  const { VERB_POSITIONALS } = await import(lib("constants.mjs"));
+  const toks = inv.trim().split(/\s+/);
+  const verb = toks[0];
+  const pos = VERB_POSITIONALS[verb];
+  const out = [];
+  if (pos && (pos.idFirst || pos.form === "<releaseId>" || verb === "release") && toks[1] && !toks[1].startsWith("--")) out.push(toks[1]);
+  if (verb === "honcho-memory" && toks[2]) out.push(toks[2]);
+  toks.forEach((t, i) => { if (i > 0 && ID_FLAGS.has(toks[i - 1])) out.push(t); });
+  return out;
+}
+
+test("7.2 the sweep: every governed input, one accumulated record, every surface (design D3)", { timeout: 600000 }, async () => {
+  const { VERB_EFFECTS } = await import(lib("verb-effects.mjs"));
+  const { VERB_POSITIONALS } = await import(lib("constants.mjs"));
+  const problems = [];
+  const repo = observationRepo({ epicId: "base" });
+  const c = { cwd: repo.cwd, repo, root: repo.head() };
+  const cwd = repo.cwd;
+
+  // ── the record the recipes act on ──
+  for (const id of ["cl", "cl2", "cl3", "wg", "k1", "k2", "k3", "k4", "k5", "st", "rel1", "rel2", "rd"]) ok(cwd, ["add-epic", "--id", id, "--lane", "claude-code"]);
+  ok(cwd, ["add-epic", "--id", "ue", "--lane", "claude-code", "--status", "planned"]);     // planned: its title and description render
+  // A release holding two spec files, so the cross-spec verdict can be recorded at all.
+  for (const cap of ["a", "b"]) { fs.mkdirSync(path.join(cwd, "openspec", "changes", "cs1", "specs", cap), { recursive: true }); fs.writeFileSync(path.join(cwd, "openspec", "changes", "cs1", "specs", cap, "spec.md"), "# spec\n"); }
+  ok(cwd, ["add-epic", "--id", "cs1", "--lane", "openspec"]);
+  ok(cwd, ["release", "cs", "--intent", "cross-spec fixture", "--member", "cs1"]);
+  ok(cwd, ["add-epic", "--id", "ue2", "--lane", "superpowers"]);
+  ok(cwd, ["add-epic", "--id", "tr", "--lane", "claude-code", "--external-id", "TR-1", "--external-url", "https://example.test/TR-1"]);
+  ok(cwd, ["update-epic", "st", "--add-story", "a story"]);
+  ok(cwd, ["claim", "cl2", "--session", "s2"]);
+  ok(cwd, ["push-detour", "base", "--detour", "rd", "--reason", "fixture", "--reconcile"]);
+  ok(cwd, ["pop-detour", "base"]);
+  c.head = repo.commit({ "src/base.txt": "base" }, "feat: base work");
+  repo.observe();                                                         // the nudge's anchor
+
+  // ── every recipe, in order ──
+  const outputs = [];                                                     // { what, text } — prose surfaces
+  // A hook verb's JSON is judged after decoding; any other invocation whose whole stdout is one JSON
+  // document is not a prose surface for its stdout (its stderr still is).
+  const seen = (what, r, { hook = false } = {}) => {
+    outputs.push({ what: `${what} (stderr)`, text: r.stderr });
+    if (!isOneJsonDocument(r.stdout)) outputs.push({ what: `${what} (stdout)`, text: r.stdout });
+    else if (hook) for (const s of jsonStrings(JSON.parse(r.stdout))) outputs.push({ what: `${what} (decoded)`, text: s });
+  };
+  const all = [...POISON_RECIPES.map((r, i) => ({ ...r, tag: i })), ...SOURCE_RECIPES.map((r, i) => ({ ...r, tag: `S${i}` }))];
+  for (const r of all) {
+    // unclaim --session needs a live claim held by another session, taken with --steal.
+    let res;
+    try { res = r.key === "unclaim --session" ? pm(cwd, ["unclaim", "cl2", "--session", poison(r.tag), "--steal"]) : r.run(c, poison(r.tag)); }
+    catch (e) { problems.push(`${r.key}: the recipe's fixture step failed — ${e.message.split("\n")[0]}`); continue; }
+    // `hookOutput`: the recipe returns a hook verb's output (the brief a refresh debt is read from).
+    seen(r.key, res, { hook: r.hookOutput === true || VERB_EFFECTS[r.key.split(" ")[0]]?.hook === true || /lesson-advice/.test(r.key) });
+    const wantFail = r.exempt !== undefined || r.expect === "fail";
+    if (wantFail !== (res.status !== 0)) {
+      problems.push(`${r.key}: exited ${res.status}, declared ${wantFail ? "non-zero" : "0"} — ${(res.stderr || res.stdout).split("\n")[0].slice(0, 200)}`);
+    }
+  }
+
+  // ── legacy stored values (design D3's documented exception): ids, a release, a detour frame and trackers ──
+  const L = (n) => `legacy-${n}` + poison(`L${n}`);
+  const legacyDet = L(1), legacyPaused = L(2), legacyAttr = L(3), legacyDelivered = L(4), legacyRelease = "r" + poison("L5");
+  const c1 = repo.commit({ "src/legacy.txt": "1" }, "feat: legacy work");
+  repo.observe("PostToolUse", "git commit -m legacy");
+  const AT = "2026-09-01T00:00:00.000Z";
+  const epic = (id, status, extra = {}) => ({ id, title: "legacy", priority: "P1", status, role: "epic", lane: "claude-code", links: [], attributedCommits: [], ...extra });
+  legacyWrite(cwd, s => {
+    s.epics.push(epic(legacyDet, "active"), epic(legacyPaused, "paused"), epic(legacyAttr, "queued", { attributedCommits: [c1], release: legacyRelease }),
+      epic(legacyDelivered, "archived", { lane: "openspec", release: legacyRelease, disposition: { outcome: "delivered", recordedAt: AT },
+        deferralAssertion: { none: true, recordedAt: AT }, gateReview: { gate2: { verdict: "pass", baseSha: c.root, headSha: c.head, reviewedAt: AT } } }));
+    s.releases = [...(s.releases || []), { id: legacyRelease, intent: "legacy", deferred: [] }];
+    s.detourStack = [...(s.detourStack || []), { pausedEpic: legacyPaused, spawnedDetour: legacyDet, reason: poison("L6"), reconcileOnResume: true, pausedAt: AT }];
+    s.active = legacyDet;
+    s.tracker = { system: "github-issues", repo: "o/r" + poison("L7"), direction: "inward" };
+    s.secondaryTrackers = [{ system: "github-issues", role: "secondary", repo: "o/s" + poison("L8"), direction: "inward" }];
+  });
+  assert.ok(readState(cwd).epics.find(e => e.id === legacyAttr).attributedCommits.includes(c1), "fixture: C1 attributed before the amend");
+
+  // ── surfaces ──
+  // the commit nudge as a SEQUENCE: amend the attributed commit, observe; commit, observe.
+  repo.git("commit", "-q", "--amend", "-m", "feat: legacy work, amended");
+  const hook = (what, r) => seen(what, r, { hook: true });
+  hook("commit-nudge after the amend", repo.observe("PostToolUse", "git commit --amend"));
+  repo.commit({ "src/after.txt": "2" }, "feat: after the amend");
+  hook("commit-nudge after a commit", repo.observe("PostToolUse", "git commit -m after"));
+  hook("brief", pm(cwd, ["brief", "--platform", "claude-code"]));
+  hook("gate-guard", pm(cwd, ["gate-guard", "--platform", "claude-code"], { input: JSON.stringify({ tool_name: "Edit", tool_input: { file_path: "src/x.txt" } }) }));
+  hook("lesson-advice", pm(cwd, ["lesson-advice", "--platform", "claude-code"], { input: JSON.stringify({ tool_name: "Bash", tool_input: { command: "poison-me" } }) }));
+  for (const [verb, eff] of Object.entries(VERB_EFFECTS)) {
+    if (eff.effect === "read-only" && Array.isArray(eff.exercise) && !eff.hook) seen(`${verb} (exercise)`, pm(cwd, [verb, ...eff.exercise]));
+  }
+  seen("release show", pm(cwd, ["release", "show"]));
+  seen("release show <legacy id>", pm(cwd, ["release", "show", legacyRelease]));
+  seen("release show 1.0.0", pm(cwd, ["release", "show", "1.0.0"]));
+  const P = poison("POS");
+  for (const [verb, pos] of Object.entries(VERB_POSITIONALS)) {
+    if (pos.idFirst || pos.form === "<id>" || pos.form === "<releaseId>") seen(`${verb} <poisoned id>`, pm(cwd, verb === "release" ? ["release", P, "--intent", "x"] : [verb, P]));
+  }
+  seen("retract-detour <poisoned sha>", pm(cwd, ["retract-detour", P, "--reason", "r"]));
+  ok(cwd, ["write-rules", "--platform", "claude-code"]);
+  ok(cwd, ["render"]);
+  const projectText = projectMd(cwd);
+  const rulesText = fs.readFileSync(path.join(cwd, "CLAUDE.md"), "utf8");
+  const honchoLog = fs.readFileSync(path.join(cwd, ".conductor", "honcho-memories.log"), "utf8");
+  outputs.push({ what: "PROJECT.md", text: projectText }, { what: "CLAUDE.md", text: rulesText }, { what: "honcho-memories.log", text: honchoLog });
+
+  // ── non-vacuity: the legacy records actually reached the printers this sweep exists for ──
+  const textOf = (prefix) => outputs.filter(o => o.what.startsWith(prefix)).map(o => o.text).join("\n");
+  assert.match(textOf("commit-nudge after"), /no verb can rename it/, "the nudge reached a control-character id and printed the no-remedy message");
+  assert.match(textOf("integrity (exercise)"), /no verb can rename it/, "integrity reached a control-character id and printed the no-remedy message");
+  assert.match(textOf("integrity (exercise)"), /tracker-repo-not-a-github-repository — [1-9]/, "integrity reported the legacy github-issues trackers");
+  assert.match(textOf("integrity (exercise)"), /delivered-release-epic-left-open — [1-9]/, "integrity reported the legacy release");
+  assert.match(textOf("brief"), /DETOUR STACK/, "the brief rendered the legacy detour frame");
+
+  // ── assertions ──
+  for (const { what, text } of outputs) {
+    // (a) no value begins a line; (b) no raw line separator other than LF reaches a prose surface
+    const forged = readerLines(text).filter(l => /^FORGED/.test(l));
+    if (forged.length) problems.push(`(a) ${what}: a line begins FORGED — ${JSON.stringify(forged[0]).slice(0, 160)}`);
+    for (const [name, sep] of [["U+2028", LS], ["U+2029", PS], ["U+0085", NEL], ["CR", CR]]) {
+      if (text.includes(sep)) problems.push(`(b) ${what}: holds a raw ${name}`);
+    }
+    // (e) no printed invocation names an identifier holding a control character, escaped or raw
+    for (const inv of await printedInvocations(text)) {
+      for (const tok of await identifierTokens(inv)) {
+        if (/FORGED/.test(tok) || tok.includes(BS + "u00") || tok.includes(BS + "u20")) {
+          problems.push(`(e) ${what}: an invocation names a control-character identifier — ${inv.slice(0, 160)}`);
+          break;
+        }
+      }
+    }
+  }
+  // (c) every PROJECT.md table data row has the header's cell count
+  const pl = projectText.split("\n");
+  pl.forEach((line, i) => {
+    if (!/^\|[-| ]+\|$/.test(line) || !pl[i - 1] || !pl[i - 1].startsWith("|")) return;
+    const width = gfmCells(pl[i - 1]).length;
+    for (let j = i + 1; j < pl.length && pl[j].trim() !== ""; j++) {
+      if (gfmCells(pl[j]).length !== width) problems.push(`(c) PROJECT.md: a row under "${pl[i - 1]}" has ${gfmCells(pl[j]).length} cells, not ${width}`);
+    }
+  });
+  // (d) one line per honcho-memories.log entry
+  for (const l of honchoLog.split("\n").filter(Boolean)) {
+    if (!/^\d{4}-\d{2}-\d{2}T[^\t]+\t/.test(l)) problems.push(`(d) honcho-memories.log: a line that is not one timestamped entry — ${JSON.stringify(l).slice(0, 120)}`);
+  }
+  // (f) every rendered recipe's tag reaches a surface; a notRendered one's does not
+  const everything = outputs.map(o => o.text).join("\n");
+  for (const r of all) {
+    const reached = everything.includes(tagOf(r.tag));
+    if (r.rendered && !reached) problems.push(`(f) ${r.key}: declared rendered, and its tag reached no surface`);
+    if (r.notRendered && reached) problems.push(`(f) ${r.key}: declared notRendered ("${r.notRendered}"), yet its tag reached a surface`);
+  }
+  assert.deepEqual(problems, [], `\n${problems.join("\n")}`);
+});

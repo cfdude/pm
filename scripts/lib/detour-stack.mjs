@@ -186,7 +186,7 @@ export function pushDetour() {
   // Computed from the POST-push state so the push being made is counted; silent on a first
   // deferral, because the first detour is the mechanism working.
   const note = deferralNote(deferralHistory(state, id));
-  if (note) process.stderr.write(`conductor: \`${id}\` — ${note}\n`);
+  if (note) process.stderr.write(`conductor: \`${escapeControls(id)}\` — ${note}\n`);
   // Step 3 of the old protocol, no longer a step: the ready-to-copy Honcho line is emitted here
   // and logged durably, so the pivot survives outside this repo without a second invocation the
   // agent has to remember. stdout, because it is a line the agent pastes verbatim.

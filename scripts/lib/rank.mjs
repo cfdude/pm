@@ -103,7 +103,7 @@ export function reorder() {
     .map(e => e.id);
   if (missing.length) {
     fail(`reorder takes the WHOLE ${band} band so the numbering stays contiguous — ` +
-      `not named: ${missing.join(", ")}. Add them in the position you want them.`);
+      `not named: ${escapeControls(missing.join(", "))}. Add them in the position you want them.`);
   }
 
   ids.forEach((id, i) => { byId.get(id).rank = i + 1; });

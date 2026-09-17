@@ -176,11 +176,11 @@ Pairs: 6.1–6.5b (6.4c included) land with 6.6, 6.7 and 6.8 (one commit; they s
 
 Pairs: 7.1 lands with 7.2.
 
-- [ ] 7.1 RED: `POISON_RECIPES` completeness — its key set equals every `valueBearingFlagsFor(verb)`
+- [x] 7.1 RED: `POISON_RECIPES` completeness — its key set equals every `valueBearingFlagsFor(verb)`
       entry plus every `freeText` positional, counted fresh on the post-change-1-and-2 tree (the 120 + 4
       measured at f49871a is stale); saved red run shows the missing keys, including
       `retract-detour --reason` and `suggest-lane --ask`
-- [ ] 7.2 GREEN: the sweep of design D3 over ONE accumulated fixture — argv recipes for every key and
+- [x] 7.2 GREEN: the sweep of design D3 over ONE accumulated fixture — argv recipes for every key and
       the `SOURCE_RECIPES` (add-many `--from` fields, plan heading, change-directory and plan-file names,
       `.changesets` fragment, workspace lesson frontmatter, `PM_SESSION`) — including
       `retract-detour --reason` (a real auto-logged row built through the commit-nudge hook;
