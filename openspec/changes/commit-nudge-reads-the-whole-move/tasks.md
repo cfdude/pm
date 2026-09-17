@@ -136,12 +136,15 @@ Pairs: 5.1–5.3a (with 5.2a) land with 5.4.
 - [ ] 5.2a RED: four epics, each with the replaced commit amended and dead; for each, run the
       withdraw command by hand and assert its exit status agrees with whether the line was printed.
       E (openspec, archived `delivered`, ONE attributed commit, passing Gate 2): no `update-epic E
-      --withdraw-commit` line, output names E as delivered and says a disposition must be recorded, the
-      command exits 1. E2 (openspec, archived `delivered`, TWO attributed commits both reached by the
+      --withdraw-commit` line, output names E as delivered and says `update-epic`'s refusal names the
+      remedy (the hook names none; the remedy's text and that it runs are tested by
+      `emitted-commands-run-as-written` task 2.6), the command exits 1. E2 (openspec, archived `delivered`, TWO attributed commits both reached by the
       Gate 2 head, the amended one withdrawn): the line IS printed and exits 0 (fails against a
       lane-keyed shortcut). E4 (openspec, stored `queued`, outcome `delivered`, change dir archived on
-      disk, one attributed commit): no line, exits 1 (fails against a stored-`archived`-only test).
-      F (claude-code, archived `delivered`): the line IS printed, no disposition sentence, exits 0.
+      disk, one attributed commit, with a passing Gate 2 whose head is that commit): no line, exits 1
+      (fails against a stored-`archived`-only test; without the Gate 2 the withdrawal breaks nothing
+      and exits 0).
+      F (claude-code, archived `delivered`): the line IS printed, no refusal sentence, exits 0.
       E also fails a hook whose simulated record only removes the sha (it reads `none-attributed` and
       prints the line). Fails on 0.44.0: the hook prints no withdraw line for any amend, so E2 and F
       fail (reviewer repro of the hand-run commands on 0.44.0: E 1, E2 0, E4 1, F 0)

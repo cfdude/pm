@@ -162,8 +162,12 @@ head clears the predicate when the replaced one is withdrawn, and a `queued` epi
 directory is archived on disk does not. A delivered epic the predicate clears gets the command as
 usual. Where it is refused, and a printed command the
 engine refuses would break emitted-instructions R2; there the hook says in prose that the replaced
-commit is attributed to delivered epic <id> and that changing it means recording the disposition it
-implies, which that refusal prints when the agent attempts it;
+commit is attributed to delivered epic <id> whose record the withdrawal would break, and that
+`update-epic`'s refusal names the remedy when the agent attempts the withdrawal. The hook names no
+remedy itself: today's refusal offers only a disposition invocation, which the archive gate refuses
+for this trigger ("attributes no commits, having withdrawn 1"), and the runnable remedy — re-record
+Gate 2 over the replacing commit, attribute it, then withdraw — is `emitted-commands-run-as-written`'s
+to print and to test (its task 2.6), and that change applies after this one;
 then (c) classify the live commits normally. So C1 amended to C2 and again to C3 in one call retracts
 and withdraws C1, handles C2 the same way (it has no row; a withdrawal only if something attributed it),
 and reports C3; an amend followed by `reset --hard` retracts and withdraws the amended commit even

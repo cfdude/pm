@@ -114,8 +114,8 @@ withdraw it itself. Only where `update-epic` would refuse that withdrawal — th
 that withdrawal writes (the replaced commit removed from the attribution array and added to the
 withdrawn commits) breaks an obligation the current record meets, decided by the same predicate
 `update-epic`'s refusal calls — the hook SHALL NOT print that command; it SHALL instead state that the replaced commit is attributed to
-a delivered epic whose record the withdrawal would break, and that changing it means recording the
-disposition the change implies, as that refusal directs. Everywhere else, including a delivered epic
+a delivered epic whose record the withdrawal would break, and that `update-epic`'s refusal of that
+withdrawal names the remedy; the hook SHALL NOT itself name a remedy. Everywhere else, including a delivered epic
 whose record the withdrawal would not break, the command SHALL be printed.
 
 #### Scenario: Amending a logged commit leaves one visible row
@@ -135,12 +135,14 @@ whose record the withdrawal would not break, the command SHALL be printed.
 - **WHEN** a commit attributed to openspec-lane epic E, archived with outcome `delivered` and a Gate 2
   verdict that withdrawing the commit would break, is amended and the replaced commit is not live
 - **THEN** the hook prints no `update-epic E --withdraw-commit` line, and its output names E as a
-  delivered epic holding the replaced commit and says the change requires recording a disposition
+  delivered epic holding the replaced commit whose record the withdrawal would break, and says
+  `update-epic`'s refusal of that withdrawal names the remedy
 
 #### Scenario: A delivered epic stored unarchived with its change archived on disk prints no bare withdrawal
 
 - **WHEN** the only commit attributed to openspec-lane epic E4 — stored status `queued`, outcome
-  `delivered`, its change directory archived on disk — is amended and the replaced commit is not live
+  `delivered`, its change directory archived on disk, with a passing Gate 2 whose head is that
+  commit — is amended and the replaced commit is not live
 - **THEN** the hook prints no `update-epic E4 --withdraw-commit` line, and running that command is
   refused by `update-epic`
 
@@ -149,7 +151,7 @@ whose record the withdrawal would not break, the command SHALL be printed.
 - **WHEN** a commit attributed to claude-code-lane epic F, archived with outcome `delivered`, is amended
   and the replaced commit is not live
 - **THEN** the hook prints `update-epic F --withdraw-commit <replaced>` with a withdrawal reason, and
-  does not say a disposition is required
+  does not say the withdrawal would be refused
 
 #### Scenario: An openspec delivered epic keeps the command when its Gate 2 still covers what remains
 
