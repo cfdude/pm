@@ -1,6 +1,7 @@
 // scripts/lib/dependency-order.mjs
 // EFFECTIVE PRIORITY over the `depends-on` closure, and the statements that go with it.
-// Pure functions over an already-resolved epic list; no imports, no I/O.
+// Pure functions over an already-resolved epic list; no I/O. One import: printedId(), the single
+// printing site for an epic id inside a printed command.
 //
 // WHY THIS EXISTS (gh#101). `orderQueueWithDependencies()` reorders epics against each other and
 // does exactly what its docstring says — but it is only ever handed the `queued`/`untriaged`
@@ -23,6 +24,17 @@
 // not inject `planned`/`later` epics into NEXT UP. "Not scheduled" and "not nameable" are
 // different claims, and the second is the bug — the issue's own "what would have been enough"
 // is a statement, not membership.
+
+import { printedId } from "./constants.mjs";
+
+/** The note for a `blocked` epic with no live `depends-on` link. Its remedy is an engine invocation,
+ *  so the brief registers THIS function as a `BRIEF_REMEDIES` entry (briefing.mjs) — the registry
+ *  and the note PROJECT.md and the brief both print are one renderer, and the suite's Layer B runs
+ *  its remedy (Gate 2 E-I3). */
+export function blockedWithoutDependsOnNote(e) {
+  return `\`${e.id}\` is \`blocked\` with no \`depends-on\` link — nothing records what it ` +
+    `waits on (\`update-epic ${printedId(e.id)} --link "depends-on:<id>:<why>"\`)`;
+}
 
 /** Priority ordering. Declared here rather than promoted into constants.mjs: it is a leaf
  *  fact this module and epic-progress.mjs share, and constants.mjs is the file every module
@@ -141,8 +153,7 @@ export function dependencyNotes(epics) {
   }
   for (const e of epics) {
     if (e.status !== "blocked" || hasLiveDependency.has(e.id)) continue;
-    notes.push(`\`${e.id}\` is \`blocked\` with no \`depends-on\` link — nothing records what it ` +
-      `waits on (\`update-epic ${e.id} --link "depends-on:<id>:<why>"\`)`);
+    notes.push(blockedWithoutDependsOnNote(e));
   }
   return notes;
 }

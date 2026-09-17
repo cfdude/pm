@@ -28,8 +28,15 @@ the rule holds, and each site where it does not, justified or fixed.
   delivered-release (670), `subcommands.mjs` via `deliveredRegression()` (the nudge's amend suppression;
   commit-observation 5.2a/5.3 pass).
 - `BRIEF_REMEDIES`: defined `briefing.mjs:25`, read only by `briefRemedy()` (55). Every brief line printing
-  an engine verb in a code span is an entry (lines 30, 43, 51, and the two `gateRemedy` entries); no brief
-  line prints an engine verb outside the registry. The mirror line (✓) prints no verb.
+  an engine verb in a code span is an entry (lines 30, 43, 51, and the two `gateRemedy` entries). The mirror
+  line (✓) prints no verb.
+- **FINDING at Gate 2 (E-I3), fixed:** the claim above that no brief line printed an engine verb outside the
+  registry was false — `dependencyNotes()` (`dependency-order.mjs`) puts `update-epic <id> --link
+  "depends-on:…"` in the brief's DEPENDENCY WARNINGS, with a raw id. It is now the entry
+  `blocked-without-depends-on`, whose renderer is the same function `dependencyNotes()` calls, with a Layer B
+  builder (a regular id and a legacy `My Plan`). Since E-I4 this category is no longer a typed claim: the
+  suite's `printedTemplates()` scan requires every printed-invocation template in `scripts/lib` to be reached
+  by a fixture whose whole output Layer A checks.
 
 ## 3. Item-sourced placeholders
 
@@ -113,6 +120,31 @@ Every passing `record-gate-review` form in shipped docs carries its own gate's e
 scan); every invocation in `agents/*.md` passes Layer A (1.3), and the child doc's Gate 1 and Gate 2 forms
 exit 0 filled (7.1).
 
+## 11. Epic ids in printed invocations — `printedId()` (added at Gate 2, E-I3)
+
+Derived mechanically by the suite, never typed: `rawEpicIdSites()` in `emitted-invocations.test.mjs` walks
+`printedTemplates()` (every code span, indented invocation line and function-built invocation template in
+`scripts/lib`, with each `${…}` hole and each `" + value` concatenation, including one wrapped onto the next
+line) and reports every WHOLE-token value placed in an epic-id slot — the positional after a verb taking an
+epic id (`honcho-memory`'s after its action word), or the value of `--id`, `--detour`, `--parent`,
+`--carried-to` — that is not `printedId(…)`. Cross-checked by hand with
+`rg -n '(\`|")\s*(<verbs>) [^\`"]*(\$\{|" \+)' scripts/lib | rg -v printedId`.
+
+- **FINDING at Gate 2, fixed:** raw ids at `active-pointer.mjs` (owedReconcileNotice), `dependency-order.mjs`
+  (the blocked note), `detour-stack.mjs` (push-detour's not-found `add-epic --id`; pop-detour's
+  `record-reconcile` paused id AND detour id, and its `honcho-memory pop`), `integrity.mjs` (the
+  missing-detour `add-epic --id` and `--detour`), `links.mjs` (unknownLinkTypeMessage), `remove-epic.mjs`
+  (the owed `record-reconcile` holder and detour), `subcommands.mjs` (sync's near-name `update-epic` and
+  `add-epic --id`), `update-epic.mjs` (the `--clear-links` refusal), `verify-specs.mjs` (`--headers`'
+  proposed `update-epic`). The last two found beyond the reviewer's list: `honcho-memory pop` and
+  `verify-specs`. All now print `printedId(…)`.
+- Justified, not epic ids: `release`/`record-cross-spec-review` positionals are RELEASE ids;
+  `retract-detour`'s is a commit sha; `reorder`, `suggest-lane`, `triage` take no epic-id positional.
+  `integrity.mjs`'s `unclaim … --session <session>` value is a session identity, not an id slot.
+- Limit, stated: a hole the scan cannot see — an id assembled into a variable before the literal, or a
+  template split over more than one wrapped line — is reported by no test; the Layer B `2.7a` legacy-id
+  builders and the brief's legacy `My Plan` case are the behavioural backstop for the printers they cover.
+
 ## DATA references
 
 This change adds no stored field. `deliveredBlockedBy` is output only (`unconsidered-outcomes` JSON). The
@@ -125,10 +157,12 @@ This change adds no stored field. `deliveredBlockedBy` is output only (`unconsid
 - Vendor-switch scope DROP — inverse: re-supply the field (`set-tracker --repo|--project|--instance`). No
   restore verb, deliberately: the dropped value is printed in full at the moment it is dropped.
 - Vendor-switch direction RECORD — inverse: `set-tracker --direction <inward|outward|both>`.
-- `--repo` shape REFUSAL — writes nothing, so no inverse is needed; `--remove` stays exempt so a legacy
-  malformed entry is never stranded (4.5).
+- `--repo` shape REFUSAL — writes nothing, so no inverse is needed; `--remove` stays exempt ON THE SECONDARY
+  so a legacy malformed entry is never stranded (4.5). Not on the primary (Gate 2 E-C1): it has no remove
+  handler, so exempting it there saved the refused value.
 - Omitting `delivered` from a disposition invocation — inverse: record the blocking obligation (e.g. the
   Gate 2 `deliveredBlockedBy` names); the output is recomputed per call and re-offers `delivered`.
 - `suggest-lane --ask` — a read; no inverse.
 - Primary `set-tracker --remove` is a MISSING inverse that predates this change (reproduced, `repro.txt`
-  §B4-B6) and is carried to `code-review-0-43-0-minors` (task 9.5), not shipped here.
+  §B4-B6) and is carried to `code-review-0-43-0-minors` (task 9.5), not shipped here. Re-decided at Gate 2
+  (E-C1) and kept carried: no verb unconfigures a primary tracker, so a refusal would name no remedy.

@@ -37,7 +37,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { EPIC_ID_FORMAT, ROOT, SPECS_DIR } from "./constants.mjs";
+import { EPIC_ID_FORMAT, ROOT, SPECS_DIR, printedId } from "./constants.mjs";
 import { isInitialized, loadState } from "./state.mjs";
 import { artifactClaimants, normalizeArtifactPath } from "./source-artifacts.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
@@ -267,7 +267,7 @@ export function formatHeaderCandidates(report) {
       L.push(`  ${p.path}`);
       for (const c of p.candidates) {
         L.push(`    • \`${c.id}\`${c.label ? `  (under **${c.label}:**)` : ""}`);
-        L.push(`        update-epic ${c.id} --spec ${p.path}`);
+        L.push(`        update-epic ${printedId(c.id)} --spec ${p.path}`);
       }
     }
   }

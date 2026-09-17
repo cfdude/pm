@@ -306,7 +306,10 @@ Pairs: 7.0–7.1 land with 7.2. The single-writer rule for hierarchy runs is NOT
         shell-bound (requires the shape) or prose/slug (tolerates a legacy value);
       - every `/pm:epic` and `state.json` mention in emitted engine text
         (`rg -n "pm:epic|state\.json" scripts/lib/rules.mjs scripts/lib/briefing.mjs scripts/lib/subcommands.mjs`);
-      - every shipped `record-gate-review` form and every engine invocation in `agents/*.md`.
+      - every shipped `record-gate-review` form and every engine invocation in `agents/*.md`;
+      - (added at Gate 2, E-I3) every printed invocation placing an epic id — derived by the suite's
+        `rawEpicIdSites()` over `printedTemplates()`, never typed — each through `printedId()` or
+        justified as a non-epic-id slot (release id, sha, session).
       DATA references: this change adds no stored field; `deliveredBlockedBy` is output only. State
       that, and that the `externalUpdatedAt` the outward line now supplies is written by `update-epic`
       and read by the brief and the refresh gate.

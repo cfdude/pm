@@ -561,8 +561,8 @@ export const CHECKS = [
             // recovery is to re-register the id, then answer it (Gate 2 m3).
             ? ` — the link a reconcile this epic owes is recorded against, and its detour \`${r.epic}\` was ` +
               "removed from the record by hand, so `record-reconcile` refuses it as not found. Re-register " +
-              `it — \`add-epic --id ${r.epic} --lane <lane>\` — then \`record-reconcile ${printedId(r.holder)} --detour ` +
-              `${r.epic} --verdict valid|invalidated\`; the link cannot be stripped while the obligation stands`
+              `it — \`add-epic --id ${printedId(r.epic)} --lane <lane>\` — then \`record-reconcile ${printedId(r.holder)} --detour ` +
+              `${printedId(r.epic)} --verdict valid|invalidated\`; the link cannot be stripped while the obligation stands`
             : " — a detour-stack frame, so `/pm:resume` would pop a frame that " +
             "names nothing") }));
     },

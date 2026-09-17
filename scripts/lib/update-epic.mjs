@@ -438,7 +438,7 @@ export function updateEpic() {
         `conductor: --clear-links on '${id}' is refused — '${id}' owes a reconcile and its links hold the ` +
         "record that verdict must be written against" +
         (owed.length ? ` (owed against ${owed.map(d => `'${d}'`).join(", ")})` : "") +
-        `. Record it first: \`record-reconcile ${id} --detour <detourId> --verdict valid|invalidated\`` +
+        `. Record it first: \`record-reconcile ${printedId(id)} --detour <detourId> --verdict valid|invalidated\`` +
         " (or /pm:upgrade first if a link predates 0.44.0), then clear. Nothing was written.\n");
       process.exit(1);
     }

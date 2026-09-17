@@ -31,6 +31,7 @@
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
+import { printedId } from "./constants.mjs";
 import { render } from "./render.mjs";
 import { activate, owedReconcileNotice } from "./active-pointer.mjs";
 import { deferralHistory, deferralNote, ownedDetours } from "./links.mjs";
@@ -118,7 +119,7 @@ export function pushDetour() {
   }
   const detour = state.epics.find(e => e.id === detourId);
   if (!detour) {
-    die(`detour epic '${detourId}' not found — register it first (\`add-epic --id ${detourId} ` +
+    die(`detour epic '${detourId}' not found — register it first (\`add-epic --id ${printedId(detourId)} ` +
       "…\`), so the frame cannot name work that does not exist");
   }
   if (detour.status === "archived") die(`detour epic '${detourId}' is archived — there is nothing left to build`);
@@ -272,8 +273,8 @@ export function popDetour() {
       `conductor: RECONCILE GATE — '${pausedEpic}' carries reconcileNeeded` +
       (owed.length ? ` and owes a verdict against ${owed.map(d => `'${d}'`).join(", ")}` : "") +
       ". Run the reconciler BEFORE writing code, then " +
-      targets.map(d => `\`record-reconcile ${pausedEpic} --detour ${d} --verdict valid|invalidated\``).join(", ") +
-      ", then `honcho-memory pop " + pausedEpic + " \"<detour>; reconcile = …\"` for the memory line\n");
+      targets.map(d => `\`record-reconcile ${printedId(pausedEpic)} --detour ${printedId(d)} --verdict valid|invalidated\``).join(", ") +
+      ", then `honcho-memory pop " + printedId(pausedEpic) + " \"<detour>; reconcile = …\"` for the memory line\n");
     return;
   }
   // Nothing to reconcile, so the resume is complete and the memory line is true now.

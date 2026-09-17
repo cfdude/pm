@@ -8,6 +8,7 @@ import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
 import { ownedDetours } from "./links.mjs";
+import { printedId } from "./constants.mjs";
 
 /** Enforce the single-active invariant: `id` becomes the one active epic AND the
  *  top-level `.active` pointer. Any OTHER epic left at status "active" is demoted to
@@ -65,7 +66,7 @@ export function owedReconcileNotice(state, previousActiveId) {
     `conductor: '${e.id}' is no longer the active epic and still owes a reconcile` +
     (owed.length ? ` against ${owed.map(d => `'${d}'`).join(", ")}` : "") +
     " — the obligation is kept, and gate-guard blocks edits again when it is active. Answer it with " +
-    `\`record-reconcile ${e.id} --detour <detourId> --verdict valid|invalidated\`.\n`);
+    `\`record-reconcile ${printedId(e.id)} --detour <detourId> --verdict valid|invalidated\`.\n`);
 }
 
 const STALE_DAYS = 14;

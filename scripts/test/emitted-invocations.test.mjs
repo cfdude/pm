@@ -1331,7 +1331,29 @@ const briefLines = (needle) => (fx) => {
   return text.split("\n").filter(l => l.includes(needle)).join("\n");
 };
 
+/** A `blocked` epic with no `depends-on` link, beside a queued epic it can be pointed at. */
+const blockedFixture = (id, legacy) => () => {
+  const repo = remedyRepo();
+  const epic = (eid, status) => ({ id: eid, title: eid, priority: "P2", status, role: "epic", lane: "claude-code", links: [] });
+  repo.write({ epics: [epic(id, "blocked"), epic("dep", "queued")] });
+  return { repo, epicId: id, legacy };
+};
+
 const BRIEF_BUILDERS = {
+  "blocked-without-depends-on": [
+    ...[["bl", false], ["My Plan", true]].map(([id, legacy]) => ({
+      case: legacy ? "legacy id My Plan" : "id",
+      setup: blockedFixture(id, legacy),
+      observe(fx) {
+        if (!fx.legacy) return;
+        const out = briefLines("no `depends-on` link")(fx);
+        assert.match(out, /update-epic 'My Plan' --link/, `the id is printed shell-quoted (Gate 2 E-I3):\n${out}`);
+      },
+      produce: briefLines("no `depends-on` link"),
+      reported: (out, fx) => out.includes(`\`${fx.epicId}\``),
+      meaning: (fx) => ({ positional: fx.epicId, link: (name) => (name === "id" ? "dep" : "it waits on dep") }),
+    })),
+  ],
   "tracker-refresh-owed": {
     setup() {
       const repo = remedyRepo();
@@ -2313,22 +2335,36 @@ export function printedTemplates(verbs = dispatchedVerbs()) {
         }
         let j = m.index + m[1].length;
         let seg = "";
+        const holes = [];
         while (j < line.length) {
           if (inTemplate && line.startsWith("${", j)) {
             let depth = 0, k = j + 1;
             for (; k < line.length; k++) { if (line[k] === "{") depth++; else if (line[k] === "}" && --depth === 0) break; }
+            holes.push(line.slice(j + 2, k).trim());
             seg += HOLE; j = k + 1; continue;
           }
           if (line[j] === BS) {
             if (line[j + 1] === "`") break;
             seg += line[j + 1]; j += 2; continue;
           }
+          const literalEnds = inTemplate ? line[j] === "`" : line[j] === '"';
+          if (literalEnds) {
+            // The literal closes mid-span and the line concatenates a value onto it (`"…claim " + id`):
+            // that value is a hole too.
+            const next = /^\s*\+\s*([A-Za-z_$][\w$.]*(?:\([^()]*\))?)/.exec(line.slice(j + 1));
+            if (next) { holes.push(next[1]); seg += HOLE; }
+            // …or the concatenation wraps, and the next line's literal OPENS with the value.
+            else if (/^\s*\+\s*$/.test(line.slice(j + 1)) && i + 1 < lines.length) {
+              const wrapped = /^\s*`\$\{([^}]*)\}/.exec(lines[i + 1]);
+              if (wrapped) { holes.push(wrapped[1].trim()); seg += HOLE; }
+            }
+            break;
+          }
           if (line[j] === "`") break;
-          if (!inTemplate && line[j] === '"') break;
           seg += line[j]; j++;
         }
         const literal = seg.split(HOLE).map(p => p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("[^`\\n]*?");
-        out.push({ site: `scripts/lib/${file}:${i + 1}`, text: seg.split(HOLE).join("${…}"), re: new RegExp(literal) });
+        out.push({ site: `scripts/lib/${file}:${i + 1}`, text: seg.split(HOLE).join("${…}"), re: new RegExp(literal), holes, raw: seg, HOLE });
       }
     });
   }
@@ -2454,6 +2490,35 @@ test("E-I4 printers outside the registries: each fixture prints the invocation i
       assert.match(outputText(r), expected, `${name}: the fixture did not print its invocation:\n${outputText(r)}`);
     }
   }
+});
+
+/** The printedId() category of the call-site sweep (Gate 2 E-I3), derived from the source scan rather
+ *  than a typed list: every printed-invocation template placing a VALUE where an epic id goes — the
+ *  positional after a verb that takes an epic id, or the value of an id-bearing flag — must place
+ *  `printedId(…)` there. A raw `${e.id}` prints a legacy `My Plan` as two shell words. */
+const NOT_AN_EPIC_POSITIONAL = new Set(["release", "record-cross-spec-review", "retract-detour", "reorder", "honcho-memory", "suggest-lane", "triage"]);
+const EPIC_ID_FLAGS = new Set(["--id", "--detour", "--parent", "--carried-to"]);
+export function rawEpicIdSites(templates = printedTemplates()) {
+  const bad = [];
+  for (const t of templates) {
+    let n = 0;
+    const toks = t.raw.split(/\s+/).filter(Boolean).map(tok => tok.split(t.HOLE).length > 1
+      ? { tok, holes: tok.split(t.HOLE).slice(1).map(() => t.holes[n++]) } : { tok, holes: [] });
+    const verb = toks[0].tok;
+    // honcho-memory's epic id follows its action word (`honcho-memory pop <id>`).
+    const idAt = verb === "honcho-memory" ? 2 : 1;
+    toks.forEach((x, k) => {
+      if (x.tok !== t.HOLE) return;                          // only a WHOLE-token value is an id slot
+      const slot = (k === idAt && !NOT_AN_EPIC_POSITIONAL.has(verb)) || (verb === "honcho-memory" && k === 2)
+        || (k > 0 && EPIC_ID_FLAGS.has(toks[k - 1].tok));
+      if (slot && !/^printedId\(/.test(x.holes[0])) bad.push(`${t.site}  \`${t.text}\` — \${${x.holes[0]}}`);
+    });
+  }
+  return bad;
+}
+
+test("E-I3 every epic id a printed invocation interpolates goes through printedId()", () => {
+  assert.deepEqual(rawEpicIdSites(), [], "raw epic ids in printed invocations");
 });
 
 /** Is this file running filtered? The reach half needs every fixture above to have run. */

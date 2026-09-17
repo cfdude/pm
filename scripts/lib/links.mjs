@@ -4,7 +4,7 @@
 // designated root every module may read from — the flat KNOWN_LINK_TYPES lives there so
 // `rg 'KNOWN_[A-Z_]+ =' constants.mjs` answers the question gh#100 was filed after asking.
 
-import { KNOWN_LINK_TYPES } from "./constants.mjs";
+import { KNOWN_LINK_TYPES, printedId } from "./constants.mjs";
 
 /** THE link-type vocabulary, in three honest bands — gh#100.
  *
@@ -134,7 +134,7 @@ export function unknownLinkTypeMessage(raw, type, { owingEpic } = {}) {
     // verdict must be recorded against), so the repair is ordered, not lost: verdict first.
     (owingEpic
       ? `  '${owingEpic}' owes a reconcile, so its links cannot be cleared yet: record the verdict FIRST ` +
-        `with \`record-reconcile ${owingEpic} --detour <detourId> --verdict valid|invalidated\`, then repair.\n`
+        `with \`record-reconcile ${printedId(owingEpic)} --detour <detourId> --verdict valid|invalidated\`, then repair.\n`
       : "") +
     "  `--link` APPENDS (a repeat of an existing type+target updates that entry's reason in " +
     "place). So if this came from a link already in the record, correcting the type ADDS a " +

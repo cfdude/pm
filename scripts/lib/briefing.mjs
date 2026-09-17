@@ -12,7 +12,7 @@ import { gateRemedy, gateTableRows } from "./archive-gate.mjs";
 import { ungatedArchives, withdrawnArchiveNote } from "./integrity.mjs";
 import { KNOWN_LANES, anyInwardProcedureEmittable, outwardApplies, printedId, releaseLine, releaseSummaries } from "./constants.mjs";
 import { crossSpecLine } from "./cross-spec-review.mjs";
-import { dependencyNotes } from "./dependency-order.mjs";
+import { blockedWithoutDependsOnNote, dependencyNotes } from "./dependency-order.mjs";
 import { conflictCount, conflictWarningLatched, consumeConflictWarning } from "./write-conflicts.mjs";
 import { CONFLICT_WARN_THRESHOLD } from "./constants.mjs";
 import { openspecCurrencyLines } from "./tool-currency.mjs";
@@ -41,6 +41,12 @@ export const BRIEF_REMEDIES = [
     id: "not-in-outward-tracker",
     render: (tracker, unmirrored) => `  ⚠ not yet in ${tracker.system} — create issues + record keys ` +
       `(\`update-epic <id> --external-id <KEY> --external-url <url>\`): ` + unmirrored.map(e => `\`${e.id}\``).join(", "),
+  },
+  {
+    id: "blocked-without-depends-on",
+    // Rendered by dependencyNotes() — the same function PROJECT.md's dependency warnings call — so the
+    // brief's DEPENDENCY WARNINGS line and this entry cannot diverge (Gate 2 E-I3).
+    render: blockedWithoutDependsOnNote,
   },
   {
     id: "never-re-read",

@@ -813,8 +813,8 @@ export function sync(quiet = false) {
       if (!quiet) process.stderr.write(
         `conductor: sync skipped plan '${fname}' — epic '${near.id}' has the same name without ` +
         `the date prefix and claims no plan. If it IS that epic's plan: ` +
-        `\`update-epic ${near.id} --plan ${planPath}\`. If it is genuinely different work: ` +
-        `\`add-epic --id ${id} --lane superpowers --plan ${planPath}\`\n`);
+        `\`update-epic ${printedId(near.id)} --plan ${planPath}\`. If it is genuinely different work: ` +
+        `\`add-epic --id ${printedId(id)} --lane superpowers --plan ${planPath}\`\n`);
       continue;
     }
 

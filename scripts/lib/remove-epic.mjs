@@ -8,6 +8,7 @@ import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { epicReferences } from "./links.mjs";
 import { tombstoneArtifacts } from "./source-artifacts.mjs";
 import { render } from "./render.mjs";
+import { printedId } from "./constants.mjs";
 
 /** Render a short (id, title, summary) table for human review — used when a removal is
  *  blocked by children, so the operator sees exactly what's in play without a raw dump. */
@@ -91,7 +92,7 @@ export function removeEpic() {
       (owed.length
         ? `  ${owed.length} reconcile obligation link(s): ${cite(owed)}. Removing it would leave the owed ` +
           "verdict nothing to be recorded against. Answer it first — " +
-          [...new Set(owed.map(r => `\`record-reconcile ${r.holder} --detour ${r.epic} --verdict valid|invalidated\``))].join(", ") +
+          [...new Set(owed.map(r => `\`record-reconcile ${printedId(r.holder)} --detour ${printedId(r.epic)} --verdict valid|invalidated\``))].join(", ") +
           " — then remove.\n"
         : ""));
     process.exit(1);
