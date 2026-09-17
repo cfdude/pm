@@ -49,8 +49,9 @@ Pairs: 2.1–2.4a land with 2.5; 2.6–2.7 land with 2.8.
 - [ ] 2.3b RED: a commit then a failing command, observed with a `PostToolUseFailure` payload: the
       commit is reported and `hookSpecificOutput.hookEventName` is `PostToolUseFailure` (fails today:
       the envelope says `PostToolUse`); with `state.json` unparseable it exits 2 naming the file, and
-      `state.json`, `PROJECT.md`, `detours.log` and `.conductor/commit-watch.json` are byte-identical
-      (fails today: `commit-watch.json` advances)
+      `state.json`, `PROJECT.md`, `detours.log`, `.conductor/commit-watch.json` and
+      `.conductor/commit-observe.json` are byte-identical (fails today: `commit-watch.json` advances), and
+      after `state.json` is repaired the next observation reports the commit
 - [ ] 2.4 RED: overlapping observations, in the order Gate 1 round 2 simulated — observation A reads
       the record, a commit lands, observation B runs to completion, then A writes: the commit is reported
       exactly once across A, B and a third observation, the anchor never moves backwards, and
@@ -111,12 +112,12 @@ Section 5 depends on this section's retraction row. Pairs: 4.1–4.4 (with 4.2a)
       retracted rows sit among the last 8 lines; a commit carrying both an AUTO-DETOUR and a
       DETOUR-COMMIT row has both hidden by one retraction
 - [ ] 4.5 GREEN: verb, positional table, flag registry, `verb-effects.mjs`, help, `conductor.mjs`
-      dispatch and USAGE, render filter, prefix match in the duplicate check (Decisions 9, 11). Suite
+      dispatch and USAGE, `retract-detour` added to `DISPATCH_BASELINE` in `scripts/test/verb-surface.test.mjs`, render filter, prefix match in the duplicate check (Decisions 9, 11). Suite
       green
 
 ## 5. An amend replaces
 
-Pairs: 5.1–5.3a land with 5.4.
+Pairs: 5.1–5.3a (with 5.2a) land with 5.4.
 
 - [ ] 5.1 RED: commit auto-logged, a later call amends it, observe: `PROJECT.md` shows the amending
       commit only; `detours.log` holds the original row then its retraction (fails today: two visible
@@ -132,6 +133,9 @@ Pairs: 5.1–5.3a land with 5.4.
       live-amend-only rule); and C1 auto-logged and attributed, then one call runs `commit --amend` and
       `reset --hard HEAD@{1}`: C1's row is NOT retracted and no `--withdraw-commit` names C1 (fails
       against an every-amend rule that ignores liveness)
+- [ ] 5.2a RED: a commit attributed to epic E archived with outcome `delivered`, amended with the
+      replaced commit dead: no `update-epic E --withdraw-commit` line is printed; the output names E as
+      delivered and says a disposition must be recorded (fails against 5.4 without the exception)
 - [ ] 5.3a REGRESSION GUARD: one call runs `checkout -b tmp`, `checkout main`, `commit --amend`: the
       replaced commit named is the one HEAD held before the amend
 - [ ] 5.4 GREEN: amend handling (Decision 7). Suite green

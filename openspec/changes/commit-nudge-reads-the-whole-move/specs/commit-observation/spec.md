@@ -109,7 +109,10 @@ the replacing commit, before the replacing commit is classified. The hook SHALL 
 `--attribute-commit` naming the replaced commit. Where the replaced commit is in any epic's
 attribution array, the hook SHALL print, before any attribution command, a runnable
 `update-epic <that epic> --withdraw-commit <replaced> --withdrawal-reason "<…>"`; the engine SHALL NOT
-withdraw it itself.
+withdraw it itself. Where that epic's recorded outcome is `delivered`, the hook SHALL NOT print that
+command, which `update-epic`'s archived-delivered regression refusal can refuse; it SHALL instead
+state that the replaced commit is attributed to a delivered epic and that changing that record means
+recording the disposition the change implies, as that refusal directs.
 
 #### Scenario: Amending a logged commit leaves one visible row
 
@@ -122,6 +125,13 @@ withdraw it itself.
 - **WHEN** commit C1 is auto-logged and attributed to epic E, and one later call runs `git commit
   --amend` and then `git reset --hard HEAD@{1}`
 - **THEN** C1's row is not retracted and no `--withdraw-commit` is printed for C1
+
+#### Scenario: An amend of a delivered epic's commit prints no bare withdrawal
+
+- **WHEN** a commit attributed to epic E, whose recorded outcome is `delivered`, is amended and the
+  replaced commit is not live
+- **THEN** the hook prints no `update-epic E --withdraw-commit` line, and its output names E as a
+  delivered epic holding the replaced commit and says the change requires recording a disposition
 
 #### Scenario: A chain of amends retracts and withdraws the original
 

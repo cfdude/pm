@@ -86,6 +86,10 @@ The new engine never reads or writes `commit-watch.json`. `upgrade()` already re
 
 ### 3. Report once: a set of reported shas, read and written under one lock
 
+The record is written only after the run has read `state.json` successfully: a run that exits on an
+unreadable file (state-write-guard) leaves anchor and set untouched, so the commit is re-read and
+reported by the first readable run.
+
 A commit is reported only if its full sha is not in `reported`; reporting adds it. The whole
 observation — read `{anchor, reported}`, walk the reflog, decide what to report, write the new record —
 runs while holding an exclusive lock, `.conductor/commit-observe.json.lock`, created with `O_EXCL`
@@ -139,7 +143,12 @@ field. A replaced commit that is LIVE when the reflog is read (the amend was und
 un-retract) and false. Before any commit is classified, for each remaining entry in landing order:
 (a) retract every non-retracted commit-derived row matching the replaced commit, reason
 `amended into <short new sha>`; (b) for each epic whose `attributedCommits` holds the replaced full sha,
-print `update-epic <id> --withdraw-commit <replaced> --withdrawal-reason "amended into <new>"`;
+print `update-epic <id> --withdraw-commit <replaced> --withdrawal-reason "amended into <new>"` —
+except for an epic whose outcome is `delivered`, where a withdrawal can hit `update-epic`'s
+archived-delivered regression refusal (`regressionRefusal`, update-epic.mjs) and a printed command the
+engine refuses would break emitted-instructions R2; there the hook says in prose that the replaced
+commit is attributed to delivered epic <id> and that changing it means recording the disposition it
+implies, which that refusal prints when the agent attempts it;
 then (c) classify the live commits normally. So C1 amended to C2 and again to C3 in one call retracts
 and withdraws C1, handles C2 the same way (it has no row; a withdrawal only if something attributed it),
 and reports C3; an amend followed by `reset --hard` retracts and withdraws the amended commit even
@@ -238,10 +247,12 @@ from the reflog. Rollback: revert; `commit-observe.json` is git-ignored and iner
   list). Apply order 1 → 2: change 2 rewrites that sentence on top of this change's shape.
 - **Change 3 (`user-text-never-forges-output`)** escapes user text in `render.mjs`, including the detour
   table's note column; this change edits the same block (retraction filter before the 8-row slice), so
-  expect a textual conflict. Retraction reasons reach `PROJECT.md` through that block. Change 3's design
+  expect a textual conflict. Change 3's design
   assigns `commit-nudge`'s own output to this change: the text added here prints abbreviated shas and
   epic ids resolved from `state.json`, never a commit subject; `--reason` goes through
-  `appendDetourLog`'s whitespace collapse, so a tab or newline cannot add a column or line.
+  `appendDetourLog`'s whitespace collapse, which removes tabs and newlines but NOT `|`, U+0085 or ESC;
+  RETRACTED rows are never rendered (Decision 11), and change 3's output escaping covers the note text
+  of rows that are.
 - Mintlify sync belongs to the 0.45.0 release cut.
 
 ## Open Questions
