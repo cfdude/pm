@@ -90,7 +90,8 @@ is specified in `output-text-integrity`.
 a stored epic id inside a command, an id that does not match the epic id format
 (`^[a-z0-9][a-z0-9._-]*$`) — a legacy id holding a space, for example — SHALL be printed shell-quoted,
 so the command still passes that id as one argument. An id that matches the format is printed as it
-is today. An id holding a control character prints no command at all (see `output-text-integrity`).
+is today. That decision is made at one site only, `printedId()`; the case of an id holding a control
+character is specified in `output-text-integrity`.
 
 A given remedy SHALL read the same at every site that prints it, and SHALL carry the evidence its
 gate requires: a commit range for Gate 2, artifact paths for Gate 1. A site that cannot know which

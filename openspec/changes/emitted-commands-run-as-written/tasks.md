@@ -108,6 +108,7 @@ Pairs: 2.1–2.8 (incl. 2.7a) land with 2.9.
       drift-heal disposition remedy (`integrity.mjs:357`), the attribute-commit remedy (`:293,295`), the
       nudge's `--attribute-commit` line and its `--withdraw-commit` line print it shell-quoted; each, run, exits 0 and clears its
       condition
+      (the control-character id case is not tested here; it is owned by `user-text-never-forges-output` task 5.3a)
 - [ ] 2.8 REGRESSION GUARD: a `claude-code`-lane unconsidered entry still offers `delivered` with
       `deliveredBlockedBy: []` and clears when run with `delivered`; the regression refusal still
       prints its echoed tokens, `--correct-disposition` and exactly one line beginning `  update-epic `
