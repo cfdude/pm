@@ -134,7 +134,9 @@ mapping in `refusal.mjs` needs no change: exit 2 is advisory on both events.
 ### 7. Amend handling
 
 For EVERY `commit (amend)` entry in the window, live or dead, the replaced commit is that line's `<old>`
-field. Before any commit is classified, for each such entry in landing order:
+field. A replaced commit that is LIVE when the reflog is read (the amend was undone, e.g.
+`reset --hard HEAD@{1}`) is skipped: retracting or withdrawing it would be irreversible (no
+un-retract) and false. Before any commit is classified, for each remaining entry in landing order:
 (a) retract every non-retracted commit-derived row matching the replaced commit, reason
 `amended into <short new sha>`; (b) for each epic whose `attributedCommits` holds the replaced full sha,
 print `update-epic <id> --withdraw-commit <replaced> --withdrawal-reason "amended into <new>"`;
@@ -185,7 +187,10 @@ sentence is printed once.
 `--reason` on this verb, keeping `REASON_REQUIRES` semantics for `push-detour` intact. `verb-effects.mjs`:
 `mutates`, writes `.conductor/detours.log (append-only), PROJECT.md`. Row matching: a `<sha>` that resolves is matched by
 Decision 9; one that resolves to no commit (rewritten, then pruned) is matched against the stored row
-text, a row matching when either sha begins with the other. Refusal messages, each distinct:
+text only: it must be at least 7 hex characters, only rows whose own sha also resolves to nothing are
+candidates, a row matches when either sha begins with the other, and the candidates must name exactly
+one sha — otherwise the verb refuses naming the too-short value or the ambiguity (so `retract-detour 1`
+cannot retract every row starting with `1`). Refusal messages, each distinct:
 no matching row; no AUTO-DETOUR or DETOUR-COMMIT row for it (naming a MINIMAL-only row where that is the
 case); already retracted; reason missing or empty. In a detached tree `appendDetourLog` writes nothing
 (gh#175), so the verb exits non-zero saying no retraction was written.

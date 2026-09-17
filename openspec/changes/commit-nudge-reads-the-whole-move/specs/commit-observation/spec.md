@@ -100,7 +100,10 @@ row, its output SHALL name `retract-detour` as the correction for a row that is 
 ### Requirement: An amended commit is replaced, not added
 
 For every `commit (amend)` entry that landed since the last observation, live or not, the commit it
-replaced (the reflog entry's previous value) SHALL be treated as superseded. Any commit-derived detour-trail row for the replaced commit
+replaced (the reflog entry's previous value) SHALL be treated as superseded only if that replaced
+commit is not live when the observation reads the reflog. A replaced commit that is live again (the
+amend was undone, e.g. `git reset --hard HEAD@{1}`) is not superseded: no row of it is retracted and no
+withdrawal is printed for it. Any commit-derived detour-trail row for the replaced commit
 SHALL be retracted by the engine, as the retraction requirement below defines, with a reason naming
 the replacing commit, before the replacing commit is classified. The hook SHALL NOT print an
 `--attribute-commit` naming the replaced commit. Where the replaced commit is in any epic's
@@ -113,6 +116,12 @@ withdraw it itself.
 - **WHEN** a commit is auto-logged to the detour trail and a later call amends it
 - **THEN** `PROJECT.md`'s detour table shows a row for the amending commit and none for the replaced
   one, and the log still holds the replaced commit's original row followed by its retraction
+
+#### Scenario: An undone amend supersedes nothing
+
+- **WHEN** commit C1 is auto-logged and attributed to epic E, and one later call runs `git commit
+  --amend` and then `git reset --hard HEAD@{1}`
+- **THEN** C1's row is not retracted and no `--withdraw-commit` is printed for C1
 
 #### Scenario: A chain of amends retracts and withdraws the original
 
@@ -189,8 +198,11 @@ check SHALL all use this match.
 `retract-detour <sha> --reason "<why>"` SHALL be the inverse of the hook's automatic logging. It SHALL
 be accepted only where a commit-derived row (`AUTO-DETOUR` or `DETOUR-COMMIT`) matching `<sha>` is not
 already retracted and a non-empty reason is given. `<sha>` matches a row when it resolves to a commit
-whose full name begins with the row's sha, or, where it resolves to no commit (a rewritten commit
-since pruned), when either of `<sha>` and the row's sha begins with the other. Every other
+whose full name begins with the row's sha. Where `<sha>` resolves to no commit (a rewritten commit since
+pruned), it SHALL be at least 7 hexadecimal characters and SHALL match only rows whose own sha also
+resolves to no commit and where either of `<sha>` and the row's sha begins with the other; exactly one
+such row (or the rows of exactly one sha) SHALL match, and otherwise the invocation is refused with a
+message naming the ambiguity or the too-short value. Every other
 invocation exits non-zero with a message naming which of those failed, and writes nothing. An accepted
 retraction SHALL append a retraction row naming the commit and the reason, SHALL NOT remove or
 rewrite any existing row, and SHALL re-render `PROJECT.md` in the same invocation so no retracted row
@@ -216,6 +228,13 @@ SHALL name this verb and SHALL NOT instruct editing or removing a line of the lo
 - **WHEN** the log holds an AUTO-DETOUR row for a commit that was rewritten and pruned, and
   `retract-detour` is given that row's sha
 - **THEN** it exits 0 and appends a retraction for that row
+
+#### Scenario: An unresolvable sha that is short or ambiguous is refused
+
+- **WHEN** `retract-detour 1 --reason x` runs, or `retract-detour` is given a 7-character prefix
+  shared by the rows of two different pruned commits
+- **THEN** each exits non-zero naming the too-short value or the ambiguity, and `detours.log` and
+  `PROJECT.md` are byte-identical
 
 #### Scenario: Each refusal names its reason
 

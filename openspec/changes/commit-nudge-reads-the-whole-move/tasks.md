@@ -102,7 +102,8 @@ Section 5 depends on this section's retraction row. Pairs: 4.1–4.4 (with 4.2a)
       <that row's sha>` exits 0 and appends its retraction (fails today: unknown verb)
 - [ ] 4.3 RED: each refusal names its specific reason — a sha matching no row, a commit with no
       commit-derived row, a commit with only a `MINIMAL` row, an already-retracted commit, a missing
-      `--reason`, an empty `--reason` — asserting the message text for each, with exit non-zero and
+      `--reason`, an empty `--reason`, an unresolvable sha shorter than 7 characters (`1`), an
+      unresolvable 7-character prefix shared by rows of two different pruned commits (ambiguity) — asserting the message text for each, with exit non-zero and
       `detours.log` and `PROJECT.md` byte-identical (fails today: exit code and bytes pass, the messages
       do not exist)
 - [ ] 4.4 REGRESSION GUARD: `retract-detour --help` and an undeclared flag write nothing (verb-surface);
@@ -128,7 +129,9 @@ Pairs: 5.1–5.3a land with 5.4.
       row is retracted, `--withdraw-commit` is printed for C1, no `--attribute-commit` names C1 or C2, and
       `PROJECT.md` shows a row only for C3; and C1 auto-logged and attributed, then one call amends to C2
       and runs `reset --hard HEAD~1`: C1's row is retracted and its withdrawal printed (fails against a
-      live-amend-only rule)
+      live-amend-only rule); and C1 auto-logged and attributed, then one call runs `commit --amend` and
+      `reset --hard HEAD@{1}`: C1's row is NOT retracted and no `--withdraw-commit` names C1 (fails
+      against an every-amend rule that ignores liveness)
 - [ ] 5.3a REGRESSION GUARD: one call runs `checkout -b tmp`, `checkout main`, `commit --amend`: the
       replaced commit named is the one HEAD held before the amend
 - [ ] 5.4 GREEN: amend handling (Decision 7). Suite green
