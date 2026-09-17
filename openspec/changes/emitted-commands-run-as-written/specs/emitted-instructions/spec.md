@@ -24,7 +24,9 @@ or refused for a different class, fails; a marker binds to exactly one invocatio
 quoted in shipped text is not an invocation and SHALL be distinguishable from one.
 
 Shipped command documents and agent documents SHALL invoke the INSTALLED engine, never a path that
-exists only in a checkout of pm itself. Every `/pm:<name>` reference in shipped text SHALL name a
+exists only in a checkout of pm itself, and SHALL NOT instruct a user's agent to work on files that
+exist only in pm's own repository (its `README.md` or `scripts/test`). A shipped statement that the
+engine cannot do something SHALL be true of the engine. Every `/pm:<name>` reference in shipped text SHALL name a
 command or skill pm ships; this check reads the name only, not the words after it.
 
 #### Scenario: An unmarked refused invocation fails the sweep
@@ -53,6 +55,16 @@ command or skill pm ships; this check reads the name only, not the words after i
   shipped skill
 - **THEN** the sweep fails naming the reference (today `commands/upgrade.md` does)
 
+#### Scenario: The child agent doc gives no pm-repository-only instruction
+- **WHEN** `agents/hierarchy-child-executor.md` is scanned
+- **THEN** it does not instruct updating pm's `README.md` or running `scripts/test/*.test.mjs` (today
+  its "check README.md" paragraph does)
+
+#### Scenario: review-mode.md does not deny an unset the engine has
+- **WHEN** `commands/review-mode.md` describes clearing a per-epic review-mode override
+- **THEN** it names `update-epic <id> --clear review-mode` and does not say there is no unset (today
+  it says there is no separate unset, while `--clear review-mode` clears the override)
+
 #### Scenario: A shipped command document invokes the installed engine
 - **WHEN** a command document instructs the agent to run an engine verb
 - **THEN** the invocation goes through the installed engine, and `node scripts/conductor.mjs` in
@@ -68,13 +80,17 @@ done, the message SHALL name that precondition first, with the command that meet
 engine will refuse MUST NOT be printed as the way out. Where a message offers alternatives ("…, or
 …"), each alternative SHALL clear the condition on its own.
 
-**One exception: a record no verb can change.** Where the condition lies in a stored identifier no
-verb can rename (an epic id, release id or tracker scope holding a control character, stored before
-input refused such values), there is no runnable remedy. The message SHALL name the record and say
-that no verb can rename it, and SHALL print no command as a remedy for it; the suite asserts that
-message instead of executing one. It SHALL NOT tell the reader to edit `.conductor/state.json`.
-Clearing the condition still requires the fixture epic to exist afterwards everywhere else: a remedy
-that clears a finding by removing the record it was about does not count as clearing it.
+A remedy that clears a finding by removing the record it was about does not count as clearing it.
+
+A **control character** is any of U+0000 to U+001F, U+007F, U+0080 to U+009F, U+2028 and U+2029. The
+exception for a stored identifier holding one, which no verb can rename and so has no runnable remedy,
+is specified in `output-text-integrity`.
+
+**An epic id in a printed command is always one shell word.** Wherever a remedy or instruction prints
+a stored epic id inside a command, an id that does not match the epic id format
+(`^[a-z0-9][a-z0-9._-]*$`) — a legacy id holding a space, for example — SHALL be printed shell-quoted,
+so the command still passes that id as one argument. An id that matches the format is printed as it
+is today.
 
 A given remedy SHALL read the same at every site that prints it, and SHALL carry the evidence its
 gate requires: a commit range for Gate 2, artifact paths for Gate 1. A site that cannot know which
@@ -112,10 +128,11 @@ adding one is a visible change to the test.
   verdict
 - **THEN** the remedy it prints for re-recording that verdict carries `--artifact`, not a range
 
-#### Scenario: A record no verb can rename prints no remedy
-- **WHEN** a finding concerns an epic whose stored id holds a control character
-- **THEN** the message names that record and says no verb can rename it, prints no command for it,
-  and does not direct a hand-edit of `.conductor/state.json`
+#### Scenario: A legacy id holding a space stays one argument
+- **WHEN** a stored epic's id is `My Plan` (registered before ids were validated) and `integrity`
+  reports it archived by the drift heal with a passing Gate 2 and no recorded disposition
+- **THEN** the printed remedy quotes the id, and running it exits zero and clears the finding (today
+  it prints `update-epic My Plan …`, which passes `My` as the id)
 
 #### Scenario: Deleting the evidence is not a fix
 - **WHEN** a remedy's commands are followed and the condition is no longer reported

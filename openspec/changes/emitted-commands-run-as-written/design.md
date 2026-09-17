@@ -161,9 +161,6 @@ For each entry the test holds a fixture builder keyed by id. The protocol, per b
 5. Re-run the PRODUCER and assert the condition is no longer reported for that epic (for a refusal,
    re-run the refused command and assert it now succeeds), AND assert the epic still exists — a remedy
    that clears a finding by removing its evidence fails.
-A condition about a stored identifier no verb can rename (change 3's control-character identifiers)
-prints no remedy by design; its builder asserts the message names the record and says no verb can
-rename it, and that no command is extracted from it.
 A builder may declare `prints: none` (the test asserts the output carries no invocation) or
 `unconstructable: "<why>"`. The test asserts the number of `unconstructable` declarations equals a
 constant that is **0**; adding one means raising that constant in the same commit. All 17 checks are
@@ -230,6 +227,15 @@ fails when copied, which is the defect. *Tradeoff:* an agent that has just recor
 re-run `unconsidered-outcomes` to see `delivered` offered again. Accepted — the output is recomputed
 from the record, never cached.
 
+**Epic ids in printed commands.** `EPIC_ID_FORMAT` (`^[a-z0-9][a-z0-9._-]*$`, today a regex literal at
+`add-epic.mjs:360`, `add-many.mjs:61` and `verify-specs.mjs:54`) is exported from `constants.mjs`, with
+`printedId(id)` returning the id as-is when it matches and shell-quoted (`update-epic.mjs:87`'s
+`shellQuote`, moved to `constants.mjs`) otherwise. Every printed command naming a stored id goes
+through it; the sites found bare at f49871a are `integrity.mjs:293,295` (attribute-commit remedy),
+`integrity.mjs:357` (drift-heal disposition) and `subcommands.mjs:350` (the commit nudge's
+`--attribute-commit`), plus every renderer this change introduces (`gateRemedy`,
+`dispositionInvocation`, `BRIEF_REMEDIES`). The call-site sweep derives the rest (task 9.1).
+
 ### 3. One declaration of the inward procedure's list and watermark steps
 
 `inwardListStep(tracker)` and `watermarkStep(n)` in `rules.mjs`, called by BOTH the primary inward
@@ -269,7 +275,9 @@ inside quotes. So the registration line emits `--title=<issue-title>` (inline fo
 `--title='--limit=5 ignored'` is accepted and stored exactly) and `--external-url=<issue-url>`, and
 lane routing emits `suggest-lane --ask=<issue-title>`. `--ask` is a NEW value-bearing registry row
 on `suggest-lane` (`constants.mjs`), so the argv check and `--help` project it like any other flag;
-the positional form keeps working unchanged. Supplying both `--ask` and a positional text is refused
+the positional form keeps working unchanged, and `suggest-lane`'s positional minimum becomes 0
+(`VERB_POSITIONALS`, today `min: 1`) — the verb itself refuses when neither `--ask` nor a text is
+given. Supplying both `--ask` and a positional text is refused
 as a surplus positional — one verb, one text. The inline `--flag=value` form is what carries a
 flag-shaped or help-shaped value through the pre-dispatch check: measured, `add-epic
 '--title=a=b --limit=5 x'`, `--title=--help` and `--title=-h` each exit 0 and read back exactly.
@@ -415,12 +423,19 @@ quoting instruction, jira id placeholder), the vendor-switch messages, and the n
 
 - **`commit-nudge-reads-the-whole-move` (change 1)** owns `runNudge` in `subcommands.mjs`. This change
   edits only the final sentence of its non-detour message (`:495-496` today) and `init()`'s stderr
-  (`:110-113`), after change 1 merges; task 0.3 re-derives both anchors.
+  (`:110-113`), after change 1 merges; task 0.3 re-derives both anchors, the nudge's message variants,
+  and the doc line numbers tasks.md hardcodes. Change 1 PRINTS new commands — `retract-detour <sha>
+  --reason "<why>"`, `update-epic <id> --withdraw-commit <replaced> --withdrawal-reason "amended into
+  <new>"`, and one `--attribute-commit` line per candidate epic — so the commit nudge is a Layer B
+  printer here (tasks 1.5, 2.1): each variant is built anchor → commit → observe; after the retract the
+  row is gone from `PROJECT.md`, after the withdraw the sha is gone from `attributedCommits`.
 - **`user-text-never-forges-output` (change 3) — identifiers no verb can rename.** Change 3 refuses a
   control character in an identifier at input and, for one stored before that rule, prints a message
   naming the record and saying no verb can rename it, with no runnable remedy and no hand-edit
-  instruction. This change's R2 and `conductor-record` requirement carry that as an explicit
-  exception, and Layer B asserts the message rather than executing a remedy. This change's `--repo`
+  instruction. Change 3 OWNS that exception, its scenarios and the Layer B builder assertion for it;
+  this change's R2 and `conductor-record` carry only a one-line cross-reference to
+  `output-text-integrity`. This change defines "control character" in R2 because it lands first, and
+  change 3 references that definition. This change's `--repo`
   shape check also refuses any control character in a github-issues repo at input, and
   `usesGhIssueList()` requires the shape, so a control-character repo never reaches the emitted
   `gh issue list --repo` line — the shell-line half of change 3's D4a for that field is already closed

@@ -216,6 +216,36 @@ touches that epic.
 - **THEN** that epic is no longer counted (today the line names only `/pm:sync`, whose procedure
   never reads that epic)
 
+### Requirement: The completion-sync reminder is emitted only where an inward procedure exists
+The "Sync after completing tracker-linked work" reminder SHALL be emitted only when at least one
+configured tracker **has an emittable inward procedure** — the predicate defined in "An inward
+section is emitted only when the tracker names what to read", not raw direction — and it MUST NOT
+refer the agent to writeback steps that the same rules block does not actually emit. Today it fires
+for any `github-issues` primary and cites "the writeback steps above" even when no writeback
+instruction was emitted at all, which is exactly the scope-less case.
+
+#### Scenario: An outward-only repo gets no completion-sync reminder
+- **WHEN** the rules block is emitted for a single primary tracker with `direction: "outward"` and
+  no secondary trackers
+- **THEN** the "Sync after completing tracker-linked work" section is absent
+
+#### Scenario: An inward primary with no secondaries gets a reminder with no dangling reference
+- **WHEN** the rules block is emitted for a single primary tracker with `direction: "inward"`, an
+  identifying scope, and no secondary trackers
+- **THEN** the reminder is present and every writeback step it references is a step the same block
+  emitted
+
+#### Scenario: An inward-only github-issues primary is not pointed at absent steps
+- **WHEN** the rules block is emitted for `{system: "github-issues", repo: "o/n", direction: "inward"}`
+  with no secondary trackers
+- **THEN** the reminder's text contains no reference to writeback steps above it, because the block
+  emits none (today it says "the writeback steps above")
+
+#### Scenario: A scope-less inward primary gets no reminder
+- **WHEN** the rules block is emitted for a single primary tracker whose direction includes
+  `inward` but which names no `repo` or `projectKey`, with no secondary trackers
+- **THEN** the reminder is absent, because no inward procedure was emitted for it to point at
+
 ## ADDED Requirements
 
 ### Requirement: A secondary tracker's inward pull re-reads what is already linked

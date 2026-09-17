@@ -19,7 +19,10 @@
       amendment; record `record-cross-spec-review 0.45.0 --verdict pass|fail --reviewer "<identity>"`
 - [ ] 0.3 After change 1 (`commit-nudge-reads-the-whole-move`) merges into `dev`, re-derive every line
       anchor in design.md with `rg` (above all `runNudge`'s message and `init()`'s stderr in
-      `subcommands.mjs`), and correct design.md in the first implementation commit if any moved
+      `subcommands.mjs`), every commit-nudge message VARIANT change 1 prints, and every doc line number
+      this tasks.md hardcodes (`skills/conductor/SKILL.md` 70, 117-119, 734, 738, 994; `README.md`
+      1327), which change 1's doc tasks move; correct design.md and tasks.md in the first
+      implementation commit if any moved
 
 ## 1. The sweep harness and Layer A (every invocation passes the pre-dispatch check)
 
@@ -52,7 +55,8 @@ Pairs: 1.2–1.5 land with 1.6.
       after a code span fails as unattached; a marked span followed on the same line by an unmarked
       refused span fails on the second
 - [ ] 1.5 RED: Layer A over the rules block for every platform × the tracker matrix, `init` stderr and
-      the commit-nudge message — passes today except where section 3 changes the text; saved as the
+      the commit-nudge message in EVERY variant change 1 prints, one fixture per variant (auto-logged
+      detour, detour commit, several candidate epics, amend), each built anchor → commit → observe — passes today except where section 3 changes the text; saved as the
       baseline, not a failure (brief, `integrity`, `unconsidered-outcomes` and archive-gate refusals
       join Layer A in 2.9, once their fixtures exist)
 - [ ] 1.6 GREEN: the `class` field in `argv-surface.mjs`; the 19 `pm:refused <class>` markers, the
@@ -64,7 +68,7 @@ Pairs: 1.2–1.5 land with 1.6.
 
 ## 2. Layer B and remedies that clear their condition (emitted-instructions R2; epic-disposition MODIFIED)
 
-Pairs: 2.1–2.8 land with 2.9.
+Pairs: 2.1–2.8 (incl. 2.7a) land with 2.9.
 
 - [ ] 2.1 RED: Layer B harness over three EXPORTED registries — `CHECKS` (integrity),
       `DELIVERED_OBLIGATIONS` (archive-gate) and `BRIEF_REMEDIES` (briefing) — plus the
@@ -72,8 +76,10 @@ Pairs: 2.1–2.8 land with 2.9.
       naming it; the declared-`unconstructable` count is asserted equal to 0. Each builder follows
       design Decision 1's five-step protocol: reproduce and observe → extract → fill BY MEANING → run
       in order, each exit 0 → re-run the producer, assert the condition is gone AND the epic still
-      exists. A stored identifier no verb can rename asserts its no-remedy message instead. Each alternative
-      runs in its own fresh fixture. (Fails today: the two registries are not exported.)
+      exists. Each alternative runs in its own fresh fixture. The commit nudge is a printer too, with
+      builders per variant: after `retract-detour <sha> --reason …` the row is gone from `PROJECT.md`;
+      after `update-epic <id> --withdraw-commit <replaced> --withdrawal-reason …` the sha is gone from
+      `attributedCommits`; each `--attribute-commit` line attributes to its epic. (Fails today: the two registries are not exported.)
 - [ ] 2.2 RED: stale Gate 2 (a commit attributed after the reviewed head) — the archive refusal's
       remedy filled with base = parent of the first attributed commit and head = the last attributed
       commit exits 0 and the same archive then succeeds; missing and withdrawn Gate 2 likewise
@@ -96,6 +102,10 @@ Pairs: 2.1–2.8 land with 2.9.
       attributed commit so the check's resolvability probe does not skip the absent arm — first
       assert the finding IS reported) and the malformed-value arm
       on a Gate 1 range — the Gate 1 remedy carries `--artifact`, not a range, and clears the finding
+- [ ] 2.7a RED: a legacy epic id `My Plan` in a hand-written state (passes the strict reader) — the
+      drift-heal disposition remedy (`integrity.mjs:357`), the attribute-commit remedy (`:293,295`) and
+      the nudge's `--attribute-commit` line print it shell-quoted; each, run, exits 0 and clears its
+      condition
 - [ ] 2.8 REGRESSION GUARD: a `claude-code`-lane unconsidered entry still offers `delivered` with
       `deliveredBlockedBy: []` and clears when run with `delivered`; the regression refusal still
       prints its echoed tokens, `--correct-disposition` and exactly one line beginning `  update-epic `
@@ -104,7 +114,8 @@ Pairs: 2.1–2.8 land with 2.9.
       (design Decision 2, incl. the `+`-split forms at `archive-gate.mjs:426,430-431` and the
       gate-aware `integrity.mjs:750-752`); `dispositionInvocation(epic, {keepDelivered})` and
       `blockedDelivered(epic)`; `deliveredBlockedBy`; the delivered-release and regression-refusal
-      remedy lines; `closedItemStep()`'s Gate 2 sentence; Layer A extended to the outputs these
+      remedy lines; `closedItemStep()`'s Gate 2 sentence; `EPIC_ID_FORMAT` and `printedId()` in
+      `constants.mjs` at every printed-id site; Layer A extended to the outputs these
       fixtures produce; 2.1–2.8 pass, suite green
 
 ## 3. Tracker recipes (tracker-sync MODIFIED "Every command pm emits must run as written"; ADDED secondary watermark)
@@ -138,10 +149,12 @@ Pairs: 3.1–3.9 (incl. 3.3a) land with 3.10.
       recorded by that line, filled, is not counted never-re-read by the brief
 - [ ] 3.9 REGRESSION GUARD: the github-issues primary's existing recipe test in `conductor-14` and the
       0.26.0 rules fixtures (`scripts/test/fixtures/rules-0.26.0-*.txt`) — update the fixtures only
-      where this change's text changes, and say which lines in the commit
+      where this change's text changes, and say which lines in the commit; `conductor-14`'s
+      `/"<issue-title>"/g` fill helper is rewritten for the `--title=<issue-title>` form
 - [ ] 3.10 GREEN: `inwardListStep()` and `watermarkStep()` shared by primary and secondary; the quoting
       sentence, `--title=`/`--external-url=` and `suggest-lane --ask=`; the `--ask` registry row in
-      `constants.mjs` and `suggest-lane` reading it (help projects it from the row); the `<issue-key-slug>`/`<issue-key>` placeholders for
+      `constants.mjs`, `suggest-lane`'s positional `min` set to 0, and `suggest-lane` reading `--ask`
+      (help projects it from the row); the `<issue-key-slug>`/`<issue-key>` placeholders for
       non-github systems; the reminder clause; the dedup wording; the outward line (design Decision 3);
       3.1–3.9 pass, suite green
 
@@ -150,7 +163,8 @@ Pairs: 3.1–3.9 (incl. 3.3a) land with 3.10.
 Pairs: 4.1–4.4 land with 4.7.
 
 - [ ] 4.1 RED: `set-tracker --system github-issues --repo 'a/b; touch pwned'` exits non-zero naming the
-      shape (and a repo holding a control character is refused with the value escaped in the message), for `--role primary` and `--role secondary`; `state.json` byte-identical
+      shape; a repo holding a control character exits non-zero, escapes the value in its message and
+      writes nothing (shape wording NOT asserted: change 3's input refusal fires first), for `--role primary` and `--role secondary`; `state.json` byte-identical
 - [ ] 4.2 RED: a hand-written legacy state carrying that repo on the primary loads for every read verb,
       and the rules block contains no shell line with the value (fixture passes the strict reader)
 - [ ] 4.3 RED: a github-issues primary `repo: "o/n"` switched with `--system jira --project ABC` records
@@ -200,16 +214,19 @@ Starts after change 1 has merged (task 0.3). Pairs: 6.1–6.3 land with 6.4.
 
 ## 7. Gate forms in shipped docs (emitted-instructions R3)
 
-Pairs: 7.1 lands with 7.2. The single-writer rule for hierarchy runs is NOT here — it moved to
+Pairs: 7.0–7.1 land with 7.2. The single-writer rule for hierarchy runs is NOT here — it moved to
 `hierarchy-run-has-one-state-writer`.
 
+- [ ] 7.0 RED: `agents/hierarchy-child-executor.md` names neither pm's `README.md` nor `scripts/test`;
+      `commands/review-mode.md` names `update-epic <id> --clear review-mode` and no "no separate unset"
+      (both pass with 7.2's doc edits; the review-mode line moves here from 10.3)
 - [ ] 7.1 RED: every passing `record-gate-review` form in shipped docs — Gate 1 forms carry
       `--artifact`, Gate 2 forms carry both range flags, no `--gate 1|2` pass form (fails on
       `agents/hierarchy-child-executor.md:33`, `SKILL.md:117-119,322,1216`, `commands/review-mode.md:72`);
       the child doc's forms, filled, exit 0 in a fixture
 - [ ] 7.2 GREEN: `commands/epic.md:731-741`'s two-gate form at every 7.1 site, with the child doc's WHO
-      unchanged; the child doc's pm-repo-only README/test paragraph and `SKILL.md:994` replaced (design
-      Decision 6); 7.1 passes, suite green
+      unchanged; the child doc's pm-repo-only README/test paragraph and `SKILL.md:994` replaced;
+      `commands/review-mode.md:99` naming `--clear review-mode` (design Decision 6); 7.0–7.1 pass, suite green
 
 ## 8. Cost of the sweep
 
@@ -285,7 +302,7 @@ Pairs: 7.1 lands with 7.2. The single-writer rule for hierarchy runs is NOT here
       `--remove` exemption); the vendor-switch scope drop and direction record
 - [ ] 10.2 `commands/unconsidered-outcomes.md` — `deliveredBlockedBy`, and that an openspec-lane epic
       never reviewed at Gate 2 is not offered `delivered`
-- [ ] 10.3 `commands/review-mode.md:99` — an override clears with `update-epic <id> --clear review-mode`
+- [ ] 10.3 (moved to 7.0/7.2 — the review-mode unset line is test-driven)
 - [ ] 10.4 `skills/conductor/SKILL.md` — tracker section (limit, watermark on secondaries, key
       placeholder, quoting item values, direction kept on a vendor switch), the brief's two tracker
       lines, `deliveredBlockedBy`
