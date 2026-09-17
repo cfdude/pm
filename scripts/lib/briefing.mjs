@@ -44,7 +44,12 @@ export const BRIEF_REMEDIES = [
   },
   {
     id: "never-re-read",
-    render: (count) => `  ⚠ ${count} tracker-linked epic(s) never re-read since mirroring — run \`/pm:sync\``,
+    // The remedy clears EVERY epic the line counts — including one linked through an outward-only
+    // primary while a secondary makes the repo inward, whose link no inward procedure reads (repro.txt
+    // §B8). `/pm:sync` alone never touches that epic, so it is named as the path for listed items only.
+    render: (count) => `  ⚠ ${count} tracker-linked epic(s) never re-read since mirroring — re-read each and record it ` +
+      "with `record-tracker-refresh <id> --verdict unchanged|material-change --external-updated-at <iso>` " +
+      "(`/pm:sync` does this for the items it lists)",
   },
 ];
 const briefRemedy = (id, ...args) => BRIEF_REMEDIES.find(r => r.id === id).render(...args);
@@ -301,7 +306,13 @@ export function buildBrief(state, { consume = false } = {}) {
       ["queued", "active", "paused"].includes(e.status) && !missing(e) && !e.externalId);
     trackerLines.push(unmirrored.length
       ? briefRemedy("not-in-outward-tracker", tracker, unmirrored)
-      : `  ✓ all active epics are mirrored to ${tracker.system}`);
+      // With a secondary configured, an external id no longer shows WHICH tracker holds the link (a
+      // secondary-linked epic carries one too), so the line claims only what it checked. Attributing
+      // by URL shape was rejected: only a github-issues URL is predictable, and a partial attribution
+      // is a second rule to drift.
+      : secondaryTrackers.length
+        ? "  ✓ every active epic carries an external link (this record cannot tell which tracker holds it)"
+        : `  ✓ all active epics are mirrored to ${tracker.system}`);
   }
   // Freshness — locally computable and nothing more. How many linked items have NEWER remote
   // activity is a network call the engine is forbidden to make, so the honest population is the

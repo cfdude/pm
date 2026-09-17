@@ -227,14 +227,14 @@ Pairs: 4.1–4.4 land with 4.7.
 
 Pairs: 5.1–5.2 land with 5.4.
 
-- [ ] 5.1 RED: outward jira primary + github-issues secondary, the only active epic linked to a GitHub
+- [x] 5.1 RED: outward jira primary + github-issues secondary, the only active epic linked to a GitHub
       item — the brief does not say every active epic is mirrored to jira (`repro.txt` §B7)
-- [ ] 5.2 RED: an outward-primary-linked epic counted never-re-read in a repo whose only inward
+- [x] 5.2 RED: an outward-primary-linked epic counted never-re-read in a repo whose only inward
       procedure is a secondary's — the remedy the line names, filled, removes it from the count
       (`repro.txt` §B8); runs as a `BRIEF_REMEDIES` Layer B builder
-- [ ] 5.3 REGRESSION GUARD: with no secondary tracker the mirror line's text is unchanged; the
+- [x] 5.3 REGRESSION GUARD: with no secondary tracker the mirror line's text is unchanged; the
       direction-gated emission conditions in `tracker-sync` still hold
-- [ ] 5.4 GREEN: the two lines as `BRIEF_REMEDIES` entries (design Decision 5); 5.1–5.3 pass, suite green
+- [x] 5.4 GREEN: the two lines as `BRIEF_REMEDIES` entries (design Decision 5); 5.1–5.3 pass, suite green
 
 ## 6. No hand-edit instructions (conductor-record ADDED)
 

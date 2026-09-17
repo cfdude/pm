@@ -1,0 +1,51 @@
+✖ Layer B brief:never-re-read {remedy} — the remedy clears what printed it (488.84475ms)
+✔ 3.8 the outward record-the-key line carries --external-updated-at, and an epic recorded by it is not counted never-re-read (450.01ms)
+✖ 5.1 with a secondary configured, the brief does not claim every active epic is mirrored to the primary (485.102708ms)
+✔ 5.3 REGRESSION GUARD: with no secondary tracker the mirror line is unchanged (978.720625ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 2
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2449.541125
+
+✖ failing tests:
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B brief:never-re-read {remedy} — the remedy clears what printed it (488.84475ms)
+  AssertionError [ERR_ASSERTION]: step 2: no remedy invocation to follow in:
+    ⚠ 1 tracker-linked epic(s) never re-read since mirroring — run `/pm:sync`
+      at followRemedy (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:755:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:800:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:2024:1
+✖ 5.1 with a secondary configured, the brief does not claim every active epic is mirrored to the primary (485.102708ms)
+  AssertionError [ERR_ASSERTION]:   ✓ all active epics are mirrored to jira
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:2032:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at node:internal/test_runner/test:1305:31
+      at node:internal/process/task_queues:151:7
+      at AsyncResource.runInAsyncScope (node:async_hooks:226:14)
+      at AsyncResource.runMicrotask (node:internal/process/task_queues:148:8) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '  ✓ all active epics are mirrored to jira\n',
+    expected: /mirrored to jira/,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }

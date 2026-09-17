@@ -1321,15 +1321,19 @@ const BRIEF_BUILDERS = {
     meaning: () => ({ positional: "un", "external-id": "ABC-1", "external-url": "https://jira.example/browse/ABC-1" }),
   },
   "never-re-read": {
-    prints: "none",
+    // 5.2 — an epic linked through an OUTWARD-ONLY primary, in a repo whose only inward procedure is a
+    // secondary's: no inward procedure reads that link, so the remedy the line names must be one that
+    // clears it for this epic too (repro.txt §B8).
     setup() {
       const repo = remedyRepo();
-      repo.ok(["set-tracker", "--system", "github-issues", "--repo", "o/n"]);
-      repo.ok(["add-epic", "--id", "nr", "--lane", "claude-code", "--title", "nr", "--external-id", "5", "--external-url", "https://github.com/o/n/issues/5"]);
+      repo.ok(["set-tracker", "--system", "jira", "--project", "ABC", "--direction", "outward"]);
+      repo.ok(["set-tracker", "--role", "secondary", "--system", "github-issues", "--repo", "o/s"]);
+      repo.ok(["add-epic", "--id", "nr", "--lane", "claude-code", "--title", "nr", "--external-id", "ABC-5", "--external-url", "https://jira.example/browse/ABC-5"]);
       return { repo, epicId: "nr" };
     },
     produce: briefLines("never re-read"),
     reported: (out) => /1 tracker-linked epic\(s\) never re-read/.test(out),
+    meaning: (fx) => ({ positional: fx.epicId, verdict: "unchanged", "external-updated-at": AT }),
   },
 };
 for (const [id, spec] of Object.entries(BRIEF_BUILDERS)) registerBuilder(`brief:${id}`, spec);
@@ -2013,4 +2017,35 @@ test("4.6 REGRESSION GUARD: re-stating the same system keeps its scope; --intent
   assert.equal(repo.state().tracker.projectKey, "ABC");
   repo.ok(["set-tracker", "--intent", "paused:todo"]);
   assert.deepEqual(repo.state().tracker.statusIntent, { active: "in-progress", paused: "todo" });
+});
+
+// ═══════════════════════════════ 5 — brief tracker lines ═══════════════════════════════
+
+test("5.1 with a secondary configured, the brief does not claim every active epic is mirrored to the primary", () => {
+  const repo = remedyRepo();
+  repo.ok(["set-tracker", "--system", "jira", "--project", "ABC", "--direction", "outward"]);
+  repo.ok(["set-tracker", "--role", "secondary", "--system", "github-issues", "--repo", "o/s"]);
+  repo.ok(["add-epic", "--id", "gh1", "--lane", "claude-code", "--title", "gh1", "--external-id", "9",
+    "--external-url", "https://github.com/o/s/issues/9", "--external-updated-at", AT]);
+  repo.ok(["set-active", "gh1"]);
+  const text = briefLines("mirrored")({ repo }) + "\n" + briefLines("external link")({ repo });
+  assert.doesNotMatch(text, /mirrored to jira/, text);
+  assert.match(text, /every active epic carries an external link \(this record cannot tell which tracker holds it\)/, text);
+});
+
+test("5.3 REGRESSION GUARD: with no secondary tracker the mirror line is unchanged", () => {
+  const repo = remedyRepo();
+  repo.ok(["set-tracker", "--system", "jira", "--project", "ABC", "--direction", "outward"]);
+  repo.ok(["add-epic", "--id", "j1", "--lane", "claude-code", "--title", "j1", "--external-id", "ABC-1",
+    "--external-url", "https://jira.example/browse/ABC-1", "--external-updated-at", AT]);
+  assert.equal(briefLines("mirrored")({ repo }), "  ✓ all active epics are mirrored to jira");
+  const inwardOnly = remedyRepo();
+  inwardOnly.ok(["set-tracker", "--system", "github-issues", "--repo", "o/n"]);
+  inwardOnly.ok(["add-epic", "--id", "g1", "--lane", "claude-code", "--title", "g1", "--external-id", "1", "--external-url", "https://github.com/o/n/issues/1"]);
+  assert.equal(briefLines("mirrored")({ repo: inwardOnly }), "", "an inward-only tracker still gets no mirror line");
+  assert.match(briefLines("never re-read")({ repo: inwardOnly }), /1 tracker-linked epic/, "and still gets the freshness line");
+  const outwardOnly = remedyRepo();
+  outwardOnly.ok(["set-tracker", "--system", "jira", "--project", "ABC", "--direction", "outward"]);
+  outwardOnly.ok(["add-epic", "--id", "o1", "--lane", "claude-code", "--title", "o1", "--external-id", "ABC-2", "--external-url", "https://jira.example/browse/ABC-2"]);
+  assert.equal(briefLines("never re-read")({ repo: outwardOnly }), "", "no inward procedure, no freshness line");
 });
