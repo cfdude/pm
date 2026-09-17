@@ -15,7 +15,7 @@
 // One-directional dependencies only: constants → disposition → (add-epic's parseFlags, state,
 // render), the same chain update-epic.mjs walks.
 
-import { escapeControls, findRelease, orNoRemedy, printedId, releaseLine, releaseMembers, releaseSummaries } from "./constants.mjs";
+import { EPIC_ID_FORMAT, escapeControls, findRelease, orNoRemedy, printedId, releaseLine, releaseMembers, releaseSummaries } from "./constants.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
@@ -113,6 +113,15 @@ export function release() {
 
   let rel = findRelease(state, id);
   if (!rel) {
+    // THE ID SHAPE, FIRST on the create path (design D5) — before the missing-intent refusal, which
+    // prints a runnable `release <id> --intent …`, and before any write. The update branch above is
+    // untouched, so a legacy release id stays addressable. No invocation carrying the id is printed.
+    if (!EPIC_ID_FORMAT.test(id)) {
+      process.stderr.write(
+        `conductor: release '${escapeControls(id)}' cannot be created — a new release id must match ` +
+        `${EPIC_ID_FORMAT.source} (lowercase letters, digits, \`.\`, \`_\`, \`-\`). Nothing was written.\n`);
+      process.exit(1);
+    }
     // A release with no intent prose is an id nobody can read six months later, which is the
     // failure this whole capability exists to end. So creation DEMANDS it, and the same refusal
     // covers "you named a release that does not exist" — those are one condition, not two.

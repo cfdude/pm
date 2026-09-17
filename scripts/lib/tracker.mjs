@@ -9,7 +9,7 @@ import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { removeSecondaryTracker, secondaryTrackerKey, upsertSecondaryTracker, writeRules } from "./rules.mjs";
 import { render } from "./render.mjs";
 import { resolvePlatform } from "./platform.mjs";
-import { KNOWN_TRACKER_DIRECTIONS, directionOf, escapeControls, isGithubRepo } from "./constants.mjs";
+import { CONTROL_CHARACTER, KNOWN_TRACKER_DIRECTIONS, directionOf, escapeControls, isGithubRepo } from "./constants.mjs";
 
 /** Write/merge the `tracker` block (role: primary, default) or upsert/remove an entry in
  *  `state.secondaryTrackers` (role: secondary). Pure local state write — the engine NEVER
@@ -20,6 +20,23 @@ export function setTracker() {
   const f = parseFlags(process.argv.slice(3));
   requireFlagValues("set-tracker", f);
   const str = (v) => (typeof v === "string" ? v : undefined);
+  // A TRACKER'S RECORDED SCOPE holding a control character is refused before anything is read or
+  // written (design D8) — it heads a section of the rules file, the channel that reaches every
+  // subagent. Both roles; NOT `--role secondary --remove`, whose match key is whatever was stored, so
+  // a legacy entry stays removable. A primary `--remove` has no remove handler and is refused. Runs
+  // BEFORE the owner/name shape check below, so a value failing both gets this refusal.
+  if (!(str(f.role) === "secondary" && f.remove)) {
+    for (const [flag, key] of [["system", "system"], ["project", "project"], ["repo", "repo"]]) {
+      const values = [].concat(f[key] === undefined ? [] : f[key]).filter(v => typeof v === "string");
+      const bad = values.find(v => CONTROL_CHARACTER.test(v));
+      if (bad !== undefined) {
+        process.stderr.write(`conductor: --${flag} ${escapeControls(JSON.stringify(bad))} holds a control character — a ` +
+          "tracker's recorded scope heads a section of the rules file and names the tracker in emitted " +
+          "instructions, so it cannot hold one. Nothing was written.\n");
+        process.exit(1);
+      }
+    }
+  }
   const state = loadState();
   const role = str(f.role) || "primary";
   if (role !== "primary" && role !== "secondary") {

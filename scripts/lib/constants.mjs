@@ -1059,6 +1059,20 @@ export const escapeTableCell = (s) => escapeControls(s).replace(/\\/g, "\\\\").r
  *  (emitted-commands-run-as-written; user-text-never-forges-output asserts none remains elsewhere). */
 export const EPIC_ID_FORMAT = /^[a-z0-9][a-z0-9._-]*$/;
 
+/** Can this id be STORED as an epic id at all? Non-empty, and no control character and no whitespace
+ *  (user-text-never-forges-output D4). Deliberately NOT EPIC_ID_FORMAT: `sync` has always registered
+ *  uppercase plan filenames (the fleet holds `MASTER-platform-stabilization-2026-05-18`), and those
+ *  stay accepted. pushEpic() — the one creation sink — refuses a failing id; `sync` and the archive
+ *  backfill test it at their final registration step and skip the entry instead. */
+export const STORABLE_EPIC_ID = (id) =>
+  typeof id === "string" && id.length > 0 && !CONTROL_CHARACTER.test(id) && !/\s/.test(id);
+
+/** The stderr line `sync` prints, on EVERY run (quiet included), for an entry it skips because its name
+ *  cannot be an epic id. */
+export const unstorableSkipLine = (kind, name) =>
+  `conductor: sync skipped ${kind} '${escapeControls(name)}' — its name holds a control character or ` +
+  "whitespace, so it cannot be an epic id; rename it to register it\n";
+
 /** POSIX single-quoting: the whole token arrives as ONE shell word, apostrophes included. Moved
  *  here from update-epic.mjs so the regression refusal's echo and printedId() share one quoter. */
 export const shellQuote = (token) => `'${String(token).replace(/'/g, "'\\''")}'`;

@@ -20,7 +20,7 @@
 
 import { isInitialized, loadState } from "./state.mjs";
 import { archivedChanges, epicProgress, isArchived, strippedChangeId } from "./epic-progress.mjs";
-import { CONTROL_CHARACTER, KNOWN_STATUSES, escapeControls, gateArtifacts, gateHasEvidence, isGithubRepo, isOpenspecLane, printedId, releaseMembers, shellQuote, withdrawnGate, orNoRemedy, commandValue } from "./constants.mjs";
+import { CONTROL_CHARACTER, KNOWN_STATUSES, escapeControls, gateArtifacts, gateHasEvidence, isGithubRepo, isOpenspecLane, printedId, releaseMembers, shellQuote, withdrawnGate, orNoRemedy, commandValue, STORABLE_EPIC_ID } from "./constants.mjs";
 import { AGENT_OUTCOMES, deliveredArchiveInvocation, deliveredObligations, dispositionInvocation, gateRemedy, obligationArchiveFlags, obligationRemedy } from "./archive-gate.mjs";
 import { commitDate, isAncestor, isCommitNameShaped, objectExists, reachableFromAnyRef } from "./git.mjs";
 import { isArchiveBackfilled, outcomeOf, stampedBy } from "./disposition.mjs";
@@ -337,9 +337,13 @@ export const CHECKS = [
       // Registering it is explicitly OUT of scope here — that belongs to `sync`'s archive
       // reconciliation. A check that registered would be a repair, and this module repairs
       // nothing.
-      return archivedChanges().filter(c => !held.has(c.id)).map(c => ({ epic: null, detail:
-        `archive/${c.dir} is an archived change the conductor holds no epic for — \`/pm:sync\` ` +
-        "registers it; this check only reports it" }));
+      // A directory whose name no epic id can carry is NOT registered by `/pm:sync` (it skips it),
+      // so saying it would be is the false instruction this detail must not give (design D4).
+      return archivedChanges().filter(c => !held.has(c.id)).map(c => ({ epic: null, detail: STORABLE_EPIC_ID(c.id)
+        ? `archive/${c.dir} is an archived change the conductor holds no epic for — \`/pm:sync\` ` +
+          "registers it; this check only reports it"
+        : `archive/${c.dir} is an archived change the conductor holds no epic for, and its name holds a ` +
+          "control character or whitespace, so it cannot be an epic id — rename the directory to register it" }));
     },
   },
   {

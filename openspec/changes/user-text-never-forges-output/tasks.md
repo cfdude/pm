@@ -145,29 +145,29 @@ Pairs: 5.1–5.3c land with 5.4.
 
 Pairs: 6.1–6.5b (6.4c included) land with 6.6, 6.7 and 6.8 (one commit; they share the fixture).
 
-- [ ] 6.1 RED: spec "sync skips a change directory whose name holds a newline" (repro H)
-- [ ] 6.2 RED: spec "sync skips a plan file whose name holds a newline" (repro H)
-- [ ] 6.3 RED: spec "The archive backfill skips a malformed archive directory" — including the
+- [x] 6.1 RED: spec "sync skips a change directory whose name holds a newline" (repro H)
+- [x] 6.2 RED: spec "sync skips a plan file whose name holds a newline" (repro H)
+- [x] 6.3 RED: spec "The archive backfill skips a malformed archive directory" — including the
       `integrity` wording half
-- [ ] 6.4 RED: spec "A release id with a newline is refused" (repro G)
-- [ ] 6.4a RED: spec "A malformed release id with no intent is refused on its shape first"
-- [ ] 6.4b RED: specs "A tracker system with a newline is refused before the rules file is written"
+- [x] 6.4 RED: spec "A release id with a newline is refused" (repro G)
+- [x] 6.4a RED: spec "A malformed release id with no intent is refused on its shape first"
+- [x] 6.4b RED: specs "A tracker system with a newline is refused before the rules file is written"
       (Gate 1 lens A repro) and "A secondary tracker repository with a newline is refused"
-- [ ] 6.5 REGRESSION GUARD: specs "A well-formed release id is still created", "An already-stored
+- [x] 6.5 REGRESSION GUARD: specs "A well-formed release id is still created", "An already-stored
       malformed release is still updatable" and "An uppercase plan filename still registers, and a held
       one is not reported"; plus `add-epic --id "e1<LF>x"` and an `add-many` batch with such an id still
       refuse with nothing written
-- [ ] 6.4c RED: spec "A primary tracker system with a newline is refused even with --remove" — fails
+- [x] 6.4c RED: spec "A primary tracker system with a newline is refused even with --remove" — fails
       on 0.44.0, measured: exits 0 and `## FORGED` lands in `CLAUDE.md` and `state.json`
-- [ ] 6.5b REGRESSION GUARD: a legacy secondary tracker whose `repo` holds a control character (written
+- [x] 6.5b REGRESSION GUARD: a legacy secondary tracker whose `repo` holds a control character (written
       into `state.json` directly) is removed by `set-tracker --role secondary --remove` with that value
-- [ ] 6.6 GREEN: `STORABLE_EPIC_ID` and `pushEpic()`'s `InvalidEpicIdError`; `sync` (active changes, plan
+- [x] 6.6 GREEN: `STORABLE_EPIC_ID` and `pushEpic()`'s `InvalidEpicIdError`; `sync` (active changes, plan
       files) and `backfillArchive` test it at the final registration step, after the claimed, known,
       tombstone and near-match rungs, and skip with the escaped stderr line on every run including
       `quiet`; the `archive-directory-has-no-epic` detail distinguishes a failing directory (design D4)
-- [ ] 6.7 GREEN: `release()` create branch refuses a non-matching id FIRST — before the
+- [x] 6.7 GREEN: `release()` create branch refuses a non-matching id FIRST — before the
       missing-intent refusal and any write — printing no runnable invocation with it (design D5)
-- [ ] 6.8 GREEN: `set-tracker` refuses a control character in `--system`/`--project`/`--repo` for both
+- [x] 6.8 GREEN: `set-tracker` refuses a control character in `--system`/`--project`/`--repo` for both
       roles before `loadState`, except on `--role secondary --remove` (a primary `--remove` is refused, as
       change 2 scoped its own exemption), and BEFORE change 2's owner/name shape check
       (design D8); change 2's tests 4.1 and 4.5 must stay green

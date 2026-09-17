@@ -14,7 +14,7 @@ import { assertRulesBlockWritable, writeRules } from "./rules.mjs";
 import { buildBrief } from "./briefing.mjs";
 import { COMMIT_DERIVED_KINDS, appendDetourLog, appendRetraction, fullSha, gitShortSha, isCommitNameShaped, isDetachedTree, readDetourRows, rowMatches, rowShasOverlap, shortSha } from "./git.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
-import { escapeControls, printedId, orNoRemedy, commandValue } from "./constants.mjs";
+import { STORABLE_EPIC_ID, escapeControls, printedId, orNoRemedy, commandValue, unstorableSkipLine } from "./constants.mjs";
 import { beginObservation, isAmend, isLiveCommit } from "./commit-watch.mjs";
 import { deliveredRegression, planWithdrawal, withdrawnRecord } from "./update-epic.mjs";
 import { deferralHistory, deferralNote, detourContext } from "./links.mjs";
@@ -694,7 +694,7 @@ function runNudge(state, ctx, commits, attribution = null, event = "PostToolUse"
  *
  *  Returns the ids it registered, so the caller owns what is said about them.
  */
-export function backfillArchive(state) {
+export function backfillArchive(state, skipped = []) {
   // Identity is the DATE-PREFIX-STRIPPED id on both sides. An epic may itself carry a
   // date-prefixed id (this repository holds four such registrations), so comparing the stripped
   // archive id against the epic's literal id alone would miss it and register a duplicate —
@@ -702,8 +702,11 @@ export function backfillArchive(state) {
   const held = new Set();
   for (const e of state.epics) { held.add(e.id); held.add(strippedChangeId(e.id)); }
   const registered = [];
-  for (const { id } of archivedChanges()) {
+  for (const { id, dir } of archivedChanges()) {
     if (held.has(id)) continue;
+    // The final registration step (design D4): an entry already held never reaches here. A name no
+    // epic id can carry is reported by the caller, never stored.
+    if (!STORABLE_EPIC_ID(id)) { skipped.push(dir); continue; }
     // Through pushEpic() like every other creation path, and exempted BY IT: the
     // `archive-backfill` stamp below is what tells the sink to leave `attributedCommits`
     // ABSENT. Absent is the truthful record here — this epic never passed through the
@@ -749,6 +752,9 @@ export function sync(quiet = false) {
   let added = 0;
   for (const id of activeChangeIds()) {
     if (!known.has(id)) {
+      // Said on EVERY run, quiet included: a skipped change has no other reported condition, so a
+      // silent skip would read as a clean sync (design D4).
+      if (!STORABLE_EPIC_ID(id)) { process.stderr.write(unstorableSkipLine("change", id)); continue; }
       pushEpic(state, { id, title: id, priority: "P?", status: "untriaged", role: "epic", lane: "openspec", links: [], reconcileNeeded: false });
       known.add(id); added++;
     }
@@ -819,7 +825,9 @@ export function sync(quiet = false) {
       continue;
     }
 
-    // 5. Real backlog.
+    // 5. Real backlog — the final registration step, so only an entry no rung above matched is
+    //    tested: a name no epic id can carry is skipped and named on every run (design D4).
+    if (!STORABLE_EPIC_ID(id)) { process.stderr.write(unstorableSkipLine("plan", fname)); continue; }
     const title = firstHeading(path.join(PLANS_DIR, fname)) || id;
     pushEpic(state, { id, title, priority: "P?", status: "untriaged", role: "epic", lane: "superpowers", planPath, links: [], reconcileNeeded: false });
     known.add(id); claimed.set(norm, { epic: id, key: "planPath", label: "plan" }); added++;
@@ -833,7 +841,9 @@ export function sync(quiet = false) {
   // announce, and written after, so a run that registered nothing still records that history
   // has been accounted for.
   const firstBackfill = !("archiveBackfilledAt" in state);
-  const backfilled = backfillArchive(state);
+  const skippedArchives = [];
+  const backfilled = backfillArchive(state, skippedArchives);
+  for (const dir of skippedArchives) process.stderr.write(unstorableSkipLine("archive directory", dir));
   if (firstBackfill) state.archiveBackfilledAt = new Date().toISOString();
   reconcileArchived(state);
   const saved = saveState(state);

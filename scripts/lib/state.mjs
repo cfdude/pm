@@ -8,7 +8,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { recordConflict, clearConflicts } from "./write-conflicts.mjs";
-import { CONFLICT_EXIT_CODE, STATE_LOCK_POLL_MS, STATE_LOCK_STALE_MS, STATE_LOCK_WAIT_MS, escapeControls } from "./constants.mjs";
+import { CONFLICT_EXIT_CODE, STATE_LOCK_POLL_MS, STATE_LOCK_STALE_MS, STATE_LOCK_WAIT_MS, STORABLE_EPIC_ID, escapeControls } from "./constants.mjs";
 import { isArchiveBackfilled } from "./disposition.mjs";
 import { claimArtifacts } from "./source-artifacts.mjs";
 
@@ -69,6 +69,7 @@ export function defaultState() {
  *  epic comes to claim an artifact. NOTE the body below is kept tight on purpose — a source
  *  scan in conductor-13 allows the raw push only within a few lines of this signature. */
 export function pushEpic(state, epic) {
+  if (!STORABLE_EPIC_ID(epic.id)) throw new InvalidEpicIdError(epic.id);
   seedCreationFields(epic);
   claimArtifacts(state, epic);
   state.epics.push(epic);
@@ -100,6 +101,17 @@ function seedCreationFields(epic) {
 }
 
 /** Thrown when a write would clobber a newer revision than the one this caller read. */
+/** pushEpic()'s refusal of an id no epic may carry (a control character or whitespace). Carries the
+ *  raw id; its message escapes it. Every caller checks STORABLE_EPIC_ID first, so reaching this is a
+ *  creation path that skipped the check — loud by design. */
+export class InvalidEpicIdError extends Error {
+  constructor(id) {
+    super(`epic id '${escapeControls(String(id))}' holds a control character or whitespace — it cannot be stored`);
+    this.name = "InvalidEpicIdError";
+    this.id = id;
+  }
+}
+
 export class StateConflictError extends Error {
   constructor(expected, found, message) {
     // `message` is for the two conflicts that are not a newer revision — a lock held past the wait,
