@@ -1,6 +1,6 @@
 ## Context
 
-See proposal.md "Why" for the reproduced defects. Current shape, read at `dev` f49871a:
+See proposal.md "Why" for the reproduced defects. Current shape, read at `dev` f49871a (anchors re-derived with `rg` at `dev` bea35d0 by task 0.3: every function named below still exists; the only line anchor that moved is update-epic.mjs's withdrawal write, now ~708-710):
 
 - `hooks/hooks.json` wires `commit-nudge` on **PostToolUse(Bash) only**. Claude Code fires PostToolUse
   only when a tool call succeeds and `PostToolUseFailure` when it fails; a cancelled call fires
@@ -156,7 +156,7 @@ from `deliveredObligations(snapshot)`. Kinds are `deliveredObligations()`'s own 
 already stale is not newly refused when a withdrawal turns it into attribution-withdrawn. `update-epic`'s refusal is rewritten to call it, and the hook
 calls it with `status` undefined (the printed command carries no `--status`), so the two cannot drift.
 `next` is the record `--withdraw-commit` would write: the replaced sha REMOVED from
-`attributedCommits` AND APPENDED to `withdrawnCommits` (as update-epic.mjs ~709-711 does). Removing it
+`attributedCommits` AND APPENDED to `withdrawnCommits` (as update-epic.mjs ~708-710 does). Removing it
 alone is wrong: an emptied array then reads `none-attributed` instead of `attribution-withdrawn`
 (archive-gate.mjs ~115-119), and the Gate 2 obligation the refusal enforces is missed. So a lane
 shortcut is not the rule: an openspec epic with two attributed commits both covered by its Gate 2

@@ -18,7 +18,7 @@
       files and its siblings' (`emitted-commands-run-as-written`, `user-text-never-forges-output`).
       Run the `cross-spec-review` skill after all three pass Gate 1 and again after any later
       amendment; record `record-cross-spec-review 0.45.0 --verdict pass|fail --reviewer "<identity>"`
-- [ ] 0.3 Re-derive every function and line reference in design.md with `rg` against `dev` before
+- [x] 0.3 Re-derive every function and line reference in design.md with `rg` against `dev` before
       the first implementation commit, and correct design.md in that commit if any moved
 
 ## 1. Fixtures
@@ -28,7 +28,7 @@ task that turns it green; pairs are named per section. Before that commit, the n
 against the pre-GREEN engine are saved in this change directory as `red-<task>.txt`, and the GREEN
 commit message names that file. New test file: `scripts/test/commit-observation.test.mjs`.
 
-- [ ] 1.1 REFACTOR: a `helpers.mjs` fixture that builds a hermetic git repository (own
+- [x] 1.1 REFACTOR: a `helpers.mjs` fixture that builds a hermetic git repository (own
       `user.name`/`user.email`, `commit.gpgsign=false`, `GIT_TEMPLATE_DIR=""`), runs `init`, registers
       and activates an epic, and exposes `observe(event, cwd)` which pipes a
       `{hook_event_name, tool_name: "Bash", tool_input}` payload into
