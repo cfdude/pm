@@ -79,12 +79,12 @@ Pairs: 2.1–2.4a land with 2.5; 2.6–2.7 land with 2.8.
 
 Pairs: 3.1–3.2 land with 3.3.
 
-- [ ] 3.1 RED: a commit lands, observe: the output states the commit landed since the last observation
+- [x] 3.1 RED: a commit lands, observe: the output states the commit landed since the last observation
       and may come from another terminal or a parallel call (fails today)
-- [ ] 3.2 RED: a commit between two Bash calls, outside either, then an observation after a call that
+- [x] 3.2 RED: a commit between two Bash calls, outside either, then an observation after a call that
       made no commit: the report carries the same statement, and the AUTO-DETOUR message names
       `retract-detour` (fails today: "Review it — if that's wrong, edit/remove the line")
-- [ ] 3.3 GREEN: provenance sentence, dead-commit sentence and retract pointer in `runNudge`
+- [x] 3.3 GREEN: provenance sentence, dead-commit sentence and retract pointer in `runNudge`
       (Decision 5); the no-anchor, no-git and reflogs-disabled rungs still reach the archived-epic
       self-heal (existing tests stay green). Suite green
 

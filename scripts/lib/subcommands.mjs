@@ -473,6 +473,13 @@ function runNudge(state, ctx, commits, attribution = null, event = "PostToolUse"
   // the unverifiable rung, which knows no commit and keeps HEAD's reading.
   let autoLogged = false;
   let detourLogged = false;
+  // The abbreviated sha of every row actually written, for the per-row retract pointer.
+  const loggedRows = [];
+  const logRow = (kind, epic, subject, sha) => {
+    if (!appendDetourLog(kind, epic, subject, sha || undefined)) return false;
+    loggedRows.push(sha ? shortSha(sha) : gitShortSha());
+    return true;
+  };
   for (const { sha, subject } of commits) {
     const files = sha ? changedFiles(sha) : headChangedFiles();
     if (ctx.active) {
@@ -486,7 +493,7 @@ function runNudge(state, ctx, commits, attribution = null, event = "PostToolUse"
       // nothing about it a reader of the trail needs. The same predicate has always guarded the
       // AUTO-DETOUR branch; it was simply never applied here.
       detourLogged = (!isConductorOwnFiles(files)
-        && appendDetourLog("DETOUR-COMMIT", ctx.detourId, subject, sha || undefined)) || detourLogged;
+        && logRow("DETOUR-COMMIT", ctx.detourId, subject, sha)) || detourLogged;
     } else if (looksLikeUnloggedMinimalDetour(subject, state.active, files)) {
       // AUTO-DETECT: this commit's shape looks like a minimal detour nobody logged via
       // `/pm:detour --minimal`. Log it automatically instead of relying on the agent to
@@ -496,7 +503,7 @@ function runNudge(state, ctx, commits, attribution = null, event = "PostToolUse"
       // The return value, not an unconditional true: a re-fire of the hook for a sha already in the
       // trail writes nothing (gh#81's dedupe), and announcing "logged automatically" for a row that
       // does not exist is the plugin reporting one thing while doing another.
-      autoLogged = appendDetourLog("AUTO-DETOUR", state.active, subject, sha || undefined) || autoLogged;
+      autoLogged = logRow("AUTO-DETOUR", state.active, subject, sha) || autoLogged;
     }
   }
   // Self-heal: if this commit archived the active epic (e.g. an OpenSpec archive),
@@ -519,9 +526,20 @@ function runNudge(state, ctx, commits, attribution = null, event = "PostToolUse"
   render();
 
   const named = commits.filter(c => c.sha).map(c => `\`${shortSha(c.sha)}\``);
+  // The provenance statement (design Decision 5) — the whole treatment of defect 3. The hook
+  // cannot tell a commit the answered call made from one made in another terminal or by a parallel
+  // call in the same interval, so it never says which; no row is suppressed because of it.
   const detected = named.length > 1
-    ? `Commits ${named.join(", ")} detected (oldest first)`
-    : named.length === 1 ? `Commit ${named[0]} detected` : "Commit detected";
+    ? `Commits ${named.join(", ")} (oldest first) landed since the last observation — this call, another terminal, or a parallel call; the hook cannot tell which`
+    : named.length === 1
+      ? `Commit ${named[0]} landed since the last observation — this call, another terminal, or a parallel call; the hook cannot tell which`
+      : "Commit detected";
+  // Every automatic row carries its inverse: the verb, never a hand-edit of a git-ignored log whose
+  // tracked rendering would keep the false row (#173).
+  const retractPointer = loggedRows.length
+    ? " If a row is wrong: " + loggedRows.map(r => `\`retract-detour ${r} --reason "<why>"\``).join(", ") +
+      " (re-renders PROJECT.md)."
+    : "";
   // Dead commits get one sentence and nothing else. The replacement a rebase wrote is a `(pick)`
   // entry, which is not reported (design Non-Goals), so the sentence says to attribute it by hand.
   const deadSentence = dead.length
@@ -536,11 +554,11 @@ function runNudge(state, ctx, commits, attribution = null, event = "PostToolUse"
     ? `${detected} during DETOUR \`${ctx.detourId}\`` +
       (detourLogged ? " (logged to detours.log)" : " (bookkeeping only — not added to the detour trail)") + ". " +
       "When the detour is done: archive it, `/pm:resume` to pop the stack, and run the " +
-      "RECONCILE check on the paused parent epic. Write a one-line Honcho memory on resume."
+      "RECONCILE check on the paused parent epic. Write a one-line Honcho memory on resume." + retractPointer
     : autoLogged
     ? `${detected}. Diff shape (small, fix/chore-prefixed, unrelated to the active ` +
       "epic) looks like a MINIMAL detour, so it was auto-logged to `.conductor/detours.log` " +
-      "as an AUTO-DETOUR entry. Review it — if that's wrong, edit/remove the line."
+      "as an AUTO-DETOUR entry." + retractPointer
     : `${detected}. If this was a MINIMAL detour, run \`/pm:detour --minimal "<what>"\` ` +
       "to record it. Otherwise update `.conductor/state.json` if an epic's status or stories changed.")
     + (commits.length && deadSentence ? `\n\n${deadSentence}` : "");

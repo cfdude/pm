@@ -231,3 +231,31 @@ test("2.7 a commit reset away in the same call is named rewritten or abandoned, 
   assert.equal(rowsFor(repo, y).length, 0, "no row");
   assert.doesNotMatch(o.context, new RegExp(`--attribute-commit ${y}`), "no attribution command naming it");
 });
+
+// ─────────────── 3. The provenance statement ───────────────
+
+const PROVENANCE = [/landed since the last observation/, /another terminal/, /parallel call/];
+
+test("3.1 a reported commit is stated as landed since the last observation, not proven to be this call's", () => {
+  const repo = observationRepo();
+  repo.observe();
+  const sha = repo.commit({ "src/p.txt": "1" }, "fix: provenance");
+  const o = repo.observe("PostToolUse", "git commit -m provenance");
+  assert.equal(o.status, 0, o.stderr);
+  assert.ok(o.context.includes(short(repo, sha)), `reported: ${JSON.stringify(o.stdout)}`);
+  for (const re of PROVENANCE) assert.match(o.context, re);
+  assert.doesNotMatch(o.context, /this call made|made by this call/i, "never claims the answered call made it");
+});
+
+test("3.2 a commit from another terminal carries the statement, and its automatic row names retract-detour", () => {
+  const repo = observationRepo();
+  repo.observe("PostToolUse", "ls");
+  const sha = repo.commit({ "src/other.txt": "1" }, "chore: from another terminal");   // outside any call
+  const o = repo.observe("PostToolUse", "npm test");                                   // a call that made no commit
+  assert.equal(o.status, 0, o.stderr);
+  assert.ok(o.context.includes(short(repo, sha)), `reported: ${JSON.stringify(o.stdout)}`);
+  for (const re of PROVENANCE) assert.match(o.context, re);
+  assert.equal(rowsFor(repo, sha).length, 1, "fixture: an AUTO-DETOUR row was written for it");
+  assert.match(o.context, new RegExp(`retract-detour ${short(repo, sha)} --reason`), "the correction is the verb");
+  assert.doesNotMatch(o.context, /edit\/remove the line|remove the line|edit the line/, "never a hand-edit of the log");
+});

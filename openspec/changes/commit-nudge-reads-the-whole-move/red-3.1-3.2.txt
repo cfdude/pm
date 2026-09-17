@@ -1,0 +1,56 @@
+✖ 3.1 a reported commit is stated as landed since the last observation, not proven to be this call's (432.51675ms)
+✖ 3.2 a commit from another terminal carries the statement, and its automatic row names retract-detour (420.949041ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 895.219667
+
+✖ failing tests:
+
+test at scripts/test/commit-observation.test.mjs:239:1
+✖ 3.1 a reported commit is stated as landed since the last observation, not proven to be this call's (432.51675ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /landed since the last observation/. Input:
+  
+  "Commit `593db41` detected. Diff shape (small, fix/chore-prefixed, unrelated to the active epic) looks like a MINIMAL detour, so it was auto-logged to `.conductor/detours.log` as an AUTO-DETOUR entry. Review it — if that's wrong, edit/remove the line.\n" +
+    '\n' +
+    "ATTRIBUTION — `epic-a` has attributed no commits yet: attribute every commit of this epic's work that already landed, IN THE ORDER THEY LANDED, and then this one — `update-epic epic-a --attribute-commit 593db4135b299513ca10d527c9eb0b6d3e2ba6ce`. The array is append-only and a recorded Gate 2 `headSha` must reach EVERY entry, so a commit left unattributed is work that gate is never checked against. ONE exclusion: a commit that only moves or deletes a change's artifacts — the `/opsx:archive` move above all — is lifecycle bookkeeping and must NOT be attributed; it lands after the reviewed range, so attributing it makes this epic's own Gate 2 read stale."
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-observation.test.mjs:246:39)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: "Commit `593db41` detected. Diff shape (small, fix/chore-prefixed, unrelated to the active epic) looks like a MINIMAL detour, so it was auto-logged to `.conductor/detours.log` as an AUTO-DETOUR entry. Review it — if that's wrong, edit/remove the line.\n\nATTRIBUTION — `epic-a` has attributed no commits yet: attribute every commit of this epic's work that already landed, IN THE ORDER THEY LANDED, and then this one — `update-epic epic-a --attribute-commit 593db4135b299513ca10d527c9eb0b6d3e2ba6ce`. The array is append-only and a recorded Gate 2 `headSha` must reach EVERY entry, so a commit left unattributed is work that gate is never checked against. ONE exclusion: a commit that only moves or deletes a change's artifacts — the `/opsx:archive` move above all — is lifecycle bookkeeping and must NOT be attributed; it lands after the reviewed range, so attributing it makes this epic's own Gate 2 read stale.",
+    expected: /landed since the last observation/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/commit-observation.test.mjs:250:1
+✖ 3.2 a commit from another terminal carries the statement, and its automatic row names retract-detour (420.949041ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /landed since the last observation/. Input:
+  
+  "Commit `cc2a09d` detected. Diff shape (small, fix/chore-prefixed, unrelated to the active epic) looks like a MINIMAL detour, so it was auto-logged to `.conductor/detours.log` as an AUTO-DETOUR entry. Review it — if that's wrong, edit/remove the line.\n" +
+    '\n' +
+    "ATTRIBUTION — `epic-a` has attributed no commits yet: attribute every commit of this epic's work that already landed, IN THE ORDER THEY LANDED, and then this one — `update-epic epic-a --attribute-commit cc2a09d8b582fd9929be9bbca7a5da2f5c2f6b0b`. The array is append-only and a recorded Gate 2 `headSha` must reach EVERY entry, so a commit left unattributed is work that gate is never checked against. ONE exclusion: a commit that only moves or deletes a change's artifacts — the `/opsx:archive` move above all — is lifecycle bookkeeping and must NOT be attributed; it lands after the reviewed range, so attributing it makes this epic's own Gate 2 read stale."
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-observation.test.mjs:257:39)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: "Commit `cc2a09d` detected. Diff shape (small, fix/chore-prefixed, unrelated to the active epic) looks like a MINIMAL detour, so it was auto-logged to `.conductor/detours.log` as an AUTO-DETOUR entry. Review it — if that's wrong, edit/remove the line.\n\nATTRIBUTION — `epic-a` has attributed no commits yet: attribute every commit of this epic's work that already landed, IN THE ORDER THEY LANDED, and then this one — `update-epic epic-a --attribute-commit cc2a09d8b582fd9929be9bbca7a5da2f5c2f6b0b`. The array is append-only and a recorded Gate 2 `headSha` must reach EVERY entry, so a commit left unattributed is work that gate is never checked against. ONE exclusion: a commit that only moves or deletes a change's artifacts — the `/opsx:archive` move above all — is lifecycle bookkeeping and must NOT be attributed; it lands after the reviewed range, so attributing it makes this epic's own Gate 2 read stale.",
+    expected: /landed since the last observation/,
+    operator: 'match',
+    diff: 'simple'
+  }
