@@ -290,6 +290,15 @@ test("G2-C1 a reflog line that is not valid UTF-8 anchors by its bytes: every co
     assert.ok(o.context.includes(short(repo, sha)),
       `commit ${i} after a non-UTF-8 reflog line is reported: ${JSON.stringify(o.stdout)}`);
   }
+  // The subjects reach the trail and PROJECT.md as git re-encodes them for output (UTF-8), never as
+  // the raw Latin-1 byte: both files are valid UTF-8 and hold "caf" + C3 A9.
+  const eAcute = Buffer.concat([Buffer.from("caf"), Buffer.from([0xc3, 0xa9])]);
+  for (const rel of [".conductor/detours.log", "PROJECT.md"]) {
+    const buf = fs.readFileSync(path.join(repo.cwd, rel));
+    assert.equal(Buffer.compare(buf, Buffer.from(buf.toString("utf8"), "utf8")), 0, `${rel} is valid UTF-8`);
+    assert.ok(buf.includes(eAcute), `${rel} carries the re-encoded subject`);
+    assert.ok(!buf.includes(Buffer.from([0x63, 0x61, 0x66, 0xe9])), `${rel} never carries the raw Latin-1 byte`);
+  }
 });
 
 test("G2-M4 REGRESSION GUARD: the anchor is the LAST occurrence of its line ending at or before the recorded size", async () => {
