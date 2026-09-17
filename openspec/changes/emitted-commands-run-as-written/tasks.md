@@ -240,16 +240,16 @@ Pairs: 5.1–5.2 land with 5.4.
 
 Starts after change 1 has merged (task 0.3). Pairs: 6.1–6.3 land with 6.4.
 
-- [ ] 6.1 RED: `init` stderr names `update-epic` and `set-active` and does not say "in
+- [x] 6.1 RED: `init` stderr names `update-epic` and `set-active` and does not say "in
       .conductor/state.json" (`repro.txt` §A1)
-- [ ] 6.2 RED: the non-detour, not-auto-logged commit-nudge message names `update-epic` and not
+- [x] 6.2 RED: the non-detour, not-auto-logged commit-nudge message names `update-epic` and not
       `.conductor/state.json`
-- [ ] 6.3 RED: the hand-edit scanner exactly as design Decision 7 defines it (units, sentences,
+- [x] 6.3 RED: the hand-edit scanner exactly as design Decision 7 defines it (units, sentences,
       imperative position, negations, rules a and b) over shipped docs reports exactly
       `commands/init.md:61`, `skills/conductor/SKILL.md:736` and `:740`; constructed fixtures show a
       negated sentence, a wrapped negation on the previous line, a bare field name outside a
       `state.json` lead-in, and a `pm:explains-hand-edit` sentence each NOT reported
-- [ ] 6.4 GREEN: `init()` stderr; the one sentence of `runNudge`'s message; `SKILL.md:736,740`;
+- [x] 6.4 GREEN: `init()` stderr; the one sentence of `runNudge`'s message; `SKILL.md:736,740`;
       `commands/init.md` step 2 naming `set-active`/`update-epic --priority`/`update-epic --status`;
       6.1–6.3 pass, suite green
 

@@ -57,10 +57,11 @@ Initialize the `pm` conductor for the current project.
 
      Delete the stray lines by hand, then run `init` again.
 
-2. Read `.conductor/state.json` and help the user TRIAGE:
-   - set `active` to the epic currently being built,
-   - assign each epic a `priority` (P0–P3) and `status` (active | queued | later),
-   - leave `detourStack` empty unless work is already paused.
+2. Read `.conductor/state.json` and help the user TRIAGE, recording each decision with its verb:
+   - make the epic currently being built active with `set-active <id>`,
+   - give each epic a priority with `update-epic <id> --priority <P0-P3>` and a status with
+     `update-epic <id> --status <active|queued|later>`,
+   - leave the detour stack empty unless work is already paused (`push-detour` records a pause).
 
 3. **Offer external-tracker mirroring (optional).** Only if there is a *real* signal that work is
    actively managed in an issue tracker — a connected/in-use tracker MCP, issue-key conventions in

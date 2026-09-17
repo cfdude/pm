@@ -733,11 +733,11 @@ it waits on.
 ## Keeping the index honest (non-blocking enforcement)
 
 - After completing stories: tick `tasks.md` checkboxes (OpenSpec), then render.
-- After a commit: the PostToolUse hook reminds you — update `state.json` status, it
+- After a commit: the PostToolUse hook reminds you — record status with `update-epic`, and it
   re-renders automatically.
 - Set the active epic with `set-active <id>` (never hand-edit the `.active` pointer); it also
   keeps `status: "active"` in sync and demotes any prior active epic. `clear-active` drops it.
-- On PUSH/POP/priority change: edit `state.json` (or use the verbs above), then render.
+- On PUSH/POP/priority change: `push-detour`/`pop-detour`/`update-epic --priority`, then render.
 - New proposal outside this flow? `/pm:sync` registers it as `untriaged`; then triage.
 - Archived an OpenSpec change? The conductor self-heals — `sync`/`commit-nudge` clear the
   `active` pointer and stamp `archived` automatically (OpenSpec's date-prefixed archive dirs are

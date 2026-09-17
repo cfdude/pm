@@ -621,6 +621,9 @@ test("1.5 Layer A: every rules block (platform × tracker matrix), init's output
   let count = 0;
   for (const s of sources) {
     const a = await layerA(s.label, s.text, verbs);
+    // Per source, not only in aggregate: a source yielding nothing is a source the sweep only
+    // claims to check (init's stderr carried no code span until 6.4 made its verbs spans).
+    assert.ok(a.count > 0, `${s.label} yielded no invocation to check`);
     count += a.count;
     problems.push(...a.problems, ...pmReferenceProblems(s.label, s.text));
   }
@@ -2048,4 +2051,78 @@ test("5.3 REGRESSION GUARD: with no secondary tracker the mirror line is unchang
   outwardOnly.ok(["set-tracker", "--system", "jira", "--project", "ABC", "--direction", "outward"]);
   outwardOnly.ok(["add-epic", "--id", "o1", "--lane", "claude-code", "--title", "o1", "--external-id", "ABC-2", "--external-url", "https://jira.example/browse/ABC-2"]);
   assert.equal(briefLines("never re-read")({ repo: outwardOnly }), "", "no inward procedure, no freshness line");
+});
+
+// ═══════════════════════════════ 6 — no hand-edit instructions (conductor-record) ═══════════════════════════════
+
+/** design.md Decision 7's scanner, exactly: units (paragraphs, list items) outside fences; sentences
+ *  split after `.`/`!`/`?` + whitespace; a WRITE VERB in IMPERATIVE POSITION (sentence start, or right
+ *  after `:`, `;`, `—` or `then`); a NEGATION anywhere in the sentence. HIT (a): imperative write +
+ *  literal `state.json` + no negation. HIT (b): a list item nested under a unit that names
+ *  `state.json` and ends with `:`, whose FIRST sentence is an unnegated imperative write — the only
+ *  way a bare field name counts. A sentence carrying `<!-- pm:explains-hand-edit -->` is exempt. */
+const WRITE_IMPERATIVE = /(^|[:;—]\s*|\bthen\s+)(edit|hand-edit|update|set|modify|change|write|flip)\s/i;
+const NEGATION = /\b(never|not|don't|do not|instead of|used to|without|no longer|rather than)\b/i;
+const sentencesOf = (text) => text.split(/(?<=[.!?])\s+/);
+export function handEditHits(label, markdown) {
+  const units = [];
+  let cur = null, fence = false;
+  markdown.split("\n").forEach((line, i) => {
+    if (/^\s*(```|~~~)/.test(line)) { fence = !fence; cur = null; return; }
+    if (fence) return;
+    if (!line.trim()) { cur = null; return; }
+    const item = /^(\s*)(?:[-*]|\d+\.)\s+(.*)$/.exec(line);
+    if (item || !cur) {
+      cur = { line: i + 1, indent: item ? item[1].length : line.search(/\S/), item: !!item, text: item ? item[2] : line.trim() };
+      units.push(cur);
+    } else cur.text += ` ${line.trim()}`;
+  });
+  const hits = [];
+  const exempt = (s) => s.includes("<!-- pm:explains-hand-edit -->");
+  let lead = null;
+  for (const u of units) {
+    if (lead && u.item && u.indent > lead.indent) {
+      const first = sentencesOf(u.text)[0];
+      if (WRITE_IMPERATIVE.test(first) && !NEGATION.test(first) && !exempt(first)) hits.push(`${label}:${u.line}`);
+      continue;
+    }
+    lead = null;
+    for (const s of sentencesOf(u.text)) {
+      if (WRITE_IMPERATIVE.test(s) && s.includes("state.json") && !NEGATION.test(s) && !exempt(s)) { hits.push(`${label}:${u.line}`); break; }
+    }
+    if (u.text.includes("state.json") && /:\s*$/.test(u.text)) lead = u;
+  }
+  return hits;
+}
+
+test("6.1 init's closing line names the verbs, not a hand-edit of state.json", () => {
+  const { text } = initOutput();
+  const last = text.trim().split("\n").pop();
+  assert.match(last, /update-epic/, last);
+  assert.match(last, /set-active/, last);
+  assert.doesNotMatch(last, /in \.conductor\/state\.json/, last);
+  assert.ok(extractInvocations(last, dispatchedVerbs()).invocations.length >= 2,
+    `init's verbs are code spans, so Layer A reads them (closes 1.5's zero-invocation source): ${last}`);
+});
+
+test("6.2 the plain commit-nudge message names update-epic, not .conductor/state.json", () => {
+  const plain = commitNudgeVariants().find(v => v.label === "nudge[plain]");
+  const para = plain.text.split("\n\n")[0];
+  assert.match(para, /update-epic/, para);
+  assert.doesNotMatch(para, /\.conductor\/state\.json/, para);
+});
+
+test("6.3 the hand-edit scanner over shipped docs reports nothing", () => {
+  const hits = shippedDocs().flatMap(d => handEditHits(d.rel, d.text));
+  assert.deepEqual(hits, [], `shipped text directs a write to state.json:\n${hits.join("\n")}`);
+});
+
+test("6.3 the hand-edit scanner: exactly the rules, on constructed text", () => {
+  assert.deepEqual(handEditHits("x", "Then update `state.json` with the new status.\n"), ["x:1"], "an imperative write naming state.json");
+  assert.deepEqual(handEditHits("x", "Never edit `state.json` by hand.\n"), [], "a negated sentence");
+  assert.deepEqual(handEditHits("x", "This is what you must\nnot do: edit `state.json` directly.\n"), [], "a negation wrapped onto the previous line");
+  assert.deepEqual(handEditHits("x", "- set `active` to the epic being built\n"), [], "a bare field name outside a state.json lead-in");
+  assert.deepEqual(handEditHits("x", "Read `.conductor/state.json` and triage:\n  - set `priority` on each epic\n"), ["x:2"], "rule b");
+  assert.deepEqual(handEditHits("x", "Update `state.json` here.<!-- pm:explains-hand-edit -->\n"), [], "an explains-hand-edit sentence");
+  assert.deepEqual(handEditHits("x", "```\nedit state.json\n```\n"), [], "fenced text is outside the scan");
 });

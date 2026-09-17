@@ -1,0 +1,78 @@
+✖ 6.1 init's closing line names the verbs, not a hand-edit of state.json (130.742333ms)
+✖ 6.2 the plain commit-nudge message names update-epic, not .conductor/state.json (2082.444375ms)
+✖ 6.3 the hand-edit scanner over shipped docs reports nothing (12.893667ms)
+✔ 6.3 the hand-edit scanner: exactly the rules, on constructed text (0.37325ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 1
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2270.827792
+
+✖ failing tests:
+
+test at scripts/test/emitted-invocations.test.mjs:2095:1
+✖ 6.1 init's closing line names the verbs, not a hand-edit of state.json (130.742333ms)
+  AssertionError [ERR_ASSERTION]: conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:2098:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'conductor: initialized. Triage epics in .conductor/state.json (set priority/status/active), then /pm:status.',
+    expected: /update-epic/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:2105:1
+✖ 6.2 the plain commit-nudge message names update-epic, not .conductor/state.json (2082.444375ms)
+  AssertionError [ERR_ASSERTION]: Commit `719db41` landed since the last observation — this call, another terminal, or a parallel call; the hook cannot tell which. If this was a MINIMAL detour, run `/pm:detour --minimal "<what>"` to record it. Otherwise update `.conductor/state.json` if an epic's status or stories changed.
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:2108:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'Commit `719db41` landed since the last observation — this call, another terminal, or a parallel call; the hook cannot tell which. If this was a MINIMAL detour, run `/pm:detour --minimal "<what>"` to record it. Otherwise update `.conductor/state.json` if an epic\'s status or stories changed.',
+    expected: /update-epic/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:2112:1
+✖ 6.3 the hand-edit scanner over shipped docs reports nothing (12.893667ms)
+  AssertionError [ERR_ASSERTION]: shipped text directs a write to state.json:
+  commands/init.md:61
+  skills/conductor/SKILL.md:736
+  skills/conductor/SKILL.md:740
+  + actual - expected
+  
+  + [
+  +   'commands/init.md:61',
+  +   'skills/conductor/SKILL.md:736',
+  +   'skills/conductor/SKILL.md:740'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:2114:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'commands/init.md:61', 'skills/conductor/SKILL.md:736', 'skills/conductor/SKILL.md:740' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

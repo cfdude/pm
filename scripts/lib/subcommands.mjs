@@ -116,8 +116,11 @@ export function init() {
   writeRules(platform);
   render();
   process.stderr.write(
-    "conductor: initialized. Triage epics in .conductor/state.json " +
-    "(set priority/status/active), then /pm:status.\n"
+    // Verbs, never a hand-edit of the state of record (conductor-record): a hand-edit skips the
+    // validation, the write lock and the read-back every verb supplies. Code spans, so the
+    // emitted-invocation sweep reads them as invocations.
+    "conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` " +
+    "and `set-active <id>`, then /pm:status.\n"
   );
 }
 
@@ -660,7 +663,8 @@ function runNudge(state, ctx, commits, attribution = null, event = "PostToolUse"
       "epic) looks like a MINIMAL detour, so it was auto-logged to `.conductor/detours.log` " +
       "as an AUTO-DETOUR entry." + retractPointer
     : `${detected}. If this was a MINIMAL detour, run \`/pm:detour --minimal "<what>"\` ` +
-      "to record it. Otherwise update `.conductor/state.json` if an epic's status or stories changed.")
+      "to record it. Otherwise record an epic's status or story change with `update-epic` " +
+      "(`--status`, `--story <n> --done`).")
     + (commits.length && deadSentence ? `\n\n${deadSentence}` : "");
   // The attribution clause is a SECOND paragraph, never a longer first one: the three messages
   // above are about the DETOUR record and are decided by different inputs, so splicing the two
