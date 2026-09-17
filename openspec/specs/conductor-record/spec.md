@@ -381,7 +381,8 @@ outside a closed list.
 
 | write site | file | suppressed? |
 | --- | --- | --- |
-| `commit-watch.mjs` | `commit-watch.json` | YES — a watermark for a session's own commits |
+| `commit-watch.mjs` | `commit-observe.json` | YES — the reflog anchor and reported-commit set for a session's own commits |
+| `git.mjs` retraction | `detours.log` (a retraction row) | YES — the same file and criterion as the row it retracts |
 | `git.mjs` `appendDetourLog()` | `detours.log` | YES — a record of interrupting active work |
 | `subcommands.mjs` | `brief.txt` | YES — a snapshot for the next session in this tree |
 | `activity-log.mjs` | `activity/*.log` | YES — per-session event trail |
@@ -426,9 +427,10 @@ already go unnoticed, which is the lost-update window `state-write-guard` closes
 
 #### Scenario: The commit watermark is not written in a detached tree
 
-- **WHEN** the commit-nudge hook runs in a working tree whose HEAD is detached
-- **THEN** the hook exits 0 and produces its normal output, AND no commit watermark file is created
-  or updated in that tree
+- **WHEN** a commit lands and the commit hook runs with a `PostToolUseFailure` payload in a working
+  tree whose HEAD is detached
+- **THEN** the hook exits 0 and produces its normal output, AND no `commit-observe.json` is created or
+  updated in that tree
 
 #### Scenario: The detour log is not written in a detached tree
 
@@ -452,14 +454,11 @@ already go unnoticed, which is the lost-update window `state-write-guard` closes
 - **WHEN** the commit-nudge hook runs repeatedly in a working tree whose HEAD is detached
 - **THEN** it does not nudge on the basis of command text alone
 
-> Suppressing the watermark alone would leave `readWatch()` returning null forever, so every
-> invocation reads `unverifiable / no-baseline` and falls through to the PRE-OBSERVATION text
-> heuristic — `gh#104`'s behaviour, where any command merely mentioning `git commit` fires the
-> nudge, reinstated permanently in exactly the tree where noise is least wanted, and reaching a
-> `state.json` write on the way. Suppressing the WATERMARK requires suppressing the hook's
-> REACTION; a gap in the watermark is otherwise safe (no false `landed` is constructible from a
-> stale baseline, because the classifier also requires a matching reflog entry) but the fallback
-> is not.
+> Suppressing the observation record alone would leave the hook with no anchor forever, so every
+> invocation would take the unverifiable rung and fall through to the PRE-OBSERVATION text heuristic —
+> `gh#104`'s behaviour, where any command merely mentioning `git commit` fires the nudge, reinstated
+> permanently in exactly the tree where noise is least wanted, and reaching a `state.json` write on the
+> way. Suppressing the RECORD requires suppressing the hook's REACTION.
 
 #### Scenario: A state save in a detached tree is still serialised
 
