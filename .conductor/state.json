@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": null,
+  "active": "emitted-commands-run-as-written",
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -8724,7 +8724,7 @@
       "id": "commit-nudge-reads-the-whole-move",
       "title": "The commit nudge reads the whole HEAD movement: every commit a call made is named, out-of-band commits and amends are not misattributed, bookkeeping commits are not logged as detours, nested conductors compare paths relative to their own root, and the attribution hint names every candidate epic",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -8765,10 +8765,32 @@
         "80ac4a3b439b15ffe870cee60b9bfdcf0238aa41",
         "fa29c9b9a0732fa8dd6cfe20311d061fc74f994d",
         "0205b778ac704914756fd2042d47fca1c6dceefb",
-        "1d6e0f8df71695c98b115323d32d4408a650f443"
+        "1d6e0f8df71695c98b115323d32d4408a650f443",
+        "8581c10d254b588308953b9952fa462141f867be",
+        "55d3e3c3b9377f9294537dbd31ba7ddfdbb37b48",
+        "030f4ecb0e4d83dab6cf28b9dcfcaf92556db562",
+        "83306c9f2ed77a1ab58575f5afa2183322e1ac63",
+        "d9d8d20973314a20f673ffdb49215afd05f1b802",
+        "541559da332fab7d5adde92cc787d0e682146992",
+        "23aa8243ee038c05ff7936f831edd19ae98ee905",
+        "372a7abef1b7461f9b95970e6815896e5b9148ba",
+        "b93091dbe403d93ecc894cf55124671993b8c4f9",
+        "0e1b09fb198a7cceaebc9b7a8d7a5fd238022dde",
+        "ddcacdac7814149a60ec9c2d79fc3be439a60fc1",
+        "5b2b09e5501b33cd924736bcdc929ae02f9d7ad8",
+        "304311e753494d96375c272a088b9c69dbdb2126",
+        "69fea84aa5d25b24e1c60d7fef34636fd275a3a4",
+        "f8388696cae7c238eace59d39c53406b85276be7",
+        "5a2b677ac601e7ebb64046e2d3f8c86476529ff4",
+        "912f657206a4b985d79b5862f48f36e834515419",
+        "46fa347667d292c4687275ca628edd62fa92d1e1",
+        "4f46b941296b52754d64c6211e893068d966a142",
+        "71dc03753db488c848af3935240e975a5e0f3fcd",
+        "04d824636c4284acb0c194f4dab067e9a4d3671f",
+        "5f5c899565adad5780870ceadb419328927b6316"
       ],
       "createdAt": "2026-09-16T22:37:13.627Z",
-      "touchedAt": "2026-09-17T01:35:50.069Z",
+      "touchedAt": "2026-09-17T05:13:57.017Z",
       "release": "0.45.0",
       "gateReview": {
         "gate1": {
@@ -8798,14 +8820,58 @@
             ],
             "reviewer": "two fresh-context lenses, round 1 fail, round 2 scoped confirmation fail, round 3 narrow confirmation fail on 1-2 precise Important findings fixed in 14d92aa and verified by the orchestrator against the diff; 2026-09-16"
           }
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-17T05:13:30.307Z",
+          "baseSha": "f49871af030253dd37d08ffdd5d4f356857a9fae",
+          "headSha": "5f5c899565adad5780870ceadb419328927b6316",
+          "reviewer": "two fresh-context lenses (spec conformance with 38 mutations; adversarial scratch repros): round 1 fail (1 C, 6 I); fixes 304311e..46fa347; scoped re-review pass on both lenses (closure re-runs + 17 mutations), Minors only; re-recorded over post-review commits 4f46b94 (test for re-review Minor M-b, RED shown) and docs/lessons 71dc037..5f5c899; 2026-09-17",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-09-17T04:51:46.751Z",
+            "baseSha": "f49871af030253dd37d08ffdd5d4f356857a9fae",
+            "headSha": "46fa347667d292c4687275ca628edd62fa92d1e1",
+            "reviewer": "two fresh-context lenses (spec conformance with 38 mutations; adversarial scratch repros): round 1 fail (1 C, 6 I); fixes 304311e..46fa347; scoped re-review pass on both lenses (closure re-runs + 17 mutations), Minors only; 2026-09-17"
+          }
         }
-      }
+      },
+      "startedAt": "2026-09-17T01:39:26.056Z",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-17T05:13:57.014Z",
+        "reason": "every live commit since the last observation is reported on both post-call events, with provenance stated, dead commits named, amends replaced, own artifacts and nested bookkeeping never auto-logged, retract-detour as the row's inverse; Gate 2 pass at 5f5c899"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-17T05:13:56.985Z",
+        "deferrals": [
+          {
+            "epic": "commit-observation-gate2-minors",
+            "section": "Gate 2 Minors (walk/output cap, partial reflog line, multi-epic retraction row, detached finish() path, prefix-of-prefix pruned rows, spec write-site table and refusal list)"
+          }
+        ],
+        "declined": [
+          {
+            "what": "defect 3 — proving a commit came from the answered call",
+            "reason": "a pre-call hook adds an engine spawn (~100 ms) to every Bash call in every session; stated as a residual with the provenance sentence and retract-detour as remedy (design Non-Goals)"
+          },
+          {
+            "what": "#173 recognising pm-written lines in .gitignore/CLAUDE.md",
+            "reason": "needs hunk diffing against ensureGitignore/writeRules output; retract-detour is the remedy (design Non-Goals)"
+          },
+          {
+            "what": "a nested conductor ignoring commits wholly outside its root (two-conductor monorepo)",
+            "reason": "no report in hand and it adds a rule without changing any requirement here (design Open Questions)"
+          }
+        ]
+      },
+      "completedAt": "2026-09-17T05:13:57.014Z"
     },
     {
       "id": "emitted-commands-run-as-written",
       "title": "Every command pm emits runs as written and never asks for a hand-edit: tracker sync recipes (secondary updatedAt and watermark, non-GitHub keys, --limit, direction scoping), remedies the engine refuses, and agent/skill docs teaching stale gate evidence or hand-edits of state.json",
       "priority": "P2",
-      "status": "queued",
+      "status": "active",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -8845,7 +8911,7 @@
         "1d6e0f8df71695c98b115323d32d4408a650f443"
       ],
       "createdAt": "2026-09-16T22:37:14.255Z",
-      "touchedAt": "2026-09-17T01:35:50.521Z",
+      "touchedAt": "2026-09-17T05:14:03.876Z",
       "release": "0.45.0",
       "gateReview": {
         "gate1": {
@@ -8876,7 +8942,8 @@
             "reviewer": "two fresh-context lenses, round 1 fail, round 2 scoped confirmation fail, round 3 narrow confirmation fail on 1-2 precise Important findings fixed in 0dcf49f and verified by the orchestrator against the diff; 2026-09-16"
           }
         }
-      }
+      },
+      "startedAt": "2026-09-17T05:14:03.873Z"
     },
     {
       "id": "user-text-never-forges-output",
@@ -8954,6 +9021,48 @@
       "attributedCommits": [],
       "createdAt": "2026-09-16T23:22:32.761Z",
       "touchedAt": "2026-09-16T23:22:32.765Z"
+    },
+    {
+      "id": "gh-cfdude-pm-206",
+      "title": "Adding an engine verb means hand-writing rows in several tables with no single source; the verb-surface harness has no documented seed step",
+      "priority": "P3",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "206",
+      "externalUrl": "https://github.com/cfdude/pm/issues/206",
+      "externalUpdatedAt": "2026-09-17T03:19:56Z",
+      "attributedCommits": [],
+      "createdAt": "2026-09-17T03:20:01.306Z",
+      "touchedAt": "2026-09-17T03:20:01.309Z"
+    },
+    {
+      "id": "commit-observation-gate2-minors",
+      "title": "commit-nudge observation: Gate 2 minors deferred from 0.45.0 — no cap on commits walked or output size, a partial last reflog line can become the anchor, a retraction row names only the first epic, the detached-tree finish() path is untested, prefix-of-prefix pruned rows retract together",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "commit-nudge-reads-the-whole-move",
+          "reason": "Gate 2 round-1 and re-review Minors deferred at its archive"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-17T05:13:42.425Z",
+      "touchedAt": "2026-09-17T05:13:42.893Z",
+      "notes": [
+        {
+          "at": "2026-09-17T05:13:42.890Z",
+          "actor": "agent",
+          "text": "Evidence (0.45.0 Gate 2, scratch repros under the session scratchpad gate2-45-nudge/l2): 200 commits since the anchor took 8 s and printed 24 KB of hook context; a 330-commit window held the lock ~10 s. Partial-line anchor not reproduced. Old-format commit-observe.json {size,line} from unreleased dev builds reads as no anchor (acceptable: never on main). Spec write-site table in conductor-record omits commit-observe.json.lock/.lock.break and the retract-detour non-hex refusal is not listed in the commit-observation refusal scenario — declined at archive to avoid staling the release cross-spec review; fold into this epic's spec touch."
+        }
+      ]
     }
   ],
   "detourStack": [],
@@ -8964,7 +9073,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 964,
+  "revision": 994,
   "reviewMode": "thorough",
   "releases": [
     {
