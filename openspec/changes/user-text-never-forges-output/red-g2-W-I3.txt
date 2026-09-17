@@ -1,0 +1,64 @@
+# Gate 2 W-I3 — mutant C (the V-I2 wrapper fix reverted: asCode/orNoRemedy back in ESCAPER_REALS), V-I2-named tests
+## before W-I3 (tests at 05e181e, wrapper mutants in claims.mjs, which imports neither wrapper)
+ℹ tests 8
+ℹ pass 8
+ℹ fail 0
+## after W-I3 (wrapper mutants in subcommands.mjs)
+✔ mutant (Gate 2 V-I2): `held.session || held.x && "y"` in claim()'s takeover line is UNCLASSIFIED (536.135792ms)
+✔ mutant (Gate 2 V-I2): `held.session ?? held.x && "y"` in claim()'s takeover line is UNCLASSIFIED (397.935375ms)
+✔ mutant (Gate 2 V-I2): `held.session + 1` in claim()'s takeover line is UNCLASSIFIED (399.945458ms)
+✔ mutant (Gate 2 V-I2): `held.session + held.x.length` in claim()'s takeover line is UNCLASSIFIED (391.512459ms)
+✖ mutant (Gate 2 V-I2, W-I3): `asCode(epic.title)` in supersedeAmended()'s withdrawal command — a file importing both wrappers — is UNCLASSIFIED (402.130459ms)
+✖ mutant (Gate 2 V-I2, W-I3): `orNoRemedy(() => epic.title)` in supersedeAmended()'s withdrawal command — a file importing both wrappers — is UNCLASSIFIED (405.021875ms)
+✔ mutant (Gate 2 V-I2): a local named esc is trusted only while it is escapeControls — `.map(esc)` over an identity esc is UNCLASSIFIED (391.10025ms)
+✔ mutant (Gate 2 V-I2): an escaper name is trusted only as the real import — a local escapeControls shadowing it is not (383.474625ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 6
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3354.035542
+
+✖ failing tests:
+
+test at scripts/test/output-interpolations.test.mjs:85:3
+✖ mutant (Gate 2 V-I2, W-I3): `asCode(epic.title)` in supersedeAmended()'s withdrawal command — a file importing both wrappers — is UNCLASSIFIED (402.130459ms)
+  AssertionError [ERR_ASSERTION]: STALE scripts/lib/subcommands.mjs [attributionNudge] "asCode(cmd(e))": declared 1 occurrence(s), found 0 (declared in scripts/test/output-interpolations.judged.mjs)
+  STALE scripts/lib/subcommands.mjs [attributionNudge] "asCode(cmd(epic))": declared 2 occurrence(s), found 0 (declared in scripts/test/output-interpolations.judged.mjs)
+  STALE scripts/lib/update-epic.mjs [regressionRefusal] "asCode(l)": declared 1 occurrence(s), found 0 (declared in scripts/test/output-interpolations.judged.mjs)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-interpolations.test.mjs:89:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/output-interpolations.test.mjs:85:3
+✖ mutant (Gate 2 V-I2, W-I3): `orNoRemedy(() => epic.title)` in supersedeAmended()'s withdrawal command — a file importing both wrappers — is UNCLASSIFIED (405.021875ms)
+  AssertionError [ERR_ASSERTION]: STALE scripts/lib/subcommands.mjs [attributionNudge] "asCode(cmd(e))": declared 1 occurrence(s), found 0 (declared in scripts/test/output-interpolations.judged.mjs)
+  STALE scripts/lib/subcommands.mjs [attributionNudge] "asCode(cmd(epic))": declared 2 occurrence(s), found 0 (declared in scripts/test/output-interpolations.judged.mjs)
+  STALE scripts/lib/update-epic.mjs [regressionRefusal] "asCode(l)": declared 1 occurrence(s), found 0 (declared in scripts/test/output-interpolations.judged.mjs)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-interpolations.test.mjs:89:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

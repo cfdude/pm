@@ -291,7 +291,7 @@ Pairs: 7.1 lands with 7.2.
         saveState's temp name) and `LOCK` (commit-watch observeLockPaths), judged not-output; the local
         `L.join("\n")` of purgeLogs and rulesBlockAmbiguousMessage, judged passthrough. The same round found
         render()'s function-wide sink-flow judgment covering its raw `rendered ${PROJECT_MD}` stderr line: a
-        sink-flow judgment no longer covers a value written straight to a stream. `red-g2-W-I2.txt`.
+        sink-flow judgment no longer covers a value written straight to a stream. `red-g2-W-I2.txt`. W-I3: the V-I2 asCode/orNoRemedy mutants ran in claims.mjs, which imports neither wrapper, so they were UNCLASSIFIED on import trust alone and reverting the wrapper fix failed no V-I2 test; they now run in subcommands.mjs (asserted to import both), and with the wrappers put back in ESCAPER_REALS both fail (`red-g2-W-I3.txt`).
 - [x] 8.2 **Inverse of every operation added or modified** — the id refusal at `pushEpic` (inverse:
       `remove-epic`, unchanged; a skipped directory's inverse is renaming it, no verb); the release
       create refusal (inverse: none needed — nothing was stored). DECIDED, not deferred: no

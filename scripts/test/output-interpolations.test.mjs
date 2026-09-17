@@ -65,8 +65,6 @@ test("only a sink-flow or json judgment may cover a whole declaration", () => {
 // `.length` / `+ 1` patterns accepted any left operand. Each of these printed held.session raw with 0 findings.
 const SESSION = "from session '${escapeControls(held.session)}' ";
 const V_I2_MUTANTS = [
-  "asCode(held.session)",
-  "orNoRemedy(() => held.session)",
   "held.session || held.x && \"y\"",
   "held.session ?? held.x && \"y\"",
   "held.session + 1",
@@ -76,6 +74,19 @@ for (const expr of V_I2_MUTANTS) {
   test(`mutant (Gate 2 V-I2): \`${expr}\` in claim()'s takeover line is UNCLASSIFIED`, () => {
     const { findings } = sweepMutated("scripts/lib/claims.mjs", SESSION, `from session '\${${expr}}' `);
     assert.ok(findings.some(f => f.startsWith("UNCLASSIFIED scripts/lib/claims.mjs:") && f.endsWith(`[claim] \${} ${expr}`)), findings.join("\n"));
+  });
+}
+
+// The two WRAPPER mutants run in subcommands.mjs, which really imports asCode and orNoRemedy from constants.mjs
+// (Gate 2 W-I3). In claims.mjs, which imports neither, `asCode(held.session)` was UNCLASSIFIED on import trust
+// alone, so putting the wrappers back among the escapers failed no V-I2 test.
+const WRAPPED_SITE = "`update-epic ${printedId(epic.id)} --withdraw-commit";
+for (const expr of ["asCode(epic.title)", "orNoRemedy(() => epic.title)"]) {
+  test(`mutant (Gate 2 V-I2, W-I3): \`${expr}\` in supersedeAmended()'s withdrawal command — a file importing both wrappers — is UNCLASSIFIED`, () => {
+    const text = source("scripts/lib/subcommands.mjs");
+    assert.match(text, /^import \{[^}]*\basCode\b[^}]*\borNoRemedy\b[^}]*\} from "\.\/constants\.mjs";$/m, "the mutated file really imports both wrappers");
+    const { findings } = sweepMutated("scripts/lib/subcommands.mjs", WRAPPED_SITE, `\`update-epic \${${expr}} --withdraw-commit`);
+    assert.ok(findings.some(f => f.startsWith("UNCLASSIFIED scripts/lib/subcommands.mjs:") && f.endsWith(`[supersedeAmended] \${} ${expr}`)), findings.join("\n"));
   });
 }
 
