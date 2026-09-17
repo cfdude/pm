@@ -1,6 +1,6 @@
 ## 0. Before any code
 
-- [ ] 0.1 Gate 1 — two fresh-context lenses over these artifacts BY PATH (lens A: every WHEN/THEN
+- [x] 0.1 Gate 1 — two fresh-context lenses over these artifacts BY PATH (lens A: every WHEN/THEN
       testable and failing on today's engine where tasks mark it RED; lens B: absent edits — output
       sites, id-storing paths, DATA references and inverses the specs do not name); fix every Critical
       and Important, re-validate with `openspec validate user-text-never-forges-output --strict`, then
@@ -9,7 +9,7 @@
       openspec/changes/user-text-never-forges-output/design.md --artifact
       openspec/changes/user-text-never-forges-output/tasks.md --artifact
       openspec/changes/user-text-never-forges-output/specs/output-text-integrity/spec.md`
-- [ ] 0.2 **Cross-spec review** (required task item 5) — release 0.45.0 holds this change's spec and
+- [x] 0.2 **Cross-spec review** (required task item 5) — release 0.45.0 holds this change's spec and
       its two siblings' (`commit-nudge-reads-the-whole-move`, `emitted-commands-run-as-written`). Run
       the `cross-spec-review` skill after all three pass Gate 1 and again after any later amendment;
       record `record-cross-spec-review 0.45.0 --verdict pass|fail --reviewer "<identity>"`

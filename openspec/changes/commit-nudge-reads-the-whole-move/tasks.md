@@ -1,6 +1,6 @@
 ## 0. Before any code
 
-- [ ] 0.1 Gate 1 — two fresh-context lenses over these artifacts BY PATH (lens A: correctness and
+- [x] 0.1 Gate 1 — two fresh-context lenses over these artifacts BY PATH (lens A: correctness and
       testability of every WHEN/THEN against today's engine, and that each RED below really fails
       where it says it does; lens B: absent edits — call sites, DATA references and inverses the specs
       do not name, and every hook event Claude Code fires after a Bash call); fix every Critical and
@@ -14,7 +14,7 @@
       openspec/changes/commit-nudge-reads-the-whole-move/specs/gate-integrity/spec.md --artifact
       openspec/changes/commit-nudge-reads-the-whole-move/specs/state-write-guard/spec.md --artifact
       openspec/changes/commit-nudge-reads-the-whole-move/specs/conductor-record/spec.md`
-- [ ] 0.2 **Cross-spec review** (required task item 5) — release 0.45.0 holds this change's four spec
+- [x] 0.2 **Cross-spec review** (required task item 5) — release 0.45.0 holds this change's four spec
       files and its siblings' (`emitted-commands-run-as-written`, `user-text-never-forges-output`).
       Run the `cross-spec-review` skill after all three pass Gate 1 and again after any later
       amendment; record `record-cross-spec-review 0.45.0 --verdict pass|fail --reviewer "<identity>"`
