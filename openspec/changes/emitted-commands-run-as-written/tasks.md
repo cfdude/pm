@@ -353,7 +353,7 @@ Pairs: 7.0–7.1 land with 7.2. The single-writer rule for hierarchy runs is NOT
       --attribute-commit <sha>`. The archive commit, and any commit that only relocates this change's
       artifacts, is excluded
 - [ ] 9.5 **Dispositions** <!-- pm:lifecycle --> — first append the carried items to the receiving epic:
-      `update-epic code-review-0-43-0-minors --notes "carried from emitted-commands-run-as-written: primary set-tracker --remove is a silent no-op (no inverse); set-tracker --intent badpair silently dropped; verify-worktrees/verify-state have no command doc"`,
+      `update-epic code-review-0-43-0-minors --notes "carried from emitted-commands-run-as-written: primary set-tracker --remove removes nothing (ignored: bare it changes nothing, with a valid --repo it replaces the repo; no inverse); set-tracker --intent badpair silently dropped; verify-worktrees/verify-state have no command doc"`,
       then `update-epic emitted-commands-run-as-written --status archived --outcome delivered
       --deferral "code-review-0-43-0-minors:proposal.md What Changes (Out of scope)"` (add
       `--deferral`/`--declined-deferral` for anything Gate 2 defers). The three superseded finding

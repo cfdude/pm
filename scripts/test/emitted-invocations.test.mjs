@@ -959,7 +959,9 @@ const INTEGRITY_BUILDERS = {
       // withdrawn, then Gate 2 recorded back over C1. In THIS state `--attribute-commit C2` alone EXITS 0 (the record was already
       // broken, so it is no regression) and clears this finding — but leaves Gate 2 stale, so the
       // archive gate would refuse the record's `delivered`. The alternative's check therefore re-runs
-      // the archive gate on it, which a remedy printing the attribution first, or alone, fails.
+      // the archive gate on it, which a remedy printing the attribution ALONE fails. It does NOT catch
+      // the attribution printed FIRST: in this state that also exits 0, and the re-record after it
+      // covers C2, so the gate passes (Gate 2 R-M5, reproduced) — `observe` asserts the order instead.
       case: "withdrawn",
       setup() {
         const repo = remedyRepo();

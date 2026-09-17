@@ -119,8 +119,10 @@ earlier (`anyInwardProcedureEmittable`); its dangling text for an inward-only pr
   corrected; `commands/tracker.md` responsibilities scoped by direction.
 - **No hand-edit instructions anywhere pm ships**: `init` stderr, commit nudge, `SKILL.md`,
   `commands/init.md` name the verbs (`set-active`, `update-epic --priority/--status`).
-- **Out of scope, carried to `code-review-0-43-0-minors`:** primary `set-tracker --remove` is
-  silently a no-op (a missing inverse) and `--intent badpair` is silently dropped — reproduced
+- **Out of scope, carried to `code-review-0-43-0-minors`:** primary `set-tracker --remove` removes
+  nothing — the flag is ignored, so bare it exits 0 changing nothing, and with a valid `--repo` it
+  exits 0 having REPLACED the recorded repo (a missing inverse; a malformed `--repo` is refused since
+  Gate 2 E-C1) — and `--intent badpair` is silently dropped — reproduced
   (`repro.txt` §B4-B6) but neither corrupts an emitted command; `verify-worktrees`/`verify-state`
   have no command doc.
 - **Moved out to its own epic, `hierarchy-run-has-one-state-writer`:** a single writer of
