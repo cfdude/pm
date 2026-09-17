@@ -350,9 +350,14 @@ never-re-read count.
 - `isGithubRepo(value)` in `constants.mjs`: `^[A-Za-z0-9](?:[A-Za-z0-9-]*)\/[A-Za-z0-9._-]+$`.
   `set-tracker` refuses a github-issues `--repo` failing it, for both roles, before anything is
   written, quoting the refused value through `escapeControls` (`constants.mjs`) so the refusal
-  cannot itself carry a control character — EXCEPT with `--remove`, which matches the recorded value exactly
+  cannot itself carry a control character — EXCEPT with `--role secondary --remove`, which matches the recorded value exactly
   (`secondaryTrackerKey`) and writes nothing new, so a legacy malformed secondary stays removable
   (verified today: removal of `a/b; touch pwned` exits 0; kept as a regression guard).
+  The PRIMARY role gets no exemption (Gate 2 E-C1): it has no remove handler, so `--remove` there
+  falls through to the merge and a malformed `--repo` would be saved. *Re-decided at Gate 2:* the
+  primary's missing remove stays carried to `code-review-0-43-0-minors` rather than becoming a
+  refusal here — no verb unconfigures a primary tracker, so a refusal would name no remedy that
+  clears, the defect this change removes elsewhere.
   `usesGhIssueList()` requires the shape, so a legacy malformed value falls through to the
   vendor-neutral listing step and is never placed in a shell line. `trackerScope()` is unchanged.
 - Primary vendor switch — when `--system` is given, a system is recorded, and they differ:

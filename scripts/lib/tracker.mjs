@@ -46,13 +46,17 @@ export function setTracker() {
 
   // THE REPOSITORY SHAPE, for either role, before anything is written. A github-issues repo is
   // placed in an emitted `gh issue list --repo …` line, so a value that could alter that command is
-  // refused here rather than escaped there. `--remove` is exempt: it matches the recorded value
-  // exactly and writes nothing new, so a legacy malformed entry stays removable. The refused value
-  // is quoted through escapeControls(), so the refusal cannot itself carry a control character.
+  // refused here rather than escaped there. `--remove` is exempt ON THE SECONDARY ROLE ONLY: that
+  // branch matches the recorded value exactly and writes nothing new, so a legacy malformed entry
+  // stays removable. The primary branch has no remove handler — `--remove` there falls through to
+  // the merge, which SAVES `--repo` — so exempting it would write the refused value (Gate 2 E-C1).
+  // The refused value is quoted through escapeControls(), so the refusal cannot itself carry a
+  // control character.
   {
     const system = str(f.system) || (role === "primary" && state.tracker ? state.tracker.system : undefined);
     const repo = str(f.repo);
-    if (system === "github-issues" && repo !== undefined && !f.remove && !isGithubRepo(repo)) {
+    const removingSecondary = role === "secondary" && !!f.remove;
+    if (system === "github-issues" && repo !== undefined && !removingSecondary && !isGithubRepo(repo)) {
       process.stderr.write(`conductor: --repo ${escapeControls(JSON.stringify(repo))} is not a GitHub repository — ` +
         "a github-issues tracker records its repo as owner/name (letters, digits, `-`, and `.`/`_` in the name). " +
         "Nothing was written.\n");

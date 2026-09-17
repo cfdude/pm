@@ -1973,6 +1973,16 @@ test("4.1 set-tracker refuses a github-issues --repo that is not owner/name, for
     assert.ok(!control.stderr.slice(0, -1).includes(NL + "x"), `the refused value is escaped, never echoed raw:\n${control.stderr}`);
     assert.ok(stateBytes(repo).equals(before), "state.json is byte-identical");
   }
+  // `--remove` exempts only the SECONDARY role, which has a remove handler matching the recorded
+  // value. The primary has none: exempting it there let the refused value fall through to the merge
+  // and be SAVED — then rendered into the rules block's heading (Gate 2 E-C1).
+  const primary = trackerRepo({ system: "github-issues", repo: "o/n", direction: "inward" });
+  const before = stateBytes(primary);
+  const removed = primary.run(["set-tracker", "--repo", HOSTILE_REPO, "--remove"]);
+  assert.notEqual(removed.status, 0, `primary --remove with a malformed repo is refused:\n${removed.stdout}${removed.stderr}`);
+  assert.match(removed.stderr, /owner\/name/, removed.stderr);
+  assert.ok(stateBytes(primary).equals(before), "state.json is byte-identical");
+  assert.equal(primary.state().tracker.repo, "o/n");
 });
 
 test("4.2 a legacy malformed github-issues repo loads for every read verb, and no emitted shell command contains it", async () => {

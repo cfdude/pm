@@ -205,7 +205,9 @@ Pairs: 4.1–4.4 land with 4.7.
 
 - [x] 4.1 RED: `set-tracker --system github-issues --repo 'a/b; touch pwned'` exits non-zero naming the
       shape; a repo holding a control character exits non-zero, escapes the value in its message and
-      writes nothing (shape wording NOT asserted: change 3's input refusal fires first), for `--role primary` and `--role secondary`; `state.json` byte-identical
+      writes nothing (shape wording NOT asserted: change 3's input refusal fires first), for `--role primary` and `--role secondary`; `state.json` byte-identical;
+      AND on a github-issues primary recording `o/n`, `set-tracker --repo 'a/b; touch pwned' --remove`
+      is refused the same way (Gate 2 E-C1: the exemption had let it be saved)
 - [x] 4.2 RED: a hand-written legacy state carrying that repo on the primary loads for every read verb,
       and the rules block contains no shell line with the value (fixture passes the strict reader)
 - [x] 4.3 RED: a github-issues primary `repo: "o/n"` switched with `--system jira --project ABC` records
@@ -220,7 +222,7 @@ Pairs: 4.1–4.4 land with 4.7.
 - [x] 4.6 REGRESSION GUARD: `set-tracker --system jira --direction both` on a jira primary keeps
       `projectKey`; `set-tracker --intent paused:todo` still merges
 - [x] 4.7 GREEN: `isGithubRepo()` in `constants.mjs`, required by `usesGhIssueList()` and by
-      `set-tracker` for both roles except `--remove`; the vendor-switch scope drop and direction record
+      `set-tracker` for both roles except `--role secondary --remove` (Gate 2 E-C1); the vendor-switch scope drop and direction record
       with their messages (design Decision 4); 4.1–4.6 pass, suite green
 
 ## 5. Brief tracker lines (tracker-sync MODIFIED freshness; ADDED mirror line)
@@ -310,10 +312,12 @@ Pairs: 7.0–7.1 land with 7.2. The single-writer rule for hierarchy runs is NOT
 - [x] 9.2 **Inverse of every operation added or modified** — the vendor-switch drop (inverse:
       re-supplying the field; no restore verb, and say why: the dropped value is printed); the
       vendor-switch direction record (inverse: `set-tracker --direction <d>`); the repo
-      refusal (inverse: none needed — nothing is written; `--remove` stays exempt so a legacy entry is
-      never stranded); omitting `delivered` (inverse: recording Gate
+      refusal (inverse: none needed — nothing is written; `--remove` stays exempt on the secondary so a legacy entry is
+      never stranded, and is NOT exempt on the primary, which has no remove handler — Gate 2 E-C1); omitting `delivered` (inverse: recording Gate
       2 re-offers it on the next call); primary `set-tracker --remove` — ALREADY missing before this
-      change, reproduced, and carried to `code-review-0-43-0-minors` rather than shipped here. Each
+      change, reproduced, and carried to `code-review-0-43-0-minors` rather than shipped here
+      (re-decided at Gate 2 E-C1 and kept carried: no verb unconfigures a primary, so refusing
+      `--remove` there would print a refusal naming no remedy that clears). Each
       unshipped inverse named and justified in the commit message
 - [ ] 9.3 **Verify against the commit** — `git show --stat <sha>` for every task commit; every file the
       task claims is present in THAT commit, including each `red-<task>.txt` and each doc a GREEN task

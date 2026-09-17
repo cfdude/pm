@@ -263,8 +263,9 @@ watermark from the listing alone.
 ### Requirement: A github-issues repository is recorded as an owner/name pair
 `set-tracker` SHALL refuse, for either role, a `--repo` on a `github-issues` tracker that is not an
 `owner/name` pair of characters GitHub permits in those names, exiting non-zero and writing nothing.
-`--remove` is exempt: it matches the recorded value exactly and writes nothing new, so a legacy
-malformed entry stays removable.
+`--remove` on the secondary role is exempt: it matches the recorded value exactly and writes nothing
+new, so a legacy malformed entry stays removable. `--remove` on the primary role is NOT exempt — the
+primary has no remove, so the value would otherwise be recorded.
 A value recorded before this rule that does not have that shape SHALL NOT fail any read; emitters
 treat it as absent for the purpose of building a shell command.
 
@@ -272,6 +273,12 @@ treat it as absent for the purpose of building a shell command.
 - **WHEN** the agent runs `set-tracker --system github-issues --repo 'a/b; touch pwned'`
 - **THEN** it exits non-zero naming the expected shape, and `state.json` is byte-identical (today it
   is accepted)
+
+#### Scenario: A malformed repository is refused on the primary even with --remove
+- **WHEN** a github-issues primary records `o/n`, and the agent runs
+  `set-tracker --repo 'a/b; touch pwned' --remove`
+- **THEN** it exits non-zero naming the expected shape, and `state.json` is byte-identical (before
+  this rule's correction the value was saved and rendered into the rules block)
 
 #### Scenario: A legacy malformed secondary is removable
 - **WHEN** a state file carries a github-issues secondary whose `repo` is `a/b; touch pwned`, and the
