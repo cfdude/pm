@@ -52,7 +52,12 @@
 //     `\(.*\)` as if the callback were one escaper call;
 //   - a DROPPED join — `L.map(escapeControls).join("");` as a statement whose value is discarded — still makes
 //     every `L.push` in that declaration a sink (a comment, a string or a bare `L.map(escapeControls)` no
-//     longer does).
+//     longer does);
+//   - an ALL_CAPS constant declared as an EMPTY ARRAY and filled later — `const HELD = []; HELD.push(x);` then
+//     `${HELD.join(", ")}` — is a literal shape by declaration, and a push is neither a reassignment nor a
+//     rebinding, so the join classifies literal (Gate 2 round-4 M2, probed: 0 findings). None in the engine
+//     (rg for an ALL_CAPS name declared `[]`: only the one-letter `L` of briefing.mjs buildBrief and
+//     tool-currency.mjs, each returned through `L.map(escapeControls)` and never interpolated).
 // And one loud false positive: an alias of a NON-span escaper — `const pid = (v) => printedId(v)` — is not
 // accepted, so its uses report UNCLASSIFIED rather than pass.
 import fs from "node:fs";

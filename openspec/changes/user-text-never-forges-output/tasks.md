@@ -305,6 +305,14 @@ Pairs: 7.1 lands with 7.2.
           alias (`const pid = (v) => printedId(v)`) is a loud false positive. None exists in the engine today
           (rg over scripts/lib and scripts/conductor.mjs: 0 hits each; the trusted aliases esc, cite, quoted are
           never reassigned). The behavioural backstop is the runtime poison sweep, 7.2 with its legacy recipes.
+        - **Gate 2 round-4 Minors.** M1: 5.3j also runs a copy of the ENGINE installed inside the hostile
+          directory with `PM_VERBOSE_ENGINE_BANNER=1`, so the banner's install-directory escape has a failing
+          test (`red-g2-rr4-M1.txt`, escape reverted). M2, a further known limit (documented, not fixed): an
+          ALL_CAPS constant declared as an empty array and filled later (`const HELD = []; HELD.push(x)`,
+          printed via `.join`) classifies literal with 0 findings (probed with a scratch mutant). None exists
+          in the engine: rg for an ALL_CAPS name declared `[]` finds only the one-letter `L` of
+          `briefing.mjs` and `tool-currency.mjs`, each returned through `L.map(escapeControls)` and never
+          interpolated.
 - [x] 8.2 **Inverse of every operation added or modified** — the id refusal at `pushEpic` (inverse:
       `remove-epic`, unchanged; a skipped directory's inverse is renaming it, no verb); the release
       create refusal (inverse: none needed — nothing was stored). DECIDED, not deferred: no

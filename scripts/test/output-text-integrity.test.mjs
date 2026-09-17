@@ -912,7 +912,24 @@ test("5.3j (Gate 2 W-I1) a project directory whose name holds a line terminator 
   const honcho = pm(dir, ["honcho-memory", "push", "e1", "a reason"]);
   assert.notEqual(honcho.status, 0, "appending to a directory fails, and the failure names the path");
   check("honcho-memory failure", honcho);
-  assert.equal(surfaces.length, 5);
+  // The ENGINE itself installed inside the hostile directory (Gate 2 round-4 M1): the verbose banner
+  // names the engine's install directory, so a copy of scripts/ under that directory, forced to print
+  // its banner, must print the directory escaped.
+  const engineDir = path.join(dir, "eng", "scripts");
+  const scriptsDir = path.dirname(ENGINE);
+  fs.mkdirSync(engineDir, { recursive: true });
+  fs.copyFileSync(ENGINE, path.join(engineDir, "conductor.mjs"));
+  fs.cpSync(path.join(scriptsDir, "lib"), path.join(engineDir, "lib"), { recursive: true });
+  const banner = spawnSync("node", [path.join(engineDir, "conductor.mjs"), "brief"], {
+    cwd: dir, encoding: "utf8",
+    env: { ...process.env, CLAUDE_PROJECT_DIR: dir, PM_CACHE_ROOT: EMPTY_CACHE, PM_VERBOSE_ENGINE_BANNER: "1",
+      CLAUDE_PLUGIN_ROOT: path.dirname(scriptsDir) },
+  });
+  const bannerRun = { status: banner.status, stdout: banner.stdout || "", stderr: banner.stderr || "" };
+  assert.equal(bannerRun.status, 0, bannerRun.stderr);
+  assert.match(bannerRun.stderr, /conductor: engine /, "the banner was forced on and printed");
+  check("verbose engine banner from an engine inside the directory", bannerRun);
+  assert.equal(surfaces.length, 6);
 });
 
 /** The segments of a line that sit inside inline code spans. */

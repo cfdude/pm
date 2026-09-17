@@ -1,0 +1,39 @@
+# RED g2-rr4-M1: 5.3j's engine-inside-hostile-directory banner case, run with the banner's escapeControls reverted in scripts/conductor.mjs (restored after; nothing of the revert committed)
+✖ 5.3j (Gate 2 W-I1) a project directory whose name holds a line terminator forges no line from init, render, brief, the activity log or a honcho-memory failure (410.888375ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 455.664291
+
+✖ failing tests:
+
+test at scripts/test/output-text-integrity.test.mjs:890:1
+✖ 5.3j (Gate 2 W-I1) a project directory whose name holds a line terminator forges no line from init, render, brief, the activity log or a honcho-memory failure (410.888375ms)
+  AssertionError [ERR_ASSERTION]: verbose engine banner from an engine inside the directory: no line begins with the directory name's second line:
+  {"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"CONDUCTOR STATE — where we are and what's next\nProgress is claimed completion — ticked checkboxes, not verified delivery.\n\nNOW: (no active epic set)\n\nLIFECYCLE TASKS (pm): a task that is bookkeeping about the change's own lifecycle — above all the one that archives the change itself, which always qualifies — carries the literal `<!-- pm:lifecycle -->` on its task line. Mark it when the source is authored OR AMENDED; a source predating this capability gets the marker the first time you touch it.\n\nRULES (pm): classify detours before fixing — minimal → fix+commit then `/pm:detour --minimal`; substantial → `/pm:detour` (own proposal + PUSH). After any state change, `/pm:status`. Resume via `/pm:resume` + reconcile gate. Mirror every PUSH/POP to a one-line Honcho memory.\n\nManage with /pm:status · /pm:next · /pm:detour · /pm:resume, or the `conductor` skill."}}conductor: engine 0.44.0 @ /private/var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-yhaIwI/rp-x
+  NOW: forged y/eng/scripts
+  
+  + actual - expected
+  
+  + [
+  +   'NOW: forged'
+  + ]
+  - []
+  
+      at check (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-text-integrity.test.mjs:901:14)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-text-integrity.test.mjs:931:3)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'NOW: forged' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
