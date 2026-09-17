@@ -165,6 +165,11 @@ named first, and a checkbox source's handoff (`obligationArchiveFlags()`) travel
   at Gate 2 (R-I1), fixed:** it kept `delivered` but carried no handoff flag, so re-pointing a fully ticked
   plan at one with an open task printed an invocation refused "task(s) outstanding". `carry` is computed on
   the record the edit leaves, and a flag the invocation already names (`--reason`) is not printed twice.
+  **FINDING at Gate 2 re-review (F-I1), fixed:** "already names" was read over the whole head, echoed user
+  tokens included, so a title `moved --carried-to later` suppressed the handoff flag and the filled
+  invocation was refused "task(s) outstanding" (`red-F-I1.txt`). It is now read from the engine's own
+  template. Callers passing `echoed`, re-derived with `rg -n "echoed" scripts/lib`: update-epic's regression
+  refusal only; `deliveredArchiveInvocation()` de-dups nothing and names no `--reason`, so it cannot collide.
 - `integrity.mjs` `heal-archived-epic-passed-gate-2` — **FINDING at Gate 2 (R-I1 sweep), fixed:** a
   hardcoded `--outcome delivered --no-deferrals` consulting nothing; an openspec epic carrying a `--plan`
   with an open task, or an open inline story, got a refused step. Now the E-I5 shape.

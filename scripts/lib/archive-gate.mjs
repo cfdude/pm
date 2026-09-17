@@ -247,11 +247,15 @@ export function gateRemedy(id, gate, { base = "<sha>", head = "<sha>" } = {}) {
 export function dispositionInvocation(epic, { echoed = [], correction = false, deferrals = "bare", keepDelivered = false, carry = [] } = {}) {
   const outcomes = keepDelivered || !blockedDelivered(epic).length
     ? AGENT_OUTCOMES : AGENT_OUTCOMES.filter(o => o !== "delivered");
-  const head = `update-epic ${printedId(epic.id)}${echoed.length ? ` ${echoed.join(" ")}` : ""} --status archived ` +
-    `--outcome <${outcomes.join("|")}> --reason "<why>"`;
+  const template = ` --status archived --outcome <${outcomes.join("|")}> --reason "<why>"`;
+  const head = `update-epic ${printedId(epic.id)}${echoed.length ? ` ${echoed.join(" ")}` : ""}${template}`;
   // A carry flag the invocation already names (`--reason`) is not printed twice: a repeated flag
   // silently keeps its last value, so a second `--reason` would make one of the two placeholders a lie.
-  const named = new Set([...head.matchAll(/(?:^| )(--[a-z][a-z0-9-]*)/g)].map(m => m[1]));
+  // "Already names" is read from the ENGINE'S OWN TEMPLATE, never from the echoed tokens (Gate 2 F-I1): an
+  // echoed value is user data — a title `moved --carried-to later` is one quoted word — and reading flags
+  // out of it suppressed the handoff flag, so the filled invocation was refused "task(s) outstanding". A
+  // REAL echoed carry flag cannot collide: `--carried-to` and `--reason` are both dropped from the echo.
+  const named = new Set([...template.matchAll(/(?:^| )(--[a-z][a-z0-9-]*)/g)].map(m => m[1]));
   return head + carry.filter(f => !named.has(f.split(" ")[0])).map(f => ` ${f}`).join("") +
     (correction ? ` --correct-disposition "<why the recorded one was wrong>"` : "") +
     (deferrals === "bare" ? " --no-deferrals" : deferrals === "placeholder" ? ` ${DEFERRAL_PLACEHOLDER}` : "");

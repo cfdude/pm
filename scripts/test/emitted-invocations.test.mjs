@@ -1753,7 +1753,15 @@ for (const variant of ["remedy, then the refused command", "remedy, then the pri
 // plan was fully ticked is re-pointed at a plan with a task still open. No verb ticks a checkbox, so the
 // refusal's invocation must itself carry the handoff flag; without it the printed invocation, filled with
 // `delivered`, is refused "task(s) outstanding" — the E-I5 defect at the refusal's own printer.
-registerBuilder("regression:handoff-checkbox", {
+// Gate 2 F-I1 — the carry de-dup read the flags named in the WHOLE invocation head, echoed user tokens
+// included, so a title holding `--carried-to` suppressed the handoff flag and the filled invocation was
+// refused "task(s) outstanding". The `--reason` title is a REGRESSION GUARD: the template names `--reason`
+// itself, so it passed before the fix.
+for (const [suffix, title] of [
+  ["", null],
+  [", a title naming --carried-to (F-I1)", "moved --carried-to later"],
+  [" (REGRESSION GUARD F-I1), a title naming --reason", "note --reason here"],
+]) registerBuilder(`regression:handoff-checkbox${suffix}`, {
   setup() {
     const repo = remedyRepo();
     repo.ok(["add-epic", "--id", "later", "--lane", "claude-code", "--title", "later"]);
@@ -1761,8 +1769,8 @@ registerBuilder("regression:handoff-checkbox", {
     const open = repo.file("docs/superpowers/plans/2026-08-02-hc.md", "# hc\n\n- [x] 1. done\n- [ ] 2. still open\n");
     repo.ok(["add-epic", "--id", "hc", "--lane", "superpowers", "--title", "hc", "--plan", ticked]);
     repo.ok(archiveDelivered("hc"));
-    const refusedArgv = ["update-epic", "hc", "--plan", open];
-    const bare = repo.run(["update-epic", "hc", "--plan", open, "--status", "archived", "--outcome", "delivered",
+    const refusedArgv = ["update-epic", "hc", "--plan", open, ...(title ? ["--title", title] : [])];
+    const bare = repo.run([...refusedArgv, "--status", "archived", "--outcome", "delivered",
       "--reason", REASON, "--correct-disposition", REASON]);
     assert.notEqual(bare.status, 0, "fixture: the invocation without the handoff flag is refused on the open task");
     assert.match(bare.stderr, /outstanding/, bare.stderr);
@@ -1776,7 +1784,10 @@ registerBuilder("regression:handoff-checkbox", {
     assert.equal(lines.length, 1, `exactly one line begins \`  update-epic \`:\n${out}`);
     assert.match(lines[0], /--outcome <delivered\|/, "the regression refusal keeps delivered");
     assert.match(lines[0], /--carried-to <epicId>/, `the invocation carries the handoff:\n${out}`);
-    assert.equal((lines[0].match(/--reason\b/g) || []).length, 1, `one --reason, not two:\n${lines[0]}`);
+    // Counted OUTSIDE the echoed title's quoted word, which is data and may name either flag.
+    const template = title ? lines[0].replace(`'${title}'`, "") : lines[0];
+    assert.equal((template.match(/--reason\b/g) || []).length, 1, `one --reason, not two:\n${lines[0]}`);
+    if (title) assert.ok(lines[0].includes(`'--title' '${title}'`), `the title is echoed as one quoted word:\n${lines[0]}`);
   },
   produce: refusal((fx) => fx.refusedArgv),
   reported: refused,
@@ -1786,6 +1797,7 @@ registerBuilder("regression:handoff-checkbox", {
     assert.equal(e.planPath, fx.open, "the edit the refusal stopped is made");
     assert.equal(e.disposition.outcome, "delivered");
     assert.equal(e.disposition.carriedTo, "later");
+    if (title) assert.equal(e.title, title, "the echoed title is recorded exactly");
   } }],
 });
 
