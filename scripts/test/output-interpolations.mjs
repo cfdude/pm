@@ -180,7 +180,7 @@ function balancedCallSpans(src, re) {
   return spans;
 }
 /** Top-level declarations: `function name`, `export function name`, `const name =` at column 0. */
-function topLevelFunctions(src) {
+export function topLevelFunctions(src) {
   const starts = [...src.matchAll(/^(?:export\s+)?(?:async\s+)?(?:function\s+([\w$]+)|(?:const|let)\s+([\w$]+)\s*=)/gm)]
     .map(m => ({ start: m.index, name: m[1] || m[2] }));
   return starts.map((s, i) => ({ ...s, end: i + 1 < starts.length ? starts[i + 1].start : src.length }));

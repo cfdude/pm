@@ -673,15 +673,45 @@ test("5.3g (Gate 2 U2-M1) jsonText escapes what JSON.stringify leaves raw, parse
     for (const c of [LS, PS, NEL, ch(0x7f), ch(0x9f)]) assert.ok(!text.includes(c), `raw U+${c.charCodeAt(0).toString(16)} (space ${space})`);
     assert.deepEqual(JSON.parse(text), value);
   }
-  // Source guard: a stdout JSON document built with JSON.stringify directly bypasses the escape.
-  const libDir = new URL("../lib/", import.meta.url);
-  const sources = [["conductor.mjs", fs.readFileSync(new URL("../conductor.mjs", import.meta.url), "utf8")],
-    ...fs.readdirSync(libDir).filter(f => f.endsWith(".mjs")).map(f => [f, fs.readFileSync(new URL(f, libDir), "utf8")])];
+  assert.deepEqual(await stdoutJsonBypasses(), [], "every JSON document written to stdout goes through jsonText()");
+});
+
+/** Source guard (Gate 2 U2-M1, widened by V-M1): a declaration that writes to stdout (process.stdout.write,
+ *  a refusal's `stdout:`, console.log) never names JSON.stringify — not called in the write, not aliased
+ *  (`const j = JSON.stringify`), not built into a variable written later. The one form allowed is
+ *  `escapeControls(JSON.stringify(…))`, a quoted value inside an already-escaped line. BOUND: the rule is per
+ *  top-level declaration, so a document stringified in one declaration and written by another is outside it;
+ *  the 5.3i byte-equality test holds every verb's actual stdout. `read(rel)` lets a mutant replace a file. */
+async function stdoutJsonBypasses(read = (rel) => fs.readFileSync(path.join(REPO_ROOT, rel), "utf8")) {
+  const { sweptFiles, topLevelFunctions } = await import("./output-interpolations.mjs");
   const offenders = [];
-  for (const [f, src] of sources) {
-    for (const m of src.matchAll(/(?:stdout\.write\(|stdout:|console\.log\()\s*JSON\.stringify\(/g)) offenders.push(`${f}: ${m[0]}`);
+  for (const rel of sweptFiles()) {
+    const src = read(rel).replace(/(^|\s)\/\/[^\n]*/g, "$1").replace(/\/\*[\s\S]*?\*\//g, "");
+    for (const fn of topLevelFunctions(src)) {
+      const body = src.slice(fn.start, fn.end);
+      if (!/process\.stdout\.write\(|\bstdout\s*:|console\.log\(/.test(body)) continue;
+      for (const m of body.replace(/\bescapeControls\(\s*JSON\.stringify\(/g, "escapeControls(").matchAll(/\bJSON\s*\.\s*stringify\b|\bJSON\s*\[\s*["'`]stringify/g)) {
+        offenders.push(`${rel} [${fn.name}]: ${m[0]}`);
+      }
+    }
   }
-  assert.deepEqual(offenders, [], "every JSON document written to stdout goes through jsonText()");
+  return offenders;
+}
+const REPO_ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..", "..");
+
+test("5.3g mutants (Gate 2 V-M1): an aliased JSON.stringify, and a document stringified into a variable, are both bypasses", async () => {
+  const mutate = (rel, from, to) => {
+    const text = fs.readFileSync(path.join(REPO_ROOT, rel), "utf8");
+    assert.equal(text.split(from).length - 1, 1, `mutation anchor occurs exactly once in ${rel}`);
+    return (r) => (r === rel ? text.replace(from, () => to) : fs.readFileSync(path.join(REPO_ROOT, r), "utf8"));
+  };
+  const aliased = await stdoutJsonBypasses(mutate("scripts/lib/triage.mjs",
+    "process.stdout.write(jsonText({", "const __j = JSON.stringify; process.stdout.write(__j({"));
+  assert.ok(aliased.some(o => o.startsWith("scripts/lib/triage.mjs [triage]")), `aliased: ${aliased.join("; ")}`);
+  const variable = await stdoutJsonBypasses(mutate("scripts/lib/lane-routing.mjs",
+    "process.stdout.write(jsonText(laneSuggestion(loadState(), text)) + \"\\n\");",
+    "const doc = JSON.stringify(laneSuggestion(loadState(), text));\n  process.stdout.write(doc + \"\\n\");"));
+  assert.ok(variable.some(o => o.startsWith("scripts/lib/lane-routing.mjs [suggestLane]")), `variable: ${variable.join("; ")}`);
 });
 
 test("5.3i (Gate 2 V-I1) every stdout JSON document is JSON.stringify's own bytes at its documented spacing — only the escaped code points differ", async () => {
