@@ -58,7 +58,7 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" render --diff-summary
 
 Renders exactly as above, and additionally prints `epic-relevant: yes` or `epic-relevant: no` to
 stdout. It is a switch, not a value-bearing flag. It is declared on `render` alone: every other
-verb refuses it before running (`set-active e2 --diff-summary` used to print
+verb refuses it before running (`set-active e2 --diff-summary`<!-- pm:refused unknown-flag --> used to print
 `epic-relevant: yes` too, because the shared renderer read it off the command line).
 
 Two things move in `PROJECT.md` on nearly every render with nothing about the epics having

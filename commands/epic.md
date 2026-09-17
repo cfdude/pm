@@ -125,8 +125,8 @@ written:
   the verb reads is refused before anything is written:
   `conductor: add-epic takes no positional arguments — 'Title' is an extra argument it does not read. Nothing was written.`
   followed by `If 'Title' belongs to --title's value, quote the whole value.`
-- **An epic id is positional wherever a verb takes one.** `remove-epic --id e2`, `set-active --id
-  e2` and the rest are diagnosed with the line you meant, not only on `update-epic`.
+- **An epic id is positional wherever a verb takes one.** `remove-epic --id e2`<!-- pm:refused id-as-flag -->, `set-active --id
+  e2`<!-- pm:refused id-as-flag --> and the rest are diagnosed with the line you meant, not only on `update-epic`.
 - **`--force` is accepted on every mutating verb here** — `add-epic`, `add-many`, `update-epic`,
   `reorder`, `remove-epic`, `set-active`, `clear-active`, `set-autonomy` and
   `record-gate-review` — and refused on read-only verbs. It belongs to the guarded write of
@@ -161,7 +161,7 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" add-many --from /path/to/batc
   chaining, no write race.
 - JSON only (the engine is zero-dependency). `parent` is optional; a bare `{ "epics": [...] }`
   batch works too.
-- **A batch key is not a command-line flag.** `add-many --from b.json --external-id X` is refused
+- **A batch key is not a command-line flag.** `add-many --from b.json --external-id X`<!-- pm:refused unknown-flag --> is refused
   before the batch is read (`unknown flag --external-id for add-many — it accepts: --from,
   --force`); it used to create the batch and drop the flag.
 - **`description`** is the durable rationale, in state-key spelling — a batch entry carries
@@ -459,7 +459,7 @@ The id is positional. Parent/status/lane/link changes are validated like `add-ep
 self-parent, no cycle, known status, known lane, `--link`'s epic must be a known epic id). On an
 unknown id, or any invalid flag value, it exits non-zero and writes nothing — including an
 unrecognized flag name, which used to silently no-op and print a false "updated" success, and an
-unquoted multi-word value: `update-epic e1 --title My Title` stored `My` and now refuses `'Title'`
+unquoted multi-word value: `update-epic e1 --title My Title`<!-- pm:refused extra-positional --> stored `My` and now refuses `'Title'`
 as an extra argument, with a hint to quote the whole value. Both refusals happen before dispatch
 and apply to every verb on this page — see "The command line" above.
 
@@ -658,7 +658,7 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" remove-epic <id> [--cascade]
   together in one atomic write. The preview table and `--cascade`'s actual blast radius always
   agree — a human confirming from the table is confirming the real deletion set, not just the
   direct children.
-- **`--cascade` takes no value, in either spelling.** `remove-epic p --cascade true` used to be
+- **`--cascade` takes no value, in either spelling.** `remove-epic p --cascade true`<!-- pm:refused extra-positional --> used to be
   accepted; now `true` is an extra argument
   (`conductor: remove-epic takes <id> — 'true' is an extra argument it does not read. Nothing was written.`
   then `--cascade takes no value.`), and `--cascade=true` is refused naming `--cascade`. Write

@@ -102,7 +102,7 @@ function arityFor(verb, positionals) {
   return branch ? { ...row, ...branch } : row;
 }
 
-/** The verdict for one command line: `{ kind: "help" }`, `{ kind: "refuse", message }`, or
+/** The verdict for one command line: `{ kind: "help" }`, `{ kind: "refuse", class, message }`, or
  *  `{ kind: "ok", positionals }`. `argv` is the whole process.argv; `initialized` is whether
  *  `.conductor/state.json` exists, passed in so hook dormancy stays pure.
  *
@@ -118,7 +118,12 @@ function arityFor(verb, positionals) {
  *       space form is refused, `--cascade=true`);
  *    5. more positionals than the verb's MAXIMUM → refuse, naming the first surplus token. The
  *       minimum stays each verb's own refusal (VERB_POSITIONALS' header says why);
- *    6. otherwise ok, with the canonical argv the verb is handed (D10). */
+ *    6. otherwise ok, with the canonical argv the verb is handed (D10).
+ *
+ *  Every refusal carries a `class` — `help-in-value-position`, `id-as-flag`, `unknown-flag`,
+ *  `value-on-valueless-flag` or `extra-positional` — beside its message. The message is prose other
+ *  changes edit; the class is the stable value the emitted-invocation sweep compares against a
+ *  shipped document's `<!-- pm:refused <class> -->` marker (emitted-commands-run-as-written). */
 export function checkCommandLine(verb, argv, { initialized = true } = {}) {
   if (!Object.prototype.hasOwnProperty.call(VERB_EFFECTS, verb) ||
       !Object.prototype.hasOwnProperty.call(VERB_POSITIONALS, verb)) {
@@ -131,18 +136,20 @@ export function checkCommandLine(verb, argv, { initialized = true } = {}) {
   const misplaced = items.find(x => x.kind === "help" && x.valuePosition);
   if (misplaced) {
     const flag = items.find(x => x.kind === "flag" && x.name === misplaced.flag);
-    return { kind: "refuse", message: flagInValuePositionMessage(misplaced.flag, flag.requires, misplaced.token) };
+    return { kind: "refuse", class: "help-in-value-position", message: flagInValuePositionMessage(misplaced.flag, flag.requires, misplaced.token) };
   }
   const badFlag = items.find(x => x.kind === "flag" && (!x.declared || (x.valueless && x.inline !== undefined)));
-  if (badFlag && !badFlag.declared) return { kind: "refuse", message: undeclaredFlagMessage(verb, badFlag, items) };
+  if (badFlag && !badFlag.declared) {
+    return { kind: "refuse", class: badFlag.idMistake ? "id-as-flag" : "unknown-flag", message: undeclaredFlagMessage(verb, badFlag, items) };
+  }
   if (badFlag) {
-    return { kind: "refuse", message: `conductor: --${badFlag.name} takes no value — '${escapeControls(badFlag.token)}' gives ` +
+    return { kind: "refuse", class: "value-on-valueless-flag", message: `conductor: --${badFlag.name} takes no value — '${escapeControls(badFlag.token)}' gives ` +
       `it one, and ${verb} would ignore it. Write --${badFlag.name} on its own. Nothing was written.` };
   }
   const positionals = items.filter(x => x.kind === "positional");
   const arity = arityFor(verb, positionals.map(x => x.token));
   if (positionals.length > arity.max) {
-    return { kind: "refuse", message: surplusMessage(verb, arity, positionals[arity.max], items) };
+    return { kind: "refuse", class: "extra-positional", message: surplusMessage(verb, arity, positionals[arity.max], items) };
   }
   // D10 — the order every verb reads: the positionals in their original order, then every flag with
   // its value in its original relative order (`--attribute-commit` order decides the Gate 2

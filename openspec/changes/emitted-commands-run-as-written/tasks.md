@@ -53,22 +53,22 @@ Pairs: 1.2–1.5 land with 1.6.
       fenced `# comment` and a bare `…` are dropped; a `text` fence and prose beginning with a verb name
       are not extracted; each real source class yields at least one invocation; suite green (verify:
       `node --test scripts/test/*.test.mjs` exit 0, output saved to a file and read from the file)
-- [ ] 1.2 RED: `checkCommandLine()` returns a `class` on each refusal kind (`unknown-flag`,
+- [x] 1.2 RED: `checkCommandLine()` returns a `class` on each refusal kind (`unknown-flag`,
       `extra-positional`, `id-as-flag`, `value-on-valueless-flag`, `help-in-value-position`), asserted
       once per kind in `verb-surface.test.mjs`
-- [ ] 1.3 RED: Layer A over shipped docs — fails naming `/pm:integrity` (`commands/upgrade.md`),
+- [x] 1.3 RED: Layer A over shipped docs — fails naming `/pm:integrity` (`commands/upgrade.md`),
       `node scripts/conductor.mjs` (`commands/cross-spec-review.md`), and each unmarked refused example
       in design Decision 1's table
-- [ ] 1.4 RED: marker rules on constructed docs in a temp dir — a `pm:refused <class>` marker on an
+- [x] 1.4 RED: marker rules on constructed docs in a temp dir — a `pm:refused <class>` marker on an
       accepted invocation fails; one whose class differs from the engine's fails; a marker not directly
       after a code span fails as unattached; a marked span followed on the same line by an unmarked
       refused span fails on the second
-- [ ] 1.5 RED: Layer A over the rules block for every platform × the tracker matrix, `init` stderr and
+- [x] 1.5 RED: Layer A over the rules block for every platform × the tracker matrix, `init` stderr and
       the commit-nudge message in EVERY variant change 1 prints, one fixture per variant (auto-logged
       detour, detour commit, several candidate epics, amend), each built anchor → commit → observe — passes today except where section 3 changes the text; saved as the
       baseline, not a failure (brief, `integrity`, `unconsidered-outcomes` and archive-gate refusals
       join Layer A in 2.9, once their fixtures exist)
-- [ ] 1.6 GREEN: the `class` field in `argv-surface.mjs`; the 20 `pm:refused <class>` markers, the
+- [x] 1.6 GREEN: the `class` field in `argv-surface.mjs`; the 20 `pm:refused <class>` markers, the
       `pm:engine-message` marker at `README.md:1336` and the `pm:checkout-path` marker at
       `skills/conductor/SKILL.md:70`, each directly after its span; `commands/upgrade.md:226` and
       `commands/cross-spec-review.md:85` in installed-engine form; the test's refusal list saved as

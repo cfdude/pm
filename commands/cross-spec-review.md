@@ -82,7 +82,9 @@ record a verdict there rather than storing a record that reads as coverage.
 6. **Record the verdict.**
 
    ```bash
-   node scripts/conductor.mjs record-cross-spec-review <releaseId> \
+   ENGINE="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/scripts/conductor.mjs}"
+   [ -f "$ENGINE" ] || ENGINE=$(ls -t ~/.claude/plugins/cache/*/pm/*/scripts/conductor.mjs 2>/dev/null | head -1)
+   node "$ENGINE" record-cross-spec-review <releaseId> \
      --verdict pass|fail --reviewer "<identity>"
    ```
 

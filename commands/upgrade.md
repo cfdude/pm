@@ -223,7 +223,7 @@ different commit.
    migration ran. `unknown` is not a hedge — it says nobody recorded a disposition, which is
    exactly true. An existing disposition is never overwritten.
 
-**Then expect a burst of `heal-archived-epic-passed-gate-2` on your first `/pm:integrity`.** The
+**Then expect a burst of `heal-archived-epic-passed-gate-2` on your first `node "$ENGINE" integrity`.** The
 migration only stamps epics that are already `archived` in state; the archive-drift heal flips the
 rest to `archived` *afterwards* and stamps them `unknown` at that moment. So every repo that
 followed the documented `/opsx:archive` → heal flow lands on `unknown` rather than `delivered`,

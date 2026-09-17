@@ -15,6 +15,9 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import os from "node:os";
+import { spawnSync } from "node:child_process";
+import { ENGINE, EMPTY_CACHE, observationRepo, tmpRepo } from "./helpers.mjs";
 
 const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const lib = (name) => new URL(`../lib/${name}`, import.meta.url).href;
@@ -414,4 +417,213 @@ test("1.1 every real source class yields at least one invocation", async () => {
     const n = extractInvocations(rulesBlock(null, "standard", [], platform), VERBS).invocations.length;
     assert.ok(n > 0, `the ${platform} rules block yielded no invocation`);
   }
+});
+
+// ═══════════════════════════════ shipped-document checks ═══════════════════════════════
+
+/** `/pm:<name>` must name a shipped command (`commands/<name>.md`) or skill (`skills/<name>/`). The
+ *  name only: `/pm:epic list` passes here and is caught against the rules block instead (3.5). */
+export function pmReferenceProblems(label, text, root = REPO) {
+  const problems = [];
+  const lines = text.split("\n");
+  lines.forEach((l, i) => {
+    for (const m of l.matchAll(/\/pm:([a-z][a-z0-9-]*)/g)) {
+      const name = m[1];
+      if (fs.existsSync(path.join(root, "commands", `${name}.md`)) || fs.existsSync(path.join(root, "skills", name))) continue;
+      problems.push(`${label}:${i + 1}: /pm:${name} names no shipped command or skill`);
+    }
+  });
+  return problems;
+}
+
+/** A shipped command, agent or skill document invokes the INSTALLED engine: `node
+ *  scripts/conductor.mjs` exists only in a checkout of pm, so it is a finding unless the code span
+ *  holding it carries `<!-- pm:checkout-path -->` (a pm-developer note). README.md is pm's own
+ *  contributor-facing document and is outside this rule. */
+export function checkoutPathProblems(doc) {
+  if (!["commands", "agents", "skills"].includes(doc.cls)) return [];
+  const problems = [];
+  doc.text.split("\n").forEach((l, i) => {
+    if (!l.includes("node scripts/conductor.mjs")) return;
+    const exempt = /`[^`]*node scripts\/conductor\.mjs[^`]*`<!-- pm:checkout-path -->/.test(l);
+    if (!exempt) problems.push(`${doc.rel}:${i + 1}: \`node scripts/conductor.mjs\` runs only in a pm checkout — invoke the installed engine`);
+  });
+  return problems;
+}
+
+/** Every Layer A problem across the shipped documents under `root`, plus the refusal list. */
+export async function shippedDocProblems(root = REPO) {
+  const verbs = dispatchedVerbs();
+  const problems = [];
+  let count = 0;
+  for (const doc of shippedDocs(root)) {
+    const a = await layerA(doc.rel, doc.text, verbs);
+    count += a.count;
+    problems.push(...a.problems, ...pmReferenceProblems(doc.rel, doc.text, root), ...checkoutPathProblems(doc));
+  }
+  return { problems, count };
+}
+
+// ═══════════════════════════════ 1.3 — Layer A over shipped docs ═══════════════════════════════
+
+test("1.3 Layer A: every engine invocation in shipped docs passes the pre-dispatch check, and every marker holds", async () => {
+  const { problems, count } = await shippedDocProblems();
+  assert.ok(count > 500, `only ${count} invocations extracted from shipped docs — the extractor regressed`);
+  assert.deepEqual(problems, [], `shipped documents:\n${problems.join("\n")}`);
+});
+
+// ═══════════════════════════════ 1.4 — marker rules on constructed docs ═══════════════════════════════
+
+/** A constructed pm-shaped document tree in a temp dir: `commands/probe.md` holding `body`. */
+function constructedRoot(body) {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "pm-emitted-docs-"));
+  fs.mkdirSync(path.join(root, "commands"), { recursive: true });
+  fs.writeFileSync(path.join(root, "commands", "probe.md"), body);
+  return root;
+}
+
+test("1.4 a correctly marked refused example passes", async () => {
+  const { problems } = await shippedDocProblems(constructedRoot("Refused: `activity --bogus`<!-- pm:refused unknown-flag -->.\n"));
+  assert.deepEqual(problems, []);
+});
+
+test("1.4 a pm:refused marker on an accepted invocation fails", async () => {
+  const { problems } = await shippedDocProblems(constructedRoot("`activity --json`<!-- pm:refused unknown-flag -->\n"));
+  assert.equal(problems.length, 1, problems.join("\n"));
+  assert.match(problems[0], /commands\/probe\.md:1: marked pm:refused unknown-flag but the engine accepts/);
+});
+
+test("1.4 a marker whose class differs from the engine's refusal fails", async () => {
+  const { problems } = await shippedDocProblems(constructedRoot("`set-activity-log on extra`<!-- pm:refused unknown-flag -->\n"));
+  assert.equal(problems.length, 1, problems.join("\n"));
+  assert.match(problems[0], /marked pm:refused unknown-flag but the engine refuses .* as extra-positional/);
+});
+
+test("1.4 a marker not directly after a code span fails as unattached", async () => {
+  const { problems } = await shippedDocProblems(constructedRoot("`activity --bogus` <!-- pm:refused unknown-flag -->\n"));
+  assert.ok(problems.some(p => /probe\.md:1: marker .* is unattached/.test(p)), problems.join("\n"));
+  assert.ok(problems.some(p => /probe\.md:1: refused \(unknown-flag\) `activity --bogus`/.test(p)),
+    `the example the detached marker failed to reach is itself reported:\n${problems.join("\n")}`);
+});
+
+test("1.4 a marked span followed on the same line by an unmarked refused span fails on the second", async () => {
+  const { problems } = await shippedDocProblems(constructedRoot(
+    "`activity --bogus`<!-- pm:refused unknown-flag --> and `integrity --force` too.\n"));
+  assert.equal(problems.length, 1, problems.join("\n"));
+  assert.match(problems[0], /refused \(unknown-flag\) `integrity --force`/);
+});
+
+// ═══════════════════════════════ 1.5 — Layer A over engine output ═══════════════════════════════
+
+/** The tracker matrix design Decision 1 names: no primary; github-issues and jira primaries in every
+ *  direction, scoped and scope-less; crossed with no secondary, a github-issues secondary and a jira
+ *  secondary. */
+export function trackerMatrix() {
+  const primaries = [null];
+  for (const system of ["github-issues", "jira"]) {
+    for (const direction of ["inward", "outward", "both"]) {
+      primaries.push({ system, direction, ...(system === "jira" ? { projectKey: "ABC" } : { repo: "o/n" }) });
+      primaries.push({ system, direction });
+    }
+  }
+  const secondarySets = [[], [{ system: "github-issues", repo: "o/s", role: "secondary" }],
+    [{ system: "jira", projectKey: "SEC", role: "secondary" }]];
+  const out = [];
+  for (const tracker of primaries) for (const secondaries of secondarySets) out.push({ tracker, secondaries });
+  return out;
+}
+
+export async function renderedRulesBlocks() {
+  const { rulesBlock } = await import(lib("rules.mjs"));
+  const { KNOWN_PLATFORMS } = await import(lib("constants.mjs"));
+  const out = [];
+  for (const platform of KNOWN_PLATFORMS) {
+    for (const { tracker, secondaries } of trackerMatrix()) {
+      const label = `rules[${platform} · ${tracker ? `${tracker.system}/${tracker.direction}/${tracker.repo || tracker.projectKey || "scope-less"}` : "none"} · ${secondaries.map(s => s.system).join("+") || "no secondary"}]`;
+      out.push({ label, text: rulesBlock(tracker, "standard", secondaries, platform) });
+    }
+  }
+  return out;
+}
+
+function engineRun(cwd, args) {
+  const r = spawnSync("node", [ENGINE, ...args], {
+    cwd, encoding: "utf8",
+    env: { ...process.env, CLAUDE_PROJECT_DIR: cwd, PM_CACHE_ROOT: EMPTY_CACHE, PM_QUIET_ENGINE_BANNER: "1" },
+  });
+  return { status: r.status, stdout: r.stdout || "", stderr: r.stderr || "" };
+}
+
+/** Every commit-nudge message variant change 1 prints, each from its own fixture built anchor →
+ *  commit → observe, with a sanity assertion that the fixture produced the variant it names. */
+export function commitNudgeVariants() {
+  const variants = [];
+  const ok = (repo, args) => { const r = engineRun(repo.cwd, args); assert.equal(r.status, 0, `${args.join(" ")}: ${r.stderr}`); };
+  {
+    const repo = observationRepo();
+    repo.observe();
+    repo.commit({ "src/auto.txt": "1" }, "chore: tidy an unrelated file");
+    const o = repo.observe("PostToolUse", "git commit");
+    assert.match(o.context, /AUTO-DETOUR/, `fixture: auto-logged. ${o.stdout}`);
+    assert.match(o.context, /retract-detour /, "fixture: the retract pointer is printed");
+    variants.push({ label: "nudge[auto-logged]", text: o.context, repo });
+  }
+  {
+    const repo = observationRepo();
+    repo.observe();
+    repo.commit({ "openspec/changes/epic-a/tasks.md": "- [x] 1.1\n" }, "feat(a): the active epic's own work");
+    const o = repo.observe("PostToolUse", "git commit");
+    assert.match(o.context, /If this was a MINIMAL detour/, `fixture: plain. ${o.stdout}`);
+    variants.push({ label: "nudge[plain]", text: o.context, repo });
+  }
+  {
+    const repo = observationRepo();
+    ok(repo, ["add-epic", "--id", "detour-d", "--lane", "claude-code"]);
+    ok(repo, ["push-detour", "epic-a", "--detour", "detour-d", "--reason", "blocked", "--reconcile"]);
+    repo.git("add", "-A");
+    repo.git("commit", "-q", "-m", "chore: record the detour");
+    repo.observe();
+    repo.commit({ "src/detour.txt": "1" }, "fix: the detour's work");
+    const o = repo.observe("PostToolUse", "git commit");
+    assert.match(o.context, /during DETOUR `detour-d` \(logged to detours\.log\)/, `fixture: detour commit. ${o.stdout}`);
+    assert.ok((o.context.match(/^- `update-epic /gm) || []).length >= 2, `fixture: several candidate epics. ${o.context}`);
+    variants.push({ label: "nudge[detour commit · several candidates]", text: o.context, repo });
+  }
+  {
+    const repo = observationRepo();
+    repo.observe();
+    const c1 = repo.commit({ "src/amend.txt": "1" }, "feat: attributed then amended");
+    repo.observe("PostToolUse", "git commit");
+    ok(repo, ["update-epic", "epic-a", "--attribute-commit", c1]);
+    const attributed = JSON.parse(fs.readFileSync(path.join(repo.cwd, ".conductor", "state.json"), "utf8"))
+      .epics.find(e => e.id === "epic-a").attributedCommits;
+    assert.ok(attributed.includes(c1), "fixture: C1 is attributed before the amend is observed");
+    repo.git("commit", "-q", "--amend", "-m", "feat: amended");
+    const o = repo.observe("PostToolUse", "git commit --amend");
+    assert.match(o.context, /--withdraw-commit /, `fixture: amend prints the withdrawal. ${o.stdout}`);
+    variants.push({ label: "nudge[amend]", text: o.context, repo });
+  }
+  return variants;
+}
+
+/** `init`'s stderr in a fresh repository. */
+export function initOutput() {
+  const cwd = tmpRepo();
+  const r = engineRun(cwd, ["init"]);
+  assert.equal(r.status, 0, r.stderr);
+  return { label: "init stderr", text: r.stderr, cwd };
+}
+
+test("1.5 Layer A: every rules block (platform × tracker matrix), init's output and every commit-nudge variant", async () => {
+  const verbs = dispatchedVerbs();
+  const sources = [...await renderedRulesBlocks(), initOutput(), ...commitNudgeVariants()];
+  const problems = [];
+  let count = 0;
+  for (const s of sources) {
+    const a = await layerA(s.label, s.text, verbs);
+    count += a.count;
+    problems.push(...a.problems, ...pmReferenceProblems(s.label, s.text));
+  }
+  assert.ok(count > 1000, `only ${count} invocations extracted from engine output — the extractor or a source regressed`);
+  assert.deepEqual(problems, [], problems.join("\n"));
 });

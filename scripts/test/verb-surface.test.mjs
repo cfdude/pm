@@ -999,3 +999,23 @@ test("An undeclared flag on a free-text verb is refused with the quote-the-whole
   assert.equal(bounded.kind, "refuse");
   assert.doesNotMatch(bounded.message, /quote the whole value/, "a verb without free text gets no quoting hint");
 });
+
+// ═══════════════ emitted-commands-run-as-written 1.2 — every refusal carries a class ═══════════════
+// The emitted-invocation sweep compares a doc marker's declared class with the engine's refusal.
+// Refusal MESSAGES are prose other changes edit; the class is the stable value a test compares.
+
+test("checkCommandLine: every refusal kind carries its class", async () => {
+  const { checkCommandLine } = await import(ARGV_SURFACE);
+  const cases = [
+    ["unknown-flag", line("activity", "--bogus")],
+    ["extra-positional", line("set-activity-log", "on", "extra")],
+    ["id-as-flag", line("remove-epic", "--id", "e2")],
+    ["value-on-valueless-flag", line("remove-epic", "e2", "--cascade=true")],
+    ["help-in-value-position", line("add-epic", "--id", "h1", "--title", "--help")],
+  ];
+  for (const [cls, argv] of cases) {
+    const r = checkCommandLine(argv[2], argv, { initialized: true });
+    assert.equal(r.kind, "refuse", `${argv.slice(2).join(" ")} is refused`);
+    assert.equal(r.class, cls, `${argv.slice(2).join(" ")} is refused with class ${cls}; got ${r.class}`);
+  }
+});

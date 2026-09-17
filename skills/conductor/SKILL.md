@@ -67,7 +67,7 @@ Two caveats. It only exists once the *installed* plugin carries the release that
 the snippet below will not cover for it — resolving the engine out of the project directory is
 how that used to be papered over, and gh-139 deleted that arm because it executed
 project-supplied code on nothing but a `-f` test. While developing a release the installed
-plugin does not yet carry, run `node scripts/conductor.mjs <verb>` from the checkout directly.
+plugin does not yet carry, run `node scripts/conductor.mjs <verb>`<!-- pm:checkout-path --> from the checkout directly.
 And it makes the engine you TYPE non-authoritative: with it set, running a worktree's
 `scripts/conductor.mjs` while `$CLAUDE_PROJECT_DIR` points at the main checkout runs the
 **main checkout's** engine, because the project dir decides. In a repo that works in worktrees
@@ -96,7 +96,7 @@ registry, so it cannot disagree with what the parser accepts. Use it instead of 
 - **Quote every multi-word value.** An unquoted `--title My Title` leaves `Title` as a surplus
   positional, and a surplus positional is refused (`If 'Title' belongs to --title's value, quote
   the whole value.`) — it used to store `My` and exit 0.
-- A valueless flag never takes a value: `remove-epic <id> --cascade true` and `--force=1` are both
+- A valueless flag never takes a value: `remove-epic <id> --cascade true`<!-- pm:refused extra-positional --> and `--force=1` are both
   refused. Outside `triage`, `suggest-lane`, `log-detour` and `honcho-memory`, a `--`-leading token
   that is not a flag (`--Steal`) is refused as an undeclared flag.
 - An epic id is positional wherever a verb takes one; `--id <x>` in its place is diagnosed with the

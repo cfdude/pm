@@ -58,7 +58,7 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" suggest-lane "add a brand-new
 Overrides are checked in the order they were added; the first match wins. `lane: null` means
 nothing matched — apply the documented generic heuristic as usual.
 
-**Quote the text.** `suggest-lane` reads ONE argument. Unquoted, `suggest-lane fix a typo` used to
+**Quote the text.** `suggest-lane` reads ONE argument. Unquoted, `suggest-lane fix a typo`<!-- pm:refused extra-positional --> used to
 route `fix` alone; it is now refused before anything runs:
 
 ```text

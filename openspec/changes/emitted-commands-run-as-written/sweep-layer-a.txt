@@ -1,0 +1,24 @@
+# emitted-commands-run-as-written task 1.6 — Layer A over shipped docs (derived by scripts/test/emitted-invocations.test.mjs's extractor)
+# 760 invocations extracted, 766 forms checked; every refusal below is marked in its source
+commands/activity.md:94	refused unknown-flag (marked unknown-flag)	activity --bogus
+commands/activity.md:99	refused extra-positional (marked extra-positional)	set-activity-log on extra
+commands/claim.md:43	refused unknown-flag (marked unknown-flag)	claim --repo --session s --Steal
+commands/detour.md:21	refused unknown-flag (marked unknown-flag)	log-detour fixed --no-verify usage
+commands/epic.md:128	refused id-as-flag (marked id-as-flag)	remove-epic --id e2
+commands/epic.md:128	refused id-as-flag (marked id-as-flag)	set-active --id   e2
+commands/epic.md:164	refused unknown-flag (marked unknown-flag)	add-many --from b.json --external-id X
+commands/epic.md:462	refused extra-positional (marked extra-positional)	update-epic e1 --title My Title
+commands/epic.md:661	refused extra-positional (marked extra-positional)	remove-epic p --cascade true
+commands/lane-routing.md:61	refused extra-positional (marked extra-positional)	suggest-lane fix a typo
+commands/status.md:61	refused unknown-flag (marked unknown-flag)	set-active e2 --diff-summary
+skills/conductor/SKILL.md:99	refused extra-positional (marked extra-positional)	remove-epic <id> --cascade true
+skills/conductor/SKILL.md:70	checkout-path	node scripts/conductor.mjs <verb>
+README.md:346	refused extra-positional (marked extra-positional)	remove-epic <id> --cascade true
+README.md:1285	refused help-in-value-position (marked help-in-value-position)	add-epic --id h1 --title --help
+README.md:1301	refused extra-positional (marked extra-positional)	remove-epic <id> --cascade true
+README.md:1304	refused extra-positional (marked extra-positional)	add-epic … --title My Title
+README.md:1335	refused extra-positional (marked extra-positional)	suggest-lane fix a typo
+README.md:1336	engine-message	suggest-lane reads ONE text argument — quote it.
+README.md:1337	refused unknown-flag (marked unknown-flag)	log-detour fixed --no-verify usage
+README.md:1353	refused id-as-flag (marked id-as-flag)	remove-epic --id e2
+README.md:1362	refused unknown-flag (marked unknown-flag)	integrity --force

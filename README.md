@@ -343,7 +343,7 @@ names — could not clear those 29, because an epic that ended has no open item 
 ## Commands
 
 > **BREAKING (unreleased): every engine verb refuses what it does not read.** An undeclared flag,
-> an unquoted multi-word value, `remove-epic <id> --cascade true` and a `--flag=value` on a
+> an unquoted multi-word value, `remove-epic <id> --cascade true`<!-- pm:refused extra-positional --> and a `--flag=value` on a
 > valueless flag now exit 1 having written nothing, and a `--help` anywhere outside a flag's value
 > prints help instead of performing the write. See "What a command line may carry" below.
 
@@ -1282,7 +1282,7 @@ not conclude the verb is impoverished and go back to the source.
 Help never touches state. A `--help` or `-h` **anywhere after the verb** prints that verb's help,
 exits 0 and writes nothing — whatever else the line carries, so `remove-epic e2 --bogus --help`
 prints help rather than refusing `--bogus`. The one exception is a flag's VALUE position:
-`add-epic --id h1 --title --help` is refused (see below), because there the token was data, not a
+`add-epic --id h1 --title --help`<!-- pm:refused help-in-value-position --> is refused (see below), because there the token was data, not a
 request. From 0.41.0 through 0.43.0 only the first token after the verb was honoured, and a trailing help
 token reached the verb as data: `remove-epic e2 --help` removed `e2`.
 
@@ -1298,10 +1298,10 @@ Every managed repo receives this same routing in its `CLAUDE.md` rules block on 
 
 > **BREAKING (unreleased).** A command line the engine does not read is refused, not acted on.
 > An undeclared flag, a surplus positional (an unquoted multi-word value included), a value given
-> to a valueless flag (`remove-epic <id> --cascade true`, `--force=1`) and, outside the free-text
+> to a valueless flag (`remove-epic <id> --cascade true`<!-- pm:refused extra-positional -->, `--force=1`) and, outside the free-text
 > verbs, a `--`-leading token that is not a flag (`--Steal`) each exit 1 having written nothing.
 > Every one of them used to exit 0: 38 of the 50 verbs accepted an undeclared flag, and
-> `add-epic … --title My Title` stored `My`.
+> `add-epic … --title My Title`<!-- pm:refused extra-positional --> stored `My`.
 
 One check, run before dispatch, decides for **every** dispatched verb what its command line may
 carry. It reads the same declarations help projects — the verb's flags, how many positionals it
@@ -1332,9 +1332,9 @@ conductor: add-epic takes no positional arguments — 'Title' is an extra argume
   If 'Title' belongs to --title's value, quote the whole value.
 ```
 
-A free-text verb that reads one text says so (`suggest-lane fix a typo` →
-`suggest-lane reads ONE text argument — quote it.`), and every free-text verb carries the same
-hint when an unquoted word looks like a flag (`log-detour fixed --no-verify usage` →
+A free-text verb that reads one text says so (`suggest-lane fix a typo`<!-- pm:refused extra-positional --> →
+`suggest-lane reads ONE text argument — quote it.`<!-- pm:engine-message -->), and every free-text verb carries the same
+hint when an unquoted word looks like a flag (`log-detour fixed --no-verify usage`<!-- pm:refused unknown-flag --> →
 `If '--no-verify' is part of the text, quote the whole value.`). On the four free-text verbs — `triage`, `suggest-lane`,
 `log-detour` and `honcho-memory` — a quoted text that begins with `--` but is not shaped like a
 flag (`log-detour "--no-verify was used on the hotfix"`) is still text.
@@ -1350,7 +1350,7 @@ conductor: --cascade takes no value — '--cascade=true' gives it one, and remov
 ```
 
 **An epic id is positional wherever a verb takes one**, and `--id` in its place is diagnosed with
-the line you meant (`remove-epic --id e2` → ``write `remove-epic <id> ...`, i.e. `remove-epic e2` ``).
+the line you meant (`remove-epic --id e2`<!-- pm:refused id-as-flag --> → ``write `remove-epic <id> ...`, i.e. `remove-epic e2` ``).
 
 **Order is free.** Positionals and flags may come in any order: the engine hands each verb its
 positionals first, its flags in their original relative order, and argv-level flags last. So
@@ -1359,7 +1359,7 @@ positional, `log-detour fixed it --force` logs `fixed it`, and `set-active --for
 `e2`.
 
 **`--force` is accepted on every mutating verb and refused on every read-only one**
-(`integrity --force` → `unknown flag --force for integrity — it accepts no flags`). It belongs to
+(`integrity --force`<!-- pm:refused unknown-flag --> → `unknown flag --force for integrity — it accepts no flags`). It belongs to
 the guarded state write, not to any verb's parser, which is why `add-epic`, `update-epic` and
 `claim` now accept it where their own allowlists refused it. On `honcho-memory` and `purge-logs`,
 whose writes never reach the state write, it is accepted and does nothing.

@@ -91,12 +91,12 @@ is the same thing without a plan printed first.
   other one, so a shell that ate a value is a refusal rather than an empty window, an epic id
   matching no event, or a silent fall-back to `--kind all`. `purge-logs`' own checks still run
   after that rule — `--keep abc` carries a value and is still refused as not a whole number.
-- **An undeclared flag is refused by name.** `activity --bogus` exits non-zero rather than
+- **An undeclared flag is refused by name.** `activity --bogus`<!-- pm:refused unknown-flag --> exits non-zero rather than
   printing the report. This is no longer these verbs' own check: one pre-dispatch check refuses
   an undeclared flag and a surplus positional on every engine verb, before anything is written,
   naming the flags the verb does accept — so a typo answers no question at all rather than quietly
   answering a different one. `set-activity-log`'s `on|off` is its one positional, so
-  `set-activity-log on extra` is refused too. `--help` anywhere after the verb prints help and
+  `set-activity-log on extra`<!-- pm:refused extra-positional --> is refused too. `--help` anywhere after the verb prints help and
   toggles nothing. `purge-logs` accepts `--force` because it mutates, and it has no effect there.
 
 ## What it does not do
