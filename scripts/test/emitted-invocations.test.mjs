@@ -943,8 +943,16 @@ const INTEGRITY_BUILDERS = {
       meaning: (fx) => ({ "attribute-commit": fx.shipped }),
     },
     {
-      // 2.2 — archived delivered, C1 attributed under a Gate 2 headed at C1, C1 amended to C2; Gate 2
-      // re-recorded over C2, then C1 withdrawn: the record attributes nothing, having withdrawn C1.
+      // 2.2 — archived delivered, C1 attributed under a Gate 2 headed at C1, C1 amended to C2, C1
+      // withdrawn: the record attributes nothing, having withdrawn C1 — with its passing Gate 2 STILL
+      // headed at C1 (Gate 2 E-I6). NOT REACHABLE BY VERBS, so the two attribution fields are written by
+      // hand: every verb path to "delivered, attributes nothing, withdrew C1" passes through a refusal —
+      // withdrawing C1, or withdrawing Gate 2, is refused on the archived record as breaking
+      // `delivered`; the only accepted order re-records Gate 2 over C2 first, where attributing alone
+      // already works. In THIS state `--attribute-commit C2` alone EXITS 0 (the record was already
+      // broken, so it is no regression) and clears this finding — but leaves Gate 2 stale, so the
+      // archive gate would refuse the record's `delivered`. The alternative's check therefore re-runs
+      // the archive gate on it, which a remedy printing the attribution first, or alone, fails.
       case: "withdrawn",
       setup() {
         const repo = remedyRepo();
@@ -952,14 +960,35 @@ const INTEGRITY_BUILDERS = {
         passGate2(repo, "wd", repo.parent(c1), c1);
         repo.ok(["update-epic", "wd", "--status", "archived", "--outcome", "delivered", "--no-deferrals"]);
         const c2 = repo.amend(c1, "feat(wd): amended");
-        passGate2(repo, "wd", repo.parent(c2), c2);
-        repo.ok(["update-epic", "wd", "--withdraw-commit", c1, "--withdrawal-reason", `amended into ${c2.slice(0, 7)}`]);
+        const state = repo.state();
+        const wd = state.epics.find(e => e.id === "wd");
+        wd.attributedCommits = [];
+        wd.withdrawnCommits = [{ sha: c1, reason: `amended into ${c2.slice(0, 7)}`, withdrawnAt: AT }];
+        writeState(repo.cwd, state);
         assert.deepEqual(repo.epic("wd").attributedCommits, [], "fixture: C1 withdrawn");
+        assert.equal(repo.epic("wd").gateReview.gate2.headSha, c1, "fixture: Gate 2 is still headed at C1");
         return { repo, epicId: "wd", replacing: c2 };
+      },
+      observe(fx) {
+        // The order is load-bearing: the re-record precedes the attribution, as the obligation prints it.
+        const order = engineInvocations(integrityBlock(fx.repo, "delivered-epic-attributed-no-commits")).map(i => i.text);
+        const g = order.findIndex(t => t.startsWith("record-gate-review wd --gate 2"));
+        const a = order.findIndex(t => t.includes("--attribute-commit"));
+        assert.ok(g !== -1 && a !== -1 && g < a, `the Gate 2 re-record is printed BEFORE --attribute-commit: ${order.join(" | ")}`);
       },
       produce: integrityProducer("delivered-epic-attributed-no-commits"),
       reported: blockHas(),
       meaning: (fx) => ({ "base-sha": fx.repo.parent(fx.replacing), "head-sha": fx.replacing, "attribute-commit": fx.replacing }),
+      alternatives: [{
+        name: "remedy",
+        cleared(fx) {
+          const out = integrityBlock(fx.repo, "delivered-epic-attributed-no-commits");
+          assert.ok(!out.includes("`wd`"), `step 5: still reported:\n${out}`);
+          const gate = fx.repo.run(["update-epic", "wd", "--status", "archived", "--outcome", "delivered", "--reason", REASON,
+            "--correct-disposition", REASON, "--no-deferrals"]);
+          assert.equal(gate.status, 0, `the record's delivered must still pass the archive gate (Gate 2 not left stale):\n${gate.stderr}`);
+        },
+      }],
     },
   ],
   "archived-openspec-epic-with-no-gate-1": {

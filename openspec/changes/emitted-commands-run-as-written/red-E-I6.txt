@@ -1,0 +1,9 @@
+# Gate 2 E-I6 — test-only fix, so the RED is mutation survival. Mutants on integrity's withdrawn arm:
+# m06b prints --attribute-commit alone (.slice(1)); m06d prints the pair attribute-first (.reverse()).
+# Run: emitted-invocations.test.mjs alone, filtered to delivered-epic-attributed-no-commits.
+## before (HEAD test file)
+m06b_integrity_attr_only: exit=0 pass=3 fail=0 SURVIVED
+m06d_integrity_attr_first: exit=0 pass=3 fail=0 SURVIVED
+## after
+m06b_integrity_attr_only: exit=1 pass=2 fail=1 KILLED by: ✖ Layer B integrity:delivered-epic-attributed-no-commits [withdrawn] {remedy} — the remedy clears what printed it (407.244ms) | ✖ failing tests:
+m06d_integrity_attr_first: exit=1 pass=2 fail=1 KILLED by: ✖ Layer B integrity:delivered-epic-attributed-no-commits [withdrawn] {remedy} — the remedy clears what printed it (391.743083ms) | ✖ failing tests:

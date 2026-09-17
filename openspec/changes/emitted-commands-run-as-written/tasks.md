@@ -100,8 +100,10 @@ Pairs: 2.1–2.8 (incl. 2.7a) land with 2.9.
       parent) BEFORE `--attribute-commit C2`, and followed in that order each exits 0 and the
       invocation then exits 0 with `delivered` kept (fails today: it prints attribute-first, and
       `--attribute-commit C2` exits 1); AND `integrity`'s `delivered-epic-attributed-no-commits`
-      withdrawn arm (same fixture, Gate 2 re-recorded over C2 and C1 then withdrawn) prints that same
-      pair in that order, each exits 0 and the finding clears (fails today: it prints
+      withdrawn arm prints that same pair in that order, each exits 0 and the finding clears — its
+      fixture (Gate 2 E-I6) keeps Gate 2 headed at C1, written by hand because no verb reaches that state,
+      asserts the order, and re-runs the archive gate on `delivered` after the remedy, which an
+      attribute-first or attribute-alone remedy leaves stale (fails today: it prints
       `--attribute-commit` alone, not the shared pair); its never-withdrawn arm keeps
       `--attribute-commit` alone
 - [x] 2.3 RED: `delivered-release-epic-left-open` on an openspec member with no Gate 2 — alternative 1
