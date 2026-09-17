@@ -1254,6 +1254,19 @@ const INTEGRITY_BUILDERS = {
         assert.deepEqual(fx.repo.state().secondaryTrackers.map(t => t.repo), ["o/s"]);
       } }],
     },
+    // Gate 2 R-M1 — a stored value that is itself flag-shaped. Passed as `--repo '--help'` the parser reads
+    // `--help` as a flag and refuses the removal; only the inline `--repo=<value>` form carries it as data.
+    {
+      case: "secondary, flag-shaped value",
+      setup: () => ({ repo: trackerRepo(null, [{ system: "github-issues", repo: "--help", role: "secondary", direction: "inward" }]) }),
+      produce: integrityProducer("tracker-repo-not-a-github-repository"),
+      reported: (out) => /secondary/.test(out),
+      meaning: () => ({ repo: "o/s" }),
+      alternatives: [{ name: "remove, then re-record", cleared(fx) {
+        assert.doesNotMatch(integrityBlock(fx.repo, "tracker-repo-not-a-github-repository"), /secondary/);
+        assert.deepEqual(fx.repo.state().secondaryTrackers.map(t => t.repo), ["o/s"]);
+      } }],
+    },
   ],
   "recorded-sha-the-repository-cannot-resolve": [
     {
@@ -2246,6 +2259,32 @@ test("4.2 a legacy malformed github-issues repo loads for every read verb, and n
   const secondary = rulesBlock(null, "standard", [{ system: "github-issues", repo: HOSTILE_REPO, role: "secondary" }], "claude-code");
   assert.deepEqual([...secondary.replace(/\n\s+/g, " ").matchAll(/`([^`]+)`/g)].map(m => m[1]).filter(t => t.includes(HOSTILE_REPO)), [],
     "nor for a legacy secondary");
+  // Gate 2 X-B2 — integrity's output too. The value never appears unquoted: outside a code span it is
+  // JSON-quoted data, and the ONLY code span carrying it is the secondary's removal, where it is one
+  // shell-quoted word in inline `--repo=` form (R-M1). The primary's remedy carries no span with it.
+  const both = trackerRepo({ system: "github-issues", repo: HOSTILE_REPO, direction: "inward" },
+    [{ system: "github-issues", repo: HOSTILE_REPO, role: "secondary", direction: "inward" }]);
+  const out = integrityBlock(both, "tracker-repo-not-a-github-repository");
+  const carrying = [...out.matchAll(/`([^`]+)`/g)].map(m => m[1]).filter(t => t.includes(HOSTILE_REPO));
+  assert.deepEqual(carrying, ["set-tracker --role secondary --system github-issues --repo='a/b; touch pwned' --remove"],
+    `integrity's only span carrying the value is the secondary removal, shell-quoted:\n${out}`);
+  const bare = out.replace(/`[^`]+`/g, "").split(JSON.stringify(HOSTILE_REPO)).join("");
+  assert.ok(!bare.includes(HOSTILE_REPO), `outside a code span the value is only ever JSON-quoted:\n${out}`);
+});
+
+test("R-M2 integrity's secondary removal, run through sh as printed, expands nothing and removes the entry", () => {
+  // JSON.stringify would print `"a/$(touch PWN)"`, which sh still expands inside double quotes; the
+  // shell-quoted word does not. Each value is removed by the printed line alone, run as a shell reads it.
+  for (const value of ["a/$(touch PWN)", "--help", "--remove"]) {
+    const repo = trackerRepo(null, [{ system: "github-issues", repo: value, role: "secondary", direction: "inward" }]);
+    const out = integrityBlock(repo, "tracker-repo-not-a-github-repository");
+    const [line] = [...out.matchAll(/`([^`]+)`/g)].map(m => m[1]).filter(t => t.includes("--remove"));
+    assert.ok(line, `a removal line is printed for ${JSON.stringify(value)}:\n${out}`);
+    const r = shRun(repo.cwd, line);
+    assert.equal(r.status, 0, `\`${line}\` exited ${r.status}:\n${r.stderr}`);
+    assert.ok(!fs.existsSync(path.join(repo.cwd, "PWN")), `running \`${line}\` created PWN`);
+    assert.deepEqual(repo.state().secondaryTrackers || [], [], `${JSON.stringify(value)} is removed`);
+  }
 });
 
 test("4.3 switching a github-issues primary to jira drops the old repo and names it", async () => {

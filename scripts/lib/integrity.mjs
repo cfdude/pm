@@ -837,7 +837,8 @@ export const CHECKS = [
      *  that tracker's `gh issue list` step (Gate 2 E-I2). This check is where that is said, with the
      *  re-record that restores it. The legacy value is printed JSON-quoted with controls escaped; in
      *  the secondary's removal line it is shell-quoted as ONE word, since `--remove` matches it exactly,
-     *  unless it holds a control character, which no printed command may carry. */
+     *  and passed in inline `--repo=` form so a flag-shaped value (`--help`) is read as data rather than
+     *  as a flag (Gate 2 R-M1) — unless it holds a control character, which no printed command may carry. */
     run(state) {
       const out = [];
       const entries = [
@@ -852,7 +853,7 @@ export const CHECKS = [
           : (CONTROL_CHARACTER.test(t.repo)
             ? "remove it with set-tracker's secondary `--remove`, passing the recorded value exactly as its " +
               "`--repo` (it holds a control character, so no command carrying it is printed), then "
-            : `remove it — \`set-tracker --role secondary --system github-issues --repo ${shellQuote(t.repo)} --remove\` — then `) +
+            : `remove it — \`set-tracker --role secondary --system github-issues --repo=${shellQuote(t.repo)} --remove\` — then `) +
             "re-record it: `set-tracker --role secondary --system github-issues --repo <owner/name>` " +
             "(`HOST/owner/name` on GitHub Enterprise)";
         out.push({ detail: `the ${role} github-issues tracker records repo ${shown}, which is not [HOST/]owner/name, ` +

@@ -219,7 +219,11 @@ Pairs: 4.1–4.4 land with 4.7.
       AND on a github-issues primary recording `o/n`, `set-tracker --repo 'a/b; touch pwned' --remove`
       is refused the same way (Gate 2 E-C1: the exemption had let it be saved)
 - [x] 4.2 RED: a hand-written legacy state carrying that repo on the primary loads for every read verb,
-      and the rules block contains no shell line with the value (fixture passes the strict reader)
+      and the rules block contains no shell line with the value (fixture passes the strict reader);
+      AND (Gate 2 X-B2) `integrity`'s output never carries it unquoted — its only code span with the
+      value is the secondary removal, `--repo=<shell-quoted>` (Gate 2 R-M1, with a Layer B case for a
+      stored `--help`); AND (Gate 2 R-M2) that removal, run through `sh` as printed for `a/$(touch PWN)`,
+      `--help` and `--remove`, creates no file and removes the entry (kills a `JSON.stringify` mutant)
 - [x] 4.3 RED: a github-issues primary `repo: "o/n"` switched with `--system jira --project ABC` records
       no `repo`, the output names `repo` as dropped, and the jira section and id name `ABC`
 - [x] 4.4 RED: a legacy github-issues primary with NO recorded direction switched with `--system jira

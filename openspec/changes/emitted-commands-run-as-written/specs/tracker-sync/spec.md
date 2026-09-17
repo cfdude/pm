@@ -275,7 +275,9 @@ new, so a legacy malformed entry stays removable. `--remove` on the primary role
 primary has no remove, so the value would otherwise be recorded.
 A value recorded before this rule that does not have that shape SHALL NOT fail any read; emitters
 treat it as absent for the purpose of building a shell command, and `integrity` SHALL name it with
-the `set-tracker` re-record that restores its listing step, so the lost step is never silent.
+the `set-tracker` re-record that restores its listing step, so the lost step is never silent. For a
+secondary, `integrity` names its removal first, carrying the recorded value as one shell-quoted word
+in inline `--repo=<quoted>` form.
 
 #### Scenario: A repository carrying a shell metacharacter is refused
 - **WHEN** the agent runs `set-tracker --system github-issues --repo 'a/b; touch pwned'`
@@ -295,7 +297,10 @@ the `set-tracker` re-record that restores its listing step, so the lost step is 
 
 #### Scenario: A legacy malformed repository still loads
 - **WHEN** a state file recorded before this rule carries such a repository
-- **THEN** every read verb succeeds, and no emitted shell command contains the value
+- **THEN** every read verb succeeds, and the value never appears unquoted in any output: the only
+  emitted command carrying it is `integrity`'s removal of a secondary, where it is one shell-quoted word
+  in inline `--repo=<quoted>` form, so a shell expands nothing in it and a flag-shaped value (`--help`)
+  is read as data (Gate 2 X-B2, R-M1); everywhere else it is JSON-quoted data or absent
 
 #### Scenario: A GitHub Enterprise repository is accepted
 - **WHEN** the agent runs `set-tracker --system github-issues --repo ghe.example.com/o/n`, for either role
