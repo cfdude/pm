@@ -5442,7 +5442,7 @@
       "id": "gh-cfdude-pm-168",
       "title": "/pm:upgrade hardcodes the engine path, so it silently re-stamps the OLD version",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -5480,7 +5480,18 @@
       ],
       "externalUpdatedAt": "2026-09-03T22:53:16Z",
       "createdAt": "2026-09-08T17:55:42-07:00",
-      "touchedAt": "2026-09-10T04:38:20.821Z"
+      "touchedAt": "2026-09-17T22:52:20.080Z",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-17T22:52:20.077Z",
+        "reason": "the command doc resolves the engine from CLAUDE_PLUGIN_ROOT with a newest-cache fallback, so an upgrade no longer re-stamps the old version; verified on 0.45.0"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-17T22:52:20.076Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-17T22:52:20.077Z"
     },
     {
       "id": "gh-cfdude-pm-169",
@@ -5828,7 +5839,7 @@
       "id": "gh-cfdude-pm-173",
       "title": "Auto-detour fires on pm's own bookkeeping commits (chore(conductor): ...)",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -5856,7 +5867,18 @@
         }
       ],
       "createdAt": "2026-09-08T17:55:42-07:00",
-      "touchedAt": "2026-09-10T04:37:01.148Z"
+      "touchedAt": "2026-09-17T19:46:53.987Z",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-17T19:46:53.984Z",
+        "reason": "retract-detour <sha> --reason ships as the verb-shaped inverse of an automatic detour row, and the hook no longer writes one for the active epic's own artifacts; 0.45.0"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-17T19:46:53.984Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-17T19:46:53.984Z"
     },
     {
       "id": "disposition-backfill-undispositioned-archive",
@@ -6896,7 +6918,7 @@
       "id": "gh-cfdude-pm-184",
       "title": "post-commit hook classifies chore(release) commits as MINIMAL detours",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -6912,20 +6934,31 @@
       "externalUpdatedAt": "2026-09-15T18:33:12Z",
       "attributedCommits": [],
       "createdAt": "2026-09-14T18:18:09.265Z",
-      "touchedAt": "2026-09-16T21:14:42.070Z",
+      "touchedAt": "2026-09-17T19:46:54.545Z",
       "notes": [
         {
           "at": "2026-09-14T18:18:12.117Z",
           "actor": "agent",
           "text": "lane: superpowers not (none routed) — suggest-lane returned no lane; the repo heuristic for a single-subsystem defect fix. Re-decide at triage."
         }
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-17T19:46:54.543Z",
+        "reason": "the commit hook reads the whole HEAD movement from a reflog anchor and classifies from paths, not a subject prefix; 0.45.0"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-17T19:46:54.542Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-17T19:46:54.543Z"
     },
     {
       "id": "gh-cfdude-pm-195",
       "title": "A nested conductor logs its own bookkeeping commits as AUTO-DETOURs — headChangedFiles returns git-root paths",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -6946,14 +6979,25 @@
       "externalUpdatedAt": "2026-09-14T18:17:00Z",
       "attributedCommits": [],
       "createdAt": "2026-09-14T18:18:14.041Z",
-      "touchedAt": "2026-09-14T18:18:15.985Z",
+      "touchedAt": "2026-09-17T19:46:55.469Z",
       "notes": [
         {
           "at": "2026-09-14T18:18:15.982Z",
           "actor": "agent",
           "text": "lane: superpowers not (none routed) — suggest-lane returned no lane; the repo heuristic for a single-subsystem defect fix. Re-decide at triage."
         }
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-17T19:46:55.466Z",
+        "reason": "changed paths are compared from the conductor root and read with -z, so a nested conductor's own bookkeeping is never auto-logged; 0.45.0"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-17T19:46:55.465Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-17T19:46:55.466Z"
     },
     {
       "id": "gh-cfdude-pm-196",
@@ -7040,7 +7084,7 @@
       "id": "gh-cfdude-pm-189",
       "title": "unconsidered-outcomes emits an invocation the archive gate refuses, with no hint of the precondition",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -7050,7 +7094,7 @@
       "externalUpdatedAt": "2026-09-15T05:12:13Z",
       "attributedCommits": [],
       "createdAt": "2026-09-14T18:18:29.810Z",
-      "touchedAt": "2026-09-16T21:14:43.869Z",
+      "touchedAt": "2026-09-17T19:46:55.018Z",
       "notes": [
         {
           "at": "2026-09-14T18:18:31.859Z",
@@ -7062,7 +7106,18 @@
           "actor": "agent",
           "text": "Code review 0.43.0 (A2, D1): two more emitted remedies the engine refuses — archive-gate.mjs prints 'record-gate-review <id> --gate 2 --verdict pass' without --base-sha/--head-sha (exits 1), and integrity delivered-release-epic-left-open prints update-epic … --status archived --outcome delivered --no-deferrals, refused on an openspec member with no Gate 2."
         }
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-17T19:46:55.013Z",
+        "reason": "unconsidered-outcomes offers delivered only where the archive gate accepts it, and every entry carries deliveredBlockedBy with an ordered remedy per obligation; 0.45.0"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-17T19:46:55.013Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-17T19:46:55.014Z"
     },
     {
       "id": "archive-gate-reads-what-it-writes",
@@ -7488,7 +7543,7 @@
       "id": "gh-cfdude-pm-199",
       "title": "The post-commit ATTRIBUTION hint always names the active epic, even for a commit that belongs to the paused one",
       "priority": "P2",
-      "status": "untriaged",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [],
@@ -7498,14 +7553,25 @@
       "externalUpdatedAt": "2026-09-14T20:57:15Z",
       "attributedCommits": [],
       "createdAt": "2026-09-15T04:39:25.171Z",
-      "touchedAt": "2026-09-15T04:39:37.284Z",
+      "touchedAt": "2026-09-17T19:46:55.906Z",
       "notes": [
         {
           "at": "2026-09-15T04:39:37.281Z",
           "actor": "agent",
           "text": "lane: superpowers — suggest-lane returned no match (repo routing has no rule for it); generic heuristic: single-subsystem engine fix, 2–8h"
         }
-      ]
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-17T19:46:55.904Z",
+        "reason": "the attribution hint lists every candidate epic as a runnable command and decides none; 0.45.0"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-17T19:46:55.903Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-17T19:46:55.904Z"
     },
     {
       "id": "gh-cfdude-pm-198",
@@ -9297,6 +9363,52 @@
           "text": "Evidence from 0.45.0 user-text-never-forges-output: the task list named a site list; the apply run found ~20 more; Gate 2 found 5 more; the per-interpolation sweep then found 12 more. What binds a future flag is the completeness assertion (every registry entry has a recipe, unconstructable bound = 0), not the enumeration. See also docs/lessons/a-static-guard-over-dynamic-code-needs-declared-limits.md and docs/lessons/bind-rules-to-functions-not-enumerations.md"
         }
       ]
+    },
+    {
+      "id": "gh-cfdude-pm-204",
+      "title": "No engine verb lists epics; intake and deferral routing fall back to reading state.json",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "204",
+      "externalUrl": "https://github.com/cfdude/pm/issues/204",
+      "externalUpdatedAt": "2026-09-16T23:30:21Z",
+      "attributedCommits": [],
+      "createdAt": "2026-09-17T19:47:11.764Z",
+      "touchedAt": "2026-09-17T19:47:12.370Z",
+      "notes": [
+        {
+          "at": "2026-09-17T19:47:12.367Z",
+          "actor": "agent",
+          "text": "lane: superpowers not none — suggest-lane returned no match; resolved away from claude-code per the asymmetric tie-break (204 adds a verb with docs and tests; 205 changes gate-staleness semantics and needs a spec)"
+        }
+      ]
+    },
+    {
+      "id": "gh-cfdude-pm-205",
+      "title": "A required post-Gate-2 task's commit cannot be attributed without staling the verdict",
+      "priority": "P2",
+      "status": "untriaged",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [],
+      "reconcileNeeded": false,
+      "externalId": "205",
+      "externalUrl": "https://github.com/cfdude/pm/issues/205",
+      "externalUpdatedAt": "2026-09-16T23:30:23Z",
+      "attributedCommits": [],
+      "createdAt": "2026-09-17T19:47:13.184Z",
+      "touchedAt": "2026-09-17T19:47:13.647Z",
+      "notes": [
+        {
+          "at": "2026-09-17T19:47:13.644Z",
+          "actor": "agent",
+          "text": "lane: openspec not none — suggest-lane returned no match; resolved away from claude-code per the asymmetric tie-break (204 adds a verb with docs and tests; 205 changes gate-staleness semantics and needs a spec)"
+        }
+      ]
     }
   ],
   "detourStack": [],
@@ -9307,7 +9419,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1078,
+  "revision": 1088,
   "reviewMode": "thorough",
   "releases": [
     {
