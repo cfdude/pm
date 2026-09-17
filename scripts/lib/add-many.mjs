@@ -9,7 +9,7 @@ import { newStory, parentError, parseFlags, requireFlagValues } from "./add-epic
 import { isInitialized, loadState, pushEpic, saveState, readStdin } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
-import { ROOT, KNOWN_LANES, KNOWN_STATUSES, epicBatchKeys } from "./constants.mjs";
+import { EPIC_ID_FORMAT, ROOT, KNOWN_LANES, KNOWN_STATUSES, epicBatchKeys } from "./constants.mjs";
 import { creationStamp } from "./disposition.mjs";
 import { isKnownLinkType, KNOWN_LINK_TYPES, mergeLinks } from "./links.mjs";
 
@@ -58,7 +58,7 @@ export function addMany() {
   const batchIds = new Set();
   for (const e of incoming) {
     const id = e.id;
-    if (typeof id !== "string" || !/^[a-z0-9][a-z0-9._-]*$/.test(id)) die(`bad id '${id}' (format ^[a-z0-9][a-z0-9._-]*$)`);
+    if (typeof id !== "string" || !EPIC_ID_FORMAT.test(id)) die(`bad id '${id}' (format ${EPIC_ID_FORMAT.source})`);
     if (existingIds.has(id)) die(`epic '${id}' already exists`);
     if (batchIds.has(id)) die(`duplicate id '${id}' within the batch`);
     const unknownKeys = Object.keys(e).filter(k => !allowedKeys.includes(k));

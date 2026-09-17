@@ -37,7 +37,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { ROOT, SPECS_DIR } from "./constants.mjs";
+import { EPIC_ID_FORMAT, ROOT, SPECS_DIR } from "./constants.mjs";
 import { isInitialized, loadState } from "./state.mjs";
 import { artifactClaimants, normalizeArtifactPath } from "./source-artifacts.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
@@ -47,11 +47,10 @@ import { parseFlags, requireFlagValues } from "./add-epic.mjs";
  *  scanned for backticked code spans. */
 export const HEADER_SCAN_LINES = 15;
 
-/** The epic-id format `add-epic` enforces. Quoted here rather than imported for the reason
- *  EPIC_SOURCE_ARTIFACTS quotes its keys: this module must not grow a dependency edge for one
- *  regex. A candidate that could not be a legal epic id is not a candidate — it is how
- *  `docs/x/y-design.md` and `foo()` are excluded without a vocabulary of things to ignore. */
-const EPIC_ID = /^[a-z0-9][a-z0-9._-]*$/;
+/** The epic-id format `add-epic` enforces, imported from its one declaration in constants.mjs (an
+ *  edge this module already has). A candidate that could not be a legal epic id is not a candidate —
+ *  it is how `docs/x/y-design.md` and `foo()` are excluded without a vocabulary of things to ignore. */
+const EPIC_ID = EPIC_ID_FORMAT;
 
 /** Every backtick-quoted epic id the document's LEADING METADATA BLOCK names, with the label it
  *  appeared under. In document order, duplicates kept out.

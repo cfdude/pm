@@ -29,7 +29,7 @@ export function unconsideredOutcomesReport() {
   const rows = unconsideredOutcomes(state.epics || []);
   process.stdout.write(JSON.stringify({
     count: rows.length,
-    unconsidered: rows.map(({ epic, invocation }) => ({
+    unconsidered: rows.map(({ epic, invocation, deliveredBlockedBy }) => ({
       id: epic.id,
       title: epic.title || epic.id,
       lane: epic.lane || "openspec",
@@ -41,6 +41,10 @@ export function unconsideredOutcomesReport() {
       recordedBy: recordedByOf(epic),
       recordedAt: (epic.disposition && epic.disposition.recordedAt) || null,
       invocation,
+      // What blocks `delivered` for this epic, each `{kind, detail, remedy}` — always present, `[]`
+      // when nothing does. The invocation above omits `delivered` exactly when this is non-empty
+      // (gh-189: 12 of 20 openspec-lane entries were refused when `delivered` was substituted).
+      deliveredBlockedBy,
     })),
   }, null, 2) + "\n");
 }

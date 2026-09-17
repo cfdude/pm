@@ -79,7 +79,7 @@ Pairs: 1.2–1.5 land with 1.6.
 
 Pairs: 2.1–2.8 (incl. 2.7a) land with 2.9.
 
-- [ ] 2.1 RED: Layer B harness over three EXPORTED registries — `CHECKS` (integrity),
+- [x] 2.1 RED: Layer B harness over three EXPORTED registries — `CHECKS` (integrity),
       `DELIVERED_OBLIGATIONS` (archive-gate) and `BRIEF_REMEDIES` (briefing) — plus the
       `unconsidered-outcomes` and regression-refusal printers; a registry id with no builder fails
       naming it; the declared-`unconstructable` count is asserted equal to 0. Each builder follows
@@ -91,7 +91,7 @@ Pairs: 2.1–2.8 (incl. 2.7a) land with 2.9.
       `attributedCommits`; the amend builder also has a `prints: none` variant for the path where
       update-epic would refuse that withdraw (change 1 suppresses the line only there), asserting no
       withdraw line is printed; each `--attribute-commit` line attributes to its epic. (Fails today: the two registries are not exported.)
-- [ ] 2.2 RED: stale Gate 2 (a commit attributed after the reviewed head) — the archive refusal's
+- [x] 2.2 RED: stale Gate 2 (a commit attributed after the reviewed head) — the archive refusal's
       remedy filled with base = parent of the first attributed commit and head = the last attributed
       commit exits 0 and the same archive then succeeds; missing and withdrawn Gate 2 likewise;
       AND attribution-withdrawn reaching the archive gate out of order (2.6's case E fixture: run the
@@ -104,17 +104,17 @@ Pairs: 2.1–2.8 (incl. 2.7a) land with 2.9.
       pair in that order, each exits 0 and the finding clears (fails today: it prints
       `--attribute-commit` alone, not the shared pair); its never-withdrawn arm keeps
       `--attribute-commit` alone
-- [ ] 2.3 RED: `delivered-release-epic-left-open` on an openspec member with no Gate 2 — alternative 1
+- [x] 2.3 RED: `delivered-release-epic-left-open` on an openspec member with no Gate 2 — alternative 1
       (archive) in one fixture: Gate 2 precondition named first, each command exits 0, `integrity` no
       longer reports the member; alternative 2 (`release --defer`) in a second fresh fixture, same
       assertion (`repro.txt` §D1-D2)
-- [ ] 2.4 RED: `unconsidered-outcomes` on an engine-stamped openspec-lane epic with no Gate 2 — the
+- [x] 2.4 RED: `unconsidered-outcomes` on an engine-stamped openspec-lane epic with no Gate 2 — the
       invocation's choices exclude `delivered`, `deliveredBlockedBy` names `gate2-missing` with its
       remedy; one fresh fixture per offered outcome, each exits 0 and the epic leaves the set (gh-189;
       `repro.txt` §D3)
-- [ ] 2.5 RED: `epic-in-undefined-status` on an openspec-lane epic with no Gate 2 — the printed archive
+- [x] 2.5 RED: `epic-in-undefined-status` on an openspec-lane epic with no Gate 2 — the printed archive
       invocation excludes `delivered`; each alternative clears the finding in its own fixture
-- [ ] 2.6 RED: regression refusal — `--attribute-commit` of a later commit on an archived `delivered`
+- [x] 2.6 RED: regression refusal — `--attribute-commit` of a later commit on an archived `delivered`
       openspec-lane epic is refused; the refusal names the Gate 2 re-record first and its invocation
       still offers `delivered`; following both with the range filled by meaning exits 0 and the
       original `--attribute-commit` then succeeds; AND the attribution-withdrawn variant on
@@ -127,23 +127,23 @@ Pairs: 2.1–2.8 (incl. 2.7a) land with 2.9.
       the refused command and that record only, not on a clean `integrity` (the fixture's
       back-to-back gates trip `gate-recorded-as-bookkeeping`). (Fails today: the refusal names only
       the disposition invocation, which exits 1.)
-- [ ] 2.7 RED: `recorded-sha-the-repository-cannot-resolve` (orphan-branch commit recorded, branch
+- [x] 2.7 RED: `recorded-sha-the-repository-cannot-resolve` (orphan-branch commit recorded, branch
       deleted, `git reflog expire --expire=now --all`, `git gc --prune=now`, plus one reachable
       attributed commit so the check's resolvability probe does not skip the absent arm — first
       assert the finding IS reported) and the malformed-value arm
       on a Gate 1 range — the Gate 1 remedy carries `--artifact`, not a range, and clears the finding
-- [ ] 2.7a RED: a legacy epic id `My Plan` in a hand-written state (passes the strict reader) — the
+- [x] 2.7a RED: a legacy epic id `My Plan` in a hand-written state (passes the strict reader) — the
       drift-heal disposition remedy (`integrity.mjs:357`), the attribute-commit remedy (`:293,295`), the
       nudge's `--attribute-commit` line and its `--withdraw-commit` line print it shell-quoted; each, run, exits 0 and clears its
       condition
       (the control-character id case is not tested here; it is owned by `user-text-never-forges-output` task 5.3a)
-- [ ] 2.8 REGRESSION GUARD: a `claude-code`-lane unconsidered entry still offers `delivered` with
+- [x] 2.8 REGRESSION GUARD: a `claude-code`-lane unconsidered entry still offers `delivered` with
       `deliveredBlockedBy: []` and clears when run with `delivered`; the regression refusal still
       prints its echoed tokens, `--correct-disposition` and exactly one line beginning `  update-epic `;
       and `deliveredObligations()` still reports Gate 2 failures under `kind: "gate2"` (the variant id
       lives in its own field), so a withdrawal on an archived delivered record whose Gate 2 is ALREADY
       stale still exits 0 — commit-nudge Decision 7's `deliveredRegression` compares by that kind
-- [ ] 2.9 GREEN: `DELIVERED_OBLIGATIONS` and `BRIEF_REMEDIES` exported and consumed by
+- [x] 2.9 GREEN: `DELIVERED_OBLIGATIONS` and `BRIEF_REMEDIES` exported and consumed by
       `deliveredObligations()` and `buildBrief()`; `gateRemedy(id, gate)` at every Gate-remedy site
       (design Decision 2, incl. the `+`-split forms at `archive-gate.mjs:426,431-432` and the
       gate-aware `integrity.mjs:750-752`); `dispositionInvocation(epic, {keepDelivered})` and

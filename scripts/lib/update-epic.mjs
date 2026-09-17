@@ -4,7 +4,7 @@
 
 import {
   EPIC_FLAGS, KNOWN_GATE_NUMBERS, KNOWN_LANES, KNOWN_STATUSES, KNOWN_REVIEW_MODES, REVIEW_MODE_RANK,
-  CONTROL_CHARACTER, epicFlagsFor, escapeControls, isFlagToken, nullableEpicFlags, splitFlagToken,
+  CONTROL_CHARACTER, epicFlagsFor, escapeControls, isFlagToken, nullableEpicFlags, printedId, shellQuote, splitFlagToken,
 } from "./constants.mjs";
 import { activate, owedReconcileNotice } from "./active-pointer.mjs";
 import { globalReviewMode } from "./rules.mjs";
@@ -12,7 +12,7 @@ import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave } from "./save-report.mjs";
 import { noteEntry, parentError, parseFlags, parseLinkFlags, parseStoryFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
-import { archiveGate, AGENT_OUTCOMES, deliveredObligations, dispositionInvocation } from "./archive-gate.mjs";
+import { archiveGate, AGENT_OUTCOMES, deliveredObligations, dispositionInvocation, obligationRemedy } from "./archive-gate.mjs";
 import { deferralAssertion, isEngineStamped, isStoryDisposed, outcomeOf, storyDisposition, storyDispositionError } from "./disposition.mjs";
 import { isArchived } from "./epic-progress.mjs";
 import { claimArtifacts } from "./source-artifacts.mjs";
@@ -83,8 +83,6 @@ const INVOCATION_DROPPED_FLAGS = new Set([
 
 const REENTER_PLACEHOLDER = "<re-enter this value>";
 
-/** POSIX single-quoting: every token arrives whole, apostrophes included. */
-const shellQuote = (token) => `'${token.replace(/'/g, "'\\''")}'`;
 
 /** The refused call's own tokens, as the printed invocation echoes them. Decided by the same walk
  *  the command-line check (lib/argv-surface.mjs) makes over raw argv, never from parsed flags — parsing loses shape (a
@@ -199,7 +197,7 @@ export function withdrawnRecord(epic, { remaining, removed }, reason, withdrawnA
   };
 }
 
-function regressionRefusal({ id, snapshot, broken, argv, status }) {
+function regressionRefusal({ id, snapshot, next, broken, argv, status }) {
   const quoted = (v) => escapeControls(JSON.stringify(String(v ?? "")));
   const findings = broken.map(o => {
     // `items` is shaped BY KIND: the handoff's are stories (rendered exactly as before), and a
@@ -210,14 +208,32 @@ function regressionRefusal({ id, snapshot, broken, argv, status }) {
         : ` (${o.items.map(i => `story ${i.n} ${quoted(i.title)}`).join(", ")})`;
     return `  broken: the ${o.kind === "gate2" ? "Gate 2" : "handoff"} demand — ${escapeControls(o.detail)}${named}\n`;
   }).join("");
+  // THE REMEDY LINES, BEFORE THE INVOCATION (emitted-instructions: a remedy the engine will refuse
+  // must not be printed as the way out). Each broken obligation's lines come from
+  // DELIVERED_OBLIGATIONS — rendered once, read the same at every site naming that obligation — and
+  // are introduced by prose and set in code spans, so the invocation stays the ONLY line beginning
+  // `  update-epic `. They are computed on the record the edit would LEAVE (`next`): that is the
+  // record whose obligation must be met again.
+  const remedyLines = broken.flatMap(o => obligationRemedy(next, o));
+  const twoStep = broken.some(o => o.variant === "gate2-attribution-withdrawn");
+  const remedies = !remedyLines.length ? ""
+    : (twoStep
+      ? "  Meet it first. Run BOTH lines, in this order, before retrying — running only the re-record lets " +
+        "the withdrawal through with `delivered` attributing no commits, and attributing first is refused " +
+        "because the recorded Gate 2 head does not reach the new commit:\n"
+      : "  Meet it first, then retry this command:\n") +
+      remedyLines.map(l => `    - \`${l}\`\n`).join("");
   const { echoed, reenter } = echoedTokens(argv);
-  const invocation = dispositionInvocation(id, {
+  const invocation = dispositionInvocation(snapshot, {
     echoed,
     correction: !isEngineStamped(snapshot.disposition),
     deferrals: snapshot.deferralAssertion ? "asserted" : "placeholder",
+    // The stored `delivered` was considered; this refusal exists so the edit can be made without
+    // losing it, so the invocation keeps offering it (epic-disposition: the one excepted rendering).
+    keepDelivered: true,
   });
   return `conductor: this update to '${id}' would break an obligation its archived 'delivered' ` +
-    "record met, so nothing was written.\n" + findings +
+    "record met, so nothing was written.\n" + findings + remedies +
     (status !== undefined
       ? `  --status ${status} is dropped from the printed invocation, because the change directory ` +
         "archived on disk re-archives the epic whatever status this call writes.\n"
@@ -227,8 +243,8 @@ function regressionRefusal({ id, snapshot, broken, argv, status }) {
         `another control character and ${reenter.length === 1 ? "is" : "are"} not echoed: re-enter ` +
         `${reenter.length === 1 ? "it" : "them"} where the invocation shows ${REENTER_PLACEHOLDER}.\n`
       : "") +
-    "  To make this change, record the disposition it implies. The invocation runs the full archive " +
-    "gate on the record it leaves:\n" +
+    `  ${remedies ? "Or, once it is met, record" : "To make this change, record"} the disposition it implies. ` +
+    "The invocation runs the full archive gate on the record it leaves:\n" +
     `  ${invocation}\n`;
 }
 
@@ -925,7 +941,7 @@ export function updateEpic() {
     // Decision 7), so the hook can never print a withdrawal this refusal would refuse.
     const broken = deliveredRegression(id, snapshot, epic, { status: f.status });
     if (broken.length) {
-      process.stderr.write(regressionRefusal({ id, snapshot, broken, argv: argv.slice(1), status: str(f.status) }));
+      process.stderr.write(regressionRefusal({ id, snapshot, next: epic, broken, argv: argv.slice(1), status: str(f.status) }));
       process.exit(1);
     }
   }

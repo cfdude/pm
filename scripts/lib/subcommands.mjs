@@ -14,7 +14,7 @@ import { assertRulesBlockWritable, writeRules } from "./rules.mjs";
 import { buildBrief } from "./briefing.mjs";
 import { COMMIT_DERIVED_KINDS, appendDetourLog, appendRetraction, fullSha, gitShortSha, isCommitNameShaped, isDetachedTree, readDetourRows, rowMatches, rowShasOverlap, shortSha } from "./git.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
-import { escapeControls } from "./constants.mjs";
+import { escapeControls, printedId } from "./constants.mjs";
 import { beginObservation, isAmend, isLiveCommit } from "./commit-watch.mjs";
 import { deliveredRegression, planWithdrawal, withdrawnRecord } from "./update-epic.mjs";
 import { deferralHistory, deferralNote, detourContext } from "./links.mjs";
@@ -400,7 +400,7 @@ function supersedeAmended(state, candidates) {
       if (!plan.removed.length) continue;
       const next = { ...epic, ...withdrawnRecord(epic, plan, reason, new Date().toISOString()) };
       if (deliveredRegression(epic.id, epic, next, { status: undefined }).length) refused.push(epic.id);
-      else commands.push(`\`update-epic ${epic.id} --withdraw-commit ${replaced} --withdrawal-reason "${reason}"\``);
+      else commands.push(`\`update-epic ${printedId(epic.id)} --withdraw-commit ${replaced} --withdrawal-reason "${reason}"\``);
     }
     if (!retractedNow && !commands.length && !refused.length) continue;
     let text = `AMEND — \`${label}\` was ${reason} and is on no branch, so it is replaced, not added.`;
@@ -464,7 +464,7 @@ function attributionNudge(state, ctx, shas, files = []) {
   if (!list.length) return null;
   const candidates = attributionCandidates(state, ctx, files);
   if (!candidates.length) return null;
-  const cmd = (epic) => `update-epic ${epic.id} ${list.map(s => `--attribute-commit ${s}`).join(" ")}`;
+  const cmd = (epic) => `update-epic ${printedId(epic.id)} ${list.map(s => `--attribute-commit ${s}`).join(" ")}`;
   // The exclusion travels WITH the commands, once: the archive move is the one commit obeying them
   // would damage, since it lands after the reviewed range and makes the epic's own Gate 2 stale.
   const exclusion =

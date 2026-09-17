@@ -147,6 +147,10 @@ function closedItemStep(platform, sys, n = 6) {
     `   to the work; ${sys} closing an item does not say which one and pm will not guess. An epic`,
     "   that is already `archived` owes nothing here — it ended, and a record that ended does not",
     `   need a second ending. Then re-render with \`${pmCmd(platform, "status")}\`.`,
+    // This step prints a placeholder id and cannot know the epic, so it cannot omit `delivered` the
+    // way the epic-aware renderer does; it says where the epic-aware answer is instead.
+    "   For an openspec-lane epic, `delivered` also needs a passing Gate 2 — the archive gate refuses",
+    "   it otherwise, and `unconsidered-outcomes` or that refusal names the review to record first.",
   ];
 }
 

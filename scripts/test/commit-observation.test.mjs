@@ -9,6 +9,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { observationRepo } from "./helpers.mjs";
+import { printedId } from "../lib/constants.mjs";
 
 const OBSERVE_RECORD = (cwd) => path.join(cwd, ".conductor", "commit-observe.json");
 const readRecord = (cwd) => JSON.parse(fs.readFileSync(OBSERVE_RECORD(cwd), "utf8"));
@@ -603,7 +604,9 @@ function editState(repo, fn) {
 }
 const amend = (repo, message) => { repo.git("commit", "-q", "--amend", "-m", message); return repo.head(); };
 const retractedFor = (repo, full) => logRows(repo).filter((x) => x[2] === "RETRACTED" && full.startsWith(x[1]));
-const withdrawLine = (id, sha) => new RegExp(`update-epic ${id} --withdraw-commit ${sha} --withdrawal-reason "[^"]+"`);
+// The id as the engine PRINTS it (emitted-commands-run-as-written printedId): an id outside the epic id
+// format — this file's uppercase `E2` fixtures — is shell-quoted so it stays one argument.
+const withdrawLine = (id, sha) => new RegExp(`update-epic ${printedId(id)} --withdraw-commit ${sha} --withdrawal-reason "[^"]+"`);
 
 test("5.1 amending an auto-logged commit leaves one visible row; the log keeps the original and its retraction", () => {
   const repo = observationRepo();

@@ -1041,6 +1041,23 @@ export const CONTROL_CHARACTER = /[\u0000-\u001f\u007f-\u009f\u2028\u2029]/;
 export const escapeControls = (s) => String(s).replace(new RegExp(CONTROL_CHARACTER.source, "g"),
   c => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`);
 
+/** The epic id format every writer enforces (`add-epic`, `add-many`) and `verify-specs` reads
+ *  candidates by. ONE declaration: a second regex literal is a format that can drift from this one
+ *  (emitted-commands-run-as-written; user-text-never-forges-output asserts none remains elsewhere). */
+export const EPIC_ID_FORMAT = /^[a-z0-9][a-z0-9._-]*$/;
+
+/** POSIX single-quoting: the whole token arrives as ONE shell word, apostrophes included. Moved
+ *  here from update-epic.mjs so the regression refusal's echo and printedId() share one quoter. */
+export const shellQuote = (token) => `'${String(token).replace(/'/g, "'\\''")}'`;
+
+/** THE single printing site for a stored epic id inside a printed command. An id matching
+ *  EPIC_ID_FORMAT prints as it is; any other — a legacy `My Plan`, registered before ids were
+ *  validated — is shell-quoted, so the command still passes it as ONE argument. No renderer
+ *  interpolates `epic.id` into a command directly (emitted-instructions: "An epic id in a printed
+ *  command is always one shell word"); user-text-never-forges-output hooks its control-character
+ *  handling into this one function. */
+export const printedId = (id) => (EPIC_ID_FORMAT.test(String(id)) ? String(id) : shellQuote(id));
+
 /** gh#182's third rule, as ONE string: "this looks like a flag but arrived where a value was
  *  expected" names the flag being filled, quotes the token, and shows the `=` form that says it
  *  unambiguously. Shared by valuelessFlagError() (add-epic.mjs) and the pre-dispatch command-line
