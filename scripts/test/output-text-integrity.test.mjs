@@ -618,6 +618,52 @@ test("6.6c REGRESSION GUARD (Gate 2 T-M2): pushEpic() refuses an unstorable id i
   assert.equal(state.epics.length, 1, "an uppercase id is storable");
 });
 
+test("5.3f source guard (Gate 2 T-M4): no printer sets a no-remedy-capable builder's result in a code span itself", () => {
+  // The population is DERIVED: every top-level declaration (and every local `const x = (…) => orNoRemedy(`)
+  // in scripts/lib whose text can produce the no-remedy message. A caller must wrap such a result with
+  // asCode(), which leaves the message as prose; a hand-typed backtick around it makes prose read as a
+  // command. Catches the call form and the `.map(x => backtick${x}backtick)` form on the builder's own line.
+  // NOT traced: a builder result held in a variable assigned on an earlier line (5.3d's runtime assertion
+  // covers integrity's and unconsidered-outcomes' instances of that shape).
+  const libDir = new URL("../lib/", import.meta.url);
+  const BT = "`";
+  const files = fs.readdirSync(libDir).filter(f => f.endsWith(".mjs"));
+  const builders = new Set();
+  const decls = [];
+  for (const f of files) {
+    const src = fs.readFileSync(new URL(f, libDir), "utf8");
+    const heads = [...src.matchAll(/^(?:export\s+)?(?:async\s+)?(?:function\s+([\w$]+)|(?:const|let)\s+([\w$]+)\s*=)/gm)];
+    heads.forEach((m, i) => decls.push({ name: m[1] || m[2], body: src.slice(m.index, i + 1 < heads.length ? heads[i + 1].index : src.length) }));
+    for (const m of src.matchAll(/\bconst\s+([\w$]+)\s*=\s*\([^)]*\)\s*=>\s*orNoRemedy\(/g)) builders.add(m[1]);
+  }
+  const OWN = new Set(["orNoRemedy", "noRemedyMessage", "asCode", "NoRemedy", "NO_REMEDY_TEXTS"]);
+  // A declaration is a builder if it produces the message itself, or calls a builder (to a fixpoint) —
+  // obligationRemedy() reaches it only through DELIVERED_OBLIGATIONS' remedy lambdas.
+  for (let grew = true; grew;) {
+    grew = false;
+    for (const d of decls) {
+      if (OWN.has(d.name) || builders.has(d.name)) continue;
+      if (/\borNoRemedy\(|\bnoRemedyMessage\(/.test(d.body) || [...builders].some(b => new RegExp(`\\b${b}\\(`).test(d.body))) {
+        builders.add(d.name); grew = true;
+      }
+    }
+  }
+  assert.ok(["gateRemedy", "dispositionInvocation", "obligationRemedy", "cmd"].every(b => builders.has(b)),
+    `the derived population holds the known builders: ${[...builders].join(", ")}`);
+  const offenders = [];
+  for (const f of files) {
+    const lines = fs.readFileSync(new URL(f, libDir), "utf8").split("\n");
+    lines.forEach((line, i) => {
+      for (const b of builders) {
+        const call = BS + BT + "$" + "{" + b + "(";
+        const mapped = new RegExp(`\\b${b}\\([^\\n]*\\.map\\(\\(?(\\w+)\\)? => ${BT}\\\\${BT}\\$\\{\\1\\}`);
+        if (line.includes(call) || mapped.test(line)) offenders.push(`${f}:${i + 1} ${b}: ${line.trim().slice(0, 140)}`);
+      }
+    });
+  }
+  assert.deepEqual(offenders, [], "wrap a builder's result with asCode(), not a typed backtick");
+});
+
 test("5.3e (Gate 2 T-S2) upgrade over a legacy pmVersion holding a control character forges no line (legacy value, design D3 exception)", () => {
   const cwd = initRepo();
   legacyWrite(cwd, s => { s.pmVersion = "0.1.0" + LF + "FORGED" + NEL + "FORGED"; });
