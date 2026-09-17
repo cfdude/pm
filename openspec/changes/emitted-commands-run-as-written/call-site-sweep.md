@@ -170,11 +170,21 @@ named first, and a checkbox source's handoff (`obligationArchiveFlags()`) travel
   with an open task, or an open inline story, got a refused step. Now the E-I5 shape.
 - `dispositionInvocation()`'s other callers (`unconsidered-outcomes`, `integrity`'s
   `epic-in-undefined-status`) — hold without `carry`: they do not pass `keepDelivered`, so a failing handoff
-  omits `delivered` from the choices and `deliveredBlockedBy` names the obligation. NOT examined by this
-  rule and stated rather than claimed: for a CHECKBOX source that entry is `{kind: "handoff", detail: "N of
-  M task(s) outstanding", remedy: []}` (reproduced at 8ac7817) — it names no way past the block, because the
-  way past is a flag on a `delivered` archive this output does not offer. The archive gate's own refusal,
-  if `delivered` is attempted, names `--carried-to` and the lifecycle marker. Left for Gate 2 to rule on.
+  omits `delivered` from the choices and `deliveredBlockedBy` names the obligation.
+- `unconsidered-outcomes`' `deliveredBlockedBy` (`blockedDelivered()`) — **FINDING at Gate 2 (U-I1),
+  fixed:** for a CHECKBOX source the handoff entry was `{kind: "handoff", detail: "N of M task(s)
+  outstanding", remedy: []}` (reproduced at 8ac7817, `red-U-I1.txt`) — a block with no way past it. Its
+  remedy is now the `delivered` archive carrying `obligationArchiveFlags()`, rendered by the new
+  `deliveredArchiveInvocation()`, which integrity's two sites above now call too, so the three print one
+  line from one source. Layer B `unconsidered:handoff-checkbox` runs it and asserts the entry clears and the
+  epic stays; `unconsidered:handoff-stories` is a REGRESSION GUARD (its `--story <n> --done` remedy was
+  already non-empty and passes before the fix).
+- Every other consumer of an obligation remedy, re-derived with `rg -n "obligationRemedy\(|blockedDelivered|
+  deliveredBlockedBy" scripts/lib` — holds: `archiveGate()`'s handoff refusal prints `--carried-to` and
+  the lifecycle marker in prose for a checkbox source and reads `remedy[0]` only for stories;
+  `archiveGate()`'s Gate 2 cases and integrity's attribution-withdrawn arm read Gate 2 variants, whose
+  remedies are never empty; update-epic's regression refusal and integrity's two delivered steps pair an
+  empty handoff remedy with `carry` (R-I1, E-I5).
 - Justified: `rules.mjs`' closed-item step and the disposition rule are epic-agnostic instructions over
   `<id>` (their Gate 2 condition is stated beside them, E-M3), and `archive-gate.mjs`' own refusal lists
   the vocabulary in prose; neither is a command for a known record.

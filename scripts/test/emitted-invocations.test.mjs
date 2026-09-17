@@ -1612,6 +1612,63 @@ registerBuilder("unconsidered:claude-code (REGRESSION GUARD 2.8)", {
   alternatives: [{ name: "delivered", meaning: () => ({ outcome: "delivered", reason: REASON }) }],
 });
 
+// Gate 2 U-I1 (the E-I5 / R-I1 class) — a CHECKBOX source's handoff blocker named a block and an EMPTY
+// remedy: no verb ticks a checkbox, and the way past is a flag on a `delivered` archive. Its remedy is now
+// that archive, carrying the DELIVERED_OBLIGATIONS handoff flags. The producer prints each blocker's
+// remedy lines, so following them runs exactly what the JSON names.
+const blockerRemedies = (fx) => {
+  const u = unconsideredEntry(fx.repo, "uc");
+  return u ? u.deliveredBlockedBy.flatMap(b => b.remedy).map(l => `\`${l}\``).join("\n") : "";
+};
+const unconsideredWith = (extra) => () => {
+  const repo = remedyRepo();
+  repo.write({ epics: [
+    { id: "later", title: "later", priority: "P2", status: "queued", role: "epic", lane: "claude-code", links: [] },
+    { id: "uc", title: "uc", priority: "P2", status: "archived", role: "epic", lane: "superpowers", links: [],
+      disposition: engineStamp("archive-drift-heal", { recordedAt: AT }), ...extra(repo) },
+  ] });
+  return { repo, epicId: "uc" };
+};
+
+registerBuilder("unconsidered:handoff-checkbox", {
+  setup: unconsideredWith((repo) => ({
+    planPath: repo.file("docs/superpowers/plans/2026-08-01-uc.md", "# uc\n\n- [x] 1. done\n- [ ] 2. still open\n"),
+  })),
+  observe(fx) {
+    const u = unconsideredEntry(fx.repo, "uc");
+    assert.ok(u, "fixture: the epic is in the unconsidered set");
+    const h = u.deliveredBlockedBy.find(b => b.kind === "handoff");
+    assert.ok(h, `deliveredBlockedBy names the handoff: ${JSON.stringify(u.deliveredBlockedBy)}`);
+    assert.ok(h.remedy.length > 0, `the handoff blocker names a way past it: ${JSON.stringify(h)}`);
+    assert.match(h.remedy.join("\n"),
+      /update-epic uc --status archived --outcome delivered --carried-to <epicId> --reason "<which tasks moved>" --no-deferrals/);
+  },
+  produce: blockerRemedies,
+  reported: (out) => out.length > 0,
+  meaning: () => ({ "carried-to": "later", reason: REASON }),
+  alternatives: [{ name: "archive, carrying the open task", cleared(fx) {
+    assert.equal(unconsideredEntry(fx.repo, "uc"), null, "the entry clears");
+    assert.equal(fx.repo.epic("uc").disposition.outcome, "delivered");
+    assert.equal(fx.repo.epic("uc").disposition.carriedTo, "later");
+  } }],
+});
+
+registerBuilder("unconsidered:handoff-stories (REGRESSION GUARD U-I1)", {
+  setup: unconsideredWith(() => ({ stories: [{ title: "still open", done: false }] })),
+  observe(fx) {
+    const h = unconsideredEntry(fx.repo, "uc").deliveredBlockedBy.find(b => b.kind === "handoff");
+    assert.ok(h && h.remedy.length > 0, `the handoff blocker names a way past it: ${JSON.stringify(h)}`);
+  },
+  produce: blockerRemedies,
+  reported: (out) => out.length > 0,
+  meaning: () => ({ story: "1" }),
+  alternatives: [{ name: "record the story done", cleared(fx) {
+    const u = unconsideredEntry(fx.repo, "uc");
+    assert.deepEqual(u.deliveredBlockedBy, [], "the blocker clears");
+    assert.match(u.invocation, /--outcome <delivered\|/, "and delivered is offered again");
+  } }],
+});
+
 // ─────────────── update-epic's archived-delivered regression refusal (2.6, 2.8) ───────────────
 
 function archivedDeliveredWithGate(repo, id) {

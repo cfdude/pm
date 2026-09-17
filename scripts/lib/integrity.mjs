@@ -21,7 +21,7 @@
 import { isInitialized, loadState } from "./state.mjs";
 import { archivedChanges, epicProgress, isArchived, strippedChangeId } from "./epic-progress.mjs";
 import { CONTROL_CHARACTER, KNOWN_STATUSES, escapeControls, gateArtifacts, gateHasEvidence, isGithubRepo, isOpenspecLane, printedId, releaseMembers, shellQuote, withdrawnGate } from "./constants.mjs";
-import { AGENT_OUTCOMES, deliveredObligations, dispositionInvocation, gateRemedy, obligationArchiveFlags, obligationRemedy } from "./archive-gate.mjs";
+import { AGENT_OUTCOMES, deliveredArchiveInvocation, deliveredObligations, dispositionInvocation, gateRemedy, obligationArchiveFlags, obligationRemedy } from "./archive-gate.mjs";
 import { commitDate, isAncestor, isCommitNameShaped, objectExists, reachableFromAnyRef } from "./git.mjs";
 import { isArchiveBackfilled, outcomeOf, stampedBy } from "./disposition.mjs";
 import { epicReferences, holdsOwedReconcileRecord, isKnownLinkType, isRenderableLink, KNOWN_LINK_TYPES, supersededEpics } from "./links.mjs";
@@ -367,7 +367,7 @@ export const CHECKS = [
           "step: " +
           (owed.length ? `first meet what \`delivered\` requires, ${owed.join(", then ")}, then ` : "") +
           (carry.length ? "tick its open tasks in its task source and archive it, or record where they went: " : "") +
-          `\`update-epic ${printedId(e.id)} --status archived --outcome delivered${carry.map(f => ` ${f}`).join("")} --no-deferrals\`` });
+          `\`${deliveredArchiveInvocation(e, carry)}\`` });
       }
       return out;
     },
@@ -687,7 +687,7 @@ export const CHECKS = [
             "nor that it was cut. Give it the ending it actually had — either it shipped: " +
             (owed.length ? `first meet what \`delivered\` requires, ${owed.join(", then ")}, then ` : "") +
             (carry.length ? "tick its open tasks in its task source and archive it, or record where they went: " : "") +
-            `\`update-epic ${printedId(e.id)} --status archived --outcome delivered${carry.map(f => ` ${f}`).join("")} --no-deferrals\` — or it ` +
+            `\`${deliveredArchiveInvocation(e, carry)}\` — or it ` +
             `was cut, and you record that instead: \`release ${rel.id} --defer ${printedId(e.id)} --reason "<why>"\`` });
         }
       }

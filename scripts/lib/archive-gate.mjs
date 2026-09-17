@@ -263,13 +263,26 @@ export function dispositionInvocation(epic, { echoed = [], correction = false, d
  *  the handoff demand. */
 export function blockedDelivered(epic) {
   const carriedTo = (epic && epic.disposition && epic.disposition.carriedTo) || undefined;
-  return deliveredObligations(epic, { carriedTo }).map(o => ({
-    kind: o.variant,
-    detail: o.variant === "gate2-missing"
-      ? `${o.detail} — the record shows no Gate 2 review of this work, and recording \`delivered\` requires a real one`
-      : o.detail,
-    remedy: obligationRemedy(epic, o),
-  }));
+  return deliveredObligations(epic, { carriedTo }).map(o => {
+    // A checkbox source's handoff has no standalone command (no verb ticks a checkbox): the way past it
+    // is the `delivered` archive itself, carrying the obligation's flags — the same line integrity
+    // prints (Gate 2 U-I1, the E-I5 class). Without it the entry named a block and an empty remedy.
+    const carry = obligationArchiveFlags(epic, o);
+    return {
+      kind: o.variant,
+      detail: o.variant === "gate2-missing"
+        ? `${o.detail} — the record shows no Gate 2 review of this work, and recording \`delivered\` requires a real one`
+        : o.detail,
+      remedy: [...obligationRemedy(epic, o), ...(carry.length ? [deliveredArchiveInvocation(epic, carry)] : [])],
+    };
+  });
+}
+
+/** THE ONE RENDERING of a `delivered` archive for one epic carrying obligationArchiveFlags() — printed by
+ *  integrity's `delivered-release-epic-left-open` and `heal-archived-epic-passed-gate-2`, and by
+ *  blockedDelivered() as a checkbox handoff's remedy, so the three cannot drift apart. */
+export function deliveredArchiveInvocation(epic, carry = []) {
+  return `update-epic ${printedId(epic.id)} --status archived --outcome delivered${carry.map(f => ` ${f}`).join("")} --no-deferrals`;
 }
 
 /** THE WALKER: the archived epics whose outcome NOBODY CONSIDERED, each with the invocation that
@@ -416,7 +429,8 @@ export const DELIVERED_OBLIGATIONS = [
     // travels ON the archive invocation itself (design Decision 2: tick the tasks, or record
     // `--carried-to`). EVERY printer offering `--outcome delivered` for such an epic appends these flags
     // — integrity's `delivered-release-epic-left-open` (Gate 2 E-I5) and `heal-archived-epic-passed-gate-2`,
-    // and update-epic's regression refusal through dispositionInvocation()'s `carry` (Gate 2 R-I1);
+    // update-epic's regression refusal through dispositionInvocation()'s `carry` (Gate 2 R-I1), and
+    // blockedDelivered()'s remedy, through deliveredArchiveInvocation() (Gate 2 U-I1);
     // without them the printed archive is refused "task(s) outstanding".
     archiveFlags: (epic) => (outstandingSummary(epic).source === "stories"
       ? [] : ["--carried-to <epicId>", "--reason \"<which tasks moved>\""]),

@@ -68,6 +68,14 @@ withdrawn one, then that commit's `--attribute-commit`, then the invocation.
 - **THEN** its invocation offers `delivered` and names no blocking obligation, and running it with
   `delivered` exits zero
 
+#### Scenario: An entry blocked by open work names the way past it
+- **WHEN** the unconsidered set holds an epic whose task source still has open work — a checkbox file
+  with a task open, or an open inline story
+- **THEN** its entry names the handoff obligation with a remedy that is never empty: for the checkbox
+  source, the `delivered` archive carrying `--carried-to <epicId>` and `--reason`, which filled with a
+  receiving epic exits zero and removes the entry; for the story, `--story <n> --done`, after which the
+  entry names nothing blocking `delivered` (before Gate 2 U-I1 the checkbox entry's remedy was empty)
+
 #### Scenario: The archived-delivered regression refusal keeps delivered
 - **WHEN** an `--attribute-commit` on an archived `delivered` openspec-lane epic is refused because
   its passing Gate 2 would no longer reach the attributed commits

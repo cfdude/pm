@@ -379,7 +379,8 @@ Pairs: 7.0–7.1 land with 7.2. The single-writer rule for hierarchy runs is NOT
       (found by 9.1's sweep; sync.md is not otherwise in this section); ALSO `commands/tracker.md:127`,
       whose outward record-the-key form lacks `--external-updated-at <iso>` (Gate 2 minor)
 - [ ] 10.2 `commands/unconsidered-outcomes.md` — `deliveredBlockedBy`, and that an openspec-lane epic
-      never reviewed at Gate 2 is not offered `delivered`
+      never reviewed at Gate 2 is not offered `delivered`; a checkbox source's handoff blocker's remedy is
+      the `delivered` archive carrying `--carried-to <epicId> --reason "<which tasks moved>"` (Gate 2 U-I1)
 - [ ] 10.3 (moved to 7.0/7.2 — the review-mode unset line is test-driven)
 - [ ] 10.4 `skills/conductor/SKILL.md` — tracker section (limit, watermark on secondaries, key
       placeholder, quoting item values, direction kept on a vendor switch), the brief's two tracker
@@ -388,7 +389,10 @@ Pairs: 7.0–7.1 land with 7.2. The single-writer rule for hierarchy runs is NOT
 - [ ] 10.4a `commands/status.md` "Auditing the record itself" — the new
       `tracker-repo-not-a-github-repository` check in its enumeration (Gate 2 E-I2), and that
       `delivered-release-epic-left-open`'s archive alternative carries `--carried-to` for a checkbox
-      source with open tasks (Gate 2 E-I5)
+      source with open tasks (Gate 2 E-I5); the drift-heal step's new shape — `heal-archived-epic-passed-gate-2`
+      names a stories source's `--story <n> --done` first and carries `--carried-to <epicId> --reason "<which
+      tasks moved>"` for a checkbox source (Gate 2 R-I1 sweep); and that update-epic's archived-delivered
+      regression refusal carries that handoff flag on its invocation (Gate 2 R-I1)
 - [ ] 10.5 `README.md` where tracker sync, `unconsidered-outcomes` or gate recording are described
 - [ ] 10.5a `commands/lane-routing.md` and README's verb reference / flag table — `suggest-lane --ask=<text>`,
       why it exists (a flag-shaped text cannot be passed positionally), and that the positional form is
@@ -397,7 +401,10 @@ Pairs: 7.0–7.1 land with 7.2. The single-writer rule for hierarchy runs is NOT
       30-item cap, unquoted repo and item titles, stale scope and silent outward switch on vendor change; docs teaching refused gate forms and
       hand-edits; Gate 2: primary `set-tracker --remove` saving a refused repo, the brief's outward
       remedy without a watermark, GitHub Enterprise repos refused, raw epic ids in printed invocations,
-      a checkbox-source release member offered an archive the gate refuses) and Added
+      a checkbox-source release member offered an archive the gate refuses, the drift-heal step's archive
+      refused on open work (its new shape: `--story <n> --done` first, or `--carried-to` carried), the
+      regression refusal's invocation missing the handoff flag, and `unconsidered-outcomes`' checkbox
+      handoff blocker with an empty remedy (Gate 2 U-I1)) and Added
       (`deliveredBlockedBy`; the emitted-invocation sweep, incl. the whole-output Layer A and the
       printed-template reach scan; the `tracker-repo-not-a-github-repository` integrity check; the
       brief's `blocked-without-depends-on` remedy entry)
