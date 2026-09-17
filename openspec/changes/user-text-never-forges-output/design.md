@@ -208,7 +208,8 @@ The trigger is a control character in the value, not failure of `EPIC_ID_FORMAT`
 id is printed as `emitted-commands-run-as-written` prints it (shell-quoted via `printedId()`).
 - A re-enterable caller token (the `gate-integrity` printed-invocation case): its position carries a
   placeholder. That requirement (`openspec/specs/gate-integrity/spec.md`, "The printed invocation") was
-  checked and is NOT modified.
+  checked and is not modified by this change; `emitted-commands-run-as-written`'s gate-integrity delta
+  adds a `--carried-to` bullet and leaves the placeholder clause intact.
 - A tracker scope — system/project/repo — is NOT in the no-remedy class: it is REPLACED, not
   re-entered. A primary is re-recorded with a placeholder in the value's position
   (`set-tracker --repo <owner/name>`); a secondary is removed with `set-tracker --role secondary
