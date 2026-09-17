@@ -40,7 +40,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
-import { ROOT } from "./constants.mjs";
+import { ROOT, escapeControls } from "./constants.mjs";
 import { readJSON } from "./state.mjs";
 
 /** Opt-in, and the whole trust boundary: the ABSOLUTE PATH of the checkout whose engine may be
@@ -127,7 +127,7 @@ export function delegateToCheckout({
   });
   if (r.error) {
     process.stderr.write(
-      `conductor: could not hand off to the checkout engine at ${target} ` +
+      `conductor: could not hand off to the checkout engine at ${escapeControls(target)} ` +
       `(${r.error.message}); running the installed engine instead\n`
     );
     return null;

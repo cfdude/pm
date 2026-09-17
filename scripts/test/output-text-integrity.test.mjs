@@ -672,7 +672,10 @@ recipe("add-many --external-id", { rendered: true, hookOutput: true, run: (c, v)
 recipe("add-many --external-url", { rendered: true, hookOutput: true, run: (c, v) => refreshOwed(c, (id) => batchArgs(c, { id, lane: "claude-code", externalId: "X-2", externalUrl: v })) });
 recipe("add-many --plan", { notRendered: "a plan path is read as a progress source and printed by no surface", run: (c, v) => batch(c, { id: fresh("mpl"), lane: "superpowers", status: "planned", planPath: v }) });
 recipe("add-many --spec", { rendered: true, run: (c, v) => batch(c, { id: fresh("msp"), lane: "claude-code", status: "planned", specPath: v }) });
-recipe("add-many --link", { rendered: true, run: (c, v) => batch(c, { id: fresh("mlk"), lane: "claude-code", status: "planned", links: [{ type: "relates-to", epic: "base", reason: v }] }) });
+// Both halves poisoned: the EPIC half of an add-many link is not validated (a batch may link to an epic
+// created later in the same batch), so this is how a control-character id reaches the record through
+// argv today — every read of it must stay safe (task 8.1's DATA-reference sweep).
+recipe("add-many --link", { rendered: true, run: (c, v) => batch(c, { id: fresh("mlk"), lane: "claude-code", status: "planned", links: [{ type: "relates-to", epic: v, reason: v }] }) });
 recipe("add-many --description", { rendered: true, run: (c, v) => batch(c, { id: fresh("md"), lane: "claude-code", status: "planned", description: v }) });
 recipe("add-many --external-updated-at", { notRendered: "an external-updated-at watermark is compared against the tracker, never printed", run: (c, v) => batch(c, { id: fresh("mxa"), lane: "claude-code", externalUpdatedAt: v }) });
 recipe("add-many --add-story", { rendered: true, expect: "fail", run: (c, v) => {

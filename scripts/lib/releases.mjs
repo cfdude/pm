@@ -63,7 +63,7 @@ function epicReasonPair(flagName, raw, outOfBand) {
   const at = value.indexOf(":");
   if (at === -1) return { epic: value, reason: outOfBand };
   if (outOfBand !== undefined) {
-    die(`--${flagName} "${value}" carries its reason inline AND --reason "${outOfBand}" was ` +
+    die(`--${flagName} ${escapeControls(JSON.stringify(value))} carries its reason inline AND --reason ${escapeControls(JSON.stringify(outOfBand))} was ` +
       "given — two reasons for one record. Say which: drop --reason, or drop the inline half. " +
       "Nothing was written.");
   }
@@ -264,7 +264,7 @@ export function release() {
       rel.deferred = rel.deferred.filter(d => !d || d.epic !== epicId);
       process.stderr.write(
         `conductor: '${escapeControls(epicId)}' was deferred from '${escapeControls(id)}' — that record is now removed ` +
-        `(it read: ${wasDeferred.reason})\n`);
+        `(it read: ${escapeControls(wasDeferred.reason)})\n`);
       // THE SIBLING CALL SITE. `--member` has been performing an implicit undefer since the verb
       // shipped, announcing the deleted judgment on stderr and storing nothing — so recording the
       // explicit `--undefer` here and not this one would be the absent-edit-at-a-sibling-site
@@ -334,13 +334,13 @@ export function releaseShow(rest) {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const flags = rest.filter(t => typeof t === "string" && t.startsWith("--"));
   if (flags.length) {
-    die(`release show is the READ form and takes no flags (got ${flags.join(", ")}). ` +
+    die(`release show is the READ form and takes no flags (got ${escapeControls(flags.join(", "))}). ` +
       `\`${SHOW}\` is RESERVED as the read keyword, so it cannot also name a release — which is ` +
       "the point: a positional that means one thing here and another there is resolved by " +
       "guesswork, and this engine resolves nothing by guesswork. Name the release something else.");
   }
   if (rest.length > 1) {
-    die(`release show takes at most one release id (got ${rest.length}: ${rest.join(", ")})`);
+    die(`release show takes at most one release id (got ${rest.length}: ${escapeControls(rest.join(", "))})`);
   }
   const state = loadState();
   const epics = Array.isArray(state.epics) ? state.epics : [];
@@ -491,7 +491,7 @@ export function recordCrossSpecReview() {
   if (verdict === "pass" && unreadable.length) {
     process.stderr.write(
       `conductor: cannot record a 'pass' for '${escapeControls(id)}' — these spec file(s) could not be read, so ` +
-      `no digest covers them and a later amendment would be undetectable: ${unreadable.join(", ")}\n`);
+      `no digest covers them and a later amendment would be undetectable: ${escapeControls(unreadable.join(", "))}\n`);
     process.exit(1);
   }
 

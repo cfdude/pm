@@ -92,7 +92,7 @@ export function reorder() {
     // Ranks from two bands in one call cannot both be 1..N, so the numbering would silently mean
     // something different for each half.
     fail(`rank is a placement WITHIN one priority band, and these are not all ${band}: ` +
-      offBand.map(id => `${id} (${byId.get(id).priority})`).join(", "));
+      escapeControls(offBand.map(id => `${id} (${byId.get(id).priority})`).join(", ")));
   }
 
   // COMPLETENESS is the whole mechanism. Accepting a subset would let `1..N` be written over a

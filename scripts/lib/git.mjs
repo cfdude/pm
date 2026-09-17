@@ -108,7 +108,9 @@ export function visibleDetourRows(rows = readDetourRows()) {
 export function appendRetraction(sha, epic, reason) {
   if (isDetachedTree()) return false;
   fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
-  const line = [new Date().toISOString(), sha, "RETRACTED", epic || "-", (reason || "").replace(/\s+/g, " ").trim()].join("\t");
+  // One line per row whatever the values hold: whitespace collapses, then every remaining control
+  // character (NEL, a legacy epic id's newline) is escaped (user-text-never-forges-output 8.1).
+  const line = [new Date().toISOString(), sha, "RETRACTED", escapeControls(epic || "-"), escapeControls((reason || "").replace(/\s+/g, " ").trim())].join("\t");
   fs.appendFileSync(DETOURS_LOG, line + "\n");
   return true;
 }
@@ -168,7 +170,8 @@ export function appendDetourLog(kind, epic, note, rev) {
   // sha "-" is "cannot tell" (no git, no repository, no commits yet), NOT a commit identity.
   // Collapsing on it would fold every unrelated row in a git-less repo into one.
   if (COMMIT_DERIVED_KINDS.has(kind) && sha !== "-" && alreadyLogged(kind, sha, fullSha(rev === undefined ? "HEAD" : rev))) return false;
-  const line = [new Date().toISOString(), sha, kind, epic || "-", (note || "").replace(/\s+/g, " ").trim()].join("\t");
+  // One line per row whatever the values hold (see appendRetraction()).
+  const line = [new Date().toISOString(), sha, kind, escapeControls(epic || "-"), escapeControls((note || "").replace(/\s+/g, " ").trim())].join("\t");
   fs.appendFileSync(DETOURS_LOG, line + "\n");
   return true;
 }

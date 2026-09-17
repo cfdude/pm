@@ -203,7 +203,7 @@ Pairs: 7.1 lands with 7.2.
 
 ## 8. Required task items
 
-- [ ] 8.1 **Call-site completeness sweep** — derived with `rg` at sweep time, never from this list:
+- [x] 8.1 **Call-site completeness sweep** — derived with `rg` at sweep time, never from this list:
       - every interpolation into an output string: `rg -n "process\.(stdout|stderr)\.write|die\(|fail\(|md\.push|L\.push|out\.push" scripts/lib scripts/conductor.mjs`,
         each interpolated value classified engine-composed or escaped; an unescaped non-engine value is
         a FINDING;
@@ -229,7 +229,7 @@ Pairs: 7.1 lands with 7.2.
         `printedId()` caller list does not reach it), each stated as carrying no control-character
         value.
       A site where the rule does not hold is a FINDING unless justified in the commit.
-- [ ] 8.2 **Inverse of every operation added or modified** — the id refusal at `pushEpic` (inverse:
+- [x] 8.2 **Inverse of every operation added or modified** — the id refusal at `pushEpic` (inverse:
       `remove-epic`, unchanged; a skipped directory's inverse is renaming it, no verb); the release
       create refusal (inverse: none needed — nothing was stored). DECIDED, not deferred: no
       release-rename verb is shipped and none is filed — nothing is stranded today (the Gate 1 review
@@ -242,9 +242,9 @@ Pairs: 7.1 lands with 7.2.
       so a legacy entry stays removable; a primary `--remove` IS refused, and a primary is replaced by the
       next well-formed `set-tracker`); escaping (inverse: none — output only, the stored value is unchanged).
       Each unshipped inverse named and justified in the commit message
-- [ ] 8.3 **Verify against the commit** — `git show --stat <sha>` for every task commit; every file the
+- [x] 8.3 **Verify against the commit** — `git show --stat <sha>` for every task commit; every file the
       task claims is present in THAT commit, including the test file and each `red-<task>.txt`
-- [ ] 8.4 **Attribute every commit** as it lands: `update-epic user-text-never-forges-output
+- [x] 8.4 **Attribute every commit** as it lands: `update-epic user-text-never-forges-output
       --attribute-commit <sha>`. The archive commit, and any commit that only relocates this change's
       artifacts, is excluded
 - [ ] 8.5 **Dispositions** <!-- pm:lifecycle --> — `update-epic user-text-never-forges-output --status

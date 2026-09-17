@@ -796,7 +796,7 @@ export function sync(quiet = false) {
     if (ignored.has(norm)) {
       if (!quiet) process.stderr.write(
         `conductor: sync skipped plan '${escapeControls(fname)}' — sync-ignore tombstone (removed epic); ` +
-        `attach it to an epic with \`update-epic <id> --plan ${planPath}\` to un-ignore it\n`);
+        `attach it to an epic with \`update-epic <id> --plan ${commandValue(planPath, "<plan path>")}\` to un-ignore it\n`);
       continue;
     }
 

@@ -775,7 +775,7 @@ export function updateEpic() {
       withdrawResolved.has(w) ? withdrawResolved.get(w) === attributed[i] : w === v));
     if (alsoAttributed.length) {
       process.stderr.write(
-        `conductor: cannot attribute and withdraw ${alsoAttributed.join(", ")} in one ` +
+        `conductor: cannot attribute and withdraw ${escapeControls(alsoAttributed.join(", "))} in one ` +
         `invocation — the two record contradictory things about the same commit.\n`);
       process.exit(1);
     }
@@ -783,7 +783,7 @@ export function updateEpic() {
     if (missing.length) {
       process.stderr.write(
         `conductor: '${escapeControls(id)}' never attributed ${escapeControls(missing.join(", "))} — nothing to withdraw. ` +
-        `It currently attributes: ${epic.attributedCommits && epic.attributedCommits.length ? epic.attributedCommits.join(", ") : "(none)"}.\n`);
+        `It currently attributes: ${epic.attributedCommits && epic.attributedCommits.length ? escapeControls(epic.attributedCommits.join(", ")) : "(none)"}.\n`);
       process.exit(1);
     }
     const withdrawnAt = new Date().toISOString();

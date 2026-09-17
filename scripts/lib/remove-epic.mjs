@@ -14,7 +14,7 @@ import { printedId, escapeControls, orNoRemedy } from "./constants.mjs";
  *  blocked by children, so the operator sees exactly what's in play without a raw dump. */
 export function epicSummaryTable(epics) {
   return epics
-    .map(e => `  ${e.id.padEnd(24)} ${e.title.slice(0, 50).padEnd(50)} ${e.lane}/${e.priority}/${e.status}`)
+    .map(e => `  ${escapeControls(e.id).padEnd(24)} ${escapeControls(String(e.title)).slice(0, 50).padEnd(50)} ${escapeControls(`${e.lane}/${e.priority}/${e.status}`)}`)
     .join("\n");
 }
 
@@ -126,7 +126,7 @@ export function removeEpic() {
   if (affected.length) {
     process.stderr.write(
       `conductor: stripped ${affected.length} dangling reference(s) to removed epic(s), held by: ` +
-      `${[...new Set(affected)].join(", ")}\n`);
+      `${escapeControls([...new Set(affected)].join(", "))}\n`);
   }
   if (tombstoned.length) {
     // The un-ignore instruction names the flag that writes the field the path CAME FROM. It was
@@ -138,7 +138,7 @@ export function removeEpic() {
     process.stderr.write(
       `conductor: recorded ${tombstoned.length} sync-ignore tombstone(s) so sync will not ` +
       `re-register the removed epic(s)' source artifact(s): ` +
-      `${tombstoned.map(t => t.path).join(", ")}. ` +
+      `${escapeControls(tombstoned.map(t => t.path).join(", "))}. ` +
       `Attach one to an epic (${how}) to un-ignore it.\n`);
   }
 }
