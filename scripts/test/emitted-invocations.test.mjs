@@ -945,11 +945,9 @@ const INTEGRITY_BUILDERS = {
     {
       // 2.2 — archived delivered, C1 attributed under a Gate 2 headed at C1, C1 amended to C2, C1
       // withdrawn: the record attributes nothing, having withdrawn C1 — with its passing Gate 2 STILL
-      // headed at C1 (Gate 2 E-I6). NOT REACHABLE BY VERBS, so the two attribution fields are written by
-      // hand: every verb path to "delivered, attributes nothing, withdrew C1" passes through a refusal —
-      // withdrawing C1, or withdrawing Gate 2, is refused on the archived record as breaking
-      // `delivered`; the only accepted order re-records Gate 2 over C2 first, where attributing alone
-      // already works. In THIS state `--attribute-commit C2` alone EXITS 0 (the record was already
+      // headed at C1 (Gate 2 E-I6). Reached by verbs: Gate 2 re-recorded over C2 (stale against the
+      // attributed C1, so the record is already broken and the withdrawal is no regression), C1
+      // withdrawn, then Gate 2 recorded back over C1. In THIS state `--attribute-commit C2` alone EXITS 0 (the record was already
       // broken, so it is no regression) and clears this finding — but leaves Gate 2 stale, so the
       // archive gate would refuse the record's `delivered`. The alternative's check therefore re-runs
       // the archive gate on it, which a remedy printing the attribution first, or alone, fails.
@@ -960,13 +958,11 @@ const INTEGRITY_BUILDERS = {
         passGate2(repo, "wd", repo.parent(c1), c1);
         repo.ok(["update-epic", "wd", "--status", "archived", "--outcome", "delivered", "--no-deferrals"]);
         const c2 = repo.amend(c1, "feat(wd): amended");
-        const state = repo.state();
-        const wd = state.epics.find(e => e.id === "wd");
-        wd.attributedCommits = [];
-        wd.withdrawnCommits = [{ sha: c1, reason: `amended into ${c2.slice(0, 7)}`, withdrawnAt: AT }];
-        writeState(repo.cwd, state);
+        passGate2(repo, "wd", repo.parent(c2), c2);
+        repo.ok(["update-epic", "wd", "--withdraw-commit", c1, "--withdrawal-reason", `amended into ${c2.slice(0, 7)}`]);
+        passGate2(repo, "wd", repo.parent(c1), c1);
         assert.deepEqual(repo.epic("wd").attributedCommits, [], "fixture: C1 withdrawn");
-        assert.equal(repo.epic("wd").gateReview.gate2.headSha, c1, "fixture: Gate 2 is still headed at C1");
+        assert.equal(repo.epic("wd").gateReview.gate2.headSha, c1, "fixture: Gate 2 is headed at C1");
         return { repo, epicId: "wd", replacing: c2 };
       },
       observe(fx) {

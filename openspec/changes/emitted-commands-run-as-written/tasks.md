@@ -101,7 +101,7 @@ Pairs: 2.1–2.8 (incl. 2.7a) land with 2.9.
       invocation then exits 0 with `delivered` kept (fails today: it prints attribute-first, and
       `--attribute-commit C2` exits 1); AND `integrity`'s `delivered-epic-attributed-no-commits`
       withdrawn arm prints that same pair in that order, each exits 0 and the finding clears — its
-      fixture (Gate 2 E-I6) keeps Gate 2 headed at C1, written by hand because no verb reaches that state,
+      fixture (Gate 2 E-I6) ends with Gate 2 headed at C1 (re-recorded over C2, C1 withdrawn, recorded back over C1),
       asserts the order, and re-runs the archive gate on `delivered` after the remedy, which an
       attribute-first or attribute-alone remedy leaves stale (fails today: it prints
       `--attribute-commit` alone, not the shared pair); its never-withdrawn arm keeps

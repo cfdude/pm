@@ -7,3 +7,6 @@ m06d_integrity_attr_first: exit=0 pass=3 fail=0 SURVIVED
 ## after
 m06b_integrity_attr_only: exit=1 pass=2 fail=1 KILLED by: ✖ Layer B integrity:delivered-epic-attributed-no-commits [withdrawn] {remedy} — the remedy clears what printed it (407.244ms) | ✖ failing tests:
 m06d_integrity_attr_first: exit=1 pass=2 fail=1 KILLED by: ✖ Layer B integrity:delivered-epic-attributed-no-commits [withdrawn] {remedy} — the remedy clears what printed it (391.743083ms) | ✖ failing tests:
+## after the verbs-only fixture (next commit): both still KILLED
+m06b_integrity_attr_only: exit=1 pass=2 fail=1 KILLED
+m06d_integrity_attr_first: exit=1 pass=2 fail=1 KILLED
