@@ -8,6 +8,70 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**Requires `/reload-plugins`.** Plugin versions install side by side, so until a session reloads it
+keeps 0.44.0's commit hook and engine — which still write `.conductor/commit-watch.json` and none of
+what follows.
+
+### Fixed
+
+* **A commit followed by a checkout in the same call was never reported** (commit-nudge read only
+  the top reflog entry, so `checkout: moving from tmp to main` read as no commit — and the watermark
+  had already moved past it, so no later call reported it either). The hook now keeps a reflog
+  anchor in `.conductor/commit-observe.json` — the reflog's byte size and its last line, stored as
+  bytes (`anchor.lineBase64`) — and reports every `commit…` entry since, oldest first. #184
+* **Two commits in one call reported only HEAD**, so the attribution hint named one and the
+  append-only array was left short. Every commit is named, and the attribution command carries
+  every `--attribute-commit`, in landing order, as one invocation.
+* **`commit --amend` double-logged.** An amend now replaces: when the replaced commit is on no
+  branch, the engine retracts its automatic row, and for each epic that attributes it prints
+  `update-epic <id> --withdraw-commit <replaced> --withdrawal-reason "amended into <new>"` before
+  any attribution command — or, where `update-epic` would refuse that withdrawal for a delivered
+  epic, says so instead of printing a command that fails. An undone amend replaces nothing.
+* **The active epic's own work was logged as a detour from it.** A commit touching the active epic's
+  own artifacts (`openspec/changes/<id>/`, its plan path, its spec path) writes no `AUTO-DETOUR` row,
+  and a commit confined to a paused epic's own artifacts writes no `DETOUR-COMMIT` row. Decided from
+  paths, never from a subject prefix. #184
+* **A nested conductor logged its own bookkeeping.** Changed paths are compared from the conductor
+  root (read with `-z`, so a non-ASCII root still matches), so a commit touching only
+  `projects/sub/.conductor/state.json` and `projects/sub/PROJECT.md` is bookkeeping, while a mixed
+  commit touching a file outside the root is still logged. #195
+* **During a detour the attribution hint named only the detour epic.** It now lists every candidate
+  — the detour epic and each paused epic, or the active epic — one runnable command each, states
+  that choosing is the agent's, and orders a candidate whose own files the commits touch first.
+  It never adds a candidate from paths and never writes an attribution. #199
+* **The only correction for a wrong automatic row was a hand-edit** of git-ignored `detours.log`,
+  which left the false row in the tracked `PROJECT.md`. See `retract-detour` below. #173
+* **Commits the hook could not have attributed safely are no longer offered.** A commit rewritten by
+  `pull --rebase` or reset away is named as rewritten or abandoned, with no row and no
+  `--attribute-commit`.
+* **Overlapping hook runs cannot drop or repeat a commit.** The observation runs under an `O_EXCL`
+  lock with a reported-sha set; a run that cannot take the lock within 200 ms skips, and the next run
+  reports. The lock is broken on liveness — at once for a dead holder, after 10 s where liveness
+  cannot be confirmed, never for age while its holder is confirmed alive — and a run releases only
+  its own lock.
+
+### Added
+
+* **`retract-detour <sha> --reason "<why>"`** — the inverse of the hook's automatic logging. Appends
+  one `RETRACTED` row covering every `AUTO-DETOUR` and `DETOUR-COMMIT` row of that commit (matched by
+  prefix, whatever the row's abbreviation length), removes nothing, and re-renders `PROJECT.md`
+  without them. Refuses, naming why and writing nothing: a value that is not a hex sha (a ref such as
+  `HEAD`), no matching row, a `MINIMAL`-only row, an already-retracted commit, a missing or empty
+  reason, a too-short or ambiguous sha of a pruned commit, and a detached tree. #173
+
+### Changed
+
+* **`commit-nudge` is also wired on `PostToolUseFailure`**, so a commit inside a Bash call that then
+  failed is reported; the output envelope names the event it answers. A failed Bash call now spawns
+  one hook process (63 ms per no-op run measured, mean of 20); a successful one gains none.
+* **Every report states its provenance:** the commits "landed since the last observation — this
+  call, another terminal, or a parallel call; the hook cannot tell which". A commit made in another
+  terminal is still reported by the next observation and can still be auto-logged against the active
+  epic (proposal defect 3): that is a stated residual, not a fix, and `retract-detour` corrects the
+  row.
+* **On unreadable `state.json`, `commit-nudge` writes nothing, the observation record included**, on
+  both post-call events, so the commit is reported by the first run after the file is repaired.
+
 ## [0.44.0] — 2026-09-16
 
 Every Critical finding from the independent review of 0.43.0, fixed in three changes.

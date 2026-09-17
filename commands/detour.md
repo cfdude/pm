@@ -85,4 +85,50 @@ Do NOT start fixing yet. Follow the `conductor` skill's detour protocol.
    (`honcho-memory push <parent-epic-id> "<reason>"` still exists for a pivot you are recording
    after the fact.)
 
+## Rows the commit hook writes for you — and `retract-detour`
+
+The `commit-nudge` hook runs after every Bash call, on success (`PostToolUse`) and on failure
+(`PostToolUseFailure`). It reads HEAD's reflog from the position it recorded last time and reports
+every commit that landed since, oldest first — including one followed by a `checkout` in the same
+call, and every commit of a call that made several.
+
+- **When it logs a row.** While a detour is live it writes `DETOUR-COMMIT` against the detour epic.
+  With no detour but an active epic, a small (≤3 files) `fix:`/`chore:` commit that does not name
+  the active epic is logged as `AUTO-DETOUR` — a minimal detour nobody declared.
+- **When it does not.** A commit touching any of the active epic's own artifacts
+  (`openspec/changes/<id>/`, its plan path, its spec path) is that epic's work, not a detour. A
+  commit confined to a paused epic's own artifacts writes no `DETOUR-COMMIT`. A commit touching
+  only pm's own generated files (`state.json`, `PROJECT.md`, `render-stamp.json`, the observation
+  record) is bookkeeping — in a nested conductor too, because paths are compared from the
+  conductor root. A commit reachable from no branch (rewritten by `pull --rebase`, reset away,
+  abandoned on a detached HEAD) is named as rewritten or abandoned and gets no row and no
+  attribution command; attribute what a rebase produced by hand. A commit that already has a row
+  is never given a second one, whatever that row's sha length.
+- **Provenance.** Every report says the commits *landed since the last observation — this call,
+  another terminal, or a parallel call; the hook cannot tell which*. It never claims the call made
+  them, so a commit from another terminal can still be logged against the active epic.
+- **An amend replaces.** When a `commit --amend` leaves the replaced commit on no branch, the engine
+  retracts that commit's automatic row (reason `amended into <new sha>`) and, for each epic whose
+  `attributedCommits` holds it, prints `update-epic <id> --withdraw-commit <replaced>
+  --withdrawal-reason "…"` before any attribution command. It never withdraws anything itself.
+  Where `update-epic` would refuse that withdrawal (a delivered epic whose record it would break),
+  the hook prints no command and says the refusal names the remedy. An undone amend
+  (`reset --hard HEAD@{1}`) replaces nothing.
+
+A wrong automatic row is corrected with the verb, never by editing the log — `detours.log` is
+git-ignored while the `PROJECT.md` it renders is tracked, so a hand-removal leaves the false row in
+what gets committed:
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" retract-detour <sha> --reason "<why the row is wrong>"
+```
+
+It appends one `RETRACTED` row covering every `AUTO-DETOUR` and `DETOUR-COMMIT` row of that commit,
+removes nothing, and re-renders `PROJECT.md` without them. `<sha>` is a commit sha, not a ref
+(`HEAD` is refused — run `git rev-parse <ref>`); a sha whose commit has been pruned must be at least
+7 hex characters and match one commit's rows. It refuses, naming the reason and writing nothing: no
+matching row, a `MINIMAL`-only row (a declaration, not retractable), an already-retracted commit, a
+missing or empty `--reason`, and a detached tree. There is no un-retract: re-declare with
+`log-detour`.
+
 When the detour is archived, use `/pm:resume` — do not skip the reconcile gate.

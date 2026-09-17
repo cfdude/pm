@@ -192,7 +192,7 @@ dormancy. The message names git remedies (`git checkout --ours|--theirs`, `git s
 conflict to keep** — that is the user's call. Meanwhile `gate-guard` blocks Edit/Write/NotebookEdit
 (exit 2) and Bash is not matched, so the remedies run from the shell; `brief` injects only the
 warning; `snapshot` writes nothing (exit 11, never 2, which would block compaction);
-`commit-nudge` writes nothing but its HEAD watermark (exit 2 when a commit has landed; 0 otherwise, without reading state). `verify-state` never loads the file,
+`commit-nudge`, on both post-call events (`PostToolUse` and `PostToolUseFailure`), writes nothing, the observation record included (exit 2 when a commit has landed, which stays unreported until the file is fixed; 0 otherwise, without reading state). `verify-state` never loads the file,
 and `activity` reports the revision and the log's on/off state as unknown.
 
 **Saves are serialised by a lock file.** `saveState()` holds `.conductor/state.json.lock` from the
@@ -808,12 +808,34 @@ and re-injected by the SessionStart hook (so they survive compaction). Two artif
 commit made while a detour is active is auto-logged to `.conductor/detours.log` by the hook
 (deterministic), and minimal detours are logged there by `log-detour` (rule-driven).
 
-Two commits are deliberately NOT logged, so the trail describes the detour rather than itself
+The hook runs after every Bash call, on success and on failure, and reads HEAD's reflog from the
+position it recorded last time: every commit that landed since is reported, oldest first, even one
+followed by a `checkout` in the same call. It cannot tell a commit the call made from one made in
+another terminal or a parallel call, and every report says so — "landed since the last observation".
+With no detour live, a small `fix:`/`chore:` commit is auto-logged as `AUTO-DETOUR` against the
+active epic; a wrong row is corrected with `retract-detour <sha> --reason "<why>"`, never by editing
+the log.
+
+Several commits are deliberately NOT logged, so the trail describes the detour rather than itself
 (#81). A commit touching ONLY pm's own generated output — `state.json`, `PROJECT.md`,
-`render-stamp.json`, `commit-watch.json` — is bookkeeping, not detour work; and a commit whose
-SHA already has a row of that kind is never given a second one. `MINIMAL` rows are exempt from
-that de-duplication: they record what you DECLARED, not what git observed, so two minimal detours
-between one pair of commits are two real entries.
+`render-stamp.json`, `commit-watch.json`, `commit-observe.json` — is bookkeeping, not detour work,
+in a nested conductor too (paths are compared from the conductor root). A commit touching the
+active epic's own artifacts (`openspec/changes/<id>/`, its plan or spec path) is that epic's work,
+and one confined to a paused epic's own artifacts is not detour work. A commit reachable from no
+branch (rewritten by a rebase, reset away) is named as rewritten or abandoned and gets no row and no
+attribution command. An amend replaces: the replaced commit's row is retracted by the engine, and
+where it is attributed the hook prints the `update-epic <id> --withdraw-commit` to run first. A
+commit whose SHA already has a row of that kind, at any abbreviation length, is never given a
+second one. `MINIMAL` rows are exempt from that de-duplication and cannot be retracted: they record
+what you DECLARED, not what git observed, so two minimal detours between one pair of commits are
+two real entries.
+
+After a commit the hook also prints the attribution command — and decides nothing. Its candidates
+are the detour epic and every paused epic while a detour is live, otherwise the active epic, each
+only if it carries an `attributedCommits` array; with no candidate it prints nothing. Several
+candidates get one runnable `update-epic <id> --attribute-commit <sha>…` each (every reported commit,
+oldest first), with the statement that choosing is yours; a candidate whose own artifacts the
+commits touch is listed first. The hook never writes an attribution itself.
 
 ## Intake — triage an ask BEFORE it becomes an epic
 

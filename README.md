@@ -458,6 +458,15 @@ and `update-epic <epic> --clear-links` and `remove-epic <detour>` are refused wh
 render heal clears it only where nothing could answer it (no frame, no armed or pre-0.44.0
 `may-invalidate` link), and says so on stderr.
 
+`retract-detour <sha> --reason "<why>"` is the inverse of the commit hook's automatic logging. It
+appends one `RETRACTED` row covering every `AUTO-DETOUR` and `DETOUR-COMMIT` row of that commit,
+removes nothing, and re-renders `PROJECT.md` without them — `detours.log` is git-ignored while
+`PROJECT.md` is tracked, so hand-removing a line left the false row in what got committed. `<sha>` is
+a hexadecimal commit sha, not a ref (`HEAD` is refused); one whose commit was pruned must be at
+least 7 characters and match one commit's rows. It refuses, naming why and writing nothing, for no
+matching row, a `MINIMAL`-only row, an already-retracted commit, a missing or empty reason, and a
+detached tree. No un-retract: re-declare with `log-detour`.
+
 `honcho-memory <push\|pop> <epicId> "<reason>"` formats the exact ready-to-copy Honcho memory
 line for a PUSH/POP and appends a timestamped copy to `.conductor/honcho-memories.log` — the
 engine only formats and logs the string, it never calls Honcho itself. The detour verbs call it
@@ -1024,7 +1033,7 @@ orchestrator can point it at a repo it does not own.
 that file in the deployed copy, and pm's dormancy guard (which asks only whether the file exists)
 read that tree as a workspace.
 
-When **HEAD is detached**, pm now writes no session bookkeeping there — no commit watermark, detour
+When **HEAD is detached**, pm now writes no session bookkeeping there — no commit observation record, detour
 log, brief snapshot, session claim or activity log — and any verb that does write says so, naming
 the tag when HEAD is exactly at one. Read-only verbs stay silent, because reading a deployed
 checkout's record is a legitimate thing to want.
@@ -1439,7 +1448,7 @@ put it in CLAUDE.md if you want the whole hierarchy to honour it.
 |------|---------|
 | SessionStart (startup / resume / **compact**) | Injects the briefing via `additionalContext` — the index comes back the moment context is summarized away. |
 | PreCompact | Calls `snapshot` (`render` + `.conductor/brief.txt`) right before the context window collapses. |
-| PostToolUse (every `Bash` call) | Calls `commit-nudge`. It OBSERVES the repository rather than reading the command text: it keeps a HEAD watermark (`.conductor/commit-watch.json`, git-ignored) and speaks only when HEAD has moved AND `git reflog` says the move was a commit. So `-m`, `-am`, `-F`, an editor commit and a commit made inside a script are all noticed, while a command that merely *mentions* `git commit` — a `grep`, a heredoc, an `echo` — a rejected commit, a commit that landed in another repo, and a `checkout`/`reset` are all silent. Then it nudges a state update, and auto-detects an unlogged minimal detour from commit shape (only while an epic is active, and excluding routine conductor bookkeeping commits). On an **observed** commit it also names the exact `update-epic <id> --attribute-commit <sha>` for the epic that commit belongs to — the detour epic while a detour is live, never the paused parent — so the per-commit attribution obligation is prompted while it is still actionable rather than only checked at the archive gate. The prompt is louder while the epic's `attributedCommits` is still empty (when catching up on already-landed commits is most likely owed) and one line thereafter, and it is absent entirely where the engine would be guessing: no active epic, an epic with no attribution array, or an unobserved commit. |
+| PostToolUse and PostToolUseFailure (every `Bash` call, succeeded or failed) | Calls `commit-nudge`. It OBSERVES the repository rather than reading the command text: it keeps an observation record (`.conductor/commit-observe.json`, git-ignored) holding a **reflog anchor** — the byte size of HEAD's reflog and its last line, stored as bytes (`anchor.lineBase64`), since a reflog is not guaranteed to be UTF-8 — and the set of shas it has already reported. Each run reports every `commit…` reflog entry after the anchor, oldest first, whatever happened to HEAD afterwards, so `-m`, `-am`, `-F`, an editor commit, a commit inside a script, a commit followed by a `checkout`, several commits in one call and a commit inside a call that then failed are all noticed, while a command that merely *mentions* `git commit`, a rejected commit, a commit in another repo and a plain `checkout`/`reset` are silent. A commit reachable from no branch (rewritten by `pull --rebase`, reset away) is named as rewritten or abandoned and gets no row and no attribution command. Every report says the commits **landed since the last observation — this call, another terminal, or a parallel call**; the hook cannot tell which. The observation runs under an O_EXCL lock broken on **liveness**: at once when its holder is confirmed dead, after 10 s when liveness cannot be confirmed, never for age alone while the holder is confirmed alive (a 10-minute pid-reuse backstop aside); a run that cannot take it within 200 ms skips and the next run reports. Then it nudges a state update, and auto-detects an unlogged minimal detour from commit shape (only while an epic is active, and never for a commit touching that epic's own artifacts or only pm's own generated files, compared from the conductor root). A wrong automatic row is corrected with `retract-detour`. An amend replaces: the replaced commit's row is retracted and, where it is attributed, the `update-epic <id> --withdraw-commit` to run first is printed. On an **observed** commit it also prints the attribution command for every **candidate** — the detour epic and each paused epic while a detour is live, otherwise the active epic — one runnable `update-epic <id> --attribute-commit <sha>…` each, stating that choosing is the agent's, so the per-commit attribution obligation is prompted while it is still actionable rather than only checked at the archive gate. The prompt is louder while a lone candidate's `attributedCommits` is still empty and one line thereafter, and it is absent where the engine would be guessing: no candidate, an epic with no attribution array, or an unobserved commit. It never writes an attribution itself. |
 | PreToolUse (gate-guard) | Hard-blocks `Edit`/`Write`/`NotebookEdit` while the active epic owes a reconcile — on by default, unconditional for that case. Also blocks them while `.conductor/state.json` exists but cannot be read, because whether a reconcile is owed is then unknown; Bash is not matched, so the remedies stay runnable. |
 | PreToolUse (lesson advisor) | Calls `lesson-advice` on `Bash`/`Edit`/`Write`/`NotebookEdit`. Matches the pending tool call against every `docs/lessons/*.md` entry that declares a `detect:` matcher in its frontmatter, and injects that lesson's `rule` **before** the mistake. **Advisory only — it never blocks and always exits 0**, which is why it is a separate entry from the gate guard. Silent in a project with no `docs/lessons/`, and dormant until `/pm:init`. Precision is the constraint, not coverage: a lesson that cannot be matched with near-certainty carries no `detect:` and stays retrieval-only, and only the command's **first line** is matched, so a heredoc body or an `echo` that merely names a command is data rather than a trigger. Adding a matcher is a frontmatter edit, never a code change. |
 
@@ -1508,7 +1517,7 @@ Meanwhile the hooks never write over it. `gate-guard` **blocks `Edit`/`Write`/`N
 (exit 2) until the file is fixed — Bash is not matched by that hook, so run the remedy from the
 shell. `brief` starts the session with only this warning in place of a briefing; `snapshot` writes
 nothing and exits 11 (never 2, which would block compaction); `commit-nudge`, when a commit has
-landed, writes nothing but its HEAD watermark and exits 2 (with no commit it exits 0 without reading state), which shows the message to the agent. `verify-state` never loads
+landed, writes nothing, the observation record included, and exits 2 on `PostToolUse` and `PostToolUseFailure` alike — the commit is reported by the first run after the file is repaired (with no commit it exits 0 without reading state), which shows the message to the agent. `verify-state` never loads
 the file, and `activity` reports the revision and whether the log is on as unknown. An absent
 `state.json` is still plain dormancy.
 
@@ -1566,10 +1575,16 @@ your-project/
 ├── .conductor/
 │   ├── state.json           # state of record — epics, detour stack, links, autonomy grants
 │   ├── detours.log          # append-only trail: timestamp · SHA · kind · epic · note
-│                             # — one row per commit: a SHA already logged under a kind is not
-│                             #   given a second row, and a commit touching only pm's own
-│                             #   generated files is bookkeeping, not detour work. MINIMAL rows
-│                             #   are exempt — they record what you declared, not what git saw.
+│                             # — kinds: MINIMAL (log-detour), DETOUR-COMMIT and AUTO-DETOUR (the
+│                             #   commit hook), RETRACTED (retract-detour, or an amend: hides that
+│                             #   commit's automatic rows from PROJECT.md; nothing is removed)
+│                             # — one row per commit: a SHA already logged under a kind, at any
+│                             #   abbreviation length, is not given a second row, and a commit
+│                             #   touching only pm's own generated files is bookkeeping, not
+│                             #   detour work. MINIMAL rows are exempt — they record what you
+│                             #   declared, not what git saw — and are not retractable.
+│   ├── commit-observe.json  # the commit hook's reflog anchor + reported shas (git-ignored,
+│                             #   commit-observe.json*, which covers its .lock)
 │   ├── honcho-memories.log  # ready-to-copy Honcho memory lines, timestamped
 │   ├── state.json.lock      # held only for the milliseconds of one save; .lock.break while a
 │                             #   stale one is broken. Git-ignored (state.json.lock*), as is a
@@ -1589,7 +1604,7 @@ pm/ (this repo)
 │                                 /pm:review-mode /pm:gate-guard /pm:changelog /pm:upgrade
 ├── skills/conductor/SKILL.md    the discipline
 ├── agents/                      reconciler.md · hierarchy-child-executor.md · merge-conflict-resolver.md
-├── hooks/hooks.json             SessionStart · PreCompact · PostToolUse · PreToolUse
+├── hooks/hooks.json             SessionStart · PreCompact · PostToolUse · PostToolUseFailure · PreToolUse
 └── scripts/conductor.mjs        the engine (zero dependencies)
 ```
 
