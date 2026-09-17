@@ -7208,7 +7208,7 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-14T18:39:53.765Z",
-      "touchedAt": "2026-09-15T02:33:38.795Z",
+      "touchedAt": "2026-09-17T01:15:34.001Z",
       "notes": [
         {
           "at": "2026-09-14T19:29:54.971Z",
@@ -7219,6 +7219,11 @@
           "at": "2026-09-15T02:33:38.790Z",
           "actor": "agent",
           "text": "Reconcile of gate-verdict-withdrawal (2026-09-14): exclude epics whose Gate 2 is withdrawn — integrity's archived-with-withdrawn-gate-2 already reports them; do not double-report."
+        },
+        {
+          "at": "2026-09-17T01:15:33.998Z",
+          "actor": "agent",
+          "text": "2026-09-16 sibling path, confirmed on 0.44.0 in a scratch repo during the 0.45.0 cross-spec round 4: on an archived delivered epic whose only attributed commit C1 was amended to C2 (C1 still resolvable), record-gate-review --gate 2 --verdict pass --head-sha C2 exits 0, then update-epic --withdraw-commit C1 exits 0, leaving archived+delivered with zero attributed commits (integrity reports delivered-epic-attributed-no-commits). The withdraw regression check compares before/after and the before is already non-covering after the re-record. emitted-commands-run-as-written design now forbids printing that re-record as a standalone step; the engine refusal is not fixed."
         }
       ]
     },
@@ -8751,11 +8756,50 @@
       ],
       "reconcileNeeded": false,
       "attributedCommits": [
-        "b136774f9c426de5312d530ae32c56a190399375"
+        "b136774f9c426de5312d530ae32c56a190399375",
+        "1592a5390cba95e192b97cf081b6b044852fbe80",
+        "97cf7bc8705934192386bf3bb7cfd12b9efc9db5",
+        "14d92aa351728d9355e822d531317c11e36b5331",
+        "e3b9f2a90026eb397e849dcbf38ec18b15096130",
+        "e516cfacda8070387b942aa3cf427d030193013c",
+        "80ac4a3b439b15ffe870cee60b9bfdcf0238aa41",
+        "fa29c9b9a0732fa8dd6cfe20311d061fc74f994d",
+        "0205b778ac704914756fd2042d47fca1c6dceefb",
+        "1d6e0f8df71695c98b115323d32d4408a650f443"
       ],
       "createdAt": "2026-09-16T22:37:13.627Z",
-      "touchedAt": "2026-09-16T23:00:28.375Z",
-      "release": "0.45.0"
+      "touchedAt": "2026-09-17T01:35:50.069Z",
+      "release": "0.45.0",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-17T01:32:56.314Z",
+          "artifacts": [
+            "openspec/changes/commit-nudge-reads-the-whole-move/proposal.md",
+            "openspec/changes/commit-nudge-reads-the-whole-move/design.md",
+            "openspec/changes/commit-nudge-reads-the-whole-move/tasks.md",
+            "openspec/changes/commit-nudge-reads-the-whole-move/specs/commit-observation/spec.md",
+            "openspec/changes/commit-nudge-reads-the-whole-move/specs/conductor-record/spec.md",
+            "openspec/changes/commit-nudge-reads-the-whole-move/specs/gate-integrity/spec.md",
+            "openspec/changes/commit-nudge-reads-the-whole-move/specs/state-write-guard/spec.md"
+          ],
+          "reviewer": "two fresh-context lenses (Gate 1 rounds as previously recorded) plus 0.45.0 cross-spec rounds 1-6 re-reviewing every amendment to these artifacts, final round pass on both lenses with REDs reproduced on 0.44.0; re-recorded over the amended artifacts 2026-09-16",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-09-17T00:03:51.292Z",
+            "artifacts": [
+              "openspec/changes/commit-nudge-reads-the-whole-move/proposal.md",
+              "openspec/changes/commit-nudge-reads-the-whole-move/design.md",
+              "openspec/changes/commit-nudge-reads-the-whole-move/tasks.md",
+              "openspec/changes/commit-nudge-reads-the-whole-move/specs/commit-observation/spec.md",
+              "openspec/changes/commit-nudge-reads-the-whole-move/specs/conductor-record/spec.md",
+              "openspec/changes/commit-nudge-reads-the-whole-move/specs/gate-integrity/spec.md",
+              "openspec/changes/commit-nudge-reads-the-whole-move/specs/state-write-guard/spec.md"
+            ],
+            "reviewer": "two fresh-context lenses, round 1 fail, round 2 scoped confirmation fail, round 3 narrow confirmation fail on 1-2 precise Important findings fixed in 14d92aa and verified by the orchestrator against the diff; 2026-09-16"
+          }
+        }
+      }
     },
     {
       "id": "emitted-commands-run-as-written",
@@ -8788,11 +8832,51 @@
       ],
       "reconcileNeeded": false,
       "attributedCommits": [
-        "c8d0d4ef0bc63742bf2ef2000deb753edc2b448e"
+        "c8d0d4ef0bc63742bf2ef2000deb753edc2b448e",
+        "30396d7820ac69f2c1914830d45327d6c792c896",
+        "498a93affe0b8a5932694608e32aae3c968e25e8",
+        "0dcf49f8e5da89632eb32a41fac1e15a3bb7fba4",
+        "6c096477e5c824eb3ddcb550c04cab5289a80928",
+        "e2781bb40c062f30b0657dd6be370707bf42f23b",
+        "a4ee277ef1f8048d3e6a34bc472fe9abf7add442",
+        "7eb529e765c196e97984746e4b2c911cda3d03da",
+        "bbf93428cd3c7c5ea867f6c100f678c43f093218",
+        "89c862512ce62512da6a5c07f4fd963650fdb4fa",
+        "1d6e0f8df71695c98b115323d32d4408a650f443"
       ],
       "createdAt": "2026-09-16T22:37:14.255Z",
-      "touchedAt": "2026-09-16T23:03:08.410Z",
-      "release": "0.45.0"
+      "touchedAt": "2026-09-17T01:35:50.521Z",
+      "release": "0.45.0",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-17T01:32:56.831Z",
+          "artifacts": [
+            "openspec/changes/emitted-commands-run-as-written/proposal.md",
+            "openspec/changes/emitted-commands-run-as-written/design.md",
+            "openspec/changes/emitted-commands-run-as-written/tasks.md",
+            "openspec/changes/emitted-commands-run-as-written/specs/conductor-record/spec.md",
+            "openspec/changes/emitted-commands-run-as-written/specs/emitted-instructions/spec.md",
+            "openspec/changes/emitted-commands-run-as-written/specs/epic-disposition/spec.md",
+            "openspec/changes/emitted-commands-run-as-written/specs/tracker-sync/spec.md"
+          ],
+          "reviewer": "two fresh-context lenses (Gate 1 rounds as previously recorded) plus 0.45.0 cross-spec rounds 1-6 re-reviewing every amendment to these artifacts, final round pass on both lenses with REDs reproduced on 0.44.0; re-recorded over the amended artifacts 2026-09-16",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-09-17T00:06:27.630Z",
+            "artifacts": [
+              "openspec/changes/emitted-commands-run-as-written/proposal.md",
+              "openspec/changes/emitted-commands-run-as-written/design.md",
+              "openspec/changes/emitted-commands-run-as-written/tasks.md",
+              "openspec/changes/emitted-commands-run-as-written/specs/conductor-record/spec.md",
+              "openspec/changes/emitted-commands-run-as-written/specs/emitted-instructions/spec.md",
+              "openspec/changes/emitted-commands-run-as-written/specs/epic-disposition/spec.md",
+              "openspec/changes/emitted-commands-run-as-written/specs/tracker-sync/spec.md"
+            ],
+            "reviewer": "two fresh-context lenses, round 1 fail, round 2 scoped confirmation fail, round 3 narrow confirmation fail on 1-2 precise Important findings fixed in 0dcf49f and verified by the orchestrator against the diff; 2026-09-16"
+          }
+        }
+      }
     },
     {
       "id": "user-text-never-forges-output",
@@ -8815,11 +8899,61 @@
       ],
       "reconcileNeeded": false,
       "attributedCommits": [
-        "c6185d151e67de6764c052e7b46ce4777e6e6542"
+        "c6185d151e67de6764c052e7b46ce4777e6e6542",
+        "7901aeca44d591fc8118270f40f37b95f82a860d",
+        "9309a4c9904afcf10b61b46295be7b460fa7760f",
+        "df29ed26b4bc72fb77b61646d61f1ad80275a6bb",
+        "a0712405da8fdb23ee7a5a3e3c7090d841213bb3",
+        "6ea3d7fe9aaa7a354bf4f951ca455847e65ce310",
+        "1d6e0f8df71695c98b115323d32d4408a650f443"
       ],
       "createdAt": "2026-09-16T22:37:14.698Z",
-      "touchedAt": "2026-09-16T23:06:35.933Z",
-      "release": "0.45.0"
+      "touchedAt": "2026-09-17T01:35:50.930Z",
+      "release": "0.45.0",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-17T01:32:57.248Z",
+          "artifacts": [
+            "openspec/changes/user-text-never-forges-output/proposal.md",
+            "openspec/changes/user-text-never-forges-output/design.md",
+            "openspec/changes/user-text-never-forges-output/tasks.md",
+            "openspec/changes/user-text-never-forges-output/specs/output-text-integrity/spec.md"
+          ],
+          "reviewer": "two fresh-context lenses (Gate 1 rounds as previously recorded) plus 0.45.0 cross-spec rounds 1-6 re-reviewing every amendment to these artifacts, final round pass on both lenses with REDs reproduced on 0.44.0; re-recorded over the amended artifacts 2026-09-16",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-09-17T00:00:17.990Z",
+            "artifacts": [
+              "openspec/changes/user-text-never-forges-output/proposal.md",
+              "openspec/changes/user-text-never-forges-output/design.md",
+              "openspec/changes/user-text-never-forges-output/tasks.md",
+              "openspec/changes/user-text-never-forges-output/specs/output-text-integrity/spec.md"
+            ],
+            "reviewer": "two fresh-context lenses (code-grounded completeness; spec contract & consistency), round 1 fail (1 C, 8 I), round 2 scoped confirmation fail (3 C unfailable/unpassable scenarios, 2 I, 1 cross-change contradiction), round 3 narrow confirmation pass (REDs re-run on 0.44.0); 2026-09-16"
+          }
+        }
+      }
+    },
+    {
+      "id": "hierarchy-run-has-one-state-writer",
+      "title": "A hierarchy run has one writer of state.json: children report attribution and gate evidence, the orchestrator records them after merge",
+      "priority": "P2",
+      "status": "planned",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "emitted-commands-run-as-written",
+          "reason": "split out at its Gate 1 — new design, not an emitted-command fix"
+        }
+      ],
+      "reconcileNeeded": false,
+      "description": "From 0.43.0 review E1 and 0.45.0 Gate 1 (emitted-commands lens B). SKILL.md's orchestrator section says children never write state.json while agents/hierarchy-child-executor.md has children record gates and archive; ROOT = CLAUDE_PROJECT_DIR||cwd so parallel children write the main checkout's state concurrently. Open design questions: the managed rules block orders every agent (children included) to attribute each commit; the tasks.md a child is handed carries record-gate-review, attribution and archive tasks; the orchestrator must attribute only the child branch's commits, never a merge or conflict-resolution commit (a merge commit as last entry makes the reviewed headSha stale); evidence carried in the child's DONE prose can be shortened by a terse contract, so Reporting item 1 must cover it; the child's context is discarded after it reports.",
+      "attributedCommits": [],
+      "createdAt": "2026-09-16T23:22:32.761Z",
+      "touchedAt": "2026-09-16T23:22:32.765Z"
     }
   ],
   "detourStack": [],
@@ -8830,7 +8964,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 927,
+  "revision": 964,
   "reviewMode": "thorough",
   "releases": [
     {
@@ -9068,7 +9202,50 @@
       "id": "0.45.0",
       "intent": "Important findings from the 0.43.0 review, first batch: the commit nudge, commands pm emits, and user text in pm's output. Cluster 4 (missing inverses) and #167/#168/#176 are 0.46.0.",
       "deferred": [],
-      "target": "0.45.0"
+      "target": "0.45.0",
+      "crossSpecReview": {
+        "verdict": "pass",
+        "reviewedAt": "2026-09-17T01:32:49.862Z",
+        "specs": [
+          {
+            "key": "commit-nudge-reads-the-whole-move/specs/commit-observation/spec.md",
+            "sha256": "d29e4502e5be55e8185c09e73f2abbdfce7290573563b684b68200a2b9f45123"
+          },
+          {
+            "key": "commit-nudge-reads-the-whole-move/specs/conductor-record/spec.md",
+            "sha256": "c89159e7e0b909dcf20bfa8006a55b31313f08d9ddf52b8e1d743abbd8859ee5"
+          },
+          {
+            "key": "commit-nudge-reads-the-whole-move/specs/gate-integrity/spec.md",
+            "sha256": "f55f933bd44149cb2b0f2bfba3a3a01829d728e14f04cb0f1012aed692cc0f6a"
+          },
+          {
+            "key": "commit-nudge-reads-the-whole-move/specs/state-write-guard/spec.md",
+            "sha256": "32c39e0ed0e91b44718413fab172726f1608daba2231a5f50f260d2022799b9d"
+          },
+          {
+            "key": "emitted-commands-run-as-written/specs/conductor-record/spec.md",
+            "sha256": "df438a3cd4ef6bf92e1d6809582104bdcb8bb5fc97d193ada62401f20ac67a81"
+          },
+          {
+            "key": "emitted-commands-run-as-written/specs/emitted-instructions/spec.md",
+            "sha256": "cc19f6cbe5ac661f9086acf62a148c793cf4f1d86e7afa6978bee46ef5d8c731"
+          },
+          {
+            "key": "emitted-commands-run-as-written/specs/epic-disposition/spec.md",
+            "sha256": "35ca6069cae4d2fecfc1a4fd5b4ff16dcf731b8ffac2655f22e16707e7c46119"
+          },
+          {
+            "key": "emitted-commands-run-as-written/specs/tracker-sync/spec.md",
+            "sha256": "5131c8835be05de01c23ae32bbf217770b4b8709b03f74dd72ff3b5cba7b9f2c"
+          },
+          {
+            "key": "user-text-never-forges-output/specs/output-text-integrity/spec.md",
+            "sha256": "5bd2150b9ccc479ed45c8e03db46221beef2b9ff4d5e3007d9785d9339093a37"
+          }
+        ],
+        "reviewer": "two fresh-context lenses per round (coherence/contradiction; falsifiability/dependency order), 6 rounds: r1 fail 7 BLOCKS, r2 fail 3, r3 fail 5, r4 fail 3, r5 split (1 contradiction adjudicated as BLOCK), r6 pass both lenses with REDs and printed remedies reproduced on 0.44.0; 2026-09-16"
+      }
     }
   ],
   "archiveBackfilledAt": "2026-08-27T04:52:42.658Z"
