@@ -126,6 +126,21 @@ adding one is a visible change to the test.
   that record's Gate 2, and the refusal's remedies are followed in the order printed
 - **THEN** each exits zero and the edit is then accepted, with `delivered` kept
 
+#### Scenario: The regression refusal's invocation carries a checkbox source's open tasks
+- **WHEN** an edit to an archived `delivered` epic whose task source is a checkbox file — re-pointing its
+  plan at one with a task still open — is refused because it breaks the handoff, and the refusal's
+  invocation is filled with `delivered`, a reason, a correction reason and a receiving epic
+- **THEN** the invocation carries `--carried-to <epicId>` beside a single `--reason`, it exits zero, and
+  the edit is made with `delivered` kept (before Gate 2 R-I1 it offered `delivered` with no handoff flag
+  and was refused "task(s) outstanding")
+
+#### Scenario: The drift-heal disposition step meets what delivered requires
+- **WHEN** `integrity` reports an epic the heal archived with a passing Gate 2 and no disposition, and
+  that epic has an open task in a checkbox source or an open inline story
+- **THEN** the step offering `--outcome delivered` carries `--carried-to <epicId>` for the checkbox
+  source, or names `--story <n> --done` first for the story, and followed it exits zero and clears the
+  finding (before Gate 2 R-I1 it offered a bare archive refused "task(s) outstanding")
+
 #### Scenario: The regression refusal's remedy runs when the edit withdraws the last attributed commit
 - **WHEN** a `--withdraw-commit` of the only commit attributed to an archived `delivered` openspec-lane
   epic with a passing Gate 2 headed at that commit — the commit an amend replaced — is refused, and

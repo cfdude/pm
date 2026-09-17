@@ -151,6 +151,27 @@ epic id (`honcho-memory`'s after its action word), or the value of `--id`, `--de
   template split over more than one wrapped line — is reported by no test; the Layer B `2.7a` legacy-id
   builders and the brief's legacy `My Plan` case are the behavioural backstop for the printers they cover.
 
+## 12. Printers offering `--outcome delivered` for one epic (added at Gate 2, R-I1)
+
+Derived with `rg -n "outcome (<)?delivered|AGENT_OUTCOMES.join" scripts/lib`. The rule: a printer offering
+`delivered` for a specific epic consults `deliveredObligations()` — an obligation with a remedy command is
+named first, and a checkbox source's handoff (`obligationArchiveFlags()`) travels on the archive itself.
+
+- `integrity.mjs` `delivered-release-epic-left-open` — holds (Gate 2 E-I5).
+- `update-epic.mjs` regression refusal, through `dispositionInvocation({ keepDelivered, carry })` — **FINDING
+  at Gate 2 (R-I1), fixed:** it kept `delivered` but carried no handoff flag, so re-pointing a fully ticked
+  plan at one with an open task printed an invocation refused "task(s) outstanding". `carry` is computed on
+  the record the edit leaves, and a flag the invocation already names (`--reason`) is not printed twice.
+- `integrity.mjs` `heal-archived-epic-passed-gate-2` — **FINDING at Gate 2 (R-I1 sweep), fixed:** a
+  hardcoded `--outcome delivered --no-deferrals` consulting nothing; an openspec epic carrying a `--plan`
+  with an open task, or an open inline story, got a refused step. Now the E-I5 shape.
+- `dispositionInvocation()`'s other callers (`unconsidered-outcomes`, `integrity`'s
+  `epic-in-undefined-status`) — hold without `carry`: they do not pass `keepDelivered`, so a failing handoff
+  omits `delivered` from the choices and `deliveredBlockedBy` names it.
+- Justified: `rules.mjs`' closed-item step and the disposition rule are epic-agnostic instructions over
+  `<id>` (their Gate 2 condition is stated beside them, E-M3), and `archive-gate.mjs`' own refusal lists
+  the vocabulary in prose; neither is a command for a known record.
+
 ## DATA references
 
 This change adds no stored field. `deliveredBlockedBy` is output only (`unconsidered-outcomes` JSON). The

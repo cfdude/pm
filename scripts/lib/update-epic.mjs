@@ -12,7 +12,7 @@ import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave } from "./save-report.mjs";
 import { noteEntry, parentError, parseFlags, parseLinkFlags, parseStoryFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
-import { archiveGate, AGENT_OUTCOMES, deliveredObligations, dispositionInvocation, gateRemedy, obligationRemedy } from "./archive-gate.mjs";
+import { archiveGate, AGENT_OUTCOMES, deliveredObligations, dispositionInvocation, gateRemedy, obligationArchiveFlags, obligationRemedy } from "./archive-gate.mjs";
 import { deferralAssertion, isEngineStamped, isStoryDisposed, outcomeOf, storyDisposition, storyDispositionError } from "./disposition.mjs";
 import { isArchived } from "./epic-progress.mjs";
 import { claimArtifacts } from "./source-artifacts.mjs";
@@ -224,7 +224,12 @@ function regressionRefusal({ id, snapshot, next, broken, argv, status }) {
       : "  Meet it first, then retry this command:\n") +
       remedyLines.map(l => `    - \`${l}\`\n`).join("");
   const { echoed, reenter } = echoedTokens(argv);
+  // A checkbox source's open tasks have no command of their own (no verb ticks a checkbox), so the
+  // handoff travels ON the invocation, computed like the remedies on the record the edit leaves
+  // (Gate 2 R-I1: without it the invocation, filled with `delivered`, is refused "task(s) outstanding").
+  const carry = broken.flatMap(o => obligationArchiveFlags(next, o));
   const invocation = dispositionInvocation(snapshot, {
+    carry,
     echoed,
     correction: !isEngineStamped(snapshot.disposition),
     deferrals: snapshot.deferralAssertion ? "asserted" : "placeholder",
@@ -242,6 +247,10 @@ function regressionRefusal({ id, snapshot, next, broken, argv, status }) {
       ? `  The ${[...new Set(reenter)].join(", ")} value${reenter.length === 1 ? "" : "s"} carried a newline or ` +
         `another control character and ${reenter.length === 1 ? "is" : "are"} not echoed: re-enter ` +
         `${reenter.length === 1 ? "it" : "them"} where the invocation shows ${REENTER_PLACEHOLDER}.\n`
+      : "") +
+    (carry.length
+      ? "  Its open tasks have no command of their own: tick them in the task source, or keep the handoff " +
+        "the invocation carries, naming the epic they moved to and which tasks moved.\n"
       : "") +
     `  ${remedies ? "Or, once it is met, record" : "To make this change, record"} the disposition it implies. ` +
     "The invocation runs the full archive gate on the record it leaves:\n" +

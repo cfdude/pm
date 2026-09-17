@@ -129,7 +129,12 @@ Pairs: 2.1–2.8 (incl. 2.7a) land with 2.9.
       and the refused `--withdraw-commit C1` then exits 0 with outcome `delivered` kept. Assert on
       the refused command and that record only, not on a clean `integrity` (the fixture's
       back-to-back gates trip `gate-recorded-as-bookkeeping`). (Fails today: the refusal names only
-      the disposition invocation, which exits 1.)
+      the disposition invocation, which exits 1.) AND (Gate 2 R-I1) a checkbox-source handoff
+      regression — an archived `delivered` superpowers epic re-pointed with `--plan` at a plan with an
+      open task: the refusal's invocation carries `--carried-to <epicId>` beside one `--reason` and,
+      filled, makes the edit with `delivered` kept; the sweep for every other printer offering
+      `--outcome delivered` found `integrity`'s `heal-archived-epic-passed-gate-2`, which now meets the
+      obligations the same way (a checkbox-source case and a stories-source case)
 - [x] 2.7 RED: `recorded-sha-the-repository-cannot-resolve` (orphan-branch commit recorded, branch
       deleted, `git reflog expire --expire=now --all`, `git gc --prune=now`, plus one reachable
       attributed commit so the check's resolvability probe does not skip the absent arm — first

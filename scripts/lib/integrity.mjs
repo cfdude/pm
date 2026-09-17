@@ -355,10 +355,19 @@ export const CHECKS = [
         // correctly — nobody supplied a disposition at the moment it flipped the status, and
         // `unknown` says exactly that — and the epic gets no `ungated` entry either, because it
         // already had a real verdict. So without this check the mismatch is visible nowhere.
+        // The step offers `delivered`, so it consults the obligations `delivered` carries, exactly as
+        // `delivered-release-epic-left-open` does (Gate 2 R-I1): an open story's remedy first, and a
+        // checkbox source's open tasks carried on the archive itself.
+        const failing = deliveredObligations(e);
+        const owed = failing.flatMap(o => obligationRemedy(e, o)).map(l => `\`${l}\``);
+        const carry = failing.flatMap(o => obligationArchiveFlags(e, o));
         out.push({ epic: e.id, detail:
           "archived by the drift heal with a passing Gate 2 but no recorded disposition. This " +
           "is the ordinary end of the documented workflow, and the fix is the ordinary next " +
-          `step: \`update-epic ${printedId(e.id)} --status archived --outcome delivered --no-deferrals\`` });
+          "step: " +
+          (owed.length ? `first meet what \`delivered\` requires, ${owed.join(", then ")}, then ` : "") +
+          (carry.length ? "tick its open tasks in its task source and archive it, or record where they went: " : "") +
+          `\`update-epic ${printedId(e.id)} --status archived --outcome delivered${carry.map(f => ` ${f}`).join("")} --no-deferrals\`` });
       }
       return out;
     },

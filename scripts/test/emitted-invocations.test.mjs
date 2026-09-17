@@ -1018,18 +1018,67 @@ const INTEGRITY_BUILDERS = {
     produce: integrityProducer("archive-directory-has-no-epic"),
     reported: (out) => out.includes("orphan-change"),
   },
-  "heal-archived-epic-passed-gate-2": {
-    setup() {
-      const repo = remedyRepo();
-      const [c1] = openspecEpic(repo, "hg", 1);
-      passGate2(repo, "hg", repo.parent(c1), c1);
-      healArchive(repo, "hg");
-      return { repo, epicId: "hg" };
+  "heal-archived-epic-passed-gate-2": [
+    {
+      case: "nothing outstanding",
+      setup() {
+        const repo = remedyRepo();
+        const [c1] = openspecEpic(repo, "hg", 1);
+        passGate2(repo, "hg", repo.parent(c1), c1);
+        healArchive(repo, "hg");
+        return { repo, epicId: "hg" };
+      },
+      produce: integrityProducer("heal-archived-epic-passed-gate-2"),
+      reported: blockHas(),
+      meaning: () => ({}),
     },
-    produce: integrityProducer("heal-archived-epic-passed-gate-2"),
-    reported: blockHas(),
-    meaning: () => ({}),
-  },
+    // Gate 2 R-I1 sweep — this check's step is a second printer offering `--outcome delivered` for one
+    // epic, and it consulted no obligation: an open task in a plan, or an open inline story, gets the
+    // step refused "task(s) outstanding". A checkbox source carries the handoff on the archive itself;
+    // a stories source names `--story <n> --done` first (the E-I5 shape).
+    {
+      case: "checkbox source",
+      setup() {
+        const repo = remedyRepo();
+        repo.ok(["add-epic", "--id", "later", "--lane", "claude-code", "--title", "later"]);
+        const plan = repo.file("docs/superpowers/plans/2026-08-01-hp.md", "# hp\n\n- [x] 1. done\n- [ ] 2. still open\n");
+        const [c1] = openspecEpic(repo, "hp", 1, ["--plan", plan]);
+        passGate2(repo, "hp", repo.parent(c1), c1);
+        healArchive(repo, "hp");
+        const bare = repo.run(archiveDelivered("hp"));
+        assert.notEqual(bare.status, 0, "fixture: a bare delivered archive is refused on the open task");
+        return { repo, epicId: "hp" };
+      },
+      produce: integrityProducer("heal-archived-epic-passed-gate-2"),
+      reported: blockHas(),
+      meaning: () => ({ "carried-to": "later", reason: REASON }),
+      alternatives: [{ name: "archive, carrying the open task", cleared(fx) {
+        assert.ok(!integrityBlock(fx.repo, "heal-archived-epic-passed-gate-2").includes("`hp`"), "the finding clears");
+        assert.equal(fx.repo.epic("hp").disposition.carriedTo, "later");
+      } }],
+    },
+    {
+      case: "stories source",
+      setup() {
+        const repo = remedyRepo();
+        const [c1] = openspecEpic(repo, "hs", 1, ["--add-story", "still open"]);
+        passGate2(repo, "hs", repo.parent(c1), c1);
+        healArchive(repo, "hs");
+        const bare = repo.run(archiveDelivered("hs"));
+        assert.notEqual(bare.status, 0, "fixture: a bare delivered archive is refused on the open story");
+        return { repo, epicId: "hs" };
+      },
+      observe(fx) {
+        const out = integrityBlock(fx.repo, "heal-archived-epic-passed-gate-2");
+        const s = out.indexOf("update-epic hs --story <n> --done");
+        const a = out.indexOf("update-epic hs --status archived");
+        assert.ok(s !== -1 && s < a, `the story is recorded done before the archive:\n${out}`);
+      },
+      produce: integrityProducer("heal-archived-epic-passed-gate-2"),
+      reported: blockHas(),
+      meaning: () => ({ story: "1" }),
+    },
+  ],
   "gate-recorded-as-bookkeeping": {
     prints: "none",
     setup() {
@@ -1617,6 +1666,46 @@ for (const variant of ["remedy, then the refused command", "remedy, then the pri
       } }],
   });
 }
+
+// Gate 2 R-I1 — the HANDOFF regression on a CHECKBOX source. An archived delivered superpowers epic whose
+// plan was fully ticked is re-pointed at a plan with a task still open. No verb ticks a checkbox, so the
+// refusal's invocation must itself carry the handoff flag; without it the printed invocation, filled with
+// `delivered`, is refused "task(s) outstanding" — the E-I5 defect at the refusal's own printer.
+registerBuilder("regression:handoff-checkbox", {
+  setup() {
+    const repo = remedyRepo();
+    repo.ok(["add-epic", "--id", "later", "--lane", "claude-code", "--title", "later"]);
+    const ticked = repo.file("docs/superpowers/plans/2026-08-01-hc.md", "# hc\n\n- [x] 1. done\n");
+    const open = repo.file("docs/superpowers/plans/2026-08-02-hc.md", "# hc\n\n- [x] 1. done\n- [ ] 2. still open\n");
+    repo.ok(["add-epic", "--id", "hc", "--lane", "superpowers", "--title", "hc", "--plan", ticked]);
+    repo.ok(archiveDelivered("hc"));
+    const refusedArgv = ["update-epic", "hc", "--plan", open];
+    const bare = repo.run(["update-epic", "hc", "--plan", open, "--status", "archived", "--outcome", "delivered",
+      "--reason", REASON, "--correct-disposition", REASON]);
+    assert.notEqual(bare.status, 0, "fixture: the invocation without the handoff flag is refused on the open task");
+    assert.match(bare.stderr, /outstanding/, bare.stderr);
+    return { repo, epicId: "hc", open, refusedArgv };
+  },
+  observe(fx) {
+    const out = refusal((f) => f.refusedArgv)(fx);
+    assert.notEqual(fx.lastStatus, 0, "fixture: refused");
+    assert.match(out, /broken: the handoff demand/, out);
+    const lines = invocationLines(out);
+    assert.equal(lines.length, 1, `exactly one line begins \`  update-epic \`:\n${out}`);
+    assert.match(lines[0], /--outcome <delivered\|/, "the regression refusal keeps delivered");
+    assert.match(lines[0], /--carried-to <epicId>/, `the invocation carries the handoff:\n${out}`);
+    assert.equal((lines[0].match(/--reason\b/g) || []).length, 1, `one --reason, not two:\n${lines[0]}`);
+  },
+  produce: refusal((fx) => fx.refusedArgv),
+  reported: refused,
+  meaning: () => ({ outcome: "delivered", reason: REASON, "correct-disposition": REASON, "carried-to": "later" }),
+  alternatives: [{ name: "the printed invocation, carrying the open task", cleared(fx) {
+    const e = fx.repo.epic("hc");
+    assert.equal(e.planPath, fx.open, "the edit the refusal stopped is made");
+    assert.equal(e.disposition.outcome, "delivered");
+    assert.equal(e.disposition.carriedTo, "later");
+  } }],
+});
 
 test("2.8 REGRESSION GUARD: a withdrawal on an archived delivered record whose Gate 2 is ALREADY stale still exits 0", () => {
   const repo = remedyRepo();

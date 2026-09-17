@@ -240,12 +240,19 @@ export function gateRemedy(id, gate, { base = "<sha>", head = "<sha>" } = {}) {
  *    correction  add `--correct-disposition` (true only for an AGENT-recorded disposition, since
  *                the correction flag is refused against an engine stamp);
  *    deferrals   "bare" (the default, `--no-deferrals`), "asserted" (the epic already carries an
- *                assertion: print nothing) or "placeholder" (print DEFERRAL_PLACEHOLDER). */
-export function dispositionInvocation(epic, { echoed = [], correction = false, deferrals = "bare", keepDelivered = false } = {}) {
+ *                assertion: print nothing) or "placeholder" (print DEFERRAL_PLACEHOLDER);
+ *    carry       obligationArchiveFlags() for a record whose `delivered` would be refused on a
+ *                checkbox source's open tasks — the refusal's invocation keeps offering `delivered`,
+ *                so it must carry the handoff that makes `delivered` recordable (Gate 2 R-I1). */
+export function dispositionInvocation(epic, { echoed = [], correction = false, deferrals = "bare", keepDelivered = false, carry = [] } = {}) {
   const outcomes = keepDelivered || !blockedDelivered(epic).length
     ? AGENT_OUTCOMES : AGENT_OUTCOMES.filter(o => o !== "delivered");
-  return `update-epic ${printedId(epic.id)}${echoed.length ? ` ${echoed.join(" ")}` : ""} --status archived ` +
-    `--outcome <${outcomes.join("|")}> --reason "<why>"` +
+  const head = `update-epic ${printedId(epic.id)}${echoed.length ? ` ${echoed.join(" ")}` : ""} --status archived ` +
+    `--outcome <${outcomes.join("|")}> --reason "<why>"`;
+  // A carry flag the invocation already names (`--reason`) is not printed twice: a repeated flag
+  // silently keeps its last value, so a second `--reason` would make one of the two placeholders a lie.
+  const named = new Set([...head.matchAll(/(?:^| )(--[a-z][a-z0-9-]*)/g)].map(m => m[1]));
+  return head + carry.filter(f => !named.has(f.split(" ")[0])).map(f => ` ${f}`).join("") +
     (correction ? ` --correct-disposition "<why the recorded one was wrong>"` : "") +
     (deferrals === "bare" ? " --no-deferrals" : deferrals === "placeholder" ? ` ${DEFERRAL_PLACEHOLDER}` : "");
 }
@@ -407,8 +414,10 @@ export const DELIVERED_OBLIGATIONS = [
       ? [`update-epic ${printedId(epic.id)} --story <n> --done`] : []),
     // A checkbox source has no standalone remedy command — no verb ticks a checkbox — so the handoff
     // travels ON the archive invocation itself (design Decision 2: tick the tasks, or record
-    // `--carried-to`). A printer offering `--outcome delivered` for such an epic appends these flags;
-    // without them the printed archive is refused "task(s) outstanding" (Gate 2 E-I5).
+    // `--carried-to`). EVERY printer offering `--outcome delivered` for such an epic appends these flags
+    // — integrity's `delivered-release-epic-left-open` (Gate 2 E-I5) and `heal-archived-epic-passed-gate-2`,
+    // and update-epic's regression refusal through dispositionInvocation()'s `carry` (Gate 2 R-I1);
+    // without them the printed archive is refused "task(s) outstanding".
     archiveFlags: (epic) => (outstandingSummary(epic).source === "stories"
       ? [] : ["--carried-to <epicId>", "--reason \"<which tasks moved>\""]),
   },
