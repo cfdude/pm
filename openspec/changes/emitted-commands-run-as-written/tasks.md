@@ -110,7 +110,9 @@ Pairs: 2.1–2.8 (incl. 2.7a) land with 2.9.
       (archive) in one fixture: Gate 2 precondition named first, each command exits 0, `integrity` no
       longer reports the member; alternative 2 (`release --defer`) in a second fresh fixture, same
       assertion (`repro.txt` §D1-D2); AND (Gate 2 E-I5) a checkbox-source member with an open task — the
-      archive alternative carries `--carried-to <epicId>` and, filled, clears the finding
+      archive alternative carries `--carried-to <epicId>` and, filled, clears the finding; AND (Gate 2
+      R-M3) it carries `--reason "<which tasks moved>"` beside it, asserted, since a remedy dropping the
+      optional reason still exits 0
 - [x] 2.4 RED: `unconsidered-outcomes` on an engine-stamped openspec-lane epic with no Gate 2 — the
       invocation's choices exclude `delivered`, `deliveredBlockedBy` names `gate2-missing` with its
       remedy; one fresh fixture per offered outcome, each exits 0 and the epic leaves the set (gh-189;
@@ -323,7 +325,13 @@ Pairs: 7.0–7.1 land with 7.2. The single-writer rule for hierarchy runs is NOT
       - every shipped `record-gate-review` form and every engine invocation in `agents/*.md`;
       - (added at Gate 2, E-I3) every printed invocation placing an epic id — derived by the suite's
         `rawEpicIdSites()` over `printedTemplates()`, never typed — each through `printedId()` or
-        justified as a non-epic-id slot (release id, sha, session).
+        justified as a non-epic-id slot (release id, sha, session); the scan also reaches (Gate 2 R-M4) a
+        span inside a single-quoted literal and a double-quoted literal ending `" +` whose value opens the
+        next line — both shapes proven by mutants that survived before and by a synthetic-source test,
+        with the template list on today's tree unchanged (82 before and after);
+      - (added at Gate 2, R-I1) every printer offering `--outcome delivered` for one epic
+        (`rg -n "outcome (<)?delivered|AGENT_OUTCOMES.join" scripts/lib`), each consulting the delivered
+        obligations or justified — `call-site-sweep.md` section 12.
       DATA references: this change adds no stored field; `deliveredBlockedBy` is output only. State
       that, and that the `externalUpdatedAt` the outward line now supplies is written by `update-epic`
       and read by the brief and the refresh gate.

@@ -1,0 +1,88 @@
+# RED for Gate 2 R-M3 and R-M4, run on HEAD 490fdde with the new tests and the n08b mutant (carry flags without --reason) applied.
+# R-M3 is test-only: its RED is that mutant, which the suite passed before these assertions. R-M4's RED is the synthetic-source scan test on the pre-change scan.
+# Mutants n11 (single-quoted span) and n13 (double-quoted, raw id on the next line) SURVIVED the pre-change scan and are KILLED by E-I3 after it.
+✔ Layer B integrity:heal-archived-epic-passed-gate-2 [nothing outstanding] {remedy} — the remedy clears what printed it (806.322292ms)
+✖ Layer B integrity:heal-archived-epic-passed-gate-2 [checkbox source] {archive, carrying the open task} — the remedy clears what printed it (520.476334ms)
+✔ Layer B integrity:heal-archived-epic-passed-gate-2 [stories source] {remedy} — the remedy clears what printed it (836.990959ms)
+✔ Layer B integrity:delivered-release-epic-left-open [archive] {archive} — the remedy clears what printed it (758.051333ms)
+✔ Layer B integrity:delivered-release-epic-left-open [release --defer] {release --defer} — the remedy clears what printed it (602.918791ms)
+✖ Layer B integrity:delivered-release-epic-left-open [checkbox source] {archive, carrying the open task} — the remedy clears what printed it (432.621375ms)
+✔ Layer B 2.7a legacy id: heal-archived-epic-passed-gate-2 {remedy} — the remedy clears what printed it (422.852542ms)
+✖ R-M4 the template scan reaches a single-quoted span and a double-quoted one whose raw id wraps onto the next line (2.160209ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 5
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4431.755834
+
+✖ failing tests:
+
+test at scripts/test/emitted-invocations.test.mjs:851:7
+✖ Layer B integrity:heal-archived-epic-passed-gate-2 [checkbox source] {archive, carrying the open task} — the remedy clears what printed it (520.476334ms)
+  AssertionError [ERR_ASSERTION]:   • `hp` — archived by the drift heal with a passing Gate 2 but no recorded disposition. This is the ordinary end of the documented workflow, and the fix is the ordinary next step: tick its open tasks in its task source and archive it, or record where they went: `update-epic hp --status archived --outcome delivered --carried-to <epicId> --no-deferrals`
+      at Object.observe (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-45/r2/pre/scripts/test/emitted-invocations.test.mjs:1054:16)
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-45/r2/pre/scripts/test/emitted-invocations.test.mjs:853:26)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '  • `hp` — archived by the drift heal with a passing Gate 2 but no recorded disposition. This is the ordinary end of the documented workflow, and the fix is the ordinary next step: tick its open tasks in its task source and archive it, or record where they went: `update-epic hp --status archived --outcome delivered --carried-to <epicId> --no-deferrals`',
+    expected: /--outcome delivered --carried-to <epicId> --reason "<which tasks moved>" --no-deferrals/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:851:7
+✖ Layer B integrity:delivered-release-epic-left-open [checkbox source] {archive, carrying the open task} — the remedy clears what printed it (432.621375ms)
+  AssertionError [ERR_ASSERTION]:   • `cb` — still `queued` in release `1.0.0`, which has already delivered — and it is not in that release's deferred[], so the record says neither that it shipped nor that it was cut. Give it the ending it actually had — either it shipped: tick its open tasks in its task source and archive it, or record where they went: `update-epic cb --status archived --outcome delivered --carried-to <epicId> --no-deferrals` — or it was cut, and you record that instead: `release 1.0.0 --defer cb --reason "<why>"`
+      at Object.observe (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-45/r2/pre/scripts/test/emitted-invocations.test.mjs:1233:16)
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-45/r2/pre/scripts/test/emitted-invocations.test.mjs:853:26)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '  • `cb` — still `queued` in release `1.0.0`, which has already delivered — and it is not in that release\'s deferred[], so the record says neither that it shipped nor that it was cut. Give it the ending it actually had — either it shipped: tick its open tasks in its task source and archive it, or record where they went: `update-epic cb --status archived --outcome delivered --carried-to <epicId> --no-deferrals` — or it was cut, and you record that instead: `release 1.0.0 --defer cb --reason "<why>"`',
+    expected: /--outcome delivered --carried-to <epicId> --reason "<which tasks moved>" --no-deferrals/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:2820:1
+✖ R-M4 the template scan reaches a single-quoted span and a double-quoted one whose raw id wraps onto the next line (2.160209ms)
+  AssertionError [ERR_ASSERTION]: the raw-id sites reported:
+  
+  + actual - expected
+  
+  + []
+  - [
+  -   'shapes.mjs:1',
+  -   'shapes.mjs:3'
+  - ]
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-45/r2/pre/scripts/test/emitted-invocations.test.mjs:2841:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at node:internal/test_runner/test:1305:31
+      at node:internal/process/task_queues:151:7
+      at AsyncResource.runInAsyncScope (node:async_hooks:226:14)
+      at AsyncResource.runMicrotask (node:internal/process/task_queues:148:8) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ 'shapes.mjs:1', 'shapes.mjs:3' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

@@ -147,6 +147,9 @@ epic id (`honcho-memory`'s after its action word), or the value of `--id`, `--de
 - Justified, not epic ids: `release`/`record-cross-spec-review` positionals are RELEASE ids;
   `retract-detour`'s is a commit sha; `reorder`, `suggest-lane`, `triage` take no epic-id positional.
   `integrity.mjs`'s `unclaim … --session <session>` value is a session identity, not an id slot.
+- Reach extended at Gate 2 (R-M4): a span opened inside a single-quoted literal (`'\`add-epic --id ' + id`),
+  and a double-quoted literal ending `" +` whose raw value opens the next line. The template list on
+  today's tree is identical before and after (82), so the extension adds no false positive.
 - Limit, stated: a hole the scan cannot see — an id assembled into a variable before the literal, or a
   template split over more than one wrapped line — is reported by no test; the Layer B `2.7a` legacy-id
   builders and the brief's legacy `My Plan` case are the behavioural backstop for the printers they cover.

@@ -1049,6 +1049,10 @@ const INTEGRITY_BUILDERS = {
         assert.notEqual(bare.status, 0, "fixture: a bare delivered archive is refused on the open task");
         return { repo, epicId: "hp" };
       },
+      observe(fx) {
+        const out = integrityBlock(fx.repo, "heal-archived-epic-passed-gate-2");
+        assert.match(out, /--outcome delivered --carried-to <epicId> --reason "<which tasks moved>" --no-deferrals/, out);
+      },
       produce: integrityProducer("heal-archived-epic-passed-gate-2"),
       reported: blockHas(),
       meaning: () => ({ "carried-to": "later", reason: REASON }),
@@ -1221,6 +1225,12 @@ const INTEGRITY_BUILDERS = {
         assert.notEqual(plain.status, 0, "fixture: a bare delivered archive is refused on the open task");
         assert.match(plain.stderr, /outstanding/, plain.stderr);
         return { repo, epicId: "cb" };
+      },
+      observe(fx) {
+        // Gate 2 R-M3 — the handoff carries WHICH tasks moved, not only where: `--reason` is optional for
+        // `delivered`, so a remedy dropping it still exits 0 and only this assertion sees the loss.
+        const out = integrityBlock(fx.repo, "delivered-release-epic-left-open");
+        assert.match(out, /--outcome delivered --carried-to <epicId> --reason "<which tasks moved>" --no-deferrals/, out);
       },
       produce: integrityProducer("delivered-release-epic-left-open"),
       reported: blockHas(),
@@ -2586,15 +2596,26 @@ test("9.1 the rules block's disposition rule states the Gate 2 condition beside 
  *  scripts/lib/*.mjs whose text begins with a dispatched verb and a space. Returned with a matcher
  *  built from the literal text up to the span's end or the literal's end, each `${…}` a wildcard. */
 const quotesBeforeOf = (line, index) => (line.slice(0, index).match(/(^|[^\\])"/g) || []).length;
-export function printedTemplates(verbs = dispatchedVerbs()) {
+/** Is `index` inside a SINGLE-quoted string literal on this line? A small lexer from the line start, so
+ *  an apostrophe inside a double-quoted or template literal is not read as a quote (Gate 2 R-M4). */
+const inSingleQuoted = (line, index) => {
+  let q = null;
+  for (let k = 0; k < index; k++) {
+    const c = line[k];
+    if (c === String.fromCharCode(92) && q) { k++; continue; }
+    if (q) { if (c === q) q = null; continue; }
+    if (c === "'" || c === '"' || c === "`") q = c;
+  }
+  return q === "'";
+};
+export function printedTemplates(verbs = dispatchedVerbs(), dir = path.join(REPO, "scripts", "lib")) {
   const BS = String.fromCharCode(92);
   const HOLE = "@@HOLE@@";
   const out = [];
-  const dir = path.join(REPO, "scripts", "lib");
   const verbAlt = [...verbs].sort((a, b) => b.length - a.length).map(v => v.replace(/-/g, "\\-")).join("|");
   // A span opener (`\``/`` ` ``) or a string literal that IS an indented invocation line (two or
   // more leading spaces, as the regression refusal and verify-specs print them).
-  const opener = new RegExp(`(${BS}${BS}\`|\`|["\`] {2,})(${verbAlt}) `, "g");
+  const opener = new RegExp(`(${BS}${BS}\`|\`|["'\`] {2,})(${verbAlt}) `, "g");
   for (const file of fs.readdirSync(dir).filter(f => f.endsWith(".mjs")).sort()) {
     const lines = fs.readFileSync(path.join(dir, file), "utf8").split("\n");
     lines.forEach((line, i) => {
@@ -2602,10 +2623,17 @@ export function printedTemplates(verbs = dispatchedVerbs()) {
       for (const m of line.matchAll(opener)) {
         const quotesBefore = quotesBeforeOf(line, m.index);
         let inTemplate;
+        // A single-quoted literal ends at `'` (Gate 2 R-M4: `'\`add-epic --id ' + id` was never scanned).
+        let singleQuoted = false;
         if (m[1].length > 2) {
-          // An indented invocation LINE: a template literal, or a double-quoted string that opens here.
+          // An indented invocation LINE: a template literal, or a quoted string that opens here.
           inTemplate = m[1][0] === "`";
-          if (!inTemplate && quotesBefore % 2 === 1) continue;
+          singleQuoted = m[1][0] === "'";
+          if (singleQuoted && inSingleQuoted(line, m.index)) continue;
+          if (!inTemplate && !singleQuoted && quotesBefore % 2 === 1) continue;
+        } else if (m[1].length === 1 && inSingleQuoted(line, m.index)) {
+          inTemplate = false;                              // a span inside a single-quoted string
+          singleQuoted = true;
         } else if (m[1].length === 2) {
           inTemplate = true;                               // an escaped span inside a template literal
         } else if (quotesBefore % 2 === 1) {
@@ -2632,7 +2660,7 @@ export function printedTemplates(verbs = dispatchedVerbs()) {
             if (line[j + 1] === "`") break;
             seg += line[j + 1]; j += 2; continue;
           }
-          const literalEnds = inTemplate ? line[j] === "`" : line[j] === '"';
+          const literalEnds = inTemplate ? line[j] === "`" : line[j] === (singleQuoted ? "'" : '"');
           if (literalEnds) {
             // The literal closes mid-span and the line concatenates a value onto it (`"…claim " + id`):
             // that value is a hole too.
@@ -2640,7 +2668,9 @@ export function printedTemplates(verbs = dispatchedVerbs()) {
             if (next) { holes.push(next[1]); seg += HOLE; }
             // …or the concatenation wraps, and the next line's literal OPENS with the value.
             else if (/^\s*\+\s*$/.test(line.slice(j + 1)) && i + 1 < lines.length) {
-              const wrapped = /^\s*`\$\{([^}]*)\}/.exec(lines[i + 1]);
+              // …as a template hole, or as a bare value the next line concatenates (Gate 2 R-M4).
+              const wrapped = /^\s*`\$\{([^}]*)\}/.exec(lines[i + 1])
+                || /^\s*([A-Za-z_$][\w$.]*(?:\([^()]*\))?)\s*(?:\+|,|\)|;|$)/.exec(lines[i + 1]);
               if (wrapped) { holes.push(wrapped[1].trim()); seg += HOLE; }
             }
             break;
@@ -2806,6 +2836,31 @@ export function rawEpicIdSites(templates = printedTemplates()) {
 
 test("E-I3 every epic id a printed invocation interpolates goes through printedId()", () => {
   assert.deepEqual(rawEpicIdSites(), [], "raw epic ids in printed invocations");
+});
+
+test("R-M4 the template scan reaches a single-quoted span and a double-quoted one whose raw id wraps onto the next line", () => {
+  // Both shapes survived the E-I3 scan as mutants of detour-stack.mjs's `add-epic --id` hint: a span
+  // opened inside a single-quoted string, and a double-quoted string ending `" +` with the id on the
+  // next line. Each must be reported; the same lines through printedId() must not.
+  const BT = "`";
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pm-templates-"));
+  fs.writeFileSync(path.join(dir, "shapes.mjs"), [
+    "export const a = (detourId) => `detour '${detourId}' not found (` + '" + BT + "add-epic --id ' + detourId + ' ' +",
+    '  "…' + BT + '), register it";',
+    "export const b = (detourId) => `detour '${detourId}' not found (` + \"" + BT + "add-epic --id \" +",
+    '  detourId + " …' + BT + '), register it";',
+    "export const c = (detourId) => `detour not found (` + '" + BT + "add-epic --id ' + printedId(detourId) + ' ' +",
+    '  "…' + BT + '), register it";',
+    "export const d = (detourId) => `detour not found (` + \"" + BT + "add-epic --id \" +",
+    '  printedId(detourId) + " …' + BT + '), register it";',
+    "export const e = (x) => 'don' + \"'t \" + x;",
+    "",
+  ].join("\n"));
+  const templates = printedTemplates(new Set(["add-epic"]), dir);
+  fs.rmSync(dir, { recursive: true, force: true });
+  const sites = rawEpicIdSites(templates).map(l => l.split(/\s+/)[0].replace(/^.*\//, ""));
+  assert.deepEqual(sites, ["shapes.mjs:1", "shapes.mjs:3"], `the raw-id sites reported:\n${rawEpicIdSites(templates).join("\n")}`);
+  assert.equal(templates.length, 4, `each of the four shapes is one template:\n${templates.map(t => `${t.site} ${t.text}`).join("\n")}`);
 });
 
 /** Is this file running filtered? The reach half needs every fixture above to have run. */
