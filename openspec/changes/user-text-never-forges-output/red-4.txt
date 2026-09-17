@@ -1,0 +1,34 @@
+✖ 4.1 A detour reason cannot forge a NOW line in the brief — the honcho-memories.log half, and honcho-memory's stdout (447.260667ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 488.819958
+
+✖ failing tests:
+
+test at scripts/test/output-text-integrity.test.mjs:298:1
+✖ 4.1 A detour reason cannot forge a NOW line in the brief — the honcho-memories.log half, and honcho-memory's stdout (447.260667ms)
+  AssertionError [ERR_ASSERTION]: push-detour's printed memory line forges nothing
+  + actual - expected
+  
+  + [
+  +   'NOW: forged'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-text-integrity.test.mjs:304:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'NOW: forged' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

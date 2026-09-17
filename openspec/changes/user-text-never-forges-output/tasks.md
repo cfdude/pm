@@ -86,9 +86,9 @@ Pairs: 3.1–3.4c land with 3.5.
 
 Pairs: 4.1 lands with 4.2.
 
-- [ ] 4.1 RED: spec "A detour reason cannot forge a NOW line in the brief" — the
+- [x] 4.1 RED: spec "A detour reason cannot forge a NOW line in the brief" — the
       `honcho-memories.log` half, plus `honcho-memory push e1 "<P>"` stdout (repro A)
-- [ ] 4.2 GREEN: `honchoMemoryLine()` escapes the reason and the epic id (design D7)
+- [x] 4.2 GREEN: `honchoMemoryLine()` escapes the reason and the epic id (design D7)
 
 ## 5. Refusals quote values on one line
 

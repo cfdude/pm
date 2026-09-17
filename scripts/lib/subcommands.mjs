@@ -985,8 +985,11 @@ const HONCHO_MEMORIES_LOG = path.join(CONDUCTOR_DIR, "honcho-memories.log");
  *  INSTRUCTION-LAYER law above); this only gives the interactive agent an exact, consistently
  *  worded, ready-to-copy string instead of composing one ad hoc from context each time. */
 export function honchoMemoryLine(action, epicId, reason) {
-  if (action === "push") return `paused ${epicId} for ${reason}`;
-  if (action === "pop") return `resumed ${epicId}, reconciled vs ${reason}`;
+  // ONE line by definition: the epic id and the reason are governed values, escaped so neither the
+  // printed line nor its `.conductor/honcho-memories.log` entry can gain a line (user-text-never-
+  // forges-output D7). A memory then carries a visible escape where a newline was typed.
+  if (action === "push") return `paused ${escapeControls(epicId)} for ${escapeControls(reason)}`;
+  if (action === "pop") return `resumed ${escapeControls(epicId)}, reconciled vs ${escapeControls(reason)}`;
   throw new Error(`honchoMemoryLine: unknown action '${action}' (expected 'push' or 'pop')`);
 }
 
