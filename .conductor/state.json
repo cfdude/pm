@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "user-text-never-forges-output",
+  "active": null,
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -8386,11 +8386,16 @@
           "at": "2026-09-17T11:31:39.288Z",
           "actor": "agent",
           "text": "carried from emitted-commands-run-as-written: primary set-tracker --remove removes nothing (ignored: bare it changes nothing, with a valid --repo it replaces the repo; no inverse); set-tracker --intent badpair silently dropped; verify-worktrees/verify-state have no command doc"
+        },
+        {
+          "at": "2026-09-17T17:34:06.177Z",
+          "actor": "agent",
+          "text": "carried from user-text-never-forges-output Gate 2 (pre-existing): verify-worktrees reports a truncated nonexistent path for a worktree whose name holds a line feed — scripts/lib/worktree-hygiene.mjs:44 reads git worktree list --porcelain line by line; read --porcelain -z and split on NUL. Forges no line (output is escaped JSON)."
         }
       ],
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:50.956Z",
-      "touchedAt": "2026-09-17T11:31:39.292Z"
+      "touchedAt": "2026-09-17T17:34:06.180Z"
     },
     {
       "id": "every-verb-refuses-what-it-does-not-read",
@@ -9041,7 +9046,7 @@
       "id": "user-text-never-forges-output",
       "title": "User-supplied text never forges a line of pm's output: one shared escaper for titles, reasons, notes, shas and ids across PROJECT.md, the brief, integrity, the archive gate and every refusal",
       "priority": "P2",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -9067,10 +9072,42 @@
         "1d6e0f8df71695c98b115323d32d4408a650f443",
         "186b7a5f96b86d8c026730f5b60b49f61e2ed1ba",
         "74d7081050ac596079ff4024979c49a788b836ff",
-        "4321bbc11a0e14e865f608e0846d8fd271d72c0f"
+        "4321bbc11a0e14e865f608e0846d8fd271d72c0f",
+        "4a3a636b78c557cab59b4419deb320118ecfce89",
+        "671dcfa6e5f9109d50dcf3208f909715a2f6ff87",
+        "890be4506d286a1f19662a848ffbd57a6fdb7ce3",
+        "ab857a33e099e8557ebfd9b1d817f6e9e56199c5",
+        "695727e280f9e02b4bd01de7c0cb90c6e31a05e5",
+        "346649d361f33359e8e3a8f5a193073be63e12ac",
+        "e661512f308ef7bf40f958328289f8786008b705",
+        "5c668ede1803330148f8c6f4810256923c113660",
+        "0a33fd4c279bd58bd606f787ad4333d0c52f5acc",
+        "fe359903ccca56ac00108d1563a5f81f496764ce",
+        "83b3d89860301542e930877db21a660c1499e950",
+        "9bbf99cd22541faa2a2e4f74ed42407d84e39606",
+        "bb729c54100b7fd7b0a7d73735045507cec9a185",
+        "9458d7875683d9d3f91f96ca774ab96c9417b128",
+        "eb5925c2e322eddffbfe8330990e8295476d3f03",
+        "7012f945f716483c9c672ecb9f8a09d9f10f1989",
+        "b75e7aa93f3fcc16361f3f1c28ed5548e790b72b",
+        "a7fc9b4f3e6fab7c0a8597e20fbba7c24a3fcb66",
+        "adda7b6847ae505300be8b228f9eac15d933b861",
+        "5b8d31a4c2a6d04370b8c11bd0aefe9fbac62f5c",
+        "4e992c284f5b834ab7883015afa2bef3c8b11ac2",
+        "5f6c0c4b845bb7be86d2a9d75b981702880192e4",
+        "cfe6ed03faa829d5e3f9f2adf43da97d40f11fb4",
+        "7d64996bbbd7adb10968f5388f1d6fa524cb60dd",
+        "e55fe4a46365caa0971cc688e7e5061179a1322e",
+        "05e181e03ef612e0763995668db0477999c0459f",
+        "01f95b1f21604f814ddd25caa4a8f03864e5ec6e",
+        "533ad3a32c03a57267ccc5eaa0de29fd9e242143",
+        "d4851cef766f583832f4cd3f5a04533c45bb3920",
+        "a09ef650e6eb1ded577561ff2211c81c105c9bf8",
+        "6937c82acb5c71b9c892a2fc9968fb03dfcf59ef",
+        "f02f0988397ab48e5d8f6a4a31fb6331ba9ffa23"
       ],
       "createdAt": "2026-09-16T22:37:14.698Z",
-      "touchedAt": "2026-09-17T11:31:50.294Z",
+      "touchedAt": "2026-09-17T18:18:34.326Z",
       "release": "0.45.0",
       "gateReview": {
         "gate1": {
@@ -9094,9 +9131,52 @@
             ],
             "reviewer": "two fresh-context lenses (code-grounded completeness; spec contract & consistency), round 1 fail (1 C, 8 I), round 2 scoped confirmation fail (3 C unfailable/unpassable scenarios, 2 I, 1 cross-change contradiction), round 3 narrow confirmation pass (REDs re-run on 0.44.0); 2026-09-16"
           }
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-17T18:17:57.349Z",
+          "baseSha": "c8d0d4ef0bc63742bf2ef2000deb753edc2b448e",
+          "headSha": "f02f0988397ab48e5d8f6a4a31fb6331ba9ffa23",
+          "reviewer": "two fresh-context lenses per round (spec conformance with mutation testing; adversarial forging): round 1 fail (8 I), fixes fe35990..bb729c5; re-review 1 fail (2 I), fixes 9458d78..a7fc9b4; re-review 2 split (2 I), fixes adda7b6..7d64996; re-review 3 split (3 I), fixes e55fe4a..d4851ce; re-review 4 pass on both lenses (Minors only; lexical-sweep limits documented with the runtime poison sweep as backstop); re-recorded over the round-4 Minor test a09ef65 and docs/lessons 6937c82..f02f098; 2026-09-17",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-09-17T17:34:05.516Z",
+            "baseSha": "c8d0d4ef0bc63742bf2ef2000deb753edc2b448e",
+            "headSha": "d4851cef766f583832f4cd3f5a04533c45bb3920",
+            "reviewer": "two fresh-context lenses per round (spec conformance with mutation testing; adversarial forging): round 1 fail (8 I), fixes fe35990..bb729c5; re-review 1 fail (2 I: sweep not in suite / function-wide judgments, untested escapes), fixes 9458d78..a7fc9b4; re-review 2 split (2 I: jsonText spacing, sweep escaper bypass), fixes adda7b6..7d64996; re-review 3 split (3 I: project-dir path leak, ALL_CAPS trust, vacuous wrapper tests), fixes e55fe4a..d4851ce; re-review 4 pass on both lenses (Minors only; lexical-sweep limits documented with runtime poison sweep as backstop); 2026-09-17"
+          }
         }
       },
-      "startedAt": "2026-09-17T11:31:50.291Z"
+      "startedAt": "2026-09-17T11:31:50.291Z",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-17T18:18:34.323Z",
+        "reason": "no user-supplied text can forge a line or a table cell: escaped at output (escapeControls, escapeTableCell via tableRow, jsonText for JSON stdout), refused at input for epic/release ids and tracker scopes, skipped at the final rung by sync and backfill, with a registry-bound poison sweep and an in-suite per-interpolation sweep holding it; Gate 2 pass at f02f098"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-17T18:18:34.298Z",
+        "deferrals": [
+          {
+            "epic": "registry-bound-poison-sweep-practice",
+            "section": "the completeness assertion as a shipped practice (tasks.md 8.6)"
+          },
+          {
+            "epic": "code-review-0-43-0-minors",
+            "section": "verify-worktrees reports a truncated path for a worktree name holding a line feed (pre-existing)"
+          }
+        ],
+        "declined": [
+          {
+            "what": "making the lexical interpolation sweep sound against every JS shape (destructured or shadowed escapers, reassigned aliases, greedy map)",
+            "reason": "four Gate 2 rounds each closed one class and opened another; the unsound shapes are declared at the top of scripts/test/output-interpolations.mjs, none exists in the engine today, and the runtime poison sweep is the behavioural backstop"
+          },
+          {
+            "what": "escaping U+2028/U+0085 inside values a parsing consumer reads",
+            "reason": "JSON stdout now escapes them so no line is forged; the parsed value is deliberately unchanged"
+          }
+        ]
+      },
+      "completedAt": "2026-09-17T18:18:34.323Z"
     },
     {
       "id": "hierarchy-run-has-one-state-writer",
@@ -9191,6 +9271,32 @@
       "attributedCommits": [],
       "createdAt": "2026-09-17T11:31:38.757Z",
       "touchedAt": "2026-09-17T11:31:38.761Z"
+    },
+    {
+      "id": "registry-bound-poison-sweep-practice",
+      "title": "Registry-bound poison sweep as a shipped practice: a completeness assertion over every value-bearing flag and non-argv source, so a new value cannot be added without a hostile-input recipe",
+      "priority": "P3",
+      "status": "planned",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "user-text-never-forges-output",
+          "reason": "its 7.x sweep found 12 output sites Gate 2 had not found"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-17T18:18:06.298Z",
+      "touchedAt": "2026-09-17T18:18:06.785Z",
+      "notes": [
+        {
+          "at": "2026-09-17T18:18:06.783Z",
+          "actor": "agent",
+          "text": "Evidence from 0.45.0 user-text-never-forges-output: the task list named a site list; the apply run found ~20 more; Gate 2 found 5 more; the per-interpolation sweep then found 12 more. What binds a future flag is the completeness assertion (every registry entry has a recipe, unconstructable bound = 0), not the enumeration. See also docs/lessons/a-static-guard-over-dynamic-code-needs-declared-limits.md and docs/lessons/bind-rules-to-functions-not-enumerations.md"
+        }
+      ]
     }
   ],
   "detourStack": [],
@@ -9201,7 +9307,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1039,
+  "revision": 1077,
   "reviewMode": "thorough",
   "releases": [
     {
