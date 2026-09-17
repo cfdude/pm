@@ -47,6 +47,10 @@ PreCompact cannot inject context, so snapshot the freshest state (re-render PROJ
 
 Fires on EVERY Bash call by design — commit-nudge decides whether a commit happened by OBSERVING the repo (a HEAD watermark plus the reflog action), not by reading the command text, so it must see every call to keep the watermark truthful. It re-renders the index and nudges to update epic status / pop a finished detour only when a commit actually landed. Non-blocking, and silent in projects that have not run /pm:init.
 
+## `PostToolUseFailure` — matcher `Bash`
+
+The same commit-nudge command line as `PostToolUse`. Claude Code fires `PostToolUse` only when a Bash call succeeds and `PostToolUseFailure` when it fails, so a commit made inside a call that then exited non-zero was invisible to a success-only hook. Wired on both post-call events and on no pre-call event (commit-nudge-reads-the-whole-move).
+
 ## `PreToolUse` — matcher `Edit|Write|NotebookEdit`
 
 gate guard — on by default for any epic with reconcileNeeded:true (unconditional, `set-gate-guard off` does not bypass it). Blocks Edit/Write/NotebookEdit while the active epic still owes a reconcile after a detour POP. Dormant until /pm:init.

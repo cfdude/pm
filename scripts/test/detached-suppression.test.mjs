@@ -40,18 +40,20 @@ function deployed() {
 const at = (cwd, ...p) => path.join(cwd, ".conductor", ...p);
 const exists = (cwd, ...p) => fs.existsSync(at(cwd, ...p));
 
-test("the commit watermark is not written in a detached tree, and the hook still runs", () => {
+test("the commit observation record is not written in a detached tree, and the hook still runs", () => {
   const cwd = deployed();
-  const out = runCombined(["commit-nudge"], { cwd });
+  const out = runCombined(["commit-nudge"], { cwd,
+    input: JSON.stringify({ hook_event_name: "PostToolUseFailure", tool_name: "Bash", tool_input: { command: "false" } }) });
   assert.doesNotMatch(out, /Error|Traceback/, "the hook completes — absence must not come from a crash");
-  assert.ok(!exists(cwd, "commit-watch.json"),
-    "a watermark tracks a session's own commits; a tree nobody works in has none to track");
+  assert.ok(!exists(cwd, "commit-observe.json"),
+    "the reflog anchor tracks a session's own commits; a tree nobody works in has none to track");
 });
 
-test("the watermark IS written on a branch — the control that makes the absence mean something", () => {
+test("the observation record IS written on a branch — the control that makes the absence mean something", () => {
   const cwd = workspace();
-  runCombined(["commit-nudge"], { cwd });
-  assert.ok(exists(cwd, "commit-watch.json"),
+  runCombined(["commit-nudge"], { cwd,
+    input: JSON.stringify({ hook_event_name: "PostToolUseFailure", tool_name: "Bash", tool_input: { command: "false" } }) });
+  assert.ok(exists(cwd, "commit-observe.json"),
     "if this did not write either, the suppression test above would pass vacuously");
 });
 
@@ -128,8 +130,8 @@ test("the session claim IS written on a branch — the control for its suppressi
 });
 
 test("commit-nudge in a detached tree does not fall back to the text heuristic", () => {
-  // The watermark alone is not enough. Suppressing it leaves readWatch() null forever, so every
-  // run reads `no-baseline` / `unverifiable` and drops to unverifiableSubject() — gh#104's text
+  // The record alone is not enough. Suppressing it leaves no anchor ever recorded, so every
+  // run reads `no-anchor` / `unverifiable` and drops to unverifiableSubject() — gh#104's text
   // heuristic, where any command merely MENTIONING `git commit` nudges, reaching a state write on
   // the way. Asserted with the exact repro gh#104 was filed on.
   const cwd = deployed();

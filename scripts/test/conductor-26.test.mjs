@@ -144,7 +144,7 @@ test("gh#129: SILENT where the engine would be guessing — no active epic, no a
   // heuristic still emits its own advisory, but a sha must never be named — obs.head is
   // non-null here while no commit is known to have landed, which is gh#104 in a new costume.
   const cold = repoWithActive([]);
-  // deliberately NOT primed: no .conductor/commit-watch.json exists
+  // deliberately NOT primed: no .conductor/commit-observe.json exists
   commitFiles(cold, { "a.txt": "1" }, "feat(x): real work");
   const coldCtx = ctxOf(nudge(cold, "git commit -m 'feat(x): real work'"));
   assert.match(coldCtx, /Commit detected/, "the legacy rung still runs — this is a no-regression check");

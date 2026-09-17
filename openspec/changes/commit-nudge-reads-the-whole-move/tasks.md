@@ -40,19 +40,19 @@ commit message names that file. New test file: `scripts/test/commit-observation.
 
 Pairs: 2.1–2.4a land with 2.5; 2.6–2.7 land with 2.8.
 
-- [ ] 2.1 RED: observe → commit → `checkout -b tmp` → `checkout main` → observe: the output names the
+- [x] 2.1 RED: observe → commit → `checkout -b tmp` → `checkout main` → observe: the output names the
       commit (fails today: empty output, proposal defect 1)
-- [ ] 2.2 RED: observe → two commits → observe: both named, older first; the attribution command
+- [x] 2.2 RED: observe → two commits → observe: both named, older first; the attribution command
       carries both `--attribute-commit` values in that order (fails today: only HEAD, defect 2)
-- [ ] 2.3 RED: `hooks/hooks.json` wires `commit-nudge` for `Bash` on `PostToolUse` and
+- [x] 2.3 RED: `hooks/hooks.json` wires `commit-nudge` for `Bash` on `PostToolUse` and
       `PostToolUseFailure` and on no pre-call event (fails today: PostToolUse only)
-- [ ] 2.3b RED: a commit then a failing command, observed with a `PostToolUseFailure` payload: the
+- [x] 2.3b RED: a commit then a failing command, observed with a `PostToolUseFailure` payload: the
       commit is reported and `hookSpecificOutput.hookEventName` is `PostToolUseFailure` (fails today:
       the envelope says `PostToolUse`); with `state.json` unparseable it exits 2 naming the file, and
       `state.json`, `PROJECT.md`, `detours.log`, `.conductor/commit-watch.json` and
       `.conductor/commit-observe.json` are byte-identical (fails today: `commit-watch.json` advances), and
       after `state.json` is repaired the next observation reports the commit
-- [ ] 2.4 RED: overlapping observations, in the order Gate 1 round 2 simulated — observation A reads
+- [x] 2.4 RED: overlapping observations, in the order Gate 1 round 2 simulated — observation A reads
       the record, a commit lands, observation B runs to completion, then A writes: the commit is reported
       exactly once across A, B and a third observation, the anchor never moves backwards, and
       `detours.log` holds at most one commit-derived row for it (drive the interleaving through an
@@ -60,10 +60,10 @@ Pairs: 2.1–2.4a land with 2.5; 2.6–2.7 land with 2.8.
       reports nothing and writes nothing, and the next observation after release reports the commit; a
       lock file older than 10 s is broken. Also: a reflog whose anchored line is gone reports nothing
       from the reflog and re-anchors
-- [ ] 2.4a RED: observe, commit, delete the oldest HEAD reflog entry (`git reflog delete` of the last
+- [x] 2.4a RED: observe, commit, delete the oldest HEAD reflog entry (`git reflog delete` of the last
       `HEAD@{n}`, the front of `logs/HEAD`), observe: the commit is reported (fails against an offset
       anchor: the anchored line moved to a smaller offset)
-- [ ] 2.5 GREEN: `commit-watch.mjs` reflog anchor located by content and resolved against the conductor
+- [x] 2.5 GREEN: `commit-watch.mjs` reflog anchor located by content and resolved against the conductor
       root, `commit-observe.json` with the reported set under the `O_EXCL` lock, `hooks.json`
       `PostToolUseFailure` entry, envelope echoes the event, `ensureGitignore` gains
       `.conductor/commit-observe.json*`, `CONDUCTOR_OWN_FILES` gains `.conductor/commit-observe.json`;

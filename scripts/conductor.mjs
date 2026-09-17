@@ -21,8 +21,8 @@
  *   brief          SessionStart: print additionalContext JSON (DORMANT if not init'd)
  *   snapshot       PreCompact: render + write .conductor/brief.txt (DORMANT if not init'd)
  *   commit-nudge   PostToolUse(Bash): fires on EVERY Bash call and decides by OBSERVING the
- *                  repo — a HEAD watermark (.conductor/commit-watch.json) plus the reflog
- *                  action — never by reading the command text (see lib/commit-watch.mjs).
+ *                  repo — a reflog anchor (.conductor/commit-observe.json) and every commit
+ *                  entry after it — never by reading the command text (see lib/commit-watch.mjs).
  *                  When a commit really landed: log detour commits + nudge; also auto-logs an
  *                  AUTO-DETOUR entry when a small fix/chore commit's diff shape looks like an
  *                  unlogged minimal detour AND an epic is active (see

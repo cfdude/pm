@@ -76,15 +76,40 @@ export const isDetachedTree = (root = ROOT) => headAttachment(root) === "detache
  *  would delete a record, which is the opposite of what this is for. */
 const COMMIT_DERIVED_KINDS = new Set(["DETOUR-COMMIT", "AUTO-DETOUR"]);
 
-/** Is (sha, kind) already in the log?  Reads the file whole — it is small, append-only, and
- *  render() already reads it whole on every render, so this adds no new order of cost. */
-function alreadyLogged(kind, sha) {
+/** The abbreviated name git gives a commit here, or `-` when git cannot answer. */
+export function shortSha(rev) {
+  try {
+    return execFileSync("git", ["rev-parse", "--short", String(rev)],
+      { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim() || "-";
+  } catch { return "-"; }
+}
+
+/** The full object name of a commit, or null when it resolves to none. */
+export function fullSha(rev) {
+  try {
+    return execFileSync("git", ["rev-parse", "--verify", "--quiet", `${String(rev)}^{commit}`],
+      { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim() || null;
+  } catch { return null; }
+}
+
+/** Does a row's sha name this commit? A row MATCHES when the commit's full name begins with the
+ *  row's sha, whatever length git abbreviated it to at write time (design Decision 9): comparing
+ *  abbreviations to each other breaks when lengths differ — one repository's log holds 7- and
+ *  8-character rows — and a full name always extends its own abbreviation. */
+export const rowMatches = (rowSha, full) =>
+  typeof rowSha === "string" && /^[0-9a-f]{4,64}$/.test(rowSha) && typeof full === "string" && full.startsWith(rowSha);
+
+/** Is (commit, kind) already in the log? Prefix-matched against the commit's full name when it
+ *  has one, exact otherwise. Reads the file whole — it is small, append-only, and render() already
+ *  reads it whole on every render, so this adds no new order of cost. */
+function alreadyLogged(kind, sha, full) {
   let body;
   try { body = fs.readFileSync(DETOURS_LOG, "utf8"); } catch { return false; }
   for (const line of body.split("\n")) {
     if (!line) continue;
     const [, s, k] = line.split("\t");
-    if (s === sha && k === kind) return true;
+    if (k !== kind) continue;
+    if (full ? rowMatches(s, full) : s === sha) return true;
   }
   return false;
 }
@@ -92,20 +117,20 @@ function alreadyLogged(kind, sha) {
 /** Append a row to the detour trail. Returns whether a row was actually written, so a caller
  *  never announces "logged to detours.log" for a row that was suppressed as a duplicate.
  *
- *  gh#81: the observed rung (commit-watch.mjs) already refuses to fire twice for one HEAD, but
- *  the UNVERIFIABLE rung — no reflog, no baseline yet, a read-only checkout that cannot persist
- *  the watermark — has no such memory and re-logs the same commit on every hook invocation. The
- *  log is the wrong place to depend on an upstream guard: dedupe where the row is written, so
- *  every rung inherits it. */
-export function appendDetourLog(kind, epic, note) {
+ *  `rev` names the commit a commit-derived row describes; it defaults to HEAD, which is what a
+ *  MINIMAL declaration and the unverifiable rung record. The observed rung passes each reported
+ *  commit's own sha, so two commits in one observation get two rows rather than HEAD twice.
+ *
+ *  gh#81: dedupe where the row is written, so every rung inherits it. */
+export function appendDetourLog(kind, epic, note, rev) {
   // gh#175: a detour is BY DEFINITION an interruption of active work, and a detached tree is one
   // nobody is working in. Suppressed silently, like every other session-bookkeeping write.
   if (isDetachedTree()) return false;
   fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
-  const sha = gitShortSha();
-  // sha "-" is gitShortSha()'s "cannot tell" (no git, no repository, no commits yet), NOT a
-  // commit identity. Collapsing on it would fold every unrelated row in a git-less repo into one.
-  if (COMMIT_DERIVED_KINDS.has(kind) && sha !== "-" && alreadyLogged(kind, sha)) return false;
+  const sha = rev === undefined ? gitShortSha() : shortSha(rev);
+  // sha "-" is "cannot tell" (no git, no repository, no commits yet), NOT a commit identity.
+  // Collapsing on it would fold every unrelated row in a git-less repo into one.
+  if (COMMIT_DERIVED_KINDS.has(kind) && sha !== "-" && alreadyLogged(kind, sha, fullSha(rev === undefined ? "HEAD" : rev))) return false;
   const line = [new Date().toISOString(), sha, kind, epic || "-", (note || "").replace(/\s+/g, " ").trim()].join("\t");
   fs.appendFileSync(DETOURS_LOG, line + "\n");
   return true;
