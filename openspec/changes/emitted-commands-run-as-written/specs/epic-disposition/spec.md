@@ -25,7 +25,9 @@ fact been done, because the epic proposing it archived with nothing saying so.
 Where recording `delivered` is blocked by an obligation the archive gate enforces — for an
 openspec-lane epic, a missing, withdrawn or stale Gate 2 — the entry SHALL NOT offer `delivered` in
 its invocation, and SHALL name each blocking obligation in a machine-readable field, together with
-the remedy that meets it. gh-189 measured the cost: of 20 epics reported, all 12 openspec-lane
+the remedy that meets it. That field is an ORDERED list, and its order is the order the remedies must
+run: every Gate 2 obligation before the handoff, because the `delivered` archive that meets a checkbox
+source's handoff is itself refused while Gate 2 is unmet. gh-189 measured the cost: of 20 epics reported, all 12 openspec-lane
 entries were refused when `delivered` was substituted, and nothing in the output said they would be.
 Where the blocking obligation is a Gate 2 that the epic predates, the entry states that recording
 `delivered` requires a real Gate 2 review of that work — the finding is about process, not a
@@ -75,6 +77,13 @@ withdrawn one, then that commit's `--attribute-commit`, then the invocation.
   source, the `delivered` archive carrying `--carried-to <epicId>` and `--reason`, which filled with a
   receiving epic exits zero and removes the entry; for the story, `--story <n> --done`, after which the
   entry names nothing blocking `delivered` (before Gate 2 U-I1 the checkbox entry's remedy was empty)
+
+#### Scenario: An entry blocked twice lists its remedies in the order they run
+- **WHEN** the unconsidered set holds an openspec-lane epic with no passing Gate 2 whose task source is a
+  checkbox file with a task open
+- **THEN** its entry names the Gate 2 obligation first and the handoff second; running the handoff's
+  archive first is refused on the missing Gate 2; and running every entry's remedy lines in the order
+  listed, filled with a range and a receiving epic, exits zero at each step and removes the entry
 
 #### Scenario: The archived-delivered regression refusal keeps delivered
 - **WHEN** an `--attribute-commit` on an archived `delivered` openspec-lane epic is refused because

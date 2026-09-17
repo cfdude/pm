@@ -262,7 +262,10 @@ export function dispositionInvocation(epic, { echoed = [], correction = false, d
 }
 
 /** What blocks recording `delivered` for `epic` today, each `{kind, detail, remedy}` — `kind` is the
- *  DELIVERED_OBLIGATIONS variant, `remedy` the command lines that meet it, in order. Empty when
+ *  DELIVERED_OBLIGATIONS variant, `remedy` the command lines that meet it, in order. THE ENTRIES ARE
+ *  ORDERED TOO, and a reader runs them in that order (Gate 2 F-M2): DELIVERED_OBLIGATIONS' order, every
+ *  Gate 2 variant before the handoff, since a checkbox handoff's remedy is the `delivered` archive, which
+ *  is refused while Gate 2 is unmet. Empty when
  *  nothing blocks. Carried to the disposition's own `carriedTo`, the one input a stored record gives
  *  the handoff demand. */
 export function blockedDelivered(epic) {

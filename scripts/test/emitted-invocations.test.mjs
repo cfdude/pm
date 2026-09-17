@@ -1620,11 +1620,11 @@ const blockerRemedies = (fx) => {
   const u = unconsideredEntry(fx.repo, "uc");
   return u ? u.deliveredBlockedBy.flatMap(b => b.remedy).map(l => `\`${l}\``).join("\n") : "";
 };
-const unconsideredWith = (extra) => () => {
+const unconsideredWith = (extra, lane = "superpowers") => () => {
   const repo = remedyRepo();
   repo.write({ epics: [
     { id: "later", title: "later", priority: "P2", status: "queued", role: "epic", lane: "claude-code", links: [] },
-    { id: "uc", title: "uc", priority: "P2", status: "archived", role: "epic", lane: "superpowers", links: [],
+    { id: "uc", title: "uc", priority: "P2", status: "archived", role: "epic", lane, links: [],
       disposition: engineStamp("archive-drift-heal", { recordedAt: AT }), ...extra(repo) },
   ] });
   return { repo, epicId: "uc" };
@@ -1650,6 +1650,41 @@ registerBuilder("unconsidered:handoff-checkbox", {
     assert.equal(unconsideredEntry(fx.repo, "uc"), null, "the entry clears");
     assert.equal(fx.repo.epic("uc").disposition.outcome, "delivered");
     assert.equal(fx.repo.epic("uc").disposition.carriedTo, "later");
+  } }],
+});
+
+// Gate 2 F-M2 — deliveredBlockedBy is ORDERED, and the order is load-bearing: an openspec-lane epic with no
+// Gate 2 and a checkbox source with an open task is blocked by both, and the handoff's remedy (the `delivered`
+// archive) is refused while Gate 2 is missing. Running every entry's remedy lines in the order printed clears it.
+registerBuilder("unconsidered:gate2-missing-then-handoff (F-M2)", {
+  setup: () => {
+    const fx = unconsideredWith((repo) => ({
+      planPath: repo.file("docs/superpowers/plans/2026-08-01-uc.md", "# uc\n\n- [x] 1. done\n- [ ] 2. still open\n"),
+    }), "openspec")();
+    [fx.c1] = fx.repo.commits("feat(uc): work");
+    return fx;
+  },
+  observe(fx) {
+    const u = unconsideredEntry(fx.repo, "uc");
+    assert.ok(u, "fixture: the epic is in the unconsidered set");
+    assert.deepEqual(u.deliveredBlockedBy.map(b => b.kind), ["gate2-missing", "handoff"],
+      `the entries run in order, Gate 2 first: ${JSON.stringify(u.deliveredBlockedBy)}`);
+    // Reversed, the archive is refused on the missing Gate 2: the order is a precondition, not a presentation.
+    const archive = u.deliveredBlockedBy[1].remedy.at(-1);
+    const argv = fillByMeaning(expandForms(archive)[0], { "carried-to": "later", reason: REASON });
+    const reversed = fx.repo.run(argv);
+    assert.notEqual(reversed.status, 0, `the handoff's archive, run before Gate 2, is refused:\n${argv.join(" ")}`);
+    assert.match(reversed.stderr, /Gate 2/, reversed.stderr);
+  },
+  produce: blockerRemedies,
+  reported: (out) => out.length > 0,
+  meaning: (fx) => ({ "base-sha": fx.repo.parent(fx.c1), "head-sha": fx.c1, "carried-to": "later", reason: REASON }),
+  alternatives: [{ name: "record Gate 2, then archive carrying the open task", cleared(fx) {
+    assert.equal(unconsideredEntry(fx.repo, "uc"), null, "the entry clears");
+    const e = fx.repo.epic("uc");
+    assert.equal(e.disposition.outcome, "delivered");
+    assert.equal(e.disposition.carriedTo, "later");
+    assert.equal(e.gateReview.gate2.verdict, "pass");
   } }],
 });
 
