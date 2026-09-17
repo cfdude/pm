@@ -556,10 +556,11 @@ function engineRun(cwd, args) {
 
 /** Every commit-nudge message variant change 1 prints, each from its own fixture built anchor →
  *  commit → observe, with a sanity assertion that the fixture produced the variant it names. */
-export function commitNudgeVariants() {
+export function commitNudgeVariants(only = null) {
   const variants = [];
+  const want = (label) => !only || only === label;
   const ok = (repo, args) => { const r = engineRun(repo.cwd, args); assert.equal(r.status, 0, `${args.join(" ")}: ${r.stderr}`); };
-  {
+  if (want("nudge[auto-logged]")) {
     const repo = observationRepo();
     repo.observe();
     repo.commit({ "src/auto.txt": "1" }, "chore: tidy an unrelated file");
@@ -568,7 +569,7 @@ export function commitNudgeVariants() {
     assert.match(o.context, /retract-detour /, "fixture: the retract pointer is printed");
     variants.push({ label: "nudge[auto-logged]", text: o.context, repo });
   }
-  {
+  if (want("nudge[plain]")) {
     const repo = observationRepo();
     repo.observe();
     repo.commit({ "openspec/changes/epic-a/tasks.md": "- [x] 1.1\n" }, "feat(a): the active epic's own work");
@@ -576,7 +577,7 @@ export function commitNudgeVariants() {
     assert.match(o.context, /If this was a MINIMAL detour/, `fixture: plain. ${o.stdout}`);
     variants.push({ label: "nudge[plain]", text: o.context, repo });
   }
-  {
+  if (want("nudge[detour commit · several candidates]")) {
     const repo = observationRepo();
     ok(repo, ["add-epic", "--id", "detour-d", "--lane", "claude-code"]);
     ok(repo, ["push-detour", "epic-a", "--detour", "detour-d", "--reason", "blocked", "--reconcile"]);
@@ -589,7 +590,7 @@ export function commitNudgeVariants() {
     assert.ok((o.context.match(/^- `update-epic /gm) || []).length >= 2, `fixture: several candidate epics. ${o.context}`);
     variants.push({ label: "nudge[detour commit · several candidates]", text: o.context, repo });
   }
-  {
+  if (want("nudge[amend]")) {
     const repo = observationRepo();
     repo.observe();
     const c1 = repo.commit({ "src/amend.txt": "1" }, "feat: attributed then amended");
@@ -656,8 +657,12 @@ const UNCONSTRUCTABLE = 0;
 const AT = "2026-09-01T00:00:00.000Z";
 const REASON = "fixture reason";
 
-/** A hermetic pm fixture: git repo (own identity, no signing), `init`, a baseline commit. */
-export function remedyRepo() {
+/** The initialized baseline every fixture starts from, built ONCE per file run (task 8.1: the sweep
+ *  cost more wall-clock than the slowest existing test file). Each fixture is a fresh COPY of it — its
+ *  own directory, its own `.git` — so no two builders or alternatives ever share a repository. */
+let TEMPLATE = null;
+function templateRepo() {
+  if (TEMPLATE) return TEMPLATE;
   const cwd = tmpRepo();
   fixtureGit(cwd, "init", "-q", "-b", "main");
   fixtureGit(cwd, "config", "user.email", "test@example.com");
@@ -667,6 +672,15 @@ export function remedyRepo() {
   assert.equal(r0.status, 0, `init: ${r0.stderr}`);
   fixtureGit(cwd, "add", "-A");
   fixtureGit(cwd, "commit", "-q", "-m", "chore: baseline");
+  TEMPLATE = cwd;
+  return cwd;
+}
+
+/** A hermetic pm fixture: git repo (own identity, no signing), `init`, a baseline commit — a fresh
+ *  copy of the template. */
+export function remedyRepo() {
+  const cwd = tmpRepo();
+  fs.cpSync(templateRepo(), cwd, { recursive: true });
   const repo = {
     cwd,
     run: (args) => engineRun(cwd, args),
@@ -2106,7 +2120,7 @@ test("6.1 init's closing line names the verbs, not a hand-edit of state.json", (
 });
 
 test("6.2 the plain commit-nudge message names update-epic, not .conductor/state.json", () => {
-  const plain = commitNudgeVariants().find(v => v.label === "nudge[plain]");
+  const plain = commitNudgeVariants("nudge[plain]").find(v => v.label === "nudge[plain]");
   const para = plain.text.split("\n\n")[0];
   assert.match(para, /update-epic/, para);
   assert.doesNotMatch(para, /\.conductor\/state\.json/, para);

@@ -1,0 +1,18 @@
+# emitted-commands-run-as-written task 8.1 — cost of the sweep (wall-clock, this machine, load average ~9-15)
+#
+# Full suite BEFORE this change (dev 244d07a, 1625 tests):          245s (measured at task start, heavy load)
+# Full suite after 1.1 (0699240, 1636 tests):                        171s
+# emitted-invocations.test.mjs alone, first measure (after 7.2):     49s   <- over no existing file alone, BUT
+# per-file under `xargs -P 4` contention (after 7.2):                149s for the new file vs 83s for the slowest
+#                                                                    existing file (state-file-refuses-to-guess)
+#   -> exceeds the slowest existing file under contention: fixtures shared per the task.
+#
+# Sharing: one initialized template repo per file run, each fixture a fresh fs.cpSync COPY (own dir, own .git —
+# no builder or alternative shares a repository); commitNudgeVariants() builds only the variant a test needs.
+#
+# Re-measured back-to-back, each file alone (after sharing):
+state-file-refuses-to-guess 61s
+conductor-15 54s
+reconcile-obligation 35s
+emitted-invocations 35s
+full-suite 182s (1730 tests, 1730 pass)

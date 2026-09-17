@@ -271,7 +271,7 @@ Pairs: 7.0–7.1 land with 7.2. The single-writer rule for hierarchy runs is NOT
 
 ## 8. Cost of the sweep
 
-- [ ] 8.1 Measure the new test file alone and the full suite before and after (wall-clock, written to a
+- [x] 8.1 Measure the new test file alone and the full suite before and after (wall-clock, written to a
       file and read from the file); if the new file adds more than the slowest existing test file,
       share fixture repos across builders before Gate 2 and re-measure
 
