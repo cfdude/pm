@@ -172,11 +172,13 @@ export function headChangedFiles() {
  *  equal a conductor-relative path — a git-root `PROJECT.md` in a monorepo is not this conductor's.
  *  `--relative` is rejected: it DROPS out-of-root paths and turns a mixed commit into a
  *  bookkeeping-only one. */
+let showPrefix = null;   // invariant for one process: ROOT does not move under a running invocation
 export function changedFiles(sha) {
   try {
     const opts = { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] };
     const out = execFileSync("git", ["diff-tree", "--no-commit-id", "--name-only", "-r", "--root", sha], opts).trim();
-    const prefix = execFileSync("git", ["rev-parse", "--show-prefix"], opts).trim();
+    if (showPrefix === null) showPrefix = execFileSync("git", ["rev-parse", "--show-prefix"], opts).trim();
+    const prefix = showPrefix;
     return out ? out.split("\n").map(p => !prefix ? p : p.startsWith(prefix) ? p.slice(prefix.length) : `:/${p}`) : [];
   } catch { return null; }
 }
