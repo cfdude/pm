@@ -341,11 +341,49 @@ Pairs: 7.1 lands with 7.2.
       The superseded epics `user-text-unescaped-in-render-brief-integrity` and
       `handoff-refusal-prints-story-titles-raw` are already archived as superseded — confirm, do not
       re-end them
-- [ ] 8.6 **Route what the work taught** — name each as a practice (register an epic, with its
+- [x] 8.6 **Route what the work taught** — name each as a practice (register an epic, with its
       evidence), tooling friction (`/pm:feedback [bug|feature] "<summary>"`), or a process failure (a
       lesson in `docs/lessons/` with `trigger`, `cost`, `enforced_in`). At minimum decide: whether a
       partial escape that passed review (the Dispositions `|`-only escape) is a lesson, and whether
-      the registry-bound poison sweep is a practice other pm users should have
+      the registry-bound poison sweep is a practice other pm users should have.
+      Five routed. The two REGISTRATIONS (an epic, a feedback item) are deferred to the orchestrating
+      session by this run's brief and are named in its report; nothing here is left unrouted:
+      - **PROCESS FAILURE — WRITTEN.** `docs/lessons/a-static-guard-over-dynamic-code-needs-declared-limits.md`.
+        Gate 2 took five rounds, four of them on the lexical interpolation sweep, and each round's fix
+        opened a new bypass class (function-wide judgments, escaper wrappers trusted whatever they
+        wrapped, ALL_CAPS literal trust, mutants running in a file importing neither wrapper). The
+        resolution was to bound the sweep as best-effort with a declared limits list and rest the
+        guarantee on the runtime poison sweep. Rule: declare the unsound shapes up front, beside the
+        checker, with a behavioural backstop. No `detect:` matcher — "about to write a lexical
+        checker" is not recognisable with near-certainty from a tool call.
+      - **PROCESS FAILURE — DECLINED, evidence cited instead.** The apply agent found ~20 governed-value
+        sites beyond this task list's own list, Gate 2 found 5 more, and the per-interpolation sweep
+        found 12 more. That is evidence for required item 1's "derived mechanically, never typed from
+        memory" and for `docs/lessons/bind-rules-to-functions-not-enumerations.md`, which already
+        states the rule; a second lesson saying it again would split the corpus. Cited here, not
+        duplicated.
+      - **PRACTICE — for the orchestrator to register as an epic.** The registry-bound poison sweep:
+        one accumulated fixture, recipe keys held equal to `valueBearingFlagsFor()` plus the free-text
+        positionals, every recipe declaring `rendered` / `notRendered` / `exempt`, and the surfaces
+        taken from `VERB_EFFECTS`. Evidence: it found sites no review had (12 beyond Gate 2's own
+        findings), and its completeness assertion is what makes a value-bearing flag added tomorrow fail
+        the suite rather than go unswept. pm users get the same shape for free only if pm ships the
+        pattern; this is a candidate for the product, with the numbers above as its spec evidence.
+      - **PRACTICE — for the orchestrator to register as an epic (smaller).** The Dispositions `|`-only
+        escape — the strongest evidence in the proposal — was a PARTIAL escape that passed review: it
+        looked correct because it escaped something. The generalisable practice is that a review of an
+        escaping/quoting/sanitising site must enumerate the whole character class the sink can be
+        broken with, not check that some escaping is present. Not written as a lesson: it is the same
+        family as `a-guard-can-check-the-wrong-half` (a guard proves the half it asserts) applied to
+        escapes, and the corpus is better served by one entry than two. Register it as a review-practice
+        epic, or fold it into that lesson's body — the orchestrator's call.
+      - **TOOLING FRICTION — for the orchestrator to file (`/pm:feedback bug`).** `openspec validate
+        --archived` counts raw checkboxes and knows nothing about `<!-- pm:lifecycle -->`, so it reports
+        `1 incomplete task` against every correctly archived pm change while pm reports it complete with
+        `· N lifecycle`. Already stated in this repo's CLAUDE.md as a known collision; nothing is filed
+        against pm for surfacing it (a `--lifecycle-aware` counter, or a documented "do not wire this
+        into a pm-managed repo" note in the archive command doc, would end the recurrence). Filing is
+        deferred here per this run's brief, not declined.
 
 ## 9. Docs (after Gate 2)
 
@@ -369,13 +407,31 @@ Pairs: 7.1 lands with 7.2.
         no-remedy message (commands/epic.md, SKILL.md, README, CHANGELOG Fixed); the release-id
         format (commands/status.md, README). Also fixed the pre-existing mismatch in
         `commands/triage.md` (it showed indented JSON; `triage` prints one compact line)
-- [ ] 9.5 Full suite green, written to a file and read from the file
+- [x] 9.5 Full suite green, written to a file and read from the file — `node --test scripts/test/*.test.mjs`
+      at HEAD `6937c82`, redirected whole to `suite-9.5.txt` in the session scratchpad and read back:
+      `tests 1829 · pass 1829 · fail 0` (677.7 s). The pre-commit hook's own run at that commit agrees
+      (`pre-commit: 1829/1829 passing`)
 
 ## 10. Gate 2 and close
 
-- [ ] 10.1 Gate 2 — two fresh-context lenses over the committed range (A: spec alignment and real
+- [x] 10.1 Gate 2 — two fresh-context lenses over the committed range (A: spec alignment and real
       tests; B: absent edits against 8.1's sweep); fix Critical and Important; record
       `record-gate-review user-text-never-forges-output --gate 2 --verdict pass --reviewer
       "<identity>" --base-sha <parent of first attributed> --head-sha <last attributed>`
+      - Round 1 — FAIL, 8 Important (T-round): fixes `fe35990..bb729c5`, including the per-interpolation
+        re-run of the 8.1 sweep (T-S2) and the detours.log write-time escape (T-M5)
+      - Round 2 (U2): fixes `9458d78..a7fc9b4` — the sweep moved into the suite, the three unpinned
+        escapes given failing tests, and `jsonText()` over all 14 stdout JSON documents
+      - Round 3 (V): fixes `adda7b6..7d64996` — `jsonText`'s replacer/space arguments, escaper trust
+        narrowed, judgments normalised, two source guards hardened
+      - Round 4 (W): fixes `e55fe4a..d4851ce` — the project directory as a governed value, ALL_CAPS
+        literal trust, the wrapper mutants moved to an importing file, the remaining escaper-trust
+        bypasses closed and the rest documented
+      - Round 5 (round-4 Minors) and final pass: `a09ef65` (the engine-banner test case and the
+        empty-array ALL_CAPS limit) and `6937c82` (docs 9.1–9.4). VERDICT PASS was recorded against
+        head `d4851ce`; those two commits are attributed and are NOT reached by it, so the recorded
+        verdict is stale and must be re-recorded with `--head-sha 6937c82` (never by withdrawing an
+        attribution) before the archive gate will accept it. Not done here: this task list's owner
+        records no gate in this run
 - [ ] 10.2 Archive this change <!-- pm:lifecycle --> — `/opsx:archive user-text-never-forges-output`,
       then the disposition in 8.5
