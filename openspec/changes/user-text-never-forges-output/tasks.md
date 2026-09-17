@@ -119,8 +119,13 @@ Pairs: 5.1–5.3c land with 5.4.
       `printedId()` as the single site (design D4a); route printed release-id commands through
       `printedId()` too, including `integrity.mjs`'s `release ${rel.id} --defer` remedy; because this
       changes `printedId()`'s return (a string or the no-remedy signal), enumerate EVERY caller at sweep
-      time with `rg -n "printedId\(" scripts/lib scripts/conductor.mjs` — never a fixed list — and state
-      for each that it handles the no-remedy signal (the message names the record and says no verb can rename it; no hand-edit
+      time with `rg -n "printedId\(" scripts/lib scripts/conductor.mjs` — never a fixed list — AND, because
+      that sweep finds the BUILDERS that call `printedId()` (`dispositionInvocation`,
+      `deliveredArchiveInvocation`, `gateRemedy`, `obligationRemedy`) but not THEIR callers, which receive
+      the signal second-hand, sweep the callers of those builders too with `rg -n
+      "dispositionInvocation\(|deliveredArchiveInvocation\(|gateRemedy\(|obligationRemedy\(|blockedDelivered\(|deliveredBlockedBy" scripts/lib`
+      (among them `integrity.mjs`'s delivered-release and drift-heal steps, and `blockedDelivered()`'s remedy
+      list as `unconsidered-outcomes` reads it) — and state for each that it handles the no-remedy signal (the message names the record and says no verb can rename it; no hand-edit
       instruction; the rules block's `gh issue list --repo` excluded — change 2's `usesGhIssueList()`
       shape requirement stops a control-character repo before that line, which holds for the rules
       block only, not for `integrity`);
