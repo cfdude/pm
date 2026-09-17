@@ -1,0 +1,35 @@
+✖ 5.2a a delivered epic gets the withdrawal command exactly where update-epic would accept it (2246.879209ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2287.694667
+
+✖ failing tests:
+
+test at scripts/test/commit-observation.test.mjs:563:1
+✖ 5.2a a delivered epic gets the withdrawal command exactly where update-epic would accept it (2246.879209ms)
+  AssertionError [ERR_ASSERTION]: E3: withdrawal line printed:
+  Commit `76fed0c` landed since the last observation — this call, another terminal, or a parallel call; the hook cannot tell which. If this was a MINIMAL detour, run `/pm:detour --minimal "<what>"` to record it. Otherwise update `.conductor/state.json` if an epic's status or stories changed.
+  
+  AMEND — `b2fb344` was amended into 76fed0c and is on no branch, so it is replaced, not added. `E3` is a delivered epic holding `b2fb344`, whose record the withdrawal would break; `update-epic`'s refusal of that withdrawal names the remedy.
+  
+  ATTRIBUTION — `epic-a` has attributed no commits yet: attribute every commit of this epic's work that already landed, IN THE ORDER THEY LANDED, and then this one — `update-epic epic-a --attribute-commit 76fed0c069da6c48c9102453b434b853e14ce11b`. The array is append-only and a recorded Gate 2 `headSha` must reach EVERY entry, so a commit left unattributed is work that gate is never checked against. ONE exclusion: a commit that only moves or deletes a change's artifacts — the `/opsx:archive` move above all — is lifecycle bookkeeping and must NOT be attributed; it lands after the reviewed range, so attributing it makes this epic's own Gate 2 read stale.
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-observation.test.mjs:598:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

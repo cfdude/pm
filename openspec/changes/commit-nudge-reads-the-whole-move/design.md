@@ -158,7 +158,9 @@ from `deliveredObligations(snapshot)`. Kinds are `deliveredObligations()`'s own 
 already stale is not newly refused when a withdrawal turns it into attribution-withdrawn. `update-epic`'s refusal is rewritten to call it, and the hook
 calls it with `status` undefined (the printed command carries no `--status`), so the two cannot drift.
 `next` is the record `--withdraw-commit` would write: the replaced sha REMOVED from
-`attributedCommits` AND APPENDED to `withdrawnCommits` (as update-epic.mjs ~708-710 does). Removing it
+`attributedCommits` AND APPENDED to `withdrawnCommits`, computed by the SAME exported simulation
+`update-epic` writes from (`planWithdrawal` + `withdrawnRecord`: one occurrence, the last, matched by commit
+identity then spelling — Gate 2 G2-I2; a hook-side `filter` removed every copy and drifted). Removing it
 alone is wrong: an emptied array then reads `none-attributed` instead of `attribution-withdrawn`
 (archive-gate.mjs ~115-119), and the Gate 2 obligation the refusal enforces is missed. So a lane
 shortcut is not the rule: an openspec epic with two attributed commits both covered by its Gate 2

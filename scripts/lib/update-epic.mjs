@@ -149,6 +149,56 @@ export function deliveredRegression(id, snapshot, next, { status } = {}) {
   return after.filter(o => !before.some(b => b.kind === o.kind));
 }
 
+/** THE ONE SIMULATION of `--withdraw-commit`'s removal (Gate 2 G2-I2). Two callers: `update-epic`
+ *  below, which writes what it returns, and the commit hook, which asks deliveredRegression() about
+ *  the record it would leave before printing the command — so the hook's "would this be refused?"
+ *  can never drift from the refusal itself.
+ *
+ *  ONE OCCURRENCE PER REQUEST, and the LAST one. The array does not de-duplicate, so a commit can
+ *  appear twice; removing the last match means the record's tail moves only when the tail itself
+ *  is what you withdrew. Matched by COMMIT IDENTITY first (a full hash withdraws the short entry
+ *  of the same commit), then by exact spelling (a value that does not resolve still withdraws the
+ *  entry written exactly that way). `removed` carries the ENTRY REMOVED, not the value typed — that
+ *  entry is what the record held.
+ *
+ *  STORED entries resolve by identity only when they are SHAPED as a commit name: a legacy `HEAD`
+ *  in the record names whatever HEAD was when it was typed, and resolving it now would match it
+ *  against today's HEAD. Such an entry is matched by its exact spelling alone.
+ *
+ *  @param withdrawResolved Map from each requested value to the full commit it resolves to (a value
+ *         absent from it matches by spelling only). Defaults to resolving `shas` here.
+ *  @returns {{remaining: string[], removed: string[], missing: string[]}} */
+export function planWithdrawal(attributedCommits, shas, withdrawResolved = resolveCommits(shas).resolved) {
+  const remaining = Array.isArray(attributedCommits) ? attributedCommits.slice() : [];
+  const storedResolved = resolveCommits(remaining.filter(isCommitNameShaped)).resolved;
+  const removed = [], missing = [];
+  for (const sha of shas) {
+    const full = withdrawResolved.get(sha);
+    let at = -1;
+    if (full) {
+      for (let i = remaining.length - 1; i >= 0; i--) {
+        if (storedResolved.get(remaining[i]) === full) { at = i; break; }
+      }
+    }
+    if (at === -1) at = remaining.lastIndexOf(sha);
+    if (at === -1) { missing.push(sha); continue; }
+    removed.push(remaining[at]);
+    remaining.splice(at, 1);
+  }
+  return { remaining, removed, missing };
+}
+
+/** The attribution fields a withdrawal planned by planWithdrawal() leaves on `epic`: the removed
+ *  entries out of `attributedCommits` AND appended to `withdrawnCommits`. Removing alone is not the
+ *  record — an emptied array then reads `none-attributed` instead of `attribution-withdrawn`. */
+export function withdrawnRecord(epic, { remaining, removed }, reason, withdrawnAt) {
+  return {
+    attributedCommits: remaining,
+    withdrawnCommits: (Array.isArray(epic.withdrawnCommits) ? epic.withdrawnCommits : [])
+      .concat(removed.map(sha => ({ sha, reason, withdrawnAt }))),
+  };
+}
+
 function regressionRefusal({ id, snapshot, broken, argv, status }) {
   const quoted = (v) => escapeControls(JSON.stringify(String(v ?? "")));
   const findings = broken.map(o => {
@@ -702,31 +752,7 @@ export function updateEpic() {
         `invocation — the two record contradictory things about the same commit.\n`);
       process.exit(1);
     }
-    const remaining = Array.isArray(epic.attributedCommits) ? epic.attributedCommits.slice() : [];
-    // STORED entries resolve by identity only when they are SHAPED as a commit name: a legacy `HEAD`
-    // in the record names whatever HEAD was when it was typed, and resolving it now would match it
-    // against today's HEAD. Such an entry is matched by its exact spelling alone.
-    const storedResolved = resolveCommits(remaining.filter(isCommitNameShaped)).resolved;
-    // ONE OCCURRENCE PER REQUEST, and the LAST one. The array does not de-duplicate, so a commit can
-    // appear twice; removing the last match means the record's tail moves only when the tail itself
-    // is what you withdrew. Matched by COMMIT IDENTITY first (a full hash withdraws the short entry
-    // of the same commit), then by exact spelling (a value that does not resolve still withdraws the
-    // entry written exactly that way). The withdrawal record carries the ENTRY REMOVED, not the
-    // value typed — that entry is what the record held.
-    const removed = [], missing = [];
-    for (const sha of shas) {
-      const full = withdrawResolved.get(sha);
-      let at = -1;
-      if (full) {
-        for (let i = remaining.length - 1; i >= 0; i--) {
-          if (storedResolved.get(remaining[i]) === full) { at = i; break; }
-        }
-      }
-      if (at === -1) at = remaining.lastIndexOf(sha);
-      if (at === -1) { missing.push(sha); continue; }
-      removed.push(remaining[at]);
-      remaining.splice(at, 1);
-    }
+    const { remaining, removed, missing } = planWithdrawal(epic.attributedCommits, shas, withdrawResolved);
     if (missing.length) {
       process.stderr.write(
         `conductor: '${id}' never attributed ${missing.join(", ")} — nothing to withdraw. ` +
@@ -734,9 +760,7 @@ export function updateEpic() {
       process.exit(1);
     }
     const withdrawnAt = new Date().toISOString();
-    epic.attributedCommits = remaining;
-    epic.withdrawnCommits = (epic.withdrawnCommits || []).concat(
-      removed.map(sha => ({ sha, reason: why, withdrawnAt })));
+    Object.assign(epic, withdrawnRecord(epic, { remaining, removed }, why, withdrawnAt));
     withdrawnEntries.push(...removed.map(sha => ({ sha, withdrawnAt })));
   }
 

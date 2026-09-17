@@ -12,11 +12,11 @@ import { stampVersion } from "./plugin-meta.mjs";
 import { render } from "./render.mjs";
 import { assertRulesBlockWritable, writeRules } from "./rules.mjs";
 import { buildBrief } from "./briefing.mjs";
-import { COMMIT_DERIVED_KINDS, appendDetourLog, appendRetraction, fullSha, gitShortSha, isDetachedTree, readDetourRows, rowMatches, rowShasOverlap, shortSha } from "./git.mjs";
+import { COMMIT_DERIVED_KINDS, appendDetourLog, appendRetraction, fullSha, gitShortSha, isCommitNameShaped, isDetachedTree, readDetourRows, rowMatches, rowShasOverlap, shortSha } from "./git.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { escapeControls } from "./constants.mjs";
 import { beginObservation, isAmend, isLiveCommit } from "./commit-watch.mjs";
-import { deliveredRegression } from "./update-epic.mjs";
+import { deliveredRegression, planWithdrawal, withdrawnRecord } from "./update-epic.mjs";
 import { deferralHistory, deferralNote, detourContext } from "./links.mjs";
 import { activeChangeIds, archivedChanges, firstHeading, planFiles, reconcileArchived, strippedChangeId } from "./epic-progress.mjs";
 import { claimedSourceArtifacts, epicSourceArtifacts, normalizeArtifactPath, syncIgnoredArtifacts } from "./source-artifacts.mjs";
@@ -390,13 +390,15 @@ function supersedeAmended(state, candidates) {
     const commands = [];
     const refused = [];
     for (const epic of state.epics || []) {
-      if (!Array.isArray(epic.attributedCommits) || !epic.attributedCommits.includes(replaced)) continue;
-      const next = {
-        ...epic,
-        attributedCommits: epic.attributedCommits.filter(s => s !== replaced),
-        withdrawnCommits: (Array.isArray(epic.withdrawnCommits) ? epic.withdrawnCommits : [])
-          .concat([{ sha: replaced, reason, withdrawnAt: new Date().toISOString() }]),
-      };
+      // Cheap pre-filter only: an entry can name the replaced commit by identity only if it is a
+      // prefix of its full name, or by spelling only if it equals it.
+      if (!Array.isArray(epic.attributedCommits) || !epic.attributedCommits.some(v =>
+        typeof v === "string" && (v === replaced || (isCommitNameShaped(v) && replaced.startsWith(v.toLowerCase()))))) continue;
+      // The SAME simulation `update-epic --withdraw-commit` performs (G2-I2): one occurrence, the
+      // last, by identity — never every copy by exact spelling.
+      const plan = planWithdrawal(epic.attributedCommits, [replaced], new Map([[replaced, replaced]]));
+      if (!plan.removed.length) continue;
+      const next = { ...epic, ...withdrawnRecord(epic, plan, reason, new Date().toISOString()) };
       if (deliveredRegression(epic.id, epic, next, { status: undefined }).length) refused.push(epic.id);
       else commands.push(`\`update-epic ${epic.id} --withdraw-commit ${replaced} --withdrawal-reason "${reason}"\``);
     }

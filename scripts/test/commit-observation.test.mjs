@@ -576,6 +576,11 @@ test("5.2a a delivered epic gets the withdrawal command exactly where update-epi
       fs.mkdirSync(path.join(repo.cwd, "openspec", "changes", "archive", "2026-09-01-E4"), { recursive: true });
       return archivedDelivered({ id: "E4", lane: "openspec", status: "queued", attributedCommits: [c1], gateReview: gate2(root, c1) });
     } },
+    // G2-I2: the same commit attributed twice. --withdraw-commit removes ONE occurrence (the last), so
+    // the record keeps c1 under its Gate 2 head and the withdrawal is accepted; a hook that simulated
+    // removing every copy read an emptied array and withheld a command update-epic runs.
+    { id: "E3", printed: true, exit: 0, build: (repo, root, c0, c1) =>
+      archivedDelivered({ id: "E3", lane: "openspec", attributedCommits: [c1, c1], gateReview: gate2(root, c1) }) },
     { id: "F", printed: true, exit: 0, build: (repo, root, c0, c1) =>
       archivedDelivered({ id: "F", lane: "claude-code", attributedCommits: [c1] }) },
   ];
