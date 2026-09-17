@@ -1,10 +1,10 @@
-// Gate 2 T-S2 — the per-INTERPOLATION output sweep (task 8.1, re-run).
+// The per-INTERPOLATION output sweep (user-text-never-forges-output, Gate 2 T-S2; moved into the suite by
+// Gate 2 U2-I1 so it guards every later commit, not only the one that ran it).
 //
-// WHY THIS EXISTS. 0a33fd4's 8.1 sweep filtered the rg hits to lines WITHOUT escapeControls /
-// orNoRemedy / printedId, which hid every line that escapes one value and not its neighbour (Gate 2:
-// remove-epic's success line, reorder's, releaseLine() beside an escaped id). The unit here is ONE
-// interpolated value, never a line: every `${…}` of every template literal and every non-literal operand
-// of a `+` chain that holds a string literal, in scripts/conductor.mjs and scripts/lib/*.mjs.
+// WHY THIS EXISTS. A sweep that filters rg hits to lines WITHOUT an escaper hides every line that escapes
+// one value and not its neighbour. The unit here is ONE interpolated value, never a line: every `${…}` of
+// every template literal and every non-literal operand of a `+` chain that holds a string literal, in
+// scripts/conductor.mjs and scripts/lib/*.mjs.
 //
 // METHOD. A small JS lexer (comments, quotes, nested template literals, regex literals) finds each
 // interpolation with its line and enclosing top-level declaration. Each is classified, in order:
@@ -18,20 +18,25 @@
 //   sink          it sits inside `X.push(…)` in a declaration that joins X through `X.map(escapeControls)`;
 //   not-output    it sits inside a call that builds no printed text (RegExp, path, fs, child_process,
 //                 JSON.parse, import);
-//   judged        everything else, matched against the DECLARED table in sweep-interpolations.judged.mjs —
-//                 sink-flow (reaches a line sink downstream), passthrough (text composed and swept where it
-//                 was built), engine (numbers, registry and vocabulary values, validated values, engine
-//                 paths, versions and shas), json (one JSON document), escaped, not-output, justified.
-//   UNCLASSIFIED  none of the above — a FINDING. A judgment matching nothing is STALE.
-// Run: `node openspec/changes/user-text-never-forges-output/sweep-interpolations.mjs [--all]`.
-// Exit 1 while anything is UNCLASSIFIED or STALE. `--all` prints every interpolation with its class;
-// sweep-interpolations.txt is that output at the commit that recorded it.
+//   judged        everything else, matched against the DECLARED table in output-interpolations.judged.mjs.
+//                 A judgment names EXACT expressions with the number of times each occurs in its
+//                 declaration, so a second raw copy of a judged expression is a finding too; only a
+//                 sink-flow or json judgment may cover a whole declaration.
+//   UNCLASSIFIED  none of the above — a FINDING. A judgment matching fewer occurrences than it declares
+//                 is STALE; one matching more is EXCESS. Both are findings.
+// The test is output-interpolations.test.mjs. Run `node scripts/test/output-interpolations.mjs [--all]`
+// to print the findings (or, with --all, every interpolation with its class); it exits 1 on any finding.
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { JUDGED } from "./output-interpolations.judged.mjs";
 
-const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..", "..", "..");
-const FILES = [path.join(REPO, "scripts", "conductor.mjs"),
-  ...fs.readdirSync(path.join(REPO, "scripts", "lib")).filter(f => f.endsWith(".mjs")).sort().map(f => path.join(REPO, "scripts", "lib", f))];
+/** The repository root: two directories above this file (scripts/test/), wherever the checkout lives. */
+export const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
+export function sweptFiles(repo = REPO) {
+  return ["scripts/conductor.mjs",
+    ...fs.readdirSync(path.join(repo, "scripts", "lib")).filter(f => f.endsWith(".mjs")).sort().map(f => `scripts/lib/${f}`)];
+}
 
 // ─────────────── lexer ───────────────
 const KEYWORDS_BEFORE_REGEX = new Set(["return", "typeof", "case", "in", "of", "delete", "void", "throw", "new", "else", "do", "instanceof", "yield", "await"]);
@@ -240,46 +245,64 @@ function splitTop(e, op) {
   }
   return at < 0 ? null : [e.slice(0, toks[at].start).trim(), e.slice(toks[at].end).trim()];
 }
-
-// ─────────────── the DECLARED judgments ───────────────
-// { file, fn?, expr: RegExp over the expression, class, why }. `fn` is the enclosing top-level declaration.
-import { JUDGED } from "./sweep-interpolations.judged.mjs";
-
 // ─────────────── run ───────────────
-const all = process.argv.includes("--all");
-const rows = [];
-for (const file of FILES) {
-  const src = fs.readFileSync(file, "utf8");
-  const rel = path.relative(REPO, file);
-  const { contexts, interps } = lex(src);
-  const values = [...interps.map(x => ({ start: x.start, end: x.end, how: "${}" })),
-    ...contexts.flatMap(concatOperands).map(x => ({ ...x, how: "+" }))];
-  const fns = topLevelFunctions(src);
-  const pushes = balancedCallSpans(src, /\b([\w$]+)\.push\(/g);
-  const notOutput = balancedCallSpans(src, NOT_OUTPUT_CALLS);
-  const escaping = balancedCallSpans(src, ESCAPING_SPANS);
-  for (const v of values) {
-    const expr = src.slice(v.start, v.end).trim().replace(/\s+/g, " ");
-    const fn = fns.filter(f => f.start <= v.start && v.start < f.end).pop();
-    const fnSrc = fn ? src.slice(fn.start, fn.end) : "";
-    let cls;
-    if (wholeCallTo(expr, ESCAPERS)) cls = "escaped";
-    else if (escaping.some(p => p.start < v.start && v.end <= p.end)) cls = "escaped";
-    else if (literalOnly(expr)) cls = "literal";
-    else if (pushes.some(p => p.start < v.start && v.end <= p.end && new RegExp(`\\b${p.name}\\.map\\(escapeControls\\)`).test(fnSrc))) cls = "sink";
-    else if (notOutput.some(p => p.start < v.start && v.end <= p.end)) cls = "not-output";
-    else {
-      const j = JUDGED.find(x => x.file === rel && (!x.fn || (fn && x.fn === fn.name)) && x.re.test(expr));
-      cls = j ? `judged:${j.class}` : "UNCLASSIFIED";
-      if (j) j.used = (j.used || 0) + 1;
+/** The only classes a judgment may assert for a WHOLE declaration: every value it prints joins a line sink,
+ *  or its whole output is one JSON document. Any other class is a claim about particular expressions. */
+export const FUNCTION_WIDE_CLASSES = new Set(["sink-flow", "json"]);
+
+/** Classify every interpolation. `read(rel)` returns a swept file's text — a test passes a mutated copy.
+ *  Returns every row, the per-class counts, and the findings (UNCLASSIFIED, STALE, EXCESS, WIDE). */
+export function sweepInterpolations({ repo = REPO, read = (rel) => fs.readFileSync(path.join(repo, rel), "utf8"), judged = JUDGED } = {}) {
+  const used = new Map(judged.map(x => [x, 0]));
+  const rows = [];
+  for (const rel of sweptFiles(repo)) {
+    const src = read(rel);
+    const { contexts, interps } = lex(src);
+    const values = [...interps.map(x => ({ start: x.start, end: x.end, how: "${}" })),
+      ...contexts.flatMap(concatOperands).map(x => ({ ...x, how: "+" }))];
+    const fns = topLevelFunctions(src);
+    const pushes = balancedCallSpans(src, /\b([\w$]+)\.push\(/g);
+    const notOutput = balancedCallSpans(src, NOT_OUTPUT_CALLS);
+    const escaping = balancedCallSpans(src, ESCAPING_SPANS);
+    for (const v of values) {
+      const expr = src.slice(v.start, v.end).trim().replace(/\s+/g, " ");
+      const fn = fns.filter(f => f.start <= v.start && v.start < f.end).pop();
+      const fnSrc = fn ? src.slice(fn.start, fn.end) : "";
+      let cls;
+      if (wholeCallTo(expr, ESCAPERS)) cls = "escaped";
+      else if (escaping.some(p => p.start < v.start && v.end <= p.end)) cls = "escaped";
+      else if (literalOnly(expr)) cls = "literal";
+      else if (pushes.some(p => p.start < v.start && v.end <= p.end && new RegExp(`\\b${p.name}\\.map\\(escapeControls\\)`).test(fnSrc))) cls = "sink";
+      else if (notOutput.some(p => p.start < v.start && v.end <= p.end)) cls = "not-output";
+      else {
+        const j = judged.find(x => x.file === rel && x.fn === (fn ? fn.name : undefined) &&
+          (x.exact !== undefined ? x.exact === expr : x.re.test(expr)));
+        cls = j ? `judged:${j.class}` : "UNCLASSIFIED";
+        if (j) used.set(j, used.get(j) + 1);
+      }
+      rows.push({ cls, file: rel, line: lineOf(src, v.start), where: `${rel}:${lineOf(src, v.start)}`, fn: fn ? fn.name : "-", how: v.how, expr });
     }
-    rows.push({ cls, where: `${rel}:${lineOf(src, v.start)}`, fn: fn ? fn.name : "-", how: v.how, expr });
   }
+  const counts = {};
+  for (const r of rows) counts[r.cls.split(":")[0]] = (counts[r.cls.split(":")[0]] || 0) + 1;
+  const findings = rows.filter(r => r.cls === "UNCLASSIFIED").map(r => `UNCLASSIFIED ${r.where} [${r.fn}] ${r.how} ${r.expr.slice(0, 160)}`);
+  const name = (x) => `${x.file} [${x.fn}] ${x.exact !== undefined ? JSON.stringify(x.exact) : `/${x.re.source}/`}`;
+  for (const [x, n] of used) {
+    if (x.exact === undefined && !FUNCTION_WIDE_CLASSES.has(x.class)) findings.push(`WIDE ${name(x)}: a ${x.class} judgment must name its expressions`);
+    const want = x.exact !== undefined ? x.count : 1;
+    if (n < want) findings.push(`STALE ${name(x)}: declared ${x.exact !== undefined ? `${want} occurrence(s)` : "a match"}, found ${n}`);
+    if (x.exact !== undefined && n > want) findings.push(`EXCESS ${name(x)}: declared ${want} occurrence(s), found ${n} — judge the new one`);
+  }
+  return { rows, counts, findings };
 }
-const counts = {};
-for (const r of rows) counts[r.cls.split(":")[0]] = (counts[r.cls.split(":")[0]] || 0) + 1;
-for (const r of rows) if (all || r.cls === "UNCLASSIFIED") console.log(`${r.cls.padEnd(22)} ${r.where} [${r.fn}] ${r.how} ${r.expr.slice(0, 160)}`);
-const unused = JUDGED.filter(j => !j.used);
-for (const j of unused) console.log(`STALE-JUDGMENT ${j.file} ${j.fn || ""} /${j.re.source}/`);
-console.log(`\ninterpolations: ${rows.length} — ` + Object.entries(counts).map(([k, n]) => `${k} ${n}`).join(", "));
-process.exit(counts.UNCLASSIFIED || unused.length ? 1 : 0);
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const { rows, counts, findings } = sweepInterpolations();
+  const out = [];
+  if (process.argv.includes("--all")) for (const r of rows) out.push(`${r.cls.padEnd(22)} ${r.where} [${r.fn}] ${r.how} ${r.expr.slice(0, 160)}`);
+  out.push(...findings.filter(f => !(process.argv.includes("--all") && f.startsWith("UNCLASSIFIED"))));
+  out.push(`\ninterpolations: ${rows.length} — ` + Object.entries(counts).map(([k, n]) => `${k} ${n}`).join(", "));
+  process.stdout.write(out.join("\n") + "\n");
+  // exitCode, never exit(): exit() can cut a piped stdout short of what was written.
+  process.exitCode = findings.length ? 1 : 0;
+}

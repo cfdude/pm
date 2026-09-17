@@ -1000,6 +1000,12 @@ export const LEGACY_RECIPES = [
     legacyWrite(c.cwd, s => { s.epics.push(legacyEpic(fresh("ca"), "archived", { ...legacyKilled, claim: { session: v, claimedAt: LEGACY_AT, ttlMinutes: 60 } })); });
     return pm(c.cwd, ["integrity"]);
   } },
+  // Gate 2 U2-I1: the takeover line prints the STORED session of the claim it replaces.
+  { key: "claim --steal over a live legacy claim whose session holds a control character (the takeover line)", rendered: true, run: (c, v) => {
+    const id = fresh("ct");
+    legacyWrite(c.cwd, s => { s.epics.push(legacyEpic(id, "queued", { claim: { session: v, claimedAt: new Date().toISOString(), ttlMinutes: 60 } })); });
+    return pm(c.cwd, ["claim", id, "--session", "taker", "--steal"]);
+  } },
   { key: "sync over a tombstoned plan file whose name holds a control character (the --plan remedy)", rendered: true, run: (c, v) => {
     const rel = path.join("docs", "superpowers", "plans", `tomb-${v}.md`);
     fs.mkdirSync(path.join(c.cwd, "docs", "superpowers", "plans"), { recursive: true });

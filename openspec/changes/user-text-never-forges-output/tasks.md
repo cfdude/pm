@@ -242,6 +242,17 @@ Pairs: 7.1 lands with 7.2.
         remove-epic's held-by citation; pop-detour's still-not-archived status; set-autonomy's stored level;
         plan-hierarchy's cycle path; the archive gate's `recorded <recordedAt>`; upgrade's `since
         <pmVersion>` and the OpenSpec currency lines it writes straight to stderr.
+      - **Moved into the suite (Gate 2 U2-I1).** The change-directory script guarded nothing past its
+        commit, resolved its repository from the change directory (broken by the archive move), and 103
+        of its 152 judgments covered a whole function — a raw `held.session` in `claim()` and a raw title
+        in `supersedeAmended()` both passed it (`red-g2-U2-I1.txt`). It now lives at
+        `scripts/test/output-interpolations.mjs` (method; `--all` prints every row, exit code set without
+        cutting a pipe short), `scripts/test/output-interpolations.judged.mjs` (judgments naming EXACT
+        expressions with their occurrence counts; only `sink-flow` and `json` may cover a whole
+        declaration) and `scripts/test/output-interpolations.test.mjs` (no UNCLASSIFIED, STALE, EXCESS or
+        WIDE finding, and both reviewer mutants proven caught in-suite). The two change-directory scripts
+        are removed; `sweep-interpolations.txt` stays as the record of the T-S2 run. 7.2 gained the legacy
+        recipe `claim --steal` over a live claim whose stored session holds a control character.
 - [x] 8.2 **Inverse of every operation added or modified** — the id refusal at `pushEpic` (inverse:
       `remove-epic`, unchanged; a skipped directory's inverse is renaming it, no verb); the release
       create refusal (inverse: none needed — nothing was stored). DECIDED, not deferred: no
