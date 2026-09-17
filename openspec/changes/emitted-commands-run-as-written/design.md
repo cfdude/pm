@@ -198,6 +198,20 @@ Grepping engine SOURCE for remedy strings (rejected: template literals split inv
   value on EITHER gate: it groups the malformed records by `where` (`gate1.*` / `gate2.*` /
   `attributedCommits`, from `recordedShas()` at `integrity.mjs:109`) and prints `gateRemedy(epic, 1)`
   for a Gate 1 value, `gateRemedy(epic, 2)` for a Gate 2 value, and the withdrawal for an attribution.
+  The `gate2-attribution-withdrawn` obligation's two-line remedy (below: `gateRemedy(id, 2)`, THEN
+  `--attribute-commit`) is rendered once, by that entry of `DELIVERED_OBLIGATIONS`, and printed by
+  every site naming that obligation: the regression refusal, the archive-gate refusal at
+  `archive-gate.mjs:444-446` (today prose in the OPPOSITE order, "Attribute the commits that actually
+  shipped, then re-record Gate 2"), and the withdrawn arm of `integrity`'s
+  `delivered-epic-attributed-no-commits` at `integrity.mjs:293` (today `--attribute-commit` alone).
+  That check's never-withdrawn arm (`:295`) is `none-attributed`, not a delivered obligation, and
+  keeps its `--attribute-commit` line. One order is right at every site — verified on 0.44.0 (C1
+  attributed, Gate 2 P..C1, C1 amended to C2): NOT archived with C1 withdrawn, re-record P..C2 →
+  attribute C2 → archive `delivered` each exit 0, while attribute-first exits 0 and the archive is
+  then refused stale; archived and refused at the archive gate via the refusal's invocation,
+  attribute-first exits 1 and re-record-first exits 0 at each step with the invocation then exit 0;
+  archived and ALREADY withdrawn (the `integrity` finding), re-record then attribute exit 0 and the
+  finding clears.
   The call-site sweep (task 9.1) is multi-line — `rg -n -U -e "--gate 2[^;]*?--verdict" -e "--gate <n>"
   -e "--gate \\$\\{" scripts/lib` — and also greps for `'record-gate-review` at a string start, so a
   form split across `+` cannot be missed.
@@ -215,6 +229,8 @@ Grepping engine SOURCE for remedy strings (rejected: template literals split inv
   ("attributes no commits, having withdrawn 1"). Its remedy is two lines, in this order:
   `gateRemedy(id, 2)` with `--base-sha <parent of the replacing commit> --head-sha <the replacing
   commit>`, then `update-epic <id> --attribute-commit <the replacing commit>`; the invocation follows.
+  The prose introducing them says both lines must run before the refused command is retried: running
+  only the re-record and then retrying the withdrawal leaves `delivered` with zero attributed commits.
   The order is load-bearing. Verified on 0.44.0 (archived `delivered` openspec epic, one attributed
   commit C1 amended to C2, C1 still resolvable): re-record Gate 2 P..C2 exit 0 → `--attribute-commit
   C2` exit 0 → the refused `--withdraw-commit C1` exit 0 (and the refusal's invocation with
@@ -222,7 +238,9 @@ Grepping engine SOURCE for remedy strings (rejected: template literals split inv
   head C1 does not reach C2). Layer B fills these two placeholders by meaning as the REPLACING commit
   and its parent — not step 3's "last attributed commit", which at refusal time is the replaced one.
   A re-record over a head that does not reach the still-attributed commit must never be printed as
-  a step on its own: it already breaks the Gate 2 obligation, so the withdrawal that follows is no
+  a step on its own: it already breaks the Gate 2 obligation, and `deliveredRegression` compares
+  obligations by `deliveredObligations()` `kind` (`gate2`), not by this change's variant, so the
+  withdrawal that follows (`gate2-stale` → `gate2-attribution-withdrawn`) is no
   longer seen as breaking anything and succeeds (exit 0 on 0.44.0), leaving `delivered` with no
   attributed commits. The existing "the invocation is the only line beginning `  update-epic `" rule is
   kept: remedy lines are introduced by prose and never begin with `update-epic`.

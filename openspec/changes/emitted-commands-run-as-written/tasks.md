@@ -84,7 +84,17 @@ Pairs: 2.1–2.8 (incl. 2.7a) land with 2.9.
       withdraw line is printed; each `--attribute-commit` line attributes to its epic. (Fails today: the two registries are not exported.)
 - [ ] 2.2 RED: stale Gate 2 (a commit attributed after the reviewed head) — the archive refusal's
       remedy filled with base = parent of the first attributed commit and head = the last attributed
-      commit exits 0 and the same archive then succeeds; missing and withdrawn Gate 2 likewise
+      commit exits 0 and the same archive then succeeds; missing and withdrawn Gate 2 likewise;
+      AND attribution-withdrawn reaching the archive gate out of order (2.6's case E fixture: run the
+      refused `--withdraw-commit C1`'s printed invocation with `--outcome delivered
+      --correct-disposition`) — the refusal prints the Gate 2 re-record (head = C2, base = C2's
+      parent) BEFORE `--attribute-commit C2`, and followed in that order each exits 0 and the
+      invocation then exits 0 with `delivered` kept (fails today: it prints attribute-first, and
+      `--attribute-commit C2` exits 1); AND `integrity`'s `delivered-epic-attributed-no-commits`
+      withdrawn arm (same fixture, Gate 2 re-recorded over C2 and C1 then withdrawn) prints that same
+      pair in that order, each exits 0 and the finding clears (fails today: it prints
+      `--attribute-commit` alone, not the shared pair); its never-withdrawn arm keeps
+      `--attribute-commit` alone
 - [ ] 2.3 RED: `delivered-release-epic-left-open` on an openspec member with no Gate 2 — alternative 1
       (archive) in one fixture: Gate 2 precondition named first, each command exits 0, `integrity` no
       longer reports the member; alternative 2 (`release --defer`) in a second fresh fixture, same
@@ -126,7 +136,9 @@ Pairs: 2.1–2.8 (incl. 2.7a) land with 2.9.
       (design Decision 2, incl. the `+`-split forms at `archive-gate.mjs:426,430-431` and the
       gate-aware `integrity.mjs:750-752`); `dispositionInvocation(epic, {keepDelivered})` and
       `blockedDelivered(epic)`; `deliveredBlockedBy`; the delivered-release and regression-refusal
-      remedy lines (incl. the attribution-withdrawn re-record + `--attribute-commit` pair);
+      remedy lines (incl. the attribution-withdrawn re-record + `--attribute-commit` pair, rendered
+      once in `DELIVERED_OBLIGATIONS` and printed by the regression refusal, `archive-gate.mjs:444-446`
+      and `integrity.mjs:293`);
       `closedItemStep()`'s Gate 2 sentence; `EPIC_ID_FORMAT` and `printedId()` in `constants.mjs` at
       every printed-id site, AND the three id-format validators replaced by an import of
       `EPIC_ID_FORMAT` from `constants.mjs` — the regex literal at `add-epic.mjs:360`,

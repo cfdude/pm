@@ -132,7 +132,18 @@ adding one is a visible change to the test.
 - **THEN** the refusal names the Gate 2 re-record over the replacing commit and then its
   `--attribute-commit` before the invocation, each exits zero, and the withdrawal is then accepted
   with `delivered` kept (today the refusal names only a disposition invocation, which the archive
-  gate refuses with exit 1)
+  gate refuses with exit 1); the refusal says both lines must run before the withdrawal is retried,
+  because running only the re-record lets the withdrawal through with `delivered` attributing no
+  commits
+
+#### Scenario: Every site naming the attribution-withdrawn obligation prints the same remedy
+- **WHEN** the archive gate refuses `delivered` because the record attributes no commits having
+  withdrawn one (reached through the regression refusal's invocation with `--outcome delivered`), or
+  `integrity`'s `delivered-epic-attributed-no-commits` reports that withdrawn shape
+- **THEN** each prints the regression refusal's remedy in its order — the Gate 2 re-record over the
+  replacing commit, then its `--attribute-commit` — and followed in that order each exits zero and the
+  refusal or finding clears (today the archive gate prints attribute-first, whose `--attribute-commit`
+  exits 1 on an archived record, and `integrity` prints `--attribute-commit` alone)
 
 #### Scenario: A gate-agnostic remedy names each gate's evidence
 - **WHEN** `integrity` reports a recorded range value that is not a commit object name on a Gate 1
