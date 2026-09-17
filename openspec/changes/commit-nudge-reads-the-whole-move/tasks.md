@@ -133,9 +133,12 @@ Pairs: 5.1–5.3a (with 5.2a) land with 5.4.
       live-amend-only rule); and C1 auto-logged and attributed, then one call runs `commit --amend` and
       `reset --hard HEAD@{1}`: C1's row is NOT retracted and no `--withdraw-commit` names C1 (fails
       against an every-amend rule that ignores liveness)
-- [ ] 5.2a RED: a commit attributed to epic E archived with outcome `delivered`, amended with the
-      replaced commit dead: no `update-epic E --withdraw-commit` line is printed; the output names E as
-      delivered and says a disposition must be recorded (fails against 5.4 without the exception)
+- [ ] 5.2a RED: a commit attributed to OPENSPEC-lane epic E, archived `delivered` with a Gate 2 verdict
+      the withdrawal would break, amended with the replaced commit dead: no `update-epic E
+      --withdraw-commit` line; the output names E as delivered and says a disposition must be recorded;
+      and running the suppressed command by hand is refused by `update-epic` (proving the pre-check
+      agrees). Same shape on a CLAUDE-CODE-lane delivered epic F: the withdraw line IS printed, no
+      disposition sentence, and running it succeeds (fails against 5.4 without the exception)
 - [ ] 5.3a REGRESSION GUARD: one call runs `checkout -b tmp`, `checkout main`, `commit --amend`: the
       replaced commit named is the one HEAD held before the amend
 - [ ] 5.4 GREEN: amend handling (Decision 7). Suite green
@@ -235,13 +238,14 @@ Pairs: 7.1–7.2 land with 7.4.
 - [ ] 9.1 `commands/detour.md` — `retract-detour`, when the hook auto-logs and when it does not (own
       artifacts, pm bookkeeping, dead commits), the provenance statement, the amend behaviour
 - [ ] 9.2 `skills/conductor/SKILL.md` — the auto-logging paragraph, the attribution-hint candidates, and
-      the exit-status line ("`commit-nudge` writes nothing but its HEAD watermark …") to name
-      `commit-observe.json` and both post-call events
+      the exit-status line ("`commit-nudge` writes nothing but its HEAD watermark …", line 195) to say
+      `commit-nudge` "writes nothing, the observation record included", on both post-call events
 - [ ] 9.3 `hooks/README.md` — the `## PostToolUse — matcher Bash` section (the watermark description
       becomes the reflog anchor and reported set; add `PostToolUseFailure`), and the hook-verb /
       unreadable-state paragraph
 - [ ] 9.4 `README.md` — the `detours.log` row kinds (add `RETRACTED`), the hook wiring description,
-      `retract-detour` in the verb list
+      `retract-detour` in the verb list, and the unreadable-state paragraph (line 1511, "writes nothing
+      but its HEAD watermark") to say `commit-nudge` "writes nothing, the observation record included"
 - [ ] 9.5 `CHANGELOG.md` `[Unreleased]` — Fixed (defects 1, 2 and 4–8 of proposal.md, citing #173, #184,
       #195, #199), Added (`retract-detour`), Changed (hook also wired on `PostToolUseFailure`; the
       provenance statement; defect 3 stated as a residual), and **requires `/reload-plugins`**: until

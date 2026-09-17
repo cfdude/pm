@@ -67,7 +67,8 @@ requirement closes.
 - **WHEN** a commit lands in a Bash call that fails, `state.json` does not parse, and `commit-nudge`
   runs with the PostToolUseFailure payload
 - **THEN** it exits 2 naming `.conductor/state.json`, and `state.json`, `PROJECT.md` and the detour
-  log are byte-identical afterwards, and so is 0.44.0's watermark `.conductor/commit-watch.json`
+  log are byte-identical afterwards, and so are the commit observation record
+  `.conductor/commit-observe.json` and 0.44.0's watermark `.conductor/commit-watch.json`
 
 #### Scenario: A pre-compaction snapshot writes nothing and does not block compaction
 

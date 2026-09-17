@@ -144,8 +144,12 @@ un-retract) and false. Before any commit is classified, for each remaining entry
 (a) retract every non-retracted commit-derived row matching the replaced commit, reason
 `amended into <short new sha>`; (b) for each epic whose `attributedCommits` holds the replaced full sha,
 print `update-epic <id> --withdraw-commit <replaced> --withdrawal-reason "amended into <new>"` —
-except for an epic whose outcome is `delivered`, where a withdrawal can hit `update-epic`'s
-archived-delivered regression refusal (`regressionRefusal`, update-epic.mjs) and a printed command the
+except where that command would hit `update-epic`'s archived-delivered regression refusal
+(`regressionRefusal`, update-epic.mjs), decided by the same pre-check the refusal runs: the epic is
+archived with outcome `delivered`, and `deliveredObligations` on the record with the replaced commit
+withdrawn names an obligation that `deliveredObligations` on the current record does not. A delivered
+epic that pre-check clears (a claude-code-lane epic, for one) gets the command as usual. Where it is
+refused, and a printed command the
 engine refuses would break emitted-instructions R2; there the hook says in prose that the replaced
 commit is attributed to delivered epic <id> and that changing it means recording the disposition it
 implies, which that refusal prints when the agent attempts it;

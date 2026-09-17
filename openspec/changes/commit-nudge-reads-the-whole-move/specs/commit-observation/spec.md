@@ -109,10 +109,12 @@ the replacing commit, before the replacing commit is classified. The hook SHALL 
 `--attribute-commit` naming the replaced commit. Where the replaced commit is in any epic's
 attribution array, the hook SHALL print, before any attribution command, a runnable
 `update-epic <that epic> --withdraw-commit <replaced> --withdrawal-reason "<…>"`; the engine SHALL NOT
-withdraw it itself. Where that epic's recorded outcome is `delivered`, the hook SHALL NOT print that
-command, which `update-epic`'s archived-delivered regression refusal can refuse; it SHALL instead
-state that the replaced commit is attributed to a delivered epic and that changing that record means
-recording the disposition the change implies, as that refusal directs.
+withdraw it itself. Only where `update-epic` would refuse that withdrawal — the epic is archived with outcome
+`delivered` and withdrawing the replaced commit would break an obligation its archived record meets —
+the hook SHALL NOT print that command; it SHALL instead state that the replaced commit is attributed to
+a delivered epic whose record the withdrawal would break, and that changing it means recording the
+disposition the change implies, as that refusal directs. Everywhere else, including a delivered epic
+whose record the withdrawal would not break, the command SHALL be printed.
 
 #### Scenario: Amending a logged commit leaves one visible row
 
@@ -128,10 +130,17 @@ recording the disposition the change implies, as that refusal directs.
 
 #### Scenario: An amend of a delivered epic's commit prints no bare withdrawal
 
-- **WHEN** a commit attributed to epic E, whose recorded outcome is `delivered`, is amended and the
-  replaced commit is not live
+- **WHEN** a commit attributed to openspec-lane epic E, archived with outcome `delivered` and a Gate 2
+  verdict that withdrawing the commit would break, is amended and the replaced commit is not live
 - **THEN** the hook prints no `update-epic E --withdraw-commit` line, and its output names E as a
   delivered epic holding the replaced commit and says the change requires recording a disposition
+
+#### Scenario: A delivered epic whose record the withdrawal does not break still gets the command
+
+- **WHEN** a commit attributed to claude-code-lane epic F, archived with outcome `delivered`, is amended
+  and the replaced commit is not live
+- **THEN** the hook prints `update-epic F --withdraw-commit <replaced>` with a withdrawal reason, and
+  does not say a disposition is required
 
 #### Scenario: A chain of amends retracts and withdraws the original
 
