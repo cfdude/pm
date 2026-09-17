@@ -6,7 +6,11 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [Unreleased]
+## [0.45.0] — 2026-09-17
+
+The first batch of Important findings from the independent review of 0.43.0: what the commit hook
+observes, what the commands pm emits actually do when they are run, and what user-supplied text can
+do to pm's own output.
 
 **Requires `/reload-plugins`.** Plugin versions install side by side, so until a session reloads it
 keeps 0.44.0's commit hook and engine — which still write `.conductor/commit-watch.json` and none of
