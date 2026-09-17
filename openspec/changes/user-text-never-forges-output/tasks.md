@@ -255,6 +255,9 @@ Pairs: 7.1 lands with 7.2.
       so a legacy entry stays removable; a primary `--remove` IS refused, and a primary is replaced by the
       next well-formed `set-tracker`); escaping (inverse: none — output only, the stored value is unchanged).
       Each unshipped inverse named and justified in the commit message
+      - Gate 2 T-M5: ONE store is escaped at write, not at output — `.conductor/detours.log`'s epic and
+        note fields — because a raw LF/TAB would split an engine-parsed row; recorded as design D7's
+        exception, with the check that no reader matches the logged epic against a stored id.
 - [x] 8.3 **Verify against the commit** — `git show --stat <sha>` for every task commit; every file the
       task claims is present in THAT commit, including the test file and each `red-<task>.txt`
 - [x] 8.4 **Attribute every commit** as it lands: `update-epic user-text-never-forges-output

@@ -294,6 +294,20 @@ refusals; they stay here because the reason for them is the output guarantee.
 and the logged line are one line each. The ready-to-paste Honcho text then carries an escape where the
 caller typed a newline; acceptable, because a memory is a one-line note by definition.
 
+**`.conductor/detours.log` escapes at WRITE, the one exception to "the stored value is unchanged"
+(Gate 2 T-M5, decided).** `appendDetourLog()` and `appendRetraction()` (`git.mjs`) write the epic and
+note fields through `escapeControls`, so a legacy epic id holding a control character is logged in its
+escaped form and no longer equals the id stored in `state.json`. Escaping at read/render instead was
+considered and rejected: the log is a line-per-row, tab-separated record that the ENGINE parses
+(`readDetourRows()` splits on LF and TAB), so a raw LF or TAB in a field would not be neutralised by any
+later sink — it would split the row, and the engine would read the tail as a row of its own, with a
+kind and sha of the value's choosing (a forged `RETRACTED` row hides a real commit's row from
+PROJECT.md). The cost is nil for identity: no reader matches a row's epic field against a stored id —
+checked at Gate 2 with `rg -n "readDetourRows|visibleDetourRows"`: `render()` displays it (through
+`tableRow`) and `retract-detour` / the amend path copy it into the RETRACTED row they append; commit
+identity is the sha field. The note field already had a write-time transformation before this change
+(whitespace collapsed), so the log was never a verbatim copy.
+
 ### D8. A tracker's recorded scope is refused at input
 `set-tracker` refuses a `--system`, `--project` or `--repo` value containing a control character, for
 both roles, before `loadState` and before the rules file is touched; exit 1, naming the flag, quoting the
