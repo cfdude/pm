@@ -242,11 +242,29 @@ Pairs: 7.1–7.2 land with 7.4.
       propose (do not write unasked) dispositions for `gh-cfdude-pm-173`, `gh-cfdude-pm-184`,
       `gh-cfdude-pm-195`, `gh-cfdude-pm-199` once their GitHub issues are closed with a comment naming
       what shipped and what was declined
-- [ ] 8.6 **Route what the work taught** — name each as a practice, tooling friction
+- [x] 8.6 **Route what the work taught** — name each as a practice, tooling friction
       (`/pm:feedback`), or a process failure (`docs/lessons/`). At minimum decide whether "a hook that
       observes only the success event misses work done in failing calls" is a lesson, and whether the
       five hand-removals from `detours.log` before a verb existed belong in `docs/lessons/` as evidence
       for the dogfooding skill
+      - Success-event-only hook — **product defect, not a lesson** (declined): it is what the tool did
+        wrong, not how we worked; fixed by the `PostToolUseFailure` wiring, bound by test 2.3 and the
+        `commit-observation` requirement, and explained in `hooks/README.md`.
+      - Five hand-removals from `detours.log` — **tooling friction, already filed and now shipped**
+        (declined as a lesson): filed as #173/#184 and closed by `retract-detour` in this change. The
+        dogfooding skill and the repo CLAUDE.md "FRICTION IN THE TOOLING" item already name the class
+        (a hand-edit because no verb exists); the numbers live in proposal.md defect 8.
+      - Adding a verb means hand-writing registration rows in several tables, and the verb-surface
+        harness had no seed step — **tooling friction**, filed as
+        https://github.com/cfdude/pm/issues/206.
+      - Fixtures running `reset --hard`/`checkout -f` silently restored committed `state.json` and
+        dropped recorded attributions — **process failure**, written as
+        `docs/lessons/git-rewinds-restore-tracked-conductor-state.md`.
+      - Decoding the reflog as UTF-8 before storing the anchor lost commits permanently, past TDD, the
+        suite and Gate 1, because every fixture was ASCII (Gate 2 G2-C1) — **process failure** (fixture
+        design), written as `docs/lessons/ascii-fixtures-hide-a-lossy-decode.md`, retrieval-only: no
+        `detect:` matcher, since no tool call recognises a lossy decode with near-certainty.
+      - No new practice or gate was adopted by this change beyond the ones already registered.
 
 ## 9. Docs (after Gate 2)
 
