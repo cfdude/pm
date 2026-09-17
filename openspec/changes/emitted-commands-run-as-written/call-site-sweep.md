@@ -170,7 +170,11 @@ named first, and a checkbox source's handoff (`obligationArchiveFlags()`) travel
   with an open task, or an open inline story, got a refused step. Now the E-I5 shape.
 - `dispositionInvocation()`'s other callers (`unconsidered-outcomes`, `integrity`'s
   `epic-in-undefined-status`) — hold without `carry`: they do not pass `keepDelivered`, so a failing handoff
-  omits `delivered` from the choices and `deliveredBlockedBy` names it.
+  omits `delivered` from the choices and `deliveredBlockedBy` names the obligation. NOT examined by this
+  rule and stated rather than claimed: for a CHECKBOX source that entry is `{kind: "handoff", detail: "N of
+  M task(s) outstanding", remedy: []}` (reproduced at 8ac7817) — it names no way past the block, because the
+  way past is a flag on a `delivered` archive this output does not offer. The archive gate's own refusal,
+  if `delivered` is attempted, names `--carried-to` and the lifecycle marker. Left for Gate 2 to rule on.
 - Justified: `rules.mjs`' closed-item step and the disposition rule are epic-agnostic instructions over
   `<id>` (their Gate 2 condition is stated beside them, E-M3), and `archive-gate.mjs`' own refusal lists
   the vocabulary in prose; neither is a command for a known record.
