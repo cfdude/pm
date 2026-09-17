@@ -130,7 +130,10 @@ Pairs: 2.1–2.8 (incl. 2.7a) land with 2.9.
       (the control-character id case is not tested here; it is owned by `user-text-never-forges-output` task 5.3a)
 - [ ] 2.8 REGRESSION GUARD: a `claude-code`-lane unconsidered entry still offers `delivered` with
       `deliveredBlockedBy: []` and clears when run with `delivered`; the regression refusal still
-      prints its echoed tokens, `--correct-disposition` and exactly one line beginning `  update-epic `
+      prints its echoed tokens, `--correct-disposition` and exactly one line beginning `  update-epic `;
+      and `deliveredObligations()` still reports Gate 2 failures under `kind: "gate2"` (the variant id
+      lives in its own field), so a withdrawal on an archived delivered record whose Gate 2 is ALREADY
+      stale still exits 0 — commit-nudge Decision 7's `deliveredRegression` compares by that kind
 - [ ] 2.9 GREEN: `DELIVERED_OBLIGATIONS` and `BRIEF_REMEDIES` exported and consumed by
       `deliveredObligations()` and `buildBrief()`; `gateRemedy(id, gate)` at every Gate-remedy site
       (design Decision 2, incl. the `+`-split forms at `archive-gate.mjs:426,430-431` and the
