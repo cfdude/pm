@@ -74,7 +74,44 @@ export const isDetachedTree = (root = ROOT) => headAttachment(root) === "detache
  *  what the agent DECLARED via `/pm:detour --minimal`, not what git observed: two genuine minimal
  *  detours fixed between one pair of commits share a HEAD and are two real events. Deduping them
  *  would delete a record, which is the opposite of what this is for. */
-const COMMIT_DERIVED_KINDS = new Set(["DETOUR-COMMIT", "AUTO-DETOUR"]);
+export const COMMIT_DERIVED_KINDS = new Set(["DETOUR-COMMIT", "AUTO-DETOUR"]);
+
+/** Every row of the detour trail, parsed. `[]` when the log is absent or unreadable. */
+export function readDetourRows() {
+  let body;
+  try { body = fs.readFileSync(DETOURS_LOG, "utf8"); } catch { return []; }
+  return body.split("\n").filter(Boolean).map((raw) => {
+    const [when, sha, kind, epic, note] = raw.split("\t");
+    return { raw, when, sha, kind, epic, note };
+  });
+}
+
+/** Do two row shas name the same commit, as far as the rows alone can tell? Either is a prefix of
+ *  the other. Used where no git is consulted (render, the already-retracted check): two different
+ *  commits whose rows were abbreviated to the same prefix are indistinguishable from the text, and
+ *  hiding both is the accepted cost (design Decision 11). */
+export const rowShasOverlap = (a, b) =>
+  typeof a === "string" && typeof b === "string" && /^[0-9a-f]{4,64}$/.test(a) && /^[0-9a-f]{4,64}$/.test(b) &&
+  (a.startsWith(b) || b.startsWith(a));
+
+/** The rows a reader should see: commit-derived rows whose commit carries a RETRACTED row are
+ *  dropped, and RETRACTED rows are never shown themselves. */
+export function visibleDetourRows(rows = readDetourRows()) {
+  const retracted = rows.filter(r => r.kind === "RETRACTED").map(r => r.sha);
+  return rows.filter(r => r.kind !== "RETRACTED" &&
+    !(COMMIT_DERIVED_KINDS.has(r.kind) && retracted.some(x => rowShasOverlap(x, r.sha))));
+}
+
+/** Append a RETRACTED row — the inverse of an automatic commit-derived row, which is never removed
+ *  or rewritten. `<iso>\t<sha>\tRETRACTED\t<epic of the retracted row>\t<reason>`. Suppressed in a
+ *  detached tree like the row it retracts (gh#175); returns whether it was written. */
+export function appendRetraction(sha, epic, reason) {
+  if (isDetachedTree()) return false;
+  fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
+  const line = [new Date().toISOString(), sha, "RETRACTED", epic || "-", (reason || "").replace(/\s+/g, " ").trim()].join("\t");
+  fs.appendFileSync(DETOURS_LOG, line + "\n");
+  return true;
+}
 
 /** The abbreviated name git gives a commit here, or `-` when git cannot answer. */
 export function shortSha(rev) {

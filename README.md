@@ -421,7 +421,7 @@ Classifies the interruption as minimal or substantial before doing anything else
 
 | Flag | Behavior |
 |------|----------|
-| `--minimal "<what you fixed>"` | Fast-path: calls `log-detour` to append to `.conductor/detours.log` and resume. No proposal, no stack entry. |
+| `--minimal "<what you fixed>"` | Fast-path: calls `log-detour` to append to `.conductor/detours.log` and resume. No proposal, no stack entry. (A wrong automatic row the commit hook wrote is corrected with `retract-detour <sha> --reason "<why>"`.) |
 | _(none)_ | Substantial: register a new epic in the appropriate lane for the detour, then PUSH the current one onto the detour stack with `push-detour`. |
 
 **`push-detour` and `pop-detour` are verbs, not hand-edits.** Until 0.35.0 the substantial

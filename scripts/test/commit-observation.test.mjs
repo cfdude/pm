@@ -259,3 +259,180 @@ test("3.2 a commit from another terminal carries the statement, and its automati
   assert.match(o.context, new RegExp(`retract-detour ${short(repo, sha)} --reason`), "the correction is the verb");
   assert.doesNotMatch(o.context, /edit\/remove the line|remove the line|edit the line/, "never a hand-edit of the log");
 });
+
+// ─────────────── 4. retract-detour ───────────────
+
+import { spawnSync } from "node:child_process";
+import { ENGINE, EMPTY_CACHE } from "./helpers.mjs";
+
+function engineRun(cwd, args) {
+  const r = spawnSync("node", [ENGINE, ...args], {
+    cwd, encoding: "utf8",
+    env: { ...process.env, CLAUDE_PROJECT_DIR: cwd, PM_CACHE_ROOT: EMPTY_CACHE },
+  });
+  return { status: r.status, stdout: r.stdout || "", stderr: r.stderr || "" };
+}
+const logPath = (repo) => path.join(repo.cwd, ".conductor", "detours.log");
+const projectMdOf = (repo) => fs.readFileSync(path.join(repo.cwd, "PROJECT.md"), "utf8");
+const detourTableRows = (repo) => {
+  const md = projectMdOf(repo);
+  const section = md.slice(md.indexOf("## Recent detours"), md.indexOf("## Briefing"));
+  return section.split("\n").filter((l) => /^\| \d{4}-/.test(l));
+};
+const logRows = (repo) => repo.detours().split("\n").filter(Boolean).map((l) => l.split("\t"));
+function writeRows(repo, rows) {
+  fs.mkdirSync(path.dirname(logPath(repo)), { recursive: true });
+  fs.writeFileSync(logPath(repo), rows.map((r) => ["2026-09-01T00:00:00.000Z", ...r].join("\t")).join("\n") + "\n");
+  engineRun(repo.cwd, ["render"]);
+}
+/** A commit auto-logged by an observation, returned with its full sha. */
+function autoLogged(repo, file, subject) {
+  const sha = repo.commit({ [file]: "1" }, subject);
+  const o = repo.observe("PostToolUse", "git commit");
+  assert.equal(rowsFor(repo, sha).filter((r) => r.includes("\tAUTO-DETOUR\t")).length, 1,
+    `fixture: ${subject} was auto-logged. Output: ${o.stdout}`);
+  return sha;
+}
+
+test("4.1 retract-detour on an AUTO-DETOUR row appends a RETRACTED row and PROJECT.md drops it (abbreviated and full sha)", () => {
+  const repo = observationRepo();
+  repo.observe();
+  for (const [file, form] of [["src/r1.txt", "short"], ["src/r2.txt", "full"]]) {
+    const sha = autoLogged(repo, file, `chore: detour ${form}`);
+    const before = logRows(repo).length;
+    const arg = form === "short" ? short(repo, sha) : sha;
+    const r = engineRun(repo.cwd, ["retract-detour", arg, "--reason", "own work"]);
+    assert.equal(r.status, 0, r.stderr);
+    const rows = logRows(repo);
+    assert.equal(rows.length, before + 1, "one row appended, none removed");
+    assert.ok(rows.some((x) => x[2] === "AUTO-DETOUR" && sha.startsWith(x[1])), "the original row is kept");
+    const retraction = rows.at(-1);
+    assert.equal(retraction[2], "RETRACTED");
+    assert.ok(sha.startsWith(retraction[1]), "the retraction names the commit");
+    assert.equal(retraction[3], "epic-a", "and the epic of the row it retracts");
+    assert.equal(retraction[4], "own work");
+    assert.ok(!detourTableRows(repo).some((l) => l.includes(short(repo, sha))), "PROJECT.md shows no row for it");
+  }
+});
+
+test("4.2 rows of 7 and 8 characters match only their own commit, and a re-fired observation writes no new row", () => {
+  const repo = observationRepo();
+  repo.observe();
+  const recordBefore = fs.readFileSync(OBSERVE_RECORD(repo.cwd), "utf8");
+  const a = repo.commit({ "src/a.txt": "1" }, "fix: seven");
+  const b = repo.commit({ "src/b.txt": "1" }, "fix: eight");
+  writeRows(repo, [
+    [repo.git("rev-parse", "--short=7", a), "AUTO-DETOUR", "epic-a", "fix: seven"],
+    [repo.git("rev-parse", "--short=8", b), "AUTO-DETOUR", "epic-a", "fix: eight"],
+  ]);
+  let r = engineRun(repo.cwd, ["retract-detour", a, "--reason", "not a detour"]);
+  assert.equal(r.status, 0, r.stderr);
+  assert.deepEqual(logRows(repo).filter((x) => x[2] === "RETRACTED").map((x) => a.startsWith(x[1])), [true]);
+  assert.equal(detourTableRows(repo).length, 1, "B's row is still visible");
+  r = engineRun(repo.cwd, ["retract-detour", b, "--reason", "not a detour"]);
+  assert.equal(r.status, 0, r.stderr);
+  const retracted = logRows(repo).filter((x) => x[2] === "RETRACTED");
+  assert.equal(retracted.length, 2);
+  assert.ok(b.startsWith(retracted[1][1]) && !a.startsWith(retracted[1][1]), "the second retraction is B's only");
+  // Re-fire: move the anchor back before both commits, so an observation reads them again.
+  const rowsBefore = logRows(repo).length;
+  fs.writeFileSync(OBSERVE_RECORD(repo.cwd), recordBefore);
+  repo.observe("PostToolUse", "ls");
+  assert.equal(logRows(repo).length, rowsBefore, "a retracted commit still counts as logged");
+});
+
+test("4.2a a row whose commit was rewritten and pruned can be retracted by the row's sha", () => {
+  const repo = observationRepo();
+  repo.observe();
+  const gone = autoLogged(repo, "src/gone.txt", "chore: rewritten then pruned");
+  const rowSha = rowsFor(repo, gone)[0].split("\t")[1];
+  repo.git("reset", "-q", "--hard", "HEAD~1");
+  fs.rmSync(path.join(repo.gitRoot, ".git", "ORIG_HEAD"), { force: true });
+  repo.git("reflog", "expire", "--expire=now", "--all");
+  repo.git("gc", "-q", "--prune=now");
+  assert.throws(() => repo.git("cat-file", "-e", `${gone}^{commit}`), "fixture: the commit no longer resolves");
+  const r = engineRun(repo.cwd, ["retract-detour", rowSha, "--reason", "rewritten away"]);
+  assert.equal(r.status, 0, r.stderr);
+  const last = logRows(repo).at(-1);
+  assert.equal(last[2], "RETRACTED");
+  assert.equal(last[1], rowSha);
+});
+
+test("4.3 every retract-detour refusal names its reason and writes nothing", () => {
+  const repo = observationRepo();
+  repo.observe();
+  const logged = autoLogged(repo, "src/logged.txt", "chore: logged once");
+  const bare = repo.commit({ "src/bare.txt": "1" }, "feat: never logged");
+  engineRun(repo.cwd, ["log-detour", "declared minimal"]);            // a MINIMAL row at HEAD (bare)
+  const unlogged = repo.commit({ "src/unlogged.txt": "1" }, "feat: no row at all");
+  engineRun(repo.cwd, ["retract-detour", logged, "--reason", "first"]); // now already retracted
+  fs.appendFileSync(logPath(repo),
+    "2026-09-01T00:00:00.000Z\tabcdef12\tAUTO-DETOUR\tepic-a\tpruned one\n" +
+    "2026-09-01T00:00:00.000Z\tabcdef13\tAUTO-DETOUR\tepic-a\tpruned two\n");
+  engineRun(repo.cwd, ["render"]);
+
+  const cases = [
+    [["retract-detour", "deadbee", "--reason", "x"], /matches no row/i],
+    [["retract-detour", unlogged, "--reason", "x"], /no AUTO-DETOUR or DETOUR-COMMIT row/],
+    [["retract-detour", bare, "--reason", "x"], /only a MINIMAL row/],
+    [["retract-detour", logged, "--reason", "x"], /already retracted/],
+    [["retract-detour", short(repo, logged)], /--reason/],
+    [["retract-detour", short(repo, logged), "--reason", ""], /--reason/],
+    [["retract-detour", "1", "--reason", "x"], /at least 7/],
+    [["retract-detour", "abcdef1", "--reason", "x"], /ambiguous/],
+  ];
+  for (const [args, message] of cases) {
+    const before = [fs.readFileSync(logPath(repo), "utf8"), projectMdOf(repo)];
+    const r = engineRun(repo.cwd, args);
+    assert.notEqual(r.status, 0, `${args.join(" ")} must refuse`);
+    assert.match(r.stderr, message, `${args.join(" ")}: ${r.stderr}`);
+    assert.deepEqual([fs.readFileSync(logPath(repo), "utf8"), projectMdOf(repo)], before, `${args.join(" ")} wrote nothing`);
+  }
+  // Missing and empty reason are named distinctly.
+  const missing = engineRun(repo.cwd, ["retract-detour", "abcdef12"]).stderr;
+  const empty = engineRun(repo.cwd, ["retract-detour", "abcdef12", "--reason", "  "]).stderr;
+  assert.notEqual(missing, empty, "a missing and an empty --reason are different refusals");
+});
+
+test("4.4 REGRESSION GUARD: help, undeclared flags and a detached tree write nothing; render keeps 8 visible rows; one retraction hides both kinds", () => {
+  const repo = observationRepo();
+  repo.observe();
+  const sha = autoLogged(repo, "src/both.txt", "chore: logged twice");
+  fs.appendFileSync(logPath(repo), `2026-09-01T00:00:01.000Z\t${short(repo, sha)}\tDETOUR-COMMIT\tepic-a\tchore: logged twice\n`);
+
+  const snap = () => [fs.readFileSync(logPath(repo), "utf8"), projectMdOf(repo)];
+  let before = snap();
+  let r = engineRun(repo.cwd, ["retract-detour", "--help"]);
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /retract-detour/);
+  assert.deepEqual(snap(), before, "--help writes nothing");
+  r = engineRun(repo.cwd, ["retract-detour", sha, "--reason", "x", "--bogus", "y"]);
+  assert.notEqual(r.status, 0);
+  assert.deepEqual(snap(), before, "an undeclared flag writes nothing");
+
+  r = engineRun(repo.cwd, ["retract-detour", sha, "--reason", "one commit, two rows"]);
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal(detourTableRows(repo).length, 0, "one retraction hides the AUTO-DETOUR and the DETOUR-COMMIT row");
+
+  // Eight visible rows even when retractions sit among the last eight lines.
+  const rows = [];
+  for (let i = 0; i < 10; i++) rows.push([`abc${(0x1000 + i).toString(16)}`, "AUTO-DETOUR", "epic-a", `row ${i}`]);
+  writeRows(repo, rows);
+  for (const i of [8, 9]) {
+    r = engineRun(repo.cwd, ["retract-detour", `abc${(0x1000 + i).toString(16)}`, "--reason", "x"]);
+    assert.equal(r.status, 0, r.stderr);
+  }
+  assert.equal(detourTableRows(repo).length, 8, "the last eight VISIBLE rows");
+  assert.ok(!detourTableRows(repo).some((l) => /RETRACTED/.test(l)), "retraction rows are never rendered");
+
+  // A detached tree: refused, nothing written.
+  const det = observationRepo();
+  det.observe();
+  const dsha = autoLogged(det, "src/d.txt", "chore: in a tree about to detach");
+  det.git("checkout", "-q", "--detach");
+  before = [fs.readFileSync(logPath(det), "utf8"), projectMdOf(det)];
+  r = engineRun(det.cwd, ["retract-detour", dsha, "--reason", "x"]);
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /no retraction was written/);
+  assert.deepEqual([fs.readFileSync(logPath(det), "utf8"), projectMdOf(det)], before);
+});

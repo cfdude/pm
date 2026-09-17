@@ -14,6 +14,7 @@ import { parseFlags } from "./add-epic.mjs";
 import { isRenderableLink } from "./links.mjs";
 import { correctionMarking, correctionNote, outcomeOf, recordedDispositions } from "./disposition.mjs";
 import { gateTableRows } from "./archive-gate.mjs";
+import { visibleDetourRows } from "./git.mjs";
 import { DETOURS_LOG, PROJECT_MD, STATE_PATH, RENDER_STAMP_PATH, CONDUCTOR_DIR, releaseLine, releaseSummaries } from "./constants.mjs";
 import { crossSpecLine } from "./cross-spec-review.mjs";
 import { dependencyNotes } from "./dependency-order.mjs";
@@ -258,12 +259,14 @@ export function render() {
   md.push("## Recent detours");
   md.push("");
   try {
-    const lines = fs.readFileSync(DETOURS_LOG, "utf8").trim().split("\n").filter(Boolean).slice(-8);
+    // Retracted commit-derived rows and the RETRACTED rows themselves are filtered BEFORE the
+    // eight-row slice, so the table always shows the last eight rows a reader should see.
+    fs.accessSync(DETOURS_LOG);
+    const lines = visibleDetourRows().slice(-8);
     if (lines.length) {
       md.push("| When | SHA | Kind | Epic | Note |");
       md.push("|------|-----|------|------|------|");
-      for (const ln of lines) {
-        const [when, sha, kind, epic, note] = ln.split("\t");
+      for (const { when, sha, kind, epic, note } of lines) {
         md.push(`| ${when} | \`${sha}\` | ${kind} | \`${epic}\` | ${note || ""} |`);
       }
     } else { md.push("_None logged._"); }

@@ -33,6 +33,8 @@
  *                  suggestion, and the backlog's shape. Emits `verdict: null`: whether two
  *                  asks are the SAME ask is judgment, and judgment is the agent's.
  *   log-detour "x" record a MINIMAL detour in detours.log (with the current git SHA)
+ *   retract-detour <sha> --reason "why"  retract the automatic AUTO-DETOUR/DETOUR-COMMIT rows of
+ *                  one commit: appends a RETRACTED row, removes nothing, re-renders PROJECT.md
  *   push-detour    the SUBSTANTIAL detour's PUSH, as a verb rather than the hand-edit of
  *                  state.json it used to be: pauses the parent, pushes the frame, writes both
  *                  protocol links, activates the detour and emits the Honcho line — one guarded
@@ -93,7 +95,7 @@ import { setActive, clearActive } from "./lib/active-pointer.mjs";
 import { setAutonomy } from "./lib/autonomy.mjs";
 import { parseFlags, planHierarchy, addEpic, requireFlagValues } from "./lib/add-epic.mjs";
 import { render } from "./lib/render.mjs";
-import { init, brief, snapshot, commitNudge, sync, logDetour, honchoMemory } from "./lib/subcommands.mjs";
+import { init, brief, snapshot, commitNudge, sync, logDetour, retractDetour, honchoMemory } from "./lib/subcommands.mjs";
 import { pushDetour, popDetour } from "./lib/detour-stack.mjs";
 import { addMany } from "./lib/add-many.mjs";
 import { recordReconcile } from "./lib/reconciler-writeback.mjs";
@@ -144,7 +146,7 @@ if (delegated !== null) process.exit(delegated);
 
 const cmd = process.argv[2];
 
-const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|push-detour|pop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n";
+const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n";
 
 // ---------- the command-line check (every-verb-refuses-what-it-does-not-read) ----------
 //
@@ -286,6 +288,7 @@ try {
   "commit-nudge": commitNudge,
   sync: () => sync(false),
   "log-detour": logDetour,
+  "retract-detour": retractDetour,
   "push-detour": pushDetour,
   "pop-detour": popDetour,
   "honcho-memory": honchoMemory,

@@ -548,7 +548,9 @@ Do not start fixing. Decide which kind this is and say so.
 **Minimal detour** — small, self-contained, no design ambiguity.
 Fix → test → commit → push, then record it so it leaves a trail:
 `node "$ENGINE" log-detour "<what you fixed>"` (appends a
-timestamped line + commit SHA to `.conductor/detours.log`). Then resume. No proposal, no
+timestamped line + commit SHA to `.conductor/detours.log`). Then resume. (An automatic
+AUTO-DETOUR or DETOUR-COMMIT row the commit hook wrote wrongly is corrected with
+`node "$ENGINE" retract-detour <sha> --reason "<why>"`, never by editing the log.) No proposal, no
 stack entry. Rule of thumb: fits before the next compaction and doesn't change the shape of
 the current proposal.
 

@@ -12,7 +12,9 @@ import { stampVersion } from "./plugin-meta.mjs";
 import { render } from "./render.mjs";
 import { assertRulesBlockWritable, writeRules } from "./rules.mjs";
 import { buildBrief } from "./briefing.mjs";
-import { appendDetourLog, gitShortSha, isDetachedTree, shortSha } from "./git.mjs";
+import { COMMIT_DERIVED_KINDS, appendDetourLog, appendRetraction, fullSha, gitShortSha, isDetachedTree, readDetourRows, rowMatches, rowShasOverlap, shortSha } from "./git.mjs";
+import { parseFlags, requireFlagValues } from "./add-epic.mjs";
+import { escapeControls } from "./constants.mjs";
 import { beginObservation, isLiveCommit } from "./commit-watch.mjs";
 import { deferralHistory, deferralNote, detourContext } from "./links.mjs";
 import { activeChangeIds, archivedChanges, firstHeading, planFiles, reconcileArchived, strippedChangeId } from "./epic-progress.mjs";
@@ -785,6 +787,83 @@ export function logDetour() {
   process.stderr.write(logged
     ? "conductor: logged minimal detour\n"
     : "conductor: NOT logged — this tree is detached, so nothing was written to .conductor/detours.log\n");
+}
+
+/** `retract-detour <sha> --reason "<why>"` — the inverse of the commit hook's automatic logging
+ *  (design Decision 11). Appends ONE `RETRACTED` row covering every AUTO-DETOUR and DETOUR-COMMIT row
+ *  of that commit, removes and rewrites nothing, and re-renders PROJECT.md so no retracted row shows.
+ *
+ *  Row matching. A `<sha>` that resolves to a commit matches a row when the commit's full name begins
+ *  with the row's sha (Decision 9). One that resolves to no commit — rewritten, then pruned — is
+ *  matched against the stored text only: it must be at least 7 hex characters, only rows whose own sha
+ *  also resolves to nothing are candidates, either sha may be a prefix of the other, and the candidates
+ *  must name exactly one commit, so `retract-detour 1` cannot retract every row starting with `1`.
+ *
+ *  MINIMAL rows are not retractable: their sha is HEAD at declaration, not an identity, and the agent
+ *  declared them. There is no un-retract; re-declare with `log-detour`. Every refusal names its own
+ *  reason and happens before any write. */
+export function retractDetour() {
+  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  const refuse = (msg) => { process.stderr.write(`conductor: retract-detour refused — ${msg}\n`); process.exit(1); };
+  const [arg] = checkedPositionals("retract-detour");
+  const argv = process.argv.slice(3);
+  const f = parseFlags(argv[0] && !argv[0].startsWith("--") ? argv.slice(1) : argv);
+  requireFlagValues("retract-detour", f);
+  if (!arg) refuse("usage: retract-detour <sha> --reason \"<why>\"");
+  if (f.reason === undefined) refuse("it requires --reason \"<why>\" — a retraction says why the automatic row was wrong");
+  const reason = typeof f.reason === "string" ? f.reason.trim() : "";
+  if (!reason) refuse("--reason is empty — a retraction with no reason is indistinguishable from a deleted row");
+  const sha = String(arg).trim().toLowerCase();
+
+  const rows = readDetourRows();
+  const full = /^[0-9a-f]{4,64}$/.test(sha) ? fullSha(sha) : null;
+  let matching;
+  let label;
+  if (full) {
+    matching = rows.filter(r => r.kind !== "RETRACTED" && rowMatches(r.sha, full));
+    label = shortSha(full);
+  } else {
+    if (!/^[0-9a-f]{7,64}$/.test(sha)) {
+      refuse(`'${escapeControls(arg)}' resolves to no commit, and a value that resolves to none must be at least 7 ` +
+        "hexadecimal characters — a shorter one could match the rows of many commits");
+    }
+    const resolves = new Map();
+    const resolvable = (s) => { if (!resolves.has(s)) resolves.set(s, fullSha(s) !== null); return resolves.get(s); };
+    matching = rows.filter(r => r.kind !== "RETRACTED" && rowShasOverlap(r.sha, sha) && !resolvable(r.sha));
+    const distinct = [...new Set(matching.map(r => r.sha))].sort((x, y) => y.length - x.length);
+    const commits = distinct.filter(x => !distinct.some(y => y !== x && y.length > x.length && y.startsWith(x)));
+    if (commits.length > 1) {
+      refuse(`'${sha}' is ambiguous — it matches rows of ${commits.length} different commits (${commits.join(", ")}); ` +
+        "give more of the sha");
+    }
+    label = distinct[0];
+  }
+  // A commit that exists but was never logged, and a value that names nothing at all, are different
+  // mistakes: the first is the wrong commit, the second the wrong value.
+  if (!matching.length) {
+    refuse(full
+      ? `commit ${label} has no AUTO-DETOUR or DETOUR-COMMIT row to retract (it has no row in .conductor/detours.log)`
+      : `'${sha}' resolves to no commit and matches no row in .conductor/detours.log`);
+  }
+  const derived = matching.filter(r => COMMIT_DERIVED_KINDS.has(r.kind));
+  if (!derived.length) {
+    refuse(matching.some(r => r.kind === "MINIMAL")
+      ? `'${sha}' has only a MINIMAL row — a MINIMAL row is a declaration, not an automatic row, and ` +
+        "is not retractable"
+      : `'${sha}' has no AUTO-DETOUR or DETOUR-COMMIT row to retract`);
+  }
+  const retracted = rows.filter(r => r.kind === "RETRACTED").map(r => r.sha);
+  if (derived.every(r => retracted.some(x => rowShasOverlap(x, r.sha)))) {
+    refuse(`'${sha}' is already retracted — the row stays in the log and is already hidden from PROJECT.md`);
+  }
+  if (!full && !derived.some(r => r.sha === label)) label = derived[0].sha;
+  if (!appendRetraction(label, derived[0].epic, reason)) {
+    process.stderr.write("conductor: this tree is detached, so no retraction was written to .conductor/detours.log\n");
+    process.exit(1);
+  }
+  render();
+  process.stderr.write(`conductor: retracted ${derived.length} automatic row(s) for ${label} — ` +
+    "kept in .conductor/detours.log, hidden from PROJECT.md\n");
 }
 
 const HONCHO_MEMORIES_LOG = path.join(CONDUCTOR_DIR, "honcho-memories.log");

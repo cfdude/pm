@@ -92,26 +92,26 @@ Pairs: 3.1–3.2 land with 3.3.
 
 Section 5 depends on this section's retraction row. Pairs: 4.1–4.4 (with 4.2a) land with 4.5.
 
-- [ ] 4.1 RED: `retract-detour <sha> --reason "own work"` on an AUTO-DETOUR row: exit 0, the log keeps
+- [x] 4.1 RED: `retract-detour <sha> --reason "own work"` on an AUTO-DETOUR row: exit 0, the log keeps
       the row and gains one `RETRACTED` row, `PROJECT.md` from that invocation shows no row for it; an
       abbreviated and a full sha both work (fails today: unknown verb)
-- [ ] 4.2 RED: a `detours.log` holding a 7-character and an 8-character commit-derived row for two
+- [x] 4.2 RED: a `detours.log` holding a 7-character and an 8-character commit-derived row for two
       different commits: `retract-detour <full sha>` retracts only its own commit's row, for each; a
       re-fired observation for either commit writes no new row (fails today)
-- [ ] 4.2a RED: an AUTO-DETOUR row whose commit was rewritten and then pruned (`git reflog expire
+- [x] 4.2a RED: an AUTO-DETOUR row whose commit was rewritten and then pruned (`git reflog expire
       --expire=now --all` plus `git gc --prune=now`, so the sha resolves to nothing): `retract-detour
       <that row's sha>` exits 0 and appends its retraction (fails today: unknown verb)
-- [ ] 4.3 RED: each refusal names its specific reason — a sha matching no row, a commit with no
+- [x] 4.3 RED: each refusal names its specific reason — a sha matching no row, a commit with no
       commit-derived row, a commit with only a `MINIMAL` row, an already-retracted commit, a missing
       `--reason`, an empty `--reason`, an unresolvable sha shorter than 7 characters (`1`), an
       unresolvable 7-character prefix shared by rows of two different pruned commits (ambiguity) — asserting the message text for each, with exit non-zero and
       `detours.log` and `PROJECT.md` byte-identical (fails today: exit code and bytes pass, the messages
       do not exist)
-- [ ] 4.4 REGRESSION GUARD: `retract-detour --help` and an undeclared flag write nothing (verb-surface);
+- [x] 4.4 REGRESSION GUARD: `retract-detour --help` and an undeclared flag write nothing (verb-surface);
       in a detached tree it exits non-zero and writes nothing; render still shows 8 visible rows when
       retracted rows sit among the last 8 lines; a commit carrying both an AUTO-DETOUR and a
       DETOUR-COMMIT row has both hidden by one retraction
-- [ ] 4.5 GREEN: verb, positional table, flag registry, `verb-effects.mjs`, help, `conductor.mjs`
+- [x] 4.5 GREEN: verb, positional table, flag registry, `verb-effects.mjs`, help, `conductor.mjs`
       dispatch and USAGE, `retract-detour` added to `DISPATCH_BASELINE` in `scripts/test/verb-surface.test.mjs`, render filter, prefix match in the duplicate check (Decisions 9, 11). Suite
       green
 
