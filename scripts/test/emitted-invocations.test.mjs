@@ -2203,3 +2203,33 @@ test("7.1 the hierarchy child's gate-recording forms, filled, exit 0 for a Gate 
     assert.equal(r.status, 0, `Gate ${gate}: \`${argv.join(" ")}\` exited ${r.status}: ${r.stderr}`);
   }
 });
+
+// ═══════════════════════════════ 9.1 findings — sites the call-site sweep reached ═══════════════════════════════
+
+registerBuilder("9.1 update-epic's refusal to withdraw an ungated Gate 2", {
+  // The sweep's `record-gate-review \${` pattern found a gate re-record printed outside gateRemedy():
+  // withdrawing an `ungated` entry is refused with "clear it by recording a real verdict", and that
+  // verdict must carry its gate's evidence to be accepted.
+  setup() {
+    const repo = remedyRepo();
+    openspecEpic(repo, "wu", 1);
+    healArchive(repo, "wu");
+    assert.equal(repo.epic("wu").gateReview.gate2.verdict, "ungated", "fixture: the heal stamped Gate 2 ungated");
+    return { repo, epicId: "wu" };
+  },
+  produce: refusal(() => ["update-epic", "wu", "--withdraw-gate-review", "2", "--withdrawal-reason", REASON]),
+  reported: (out, fx) => fx.lastStatus !== 0 && /ungated/.test(out),
+  meaning: (fx) => rangeMeaning(fx.repo, "wu")(),
+  alternatives: [{
+    name: "record a real verdict",
+    cleared(fx) { assert.equal(fx.repo.epic("wu").gateReview.gate2.verdict, "pass", "the ungated entry is superseded by a real verdict"); },
+  }],
+});
+
+test("9.1 the rules block's disposition rule states the Gate 2 condition beside its placeholder-id outcome list", async () => {
+  const { rulesBlock } = await import(lib("rules.mjs"));
+  const block = rulesBlock(null, "standard", [], "claude-code");
+  const item = block.slice(block.indexOf("**End work by recording a disposition.**"));
+  const head = item.slice(0, item.indexOf("\n7. ")).replace(/\n\s+/g, " ");
+  assert.match(head, /openspec-lane epic, `delivered` also needs a passing Gate 2/, head);
+});

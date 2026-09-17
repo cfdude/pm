@@ -1,0 +1,43 @@
+✖ Layer B 9.1 update-epic's refusal to withdraw an ungated Gate 2 {record a real verdict} — the remedy clears what printed it (461.292542ms)
+✖ 9.1 the rules block's disposition rule states the Gate 2 condition beside its placeholder-id outcome list (4.905709ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 507.780667
+
+✖ failing tests:
+
+test at scripts/test/emitted-invocations.test.mjs:813:7
+✖ Layer B 9.1 update-epic's refusal to withdraw an ungated Gate 2 {record a real verdict} — the remedy clears what printed it (461.292542ms)
+  AssertionError [ERR_ASSERTION]: step 2: no remedy invocation to follow in:
+  conductor: Gate 2 of 'wu' is an `ungated` entry — the engine's record that no review happened, not a review that can be taken back. An ungated entry is cleared by recording a real verdict: record-gate-review wu --gate 2 --verdict pass|fail. Nothing was written.
+  
+      at followRemedy (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:772:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:817:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:2229:1
+✖ 9.1 the rules block's disposition rule states the Gate 2 condition beside its placeholder-id outcome list (4.905709ms)
+  AssertionError [ERR_ASSERTION]: **End work by recording a disposition.** An epic, a story, a deferral or a release exclusion ENDS by recording a terminal disposition carrying its required reason, and never by removing the record. The archive verb takes TWO halves in ONE invocation — the disposition AND a deferral assertion — because the gate refuses either half alone: `update-epic <id> --status archived --outcome delivered|killed|superseded|abandoned|declined|unreconstructable --reason "<why>" --no-deferrals` (every outcome except `delivered` requires the reason). `--no-deferrals` is the explicit "there are none" and is a claim, not a default — swap it for `--deferral "<epicId>:<artifact section>"` where work is now held by a registered epic, or `--declined-deferral "<what>:<why not>"` where you are deliberately not doing it; both repeat, and the engine will not read your artifacts to guess. Deletion removes the record of projected work, which is precisely what a disposition exists to preserve. `remove-epic` stays available and ungated for what it is for: an epic registered in error, a duplicate, a mistake made a minute ago — where there is no disposition to record because there was no work.
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:2234:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '**End work by recording a disposition.** An epic, a story, a deferral or a release exclusion ENDS by recording a terminal disposition carrying its required reason, and never by removing the record. The archive verb takes TWO halves in ONE invocation — the disposition AND a deferral assertion — because the gate refuses either half alone: `update-epic <id> --status archived --outcome delivered|killed|superseded|abandoned|declined|unreconstructable --reason "<why>" --no-deferrals` (every outcome except `delivered` requires the reason). `--no-deferrals` is the explicit "there are none" and is a claim, not a default — swap it for `--deferral "<epicId>:<artifact section>"` where work is now held by a registered epic, or `--declined-deferral "<what>:<why not>"` where you are deliberately not doing it; both repeat, and the engine will not read your artifacts to guess. Deletion removes the record of projected work, which is precisely what a disposition exists to preserve. `remove-epic` stays available and ungated for what it is for: an epic registered in error, a duplicate, a mistake made a minute ago — where there is no disposition to record because there was no work.',
+    expected: /openspec-lane epic, `delivered` also needs a passing Gate 2/,
+    operator: 'match',
+    diff: 'simple'
+  }

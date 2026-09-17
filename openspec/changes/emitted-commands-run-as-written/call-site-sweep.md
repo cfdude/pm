@@ -1,0 +1,134 @@
+# emitted-commands-run-as-written — call-site completeness sweep (task 9.1) and inverses (9.2)
+
+Derived with `rg` at dev after 4b2e4df, never typed from tasks.md. Each category: the command run, where
+the rule holds, and each site where it does not, justified or fixed.
+
+## 1. Gate-verdict remedy printers
+
+`rg -n -U -e "--gate 2[^;]*?--verdict" -e "--gate <n>" -e 'record-gate-review \$\{' scripts/lib` plus
+`rg -n "'record-gate-review|\"record-gate-review|\`record-gate-review" scripts/lib`.
+
+- `archive-gate.mjs:221-222` — `gateRemedy()` itself, the one renderer (Gate 1 `--artifact`, Gate 2 range).
+- Through `gateRemedy()`: archive refusal (via `DELIVERED_OBLIGATIONS`), `integrity` ungated / withdrawn
+  checks, the malformed-value remedy (now GATE-AWARE: Gate 1 value → `--artifact`, Gate 2 value → range,
+  attribution → withdraw), `briefing.mjs` ungated / withdrawn entries, update-epic's regression refusal.
+- **FINDING, fixed in this commit:** `update-epic.mjs:384` — refusing to withdraw an `ungated` entry
+  printed `record-gate-review ${id} --gate ${g} --verdict pass|fail`: no evidence (a pass is refused) and a
+  bare id. Now `gateRemedy(id, g)` in a code span; a Layer B builder runs it (red-9.1.txt).
+- `gate-review-writeback.mjs:63` and `integrity.mjs:760` are comments.
+
+## 2. Writers and readers of the new exports
+
+`rg -n "DELIVERED_OBLIGATIONS|BRIEF_REMEDIES|deliveredObligations\(" scripts`.
+
+- `DELIVERED_OBLIGATIONS`: defined `archive-gate.mjs:337`; read by `obligationRemedy()` (413) and
+  `deliveredObligations()` (433); the Layer B registry test reads it. No other writer.
+- `deliveredObligations()`: `blockedDelivered()` (259), `archiveGate()` (525), update-epic's
+  `deliveredRegression()` (145-146, compares by `kind`, unchanged — 2.8 guards it), `integrity`
+  delivered-release (670), `subcommands.mjs` via `deliveredRegression()` (the nudge's amend suppression;
+  commit-observation 5.2a/5.3 pass).
+- `BRIEF_REMEDIES`: defined `briefing.mjs:25`, read only by `briefRemedy()` (55). Every brief line printing
+  an engine verb in a code span is an entry (lines 30, 43, 51, and the two `gateRemedy` entries); no brief
+  line prints an engine verb outside the registry. The mirror line (✓) prints no verb.
+
+## 3. Item-sourced placeholders
+
+`rg -n "<issue-(title|url|key)>" scripts/lib` — only `rules.mjs` `registrationStep()` (581-595), shared by
+the primary and every secondary. Each placeholder it prints (`<issue-title>`, `<issue-url>`, and
+`<issue-key>` for non-numeric keys) is named in the quoting sentence directly above the line.
+
+## 4. Readers of suggest-lane's text
+
+`rg -n "suggest-lane|suggestLane" scripts commands skills README.md` (tests excluded).
+
+- Engine: `lane-routing.mjs:100-120` reads `--ask` or the positional, refuses both and neither.
+  `triage.mjs` calls `laneSuggestion()` with its own ask (not argv) — unaffected.
+- Emitted: the only emitted `suggest-lane` step is `rules.mjs:595`, `suggest-lane --ask=<issue-title>`.
+  `rules.mjs:432` names the verb in prose (intake), not a line to fill.
+- **FINDING, deferred to section 10 (docs after Gate 2):** `commands/tracker.md:170` and
+  `commands/sync.md:103` still teach `suggest-lane "<issue-title>"`. Both pass the argv check; sync.md was
+  not named in section 10, so 10.1 is amended in this commit to cover both. Other doc mentions
+  (`commands/lane-routing.md`, SKILL.md 969, README 791) route a text the user typed, where the positional
+  form is unchanged and correct.
+
+## 5. Readers of a tracker's `direction`
+
+`rg -n "directionOf|\.direction\b" scripts/lib`.
+
+- `constants.mjs` `directionOf` (1308) and its two predicates (1317, 1351): read the recorded value first,
+  so a direction the vendor switch RECORDS is read exactly as one set explicitly — unaffected.
+- `migrations.mjs:125-129`: stamps a direction only where none is recorded — unaffected (the switch records
+  one, and a migrated state already has one).
+- `tracker.mjs`: the secondary branch (94, 99) and the primary new-tracker default (172) are unchanged; the
+  switch record (142-144) runs only when a system is recorded, `--system` differs and no direction is
+  given or recorded.
+
+## 6. Printers of `--outcome` choices
+
+`rg -n "dispositionInvocation|deliveredObligations|unconsideredOutcomes" scripts/lib`, `rg -n
+"AGENT_OUTCOMES" scripts/lib`.
+
+- Epic-aware (omit `delivered` where an obligation fails): `unconsideredOutcomes()` (295),
+  `integrity` epic-in-undefined-status (537). `keepDelivered`: update-epic's regression refusal (227).
+- Placeholder-id with the Gate 2 sentence: `rules.mjs` `closedItemStep()` (145 + its sentence), and
+  **FINDING, fixed in this commit:** the rules block's "End work by recording a disposition" item
+  (`rules.mjs:329`) printed the same placeholder-id outcome list with no Gate 2 sentence; it now carries
+  it (tested).
+- Justified: `archive-gate.mjs:449,455` state the vocabulary in the refusal for a MISSING or UNKNOWN
+  `--outcome` — not an invocation to copy; an agent that then passes `delivered` on a blocked epic receives
+  the obligation refusal with its remedy. `update-epic.mjs:277` is the usage line.
+
+## 7. Emitted `gh` lines and inward/secondary steps
+
+`rg -n "gh issue|inwardProcedureEmittable|secondaryInwardProcedureEmittable|usesGhIssueList|mirroredEpicIdPrefix|trackerScope" scripts/lib`.
+
+- The only `gh issue list` line is `inwardListStep()` (`rules.mjs:547`), called by the primary (843-) and
+  every secondary (876-); both use the shared dedup, registration and watermark steps.
+- `usesGhIssueList()` requires `isGithubRepo()`, so the `--repo` interpolated at 547 always has the shape.
+- `trackerScope()`, `mirroredEpicIdPrefix()` and the emittable predicates are unchanged (design Decision 4).
+
+## 8. Readers of `tracker.repo` / a secondary's `repo`
+
+`rg -n "\.repo\b" scripts/lib`.
+
+- Shell-bound (requires the shape): `rules.mjs:547` (through `usesGhIssueList`).
+- Code span, gated: `rules.mjs:899` — a github-issues repo failing the shape is quoted as data, not spanned.
+- Prose / key / slug (tolerate a legacy value): `rules.mjs:51` (secondary identity key — `--remove` matches
+  it exactly), `constants.mjs:1338-1340` (`trackerScope`, feeding headings and the id slug),
+  `briefing.mjs:359` (brief label), `tracker.mjs:90,105,135,153` (writes and messages).
+- `claims.mjs:158,240` read `--repo` of the `claim` verb, an unrelated boolean flag.
+
+## 9. `/pm:epic` and `state.json` in emitted engine text
+
+`rg -n "pm:epic|state\.json" scripts/lib/rules.mjs scripts/lib/briefing.mjs scripts/lib/subcommands.mjs`.
+
+- No emitted `/pm:epic list` remains (3.5). The outward section names `/pm:epic`, a shipped command.
+- Every `state.json` mention in emitted text is a READ (`rules.mjs:564` dedup), a statement of record
+  (661, 733, 829), or a prohibition (654, 787, 491). `subcommands.mjs:103,108` report init's file creation.
+  None directs a write (6.1-6.3's scanner and output assertions hold it).
+
+## 10. Shipped gate forms and agent-doc invocations
+
+Every passing `record-gate-review` form in shipped docs carries its own gate's evidence (7.1, asserted by
+scan); every invocation in `agents/*.md` passes Layer A (1.3), and the child doc's Gate 1 and Gate 2 forms
+exit 0 filled (7.1).
+
+## DATA references
+
+This change adds no stored field. `deliveredBlockedBy` is output only (`unconsidered-outcomes` JSON). The
+`externalUpdatedAt` the outward record-the-key line now supplies is written by `update-epic
+--external-updated-at` and read by the brief's never-re-read count and the refresh gate
+(`record-tracker-refresh`) — existing writers and readers.
+
+## Inverses (task 9.2)
+
+- Vendor-switch scope DROP — inverse: re-supply the field (`set-tracker --repo|--project|--instance`). No
+  restore verb, deliberately: the dropped value is printed in full at the moment it is dropped.
+- Vendor-switch direction RECORD — inverse: `set-tracker --direction <inward|outward|both>`.
+- `--repo` shape REFUSAL — writes nothing, so no inverse is needed; `--remove` stays exempt so a legacy
+  malformed entry is never stranded (4.5).
+- Omitting `delivered` from a disposition invocation — inverse: record the blocking obligation (e.g. the
+  Gate 2 `deliveredBlockedBy` names); the output is recomputed per call and re-offers `delivered`.
+- `suggest-lane --ask` — a read; no inverse.
+- Primary `set-tracker --remove` is a MISSING inverse that predates this change (reproduced, `repro.txt`
+  §B4-B6) and is carried to `code-review-0-43-0-minors` (task 9.5), not shipped here.

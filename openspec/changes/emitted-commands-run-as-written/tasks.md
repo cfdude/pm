@@ -277,7 +277,7 @@ Pairs: 7.0–7.1 land with 7.2. The single-writer rule for hierarchy runs is NOT
 
 ## 9. Required task items
 
-- [ ] 9.1 **Call-site completeness sweep** — derived with `rg` at sweep time, never from this list:
+- [x] 9.1 **Call-site completeness sweep** — derived with `rg` at sweep time, never from this list:
       - every printer of a gate-verdict remedy, derived MULTI-LINE because remedy strings are split
         across `+`: `rg -n -U -e "--gate 2[^;]*?--verdict" -e "--gate <n>" -e "record-gate-review \$\{"
         scripts/lib` — each through `gateRemedy(id, gate)` or justified, and each gate-agnostic site
@@ -307,7 +307,7 @@ Pairs: 7.0–7.1 land with 7.2. The single-writer rule for hierarchy runs is NOT
       that, and that the `externalUpdatedAt` the outward line now supplies is written by `update-epic`
       and read by the brief and the refresh gate.
       A site where a rule does not hold is a FINDING unless justified in the commit.
-- [ ] 9.2 **Inverse of every operation added or modified** — the vendor-switch drop (inverse:
+- [x] 9.2 **Inverse of every operation added or modified** — the vendor-switch drop (inverse:
       re-supplying the field; no restore verb, and say why: the dropped value is printed); the
       vendor-switch direction record (inverse: `set-tracker --direction <d>`); the repo
       refusal (inverse: none needed — nothing is written; `--remove` stays exempt so a legacy entry is
@@ -340,7 +340,10 @@ Pairs: 7.0–7.1 land with 7.2. The single-writer rule for hierarchy runs is NOT
 - [ ] 10.1 `commands/tracker.md` — "ongoing responsibilities" split by direction; the worked listing
       step with `--limit`, `updatedAt` and the truncation stop; the secondary watermark step; the
       non-github key placeholder; the quoting rule for item values; the `--repo` shape (and its
-      `--remove` exemption); the vendor-switch scope drop and direction record
+      `--remove` exemption); the vendor-switch scope drop and direction record; ALSO
+      `commands/tracker.md:170` and `commands/sync.md:103`, which still teach
+      `suggest-lane "<issue-title>"` — the emitted step is now `suggest-lane --ask=<issue-title>`
+      (found by 9.1's sweep; sync.md is not otherwise in this section)
 - [ ] 10.2 `commands/unconsidered-outcomes.md` — `deliveredBlockedBy`, and that an openspec-lane epic
       never reviewed at Gate 2 is not offered `delivered`
 - [ ] 10.3 (moved to 7.0/7.2 — the review-mode unset line is test-driven)

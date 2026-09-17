@@ -12,7 +12,7 @@ import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave } from "./save-report.mjs";
 import { noteEntry, parentError, parseFlags, parseLinkFlags, parseStoryFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
-import { archiveGate, AGENT_OUTCOMES, deliveredObligations, dispositionInvocation, obligationRemedy } from "./archive-gate.mjs";
+import { archiveGate, AGENT_OUTCOMES, deliveredObligations, dispositionInvocation, gateRemedy, obligationRemedy } from "./archive-gate.mjs";
 import { deferralAssertion, isEngineStamped, isStoryDisposed, outcomeOf, storyDisposition, storyDispositionError } from "./disposition.mjs";
 import { isArchived } from "./epic-progress.mjs";
 import { claimArtifacts } from "./source-artifacts.mjs";
@@ -381,7 +381,7 @@ export function updateEpic() {
       process.stderr.write(
         `conductor: Gate ${g} of '${id}' is an \`ungated\` entry — the engine's record that no review ` +
         "happened, not a review that can be taken back. An ungated entry is cleared by recording a " +
-        `real verdict: record-gate-review ${id} --gate ${g} --verdict pass|fail. Nothing was written.\n`);
+        `real verdict, with that gate's evidence: \`${gateRemedy(id, g)}\`. Nothing was written.\n`);
       process.exit(1);
     }
   }
