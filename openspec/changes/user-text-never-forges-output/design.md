@@ -63,8 +63,9 @@ Line anchors below are as of `dev` f49871a (engine 0.44.0); task 0.3 re-derives 
 - The `owner/name` shape of a github-issues `--repo` — sibling `emitted-commands-run-as-written` owns it
   (its Decision 4). This change owns only the control-character refusal for `--system`, `--project` and
   `--repo`.
-- Shell quoting of an identifier that holds whitespace but no control character inside an emitted
-  command (a legacy `Legacy Release`). That is a runnable-as-written concern, the sibling's.
+- Shell quoting of an EPIC id that holds whitespace but no control character inside an emitted command:
+  `emitted-commands-run-as-written`'s `printedId()` owns it. Release ids are not covered by that function
+  as change 2 ships it; D4a records the decision to route them through it.
 
 ## Decisions
 
@@ -168,8 +169,9 @@ The rule lives in a test whose populations come from registries, per
   that begins with `|` other than header and separator rows — every data row goes through `tableRow`.
 
 ### D4. Epic ids at the sink: control characters and whitespace, at the final step
-- `EPIC_ID_FORMAT = /^[a-z0-9][a-z0-9._-]*$/` exported from `constants.mjs`; `add-epic.mjs`,
-  `add-many.mjs` and `verify-specs.mjs` import it instead of spelling it. `add-epic`/`add-many` keep their
+- `EPIC_ID_FORMAT = /^[a-z0-9][a-z0-9._-]*$/` is exported from `constants.mjs`, and `add-epic.mjs`,
+  `add-many.mjs` and `verify-specs.mjs` import it — OWNED by `emitted-commands-run-as-written` (its task
+  2.9), which applies first. This change only guards that it stays single (task 1.1). `add-epic`/`add-many` keep their
   refusals and wording (they fire first); `add-many`'s `bad id '${id}'` and story-title messages are
   escaped.
 - `STORABLE_EPIC_ID` — a predicate: the id is non-empty and contains no control character and no
@@ -203,7 +205,7 @@ fleet were not measured.
 
 ### D4a. Emitted invocations never carry a control-character identifier
 The trigger is a control character in the value, not failure of `EPIC_ID_FORMAT`: a legacy `MASTER-…`
-or `Legacy Release` id is echoed as today.
+id is printed as `emitted-commands-run-as-written` prints it (shell-quoted via `printedId()`).
 - A re-enterable caller token (the `gate-integrity` printed-invocation case): its position carries a
   placeholder. That requirement (`openspec/specs/gate-integrity/spec.md`, "The printed invocation") was
   checked and is NOT modified.
@@ -212,12 +214,18 @@ or `Legacy Release` id is echoed as today.
   invocation for it, and says instead, naming the record: `<record kind> '<escaped id>' holds a control
   character; no verb can rename it`. It never instructs a hand-edit of `.conductor/state.json`
   (sibling `emitted-commands-run-as-written`'s conductor-record requirement: nothing pm ships tells an
-  agent to hand-edit it). One builder produces that message (the no-remedy builder, beside the remedy
-  builders), and every remedy site calls it when the identifier holds a control character. Sites, as
-  of change 2 (re-derived at task 0.3): the remedy builders in `archive-gate.mjs` — `gateRemedy`,
-  `dispositionInvocation`, `deliveredBlockedBy`, `BRIEF_REMEDIES` — and their callers in `integrity.mjs`
-  and `briefing.mjs`; `commit-nudge`'s candidate and withdraw lines (change 1); `release`'s create hint;
-  `sync`'s near-match `update-epic ${near.id} --plan …` hint. The rules block's
+  agent to hand-edit it). SINGLE SITE: the check is hooked into change 2's `printedId()`, through which
+  every printed command naming a stored id already passes. When the id holds a control character,
+  `printedId()` does not return a printable id; it signals no-remedy, and the command builder that
+  called it emits the no-remedy message in place of the command. No separate site list is kept: the
+  population is `printedId()`'s callers, and a caller that prints an id without it is change 2's
+  call-site finding and this change's sweep finding alike.
+- **Release ids — decision recorded:** `printedId()` as change 2 ships it covers epic ids only. Release
+  ids share the same format (D5), so printed commands naming a release id (e.g. a
+  `record-cross-spec-review <releaseId>` remedy, `release`'s hints) are routed through `printedId()`
+  too — as-is when matching, shell-quoted otherwise, no-remedy on a control character. Population today:
+  all ten stored release ids in this repository match the format, so the quoting branch changes no
+  output here. The rules block's
   `gh issue list --repo` is NOT a site: the sibling's repo-shape check means a repo holding a control
   character never reaches that line.
 - Because no command is printed, nothing here violates the sibling's rule that every printed remedy

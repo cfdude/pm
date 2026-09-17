@@ -14,7 +14,7 @@
       the `cross-spec-review` skill after all three pass Gate 1 and again after any later amendment;
       record `record-cross-spec-review 0.45.0 --verdict pass|fail --reviewer "<identity>"`
 - [ ] 0.3 After changes 1 AND 2 have merged into `dev`, re-derive with `rg` every line anchor in
-      design.md AND the site lists of tasks 3.5 and 5.4 and design D4a — including `archive-gate.mjs`,
+      design.md AND the site lists of tasks 3.5 and 5.4 and the callers of `printedId()` — including `archive-gate.mjs`,
       where change 2 moves `gateRemedy`, `dispositionInvocation`, `deliveredBlockedBy` and
       `BRIEF_REMEDIES`, and change 1's `commitNudge`/`retract-detour` output — and correct them in the
       first implementation commit
@@ -30,9 +30,10 @@ setup error).
 
 Pairs: 1.2 lands with 1.3.
 
-- [ ] 1.1 REFACTOR: export `EPIC_ID_FORMAT` from `constants.mjs`; `add-epic.mjs`, `add-many.mjs` and
-      `verify-specs.mjs` import it (`rg -n "a-z0-9\]\[a-z0-9" scripts/lib` returns only
-      `constants.mjs` afterwards); suite green, output saved to a file and read from the file
+- [ ] 1.1 REGRESSION GUARD: `EPIC_ID_FORMAT` is exported from `constants.mjs` by
+      `emitted-commands-run-as-written` (its task 2.9, applied first); confirm
+      `rg -n "a-z0-9\]\[a-z0-9" scripts/lib` still finds the pattern only in `constants.mjs`; no commit
+      unless it does not (design D4)
 - [ ] 1.2 RED: unit — `escapeTableCell` escapes every control character exactly as `escapeControls`
       does, then every backslash as two and every `|` as `\|` (so `a\|b` stays one GFM cell);
       `escapeControls` is idempotent over its own output
@@ -102,12 +103,11 @@ Pairs: 5.1–5.3b land with 5.4.
       observe; assert no printed command names any of the three ids and no line is forged
 - [ ] 5.4 GREEN: an emitted invocation whose identifier (epic id, release id, tracker
       system/project/repo) holds a CONTROL CHARACTER is not printed; the prose line of design D4a
-      replaces it (an id merely failing `EPIC_ID_FORMAT` is echoed as today) — add the no-remedy builder
-      (one function producing that message) and call it from every remedy site: `archive-gate.mjs`
-      `gateRemedy`/`dispositionInvocation`/`deliveredBlockedBy`/`BRIEF_REMEDIES` and their callers in
-      `integrity.mjs` and `briefing.mjs` (list re-derived at 0.3), `commitNudge`'s candidate and
-      withdraw lines,
-      `sync`'s near-match hint (the message names the record and says no verb can rename it; no hand-edit
+      replaces it (an id merely failing `EPIC_ID_FORMAT` is printed as emitted-commands-run-as-written
+      prints it, shell-quoted via `printedId()`) — add the no-remedy builder and hook it into
+      `printedId()` as the single site (design D4a); route printed release-id commands through
+      `printedId()` too; confirm with `rg` that `commitNudge`'s candidate and withdraw lines and `sync`'s
+      near-match hint call `printedId()` (the message names the record and says no verb can rename it; no hand-edit
       instruction; `gh issue list --repo` excluded — change 2's repo-shape check stops it first);
       and escape every governed value in a refusal or
       report line: the handoff refusal's story titles (`archive-gate.mjs`),

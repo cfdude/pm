@@ -46,7 +46,8 @@ identifier, that the identifier holds a control character and that no verb can r
 SHALL NOT instruct the reader to edit `.conductor/state.json` by hand. This is the one exception to
 `emitted-commands-run-as-written`'s rule that a printed remedy clears the condition that printed it,
 and this capability owns it; a suite asserts the message instead of executing a command.
-An identifier holding no control character is echoed as it is today.
+An identifier holding no control character is printed as `emitted-commands-run-as-written` prints it
+(as-is when it matches the id format, shell-quoted otherwise).
 
 Governed values stored before this requirement — including an identifier the input rules below would
 now refuse — SHALL still be read and rendered, never refused on read.
