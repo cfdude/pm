@@ -39,7 +39,7 @@ export function setTracker() {
   // an outward secondary would be a direction with no procedure behind it.
   if (role === "secondary" && direction !== undefined && direction !== "inward") {
     process.stderr.write(
-      `conductor: a secondary tracker is inward-only — --direction '${direction}' is not available ` +
+      `conductor: a secondary tracker is inward-only — --direction '${escapeControls(direction)}' is not available ` +
       "for --role secondary (a secondary tracker never gets outward-created issues)\n");
     process.exit(1);
   }
@@ -77,15 +77,15 @@ export function setTracker() {
     if (f.remove) {
       const removed = removeSecondaryTracker(state, { system, repo, projectKey });
       if (!removed) {
-        process.stderr.write(`conductor: no matching secondary tracker (${system}${repo ? ` ${repo}` : ` ${projectKey}`})\n`);
+        process.stderr.write(`conductor: no matching secondary tracker (${escapeControls(`${system}${repo ? ` ${repo}` : ` ${projectKey}`}`)})\n`);
         process.exit(1);
       }
       const saved = saveState(state);
       writeRules(resolvePlatform({}, state));
       render();
       reportSave(saved, {
-        changed: `conductor: secondary tracker removed (${system}${repo ? ` ${repo}` : ` ${projectKey}`})`,
-        unchanged: `conductor: no secondary tracker matched (${system}${repo ? ` ${repo}` : ` ${projectKey}`}) — ` +
+        changed: `conductor: secondary tracker removed (${escapeControls(`${system}${repo ? ` ${repo}` : ` ${projectKey}`}`)})`,
+        unchanged: `conductor: no secondary tracker matched (${escapeControls(`${system}${repo ? ` ${repo}` : ` ${projectKey}`}`)}) — ` +
           `${STATE_UNCHANGED} (the rules block and PROJECT.md were re-rendered)`,
       });
       return;
@@ -106,7 +106,7 @@ export function setTracker() {
     writeRules(resolvePlatform({}, state));
     render();
     reportSave(saved, {
-      changed: `conductor: secondary tracker set (${entry.system}${entry.repo ? ` ${entry.repo}` : ` ${entry.projectKey}`})`,
+      changed: `conductor: secondary tracker set (${escapeControls(`${entry.system}${entry.repo ? ` ${entry.repo}` : ` ${entry.projectKey}`}`)})`,
       unchanged: `conductor: that secondary tracker was already recorded exactly so — ` +
         `${STATE_UNCHANGED} (the rules block and PROJECT.md were re-rendered)`,
     });
@@ -139,14 +139,14 @@ export function setTracker() {
     const resupplied = { repo: str(f.repo), projectKey: str(f.project), instance: str(f.instance) };
     for (const field of ["repo", "projectKey", "instance"]) {
       if (t[field] !== undefined && resupplied[field] === undefined) {
-        notices.push(`conductor: dropped ${field}=${escapeControls(JSON.stringify(t[field]))} recorded for ${previous.system}`);
+        notices.push(`conductor: dropped ${field}=${escapeControls(JSON.stringify(t[field]))} recorded for ${escapeControls(previous.system)}`);
         delete t[field];
       }
     }
     if (direction === undefined && t.direction === undefined) {
       const kept = directionOf(previous);
       t.direction = kept;
-      notices.push(`conductor: direction ${kept} recorded — kept from the previous ${previous.system} tracker, which ` +
+      notices.push(`conductor: direction ${kept} recorded — kept from the previous ${escapeControls(previous.system)} tracker, which ` +
         `resolved to it; set-tracker --direction <${KNOWN_TRACKER_DIRECTIONS.join("|")}> to change it`);
     }
   }
@@ -180,7 +180,7 @@ export function setTracker() {
   writeRules(resolvePlatform({}, state));   // refresh CLAUDE.md so the agent sees its new tracker-sync responsibility
   render();
   reportSave(saved, {
-    changed: `conductor: tracker set (${t.system}${t.projectKey ? ` ${t.projectKey}` : ""})`,
+    changed: `conductor: tracker set (${escapeControls(`${t.system}${t.projectKey ? ` ${t.projectKey}` : ""}`)})`,
     unchanged: `conductor: the primary tracker was already recorded exactly so — ${STATE_UNCHANGED} ` +
       "(the rules block and PROJECT.md were re-rendered)",
   });

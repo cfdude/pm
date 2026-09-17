@@ -15,7 +15,7 @@ import { isRenderableLink } from "./links.mjs";
 import { correctionMarking, correctionNote, outcomeOf, recordedDispositions } from "./disposition.mjs";
 import { gateTableRows } from "./archive-gate.mjs";
 import { visibleDetourRows } from "./git.mjs";
-import { DETOURS_LOG, PROJECT_MD, STATE_PATH, RENDER_STAMP_PATH, CONDUCTOR_DIR, escapeTableCell, releaseLine, releaseSummaries } from "./constants.mjs";
+import { DETOURS_LOG, PROJECT_MD, STATE_PATH, RENDER_STAMP_PATH, CONDUCTOR_DIR, escapeControls, escapeTableCell, releaseLine, releaseSummaries } from "./constants.mjs";
 import { crossSpecLine } from "./cross-spec-review.mjs";
 import { dependencyNotes } from "./dependency-order.mjs";
 
@@ -290,11 +290,16 @@ export function render() {
   // consume defaults to false: composing PROJECT.md is not a session ever seeing this text —
   // only brief()/snapshot() (the entry points that actually deliver a briefing) pass
   // consume: true. See briefing.mjs's buildBrief comment for why this distinction matters.
-  md.push(buildBrief(state));
+  // One md entry per brief LINE, so the line sink below sees lines, never a multi-line block.
+  md.push(...buildBrief(state).split("\n"));
   md.push("```");
   md.push("");
 
-  const content = md.join("\n");
+  // THE LINE SINK (user-text-never-forges-output): every md entry is one line, so escaping each
+  // entry's control characters here guarantees no stored value begins a line of PROJECT.md — a
+  // title, a description, a reason, a release id — whichever interpolation carried it. Table cells
+  // were already escaped by tableRow(); escapeControls() is idempotent over that output.
+  const content = md.map(escapeControls).join("\n");
   const STAMP_RE = /^> Last rendered: .*$/m;
   let existing = "";
   try { existing = fs.readFileSync(PROJECT_MD, "utf8"); } catch { /* no file yet */ }

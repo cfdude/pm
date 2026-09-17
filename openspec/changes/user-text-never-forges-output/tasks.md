@@ -61,17 +61,17 @@ Pairs: 2.1–2.3a land with 2.4.
 
 Pairs: 3.1–3.4c land with 3.5.
 
-- [ ] 3.1 RED: spec "A detour reason cannot forge a NOW line in the brief" — PROJECT.md and the decoded
+- [x] 3.1 RED: spec "A detour reason cannot forge a NOW line in the brief" — PROJECT.md and the decoded
       brief halves (the log half is 4.1)
-- [ ] 3.2 RED: spec "A backlog title cannot forge a heading" (repro C)
-- [ ] 3.3 RED: spec "An already-stored malformed release id renders without forging" — the fixture
+- [x] 3.2 RED: spec "A backlog title cannot forge a heading" (repro C)
+- [x] 3.3 RED: spec "An already-stored malformed release id renders without forging" — the fixture
       writes the release into `state.json` directly (design D3 legacy exception, say so in the test)
-- [ ] 3.4 RED: spec "Line separators other than LF are escaped too"
-- [ ] 3.4a RED: spec "A session name cannot forge a line in the owners report" (Gate 1 lens A repro)
-- [ ] 3.4b RED: spec "A plan heading cannot carry a line separator into PROJECT.md"
-- [ ] 3.4c RED: spec "An already-stored tracker value cannot forge a rules heading" — legacy tracker
+- [x] 3.4 RED: spec "Line separators other than LF are escaped too"
+- [x] 3.4a RED: spec "A session name cannot forge a line in the owners report" (Gate 1 lens A repro)
+- [x] 3.4b RED: spec "A plan heading cannot carry a line separator into PROJECT.md"
+- [x] 3.4c RED: spec "An already-stored tracker value cannot forge a rules heading" — legacy tracker
       written into `state.json` directly (design D3 exception)
-- [ ] 3.5 GREEN: `escapeControls` at every interpolation of a governed value in `render.mjs`,
+- [x] 3.5 GREEN: `escapeControls` at every interpolation of a governed value in `render.mjs`,
       `briefing.mjs`, `constants.mjs` (`releaseLine`), `releases.mjs` (`releaseShow`), `claims.mjs` (`owners`, claim
       messages), `rules.mjs` (tracker system/project/repo/instance in the managed block's prose),
       `tracker.mjs` (set/remove messages), `lessons.mjs` (`adviceText`) and the `changesets` reader
@@ -197,8 +197,8 @@ Pairs: 7.1 lands with 7.2.
       Any governed-value site the sweep exposes is fixed in this commit and listed in its message.
       Size: re-derived at 7.1 (it was 120 flag entries plus 4 free-text positionals at f49871a, before
       changes 1 and 2); many share one recipe body
-- [ ] 7.3 REGRESSION GUARD (mutation check): temporarily remove one escape from `briefing.mjs` (the
-      detour reason) and one `tableRow` use from `render.mjs`; confirm the sweep fails on each, save
+- [ ] 7.3 REGRESSION GUARD (mutation check): temporarily remove one escape from `briefing.mjs` (its line
+      sink, which carries the detour reason — design D1 implementation note) and one `tableRow` use from `render.mjs`; confirm the sweep fails on each, save
       both runs as `red-7.3-mutant.txt`, restore; nothing of the mutation is committed
 
 ## 8. Required task items

@@ -15,7 +15,7 @@
 // One-directional dependencies only: constants → disposition → (add-epic's parseFlags, state,
 // render), the same chain update-epic.mjs walks.
 
-import { findRelease, releaseLine, releaseMembers, releaseSummaries } from "./constants.mjs";
+import { escapeControls, findRelease, releaseLine, releaseMembers, releaseSummaries } from "./constants.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
@@ -353,7 +353,8 @@ export function releaseShow(rest) {
         `${r.intent ? ` — ${r.intent}` : ""}${r.target ? ` (target: ${r.target})` : ""}`);
     }
     out.push("  Read one back with `release show <id>`.");
-    process.stdout.write(out.join("\n") + "\n");
+    // One entry per line: escaping each is what keeps a stored id, intent or target on its line.
+    process.stdout.write(out.map(escapeControls).join("\n") + "\n");
     return;
   }
 
@@ -403,7 +404,7 @@ export function releaseShow(rest) {
         `${a.at ? ` (${a.at})` : ""}`);
     }
   }
-  process.stdout.write(out.join("\n") + "\n");
+  process.stdout.write(out.map(escapeControls).join("\n") + "\n");
 }
 
 // ─────────────────── the RELEASE-scope review gate (gh#126) ───────────────────

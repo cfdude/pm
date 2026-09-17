@@ -10,7 +10,7 @@ import { isRenderableLink, deferralHistory, deferralNote, daysSince } from "./li
 import { correctionMarking, correctionNote, outcomeOf, recordedDispositions } from "./disposition.mjs";
 import { gateRemedy, gateTableRows } from "./archive-gate.mjs";
 import { ungatedArchives, withdrawnArchiveNote } from "./integrity.mjs";
-import { KNOWN_LANES, anyInwardProcedureEmittable, outwardApplies, printedId, releaseLine, releaseSummaries } from "./constants.mjs";
+import { KNOWN_LANES, anyInwardProcedureEmittable, escapeControls, outwardApplies, printedId, releaseLine, releaseSummaries } from "./constants.mjs";
 import { crossSpecLine } from "./cross-spec-review.mjs";
 import { blockedWithoutDependsOnNote, dependencyNotes } from "./dependency-order.mjs";
 import { conflictCount, conflictWarningLatched, consumeConflictWarning } from "./write-conflicts.mjs";
@@ -402,5 +402,10 @@ export function buildBrief(state, { consume = false } = {}) {
     "Resume via `/pm:resume` + reconcile gate. Mirror every PUSH/POP to a one-line Honcho memory.");
   L.push("");
   L.push("Manage with /pm:status · /pm:next · /pm:detour · /pm:resume, or the `conductor` skill.");
-  return L.join("\n");
+  // THE LINE SINK (user-text-never-forges-output): every entry of L is one line the engine composed,
+  // and none legitimately holds a control character — so escaping each entry here, at the one join,
+  // is what guarantees no stored value (a reason, a title, a release id, a tracker scope) can begin a
+  // line of the brief, whichever interpolation carried it. escapeControls() is idempotent, so the
+  // shared helpers that already escape (gateTableRows) are not double-escaped.
+  return L.map(escapeControls).join("\n");
 }

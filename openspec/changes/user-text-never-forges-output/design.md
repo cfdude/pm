@@ -112,6 +112,15 @@ is workspace content and governed, even in this repository where the two directo
   reason's existing `.replace(/\|/g, "\\|")` is removed so it is not escaped twice. Engine-composed cell
   text (backtick ids, `P2 → P1`, gate cells) passes through the same escaper; it contains no `\` or `|`
   today (checked at f49871a), and escaping one there would be correct anyway.
+- **Implementation note (task 3.5).** Every surface that is built as an ARRAY OF LINES and then
+  joined — `render()`'s `md`, `buildBrief()`'s `L`, `rulesBlock()`'s `lines`, `releaseShow()`'s `out`,
+  `formatOwners()`'s `L` — escapes at its ONE join (`lines.map(escapeControls).join("\n")`) instead of
+  at each interpolation. No entry of those arrays legitimately holds a control character (checked with
+  `rg` at 5accfbe), `escapeControls` is idempotent, and a sink cannot be forgotten by the next
+  interpolation someone adds. PROJECT.md pushes the brief as its lines, so the sink never sees a
+  multi-line entry. Output built as one multi-line string (`adviceText`, `claims.mjs` and `tracker.mjs`
+  messages, refusals) escapes each governed value instead. Task 7.3's brief mutation removes the brief's
+  sink escape.
 - Where a refusal already JSON-quotes a value (`escapeControls(JSON.stringify(v))`), it stays: that
   form is compliant and changing it is churn.
 

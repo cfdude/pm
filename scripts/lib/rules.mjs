@@ -9,7 +9,7 @@
 // grows, and an emitted command naming a set the verb has outgrown is a command pm emits that
 // does not run as written. Nothing under archive-gate.mjs imports back up.
 
-import { DOCS_INDEX_URL, DOCS_MCP_URL } from "./constants.mjs";
+import { DOCS_INDEX_URL, DOCS_MCP_URL, escapeControls } from "./constants.mjs";
 import { AGENT_OUTCOMES } from "./archive-gate.mjs";
 import { loadState, StateUnreadableError } from "./state.mjs";
 
@@ -952,7 +952,11 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     "when the item and a local spec disagree.",
   );
   lines.push(RULES_END, "");
-  return lines.join("\n");
+  // THE LINE SINK (user-text-never-forges-output): each entry is one line of the block, so a stored
+  // tracker system, project, repo or status intent can never begin a line of the rules file — the one
+  // channel that reaches every subagent. Emitted commands carry no such value raw: the derived id
+  // prefix is slugged, and `gh issue list --repo` needs usesGhIssueList()'s owner/name shape.
+  return lines.map(escapeControls).join("\n");
 }
 
 /** The managed block's arrangement in a rules file's TEXT (managed-rules-block capability).
