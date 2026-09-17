@@ -241,6 +241,33 @@ test("G2-I3 breaking a stale observation lock removes only the lock judged, neve
   assert.equal(fs.existsSync(lock), false);
 });
 
+test("G2-M-b an observation whose lock was broken releases only its own lock, never its successor's", async () => {
+  const cw = await import("../lib/commit-watch.mjs");
+  const repo = observationRepo();
+  repo.observe();
+  const lock = OBSERVE_RECORD(repo.cwd) + ".lock";
+  // A takes the lock, then its holder becomes unconfirmable (recorded on another host) and 11 s old,
+  // as a hook on a shared checkout stalled past the stale age would be. Nonce and inode are A's own.
+  const a = cw.beginObservation({ root: repo.cwd });
+  assert.notEqual(a.verdict, "skipped", "fixture: A holds the lock");
+  const aLock = JSON.parse(fs.readFileSync(lock, "utf8"));
+  fs.writeFileSync(lock, JSON.stringify({ ...aLock, host: `${aLock.host}-elsewhere` }));
+  const old = new Date(Date.now() - 11_000);
+  fs.utimesSync(lock, old, old);
+  assert.ok(cw.isStaleObserveLock(cw.inspectObserveLock(repo.cwd)), "precondition: A's lock is judged stale");
+  // B breaks A's lock and takes its own.
+  const b = cw.beginObservation({ root: repo.cwd });
+  assert.notEqual(b.verdict, "skipped", "B broke the stale lock and holds a new one");
+  const bLock = cw.inspectObserveLock(repo.cwd);
+  assert.ok(bLock && bLock.nonce && bLock.nonce !== aLock.nonce, "fixture: the lock in place is B's");
+  // A finally ends. Its release must leave B's lock alone.
+  a.release();
+  assert.ok(fs.existsSync(lock), "A's release removed B's lock");
+  assert.equal(cw.inspectObserveLock(repo.cwd).nonce, bLock.nonce, "the lock in place is still B's");
+  b.release();
+  assert.equal(fs.existsSync(lock), false, "B releases its own lock");
+});
+
 test("2.4 the anchored reflog line itself is gone: nothing reported from the reflog, and the record re-anchors", () => {
   {
     const repo = observationRepo();
