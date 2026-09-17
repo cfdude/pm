@@ -285,7 +285,7 @@ export function planHierarchy() {
       const stuck = children.filter(e => !placed.has(e.id)).map(e => e.id);
       const cycle = findCyclePath(stuck, deps);
       process.stderr.write(
-        `conductor: plan-hierarchy: dependency cycle among children of '${escapeControls(parent)}': ${cycle.join(" -> ")}\n`);
+        `conductor: plan-hierarchy: dependency cycle among children of '${escapeControls(parent)}': ${escapeControls(cycle.join(" -> "))}\n`);
       process.exit(1);
     }
     // Manual rank applies HERE too, not only in resolveEpics()'s comparator. This is the same

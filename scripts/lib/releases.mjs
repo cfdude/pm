@@ -218,7 +218,7 @@ export function release() {
     if (unmember.reason === undefined) {
       process.stderr.write(
         `conductor: --unmember requires a reason — why '${escapeControls(unmember.epic)}' does not belong to ` +
-        `'${escapeControls(id)}': --unmember "${unmember.epic}:<why>" (or --reason "<why>"). A membership removed ` +
+        `'${escapeControls(id)}': ${orNoRemedy(() => `--unmember "${printedId(unmember.epic) && unmember.epic}:<why>"`)} (or --reason "<why>"). A membership removed ` +
         "with no reason is indistinguishable from one nobody decided. Nothing was written.\n");
       process.exit(1);
     }
@@ -245,7 +245,7 @@ export function release() {
     if (undefer.reason === undefined) {
       process.stderr.write(
         `conductor: --undefer requires a reason — why '${escapeControls(undefer.epic)}' is back in scope for ` +
-        `'${escapeControls(id)}': --undefer "${undefer.epic}:<why>" (or --reason "<why>"). Nothing was written.\n`);
+        `'${escapeControls(id)}': ${orNoRemedy(() => `--undefer "${printedId(undefer.epic) && undefer.epic}:<why>"`)} (or --reason "<why>"). Nothing was written.\n`);
       process.exit(1);
     }
     if (!rel.deferred.some(d => d && d.epic === undefer.epic)) {

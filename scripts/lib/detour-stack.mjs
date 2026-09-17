@@ -246,7 +246,7 @@ export function popDetour() {
   const detour = detourId ? state.epics.find(e => e.id === detourId) : null;
   if (detour && detour.status !== "archived") {
     process.stderr.write(
-      `conductor: detour '${escapeControls(detourId)}' is still ${detour.status}, not archived — resuming anyway, ` +
+      `conductor: detour '${escapeControls(detourId)}' is still ${escapeControls(detour.status)}, not archived — resuming anyway, ` +
       "but confirm its work is finished and committed before building on the resumed epic\n");
   }
   reportSave(saved, {

@@ -91,7 +91,7 @@ export function reorder() {
   if (offBand.length) {
     // Ranks from two bands in one call cannot both be 1..N, so the numbering would silently mean
     // something different for each half.
-    fail(`rank is a placement WITHIN one priority band, and these are not all ${band}: ` +
+    fail(`rank is a placement WITHIN one priority band, and these are not all ${escapeControls(band)}: ` +
       escapeControls(offBand.map(id => `${id} (${byId.get(id).priority})`).join(", ")));
   }
 
@@ -102,7 +102,7 @@ export function reorder() {
     .filter(e => e.priority === band && e.status !== "archived" && !seen.has(e.id))
     .map(e => e.id);
   if (missing.length) {
-    fail(`reorder takes the WHOLE ${band} band so the numbering stays contiguous — ` +
+    fail(`reorder takes the WHOLE ${escapeControls(band)} band so the numbering stays contiguous — ` +
       `not named: ${escapeControls(missing.join(", "))}. Add them in the position you want them.`);
   }
 
@@ -110,8 +110,8 @@ export function reorder() {
   const saved = saveState(state, { verb: "reorder" });
   reportSave(saved, {
     stream: process.stdout,
-    changed: `conductor: ${band} reordered — ${escapeControls(ids.map((id, i) => `${i + 1}. ${id}`).join("  "))}`,
-    unchanged: `conductor: ${band} was already in that order — ${STATE_UNCHANGED}`,
+    changed: `conductor: ${escapeControls(band)} reordered — ${escapeControls(ids.map((id, i) => `${i + 1}. ${id}`).join("  "))}`,
+    unchanged: `conductor: ${escapeControls(band)} was already in that order — ${STATE_UNCHANGED}`,
   });
   render();
 }

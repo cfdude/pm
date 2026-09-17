@@ -82,7 +82,7 @@ export function removeEpic() {
   if (blocking.length) {
     const frames = blocking.filter(r => r.kind === "frame");
     const owed = blocking.filter(r => r.kind === "owed-reconcile");
-    const cite = (list) => list.map(r => `${r.where} → \`${r.epic}\``).join("; ");
+    const cite = (list) => escapeControls(list.map(r => `${r.where} → \`${r.epic}\``).join("; "));
     process.stderr.write(
       `conductor: cannot remove ${[...toRemove].map(i => `'${escapeControls(i)}'`).join(", ")} — still held by ` +
       `${blocking.length} reference(s) that cannot be stripped.\n` +

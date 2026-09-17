@@ -229,6 +229,19 @@ Pairs: 7.1 lands with 7.2.
         `printedId()` caller list does not reach it), each stated as carrying no control-character
         value.
       A site where the rule does not hold is a FINDING unless justified in the commit.
+      - **Re-run at Gate 2 (T-S2), per interpolation.** The first run filtered rg hits to lines holding no
+        escaper, which hid every line escaping one value beside a raw neighbour. Method and result:
+        `sweep-interpolations.mjs` (a lexer classifying EVERY `${…}` and non-literal `+` operand in
+        `scripts/conductor.mjs` and `scripts/lib/*.mjs`), its declared judgments
+        `sweep-interpolations.judged.mjs` (each with its reason; a judgment matching nothing is STALE), and
+        `sweep-interpolations.txt` (every interpolation with its class; exits 0 only with none
+        UNCLASSIFIED). Result: 1447 interpolations — escaped 451, literal 265, sink 191, not-output 17,
+        judged 523, unclassified 0. Findings fixed, each driven RED first by a 7.2 legacy recipe or 5.3e
+        (`red-g2-T-S2.txt`): rank's band name (a stored priority is free text); update-epic's un-ignore,
+        rank-clear and cleared-field announcements; release's `--unmember`/`--undefer` re-entry hints;
+        remove-epic's held-by citation; pop-detour's still-not-archived status; set-autonomy's stored level;
+        plan-hierarchy's cycle path; the archive gate's `recorded <recordedAt>`; upgrade's `since
+        <pmVersion>` and the OpenSpec currency lines it writes straight to stderr.
 - [x] 8.2 **Inverse of every operation added or modified** — the id refusal at `pushEpic` (inverse:
       `remove-epic`, unchanged; a skipped directory's inverse is renaming it, no verb); the release
       create refusal (inverse: none needed — nothing was stored). DECIDED, not deferred: no

@@ -830,7 +830,7 @@ export function updateEpic() {
   // not hold two opposite claims about one file, and this is the un-ignore path (derived from
   // an action the operator already takes, rather than a new verb nobody would find).
   for (const p of claimArtifacts(state, epic)) {
-    announcements.push(`conductor: cleared the sync-ignore tombstone on '${escapeControls(p)}' — \`${epic.id}\` now claims it\n`);
+    announcements.push(`conductor: cleared the sync-ignore tombstone on '${escapeControls(p)}' — \`${escapeControls(epic.id)}\` now claims it\n`);
   }
   // A manual `rank` is a placement among ONE band's peers, so it does not survive a move to
   // another band — it would collide with that band's own 1..N numbering, and the number would
@@ -842,9 +842,9 @@ export function updateEpic() {
   const newPriority = str(f.priority);
   if (newPriority !== undefined) {
     if (newPriority !== epic.priority && epic.rank !== undefined) {
-      announcements.push(`conductor: cleared \`${epic.id}\`'s rank (${epic.rank}) — it was a ` +
-        `placement among ${epic.priority} epics, and this moves it to ${newPriority}. ` +
-        `Re-run \`reorder\` on the ${newPriority} band to place it.\n`);
+      announcements.push(`conductor: cleared \`${escapeControls(epic.id)}\`'s rank (${escapeControls(epic.rank)}) — it was a ` +
+        `placement among ${escapeControls(epic.priority)} epics, and this moves it to ${escapeControls(newPriority)}. ` +
+        `Re-run \`reorder\` on the ${escapeControls(newPriority)} band to place it.\n`);
       delete epic.rank;
     }
     epic.priority = newPriority;
@@ -898,7 +898,7 @@ export function updateEpic() {
     const had = row.key in epic;
     delete epic[row.key];
     if (had && row.clearNote) {
-      announcements.push(`conductor: cleared \`${id}\`'s ${row.flag} — ${row.clearNote}\n`);
+      announcements.push(`conductor: cleared \`${escapeControls(id)}\`'s ${row.flag} — ${row.clearNote}\n`);
     }
   }
 

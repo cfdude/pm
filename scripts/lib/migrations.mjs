@@ -3,6 +3,7 @@
 // the /pm:upgrade verb that applies them. One-directional dependencies only.
 
 import path from "node:path";
+import { escapeControls } from "./constants.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { pluginVersion, newestInstalledVersion, cmpVer, changelogBetween, stampVersion } from "./plugin-meta.mjs";
@@ -250,7 +251,7 @@ export function upgrade() {
   const delta = changelogBetween(stamped, state.pmVersion || null);
   if (delta && delta.length) {
     process.stdout.write(
-      `What's new in pm (since ${stamped}):\n\n` + delta.map(s => s.body).join("\n\n") + "\n");
+      `What's new in pm (since ${escapeControls(stamped)}):\n\n` + delta.map(s => s.body).join("\n\n") + "\n");
   }
 
   // gh#128 — "is this repo current with pm?" is the question this verb exists to answer, and it

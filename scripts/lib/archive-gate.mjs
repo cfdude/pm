@@ -531,7 +531,7 @@ export function archiveGate(epic, request = {}) {
   } else if (existing && !isEngineStamped(existing)) {
     return { ok: false, message:
       `cannot archive '${escapeControls(epic.id)}' — it already carries an agent-recorded outcome ` +
-      `'${outcomeOf(epic)}'${existing.recordedAt ? `, recorded ${existing.recordedAt}` : ""}. ` +
+      `'${outcomeOf(epic)}'${existing.recordedAt ? `, recorded ${escapeControls(existing.recordedAt)}` : ""}. ` +
       `Replacing it would destroy a judgment somebody made. If it is WRONG, correct it: add ` +
       `--correct-disposition "<why the recorded one was wrong>", which keeps the prior record ` +
       `readable under it rather than overwriting it.` };

@@ -99,8 +99,8 @@ export function setAutonomy() {
   const saved = saveState(state);
   render();
   reportSave(saved, {
-    changed: `conductor: autonomy for '${escapeControls(id)}' is now level=${a.level}`,
-    unchanged: `conductor: autonomy for '${escapeControls(id)}' already reads level=${a.level} with exactly the ` +
+    changed: `conductor: autonomy for '${escapeControls(id)}' is now level=${escapeControls(a.level)}`,
+    unchanged: `conductor: autonomy for '${escapeControls(id)}' already reads level=${escapeControls(a.level)} with exactly the ` +
       `pre-authorizations and context this invocation supplied — ${STATE_UNCHANGED}`,
   });
 }

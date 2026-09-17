@@ -618,6 +618,16 @@ test("6.6c REGRESSION GUARD (Gate 2 T-M2): pushEpic() refuses an unstorable id i
   assert.equal(state.epics.length, 1, "an uppercase id is storable");
 });
 
+test("5.3e (Gate 2 T-S2) upgrade over a legacy pmVersion holding a control character forges no line (legacy value, design D3 exception)", () => {
+  const cwd = initRepo();
+  legacyWrite(cwd, s => { s.pmVersion = "0.1.0" + LF + "FORGED" + NEL + "FORGED"; });
+  const r = pm(cwd, ["upgrade"]);
+  const out = r.stdout + r.stderr;
+  assert.equal(r.status, 0, out);
+  assert.deepEqual(linesBeginning(out, "FORGED"), [], `no upgrade line begins FORGED:\n${out}`);
+  assert.equal(out.includes(NEL), false, "and no raw NEL reaches its output");
+});
+
 /** The segments of a line that sit inside inline code spans. */
 const codeSpans = (text) => readerLines(text).flatMap(l => l.split("`").filter((_, i) => i % 2 === 1));
 
@@ -950,6 +960,73 @@ export const LEGACY_RECIPES = [
     fs.writeFileSync(path.join(c.cwd, rel), "# tombstoned\n");
     legacyWrite(c.cwd, s => { s.syncIgnore = [...(s.syncIgnore || []), { path: rel, epic: "gone", reason: "removed by remove-epic" }]; });
     return pm(c.cwd, ["sync"]);
+  } },
+  // ── Gate 2 T-S2: the per-interpolation sweep's findings, each driven here before it was fixed ──
+  { key: "reorder over a legacy priority band (the band's name)", rendered: true, run: (c, v) => {
+    const band = "Pq-" + v;
+    legacyWrite(c.cwd, s => { s.epics.push(legacyEpic(fresh("bq"), "queued", { priority: band }), legacyEpic(fresh("bq"), "queued", { priority: band })); });
+    const ids = readState(c.cwd).epics.filter(e => e.priority === band && e.status !== "archived").map(e => e.id).reverse();
+    return pm(c.cwd, ["reorder", ...ids]);
+  } },
+  { key: "update-epic --priority over a ranked legacy epic (the rank-clear announcement)", rendered: true, run: (c, v) => {
+    const id = "rk-" + v;
+    legacyWrite(c.cwd, s => { s.epics.push(legacyEpic(id, "queued", { priority: "P3", rank: 1 })); });
+    return pm(c.cwd, ["update-epic", id, "--priority", "P2"]);
+  } },
+  { key: "update-epic --plan over a legacy epic id and a tombstoned plan (the un-ignore announcement)", rendered: true, run: (c, v) => {
+    const id = "pl-" + v;
+    const rel = path.join("docs", "superpowers", "plans", `${fresh("unignore")}.md`);
+    legacyWrite(c.cwd, s => { s.epics.push(legacyEpic(id, "queued", { lane: "superpowers" })); s.syncIgnore = [...(s.syncIgnore || []), { path: rel, epic: "gone", reason: "removed by remove-epic" }]; });
+    return pm(c.cwd, ["update-epic", id, "--plan", rel]);
+  } },
+  { key: "release --unmember with no reason over a legacy member id (the re-entry hint)", rendered: true, expect: "fail", run: (c, v) => {
+    const id = "um-" + v;
+    legacyWrite(c.cwd, s => { s.epics.push(legacyEpic(id, "queued", { release: "1.0.0" })); });
+    return pm(c.cwd, ["release", "1.0.0", "--unmember", id]);
+  } },
+  { key: "release --undefer with no reason over a legacy deferred id (the re-entry hint)", rendered: true, expect: "fail", run: (c, v) => {
+    const id = "ud-" + v;
+    legacyWrite(c.cwd, s => { s.epics.push(legacyEpic(id, "queued")); });
+    return pm(c.cwd, ["release", "1.0.0", "--undefer", id]);
+  } },
+  { key: "remove-epic refused while a legacy detour frame holds the id (the held-by citation)", rendered: true, expect: "fail", run: (c, v) => {
+    const id = "fr-" + v;
+    const frame = { pausedEpic: "base", spawnedDetour: id, reason: "legacy", reconcileOnResume: false, pausedAt: LEGACY_AT };
+    legacyWrite(c.cwd, s => { s.epics.push(legacyEpic(id, "queued")); s.detourStack = [frame, ...(s.detourStack || [])]; });
+    const r = pm(c.cwd, ["remove-epic", id]);
+    legacyWrite(c.cwd, s => { s.detourStack = s.detourStack.filter(f => f.spawnedDetour !== id); });   // leave the sweep's own frame on top
+    return r;
+  } },
+  { key: "pop-detour over a legacy detour epic whose status holds a control character", rendered: true, run: (c, v) => {
+    const paused = fresh("pdp"), detour = fresh("pdd");
+    const before = readState(c.cwd);
+    legacyWrite(c.cwd, s => {
+      s.epics.push(legacyEpic(paused, "paused"), legacyEpic(detour, "st-" + v));
+      s.detourStack = [...(s.detourStack || []), { pausedEpic: paused, spawnedDetour: detour, reason: "legacy", reconcileOnResume: false, pausedAt: LEGACY_AT }];
+    });
+    const r = pm(c.cwd, ["pop-detour", paused]);
+    // hand the record back as the legacy phase left it: the sweep's own frame and active pointer
+    legacyWrite(c.cwd, s => { s.active = before.active; s.detourStack = before.detourStack; s.epics = s.epics.filter(e => e.id !== paused && e.id !== detour); });
+    return r;
+  } },
+  { key: "set-autonomy over a legacy autonomy level (its update line)", rendered: true, run: (c, v) => {
+    const id = fresh("au");
+    legacyWrite(c.cwd, s => { s.epics.push(legacyEpic(id, "queued", { autonomy: { level: "lv-" + v, preAuthorized: [], context: [], notifications: [] } })); });
+    return pm(c.cwd, ["set-autonomy", id, "--context", "a note"]);
+  } },
+  { key: "plan-hierarchy over a legacy dependency cycle (the cycle path)", rendered: true, expect: "fail", run: (c, v) => {
+    const parent = fresh("hp"), a = "cy-a-" + v, b = "cy-b-" + v;
+    legacyWrite(c.cwd, s => {
+      s.epics.push(legacyEpic(parent, "later"),
+        legacyEpic(a, "later", { parent, links: [{ type: "depends-on", epic: b }] }),
+        legacyEpic(b, "later", { parent, links: [{ type: "depends-on", epic: a }] }));
+    });
+    return pm(c.cwd, ["plan-hierarchy", "--parent", parent]);
+  } },
+  { key: "update-epic --status archived over a legacy agent disposition whose recordedAt holds a control character (the replacement refusal)", rendered: true, expect: "fail", run: (c, v) => {
+    const id = fresh("ar");
+    legacyWrite(c.cwd, s => { s.epics.push(legacyEpic(id, "archived", { disposition: { outcome: "killed", reason: "legacy", recordedAt: "at-" + v }, deferralAssertion: { none: true, recordedAt: LEGACY_AT } })); });
+    return pm(c.cwd, ["update-epic", id, "--status", "archived", "--outcome", "abandoned", "--reason", "r", "--no-deferrals"]);
   } },
 ];
 
