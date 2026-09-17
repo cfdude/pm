@@ -691,6 +691,47 @@ test("6.5 a nested conductor's bookkeeping commit is not a detour, on either bra
   }
 });
 
+test("G2-I1 a nested conductor under a non-ASCII directory: its bookkeeping commit is not a detour, on either branch", () => {
+  // Built from bytes, never spelled: `projects/s` + U+00FC + `b`. git quotes such a path in
+  // `diff-tree` output by default ("projects/s\\303\\274b/..."), which then matched no show-prefix.
+  const sub = "projects/s" + Buffer.from([0xc3, 0xbc]).toString("utf8") + "b";
+  for (const detour of [false, true]) {
+    const repo = observationRepo({ nested: sub });
+    if (detour) pushDetourFixture(repo);
+    repo.observe();
+    const sha = observedCommit(repo, {
+      [`${sub}/.conductor/state.json`]: appendTo(repo, `${sub}/.conductor/state.json`),
+      [`${sub}/PROJECT.md`]: appendTo(repo, `${sub}/PROJECT.md`),
+    }, "chore(conductor): register epic-b");
+    assert.equal(rowsFor(repo, sha).length, 0, `${detour ? "DETOUR-COMMIT" : "AUTO-DETOUR"}: ${repo.detours()}`);
+  }
+});
+
+test("G2-I1 sweep: upgrade's commit nudge names its rewritten files in a nested conductor under a non-ASCII directory", () => {
+  // The sibling changed-path reader (git.mjs differsFromHead, `git diff --name-only`) printed the same
+  // quoted git-root path, so no line ended with `/.conductor/state.json` and the nudge went silent.
+  for (const sub of ["projects/sub", "projects/s" + Buffer.from([0xc3, 0xbc]).toString("utf8") + "b"]) {
+    const repo = observationRepo({ nested: sub });
+    editState(repo, (s) => { s.pmVersion = "0.1.0"; });
+    repo.git("add", "-A");
+    repo.git("commit", "-q", "-m", "chore: an older conductor");
+    const r = engineRun(repo.cwd, ["upgrade"]);
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stderr, /COMMIT THIS UPGRADE[\s\S]*git add [^\n]*\.conductor\/state\.json/, `${sub}: ${r.stderr}`);
+  }
+});
+
+test("G2-I6 REGRESSION GUARD: in a nested conductor, pm-named files at the GIT root are not this conductor's own files", () => {
+  const repo = observationRepo({ nested: true });
+  repo.observe();
+  const sha = observedCommit(repo, {
+    "PROJECT.md": "# a git-root PROJECT.md\n",
+    ".conductor/state.json": "{}\n",
+  }, "chore(x): git-root files that only look like pm's");
+  assert.equal(rowsFor(repo, sha).filter((l) => l.includes("\tAUTO-DETOUR\t")).length, 1,
+    `a changed path outside the conductor root never matches pm's own files: ${repo.detours()}`);
+});
+
 test("6.6 REGRESSION GUARD: a nested mixed commit, a mismatched change directory and #173's shape still log", () => {
   {
     const repo = observationRepo({ nested: true });

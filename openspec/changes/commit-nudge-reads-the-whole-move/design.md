@@ -180,7 +180,8 @@ left C1's row visible and attributed. The engine never runs the withdrawal.
 
 ### 8. Changed paths and own artifacts
 
-`changedFiles(sha)` returns `git diff-tree --no-commit-id --name-only -r --root <sha>` paths with
+`changedFiles(sha)` returns `git diff-tree -z --no-commit-id --name-only -r --root <sha>` paths (`-z`: unquoted, so a
+non-ASCII conductor root still matches its prefix; Gate 2 G2-I1) with
 `git rev-parse --show-prefix` stripped; a path not starting with the prefix is returned unchanged, so it
 can never equal a conductor-relative path. #195's `--relative` is rejected: it drops out-of-root paths
 and turns a mixed commit into a bookkeeping-only one (proposal defect 6).

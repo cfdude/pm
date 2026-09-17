@@ -176,10 +176,16 @@ let showPrefix = null;   // invariant for one process: ROOT does not move under 
 export function changedFiles(sha) {
   try {
     const opts = { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] };
-    const out = execFileSync("git", ["diff-tree", "--no-commit-id", "--name-only", "-r", "--root", sha], opts).trim();
-    if (showPrefix === null) showPrefix = execFileSync("git", ["rev-parse", "--show-prefix"], opts).trim();
+    // `-z`: NUL-terminated and UNQUOTED. Without it git quotes any path holding a non-ASCII byte
+    // (`"projects/s\303\274b/PROJECT.md"`, core.quotePath), so no path under a non-ASCII conductor
+    // root matched the prefix and every bookkeeping commit there was logged (Gate 2 G2-I1). `-z` also
+    // survives a tab or newline in a path, which `core.quotePath=false` does not.
+    const out = execFileSync("git", ["diff-tree", "-z", "--no-commit-id", "--name-only", "-r", "--root", sha], opts);
+    // --show-prefix prints the prefix raw today; quotePath=false keeps it comparable with the -z paths
+    // should that ever change.
+    if (showPrefix === null) showPrefix = execFileSync("git", ["-c", "core.quotePath=false", "rev-parse", "--show-prefix"], opts).replace(/\n$/, "");
     const prefix = showPrefix;
-    return out ? out.split("\n").map(p => !prefix ? p : p.startsWith(prefix) ? p.slice(prefix.length) : `:/${p}`) : [];
+    return out.split("\0").filter(Boolean).map(p => !prefix ? p : p.startsWith(prefix) ? p.slice(prefix.length) : `:/${p}`);
   } catch { return null; }
 }
 

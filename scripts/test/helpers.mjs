@@ -420,7 +420,8 @@ export function observationRepo({ nested = false, clone = false, epicId = "epic-
     gitRoot = tmpRepo();
     initFixtureGit(gitRoot);
   }
-  const cwd = nested ? path.join(gitRoot, "projects", "sub") : gitRoot;
+  // `nested: true` is `projects/sub/`; a string names the git-root-relative directory instead.
+  const cwd = typeof nested === "string" ? path.join(gitRoot, nested) : nested ? path.join(gitRoot, "projects", "sub") : gitRoot;
   fs.mkdirSync(cwd, { recursive: true });
   const quiet = (args) => execFileSync("node", [ENGINE, ...args], {
     cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"],

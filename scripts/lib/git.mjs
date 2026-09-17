@@ -311,10 +311,13 @@ export function reachableFromAnyRef(sha) {
 export function differsFromHead(paths) {
   if (!paths || !paths.length) return [];
   try {
-    const out = execFileSync("git", ["diff", "--name-only", "HEAD", "--", ...paths], {
+    // `-z`: unquoted. git quotes a root-relative path holding a non-ASCII byte, so in a project nested
+    // under such a directory no line ended with `/<path>` and the nudge went silent (Gate 2 G2-I1's
+    // sibling of changedFiles()).
+    const out = execFileSync("git", ["diff", "-z", "--name-only", "HEAD", "--", ...paths], {
       cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"],
     });
-    const changed = out.split("\n").map(l => l.trim()).filter(Boolean);
+    const changed = out.split("\0").filter(Boolean);
     return paths.filter(p => changed.some(l => l === p || l.endsWith(`/${p}`)));
   } catch { return []; }
 }
