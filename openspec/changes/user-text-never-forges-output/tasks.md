@@ -48,12 +48,12 @@ Pairs: 1.2 lands with 1.3.
 
 Pairs: 2.1–2.3a land with 2.4.
 
-- [ ] 2.1 RED: spec "A detour reason with a pipe and a newline stays in its cell" (repro A)
-- [ ] 2.2 RED: spec "A disposition reason with a newline stays in its row" (repro B)
-- [ ] 2.3 RED: spec "A minimal detour note with a pipe stays in its cell" (repro I)
-- [ ] 2.3a RED: spec "A backslash before a pipe does not open a delimiter" — cells counted under
+- [x] 2.1 RED: spec "A detour reason with a pipe and a newline stays in its cell" (repro A)
+- [x] 2.2 RED: spec "A disposition reason with a newline stays in its row" (repro B)
+- [x] 2.3 RED: spec "A minimal detour note with a pipe stays in its cell" (repro I)
+- [x] 2.3a RED: spec "A backslash before a pipe does not open a delimiter" — cells counted under
       GitHub-flavored-Markdown splitting (design D1)
-- [ ] 2.4 GREEN: `tableRow(...cells)` in `render.mjs`; every data row of Detour stack, Epics,
+- [x] 2.4 GREEN: `tableRow(...cells)` in `render.mjs`; every data row of Detour stack, Epics,
       Dispositions, Gate reviews and Recent detours built through it; remove the Dispositions reason's
       own `|` replace; add the D3 source guard (no data-row `md.push` beginning `|` outside `tableRow`)
 

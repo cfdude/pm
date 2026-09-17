@@ -10,6 +10,9 @@
 import "./hermetic-git.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import { spawnSync } from "node:child_process";
+import { ENGINE, EMPTY_CACHE, tmpRepo, projectMd } from "./helpers.mjs";
 
 const lib = (name) => new URL(`../lib/${name}`, import.meta.url).href;
 
@@ -82,4 +85,110 @@ test("1.2 escapeControls is idempotent over its own output", async () => {
   assert.equal(escapeControls(once), once);
   assert.equal(/[\x00-\x1f\x7f-\x9f]/.test(once) || once.includes(LS) || once.includes(PS), false,
     "escapeControls output holds no control character");
+});
+
+// ═══════════════════════════════ fixtures ═══════════════════════════════
+
+/** One engine invocation, never throwing: `{ status, stdout, stderr }`. */
+export function pm(cwd, args, { input, env = {} } = {}) {
+  const r = spawnSync("node", [ENGINE, ...args], {
+    cwd, encoding: "utf8", input,
+    env: { ...process.env, CLAUDE_PROJECT_DIR: cwd, PM_CACHE_ROOT: EMPTY_CACHE, ...env },
+  });
+  return { status: r.status, stdout: r.stdout || "", stderr: r.stderr || "" };
+}
+/** An invocation that must succeed; fails the test loudly otherwise, so no later absence
+ *  assertion can pass over a fixture that half-built. */
+export function ok(cwd, args, opts) {
+  const r = pm(cwd, args, opts);
+  assert.equal(r.status, 0, `\`${args.join(" ")}\` must succeed while building the fixture:\n${r.stderr}${r.stdout}`);
+  return r;
+}
+/** A fresh pm-managed fixture directory (no git unless a test adds it). */
+export function initRepo() {
+  const cwd = tmpRepo();
+  ok(cwd, ["init", "--platform", "claude-code"]);
+  return cwd;
+}
+
+/** A PROJECT.md table under `## <heading>`: its header row and every line of its body up to the
+ *  first blank line — GFM ends a table there, so a line a value forged is a body row too. */
+export function tableUnder(md, heading) {
+  const lines = md.split("\n");
+  const at = lines.indexOf(`## ${heading}`);
+  assert.notEqual(at, -1, `PROJECT.md must hold a "## ${heading}" section`);
+  let i = at + 1;
+  while (i < lines.length && !lines[i].startsWith("|")) {
+    assert.ok(!lines[i].startsWith("## "), `"## ${heading}" must hold a table`);
+    i++;
+  }
+  const header = lines[i];
+  const rows = [];
+  for (let j = i + 2; j < lines.length && lines[j].trim() !== ""; j++) rows.push(lines[j]);
+  return { header, rows, width: gfmCells(header).length };
+}
+export function assertCellCounts(table, what) {
+  for (const row of table.rows) {
+    assert.equal(gfmCells(row).length, table.width, `${what}: row has ${gfmCells(row).length} cells, header has ${table.width}:\n${row}`);
+  }
+}
+
+// ═══════════════════════════════ 2. PROJECT.md tables keep their cells ═══════════════════════════════
+
+test("2.1 A detour reason with a pipe and a newline stays in its cell", () => {
+  const cwd = initRepo();
+  ok(cwd, ["add-epic", "--id", "e1", "--lane", "claude-code"]);
+  ok(cwd, ["add-epic", "--id", "det", "--lane", "claude-code"]);
+  ok(cwd, ["set-active", "e1"]);
+  ok(cwd, ["push-detour", "e1", "--detour", "det", "--reason", "blocked" + LF + "x | cell", "--reconcile"]);
+  ok(cwd, ["render"]);
+  const t = tableUnder(projectMd(cwd), "Detour stack");
+  assert.equal(t.rows.length, 1, `the Detour-stack table has exactly one data row:\n${t.rows.join("\n")}`);
+  assertCellCounts(t, "Detour stack");
+});
+
+test("2.2 A disposition reason with a newline stays in its row", () => {
+  const cwd = initRepo();
+  ok(cwd, ["add-epic", "--id", "e3", "--lane", "claude-code"]);
+  ok(cwd, ["update-epic", "e3", "--status", "archived", "--outcome", "killed",
+    "--reason", "dead" + LF + "| forged | delivered | x | y |", "--no-deferrals"]);
+  ok(cwd, ["render"]);
+  const t = tableUnder(projectMd(cwd), "Dispositions");
+  assert.equal(t.rows.filter(r => gfmCells(r)[0].includes("e3")).length, 1, "exactly one Dispositions row for e3");
+  assert.equal(t.rows.some(r => gfmCells(r)[0].trim() === "forged"), false, "no row whose Epic cell is `forged`");
+  assertCellCounts(t, "Dispositions");
+});
+
+test("2.3 A minimal detour note with a pipe stays in its cell", () => {
+  const cwd = initRepo();
+  ok(cwd, ["add-epic", "--id", "e1", "--lane", "claude-code"]);
+  ok(cwd, ["set-active", "e1"]);
+  ok(cwd, ["log-detour", "fixed a | b"]);
+  ok(cwd, ["render"]);
+  const t = tableUnder(projectMd(cwd), "Recent detours");
+  assert.ok(t.rows.length >= 1, "the Recent-detours table holds the logged row");
+  assertCellCounts(t, "Recent detours");
+});
+
+test("2.3a A backslash before a pipe does not open a delimiter", () => {
+  const cwd = initRepo();
+  ok(cwd, ["add-epic", "--id", "e3", "--lane", "claude-code"]);
+  ok(cwd, ["update-epic", "e3", "--status", "archived", "--outcome", "killed",
+    "--reason", "a" + BS + "|b", "--no-deferrals"]);
+  ok(cwd, ["render"]);
+  assertCellCounts(tableUnder(projectMd(cwd), "Dispositions"), "Dispositions");
+});
+
+test("2.4 source guard: every PROJECT.md data row goes through tableRow()", () => {
+  const src = fs.readFileSync(new URL("../lib/render.mjs", import.meta.url), "utf8");
+  const pushes = [...src.matchAll(/md\.push\(\s*(["'`])\|/g)];
+  assert.ok(pushes.length > 0, "render.mjs still pushes its literal header and separator rows");
+  for (const m of pushes) {
+    const q = m[1];
+    const end = src.indexOf(q, m.index + m[0].length);
+    const literal = src.slice(m.index + m[0].length - 1, end);
+    assert.equal(literal.includes("${"), false,
+      `a row pushed with md.push that interpolates a value must be built by tableRow(): ${literal}`);
+  }
+  assert.match(src, /export function tableRow\(|function tableRow\(/, "render.mjs declares tableRow()");
 });

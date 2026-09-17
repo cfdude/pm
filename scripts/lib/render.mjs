@@ -15,9 +15,18 @@ import { isRenderableLink } from "./links.mjs";
 import { correctionMarking, correctionNote, outcomeOf, recordedDispositions } from "./disposition.mjs";
 import { gateTableRows } from "./archive-gate.mjs";
 import { visibleDetourRows } from "./git.mjs";
-import { DETOURS_LOG, PROJECT_MD, STATE_PATH, RENDER_STAMP_PATH, CONDUCTOR_DIR, releaseLine, releaseSummaries } from "./constants.mjs";
+import { DETOURS_LOG, PROJECT_MD, STATE_PATH, RENDER_STAMP_PATH, CONDUCTOR_DIR, escapeTableCell, releaseLine, releaseSummaries } from "./constants.mjs";
 import { crossSpecLine } from "./cross-spec-review.mjs";
 import { dependencyNotes } from "./dependency-order.mjs";
+
+/** THE builder of every PROJECT.md table DATA row (user-text-never-forges-output D1). Each cell is
+ *  passed through escapeTableCell() exactly once — here and nowhere else, because that escaper is not
+ *  idempotent — so no value can end the row (a line terminator) or add or split a cell (a `|`, or a
+ *  backslash that would escape the delimiter after it). Header and separator rows stay literal; the
+ *  suite's source guard fails any other `md.push` that begins a row with an interpolated value. */
+export function tableRow(...cells) {
+  return `| ${cells.map(escapeTableCell).join(" | ")} |`;
+}
 
 export function render() {
   const state = loadState();
@@ -77,7 +86,7 @@ export function render() {
     md.push("| # | Paused epic | Reason | Detour | Reconcile on resume |");
     md.push("|---|-------------|--------|--------|---------------------|");
     state.detourStack.forEach((f, i) => {
-      md.push(`| ${i + 1} | \`${f.pausedEpic}\` | ${f.reason} | \`${f.spawnedDetour || "-"}\` | ${f.reconcileOnResume ? "⚠ yes" : "no"} |`);
+      md.push(tableRow(String(i + 1), `\`${f.pausedEpic}\``, f.reason, `\`${f.spawnedDetour || "-"}\``, f.reconcileOnResume ? "⚠ yes" : "no"));
     });
   }
   md.push("");
@@ -126,7 +135,8 @@ export function render() {
     // goal from the means. Identical values render once, so the arrow itself is the signal.
     const prio = e.effectivePriority && e.effectivePriority !== e.priority
       ? `${e.priority} → ${e.effectivePriority}` : e.priority;
-    md.push(`| ${prio} | ${indent}\`${e.id}\` | ${e.lane} | ${e.role} | ${e.status}${outcome}${e.reconcileNeeded ? " ⚠" : ""}${miss}${autonomous}${staleMarker(e)} | ${progress} | ${links} |`);
+    md.push(tableRow(prio, `${indent}\`${e.id}\``, e.lane, e.role,
+      `${e.status}${outcome}${e.reconcileNeeded ? " ⚠" : ""}${miss}${autonomous}${staleMarker(e)}`, progress, links));
   };
   const seen = new Set();
   const emit = (e, depth) => {
@@ -222,9 +232,10 @@ export function render() {
     md.push("| Epic | Outcome | Recorded | Why |");
     md.push("|------|---------|----------|-----|");
     for (const { epic, disposition: d } of dispositions) {
-      const why = (d.reason || "—").replace(/\|/g, "\\|");
+      // No `|` replace of its own: tableRow() escapes every cell once, backslash first.
+      const why = d.reason || "—";
       const carried = d.carriedTo ? ` (carried to \`${d.carriedTo}\`)` : "";
-      md.push(`| \`${epic.id}\` | ${outcomeOf(epic)}${correctionMarking(d)} | ${d.recordedAt || "—"} | ${why}${carried}${correctionNote(d)} |`);
+      md.push(tableRow(`\`${epic.id}\``, `${outcomeOf(epic)}${correctionMarking(d)}`, d.recordedAt || "—", `${why}${carried}${correctionNote(d)}`));
     }
     md.push("");
   }
@@ -251,7 +262,7 @@ export function render() {
       // archive and a verdict that renders as a pass would otherwise be able to disagree.
       // Three no-attribution states render three ways — absent is unverifiable, present-and-
       // empty says nothing was attributed, and an unavailable git is unverifiable too.
-      md.push(`| \`${row.id}\` | ${row.gate1} | ${row.gate2} |`);
+      md.push(tableRow(`\`${row.id}\``, row.gate1, row.gate2));
     }
     md.push("");
   }
@@ -267,7 +278,7 @@ export function render() {
       md.push("| When | SHA | Kind | Epic | Note |");
       md.push("|------|-----|------|------|------|");
       for (const { when, sha, kind, epic, note } of lines) {
-        md.push(`| ${when} | \`${sha}\` | ${kind} | \`${epic}\` | ${note || ""} |`);
+        md.push(tableRow(when, `\`${sha}\``, kind, `\`${epic}\``, note || ""));
       }
     } else { md.push("_None logged._"); }
   } catch { md.push("_None logged._"); }
