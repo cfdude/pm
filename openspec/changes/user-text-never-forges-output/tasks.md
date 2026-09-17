@@ -261,6 +261,19 @@ Pairs: 7.1 lands with 7.2.
         put a line start into `triage`'s stdout (`red-g2-U2-M1.txt`). Fixed, not declined: all 14 stdout
         JSON documents go through `jsonText()` (`constants.mjs`; same parsed value); test 5.3g guards the
         bypass; design.md's Non-Goal corrected.
+      - **Gate 2 V-round.** V-I1: `jsonText` takes JSON.stringify's `(value, replacer, space)` — its two-argument
+        form read `unconsidered-outcomes`' `null, 2` as null spacing and printed compact JSON; the 14 callers
+        re-derived with rg, `activity --json` and `owners --json` moved to `(…, null, 2)`; test 5.3i compares 13
+        stdout documents byte for byte against `JSON.stringify(parsed, null, <documented space>)` with only the
+        escaped code points differing (`red-g2-V-I1.txt`). V-I2: the sweep counted asCode/orNoRemedy as escapers
+        whatever they wrapped, split `a || b && "y"` at the `&&`, and accepted any left operand of `.length` /
+        `+ 1`; now wrappers count only around a built remedy, splitTop stops at a looser operator, the count
+        patterns are anchored, and escapers are trusted only as their real binding (no `esc` by name, no
+        shadowing local) — six reviewer mutants plus two binding mutants in-suite (`red-g2-V-I2.txt`). V-M3:
+        judgments match through `normaliseExpr()` on both sides, and findings name the judgments file
+        (`red-g2-V-M3.txt`). V-M1: 5.3g refuses JSON.stringify anywhere in a declaration that writes stdout
+        (aliased and variable mutants; `red-g2-V-M1.txt`). V-M2: 5.3h refuses a row's epic read by bracket,
+        optional chain or destructuring (three mutants; `red-g2-V-M2.txt`).
 - [x] 8.2 **Inverse of every operation added or modified** — the id refusal at `pushEpic` (inverse:
       `remove-epic`, unchanged; a skipped directory's inverse is renaming it, no verb); the release
       create refusal (inverse: none needed — nothing was stored). DECIDED, not deferred: no
