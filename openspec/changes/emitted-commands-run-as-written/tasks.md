@@ -17,12 +17,21 @@
       files and its siblings' (`commit-nudge-reads-the-whole-move`, `user-text-never-forges-output`).
       Run the `cross-spec-review` skill after all three pass Gate 1 and again after any later
       amendment; record `record-cross-spec-review 0.45.0 --verdict pass|fail --reviewer "<identity>"`
-- [ ] 0.3 After change 1 (`commit-nudge-reads-the-whole-move`) merges into `dev`, re-derive every line
+- [x] 0.3 After change 1 (`commit-nudge-reads-the-whole-move`) merges into `dev`, re-derive every line
       anchor in design.md with `rg` (above all `runNudge`'s message and `init()`'s stderr in
       `subcommands.mjs`), every commit-nudge message VARIANT change 1 prints, and every doc line number
       this tasks.md hardcodes (`skills/conductor/SKILL.md` 70, 117-119, 734, 738, 994; `README.md`
       1327), which change 1's doc tasks move; correct design.md and tasks.md in the first
       implementation commit if any moved
+      — DONE at 244d07a: SKILL 734→736, 738→740, 994→1017-1022, 1216→1240; README 1327→1336 (every
+      README anchor ≥779 +9); `subcommands.mjs` init stderr 118-121, nudge sentence 662-663, nudge
+      `--attribute-commit` 467 and `--withdraw-commit` 403; `update-epic.mjs` regression refusal
+      202-232 (invocation 214); `archive-gate.mjs` dispositionInvocation 227, remedies 426, 431-432;
+      `rules.mjs` reminder 856-871; `commands/epic.md` 726-741; child doc 63-70. Nudge variants
+      (runNudge): DETOUR logged | DETOUR bookkeeping-only | AUTO-DETOUR | plain; each may add the
+      retract pointer, the dead-commit sentence, the amend paragraph (`--withdraw-commit`, suppressed
+      where update-epic would refuse) and the attribution paragraph (one `--attribute-commit` per
+      candidate epic)
 
 ## 1. The sweep harness and Layer A (every invocation passes the pre-dispatch check)
 
@@ -37,7 +46,7 @@ without it); narrative docs describing the new behaviour wait for section 10, af
 
 Pairs: 1.2–1.5 land with 1.6.
 
-- [ ] 1.1 REFACTOR: the extractor, placeholder filler and source enumerator (design Decision 1,
+- [x] 1.1 REFACTOR: the extractor, placeholder filler and source enumerator (design Decision 1,
       Layer A extraction rules) inside the new test file, with self-tests only on constructed text:
       a wrapped code span is one span; `(--reconcile | --no-reconcile)` yields two invocations; a
       top-level `A | B | C` form yields three; `<how they inform each other>` is one placeholder; a
@@ -59,8 +68,8 @@ Pairs: 1.2–1.5 land with 1.6.
       detour, detour commit, several candidate epics, amend), each built anchor → commit → observe — passes today except where section 3 changes the text; saved as the
       baseline, not a failure (brief, `integrity`, `unconsidered-outcomes` and archive-gate refusals
       join Layer A in 2.9, once their fixtures exist)
-- [ ] 1.6 GREEN: the `class` field in `argv-surface.mjs`; the 19 `pm:refused <class>` markers, the
-      `pm:engine-message` marker at `README.md:1327` and the `pm:checkout-path` marker at
+- [ ] 1.6 GREEN: the `class` field in `argv-surface.mjs`; the 20 `pm:refused <class>` markers, the
+      `pm:engine-message` marker at `README.md:1336` and the `pm:checkout-path` marker at
       `skills/conductor/SKILL.md:70`, each directly after its span; `commands/upgrade.md:226` and
       `commands/cross-spec-review.md:85` in installed-engine form; the test's refusal list saved as
       `sweep-layer-a.txt` and any difference from design's table stated in the commit; 1.2–1.5 pass,
@@ -136,7 +145,7 @@ Pairs: 2.1–2.8 (incl. 2.7a) land with 2.9.
       stale still exits 0 — commit-nudge Decision 7's `deliveredRegression` compares by that kind
 - [ ] 2.9 GREEN: `DELIVERED_OBLIGATIONS` and `BRIEF_REMEDIES` exported and consumed by
       `deliveredObligations()` and `buildBrief()`; `gateRemedy(id, gate)` at every Gate-remedy site
-      (design Decision 2, incl. the `+`-split forms at `archive-gate.mjs:426,430-431` and the
+      (design Decision 2, incl. the `+`-split forms at `archive-gate.mjs:426,431-432` and the
       gate-aware `integrity.mjs:750-752`); `dispositionInvocation(epic, {keepDelivered})` and
       `blockedDelivered(epic)`; `deliveredBlockedBy`; the delivered-release and regression-refusal
       remedy lines (incl. the attribution-withdrawn re-record + `--attribute-commit` pair, rendered
@@ -237,10 +246,10 @@ Starts after change 1 has merged (task 0.3). Pairs: 6.1–6.3 land with 6.4.
       `.conductor/state.json`
 - [ ] 6.3 RED: the hand-edit scanner exactly as design Decision 7 defines it (units, sentences,
       imperative position, negations, rules a and b) over shipped docs reports exactly
-      `commands/init.md:61`, `skills/conductor/SKILL.md:734` and `:738`; constructed fixtures show a
+      `commands/init.md:61`, `skills/conductor/SKILL.md:736` and `:740`; constructed fixtures show a
       negated sentence, a wrapped negation on the previous line, a bare field name outside a
       `state.json` lead-in, and a `pm:explains-hand-edit` sentence each NOT reported
-- [ ] 6.4 GREEN: `init()` stderr; the one sentence of `runNudge`'s message; `SKILL.md:734,738`;
+- [ ] 6.4 GREEN: `init()` stderr; the one sentence of `runNudge`'s message; `SKILL.md:736,740`;
       `commands/init.md` step 2 naming `set-active`/`update-epic --priority`/`update-epic --status`;
       6.1–6.3 pass, suite green
 
@@ -254,10 +263,10 @@ Pairs: 7.0–7.1 land with 7.2. The single-writer rule for hierarchy runs is NOT
       (both pass with 7.2's doc edits; the review-mode line moves here from 10.3)
 - [ ] 7.1 RED: every passing `record-gate-review` form in shipped docs — Gate 1 forms carry
       `--artifact`, Gate 2 forms carry both range flags, no `--gate 1|2` pass form (fails on
-      `agents/hierarchy-child-executor.md:33`, `SKILL.md:117-119,322,1216`, `commands/review-mode.md:72`);
+      `agents/hierarchy-child-executor.md:33`, `SKILL.md:117-119,322,1240`, `commands/review-mode.md:72`);
       the child doc's forms, filled, exit 0 in a fixture
-- [ ] 7.2 GREEN: `commands/epic.md:731-741`'s two-gate form at every 7.1 site, with the child doc's WHO
-      unchanged; the child doc's pm-repo-only README/test paragraph and `SKILL.md:994` replaced;
+- [ ] 7.2 GREEN: `commands/epic.md:726-741`'s two-gate form at every 7.1 site, with the child doc's WHO
+      unchanged; the child doc's pm-repo-only README/test paragraph and `SKILL.md:1017-1022` replaced;
       `commands/review-mode.md:99` naming `--clear review-mode` (design Decision 6); 7.0–7.1 pass, suite green
 
 ## 8. Cost of the sweep

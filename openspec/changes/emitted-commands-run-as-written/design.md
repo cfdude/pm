@@ -13,12 +13,12 @@ See proposal.md "Why" for the defects and `repro.txt` for their reproductions. C
   `delivered-release-epic-left-open` run together leave one epic both archived `delivered` and
   deferred.
 - The same remedy is already typed at several sites with different arguments. `GH_PREFLIGHT`
-  (`rules.mjs:517`) and `dispositionInvocation` (`archive-gate.mjs:226`) each exist as "the one
+  (`rules.mjs:517`) and `dispositionInvocation` (`archive-gate.mjs:227`) each exist as "the one
   declaration" precisely so two sites cannot state one thing differently — but the `gh issue list`
   step and the gate-verdict remedy were never so declared, and that is how `updatedAt` came to be at
   `rules.mjs:762` and not `:826`, and the range flags at `briefing.mjs:222,235` and
-  `integrity.mjs:249,263` and not `archive-gate.mjs:426,430-431` (both split across `+`).
-- Line anchors are at `dev` f49871a. Change 1 (`commit-nudge-reads-the-whole-move`) lands first and
+  `integrity.mjs:249,263` and not `archive-gate.mjs:426,431-432` (both split across `+`).
+- Line anchors were written at `dev` f49871a and RE-DERIVED at 244d07a after change 1 merged (task 0.3). Change 1 (`commit-nudge-reads-the-whole-move`) lands first and
   edits `subcommands.mjs`; task 0.3 re-derives anchors after it merges.
 
 ## Goals / Non-Goals
@@ -83,7 +83,7 @@ Markers, each placed IMMEDIATELY after the closing backtick of the one inline co
 to (a marker anywhere else fails as unattached; a marker never reaches a second span):
 - `<!-- pm:refused <class> -->` — a deliberate refused example; the engine must refuse it with that
   class.
-- `<!-- pm:engine-message -->` — the span is engine output, not an invocation (README.md:1327).
+- `<!-- pm:engine-message -->` — the span is engine output, not an invocation (README.md:1336).
 - `<!-- pm:checkout-path -->` — a pm-developer note naming a checkout path, exempt from the
   installed-engine rule (skills/conductor/SKILL.md:70). It is NOT a refused-example marker.
 
@@ -116,18 +116,18 @@ lens A's cruder extractor reported 21. Every one of the 33, and its disposition:
 | commands/triage.md:89, 92, 99 | `add-epic --id <new> … --link "…"` | rule: `…` dropped, spaced placeholder |
 | skills/conductor/SKILL.md:99 | `remove-epic <id> --cascade true` | mark `extra-positional` |
 | skills/conductor/SKILL.md:143 | `push-detour … (--reconcile \| --no-reconcile)` | rule: group expanded |
-| README.md:346, 1292 | `remove-epic <id> --cascade true` | mark `extra-positional` |
+| README.md:346, 1301 | `remove-epic <id> --cascade true` | mark `extra-positional` |
 | README.md:433 | `push-detour … (--reconcile \| --no-reconcile)` | rule: group expanded |
-| README.md:779 | `set-lane-routing --add … \| --remove … \| --clear` | rule: top-level forms split |
-| README.md:1276 | `add-epic --id h1 --title --help` | mark `help-in-value-position` |
-| README.md:1295 | `add-epic … --title My Title` | mark `extra-positional` |
-| README.md:1326 | `suggest-lane fix a typo` | mark `extra-positional` |
-| README.md:1327 | `suggest-lane reads ONE text argument — quote it.` | mark `engine-message` |
-| README.md:1328 | `log-detour fixed --no-verify usage` | mark `unknown-flag` |
-| README.md:1344 | `remove-epic --id e2` | mark `id-as-flag` |
-| README.md:1353 | `integrity --force` | mark `unknown-flag` |
+| README.md:788 | `set-lane-routing --add … \| --remove … \| --clear` | rule: top-level forms split |
+| README.md:1285 | `add-epic --id h1 --title --help` | mark `help-in-value-position` |
+| README.md:1304 | `add-epic … --title My Title` | mark `extra-positional` |
+| README.md:1335 | `suggest-lane fix a typo` | mark `extra-positional` |
+| README.md:1336 | `suggest-lane reads ONE text argument — quote it.` | mark `engine-message` |
+| README.md:1337 | `log-detour fixed --no-verify usage` | mark `unknown-flag` |
+| README.md:1353 | `remove-epic --id e2` | mark `id-as-flag` |
+| README.md:1362 | `integrity --force` | mark `unknown-flag` |
 
-19 refused-example markers, 1 engine-message marker, 13 resolved by extraction rules, 0 doc lines
+20 refused-example markers (re-derived: the epic.md:128 row carries two, `remove-epic --id e2` and the wrapped `set-active --id e2`), 1 engine-message marker, 13 resolved by extraction rules, 0 doc lines
 that are wrong and must be FIXED (the two fixes Layer A drives — `commands/upgrade.md:226` and
 `commands/cross-spec-review.md:85` — are reference and path defects, not refusals). The GREEN commit
 saves the test's own refusal list as `sweep-layer-a.txt` in this change directory; where it differs
@@ -144,7 +144,7 @@ exported registries:
   invocation (today: tracker refresh owed, ungated archive, withdrawn Gate 2 archive, not yet in the
   outward tracker, never re-read), each an entry `{id, render}` that `buildBrief()` calls.
 Plus the two non-registry printers: `unconsidered-outcomes` entries and update-epic's archived-record
-regression refusal (`update-epic.mjs:124`).
+regression refusal (`update-epic.mjs:202`).
 
 For each entry the test holds a fixture builder keyed by id. The protocol, per builder:
 1. Build a fresh hermetic fixture repo (`hermetic-git.mjs`: own identity, `commit.gpgsign=false`,
@@ -192,7 +192,7 @@ Grepping engine SOURCE for remedy strings (rejected: template literals split inv
 
 - `gateRemedy(id, gate)` in `archive-gate.mjs`: Gate 2 → `record-gate-review <id> --gate 2 --verdict
   pass --base-sha <sha> --head-sha <sha>`; Gate 1 → `record-gate-review <id> --gate 1 --verdict pass
-  --artifact <path>`. Callers: `archive-gate.mjs:426` and `:430-431` (Gate 2; both split across `+`),
+  --artifact <path>`. Callers: `archive-gate.mjs:426` and `:431-432` (Gate 2; both split across `+`),
   `briefing.mjs:222,235` (Gate 2), `integrity.mjs:249,263` (Gate 2), and `integrity.mjs:750-752`,
   which today prints `--gate <n> --verdict <v> --base-sha <sha> --head-sha <sha>` for a malformed
   value on EITHER gate: it groups the malformed records by `where` (`gate1.*` / `gate2.*` /
@@ -219,8 +219,8 @@ Grepping engine SOURCE for remedy strings (rejected: template literals split inv
   `deliveredObligations(epic)`; if any obligation fails, the `--outcome` choices omit `delivered`.
   `blockedDelivered(epic)` returns `[{kind, detail, remedy}]` from `DELIVERED_OBLIGATIONS`. Callers:
   `archive-gate.mjs:257` (`unconsideredOutcomes`), `integrity.mjs:531` — both apply the rule — and
-  `update-epic.mjs:136` (regression refusal), which passes `keepDelivered: true`.
-- Regression refusal (`update-epic.mjs:124-155`): the epic's `delivered` was already considered, so
+  `update-epic.mjs:214` (regression refusal), which passes `keepDelivered: true`.
+- Regression refusal (`update-epic.mjs:202-232`): the epic's `delivered` was already considered, so
   its invocation keeps `delivered`; for each broken obligation it prints that obligation's remedy
   line BEFORE the invocation (`gate2-missing`/`-withdrawn`/`-stale` → `gateRemedy(id, 2)`; `handoff` →
   tick the tasks or record `--carried-to`). `gate2-attribution-withdrawn` — the refused edit withdraws
@@ -267,7 +267,7 @@ from the record, never cached.
 epic id inside a printed command — no renderer interpolates `epic.id` into a command directly — which
 is what lets change 3 hook its no-remedy handling for a control-character id into this one function.
 Every printed command naming a stored id goes through it; the sites found bare at f49871a are `integrity.mjs:293,295` (attribute-commit remedy),
-`integrity.mjs:357` (drift-heal disposition) and `subcommands.mjs:350` (the commit nudge's
+`integrity.mjs:357` (drift-heal disposition) and `subcommands.mjs:467` (the commit nudge's
 `--attribute-commit`), plus every renderer this change introduces (`gateRemedy`,
 `dispositionInvocation`, `BRIEF_REMEDIES`). The call-site sweep derives the rest (task 9.1).
 
@@ -335,7 +335,7 @@ as written; single quotes with the `'\''` rule are POSIX and work in every shell
 **`/pm:epic list`** is removed from both dedup steps: "check `.conductor/state.json` for an epic whose
 `externalUrl` matches" (reading is not a hand-edit).
 
-**Completion-sync reminder** (`rules.mjs:858-871`): its "(the writeback steps above)" clause is
+**Completion-sync reminder** (`rules.mjs:856-871`): its "(the writeback steps above)" clause is
 emitted only when the block holds a writeback or transition step — `outwardApplies(tracker)` or at
 least one emitted secondary section. Otherwise the reminder reads "After you finish an epic linked to
 an item here, immediately re-sync…". The existing requirement already demands this; the change is
@@ -384,13 +384,13 @@ Both lines become `BRIEF_REMEDIES` entries (Decision 1).
 
 ### 6. Gate forms in docs
 
-- Every passing `record-gate-review` form in shipped docs is replaced by `commands/epic.md:731-741`'s
-  two-gate form. Sites: `skills/conductor/SKILL.md:117-119,322,1216`, `commands/review-mode.md:72`,
+- Every passing `record-gate-review` form in shipped docs is replaced by `commands/epic.md:726-741`'s
+  two-gate form. Sites: `skills/conductor/SKILL.md:117-119,322,1240`, `commands/review-mode.md:72`,
   `agents/hierarchy-child-executor.md:33`; re-derived with `rg -n "record-gate-review" commands skills
   agents README.md` at sweep time. The child doc keeps WHO records (a separate epic); only the form
   changes.
-- The child doc's pm-repo-only paragraph (`:62-72`, README + `scripts/test`) is replaced by "if the
-  change is user-facing, update the project's own docs in the same commit". `SKILL.md:994` likewise.
+- The child doc's pm-repo-only paragraph (`:63-70`, README + `scripts/test`) is replaced by "if the
+  change is user-facing, update the project's own docs in the same commit". `SKILL.md:1017-1022` likewise.
 - `commands/review-mode.md:99`: an override is cleared with `update-epic <id> --clear review-mode`.
 - `commands/upgrade.md:226`: `/pm:integrity` → `node "$ENGINE" integrity`.
 - `commands/cross-spec-review.md:85`: installed-engine form with the `$ENGINE` resolution line.
@@ -399,11 +399,11 @@ Both lines become `BRIEF_REMEDIES` entries (Decision 1).
 
 ### 7. Hand-edit instructions
 
-- `init` stderr (`subcommands.mjs:110-113`): `conductor: initialized. Triage with update-epic <id>
+- `init` stderr (`subcommands.mjs:118-121`): `conductor: initialized. Triage with update-epic <id>
   --priority <P0-P3> --status <status> and set-active <id>, then /pm:status.`
-- Commit nudge (`subcommands.mjs:495-496`, inside `runNudge`): `Otherwise record an epic's status or
+- Commit nudge (`subcommands.mjs:662-663`, inside `runNudge`): `Otherwise record an epic's status or
   story change with update-epic (--status, --story <n> --done).`
-- `SKILL.md:734`: "the PostToolUse hook reminds you — record status with `update-epic`"; `:738`:
+- `SKILL.md:736`: "the PostToolUse hook reminds you — record status with `update-epic`"; `:740`:
   "PUSH/POP/priority: `push-detour`/`pop-detour`/`update-epic --priority`, then render."
 - `commands/init.md:60-63`: step 2 names `set-active`, `update-epic --priority`, `update-epic --status`.
 
@@ -423,7 +423,7 @@ Both lines become `BRIEF_REMEDIES` entries (Decision 1).
    the only way a bare field name (`active`, `priority`) counts — never on its own, anywhere.
 7. A sentence carrying `<!-- pm:explains-hand-edit -->` is exempt.
 Measured at f49871a with a draft of exactly these rules (`/private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/propose45/emitted-commands-run-as-written/handedit3.mjs`, not committed): **3**
-hits, all true — `commands/init.md:61` (rule b), `skills/conductor/SKILL.md:734` and `:738` (rule a).
+hits, all true — `commands/init.md:61` (rule b), `skills/conductor/SKILL.md:736` and `:740` (rule a).
 Without joining wrapped lines the same rules report 6 (three negations sit on the previous line);
 the broader of the two readings Gate 1 compared (a bare field name counting anywhere a write verb
 appears) matched 55, and that reading is what rule 6 excludes. `init` stderr and the nudge message are asserted directly from output.
