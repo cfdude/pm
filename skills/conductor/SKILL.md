@@ -114,9 +114,11 @@ rules block belongs in, resolving that platform's first-match-wins chain. Exists
 never has to mirror the chain: a second copy of platform knowledge is drift waiting to happen.
 Does not record a platform, unlike `write-rules`) ·
 `/pm:resume` resume + reconcile (writes the reconciler's verdict back durably via
-`record-reconcile`) · `record-gate-review <id> --gate 1|2 --verdict pass|fail` records an
-epic's Gate 1/Gate 2 review verdict on ANY lane (see "OpenSpec build" below); a `pass` requires
-`--base-sha`/`--head-sha`. Recording is lane-agnostic, ENFORCEMENT is not: `update-epic
+`record-reconcile`) · `record-gate-review` records an epic's Gate 1/Gate 2 review verdict on ANY
+lane (see "OpenSpec build" below), each with its own gate's evidence — Gate 1 (spec review):
+`record-gate-review <id> --gate 1 --verdict pass|fail --artifact <path>`; Gate 2 (implementation
+review): `record-gate-review <id> --gate 2 --verdict pass|fail --base-sha <a> --head-sha <b>`.
+Recording is lane-agnostic, ENFORCEMENT is not: `update-epic
 --status archived` on an openspec-lane epic requires a passing Gate 2 verdict already recorded,
 and no other lane gains that obligation ·
 `record-tracker-refresh <id> --verdict unchanged|material-change --external-updated-at <iso>`
@@ -318,12 +320,15 @@ now enforces Gate 2 mechanically. Keep the two halves apart, because they are sc
 differently: a verdict is RECORDABLE on any lane, and it is ENFORCED at archive time strictly on
 the `openspec` lane.
 
-- After a real fresh-context review, write the verdict back with `node "$ENGINE"
-  record-gate-review <epicId> --gate 1|2 --verdict pass|fail --base-sha <a> --head-sha <b>
-  [--reviewer "<who>"]` — this writes `{verdict, reviewedAt, baseSha, headSha, reviewer?}` onto
-  `epic.gateReview.gate1`/`gate2` in `.conductor/state.json`, mirroring how `record-reconcile`
-  writes the reconciler's verdict. Rejects (writes nothing) if the epic id is unknown, `--gate`
-  isn't `1`/`2`, `--verdict` isn't `pass`/`fail`, or a `pass` arrives without both shas. **The
+- After a real fresh-context review, write the verdict back with the form for THAT gate — Gate 2:
+  `node "$ENGINE" record-gate-review <epicId> --gate 2 --verdict pass|fail --base-sha <a>
+  --head-sha <b> [--reviewer "<who>"]`; Gate 1: `node "$ENGINE" record-gate-review <epicId> --gate 1
+  --verdict pass|fail --artifact <path> [--reviewer "<who>"]` — this writes `{verdict, reviewedAt,
+  baseSha, headSha | artifacts, reviewer?}` onto `epic.gateReview.gate1`/`gate2` in
+  `.conductor/state.json`, mirroring how `record-reconcile` writes the reconciler's verdict. Rejects
+  (writes nothing) if the epic id is unknown, `--gate` isn't `1`/`2`, `--verdict` isn't
+  `pass`/`fail`, or a pass arrives without its gate's evidence (both shas for Gate 2, an
+  `--artifact` for Gate 1). **The
   epic's LANE is not a rejection reason.** It used to be, which left pm telling every lane to run
   reviews while it could record the verdict for exactly one of them — `set-review-mode` is
   lane-agnostic and its own table names "a Superpowers task review". The consequences were the
@@ -1014,12 +1019,10 @@ CLAUDE.md (see `/pm:epic` → `set-autonomy`).
      preflight scan nor the executor's completion report had flagged it. The
      `hierarchy-child-executor` agent enforces the matching check at report time — see its
      "Required check: session-continuity impact on the orchestrator" section.
-   - **Documentation currency** — `SKILL.md` and `README.md` drift from the real dispatch table
-     independently (two separate tests in `scripts/test/*.test.mjs` check each one; passing
-     one does not mean the other is current). Any child epic that adds/changes a user-facing
-     command, flag, or behavior must update `README.md`, not just `SKILL.md` — this bit the
-     project once already (`record-gate-review` shipped with no README mention). See
-     `hierarchy-child-executor`'s "Required: check README.md, not just SKILL.md" section.
+   - **Documentation currency** — any child epic that adds or changes a user-facing command,
+     flag, or behavior must update the project's own user-facing docs in the same commit, not
+     only the notes an agent reads. See `hierarchy-child-executor`'s "Required: update the
+     project's own docs for user-facing changes" section.
 4. Keep it SHORT and high-signal. If there is nothing destructive, say so plainly. If there is
    no genuine unknown, say so plainly. Padding the output with non-issues defeats the entire
    point — it is exactly what turns autonomous execution into a wall of blockers.
@@ -1238,7 +1241,8 @@ withdrawnCommits? : [{sha, reason, withdrawnAt}] — attributions CORRECTED away
 gateReview?   : { gate1?: {verdict, reviewedAt, baseSha?, headSha?, reviewer?, note?}, gate2?: same } —
                 ANY lane; verdict ∈ pass|fail; a gate may instead be in the WITHDRAWN state (absent
                 here, with a withdrawnGateReviews entry); set via record-gate-review, which requires both
-                shas for a `pass` (a legacy `note` is the pre-fields shape, kept unparsed).
+                shas for a Gate 2 `pass` and an --artifact for a Gate 1 `pass` (a legacy `note`
+                is the pre-fields shape, kept unparsed).
                 baseSha/headSha, like every attributedCommits entry, are written as the FULL
                 object name the typed value resolved to; a value that does not resolve is
                 refused at write time. Fresh only when headSha reaches every attributed commit.

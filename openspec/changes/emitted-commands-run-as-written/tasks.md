@@ -258,14 +258,14 @@ Starts after change 1 has merged (task 0.3). Pairs: 6.1–6.3 land with 6.4.
 Pairs: 7.0–7.1 land with 7.2. The single-writer rule for hierarchy runs is NOT here — it moved to
 `hierarchy-run-has-one-state-writer`.
 
-- [ ] 7.0 RED: `agents/hierarchy-child-executor.md` names neither pm's `README.md` nor `scripts/test`;
+- [x] 7.0 RED: `agents/hierarchy-child-executor.md` names neither pm's `README.md` nor `scripts/test`;
       `commands/review-mode.md` names `update-epic <id> --clear review-mode` and no "no separate unset"
       (both pass with 7.2's doc edits; the review-mode line moves here from 10.3)
-- [ ] 7.1 RED: every passing `record-gate-review` form in shipped docs — Gate 1 forms carry
+- [x] 7.1 RED: every passing `record-gate-review` form in shipped docs — Gate 1 forms carry
       `--artifact`, Gate 2 forms carry both range flags, no `--gate 1|2` pass form (fails on
       `agents/hierarchy-child-executor.md:33`, `SKILL.md:117-119,322,1240`, `commands/review-mode.md:72`);
       the child doc's forms, filled, exit 0 in a fixture
-- [ ] 7.2 GREEN: `commands/epic.md:726-741`'s two-gate form at every 7.1 site, with the child doc's WHO
+- [x] 7.2 GREEN: `commands/epic.md:726-741`'s two-gate form at every 7.1 site, with the child doc's WHO
       unchanged; the child doc's pm-repo-only README/test paragraph and `SKILL.md:1017-1022` replaced;
       `commands/review-mode.md:99` naming `--clear review-mode` (design Decision 6); 7.0–7.1 pass, suite green
 

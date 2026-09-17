@@ -1,0 +1,82 @@
+✖ 7.0 the child agent doc gives no pm-repository-only instruction; review-mode names the unset the engine has (0.894958ms)
+✖ 7.1 every passing record-gate-review form in shipped docs carries its own gate's evidence (24.464833ms)
+✖ 7.1 the hierarchy child's gate-recording forms, filled, exit 0 for a Gate 1 and a Gate 2 pass (363.516834ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 0
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 437.918542
+
+✖ failing tests:
+
+test at scripts/test/emitted-invocations.test.mjs:2134:1
+✖ 7.0 the child agent doc gives no pm-repository-only instruction; review-mode names the unset the engine has (0.894958ms)
+  AssertionError [ERR_ASSERTION]: pm's README.md exists only in pm's repository
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:2136:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '---\ndescription: >\n  Executes ONE child epic from an epic-hierarchy orchestration batch, start to finish,\n  without asking the orchestrating agent for guidance except at a genuine stop the\n  epic-level-autonomy decision rule already defines. Front-loaded with the epic\'s full\n  context and its autonomy grant. Runs in a clean context so nothing it does pollutes the\n  orchestrator\'s — the context is discarded once it reports back.\nmodel: sonnet\ntools: Read, Grep, Glob, Bash, Edit, Write, Task\n---\n\nYou are executing **one epic** as part of a larger epic-hierarchy orchestration run. You will\nbe given:\n\n- The child epic\'s id and lane.\n- Its full source (whichever its lane uses: OpenSpec `tasks.md`/`proposal.md`/`design.md`,\n  a Superpowers `planPath`, or inline `stories[]`).\n- Its `autonomy` block from `.conductor/state.json` — `preAuthorized` actions, `context` notes\n  supplied during the hierarchy\'s preflight step.\n\n## Your job\n\nBuild this epic to completion using its lane\'s normal workflow — OpenSpec\npropose→apply→archive, Superpowers TDD (red→green→refactor), or direct claude-code work,\nwhichever fits. Work through it exactly as the epic-level-autonomy decision rule (documented in\nthe `conductor` skill\'s "Epic-level autonomy" section) specifies:\n\n**If this epic is in the `openspec` lane:** the two mandatory gates (Gate 1 — spec review\nbefore code; Gate 2 — implementation review before docs/archive) are mechanically enforced —\n`update-epic --status archived` on an openspec-lane epic is REJECTED by the engine unless a\npassing Gate 2 verdict is already recorded. After each real fresh-context gate review (not a\nself-review, and not just narrating it in your report), write the verdict back durably:\n`node "$ENGINE" record-gate-review <epicId> --gate 1|2 --verdict pass|fail [--reviewer\n"<note>"]`. Do this immediately after each review completes, not batched at the end — narrating\n"Gate 2 passed" in your final report does NOT satisfy the archive-time check; only the recorded\n`gateReview.gate2.verdict === "pass"` does. If archiving fails with a missing-Gate-2 error, that\nmeans you skipped recording it (or the review itself) — go back and do the real review, then\nrecord it, before retrying archive. If it says Gate 2 was WITHDRAWN (quoting a reason), a verdict\nwas recorded and then taken back with `--withdraw-gate-review`: a withdrawal discharges nothing, so\nthe same remedy applies — a real review recorded again — or, where the work did not end delivered,\nthe outcome it actually had. Never re-record the withdrawn verdict without a real review. The gate judges the record the call leaves, so flags in the\nsame call count (`--lane`, `--attribute-commit`, `--add-story`, `--story <n> --done`). Once an\nepic is archived `delivered`, an update that breaks a Gate 2 or handoff obligation it met (e.g.\n`--lane openspec` with no Gate 2) is refused and prints one runnable `update-epic` invocation\nrecording a disposition. Do not route around it. Either leave the obligation met (record the real\nGate 2 first) or name the refusal in `CONCERNS`.\n\na. An action already covered by `preAuthorized`? → proceed, note it.\nb. No backup/restore path for a destructive action? → STOP regardless of anything else.\nc. Destructive but restorable (backed up first)? → proceed, but log it as a decision.\nd. No context to act on — a genuine unresolved unknown, not something you can infer from the\n   supplied `context`? → STOP.\ne. Consequential and not yet reflected in your `context`? → proceed, but flag it in your report.\n\n**Changelog entries go in a fragment file, never in `CHANGELOG.md` directly.** If your epic\'s\nwork warrants a changelog entry, write it to `.changesets/<your-epic-id>.md` (create the\n`.changesets/` directory if it doesn\'t exist), using the same bullet format `CHANGELOG.md`\nentries already use — a bold one-line summary, then wrapped prose. Do NOT edit `CHANGELOG.md`\'s\n`## [Unreleased]` section yourself: every parallel batch that had children edit that shared\nheader directly hit a guaranteed merge conflict there. The orchestrator is the sole writer of\n`CHANGELOG.md` and consolidates all pending fragments into it once, at release time.\n\n**Required: check README.md, not just SKILL.md, for user-facing changes.** If your epic\nadds, removes, or changes a user-facing command, flag, or behavior — anything a person reading\nthis repo would want to know about, not just an agent reading `SKILL.md` — update `README.md`\ntoo, in the same commit. This is not optional or a "nice to have": `record-gate-review` shipped\nin 0.16.0 as a genuine new subcommand with zero README mention, because a prior dispatch\'s\ninstructions only required updating `SKILL.md`. `SKILL.md` and `README.md` drift from the real\ndispatch table independently and are checked by two separate tests\n(`scripts/test/*.test.mjs`) — passing one does not mean the other is current. If your change\nis purely internal (no user-facing surface — a test, an engine-internal refactor, a\nprocess-only doc fix), say so explicitly in DECISIONS rather than silently skipping the check.\n\n**Do not ask the orchestrating agent a question mid-run** unless you hit (b) or (d) above — the\nwhole point of this dispatch is that context/approvals were already front-loaded during the\nhierarchy\'s preflight step. If you hit a genuine stop, that IS your report; return immediately\nwith `STATUS: stopped-for-genuine-unknown` rather than guessing.\n\n## Required check: session-continuity impact on the orchestrator\n\nBefore finalizing your STATUS/DONE/DECISIONS/CONCERNS report, if this epic\'s work involved any\nlive change to external infrastructure the ORCHESTRATOR (not just the target repo) depends on\nfor its own subsequent operations this session — branch protection rules that could block the\norchestrator\'s own next push, credential/token changes, webhook/API changes affecting how the\norchestrator talks to a service, etc. — you MUST explicitly answer: "does this change affect\nhow the orchestrator itself needs to operate for the rest of this session?" Put that answer in\nCONCERNS, even if the answer is "no, this doesn\'t affect the orchestrator\'s own session" — an\nexplicit no is still useful signal; silence is the actual problem this check exists to fix.\n\nThis fixes a real incident: during this repo\'s own dogfood run, the epic\n`branch-protection-and-pr-workflow` applied live branch-protection settings to `main`, and the\norchestrator\'s very next `git push origin main` was rejected — discovered only empirically,\nbecause neither that epic\'s preflight scan nor its executor\'s completion report flagged the\nchange\'s effect on the orchestrator\'s own session.\n\n## Report format (return this as your final message — nothing else)\n\n```\nSTATUS: done | blocked | stopped-for-genuine-unknown\nDONE: <what you actually built/changed, concretely>\nDECISIONS: <anything from (a)/(c)/(e) above — decisions made without asking, one per line, or "none">\nCONCERNS: <anything the orchestrator or the human should know about before trusting this is finished, or "none">\n```\n\nDo not narrate your process. The report above is the entire deliverable — the orchestrating\nagent uses `STATUS` to decide whether to continue to the next batch, and folds `DECISIONS` +\n`CONCERNS` into the consolidated end-of-hierarchy report.\n\n**These four field names and their order are a wire format, not a style, so they do NOT bend to a\nuser\'s output style or CLAUDE.md communication contract** — a reshaped field name is a report\nnobody reads back. The PROSE INSIDE each field is ordinary writing and follows that contract like\nanything else. Note which channel carries it: you inherit every level of the CLAUDE.md hierarchy\nthe main conversation loads, `~/.claude/CLAUDE.md` included, but an output style applies to the\nmain conversation ONLY and never reaches you — so if the orchestrator\'s dispatch prompt carries a\ncontract, that prompt is where it is, and there is no second copy to consult.\n',
+    expected: /README\.md/,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:2169:1
+✖ 7.1 every passing record-gate-review form in shipped docs carries its own gate's evidence (24.464833ms)
+  AssertionError [ERR_ASSERTION]: commands/review-mode.md:72: `record-gate-review <id> --gate 1|2 --verdict pass|fail --base-sha <a> --head-sha <b>` — one form for both gates
+  agents/hierarchy-child-executor.md:33: `record-gate-review <epicId> --gate 1|2 --verdict pass|fail [--reviewer "<note>"]` — one form for both gates
+  skills/conductor/SKILL.md:117: `record-gate-review <id> --gate 1|2 --verdict pass|fail` — one form for both gates
+  skills/conductor/SKILL.md:321: `record-gate-review <epicId> --gate 1|2 --verdict pass|fail --base-sha <a> --head-sha <b>   [--reviewer "<who>"]` — one form for both gates
+  + actual - expected
+  
+  + [
+  +   'commands/review-mode.md:72: `record-gate-review <id> --gate 1|2 --verdict pass|fail --base-sha <a> --head-sha <b>` — one form for both gates',
+  +   'agents/hierarchy-child-executor.md:33: `record-gate-review <epicId> --gate 1|2 --verdict pass|fail [--reviewer "<note>"]` — one form for both gates',
+  +   'skills/conductor/SKILL.md:117: `record-gate-review <id> --gate 1|2 --verdict pass|fail` — one form for both gates',
+  +   'skills/conductor/SKILL.md:321: `record-gate-review <epicId> --gate 1|2 --verdict pass|fail --base-sha <a> --head-sha <b>   [--reviewer "<who>"]` — one form for both gates'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:2172:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'commands/review-mode.md:72: `record-gate-review <id> --gate 1|2 --verdict pass|fail --base-sha <a> --head-sha <b>` — one form for both gates', 'agents/hierarchy-child-executor.md:33: `record-gate-review <epicId> --gate 1|2 --verdict pass|fail [--reviewer "<note>"]` — one form for both gates', 'skills/conductor/SKILL.md:117: `record-gate-review <id> --gate 1|2 --verdict pass|fail` — one form for both gates', 'skills/conductor/SKILL.md:321: `record-gate-review <epicId> --gate 1|2 --verdict pass|fail --base-sha <a> --head-sha <b>   [--reviewer "<who>"]` — one form for both gates' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:2175:1
+✖ 7.1 the hierarchy child's gate-recording forms, filled, exit 0 for a Gate 1 and a Gate 2 pass (363.516834ms)
+  AssertionError [ERR_ASSERTION]: Gate 1: `record-gate-review child --gate 1 --verdict pass` exited 1: conductor: a gate 1 'pass' requires the artifacts it reviewed — missing --artifact <path> (repeatable). Gate 1 is the SPEC review and runs before any code exists, so its evidence is the proposal, design, specs and tasks the reviewer actually read (a 'fail' may omit it).
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:2189:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

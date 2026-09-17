@@ -2126,3 +2126,66 @@ test("6.3 the hand-edit scanner: exactly the rules, on constructed text", () => 
   assert.deepEqual(handEditHits("x", "Update `state.json` here.<!-- pm:explains-hand-edit -->\n"), [], "an explains-hand-edit sentence");
   assert.deepEqual(handEditHits("x", "```\nedit state.json\n```\n"), [], "fenced text is outside the scan");
 });
+
+// ═══════════════════════════════ 7 — gate forms in shipped docs ═══════════════════════════════
+
+const readDoc = (rel) => fs.readFileSync(path.join(REPO, rel), "utf8");
+
+test("7.0 the child agent doc gives no pm-repository-only instruction; review-mode names the unset the engine has", () => {
+  const child = readDoc("agents/hierarchy-child-executor.md");
+  assert.doesNotMatch(child, /README\.md/, "pm's README.md exists only in pm's repository");
+  assert.doesNotMatch(child, /scripts\/test/, "pm's scripts/test exists only in pm's repository");
+  const reviewMode = readDoc("commands/review-mode.md");
+  assert.match(reviewMode, /update-epic <id> --clear review-mode/);
+  assert.doesNotMatch(reviewMode.replace(/\n\s*/g, " "), /no separate "?unset"?/i);
+});
+
+/** Every passing `record-gate-review` form in shipped docs, each with the problem it has, if any. */
+function gateFormProblems() {
+  const verbs = dispatchedVerbs();
+  const problems = [];
+  let forms = 0;
+  for (const doc of shippedDocs()) {
+    for (const inv of extractInvocations(doc.text, verbs).invocations) {
+      if (!inv.text.startsWith("record-gate-review") || (inv.marker && inv.marker.kind === "refused")) continue;
+      for (const form of inv.forms) {
+        const t = form.tokens;
+        const at = (flag) => { const i = t.indexOf(flag); return i === -1 ? undefined : t[i + 1]; };
+        const verdict = at("--verdict");
+        if (!verdict || !/(^|\|)pass(\||$)/.test(verdict)) continue;
+        forms++;
+        const gate = at("--gate");
+        const where = `${doc.rel}:${inv.line}: \`${inv.text}\``;
+        if (gate === "1|2" || gate === "2|1") problems.push(`${where} — one form for both gates`);
+        else if (gate === "1" && !t.includes("--artifact")) problems.push(`${where} — a Gate 1 pass without --artifact`);
+        else if (gate === "1" && (t.includes("--base-sha") || t.includes("--head-sha"))) problems.push(`${where} — a Gate 1 pass carrying a range`);
+        else if (gate === "2" && !(t.includes("--base-sha") && t.includes("--head-sha"))) problems.push(`${where} — a Gate 2 pass without both range flags`);
+      }
+    }
+  }
+  return { problems, forms };
+}
+
+test("7.1 every passing record-gate-review form in shipped docs carries its own gate's evidence", () => {
+  const { problems, forms } = gateFormProblems();
+  assert.ok(forms >= 4, `only ${forms} passing gate forms found — the scan regressed`);
+  assert.deepEqual(problems, [], problems.join("\n"));
+});
+
+test("7.1 the hierarchy child's gate-recording forms, filled, exit 0 for a Gate 1 and a Gate 2 pass", () => {
+  const verbs = dispatchedVerbs();
+  const forms = extractInvocations(readDoc("agents/hierarchy-child-executor.md"), verbs).invocations
+    .filter(i => i.text.startsWith("record-gate-review")).flatMap(i => i.forms);
+  const byGate = (g) => forms.filter(f => { const i = f.tokens.indexOf("--gate"); return i !== -1 && f.tokens[i + 1].split("|").includes(g); });
+  for (const gate of ["1", "2"]) {
+    const [form] = byGate(gate);
+    assert.ok(form, `the child doc shows a Gate ${gate} form`);
+    const repo = remedyRepo();
+    const [c1] = openspecEpic(repo, "child", 1);
+    const art = repo.file("openspec/changes/child/proposal.md", "# child\n");
+    const argv = fillByMeaning(form, { positional: "child", gate, verdict: "pass", artifact: art, reviewer: "fixture",
+      "base-sha": repo.parent(c1), "head-sha": c1 });
+    const r = repo.run(argv);
+    assert.equal(r.status, 0, `Gate ${gate}: \`${argv.join(" ")}\` exited ${r.status}: ${r.stderr}`);
+  }
+});
