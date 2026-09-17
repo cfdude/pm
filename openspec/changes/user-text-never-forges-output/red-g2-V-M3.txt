@@ -1,0 +1,21 @@
+✖ a judged expression split across lines with a trailing comma still matches its judgment (Gate 2 V-M3) (274.543625ms)
+✖ a STALE or EXCESS finding names the judgments file it is declared in (Gate 2 V-M3) (170.777167ms)
+✖ failing tests:
+test at scripts/test/output-interpolations.test.mjs:96:1
+✖ a judged expression split across lines with a trailing comma still matches its judgment (Gate 2 V-M3) (274.543625ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  + [
+  +   'UNCLASSIFIED scripts/lib/claims.mjs:370 [owners] + jsonText({ quiescent: rows.length === 0, claims: rows, }, null, 2)',
+  +   'STALE scripts/lib/claims.mjs [owners] "jsonText({ quiescent: rows.length === 0, claims: rows }, null, 2)": declared 1 occurrence(s), found 0'
+  + ]
+  - []
+    actual: [ 'UNCLASSIFIED scripts/lib/claims.mjs:370 [owners] + jsonText({ quiescent: rows.length === 0, claims: rows, }, null, 2)', 'STALE scripts/lib/claims.mjs [owners] "jsonText({ quiescent: rows.length === 0, claims: rows }, null, 2)": declared 1 occurrence(s), found 0' ],
+    expected: [],
+  }
+test at scripts/test/output-interpolations.test.mjs:105:1
+✖ a STALE or EXCESS finding names the judgments file it is declared in (Gate 2 V-M3) (170.777167ms)
+  AssertionError [ERR_ASSERTION]: STALE scripts/lib/claims.mjs [claim] "claimExpiry(epic.claim)": declared 1 occurrence(s), found 0
+    actual: false,
+    expected: true,
+  }

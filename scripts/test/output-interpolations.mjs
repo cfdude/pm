@@ -351,6 +351,29 @@ function splitTop(e, op) {
   }
   return at < 0 ? null : [e.slice(0, toks[at].start).trim(), e.slice(toks[at].end).trim()];
 }
+/** The form a judgment's expression is MATCHED in (Gate 2 V-M3): whitespace collapsed, none left after an
+ *  opening bracket or `.`, none before a closing bracket, `,` or `.`, and a trailing comma before a closing
+ *  bracket dropped — so a judged expression reformatted across lines still matches. Token-level, so the
+ *  text of a string or template literal is never touched. Applied to BOTH sides of the comparison. */
+export function normaliseExpr(text) {
+  const e = String(text).trim().replace(/\s+/g, " ");
+  const toks = lex(e).contexts[0].tokens;
+  if (!toks.length) return e;
+  const OPENS = new Set(["(", "[", "{", ".", "?."]), TIGHT_BEFORE = new Set([")", "]", "}", ",", ".", "?."]);
+  let out = "", last = null;
+  for (let k = 0; k < toks.length; k++) {
+    const t = toks[k], next = toks[k + 1];
+    if (t.kind === "punct" && t.text === "," && next && next.kind === "punct" && [")", "]", "}"].includes(next.text)) continue;
+    if (last) {
+      const spaced = /\s/.test(e.slice(last.end, t.start));
+      const tight = (last.kind === "punct" && OPENS.has(last.text)) || (t.kind === "punct" && TIGHT_BEFORE.has(t.text));
+      if (spaced && !tight) out += " ";
+    }
+    out += e.slice(t.start, t.end);
+    last = t;
+  }
+  return out;
+}
 // ─────────────── run ───────────────
 /** The only classes a judgment may assert for a WHOLE declaration: every value it prints joins a line sink,
  *  or its whole output is one JSON document. Any other class is a claim about particular expressions. */
@@ -360,6 +383,7 @@ export const FUNCTION_WIDE_CLASSES = new Set(["sink-flow", "json"]);
  *  Returns every row, the per-class counts, and the findings (UNCLASSIFIED, STALE, EXCESS, WIDE). */
 export function sweepInterpolations({ repo = REPO, read = (rel) => fs.readFileSync(path.join(repo, rel), "utf8"), judged = JUDGED } = {}) {
   const used = new Map(judged.map(x => [x, 0]));
+  const exactKey = new Map(judged.filter(x => x.exact !== undefined).map(x => [x, normaliseExpr(x.exact)]));
   const rows = [];
   for (const rel of sweptFiles(repo)) {
     const src = read(rel);
@@ -383,8 +407,9 @@ export function sweepInterpolations({ repo = REPO, read = (rel) => fs.readFileSy
       else if (pushes.some(p => p.start < v.start && v.end <= p.end && new RegExp(`\\b${p.name}\\.map\\(escapeControls\\)`).test(fnSrc))) cls = "sink";
       else if (notOutput.some(p => p.start < v.start && v.end <= p.end)) cls = "not-output";
       else {
+        const key = normaliseExpr(expr);
         const j = judged.find(x => x.file === rel && x.fn === (fn ? fn.name : undefined) &&
-          (x.exact !== undefined ? x.exact === expr : x.re.test(expr)));
+          (x.exact !== undefined ? exactKey.get(x) === key : x.re.test(expr)));
         cls = j ? `judged:${j.class}` : "UNCLASSIFIED";
         if (j) used.set(j, used.get(j) + 1);
       }
@@ -395,11 +420,12 @@ export function sweepInterpolations({ repo = REPO, read = (rel) => fs.readFileSy
   for (const r of rows) counts[r.cls.split(":")[0]] = (counts[r.cls.split(":")[0]] || 0) + 1;
   const findings = rows.filter(r => r.cls === "UNCLASSIFIED").map(r => `UNCLASSIFIED ${r.where} [${r.fn}] ${r.how} ${r.expr.slice(0, 160)}`);
   const name = (x) => `${x.file} [${x.fn}] ${x.exact !== undefined ? JSON.stringify(x.exact) : `/${x.re.source}/`}`;
+  const where = "(declared in scripts/test/output-interpolations.judged.mjs)";
   for (const [x, n] of used) {
-    if (x.exact === undefined && !FUNCTION_WIDE_CLASSES.has(x.class)) findings.push(`WIDE ${name(x)}: a ${x.class} judgment must name its expressions`);
+    if (x.exact === undefined && !FUNCTION_WIDE_CLASSES.has(x.class)) findings.push(`WIDE ${name(x)}: a ${x.class} judgment must name its expressions ${where}`);
     const want = x.exact !== undefined ? x.count : 1;
-    if (n < want) findings.push(`STALE ${name(x)}: declared ${x.exact !== undefined ? `${want} occurrence(s)` : "a match"}, found ${n}`);
-    if (x.exact !== undefined && n > want) findings.push(`EXCESS ${name(x)}: declared ${want} occurrence(s), found ${n} — judge the new one`);
+    if (n < want) findings.push(`STALE ${name(x)}: declared ${x.exact !== undefined ? `${want} occurrence(s)` : "a match"}, found ${n} ${where}`);
+    if (x.exact !== undefined && n > want) findings.push(`EXCESS ${name(x)}: declared ${want} occurrence(s), found ${n} — judge the new one ${where}`);
   }
   return { rows, counts, findings };
 }

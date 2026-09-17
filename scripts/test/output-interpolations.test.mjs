@@ -27,7 +27,8 @@ test("the sweep resolves the repository from scripts/test and reaches the engine
 test("every interpolation into engine output is escaped, literal, sunk or judged — no UNCLASSIFIED, STALE, EXCESS or WIDE", () => {
   const { rows, findings } = sweepInterpolations();
   assert.ok(rows.length > 1000, `the sweep saw ${rows.length} interpolations`);
-  assert.deepEqual(findings, []);
+  assert.deepEqual(findings, [], "escape each UNCLASSIFIED value, or judge it with its reason in scripts/test/output-interpolations.judged.mjs; " +
+    "fix or remove each STALE / EXCESS / WIDE judgment there (run `node scripts/test/output-interpolations.mjs` to list them)");
 });
 
 test("mutant (Gate 2 U2-I1): a raw stored session in claim()'s takeover line is UNCLASSIFIED", () => {
@@ -90,4 +91,19 @@ test("mutant (Gate 2 V-I2): an escaper name is trusted only as the real import �
     "REPO_CLAIM_DEFAULT_TTL_MINUTES, escapeControls, isFlagToken, splitFlagToken } from \"./constants.mjs\";",
     "REPO_CLAIM_DEFAULT_TTL_MINUTES, isFlagToken, splitFlagToken } from \"./constants.mjs\";\nconst escapeControls = (s) => s;");
   assert.ok(findings.some(f => /^UNCLASSIFIED scripts\/lib\/claims\.mjs:\d+ \[claim\] \$\{\} escapeControls\(held\.session\)$/.test(f)), findings.join("\n"));
+});
+
+// ── Gate 2 V-M3: a judged expression reformatted across lines is still the judged expression ──
+test("a judged expression split across lines with a trailing comma still matches its judgment (Gate 2 V-M3)", () => {
+  const { findings } = sweepMutated("scripts/lib/claims.mjs",
+    "jsonText({ quiescent: rows.length === 0, claims: rows }, null, 2)",
+    "jsonText({\n      quiescent: rows.length === 0,\n      claims: rows,\n    }, null, 2)");
+  assert.deepEqual(findings, []);
+  const judged = sweepMutated("scripts/lib/update-epic.mjs", "${asCode(l)}", "${asCode(\n        l,\n      )}");
+  assert.deepEqual(judged.findings, []);
+});
+
+test("a STALE or EXCESS finding names the judgments file it is declared in (Gate 2 V-M3)", () => {
+  const stale = sweepMutated("scripts/lib/claims.mjs", "until ${claimExpiry(epic.claim)}", "until later");
+  assert.ok(stale.findings.some(f => f.startsWith("STALE ") && f.includes("output-interpolations.judged.mjs")), stale.findings.join("\n"));
 });
