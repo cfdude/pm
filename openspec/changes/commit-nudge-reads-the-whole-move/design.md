@@ -126,7 +126,7 @@ branch deleted) makes every commit dead; accepted.
 ### 5. The provenance statement
 
 Every report says the commits "landed since the last observation — this call, another terminal, or a
-parallel call". This is the whole treatment of defect 3: no row is suppressed because of it. An
+parallel call", a report naming only rewritten or abandoned commits included (Gate 2 G2-M1). This is the whole treatment of defect 3: no row is suppressed because of it. An
 AUTO-DETOUR or DETOUR-COMMIT message ends: "If that row is wrong: `retract-detour <sha> --reason
 \"<why>\"` (re-renders PROJECT.md)."
 
@@ -226,6 +226,7 @@ text only: it must be at least 7 hex characters, only rows whose own sha also re
 candidates, a row matches when either sha begins with the other, and the candidates must name exactly
 one sha — otherwise the verb refuses naming the too-short value or the ambiguity (so `retract-detour 1`
 cannot retract every row starting with `1`). Refusal messages, each distinct:
+a value that is not hexadecimal (a ref such as `HEAD`: the verb takes a sha, not a ref — Gate 2 G2-M2);
 no matching row; no AUTO-DETOUR or DETOUR-COMMIT row for it (naming a MINIMAL-only row where that is the
 case); already retracted; reason missing or empty. In a detached tree `appendDetourLog` writes nothing
 (gh#175), so the verb exits non-zero saying no retraction was written.

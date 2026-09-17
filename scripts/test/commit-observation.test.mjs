@@ -229,6 +229,20 @@ test("G2-C1 a reflog line that is not valid UTF-8 anchors by its bytes: every co
   }
 });
 
+test("G2-M4 REGRESSION GUARD: the anchor is the LAST occurrence of its line ending at or before the recorded size", async () => {
+  const { anchorOf, locateAnchor } = await import("../lib/commit-watch.mjs");
+  const L = Buffer.from("a".repeat(40) + " " + "b".repeat(40) + " T <t@e.x> 1 +0000\tcheckout: moving from x to y\n");
+  const X = Buffer.from("b".repeat(40) + " " + "a".repeat(40) + " T <t@e.x> 2 +0000\tcheckout: moving from y to x\n");
+  // Recorded after L X L: the anchor is the SECOND, byte-identical L, not the first.
+  const both = Buffer.concat([L, X, L]);
+  const recorded = anchorOf(both);
+  assert.equal(locateAnchor(both, recorded), both.length, "the last occurrence, not the first");
+  // Recorded after L alone, and X L appended since: the later identical L lies past the recorded
+  // size, so it is new, and the anchor stays at the first.
+  const early = anchorOf(L);
+  assert.equal(locateAnchor(both, early), L.length, "an identical line past the recorded size is never the anchor");
+});
+
 test("2.6 a commit rewritten by `pull --rebase` is named rewritten or abandoned, never logged or attributed", () => {
   const repo = observationRepo({ clone: true });
   repo.observe();
@@ -255,6 +269,9 @@ test("2.7 a commit reset away in the same call is named rewritten or abandoned, 
   assert.ok(o.context.includes(short(repo, y)));
   assert.equal(rowsFor(repo, y).length, 0, "no row");
   assert.doesNotMatch(o.context, new RegExp(`--attribute-commit ${y}`), "no attribution command naming it");
+  // G2-M1: naming a dead commit IS reporting it, so the report carries the provenance statement even
+  // when no live commit is named alongside it.
+  for (const re of PROVENANCE) assert.match(o.context, re, `a dead-only report states its provenance: ${o.context}`);
 });
 
 // ─────────────── 3. The provenance statement ───────────────
@@ -367,20 +384,26 @@ test("4.2 rows of 7 and 8 characters match only their own commit, and a re-fired
 });
 
 test("4.2a a row whose commit was rewritten and pruned can be retracted by the row's sha", () => {
-  const repo = observationRepo();
-  repo.observe();
-  const gone = autoLogged(repo, "src/gone.txt", "chore: rewritten then pruned");
-  const rowSha = rowsFor(repo, gone)[0].split("\t")[1];
-  repo.git("reset", "-q", "--hard", "HEAD~1");
-  fs.rmSync(path.join(repo.gitRoot, ".git", "ORIG_HEAD"), { force: true });
-  repo.git("reflog", "expire", "--expire=now", "--all");
-  repo.git("gc", "-q", "--prune=now");
-  assert.throws(() => repo.git("cat-file", "-e", `${gone}^{commit}`), "fixture: the commit no longer resolves");
-  const r = engineRun(repo.cwd, ["retract-detour", rowSha, "--reason", "rewritten away"]);
-  assert.equal(r.status, 0, r.stderr);
-  const last = logRows(repo).at(-1);
-  assert.equal(last[2], "RETRACTED");
-  assert.equal(last[1], rowSha);
+  // G2-I5: either sha may begin with the other — the row's own abbreviation, and a value LONGER than
+  // it (the pruned commit's full name), each retract it.
+  for (const byLonger of [false, true]) {
+    const repo = observationRepo();
+    repo.observe();
+    const gone = autoLogged(repo, "src/gone.txt", "chore: rewritten then pruned");
+    const rowSha = rowsFor(repo, gone)[0].split("\t")[1];
+    repo.git("reset", "-q", "--hard", "HEAD~1");
+    fs.rmSync(path.join(repo.gitRoot, ".git", "ORIG_HEAD"), { force: true });
+    repo.git("reflog", "expire", "--expire=now", "--all");
+    repo.git("gc", "-q", "--prune=now");
+    assert.throws(() => repo.git("cat-file", "-e", `${gone}^{commit}`), "fixture: the commit no longer resolves");
+    const value = byLonger ? gone : rowSha;
+    assert.ok(!byLonger || value.length > rowSha.length, "fixture: the value is longer than the row's sha");
+    const r = engineRun(repo.cwd, ["retract-detour", value, "--reason", "rewritten away"]);
+    assert.equal(r.status, 0, `${byLonger ? "longer value" : "row sha"}: ${r.stderr}`);
+    const last = logRows(repo).at(-1);
+    assert.equal(last[2], "RETRACTED");
+    assert.equal(last[1], rowSha);
+  }
 });
 
 test("4.3 every retract-detour refusal names its reason and writes nothing", () => {
@@ -391,6 +414,12 @@ test("4.3 every retract-detour refusal names its reason and writes nothing", () 
   engineRun(repo.cwd, ["log-detour", "declared minimal"]);            // a MINIMAL row at HEAD (bare)
   const unlogged = repo.commit({ "src/unlogged.txt": "1" }, "feat: no row at all");
   engineRun(repo.cwd, ["retract-detour", logged, "--reason", "first"]); // now already retracted
+  // G2-I4: a LIVE commit's open row, and a value that extends that row's sha but resolves to nothing.
+  // Only rows whose own sha also resolves to nothing may match an unresolvable value.
+  const live = autoLogged(repo, "src/live.txt", "chore: a live row");
+  const liveRowSha = rowsFor(repo, live)[0].split("\t")[1];
+  const next = live[liveRowSha.length];
+  const bogus = liveRowSha + (next === "0" ? "1" : "0") + "000000";
   fs.appendFileSync(logPath(repo),
     "2026-09-01T00:00:00.000Z\tabcdef12\tAUTO-DETOUR\tepic-a\tpruned one\n" +
     "2026-09-01T00:00:00.000Z\tabcdef13\tAUTO-DETOUR\tepic-a\tpruned two\n");
@@ -405,6 +434,9 @@ test("4.3 every retract-detour refusal names its reason and writes nothing", () 
     [["retract-detour", short(repo, logged), "--reason", ""], /--reason/],
     [["retract-detour", "1", "--reason", "x"], /at least 7/],
     [["retract-detour", "abcdef1", "--reason", "x"], /ambiguous/],
+    [["retract-detour", bogus, "--reason", "x"], /resolves to no commit and matches no row/],
+    // G2-M2: a ref is not a sha. It must not be told it "resolves to no commit".
+    [["retract-detour", "HEAD", "--reason", "x"], /takes a commit sha, not a ref/],
   ];
   for (const [args, message] of cases) {
     const before = [fs.readFileSync(logPath(repo), "utf8"), projectMdOf(repo)];
@@ -828,7 +860,8 @@ test("7.3 REGRESSION GUARD: one active epic prints one command; an epic with no 
     let o = repo.observe("PostToolUse", "git commit");
     assert.ok(o.context.includes(short(repo, s1)), "fixture: reported");
     assert.deepEqual(attributionCommands(o.context), [], "touching an epic's files never makes it a candidate");
-    repo.git("mv", "openspec/changes/e-change", "openspec/changes/archive-e-change");
+    fs.mkdirSync(path.join(repo.gitRoot, "openspec", "changes", "archive"), { recursive: true });
+    repo.git("mv", "openspec/changes/e-change", "openspec/changes/archive/e-change");
     repo.git("commit", "-q", "-m", "chore(openspec): archive e-change");
     o = repo.observe("PostToolUse", "git commit");
     assert.deepEqual(attributionCommands(o.context), [], "nor does the archive move");

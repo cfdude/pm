@@ -643,7 +643,11 @@ function runNudge(state, ctx, commits, attribution = null, event = "PostToolUse"
       "not logged, not attributed (reachable from no branch). If a rebase rewrote them, attribute " +
       "what the rebase produced by hand."
     : "";
-  const msg = !commits.length ? deadSentence : (ctx.active
+  // G2-M1: naming a dead commit IS reporting it, so a report of dead commits alone carries the same
+  // provenance statement a live report opens with.
+  const deadProvenance = `${dead.length > 1 ? "These commits" : "This commit"} landed since the last observation — ` +
+    "this call, another terminal, or a parallel call; the hook cannot tell which.";
+  const msg = !commits.length ? `${deadProvenance} ${deadSentence}` : (ctx.active
     // "(logged to detours.log)" is now a CLAIM about what just happened, so it is conditional:
     // a bookkeeping-only commit, or a re-fire for a sha already in the trail, writes no row, and
     // saying otherwise would send the agent looking for a line that is not there.
@@ -911,6 +915,13 @@ export function retractDetour() {
   if (!reason) refuse("--reason is empty — a retraction with no reason is indistinguishable from a deleted row");
   const sha = String(arg).trim().toLowerCase();
 
+  // G2-M2: a ref (`HEAD`, `main~1`) is not a sha. It used to fall through to the pruned-commit branch
+  // and be told it "resolves to no commit", which is false. The contract is a sha: a row names a
+  // commit, not wherever a ref points now.
+  if (!/^[0-9a-f]+$/.test(sha)) {
+    refuse(`'${escapeControls(arg)}' is not a hexadecimal sha — retract-detour takes a commit sha, not a ref ` +
+      "(run `git rev-parse <ref>` for it)");
+  }
   const rows = readDetourRows();
   const full = /^[0-9a-f]{4,64}$/.test(sha) ? fullSha(sha) : null;
   let matching;
