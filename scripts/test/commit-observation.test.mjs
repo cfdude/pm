@@ -178,6 +178,69 @@ test("2.4 a lock older than 10 s was left by a killed hook, and is broken", () =
   }
 });
 
+test("G2-I3 a LIVE holder's lock is never broken for its age: a long observation is not reported twice", async () => {
+  const { beginObservation } = await import("../lib/commit-watch.mjs");
+  const repo = observationRepo();
+  repo.observe();
+  const sha = repo.commit({ "src/slow.txt": "1" }, "fix: read by a slow observation");
+  // A holds the lock (this test process — alive) and is still working 11 s later, as a hook reading
+  // hundreds of commits was measured to be (10.6 s).
+  const a = beginObservation({ root: repo.cwd });
+  assert.equal(a.verdict, "landed", "fixture: A holds the lock and has the commit in hand");
+  const lock = OBSERVE_RECORD(repo.cwd) + ".lock";
+  const old = new Date(Date.now() - 11_000);
+  fs.utimesSync(lock, old, old);
+  const before = snapshotFiles(repo.cwd, [".conductor/commit-observe.json", ".conductor/detours.log", "PROJECT.md"]);
+  const b = repo.observe("PostToolUse", "ls");
+  assert.equal(b.status, 0, b.stderr);
+  assert.equal(b.stdout, "", `B skips: A is alive, so its lock is not stale whatever its age. Output: ${b.stdout}`);
+  assert.deepEqual(snapshotFiles(repo.cwd, [".conductor/commit-observe.json", ".conductor/detours.log", "PROJECT.md"]), before,
+    "and B writes nothing");
+  assert.ok(fs.existsSync(lock), "A's lock is still in place");
+  a.finish(a.candidates.map((c) => c.sha));
+  assert.equal(fs.existsSync(lock), false, "A releases its own lock");
+  const c = repo.observe("PostToolUse", "ls");
+  assert.ok(!c.context.includes(short(repo, sha)), "A reported it; nobody reports it again");
+});
+
+test("G2-I3 a lock whose holder is confirmed dead is broken at once, however young", async () => {
+  const { spawnSync } = await import("node:child_process");
+  const os = await import("node:os");
+  const repo = observationRepo();
+  repo.observe();
+  const sha = repo.commit({ "src/dead.txt": "1" }, "fix: behind a dead holder");
+  const dead = spawnSync(process.execPath, ["-e", ""]).pid;        // exited: its pid names no process
+  const lock = OBSERVE_RECORD(repo.cwd) + ".lock";
+  let pidns = null;
+  try { pidns = fs.readlinkSync("/proc/self/ns/pid"); } catch { /* not Linux */ }
+  fs.writeFileSync(lock, JSON.stringify({ pid: dead, host: os.hostname(), pidns, acquiredAt: new Date().toISOString(), nonce: "n" }));
+  const o = repo.observe("PostToolUse", "ls");
+  assert.ok(o.context.includes(short(repo, sha)), `a dead holder does not defer the report: ${JSON.stringify(o.stdout)}`);
+  assert.equal(fs.existsSync(lock), false);
+});
+
+test("G2-I3 breaking a stale observation lock removes only the lock judged, never a successor", async () => {
+  const cw = await import("../lib/commit-watch.mjs");
+  const repo = observationRepo();
+  repo.observe();
+  const lock = OBSERVE_RECORD(repo.cwd) + ".lock";
+  // L: left by a killed hook. B judges it stale ...
+  fs.writeFileSync(lock, "999999");
+  const old = new Date(Date.now() - 11_000);
+  fs.utimesSync(lock, old, old);
+  const judgedByB = cw.inspectObserveLock(repo.cwd);
+  assert.ok(judgedByB && cw.isStaleObserveLock(judgedByB), "precondition: B judges L stale");
+  // ... A breaks L first and takes N ...
+  assert.equal(cw.breakStaleObserveLock(repo.cwd, cw.inspectObserveLock(repo.cwd)), true, "A breaks L");
+  const a = cw.beginObservation({ root: repo.cwd });
+  assert.notEqual(a.verdict, "skipped", "A holds N");
+  // ... and B's break, acting on its old judgement, must not remove N.
+  assert.equal(cw.breakStaleObserveLock(repo.cwd, judgedByB), false, "B removes nothing");
+  assert.ok(fs.existsSync(lock), "N is still held");
+  a.release();
+  assert.equal(fs.existsSync(lock), false);
+});
+
 test("2.4 the anchored reflog line itself is gone: nothing reported from the reflog, and the record re-anchors", () => {
   {
     const repo = observationRepo();

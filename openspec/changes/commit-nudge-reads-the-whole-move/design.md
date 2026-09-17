@@ -102,8 +102,14 @@ moves backwards and `reported` never loses an entry it still needs.
 
 Contention: the hook retries for at most 200 ms, then SKIPS the observation entirely — no report, no
 write, no output. The commits stay after the anchor and the next observation reports them, so a skip
-delays a report and never drops or repeats one. A lock older than 10 s is taken as left by a killed
-hook and broken (an observation is a reflog read and one small write). Not 0.44.0's state lock
+delays a report and never drops or repeats one. The lock records its holder (pid, host, pid namespace,
+nonce — `state.mjs` `lockContent()`) and is broken only when that holder is confirmed dead, or, where liveness
+cannot be confirmed (another host or namespace, content not yet written), once it is older than 10 s. A holder
+confirmed alive is not broken for age below a 10-minute pid-reuse backstop: breaking a live observation at 10 s
+reported 330 commits twice (Gate 2 G2-I3). The break reuses `state.mjs`'s serialised, re-judging break
+(`breakStaleLockAt`, a `.lock.break` sibling), so two starters can never both break and both hold. No cap on
+commits per observation: with liveness a slow observation is never overtaken, and the spec requires every
+landed commit to be reported. Not 0.44.0's state lock
 (`state.mjs` `lockPaths`): that lock waits up to `STATE_LOCK_WAIT_MS` and then refuses, and a hook
 must neither wait that long on every Bash call nor turn contention into an error. Writes to
 `state.json` later in the same run still take the state lock, as today.

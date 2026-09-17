@@ -381,7 +381,28 @@ function lstatLock(lockPath) {
   } catch { return null; }
 }
 
-const sameLock = (a, b) => !!a && !!b && a.ino === b.ino && a.nonce === b.nonce;
+export const sameLock = (a, b) => !!a && !!b && a.ino === b.ino && a.nonce === b.nonce;
+
+/** The content a lock holder writes: who holds it, where, since when, and a nonce that makes its
+ *  identity unique. Shared by the state lock and the commit hook's observation lock
+ *  (commit-watch.mjs), so both are judged by the same liveness rule. */
+export function lockContent() {
+  return {
+    pid: process.pid, host: os.hostname(), pidns: pidNamespace(),
+    acquiredAt: new Date().toISOString(), nonce: crypto.randomBytes(16).toString("hex"),
+  };
+}
+
+/** Is this lock's holder CONFIRMED alive (true), CONFIRMED dead (false), or not confirmable (null)?
+ *  Confirmable only where the checker shares the holder's host AND pid namespace; ESRCH is dead and
+ *  EPERM means the process exists. */
+export function lockHolderAlive(info) {
+  const c = info && info.content;
+  if (!c || !Number.isInteger(c.pid) || c.pid <= 0) return null;
+  if (c.host !== os.hostname() || c.pidns !== pidNamespace()) return null;
+  try { process.kill(c.pid, 0); return true; }
+  catch (e) { return e && e.code === "ESRCH" ? false : null; }
+}
 
 /** Is this lock STALE — safe for a breaker to remove? (design D4)
  *
@@ -395,11 +416,7 @@ const sameLock = (a, b) => !!a && !!b && a.ino === b.ino && a.nonce === b.nonce;
 export function isStaleLock(info, now = Date.now()) {
   if (!info) return false;
   if (Math.abs(now - info.mtimeMs) > STATE_LOCK_STALE_MS) return true;
-  const c = info.content;
-  if (!c || !Number.isInteger(c.pid) || c.pid <= 0) return false;
-  if (c.host !== os.hostname() || c.pidns !== pidNamespace()) return false;
-  try { process.kill(c.pid, 0); return false; }
-  catch (e) { return !!e && e.code === "ESRCH"; }
+  return lockHolderAlive(info) === false;
 }
 
 /** Remove `judged` — the very lock a caller found stale — and nothing else. Returns whether it
@@ -418,17 +435,26 @@ export function breakStaleLock(judged) {
   return tryBreakStaleLock(judged).removed;
 }
 
+/** breakStaleLock() for ANOTHER lock: the same serialised, re-judging break, at `LOCK` with its own
+ *  `BREAK` sibling, judged by `isStale`, with the break file itself recoverable after `staleMs`. The
+ *  commit hook's observation lock uses it (commit-watch.mjs, Gate 2 G2-I3). */
+export function breakStaleLockAt(judged, { LOCK, BREAK, isStale, staleMs }) {
+  return tryBreakStaleLock(judged, { LOCK, BREAK, isStale, staleMs }).removed;
+}
+
 /** breakStaleLock()'s body, also reporting an OBSTACLE: a path past the stale age that the engine
  *  cannot remove (a directory at the lock or the break path). The acquire loop refuses on one at
  *  once, naming it — waiting cannot help, and the age rule would otherwise judge it forever. */
-function tryBreakStaleLock(judged) {
-  const { LOCK, BREAK } = lockPaths();
+function tryBreakStaleLock(judged, at = null) {
+  const { LOCK, BREAK } = at || lockPaths();
+  const isStale = (at && at.isStale) || isStaleLock;
+  const staleMs = (at && at.staleMs) || STATE_LOCK_STALE_MS;
   let bfd;
   try { bfd = fs.openSync(BREAK, "wx"); } catch (e) {
     if (!e || e.code !== "EEXIST") return { removed: false };
     try {
       const st = fs.lstatSync(BREAK);
-      if (Math.abs(Date.now() - st.mtimeMs) > STATE_LOCK_STALE_MS && fs.lstatSync(BREAK).ino === st.ino) {
+      if (Math.abs(Date.now() - st.mtimeMs) > staleMs && fs.lstatSync(BREAK).ino === st.ino) {
         try { fs.unlinkSync(BREAK); }
         catch (u) { if (u && u.code !== "ENOENT") return { removed: false, obstacle: { path: BREAK, directory: st.isDirectory() } }; }
       }
@@ -439,7 +465,7 @@ function tryBreakStaleLock(judged) {
   try { breakIno = fs.fstatSync(bfd).ino; } catch { /* unknown: released by age */ } finally { fs.closeSync(bfd); }
   try {
     const current = inspectLock(LOCK);
-    if (!sameLock(current, judged) || !isStaleLock(current)) return { removed: false };
+    if (!sameLock(current, judged) || !isStale(current)) return { removed: false };
     try { fs.unlinkSync(LOCK); return { removed: true }; }
     catch (u) {
       return u && u.code === "ENOENT" ? { removed: false }
@@ -525,14 +551,12 @@ function acquireStateLock() {
       sleepMs(STATE_LOCK_POLL_MS);
       continue;
     }
-    const nonce = crypto.randomBytes(16).toString("hex");
+    const content = lockContent();
+    const nonce = content.nonce;
     let ino = null;
     try {
       ino = fs.fstatSync(fd).ino;
-      fs.writeFileSync(fd, JSON.stringify({
-        pid: process.pid, host: os.hostname(), pidns: pidNamespace(),
-        acquiredAt: new Date().toISOString(), nonce,
-      }));
+      fs.writeFileSync(fd, JSON.stringify(content));
       return { ino, nonce };
     } catch (e) {
       // The lock was CREATED and its content never written: remove it rather than leave an empty

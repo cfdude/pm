@@ -22,9 +22,14 @@
 //
 // REPORTED ONCE (Decision 3). The whole observation — read the record, walk the reflog, decide,
 // write the new record — runs under an O_EXCL lock. A run that cannot take the lock within 200 ms
-// SKIPS entirely: no report, no write, so the commits stay after the anchor for the next run. A
-// lock older than 10 s was left by a killed hook and is broken. The record also keeps the set of
-// full shas already reported (bounded to the 500 most recent).
+// SKIPS entirely: no report, no write, so the commits stay after the anchor for the next run. The
+// lock records its holder (pid, host, pid namespace, nonce — state.mjs lockContent()) and is broken
+// only when that holder is CONFIRMED dead, or — where liveness cannot be confirmed (another host or
+// namespace, unreadable content) — once it is older than 10 s. A holder confirmed ALIVE is never
+// broken for age inside OBSERVE_LOCK_LIVE_MAX_MS: breaking a slow live observation at 10 s reported
+// its commits twice (Gate 2 G2-I3, 330 commits). Breaking is state.mjs's serialised, re-judging
+// break, so two starters can never both remove a lock and both hold one. The record also keeps the
+// set of full shas already reported (bounded to the 500 most recent).
 //
 // A NEW FILE (Decision 2): `.conductor/commit-observe.json`, never `commit-watch.json`. An
 // unreloaded 0.44.0 session rewrites `commit-watch.json` as `{head}` on every Bash call, and would
@@ -43,6 +48,7 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { ROOT } from "./constants.mjs";
 import { isDetachedTree } from "./git.mjs";
+import { breakStaleLockAt, inspectLock, lockContent, lockHolderAlive, sameLock } from "./state.mjs";
 
 export const COMMIT_OBSERVE_FILE = "commit-observe.json";
 /** Where the observation record lives for a conductor root. Per-checkout (a worktree has its own
@@ -51,6 +57,9 @@ export const commitObservePath = (root = ROOT) => path.join(root, ".conductor", 
 
 export const OBSERVE_LOCK_WAIT_MS = 200;
 export const OBSERVE_LOCK_STALE_MS = 10_000;
+/** The backstop for a holder confirmed alive: a pid reused by an unrelated long-lived process after
+ *  a hook was killed must not stop observation forever. Far above any observation measured. */
+export const OBSERVE_LOCK_LIVE_MAX_MS = 600_000;
 export const REPORTED_BOUND = 500;
 
 /** Reflog actions that mean a commit OBJECT was created at HEAD: `commit`, `commit (initial)`,
@@ -135,24 +144,60 @@ export function parseReflog(text) {
 
 const sleepMs = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 
-/** Take the observation lock: true when held, false on contention past the wait, and "unlockable"
- *  when the lock cannot be created at all (a read-only checkout) — that run proceeds and its
- *  record write fails harmlessly, which is the pre-lock behaviour and therefore safe. */
-function acquireLock(lockPath, { waitMs = OBSERVE_LOCK_WAIT_MS, staleMs = OBSERVE_LOCK_STALE_MS } = {}) {
+const observeLockPaths = (root) => {
+  const LOCK = commitObservePath(root) + ".lock";
+  return { LOCK, BREAK: `${LOCK}.break` };
+};
+
+/** The observation lock currently in place, as state.mjs inspectLock() reads a lock, or null. */
+export const inspectObserveLock = (root = ROOT) => inspectLock(observeLockPaths(root).LOCK);
+
+/** Is this observation lock stale — safe to break? Holder confirmed dead: yes, at once. Holder
+ *  confirmed alive: only past OBSERVE_LOCK_LIVE_MAX_MS. Not confirmable (another host or pid
+ *  namespace, content not yet written or not a lock record): past OBSERVE_LOCK_STALE_MS. Age is
+ *  absolute, so a lock dated in the future by a clock step cannot wedge observation. */
+export function isStaleObserveLock(info, now = Date.now()) {
+  if (!info) return false;
+  const age = Math.abs(now - info.mtimeMs);
+  const alive = lockHolderAlive(info);
+  if (alive === false) return true;
+  if (alive === true) return age > OBSERVE_LOCK_LIVE_MAX_MS;
+  return age > OBSERVE_LOCK_STALE_MS;
+}
+
+/** Break `judged` — the very observation lock a caller found stale — and nothing else. */
+export const breakStaleObserveLock = (root, judged) =>
+  breakStaleLockAt(judged, { ...observeLockPaths(root), isStale: isStaleObserveLock, staleMs: OBSERVE_LOCK_STALE_MS });
+
+/** Take the observation lock: `{ino, nonce}` when held, false on contention past the wait, and
+ *  "unlockable" when the lock cannot be created at all (a read-only checkout) — that run proceeds
+ *  and its record write fails harmlessly, which is the pre-lock behaviour and therefore safe. */
+function acquireLock(root, { waitMs = OBSERVE_LOCK_WAIT_MS } = {}) {
+  const { LOCK } = observeLockPaths(root);
   const deadline = Date.now() + waitMs;
   for (;;) {
-    try {
-      const fd = fs.openSync(lockPath, "wx");
-      try { fs.writeSync(fd, String(process.pid)); } finally { fs.closeSync(fd); }
-      return true;
-    } catch (e) {
+    let fd;
+    try { fd = fs.openSync(LOCK, "wx"); } catch (e) {
       if (!e || e.code !== "EEXIST") return "unlockable";
-      let st = null;
-      try { st = fs.statSync(lockPath); } catch { continue; }   // released between open and stat
-      if (Date.now() - st.mtimeMs > staleMs) { try { fs.rmSync(lockPath, { force: true }); } catch { /* raced */ } continue; }
+      const held = inspectLock(LOCK);
+      if (held === null) continue;                      // released between the create and the look
+      if (isStaleObserveLock(held) && breakStaleObserveLock(root, held)) continue;
       if (Date.now() >= deadline) return false;
       sleepMs(10);
+      continue;
     }
+    const content = lockContent();
+    let ino = null;
+    try {
+      ino = fs.fstatSync(fd).ino;
+      fs.writeFileSync(fd, JSON.stringify(content));
+      return { ino, nonce: content.nonce };
+    } catch {
+      // Created but not written: remove only the file this call created, then proceed unlocked as a
+      // lock that cannot be written is a checkout that cannot hold one.
+      try { if (ino === null || fs.lstatSync(LOCK).ino === ino) fs.unlinkSync(LOCK); } catch { /* gone */ }
+      return "unlockable";
+    } finally { try { fs.closeSync(fd); } catch { /* closed */ } }
   }
 }
 
@@ -169,14 +214,17 @@ function acquireLock(lockPath, { waitMs = OBSERVE_LOCK_WAIT_MS, staleMs = OBSERV
  *  The caller MUST end every handle with finish() or release(). A run that exits on unreadable
  *  state calls neither write, so the anchor and the set stay where they were (Decision 3). */
 export function beginObservation({ root = ROOT } = {}) {
-  const lockPath = commitObservePath(root) + ".lock";
-  const got = acquireLock(lockPath);
+  const got = acquireLock(root);
   if (got === false) return { verdict: "skipped" };
   let released = false;
+  // Only OUR lock is removed — never one another observation took after ours was broken.
   const release = () => {
     if (released) return;
     released = true;
-    if (got === true) { try { fs.rmSync(lockPath, { force: true }); } catch { /* best effort */ } }
+    if (got && typeof got === "object") {
+      try { if (sameLock(inspectObserveLock(root), got)) fs.rmSync(observeLockPaths(root).LOCK, { force: true }); }
+      catch { /* best effort: the stale rule recovers */ }
+    }
   };
 
   const handle = (verdict, reason, { candidates = [], nextAnchor = null, record }) => ({
