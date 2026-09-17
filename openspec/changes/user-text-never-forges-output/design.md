@@ -2,6 +2,25 @@
 
 Line anchors below are as of `dev` f49871a (engine 0.44.0); task 0.3 re-derives them.
 
+**Re-derived at `dev` 5accfbe (task 0.3, after changes 1 and 2 merged).** Corrections to what follows:
+`releaseLine` lives in `constants.mjs`, not `releases.mjs` (`releaseShow` is `releases.mjs`); the id
+regex is now declared ONCE as `EPIC_ID_FORMAT` in `constants.mjs` (change 2's task 2.9 — task 1.1's
+two `rg` guards return nothing); the `.changesets` reader is `worktree-hygiene.mjs` `changesets()`.
+`printedId()` callers, by `rg -n "printedId\(" scripts/lib`: `archive-gate.mjs` (`gateRemedy`,
+`dispositionInvocation`, `deliveredArchiveInvocation`, the attribution/story remedies of
+`obligationRemedy`), `active-pointer.mjs`, `briefing.mjs` (tracker refresh), `dependency-order.mjs`,
+`detour-stack.mjs` (push/pop), `integrity.mjs` (ten sites), `links.mjs`, `remove-epic.mjs`,
+`subcommands.mjs` (`commitNudge` withdraw and candidate commands, `sync`'s near-match hint),
+`update-epic.mjs` (reconcile-owed refusal), `verify-specs.mjs`. Callers of the builders, second-hand:
+`briefing.mjs` `BRIEF_REMEDIES`, `update-epic.mjs` (disposition refusals and `--withdraw-gate-review`),
+`integrity.mjs`, `archive-gate.mjs` itself (`archiveGate`, `unconsideredRows` → `unconsidered.mjs`).
+Emitted commands that carry a governed value which is NOT an id, found by the same sweep and not named
+elsewhere in this design: `integrity.mjs`'s `unclaim`/`claim … --session <session>` remedies (a session
+name), `verify-specs.mjs`'s `--spec <path>` (a workspace path), `sync`'s near-match `--plan <planPath>`
+(a workspace filename). Resolved by the ladder the spec already states: an id goes through
+`printedId()`; any other caller-supplied value holding a control character takes a placeholder in its
+position (the `gate-integrity` printed-invocation clause), and is otherwise printed as change 2 prints it.
+
 - `escapeControls(s)` and `CONTROL_CHARACTER` live in `scripts/lib/constants.mjs` (0.44.0). The class is
   C0, DEL, C1, U+2028, U+2029; each is rendered as backslash, `u`, four lowercase hex digits. It is used
   by the pre-dispatch argv refusals (`argv-surface.mjs`), `update-epic.mjs`'s archived-epic regression
@@ -26,8 +45,9 @@ Line anchors below are as of `dev` f49871a (engine 0.44.0); task 0.3 re-derives 
   then `owners` prints a line beginning `FORGED` (reproduced).
 - Epic creation funnels through `pushEpic()` (`state.mjs`), called from `add-epic.mjs`, `add-many.mjs`,
   and `subcommands.mjs` three times (`backfillArchive`, and `sync` for active changes and plan files).
-  `add-epic` and `add-many` validate `^[a-z0-9][a-z0-9._-]*$` themselves (the regex is spelled three
-  times: `add-epic.mjs`, `add-many.mjs`, `verify-specs.mjs`); the three `sync` paths validate nothing.
+  `add-epic` and `add-many` validate `^[a-z0-9][a-z0-9._-]*$` themselves (at f49871a the regex was spelled
+  three times; change 2 made it one `EPIC_ID_FORMAT` in `constants.mjs`); the three `sync` paths validate
+  nothing.
   `sync`'s plan loop resolves an entry through ordered rungs — claimed artifact, known id, tombstone,
   near-match — before the final `pushEpic`; a plan's title is its first heading (`firstHeading`).
 - `release()` (`releases.mjs`) creates a release from `argv[0]` with no id check; its missing-intent

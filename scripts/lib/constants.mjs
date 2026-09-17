@@ -1047,6 +1047,12 @@ export const CONTROL_CHARACTER = /[\u0000-\u001f\u007f-\u009f\u2028\u2029]/;
  *  leaves C1 controls and U+2028/U+2029 raw. */
 export const escapeControls = (s) => String(s).replace(new RegExp(CONTROL_CHARACTER.source, "g"),
   c => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`);
+/** The CELL escaper for a PROJECT.md table (user-text-never-forges-output D1): escapeControls(),
+ *  then every backslash doubled, then every `|` escaped. GitHub-flavored Markdown splits a row with a
+ *  backslash escaping the one character after it, so the backslash MUST go first — a pipe-only
+ *  escape turns `a\|b` into `a\\|b`, which splits at that pipe. NOT idempotent: render.mjs's
+ *  tableRow() is its one caller, applying it exactly once per cell. */
+export const escapeTableCell = (s) => escapeControls(s).replace(/\\/g, "\\\\").replace(/\|/g, "\\|");
 
 /** The epic id format every writer enforces (`add-epic`, `add-many`) and `verify-specs` reads
  *  candidates by. ONE declaration: a second regex literal is a format that can drift from this one

@@ -13,7 +13,7 @@
       its two siblings' (`commit-nudge-reads-the-whole-move`, `emitted-commands-run-as-written`). Run
       the `cross-spec-review` skill after all three pass Gate 1 and again after any later amendment;
       record `record-cross-spec-review 0.45.0 --verdict pass|fail --reviewer "<identity>"`
-- [ ] 0.3 After changes 1 AND 2 have merged into `dev`, re-derive with `rg` every line anchor in
+- [x] 0.3 After changes 1 AND 2 have merged into `dev`, re-derive with `rg` every line anchor in
       design.md AND the site lists of tasks 3.5 and 5.4 and the callers of `printedId()` — including `archive-gate.mjs`,
       where change 2 moves `gateRemedy`, `dispositionInvocation`, `deliveredBlockedBy` and
       `BRIEF_REMEDIES`, and change 1's `commitNudge`/`retract-detour` output — and correct them in the
@@ -30,7 +30,7 @@ setup error).
 
 Pairs: 1.2 lands with 1.3.
 
-- [ ] 1.1 REGRESSION GUARD: `EPIC_ID_FORMAT` is exported from `constants.mjs` by
+- [x] 1.1 REGRESSION GUARD: `EPIC_ID_FORMAT` is exported from `constants.mjs` by
       `emitted-commands-run-as-written` (its task 2.9, applied first); confirm the DEFINITION is
       single — `rg -n 'EPIC_ID_FORMAT\s*=' scripts/lib scripts/conductor.mjs --glob '!constants.mjs'`
       and `rg -n '/\^\[a-z0-9\]\[a-z0-9\._-\]\*\$/' scripts/lib scripts/conductor.mjs --glob
@@ -39,10 +39,10 @@ Pairs: 1.2 lands with 1.3.
       Measured before change 2: the literal rg returns exactly `add-epic.mjs:360`, `add-many.mjs:61`
       and `verify-specs.mjs:54`, the three sites its task 2.9 replaces; no commit unless it does not
       (design D4)
-- [ ] 1.2 RED: unit — `escapeTableCell` escapes every control character exactly as `escapeControls`
+- [x] 1.2 RED: unit — `escapeTableCell` escapes every control character exactly as `escapeControls`
       does, then every backslash as two and every `|` as `\|` (so `a\|b` stays one GFM cell);
       `escapeControls` is idempotent over its own output
-- [ ] 1.3 GREEN: add `escapeTableCell` beside `escapeControls` (design D1)
+- [x] 1.3 GREEN: add `escapeTableCell` beside `escapeControls` (design D1)
 
 ## 2. PROJECT.md tables keep their cells
 
@@ -72,9 +72,10 @@ Pairs: 3.1–3.4c land with 3.5.
 - [ ] 3.4c RED: spec "An already-stored tracker value cannot forge a rules heading" — legacy tracker
       written into `state.json` directly (design D3 exception)
 - [ ] 3.5 GREEN: `escapeControls` at every interpolation of a governed value in `render.mjs`,
-      `briefing.mjs`, `releases.mjs` (`releaseLine`, `releaseShow`), `claims.mjs` (`owners`, claim
+      `briefing.mjs`, `constants.mjs` (`releaseLine`), `releases.mjs` (`releaseShow`), `claims.mjs` (`owners`, claim
       messages), `rules.mjs` (tracker system/project/repo/instance in the managed block's prose),
-      `tracker.mjs` (set/remove messages), `lessons.mjs` (`adviceText`) and the `changesets` reader, and
+      `tracker.mjs` (set/remove messages), `lessons.mjs` (`adviceText`) and the `changesets` reader
+      (`worktree-hygiene.mjs`), and
       in the shared helpers both render and brief call (`outcomeOf`, `correctionNote`,
       `correctionMarking`, `crossSpecLine`, `gateTableRows`, `withdrawnArchiveNote`,
       starvation/dependency notes) — derived with `rg -n '\$\{'` over those files and each
@@ -124,8 +125,11 @@ Pairs: 5.1–5.3c land with 5.4.
       `deliveredArchiveInvocation`, `gateRemedy`, `obligationRemedy`) but not THEIR callers, which receive
       the signal second-hand, sweep the callers of those builders too with `rg -n
       "dispositionInvocation\(|deliveredArchiveInvocation\(|gateRemedy\(|obligationRemedy\(|blockedDelivered\(|deliveredBlockedBy" scripts/lib`
-      (among them `integrity.mjs`'s delivered-release and drift-heal steps, and `blockedDelivered()`'s remedy
-      list as `unconsidered-outcomes` reads it) — and state for each that it handles the no-remedy signal (the message names the record and says no verb can rename it; no hand-edit
+      (among them `integrity.mjs`'s delivered-release and drift-heal steps, `briefing.mjs`'s `BRIEF_REMEDIES`,
+      `update-epic.mjs`'s disposition refusals, and `blockedDelivered()`'s remedy
+      list as `unconsidered-outcomes` reads it; re-derived at 5accfbe in design.md Context) — and a
+      non-id governed value in an emitted command (`integrity.mjs`'s `--session`, `verify-specs.mjs`'s
+      `--spec`, `sync`'s near-match `--plan`) takes a placeholder when it holds a control character — and state for each that it handles the no-remedy signal (the message names the record and says no verb can rename it; no hand-edit
       instruction; the rules block's `gh issue list --repo` excluded — change 2's `usesGhIssueList()`
       shape requirement stops a control-character repo before that line, which holds for the rules
       block only, not for `integrity`);
