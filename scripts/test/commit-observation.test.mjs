@@ -436,3 +436,164 @@ test("4.4 REGRESSION GUARD: help, undeclared flags and a detached tree write not
   assert.match(r.stderr, /no retraction was written/);
   assert.deepEqual([fs.readFileSync(logPath(det), "utf8"), projectMdOf(det)], before);
 });
+
+// ─────────────── 5. An amend replaces ───────────────
+
+const stateOf = (repo) => JSON.parse(fs.readFileSync(path.join(repo.cwd, ".conductor", "state.json"), "utf8"));
+function editState(repo, fn) {
+  const s = stateOf(repo);
+  fn(s);
+  fs.writeFileSync(path.join(repo.cwd, ".conductor", "state.json"), JSON.stringify(s, null, 2) + "\n");
+}
+const amend = (repo, message) => { repo.git("commit", "-q", "--amend", "-m", message); return repo.head(); };
+const retractedFor = (repo, full) => logRows(repo).filter((x) => x[2] === "RETRACTED" && full.startsWith(x[1]));
+const withdrawLine = (id, sha) => new RegExp(`update-epic ${id} --withdraw-commit ${sha} --withdrawal-reason "[^"]+"`);
+
+test("5.1 amending an auto-logged commit leaves one visible row; the log keeps the original and its retraction", () => {
+  const repo = observationRepo();
+  repo.observe();
+  const c1 = autoLogged(repo, "src/am.txt", "chore: amend me");
+  const c2 = amend(repo, "chore: amended");
+  const o = repo.observe("PostToolUse", "git commit --amend");
+  assert.equal(o.status, 0, o.stderr);
+  const visible = detourTableRows(repo);
+  assert.ok(!visible.some((l) => l.includes(short(repo, c1))), `no visible row for the replaced commit:\n${visible.join("\n")}`);
+  assert.ok(visible.some((l) => l.includes(short(repo, c2))), "a row for the amending commit");
+  const rows = logRows(repo);
+  const orig = rows.findIndex((x) => x[2] === "AUTO-DETOUR" && c1.startsWith(x[1]));
+  const retr = rows.findIndex((x) => x[2] === "RETRACTED" && c1.startsWith(x[1]));
+  assert.ok(orig >= 0 && retr > orig, "the original row, then its retraction");
+  assert.match(rows[retr][4], new RegExp(`amended into ${short(repo, c2)}`));
+});
+
+test("5.2 amending an attributed commit prints the withdrawal before any attribution, and writes no attribution", () => {
+  const repo = observationRepo();
+  repo.observe();
+  const c1 = autoLogged(repo, "src/att.txt", "chore: attributed then amended");
+  engineRun(repo.cwd, ["update-epic", "epic-a", "--attribute-commit", c1]);
+  const before = JSON.stringify(stateOf(repo).epics.find((e) => e.id === "epic-a").attributedCommits);
+  const c2 = amend(repo, "chore: amended attributed");
+  const o = repo.observe("PostToolUse", "git commit --amend");
+  assert.equal(o.status, 0, o.stderr);
+  const w = o.context.search(withdrawLine("epic-a", c1));
+  assert.ok(w >= 0, `the withdrawal is printed: ${o.context}`);
+  assert.match(o.context, new RegExp(`--withdrawal-reason "amended into ${short(repo, c2)}"`));
+  const a = o.context.indexOf("--attribute-commit");
+  assert.ok(a < 0 || w < a, "before any attribution command");
+  assert.doesNotMatch(o.context, new RegExp(`--attribute-commit ${c1}`), "never an attribution of the replaced commit");
+  assert.equal(JSON.stringify(stateOf(repo).epics.find((e) => e.id === "epic-a").attributedCommits), before,
+    "the hook withdraws nothing itself");
+});
+
+test("5.3 a chain of amends, an amend then reset, and an undone amend", () => {
+  // C1 → C2 → C3 in one call.
+  {
+    const repo = observationRepo();
+    repo.observe();
+    const c1 = autoLogged(repo, "src/chain.txt", "chore: chain start");
+    engineRun(repo.cwd, ["update-epic", "epic-a", "--attribute-commit", c1]);
+    const c2 = amend(repo, "chore: chain two");
+    const c3 = amend(repo, "chore: chain three");
+    const o = repo.observe("PostToolUse", "git commit --amend && git commit --amend");
+    assert.equal(o.status, 0, o.stderr);
+    assert.equal(retractedFor(repo, c1).length, 1, "C1's row is retracted");
+    assert.match(o.context, withdrawLine("epic-a", c1));
+    assert.doesNotMatch(o.context, new RegExp(`--attribute-commit[^\\n\`]*(${c1}|${c2})`), "no attribution of C1 or C2");
+    const visible = detourTableRows(repo);
+    assert.ok(!visible.some((l) => l.includes(short(repo, c1)) || l.includes(short(repo, c2))), visible.join("\n"));
+    assert.ok(visible.some((l) => l.includes(short(repo, c3))), "only C3 is shown");
+  }
+  // Amend then reset --hard HEAD~1: the amending commit is dead too, and C1 is still superseded.
+  {
+    const repo = observationRepo();
+    repo.observe();
+    const c1 = autoLogged(repo, "src/reset.txt", "chore: amend then reset");
+    amend(repo, "chore: amended then reset");
+    repo.git("reset", "-q", "--hard", "HEAD~1");
+    // Attributed AFTER the reset: `reset --hard` restores the tracked state.json of the fixture's
+    // baseline, which would silently drop an attribution recorded earlier.
+    engineRun(repo.cwd, ["update-epic", "epic-a", "--attribute-commit", c1]);
+    const o = repo.observe("PostToolUse", "git commit --amend && git reset --hard HEAD~1");
+    assert.equal(o.status, 0, o.stderr);
+    assert.equal(retractedFor(repo, c1).length, 1, "C1's row is retracted");
+    assert.match(o.context, withdrawLine("epic-a", c1), "and its withdrawal printed");
+  }
+  // Amend then reset --hard HEAD@{1}: the amend is undone, C1 is live, nothing is superseded.
+  {
+    const repo = observationRepo();
+    repo.observe();
+    const c1 = autoLogged(repo, "src/undo.txt", "chore: amend undone");
+    amend(repo, "chore: amend to be undone");
+    repo.git("reset", "-q", "--hard", "HEAD@{1}");
+    assert.equal(repo.head(), c1, "fixture: C1 is HEAD again");
+    engineRun(repo.cwd, ["update-epic", "epic-a", "--attribute-commit", c1]);   // after the tree reset
+    assert.deepEqual(stateOf(repo).epics.find((e) => e.id === "epic-a").attributedCommits, [c1], "fixture: C1 is attributed");
+    const o = repo.observe("PostToolUse", "git commit --amend && git reset --hard HEAD@{1}");
+    assert.equal(o.status, 0, o.stderr);
+    assert.equal(retractedFor(repo, c1).length, 0, "C1's row is NOT retracted");
+    assert.doesNotMatch(o.context, new RegExp(`--withdraw-commit ${c1}`), "and no withdrawal names C1");
+  }
+});
+
+test("5.2a a delivered epic gets the withdrawal command exactly where update-epic would accept it", () => {
+  const archivedDelivered = (extra) => ({
+    title: "t", priority: "P1", role: "epic", links: [], reconcileNeeded: false, status: "archived",
+    disposition: { outcome: "delivered", recordedAt: "2026-09-01T00:00:00.000Z", recordedBy: "agent" },
+    ...extra,
+  });
+  const gate2 = (base, head) => ({ gate2: { verdict: "pass", baseSha: base, headSha: head, reviewedAt: "2026-09-01T00:00:00.000Z" } });
+  const cases = [
+    { id: "E", printed: false, exit: 1, build: (repo, root, c0, c1) =>
+      archivedDelivered({ id: "E", lane: "openspec", attributedCommits: [c1], gateReview: gate2(root, c1) }) },
+    { id: "E2", printed: true, exit: 0, build: (repo, root, c0, c1) =>
+      archivedDelivered({ id: "E2", lane: "openspec", attributedCommits: [c0, c1], gateReview: gate2(root, c1) }) },
+    { id: "E4", printed: false, exit: 1, build: (repo, root, c0, c1) => {
+      fs.mkdirSync(path.join(repo.cwd, "openspec", "changes", "archive", "2026-09-01-E4"), { recursive: true });
+      return archivedDelivered({ id: "E4", lane: "openspec", status: "queued", attributedCommits: [c1], gateReview: gate2(root, c1) });
+    } },
+    { id: "F", printed: true, exit: 0, build: (repo, root, c0, c1) =>
+      archivedDelivered({ id: "F", lane: "claude-code", attributedCommits: [c1] }) },
+  ];
+  for (const { id, printed, exit, build } of cases) {
+    const repo = observationRepo();
+    const root = repo.head();
+    const c0 = repo.commit({ "src/c0.txt": "0" }, "feat: earlier delivered work");
+    const c1 = repo.commit({ "src/c1.txt": "1" }, "feat: delivered work");
+    editState(repo, (s) => { s.epics.push(build(repo, root, c0, c1)); });
+    repo.observe();                                          // anchor after the delivered commits
+    const c2 = amend(repo, "feat: delivered work, amended");
+    const o = repo.observe("PostToolUse", "git commit --amend");
+    assert.equal(o.status, 0, `${id}: ${o.stderr}`);
+    const line = o.context.match(withdrawLine(id, c1));
+    assert.equal(!!line, printed, `${id}: withdrawal line ${printed ? "printed" : "not printed"}:\n${o.context}`);
+    if (!printed) {
+      assert.match(o.context, new RegExp(`\`${id}\`[^\\n]*delivered`), `${id}: named as a delivered epic`);
+      assert.match(o.context, /refusal[^\n]*names the remedy/, `${id}: says update-epic's refusal names the remedy`);
+    } else {
+      assert.doesNotMatch(o.context, new RegExp(`\`${id}\`[^\\n]*would break`), `${id}: no refusal sentence`);
+    }
+    const r = engineRun(repo.cwd, ["update-epic", id, "--withdraw-commit", c1, "--withdrawal-reason", `amended into ${short(repo, c2)}`]);
+    assert.equal(r.status, exit, `${id}: running the withdrawal exits ${exit}. stderr: ${r.stderr}`);
+  }
+});
+
+test("5.3a REGRESSION GUARD: checkouts before an amend — the replaced commit is the one HEAD held before the amend", () => {
+  const repo = observationRepo();
+  repo.observe();
+  const c1 = autoLogged(repo, "src/co.txt", "chore: before the checkouts");
+  // One call: `checkout -b tmp` (an orphan, so tmp does not keep C1 alive), a commit there, `checkout
+  // main`, `commit --amend`. The entry just before the amend is the checkout FROM tmp, whose old value
+  // is T — a rule reading neighbouring entries rather than the amend line's own old value names T.
+  repo.git("checkout", "-q", "--orphan", "tmp");
+  const t = repo.commit({ "src/t.txt": "1" }, "chore: on the orphan branch");
+  repo.git("checkout", "-q", "-f", "main");
+  const c2 = amend(repo, "chore: amended after checkouts");
+  // Attributed after the checkouts: `checkout -f main` restores the fixture's tracked state.json.
+  engineRun(repo.cwd, ["update-epic", "epic-a", "--attribute-commit", c1]);
+  const o = repo.observe("PostToolUse", "git checkout --orphan tmp && git commit && git checkout main && git commit --amend");
+  assert.equal(o.status, 0, o.stderr);
+  assert.match(o.context, withdrawLine("epic-a", c1), `the replaced commit is C1:\n${o.context}`);
+  assert.doesNotMatch(o.context, new RegExp(`--withdraw-commit ${t}`), "never the checkout's old value");
+  assert.equal(retractedFor(repo, c1).length, 1);
+  assert.ok(c2);
+});

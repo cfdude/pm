@@ -119,21 +119,21 @@ Section 5 depends on this section's retraction row. Pairs: 4.1–4.4 (with 4.2a)
 
 Pairs: 5.1–5.3a (with 5.2a) land with 5.4.
 
-- [ ] 5.1 RED: commit auto-logged, a later call amends it, observe: `PROJECT.md` shows the amending
+- [x] 5.1 RED: commit auto-logged, a later call amends it, observe: `PROJECT.md` shows the amending
       commit only; `detours.log` holds the original row then its retraction (fails today: two visible
       rows)
-- [ ] 5.2 RED: commit attributed to epic E (`update-epic --attribute-commit`), a later call amends it:
+- [x] 5.2 RED: commit attributed to epic E (`update-epic --attribute-commit`), a later call amends it:
       output prints `update-epic E --withdraw-commit <replaced>` with `--withdrawal-reason` before any
       attribution command, never `--attribute-commit <replaced>`; E's `attributedCommits` byte-identical
       after the hook (fails today)
-- [ ] 5.3 RED: C1 auto-logged and attributed to E, then one call amends to C2 and again to C3: C1's
+- [x] 5.3 RED: C1 auto-logged and attributed to E, then one call amends to C2 and again to C3: C1's
       row is retracted, `--withdraw-commit` is printed for C1, no `--attribute-commit` names C1 or C2, and
       `PROJECT.md` shows a row only for C3; and C1 auto-logged and attributed, then one call amends to C2
       and runs `reset --hard HEAD~1`: C1's row is retracted and its withdrawal printed (fails against a
       live-amend-only rule); and C1 auto-logged and attributed, then one call runs `commit --amend` and
       `reset --hard HEAD@{1}`: C1's row is NOT retracted and no `--withdraw-commit` names C1 (fails
       against an every-amend rule that ignores liveness)
-- [ ] 5.2a RED: four epics, each with the replaced commit amended and dead; for each, run the
+- [x] 5.2a RED: four epics, each with the replaced commit amended and dead; for each, run the
       withdraw command by hand and assert its exit status agrees with whether the line was printed.
       E (openspec, archived `delivered`, ONE attributed commit, passing Gate 2): no `update-epic E
       --withdraw-commit` line, output names E as delivered and says `update-epic`'s refusal names the
@@ -148,9 +148,9 @@ Pairs: 5.1–5.3a (with 5.2a) land with 5.4.
       E also fails a hook whose simulated record only removes the sha (it reads `none-attributed` and
       prints the line). Fails on 0.44.0: the hook prints no withdraw line for any amend, so E2 and F
       fail (reviewer repro of the hand-run commands on 0.44.0: E 1, E2 0, E4 1, F 0)
-- [ ] 5.3a REGRESSION GUARD: one call runs `checkout -b tmp`, `checkout main`, `commit --amend`: the
+- [x] 5.3a REGRESSION GUARD: one call runs `checkout -b tmp`, `checkout main`, `commit --amend`: the
       replaced commit named is the one HEAD held before the amend
-- [ ] 5.4 GREEN: amend handling (Decision 7), with `deliveredRegression` extracted from
+- [x] 5.4 GREEN: amend handling (Decision 7), with `deliveredRegression` extracted from
       `update-epic`'s inline refusal test and called by both. Suite green
 
 ## 6. Detour rows: own artifacts and conductor-root paths

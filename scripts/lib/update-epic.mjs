@@ -121,6 +121,34 @@ function echoedTokens(tokens) {
  *  refusal. So no line but the printed invocation names those flags, and the invocation is the
  *  only line beginning `  update-epic `. User-supplied values (story titles) are JSON-quoted, and
  *  a finding's control characters escaped, so no value can start a line of its own. */
+/** Would writing `next` over the stored `snapshot` break an obligation an archived `delivered`
+ *  record meets? Returns the broken obligations — `deliveredObligations()`'s own `{kind, …}` entries
+ *  (`gate2`, `handoff`), empty for "no refusal". `status` is the call's RAW `--status` value
+ *  (undefined when absent).
+ *
+ *  WHEN, every half read from `snapshot`, never from `next`:
+ *    - the stored outcome is `delivered`;
+ *    - the call does not archive (`str(status) !== "archived"` — that case is the archive gate's);
+ *    - the record will be archived when the call returns: EITHER its change directory is archived on
+ *      disk (render()'s heal re-archives it whatever status the call writes) OR it is stored
+ *      `archived` and the call carries no `--status` at all (`status === undefined`, deliberately
+ *      the raw test and not `str()`).
+ *  PER OBLIGATION, and only a REGRESSION counts: an obligation the stored record already fails is
+ *  no ground for refusal.
+ *
+ *  Two callers, and the reason it is one function: `update-epic`'s refusal below, and the commit
+ *  hook, which asks it before printing `update-epic <id> --withdraw-commit` for an amended commit —
+ *  a printed command the engine refuses would be an instruction that does not run. */
+export function deliveredRegression(id, snapshot, next, { status } = {}) {
+  const asString = (v) => (typeof v === "string" ? v : undefined);
+  if (outcomeOf(snapshot) !== "delivered" || asString(status) === "archived") return [];
+  if (!(isArchived(id) || (snapshot.status === "archived" && status === undefined))) return [];
+  const carriedToOf = (e) => (e.disposition && e.disposition.carriedTo) || undefined;
+  const before = deliveredObligations(snapshot, { carriedTo: carriedToOf(snapshot) });
+  const after = deliveredObligations(next, { carriedTo: carriedToOf(next) });
+  return after.filter(o => !before.some(b => b.kind === o.kind));
+}
+
 function regressionRefusal({ id, snapshot, broken, argv, status }) {
   const quoted = (v) => escapeControls(JSON.stringify(String(v ?? "")));
   const findings = broken.map(o => {
@@ -868,12 +896,10 @@ export function updateEpic() {
   // PER OBLIGATION, and only a REGRESSION refuses: an obligation the record already failed is no
   // ground for refusal (a legacy record keeps its notes, links and priority editable), and an
   // already-failing handoff must not mask a Gate 2 this call breaks.
-  if (outcomeOf(snapshot) === "delivered" && str(f.status) !== "archived" &&
-      (isArchived(id) || (snapshot.status === "archived" && f.status === undefined))) {
-    const carriedToOf = (e) => (e.disposition && e.disposition.carriedTo) || undefined;
-    const before = deliveredObligations(snapshot, { carriedTo: carriedToOf(snapshot) });
-    const after = deliveredObligations(epic, { carriedTo: carriedToOf(epic) });
-    const broken = after.filter(o => !before.some(b => b.kind === o.kind));
+  {
+    // ONE predicate, shared with the commit hook's amend handling (commit-nudge-reads-the-whole-move
+    // Decision 7), so the hook can never print a withdrawal this refusal would refuse.
+    const broken = deliveredRegression(id, snapshot, epic, { status: f.status });
     if (broken.length) {
       process.stderr.write(regressionRefusal({ id, snapshot, broken, argv: argv.slice(1), status: str(f.status) }));
       process.exit(1);

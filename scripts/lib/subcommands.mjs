@@ -15,7 +15,8 @@ import { buildBrief } from "./briefing.mjs";
 import { COMMIT_DERIVED_KINDS, appendDetourLog, appendRetraction, fullSha, gitShortSha, isDetachedTree, readDetourRows, rowMatches, rowShasOverlap, shortSha } from "./git.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { escapeControls } from "./constants.mjs";
-import { beginObservation, isLiveCommit } from "./commit-watch.mjs";
+import { beginObservation, isAmend, isLiveCommit } from "./commit-watch.mjs";
+import { deliveredRegression } from "./update-epic.mjs";
 import { deferralHistory, deferralNote, detourContext } from "./links.mjs";
 import { activeChangeIds, archivedChanges, firstHeading, planFiles, reconcileArchived, strippedChangeId } from "./epic-progress.mjs";
 import { claimedSourceArtifacts, epicSourceArtifacts, normalizeArtifactPath, syncIgnoredArtifacts } from "./source-artifacts.mjs";
@@ -291,6 +292,9 @@ export function commitNudge() {
       // The observed path needs no parser at all: each subject comes from its commit, which is what
       // closes `-am` / `-F` / editor commits / escaped quotes as a class rather than one flag form
       // at a time.
+      // AN AMEND REPLACES (Decision 7), and it is handled BEFORE any commit is classified, so the
+      // replaced commit's row is already retracted when the amending commit's row is written.
+      const amendNote = supersedeAmended(state, obs.candidates);
       // LIVE commits only get a row or an attribution command (Decision 4); a dead one is named.
       const live = obs.candidates.filter(c => isLiveCommit(c.sha));
       const dead = obs.candidates.filter(c => !live.includes(c)).map(c => c.sha);
@@ -299,7 +303,7 @@ export function commitNudge() {
       // on the unverifiable rung nothing is known to have landed, and naming HEAD there would
       // assert a commit the repository never confirmed against an APPEND-ONLY array.
       const attribution = attributionNudge(state, ctx, commits.map(c => c.sha));
-      runNudge(state, ctx, commits, attribution, event, dead);
+      runNudge(state, ctx, commits, attribution, event, dead, amendNote);
     } else {
       const subject = unverifiableSubject(cmd);
       // null: the unverifiable rung, and the old heuristic said no.
@@ -313,6 +317,68 @@ export function commitNudge() {
     // skip only defers.
     obs.finish(obs.candidates.map(c => c.sha));
   } finally { obs.release(); }
+}
+
+/** Supersede every commit an amend in this window replaced (design Decision 7). Returns the
+ *  paragraph to print, or "".
+ *
+ *  For EVERY `commit (amend)` entry, live or dead, the replaced commit is that line's old value —
+ *  never a neighbouring entry's. A replaced commit that is LIVE again (the amend was undone, e.g.
+ *  `reset --hard HEAD@{1}`) is skipped: retracting or withdrawing it would be irreversible and false.
+ *  Otherwise, in landing order:
+ *    (a) every non-retracted AUTO-DETOUR / DETOUR-COMMIT row of it is retracted by the engine, with
+ *        the reason `amended into <new>`;
+ *    (b) each epic whose attribution array holds it gets a printed
+ *        `update-epic <id> --withdraw-commit <replaced> --withdrawal-reason "amended into <new>"` —
+ *        unless `deliveredRegression()` (the predicate update-epic's own refusal calls) says that
+ *        command would be refused, in which case the paragraph says so in prose and names no remedy:
+ *        the runnable remedy is emitted-commands-run-as-written's to print. The record the predicate
+ *        is asked about is the one --withdraw-commit writes — the sha REMOVED from the attribution
+ *        array AND APPENDED to the withdrawn commits — because removal alone reads an emptied array
+ *        as `none-attributed` and misses the Gate 2 obligation.
+ *  The engine never withdraws anything itself. */
+function supersedeAmended(state, candidates) {
+  const lines = [];
+  for (const entry of candidates) {
+    if (!isAmend(entry)) continue;
+    const replaced = entry.old;
+    if (/^0+$/.test(replaced) || isLiveCommit(replaced)) continue;
+    const reason = `amended into ${shortSha(entry.sha)}`;
+    const replacedShort = shortSha(replaced);
+    const label = replacedShort === "-" ? replaced.slice(0, 7) : replacedShort;
+
+    const rows = readDetourRows();
+    const retracted = rows.filter(r => r.kind === "RETRACTED").map(r => r.sha);
+    const open = rows.filter(r => COMMIT_DERIVED_KINDS.has(r.kind) && rowMatches(r.sha, replaced) &&
+      !retracted.some(x => rowShasOverlap(x, r.sha)));
+    const retractedNow = open.length > 0 && appendRetraction(open[0].sha, open[0].epic, reason);
+
+    const commands = [];
+    const refused = [];
+    for (const epic of state.epics || []) {
+      if (!Array.isArray(epic.attributedCommits) || !epic.attributedCommits.includes(replaced)) continue;
+      const next = {
+        ...epic,
+        attributedCommits: epic.attributedCommits.filter(s => s !== replaced),
+        withdrawnCommits: (Array.isArray(epic.withdrawnCommits) ? epic.withdrawnCommits : [])
+          .concat([{ sha: replaced, reason, withdrawnAt: new Date().toISOString() }]),
+      };
+      if (deliveredRegression(epic.id, epic, next, { status: undefined }).length) refused.push(epic.id);
+      else commands.push(`\`update-epic ${epic.id} --withdraw-commit ${replaced} --withdrawal-reason "${reason}"\``);
+    }
+    if (!retractedNow && !commands.length && !refused.length) continue;
+    let text = `AMEND — \`${label}\` was ${reason} and is on no branch, so it is replaced, not added.`;
+    if (retractedNow) text += ` Its automatic detour row was retracted (${reason}).`;
+    if (commands.length) {
+      text += " Withdraw its attribution BEFORE attributing anything else: " + commands.join(", ") + ".";
+    }
+    for (const id of refused) {
+      text += ` \`${id}\` is a delivered epic holding \`${label}\`, whose record the withdrawal would break; ` +
+        "`update-epic`'s refusal of that withdrawal names the remedy.";
+    }
+    lines.push(text);
+  }
+  return lines.join("\n\n");
 }
 
 /** The epic a commit that just landed belongs to, or null wherever the engine would have to
@@ -469,7 +535,7 @@ function unverifiableSubject(cmd) {
 /** Log the commit, self-heal an archived active pointer, re-render, and emit the advisory.
  *  Reached only once a commit is believed to have landed — by observation, or by the fallback
  *  heuristic above. */
-function runNudge(state, ctx, commits, attribution = null, event = "PostToolUse", dead = []) {
+function runNudge(state, ctx, commits, attribution = null, event = "PostToolUse", dead = [], amendNote = "") {
   // DETERMINISTIC: if we are inside a detour, record each commit in the trail. Each commit is
   // judged on ITS OWN subject and changed paths, and its row carries its own sha; `sha: null` is
   // the unverifiable rung, which knows no commit and keeps HEAD's reading.
@@ -570,7 +636,9 @@ function runNudge(state, ctx, commits, attribution = null, event = "PostToolUse"
   process.stdout.write(JSON.stringify({
     hookSpecificOutput: {
       hookEventName: event,
-      additionalContext: attribution ? `${msg}\n\n${attribution}` : msg,
+      // The amend paragraph sits BEFORE the attribution one: a withdrawal of the replaced commit is
+      // owed before anything new is attributed.
+      additionalContext: [msg, amendNote, attribution].filter(Boolean).join("\n\n"),
     },
   }));
 }
