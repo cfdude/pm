@@ -1,0 +1,32 @@
+# Gate 2 W-M1 — the replacer test against rr3-a's mutant M6 (jsonText ignores its replacer: JSON.stringify(value, null, space))
+✖ 5.3g (Gate 2 W-M1) jsonText passes its replacer through, as JSON.stringify's second argument (2.423125ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 44.44825
+
+✖ failing tests:
+
+test at scripts/test/output-text-integrity.test.mjs:679:1
+✖ 5.3g (Gate 2 W-M1) jsonText passes its replacer through, as JSON.stringify's second argument (2.423125ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + '{"a":1,"b":2}'
+  - '{"a":1}'
+           ^
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-text-integrity.test.mjs:681:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '{"a":1,"b":2}',
+    expected: '{"a":1}',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

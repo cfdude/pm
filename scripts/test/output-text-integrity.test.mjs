@@ -676,6 +676,12 @@ test("5.3g (Gate 2 U2-M1) jsonText escapes what JSON.stringify leaves raw, parse
   assert.deepEqual(await stdoutJsonBypasses(), [], "every JSON document written to stdout goes through jsonText()");
 });
 
+test("5.3g (Gate 2 W-M1) jsonText passes its replacer through, as JSON.stringify's second argument", async () => {
+  const { jsonText } = await import(lib("constants.mjs"));
+  assert.equal(jsonText({ a: 1, b: 2 }, ["a"]), '{"a":1}');
+  assert.equal(jsonText({ a: 1, b: 2 }, (k, v) => (k === "b" ? undefined : v), 1), '{\n "a": 1\n}');
+});
+
 /** Source guard (Gate 2 U2-M1, widened by V-M1): a declaration that writes to stdout (process.stdout.write,
  *  a refusal's `stdout:`, console.log) never names JSON.stringify — not called in the write, not aliased
  *  (`const j = JSON.stringify`), not built into a variable written later. The one form allowed is
