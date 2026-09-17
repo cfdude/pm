@@ -46,8 +46,11 @@ identifier, that the identifier holds a control character and that no verb can r
 SHALL NOT instruct the reader to edit `.conductor/state.json` by hand. This is the one exception to
 `emitted-commands-run-as-written`'s rule that a printed remedy clears the condition that printed it,
 and this capability owns it; a suite asserts the message instead of executing a command.
-An identifier holding no control character is printed as `emitted-commands-run-as-written` prints it
-(as-is when it matches the id format, shell-quoted otherwise).
+An epic id or release id holding no control character is printed through `printedId()` as
+`emitted-commands-run-as-written` prints an epic id (as-is when it matches the id format, shell-quoted
+otherwise). A tracker system, project or repository holding no control character is printed under
+`emitted-commands-run-as-written`'s own shape rules for that value, and this capability does not
+quote it.
 
 Governed values stored before this requirement — including an identifier the input rules below would
 now refuse — SHALL still be read and rendered, never refused on read.
@@ -100,6 +103,14 @@ now refuse — SHALL still be read and rendered, never refused on read.
   and an empty attribution array, and `integrity` runs
 - **THEN** no line of its output begins with `x`, and no printed `update-epic` invocation names that
   epic by an escaped or raw id
+
+#### Scenario: A release id in an integrity remedy is routed through the id printer
+- **WHEN** `state.json` already holds a release with id `"r<LF>FORGED"` and a release with id
+  `Legacy Release`, each with one archived `delivered` member and one `queued` member not in its
+  `deferred[]`, and `integrity` runs
+- **THEN** it exits 0, no line of its output begins with `FORGED`, no printed `release` invocation
+  names the first release by an escaped or raw id and its finding says no verb can rename that
+  release, and the second finding prints `release 'Legacy Release' --defer <queued member id>`
 
 #### Scenario: A record no verb can rename prints no remedy
 - **WHEN** a finding concerns an epic whose stored id holds a control character

@@ -31,9 +31,14 @@ setup error).
 Pairs: 1.2 lands with 1.3.
 
 - [ ] 1.1 REGRESSION GUARD: `EPIC_ID_FORMAT` is exported from `constants.mjs` by
-      `emitted-commands-run-as-written` (its task 2.9, applied first); confirm
-      `rg -n "a-z0-9\]\[a-z0-9" scripts/lib` still finds the pattern only in `constants.mjs`; no commit
-      unless it does not (design D4)
+      `emitted-commands-run-as-written` (its task 2.9, applied first); confirm the DEFINITION is
+      single — `rg -n 'EPIC_ID_FORMAT\s*=' scripts/lib scripts/conductor.mjs --glob '!constants.mjs'`
+      and `rg -n '/\^\[a-z0-9\]\[a-z0-9\._-\]\*\$/' scripts/lib scripts/conductor.mjs --glob
+      '!constants.mjs'` (the regex LITERAL) both return nothing. The bare pattern is not the guard: it
+      also matches `created-at.mjs`'s comment and the `add-epic`/`add-many` refusal messages D4 keeps.
+      Measured before change 2: the literal rg returns exactly `add-epic.mjs:360`, `add-many.mjs:61`
+      and `verify-specs.mjs:54`, the three sites its task 2.9 replaces; no commit unless it does not
+      (design D4)
 - [ ] 1.2 RED: unit — `escapeTableCell` escapes every control character exactly as `escapeControls`
       does, then every backslash as two and every `|` as `\|` (so `a\|b` stays one GFM cell);
       `escapeControls` is idempotent over its own output
@@ -86,7 +91,7 @@ Pairs: 4.1 lands with 4.2.
 
 ## 5. Refusals quote values on one line
 
-Pairs: 5.1–5.3b land with 5.4.
+Pairs: 5.1–5.3c land with 5.4.
 
 - [ ] 5.1 RED: spec "An unknown id is quoted back on one line" — the fixture pushes one detour frame
       first (without it `pop-detour` never reaches the id); all six verbs, `state.json` byte-identical
@@ -101,13 +106,20 @@ Pairs: 5.1–5.3b land with 5.4.
       a control-character id" — legacy control-character ids on the active detour epic, the paused epic
       and an attributed epic; record the anchor, make a real commit, amend the attributed commit,
       observe; assert no printed command names any of the three ids and no line is forged
+- [ ] 5.3c RED: spec "A release id in an integrity remedy is routed through the id printer" (legacy
+      release ids written into `state.json` directly — design D3 exception). Fails on 0.44.0, measured:
+      `integrity.mjs`'s `delivered-release-epic-left-open` prints `release ${rel.id} --defer …` raw, so
+      the output holds a line beginning `FORGED --defer` and the unquoted `release Legacy Release --defer`
 - [ ] 5.4 GREEN: an emitted invocation whose identifier (epic id, release id, tracker
       system/project/repo) holds a CONTROL CHARACTER is not printed; the prose line of design D4a
-      replaces it (an id merely failing `EPIC_ID_FORMAT` is printed as emitted-commands-run-as-written
-      prints it, shell-quoted via `printedId()`) — add the no-remedy builder and hook it into
+      replaces it (an epic or release id merely failing `EPIC_ID_FORMAT` is printed as
+      emitted-commands-run-as-written prints it, shell-quoted via `printedId()`; a tracker value without
+      a control character keeps change 2's shape rules) — add the no-remedy builder and hook it into
       `printedId()` as the single site (design D4a); route printed release-id commands through
-      `printedId()` too; confirm with `rg` that `commitNudge`'s candidate and withdraw lines and `sync`'s
-      near-match hint call `printedId()` (the message names the record and says no verb can rename it; no hand-edit
+      `printedId()` too, including `integrity.mjs`'s `release ${rel.id} --defer` remedy; because this
+      changes `printedId()`'s return (a string or the no-remedy signal), enumerate EVERY caller at sweep
+      time with `rg -n "printedId\(" scripts/lib scripts/conductor.mjs` — never a fixed list — and state
+      for each that it handles the no-remedy signal (the message names the record and says no verb can rename it; no hand-edit
       instruction; `gh issue list --repo` excluded — change 2's repo-shape check stops it first);
       and escape every governed value in a refusal or
       report line: the handoff refusal's story titles (`archive-gate.mjs`),
