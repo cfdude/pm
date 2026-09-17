@@ -178,15 +178,15 @@ Pairs: 6.1–6.6 land with 6.7.
 
 Pairs: 7.1–7.2 land with 7.4.
 
-- [ ] 7.1 RED: P paused behind D, both with arrays, a commit lands: a runnable command for D and one
+- [x] 7.1 RED: P paused behind D, both with arrays, a commit lands: a runnable command for D and one
       for P, and the text says the choice is the agent's (fails today, #199)
-- [ ] 7.2 RED: same, commit touches only `openspec/changes/P/tasks.md`: P's command precedes D's
-- [ ] 7.3 REGRESSION GUARD: every epic's `attributedCommits` unchanged by the hook in 7.1, 7.2 and 2.2;
+- [x] 7.2 RED: same, commit touches only `openspec/changes/P/tasks.md`: P's command precedes D's
+- [x] 7.3 REGRESSION GUARD: every epic's `attributedCommits` unchanged by the hook in 7.1, 7.2 and 2.2;
       one active epic and no artifact match prints exactly one command (today's shape); an epic with no
       `attributedCommits` array is never a candidate; with no active epic and no detour, a commit
       touching `openspec/changes/E/` and a commit moving it under `archive/` print no hint (today's
       silence)
-- [ ] 7.4 GREEN: `attributionCandidates` and the multi-candidate text (Decision 10). Suite green
+- [x] 7.4 GREEN: `attributionCandidates` and the multi-candidate text (Decision 10). Suite green
 
 ## 8. Required task items
 

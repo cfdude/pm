@@ -45,6 +45,7 @@ test("2.1 a commit followed by a checkout in the same call is reported", () => {
 test("2.2 two commits in one call are both reported, older first, in one attribution command", () => {
   const repo = observationRepo();
   repo.observe();
+  const attributionBefore = arrays(repo);
   const a = repo.commit({ "src/two.txt": "2" }, "fix: two");
   const b = repo.commit({ "src/three.txt": "3" }, "fix: three");
   const o = repo.observe("PostToolUse", "git commit -m two && git commit -m three");
@@ -55,6 +56,7 @@ test("2.2 two commits in one call are both reported, older first, in one attribu
   assert.ok(ia < ib, "the older commit is named first");
   assert.match(o.context, new RegExp(`update-epic epic-a --attribute-commit ${a} --attribute-commit ${b}`),
     "the attribution command carries both commits, in landing order, as one invocation");
+  assert.equal(arrays(repo), attributionBefore, "7.3: the hook attributes nothing");
 });
 
 test("2.3 hooks.json wires commit-nudge for Bash on PostToolUse and PostToolUseFailure, and on no pre-call event", () => {
@@ -692,5 +694,74 @@ test("6.6 REGRESSION GUARD: a nested mixed commit, a mismatched change directory
       "PROJECT.md": appendTo(repo, "PROJECT.md"),
     }, "chore(pm): upgrade conductor");
     assert.equal(rowsFor(repo, sha).filter((l) => l.includes("\tAUTO-DETOUR\t")).length, 1, "#173's shape is still auto-logged");
+  }
+});
+
+// ─────────────── 7. The attribution hint lists candidates and decides none ───────────────
+
+const attributionCommands = (context) => [...context.matchAll(/update-epic (\S+) --attribute-commit/g)].map((m) => m[1]);
+const arrays = (repo) => JSON.stringify(stateOf(repo).epics.map((e) => [e.id, e.attributedCommits]));
+
+test("7.1 during a detour the hint gives the detour epic and the paused epic each a command, and decides neither", () => {
+  const repo = observationRepo();
+  pushDetourFixture(repo);
+  repo.observe();
+  const before = arrays(repo);
+  const sha2 = repo.commit({ "src/more.mjs": "2" }, "feat: detour work");
+  const out = repo.observe("PostToolUse", "git commit");
+  const cmds = attributionCommands(out.context);
+  assert.deepEqual([...cmds].sort(), ["detour-d", "epic-a"], `a command for D and for P:\n${out.context}`);
+  assert.match(out.context, new RegExp(`update-epic detour-d --attribute-commit ${sha2}`));
+  assert.match(out.context, new RegExp(`update-epic epic-a --attribute-commit ${sha2}`));
+  assert.match(out.context, /choosing is yours|the choice is yours/i, "the choice is stated as the agent's");
+  assert.equal(arrays(repo), before, "the hook attributes nothing");
+});
+
+test("7.2 a commit confined to the paused epic's change directory lists that epic first", () => {
+  const repo = observationRepo();
+  pushDetourFixture(repo);
+  repo.observe();
+  const before = arrays(repo);
+  const sha = repo.commit({ "openspec/changes/epic-a/tasks.md": "- [x] 1\n" }, "chore(openspec): tick epic-a");
+  const o = repo.observe("PostToolUse", "git commit");
+  const cmds = attributionCommands(o.context);
+  assert.deepEqual(cmds, ["epic-a", "detour-d"], `P's command precedes D's:\n${o.context}`);
+  assert.equal(arrays(repo), before);
+  assert.ok(sha);
+});
+
+test("7.3 REGRESSION GUARD: one active epic prints one command; an epic with no array is never a candidate; no active epic prints no hint", () => {
+  {
+    const repo = observationRepo();
+    repo.observe();
+    const before = arrays(repo);
+    repo.commit({ "src/a.mjs": "1" }, "feat: ordinary work");
+    const o = repo.observe("PostToolUse", "git commit");
+    assert.deepEqual(attributionCommands(o.context), ["epic-a"]);
+    assert.equal(arrays(repo), before);
+  }
+  {
+    const repo = observationRepo();
+    pushDetourFixture(repo);
+    editState(repo, (s) => { delete s.epics.find((e) => e.id === "detour-d").attributedCommits; });
+    repo.observe();
+    repo.commit({ "src/b.mjs": "1" }, "feat: detour work");
+    const o = repo.observe("PostToolUse", "git commit");
+    assert.deepEqual(attributionCommands(o.context), ["epic-a"], "an epic with no attribution array is never a candidate");
+  }
+  {
+    const repo = observationRepo();
+    engineRun(repo.cwd, ["add-epic", "--id", "e-change", "--lane", "claude-code"]);
+    const cleared = engineRun(repo.cwd, ["clear-active"]);
+    assert.equal(cleared.status, 0, cleared.stderr);
+    repo.observe();
+    const s1 = repo.commit({ "openspec/changes/e-change/tasks.md": "- [x] 1\n" }, "chore(openspec): tick e-change");
+    let o = repo.observe("PostToolUse", "git commit");
+    assert.ok(o.context.includes(short(repo, s1)), "fixture: reported");
+    assert.deepEqual(attributionCommands(o.context), [], "touching an epic's files never makes it a candidate");
+    repo.git("mv", "openspec/changes/e-change", "openspec/changes/archive-e-change");
+    repo.git("commit", "-q", "-m", "chore(openspec): archive e-change");
+    o = repo.observe("PostToolUse", "git commit");
+    assert.deepEqual(attributionCommands(o.context), [], "nor does the archive move");
   }
 });
