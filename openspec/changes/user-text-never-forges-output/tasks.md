@@ -284,7 +284,14 @@ Pairs: 7.1 lands with 7.2.
         machine-read filename); lock and rules-file paths are printed RELATIVE to the same root they are
         built from, so no root segment reaches them. Test 5.3j runs init/render/brief/set-activity-log and
         a failing honcho-memory in a directory named with LF and U+2028 (`red-g2-W-I1.txt`, one site
-        fixed at a time).
+        fixed at a time). W-I2: an ALL_CAPS name (and its `.join()`) is literal only when every declaration
+        of it, followed through imports, is a literal shape and it is never reassigned or rebound;
+        `AGENT_OUTCOMES` (a filter of literal `KNOWN_OUTCOMES`) is the one `LITERAL_ALLOWLIST` entry. Names
+        that lost trust: `PROJECT_MD` (render — escaped in W-I1), `STATE_PATH` (state.mjs lockPaths ×2,
+        saveState's temp name) and `LOCK` (commit-watch observeLockPaths), judged not-output; the local
+        `L.join("\n")` of purgeLogs and rulesBlockAmbiguousMessage, judged passthrough. The same round found
+        render()'s function-wide sink-flow judgment covering its raw `rendered ${PROJECT_MD}` stderr line: a
+        sink-flow judgment no longer covers a value written straight to a stream. `red-g2-W-I2.txt`.
 - [x] 8.2 **Inverse of every operation added or modified** — the id refusal at `pushEpic` (inverse:
       `remove-epic`, unchanged; a skipped directory's inverse is renaming it, no verb); the release
       create refusal (inverse: none needed — nothing was stored). DECIDED, not deferred: no

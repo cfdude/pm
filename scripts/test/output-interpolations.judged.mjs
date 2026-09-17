@@ -596,3 +596,21 @@ x("update-epic.mjs", "updateEpic", {
 x("remove-epic.mjs", "removeEpic", {
   "(owed.length ? ` ${owed.length} reconcile obligation link(s): ${cite(owed)}. Removing it would leave the owed ` + \"verdict nothing to be recorded against. Answer it first — \" + [...new Set(owed.map(r => orNoRemedy(() => `\\`record-reconcile ${printedId(r.holder)} --detour ${printedId(r.epic)} --verdict valid|invalidated\\``)))].join(\", \") + \" — then remove.\\n\" : \"\")": 1,
 }, "passthrough", "a conditional `+` chain whose non-literal operands (the escaped citation, the orNoRemedy command list) are each swept where they sit");
+
+// ── Gate 2 W-I2: ALL_CAPS names are no longer literal by their spelling. Each below lost that trust because
+// its declaration is not a literal (the resolver in output-interpolations.mjs reads it), and is judged here.
+x("state.mjs", "lockPaths", {
+  "STATE_PATH": 2,
+}, "not-output", "lock and break-lock FILE paths; lockRefusalMessage prints a lock path only relative to the root it was built from");
+x("state.mjs", "saveState", {
+  "STATE_PATH": 1,
+}, "not-output", "the temporary file name the state is written to and renamed from");
+x("commit-watch.mjs", "observeLockPaths", {
+  "LOCK": 1,
+}, "not-output", "a lock file path (LOCK is commitObservePath(root) + \".lock\")");
+x("purge-logs.mjs", "purgeLogs", {
+  "L.join(\"\\n\")": 1,
+}, "passthrough", "L is a local array of templates and literals only (its file names through escapeControls), each value swept where it is built");
+x("rules.mjs", "rulesBlockAmbiguousMessage", {
+  "L.join(\"\\n\")": 1,
+}, "passthrough", "L is a local array of templates and literals only (err.markers mapped to a template), each value swept where it is built");

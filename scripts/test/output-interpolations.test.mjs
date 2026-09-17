@@ -107,3 +107,52 @@ test("a STALE or EXCESS finding names the judgments file it is declared in (Gate
   const stale = sweepMutated("scripts/lib/claims.mjs", "until ${claimExpiry(epic.claim)}", "until later");
   assert.ok(stale.findings.some(f => f.startsWith("STALE ") && f.includes("output-interpolations.judged.mjs")), stale.findings.join("\n"));
 });
+
+// ── Gate 2 W-I2: an ALL_CAPS name was literal by its spelling alone ──
+const CLAIMS_IMPORT = "REPO_CLAIM_DEFAULT_TTL_MINUTES, escapeControls, isFlagToken, splitFlagToken } from \"./constants.mjs\";";
+/** Sweep claims.mjs with a top-level declaration added after its constants import and claim()'s session
+ *  interpolation replaced by `expr`. */
+function sweepClaimWith(decl, expr, extra = []) {
+  const text = source("scripts/lib/claims.mjs");
+  let t = text;
+  for (const [from, to] of [[CLAIMS_IMPORT, `${CLAIMS_IMPORT}\n${decl}`], [SESSION, `from session '\${${expr}}' `], ...extra]) {
+    assert.equal(t.split(from).length - 1, 1, `mutation anchor occurs exactly once: ${from}`);
+    t = t.replace(from, () => to);
+  }
+  return sweepInterpolations({ read: (r) => (r === "scripts/lib/claims.mjs" ? t : source(r)) });
+}
+const unclassifiedInClaim = (findings, expr) =>
+  findings.some(f => f.startsWith("UNCLASSIFIED scripts/lib/claims.mjs:") && f.endsWith(`[claim] \${} ${expr}`));
+
+test("mutant (Gate 2 W-I2): an ALL_CAPS name bound to a stored value is UNCLASSIFIED, and so is its .join()", () => {
+  const a = sweepClaimWith("const HELD_SESSION = globalThis.held.session;", "HELD_SESSION");
+  assert.ok(unclassifiedInClaim(a.findings, "HELD_SESSION"), a.findings.join("\n"));
+  const b = sweepClaimWith("const SESSIONS = globalThis.held.sessions;", "SESSIONS.join(\" \")");
+  assert.ok(unclassifiedInClaim(b.findings, "SESSIONS.join(\" \")"), b.findings.join("\n"));
+});
+
+test("mutant (Gate 2 W-I2): an ALL_CAPS literal is still literal, unless it is reassigned or also bound as a parameter", () => {
+  const literal = sweepClaimWith("const HELD_SESSION = [\"a\", \"b\"];", "HELD_SESSION.join(\" \")");
+  assert.deepEqual(literal.findings, [], "a literal array's join is literal");
+  const reassigned = sweepClaimWith("let HELD_SESSION = \"a\";", "HELD_SESSION",
+    [["  const session = resolveSession(f);\n  if (!session) die(`claim requires", "  const session = resolveSession(f);\n  HELD_SESSION = session;\n  if (!session) die(`claim requires"]]);
+  assert.ok(unclassifiedInClaim(reassigned.findings, "HELD_SESSION"), reassigned.findings.join("\n"));
+  const param = sweepClaimWith("const HELD_SESSION = \"a\";\nconst f2 = (HELD_SESSION) => HELD_SESSION;", "HELD_SESSION");
+  assert.ok(unclassifiedInClaim(param.findings, "HELD_SESSION"), param.findings.join("\n"));
+});
+
+test("mutant (Gate 2 W-I2): render's PROJECT_MD — a path under CLAUDE_PROJECT_DIR — printed raw is UNCLASSIFIED, though render() is judged sink-flow as a whole", () => {
+  const { findings } = sweepMutated("scripts/lib/render.mjs", "${escapeControls(PROJECT_MD)}", "${PROJECT_MD}");
+  assert.ok(findings.some(f => /^UNCLASSIFIED scripts\/lib\/render\.mjs:\d+ \[render\] \$\{\} PROJECT_MD$/.test(f)), findings.join("\n"));
+});
+
+test("every LITERAL_ALLOWLIST entry names a declaration that exists with exactly that text, and carries a reason (Gate 2 W-I2)", async () => {
+  const { LITERAL_ALLOWLIST, literalConstant } = await import("./output-interpolations.mjs");
+  assert.ok(Object.keys(LITERAL_ALLOWLIST).length > 0);
+  for (const [key, { decl, why }] of Object.entries(LITERAL_ALLOWLIST)) {
+    const [rel, name] = key.split(":");
+    assert.ok(typeof why === "string" && why.trim(), `${key} carries a reason`);
+    assert.ok(source(rel).includes(`const ${name} = ${decl}`), `${key}: declared as ${decl}`);
+    assert.equal(literalConstant(rel, name, source), true, `${key} resolves`);
+  }
+});

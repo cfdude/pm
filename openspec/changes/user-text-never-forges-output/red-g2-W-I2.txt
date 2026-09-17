@@ -1,0 +1,94 @@
+# Gate 2 W-I2 — the W-I2 tests run against output-interpolations.mjs at e55fe4a (ALL_CAPS trusted by spelling; a function-wide sink-flow judgment covering a direct stream write)
+✖ mutant (Gate 2 W-I2): an ALL_CAPS name bound to a stored value is UNCLASSIFIED, and so is its .join() (330.175ms)
+✖ mutant (Gate 2 W-I2): an ALL_CAPS literal is still literal, unless it is reassigned or also bound as a parameter (210.471083ms)
+✖ mutant (Gate 2 W-I2): render's PROJECT_MD — a path under CLAUDE_PROJECT_DIR — printed raw is UNCLASSIFIED, though render() is judged sink-flow as a whole (228.785708ms)
+✖ every LITERAL_ALLOWLIST entry names a declaration that exists with exactly that text, and carries a reason (Gate 2 W-I2) (0.307417ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 0
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 822.620833
+
+✖ failing tests:
+
+test at scripts/test/output-interpolations.test.mjs:127:1
+✖ mutant (Gate 2 W-I2): an ALL_CAPS name bound to a stored value is UNCLASSIFIED, and so is its .join() (330.175ms)
+  AssertionError [ERR_ASSERTION]: STALE scripts/lib/state.mjs [lockPaths] "STATE_PATH": declared 2 occurrence(s), found 0 (declared in scripts/test/output-interpolations.judged.mjs)
+  STALE scripts/lib/state.mjs [saveState] "STATE_PATH": declared 1 occurrence(s), found 0 (declared in scripts/test/output-interpolations.judged.mjs)
+  STALE scripts/lib/commit-watch.mjs [observeLockPaths] "LOCK": declared 1 occurrence(s), found 0 (declared in scripts/test/output-interpolations.judged.mjs)
+  STALE scripts/lib/purge-logs.mjs [purgeLogs] "L.join(\"\\n\")": declared 1 occurrence(s), found 0 (declared in scripts/test/output-interpolations.judged.mjs)
+  STALE scripts/lib/rules.mjs [rulesBlockAmbiguousMessage] "L.join(\"\\n\")": declared 1 occurrence(s), found 0 (declared in scripts/test/output-interpolations.judged.mjs)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-interpolations.test.mjs:129:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/output-interpolations.test.mjs:134:1
+✖ mutant (Gate 2 W-I2): an ALL_CAPS literal is still literal, unless it is reassigned or also bound as a parameter (210.471083ms)
+  AssertionError [ERR_ASSERTION]: a literal array's join is literal
+  + actual - expected
+  
+  + [
+  +   'STALE scripts/lib/state.mjs [lockPaths] "STATE_PATH": declared 2 occurrence(s), found 0 (declared in scripts/test/output-interpolations.judged.mjs)',
+  +   'STALE scripts/lib/state.mjs [saveState] "STATE_PATH": declared 1 occurrence(s), found 0 (declared in scripts/test/output-interpolations.judged.mjs)',
+  +   'STALE scripts/lib/commit-watch.mjs [observeLockPaths] "LOCK": declared 1 occurrence(s), found 0 (declared in scripts/test/output-interpolations.judged.mjs)',
+  +   'STALE scripts/lib/purge-logs.mjs [purgeLogs] "L.join(\\"\\\\n\\")": declared 1 occurrence(s), found 0 (declared in scripts/test/output-interpolations.judged.mjs)',
+  +   'STALE scripts/lib/rules.mjs [rulesBlockAmbiguousMessage] "L.join(\\"\\\\n\\")": declared 1 occurrence(s), found 0 (declared in scripts/test/output-interpolations.judged.mjs)'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-interpolations.test.mjs:136:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'STALE scripts/lib/state.mjs [lockPaths] "STATE_PATH": declared 2 occurrence(s), found 0 (declared in scripts/test/output-interpolations.judged.mjs)', 'STALE scripts/lib/state.mjs [saveState] "STATE_PATH": declared 1 occurrence(s), found 0 (declared in scripts/test/output-interpolations.judged.mjs)', 'STALE scripts/lib/commit-watch.mjs [observeLockPaths] "LOCK": declared 1 occurrence(s), found 0 (declared in scripts/test/output-interpolations.judged.mjs)', 'STALE scripts/lib/purge-logs.mjs [purgeLogs] "L.join(\\"\\\\n\\")": declared 1 occurrence(s), found 0 (declared in scripts/test/output-interpolations.judged.mjs)', 'STALE scripts/lib/rules.mjs [rulesBlockAmbiguousMessage] "L.join(\\"\\\\n\\")": declared 1 occurrence(s), found 0 (declared in scripts/test/output-interpolations.judged.mjs)' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/output-interpolations.test.mjs:144:1
+✖ mutant (Gate 2 W-I2): render's PROJECT_MD — a path under CLAUDE_PROJECT_DIR — printed raw is UNCLASSIFIED, though render() is judged sink-flow as a whole (228.785708ms)
+  AssertionError [ERR_ASSERTION]: STALE scripts/lib/state.mjs [lockPaths] "STATE_PATH": declared 2 occurrence(s), found 0 (declared in scripts/test/output-interpolations.judged.mjs)
+  STALE scripts/lib/state.mjs [saveState] "STATE_PATH": declared 1 occurrence(s), found 0 (declared in scripts/test/output-interpolations.judged.mjs)
+  STALE scripts/lib/commit-watch.mjs [observeLockPaths] "LOCK": declared 1 occurrence(s), found 0 (declared in scripts/test/output-interpolations.judged.mjs)
+  STALE scripts/lib/purge-logs.mjs [purgeLogs] "L.join(\"\\n\")": declared 1 occurrence(s), found 0 (declared in scripts/test/output-interpolations.judged.mjs)
+  STALE scripts/lib/rules.mjs [rulesBlockAmbiguousMessage] "L.join(\"\\n\")": declared 1 occurrence(s), found 0 (declared in scripts/test/output-interpolations.judged.mjs)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-interpolations.test.mjs:146:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/output-interpolations.test.mjs:149:1
+✖ every LITERAL_ALLOWLIST entry names a declaration that exists with exactly that text, and carries a reason (Gate 2 W-I2) (0.307417ms)
+  TypeError: Cannot convert undefined or null to object
+      at Object.keys (<anonymous>)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-interpolations.test.mjs:151:20)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)

@@ -19,7 +19,9 @@
 //                 an arrow returning a whole call to it — never a name alone (`esc`), and never a local
 //                 declaration shadowing the real one. shellQuote is deliberately NOT an escaper;
 //   literal       every value it can print is literal: a string, a number, `<name>.length`/`.size`, an
-//                 ALL_CAPS constant (or its `.join`), a Date rendering, a template or `+` chain of
+//                 ALL_CAPS constant (or its `.join`) whose every declaration — followed through imports — is
+//                 a literal, an array/object/Set of literals, or listed in LITERAL_ALLOWLIST with a reason,
+//                 and that is never reassigned or rebound (Gate 2 W-I2), a Date rendering, a template or `+` chain of
 //                 literals (whose own values are swept where they sit), a ternary / `&&` of those (an
 //                 `&&` only when no looser `||`, `??`, `?` or `,` sits beside it at the top level);
 //   sink          it sits inside `X.push(…)` in a declaration that joins X through `X.map(escapeControls)`;
@@ -28,7 +30,9 @@
 //   judged        everything else, matched against the DECLARED table in output-interpolations.judged.mjs.
 //                 A judgment names EXACT expressions with the number of times each occurs in its
 //                 declaration, so a second raw copy of a judged expression is a finding too; only a
-//                 sink-flow or json judgment may cover a whole declaration.
+//                 sink-flow or json judgment may cover a whole declaration, and a sink-flow one never covers
+//                 a value written straight to a stream (process.stdout/stderr.write, console, fs.writeSync)
+//                 beside its sink (Gate 2 W-I1).
 //   UNCLASSIFIED  none of the above — a FINDING. A judgment matching fewer occurrences than it declares
 //                 is STALE; one matching more is EXCESS. Both are findings.
 // The test is output-interpolations.test.mjs. Run `node scripts/test/output-interpolations.mjs [--all]`
@@ -293,9 +297,116 @@ function wholeCallTo(expr, names) {
 // Anchored to the WHOLE operand (Gate 2 V-I2): `held.session + held.x.length` is not a count. `<name> + 1`
 // is not here at all — a name alone cannot say it is a number — so an ordinal judges it.
 const SIMPLE_ENGINE = [
-  /^\d+$/, /^[\w$.]+\.length$/, /^[\w$.]+\.size$/, /^[A-Z][A-Z0-9_]*$/, /^[A-Z][A-Z0-9_]*\.join\((["'][^"']*["'])?\)$/,
+  /^\d+$/, /^[\w$.]+\.length$/, /^[\w$.]+\.size$/,
   /^new Date\([^)]*\)\.toISOString\(\)$/, /^ordinal\([\w$.]+\)$/,
 ];
+// An ALL_CAPS name (or its `.join(…)`) is literal only when its DECLARATION is (Gate 2 W-I2): a name alone
+// said nothing — `PROJECT_MD` is path.join(CLAUDE_PROJECT_DIR…), `L` a local array of templates, and
+// `const HELD = held.session` was trusted by its spelling.
+const CONSTANT_NAME = /^([A-Z][A-Z0-9_]*)(?:\.join\((?:["'][^"']*["'])?\))?$/;
+/** Constants whose declaration is not a literal SHAPE the resolver reads, trusted with a reason. Each names
+ *  its declaration; the test asserts every entry still resolves to a declaration of that exact text. */
+export const LITERAL_ALLOWLIST = {
+  "scripts/lib/archive-gate.mjs:AGENT_OUTCOMES": {
+    decl: "KNOWN_OUTCOMES.filter(o => o !== \"unknown\")",
+    why: "a filter of disposition.mjs's literal KNOWN_OUTCOMES array: a subset of literal strings",
+  },
+};
+/** Comments removed and the TEXT of every string and template literal blanked (quotes kept, length kept),
+ *  so a declaration pattern never matches inside a literal or a comment (Gate 2 W-M2). */
+export function codeOnly(src) {
+  const { contexts, templates, interps } = lex(src);
+  const out = src.split("");
+  const keep = new Uint8Array(src.length);
+  const blank = (a, b) => { for (let i = a; i < b; i++) if (out[i] !== "\n") out[i] = " "; };
+  for (const ctx of contexts) for (const t of ctx.tokens) keep.fill(1, t.start, t.end);
+  // A comment is whatever no token covers; whitespace stays as it is.
+  for (let i = 0; i < src.length; i++) if (!keep[i] && !/\s/.test(src[i])) out[i] = " ";
+  for (const ctx of contexts) for (const t of ctx.tokens) {
+    if (t.kind === "string" || t.kind === "regex") blank(t.start + 1, t.end - 1);
+  }
+  for (const tpl of templates) {
+    // The template's literal text, never its interpolations' code.
+    let at = tpl.start + 1;
+    for (const x of interps.filter(x => x.start > tpl.start && x.end < tpl.end).sort((p, q) => p.start - q.start)) {
+      if (x.start - 2 > at) blank(at, x.start - 2);
+      at = Math.max(at, x.end + 1);
+    }
+    if (tpl.end - 1 > at) blank(at, tpl.end - 1);
+  }
+  return out.join("");
+}
+/** The text of a declaration's right-hand side starting at `from` (just after `=`): to a top-level `;`, or a
+ *  line break at depth 0 after a complete value where no operator continues the expression. */
+function rhsText(src, from) {
+  const toks = lex(src.slice(from)).contexts[0].tokens;
+  let depth = 0, end = 0;
+  const CONT = new Set(["+", ".", "?.", "?", ":", "||", "&&", "??", "=>", ",", "(", "[", "{", "-", "*", "/"]);
+  for (let k = 0; k < toks.length; k++) {
+    const t = toks[k], prev = toks[k - 1];
+    if (depth === 0 && prev && /\n/.test(src.slice(from + prev.end, from + t.start)) &&
+      !(prev.kind === "punct" && CONT.has(prev.text)) && !(t.kind === "punct" && CONT.has(t.text))) break;
+    if (t.kind === "punct" && ["(", "[", "{"].includes(t.text)) depth++;
+    else if (t.kind === "punct" && [")", "]", "}"].includes(t.text)) depth--;
+    if (depth === 0 && t.kind === "punct" && t.text === ";") break;
+    end = t.end;
+  }
+  return src.slice(from, from + end).trim();
+}
+/** Is `name`, as file `rel` binds it, a constant whose every declaration is literal — a string, a number, an
+ *  interpolation-free template, or an array/object/Set/Object.freeze of those and of other such constants —
+ *  or an import of one? Anything else (a call, a path, a destructured binding, a parameter) is not. */
+export function literalConstant(rel, name, read, seen = new Set()) {
+  const key = `${rel}:${name}`;
+  if (seen.has(key)) return false;
+  seen.add(key);
+  let src;
+  try { src = read(rel); } catch { return false; }
+  const code = codeOnly(src);
+  const esc = name.replace(/\$/g, "\\$");
+  // Any binding that is not `const|let|var NAME =`: a function, a class, a destructuring, a parameter or catch.
+  if (new RegExp(`(?:^|[^\\w$.])(?:function|class)\\s+${esc}\\b`).test(code)) return false;
+  if (new RegExp(`(?:const|let|var)\\s*[{\\[][^=;]*[^\\w$.]${esc}\\b[^=;]*[}\\]]\\s*=`).test(code)) return false;
+  if (new RegExp(`\\(\\s*(?:[\\w$]+\\s*,\\s*)*${esc}\\s*(?:,[^)]*)?\\)\\s*(?:=>|\\{)|catch\\s*\\(\\s*${esc}\\s*\\)|[^\\w$.]${esc}\\s*=>`).test(code)) return false;
+  // A reassignment `NAME = …` outside its declaration: its value is whatever was assigned last.
+  if (new RegExp(`(?:^|[^\\w$.])${esc}\\s*(?:[-+*/|&?]{1,3})?=(?![=>])`).test(code.replace(new RegExp(`(?:const|let|var)\\s+${esc}\\s*=`, "g"), ""))) return false;
+  const decls = [...code.matchAll(new RegExp(`(?:^|[^\\w$.])(?:const|let|var)\\s+${esc}\\s*=`, "g"))];
+  if (decls.length) {
+    const allow = LITERAL_ALLOWLIST[key];
+    return decls.every(m => {
+      const rhs = rhsText(src, m.index + m[0].length);
+      return (allow && normaliseExpr(rhs) === normaliseExpr(allow.decl)) || literalValue(rel, rhs, read, seen);
+    });
+  }
+  for (const m of code.matchAll(/import\s*\{([^}]*)\}\s*from\s*["']([^"']+)["']/g)) {
+    // The specifier list and the module path, read from the ORIGINAL text at the same offsets.
+    const orig = src.slice(m.index, m.index + m[0].length);
+    const im = /import\s*\{([^}]*)\}\s*from\s*["']([^"']+)["']/.exec(orig);
+    for (const spec of im[1].split(",").map(t => t.trim()).filter(Boolean)) {
+      const [real, local = real] = spec.split(/\s+as\s+/).map(t => t.trim());
+      if (local === name) return literalConstant(path.posix.normalize(path.posix.join(path.posix.dirname(rel), im[2])), real, read, seen);
+    }
+  }
+  return false;
+}
+function literalValue(rel, rhs, read, seen) {
+  const toks = lex(rhs).contexts[0].tokens;
+  if (!toks.length) return false;
+  for (let k = 0; k < toks.length; k++) {
+    const t = toks[k], next = toks[k + 1], prev = toks[k - 1];
+    if (t.kind === "string" || t.kind === "number") continue;
+    if (t.kind === "template") { if (t.tpl.hasInterp) return false; continue; }
+    if (t.kind === "punct" && ["[", "]", "{", "}", "(", ")", ",", ":", "+", "-", "..."].includes(t.text)) continue;
+    if (t.kind === "ident" && ["true", "false", "null", "undefined"].includes(t.text)) continue;
+    if (t.kind === "ident" && next && next.kind === "punct" && next.text === ":" && prev && ["{", ","].includes(prev.text)) continue;   // an object key
+    if (t.kind === "ident" && t.text === "Object" && next && next.text === "." && toks[k + 2] && toks[k + 2].text === "freeze") { k += 2; continue; }
+    if (t.kind === "ident" && t.text === "new" && next && next.kind === "ident" && next.text === "Set") { k += 1; continue; }
+    if (t.kind === "ident" && /^[A-Z][A-Z0-9_]*$/.test(t.text) && !(next && next.kind === "punct" && [".", "?.", "("].includes(next.text)) &&
+      literalConstant(rel, t.text, read, seen)) continue;
+    return false;
+  }
+  return true;
+}
 const reAlt = (xs) => xs.map(n => n.replace(/\$/g, "\\$")).join("|") || "(?!)";
 /** `X.map(<escaper>).join(…)`, with the escaper named as the file really binds it. */
 function mappedEscape(e, names) {
@@ -315,6 +426,8 @@ function literalOnly(expr, names) {
   const plusToks = lex(e).contexts[0].tokens;
   if (plusToks.length > 1 && plusToks.every((tk, k) => (k % 2 === 0 ? isLiteral(tk) : tk.kind === "punct" && tk.text === "+"))) return true;
   if (SIMPLE_ENGINE.some(r => r.test(e))) return true;
+  const constant = CONSTANT_NAME.exec(e);
+  if (constant && names.constant && names.constant(constant[1])) return true;
   if (/^(["'])(?:(?!\1)[^\\]|\\.)*\1$/.test(e)) return true;
   if (/^`[^`$]*`$/.test(e)) return true;
   // A ternary whose output branches are all literal: `cond ? "a" : "b"` (nested allowed).
@@ -333,6 +446,8 @@ function literalOnly(expr, names) {
   }
   return false;
 }
+/** Calls that write their argument straight to a process stream. */
+const DIRECT_OUTPUT_CALLS = /\b(process\.(?:stdout|stderr)\.write|console\.(?:log|error|warn|info)|fs\.writeSync)\(/g;
 const NOT_OUTPUT_CALLS = /\b(new RegExp|path\.(?:join|resolve|relative|dirname|basename)|fs\.[a-zA-Z]+|execFileSync|spawnSync|execSync|JSON\.parse|import)\(/g;
 
 function balancedParens(s) { let d = 0; for (const ch of s) { if (ch === "(") d++; else if (ch === ")" && --d < 0) return false; } return d === 0; }
@@ -393,7 +508,9 @@ export function sweepInterpolations({ repo = REPO, read = (rel) => fs.readFileSy
     const fns = topLevelFunctions(src);
     const pushes = balancedCallSpans(src, /\b([\w$]+)\.push\(/g);
     const notOutput = balancedCallSpans(src, NOT_OUTPUT_CALLS);
+    const direct = balancedCallSpans(src, DIRECT_OUTPUT_CALLS);
     const names = trustedEscapers(rel, src);
+    names.constant = (n) => literalConstant(rel, n, read);
     const spanNames = localNames(names, SPAN_ESCAPERS);
     const escaping = spanNames.length ? balancedCallSpans(src, new RegExp(`\\b(${reAlt(spanNames)})\\(`, "g")) : [];
     for (const v of values) {
@@ -408,8 +525,11 @@ export function sweepInterpolations({ repo = REPO, read = (rel) => fs.readFileSy
       else if (notOutput.some(p => p.start < v.start && v.end <= p.end)) cls = "not-output";
       else {
         const key = normaliseExpr(expr);
+        // A WHOLE-declaration judgment says where the declaration's lines GO; a value written straight to a
+        // stream beside that sink never goes there, so only an exact judgment covers it (Gate 2 W-I1).
+        const straight = direct.some(p => p.start < v.start && v.end <= p.end);
         const j = judged.find(x => x.file === rel && x.fn === (fn ? fn.name : undefined) &&
-          (x.exact !== undefined ? exactKey.get(x) === key : x.re.test(expr)));
+          (x.exact !== undefined ? exactKey.get(x) === key : !(straight && x.class === "sink-flow") && x.re.test(expr)));
         cls = j ? `judged:${j.class}` : "UNCLASSIFIED";
         if (j) used.set(j, used.get(j) + 1);
       }
