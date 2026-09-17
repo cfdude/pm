@@ -58,7 +58,9 @@ Pairs: 2.1–2.4a land with 2.5; 2.6–2.7 land with 2.8.
       `detours.log` holds at most one commit-derived row for it (drive the interleaving through an
       exported function, not timing). Also: with the lock held by another process, an observation
       reports nothing and writes nothing, and the next observation after release reports the commit; a
-      lock file older than 10 s is broken. Also: a reflog whose anchored line is gone reports nothing
+      lock file is broken when it is older than 10 s AND its holder is not confirmed alive (a holder
+      confirmed dead is broken at once; a confirmed-live holder blocks observation — design Decision 3
+      as amended by Gate 2 G2-I3). Also: a reflog whose anchored line is gone reports nothing
       from the reflog and re-anchors
 - [x] 2.4a RED: observe, commit, delete the oldest HEAD reflog entry (`git reflog delete` of the last
       `HEAD@{n}`, the front of `logs/HEAD`), observe: the commit is reported (fails against an offset
@@ -267,9 +269,19 @@ Pairs: 7.1–7.2 land with 7.4.
 
 ## 10. Gate 2 and close
 
-- [ ] 10.1 Gate 2 — two fresh-context lenses over the committed range (A: spec alignment and real
+- [x] 10.1 Gate 2 — two fresh-context lenses over the committed range (A: spec alignment and real
       tests; B: absent edits against 8.1's sweep and 8.2's inverses); fix Critical and Important;
       record `record-gate-review commit-nudge-reads-the-whole-move --gate 2 --verdict pass --reviewer
       "<identity>" --base-sha <parent of first attributed> --head-sha <last attributed>`
+      - Round 1 over `b136774^..` failed (1 Critical, 6 Important); fixed in:
+        - `304311e` — reflog anchor stored and compared as bytes, not a UTF-8 decode (G2-C1)
+        - `69fea84` — changed paths read unquoted with `-z` (G2-I1, G2-I6)
+        - `f838869` — withdrawal simulated with `update-epic`'s own removal (G2-I2)
+        - `5a2b677` — dead-only reports state provenance; `retract-detour` refuses a ref (G2-M1, G2-M2,
+          G2-I4, G2-I5, G2-M3, G2-M4)
+        - `912f657` — observation lock broken only when its holder is not confirmed alive (G2-I3)
+        - `46fa347` — test pinning how a Latin-1 subject reaches the trail (G2-C1 follow-up)
+      - Scoped re-review over `304311e..46fa347`: pass. Its Minors: M-b (release() guard untested)
+        covered by a test with `red-G2-Mb.txt`; M1 (task 2.4's stale-lock wording) corrected above
 - [ ] 10.2 Archive this change <!-- pm:lifecycle --> — `/opsx:archive commit-nudge-reads-the-whole-move`,
       then the dispositions in 8.5
