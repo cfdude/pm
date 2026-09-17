@@ -190,7 +190,7 @@ Pairs: 7.1–7.2 land with 7.4.
 
 ## 8. Required task items
 
-- [ ] 8.1 **Call-site completeness sweep** — derived with `rg` at sweep time, never from this list:
+- [x] 8.1 **Call-site completeness sweep** — derived with `rg` at sweep time, never from this list:
       - every caller of `observeCommit`, `classifyMovement`, `headReflog`, `readWatch`, `writeWatch`,
         `COMMIT_WATCH_PATH` (`rg -n "observeCommit|classifyMovement|headReflog|readWatch|writeWatch|COMMIT_WATCH_PATH|commit-watch" scripts`);
       - every caller of `headChangedFiles`/`changedFiles`, `isConductorOwnFiles`,
@@ -217,7 +217,7 @@ Pairs: 7.1–7.2 land with 7.4.
       already-retracted check, removed only by `purge-logs` wholesale; `commit-observe.json`'s
       `reported` shas — written and read by the hook only, removed by the 500-entry bound.
       A site where a rule does not hold is a FINDING unless justified in the commit
-- [ ] 8.2 **Inverse of every operation added or modified** — automatic row (inverse: `retract-detour`,
+- [x] 8.2 **Inverse of every operation added or modified** — automatic row (inverse: `retract-detour`,
       shipped); retraction (no un-retract: re-declare with `log-detour`, design Decision 11); amend
       auto-retraction (same); adding to `reported` (inverse: the bound's eviction only — a manual
       un-report has no use, since a reported commit's rows are retracted, not re-reported); the anchor

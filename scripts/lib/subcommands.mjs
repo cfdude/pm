@@ -531,7 +531,7 @@ function unverifiableSubject(cmd) {
   //     untouched, but gitShortSha()/headChangedFiles() both read ROOT and so attribute
   //     that commit to this repo                                           (gh#65 bug 2)
   //
-  // observeCommit() now answers all three directly and without a subject — this subject-vs-HEAD
+  // The reflog walk (commit-watch.mjs) now answers all three directly and without a subject — this subject-vs-HEAD
   // comparison is what is left for the rung where nothing can be observed. It stays a
   // SUPPRESSION-ONLY test: only CONTRADICTED (a subject was parsed, git works here, and HEAD
   // disagrees) goes silent. A subject we could not read is "cannot tell", which keeps the old

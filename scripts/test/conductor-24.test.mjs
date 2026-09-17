@@ -174,8 +174,8 @@ test("a BACKGROUNDED commit is caught on the next tool call rather than lost (gh
   assert.ok(out.includes("hookSpecificOutput"),
     "the anchor is behind by exactly one commit, so the very next call notices it");
   assert.match(detourLog(cwd), /still running/);
-  // The entry describes the COMMIT, not the call that happened to notice it. gitShortSha() and
-  // headChangedFiles() both read HEAD, so a delayed notice is still attributed correctly —
+  // The entry describes the COMMIT, not the call that happened to notice it. The observed rung logs
+  // each reported commit under its own sha and changed paths, so a delayed notice is still correct —
   // assert it rather than trust it, since this is the one place that could silently drift.
   assert.match(detourLog(cwd), new RegExp(`\\t${git(cwd, "rev-parse", "--short", "HEAD")}\\t`),
     "the logged sha must be the commit's, not a stale or unrelated one");

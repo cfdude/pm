@@ -20,7 +20,7 @@
  *   render         regenerate PROJECT.md from state.json + live tasks.md
  *   brief          SessionStart: print additionalContext JSON (DORMANT if not init'd)
  *   snapshot       PreCompact: render + write .conductor/brief.txt (DORMANT if not init'd)
- *   commit-nudge   PostToolUse(Bash): fires on EVERY Bash call and decides by OBSERVING the
+ *   commit-nudge   PostToolUse/PostToolUseFailure(Bash): fires after EVERY Bash call and decides by OBSERVING the
  *                  repo — a reflog anchor (.conductor/commit-observe.json) and every commit
  *                  entry after it — never by reading the command text (see lib/commit-watch.mjs).
  *                  When a commit really landed: log detour commits + nudge; also auto-logs an
@@ -136,7 +136,7 @@ import { unconsideredOutcomesReport } from "./lib/unconsidered.mjs";
 // printed twice.
 //
 // OPT-IN ONLY, via PM_ENGINE_DELEGATION naming the checkout's absolute path. This is the single
-// place the engine can execute code it did not ship, and the four hooks reach it in every
+// place the engine can execute code it did not ship, and the hooks (five events) reach it in every
 // project on the machine — see the trust-boundary note at the top of lib/self-hosting.mjs
 // before loosening the condition.
 const delegated = delegateToCheckout({ selfPath: fileURLToPath(import.meta.url) });

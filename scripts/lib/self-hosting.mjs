@@ -1,7 +1,7 @@
 // scripts/lib/self-hosting.mjs
 // gh-134: hand execution off to the checkout's engine when pm is being developed.
 //
-// Every entry point the plugin ships — `hooks/hooks.json` (4 hooks) and `commands/*.md` (15
+// Every entry point the plugin ships — `hooks/hooks.json` (6 hook entries) and `commands/*.md` (15
 // slash commands) — invokes `${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs`, which resolves to
 // the INSTALLED plugin, not the checkout being edited. Working on pm itself therefore runs an
 // engine a full release behind the working tree; the PostToolUse hook fires on every commit
@@ -13,8 +13,8 @@
 // ─────────────────────────── THE TRUST BOUNDARY ───────────────────────────
 //
 // This module decides whether to execute code the PROJECT supplies, and that decision is
-// evaluated in EVERY project on the machine, initialized or not, by four hooks — SessionStart,
-// PreToolUse, PostToolUse, PreCompact — on roughly every turn. Before this handoff existed,
+// evaluated in EVERY project on the machine, initialized or not, by five hook events — SessionStart,
+// PreToolUse, PostToolUse, PostToolUseFailure, PreCompact — on roughly every turn. Before this handoff existed,
 // those hooks could only ever run code that shipped with the plugin.
 //
 // So the authorization MUST come from something the project cannot write. The first version of
