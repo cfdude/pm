@@ -157,7 +157,9 @@ Pairs: 2.1–2.8 (incl. 2.7a) land with 2.9.
       `add-many.mjs:61` and `verify-specs.mjs:54` (the `EPIC_ID` const) — so no id-format regex
       literal remains outside `constants.mjs` (the guard `user-text-never-forges-output` task 1.1
       asserts); Layer A extended to the outputs these
-      fixtures produce; 2.1–2.8 pass, suite green
+      fixtures produce — at Gate 2 (E-I4) to the WHOLE output of every run in the file, plus a source
+      scan requiring every printed-invocation template in `scripts/lib` to be reached by a fixture
+      (`PRINTER_FIXTURES` for the printers outside the registries); 2.1–2.8 pass, suite green
 
 ## 3. Tracker recipes (tracker-sync MODIFIED "Every command pm emits must run as written"; ADDED secondary watermark)
 

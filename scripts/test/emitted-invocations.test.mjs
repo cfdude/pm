@@ -17,7 +17,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import os from "node:os";
 import { spawnSync } from "node:child_process";
-import { ENGINE, EMPTY_CACHE, observationRepo, tmpRepo } from "./helpers.mjs";
+import { ENGINE, EMPTY_CACHE, observationRepo as helperObservationRepo, tmpRepo } from "./helpers.mjs";
 
 const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const lib = (name) => new URL(`../lib/${name}`, import.meta.url).href;
@@ -546,12 +546,39 @@ export async function renderedRulesBlocks() {
   return out;
 }
 
-function engineRun(cwd, args) {
+/** EVERY engine output this file produces — each verb's stdout and stderr, each hook's context —
+ *  kept so the final sweep (E-I4) can run Layer A over all of it, not only the keyword-filtered lines
+ *  a builder's producer selects, and can check that every printed-invocation template in the engine
+ *  source was reached by some fixture. */
+const CORPUS = [];
+function engineRun(cwd, args, input) {
   const r = spawnSync("node", [ENGINE, ...args], {
-    cwd, encoding: "utf8",
+    cwd, encoding: "utf8", ...(input !== undefined ? { input } : {}),
     env: { ...process.env, CLAUDE_PROJECT_DIR: cwd, PM_CACHE_ROOT: EMPTY_CACHE, PM_QUIET_ENGINE_BANNER: "1" },
   });
-  return { status: r.status, stdout: r.stdout || "", stderr: r.stderr || "" };
+  const out = { status: r.status, stdout: r.stdout || "", stderr: r.stderr || "" };
+  CORPUS.push({ args, text: outputText(out) });
+  return out;
+}
+/** A run's output as an agent reads it: a hook-shaped verb (`brief`) prints JSON, so its context is
+ *  DECODED — the JSON escaping (`\"`) is not text anyone reads. */
+function outputText(r) {
+  let text = r.stdout;
+  try { const j = JSON.parse(r.stdout); if (j && j.hookSpecificOutput) text = j.hookSpecificOutput.additionalContext || ""; } catch { /* plain text */ }
+  return `${text}\n${r.stderr}`;
+}
+/** The helper's observation repo, with every hook observation recorded into CORPUS. */
+function observationRepo(opts) {
+  const repo = helperObservationRepo(opts);
+  const observe = repo.observe;
+  repo.observe = (...a) => {
+    const o = observe(...a);
+    // The context, decoded — never the hook's raw stdout, whose JSON escaping (`\"`) is not text any
+    // agent reads.
+    CORPUS.push({ args: ["observe", ...a], text: `${o.context || ""}\n${o.stderr || ""}` });
+    return o;
+  };
+  return repo;
 }
 
 /** Every commit-nudge message variant change 1 prints, each from its own fixture built anchor →
@@ -797,8 +824,10 @@ async function assertLayerA(label, out) {
 function registerBuilder(label, spec) {
   if (spec.unconstructable) return;
   const cases = Array.isArray(spec) ? spec : [spec];
-  cases.forEach((c, k) => {
-    const name = `${label}${cases.length > 1 ? ` [${c.case || k}]` : ""}`;
+  cases.forEach((c0, k) => {
+    const name = `${label}${cases.length > 1 ? ` [${c0.case || k}]` : ""}`;
+    // A producer may read in-process (a library function, not a verb run): its output joins the corpus.
+    const c = { ...c0, produce: (fx) => { const out = c0.produce(fx); CORPUS.push({ args: ["produce", name], text: out }); return out; } };
     if (c.prints === "none") {
       test(`Layer B ${name} — reproduces its condition and prints no engine invocation`, async () => {
         const fx = c.setup();
@@ -2242,4 +2271,210 @@ test("9.1 the rules block's disposition rule states the Gate 2 condition beside 
   const item = block.slice(block.indexOf("**End work by recording a disposition.**"));
   const head = item.slice(0, item.indexOf("\n7. ")).replace(/\n\s+/g, " ");
   assert.match(head, /openspec-lane epic, `delivered` also needs a passing Gate 2/, head);
+});
+
+// ═══════════════════════════════ E-I4 — the whole corpus, and every printer reached ═══════════════════════════════
+
+/** Every printed-invocation TEMPLATE in the engine source: a code span in a string literal of
+ *  scripts/lib/*.mjs whose text begins with a dispatched verb and a space. Returned with a matcher
+ *  built from the literal text up to the span's end or the literal's end, each `${…}` a wildcard. */
+const quotesBeforeOf = (line, index) => (line.slice(0, index).match(/(^|[^\\])"/g) || []).length;
+export function printedTemplates(verbs = dispatchedVerbs()) {
+  const BS = String.fromCharCode(92);
+  const HOLE = "@@HOLE@@";
+  const out = [];
+  const dir = path.join(REPO, "scripts", "lib");
+  const verbAlt = [...verbs].sort((a, b) => b.length - a.length).map(v => v.replace(/-/g, "\\-")).join("|");
+  // A span opener (`\``/`` ` ``) or a string literal that IS an indented invocation line (two or
+  // more leading spaces, as the regression refusal and verify-specs print them).
+  const opener = new RegExp(`(${BS}${BS}\`|\`|["\`] {2,})(${verbAlt}) `, "g");
+  for (const file of fs.readdirSync(dir).filter(f => f.endsWith(".mjs")).sort()) {
+    const lines = fs.readFileSync(path.join(dir, file), "utf8").split("\n");
+    lines.forEach((line, i) => {
+      if (/^\s*(\/\/|\*|\/\*)/.test(line)) return;
+      for (const m of line.matchAll(opener)) {
+        const quotesBefore = quotesBeforeOf(line, m.index);
+        let inTemplate;
+        if (m[1].length > 2) {
+          // An indented invocation LINE: a template literal, or a double-quoted string that opens here.
+          inTemplate = m[1][0] === "`";
+          if (!inTemplate && quotesBefore % 2 === 1) continue;
+        } else if (m[1].length === 2) {
+          inTemplate = true;                               // an escaped span inside a template literal
+        } else if (quotesBefore % 2 === 1) {
+          inTemplate = false;                              // a span inside a double-quoted string
+        } else {
+          // A plain backtick outside a double-quoted string OPENS a template literal. It is an
+          // invocation only where a function BUILDS one — returned, a ternary arm, an arrow body, an
+          // array element or a line of its own (gateRemedy, dispositionInvocation, a remedy list);
+          // elsewhere it is a message that merely begins with a verb's name.
+          if (!/(^\s*|\breturn\s+|[?:,[]\s*|=>\s*)$/.test(line.slice(0, m.index))) continue;
+          inTemplate = true;
+        }
+        let j = m.index + m[1].length;
+        let seg = "";
+        while (j < line.length) {
+          if (inTemplate && line.startsWith("${", j)) {
+            let depth = 0, k = j + 1;
+            for (; k < line.length; k++) { if (line[k] === "{") depth++; else if (line[k] === "}" && --depth === 0) break; }
+            seg += HOLE; j = k + 1; continue;
+          }
+          if (line[j] === BS) {
+            if (line[j + 1] === "`") break;
+            seg += line[j + 1]; j += 2; continue;
+          }
+          if (line[j] === "`") break;
+          if (!inTemplate && line[j] === '"') break;
+          seg += line[j]; j++;
+        }
+        const literal = seg.split(HOLE).map(p => p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("[^`\\n]*?");
+        out.push({ site: `scripts/lib/${file}:${i + 1}`, text: seg.split(HOLE).join("${…}"), re: new RegExp(literal) });
+      }
+    });
+  }
+  return out;
+}
+
+/** The printers OUTSIDE the three registries — notices, refusals and reports that print an engine
+ *  invocation. Each fixture makes the engine print its line into CORPUS; the sweep below then runs
+ *  Layer A over it and asserts every template in the source was reached. `expect` is the fixture's
+ *  own sanity check that it produced the printer it is named for. */
+const PRINTER_FIXTURES = {
+  "reconcile owed: pop-detour, --clear-links, a bad --link, remove-epic, and moving the pointer off"() {
+    const repo = remedyRepo();
+    repo.ok(["add-epic", "--id", "rp", "--lane", "claude-code", "--title", "rp"]);
+    repo.ok(["set-active", "rp"]);
+    repo.ok(["add-epic", "--id", "rd", "--lane", "claude-code", "--title", "rd"]);
+    repo.ok(["push-detour", "rp", "--detour", "rd", "--reason", REASON, "--reconcile"]);
+    return [
+      [repo.run(["pop-detour", "rp"]), /record-reconcile rp --detour rd --verdict/],
+      [repo.run(["update-epic", "rp", "--clear-links"]), /record-reconcile rp --detour <detourId>/],
+      [repo.run(["update-epic", "rp", "--link", "bogus:rd:x"]), /record-reconcile rp --detour <detourId>/],
+      [repo.run(["remove-epic", "rd"]), /record-reconcile rp --detour rd --verdict/],
+      [repo.run(["clear-active"]), /record-reconcile rp --detour <detourId>/],
+    ];
+  },
+  "activity log off"() {
+    const repo = remedyRepo();
+    return [[repo.run(["activity"]), /set-activity-log on/]];
+  },
+  "a stale claim marker"() {
+    const repo = remedyRepo();
+    repo.write({ epics: [{ id: "cl", title: "cl", priority: "P2", status: "queued", role: "epic", lane: "claude-code", links: [],
+      claim: { session: "s1", claimedAt: "2026-01-01T00:00:00.000Z", ttlMinutes: 1 } }] });
+    return [[repo.run(["owners"]), /claim <id> --session <you>/]];
+  },
+  "clearing a parent"() {
+    const repo = remedyRepo();
+    repo.ok(["add-epic", "--id", "pa", "--lane", "claude-code", "--title", "pa"]);
+    repo.ok(["add-epic", "--id", "ch", "--lane", "claude-code", "--title", "ch", "--parent", "pa"]);
+    return [[repo.run(["update-epic", "ch", "--clear", "parent"]), /plan-hierarchy --parent <that id>/]];
+  },
+  "a blocked epic with no depends-on link"() {
+    const repo = remedyRepo();
+    repo.ok(["add-epic", "--id", "bl", "--lane", "claude-code", "--title", "bl", "--status", "blocked"]);
+    return [[repo.run(["brief"]), /update-epic bl --link "depends-on:<id>:<why>"/]];
+  },
+  "gate guard: the read, the reconcile block and the tracker-refresh block"() {
+    const out = [];
+    {
+      const repo = remedyRepo();
+      out.push([repo.run(["set-gate-guard"]), /set-gate-guard on\|off/]);
+    }
+    {
+      const repo = remedyRepo();
+      repo.ok(["add-epic", "--id", "gp", "--lane", "claude-code", "--title", "gp"]);
+      repo.ok(["set-active", "gp"]);
+      repo.ok(["add-epic", "--id", "gd", "--lane", "claude-code", "--title", "gd"]);
+      repo.ok(["push-detour", "gp", "--detour", "gd", "--reason", REASON, "--reconcile"]);
+      repo.ok(["pop-detour", "gp"]);
+      out.push([engineRun(repo.cwd, ["gate-guard"], "{}"), /`set-gate-guard off` does not/]);
+    }
+    {
+      const repo = remedyRepo();
+      repo.ok(["set-gate-guard", "on"]);
+      repo.ok(["add-epic", "--id", "gt", "--lane", "claude-code", "--title", "gt", "--external-id", "7", "--external-url", "https://github.com/o/n/issues/7"]);
+      repo.ok(["set-active", "gt"]);
+      out.push([engineRun(repo.cwd, ["gate-guard"], "{}"), /Turn the guard off with `set-gate-guard off`/]);
+    }
+    return out;
+  },
+  "releases: none declared, one declared, an unknown id, an unknown cross-spec release"() {
+    const repo = remedyRepo();
+    const none = repo.run(["release", "show"]);
+    repo.ok(["release", "r1", "--intent", "the first"]);
+    return [
+      [none, /release <id> --intent/],
+      [repo.run(["release", "show"]), /release show <id>/],
+      [repo.run(["release", "nope"]), /release nope --intent/],
+      [repo.run(["record-cross-spec-review", "nope", "--verdict", "pass", "--reviewer", "r"]), /release nope --intent/],
+    ];
+  },
+  "a release write on a detached checkout"() {
+    const repo = remedyRepo();
+    fixtureGit(repo.cwd, "checkout", "-q", "--detach");
+    return [[repo.run(["release", "r2", "--intent", "detached"]), /release show/]];
+  },
+  "remove-epic tombstones a plan, then sync skips it; a near-name plan"() {
+    const repo = remedyRepo();
+    const plan = repo.file("docs/superpowers/plans/2026-08-01-tomb.md", "# tomb\n\n- [ ] 1\n");
+    repo.ok(["add-epic", "--id", "tomb", "--lane", "superpowers", "--title", "tomb", "--plan", plan]);
+    const removed = repo.run(["remove-epic", "tomb"]);
+    const skipped = repo.run(["sync"]);
+    repo.ok(["add-epic", "--id", "near", "--lane", "superpowers", "--title", "near"]);
+    repo.file("docs/superpowers/plans/2026-09-01-near.md", "# near\n\n- [ ] 1\n");
+    return [
+      [removed, /update-epic <id> --plan <path>/],
+      [skipped, /update-epic <id> --plan docs\/superpowers\/plans\/2026-08-01-tomb\.md/],
+      [repo.run(["sync"]), /add-epic --id 2026-09-01-near --lane superpowers --plan/],
+    ];
+  },
+  "verify-specs: no root, an uncovered document, a header naming an epic, a dangling spec"() {
+    const out = [];
+    {
+      const repo = remedyRepo();
+      out.push([repo.run(["verify-specs"]), /verify-specs --root <path>/]);
+      out.push([repo.run(["verify-specs", "--headers"]), /verify-specs --headers --root <path>/]);
+    }
+    {
+      const repo = remedyRepo();
+      repo.ok(["add-epic", "--id", "hd", "--lane", "claude-code", "--title", "hd", "--spec", "docs/superpowers/specs/gone.md"]);
+      repo.file("docs/superpowers/specs/2026-08-01-hd-design.md", "# hd\n\n**Epic:** `hd`\n\nbody\n");
+      out.push([repo.run(["verify-specs"]), /verify-specs --headers/]);
+      out.push([repo.run(["verify-specs"]), /update-epic <id> --spec <path>/]);
+      out.push([repo.run(["verify-specs", "--headers"]), /update-epic hd --spec docs\/superpowers\/specs\/2026-08-01-hd-design\.md/]);
+    }
+    return out;
+  },
+};
+
+test("E-I4 printers outside the registries: each fixture prints the invocation it is named for", () => {
+  for (const [name, build] of Object.entries(PRINTER_FIXTURES)) {
+    for (const [r, expected] of build()) {
+      assert.match(outputText(r), expected, `${name}: the fixture did not print its invocation:\n${outputText(r)}`);
+    }
+  }
+});
+
+/** Is this file running filtered? The reach half needs every fixture above to have run. */
+const FILTERED = process.execArgv.some(a => /^--test-(name-pattern|skip-pattern|only)/.test(a));
+
+test("E-I4 Layer A over EVERY output this file produced, and every printed-invocation template in the engine reached", async () => {
+  const verbs = dispatchedVerbs();
+  // The WHOLE output of every run — every brief, every integrity report, every refusal and notice —
+  // not the keyword-filtered lines a producer selected; plus the rules blocks and init, which 1.5
+  // renders in-process.
+  const texts = [...new Set([...CORPUS.map(c => c.text), ...(await renderedRulesBlocks()).map(b => b.text), initOutput().text])];
+  const problems = [];
+  for (const t of texts) problems.push(...(await layerA("engine output", t, verbs)).problems);
+  assert.deepEqual([...new Set(problems)], [], problems.join("\n"));
+  if (FILTERED) return;
+  assert.ok(CORPUS.length > 300, `only ${CORPUS.length} outputs recorded — the corpus hook regressed`);
+  const all = texts.join("\n");
+  const templates = printedTemplates(verbs);
+  assert.ok(templates.length > 60, `only ${templates.length} printed templates found — the source scan regressed`);
+  const unreached = templates.filter(t => !t.re.test(all)).map(t => `${t.site}  \`${t.text}\``);
+  assert.deepEqual(unreached, [],
+    "printed-invocation templates no fixture in this file makes the engine print — add a Layer B builder or a " +
+    `PRINTER_FIXTURES entry so Layer A checks what it prints:\n${unreached.join("\n")}`);
 });
