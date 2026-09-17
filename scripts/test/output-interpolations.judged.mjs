@@ -489,9 +489,7 @@ x("releases.mjs", "release", {
 }, "escaped", "releaseLine() escapes the release id (Gate 2 T-I3); the rest are counts");
 x("remove-epic.mjs", "removeEpic", {
   "epicSummaryTable([epic, ...descendants])": 1,
-  "cite(frames)": 1,
-  "cite(owed)": 1,
-}, "escaped", "the summary table escapes each cell; cite() escapes its whole citation (Gate 2 T-S2); each id through escapeControls");
+}, "escaped", "the summary table escapes each cell; each id through escapeControls (cite(), a whole call to escapeControls, is trusted as its alias since Gate 2 W-M2 stopped a \"; \" string ending its declaration)");
 x("remove-epic.mjs", "removeEpic", {
   "[...new Set(owed.map(r => orNoRemedy(() => `\\`record-reconcile ${printedId(r.holder)} --detour ${printedId(r.epic)} --verdict valid|invalidated\\``)))].join(\", \")": 1,
 }, "escaped", "each command through orNoRemedy/printedId");
@@ -594,7 +592,7 @@ x("update-epic.mjs", "updateEpic", {
   "verdict.message": 1,
 }, "passthrough", "parentError / parseLinkFlags / parseStoryFlags / storyDispositionError / archiveGate messages, each escaping what it quotes where it is built");
 x("remove-epic.mjs", "removeEpic", {
-  "(owed.length ? ` ${owed.length} reconcile obligation link(s): ${cite(owed)}. Removing it would leave the owed ` + \"verdict nothing to be recorded against. Answer it first — \" + [...new Set(owed.map(r => orNoRemedy(() => `\\`record-reconcile ${printedId(r.holder)} --detour ${printedId(r.epic)} --verdict valid|invalidated\\``)))].join(\", \") + \" — then remove.\\n\" : \"\")": 1,
+  "(owed.length ? `  ${owed.length} reconcile obligation link(s): ${cite(owed)}. Removing it would leave the owed ` + \"verdict nothing to be recorded against. Answer it first — \" + [...new Set(owed.map(r => orNoRemedy(() => `\\`record-reconcile ${printedId(r.holder)} --detour ${printedId(r.epic)} --verdict valid|invalidated\\``)))].join(\", \") + \" — then remove.\\n\" : \"\")": 1,
 }, "passthrough", "a conditional `+` chain whose non-literal operands (the escaped citation, the orNoRemedy command list) are each swept where they sit");
 
 // ── Gate 2 W-I2: ALL_CAPS names are no longer literal by their spelling. Each below lost that trust because

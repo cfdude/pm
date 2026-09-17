@@ -37,6 +37,24 @@
 //                 is STALE; one matching more is EXCESS. Both are findings.
 // The test is output-interpolations.test.mjs. Run `node scripts/test/output-interpolations.mjs [--all]`
 // to print the findings (or, with --all, every interpolation with its class); it exits 1 on any finding.
+//
+// KNOWN LIMITS OF THE LEXICAL SWEEP (Gate 2 W-M2). This is a lexer, not a JavaScript binder, and it is not
+// sound against adversarial source. Each shape below classifies a raw value as escaped or sunk with 0
+// findings. NONE exists in the engine today — each verified with rg over scripts/lib and scripts/conductor.mjs
+// when this block was written (0 hits; the alias check listed every trusted alias — esc, cite, quoted — with
+// no reassignment) — and the BEHAVIOURAL backstop is the runtime poison sweep, test 7.2 with its legacy
+// recipes in output-text-integrity.test.mjs, which runs every governed input through every surface:
+//   - a DESTRUCTURED escaper name — `const { escapeControls } = identityObject` — is not counted as a binding
+//     shadowing the import;
+//   - a PARAMETER or CATCH variable named like an escaper — `(escapeControls) => …`, `catch (escapeControls)`;
+//   - a REASSIGNED alias — `let e = (v) => escapeControls(v); e = (v) => v;` — is trusted by its declaration;
+//   - a GREEDY mapped escape — `xs.map(v => escapeControls(v) + String(v)).join("")` — matches mappedEscape's
+//     `\(.*\)` as if the callback were one escaper call;
+//   - a DROPPED join — `L.map(escapeControls).join("");` as a statement whose value is discarded — still makes
+//     every `L.push` in that declaration a sink (a comment, a string or a bare `L.map(escapeControls)` no
+//     longer does).
+// And one loud false positive: an alias of a NON-span escaper — `const pid = (v) => printedId(v)` — is not
+// accepted, so its uses report UNCLASSIFIED rather than pass.
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -214,13 +232,17 @@ const SPAN_ESCAPERS = new Set(["escapeControls", "escapeTableCell", "tableRow"])
  *  `const A = (v) => B(…)` (B trusted) aliases B, but only if EVERY declaration of A in the file does. */
 export function trustedEscapers(rel, src) {
   const names = new Map();
-  // Line comments first: a `//` comment may hold `/*` (a glob such as `commands/*.md`).
-  const code = src.replace(/(^|\s)\/\/[^\n]*/g, "$1").replace(/\/\*[\s\S]*?\*\//g, "");
+  // Comments removed and string/template text blanked (Gate 2 W-M2): a string holding "const escapeControls ="
+  // is not a declaration shadowing the import.
+  const code = codeOnly(src);
   const declared = (n) => [...code.matchAll(new RegExp(`(?:^|[^\\w$.])(?:const|let|var|function|class)\\s+${n.replace(/\$/g, "\\$")}\\b`, "g"))].length;
   for (const [real, home] of Object.entries(ESCAPER_HOMES)) {
     if (rel === home && new RegExp(`^export\\s+(?:const|function)\\s+${real}\\b`, "m").test(code) && declared(real) === 1) names.set(real, real);
   }
-  for (const m of code.matchAll(/import\s*\{([^}]*)\}\s*from\s*["']([^"']+)["']/g)) {
+  for (const found of code.matchAll(/import\s*\{([^}]*)\}\s*from\s*["']([^"']*)["']/g)) {
+    // The module path is literal text, blanked in `code`: read it from the source at the same offsets.
+    const m = /import\s*\{([^}]*)\}\s*from\s*["']([^"']+)["']/.exec(src.slice(found.index, found.index + found[0].length));
+    if (!m) continue;
     const from = path.posix.normalize(path.posix.join(path.posix.dirname(rel), m[2]));
     for (const spec of m[1].split(",").map(t => t.trim()).filter(Boolean)) {
       const [real, local = real] = spec.split(/\s+as\s+/).map(t => t.trim());
@@ -446,9 +468,15 @@ function literalOnly(expr, names) {
   }
   return false;
 }
+/** Does `fnCode` (comments removed, literal text blanked) USE `X.map(escapeControls)` — joined, or returned whole?
+ *  A mention in a comment, a string or an expression statement whose value is dropped joins nothing (Gate 2 W-M2). */
+function sinkJoins(fnCode, name) {
+  const x = name.replace(/\$/g, "\\$");
+  return new RegExp(`(?<![\\w$.])${x}\\.map\\(escapeControls\\)\\.join\\(|\\breturn\\s+${x}\\.map\\(escapeControls\\)\\s*[;}]`).test(fnCode);
+}
 /** Calls that write their argument straight to a process stream. */
 const DIRECT_OUTPUT_CALLS = /\b(process\.(?:stdout|stderr)\.write|console\.(?:log|error|warn|info)|fs\.writeSync)\(/g;
-const NOT_OUTPUT_CALLS = /\b(new RegExp|path\.(?:join|resolve|relative|dirname|basename)|fs\.[a-zA-Z]+|execFileSync|spawnSync|execSync|JSON\.parse|import)\(/g;
+const NOT_OUTPUT_CALLS = /\b(new RegExp|path\.(?:join|resolve|relative|dirname|basename)|fs\.(?!writeSync\b)[a-zA-Z]+|execFileSync|spawnSync|execSync|JSON\.parse|import)\(/g;
 
 function balancedParens(s) { let d = 0; for (const ch of s) { if (ch === "(") d++; else if (ch === ")" && --d < 0) return false; } return d === 0; }
 /** Split at the LAST top-level binary operator `op` (token-level), or null. */
@@ -471,7 +499,9 @@ function splitTop(e, op) {
  *  bracket dropped — so a judged expression reformatted across lines still matches. Token-level, so the
  *  text of a string or template literal is never touched. Applied to BOTH sides of the comparison. */
 export function normaliseExpr(text) {
-  const e = String(text).trim().replace(/\s+/g, " ");
+  // No whitespace collapse BEFORE lexing (Gate 2 W-M2): spacing between tokens is rebuilt below, and the text
+  // of a string or template literal is copied as written.
+  const e = String(text).trim();
   const toks = lex(e).contexts[0].tokens;
   if (!toks.length) return e;
   const OPENS = new Set(["(", "[", "{", ".", "?."]), TIGHT_BEFORE = new Set([")", "]", "}", ",", ".", "?."]);
@@ -512,7 +542,7 @@ export function sweepInterpolations({ repo = REPO, read = (rel) => fs.readFileSy
     const names = trustedEscapers(rel, src);
     names.constant = (n) => literalConstant(rel, n, read);
     const spanNames = localNames(names, SPAN_ESCAPERS);
-    const escaping = spanNames.length ? balancedCallSpans(src, new RegExp(`\\b(${reAlt(spanNames)})\\(`, "g")) : [];
+    const escaping = spanNames.length ? balancedCallSpans(src, new RegExp(`(?<![\\w$.])(${reAlt(spanNames)})\\(`, "g")) : [];
     for (const v of values) {
       const expr = src.slice(v.start, v.end).trim().replace(/\s+/g, " ");
       const fn = fns.filter(f => f.start <= v.start && v.start < f.end).pop();
@@ -521,10 +551,10 @@ export function sweepInterpolations({ repo = REPO, read = (rel) => fs.readFileSy
       if (escapedCall(expr, names)) cls = "escaped";
       else if (escaping.some(p => p.start < v.start && v.end <= p.end)) cls = "escaped";
       else if (literalOnly(expr, names)) cls = "literal";
-      else if (pushes.some(p => p.start < v.start && v.end <= p.end && new RegExp(`\\b${p.name}\\.map\\(escapeControls\\)`).test(fnSrc))) cls = "sink";
+      else if (pushes.some(p => p.start < v.start && v.end <= p.end && sinkJoins(codeOnly(fnSrc), p.name))) cls = "sink";
       else if (notOutput.some(p => p.start < v.start && v.end <= p.end)) cls = "not-output";
       else {
-        const key = normaliseExpr(expr);
+        const key = normaliseExpr(src.slice(v.start, v.end));
         // A WHOLE-declaration judgment says where the declaration's lines GO; a value written straight to a
         // stream beside that sink never goes there, so only an exact judgment covers it (Gate 2 W-I1).
         const straight = direct.some(p => p.start < v.start && v.end <= p.end);

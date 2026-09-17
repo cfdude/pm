@@ -167,3 +167,37 @@ test("every LITERAL_ALLOWLIST entry names a declaration that exists with exactly
     assert.equal(literalConstant(rel, name, source), true, `${key} resolves`);
   }
 });
+
+// ── Gate 2 W-M2: escaper-trust bypasses and false positives of the lexical sweep ──
+test("mutant (Gate 2 W-M2): a MEMBER call named like an escaper — fake.escapeControls(`…`) — escapes nothing", () => {
+  const { findings } = sweepMutated("scripts/lib/claims.mjs", SESSION, "from session '${fake.escapeControls(`${held.session}`)}' ");
+  assert.ok(unclassifiedInClaim(findings, "held.session"), findings.join("\n"));
+});
+
+test("mutant (Gate 2 W-M2): fs.writeSync to a file descriptor is output, not a filesystem call", () => {
+  const { findings } = sweepMutated("scripts/lib/claims.mjs", "  const session = resolveSession(f);\n  if (!session) die(`claim requires",
+    "  const session = resolveSession(f);\n  fs.writeSync(2, `taken from ${held.session}\\n`);\n  if (!session) die(`claim requires");
+  assert.ok(unclassifiedInClaim(findings, "held.session"), findings.join("\n"));
+});
+
+test("mutant (Gate 2 W-M2): a push is a sink only when X.map(escapeControls) is joined or returned — not in a comment, a string or a dropped expression", () => {
+  const sinkless = (joinLine) => `\nfunction sinkless(held) {\n  const L = [];\n  L.push(\`taken from \${held.session}\`);\n  ${joinLine}\n  process.stdout.write(L.join("\\n"));\n}`;
+  for (const line of ["// L.map(escapeControls).join(\"\\n\")", "const note = \"L.map(escapeControls).join()\";", "L.map(escapeControls);"]) {
+    const { findings } = sweepMutated("scripts/lib/claims.mjs", CLAIMS_IMPORT, CLAIMS_IMPORT + sinkless(line));
+    assert.ok(findings.some(f => /^UNCLASSIFIED scripts\/lib\/claims\.mjs:\d+ \[sinkless\] \$\{\} held\.session$/.test(f)), `${line}\n${findings.join("\n")}`);
+  }
+  const joined = sweepMutated("scripts/lib/claims.mjs", CLAIMS_IMPORT, CLAIMS_IMPORT +
+    `\nfunction sinkless(held) {\n  const L = [];\n  L.push(\`taken from \${held.session}\`);\n  process.stdout.write(L.map(escapeControls).join("\\n"));\n}`);
+  assert.deepEqual(joined.findings, [], "the real sink shape still classifies");
+});
+
+test("a string holding \"const escapeControls =\" does not un-trust the real import (Gate 2 W-M2 false positive)", () => {
+  const { findings } = sweepMutated("scripts/lib/claims.mjs", CLAIMS_IMPORT, `${CLAIMS_IMPORT}\nconst NOTE_TEXT = "const escapeControls = (s) => s";`);
+  assert.deepEqual(findings, []);
+});
+
+test("normaliseExpr never collapses whitespace inside a string or template literal (Gate 2 W-M2)", async () => {
+  const { normaliseExpr } = await import("./output-interpolations.mjs");
+  assert.equal(normaliseExpr("f(\"a  b\",\n    `c   ${d}`)"), "f(\"a  b\", `c   ${d}`)");
+  assert.notEqual(normaliseExpr("f(\"a  b\")"), normaliseExpr("f(\"a b\")"));
+});

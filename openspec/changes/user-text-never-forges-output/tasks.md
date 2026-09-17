@@ -291,7 +291,20 @@ Pairs: 7.1 lands with 7.2.
         saveState's temp name) and `LOCK` (commit-watch observeLockPaths), judged not-output; the local
         `L.join("\n")` of purgeLogs and rulesBlockAmbiguousMessage, judged passthrough. The same round found
         render()'s function-wide sink-flow judgment covering its raw `rendered ${PROJECT_MD}` stderr line: a
-        sink-flow judgment no longer covers a value written straight to a stream. `red-g2-W-I2.txt`. W-I3: the V-I2 asCode/orNoRemedy mutants ran in claims.mjs, which imports neither wrapper, so they were UNCLASSIFIED on import trust alone and reverting the wrapper fix failed no V-I2 test; they now run in subcommands.mjs (asserted to import both), and with the wrappers put back in ESCAPER_REALS both fail (`red-g2-W-I3.txt`). W-M1: jsonText's replacer argument had no caller and no test (a mutant ignoring it passed); a 5.3g unit test now passes an array and a function replacer (`red-g2-W-M1.txt`).
+        sink-flow judgment no longer covers a value written straight to a stream. `red-g2-W-I2.txt`. W-I3: the V-I2 asCode/orNoRemedy mutants ran in claims.mjs, which imports neither wrapper, so they were UNCLASSIFIED on import trust alone and reverting the wrapper fix failed no V-I2 test; they now run in subcommands.mjs (asserted to import both), and with the wrappers put back in ESCAPER_REALS both fail (`red-g2-W-I3.txt`). W-M1: jsonText's replacer argument had no caller and no test (a mutant ignoring it passed); a 5.3g unit test now passes an array and a function replacer (`red-g2-W-M1.txt`). W-M2 FIXED: a member call `x.escapeControls(…)` is no span
+        escaper; `fs.writeSync` is output, not a filesystem call; a push is a sink only where
+        `X.map(escapeControls)` is joined or returned outside comments and literals; declarations and imports
+        are read with literal text blanked, so a string holding `const escapeControls =` un-trusts nothing
+        (it also let `remove-epic`'s `cite` be trusted as the escapeControls alias it is, whose `"; "` had ended
+        its declaration early); `normaliseExpr` no longer collapses whitespace inside literals (one judgment
+        had recorded a template's double space as single, corrected) (`red-g2-W-M2.txt`).
+        - **Known limits of the lexical sweep** (W-M2, documented, not fixed — also at the top of
+          `scripts/test/output-interpolations.mjs`): a destructured escaper name, a parameter or catch
+          variable named like an escaper, a reassigned alias, a greedy `.map(v => escapeControls(v) + raw)`, and
+          a dropped `L.map(escapeControls).join()` statement each pass with 0 findings; a non-span escaper
+          alias (`const pid = (v) => printedId(v)`) is a loud false positive. None exists in the engine today
+          (rg over scripts/lib and scripts/conductor.mjs: 0 hits each; the trusted aliases esc, cite, quoted are
+          never reassigned). The behavioural backstop is the runtime poison sweep, 7.2 with its legacy recipes.
 - [x] 8.2 **Inverse of every operation added or modified** — the id refusal at `pushEpic` (inverse:
       `remove-epic`, unchanged; a skipped directory's inverse is renaming it, no verb); the release
       create refusal (inverse: none needed — nothing was stored). DECIDED, not deferred: no
