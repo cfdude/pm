@@ -894,7 +894,9 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
       ...closedItemStep(platform, st.system, 5),
       "",
       "**Completion status writeback** — when an epic whose `externalUrl` matches this secondary",
-      `tracker's ${st.repo ? `repo (\`${st.repo}\`)` : `project (\`${st.projectKey}\`)`} transitions to`,
+      // A repo that fails the owner/name shape (a legacy value) is quoted as DATA, never set in a
+      // code span an agent may lift into a shell line.
+      `tracker's ${st.repo ? (usesGhIssueList(st) || !itemKeysAreNumbers(st) ? `repo (\`${st.repo}\`)` : `repo ${JSON.stringify(st.repo)}`) : `project (\`${st.projectKey}\`)`} transitions to`,
       "`status: \"archived\"`, close/transition the linked issue here too, using your own",
       "tooling — check its current state first so a re-run does not error on an already-closed",
       "issue.",

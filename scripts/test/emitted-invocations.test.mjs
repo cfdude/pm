@@ -1924,3 +1924,93 @@ test("3.8 the outward record-the-key line carries --external-updated-at, and an 
   const text = brief.stdout.trim() ? JSON.parse(brief.stdout).hookSpecificOutput.additionalContext : "";
   assert.doesNotMatch(text, /never re-read/, text);
 });
+
+// ═══════════════════════════════ 4 — set-tracker: repository shape and vendor switch ═══════════════════════════════
+
+const HOSTILE_REPO = "a/b; touch pwned";
+const stateBytes = (repo) => fs.readFileSync(path.join(repo.cwd, ".conductor", "state.json"));
+const trackerRepo = (tracker, secondaries = []) => {
+  const repo = remedyRepo();
+  const s = repo.state();
+  if (tracker) s.tracker = tracker;
+  s.secondaryTrackers = secondaries;
+  writeState(repo.cwd, s);
+  return repo;
+};
+
+test("4.1 set-tracker refuses a github-issues --repo that is not owner/name, for both roles, writing nothing", () => {
+  const NL = String.fromCharCode(10);
+  for (const role of [[], ["--role", "secondary"]]) {
+    const repo = remedyRepo();
+    const before = stateBytes(repo);
+    const shell = repo.run(["set-tracker", ...role, "--system", "github-issues", "--repo", HOSTILE_REPO]);
+    assert.notEqual(shell.status, 0, `${role.join(" ") || "primary"}: a shell-metacharacter repo is refused`);
+    assert.match(shell.stderr, /owner\/name/, shell.stderr);
+    assert.ok(stateBytes(repo).equals(before), "state.json is byte-identical");
+    const control = repo.run(["set-tracker", ...role, "--system", "github-issues", "--repo", `a/b${NL}x`]);
+    assert.notEqual(control.status, 0, `${role.join(" ") || "primary"}: a control-character repo is refused`);
+    assert.ok(!control.stderr.slice(0, -1).includes(NL + "x"), `the refused value is escaped, never echoed raw:\n${control.stderr}`);
+    assert.ok(stateBytes(repo).equals(before), "state.json is byte-identical");
+  }
+});
+
+test("4.2 a legacy malformed github-issues repo loads for every read verb, and no emitted shell command contains it", async () => {
+  const repo = trackerRepo({ system: "github-issues", repo: HOSTILE_REPO, direction: "inward" });
+  for (const argv of [["rules"], ["brief"], ["integrity"], ["unconsidered-outcomes"], ["owners"], ["rules-target"], ["triage", "anything"]]) {
+    const r = repo.run(argv);
+    assert.equal(r.status, 0, `${argv.join(" ")}: ${r.stderr}`);
+  }
+  const { rulesBlock } = await import(lib("rules.mjs"));
+  const block = rulesBlock({ system: "github-issues", repo: HOSTILE_REPO, direction: "inward" }, "standard", [], "claude-code");
+  const spans = [...block.replace(/\n\s+/g, " ").matchAll(/`([^`]+)`/g)].map(m => m[1]).filter(t => t.includes(HOSTILE_REPO));
+  assert.deepEqual(spans, [], "no code span (an emitted command) carries the malformed repo");
+  const secondary = rulesBlock(null, "standard", [{ system: "github-issues", repo: HOSTILE_REPO, role: "secondary" }], "claude-code");
+  assert.deepEqual([...secondary.replace(/\n\s+/g, " ").matchAll(/`([^`]+)`/g)].map(m => m[1]).filter(t => t.includes(HOSTILE_REPO)), [],
+    "nor for a legacy secondary");
+});
+
+test("4.3 switching a github-issues primary to jira drops the old repo and names it", async () => {
+  const repo = trackerRepo({ system: "github-issues", repo: "o/n", direction: "inward" });
+  const r = repo.ok(["set-tracker", "--system", "jira", "--project", "ABC"]);
+  const t = repo.state().tracker;
+  assert.equal(t.repo, undefined, JSON.stringify(t));
+  assert.match(r.stderr, /dropped repo="o\/n"/, r.stderr);
+  const block = repo.run(["rules"]).stdout;
+  assert.match(block, /## Inward tracker sync \(jira · ABC\)/);
+  assert.match(block, /add-epic --id jira-abc-/);
+  assert.ok(!block.includes("o/n"), "no section names the old scope");
+});
+
+test("4.4 a vendor switch never silently changes the resolved direction", () => {
+  {
+    const repo = trackerRepo({ system: "github-issues", repo: "o/n" });
+    const r = repo.ok(["set-tracker", "--system", "jira", "--project", "ABC"]);
+    assert.equal(repo.state().tracker.direction, "inward");
+    assert.match(r.stderr, /direction inward recorded — kept from the previous github-issues tracker/, r.stderr);
+    assert.ok(!repo.run(["rules"]).stdout.includes("## External tracker sync"), "no outward section");
+  }
+  {
+    const repo = trackerRepo({ system: "jira", projectKey: "ABC" });
+    repo.ok(["set-tracker", "--system", "linear", "--project", "LIN"]);
+    assert.equal(repo.state().tracker.direction, "outward");
+  }
+  {
+    const repo = trackerRepo({ system: "github-issues", repo: "o/n" });
+    repo.ok(["set-tracker", "--system", "jira", "--project", "ABC", "--direction", "both"]);
+    assert.equal(repo.state().tracker.direction, "both");
+  }
+});
+
+test("4.5 REGRESSION GUARD: a legacy malformed secondary stays removable", () => {
+  const repo = trackerRepo(null, [{ system: "github-issues", repo: HOSTILE_REPO, role: "secondary", direction: "inward" }]);
+  repo.ok(["set-tracker", "--role", "secondary", "--system", "github-issues", "--repo", HOSTILE_REPO, "--remove"]);
+  assert.deepEqual(repo.state().secondaryTrackers || [], []);
+});
+
+test("4.6 REGRESSION GUARD: re-stating the same system keeps its scope; --intent still merges", () => {
+  const repo = trackerRepo({ system: "jira", projectKey: "ABC", direction: "inward", statusIntent: { active: "in-progress" } });
+  repo.ok(["set-tracker", "--system", "jira", "--direction", "both"]);
+  assert.equal(repo.state().tracker.projectKey, "ABC");
+  repo.ok(["set-tracker", "--intent", "paused:todo"]);
+  assert.deepEqual(repo.state().tracker.statusIntent, { active: "in-progress", paused: "todo" });
+});

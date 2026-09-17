@@ -203,23 +203,23 @@ Pairs: 3.1–3.9 (incl. 3.3a) land with 3.10.
 
 Pairs: 4.1–4.4 land with 4.7.
 
-- [ ] 4.1 RED: `set-tracker --system github-issues --repo 'a/b; touch pwned'` exits non-zero naming the
+- [x] 4.1 RED: `set-tracker --system github-issues --repo 'a/b; touch pwned'` exits non-zero naming the
       shape; a repo holding a control character exits non-zero, escapes the value in its message and
       writes nothing (shape wording NOT asserted: change 3's input refusal fires first), for `--role primary` and `--role secondary`; `state.json` byte-identical
-- [ ] 4.2 RED: a hand-written legacy state carrying that repo on the primary loads for every read verb,
+- [x] 4.2 RED: a hand-written legacy state carrying that repo on the primary loads for every read verb,
       and the rules block contains no shell line with the value (fixture passes the strict reader)
-- [ ] 4.3 RED: a github-issues primary `repo: "o/n"` switched with `--system jira --project ABC` records
+- [x] 4.3 RED: a github-issues primary `repo: "o/n"` switched with `--system jira --project ABC` records
       no `repo`, the output names `repo` as dropped, and the jira section and id name `ABC`
-- [ ] 4.4 RED: a legacy github-issues primary with NO recorded direction switched with `--system jira
+- [x] 4.4 RED: a legacy github-issues primary with NO recorded direction switched with `--system jira
       --project ABC` records `direction: "inward"`, prints that it was kept from the previous tracker,
       and the rules block has no outward section (`repro.txt` §B9); a legacy jira primary with no
       direction switched to `linear` records `outward`; an explicit `--direction both` on the switch
       records `both`
-- [ ] 4.5 REGRESSION GUARD: `set-tracker --role secondary --system github-issues --repo 'a/b; touch
+- [x] 4.5 REGRESSION GUARD: `set-tracker --role secondary --system github-issues --repo 'a/b; touch
       pwned' --remove` on a legacy entry exits 0 and removes it (passes today; must survive 4.7)
-- [ ] 4.6 REGRESSION GUARD: `set-tracker --system jira --direction both` on a jira primary keeps
+- [x] 4.6 REGRESSION GUARD: `set-tracker --system jira --direction both` on a jira primary keeps
       `projectKey`; `set-tracker --intent paused:todo` still merges
-- [ ] 4.7 GREEN: `isGithubRepo()` in `constants.mjs`, required by `usesGhIssueList()` and by
+- [x] 4.7 GREEN: `isGithubRepo()` in `constants.mjs`, required by `usesGhIssueList()` and by
       `set-tracker` for both roles except `--remove`; the vendor-switch scope drop and direction record
       with their messages (design Decision 4); 4.1–4.6 pass, suite green
 

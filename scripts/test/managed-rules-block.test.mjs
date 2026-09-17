@@ -165,12 +165,15 @@ test("6.5: substitution patterns in the block are written verbatim", () => {
   const { cwd } = initRepo();
   const text = fs.readFileSync(claude(cwd), "utf8");
   fs.writeFileSync(claude(cwd), "PREFIX-SENTINEL\n\n" + text);
+  // Carried by a jira project key: a github-issues --repo must be owner/name since
+  // emitted-commands-run-as-written, and `$` is not a character GitHub permits there. The property
+  // under test is the block writer's, whatever tracker field carries the value into the block.
   const repo = "o/n$`x$&y$'z";
-  const r = sh(["set-tracker", "--system", "github-issues", "--repo", repo], { cwd });
+  const r = sh(["set-tracker", "--system", "jira", "--project", repo, "--direction", "inward"], { cwd });
   assert.equal(r.status, 0, `stderr: ${r.stderr}`);
   const after = fs.readFileSync(claude(cwd), "utf8");
   assert.equal(after.split("PREFIX-SENTINEL").length - 1, 1, "PREFIX-SENTINEL occurs exactly once");
-  assert.ok(after.includes(repo), "the repo value, with each of $` $& $', is present verbatim");
+  assert.ok(after.includes(repo), "the scope value, with each of $` $& $', is present verbatim");
 });
 
 // ─────────────── G2-I5 — the parser's marker rules, each pinned ───────────────

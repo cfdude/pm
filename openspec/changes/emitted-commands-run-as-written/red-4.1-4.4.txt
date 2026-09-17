@@ -1,0 +1,97 @@
+✖ 4.1 set-tracker refuses a github-issues --repo that is not owner/name, for both roles, writing nothing (209.359917ms)
+✖ 4.2 a legacy malformed github-issues repo loads for every read verb, and no emitted shell command contains it (427.563208ms)
+✖ 4.3 switching a github-issues primary to jira drops the old repo and names it (204.4585ms)
+✖ 4.4 a vendor switch never silently changes the resolved direction (191.502583ms)
+✔ 4.5 REGRESSION GUARD: a legacy malformed secondary stays removable (213.831667ms)
+✔ 4.6 REGRESSION GUARD: re-stating the same system keeps its scope; --intent still merges (261.6815ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 2
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1554.473208
+
+✖ failing tests:
+
+test at scripts/test/emitted-invocations.test.mjs:1941:1
+✖ 4.1 set-tracker refuses a github-issues --repo that is not owner/name, for both roles, writing nothing (209.359917ms)
+  AssertionError [ERR_ASSERTION]: primary: a shell-metacharacter repo is refused
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1947:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:1957:1
+✖ 4.2 a legacy malformed github-issues repo loads for every read verb, and no emitted shell command contains it (427.563208ms)
+  AssertionError [ERR_ASSERTION]: no code span (an emitted command) carries the malformed repo
+  + actual - expected
+  
+  + [
+  +   'gh issue list --repo a/b; touch pwned --state open --limit 1000 --json number,title,url,updatedAt,labels'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1966:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'gh issue list --repo a/b; touch pwned --state open --limit 1000 --json number,title,url,updatedAt,labels' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:1972:1
+✖ 4.3 switching a github-issues primary to jira drops the old repo and names it (204.4585ms)
+  AssertionError [ERR_ASSERTION]: {"system":"jira","repo":"o/n","direction":"inward","projectKey":"ABC"}
+  
+  'o/n' !== undefined
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1976:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'o/n',
+    expected: undefined,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:1984:1
+✖ 4.4 a vendor switch never silently changes the resolved direction (191.502583ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + undefined
+  - 'inward'
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1988:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 'inward',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
