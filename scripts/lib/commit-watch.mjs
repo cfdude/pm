@@ -9,7 +9,10 @@
 // commits in one call reported only HEAD, and an amend reported a second row.
 //
 // Now: a REFLOG ANCHOR. After each observation the hook records the byte size of HEAD's reflog
-// file and that file's full last line. The next observation locates the anchor BY CONTENT — the
+// file and that file's full last line AS BYTES (base64): a reflog is not guaranteed to be UTF-8 — a
+// commit made with `i18n.commitEncoding=ISO-8859-1` writes its raw subject bytes there — and a line
+// decoded as UTF-8 and re-encoded is not the line on disk, so it was never found again and nothing
+// was reported from then on (Gate 2 G2-C1). The next observation locates the anchor BY CONTENT — the
 // last occurrence of the anchored line that ends at or before the recorded size — and reads every
 // entry after it. Expiry (`git reflog expire`, `git gc`) removes entries from the FRONT, so the
 // anchored line survives at a smaller offset; appends only land after the recorded size, so
@@ -78,26 +81,35 @@ export function readObserveRecord(root = ROOT) {
   try {
     const v = JSON.parse(fs.readFileSync(commitObservePath(root), "utf8"));
     const a = v && v.anchor;
-    const anchor = a && Number.isInteger(a.size) && a.size >= 0 && typeof a.line === "string" ? a : null;
+    // `lineBase64` only: a record carrying the earlier `line` (a UTF-8 decode) reads as no anchor and
+    // re-anchors once, on the unverifiable rung.
+    const anchor = a && Number.isInteger(a.size) && a.size >= 0 && typeof a.lineBase64 === "string"
+      ? { size: a.size, lineBase64: a.lineBase64 } : null;
     const reported = Array.isArray(v && v.reported) ? v.reported.filter(s => typeof s === "string") : [];
     return { anchor, reported };
   } catch { return { anchor: null, reported: [] }; }
 }
 
-/** The anchor for a reflog buffer as it is now: its byte size and its last line. */
+/** The anchor for a reflog buffer as it is now: its byte size and its last line's BYTES, base64.
+ *  Never decoded: the comparison in locateAnchor() is byte for byte, whatever the encoding. */
 export function anchorOf(buf) {
-  const text = buf.toString("utf8").replace(/\n+$/, "");
-  const nl = text.lastIndexOf("\n");
-  return { size: buf.length, line: nl < 0 ? text : text.slice(nl + 1) };
+  let end = buf.length;
+  while (end > 0 && buf[end - 1] === 0x0a) end--;
+  const nl = end > 0 ? buf.lastIndexOf(0x0a, end - 1) : -1;
+  return { size: buf.length, lineBase64: buf.subarray(nl + 1, end).toString("base64") };
 }
+
+/** The anchored line's bytes. */
+const anchorLineBytes = (anchor) => Buffer.from(anchor.lineBase64, "base64");
 
 /** Byte offset just past the anchored line, or -1 when the anchor is not in the reflog.
  *
  *  The LAST occurrence of the whole line that ends at or before the recorded size. An anchor
- *  recorded against an empty or absent reflog (`{size: 0, line: ""}`) is the start of the file. */
+ *  recorded against an empty or absent reflog (`{size: 0, lineBase64: ""}`) is the start of the file. */
 export function locateAnchor(buf, anchor) {
-  if (anchor.size === 0 && anchor.line === "") return 0;
-  const needle = Buffer.from(anchor.line + "\n", "utf8");
+  const line = anchorLineBytes(anchor);
+  if (anchor.size === 0 && line.length === 0) return 0;
+  const needle = Buffer.concat([line, Buffer.from([0x0a])]);
   let from = anchor.size - needle.length;
   while (from >= 0) {
     const i = buf.lastIndexOf(needle, from);
@@ -196,7 +208,7 @@ export function beginObservation({ root = ROOT } = {}) {
     try { buf = fs.readFileSync(file); } catch {
       // No reflog file: an unborn HEAD, or reflogs disabled. Anchored at the start, so the first
       // commit of an unborn repository is reported once the file appears.
-      return handle("unverifiable", "no-reflog", { record, nextAnchor: { size: 0, line: "" } });
+      return handle("unverifiable", "no-reflog", { record, nextAnchor: { size: 0, lineBase64: "" } });
     }
     const nextAnchor = anchorOf(buf);
     if (!record.anchor) return handle("unverifiable", "no-anchor", { record, nextAnchor });

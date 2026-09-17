@@ -50,7 +50,7 @@ attribution hint lists candidates without deciding.
 After each observation the hook records an anchor: the byte size of the file named by
 `git rev-parse --git-path logs/HEAD` (a path git prints relative to the working directory — `../../.git/logs/HEAD`
 in a nested conductor — so it is resolved against the conductor root, the hook's `cwd`) and that
-file's full last line. The next observation locates the anchor BY CONTENT: the last occurrence of the
+file's full last line, as bytes (Decision 2). The next observation locates the anchor BY CONTENT: the last occurrence of the
 anchored line that ends at or before the recorded size. Expiry (`git reflog expire`, `git gc`,
 `gc --auto`, a fetch's auto-gc) removes entries from the FRONT of the file, so the anchored line
 survives at a smaller offset and new entries still follow it; appends only ever land after the
@@ -76,7 +76,9 @@ works there too; only a repository with no `logs/HEAD` at all is unverifiable, a
 
 ### 2. A new record file: `.conductor/commit-observe.json`
 
-`{ "anchor": { "size": <n>, "line": "<last line>" }, "reported": ["<full sha>", …] }`, written by
+`{ "anchor": { "size": <n>, "lineBase64": "<last line's bytes, base64>" }, "reported": ["<full sha>", …] }`
+(the line is stored and compared as BYTES — a reflog is not guaranteed to be UTF-8, and a UTF-8 decode of a
+Latin-1 subject never matched again; Gate 2 G2-C1), written by
 temp-file-and-rename inside the lock of Decision 3. `ensureGitignore` ignores `.conductor/commit-observe.json*`, so
 the lock and a temp file left by a killed hook are ignored too, and the file joins `CONDUCTOR_OWN_FILES`
 for the same reason `commit-watch.json` is there. A new file, not a new key in `commit-watch.json`, because plugin versions install

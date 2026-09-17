@@ -12,6 +12,8 @@ import { observationRepo } from "./helpers.mjs";
 
 const OBSERVE_RECORD = (cwd) => path.join(cwd, ".conductor", "commit-observe.json");
 const readRecord = (cwd) => JSON.parse(fs.readFileSync(OBSERVE_RECORD(cwd), "utf8"));
+/** The anchored reflog line, which the record stores as its bytes (base64), decoded for comparison. */
+const anchorLine = (cwd) => Buffer.from(readRecord(cwd).anchor.lineBase64, "base64").toString("utf8");
 const short = (repo, sha) => repo.git("rev-parse", "--short", sha);
 
 /** Bytes of each file, or null for an absent one, so "byte-identical" covers absent-stays-absent. */
@@ -130,12 +132,12 @@ test("2.4 overlapping observations: A reads, a commit lands, B completes, A writ
 
   a.finish(a.candidates.map((c) => c.sha));
   assert.equal(a.candidates.some((x) => x.sha === sha), false, "A read the reflog before the commit landed");
-  assert.equal(readRecord(repo.cwd).anchor.line, preCommitLine,
+  assert.equal(anchorLine(repo.cwd), preCommitLine,
     "A's write leaves the anchor BEFORE the commit, so the commit is still ahead of it");
 
   const c = repo.observe("PostToolUse", "ls");
   assert.ok(c.context.includes(short(repo, sha)), `the third observation reports it: ${JSON.stringify(c.stdout)}`);
-  assert.equal(readRecord(repo.cwd).anchor.line, reflogLines().at(-1), "and the anchor moves past it");
+  assert.equal(anchorLine(repo.cwd), reflogLines().at(-1), "and the anchor moves past it");
   assert.ok(readRecord(repo.cwd).reported.includes(sha), "into the reported set");
 
   const d = repo.observe("PostToolUse", "ls");
@@ -186,7 +188,7 @@ test("2.4 the anchored reflog line itself is gone: nothing reported from the ref
     assert.equal(o.status, 0, o.stderr);
     assert.ok(!o.context.includes(short(repo, lost)), "an unverifiable reflog reports nothing from the reflog");
     const lines = fs.readFileSync(path.join(repo.gitRoot, ".git", "logs", "HEAD"), "utf8").trim().split("\n");
-    assert.equal(readRecord(repo.cwd).anchor.line, lines[lines.length - 1], "re-anchored at the current end");
+    assert.equal(anchorLine(repo.cwd), lines[lines.length - 1], "re-anchored at the current end");
     const later = repo.commit({ "src/later.txt": "1" }, "fix: after re-anchoring");
     const o2 = repo.observe("PostToolUse", "ls");
     assert.ok(o2.context.includes(short(repo, later)), "observation resumes from the new anchor");
@@ -204,6 +206,27 @@ test("2.4a reflog expiry at the front loses no commit", () => {
   const o = repo.observe("PostToolUse", "ls");
   assert.equal(o.status, 0, o.stderr);
   assert.ok(o.context.includes(short(repo, sha)), `reported despite the front entry's removal: ${JSON.stringify(o.stdout)}`);
+});
+
+test("G2-C1 a reflog line that is not valid UTF-8 anchors by its bytes: every commit is still reported", () => {
+  const repo = observationRepo();
+  repo.observe();
+  const msgFile = path.join(repo.gitRoot, ".git", "latin1-msg");
+  for (let i = 1; i <= 4; i++) {
+    fs.writeFileSync(path.join(repo.gitRoot, "g.txt"), `${i}\n`);
+    repo.git("add", "g.txt");
+    // A raw 0xE9 byte (Latin-1 e-acute) in the subject: git copies it into logs/HEAD unchanged, so
+    // the reflog is not valid UTF-8 from this line on.
+    fs.writeFileSync(msgFile, Buffer.concat([Buffer.from("fix: caf"), Buffer.from([0xe9]), Buffer.from(` ${i}\n`)]));
+    repo.git("-c", "i18n.commitEncoding=ISO-8859-1", "commit", "-q", "-F", msgFile);
+    const sha = repo.head();
+    const reflog = fs.readFileSync(path.join(repo.gitRoot, ".git", "logs", "HEAD"));
+    assert.ok(reflog.includes(Buffer.from([0x63, 0x61, 0x66, 0xe9])), "fixture: the reflog holds the raw Latin-1 byte");
+    const o = repo.observe("PostToolUse", "git commit");
+    assert.equal(o.status, 0, o.stderr);
+    assert.ok(o.context.includes(short(repo, sha)),
+      `commit ${i} after a non-UTF-8 reflog line is reported: ${JSON.stringify(o.stdout)}`);
+  }
 });
 
 test("2.6 a commit rewritten by `pull --rebase` is named rewritten or abandoned, never logged or attributed", () => {

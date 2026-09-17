@@ -189,10 +189,10 @@ test("the reflog anchor is persisted on EVERY invocation, including silent ones"
   const cwd = tmpRepo(); run(["init"], { cwd }); gitRepo(cwd);
   nudge(cwd, "ls");                       // silent: nothing landed
   assert.ok(fs.existsSync(RECORD(cwd)), "a silent call must still record where the reflog ended");
-  assert.equal(record(cwd).anchor.line, reflogLastLine(cwd));
+  assert.equal(Buffer.from(record(cwd).anchor.lineBase64, "base64").toString("utf8"), reflogLastLine(cwd));
   commitFiles(cwd, { "a.txt": "1" }, "fix: a later commit");
   nudge(cwd, "ls");
-  assert.equal(record(cwd).anchor.line, reflogLastLine(cwd),
+  assert.equal(Buffer.from(record(cwd).anchor.lineBase64, "base64").toString("utf8"), reflogLastLine(cwd),
     "and must move the anchor forward as the reflog grows");
   assert.equal(fs.existsSync(path.join(cwd, ".conductor", "commit-watch.json")), false,
     "the 0.44.0 watermark file is never written by this engine");
@@ -203,7 +203,7 @@ test("the anchor is recorded even for a command that never mentions a commit (gh
   // make gh#104's own repro the only thing that ever primes the record.
   const cwd = tmpRepo(); run(["init"], { cwd }); gitRepo(cwd);
   nudge(cwd, "echo hello");
-  assert.equal(record(cwd).anchor.line, reflogLastLine(cwd));
+  assert.equal(Buffer.from(record(cwd).anchor.lineBase64, "base64").toString("utf8"), reflogLastLine(cwd));
 });
 
 test("a corrupt observation record degrades to the pre-observation path instead of throwing", () => {
@@ -213,7 +213,7 @@ test("a corrupt observation record degrades to the pre-observation path instead 
   const out = nudge(cwd, 'git commit -m "fix: a real commit"');
   assert.ok(out.includes("hookSpecificOutput"),
     "an unreadable record must never disable the hook, and must never crash it");
-  assert.equal(record(cwd).anchor.line, reflogLastLine(cwd),
+  assert.equal(Buffer.from(record(cwd).anchor.lineBase64, "base64").toString("utf8"), reflogLastLine(cwd),
     "and the corrupt file is replaced with a usable anchor, so the repo self-heals onto the observed path");
 });
 
@@ -283,7 +283,7 @@ test("an UNBORN HEAD is a position, not a failure: the initial commit is noticed
   git(cwd, "config", "user.email", "test@example.com");
   git(cwd, "config", "user.name", "Test");
   prime(cwd);                                   // records the unborn position
-  assert.deepEqual(record(cwd).anchor, { size: 0, line: "" },
+  assert.deepEqual(record(cwd).anchor, { size: 0, lineBase64: "" },
     "a repo with no reflog yet is anchored at its start, a real and comparable position");
   commitFiles(cwd, { "a.txt": "1" }, "fix: the very first commit");
   const out = nudge(cwd, "git commit");

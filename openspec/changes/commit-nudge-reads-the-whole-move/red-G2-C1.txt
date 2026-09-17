@@ -1,0 +1,27 @@
+✖ G2-C1 a reflog line that is not valid UTF-8 anchors by its bytes: every commit is still reported (547.899417ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 586.157166
+
+✖ failing tests:
+
+test at scripts/test/commit-observation.test.mjs:209:1
+✖ G2-C1 a reflog line that is not valid UTF-8 anchors by its bytes: every commit is still reported (547.899417ms)
+  AssertionError [ERR_ASSERTION]: commit 2 after a non-UTF-8 reflog line is reported: "{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"Commit detected. If this was a MINIMAL detour, run `/pm:detour --minimal \\\"<what>\\\"` to record it. Otherwise update `.conductor/state.json` if an epic's status or stories changed.\"}}"
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-observation.test.mjs:225:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
