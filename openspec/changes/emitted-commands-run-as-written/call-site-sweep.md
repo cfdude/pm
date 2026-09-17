@@ -156,7 +156,9 @@ epic id (`honcho-memory`'s after its action word), or the value of `--id`, `--de
 
 ## 12. Printers offering `--outcome delivered` for one epic (added at Gate 2, R-I1)
 
-Derived with `rg -n "outcome (<)?delivered|AGENT_OUTCOMES.join" scripts/lib`. The rule: a printer offering
+Derived with `rg -n "outcome (<)?delivered|AGENT_OUTCOMES.join|deliveredArchiveInvocation\(|dispositionInvocation\(" scripts/lib`
+(the shared renderers added at Gate 2 F-M3: the first pattern alone misses a printer that reaches
+`delivered` only through one of them). The rule: a printer offering
 `delivered` for a specific epic consults `deliveredObligations()` — an obligation with a remedy command is
 named first, and a checkbox source's handoff (`obligationArchiveFlags()`) travels on the archive itself.
 

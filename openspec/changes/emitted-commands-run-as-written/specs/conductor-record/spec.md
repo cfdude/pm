@@ -8,8 +8,8 @@ binds everything the engine prints (`init`'s output, the commit nudge, the brief
 document pm ships (`commands/*.md`, `skills/**/SKILL.md`, `agents/*.md`, `README.md`). Reading the
 file is not a write and stays allowed.
 
-The exception for a stored identifier holding a control character, which no verb can rename, is
-specified in `output-text-integrity`.
+The exception for a stored epic or release id holding a control character, which no verb can rename,
+is specified in `output-text-integrity`.
 
 A hand-edit skips everything a verb supplies: validation, the write lock, the revision guard, the
 read-back, and — on a POP — the same-write `reconcileNeeded` stamp the rules block exists to protect.

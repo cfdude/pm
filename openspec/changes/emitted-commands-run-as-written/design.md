@@ -473,9 +473,9 @@ quoting instruction, jira id placeholder), the vendor-switch messages, and the n
   <new>"`, and one `--attribute-commit` line per candidate epic — so the commit nudge is a Layer B
   printer here (tasks 1.5, 2.1): each variant is built anchor → commit → observe; after the retract the
   row is gone from `PROJECT.md`, after the withdraw the sha is gone from `attributedCommits`.
-- **`user-text-never-forges-output` (change 3) — identifiers no verb can rename.** Change 3 refuses a
-  control character in an identifier at input and, for one stored before that rule, prints a message
-  naming the record and saying no verb can rename it, with no runnable remedy and no hand-edit
+- **`user-text-never-forges-output` (change 3) — epic and release ids no verb can rename.** Change 3 refuses
+  a control character in an identifier at input and, for an epic or release id stored before that rule,
+  prints a message naming the record and saying no verb can rename it, with no runnable remedy and no hand-edit
   instruction. Change 3 OWNS that exception, its scenarios and the Layer B builder assertion for it;
   this change's R2 and `conductor-record` carry only a one-line cross-reference to
   `output-text-integrity`. This change defines "control character" in R2 because it lands first, and

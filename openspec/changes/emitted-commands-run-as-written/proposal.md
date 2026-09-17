@@ -152,6 +152,10 @@ earlier (`anyInwardProcedureEmittable`); its dangling text for an inward-only pr
   archived-delivered regression refusal is explicitly excepted.
 - `conductor-record`: ADDED — no instruction pm ships directs a write to the state of record except
   through an engine verb.
+- `gate-integrity`: "An update to an archived epic does not break an obligation its archive met" — the
+  regression refusal's printed invocation carries `--carried-to <epicId>` for a checkbox source's open
+  tasks, only with `delivered`, decided by the engine's own template (added at Gate 2 R-I1/F-I1, cross-spec
+  X8-B1: the requirement's closed list of flags otherwise forbade it).
 
 ## Impact
 

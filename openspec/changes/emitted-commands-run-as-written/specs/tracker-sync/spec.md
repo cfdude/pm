@@ -277,7 +277,8 @@ A value recorded before this rule that does not have that shape SHALL NOT fail a
 treat it as absent for the purpose of building a shell command, and `integrity` SHALL name it with
 the `set-tracker` re-record that restores its listing step, so the lost step is never silent. For a
 secondary, `integrity` names its removal first, carrying the recorded value as one shell-quoted word
-in inline `--repo=<quoted>` form.
+in inline `--repo=<quoted>` form (a value holding a control character: named without the value, per
+`output-text-integrity`).
 
 #### Scenario: A repository carrying a shell metacharacter is refused
 - **WHEN** the agent runs `set-tracker --system github-issues --repo 'a/b; touch pwned'`
@@ -300,7 +301,8 @@ in inline `--repo=<quoted>` form.
 - **THEN** every read verb succeeds, and the value never appears unquoted in any output: the only
   emitted command carrying it is `integrity`'s removal of a secondary, where it is one shell-quoted word
   in inline `--repo=<quoted>` form, so a shell expands nothing in it and a flag-shaped value (`--help`)
-  is read as data (Gate 2 X-B2, R-M1); everywhere else it is JSON-quoted data or absent
+  is read as data (Gate 2 X-B2, R-M1) (a value holding a control character: named without the value, per
+  `output-text-integrity`); everywhere else it is JSON-quoted data or absent
 
 #### Scenario: A GitHub Enterprise repository is accepted
 - **WHEN** the agent runs `set-tracker --system github-issues --repo ghe.example.com/o/n`, for either role

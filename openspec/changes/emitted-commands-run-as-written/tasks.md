@@ -392,7 +392,12 @@ Pairs: 7.0–7.1 land with 7.2. The single-writer rule for hierarchy runs is NOT
       source with open tasks (Gate 2 E-I5); the drift-heal step's new shape — `heal-archived-epic-passed-gate-2`
       names a stories source's `--story <n> --done` first and carries `--carried-to <epicId> --reason "<which
       tasks moved>"` for a checkbox source (Gate 2 R-I1 sweep); and that update-epic's archived-delivered
-      regression refusal carries that handoff flag on its invocation (Gate 2 R-I1)
+      regression refusal carries that handoff flag on its invocation (Gate 2 R-I1), only with `delivered`
+      (Gate 2 F-M1); ALSO `commands/status.md:136`, whose 0.27.0 upgrade note still calls the bare
+      `update-epic <id> --status archived --outcome delivered --no-deferrals` "the exact remedy" — it is now the
+      printed step, which names a stories source's `--story <n> --done` first or carries `--carried-to` (Gate 2 F-M4)
+- [ ] 10.4b `commands/upgrade.md:231` — the same 0.27.0 note calls the bare `--outcome delivered --no-deferrals`
+      form "the exact remedy"; name the check's printed step instead, as 10.4a does (Gate 2 F-M4)
 - [ ] 10.5 `README.md` where tracker sync, `unconsidered-outcomes` or gate recording are described
 - [ ] 10.5a `commands/lane-routing.md` and README's verb reference / flag table — `suggest-lane --ask=<text>`,
       why it exists (a flag-shaped text cannot be passed positionally), and that the positional form is

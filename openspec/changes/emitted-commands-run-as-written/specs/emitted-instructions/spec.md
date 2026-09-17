@@ -83,8 +83,8 @@ engine will refuse MUST NOT be printed as the way out. Where a message offers al
 A remedy that clears a finding by removing the record it was about does not count as clearing it.
 
 A **control character** is any of U+0000 to U+001F, U+007F, U+0080 to U+009F, U+2028 and U+2029. The
-exception for a stored identifier holding one, which no verb can rename and so has no runnable remedy,
-is specified in `output-text-integrity`.
+exception for a stored epic or release id holding one, which no verb can rename and so has no runnable
+remedy, is specified in `output-text-integrity`.
 
 **An epic id in a printed command is always one shell word.** Wherever a remedy or instruction prints
 a stored epic id inside a command, an id that does not match the epic id format
