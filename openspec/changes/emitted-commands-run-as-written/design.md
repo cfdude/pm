@@ -208,8 +208,23 @@ Grepping engine SOURCE for remedy strings (rejected: template literals split inv
   `update-epic.mjs:136` (regression refusal), which passes `keepDelivered: true`.
 - Regression refusal (`update-epic.mjs:124-155`): the epic's `delivered` was already considered, so
   its invocation keeps `delivered`; for each broken obligation it prints that obligation's remedy
-  line BEFORE the invocation (`gate2-*` → `gateRemedy(id, 2)`; `handoff` → tick the tasks or record
-  `--carried-to`). The existing "the invocation is the only line beginning `  update-epic `" rule is
+  line BEFORE the invocation (`gate2-missing`/`-withdrawn`/`-stale` → `gateRemedy(id, 2)`; `handoff` →
+  tick the tasks or record `--carried-to`). `gate2-attribution-withdrawn` — the refused edit withdraws
+  the last attributed commit, e.g. one an amend replaced — is NOT met by a re-record alone: afterwards
+  the record still attributes no commits and the archive gate refuses the `delivered` invocation
+  ("attributes no commits, having withdrawn 1"). Its remedy is two lines, in this order:
+  `gateRemedy(id, 2)` with `--base-sha <parent of the replacing commit> --head-sha <the replacing
+  commit>`, then `update-epic <id> --attribute-commit <the replacing commit>`; the invocation follows.
+  The order is load-bearing. Verified on 0.44.0 (archived `delivered` openspec epic, one attributed
+  commit C1 amended to C2, C1 still resolvable): re-record Gate 2 P..C2 exit 0 → `--attribute-commit
+  C2` exit 0 → the refused `--withdraw-commit C1` exit 0 (and the refusal's invocation with
+  `--outcome delivered` exit 0), `delivered` kept; attributing C2 first is refused (exit 1: Gate 2
+  head C1 does not reach C2). Layer B fills these two placeholders by meaning as the REPLACING commit
+  and its parent — not step 3's "last attributed commit", which at refusal time is the replaced one.
+  A re-record over a head that does not reach the still-attributed commit must never be printed as
+  a step on its own: it already breaks the Gate 2 obligation, so the withdrawal that follows is no
+  longer seen as breaking anything and succeeds (exit 0 on 0.44.0), leaving `delivered` with no
+  attributed commits. The existing "the invocation is the only line beginning `  update-epic `" rule is
   kept: remedy lines are introduced by prose and never begin with `update-epic`.
 - `unconsidered-outcomes` JSON gains `deliveredBlockedBy: [...]` per entry (always present, `[]` when
   nothing blocks). A `gate2-missing` detail says the record shows no Gate 2 review of that work and

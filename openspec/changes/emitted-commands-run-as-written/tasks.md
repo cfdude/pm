@@ -98,7 +98,16 @@ Pairs: 2.1–2.8 (incl. 2.7a) land with 2.9.
 - [ ] 2.6 RED: regression refusal — `--attribute-commit` of a later commit on an archived `delivered`
       openspec-lane epic is refused; the refusal names the Gate 2 re-record first and its invocation
       still offers `delivered`; following both with the range filled by meaning exits 0 and the
-      original `--attribute-commit` then succeeds
+      original `--attribute-commit` then succeeds; AND the attribution-withdrawn variant on
+      `commit-nudge-reads-the-whole-move` 5.2a case E's fixture (archived `delivered` openspec epic,
+      ONE attributed commit C1, passing Gate 2 headed at C1, C1 amended to C2; no `reflog expire` or
+      `gc`, so C1 stays resolvable): `--withdraw-commit C1` is refused; the refusal names, in order,
+      the Gate 2 re-record and `--attribute-commit` before the invocation, and its invocation still
+      offers `delivered`; filled by meaning (head = C2, base = C2's parent, attribute C2) each exits 0
+      and the refused `--withdraw-commit C1` then exits 0 with outcome `delivered` kept. Assert on
+      the refused command and that record only, not on a clean `integrity` (the fixture's
+      back-to-back gates trip `gate-recorded-as-bookkeeping`). (Fails today: the refusal names only
+      the disposition invocation, which exits 1.)
 - [ ] 2.7 RED: `recorded-sha-the-repository-cannot-resolve` (orphan-branch commit recorded, branch
       deleted, `git reflog expire --expire=now --all`, `git gc --prune=now`, plus one reachable
       attributed commit so the check's resolvability probe does not skip the absent arm — first
@@ -117,8 +126,13 @@ Pairs: 2.1–2.8 (incl. 2.7a) land with 2.9.
       (design Decision 2, incl. the `+`-split forms at `archive-gate.mjs:426,430-431` and the
       gate-aware `integrity.mjs:750-752`); `dispositionInvocation(epic, {keepDelivered})` and
       `blockedDelivered(epic)`; `deliveredBlockedBy`; the delivered-release and regression-refusal
-      remedy lines; `closedItemStep()`'s Gate 2 sentence; `EPIC_ID_FORMAT` and `printedId()` in
-      `constants.mjs` at every printed-id site; Layer A extended to the outputs these
+      remedy lines (incl. the attribution-withdrawn re-record + `--attribute-commit` pair);
+      `closedItemStep()`'s Gate 2 sentence; `EPIC_ID_FORMAT` and `printedId()` in `constants.mjs` at
+      every printed-id site, AND the three id-format validators replaced by an import of
+      `EPIC_ID_FORMAT` from `constants.mjs` — the regex literal at `add-epic.mjs:360`,
+      `add-many.mjs:61` and `verify-specs.mjs:54` (the `EPIC_ID` const) — so no id-format regex
+      literal remains outside `constants.mjs` (the guard `user-text-never-forges-output` task 1.1
+      asserts); Layer A extended to the outputs these
       fixtures produce; 2.1–2.8 pass, suite green
 
 ## 3. Tracker recipes (tracker-sync MODIFIED "Every command pm emits must run as written"; ADDED secondary watermark)

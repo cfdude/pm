@@ -36,7 +36,10 @@ same rule.
 `delivered` record.** That epic's outcome is already `delivered` and was considered; the refusal
 exists so the edit can be made without losing it. Its remedy SHALL keep `delivered` and SHALL name
 first the re-record that restores the broken obligation (for a Gate 2, the verdict over the range
-that now covers the attributed commits), then the disposition invocation.
+that now covers the attributed commits), then the disposition invocation. Where the edit would leave
+the record attributing no commits (it withdraws the last one), a re-record cannot restore the
+obligation alone: the remedy SHALL name the Gate 2 re-record over the commit that replaces the
+withdrawn one, then that commit's `--attribute-commit`, then the invocation.
 
 #### Scenario: The unconsidered set is enumerable with its remedy
 - **WHEN** an agent asks the engine which archived epics carry no considered outcome

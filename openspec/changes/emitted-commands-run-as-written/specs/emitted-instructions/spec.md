@@ -124,6 +124,16 @@ adding one is a visible change to the test.
   that record's Gate 2, and the refusal's remedies are followed in the order printed
 - **THEN** each exits zero and the edit is then accepted, with `delivered` kept
 
+#### Scenario: The regression refusal's remedy runs when the edit withdraws the last attributed commit
+- **WHEN** a `--withdraw-commit` of the only commit attributed to an archived `delivered` openspec-lane
+  epic with a passing Gate 2 headed at that commit — the commit an amend replaced — is refused, and
+  the refusal's remedies are followed in the order printed with the replacing commit and its parent
+  filled in
+- **THEN** the refusal names the Gate 2 re-record over the replacing commit and then its
+  `--attribute-commit` before the invocation, each exits zero, and the withdrawal is then accepted
+  with `delivered` kept (today the refusal names only a disposition invocation, which the archive
+  gate refuses with exit 1)
+
 #### Scenario: A gate-agnostic remedy names each gate's evidence
 - **WHEN** `integrity` reports a recorded range value that is not a commit object name on a Gate 1
   verdict
