@@ -151,7 +151,9 @@ obligations `next` breaks (empty = no refusal). It holds BOTH halves of today's 
 update-epic.mjs ~871-872: stored outcome `delivered`, `status` not `archived`, and EITHER the change
 directory is archived on disk (`isArchived(id)`, whatever the stored status) OR the record is stored
 `archived` and `status` is undefined; then it returns every `deliveredObligations(next)` kind absent
-from `deliveredObligations(snapshot)`. `update-epic`'s refusal is rewritten to call it, and the hook
+from `deliveredObligations(snapshot)`. Kinds are `deliveredObligations()`'s own `kind` (`gate2`,
+`handoff`), never `emitted-commands-run-as-written`'s Gate 2 variants, so a record whose Gate 2 is
+already stale is not newly refused when a withdrawal turns it into attribution-withdrawn. `update-epic`'s refusal is rewritten to call it, and the hook
 calls it with `status` undefined (the printed command carries no `--status`), so the two cannot drift.
 `next` is the record `--withdraw-commit` would write: the replaced sha REMOVED from
 `attributedCommits` AND APPENDED to `withdrawnCommits` (as update-epic.mjs ~709-711 does). Removing it
