@@ -157,21 +157,21 @@ Pairs: 5.1–5.3a (with 5.2a) land with 5.4.
 
 Pairs: 6.1–6.6 land with 6.7.
 
-- [ ] 6.1 RED: active A, `fix(a):` commit touching `openspec/changes/A/red-1.txt` + two source files:
+- [x] 6.1 RED: active A, `fix(a):` commit touching `openspec/changes/A/red-1.txt` + two source files:
       no AUTO-DETOUR row (fails today)
-- [ ] 6.2 RED: active A, `chore(openspec):` commit touching only `openspec/changes/A/tasks.md`: no row
+- [x] 6.2 RED: active A, `chore(openspec):` commit touching only `openspec/changes/A/tasks.md`: no row
       (fails today)
-- [ ] 6.3 RED: active A with a `planPath`, a `chore(…):` commit touching that plan file: no row (fails
+- [x] 6.3 RED: active A with a `planPath`, a `chore(…):` commit touching that plan file: no row (fails
       today)
-- [ ] 6.4 RED: P paused behind D, commit touching only `openspec/changes/P/tasks.md`: no DETOUR-COMMIT
+- [x] 6.4 RED: P paused behind D, commit touching only `openspec/changes/P/tasks.md`: no DETOUR-COMMIT
       row (fails today)
-- [ ] 6.5 RED: nested conductor, `chore(conductor):` commit touching only its own `state.json` and
+- [x] 6.5 RED: nested conductor, `chore(conductor):` commit touching only its own `state.json` and
       `PROJECT.md`: no row — for both the AUTO-DETOUR and the DETOUR-COMMIT branch (fails today, #195)
-- [ ] 6.6 REGRESSION GUARD: nested conductor, `chore(x):` commit touching `projects/sub/PROJECT.md` and
+- [x] 6.6 REGRESSION GUARD: nested conductor, `chore(x):` commit touching `projects/sub/PROJECT.md` and
       `src/thing.mjs`: AUTO-DETOUR row written (would fail under `--relative`; passes today); an epic
       whose id differs from its change directory keeps today's behaviour; #173's shape (`.gitignore`,
       `state.json`, `PROJECT.md`) is still auto-logged
-- [ ] 6.7 GREEN: `changedFiles(sha)` conductor-root relative, `ownArtifacts`, both branches' rules,
+- [x] 6.7 GREEN: `changedFiles(sha)` conductor-root relative, `ownArtifacts`, both branches' rules,
       `appendDetourLog` takes the commit's sha (Decisions 8, 9). Suite green
 
 ## 7. The attribution hint lists candidates and decides none

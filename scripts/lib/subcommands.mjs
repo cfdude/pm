@@ -162,16 +162,37 @@ export function headChangedFiles() {
   return changedFiles("HEAD");
 }
 
-/** Files changed by one commit, via `git diff-tree`. Returns null if git cannot answer. The value
- *  reaches git as one argv element, never through a shell. */
+/** Files changed by one commit, RELATIVE TO THE CONDUCTOR ROOT (design Decision 8). Returns null if
+ *  git cannot answer. The value reaches git as one argv element, never through a shell.
+ *
+ *  `git diff-tree` prints git-root paths; pm's own files (CONDUCTOR_OWN_FILES) and an epic's own
+ *  artifacts are conductor-root relative, so a nested conductor's bookkeeping commit never looked
+ *  like bookkeeping (#195). The `git rev-parse --show-prefix` is stripped; a path OUTSIDE the
+ *  conductor root keeps a `:/` marker (git's own top-of-tree pathspec spelling), so it can never
+ *  equal a conductor-relative path — a git-root `PROJECT.md` in a monorepo is not this conductor's.
+ *  `--relative` is rejected: it DROPS out-of-root paths and turns a mixed commit into a
+ *  bookkeeping-only one. */
 export function changedFiles(sha) {
   try {
-    const out = execFileSync("git", ["diff-tree", "--no-commit-id", "--name-only", "-r", "--root", sha], {
-      cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"],
-    }).trim();
-    return out ? out.split("\n") : [];
+    const opts = { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] };
+    const out = execFileSync("git", ["diff-tree", "--no-commit-id", "--name-only", "-r", "--root", sha], opts).trim();
+    const prefix = execFileSync("git", ["rev-parse", "--show-prefix"], opts).trim();
+    return out ? out.split("\n").map(p => !prefix ? p : p.startsWith(prefix) ? p.slice(prefix.length) : `:/${p}`) : [];
   } catch { return null; }
 }
+
+/** An epic's OWN ARTIFACTS: its change directory `openspec/changes/<id>/` plus each source-artifact
+ *  path it records (plan, spec), conductor-root relative. An openspec epic registered under an id
+ *  that differs from its change directory does not match, and keeps the old behaviour. */
+export function ownArtifacts(epic) {
+  if (!epic || typeof epic.id !== "string") return [];
+  return [{ path: `openspec/changes/${epic.id}/`, dir: true },
+    ...epicSourceArtifacts(epic).map(a => ({ path: a.path, dir: false }))];
+}
+
+/** Does this conductor-relative path lie within these own artifacts? */
+export const withinOwnArtifacts = (file, artifacts) =>
+  artifacts.some(a => (a.dir ? file.startsWith(a.path) : file === a.path));
 
 /** Subject line of one commit, or null when git cannot answer. */
 export function commitSubject(sha) {
@@ -223,7 +244,7 @@ export function isConductorOwnFiles(files) {
  *  (<=3 files) whose subject uses a fix/chore conventional-commit prefix, made while no
  *  detour is active, and that does not itself name the currently active epic (a commit
  *  tagged to the active epic's own scope is that epic's work, not a stray detour). */
-export function looksLikeUnloggedMinimalDetour(subject, activeEpicId, files = headChangedFiles()) {
+export function looksLikeUnloggedMinimalDetour(subject, activeEpicId, files = headChangedFiles(), own = []) {
   // gh#91: a detour is BY DEFINITION an interruption of an active epic. With no active epic
   // there is nothing to detour FROM, and the entry this used to write carried an empty epic
   // field (`AUTO-DETOUR\t-\t…`) describing an interruption that never happened — then asked the
@@ -243,6 +264,10 @@ export function looksLikeUnloggedMinimalDetour(subject, activeEpicId, files = he
   if (activeEpicId && subject.includes(`(${activeEpicId})`)) return false;
   if (files === null || files.length === 0 || files.length > 3) return false;
   if (isConductorOwnFiles(files)) return false;
+  // commit-nudge-reads-the-whole-move: a commit touching ANY of the active epic's own artifacts is
+  // that epic's work — a TDD commit carrying its red-*.txt, a task tick, a plan edit — never a
+  // detour from it. Decided from paths, never from a subject prefix or scope.
+  if (files.some(f => withinOwnArtifacts(f, own))) return false;
   return true;
 }
 
@@ -543,6 +568,11 @@ function runNudge(state, ctx, commits, attribution = null, event = "PostToolUse"
   let detourLogged = false;
   // The abbreviated sha of every row actually written, for the per-row retract pointer.
   const loggedRows = [];
+  const pausedArtifacts = (state.detourStack || [])
+    .map(fr => (state.epics || []).find(e => fr && e.id === fr.pausedEpic))
+    .flatMap(e => ownArtifacts(e));
+  const confinedToPaused = (files) => Array.isArray(files) && files.length > 0 && pausedArtifacts.length > 0 &&
+    files.every(f => withinOwnArtifacts(f, pausedArtifacts) || isConductorOwnFiles([f]));
   const logRow = (kind, epic, subject, sha) => {
     if (!appendDetourLog(kind, epic, subject, sha || undefined)) return false;
     loggedRows.push(sha ? shortSha(sha) : gitShortSha());
@@ -560,9 +590,13 @@ function runNudge(state, ctx, commits, attribution = null, event = "PostToolUse"
       // A commit touching ONLY pm's own generated output is bookkeeping, not detour work — there is
       // nothing about it a reader of the trail needs. The same predicate has always guarded the
       // AUTO-DETOUR branch; it was simply never applied here.
-      detourLogged = (!isConductorOwnFiles(files)
+      //
+      // A commit whose every changed path is a paused epic's own artifact or a pm-owned file is the
+      // paused work's bookkeeping (a task tick on the parent), not detour work.
+      detourLogged = (!isConductorOwnFiles(files) && !confinedToPaused(files)
         && logRow("DETOUR-COMMIT", ctx.detourId, subject, sha)) || detourLogged;
-    } else if (looksLikeUnloggedMinimalDetour(subject, state.active, files)) {
+    } else if (looksLikeUnloggedMinimalDetour(subject, state.active, files,
+      ownArtifacts((state.epics || []).find(e => e.id === state.active)))) {
       // AUTO-DETECT: this commit's shape looks like a minimal detour nobody logged via
       // `/pm:detour --minimal`. Log it automatically instead of relying on the agent to
       // remember — the whole point of this heuristic.

@@ -597,3 +597,100 @@ test("5.3a REGRESSION GUARD: checkouts before an amend — the replaced commit i
   assert.equal(retractedFor(repo, c1).length, 1);
   assert.ok(c2);
 });
+
+// ─────────────── 6. Detour rows: own artifacts and conductor-root paths ───────────────
+
+/** Observe a commit and require the hook ran to completion, so an absent row is not a silent hook. */
+function observedCommit(repo, files, subject) {
+  const sha = repo.commit(files, subject);
+  const o = repo.observe("PostToolUse", "git commit");
+  assert.equal(o.status, 0, o.stderr);
+  assert.ok(o.context.includes(short(repo, sha)), `the hook reported ${subject}: ${JSON.stringify(o.stdout)}`);
+  return sha;
+}
+const pushDetourFixture = (repo, paused = "epic-a", detour = "detour-d") => {
+  for (const args of [["add-epic", "--id", detour, "--lane", "claude-code"],
+    ["push-detour", paused, "--detour", detour, "--reason", "blocked", "--reconcile"]]) {
+    const r = engineRun(repo.cwd, args);
+    assert.equal(r.status, 0, `${args.join(" ")}: ${r.stderr}`);
+  }
+};
+const appendTo = (repo, rel) => fs.readFileSync(path.join(repo.gitRoot, rel), "utf8") + "\n";
+
+test("6.1 a TDD commit touching the active epic's change directory is not an AUTO-DETOUR", () => {
+  const repo = observationRepo();
+  repo.observe();
+  const sha = observedCommit(repo, { "openspec/changes/epic-a/red-1.txt": "red", "src/one.mjs": "1", "src/two.mjs": "2" },
+    "fix(a): make the red test green");
+  assert.equal(rowsFor(repo, sha).length, 0, repo.detours());
+});
+
+test("6.2 a task-tick commit for the active epic is not an AUTO-DETOUR", () => {
+  const repo = observationRepo();
+  repo.observe();
+  const sha = observedCommit(repo, { "openspec/changes/epic-a/tasks.md": "- [x] 1.1\n" }, "chore(openspec): tick epic-a 1.1");
+  assert.equal(rowsFor(repo, sha).length, 0, repo.detours());
+});
+
+test("6.3 a commit touching the active epic's plan file is not an AUTO-DETOUR", () => {
+  const repo = observationRepo();
+  const plan = "docs/superpowers/plans/2026-09-01-epic-a.md";
+  fs.mkdirSync(path.join(repo.cwd, path.dirname(plan)), { recursive: true });
+  fs.writeFileSync(path.join(repo.cwd, plan), "# plan\n");
+  const r = engineRun(repo.cwd, ["update-epic", "epic-a", "--plan", plan]);
+  assert.equal(r.status, 0, r.stderr);
+  repo.observe();
+  const sha = observedCommit(repo, { [plan]: "# plan\n- [x] step\n" }, "chore(plan): tick a step");
+  assert.equal(rowsFor(repo, sha).length, 0, repo.detours());
+});
+
+test("6.4 a commit confined to a paused epic's artifacts is not a DETOUR-COMMIT", () => {
+  const repo = observationRepo();
+  pushDetourFixture(repo);
+  repo.observe();
+  const sha = observedCommit(repo, { "openspec/changes/epic-a/tasks.md": "- [x] 1.1\n" }, "chore(openspec): tick epic-a");
+  assert.equal(rowsFor(repo, sha).length, 0, repo.detours());
+});
+
+test("6.5 a nested conductor's bookkeeping commit is not a detour, on either branch", () => {
+  for (const detour of [false, true]) {
+    const repo = observationRepo({ nested: true });
+    if (detour) pushDetourFixture(repo);
+    repo.observe();
+    const files = {
+      "projects/sub/.conductor/state.json": appendTo(repo, "projects/sub/.conductor/state.json"),
+      "projects/sub/PROJECT.md": appendTo(repo, "projects/sub/PROJECT.md"),
+    };
+    const sha = observedCommit(repo, files, "chore(conductor): register epic-b");
+    assert.equal(rowsFor(repo, sha).length, 0, `${detour ? "DETOUR-COMMIT" : "AUTO-DETOUR"}: ${repo.detours()}`);
+  }
+});
+
+test("6.6 REGRESSION GUARD: a nested mixed commit, a mismatched change directory and #173's shape still log", () => {
+  {
+    const repo = observationRepo({ nested: true });
+    repo.observe();
+    const sha = observedCommit(repo, {
+      "projects/sub/PROJECT.md": appendTo(repo, "projects/sub/PROJECT.md"),
+      "src/thing.mjs": "export {}\n",
+    }, "chore(x): mixed");
+    assert.equal(rowsFor(repo, sha).filter((l) => l.includes("\tAUTO-DETOUR\t")).length, 1, repo.detours());
+  }
+  {
+    const repo = observationRepo();
+    repo.observe();
+    const sha = observedCommit(repo, { "openspec/changes/a-different-dir/tasks.md": "- [x] 1\n" }, "chore(openspec): tick");
+    assert.equal(rowsFor(repo, sha).filter((l) => l.includes("\tAUTO-DETOUR\t")).length, 1,
+      "an epic whose id differs from its change directory keeps today's behaviour");
+  }
+  {
+    const repo = observationRepo();
+    repo.observe();
+    const sha = observedCommit(repo, {
+      ".gitignore": appendTo(repo, ".gitignore"),
+      ".conductor/state.json": appendTo(repo, ".conductor/state.json"),
+      "PROJECT.md": appendTo(repo, "PROJECT.md"),
+    }, "chore(pm): upgrade conductor");
+    assert.equal(rowsFor(repo, sha).filter((l) => l.includes("\tAUTO-DETOUR\t")).length, 1, "#173's shape is still auto-logged");
+  }
+});
