@@ -22,7 +22,7 @@ import path from "node:path";
 import { isInitialized } from "./state.mjs";
 import { activityDir, segments } from "./activity-log.mjs";
 import { segmentStart } from "./activity-report.mjs";
-import { PURGE_KINDS } from "./constants.mjs";
+import { PURGE_KINDS, escapeControls } from "./constants.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 
 // Re-exported from its DECLARATION in constants.mjs: `VERB_FLAGS`' `--kind` row names these
@@ -162,7 +162,7 @@ export function purgeLogs() {
   }
   const L = [`purge-logs: ${doomed.length} file(s), ${bytes} byte(s)` +
     `${confirmed ? " REMOVED" : " would be removed"}:`];
-  for (const f of doomed) L.push(`  ${f.kind}\t${f.size}\t${f.name}`);
+  for (const f of doomed) L.push(`  ${f.kind}\t${f.size}\t${escapeControls(f.name)}`);
   if (!confirmed) {
     L.push("");
     L.push(dryRun

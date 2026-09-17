@@ -37,7 +37,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { ROOT, SPECS_DIR } from "./constants.mjs";
+import { EPIC_ID_FORMAT, ROOT, SPECS_DIR, escapeControls, printedId, orNoRemedy, commandValue } from "./constants.mjs";
 import { isInitialized, loadState } from "./state.mjs";
 import { artifactClaimants, normalizeArtifactPath } from "./source-artifacts.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
@@ -47,11 +47,10 @@ import { parseFlags, requireFlagValues } from "./add-epic.mjs";
  *  scanned for backticked code spans. */
 export const HEADER_SCAN_LINES = 15;
 
-/** The epic-id format `add-epic` enforces. Quoted here rather than imported for the reason
- *  EPIC_SOURCE_ARTIFACTS quotes its keys: this module must not grow a dependency edge for one
- *  regex. A candidate that could not be a legal epic id is not a candidate — it is how
- *  `docs/x/y-design.md` and `foo()` are excluded without a vocabulary of things to ignore. */
-const EPIC_ID = /^[a-z0-9][a-z0-9._-]*$/;
+/** The epic-id format `add-epic` enforces, imported from its one declaration in constants.mjs (an
+ *  edge this module already has). A candidate that could not be a legal epic id is not a candidate —
+ *  it is how `docs/x/y-design.md` and `foo()` are excluded without a vocabulary of things to ignore. */
+const EPIC_ID = EPIC_ID_FORMAT;
 
 /** Every backtick-quoted epic id the document's LEADING METADATA BLOCK names, with the label it
  *  appeared under. In document order, duplicates kept out.
@@ -181,7 +180,7 @@ export function formatSpecCoverage(report) {
     L.push("at them with `verify-specs --root <path>`.");
     L.push("");
     if (report.dangling.length) L.push(...danglingBlock(report.dangling));
-    return L.join("\n");
+    return L.map(escapeControls).join("\n");
   }
 
   L.push(`root: \`${report.root}\` — ${report.documents.length} document(s)`);
@@ -206,7 +205,7 @@ export function formatSpecCoverage(report) {
   }
   L.push("");
   if (report.dangling.length) L.push(...danglingBlock(report.dangling));
-  return L.join("\n");
+  return L.map(escapeControls).join("\n");
 }
 
 /** #148's candidate set, as data. For every document under the root, the epic ids its own header
@@ -257,7 +256,7 @@ export function formatHeaderCandidates(report) {
     L.push(`no spec root at \`${report.root}\` — no document was read.`);
     L.push("Point the check at your design documents with `verify-specs --headers --root <path>`.");
     L.push("");
-    return L.join("\n");
+    return L.map(escapeControls).join("\n");
   }
   if (!report.proposals.length) {
     L.push("No uncovered document names an epic that exists — nothing to propose.");
@@ -268,7 +267,8 @@ export function formatHeaderCandidates(report) {
       L.push(`  ${p.path}`);
       for (const c of p.candidates) {
         L.push(`    • \`${c.id}\`${c.label ? `  (under **${c.label}:**)` : ""}`);
-        L.push(`        update-epic ${c.id} --spec ${p.path}`);
+        // A workspace path holding a control character takes a placeholder (it is not an id).
+        L.push(`        ${orNoRemedy(() => `update-epic ${printedId(c.id)} --spec ${commandValue(p.path, "<spec path>")}`)}`);
       }
     }
   }
@@ -281,7 +281,7 @@ export function formatHeaderCandidates(report) {
     }
     L.push("");
   }
-  return L.join("\n");
+  return L.map(escapeControls).join("\n");
 }
 
 /** The other half of the set difference: an epic naming a document that is not there.

@@ -35,7 +35,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { ROOT } from "./constants.mjs";
+import { ROOT, escapeControls } from "./constants.mjs";
 import { cmpVer } from "./plugin-meta.mjs";
 import { activeChangeIds } from "./epic-progress.mjs";
 
@@ -207,5 +207,7 @@ export function openspecCurrencyLines() {
       `${c.changes.length === 1 ? "is" : "are"} archived — \`openspec update\` rewrites the very ` +
       "instruction files that change is being authored against.");
   }
-  return L;
+  // Escaped HERE, not only at a caller's line sink: `upgrade` writes these lines straight to stderr, and
+  // the versions and change ids come from the workspace (user-text-never-forges-output, Gate 2 T-S2).
+  return L.map(escapeControls);
 }

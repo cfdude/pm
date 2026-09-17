@@ -87,9 +87,10 @@ export const VERB_EFFECTS = {
   // a discarded write would be false, and commit-nudge is PostToolUse-wired so it would have
   // warned on EVERY Bash tool call in a deployed checkout — three stderr lines and a `git
   // describe` spawn per call, for a verb that does nothing.
-  "commit-nudge": { effect: "mutates", hook: true, detachedNoOp: true, writes: ".conductor/commit-watch.json, .conductor/detours.log, state.json's archived-epic self-heal, plus render()'s writes" },
+  "commit-nudge": { effect: "mutates", hook: true, detachedNoOp: true, writes: ".conductor/commit-observe.json (reflog anchor + reported set, under its .lock), .conductor/detours.log, state.json's archived-epic self-heal, plus render()'s writes" },
   sync: { effect: "mutates", writes: "state.json — registers newly-found openspec changes and plans as untriaged epics" },
   "log-detour": { effect: "mutates", writes: ".conductor/detours.log (append-only)" },
+  "retract-detour": { effect: "mutates", writes: ".conductor/detours.log (append-only), PROJECT.md" },
   // #151. The substantial-detour PUSH and POP were a documented HAND-EDIT of state.json until
   // these existed, so they are `mutates` in the strongest sense: they are the transition, not a
   // record of one. Both go through saveState()'s normal path, so they inherit the write-conflict

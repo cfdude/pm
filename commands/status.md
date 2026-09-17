@@ -58,7 +58,7 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" render --diff-summary
 
 Renders exactly as above, and additionally prints `epic-relevant: yes` or `epic-relevant: no` to
 stdout. It is a switch, not a value-bearing flag. It is declared on `render` alone: every other
-verb refuses it before running (`set-active e2 --diff-summary` used to print
+verb refuses it before running (`set-active e2 --diff-summary`<!-- pm:refused unknown-flag --> used to print
 `epic-relevant: yes` too, because the shared renderer read it off the command line).
 
 Two things move in `PROJECT.md` on nearly every render with nothing about the epics having
@@ -88,7 +88,11 @@ and no Gate 1, an epic archived with an `ungated` Gate 2, an epic the archive-dr
 that reads `outcome: unknown` while carrying a passing Gate 2, an epic sitting in a status the
 engine does not define, a dangling epic reference, an archive directory no epic corresponds to, a
 recorded commit sha this repository can no longer resolve, an epic still open in a release that
-has already delivered, and an epic another epic declares it supersedes that never ended. It
+has already delivered, an epic another epic declares it supersedes that never ended, and a
+`github-issues` tracker whose recorded repo is not `owner/name` or `HOST/owner/name`
+(`tracker-repo-not-a-github-repository` — such a repo, saved before `set-tracker` refused the
+shape, gets no `gh` listing step, and the finding prints the re-record that restores it; for a
+secondary, its `--remove` first). It
 reports every check with its count, including the ones that found nothing, so a check that
 measured nothing is visibly a check that ran.
 
@@ -98,7 +102,14 @@ least one carrying a `delivered` disposition, and none `active` or `paused`, so 
 in flight stays silent. Anything left non-terminal that the release's own `deferred[]` does not
 name is reported: the record says neither that it shipped nor that it was cut. That is #137,
 where 0.27.0 shipped with all twenty of its member epics still `queued` and `next` then
-recommended two P0s that had shipped hours earlier.
+recommended two P0s that had shipped hours earlier. The finding offers two alternatives, each
+clearing it on its own — archive it as shipped, or `release <id> --defer <epicId> --reason "<why>"`.
+The archive alternative consults what `delivered` requires of that member and names it FIRST: an
+openspec member with no passing Gate 2 gets the Gate 2 re-record (with its range) before the
+archive, and a checkbox source (an OpenSpec `tasks.md` or a plan) with open tasks gets an archive
+carrying the handoff — tick the tasks, or record where they went with
+`update-epic <id> --status archived --outcome delivered --carried-to <epicId> --reason "<which tasks moved>" --no-deferrals`.
+Before this, the printed archive was refused by the gate it was meant to satisfy.
 
 `recorded-sha-the-repository-cannot-resolve` is the one with a deadline. A squash-merge orphans
 every commit on the merged branch — they are reachable from no ref and the next `git gc` deletes
@@ -132,9 +143,21 @@ epic actually ended with, or removing a duplicate registration.
 `heal-archived-epic-passed-gate-2`.** Every repo that followed the documented `/opsx:archive` →
 heal flow lands on `outcome: unknown` rather than `delivered`: the migration only stamps epics
 already `archived` in state, and the heal flips the rest afterwards, so they miss it by one step.
-That is expected, not a bug. Each finding carries the exact remedy —
-`update-epic <id> --status archived --outcome delivered --no-deferrals` — and the archive gate
-lets an agent replace an engine-written stamp, so nothing is frozen at `unknown`. Run it when the record looks
+That is expected, not a bug. Each finding prints its step — at its simplest
+`update-epic <id> --status archived --outcome delivered --no-deferrals`, but the step consults what
+`delivered` requires of that epic: a stories source with an open story names
+`update-epic <id> --story <n> --done` first, and a checkbox source with open tasks gets the archive
+carrying `--carried-to <epicId> --reason "<which tasks moved>"`. Run the step the finding prints, not
+the bare form, which the gate refuses on open work. The archive gate lets an agent replace an
+engine-written stamp, so nothing is frozen at `unknown`.
+
+**`update-epic`'s archived-`delivered` regression refusal carries the same handoff.** An edit to an
+archived `delivered` epic that would break what its archive met — re-pointing `--plan` at a plan
+with an open task, say — is refused with the remedy lines first and an invocation that keeps
+offering `delivered`. For a checkbox source's open tasks that invocation carries
+`--carried-to <epicId> --reason "<which tasks moved>"`, since without it the filled invocation is
+refused "task(s) outstanding". The handoff goes **only with `delivered`**: for any other outcome,
+remove it and give that outcome's reason — work that was not delivered was not carried anywhere. Run it when the record looks
 wrong, before a release, or when you want to know what the numbers in `PROJECT.md` are hiding.
 
 ## Spec coverage — `verify-specs`
@@ -216,6 +239,12 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" release 0.27.0 --intent "<wha
 node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" release 0.27.0 --member <epicId> [--member <epicId>]...
 ```
 
+- **A new release id must match `^[a-z0-9][a-z0-9._-]*$`** — lowercase letters, digits, `.`, `_`,
+  `-`. It is checked FIRST, before the missing-intent refusal and before any write, because that
+  refusal prints `release <id> --intent …` with the id in it:
+  `conductor: release '<escaped id>' cannot be created — a new release id must match … Nothing was written.`
+  An existing release whose id predates the rule is still updated and shown by its stored id.
+  Intent, target and every reason are free text, stored as written and escaped on display.
 - **Intent prose is required to create one** and the same refusal covers naming a release that
   does not exist — an id with no statement of what it is for is unreadable later, which is the
   failure this records against.

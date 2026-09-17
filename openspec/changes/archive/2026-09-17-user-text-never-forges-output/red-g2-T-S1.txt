@@ -1,0 +1,152 @@
+✔ 1.2 escapeTableCell escapes every control character as escapeControls does, then backslashes, then pipes (2.282958ms)
+✔ 1.2 escapeControls is idempotent over its own output (0.12325ms)
+✔ 2.1 A detour reason with a pipe and a newline stays in its cell (419.718875ms)
+✔ 2.2 A disposition reason with a newline stays in its row (265.68225ms)
+✔ 2.3 A minimal detour note with a pipe stays in its cell (335.129667ms)
+✔ 2.3a A backslash before a pipe does not open a delimiter (286.169083ms)
+✔ 2.4 source guard: every PROJECT.md data row goes through tableRow() (0.29425ms)
+✔ 3.1 A detour reason cannot forge a NOW line in the brief (PROJECT.md and the decoded brief) (475.573125ms)
+✔ 3.2 A backlog title cannot forge a heading (207.520208ms)
+✔ 3.3 An already-stored malformed release id renders without forging (legacy value, design D3 exception) (241.217583ms)
+✔ 3.4 Line separators other than LF are escaped too (329.97075ms)
+✔ 3.4a A session name cannot forge a line in the owners report (260.867458ms)
+✔ 3.4b A plan heading cannot carry a line separator into PROJECT.md (265.823333ms)
+✔ 3.4c An already-stored tracker value cannot forge a rules heading (legacy value, design D3 exception) (149.640375ms)
+✔ 4.1 A detour reason cannot forge a NOW line in the brief — the honcho-memories.log half, and honcho-memory's stdout (408.750334ms)
+✔ 5.1 An unknown id is quoted back on one line (645.131375ms)
+✔ 5.2 A story title cannot forge an invocation in the archive refusal (266.516458ms)
+✔ 5.3 A withdrawal reason cannot forge an integrity line (728.667291ms)
+✔ 5.3a A stored id holding a control character is never put into an emitted command; the record no verb can rename is named (legacy value, design D3 exception) (217.973292ms)
+✔ 5.3b The commit nudge never prints a command naming a control-character id (legacy values, design D3 exception) (565.526166ms)
+✔ 5.3c A release id in an integrity remedy is routed through the id printer (legacy values, design D3 exception) (143.812416ms)
+✔ 6.1 sync skips a change directory whose name holds a newline (150.696042ms)
+✔ 6.2 sync skips a plan file whose name holds a newline (141.847917ms)
+✔ 6.3 The archive backfill skips a malformed archive directory, and integrity does not say sync registers it (231.156584ms)
+✔ 6.4 A release id with a newline is refused (138.579208ms)
+✔ 6.4a A malformed release id with no intent is refused on its shape first (137.076ms)
+✔ 6.4b A tracker system with a newline is refused before the rules file is written; a secondary repository too (181.488542ms)
+✔ 6.4c A primary tracker system with a newline is refused even with --remove (142.883125ms)
+✔ 6.5 REGRESSION GUARD: well-formed and legacy release ids, uppercase and held plans, and the add-epic/add-many id refusals (373.092ms)
+✔ 6.5b REGRESSION GUARD: a legacy secondary tracker whose repo holds a control character is still removable (legacy value, design D3 exception) (152.185625ms)
+✔ 6.6a REGRESSION GUARD (Gate 2 T-I6): init's QUIET sync still names a skipped change directory and plan file (96.392292ms)
+✔ 6.6b REGRESSION GUARD (Gate 2 T-M3): a CLAIMED plan file whose name holds a space is reported as claimed, never as unstorable (194.35475ms)
+✔ 6.6c REGRESSION GUARD (Gate 2 T-M2): pushEpic() refuses an unstorable id itself, whichever path calls it (3.041292ms)
+✖ 5.3d (Gate 2 T-M1, T-M4) an undefined status and an engine-stamped unknown outcome on a control-character id print the no-remedy PROSE (legacy values, design D3 exception) (327.130042ms)
+✔ 7.1 POISON_RECIPES covers exactly the registry projection, each recipe declared exactly one way (0.621083ms)
+✖ 7.2 the sweep: every governed input, one accumulated record, every surface (design D3) (14439.050209ms)
+ℹ tests 36
+ℹ suites 0
+ℹ pass 34
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 22972.247792
+
+✖ failing tests:
+
+test at scripts/test/output-text-integrity.test.mjs:624:1
+✖ 5.3d (Gate 2 T-M1, T-M4) an undefined status and an engine-stamped unknown outcome on a control-character id print the no-remedy PROSE (legacy values, design D3 exception) (327.130042ms)
+  AssertionError [ERR_ASSERTION]: integrity: the no-remedy message is prose, not a code span:
+  INTEGRITY — records that cannot be true.
+  Findings are reported, never repaired: nothing here writes state or blocks a command.
+  
+  archived-with-zero-ticked-tasks — 0 finding(s): an archived epic whose task source exists and has nothing ticked
+  verdict-range-omits-cited-commits — 0 finding(s): a gate verdict's note cites commits its recorded range does not contain
+  archived-with-no-gate-2-review — 0 finding(s): an epic archived with an `ungated` Gate 2 — no review from anyone
+  archived-with-withdrawn-gate-2 — 0 finding(s): an archived openspec-lane epic whose Gate 2 verdict was withdrawn and not recorded again
+  delivered-epic-attributed-no-commits — 0 finding(s): a delivered epic with a passing Gate 2 whose attribution array is present and empty
+  archived-openspec-epic-with-no-gate-1 — 0 finding(s): an openspec-lane epic archived with a passing Gate 2 and no Gate 1 verdict
+  archive-directory-has-no-epic — 0 finding(s): a directory under openspec/changes/archive/ that corresponds to no epic
+  heal-archived-epic-passed-gate-2 — 0 finding(s): an epic the heal archived reads `unknown` while carrying a passing Gate 2
+  gate-recorded-as-bookkeeping — 0 finding(s): a gate verdict recorded as bookkeeping rather than as review
+  change-registered-under-two-lanes — 0 finding(s): one change id registered as two epics under different lanes
+  link-of-unknown-type — 0 finding(s): a stored link whose type nothing in the engine knows — an edge that reads as a relationship and is not one
+  epic-in-undefined-status — 1 finding(s): an epic in a status the engine does not define — a record no terminal rule can reach
+    • `odd\u000aFORGEDA` — status `bogus` is not one of untriaged, queued, active, paused, later, blocked, planned, archived. Because it is not `archived`, this epic is NON-TERMINAL to every rule that tests for the archived status: it is invisible to the completion-shaped checks above, so the record reads cleaner than it is, and every `depends-on` edge pointing at it reads unsatisfied permanently — whatever waits on it stays blocked, and its own effective priority is lifted to that of everything depending on it, for as long as the value persists. Decide what happened to the work and set a defined status: epic 'odd\u000aFORGEDA' holds a control character; no verb can rename it, or, where the work ended, `epic 'odd\u000aFORGEDA' holds a control character; no verb can rename it`. The check will not choose for you — which legal status an undefined one should become is a judgment about what happened to the work.
+  dangling-epic-reference — 0 finding(s): a reference in the record that names an epic the record does not hold
+  superseded-epic-never-ended — 0 finding(s): an epic another epic declares it supersedes, still carrying a non-terminal status
+  delivered-release-epic-left-open — 0 finding(s): an epic still open in a release that has already delivered, and was not deliberately cut
+  recorded-sha-the-repository-cannot-resolve — 0 finding(s): a recorded commit sha this repository can no longer resolve — orphaned, or already gone
+  tracker-repo-not-a-github-repository — 0 finding(s): a github-issues tracker whose recorded repo is not [HOST/]owner/name — it gets no `gh` listing step
+  advisory-claim-shape — 0 finding(s): an advisory claim that cannot be true — expired, or held on an epic that has ended
+  
+  1 finding(s) across 18 check(s).
+  
+  + actual - expected
+  
+  + [
+  +   "epic 'odd\\u000aFORGEDA' holds a control character; no verb can rename it"
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-text-integrity.test.mjs:640:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ "epic 'odd\\u000aFORGEDA' holds a control character; no verb can rename it" ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/output-text-integrity.test.mjs:991:1
+✖ 7.2 the sweep: every governed input, one accumulated record, every surface (design D3) (14439.050209ms)
+  AssertionError [ERR_ASSERTION]: 
+  (a) update-epic --wont-do (stderr): a line begins FORGED — "FORGED"
+  (b) update-epic --wont-do (stderr): holds a raw U+2028
+  (b) update-epic --wont-do (stderr): holds a raw U+0085
+  (b) update-epic --wont-do (stderr): holds a raw CR
+  (a) remove-epic over a legacy epic id (its removal line) (stderr): a line begins FORGED — "FORGED"
+  (b) remove-epic over a legacy epic id (its removal line) (stderr): holds a raw U+2028
+  (b) remove-epic over a legacy epic id (its removal line) (stderr): holds a raw U+0085
+  (b) remove-epic over a legacy epic id (its removal line) (stderr): holds a raw CR
+  (a) reorder over legacy epic ids (its reordered line) (stdout): a line begins FORGED — "FORGED"
+  (b) reorder over legacy epic ids (its reordered line) (stdout): holds a raw U+2028
+  (b) reorder over legacy epic ids (its reordered line) (stdout): holds a raw U+0085
+  (b) reorder over legacy epic ids (its reordered line) (stdout): holds a raw CR
+  (a) release --intent over a legacy release id (its update line) (stderr): a line begins FORGED — "FORGED"
+  (b) release --intent over a legacy release id (its update line) (stderr): holds a raw U+2028
+  (b) release --intent over a legacy release id (its update line) (stderr): holds a raw U+0085
+  (b) release --intent over a legacy release id (its update line) (stderr): holds a raw CR
+  (a) honcho-memory push over add-many may-invalidate link ids (the deferral note) (stderr): a line begins FORGED — "FORGED"
+  (b) honcho-memory push over add-many may-invalidate link ids (the deferral note) (stderr): holds a raw U+2028
+  (b) honcho-memory push over add-many may-invalidate link ids (the deferral note) (stderr): holds a raw U+0085
+  (b) honcho-memory push over add-many may-invalidate link ids (the deferral note) (stderr): holds a raw CR
+  + actual - expected
+  
+  + [
+  +   '(a) update-epic --wont-do (stderr): a line begins FORGED — "FORGED"',
+  +   '(b) update-epic --wont-do (stderr): holds a raw U+2028',
+  +   '(b) update-epic --wont-do (stderr): holds a raw U+0085',
+  +   '(b) update-epic --wont-do (stderr): holds a raw CR',
+  +   '(a) remove-epic over a legacy epic id (its removal line) (stderr): a line begins FORGED — "FORGED"',
+  +   '(b) remove-epic over a legacy epic id (its removal line) (stderr): holds a raw U+2028',
+  +   '(b) remove-epic over a legacy epic id (its removal line) (stderr): holds a raw U+0085',
+  +   '(b) remove-epic over a legacy epic id (its removal line) (stderr): holds a raw CR',
+  +   '(a) reorder over legacy epic ids (its reordered line) (stdout): a line begins FORGED — "FORGED"',
+  +   '(b) reorder over legacy epic ids (its reordered line) (stdout): holds a raw U+2028',
+  +   '(b) reorder over legacy epic ids (its reordered line) (stdout): holds a raw U+0085',
+  +   '(b) reorder over legacy epic ids (its reordered line) (stdout): holds a raw CR',
+  +   '(a) release --intent over a legacy release id (its update line) (stderr): a line begins FORGED — "FORGED"',
+  +   '(b) release --intent over a legacy release id (its update line) (stderr): holds a raw U+2028',
+  +   '(b) release --intent over a legacy release id (its update line) (stderr): holds a raw U+0085',
+  +   '(b) release --intent over a legacy release id (its update line) (stderr): holds a raw CR',
+  +   '(a) honcho-memory push over add-many may-invalidate link ids (the deferral note) (stderr): a line begins FORGED — "FORGED"',
+  +   '(b) honcho-memory push over add-many may-invalidate link ids (the deferral note) (stderr): holds a raw U+2028',
+  +   '(b) honcho-memory push over add-many may-invalidate link ids (the deferral note) (stderr): holds a raw U+0085',
+  +   '(b) honcho-memory push over add-many may-invalidate link ids (the deferral note) (stderr): holds a raw CR'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-text-integrity.test.mjs:1145:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ '(a) update-epic --wont-do (stderr): a line begins FORGED — "FORGED"', '(b) update-epic --wont-do (stderr): holds a raw U+2028', '(b) update-epic --wont-do (stderr): holds a raw U+0085', '(b) update-epic --wont-do (stderr): holds a raw CR', '(a) remove-epic over a legacy epic id (its removal line) (stderr): a line begins FORGED — "FORGED"', '(b) remove-epic over a legacy epic id (its removal line) (stderr): holds a raw U+2028', '(b) remove-epic over a legacy epic id (its removal line) (stderr): holds a raw U+0085', '(b) remove-epic over a legacy epic id (its removal line) (stderr): holds a raw CR', '(a) reorder over legacy epic ids (its reordered line) (stdout): a line begins FORGED — "FORGED"', '(b) reorder over legacy epic ids (its reordered line) (stdout): holds a raw U+2028', '(b) reorder over legacy epic ids (its reordered line) (stdout): holds a raw U+0085', '(b) reorder over legacy epic ids (its reordered line) (stdout): holds a raw CR', '(a) release --intent over a legacy release id (its update line) (stderr): a line begins FORGED — "FORGED"', '(b) release --intent over a legacy release id (its update line) (stderr): holds a raw U+2028', '(b) release --intent over a legacy release id (its update line) (stderr): holds a raw U+0085', '(b) release --intent over a legacy release id (its update line) (stderr): holds a raw CR', '(a) honcho-memory push over add-many may-invalidate link ids (the deferral note) (stderr): a line begins FORGED — "FORGED"', '(b) honcho-memory push over add-many may-invalidate link ids (the deferral note) (stderr): holds a raw U+2028', '(b) honcho-memory push over add-many may-invalidate link ids (the deferral note) (stderr): holds a raw U+0085', '(b) honcho-memory push over add-many may-invalidate link ids (the deferral note) (stderr): holds a raw CR' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

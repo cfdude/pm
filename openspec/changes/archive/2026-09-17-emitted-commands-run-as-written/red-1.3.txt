@@ -1,0 +1,79 @@
+✖ 1.3 Layer A: every engine invocation in shipped docs passes the pre-dispatch check, and every marker holds (37.770666ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 79.874417
+
+✖ failing tests:
+
+test at scripts/test/emitted-invocations.test.mjs:469:1
+✖ 1.3 Layer A: every engine invocation in shipped docs passes the pre-dispatch check, and every marker holds (37.770666ms)
+  AssertionError [ERR_ASSERTION]: shipped documents:
+  commands/activity.md:94: refused (null) `activity --bogus` — conductor: unknown flag --bogus for activity — it accepts: --json, --since, --epic
+  commands/activity.md:99: refused (null) `set-activity-log on extra` — conductor: set-activity-log takes on|off — 'extra' is an extra argument it does not read. Nothing was written.
+  commands/claim.md:43: refused (null) `claim --repo --session s --Steal` — conductor: unknown flag --Steal for claim — it accepts: --session, --ttl, --steal, --repo, --force
+  commands/cross-spec-review.md:85: `node scripts/conductor.mjs` runs only in a pm checkout — invoke the installed engine
+  commands/detour.md:21: refused (null) `log-detour fixed --no-verify usage` — conductor: unknown flag --no-verify for log-detour — it accepts: --force
+  commands/epic.md:128: refused (null) `remove-epic --id e2` — conductor: remove-epic takes its epic id POSITIONALLY, not as --id — write `remove-epic <id> ...`, i.e. `remove-epic e2`. Nothing was written.
+  commands/epic.md:128: refused (null) `set-active --id   e2` — conductor: set-active takes its epic id POSITIONALLY, not as --id — write `set-active <id> ...`, i.e. `set-active e2`. Nothing was written.
+  commands/epic.md:164: refused (null) `add-many --from b.json --external-id X` — conductor: unknown flag --external-id for add-many — it accepts: --from, --force
+  commands/epic.md:462: refused (null) `update-epic e1 --title My Title` — conductor: update-epic takes <id> — 'Title' is an extra argument it does not read. Nothing was written.
+  commands/epic.md:661: refused (null) `remove-epic p --cascade true` — conductor: remove-epic takes <id> — 'true' is an extra argument it does not read. Nothing was written.
+  commands/lane-routing.md:61: refused (null) `suggest-lane fix a typo` — conductor: suggest-lane takes "<free text>" — 'a' is an extra argument it does not read. Nothing was written.
+  commands/status.md:61: refused (null) `set-active e2 --diff-summary` — conductor: unknown flag --diff-summary for set-active — it accepts: --force
+  commands/upgrade.md:226: /pm:integrity names no shipped command or skill
+  skills/conductor/SKILL.md:99: refused (null) `remove-epic <id> --cascade true` — conductor: remove-epic takes <id> — 'true' is an extra argument it does not read. Nothing was written.
+  skills/conductor/SKILL.md:70: `node scripts/conductor.mjs` runs only in a pm checkout — invoke the installed engine
+  README.md:346: refused (null) `remove-epic <id> --cascade true` — conductor: remove-epic takes <id> — 'true' is an extra argument it does not read. Nothing was written.
+  README.md:1285: refused (null) `add-epic --id h1 --title --help` — conductor: --title requires a value — '--help' arrived where that value belonged and was read as a flag, not as the value. If it IS the value, write --title=--help
+  README.md:1301: refused (null) `remove-epic <id> --cascade true` — conductor: remove-epic takes <id> — 'true' is an extra argument it does not read. Nothing was written.
+  README.md:1304: refused (null) `add-epic … --title My Title` — conductor: add-epic takes no positional arguments — 'Title' is an extra argument it does not read. Nothing was written.
+  README.md:1335: refused (null) `suggest-lane fix a typo` — conductor: suggest-lane takes "<free text>" — 'a' is an extra argument it does not read. Nothing was written.
+  README.md:1336: refused (null) `suggest-lane reads ONE text argument — quote it.` — conductor: suggest-lane takes "<free text>" — 'ONE' is an extra argument it does not read. Nothing was written.
+  README.md:1337: refused (null) `log-detour fixed --no-verify usage` — conductor: unknown flag --no-verify for log-detour — it accepts: --force
+  README.md:1353: refused (null) `remove-epic --id e2` — conductor: remove-epic takes its epic id POSITIONALLY, not as --id — write `remove-epic <id> ...`, i.e. `remove-epic e2`. Nothing was written.
+  README.md:1362: refused (null) `integrity --force` — conductor: unknown flag --force for integrity — it accepts no flags
+  + actual - expected
+  
+  + [
+  +   'commands/activity.md:94: refused (null) `activity --bogus` — conductor: unknown flag --bogus for activity — it accepts: --json, --since, --epic',
+  +   "commands/activity.md:99: refused (null) `set-activity-log on extra` — conductor: set-activity-log takes on|off — 'extra' is an extra argument it does not read. Nothing was written.",
+  +   'commands/claim.md:43: refused (null) `claim --repo --session s --Steal` — conductor: unknown flag --Steal for claim — it accepts: --session, --ttl, --steal, --repo, --force',
+  +   'commands/cross-spec-review.md:85: `node scripts/conductor.mjs` runs only in a pm checkout — invoke the installed engine',
+  +   'commands/detour.md:21: refused (null) `log-detour fixed --no-verify usage` — conductor: unknown flag --no-verify for log-detour — it accepts: --force',
+  +   'commands/epic.md:128: refused (null) `remove-epic --id e2` — conductor: remove-epic takes its epic id POSITIONALLY, not as --id — write `remove-epic <id> ...`, i.e. `remove-epic e2`. Nothing was written.',
+  +   'commands/epic.md:128: refused (null) `set-active --id   e2` — conductor: set-active takes its epic id POSITIONALLY, not as --id — write `set-active <id> ...`, i.e. `set-active e2`. Nothing was written.',
+  +   'commands/epic.md:164: refused (null) `add-many --from b.json --external-id X` — conductor: unknown flag --external-id for add-many — it accepts: --from, --force',
+  +   "commands/epic.md:462: refused (null) `update-epic e1 --title My Title` — conductor: update-epic takes <id> — 'Title' is an extra argument it does not read. Nothing was written.",
+  +   "commands/epic.md:661: refused (null) `remove-epic p --cascade true` — conductor: remove-epic takes <id> — 'true' is an extra argument it does not read. Nothing was written.",
+  +   'commands/lane-routing.md:61: refused (null) `suggest-lane fix a typo` — conductor: suggest-lane takes "<free text>" — \'a\' is an extra argument it does not read. Nothing was written.',
+  +   'commands/status.md:61: refused (null) `set-active e2 --diff-summary` — conductor: unknown flag --diff-summary for set-active — it accepts: --force',
+  +   'commands/upgrade.md:226: /pm:integrity names no shipped command or skill',
+  +   "skills/conductor/SKILL.md:99: refused (null) `remove-epic <id> --cascade true` — conductor: remove-epic takes <id> — 'true' is an extra argument it does not read. Nothing was written.",
+  +   'skills/conductor/SKILL.md:70: `node scripts/conductor.mjs` runs only in a pm checkout — invoke the installed engine',
+  +   "README.md:346: refused (null) `remove-epic <id> --cascade true` — conductor: remove-epic takes <id> — 'true' is an extra argument it does not read. Nothing was written.",
+  +   "README.md:1285: refused (null) `add-epic --id h1 --title --help` — conductor: --title requires a value — '--help' arrived where that value belonged and was read as a flag, not as the value. If it IS the value, write --title=--help",
+  +   "README.md:1301: refused (null) `remove-epic <id> --cascade true` — conductor: remove-epic takes <id> — 'true' is an extra argument it does not read. Nothing was written.",
+  +   "README.md:1304: refused (null) `add-epic … --title My Title` — conductor: add-epic takes no positional arguments — 'Title' is an extra argument it does not read. Nothing was written.",
+  +   'README.md:1335: refused (null) `suggest-lane fix a typo` — conductor: suggest-lane takes "<free text>" — \'a\' is an extra argument it does not read. Nothing was written.',
+  +   'README.md:1336: refused (null) `suggest-lane reads ONE text argument — quote it.` — conductor: suggest-lane takes "<free text>" — \'ONE\' is an extra argument it does not read. Nothing was written.',
+  +   'README.md:1337: refused (null) `log-detour fixed --no-verify usage` — conductor: unknown flag --no-verify for log-detour — it accepts: --force',
+  +   'README.md:1353: refused (null) `remove-epic --id e2` — conductor: remove-epic takes its epic id POSITIONALLY, not as --id — write `remove-epic <id> ...`, i.e. `remove-epic e2`. Nothing was written.',
+  +   'README.md:1362: refused (null) `integrity --force` — conductor: unknown flag --force for integrity — it accepts no flags'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:472:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'commands/activity.md:94: refused (null) `activity --bogus` — conductor: unknown flag --bogus for activity — it accepts: --json, --since, --epic', "commands/activity.md:99: refused (null) `set-activity-log on extra` — conductor: set-activity-log takes on|off — 'extra' is an extra argument it does not read. Nothing was written.", 'commands/claim.md:43: refused (null) `claim --repo --session s --Steal` — conductor: unknown flag --Steal for claim — it accepts: --session, --ttl, --steal, --repo, --force', 'commands/cross-spec-review.md:85: `node scripts/conductor.mjs` runs only in a pm checkout — invoke the installed engine', 'commands/detour.md:21: refused (null) `log-detour fixed --no-verify usage` — conductor: unknown flag --no-verify for log-detour — it accepts: --force', 'commands/epic.md:128: refused (null) `remove-epic --id e2` — conductor: remove-epic takes its epic id POSITIONALLY, not as --id — write `remove-epic <id> ...`, i.e. `remove-epic e2`. Nothing was written.', 'commands/epic.md:128: refused (null) `set-active --id   e2` — conductor: set-active takes its epic id POSITIONALLY, not as --id — write `set-active <id> ...`, i.e. `set-active e2`. Nothing was written.', 'commands/epic.md:164: refused (null) `add-many --from b.json --external-id X` — conductor: unknown flag --external-id for add-many — it accepts: --from, --force', "commands/epic.md:462: refused (null) `update-epic e1 --title My Title` — conductor: update-epic takes <id> — 'Title' is an extra argument it does not read. Nothing was written.", "commands/epic.md:661: refused (null) `remove-epic p --cascade true` — conductor: remove-epic takes <id> — 'true' is an extra argument it does not read. Nothing was written.", 'commands/lane-routing.md:61: refused (null) `suggest-lane fix a typo` — conductor: suggest-lane takes "<free text>" — \'a\' is an extra argument it does not read. Nothing was written.', 'commands/status.md:61: refused (null) `set-active e2 --diff-summary` — conductor: unknown flag --diff-summary for set-active — it accepts: --force', 'commands/upgrade.md:226: /pm:integrity names no shipped command or skill', "skills/conductor/SKILL.md:99: refused (null) `remove-epic <id> --cascade true` — conductor: remove-epic takes <id> — 'true' is an extra argument it does not read. Nothing was written.", 'skills/conductor/SKILL.md:70: `node scripts/conductor.mjs` runs only in a pm checkout — invoke the installed engine', "README.md:346: refused (null) `remove-epic <id> --cascade true` — conductor: remove-epic takes <id> — 'true' is an extra argument it does not read. Nothing was written.", "README.md:1285: refused (null) `add-epic --id h1 --title --help` — conductor: --title requires a value — '--help' arrived where that value belonged and was read as a flag, not as the value. If it IS the value, write --title=--help", "README.md:1301: refused (null) `remove-epic <id> --cascade true` — conductor: remove-epic takes <id> — 'true' is an extra argument it does not read. Nothing was written.", "README.md:1304: refused (null) `add-epic … --title My Title` — conductor: add-epic takes no positional arguments — 'Title' is an extra argument it does not read. Nothing was written.", 'README.md:1335: refused (null) `suggest-lane fix a typo` — conductor: suggest-lane takes "<free text>" — \'a\' is an extra argument it does not read. Nothing was written.', 'README.md:1336: refused (null) `suggest-lane reads ONE text argument — quote it.` — conductor: suggest-lane takes "<free text>" — \'ONE\' is an extra argument it does not read. Nothing was written.', 'README.md:1337: refused (null) `log-detour fixed --no-verify usage` — conductor: unknown flag --no-verify for log-detour — it accepts: --force', 'README.md:1353: refused (null) `remove-epic --id e2` — conductor: remove-epic takes its epic id POSITIONALLY, not as --id — write `remove-epic <id> ...`, i.e. `remove-epic e2`. Nothing was written.', 'README.md:1362: refused (null) `integrity --force` — conductor: unknown flag --force for integrity — it accepts no flags' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

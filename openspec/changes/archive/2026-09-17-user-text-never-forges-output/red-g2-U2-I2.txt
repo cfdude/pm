@@ -1,0 +1,37 @@
+# RED — Gate 2 U2-I2: each T-S2 escape undone alone (restored afterwards; nothing of it committed)
+
+## A. update-epic.mjs rank-clear line: escapeControls(epic.priority) -> epic.priority; 7.2
+✖ 7.2 the sweep: every governed input, one accumulated record, every surface (design D3) (22198.785417ms)
+ℹ pass 0
+ℹ fail 1
+✖ failing tests:
+✖ 7.2 the sweep: every governed input, one accumulated record, every surface (design D3) (22198.785417ms)
+  AssertionError [ERR_ASSERTION]: 
+  +   '(a) update-epic --priority over a ranked legacy epic whose id and stored priority hold a control character (the rank-clear announcement, Gate 2 U2-I2) (stderr): a line begins FORGED — "FORGED"',
+  +   '(b) update-epic --priority over a ranked legacy epic whose id and stored priority hold a control character (the rank-clear announcement, Gate 2 U2-I2) (stderr): holds a raw U+2028',
+  +   '(b) update-epic --priority over a ranked legacy epic whose id and stored priority hold a control character (the rank-clear announcement, Gate 2 U2-I2) (stderr): holds a raw U+0085',
+  +   '(b) update-epic --priority over a ranked legacy epic whose id and stored priority hold a control character (the rank-clear announcement, Gate 2 U2-I2) (stderr): holds a raw CR'
+
+## B. update-epic.mjs cleared-field line: escapeControls(id) -> id; 7.2
+✖ 7.2 the sweep: every governed input, one accumulated record, every surface (design D3) (32107.271416ms)
+ℹ pass 0
+ℹ fail 1
+✖ failing tests:
+✖ 7.2 the sweep: every governed input, one accumulated record, every surface (design D3) (32107.271416ms)
+  AssertionError [ERR_ASSERTION]: 
+  +   '(a) update-epic --clear parent over a legacy epic id (the cleared-field announcement, Gate 2 U2-I2) (stderr): a line begins FORGED — "FORGED"',
+  +   '(b) update-epic --clear parent over a legacy epic id (the cleared-field announcement, Gate 2 U2-I2) (stderr): holds a raw U+2028',
+  +   '(b) update-epic --clear parent over a legacy epic id (the cleared-field announcement, Gate 2 U2-I2) (stderr): holds a raw U+0085',
+  +   '(b) update-epic --clear parent over a legacy epic id (the cleared-field announcement, Gate 2 U2-I2) (stderr): holds a raw CR'
+
+## C. tool-currency.mjs openspecCurrencyLines: return L.map(escapeControls) -> return L; tool-currency U2-I2 test
+✖ user-text-never-forges-output (Gate 2 U2-I2): a change id holding a control character stays on its line in upgrade's HOLD (287.799666ms)
+ℹ pass 0
+ℹ fail 1
+✖ failing tests:
+✖ user-text-never-forges-output (Gate 2 U2-I2): a change id holding a control character stays on its line in upgrade's HOLD (287.799666ms)
+  AssertionError [ERR_ASSERTION]: no line begins with a value's tail
+  +   'FORGED',
+  +   'FORGED',
+  +   'FORGED',
+  +   'FORGED` is archived — `openspec update` rewrites the very instruction files that change is being authored against.'

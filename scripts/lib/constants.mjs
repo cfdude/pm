@@ -196,7 +196,7 @@ export function releaseSummaries(state, epics) {
 
 /** The ONE wording for a release line, shared by both surfaces exactly as gateSummary() is. */
 export const releaseLine = (s) =>
-  `\`${s.id}\`: ${s.members} epic${s.members === 1 ? "" : "s"}, ${s.deferred.length} deferred`;
+  `\`${escapeControls(s.id)}\`: ${s.members} epic${s.members === 1 ? "" : "s"}, ${s.deferred.length} deferred`;
 
 export const KNOWN_PLATFORMS = ["claude-code", "hermes", "codex"];
 
@@ -762,6 +762,11 @@ export const VERB_FLAGS = [
   { flag: "direction", commands: ["set-tracker"], placeholder: "inward|outward|both" },
   { flag: "intent", commands: ["set-tracker"], repeats: true },
   { flag: "remove", commands: ["set-tracker"], valueless: true },
+  // suggest-lane's text as the VALUE of a declared flag. A title that begins with `-` or is shaped
+  // like a flag (`--limit=5 ignored`) is classified as a flag even inside shell quotes when passed
+  // positionally; `--ask=<text>` is one token whose value is never reclassified, so the emitted
+  // lane-routing step routes any item title (emitted-commands-run-as-written, Decision 3).
+  { flag: "ask", commands: ["suggest-lane"], requires: "the text to route" },
   // record-reconcile and record-tracker-refresh. `--verdict` is spelled the same on four verbs
   // and means four different vocabularies, so it is four scoped rows and not one shared one;
   // what they agree on — that it takes a value — is what the row carries.
@@ -802,7 +807,9 @@ export const VERB_FLAGS = [
   // rather than restating the phrase: a deferral's reason is held to the same standard whichever
   // verb records it.
   { flag: "detour", commands: ["push-detour"] },
-  { flag: "reason", commands: ["push-detour"], requires: REASON_REQUIRES },
+  // `retract-detour` (commit-nudge-reads-the-whole-move) joins the row: a retraction's reason is held
+  // to the same standard, and push-detour's semantics are untouched.
+  { flag: "reason", commands: ["push-detour", "retract-detour"], requires: REASON_REQUIRES },
   // The reconcile decision is SAID, never defaulted — see pushDetour() in lib/detour-stack.mjs
   // for why, and KNOWN_STATUSES' neighbour `--no-deferrals` for the precedent.
   { flag: "reconcile", commands: ["push-detour"], valueless: true },
@@ -909,9 +916,13 @@ export const VERB_POSITIONALS = {
   "update-epic": EPIC_ID, "remove-epic": EPIC_ID, "set-active": EPIC_ID, "set-autonomy": EPIC_ID,
   "record-reconcile": EPIC_ID, "record-gate-review": EPIC_ID, "record-tracker-refresh": EPIC_ID,
   "push-detour": EPIC_ID,
+  // One commit sha, never free text: the row it retracts is named by exactly one value.
+  "retract-detour": { min: 1, max: 1, form: "<sha>", idFirst: false, freeText: false },
   "record-cross-spec-review": { min: 1, max: 1, form: "<releaseId>", idFirst: false, freeText: false },
   "set-activity-log": { min: 1, max: 1, form: "on|off", idFirst: false, freeText: false },
-  "suggest-lane": { min: 1, max: 1, form: "\"<free text>\"", idFirst: false, freeText: true },
+  // min 0 since `--ask=<text>` (emitted-commands-run-as-written): the verb refuses when neither the
+  // flag nor a text is given, and refuses both at once.
+  "suggest-lane": { min: 0, max: 1, form: "\"<free text>\"", idFirst: false, freeText: true },
   triage: { min: 1, max: 1, form: "\"<the ask, in its own words>\"", idFirst: false, freeText: true },
   "pop-detour": { min: 0, max: 1, form: "[<epicId>]", idFirst: true, freeText: false },
   "set-gate-guard": { min: 0, max: 1, form: "[on|off]", idFirst: false, freeText: false },
@@ -928,7 +939,7 @@ export const VERB_POSITIONALS = {
 
 export const FLAGLESS_VERBS = [
   "sync", "log-detour", "honcho-memory",
-  "reorder", "set-active", "clear-active", "suggest-lane", "set-gate-guard",
+  "reorder", "set-active", "clear-active", "set-gate-guard",
   "verify-worktrees", "verify-state", "integrity", "changesets", "upgrade",
   // #111's toggle. Its argument is the POSITIONAL `on|off` — `set-activity-log --on` is refused
   // by the same check that refuses `set-activity-log maybe` — so it has no flag surface to
@@ -1036,6 +1047,109 @@ export const CONTROL_CHARACTER = /[\u0000-\u001f\u007f-\u009f\u2028\u2029]/;
  *  leaves C1 controls and U+2028/U+2029 raw. */
 export const escapeControls = (s) => String(s).replace(new RegExp(CONTROL_CHARACTER.source, "g"),
   c => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`);
+/** The characters JSON.stringify leaves raw that a reader counts as a line terminator or control:
+ *  DEL, the C1 controls (NEL among them) and U+2028/U+2029. Built from code points so no raw one
+ *  sits in this source file. */
+const JSON_RAW_CONTROLS = new RegExp("[" + String.fromCharCode(0x7f) + "-" + String.fromCharCode(0x9f) +
+  String.fromCharCode(0x2028) + String.fromCharCode(0x2029) + "]", "g");
+/** A JSON document as printed text (user-text-never-forges-output, Gate 2 U2-M1): JSON.stringify(),
+ *  then every character in JSON_RAW_CONTROLS written as its JSON escape (escapeControls' form, which
+ *  is valid JSON). Such a character can only occur inside a string literal, so the result parses to
+ *  exactly the same value — and no stored value puts a line start into a JSON verb's stdout for a
+ *  reader that splits lines before it parses. Every stdout JSON document goes through this.
+ *  JSON.stringify's own (value, replacer, space) signature (Gate 2 V-I1): a two-argument form read
+ *  `jsonText(v, null, 2)` as a null spacing and silently dropped a verb's indentation. */
+export const jsonText = (value, replacer, space) => JSON.stringify(value, replacer, space).replace(JSON_RAW_CONTROLS, escapeControls);
+/** The CELL escaper for a PROJECT.md table (user-text-never-forges-output D1): escapeControls(),
+ *  then every backslash doubled, then every `|` escaped. GitHub-flavored Markdown splits a row with a
+ *  backslash escaping the one character after it, so the backslash MUST go first — a pipe-only
+ *  escape turns `a\|b` into `a\\|b`, which splits at that pipe. NOT idempotent: render.mjs's
+ *  tableRow() is its one caller, applying it exactly once per cell. */
+export const escapeTableCell = (s) => escapeControls(s).replace(/\\/g, "\\\\").replace(/\|/g, "\\|");
+
+/** The epic id format every writer enforces (`add-epic`, `add-many`) and `verify-specs` reads
+ *  candidates by. ONE declaration: a second regex literal is a format that can drift from this one
+ *  (emitted-commands-run-as-written; user-text-never-forges-output asserts none remains elsewhere). */
+export const EPIC_ID_FORMAT = /^[a-z0-9][a-z0-9._-]*$/;
+
+/** Can this id be STORED as an epic id at all? Non-empty, and no control character and no whitespace
+ *  (user-text-never-forges-output D4). Deliberately NOT EPIC_ID_FORMAT: `sync` has always registered
+ *  uppercase plan filenames (the fleet holds `MASTER-platform-stabilization-2026-05-18`), and those
+ *  stay accepted. pushEpic() — the one creation sink — refuses a failing id; `sync` and the archive
+ *  backfill test it at their final registration step and skip the entry instead. */
+export const STORABLE_EPIC_ID = (id) =>
+  typeof id === "string" && id.length > 0 && !CONTROL_CHARACTER.test(id) && !/\s/.test(id);
+
+/** The stderr line `sync` prints, on EVERY run (quiet included), for an entry it skips because its name
+ *  cannot be an epic id. */
+export const unstorableSkipLine = (kind, name) =>
+  `conductor: sync skipped ${kind} '${escapeControls(name)}' — its name holds a control character or ` +
+  "whitespace, so it cannot be an epic id; rename it to register it\n";
+
+/** POSIX single-quoting: the whole token arrives as ONE shell word, apostrophes included. Moved
+ *  here from update-epic.mjs so the regression refusal's echo and printedId() share one quoter. */
+export const shellQuote = (token) => `'${String(token).replace(/'/g, "'\\''")}'`;
+
+/** THE single printing site for a stored epic id inside a printed command. An id matching
+ *  EPIC_ID_FORMAT prints as it is; any other — a legacy `My Plan`, registered before ids were
+ *  validated — is shell-quoted, so the command still passes it as ONE argument. No renderer
+ *  interpolates `epic.id` into a command directly (emitted-instructions: "An epic id in a printed
+ *  command is always one shell word"); user-text-never-forges-output hooks its control-character
+ *  handling into this one function. */
+export const printedId = (id, kind = "epic") => {
+  // user-text-never-forges-output D4a: an id holding a CONTROL CHARACTER has no one-line remedy — an
+  // escaped id names a different record, and a raw one breaks the line. So there is no printable
+  // form to return: printedId() THROWS the no-remedy signal, and the command builder that called it
+  // prints noRemedyMessage() IN PLACE OF the command (orNoRemedy()). A throw rather than a sentinel
+  // value, deliberately: a caller not yet taught to handle it fails loudly instead of interpolating
+  // `[object Object]` into a command nothing would notice. Only legacy records reach this branch —
+  // every writer refuses such an id now.
+  if (CONTROL_CHARACTER.test(String(id))) throw new NoRemedy(kind, id);
+  return EPIC_ID_FORMAT.test(String(id)) ? String(id) : shellQuote(id);
+};
+
+/** The no-remedy signal printedId() throws for an id holding a control character. */
+export class NoRemedy extends Error {
+  constructor(kind, id) {
+    super(`${kind} id holds a control character`);
+    this.name = "NoRemedy";
+    this.kind = kind;
+    this.id = id;
+  }
+}
+
+/** THE wording for a record no verb can rename (spec output-text-integrity): names the record kind
+ *  and its escaped id, prints no command, and never directs a hand-edit of the state file. */
+export const noRemedyMessage = (kind, id) => {
+  const message = `${kind} '${escapeControls(id)}' holds a control character; no verb can rename it`;
+  NO_REMEDY_TEXTS.add(message);
+  return message;
+};
+/** Every no-remedy message this process has produced, so asCode() can tell one from a command by
+ *  IDENTITY with what the engine emitted rather than by reading its wording. */
+const NO_REMEDY_TEXTS = new Set();
+
+/** A remedy builder's result as inline code — unless it is the no-remedy message, which is PROSE and
+ *  must not read as a command to run (Gate 2 T-M4). Every caller that wraps a builder's result in
+ *  backticks itself goes through this instead. */
+export const asCode = (remedy) => (NO_REMEDY_TEXTS.has(remedy) ? remedy : `\`${remedy}\``);
+
+/** Build a printed remedy, or — when an id inside it holds a control character — the no-remedy
+ *  message in its place. Every printedId() caller builds through this (or is a builder that does). */
+export function orNoRemedy(build) {
+  try {
+    return build();
+  } catch (e) {
+    if (e instanceof NoRemedy) return noRemedyMessage(e.kind, e.id);
+    throw e;
+  }
+}
+
+/** A caller-supplied value that is NOT an id (a session name, a workspace path) placed in a printed
+ *  command: as it is when it holds no control character, else the placeholder the reader fills —
+ *  the gate-integrity printed-invocation rule (design.md Context, re-derived at 5accfbe). */
+export const commandValue = (value, placeholder) =>
+  (CONTROL_CHARACTER.test(String(value)) ? placeholder : String(value));
 
 /** gh#182's third rule, as ONE string: "this looks like a flag but arrived where a value was
  *  expected" names the flag being filled, quotes the token, and shows the `=` form that says it
@@ -1381,8 +1495,24 @@ export function mirroredEpicIdPrefix(tracker) {
  *  the suite's source scan fails any emitter that carries the `github-issues` literal itself,
  *  because a vendor literal in an emitter is how the direction rule came to be applied at one of
  *  two sites in the first place. */
+/** Are this tracker's item keys bare numbers (`42`)? Only then can a registration recipe derive an
+ *  epic id from `<issue-number>` directly; every other system's keys (`ABC-123`) are slugged into
+ *  the id and recorded verbatim as the external id. Exported so an emitter never names a vendor. */
+export const itemKeysAreNumbers = (tracker) => !!tracker && tracker.system === "github-issues";
+
+/** A GitHub repository as `[HOST/]owner/name` — the form `gh issue list -R` accepts, the optional
+ *  HOST being a GitHub Enterprise hostname (Gate 2 E-I2) — in the characters GitHub permits in those
+ *  names. The shape is what makes a recorded repo safe to place in an emitted SHELL line:
+ *  `a/b; touch pwned` is not one, and neither is anything holding a control character. `set-tracker`
+ *  refuses a github-issues `--repo` failing it (except with `--role secondary --remove`, which writes
+ *  nothing new); a value recorded before the rule still loads, emitters treat it as absent for
+ *  building a shell command, and `integrity` names it (tracker-repo-not-a-github-repository). */
+export const isGithubRepo = (value) =>
+  typeof value === "string" &&
+  /^(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)+\/)?[A-Za-z0-9][A-Za-z0-9-]*\/[A-Za-z0-9._-]+$/.test(value);
+
 export const usesGhIssueList = (tracker) =>
-  !!tracker && tracker.system === "github-issues" && !!tracker.repo;
+  !!tracker && tracker.system === "github-issues" && isGithubRepo(tracker.repo);
 
 // ─────────────────────── gh#82 — is ROOT the repository the caller is in? ───────────────────────
 //
@@ -1490,9 +1620,9 @@ export function warnRootDivergence(stream = process.stderr) {
   const d = rootDivergence();
   if (!d) return null;
   stream.write(
-    `conductor: ⚠ WRITING A DIFFERENT REPOSITORY — CLAUDE_PROJECT_DIR points at ${d.target}\n` +
-    `conductor:   You are in ${d.cwd}, which has a conductor of its own. Every path this ` +
-    `command reads or writes belongs to ${d.target}. Unset CLAUDE_PROJECT_DIR to act here instead.\n`
+    `conductor: ⚠ WRITING A DIFFERENT REPOSITORY — CLAUDE_PROJECT_DIR points at ${escapeControls(d.target)}\n` +
+    `conductor:   You are in ${escapeControls(d.cwd)}, which has a conductor of its own. Every path this ` +
+    `command reads or writes belongs to ${escapeControls(d.target)}. Unset CLAUDE_PROJECT_DIR to act here instead.\n`
   );
   return d;
 }

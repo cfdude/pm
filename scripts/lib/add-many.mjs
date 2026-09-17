@@ -9,7 +9,7 @@ import { newStory, parentError, parseFlags, requireFlagValues } from "./add-epic
 import { isInitialized, loadState, pushEpic, saveState, readStdin } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
-import { ROOT, KNOWN_LANES, KNOWN_STATUSES, epicBatchKeys } from "./constants.mjs";
+import { EPIC_ID_FORMAT, ROOT, KNOWN_LANES, KNOWN_STATUSES, epicBatchKeys, escapeControls } from "./constants.mjs";
 import { creationStamp } from "./disposition.mjs";
 import { isKnownLinkType, KNOWN_LINK_TYPES, mergeLinks } from "./links.mjs";
 
@@ -26,7 +26,7 @@ export function addMany() {
   if (!from) { process.stderr.write("usage: conductor.mjs add-many --from <path|->\n"); process.exit(1); }
   let raw;
   try { raw = from === "-" ? readStdin() : fs.readFileSync(path.resolve(ROOT, from), "utf8"); }
-  catch { process.stderr.write(`conductor: cannot read '${from}'\n`); process.exit(1); }
+  catch { process.stderr.write(`conductor: cannot read '${escapeControls(from)}'\n`); process.exit(1); }
   let doc;
   try { doc = JSON.parse(raw); } catch { process.stderr.write("conductor: --from is not valid JSON\n"); process.exit(1); }
 
@@ -58,12 +58,12 @@ export function addMany() {
   const batchIds = new Set();
   for (const e of incoming) {
     const id = e.id;
-    if (typeof id !== "string" || !/^[a-z0-9][a-z0-9._-]*$/.test(id)) die(`bad id '${id}' (format ^[a-z0-9][a-z0-9._-]*$)`);
-    if (existingIds.has(id)) die(`epic '${id}' already exists`);
-    if (batchIds.has(id)) die(`duplicate id '${id}' within the batch`);
+    if (typeof id !== "string" || !EPIC_ID_FORMAT.test(id)) die(`bad id '${escapeControls(id)}' (format ${EPIC_ID_FORMAT.source})`);
+    if (existingIds.has(id)) die(`epic '${escapeControls(id)}' already exists`);
+    if (batchIds.has(id)) die(`duplicate id '${escapeControls(id)}' within the batch`);
     const unknownKeys = Object.keys(e).filter(k => !allowedKeys.includes(k));
     if (unknownKeys.length) {
-      die(`epic '${id}': unsupported key(s) ${unknownKeys.join(", ")} ` +
+      die(`epic '${escapeControls(id)}': unsupported key(s) ${escapeControls(unknownKeys.join(", "))} ` +
         `(supported: ${allowedKeys.join(", ")})`);
     }
     // `stories` is the first ARRAY-valued batch key that is not `links`, and the copy loop below
@@ -74,14 +74,14 @@ export function addMany() {
     // Two accepted element shapes, because a plan being registered may already have milestones
     // behind it: a plain title string, or `{title, done?}`. Anything else is refused by name.
     if (e.stories !== undefined) {
-      if (!Array.isArray(e.stories)) die(`epic '${id}': stories must be an array of titles or {title, done} objects`);
+      if (!Array.isArray(e.stories)) die(`epic '${escapeControls(id)}': stories must be an array of titles or {title, done} objects`);
       for (const s of e.stories) {
         const title = typeof s === "string" ? s : (s && typeof s.title === "string" ? s.title : undefined);
         if (title === undefined || !title.trim()) {
-          die(`epic '${id}': every entry in stories needs a non-empty title (got ${JSON.stringify(s)})`);
+          die(`epic '${escapeControls(id)}': every entry in stories needs a non-empty title (got ${escapeControls(JSON.stringify(s))})`);
         }
         if (s && typeof s === "object" && s.done !== undefined && typeof s.done !== "boolean") {
-          die(`epic '${id}': story '${title}' has a non-boolean done`);
+          die(`epic '${escapeControls(id)}': story '${escapeControls(title)}' has a non-boolean done`);
         }
       }
     }
@@ -100,12 +100,12 @@ export function addMany() {
     for (const k of Object.keys(e)) {
       if (!allowedKeys.includes(k) || k === "links" || k === "stories") continue;
       if (typeof e[k] !== "string" || !e[k].trim()) {
-        die(`epic '${id}': ${k} must be a non-empty string (got ${JSON.stringify(e[k])})`);
+        die(`epic '${escapeControls(id)}': ${k} must be a non-empty string (got ${escapeControls(JSON.stringify(e[k]))})`);
       }
     }
-    if (!e.lane || !KNOWN_LANES.includes(e.lane)) die(`epic '${id}': lane must be one of ${KNOWN_LANES.join("|")}`);
+    if (!e.lane || !KNOWN_LANES.includes(e.lane)) die(`epic '${escapeControls(id)}': lane must be one of ${KNOWN_LANES.join("|")}`);
     const status = e.status || "queued";
-    if (!KNOWN_STATUSES.includes(status)) die(`epic '${id}': status must be one of ${KNOWN_STATUSES.join("|")}`);
+    if (!KNOWN_STATUSES.includes(status)) die(`epic '${escapeControls(id)}': status must be one of ${KNOWN_STATUSES.join("|")}`);
     // The SIBLING write path. `--link` reaches the store through parseLinkFlags for add-epic and
     // update-epic; a batch entry's `links` is a JSON array copied verbatim by the registry loop
     // below, so a rule added only at parseLinkFlags would hold at two of three write paths and
@@ -115,7 +115,7 @@ export function addMany() {
     // its own issue rather than something to widen here.
     for (const l of Array.isArray(e.links) ? e.links : []) {
       if (l && typeof l.type === "string" && !isKnownLinkType(l.type)) {
-        die(`epic '${id}': link type '${l.type}' is not one of ${KNOWN_LINK_TYPES.join("|")}`);
+        die(`epic '${escapeControls(id)}': link type '${escapeControls(l.type)}' is not one of ${KNOWN_LINK_TYPES.join("|")}`);
       }
     }
     batchIds.add(id);

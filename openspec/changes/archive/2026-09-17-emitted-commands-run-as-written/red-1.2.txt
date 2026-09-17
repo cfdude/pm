@@ -1,0 +1,30 @@
+✖ checkCommandLine: every refusal kind carries its class (2.524375ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 44.5485
+
+✖ failing tests:
+
+test at scripts/test/verb-surface.test.mjs:1007:1
+✖ checkCommandLine: every refusal kind carries its class (2.524375ms)
+  AssertionError [ERR_ASSERTION]: activity --bogus is refused with class unknown-flag; got undefined
+  + actual - expected
+  
+  + undefined
+  - 'unknown-flag'
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/verb-surface.test.mjs:1019:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 'unknown-flag',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

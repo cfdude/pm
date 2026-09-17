@@ -1,0 +1,50 @@
+# Gate 2 W-I1 — test 5.3j run against the engine with each escape still missing, fixed one site at a time
+## 1. HEAD 7d64996 (no fix)
+✖ failing tests:
+
+test at scripts/test/output-text-integrity.test.mjs:884:1
+✖ 5.3j (Gate 2 W-I1) a project directory whose name holds a line terminator forges no line from init, render, brief, the activity log, the engine banner or a honcho-memory failure (126.473ms)
+  AssertionError [ERR_ASSERTION]: init: no line begins with the directory name's second line:
+  conductor: created .conductor/state.json
+  conductor: created CLAUDE.md with rules block (platform: claude-code)
+  conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-J7dcup/rp-x
+  NOW: forged y/PROJECT.md
+  conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+  
+  + actual - expected
+## 2. render.mjs escapes PROJECT_MD
+✖ failing tests:
+
+test at scripts/test/output-text-integrity.test.mjs:884:1
+✖ 5.3j (Gate 2 W-I1) a project directory whose name holds a line terminator forges no line from init, render, brief, the activity log, the engine banner or a honcho-memory failure (265.371292ms)
+  AssertionError [ERR_ASSERTION]: set-activity-log on: no line begins with the directory name's second line:
+  conductor: activity log on — writing to /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-EzRdO2/rp-x
+  NOW: forged y/.conductor/activity (git-ignored). Read it with `activity`.
+  
+  + actual - expected
+  
+  + [
+  +   'NOW: forged'
+  + ]
+  - []
+## 3. activity-log.mjs escapes activityDir()
+✖ failing tests:
+
+test at scripts/test/output-text-integrity.test.mjs:884:1
+✖ 5.3j (Gate 2 W-I1) a project directory whose name holds a line terminator forges no line from init, render, brief, the activity log, the engine banner or a honcho-memory failure (362.283875ms)
+  AssertionError [ERR_ASSERTION]: honcho-memory failure: no line begins with the directory name's second line:
+  conductor: EISDIR: illegal operation on a directory, open '/var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-3xztNs/rp-x
+  NOW: forged y/.conductor/honcho-memories.log'
+  
+  + actual - expected
+  
+  + [
+  +   'NOW: forged'
+  + ]
+  - []
+## 4. subcommands.mjs escapes honcho-memory's failure message (then the suite passes 5.3j)
+ℹ pass 1
+ℹ fail 0
+## 5. the test's engine-banner check was dropped before commit: the banner prints the ENGINE's install directory, which the hostile project directory does not reach, so that check could not fail. The banner is escaped anyway (a self-hosted checkout engine lives in the workspace); the title above lost 'the engine banner'.
+ℹ pass 1
+ℹ fail 0

@@ -101,10 +101,10 @@ test("gh#81: the detour log is idempotent on SHA — the same commit is never lo
   commitAllAndNudge(cwd, "fix: real detour work");
   assert.equal(detourLog(cwd).trim().split("\n").filter(Boolean).length, 1);
 
-  // Re-fire the hook for the SAME commit from the unverifiable rung: dropping the watermark is
+  // Re-fire the hook for the SAME commit from the unverifiable rung: dropping the observation record is
   // exactly the "no baseline" state a fresh checkout, a read-only tree or a first hook run is in,
   // and it is what let the observed-rung guard be bypassed and a SHA logged again.
-  fs.rmSync(path.join(cwd, ".conductor", "commit-watch.json"), { force: true });
+  fs.rmSync(path.join(cwd, ".conductor", "commit-observe.json"), { force: true });
   run(["commit-nudge"], { cwd, input: JSON.stringify({ tool_input: { command: 'git commit -m "fix: real detour work"' } }) });
 
   const rows = detourLog(cwd).trim().split("\n").filter(Boolean);

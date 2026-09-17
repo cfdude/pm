@@ -1,0 +1,288 @@
+✖ 5.1 An unknown id is quoted back on one line (436.966625ms)
+✖ 5.2 A story title cannot forge an invocation in the archive refusal (255.503625ms)
+✖ 5.3 A withdrawal reason cannot forge an integrity line (753.004875ms)
+✖ 5.3a A stored id holding a control character is never put into an emitted command; the record no verb can rename is named (legacy value, design D3 exception) (223.026209ms)
+✖ 5.3b The commit nudge never prints a command naming a control-character id (legacy values, design D3 exception) (599.650667ms)
+✖ 5.3c A release id in an integrity remedy is routed through the id printer (legacy values, design D3 exception) (143.913625ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 0
+ℹ fail 6
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2453.216541
+
+✖ failing tests:
+
+test at scripts/test/output-text-integrity.test.mjs:335:1
+✖ 5.1 An unknown id is quoted back on one line (436.966625ms)
+  AssertionError [ERR_ASSERTION]: update-epic prints no stderr line beginning FORGED:
+  conductor: epic 'e9
+  FORGED' not found
+  
+  + actual - expected
+  
+  + [
+  +   "FORGED' not found"
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-text-integrity.test.mjs:349:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ "FORGED' not found" ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/output-text-integrity.test.mjs:353:1
+✖ 5.2 A story title cannot forge an invocation in the archive refusal (255.503625ms)
+  AssertionError [ERR_ASSERTION]: no stderr line begins `  update-epic`:
+  conductor: cannot archive 'h' as delivered — 1 of 0/1 task(s) outstanding. The outstanding story is:
+    [ ] 1. do it
+    update-epic h --status archived --outcome delivered --no-deferrals
+  Finish them, or record what happened to each: `update-epic h --story <n> --done` (it shipped) or --story <n> --wont-do "<reason>" (it will not be done, and why — the row and its reason stay on the record). If the whole remainder moved to another epic, --carried-to <epicId> --reason "<which stories moved>" instead. Naming a receiver for work nobody carried anywhere is a fabricated record.
+  
+  + actual - expected
+  
+  + [
+  +   '  update-epic h --status archived --outcome delivered --no-deferrals'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-text-integrity.test.mjs:359:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ '  update-epic h --status archived --outcome delivered --no-deferrals' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/output-text-integrity.test.mjs:369:1
+✖ 5.3 A withdrawal reason cannot forge an integrity line (753.004875ms)
+  AssertionError [ERR_ASSERTION]: no integrity line begins `  ✓`:
+  INTEGRITY — records that cannot be true.
+  Findings are reported, never repaired: nothing here writes state or blocks a command.
+  
+  archived-with-zero-ticked-tasks — 0 finding(s): an archived epic whose task source exists and has nothing ticked
+  verdict-range-omits-cited-commits — 0 finding(s): a gate verdict's note cites commits its recorded range does not contain
+  archived-with-no-gate-2-review — 0 finding(s): an epic archived with an `ungated` Gate 2 — no review from anyone
+  archived-with-withdrawn-gate-2 — 0 finding(s): an archived openspec-lane epic whose Gate 2 verdict was withdrawn and not recorded again
+  delivered-epic-attributed-no-commits — 1 finding(s): a delivered epic with a passing Gate 2 whose attribution array is present and empty
+    • `wd` — recorded as delivered with a passing Gate 2 and attributes no commits, having WITHDRAWN 6d0ddb61425df92610ce76706f114675d755a0bc ("wrong
+    ✓ integrity: all checks pass"). A withdrawal corrects the record and does not discharge the obligation — record the commit that actually shipped, both lines in this order: `record-gate-review wd --gate 2 --verdict pass --base-sha <that commit's parent> --head-sha <the commit that replaces the withdrawn one>`, then `update-epic wd --attribute-commit <the commit that replaces the withdrawn one>`
+  archived-openspec-epic-with-no-gate-1 — 1 finding(s): an openspec-lane epic archived with a passing Gate 2 and no Gate 1 verdict
+    • `wd` — archived with a passing Gate 2 and no Gate 1 (spec review) verdict — the spec review either did not happen or was never recorded
+  archive-directory-has-no-epic — 0 finding(s): a directory under openspec/changes/archive/ that corresponds to no epic
+  heal-archived-epic-passed-gate-2 — 0 finding(s): an epic the heal archived reads `unknown` while carrying a passing Gate 2
+  gate-recorded-as-bookkeeping — 0 finding(s): a gate verdict recorded as bookkeeping rather than as review
+  change-registered-under-two-lanes — 0 finding(s): one change id registered as two epics under different lanes
+  link-of-unknown-type — 0 finding(s): a stored link whose type nothing in the engine knows — an edge that reads as a relationship and is not one
+  epic-in-undefined-status — 0 finding(s): an epic in a status the engine does not define — a record no terminal rule can reach
+  dangling-epic-reference — 0 finding(s): a reference in the record that names an epic the record does not hold
+  superseded-epic-never-ended — 0 finding(s): an epic another epic declares it supersedes, still carrying a non-terminal status
+  delivered-release-epic-left-open — 0 finding(s): an epic still open in a release that has already delivered, and was not deliberately cut
+  recorded-sha-the-repository-cannot-resolve — 1 finding(s): a recorded commit sha this repository can no longer resolve — orphaned, or already gone
+    • `wd` — 1 recorded sha(s) are still in this repository's object store but reachable from NO ref — the shape a squash-merge leaves behind. RECOVERABLE NOW and deleted by the next `git gc` (default `gc.pruneExpire`: two weeks), after which the range this epic's gate verdict names can never be reviewed again. Tag them while they exist: `git tag presquash/<name> <sha>`. gate2.headSha `6d0ddb6`
+  tracker-repo-not-a-github-repository — 0 finding(s): a github-issues tracker whose recorded repo is not [HOST/]owner/name — it gets no `gh` listing step
+  advisory-claim-shape — 0 finding(s): an advisory claim that cannot be true — expired, or held on an epic that has ended
+  
+  3 finding(s) across 18 check(s).
+  
+  + actual - expected
+  
+  + [
+  +   '  ✓ integrity: all checks pass"). A withdrawal corrects the record and does not discharge the obligation — record the commit that actually shipped, both lines in this order: `record-gate-review wd --gate 2 --verdict pass --base-sha <that commit\'s parent> --head-sha <the commit that replaces the withdrawn one>`, then `update-epic wd --attribute-commit <the commit that replaces the withdrawn one>`'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-text-integrity.test.mjs:387:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ '  ✓ integrity: all checks pass"). A withdrawal corrects the record and does not discharge the obligation — record the commit that actually shipped, both lines in this order: `record-gate-review wd --gate 2 --verdict pass --base-sha <that commit\'s parent> --head-sha <the commit that replaces the withdrawn one>`, then `update-epic wd --attribute-commit <the commit that replaces the withdrawn one>`' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/output-text-integrity.test.mjs:390:1
+✖ 5.3a A stored id holding a control character is never put into an emitted command; the record no verb can rename is named (legacy value, design D3 exception) (223.026209ms)
+  AssertionError [ERR_ASSERTION]: no integrity line begins with the id's tail:
+  INTEGRITY — records that cannot be true.
+  Findings are reported, never repaired: nothing here writes state or blocks a command.
+  
+  archived-with-zero-ticked-tasks — 0 finding(s): an archived epic whose task source exists and has nothing ticked
+  verdict-range-omits-cited-commits — 0 finding(s): a gate verdict's note cites commits its recorded range does not contain
+  archived-with-no-gate-2-review — 0 finding(s): an epic archived with an `ungated` Gate 2 — no review from anyone
+  archived-with-withdrawn-gate-2 — 0 finding(s): an archived openspec-lane epic whose Gate 2 verdict was withdrawn and not recorded again
+  delivered-epic-attributed-no-commits — 1 finding(s): a delivered epic with a passing Gate 2 whose attribution array is present and empty
+    • `legacy
+  x` — recorded as delivered with a passing Gate 2 but attributed no commits — record the range that shipped with: `update-epic 'legacy
+  x' --attribute-commit <sha>`
+  archived-openspec-epic-with-no-gate-1 — 1 finding(s): an openspec-lane epic archived with a passing Gate 2 and no Gate 1 verdict
+    • `legacy
+  x` — archived with a passing Gate 2 and no Gate 1 (spec review) verdict — the spec review either did not happen or was never recorded
+  archive-directory-has-no-epic — 0 finding(s): a directory under openspec/changes/archive/ that corresponds to no epic
+  heal-archived-epic-passed-gate-2 — 0 finding(s): an epic the heal archived reads `unknown` while carrying a passing Gate 2
+  gate-recorded-as-bookkeeping — 0 finding(s): a gate verdict recorded as bookkeeping rather than as review
+  change-registered-under-two-lanes — 0 finding(s): one change id registered as two epics under different lanes
+  link-of-unknown-type — 0 finding(s): a stored link whose type nothing in the engine knows — an edge that reads as a relationship and is not one
+  epic-in-undefined-status — 0 finding(s): an epic in a status the engine does not define — a record no terminal rule can reach
+  dangling-epic-reference — 0 finding(s): a reference in the record that names an epic the record does not hold
+  superseded-epic-never-ended — 0 finding(s): an epic another epic declares it supersedes, still carrying a non-terminal status
+  delivered-release-epic-left-open — 0 finding(s): an epic still open in a release that has already delivered, and was not deliberately cut
+  recorded-sha-the-repository-cannot-resolve — 0 finding(s): a recorded commit sha this repository can no longer resolve — orphaned, or already gone
+  tracker-repo-not-a-github-repository — 0 finding(s): a github-issues tracker whose recorded repo is not [HOST/]owner/name — it gets no `gh` listing step
+  advisory-claim-shape — 0 finding(s): an advisory claim that cannot be true — expired, or held on an epic that has ended
+  
+  2 finding(s) across 18 check(s).
+  
+  + actual - expected
+  
+  + [
+  +   "x` — recorded as delivered with a passing Gate 2 but attributed no commits — record the range that shipped with: `update-epic 'legacy",
+  +   "x' --attribute-commit <sha>`",
+  +   'x` — archived with a passing Gate 2 and no Gate 1 (spec review) verdict — the spec review either did not happen or was never recorded'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-text-integrity.test.mjs:403:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ "x` — recorded as delivered with a passing Gate 2 but attributed no commits — record the range that shipped with: `update-epic 'legacy", "x' --attribute-commit <sha>`", 'x` — archived with a passing Gate 2 and no Gate 1 (spec review) verdict — the spec review either did not happen or was never recorded' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/output-text-integrity.test.mjs:411:1
+✖ 5.3b The commit nudge never prints a command naming a control-character id (legacy values, design D3 exception) (599.650667ms)
+  AssertionError [ERR_ASSERTION]: no line begins FORGEDA:
+  Commit `ee885a8` landed since the last observation — this call, another terminal, or a parallel call; the hook cannot tell which during DETOUR `det
+  FORGEDA` (logged to detours.log). When the detour is done: archive it, `/pm:resume` to pop the stack, and run the RECONCILE check on the paused parent epic. Write a one-line Honcho memory on resume. If a row is wrong: `retract-detour ee885a8 --reason "<why>"` (re-renders PROJECT.md).
+  
+  AMEND — `4a71c69` was amended into ee885a8 and is on no branch, so it is replaced, not added. Withdraw its attribution BEFORE attributing anything else: `update-epic 'attr
+  FORGEDC' --withdraw-commit 4a71c6994d65a84626fabb06224baa8af211367a --withdrawal-reason "amended into ee885a8"`.
+  
+  ATTRIBUTION — the engine recorded nothing; choosing is yours. Each of these epics could own what landed (a candidate whose own files the commits touch is listed first):
+  - `update-epic 'det
+  FORGEDA' --attribute-commit ee885a87dd38e71568a2f0b44f5bf60d451a29b1` (attributes no commits yet)
+  - `update-epic 'paused
+  FORGEDB' --attribute-commit ee885a87dd38e71568a2f0b44f5bf60d451a29b1` (attributes no commits yet)
+  ONE exclusion: a commit that only moves or deletes a change's artifacts — the `/opsx:archive` move above all — is lifecycle bookkeeping and must NOT be attributed; it lands after the reviewed range, so attributing it makes this epic's own Gate 2 read stale.
+  conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-iCUcB5/PROJECT.md
+  
+  Commit `b5f36f2` landed since the last observation — this call, another terminal, or a parallel call; the hook cannot tell which during DETOUR `det
+  FORGEDA` (logged to detours.log). When the detour is done: archive it, `/pm:resume` to pop the stack, and run the RECONCILE check on the paused parent epic. Write a one-line Honcho memory on resume. If a row is wrong: `retract-detour b5f36f2 --reason "<why>"` (re-renders PROJECT.md).
+  
+  ATTRIBUTION — the engine recorded nothing; choosing is yours. Each of these epics could own what landed (a candidate whose own files the commits touch is listed first):
+  - `update-epic 'det
+  FORGEDA' --attribute-commit b5f36f213645262693ad4133544a3a52f0a884e2` (attributes no commits yet)
+  - `update-epic 'paused
+  FORGEDB' --attribute-commit b5f36f213645262693ad4133544a3a52f0a884e2` (attributes no commits yet)
+  ONE exclusion: a commit that only moves or deletes a change's artifacts — the `/opsx:archive` move above all — is lifecycle bookkeeping and must NOT be attributed; it lands after the reviewed range, so attributing it makes this epic's own Gate 2 read stale.
+  conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-iCUcB5/PROJECT.md
+  
+  + actual - expected
+  
+  + [
+  +   'FORGEDA` (logged to detours.log). When the detour is done: archive it, `/pm:resume` to pop the stack, and run the RECONCILE check on the paused parent epic. Write a one-line Honcho memory on resume. If a row is wrong: `retract-detour ee885a8 --reason "<why>"` (re-renders PROJECT.md).',
+  +   "FORGEDA' --attribute-commit ee885a87dd38e71568a2f0b44f5bf60d451a29b1` (attributes no commits yet)",
+  +   'FORGEDA` (logged to detours.log). When the detour is done: archive it, `/pm:resume` to pop the stack, and run the RECONCILE check on the paused parent epic. Write a one-line Honcho memory on resume. If a row is wrong: `retract-detour b5f36f2 --reason "<why>"` (re-renders PROJECT.md).',
+  +   "FORGEDA' --attribute-commit b5f36f213645262693ad4133544a3a52f0a884e2` (attributes no commits yet)"
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-text-integrity.test.mjs:430:64)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'FORGEDA` (logged to detours.log). When the detour is done: archive it, `/pm:resume` to pop the stack, and run the RECONCILE check on the paused parent epic. Write a one-line Honcho memory on resume. If a row is wrong: `retract-detour ee885a8 --reason "<why>"` (re-renders PROJECT.md).', "FORGEDA' --attribute-commit ee885a87dd38e71568a2f0b44f5bf60d451a29b1` (attributes no commits yet)", 'FORGEDA` (logged to detours.log). When the detour is done: archive it, `/pm:resume` to pop the stack, and run the RECONCILE check on the paused parent epic. Write a one-line Honcho memory on resume. If a row is wrong: `retract-detour b5f36f2 --reason "<why>"` (re-renders PROJECT.md).', "FORGEDA' --attribute-commit b5f36f213645262693ad4133544a3a52f0a884e2` (attributes no commits yet)" ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/output-text-integrity.test.mjs:436:1
+✖ 5.3c A release id in an integrity remedy is routed through the id printer (legacy values, design D3 exception) (143.913625ms)
+  AssertionError [ERR_ASSERTION]: no integrity line begins FORGED:
+  INTEGRITY — records that cannot be true.
+  Findings are reported, never repaired: nothing here writes state or blocks a command.
+  
+  archived-with-zero-ticked-tasks — 0 finding(s): an archived epic whose task source exists and has nothing ticked
+  verdict-range-omits-cited-commits — 0 finding(s): a gate verdict's note cites commits its recorded range does not contain
+  archived-with-no-gate-2-review — 0 finding(s): an epic archived with an `ungated` Gate 2 — no review from anyone
+  archived-with-withdrawn-gate-2 — 0 finding(s): an archived openspec-lane epic whose Gate 2 verdict was withdrawn and not recorded again
+  delivered-epic-attributed-no-commits — 0 finding(s): a delivered epic with a passing Gate 2 whose attribution array is present and empty
+  archived-openspec-epic-with-no-gate-1 — 0 finding(s): an openspec-lane epic archived with a passing Gate 2 and no Gate 1 verdict
+  archive-directory-has-no-epic — 0 finding(s): a directory under openspec/changes/archive/ that corresponds to no epic
+  heal-archived-epic-passed-gate-2 — 0 finding(s): an epic the heal archived reads `unknown` while carrying a passing Gate 2
+  gate-recorded-as-bookkeeping — 0 finding(s): a gate verdict recorded as bookkeeping rather than as review
+  change-registered-under-two-lanes — 0 finding(s): one change id registered as two epics under different lanes
+  link-of-unknown-type — 0 finding(s): a stored link whose type nothing in the engine knows — an edge that reads as a relationship and is not one
+  epic-in-undefined-status — 0 finding(s): an epic in a status the engine does not define — a record no terminal rule can reach
+  dangling-epic-reference — 0 finding(s): a reference in the record that names an epic the record does not hold
+  superseded-epic-never-ended — 0 finding(s): an epic another epic declares it supersedes, still carrying a non-terminal status
+  delivered-release-epic-left-open — 2 finding(s): an epic still open in a release that has already delivered, and was not deliberately cut
+    • `left1` — still `queued` in release `r
+  FORGED`, which has already delivered — and it is not in that release's deferred[], so the record says neither that it shipped nor that it was cut. Give it the ending it actually had — either it shipped: `update-epic left1 --status archived --outcome delivered --no-deferrals` — or it was cut, and you record that instead: `release r
+  FORGED --defer left1 --reason "<why>"`
+    • `left2` — still `queued` in release `Legacy Release`, which has already delivered — and it is not in that release's deferred[], so the record says neither that it shipped nor that it was cut. Give it the ending it actually had — either it shipped: `update-epic left2 --status archived --outcome delivered --no-deferrals` — or it was cut, and you record that instead: `release Legacy Release --defer left2 --reason "<why>"`
+  recorded-sha-the-repository-cannot-resolve — 0 finding(s): a recorded commit sha this repository can no longer resolve — orphaned, or already gone
+  tracker-repo-not-a-github-repository — 0 finding(s): a github-issues tracker whose recorded repo is not [HOST/]owner/name — it gets no `gh` listing step
+  advisory-claim-shape — 0 finding(s): an advisory claim that cannot be true — expired, or held on an epic that has ended
+  
+  2 finding(s) across 18 check(s).
+  
+  + actual - expected
+  
+  + [
+  +   "FORGED`, which has already delivered — and it is not in that release's deferred[], so the record says neither that it shipped nor that it was cut. Give it the ending it actually had — either it shipped: `update-epic left1 --status archived --outcome delivered --no-deferrals` — or it was cut, and you record that instead: `release r",
+  +   'FORGED --defer left1 --reason "<why>"`'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-text-integrity.test.mjs:450:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ "FORGED`, which has already delivered — and it is not in that release's deferred[], so the record says neither that it shipped nor that it was cut. Give it the ending it actually had — either it shipped: `update-epic left1 --status archived --outcome delivered --no-deferrals` — or it was cut, and you record that instead: `release r", 'FORGED --defer left1 --reason "<why>"`' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

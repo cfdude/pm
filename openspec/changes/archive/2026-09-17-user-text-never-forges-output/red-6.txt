@@ -1,0 +1,156 @@
+✖ 6.1 sync skips a change directory whose name holds a newline (188.568125ms)
+✖ 6.2 sync skips a plan file whose name holds a newline (150.743375ms)
+✖ 6.3 The archive backfill skips a malformed archive directory, and integrity does not say sync registers it (152.328208ms)
+✖ 6.4 A release id with a newline is refused (152.238ms)
+✖ 6.4a A malformed release id with no intent is refused on its shape first (149.422334ms)
+✖ 6.4b A tracker system with a newline is refused before the rules file is written; a secondary repository too (153.926667ms)
+✖ 6.4c A primary tracker system with a newline is refused even with --remove (152.974125ms)
+✔ 6.5 REGRESSION GUARD: well-formed and legacy release ids, uppercase and held plans, and the add-epic/add-many id refusals (369.63575ms)
+✔ 6.5b REGRESSION GUARD: a legacy secondary tracker whose repo holds a control character is still removable (legacy value, design D3 exception) (161.042833ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 2
+ℹ fail 7
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1672.156167
+
+✖ failing tests:
+
+test at scripts/test/output-text-integrity.test.mjs:464:1
+✖ 6.1 sync skips a change directory whose name holds a newline (188.568125ms)
+  AssertionError [ERR_ASSERTION]: no epic id holds a control character
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-text-integrity.test.mjs:473:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/output-text-integrity.test.mjs:478:1
+✖ 6.2 sync skips a plan file whose name holds a newline (150.743375ms)
+  AssertionError [ERR_ASSERTION]: no epic id holds a control character:
+  conductor: synced (1 new epic(s) added as untriaged)
+  
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-text-integrity.test.mjs:485:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/output-text-integrity.test.mjs:489:1
+✖ 6.3 The archive backfill skips a malformed archive directory, and integrity does not say sync registers it (152.328208ms)
+  AssertionError [ERR_ASSERTION]: no epic id holds a control character:
+  conductor: registered 1 newly archived change(s): ax
+  forged
+  conductor: synced (0 new epic(s) added as untriaged)
+  
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-text-integrity.test.mjs:496:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/output-text-integrity.test.mjs:505:1
+✖ 6.4 A release id with a newline is refused (152.238ms)
+  AssertionError [ERR_ASSERTION]: refused
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-text-integrity.test.mjs:509:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/output-text-integrity.test.mjs:515:1
+✖ 6.4a A malformed release id with no intent is refused on its shape first (149.422334ms)
+  AssertionError [ERR_ASSERTION]: the shape refusal fires before the missing-intent refusal
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-text-integrity.test.mjs:524:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: "conductor: release 'r\\u000aFORGED' does not exist — create it first with release 'r\\u000aFORGED' holds a control character; no verb can rename it. Nothing was written.\n",
+    expected: /does not exist — create it first/,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }
+
+test at scripts/test/output-text-integrity.test.mjs:539:1
+✖ 6.4b A tracker system with a newline is refused before the rules file is written; a secondary repository too (153.926667ms)
+  AssertionError [ERR_ASSERTION]: set-tracker --system… is refused
+      at trackerRefused (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-text-integrity.test.mjs:530:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-text-integrity.test.mjs:541:3)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/output-text-integrity.test.mjs:545:1
+✖ 6.4c A primary tracker system with a newline is refused even with --remove (152.974125ms)
+  AssertionError [ERR_ASSERTION]: set-tracker --system… is refused
+      at trackerRefused (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-text-integrity.test.mjs:530:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-text-integrity.test.mjs:547:3)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }

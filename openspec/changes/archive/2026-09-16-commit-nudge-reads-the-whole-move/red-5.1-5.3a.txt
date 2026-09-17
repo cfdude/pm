@@ -1,0 +1,113 @@
+✖ 5.1 amending an auto-logged commit leaves one visible row; the log keeps the original and its retraction (563.5725ms)
+✖ 5.2 amending an attributed commit prints the withdrawal before any attribution, and writes no attribution (616.523542ms)
+✖ 5.3 a chain of amends, an amend then reset, and an undone amend (637.557208ms)
+✖ 5.2a a delivered epic gets the withdrawal command exactly where update-epic would accept it (492.832375ms)
+✖ 5.3a REGRESSION GUARD: checkouts before an amend — the replaced commit is the one HEAD held before the amend (712.009209ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 0
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3068.103667
+
+✖ failing tests:
+
+test at scripts/test/commit-observation.test.mjs:452:1
+✖ 5.1 amending an auto-logged commit leaves one visible row; the log keeps the original and its retraction (563.5725ms)
+  AssertionError [ERR_ASSERTION]: no visible row for the replaced commit:
+  | 2026-09-17T02:36:30.405Z | `1bc2278` | AUTO-DETOUR | `epic-a` | chore: amend me |
+  | 2026-09-17T02:36:30.512Z | `c56431a` | AUTO-DETOUR | `epic-a` | chore: amended |
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-observation.test.mjs:460:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/commit-observation.test.mjs:469:1
+✖ 5.2 amending an attributed commit prints the withdrawal before any attribution, and writes no attribution (616.523542ms)
+  AssertionError [ERR_ASSERTION]: the withdrawal is printed: Commit `48e2bf2` landed since the last observation — this call, another terminal, or a parallel call; the hook cannot tell which. Diff shape (small, fix/chore-prefixed, unrelated to the active epic) looks like a MINIMAL detour, so it was auto-logged to `.conductor/detours.log` as an AUTO-DETOUR entry. If a row is wrong: `retract-detour 48e2bf2 --reason "<why>"` (re-renders PROJECT.md).
+  
+  ATTRIBUTION — record this commit against its epic now, before the next one: `update-epic epic-a --attribute-commit 48e2bf2eaee4ab0fa1ac1e5034cc7ec00f59a6e3`. ONE exclusion: a commit that only moves or deletes a change's artifacts — the `/opsx:archive` move above all — is lifecycle bookkeeping and must NOT be attributed; it lands after the reviewed range, so attributing it makes this epic's own Gate 2 read stale.
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-observation.test.mjs:479:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/commit-observation.test.mjs:488:1
+✖ 5.3 a chain of amends, an amend then reset, and an undone amend (637.557208ms)
+  AssertionError [ERR_ASSERTION]: C1's row is retracted
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-observation.test.mjs:499:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/commit-observation.test.mjs:538:1
+✖ 5.2a a delivered epic gets the withdrawal command exactly where update-epic would accept it (492.832375ms)
+  AssertionError [ERR_ASSERTION]: E: named as a delivered epic
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-observation.test.mjs:570:14)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'Commit `399fab2` landed since the last observation — this call, another terminal, or a parallel call; the hook cannot tell which. If this was a MINIMAL detour, run `/pm:detour --minimal "<what>"` to record it. Otherwise update `.conductor/state.json` if an epic\'s status or stories changed.\n\nATTRIBUTION — `epic-a` has attributed no commits yet: attribute every commit of this epic\'s work that already landed, IN THE ORDER THEY LANDED, and then this one — `update-epic epic-a --attribute-commit 399fab29d94702ff716832ed237bc9465a113ec3`. The array is append-only and a recorded Gate 2 `headSha` must reach EVERY entry, so a commit left unattributed is work that gate is never checked against. ONE exclusion: a commit that only moves or deletes a change\'s artifacts — the `/opsx:archive` move above all — is lifecycle bookkeeping and must NOT be attributed; it lands after the reviewed range, so attributing it makes this epic\'s own Gate 2 read stale.',
+    expected: /`E`[^\n]*delivered/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/commit-observation.test.mjs:580:1
+✖ 5.3a REGRESSION GUARD: checkouts before an amend — the replaced commit is the one HEAD held before the amend (712.009209ms)
+  AssertionError [ERR_ASSERTION]: the replaced commit is C1:
+  Commits `73a6bac`, `52ccd9b` (oldest first) landed since the last observation — this call, another terminal, or a parallel call; the hook cannot tell which. Diff shape (small, fix/chore-prefixed, unrelated to the active epic) looks like a MINIMAL detour, so it was auto-logged to `.conductor/detours.log` as an AUTO-DETOUR entry. If a row is wrong: `retract-detour 52ccd9b --reason "<why>"` (re-renders PROJECT.md).
+  
+  ATTRIBUTION — record this commit against its epic now, before the next one: `update-epic epic-a --attribute-commit 73a6bac30ed8e2ce2e78b658d876a8d54170bae6 --attribute-commit 52ccd9be3c3493033930bcd9c64836dd71e070e7`. ONE exclusion: a commit that only moves or deletes a change's artifacts — the `/opsx:archive` move above all — is lifecycle bookkeeping and must NOT be attributed; it lands after the reviewed range, so attributing it makes this epic's own Gate 2 read stale.
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-observation.test.mjs:595:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'Commits `73a6bac`, `52ccd9b` (oldest first) landed since the last observation — this call, another terminal, or a parallel call; the hook cannot tell which. Diff shape (small, fix/chore-prefixed, unrelated to the active epic) looks like a MINIMAL detour, so it was auto-logged to `.conductor/detours.log` as an AUTO-DETOUR entry. If a row is wrong: `retract-detour 52ccd9b --reason "<why>"` (re-renders PROJECT.md).\n\nATTRIBUTION — record this commit against its epic now, before the next one: `update-epic epic-a --attribute-commit 73a6bac30ed8e2ce2e78b658d876a8d54170bae6 --attribute-commit 52ccd9be3c3493033930bcd9c64836dd71e070e7`. ONE exclusion: a commit that only moves or deletes a change\'s artifacts — the `/opsx:archive` move above all — is lifecycle bookkeeping and must NOT be attributed; it lands after the reviewed range, so attributing it makes this epic\'s own Gate 2 read stale.',
+    expected: /update-epic epic-a --withdraw-commit 1c0b317871d928f31d417de41a5e21b89e76b3e8 --withdrawal-reason "[^"]+"/,
+    operator: 'match',
+    diff: 'simple'
+  }

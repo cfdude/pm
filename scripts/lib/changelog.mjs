@@ -5,6 +5,7 @@
 import { changelogBetween } from "./plugin-meta.mjs";
 import { isInitialized, loadState } from "./state.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
+import { escapeControls } from "./constants.mjs";
 
 /** Show CHANGELOG entries newer than a version. `--since <x.y.z>` overrides the
  *  default, which is the version stamped in this repo's state.json. */
@@ -19,7 +20,7 @@ export function changelog() {
     process.stdout.write("conductor: no CHANGELOG.md ships with this pm version\n"); return;
   }
   if (!secs.length) {
-    process.stdout.write(`conductor: no changelog entries newer than ${since || "(start)"}\n`); return;
+    process.stdout.write(`conductor: no changelog entries newer than ${since ? escapeControls(since) : "(start)"}\n`); return;
   }
   process.stdout.write(secs.map(s => s.body).join("\n\n") + "\n");
 }

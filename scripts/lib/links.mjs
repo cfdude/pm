@@ -4,7 +4,7 @@
 // designated root every module may read from — the flat KNOWN_LINK_TYPES lives there so
 // `rg 'KNOWN_[A-Z_]+ =' constants.mjs` answers the question gh#100 was filed after asking.
 
-import { KNOWN_LINK_TYPES } from "./constants.mjs";
+import { KNOWN_LINK_TYPES, printedId, escapeControls, orNoRemedy } from "./constants.mjs";
 
 /** THE link-type vocabulary, in three honest bands — gh#100.
  *
@@ -126,15 +126,15 @@ export function linkTypeVocabulary() {
  *  runs as written is a defect this engine forbids elsewhere, so the wording names the one shape
  *  that still repairs: clear and re-supply, in one invocation. */
 export function unknownLinkTypeMessage(raw, type, { owingEpic } = {}) {
-  return `bad --link '${raw}': '${type}' is not a known link type.\n` +
+  return `bad --link '${escapeControls(raw)}': '${escapeControls(type)}' is not a known link type.\n` +
     `  reads (these change behaviour): ${LINK_TYPES_READ.map(t => `${t.type} — ${t.drives}`).join("; ")}\n` +
     `  protocol state: ${LINK_TYPES_WRITTEN.map(t => t.type).join(", ")}\n` +
     `  annotation only: ${LINK_TYPES_ANNOTATION.join(", ")}\n` +
     // On an epic OWING a reconcile the clear below is refused (it would remove the link the owed
     // verdict must be recorded against), so the repair is ordered, not lost: verdict first.
     (owingEpic
-      ? `  '${owingEpic}' owes a reconcile, so its links cannot be cleared yet: record the verdict FIRST ` +
-        `with \`record-reconcile ${owingEpic} --detour <detourId> --verdict valid|invalidated\`, then repair.\n`
+      ? `  '${escapeControls(owingEpic)}' owes a reconcile, so its links cannot be cleared yet: record the verdict FIRST ` +
+        `with ${orNoRemedy(() => `\`record-reconcile ${printedId(owingEpic)} --detour <detourId> --verdict valid|invalidated\``)}, then repair.\n`
       : "") +
     "  `--link` APPENDS (a repeat of an existing type+target updates that entry's reason in " +
     "place). So if this came from a link already in the record, correcting the type ADDS a " +
@@ -449,5 +449,5 @@ export function ordinal(n) {
  *  how a signal becomes noise. */
 export function deferralNote(history) {
   if (!history || history.count < 2) return null;
-  return `${ordinal(history.count)} deferral of this epic (detours recorded: ${history.detours.join(", ")})`;
+  return `${ordinal(history.count)} deferral of this epic (detours recorded: ${escapeControls(history.detours.join(", "))})`;
 }

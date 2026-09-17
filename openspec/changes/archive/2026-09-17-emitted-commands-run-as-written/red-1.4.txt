@@ -1,0 +1,87 @@
+✖ 1.4 a correctly marked refused example passes (8.061125ms)
+✔ 1.4 a pm:refused marker on an accepted invocation fails (1.309125ms)
+✖ 1.4 a marker whose class differs from the engine's refusal fails (1.304459ms)
+✖ 1.4 a marker not directly after a code span fails as unattached (0.799125ms)
+✖ 1.4 a marked span followed on the same line by an unmarked refused span fails on the second (0.973ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 1
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 54.59475
+
+✖ failing tests:
+
+test at scripts/test/emitted-invocations.test.mjs:485:1
+✖ 1.4 a correctly marked refused example passes (8.061125ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + [
+  +   'commands/probe.md:1: marked pm:refused unknown-flag but the engine refuses `activity --bogus` as null'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:487:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 'commands/probe.md:1: marked pm:refused unknown-flag but the engine refuses `activity --bogus` as null' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:496:1
+✖ 1.4 a marker whose class differs from the engine's refusal fails (1.304459ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /marked pm:refused unknown-flag but the engine refuses .* as extra-positional/. Input:
+  
+  'commands/probe.md:1: marked pm:refused unknown-flag but the engine refuses `set-activity-log on extra` as null'
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:499:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'commands/probe.md:1: marked pm:refused unknown-flag but the engine refuses `set-activity-log on extra` as null',
+    expected: /marked pm:refused unknown-flag but the engine refuses .* as extra-positional/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:502:1
+✖ 1.4 a marker not directly after a code span fails as unattached (0.799125ms)
+  AssertionError [ERR_ASSERTION]: the example the detached marker failed to reach is itself reported:
+  commands/probe.md:1: marker <!-- pm:refused unknown-flag --> is unattached — it must directly follow one code span
+  commands/probe.md:1: refused (null) `activity --bogus` — conductor: unknown flag --bogus for activity — it accepts: --json, --since, --epic
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:505:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:509:1
+✖ 1.4 a marked span followed on the same line by an unmarked refused span fails on the second (0.973ms)
+  AssertionError [ERR_ASSERTION]: commands/probe.md:1: marked pm:refused unknown-flag but the engine refuses `activity --bogus` as null
+  commands/probe.md:1: refused (null) `integrity --force` — conductor: unknown flag --force for integrity — it accepts no flags
+  
+  2 !== 1
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:512:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

@@ -1,0 +1,53 @@
+✖ G2-I3 a LIVE holder's lock is never broken for its age: a long observation is not reported twice (512.930875ms)
+✖ G2-I3 a lock whose holder is confirmed dead is broken at once, however young (729.367417ms)
+✖ G2-I3 breaking a stale observation lock removes only the lock judged, never a successor (346.521292ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 0
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1636.095375
+
+✖ failing tests:
+
+test at scripts/test/commit-observation.test.mjs:181:1
+✖ G2-I3 a LIVE holder's lock is never broken for its age: a long observation is not reported twice (512.930875ms)
+  AssertionError [ERR_ASSERTION]: B skips: A is alive, so its lock is not stale whatever its age. Output: {"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"Commit `9c56510` landed since the last observation — this call, another terminal, or a parallel call; the hook cannot tell which. Diff shape (small, fix/chore-prefixed, unrelated to the active epic) looks like a MINIMAL detour, so it was auto-logged to `.conductor/detours.log` as an AUTO-DETOUR entry. If a row is wrong: `retract-detour 9c56510 --reason \"<why>\"` (re-renders PROJECT.md).\n\nATTRIBUTION — `epic-a` has attributed no commits yet: attribute every commit of this epic's work that already landed, IN THE ORDER THEY LANDED, and then this one — `update-epic epic-a --attribute-commit 9c5651033615041a982f1ccd8d5649554a5a82dd`. The array is append-only and a recorded Gate 2 `headSha` must reach EVERY entry, so a commit left unattributed is work that gate is never checked against. ONE exclusion: a commit that only moves or deletes a change's artifacts — the `/opsx:archive` move above all — is lifecycle bookkeeping and must NOT be attributed; it lands after the reviewed range, so attributing it makes this epic's own Gate 2 read stale."}}
+  + actual - expected
+  
+  + '{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"Commit `9c56510` landed since the last observation — this call, another terminal, or a parallel call; the hook cannot tell which. Diff shape (small, fix/chore-prefixed, unrelated to the active epic) looks like a MINIMAL detour, so it was auto-logged to `.conductor/detours.log` as an AUTO-DETOUR entry. If a row is wrong: `retract-detour 9c56510 --reason \\"<why>\\"` (re-renders PROJECT.md).\\n\\nATTRIBUTION — `epic-a` has attributed no commits yet: attribute every commit of this epic\'s work that already landed, IN THE ORDER THEY LANDED, and then this one — `update-epic epic-a --attribute-commit 9c5651033615041a982f1ccd8d5649554a5a82dd`. The array is append-only and a recorded Gate 2 `headSha` must reach EVERY entry, so a commit left unattributed is work that gate is never checked against. ONE exclusion: a commit that only moves or deletes a change\'s artifacts — the `/opsx:archive` move above all — is lifecycle bookkeeping and must NOT be attributed; it lands after the reviewed range, so attributing it makes this epic\'s own Gate 2 read stale."}}'
+  - ''
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-observation.test.mjs:196:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"Commit `9c56510` landed since the last observation — this call, another terminal, or a parallel call; the hook cannot tell which. Diff shape (small, fix/chore-prefixed, unrelated to the active epic) looks like a MINIMAL detour, so it was auto-logged to `.conductor/detours.log` as an AUTO-DETOUR entry. If a row is wrong: `retract-detour 9c56510 --reason \\"<why>\\"` (re-renders PROJECT.md).\\n\\nATTRIBUTION — `epic-a` has attributed no commits yet: attribute every commit of this epic\'s work that already landed, IN THE ORDER THEY LANDED, and then this one — `update-epic epic-a --attribute-commit 9c5651033615041a982f1ccd8d5649554a5a82dd`. The array is append-only and a recorded Gate 2 `headSha` must reach EVERY entry, so a commit left unattributed is work that gate is never checked against. ONE exclusion: a commit that only moves or deletes a change\'s artifacts — the `/opsx:archive` move above all — is lifecycle bookkeeping and must NOT be attributed; it lands after the reviewed range, so attributing it makes this epic\'s own Gate 2 read stale."}}',
+    expected: '',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/commit-observation.test.mjs:206:1
+✖ G2-I3 a lock whose holder is confirmed dead is broken at once, however young (729.367417ms)
+  AssertionError [ERR_ASSERTION]: a dead holder does not defer the report: ""
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-observation.test.mjs:218:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/commit-observation.test.mjs:222:1
+✖ G2-I3 breaking a stale observation lock removes only the lock judged, never a successor (346.521292ms)
+  TypeError: cw.inspectObserveLock is not a function
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-observation.test.mjs:231:24)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)

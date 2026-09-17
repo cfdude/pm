@@ -23,6 +23,17 @@ description: >
   the **detour stack**, and **epic links** (especially the reconcile relationship).
 - State of record is `.conductor/state.json`. `PROJECT.md` is a generated view — never
   hand-edit it. After any state change, run `node "$ENGINE" render` (see "Running the engine").
+- **No stored value can forge a line.** Free text (titles, reasons, notes, session names, tracker
+  titles from inward sync) is stored as written and rendered with its control characters escaped
+  on every surface — PROJECT.md, the brief, the rules block, hook output, refusals, and JSON
+  stdout (DEL, C1 and U+2028/U+2029 too). A PROJECT.md table cell also escapes `\` and `|`.
+  So a line in any of those that looks like a `NOW:` line or a runnable command IS the engine's.
+  Ids are refused at input instead: an epic id outside `^[a-z0-9][a-z0-9._-]*$` at
+  `add-epic`/`add-many`, a new release id likewise, a `sync` name holding a control character or
+  whitespace (skipped and named — rename it), and a tracker `--system`/`--project`/`--repo` holding
+  a control character. A legacy id holding one gets no printed command:
+  `<kind> '<escaped id>' holds a control character; no verb can rename it` — do not hand-edit
+  `state.json` to fix it; report it.
 
 You (Claude) are myopic across compactions. This skill is how you stop losing the thread.
 
@@ -67,7 +78,7 @@ Two caveats. It only exists once the *installed* plugin carries the release that
 the snippet below will not cover for it — resolving the engine out of the project directory is
 how that used to be papered over, and gh-139 deleted that arm because it executed
 project-supplied code on nothing but a `-f` test. While developing a release the installed
-plugin does not yet carry, run `node scripts/conductor.mjs <verb>` from the checkout directly.
+plugin does not yet carry, run `node scripts/conductor.mjs <verb>`<!-- pm:checkout-path --> from the checkout directly.
 And it makes the engine you TYPE non-authoritative: with it set, running a worktree's
 `scripts/conductor.mjs` while `$CLAUDE_PROJECT_DIR` points at the main checkout runs the
 **main checkout's** engine, because the project dir decides. In a repo that works in worktrees
@@ -96,7 +107,7 @@ registry, so it cannot disagree with what the parser accepts. Use it instead of 
 - **Quote every multi-word value.** An unquoted `--title My Title` leaves `Title` as a surplus
   positional, and a surplus positional is refused (`If 'Title' belongs to --title's value, quote
   the whole value.`) — it used to store `My` and exit 0.
-- A valueless flag never takes a value: `remove-epic <id> --cascade true` and `--force=1` are both
+- A valueless flag never takes a value: `remove-epic <id> --cascade true`<!-- pm:refused extra-positional --> and `--force=1` are both
   refused. Outside `triage`, `suggest-lane`, `log-detour` and `honcho-memory`, a `--`-leading token
   that is not a flag (`--Steal`) is refused as an undeclared flag.
 - An epic id is positional wherever a verb takes one; `--id <x>` in its place is diagnosed with the
@@ -114,9 +125,11 @@ rules block belongs in, resolving that platform's first-match-wins chain. Exists
 never has to mirror the chain: a second copy of platform knowledge is drift waiting to happen.
 Does not record a platform, unlike `write-rules`) ·
 `/pm:resume` resume + reconcile (writes the reconciler's verdict back durably via
-`record-reconcile`) · `record-gate-review <id> --gate 1|2 --verdict pass|fail` records an
-epic's Gate 1/Gate 2 review verdict on ANY lane (see "OpenSpec build" below); a `pass` requires
-`--base-sha`/`--head-sha`. Recording is lane-agnostic, ENFORCEMENT is not: `update-epic
+`record-reconcile`) · `record-gate-review` records an epic's Gate 1/Gate 2 review verdict on ANY
+lane (see "OpenSpec build" below), each with its own gate's evidence — Gate 1 (spec review):
+`record-gate-review <id> --gate 1 --verdict pass|fail --artifact <path>`; Gate 2 (implementation
+review): `record-gate-review <id> --gate 2 --verdict pass|fail --base-sha <a> --head-sha <b>`.
+Recording is lane-agnostic, ENFORCEMENT is not: `update-epic
 --status archived` on an openspec-lane epic requires a passing Gate 2 verdict already recorded,
 and no other lane gains that obligation ·
 `record-tracker-refresh <id> --verdict unchanged|material-change --external-updated-at <iso>`
@@ -192,7 +205,7 @@ dormancy. The message names git remedies (`git checkout --ours|--theirs`, `git s
 conflict to keep** — that is the user's call. Meanwhile `gate-guard` blocks Edit/Write/NotebookEdit
 (exit 2) and Bash is not matched, so the remedies run from the shell; `brief` injects only the
 warning; `snapshot` writes nothing (exit 11, never 2, which would block compaction);
-`commit-nudge` writes nothing but its HEAD watermark (exit 2 when a commit has landed; 0 otherwise, without reading state). `verify-state` never loads the file,
+`commit-nudge`, on both post-call events (`PostToolUse` and `PostToolUseFailure`), writes nothing, the observation record included (exit 2 when a commit has landed, which stays unreported until the file is fixed; 0 otherwise, without reading state). `verify-state` never loads the file,
 and `activity` reports the revision and the log's on/off state as unknown.
 
 **Saves are serialised by a lock file.** `saveState()` holds `.conductor/state.json.lock` from the
@@ -238,16 +251,31 @@ the verb, since a repeated `set-tracker --remove` exits 1 before its block write
   inward-only any more and `jira`/`linear` are not outward-only; before you act on a tracker,
   read its recorded `direction` out of `.conductor/state.json`.
   - **`outward`** — create an issue for any epic lacking `externalId`, record the key with
-    `update-epic <id> --external-id <KEY> --external-url <url>`, and transition the linked issue
-    toward the `statusIntent` semantic target on each status change. The brief lists only
-    unmirrored epics; it never fabricates transition drift.
-  - **`inward`** — as part of `/pm:sync`, list open items in the tracker's scope and register the
-    ones whose `externalUrl` matches no epic, using the recipe the rules block emits. That recipe
-    **runs as written**: it carries a derived `--id` (`<system>-<scope>-<number>`, so the same
-    item yields the same epic id in every repo and session and a re-run is refused as a duplicate
-    rather than inventing a slug), a `<lane>` from `suggest-lane` rather than a hardcoded
-    `claude-code`, and `--external-updated-at` so a freshly mirrored epic starts with a watermark.
-    A `P0`/`P1`/`P2`/`P3` label overrides the `P2` default.
+    `update-epic <id> --external-id <KEY> --external-url <url> --external-updated-at <iso>` (`<iso>`:
+    the created issue's own updated timestamp, so an outward-created link starts with a watermark and
+    never enters the never-re-read count), and transition the linked issue toward the `statusIntent`
+    semantic target on each status change. The brief lists only unmirrored epics; it never
+    fabricates transition drift.
+  - **`inward`** — as part of `/pm:sync`, list ALL open items in the tracker's scope and register
+    the ones whose `externalUrl` matches no epic, using the recipe the rules block emits. The
+    listing step is one declaration shared by the primary and every secondary: for `github-issues`
+    it is `gh issue list … --limit 1000 --json number,title,url,updatedAt,labels` (`gh` returns 30
+    items without `--limit`), and it carries a **truncation stop** — a list that reached its bound
+    may be truncated, so raise `--limit` and never run the closed-item step on it. Other systems
+    are told to read every page. That recipe **runs as written**: it carries a derived `--id`
+    (`<system>-<scope>-<number>`, so the same item yields the same epic id in every repo and
+    session and a re-run is refused as a duplicate rather than inventing a slug; for a system whose
+    keys are not numbers, `<issue-key-slug>` — the key lowercased with every run outside `a-z0-9`
+    turned into `-`, so `ABC-123` gives `jira-abc-abc-123`), a `<lane>` from `suggest-lane
+    --ask=<issue-title>` rather than a hardcoded `claude-code`, and `--external-updated-at` so a
+    freshly mirrored epic starts with a watermark. A `P0`/`P1`/`P2`/`P3` label overrides the `P2`
+    default.
+    **Item values are quoted by you, as the recipe says.** `<issue-title>`, `<issue-url>` and
+    `<issue-key>` are third-party text: fill each as ONE single-quoted word, writing every `'`
+    inside as `'\''`, never in double quotes (`$(…)`, backticks and `"` change the command). The
+    line uses `--title=`, `--external-url=` and `--ask=` because the engine classifies a token, not
+    a shell word: a title such as `--limit=5 ignored` or `--help` reaches the engine as a value
+    only in the attached form.
     The pull has a **reciprocal half**: the list is of OPEN items, so an epic linked to an item
     that is not in it has an item that is no longer open. Read that item — absence from a list
     also covers deleted, transferred and out-of-scope — and where the epic is not already
@@ -265,6 +293,18 @@ the verb, since a repeated `set-tracker --remove` exits 1 before its block write
     tracker is the consequential default and must be chosen. Remedy:
     `set-tracker --system jira --direction outward`. Existing repos are unaffected; the migration
     stamped each tracker with the direction it already behaved with.
+  - **Switching a primary's vendor keeps the direction and drops the old scope.** When `--system`
+    differs from the recorded system, `repo`/`projectKey`/`instance` not re-given in the same call
+    are dropped, each printed (`conductor: dropped repo="o/n" recorded for github-issues`); an
+    unrecorded direction is recorded as the one the old tracker RESOLVED to, and printed, so a
+    legacy github-issues primary switched to jira stays `inward` instead of silently gaining outward
+    creation. `statusIntent` and `mechanism` are kept.
+  - **A `github-issues` `--repo` is `owner/name` or GitHub Enterprise `HOST/owner/name`**, refused
+    otherwise before anything is written, for both roles — except `--role secondary … --remove`,
+    which matches the recorded value exactly so a legacy malformed secondary stays removable (the
+    primary has no remove handler and gets no exemption). A legacy repo failing the shape still
+    loads but receives no `gh` line, and `integrity`'s `tracker-repo-not-a-github-repository`
+    names it with the re-record.
 
   See `commands/tracker.md` and `commands/sync.md`.
 - **Primary + secondary trackers:** exactly one **primary** tracker (`state.tracker`, everything
@@ -273,7 +313,8 @@ the verb, since a repeated `set-tracker --remove` exits 1 before its block write
   with the same flags plus `--remove`. Re-running with a matching `system`+`repo`/`project`
   upserts in place (namespace-prefixed key — `repo`- and `project`-keyed entries never collide
   even if the string values match). A secondary tracker gets inward pull (same as `github-issues`
-  above, but deduped by `externalUrl` — globally unique — not bare `externalId`, since two
+  above — the same listing step, registration line, and a **watermark step** before its closed-item
+  step — but deduped by `externalUrl` — globally unique — not bare `externalId`, since two
   secondary trackers can each have an issue numbered the same) plus a new capability, **status
   writeback**: when an epic sourced from a secondary tracker reaches `archived`, you close the
   linked issue there too. It NEVER gets outward-created issues — that stays exclusive to the
@@ -297,6 +338,14 @@ the verb, since a repeated `set-tracker --remove` exits 1 before its block write
   **provenance** — does this epic have an `externalId` — never on direction: an epic with none
   re-reads its LOCAL source (plan, or proposal plus tasks) and `record-tracker-refresh` refuses it
   by name.
+- **The brief's two tracker lines claim only what the record shows.** The never-re-read line names
+  a remedy that clears every epic it counts — re-read each and record it with
+  `record-tracker-refresh <id> --verdict unchanged|material-change --external-updated-at <iso>`,
+  `/pm:sync` doing that for the items it lists — because an epic linked through an outward-only
+  primary is read by no inward step, and pointing only at `/pm:sync` left it counted forever. The
+  mirror line, with any secondary tracker configured, reads `✓ every active epic carries an
+  external link (this record cannot tell which tracker holds it)` instead of claiming every epic is
+  mirrored to the primary: an external id does not say which tracker it came from.
 - **The brief's freshness line counts only epics that can still become work.** `⚠ N
   tracker-linked epic(s) never re-read since mirroring` excludes every `archived` epic: the
   ARCHIVE DISPOSITION discharges the refresh obligation outright, whatever the outcome, because
@@ -318,12 +367,15 @@ now enforces Gate 2 mechanically. Keep the two halves apart, because they are sc
 differently: a verdict is RECORDABLE on any lane, and it is ENFORCED at archive time strictly on
 the `openspec` lane.
 
-- After a real fresh-context review, write the verdict back with `node "$ENGINE"
-  record-gate-review <epicId> --gate 1|2 --verdict pass|fail --base-sha <a> --head-sha <b>
-  [--reviewer "<who>"]` — this writes `{verdict, reviewedAt, baseSha, headSha, reviewer?}` onto
-  `epic.gateReview.gate1`/`gate2` in `.conductor/state.json`, mirroring how `record-reconcile`
-  writes the reconciler's verdict. Rejects (writes nothing) if the epic id is unknown, `--gate`
-  isn't `1`/`2`, `--verdict` isn't `pass`/`fail`, or a `pass` arrives without both shas. **The
+- After a real fresh-context review, write the verdict back with the form for THAT gate — Gate 2:
+  `node "$ENGINE" record-gate-review <epicId> --gate 2 --verdict pass|fail --base-sha <a>
+  --head-sha <b> [--reviewer "<who>"]`; Gate 1: `node "$ENGINE" record-gate-review <epicId> --gate 1
+  --verdict pass|fail --artifact <path> [--reviewer "<who>"]` — this writes `{verdict, reviewedAt,
+  baseSha, headSha | artifacts, reviewer?}` onto `epic.gateReview.gate1`/`gate2` in
+  `.conductor/state.json`, mirroring how `record-reconcile` writes the reconciler's verdict. Rejects
+  (writes nothing) if the epic id is unknown, `--gate` isn't `1`/`2`, `--verdict` isn't
+  `pass`/`fail`, or a pass arrives without its gate's evidence (both shas for Gate 2, an
+  `--artifact` for Gate 1). **The
   epic's LANE is not a rejection reason.** It used to be, which left pm telling every lane to run
   reviews while it could record the verdict for exactly one of them — `set-review-mode` is
   lane-agnostic and its own table names "a Superpowers task review". The consequences were the
@@ -548,7 +600,9 @@ Do not start fixing. Decide which kind this is and say so.
 **Minimal detour** — small, self-contained, no design ambiguity.
 Fix → test → commit → push, then record it so it leaves a trail:
 `node "$ENGINE" log-detour "<what you fixed>"` (appends a
-timestamped line + commit SHA to `.conductor/detours.log`). Then resume. No proposal, no
+timestamped line + commit SHA to `.conductor/detours.log`). Then resume. (An automatic
+AUTO-DETOUR or DETOUR-COMMIT row the commit hook wrote wrongly is corrected with
+`node "$ENGINE" retract-detour <sha> --reason "<why>"`, never by editing the log.) No proposal, no
 stack entry. Rule of thumb: fits before the next compaction and doesn't change the shape of
 the current proposal.
 
@@ -731,11 +785,11 @@ it waits on.
 ## Keeping the index honest (non-blocking enforcement)
 
 - After completing stories: tick `tasks.md` checkboxes (OpenSpec), then render.
-- After a commit: the PostToolUse hook reminds you — update `state.json` status, it
+- After a commit: the PostToolUse hook reminds you — record status with `update-epic`, and it
   re-renders automatically.
 - Set the active epic with `set-active <id>` (never hand-edit the `.active` pointer); it also
   keeps `status: "active"` in sync and demotes any prior active epic. `clear-active` drops it.
-- On PUSH/POP/priority change: edit `state.json` (or use the verbs above), then render.
+- On PUSH/POP/priority change: `push-detour`/`pop-detour`/`update-epic --priority`, then render.
 - New proposal outside this flow? `/pm:sync` registers it as `untriaged`; then triage.
 - Archived an OpenSpec change? The conductor self-heals — `sync`/`commit-nudge` clear the
   `active` pointer and stamp `archived` automatically (OpenSpec's date-prefixed archive dirs are
@@ -771,7 +825,12 @@ it waits on.
   EXCLUDED, because re-deciding it would ask you to re-derive what the record already got right,
   and so is an agent-recorded outcome, whatever its value — somebody was asked. Where a record
   genuinely cannot be reconstructed, `--outcome unreconstructable` says so with its required
-  reason. The set shrinks only by somebody deciding; the engine never guesses. Note the SEAM: an
+  reason. The invocation offers only outcomes the archive gate would accept for THAT epic: an
+  openspec-lane epic with no passing Gate 2 is not offered `delivered`, and each row's
+  `deliveredBlockedBy` (always present, `[]` when nothing blocks) lists `{kind, detail, remedy}`
+  per blocking obligation, in the order to run them — Gate 2 before the handoff. A checkbox
+  source's handoff remedy is the `delivered` archive itself carrying `--carried-to <epicId>
+  --reason "<which tasks moved>"`. The set shrinks only by somebody deciding; the engine never guesses. Note the SEAM: an
   epic sitting in an undefined status such as `done` is NOT archived, so this walker cannot reach
   it — `integrity`'s unknown-status check reports that one, and this verb reaches it only after a
   human moves it to `archived`.
@@ -806,12 +865,34 @@ and re-injected by the SessionStart hook (so they survive compaction). Two artif
 commit made while a detour is active is auto-logged to `.conductor/detours.log` by the hook
 (deterministic), and minimal detours are logged there by `log-detour` (rule-driven).
 
-Two commits are deliberately NOT logged, so the trail describes the detour rather than itself
+The hook runs after every Bash call, on success and on failure, and reads HEAD's reflog from the
+position it recorded last time: every commit that landed since is reported, oldest first, even one
+followed by a `checkout` in the same call. It cannot tell a commit the call made from one made in
+another terminal or a parallel call, and every report says so — "landed since the last observation".
+With no detour live, a small `fix:`/`chore:` commit is auto-logged as `AUTO-DETOUR` against the
+active epic; a wrong row is corrected with `retract-detour <sha> --reason "<why>"`, never by editing
+the log.
+
+Several commits are deliberately NOT logged, so the trail describes the detour rather than itself
 (#81). A commit touching ONLY pm's own generated output — `state.json`, `PROJECT.md`,
-`render-stamp.json`, `commit-watch.json` — is bookkeeping, not detour work; and a commit whose
-SHA already has a row of that kind is never given a second one. `MINIMAL` rows are exempt from
-that de-duplication: they record what you DECLARED, not what git observed, so two minimal detours
-between one pair of commits are two real entries.
+`render-stamp.json`, `commit-watch.json`, `commit-observe.json` — is bookkeeping, not detour work,
+in a nested conductor too (paths are compared from the conductor root). A commit touching the
+active epic's own artifacts (`openspec/changes/<id>/`, its plan or spec path) is that epic's work,
+and one confined to a paused epic's own artifacts is not detour work. A commit reachable from no
+branch (rewritten by a rebase, reset away) is named as rewritten or abandoned and gets no row and no
+attribution command. An amend replaces: the replaced commit's row is retracted by the engine, and
+where it is attributed the hook prints the `update-epic <id> --withdraw-commit` to run first. A
+commit whose SHA already has a row of that kind, at any abbreviation length, is never given a
+second one. `MINIMAL` rows are exempt from that de-duplication and cannot be retracted: they record
+what you DECLARED, not what git observed, so two minimal detours between one pair of commits are
+two real entries.
+
+After a commit the hook also prints the attribution command — and decides nothing. Its candidates
+are the detour epic and every paused epic while a detour is live, otherwise the active epic, each
+only if it carries an `attributedCommits` array; with no candidate it prints nothing. Several
+candidates get one runnable `update-epic <id> --attribute-commit <sha>…` each (every reported commit,
+oldest first), with the statement that choosing is yours; a candidate whose own artifacts the
+commits touch is listed first. The hook never writes an attribution itself.
 
 ## Intake — triage an ask BEFORE it becomes an epic
 
@@ -990,12 +1071,10 @@ CLAUDE.md (see `/pm:epic` → `set-autonomy`).
      preflight scan nor the executor's completion report had flagged it. The
      `hierarchy-child-executor` agent enforces the matching check at report time — see its
      "Required check: session-continuity impact on the orchestrator" section.
-   - **Documentation currency** — `SKILL.md` and `README.md` drift from the real dispatch table
-     independently (two separate tests in `scripts/test/*.test.mjs` check each one; passing
-     one does not mean the other is current). Any child epic that adds/changes a user-facing
-     command, flag, or behavior must update `README.md`, not just `SKILL.md` — this bit the
-     project once already (`record-gate-review` shipped with no README mention). See
-     `hierarchy-child-executor`'s "Required: check README.md, not just SKILL.md" section.
+   - **Documentation currency** — any child epic that adds or changes a user-facing command,
+     flag, or behavior must update the project's own user-facing docs in the same commit, not
+     only the notes an agent reads. See `hierarchy-child-executor`'s "Required: update the
+     project's own docs for user-facing changes" section.
 4. Keep it SHORT and high-signal. If there is nothing destructive, say so plainly. If there is
    no genuine unknown, say so plainly. Padding the output with non-issues defeats the entire
    point — it is exactly what turns autonomous execution into a wall of blockers.
@@ -1214,7 +1293,8 @@ withdrawnCommits? : [{sha, reason, withdrawnAt}] — attributions CORRECTED away
 gateReview?   : { gate1?: {verdict, reviewedAt, baseSha?, headSha?, reviewer?, note?}, gate2?: same } —
                 ANY lane; verdict ∈ pass|fail; a gate may instead be in the WITHDRAWN state (absent
                 here, with a withdrawnGateReviews entry); set via record-gate-review, which requires both
-                shas for a `pass` (a legacy `note` is the pre-fields shape, kept unparsed).
+                shas for a Gate 2 `pass` and an --artifact for a Gate 1 `pass` (a legacy `note`
+                is the pre-fields shape, kept unparsed).
                 baseSha/headSha, like every attributedCommits entry, are written as the FULL
                 object name the typed value resolved to; a value that does not resolve is
                 refused at write time. Fresh only when headSha reaches every attributed commit.

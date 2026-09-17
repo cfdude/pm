@@ -9,7 +9,7 @@
 // grows, and an emitted command naming a set the verb has outgrown is a command pm emits that
 // does not run as written. Nothing under archive-gate.mjs imports back up.
 
-import { DOCS_INDEX_URL, DOCS_MCP_URL } from "./constants.mjs";
+import { DOCS_INDEX_URL, DOCS_MCP_URL, escapeControls } from "./constants.mjs";
 import { AGENT_OUTCOMES } from "./archive-gate.mjs";
 import { loadState, StateUnreadableError } from "./state.mjs";
 
@@ -24,7 +24,7 @@ import path from "node:path";
 import {
   KNOWN_REVIEW_MODES, REVIEW_MODE_RANK, RULES_BEGIN, RULES_BEGIN_PREFIX, RULES_END, ROOT,
   PLATFORM_COMMAND_PREFIX, anyInwardProcedureEmittable, inwardProcedureEmittable, outwardApplies,
-  mirroredEpicIdPrefix, secondaryInwardProcedureEmittable, trackerScope, usesGhIssueList,
+  itemKeysAreNumbers, mirroredEpicIdPrefix, secondaryInwardProcedureEmittable, trackerScope, usesGhIssueList,
 } from "./constants.mjs";
 import { rulesTarget } from "./platform.mjs";
 
@@ -147,6 +147,10 @@ function closedItemStep(platform, sys, n = 6) {
     `   to the work; ${sys} closing an item does not say which one and pm will not guess. An epic`,
     "   that is already `archived` owes nothing here — it ended, and a record that ended does not",
     `   need a second ending. Then re-render with \`${pmCmd(platform, "status")}\`.`,
+    // This step prints a placeholder id and cannot know the epic, so it cannot omit `delivered` the
+    // way the epic-aware renderer does; it says where the epic-aware answer is instead.
+    "   For an openspec-lane epic, `delivered` also needs a passing Gate 2 — the archive gate refuses",
+    "   it otherwise, and `unconsidered-outcomes` or that refusal names the review to record first.",
   ];
 }
 
@@ -323,7 +327,8 @@ export const GATE_PROCEDURE_ITEMS = [
       "   never by removing the record. The archive verb takes TWO halves in ONE invocation — the",
       "   disposition AND a deferral assertion — because the gate refuses either half alone:",
       `   \`update-epic <id> --status archived --outcome ${AGENT_OUTCOMES.join("|")} --reason "<why>" --no-deferrals\``,
-      "   (every outcome except `delivered` requires the reason). `--no-deferrals` is the explicit",
+      "   (every outcome except `delivered` requires the reason; for an openspec-lane epic, `delivered` also needs a passing Gate 2,",
+      "   and `unconsidered-outcomes` or the archive gate's refusal names the review to record first). `--no-deferrals` is the explicit",
       "   \"there are none\" and is a claim, not a default — swap it for `--deferral",
       "   \"<epicId>:<artifact section>\"` where work is now held by a registered epic, or",
       "   `--declined-deferral \"<what>:<why not>\"` where you are deliberately not doing it; both",
@@ -527,6 +532,93 @@ const GH_PREFLIGHT =
   "credential-free substitute, so reporting a clean sync you could not perform is worse than " +
   "reporting that you could not perform it.";
 
+/** The bound the emitted `gh issue list` step names. A BOUND, not a claim about any repo's size:
+ *  `gh issue list` returns 30 items without `--limit`, and every item past the cap was never
+ *  registered while the closed-item step proposed archiving each linked epic whose item was on page
+ *  two. No fixed number is safe, so the step pairs the bound with a truncation STOP. */
+const GH_LIST_LIMIT = 1000;
+
+/** STEP 1 of every inward procedure — THE one declaration, called by the primary's inward section and
+ *  by every secondary section, so the two can never again request different fields (the secondary
+ *  once listed `number,title,url,labels` and then asked for `<issue-updated-at>`). The listing fetches
+ *  every field a later step consumes, and says what to do when it may be truncated. */
+function inwardListStep(tracker, sys, scope) {
+  if (usesGhIssueList(tracker)) {
+    return [
+      `1. \`gh issue list --repo ${tracker.repo} --state open --limit ${GH_LIST_LIMIT} --json number,title,url,updatedAt,labels\`.`,
+      GH_PREFLIGHT,
+      `   If it returns ${GH_LIST_LIMIT} items the list may be truncated: raise \`--limit\` and list again, and`,
+      "   do not run the closed-item step on a list that reached its bound — an item missing from a",
+      "   truncated list is not an item that closed.",
+    ];
+  }
+  return [
+    `1. List ALL open items in ${sys}${scope ? ` (${scope})` : ""} with your own tooling — every page — reading each`,
+    "   item's key, title, url and updated timestamp. If your tooling cannot return every page, do not",
+    "   run the closed-item step on a partial list — an item missing from it is not an item that closed.",
+  ];
+}
+
+/** The dedup step, shared. Reads the record; reading `.conductor/state.json` is not an edit, and pm
+ *  ships no `/pm:epic list` command to point at. */
+const dedupStep = () => [
+  "2. For each item, check `.conductor/state.json` for an epic whose `externalUrl` matches that",
+  "   item's URL — if so, skip it (already mirrored; re-running sync must never create a duplicate",
+  "   epic for the same item). Match on `externalUrl` when both sides carry one, never on a bare",
+  "   `externalId`: item numbers are unique only within one tracker/repo, so two trackers can each",
+  "   hold an item numbered the same without those being the same item. Where one side has no URL,",
+  "   they are not a duplicate either — a URL-less legacy epic must not block a genuinely distinct item.",
+];
+
+/** The registration step, shared: the quoting instruction, then the line, then lane routing. Item
+ *  values (title, url, a non-numeric key) are THIRD-PARTY TEXT: the recipe tells the agent how to
+ *  make each one shell word, and places the title and url where the engine reads them as values
+ *  whatever their shape (`--title=`, `--external-url=`, `suggest-lane --ask=`). Quoting changes what
+ *  the shell passes, never the token the engine classifies — so both halves are needed. */
+function registrationStep(platform, tracker) {
+  const prefix = mirroredEpicIdPrefix(tracker);
+  const numeric = itemKeysAreNumbers(tracker);
+  const idPart = numeric ? "<issue-number>" : "<issue-key-slug>";
+  const keyPart = numeric ? "<issue-number>" : "<issue-key>";
+  const itemPlaceholders = numeric ? "`<issue-title>`, `<issue-url>`" : "`<issue-title>`, `<issue-url>`, `<issue-key>`";
+  return [
+    "3. Otherwise register a new untriaged epic, running this line as written with only its",
+    "   placeholders filled in. Fill every placeholder taken from the item — " + itemPlaceholders + " — as",
+    "   ONE shell-quoted word: wrap the value in single quotes and write each `'` inside it as `'\\''`.",
+    "   Never use double quotes: `$(…)`, backticks and `\"` inside them change the command. Keep",
+    "   `--title=` and `--ask=` attached to their values: that is what lets a title that starts with",
+    "   `-` reach the engine as a title.",
+    `   \`add-epic --id ${prefix}-${idPart} --title=<issue-title> --status untriaged --external-id ${keyPart} --external-url=<issue-url> --external-updated-at <issue-updated-at> --lane <lane> --priority P2\``,
+    ...(numeric ? [] : [
+      "   `<issue-key-slug>` is the item's key lowercased with every run of characters outside `a-z0-9`",
+      "   replaced by `-` (`ABC-123` → `abc-123`), so distinct keys derive distinct ids.",
+    ]),
+    "   Take `<lane>` from LANE ROUTING, never a fixed value: run `suggest-lane --ask=<issue-title>`",
+    "   and use the lane it returns; when it returns none, apply this repo's generic lane",
+    "   heuristic. The lane decides whether the work leaves any spec, plan or gate record, so",
+    "   a hardcoded one decides that silently for every mirrored item. If the routed lane is",
+    "   wrong for a particular item, register it in the lane you judge correct and record the",
+    "   reason on the epic: `update-epic <id> --notes \"lane: <chosen> not <routed> — <why>\"`.",
+    `   The id is DERIVED, never invented: \`${prefix}-${idPart}\` — this tracker's system and scope,`,
+    "   then the item's own key. The same item therefore yields the same epic id in every repo and",
+    "   every session, so a second registration of it is refused as a duplicate instead of landing as",
+    "   a second epic under a different invented slug, and the same key in two different trackers",
+    "   derives two DISTINCT ids. Use a `P0`/`P1`/`P2`/`P3` label's priority when the item carries",
+    "   one, `P2` otherwise.",
+  ];
+}
+
+/** The watermark step, shared by the primary and every secondary inward procedure: listing alone
+ *  never advances a watermark. */
+const watermarkStep = (n) => [
+  `${n}. For every epic ALREADY linked to an item here, compare that item's tracker-side`,
+  "   updated timestamp against the epic's `externalUpdatedAt` watermark, and READ the ones",
+  "   whose timestamp is newer. Record what you read with `update-epic <id>",
+  "   --external-updated-at <iso>` (or `record-tracker-refresh` when you owe a verdict) —",
+  "   seeing an item in the list response is not reading it, so listing alone must never",
+  "   advance the watermark or sync erases the drift it exists to find.",
+];
+
 export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform = "claude-code") {
   const mode = KNOWN_REVIEW_MODES.includes(reviewMode) ? reviewMode : "standard";
   // NO VERSION NUMBER IN THIS BLOCK, and the omission is the design.
@@ -723,7 +815,8 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
         `the pm plugin NEVER calls ${sys} itself. On these events, perform the matching action with`,
         "your own tooling (MCP, connector, CLI — whatever this project uses):",
         `- A real epic has no \`externalId\` → create the ${sys} issue, then record its key with`,
-        `  \`${pmCmd(platform, "epic")}\` → \`update-epic <id> --external-id <KEY> --external-url <url>\`.`,
+        `  \`${pmCmd(platform, "epic")}\` → \`update-epic <id> --external-id <KEY> --external-url <url> --external-updated-at <iso>\``,
+        "  (`<iso>`: the created issue's own updated timestamp, so the link starts with a watermark).",
         "- An epic moves to a status with a `statusIntent` (e.g. active/archived) → transition the",
         "  linked issue toward that SEMANTIC target, resolving the real workflow transition yourself.",
         `- A parent epic → create it as a ${sys} epic and link its children.`,
@@ -749,7 +842,6 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
       // all along. The primary slot alone lacked it, which is why an inward jira tracker could
       // not be expressed at all.
       const gh = usesGhIssueList(tracker);
-      const idPrefix = mirroredEpicIdPrefix(tracker);
       lines.push(
         "",
         gh ? `## GitHub issue sync (${scope})` : `## Inward tracker sync (${sys} · ${scope})`,
@@ -758,37 +850,11 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
         "OpenSpec/Superpowers auto-registration `sync` already does for on-disk changes/plans. The",
         `pm plugin NEVER calls ${sys} itself — as part of running \`${pmCmd(platform, "sync")}\`, YOU (the interactive`,
         "agent) do:",
-        ...(gh
-          ? [`1. \`gh issue list --repo ${scope} --state open --json number,title,url,updatedAt,labels\`.`, GH_PREFLIGHT]
-          : [`1. List open items in ${sys} (${scope}) with your own tooling, reading each item's id, title, url and updated timestamp.`]),
-        "2. For each item, check whether an epic's `externalUrl` already matches that item's URL",
-        `   (\`${pmCmd(platform, "epic")} list\` or read \`.conductor/state.json\`) — if so, skip it (already`,
-        "   mirrored; re-running sync must never create a duplicate epic for the same item). Match",
-        "   on `externalUrl` when both sides carry one, never on a bare `externalId`: item numbers",
-        "   are unique only within one tracker/repo, so two trackers can each hold an item numbered",
-        "   the same without those being the same item. Where one side has no URL, they are not a",
-        "   duplicate either — a URL-less legacy epic must not block a genuinely distinct item.",
-        "3. Otherwise register a new untriaged epic, running this line as written with only its",
-        "   placeholders filled in:",
-        `   \`add-epic --id ${idPrefix}-<issue-number> --title "<issue-title>" --status untriaged --external-id <issue-number> --external-url <issue-url> --external-updated-at <issue-updated-at> --lane <lane> --priority P2\``,
-        "   Take `<lane>` from LANE ROUTING, never a fixed value: run `suggest-lane \"<issue-title>\"`",
-        "   and use the lane it returns; when it returns none, apply this repo's generic lane",
-        "   heuristic. The lane decides whether the work leaves any spec, plan or gate record, so",
-        "   a hardcoded one decides that silently for every mirrored item. If the routed lane is",
-        "   wrong for a particular item, register it in the lane you judge correct and record the",
-        "   reason on the epic: `update-epic <id> --notes \"lane: <chosen> not <routed> — <why>\"`.",
-        `   The id is DERIVED, never invented: \`${idPrefix}-<issue-number>\` — this tracker's`,
-        "   system and scope, then the item's own number. The same item therefore yields the same",
-        "   epic id in every repo and every session, so a second registration of it is refused as a",
-        "   duplicate instead of landing as a second epic under a different invented slug. Use a",
-        "   `P0`/`P1`/`P2`/`P3` label's priority when the item carries one, `P2` otherwise.",
+        ...inwardListStep(tracker, sys, scope),
+        ...dedupStep(),
+        ...registrationStep(platform, tracker),
         "4. Set `--title` from the item title so the epic is legible before you triage it further.",
-        "5. For every epic ALREADY linked to an item here, compare that item's tracker-side",
-        "   updated timestamp against the epic's `externalUpdatedAt` watermark, and READ the ones",
-        "   whose timestamp is newer. Record what you read with `update-epic <id>",
-        "   --external-updated-at <iso>` (or `record-tracker-refresh` when you owe a verdict) —",
-        "   seeing an item in the list response is not reading it, so listing alone must never",
-        "   advance the watermark or sync erases the drift it exists to find.",
+        ...watermarkStep(5),
         ...closedItemStep(platform, sys),
       );
     }
@@ -822,32 +888,18 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
       "tracker above (if configured).",
       "",
       `**Inward pull** — as part of running \`${pmCmd(platform, "sync")}\`:`,
-      ...(usesGhIssueList(st)
-        ? [`1. \`gh issue list --repo ${st.repo} --state open --json number,title,url,labels\`.`, GH_PREFLIGHT]
-        : [`1. List open issues in ${st.system}${scope ? ` (${scope})` : ""} with your own tooling.`]),
-      "2. For each issue, check whether an epic's `externalUrl` already matches that issue's URL",
-      `   (\`${pmCmd(platform, "epic")} list\` or read \`.conductor/state.json\`) — if so, skip it (already mirrored;`,
-      "   re-running sync must never create a duplicate epic for the same issue). Match on",
-      "   `externalUrl` when both sides carry one, never on a bare `externalId` — issue numbers",
-      "   are unique only within one tracker/repo, so two secondary trackers can each hold an",
-      "   issue numbered the same without those being the same issue. Where one side has no URL",
-      "   at all, they are not a duplicate either: a URL-less legacy epic must not block a",
-      "   genuinely distinct issue that happens to share its bare number.",
-      "3. Otherwise register a new untriaged epic, running this line as written with only its",
-      "   placeholders filled in:",
-      `   \`add-epic --id ${mirroredEpicIdPrefix(st)}-<issue-number> --title "<issue-title>" --status untriaged --external-id <issue-number> --external-url <issue-url> --external-updated-at <issue-updated-at> --lane <lane> --priority P2\``,
-      "   Take `<lane>` from LANE ROUTING, never a fixed value: run `suggest-lane \"<issue-title>\"`",
-      "   and use the lane it returns; when it returns none, apply this repo's generic lane",
-      "   heuristic. If the routed lane is wrong for a particular item, register it in the lane you",
-      "   judge correct and record the reason on the epic with `update-epic <id> --notes \"…\"`.",
-      `   The id is DERIVED from this tracker's system and scope: \`${mirroredEpicIdPrefix(st)}-<issue-number>\`,`,
-      "   so the same item yields the same epic id everywhere, and issue `#42` in two different",
-      "   secondary repos derives two DISTINCT ids rather than colliding. Use a `P0`/`P1`/`P2`/`P3`",
-      "   label's priority when the issue carries one, `P2` otherwise.",
-      ...closedItemStep(platform, st.system, 4),
+      ...inwardListStep(st, st.system, scope),
+      ...dedupStep(),
+      ...registrationStep(platform, st),
+      ...watermarkStep(4),
+      ...closedItemStep(platform, st.system, 5),
       "",
       "**Completion status writeback** — when an epic whose `externalUrl` matches this secondary",
-      `tracker's ${st.repo ? `repo (\`${st.repo}\`)` : `project (\`${st.projectKey}\`)`} transitions to`,
+      // Only a repo that HAS the owner/name shape (a github-issues repo usesGhIssueList() accepts) is
+      // set in a code span. Any other — a legacy malformed github-issues value, or a repo recorded on a
+      // non-github secondary, which no shape rule covers — is quoted as DATA: a backtick in it would
+      // break the span, and a span is what an agent lifts into a shell line (Gate 2 E-M5).
+      `tracker's ${st.repo ? (usesGhIssueList(st) ? `repo (\`${st.repo}\`)` : `repo ${JSON.stringify(st.repo)}`) : `project (\`${st.projectKey}\`)`} transitions to`,
       "`status: \"archived\"`, close/transition the linked issue here too, using your own",
       "tooling — check its current state first so a re-run does not error on an already-closed",
       "issue.",
@@ -859,12 +911,20 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
   // reference to instructions it did not contain. This is one of exactly two deliberate
   // emitted-output changes on the un-upgraded path, and it is a repair of a dangling pointer.
   if (anyInwardProcedureEmittable(tracker, secondaryTrackers)) {
+    // "(the writeback steps above)" only where the block HOLDS one: the outward section's transition
+    // step or a secondary's completion writeback. An inward-only primary with no secondary emits
+    // neither, and pointing at absent steps is the dangling reference this reminder was gated for.
+    const writebackAbove = (tracker && tracker.system && outwardApplies(tracker)) ||
+      (Array.isArray(secondaryTrackers) && secondaryTrackers.some(secondaryInwardProcedureEmittable));
     lines.push(
       "",
       "## Sync after completing tracker-linked work",
       "",
-      "After you close/transition a tracker-linked issue as part of completing an epic (the",
-      `writeback steps above), immediately re-sync with your tracker(s) — run \`${pmCmd(platform, "sync")}\` — to pull`,
+      ...(writebackAbove
+        ? ["After you close/transition a tracker-linked issue as part of completing an epic (the",
+          `writeback steps above), immediately re-sync with your tracker(s) — run \`${pmCmd(platform, "sync")}\` — to pull`]
+        : ["After you finish an epic linked to an item here, immediately re-sync with your tracker(s) —",
+          `run \`${pmCmd(platform, "sync")}\` — to pull`]),
       "in anything new that appeared while you were heads-down. You're already doing tracker I/O",
       "for this epic, so this is the cheapest moment to catch it; this applies whether you have one",
       "tracker or several (primary + secondary) configured.",
@@ -892,7 +952,11 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     "when the item and a local spec disagree.",
   );
   lines.push(RULES_END, "");
-  return lines.join("\n");
+  // THE LINE SINK (user-text-never-forges-output): each entry is one line of the block, so a stored
+  // tracker system, project, repo or status intent can never begin a line of the rules file — the one
+  // channel that reaches every subagent. Emitted commands carry no such value raw: the derived id
+  // prefix is slugged, and `gh issue list --repo` needs usesGhIssueList()'s owner/name shape.
+  return lines.map(escapeControls).join("\n");
 }
 
 /** The managed block's arrangement in a rules file's TEXT (managed-rules-block capability).

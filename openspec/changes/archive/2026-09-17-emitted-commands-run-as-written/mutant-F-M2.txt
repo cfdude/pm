@@ -1,0 +1,36 @@
+✖ Layer B unconsidered:gate2-missing-then-handoff (F-M2) {record Gate 2, then archive carrying the open task} — the remedy clears what printed it (444.999542ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 499.484625
+
+✖ failing tests:
+
+test at scripts/test/emitted-invocations.test.mjs:851:7
+✖ Layer B unconsidered:gate2-missing-then-handoff (F-M2) {record Gate 2, then archive carrying the open task} — the remedy clears what printed it (444.999542ms)
+  AssertionError [ERR_ASSERTION]: the entries run in order, Gate 2 first: [{"kind":"handoff","detail":"1 of 1/2 task(s) outstanding","remedy":["update-epic uc --status archived --outcome delivered --carried-to <epicId> --reason \"<which tasks moved>\" --no-deferrals"]},{"kind":"gate2-missing","detail":"missing a passing Gate 2 (implementation review) verdict — the record shows no Gate 2 review of this work, and recording `delivered` requires a real one","remedy":["record-gate-review uc --gate 2 --verdict pass --base-sha <sha> --head-sha <sha>"]}]
+  + actual - expected
+  
+    [
+  +   'handoff',
+      'gate2-missing',
+  -   'handoff'
+    ]
+  
+      at Object.observe (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1670:12)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:853:26)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'handoff', 'gate2-missing' ],
+    expected: [ 'gate2-missing', 'handoff' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

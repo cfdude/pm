@@ -1,0 +1,35 @@
+✔ Layer B integrity:delivered-release-epic-left-open [archive] {archive} — the remedy clears what printed it (904.987667ms)
+✔ Layer B integrity:delivered-release-epic-left-open [release --defer] {release --defer} — the remedy clears what printed it (581.384375ms)
+✖ Layer B integrity:delivered-release-epic-left-open [checkbox source] {archive, carrying the open task} — the remedy clears what printed it (537.173833ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 2
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2066.469917
+
+✖ failing tests:
+
+test at scripts/test/emitted-invocations.test.mjs:842:7
+✖ Layer B integrity:delivered-release-epic-left-open [checkbox source] {archive, carrying the open task} — the remedy clears what printed it (537.173833ms)
+  AssertionError [ERR_ASSERTION]: step 4: `update-epic cb --status archived --outcome delivered --no-deferrals` exited 1:
+  conductor: cannot archive 'cb' as delivered — 1 of 1/2 task(s) outstanding. Either record where the work went with --carried-to <epicId> --reason "<which tasks moved>", or — if the outstanding item is lifecycle bookkeeping rather than delivery — declare it in the task source by putting the literal <!-- pm:lifecycle --> on that task's own line. Naming a receiver for work nobody carried anywhere is a fabricated record.
+  
+  printed:
+    • `cb` — still `queued` in release `1.0.0`, which has already delivered — and it is not in that release's deferred[], so the record says neither that it shipped nor that it was cut. Give it the ending it actually had — either it shipped: `update-epic cb --status archived --outcome delivered --no-deferrals` — or it was cut, and you record that instead: `release 1.0.0 --defer cb --reason "<why>"`
+  
+  1 !== 0
+  
+      at followRemedy (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:806:12)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:846:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

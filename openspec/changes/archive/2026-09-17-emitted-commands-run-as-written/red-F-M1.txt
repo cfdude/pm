@@ -1,0 +1,28 @@
+✖ F-M1 the regression refusal says its handoff applies only with delivered, naming no archive-only flag outside the invocation (470.017416ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 522.44225
+
+✖ failing tests:
+
+test at scripts/test/emitted-invocations.test.mjs:1804:1
+✖ F-M1 the regression refusal says its handoff applies only with delivered, naming no archive-only flag outside the invocation (470.017416ms)
+  AssertionError [ERR_ASSERTION]: it says the handoff goes only with delivered:
+    Its open tasks have no command of their own: tick them in the task source, or keep the handoff the invocation carries, naming the epic they moved to and which tasks moved.
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1818:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '  Its open tasks have no command of their own: tick them in the task source, or keep the handoff the invocation carries, naming the epic they moved to and which tasks moved.',
+    expected: /only with `delivered`/,
+    operator: 'match',
+    diff: 'simple'
+  }

@@ -1,0 +1,130 @@
+✔ 1.2 escapeTableCell escapes every control character as escapeControls does, then backslashes, then pipes (1.692583ms)
+✔ 1.2 escapeControls is idempotent over its own output (0.341541ms)
+✖ 2.1 A detour reason with a pipe and a newline stays in its cell (441.683ms)
+✖ 2.2 A disposition reason with a newline stays in its row (262.855208ms)
+✖ 2.3 A minimal detour note with a pipe stays in its cell (311.859625ms)
+✖ 2.3a A backslash before a pipe does not open a delimiter (261.498542ms)
+✖ 2.4 source guard: every PROJECT.md data row goes through tableRow() (0.234375ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 2
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1319.97175
+
+✖ failing tests:
+
+test at scripts/test/output-text-integrity.test.mjs:138:1
+✖ 2.1 A detour reason with a pipe and a newline stays in its cell (441.683ms)
+  AssertionError [ERR_ASSERTION]: the Detour-stack table has exactly one data row:
+  | 1 | `e1` | blocked
+  x | cell | `det` | ⚠ yes |
+  
+  2 !== 1
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-text-integrity.test.mjs:146:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/output-text-integrity.test.mjs:150:1
+✖ 2.2 A disposition reason with a newline stays in its row (262.855208ms)
+  AssertionError [ERR_ASSERTION]: Dispositions: row has 1 cells, header has 4:
+  \| forged \| delivered \| x \| y \| |
+  
+  1 !== 4
+  
+      at assertCellCounts (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-text-integrity.test.mjs:132:12)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-text-integrity.test.mjs:159:3)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 4,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/output-text-integrity.test.mjs:162:1
+✖ 2.3 A minimal detour note with a pipe stays in its cell (311.859625ms)
+  AssertionError [ERR_ASSERTION]: Recent detours: row has 6 cells, header has 5:
+  | 2026-09-17T11:52:03.242Z | `-` | MINIMAL | `e1` | fixed a | b |
+  
+  6 !== 5
+  
+      at assertCellCounts (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-text-integrity.test.mjs:132:12)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-text-integrity.test.mjs:170:3)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 6,
+    expected: 5,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/output-text-integrity.test.mjs:173:1
+✖ 2.3a A backslash before a pipe does not open a delimiter (261.498542ms)
+  AssertionError [ERR_ASSERTION]: Dispositions: row has 5 cells, header has 4:
+  | `e3` | killed | 2026-09-17T11:52:03.495Z | a\\|b |
+  
+  5 !== 4
+  
+      at assertCellCounts (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-text-integrity.test.mjs:132:12)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-text-integrity.test.mjs:179:3)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 5,
+    expected: 4,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/output-text-integrity.test.mjs:182:1
+✖ 2.4 source guard: every PROJECT.md data row goes through tableRow() (0.234375ms)
+  AssertionError [ERR_ASSERTION]: a row pushed with md.push that interpolates a value must be built by tableRow(): | ${i + 1} | \
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-text-integrity.test.mjs:190:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

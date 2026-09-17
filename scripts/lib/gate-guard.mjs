@@ -7,6 +7,7 @@ import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
 import { requirePlatformFlag } from "./add-epic.mjs";
 import { checkedPositionals } from "./argv-surface.mjs";
+import { escapeControls } from "./constants.mjs";
 
 /** `set-gate-guard <on|off>` — repo-level opt-in for a hard PreToolUse guard blocking
  *  source writes while the active epic still owes a reconcile. Off by default. This is
@@ -48,10 +49,10 @@ export function setGateGuard() {
     out.push(!live
       ? "  Nothing is blocked right now: no live active epic, and the guard needs one."
       : (live.reconcileNeeded
-          ? `  BLOCKING NOW: '${live.id}' owes a reconcile.`
+          ? `  BLOCKING NOW: '${escapeControls(live.id)}' owes a reconcile.`
           : (on && live.trackerRefreshNeeded
-              ? `  BLOCKING NOW: '${live.id}' owes a tracker refresh.`
-              : `  Nothing is blocked right now: '${live.id}' owes neither obligation.`)));
+              ? `  BLOCKING NOW: '${escapeControls(live.id)}' owes a tracker refresh.`
+              : `  Nothing is blocked right now: '${escapeControls(live.id)}' owes neither obligation.`)));
     out.push("  'on' alone never means something is blocked — the guard also needs a live active");
     out.push("  epic that owes one of those two things.");
     out.push("");
@@ -108,7 +109,7 @@ export function gateGuardCheck() {
   // never actually turned on in real usage.
   if (active.reconcileNeeded) {
     process.stderr.write(
-      `conductor: gate guard — '${active.id}' still owes a reconcile (a detour touched shared ` +
+      `conductor: gate guard — '${escapeControls(active.id)}' still owes a reconcile (a detour touched shared ` +
       "code). Run the reconcile gate (reconciler agent, per the conductor skill's POP protocol) " +
       // NO BYPASS SENTENCE HERE, and its absence is the fix. This branch is UNCONDITIONAL —
       // `set-gate-guard off` does not reach it, by design (the reconcile skip is the
@@ -129,7 +130,7 @@ export function gateGuardCheck() {
   // `--verdict unchanged` recorded blind is a worse outcome than an honest bypass.
   if (state.gateGuard === true && active.trackerRefreshNeeded) {
     process.stderr.write(
-      `conductor: gate guard — '${active.id}' owes a tracker refresh: re-read its linked item ` +
+      `conductor: gate guard — '${escapeControls(active.id)}' owes a tracker refresh: re-read its linked item ` +
       "(body, comments, labels, state) before drawing specs or a plan for it, then record the " +
       "verdict with `record-tracker-refresh <id> --verdict unchanged|material-change " +
       "--external-updated-at <iso>`. Turn the guard off with `set-gate-guard off` if you cannot " +

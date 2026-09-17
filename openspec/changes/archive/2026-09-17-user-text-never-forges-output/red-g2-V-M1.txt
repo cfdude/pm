@@ -1,0 +1,11 @@
+# RED for Gate 2 V-M1: the new 5.3g mutant test run against the pre-V-M1 guard (the whole-file regex
+# matching only stdout.write(JSON.stringify( / stdout: / console.log( directly), placed behind the same helper.
+✔ 5.3g (Gate 2 U2-M1) jsonText escapes what JSON.stringify leaves raw, parses to the same value, and every stdout JSON document goes through it (6.045334ms)
+✖ 5.3g mutants (Gate 2 V-M1): an aliased JSON.stringify, and a document stringified into a variable, are both bypasses (2.705625ms)
+✖ failing tests:
+test at scripts/test/output-text-integrity.test.mjs:695:1
+✖ 5.3g mutants (Gate 2 V-M1): an aliased JSON.stringify, and a document stringified into a variable, are both bypasses (2.705625ms)
+  AssertionError [ERR_ASSERTION]: aliased: 
+    actual: false,
+    expected: true,
+  }

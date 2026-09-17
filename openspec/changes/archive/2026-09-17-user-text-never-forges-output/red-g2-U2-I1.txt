@@ -1,0 +1,28 @@
+# RED — Gate 2 U2-I1
+
+## 1. The two reviewer mutants against the sweep as it stood at bb729c5 (wide judgments from the change directory)
+claim takeover raw held.session: scripts/lib/claims.mjs:204 [claim] held.session -> judged:engine — UNCLASSIFIED total 0 (the old sweep exits 0: the mutant PASSES)
+supersedeAmended raw title: scripts/lib/subcommands.mjs:406 [supersedeAmended] epic.title -> judged:engine — UNCLASSIFIED total 0 (the old sweep exits 0: the mutant PASSES)
+
+## 2. The same held.session mutant (escape undone in claims.mjs:204) against the suite: the new sweep test and 7.2's new legacy recipe
+✖ every interpolation into engine output is escaped, literal, sunk or judged — no UNCLASSIFIED, STALE, EXCESS or WIDE (124.042542ms)
+✖ mutant (Gate 2 U2-I1): a raw stored session in claim()'s takeover line is UNCLASSIFIED (0.178083ms)
+✖ 7.2 the sweep: every governed input, one accumulated record, every surface (design D3) (48847.440792ms)
+ℹ pass 1
+ℹ fail 3
+✖ failing tests:
+✖ every interpolation into engine output is escaped, literal, sunk or judged — no UNCLASSIFIED, STALE, EXCESS or WIDE (124.042542ms)
+  +   'UNCLASSIFIED scripts/lib/claims.mjs:204 [claim] ${} held.session'
+    actual: [ 'UNCLASSIFIED scripts/lib/claims.mjs:204 [claim] ${} held.session' ],
+✖ mutant (Gate 2 U2-I1): a raw stored session in claim()'s takeover line is UNCLASSIFIED (0.178083ms)
+  AssertionError [ERR_ASSERTION]: mutation anchor occurs exactly once in scripts/lib/claims.mjs: from session '${escapeControls(held.session)}' 
+✖ 7.2 the sweep: every governed input, one accumulated record, every surface (design D3) (48847.440792ms)
+  (a) claim --steal over a live legacy claim whose session holds a control character (the takeover line) (stderr): a line begins FORGED — "FORGED"
+  (b) claim --steal over a live legacy claim whose session holds a control character (the takeover line) (stderr): holds a raw U+2028
+  (b) claim --steal over a live legacy claim whose session holds a control character (the takeover line) (stderr): holds a raw U+0085
+  (b) claim --steal over a live legacy claim whose session holds a control character (the takeover line) (stderr): holds a raw CR
+  +   '(a) claim --steal over a live legacy claim whose session holds a control character (the takeover line) (stderr): a line begins FORGED — "FORGED"',
+  +   '(b) claim --steal over a live legacy claim whose session holds a control character (the takeover line) (stderr): holds a raw U+2028',
+  +   '(b) claim --steal over a live legacy claim whose session holds a control character (the takeover line) (stderr): holds a raw U+0085',
+  +   '(b) claim --steal over a live legacy claim whose session holds a control character (the takeover line) (stderr): holds a raw CR'
+    actual: [ '(a) claim --steal over a live legacy claim whose session holds a control character (the takeover line) (stderr): a line begins FORGED — "FORGED"', '(b) claim --steal over a live legacy claim whose session holds a control character (the takeover line) (stderr): holds a raw U+2028', '(b) claim --steal over a live legacy claim whose session holds a control character (the takeover line) (stderr): holds a raw U+0085', '(b) claim --steal over a live legacy claim whose session holds a control character (the takeover line) (stderr): holds a raw CR' ],

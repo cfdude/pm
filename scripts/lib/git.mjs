@@ -74,17 +74,81 @@ export const isDetachedTree = (root = ROOT) => headAttachment(root) === "detache
  *  what the agent DECLARED via `/pm:detour --minimal`, not what git observed: two genuine minimal
  *  detours fixed between one pair of commits share a HEAD and are two real events. Deduping them
  *  would delete a record, which is the opposite of what this is for. */
-const COMMIT_DERIVED_KINDS = new Set(["DETOUR-COMMIT", "AUTO-DETOUR"]);
+export const COMMIT_DERIVED_KINDS = new Set(["DETOUR-COMMIT", "AUTO-DETOUR"]);
 
-/** Is (sha, kind) already in the log?  Reads the file whole — it is small, append-only, and
- *  render() already reads it whole on every render, so this adds no new order of cost. */
-function alreadyLogged(kind, sha) {
+/** Every row of the detour trail, parsed. `[]` when the log is absent or unreadable. */
+export function readDetourRows() {
+  let body;
+  try { body = fs.readFileSync(DETOURS_LOG, "utf8"); } catch { return []; }
+  return body.split("\n").filter(Boolean).map((raw) => {
+    const [when, sha, kind, epic, note] = raw.split("\t");
+    return { raw, when, sha, kind, epic, note };
+  });
+}
+
+/** Do two row shas name the same commit, as far as the rows alone can tell? Either is a prefix of
+ *  the other. Used where no git is consulted (render, the already-retracted check): two different
+ *  commits whose rows were abbreviated to the same prefix are indistinguishable from the text, and
+ *  hiding both is the accepted cost (design Decision 11). */
+export const rowShasOverlap = (a, b) =>
+  typeof a === "string" && typeof b === "string" && /^[0-9a-f]{4,64}$/.test(a) && /^[0-9a-f]{4,64}$/.test(b) &&
+  (a.startsWith(b) || b.startsWith(a));
+
+/** The rows a reader should see: commit-derived rows whose commit carries a RETRACTED row are
+ *  dropped, and RETRACTED rows are never shown themselves. */
+export function visibleDetourRows(rows = readDetourRows()) {
+  const retracted = rows.filter(r => r.kind === "RETRACTED").map(r => r.sha);
+  return rows.filter(r => r.kind !== "RETRACTED" &&
+    !(COMMIT_DERIVED_KINDS.has(r.kind) && retracted.some(x => rowShasOverlap(x, r.sha))));
+}
+
+/** Append a RETRACTED row — the inverse of an automatic commit-derived row, which is never removed
+ *  or rewritten. `<iso>\t<sha>\tRETRACTED\t<epic of the retracted row>\t<reason>`. Suppressed in a
+ *  detached tree like the row it retracts (gh#175); returns whether it was written. */
+export function appendRetraction(sha, epic, reason) {
+  if (isDetachedTree()) return false;
+  fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
+  // One line per row whatever the values hold: whitespace collapses, then every remaining control
+  // character (NEL, a legacy epic id's newline) is escaped (user-text-never-forges-output 8.1).
+  const line = [new Date().toISOString(), sha, "RETRACTED", escapeControls(epic || "-"), escapeControls((reason || "").replace(/\s+/g, " ").trim())].join("\t");
+  fs.appendFileSync(DETOURS_LOG, line + "\n");
+  return true;
+}
+
+/** The abbreviated name git gives a commit here, or `-` when git cannot answer. */
+export function shortSha(rev) {
+  try {
+    return execFileSync("git", ["rev-parse", "--short", String(rev)],
+      { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim() || "-";
+  } catch { return "-"; }
+}
+
+/** The full object name of a commit, or null when it resolves to none. */
+export function fullSha(rev) {
+  try {
+    return execFileSync("git", ["rev-parse", "--verify", "--quiet", `${String(rev)}^{commit}`],
+      { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim() || null;
+  } catch { return null; }
+}
+
+/** Does a row's sha name this commit? A row MATCHES when the commit's full name begins with the
+ *  row's sha, whatever length git abbreviated it to at write time (design Decision 9): comparing
+ *  abbreviations to each other breaks when lengths differ — one repository's log holds 7- and
+ *  8-character rows — and a full name always extends its own abbreviation. */
+export const rowMatches = (rowSha, full) =>
+  typeof rowSha === "string" && /^[0-9a-f]{4,64}$/.test(rowSha) && typeof full === "string" && full.startsWith(rowSha);
+
+/** Is (commit, kind) already in the log? Prefix-matched against the commit's full name when it
+ *  has one, exact otherwise. Reads the file whole — it is small, append-only, and render() already
+ *  reads it whole on every render, so this adds no new order of cost. */
+function alreadyLogged(kind, sha, full) {
   let body;
   try { body = fs.readFileSync(DETOURS_LOG, "utf8"); } catch { return false; }
   for (const line of body.split("\n")) {
     if (!line) continue;
     const [, s, k] = line.split("\t");
-    if (s === sha && k === kind) return true;
+    if (k !== kind) continue;
+    if (full ? rowMatches(s, full) : s === sha) return true;
   }
   return false;
 }
@@ -92,21 +156,22 @@ function alreadyLogged(kind, sha) {
 /** Append a row to the detour trail. Returns whether a row was actually written, so a caller
  *  never announces "logged to detours.log" for a row that was suppressed as a duplicate.
  *
- *  gh#81: the observed rung (commit-watch.mjs) already refuses to fire twice for one HEAD, but
- *  the UNVERIFIABLE rung — no reflog, no baseline yet, a read-only checkout that cannot persist
- *  the watermark — has no such memory and re-logs the same commit on every hook invocation. The
- *  log is the wrong place to depend on an upstream guard: dedupe where the row is written, so
- *  every rung inherits it. */
-export function appendDetourLog(kind, epic, note) {
+ *  `rev` names the commit a commit-derived row describes; it defaults to HEAD, which is what a
+ *  MINIMAL declaration and the unverifiable rung record. The observed rung passes each reported
+ *  commit's own sha, so two commits in one observation get two rows rather than HEAD twice.
+ *
+ *  gh#81: dedupe where the row is written, so every rung inherits it. */
+export function appendDetourLog(kind, epic, note, rev) {
   // gh#175: a detour is BY DEFINITION an interruption of active work, and a detached tree is one
   // nobody is working in. Suppressed silently, like every other session-bookkeeping write.
   if (isDetachedTree()) return false;
   fs.mkdirSync(CONDUCTOR_DIR, { recursive: true });
-  const sha = gitShortSha();
-  // sha "-" is gitShortSha()'s "cannot tell" (no git, no repository, no commits yet), NOT a
-  // commit identity. Collapsing on it would fold every unrelated row in a git-less repo into one.
-  if (COMMIT_DERIVED_KINDS.has(kind) && sha !== "-" && alreadyLogged(kind, sha)) return false;
-  const line = [new Date().toISOString(), sha, kind, epic || "-", (note || "").replace(/\s+/g, " ").trim()].join("\t");
+  const sha = rev === undefined ? gitShortSha() : shortSha(rev);
+  // sha "-" is "cannot tell" (no git, no repository, no commits yet), NOT a commit identity.
+  // Collapsing on it would fold every unrelated row in a git-less repo into one.
+  if (COMMIT_DERIVED_KINDS.has(kind) && sha !== "-" && alreadyLogged(kind, sha, fullSha(rev === undefined ? "HEAD" : rev))) return false;
+  // One line per row whatever the values hold (see appendRetraction()).
+  const line = [new Date().toISOString(), sha, kind, escapeControls(epic || "-"), escapeControls((note || "").replace(/\s+/g, " ").trim())].join("\t");
   fs.appendFileSync(DETOURS_LOG, line + "\n");
   return true;
 }
@@ -249,10 +314,13 @@ export function reachableFromAnyRef(sha) {
 export function differsFromHead(paths) {
   if (!paths || !paths.length) return [];
   try {
-    const out = execFileSync("git", ["diff", "--name-only", "HEAD", "--", ...paths], {
+    // `-z`: unquoted. git quotes a root-relative path holding a non-ASCII byte, so in a project nested
+    // under such a directory no line ended with `/<path>` and the nudge went silent (Gate 2 G2-I1's
+    // sibling of changedFiles()).
+    const out = execFileSync("git", ["diff", "-z", "--name-only", "HEAD", "--", ...paths], {
       cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"],
     });
-    const changed = out.split("\n").map(l => l.trim()).filter(Boolean);
+    const changed = out.split("\0").filter(Boolean);
     return paths.filter(p => changed.some(l => l === p || l.endsWith(`/${p}`)));
   } catch { return []; }
 }

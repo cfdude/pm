@@ -9,7 +9,7 @@ import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { removeSecondaryTracker, secondaryTrackerKey, upsertSecondaryTracker, writeRules } from "./rules.mjs";
 import { render } from "./render.mjs";
 import { resolvePlatform } from "./platform.mjs";
-import { KNOWN_TRACKER_DIRECTIONS } from "./constants.mjs";
+import { CONTROL_CHARACTER, KNOWN_TRACKER_DIRECTIONS, directionOf, escapeControls, isGithubRepo } from "./constants.mjs";
 
 /** Write/merge the `tracker` block (role: primary, default) or upsert/remove an entry in
  *  `state.secondaryTrackers` (role: secondary). Pure local state write — the engine NEVER
@@ -20,6 +20,23 @@ export function setTracker() {
   const f = parseFlags(process.argv.slice(3));
   requireFlagValues("set-tracker", f);
   const str = (v) => (typeof v === "string" ? v : undefined);
+  // A TRACKER'S RECORDED SCOPE holding a control character is refused before anything is read or
+  // written (design D8) — it heads a section of the rules file, the channel that reaches every
+  // subagent. Both roles; NOT `--role secondary --remove`, whose match key is whatever was stored, so
+  // a legacy entry stays removable. A primary `--remove` has no remove handler and is refused. Runs
+  // BEFORE the owner/name shape check below, so a value failing both gets this refusal.
+  if (!(str(f.role) === "secondary" && f.remove)) {
+    for (const [flag, key] of [["system", "system"], ["project", "project"], ["repo", "repo"]]) {
+      const values = [].concat(f[key] === undefined ? [] : f[key]).filter(v => typeof v === "string");
+      const bad = values.find(v => CONTROL_CHARACTER.test(v));
+      if (bad !== undefined) {
+        process.stderr.write(`conductor: --${flag} ${escapeControls(JSON.stringify(bad))} holds a control character — a ` +
+          "tracker's recorded scope heads a section of the rules file and names the tracker in emitted " +
+          "instructions, so it cannot hold one. Nothing was written.\n");
+        process.exit(1);
+      }
+    }
+  }
   const state = loadState();
   const role = str(f.role) || "primary";
   if (role !== "primary" && role !== "secondary") {
@@ -39,9 +56,29 @@ export function setTracker() {
   // an outward secondary would be a direction with no procedure behind it.
   if (role === "secondary" && direction !== undefined && direction !== "inward") {
     process.stderr.write(
-      `conductor: a secondary tracker is inward-only — --direction '${direction}' is not available ` +
+      `conductor: a secondary tracker is inward-only — --direction '${escapeControls(direction)}' is not available ` +
       "for --role secondary (a secondary tracker never gets outward-created issues)\n");
     process.exit(1);
+  }
+
+  // THE REPOSITORY SHAPE, for either role, before anything is written. A github-issues repo is
+  // placed in an emitted `gh issue list --repo …` line, so a value that could alter that command is
+  // refused here rather than escaped there. `--remove` is exempt ON THE SECONDARY ROLE ONLY: that
+  // branch matches the recorded value exactly and writes nothing new, so a legacy malformed entry
+  // stays removable. The primary branch has no remove handler — `--remove` there falls through to
+  // the merge, which SAVES `--repo` — so exempting it would write the refused value (Gate 2 E-C1).
+  // The refused value is quoted through escapeControls(), so the refusal cannot itself carry a
+  // control character.
+  {
+    const system = str(f.system) || (role === "primary" && state.tracker ? state.tracker.system : undefined);
+    const repo = str(f.repo);
+    const removingSecondary = role === "secondary" && !!f.remove;
+    if (system === "github-issues" && repo !== undefined && !removingSecondary && !isGithubRepo(repo)) {
+      process.stderr.write(`conductor: --repo ${escapeControls(JSON.stringify(repo))} is not a GitHub repository — ` +
+        "a github-issues tracker records its repo as owner/name, or HOST/owner/name for GitHub Enterprise (letters, digits, `-`, and `.`/`_` in the name). " +
+        "Nothing was written.\n");
+      process.exit(1);
+    }
   }
 
   if (role === "secondary") {
@@ -57,15 +94,15 @@ export function setTracker() {
     if (f.remove) {
       const removed = removeSecondaryTracker(state, { system, repo, projectKey });
       if (!removed) {
-        process.stderr.write(`conductor: no matching secondary tracker (${system}${repo ? ` ${repo}` : ` ${projectKey}`})\n`);
+        process.stderr.write(`conductor: no matching secondary tracker (${escapeControls(`${system}${repo ? ` ${repo}` : ` ${projectKey}`}`)})\n`);
         process.exit(1);
       }
       const saved = saveState(state);
       writeRules(resolvePlatform({}, state));
       render();
       reportSave(saved, {
-        changed: `conductor: secondary tracker removed (${system}${repo ? ` ${repo}` : ` ${projectKey}`})`,
-        unchanged: `conductor: no secondary tracker matched (${system}${repo ? ` ${repo}` : ` ${projectKey}`}) — ` +
+        changed: `conductor: secondary tracker removed (${escapeControls(`${system}${repo ? ` ${repo}` : ` ${projectKey}`}`)})`,
+        unchanged: `conductor: no secondary tracker matched (${escapeControls(`${system}${repo ? ` ${repo}` : ` ${projectKey}`}`)}) — ` +
           `${STATE_UNCHANGED} (the rules block and PROJECT.md were re-rendered)`,
       });
       return;
@@ -86,7 +123,7 @@ export function setTracker() {
     writeRules(resolvePlatform({}, state));
     render();
     reportSave(saved, {
-      changed: `conductor: secondary tracker set (${entry.system}${entry.repo ? ` ${entry.repo}` : ` ${entry.projectKey}`})`,
+      changed: `conductor: secondary tracker set (${escapeControls(`${entry.system}${entry.repo ? ` ${entry.repo}` : ` ${entry.projectKey}`}`)})`,
       unchanged: `conductor: that secondary tracker was already recorded exactly so — ` +
         `${STATE_UNCHANGED} (the rules block and PROJECT.md were re-rendered)`,
     });
@@ -104,6 +141,32 @@ export function setTracker() {
   // list would silently re-scope work that was deliberately kept out of the primary mirror.
   const isNew = !(state.tracker && state.tracker.system);
   const t = { ...(state.tracker || {}) };
+  // A VENDOR SWITCH — `--system` names a system different from the one recorded. Two things a plain
+  // merge would carry across silently (repro.txt §B9):
+  //   scope: `repo`, `projectKey` and `instance` belong to the tracker they were recorded for, so
+  //     each one this call does not re-supply is DROPPED and named — carried over, every heading,
+  //     listing step and derived id would name the old tracker;
+  //   direction: a primary with no recorded direction resolves by system, so switching the system
+  //     alone would turn outward creation on or off. Unless `--direction` is given, a recorded
+  //     direction is kept, and an unrecorded one is RECORDED as what the old tracker resolved to.
+  //   `statusIntent` and `mechanism` are kept — they describe how the user works, not where.
+  const notices = [];
+  const previous = state.tracker && state.tracker.system ? state.tracker : null;
+  if (previous && str(f.system) !== undefined && str(f.system) !== previous.system) {
+    const resupplied = { repo: str(f.repo), projectKey: str(f.project), instance: str(f.instance) };
+    for (const field of ["repo", "projectKey", "instance"]) {
+      if (t[field] !== undefined && resupplied[field] === undefined) {
+        notices.push(`conductor: dropped ${field}=${escapeControls(JSON.stringify(t[field]))} recorded for ${escapeControls(previous.system)}`);
+        delete t[field];
+      }
+    }
+    if (direction === undefined && t.direction === undefined) {
+      const kept = directionOf(previous);
+      t.direction = kept;
+      notices.push(`conductor: direction ${kept} recorded — kept from the previous ${escapeControls(previous.system)} tracker, which ` +
+        `resolved to it; set-tracker --direction <${KNOWN_TRACKER_DIRECTIONS.join("|")}> to change it`);
+    }
+  }
   if (str(f.system) !== undefined) t.system = str(f.system);
   if (str(f.instance) !== undefined) t.instance = str(f.instance);
   if (str(f.project) !== undefined) t.projectKey = str(f.project);
@@ -130,10 +193,11 @@ export function setTracker() {
   if (isNew && t.direction === undefined) t.direction = "inward";
   state.tracker = t;
   const saved = saveState(state);
+  for (const line of notices) process.stderr.write(`${line}\n`);
   writeRules(resolvePlatform({}, state));   // refresh CLAUDE.md so the agent sees its new tracker-sync responsibility
   render();
   reportSave(saved, {
-    changed: `conductor: tracker set (${t.system}${t.projectKey ? ` ${t.projectKey}` : ""})`,
+    changed: `conductor: tracker set (${escapeControls(`${t.system}${t.projectKey ? ` ${t.projectKey}` : ""}`)})`,
     unchanged: `conductor: the primary tracker was already recorded exactly so — ${STATE_UNCHANGED} ` +
       "(the rules block and PROJECT.md were re-rendered)",
   });

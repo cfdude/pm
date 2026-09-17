@@ -40,7 +40,7 @@ Writes `epic.claim = {session, claimedAt, ttlMinutes}` in `.conductor/state.json
 - **The epic id is the one positional, and it may come after the flags.** `--steal` and `--repo`
   take no value, so `claim --steal e1 --session s2` claims `e1`. `--id e1` in its place is
   diagnosed with the line you meant. A token that only looks like a flag is refused rather than
-  skipped — `claim --repo --session s --Steal` used to record the repo claim, and now prints
+  skipped — `claim --repo --session s --Steal`<!-- pm:refused unknown-flag --> used to record the repo claim, and now prints
   `conductor: unknown flag --Steal for claim — it accepts: --session, --ttl, --steal, --repo, --force`.
   `--force` belongs to the state write, not to the claim, and does not override a live claim —
   that is `--steal`.

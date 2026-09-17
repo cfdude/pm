@@ -14,6 +14,8 @@
 // scenario phrased "the epic carries outcome: unknown" is a claim about the READER
 // (outcomeOf), not about a flat field.
 
+import { escapeControls } from "./constants.mjs";
+
 /** The terminal outcomes. `unknown` is never an agent's answer — it records that nobody was
  *  asked, which is why only the engine ever writes it (see engineStamp).
  *
@@ -72,10 +74,10 @@ const nonEmpty = (s) => typeof s === "string" && s.trim() !== "";
  *  subject, and a disposition recorded without one is the silence this capability removes. */
 export function dispositionError({ outcome, reason } = {}) {
   if (!KNOWN_OUTCOMES.includes(outcome)) {
-    return `outcome '${outcome}' is not one of ${KNOWN_OUTCOMES.join("|")}`;
+    return `outcome '${escapeControls(outcome)}' is not one of ${KNOWN_OUTCOMES.join("|")}`;
   }
   if (outcome !== "delivered" && !nonEmpty(reason)) {
-    return `outcome '${outcome}' requires a non-empty reason (only 'delivered' may omit one)`;
+    return `outcome '${escapeControls(outcome)}' requires a non-empty reason (only 'delivered' may omit one)`;
   }
   return null;
 }
@@ -168,10 +170,10 @@ export function correctionNote(disposition) {
  *  exists and prefers the epic's existing `completedAt` over the migration clock. */
 export function engineStamp(recordedBy, { outcome = "unknown", reason, recordedAt } = {}) {
   if (!ENGINE_STAMP_TOKENS.includes(recordedBy)) {
-    throw new Error(`recordedBy '${recordedBy}' is not one of ${ENGINE_STAMP_TOKENS.join("|")}`);
+    throw new Error(`recordedBy '${escapeControls(recordedBy)}' is not one of ${ENGINE_STAMP_TOKENS.join("|")}`);
   }
   if (!KNOWN_OUTCOMES.includes(outcome)) {
-    throw new Error(`outcome '${outcome}' is not one of ${KNOWN_OUTCOMES.join("|")}`);
+    throw new Error(`outcome '${escapeControls(outcome)}' is not one of ${KNOWN_OUTCOMES.join("|")}`);
   }
   const record = { outcome, recordedAt: recordedAt || new Date().toISOString(), recordedBy };
   if (nonEmpty(reason)) record.reason = reason.trim();
@@ -363,7 +365,7 @@ export const KNOWN_STORY_DISPOSITIONS = ["wont-do"];
  *  one rule rather than two. */
 export function storyDispositionError({ state, reason } = {}) {
   if (!KNOWN_STORY_DISPOSITIONS.includes(state)) {
-    return `story disposition '${state}' is not one of ${KNOWN_STORY_DISPOSITIONS.join("|")}`;
+    return `story disposition '${escapeControls(state)}' is not one of ${KNOWN_STORY_DISPOSITIONS.join("|")}`;
   }
   if (!nonEmpty(reason)) return `--${state} requires a reason — a terminal state with no recorded why is the silence this records`;
   return null;

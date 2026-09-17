@@ -1,0 +1,1449 @@
+judged:engine          scripts/conductor.mjs:243 [showEngineBanner] ${} pluginVersion() || "unknown"
+judged:engine          scripts/conductor.mjs:243 [showEngineBanner] ${} path.dirname(fileURLToPath(import.meta.url))
+judged:engine          scripts/conductor.mjs:349 [showEngineBanner] ${} platform
+judged:passthrough     scripts/conductor.mjs:183 [helpAt] + verdict.message
+judged:justified       scripts/conductor.mjs:359 [showEngineBanner] + rulesTarget(resolvePlatform({ platform: declared }, loadState()), ROOT)
+escaped                scripts/lib/active-pointer.mjs:66 [owedReconcileNotice] ${} escapeControls(e.id)
+escaped                scripts/lib/active-pointer.mjs:67 [owedReconcileNotice] ${} escapeControls(d)
+literal                scripts/lib/active-pointer.mjs:67 [owedReconcileNotice] ${} owed.map(d => `'${escapeControls(d)}'`).join(", ")
+escaped                scripts/lib/active-pointer.mjs:69 [owedReconcileNotice] ${} printedId(e.id)
+escaped                scripts/lib/active-pointer.mjs:69 [owedReconcileNotice] ${} orNoRemedy(() => `\`record-reconcile ${printedId(e.id)} --detour <detourId> --verdict valid|invalidated\``)
+judged:engine          scripts/lib/active-pointer.mjs:87 [staleMarker] ${} d
+escaped                scripts/lib/active-pointer.mjs:98 [setActive] ${} escapeControls(id)
+escaped                scripts/lib/active-pointer.mjs:100 [setActive] ${} escapeControls(id)
+escaped                scripts/lib/active-pointer.mjs:108 [setActive] ${} escapeControls(id)
+escaped                scripts/lib/active-pointer.mjs:109 [setActive] ${} escapeControls(id)
+literal                scripts/lib/active-pointer.mjs:109 [setActive] ${} STATE_UNCHANGED
+literal                scripts/lib/active-pointer.mjs:128 [clearActive] ${} STATE_UNCHANGED
+literal                scripts/lib/active-pointer.mjs:67 [owedReconcileNotice] + (owed.length ? ` against ${owed.map(d => `'${escapeControls(d)}'`).join(", ")}` : "")
+judged:engine          scripts/lib/activity-log.mjs:75 [setActivityLog] ${} arg
+judged:engine          scripts/lib/activity-log.mjs:76 [setActivityLog] ${} activityDir()
+literal                scripts/lib/activity-log.mjs:75 [setActivityLog] ${} arg === "on" ? ` — writing to ${activityDir()} (git-ignored). Read it with \`activity\`.` : " — nothing further is recorded. What was already recorded is kept."
+judged:engine          scripts/lib/activity-log.mjs:78 [setActivityLog] ${} arg
+literal                scripts/lib/activity-log.mjs:78 [setActivityLog] ${} STATE_UNCHANGED
+judged:not-output      scripts/lib/activity-log.mjs:98 [segmentName] ${} at.toISOString().replace(/[:.]/g, "-")
+judged:not-output      scripts/lib/activity-log.mjs:261 [diffEvents] ${} w && w.gate
+not-output             scripts/lib/activity-log.mjs:171 [appendEvents] + events.map(e => JSON.stringify(e)).join("\n")
+judged:engine          scripts/lib/activity-report.mjs:103 [hrs] ${} (ms / HOUR).toFixed(1)
+literal                scripts/lib/activity-report.mjs:212 [formatReport] ${} enabled === null ? " (the log may be off)" : (enabled ? "" : " (and none will be while it is off)")
+sink                   scripts/lib/activity-report.mjs:212 [formatReport] ${} dir
+sink                   scripts/lib/activity-report.mjs:215 [formatReport] ${} r.events
+sink                   scripts/lib/activity-report.mjs:215 [formatReport] ${} r.from
+sink                   scripts/lib/activity-report.mjs:215 [formatReport] ${} r.to
+sink                   scripts/lib/activity-report.mjs:219 [formatReport] ${} r.malformed
+sink                   scripts/lib/activity-report.mjs:223 [formatReport] ${} r.pickupMedianMs === null ? "no epic was picked up in this window" : hrs(r.pickupMedianMs)
+sink                   scripts/lib/activity-report.mjs:224 [formatReport] ${} r.neverPickedUp
+sink                   scripts/lib/activity-report.mjs:226 [formatReport] ${} p.epic
+sink                   scripts/lib/activity-report.mjs:226 [formatReport] ${} p.waitedMs === null ? "never picked up" : hrs(p.waitedMs)
+sink                   scripts/lib/activity-report.mjs:231 [formatReport] ${} r.detours.push
+sink                   scripts/lib/activity-report.mjs:231 [formatReport] ${} r.detours.pop
+sink                   scripts/lib/activity-report.mjs:232 [formatReport] ${} epic
+sink                   scripts/lib/activity-report.mjs:232 [formatReport] ${} n
+sink                   scripts/lib/activity-report.mjs:239 [formatReport] ${} k
+sink                   scripts/lib/activity-report.mjs:239 [formatReport] ${} v
+literal                scripts/lib/activity-report.mjs:241 [formatReport] ${} r.reroutes.length
+sink                   scripts/lib/activity-report.mjs:242 [formatReport] ${} x.epic
+sink                   scripts/lib/activity-report.mjs:242 [formatReport] ${} x.from
+sink                   scripts/lib/activity-report.mjs:242 [formatReport] ${} x.to
+sink                   scripts/lib/activity-report.mjs:242 [formatReport] ${} x.at
+sink                   scripts/lib/activity-report.mjs:247 [formatReport] ${} g.at
+sink                   scripts/lib/activity-report.mjs:247 [formatReport] ${} g.epic
+sink                   scripts/lib/activity-report.mjs:247 [formatReport] ${} g.gate
+sink                   scripts/lib/activity-report.mjs:247 [formatReport] ${} g.gate
+sink                   scripts/lib/activity-report.mjs:247 [formatReport] ${} g.verdict
+literal                scripts/lib/activity-report.mjs:247 [formatReport] ${} g.withdrawn ? `${g.gate} withdrawn` : `${g.gate}=${g.verdict}`
+sink                   scripts/lib/activity-report.mjs:254 [formatReport] ${} r.outOfBand.covered
+sink                   scripts/lib/activity-report.mjs:257 [formatReport] ${} r.outOfBand.missingCount
+sink                   scripts/lib/activity-report.mjs:262 [formatReport] ${} r.outOfBand.afterLast
+sink                   scripts/lib/activity-report.mjs:271 [formatReport] ${} s
+sink                   scripts/lib/activity-report.mjs:271 [formatReport] ${} n
+judged:passthrough     scripts/lib/activity-report.mjs:304 [activity] ${} e.message
+sink                   scripts/lib/activity-report.mjs:258 [formatReport] + r.outOfBand.missing.join(", ")
+literal                scripts/lib/activity-report.mjs:259 [formatReport] + (r.outOfBand.missingCount > r.outOfBand.missing.length ? ", …" : "")
+judged:json            scripts/lib/activity-report.mjs:309 [activity] + JSON.stringify({ enabled: state ? activityEnabled(state) : null, ...report }, null, 2)
+judged:escaped         scripts/lib/activity-report.mjs:312 [activity] + formatReport(report, { enabled: state ? activityEnabled(state) : null })
+judged:engine          scripts/lib/add-epic.mjs:115 [valuelessFlagError] ${} flag
+judged:engine          scripts/lib/add-epic.mjs:115 [valuelessFlagError] ${} requires
+escaped                scripts/lib/add-epic.mjs:157 [parseLinkFlags] ${} escapeControls(s)
+escaped                scripts/lib/add-epic.mjs:165 [parseLinkFlags] ${} escapeControls(s)
+escaped                scripts/lib/add-epic.mjs:165 [parseLinkFlags] ${} escapeControls(epic)
+escaped                scripts/lib/add-epic.mjs:262 [planHierarchy] ${} escapeControls(parent)
+escaped                scripts/lib/add-epic.mjs:288 [planHierarchy] ${} escapeControls(parent)
+escaped                scripts/lib/add-epic.mjs:288 [planHierarchy] ${} escapeControls(cycle.join(" -> "))
+escaped                scripts/lib/add-epic.mjs:328 [parentError] ${} escapeControls(id)
+escaped                scripts/lib/add-epic.mjs:330 [parentError] ${} escapeControls(parent)
+escaped                scripts/lib/add-epic.mjs:334 [parentError] ${} escapeControls(parent)
+escaped                scripts/lib/add-epic.mjs:334 [parentError] ${} escapeControls(id)
+judged:passthrough     scripts/lib/add-epic.mjs:358 [addEpic] ${} e.message
+judged:engine          scripts/lib/add-epic.mjs:361 [addEpic] ${} EPIC_ID_FORMAT.source
+literal                scripts/lib/add-epic.mjs:365 [addEpic] ${} KNOWN_LANES.join("|")
+literal                scripts/lib/add-epic.mjs:369 [addEpic] ${} KNOWN_STATUSES.join("|")
+escaped                scripts/lib/add-epic.mjs:373 [addEpic] ${} escapeControls(id)
+escaped                scripts/lib/add-epic.mjs:396 [addEpic] ${} escapeControls(externalId)
+escaped                scripts/lib/add-epic.mjs:396 [addEpic] ${} escapeControls(dup.id)
+judged:passthrough     scripts/lib/add-epic.mjs:408 [addEpic] ${} e.message
+judged:passthrough     scripts/lib/add-epic.mjs:413 [addEpic] ${} perr
+escaped                scripts/lib/add-epic.mjs:464 [addEpic] ${} escapeControls(id)
+judged:engine          scripts/lib/add-epic.mjs:464 [addEpic] ${} lane
+judged:engine          scripts/lib/add-epic.mjs:464 [addEpic] ${} status
+escaped                scripts/lib/add-epic.mjs:469 [addEpic] ${} escapeControls(id)
+literal                scripts/lib/add-epic.mjs:469 [addEpic] ${} STATE_UNCHANGED
+judged:passthrough     scripts/lib/add-epic.mjs:125 [requireFlagValues] + err
+judged:json            scripts/lib/add-epic.mjs:319 [planHierarchy] + JSON.stringify(plan)
+escaped                scripts/lib/add-many.mjs:29 [addMany] ${} escapeControls(from)
+judged:passthrough     scripts/lib/add-many.mjs:44 [addMany] ${} msg
+escaped                scripts/lib/add-many.mjs:61 [addMany] ${} escapeControls(id)
+judged:engine          scripts/lib/add-many.mjs:61 [addMany] ${} EPIC_ID_FORMAT.source
+escaped                scripts/lib/add-many.mjs:62 [addMany] ${} escapeControls(id)
+escaped                scripts/lib/add-many.mjs:63 [addMany] ${} escapeControls(id)
+escaped                scripts/lib/add-many.mjs:66 [addMany] ${} escapeControls(id)
+escaped                scripts/lib/add-many.mjs:66 [addMany] ${} escapeControls(unknownKeys.join(", "))
+judged:engine          scripts/lib/add-many.mjs:67 [addMany] ${} allowedKeys.join(", ")
+escaped                scripts/lib/add-many.mjs:77 [addMany] ${} escapeControls(id)
+escaped                scripts/lib/add-many.mjs:81 [addMany] ${} escapeControls(id)
+escaped                scripts/lib/add-many.mjs:81 [addMany] ${} escapeControls(JSON.stringify(s))
+escaped                scripts/lib/add-many.mjs:84 [addMany] ${} escapeControls(id)
+escaped                scripts/lib/add-many.mjs:84 [addMany] ${} escapeControls(title)
+escaped                scripts/lib/add-many.mjs:103 [addMany] ${} escapeControls(id)
+judged:engine          scripts/lib/add-many.mjs:103 [addMany] ${} k
+escaped                scripts/lib/add-many.mjs:103 [addMany] ${} escapeControls(JSON.stringify(e[k]))
+escaped                scripts/lib/add-many.mjs:106 [addMany] ${} escapeControls(id)
+literal                scripts/lib/add-many.mjs:106 [addMany] ${} KNOWN_LANES.join("|")
+escaped                scripts/lib/add-many.mjs:108 [addMany] ${} escapeControls(id)
+literal                scripts/lib/add-many.mjs:108 [addMany] ${} KNOWN_STATUSES.join("|")
+escaped                scripts/lib/add-many.mjs:118 [addMany] ${} escapeControls(id)
+escaped                scripts/lib/add-many.mjs:118 [addMany] ${} escapeControls(l.type)
+literal                scripts/lib/add-many.mjs:118 [addMany] ${} KNOWN_LINK_TYPES.join("|")
+literal                scripts/lib/add-many.mjs:178 [addMany] ${} incoming.length
+literal                scripts/lib/add-many.mjs:180 [addMany] ${} STATE_UNCHANGED
+judged:engine          scripts/lib/archive-gate.mjs:35 [outstandingSummary] ${} p.done
+judged:engine          scripts/lib/archive-gate.mjs:35 [outstandingSummary] ${} p.total
+judged:sink-flow       scripts/lib/archive-gate.mjs:164 [gateTableRows] ${} n
+escaped                scripts/lib/archive-gate.mjs:167 [gateTableRows] ${} escapeControls(String(withdrawal.reason ?? ""))
+escaped                scripts/lib/archive-gate.mjs:222 [gateRemedy] ${} printedId(id)
+escaped                scripts/lib/archive-gate.mjs:223 [gateRemedy] ${} printedId(id)
+judged:engine          scripts/lib/archive-gate.mjs:223 [gateRemedy] ${} base
+judged:engine          scripts/lib/archive-gate.mjs:223 [gateRemedy] ${} head
+judged:engine          scripts/lib/archive-gate.mjs:253 [dispositionInvocation] ${} outcomes.join("|")
+escaped                scripts/lib/archive-gate.mjs:254 [dispositionInvocation] ${} printedId(epic.id)
+judged:engine          scripts/lib/archive-gate.mjs:254 [dispositionInvocation] ${} echoed.join(" ")
+literal                scripts/lib/archive-gate.mjs:254 [dispositionInvocation] ${} echoed.length ? ` ${echoed.join(" ")}` : ""
+judged:engine          scripts/lib/archive-gate.mjs:254 [dispositionInvocation] ${} template
+judged:engine          scripts/lib/archive-gate.mjs:262 [dispositionInvocation] ${} f
+literal                scripts/lib/archive-gate.mjs:264 [dispositionInvocation] ${} DEFERRAL_PLACEHOLDER
+judged:passthrough     scripts/lib/archive-gate.mjs:284 [blockedDelivered] ${} o.detail
+escaped                scripts/lib/archive-gate.mjs:295 [deliveredArchiveInvocation] ${} printedId(epic.id)
+judged:engine          scripts/lib/archive-gate.mjs:295 [deliveredArchiveInvocation] ${} f
+literal                scripts/lib/archive-gate.mjs:295 [deliveredArchiveInvocation] ${} carry.map(f => ` ${f}`).join("")
+judged:escaped         scripts/lib/archive-gate.mjs:401 [DELIVERED_OBLIGATIONS] ${} esc(staleness.headSha)
+literal                scripts/lib/archive-gate.mjs:402 [DELIVERED_OBLIGATIONS] ${} staleness.uncovered.map(esc).join(", ")
+literal                scripts/lib/archive-gate.mjs:406 [DELIVERED_OBLIGATIONS] ${} staleness.malformed.map(v => escapeControls(JSON.stringify(v))).join(", ")
+literal                scripts/lib/archive-gate.mjs:419 [DELIVERED_OBLIGATIONS] ${} staleness.withdrawn.length
+literal                scripts/lib/archive-gate.mjs:419 [DELIVERED_OBLIGATIONS] ${} staleness.withdrawn.map(w => escapeControls(String(w.sha))).join(", ")
+escaped                scripts/lib/archive-gate.mjs:423 [DELIVERED_OBLIGATIONS] ${} printedId(epic.id)
+literal                scripts/lib/archive-gate.mjs:423 [DELIVERED_OBLIGATIONS] ${} REPLACING
+judged:escaped         scripts/lib/archive-gate.mjs:432 [DELIVERED_OBLIGATIONS] ${} summary.outstanding
+judged:escaped         scripts/lib/archive-gate.mjs:432 [DELIVERED_OBLIGATIONS] ${} summary.claimed
+escaped                scripts/lib/archive-gate.mjs:437 [DELIVERED_OBLIGATIONS] ${} printedId(epic.id)
+escaped                scripts/lib/archive-gate.mjs:495 [archiveGate] ${} escapeControls(epic.id)
+literal                scripts/lib/archive-gate.mjs:496 [archiveGate] ${} AGENT_OUTCOMES.join("|")
+escaped                scripts/lib/archive-gate.mjs:501 [archiveGate] ${} escapeControls(epic.id)
+escaped                scripts/lib/archive-gate.mjs:501 [archiveGate] ${} escapeControls(outcome)
+literal                scripts/lib/archive-gate.mjs:502 [archiveGate] ${} AGENT_OUTCOMES.join("|")
+escaped                scripts/lib/archive-gate.mjs:506 [archiveGate] ${} escapeControls(epic.id)
+judged:passthrough     scripts/lib/archive-gate.mjs:506 [archiveGate] ${} invalid
+escaped                scripts/lib/archive-gate.mjs:530 [archiveGate] ${} escapeControls(epic.id)
+judged:passthrough     scripts/lib/archive-gate.mjs:530 [archiveGate] ${} cerr
+escaped                scripts/lib/archive-gate.mjs:533 [archiveGate] ${} escapeControls(epic.id)
+judged:engine          scripts/lib/archive-gate.mjs:534 [archiveGate] ${} outcomeOf(epic)
+escaped                scripts/lib/archive-gate.mjs:534 [archiveGate] ${} escapeControls(existing.recordedAt)
+literal                scripts/lib/archive-gate.mjs:534 [archiveGate] ${} existing.recordedAt ? `, recorded ${escapeControls(existing.recordedAt)}` : ""
+escaped                scripts/lib/archive-gate.mjs:546 [archiveGate] ${} escapeControls(epic.id)
+escaped                scripts/lib/archive-gate.mjs:575 [archiveGate] ${} escapeControls(epic.id)
+judged:passthrough     scripts/lib/archive-gate.mjs:575 [archiveGate] ${} gate2Failure.detail
+judged:passthrough     scripts/lib/archive-gate.mjs:585 [archiveGate] ${} refusal
+escaped                scripts/lib/archive-gate.mjs:585 [archiveGate] ${} escapeControls(JSON.stringify(withdrawn ? withdrawn.reason : ""))
+judged:passthrough     scripts/lib/archive-gate.mjs:587 [archiveGate] ${} lines[0]
+judged:passthrough     scripts/lib/archive-gate.mjs:591 [archiveGate] ${} refusal
+judged:passthrough     scripts/lib/archive-gate.mjs:591 [archiveGate] ${} lines[0]
+judged:passthrough     scripts/lib/archive-gate.mjs:603 [archiveGate] ${} refusal
+judged:passthrough     scripts/lib/archive-gate.mjs:604 [archiveGate] ${} lines[0]
+judged:passthrough     scripts/lib/archive-gate.mjs:605 [archiveGate] ${} lines[1]
+judged:passthrough     scripts/lib/archive-gate.mjs:609 [archiveGate] ${} refusal
+judged:passthrough     scripts/lib/archive-gate.mjs:609 [archiveGate] ${} lines[0]
+literal                scripts/lib/archive-gate.mjs:636 [archiveGate] ${} items.length === 1 ? "y is" : "ies are"
+judged:engine          scripts/lib/archive-gate.mjs:637 [archiveGate] ${} i.n
+escaped                scripts/lib/archive-gate.mjs:637 [archiveGate] ${} escapeControls(i.title)
+escaped                scripts/lib/archive-gate.mjs:644 [archiveGate] ${} asCode(obligationRemedy(epic, handoffFailure)[0])
+literal                scripts/lib/archive-gate.mjs:650 [archiveGate] ${} LIFECYCLE_MARKER
+escaped                scripts/lib/archive-gate.mjs:653 [archiveGate] ${} escapeControls(epic.id)
+judged:passthrough     scripts/lib/archive-gate.mjs:653 [archiveGate] ${} handoffFailure.detail
+judged:passthrough     scripts/lib/archive-gate.mjs:653 [archiveGate] ${} named
+judged:passthrough     scripts/lib/archive-gate.mjs:653 [archiveGate] ${} remedy
+literal                scripts/lib/archive-gate.mjs:637 [archiveGate] + items.map(i => ` [ ] ${i.n}. ${escapeControls(i.title)}`).join("\n")
+judged:engine          scripts/lib/argv-surface.mjs:146 [checkCommandLine] ${} badFlag.name
+escaped                scripts/lib/argv-surface.mjs:146 [checkCommandLine] ${} escapeControls(badFlag.token)
+judged:engine          scripts/lib/argv-surface.mjs:147 [checkCommandLine] ${} verb
+judged:engine          scripts/lib/argv-surface.mjs:147 [checkCommandLine] ${} badFlag.name
+judged:engine          scripts/lib/argv-surface.mjs:185 [surplusMessage] ${} verb
+judged:engine          scripts/lib/argv-surface.mjs:185 [surplusMessage] ${} arity.max === 0 ? "no positional arguments" : arity.form
+escaped                scripts/lib/argv-surface.mjs:186 [surplusMessage] ${} escapeControls(surplus.token)
+judged:engine          scripts/lib/argv-surface.mjs:188 [surplusMessage] ${} prev.name
+escaped                scripts/lib/argv-surface.mjs:190 [surplusMessage] ${} escapeControls(surplus.token)
+judged:engine          scripts/lib/argv-surface.mjs:190 [surplusMessage] ${} prev.name
+judged:engine          scripts/lib/argv-surface.mjs:192 [surplusMessage] ${} verb
+judged:engine          scripts/lib/argv-surface.mjs:212 [undeclaredFlagMessage] ${} verb
+judged:engine          scripts/lib/argv-surface.mjs:213 [undeclaredFlagMessage] ${} verb
+escaped                scripts/lib/argv-surface.mjs:213 [undeclaredFlagMessage] ${} verb
+escaped                scripts/lib/argv-surface.mjs:213 [undeclaredFlagMessage] ${} value
+escaped                scripts/lib/argv-surface.mjs:213 [undeclaredFlagMessage] ${} rest.join(" ")
+escaped                scripts/lib/argv-surface.mjs:213 [undeclaredFlagMessage] ${} rest.length ? ` ${rest.join(" ")}` : ""
+escaped                scripts/lib/argv-surface.mjs:213 [undeclaredFlagMessage] ${} escapeControls(`${verb} ${value}${rest.length ? ` ${rest.join(" ")}` : ""}`)
+escaped                scripts/lib/argv-surface.mjs:217 [undeclaredFlagMessage] ${} escapeControls(flag.name)
+judged:engine          scripts/lib/argv-surface.mjs:217 [undeclaredFlagMessage] ${} verb
+judged:engine          scripts/lib/argv-surface.mjs:218 [undeclaredFlagMessage] ${} f
+literal                scripts/lib/argv-surface.mjs:218 [undeclaredFlagMessage] ${} accepted.map(f => `--${f}`).join(", ")
+judged:engine          scripts/lib/argv-surface.mjs:219 [undeclaredFlagMessage] ${} verb
+judged:engine          scripts/lib/argv-surface.mjs:219 [undeclaredFlagMessage] ${} pos.form
+escaped                scripts/lib/argv-surface.mjs:223 [undeclaredFlagMessage] ${} escapeControls(flag.token)
+literal                scripts/lib/argv-surface.mjs:218 [undeclaredFlagMessage] + (accepted.length ? `it accepts: ${accepted.map(f => `--${f}`).join(", ")}` : "it accepts no flags")
+judged:engine          scripts/lib/argv-surface.mjs:225 [undeclaredFlagMessage] + msg
+escaped                scripts/lib/autonomy.mjs:53 [setAutonomy] ${} escapeControls(id)
+literal                scripts/lib/autonomy.mjs:57 [setAutonomy] ${} KNOWN_AUTONOMY_LEVELS.join("|")
+literal                scripts/lib/autonomy.mjs:76 [setAutonomy] ${} KNOWN_PREAUTHORIZE_CATEGORIES.join("|")
+escaped                scripts/lib/autonomy.mjs:102 [setAutonomy] ${} escapeControls(id)
+escaped                scripts/lib/autonomy.mjs:102 [setAutonomy] ${} escapeControls(a.level)
+escaped                scripts/lib/autonomy.mjs:103 [setAutonomy] ${} escapeControls(id)
+escaped                scripts/lib/autonomy.mjs:103 [setAutonomy] ${} escapeControls(a.level)
+literal                scripts/lib/autonomy.mjs:104 [setAutonomy] ${} STATE_UNCHANGED
+judged:sink-flow       scripts/lib/briefing.mjs:28 [BRIEF_REMEDIES] ${} active.externalUrl || active.externalId
+escaped                scripts/lib/briefing.mjs:30 [BRIEF_REMEDIES] ${} printedId(active.id)
+escaped                scripts/lib/briefing.mjs:30 [BRIEF_REMEDIES] ${} orNoRemedy(() => `\`record-tracker-refresh ${printedId(active.id)} --verdict unchanged|material-change --external-updated-at <iso>\``)
+judged:sink-flow       scripts/lib/briefing.mjs:34 [BRIEF_REMEDIES] ${} e.id
+escaped                scripts/lib/briefing.mjs:34 [BRIEF_REMEDIES] ${} asCode(gateRemedy(e.id, 2))
+judged:sink-flow       scripts/lib/briefing.mjs:38 [BRIEF_REMEDIES] ${} x.epic.id
+judged:sink-flow       scripts/lib/briefing.mjs:38 [BRIEF_REMEDIES] ${} withdrawnArchiveNote(x)
+escaped                scripts/lib/briefing.mjs:38 [BRIEF_REMEDIES] ${} asCode(gateRemedy(x.epic.id, 2))
+judged:sink-flow       scripts/lib/briefing.mjs:42 [BRIEF_REMEDIES] ${} tracker.system
+judged:sink-flow       scripts/lib/briefing.mjs:46 [BRIEF_REMEDIES] ${} e.id
+judged:sink-flow       scripts/lib/briefing.mjs:59 [BRIEF_REMEDIES] ${} count
+sink                   scripts/lib/briefing.mjs:75 [buildBrief] ${} stamped
+sink                   scripts/lib/briefing.mjs:75 [buildBrief] ${} newest
+sink                   scripts/lib/briefing.mjs:76 [buildBrief] ${} h
+sink                   scripts/lib/briefing.mjs:82 [buildBrief] ${} stamped
+sink                   scripts/lib/briefing.mjs:82 [buildBrief] ${} running
+sink                   scripts/lib/briefing.mjs:83 [buildBrief] ${} h
+sink                   scripts/lib/briefing.mjs:109 [buildBrief] ${} active.id
+sink                   scripts/lib/briefing.mjs:109 [buildBrief] ${} active.lane
+sink                   scripts/lib/briefing.mjs:109 [buildBrief] ${} active.role
+sink                   scripts/lib/briefing.mjs:109 [buildBrief] ${} active.priority
+sink                   scripts/lib/briefing.mjs:109 [buildBrief] ${} autonomous
+sink                   scripts/lib/briefing.mjs:109 [buildBrief] ${} bar(active.progress)
+sink                   scripts/lib/briefing.mjs:109 [buildBrief] ${} staleMarker(active)
+sink                   scripts/lib/briefing.mjs:117 [buildBrief] ${} activeEpic.id
+sink                   scripts/lib/briefing.mjs:145 [buildBrief] ${} skipped
+literal                scripts/lib/briefing.mjs:150 [buildBrief] ${} state.detourStack.length
+sink                   scripts/lib/briefing.mjs:153 [buildBrief] ${} f.pausedEpic
+sink                   scripts/lib/briefing.mjs:153 [buildBrief] ${} f.reason
+sink                   scripts/lib/briefing.mjs:163 [buildBrief] ${} days
+sink                   scripts/lib/briefing.mjs:163 [buildBrief] ${} [days === null ? null : `paused ${days}d`, note].filter(Boolean).join(" · ")
+sink                   scripts/lib/briefing.mjs:165 [buildBrief] ${} f.spawnedDetour
+sink                   scripts/lib/briefing.mjs:167 [buildBrief] ${} f.pausedEpic
+sink                   scripts/lib/briefing.mjs:167 [buildBrief] ${} f.spawnedDetour
+judged:sink-flow       scripts/lib/briefing.mjs:178 [buildBrief] ${} e.parent
+sink                   scripts/lib/briefing.mjs:179 [buildBrief] ${} e.id
+sink                   scripts/lib/briefing.mjs:179 [buildBrief] ${} e.priority
+sink                   scripts/lib/briefing.mjs:179 [buildBrief] ${} e.lane
+sink                   scripts/lib/briefing.mjs:179 [buildBrief] ${} e.status
+sink                   scripts/lib/briefing.mjs:179 [buildBrief] ${} pa
+sink                   scripts/lib/briefing.mjs:179 [buildBrief] ${} bar(e.progress)
+sink                   scripts/lib/briefing.mjs:179 [buildBrief] ${} staleMarker(e)
+sink                   scripts/lib/briefing.mjs:181 [buildBrief] ${} queued.length - NEXT_CAP
+sink                   scripts/lib/briefing.mjs:182 [buildBrief] ${} note
+judged:sink-flow       scripts/lib/briefing.mjs:185 [buildBrief] ${} l
+judged:sink-flow       scripts/lib/briefing.mjs:185 [buildBrief] ${} counts[l]
+judged:sink-flow       scripts/lib/briefing.mjs:186 [buildBrief] ${} l
+judged:sink-flow       scripts/lib/briefing.mjs:186 [buildBrief] ${} counts[l]
+sink                   scripts/lib/briefing.mjs:187 [buildBrief] ${} [...ordered, ...unknown].join(" · ")
+sink                   scripts/lib/briefing.mjs:198 [buildBrief] ${} n
+sink                   scripts/lib/briefing.mjs:204 [buildBrief] ${} plannedCount
+sink                   scripts/lib/briefing.mjs:216 [buildBrief] ${} releaseLine(r)
+sink                   scripts/lib/briefing.mjs:216 [buildBrief] ${} crossSpecLine(state, epics, r.id)
+sink                   scripts/lib/briefing.mjs:216 [buildBrief] ${} r.intent
+literal                scripts/lib/briefing.mjs:216 [buildBrief] ${} r.intent ? ` — ${r.intent}` : ""
+sink                   scripts/lib/briefing.mjs:216 [buildBrief] ${} r.target
+literal                scripts/lib/briefing.mjs:216 [buildBrief] ${} r.target ? ` (target: ${r.target})` : ""
+judged:sink-flow       scripts/lib/briefing.mjs:228 [buildBrief] ${} d.recordedAt.slice(0, 10)
+judged:sink-flow       scripts/lib/briefing.mjs:229 [buildBrief] ${} d.reason
+judged:sink-flow       scripts/lib/briefing.mjs:230 [buildBrief] ${} d.carriedTo
+sink                   scripts/lib/briefing.mjs:231 [buildBrief] ${} epic.id
+sink                   scripts/lib/briefing.mjs:231 [buildBrief] ${} outcomeOf(epic)
+sink                   scripts/lib/briefing.mjs:231 [buildBrief] ${} correctionMarking(d)
+sink                   scripts/lib/briefing.mjs:231 [buildBrief] ${} when
+sink                   scripts/lib/briefing.mjs:231 [buildBrief] ${} why
+sink                   scripts/lib/briefing.mjs:231 [buildBrief] ${} carried
+sink                   scripts/lib/briefing.mjs:231 [buildBrief] ${} correctionNote(d)
+sink                   scripts/lib/briefing.mjs:234 [buildBrief] ${} dispositions.length - NEXT_CAP
+sink                   scripts/lib/briefing.mjs:245 [buildBrief] ${} row.id
+sink                   scripts/lib/briefing.mjs:245 [buildBrief] ${} row.gate1
+sink                   scripts/lib/briefing.mjs:245 [buildBrief] ${} row.gate2
+sink                   scripts/lib/briefing.mjs:247 [buildBrief] ${} gated.length - NEXT_CAP
+sink                   scripts/lib/briefing.mjs:267 [buildBrief] ${} ungated.length - NEXT_CAP
+sink                   scripts/lib/briefing.mjs:279 [buildBrief] ${} withdrawnArchives.length - NEXT_CAP
+sink                   scripts/lib/briefing.mjs:289 [buildBrief] ${} e.id
+sink                   scripts/lib/briefing.mjs:289 [buildBrief] ${} e.disposition.carriedTo
+sink                   scripts/lib/briefing.mjs:290 [buildBrief] ${} e.disposition.reason
+literal                scripts/lib/briefing.mjs:290 [buildBrief] ${} e.disposition.reason ? ` — ${e.disposition.reason}` : ""
+sink                   scripts/lib/briefing.mjs:291 [buildBrief] ${} e.disposition.carriedTo
+sink                   scripts/lib/briefing.mjs:291 [buildBrief] ${} e.id
+sink                   scripts/lib/briefing.mjs:299 [buildBrief] ${} l.from
+sink                   scripts/lib/briefing.mjs:299 [buildBrief] ${} l.type
+sink                   scripts/lib/briefing.mjs:299 [buildBrief] ${} l.epic
+sink                   scripts/lib/briefing.mjs:299 [buildBrief] ${} l.reason
+literal                scripts/lib/briefing.mjs:299 [buildBrief] ${} l.reason ? ` — ${l.reason}` : ""
+judged:sink-flow       scripts/lib/briefing.mjs:324 [buildBrief] ${} tracker.system
+judged:sink-flow       scripts/lib/briefing.mjs:367 [buildBrief] ${} tracker.system
+judged:sink-flow       scripts/lib/briefing.mjs:367 [buildBrief] ${} tracker.projectKey
+literal                scripts/lib/briefing.mjs:367 [buildBrief] ${} tracker.projectKey ? ` · ${tracker.projectKey}` : ""
+judged:sink-flow       scripts/lib/briefing.mjs:368 [buildBrief] ${} st.system
+judged:sink-flow       scripts/lib/briefing.mjs:368 [buildBrief] ${} st.repo || st.projectKey
+literal                scripts/lib/briefing.mjs:368 [buildBrief] ${} st.repo || st.projectKey ? ` · ${st.repo || st.projectKey}` : ""
+sink                   scripts/lib/briefing.mjs:369 [buildBrief] ${} label
+sink                   scripts/lib/briefing.mjs:383 [buildBrief] ${} trackerCount
+sink                   scripts/lib/briefing.mjs:383 [buildBrief] ${} label
+sink                   scripts/lib/briefing.mjs:383 [buildBrief] ${} systems.join(", ")
+judged:sink-flow       scripts/lib/briefing.mjs:46 [BRIEF_REMEDIES] + unmirrored.map(e => `\`${e.id}\``).join(", ")
+literal                scripts/lib/changelog.mjs:23 [changelog] ${} since ? escapeControls(since) : "(start)"
+judged:engine          scripts/lib/changelog.mjs:25 [changelog] + secs.map(s => s.body).join("\n\n")
+judged:not-output      scripts/lib/claims.mjs:101 [writeRepoClaim] ${} p
+judged:not-output      scripts/lib/claims.mjs:101 [writeRepoClaim] ${} process.pid
+judged:not-output      scripts/lib/claims.mjs:101 [writeRepoClaim] ${} Date.now()
+judged:passthrough     scripts/lib/claims.mjs:112 [die] ${} msg
+judged:passthrough     scripts/lib/claims.mjs:119 [refuseHeld] ${} what
+escaped                scripts/lib/claims.mjs:119 [refuseHeld] ${} escapeControls(claim.session)
+escaped                scripts/lib/claims.mjs:119 [refuseHeld] ${} escapeControls(claim.claimedAt)
+judged:engine          scripts/lib/claims.mjs:120 [refuseHeld] ${} claimExpiry(claim)
+judged:passthrough     scripts/lib/claims.mjs:121 [refuseHeld] ${} verb
+literal                scripts/lib/claims.mjs:133 [ttlFrom] ${} CLAIM_MAX_TTL_MINUTES
+literal                scripts/lib/claims.mjs:152 [claim] ${} SESSION_HINT
+escaped                scripts/lib/claims.mjs:176 [claim] ${} escapeControls(stolenFrom.session)
+literal                scripts/lib/claims.mjs:177 [claim] ${} isLiveClaim(stolenFrom) ? "STOLEN while live" : "its claim had expired"
+escaped                scripts/lib/claims.mjs:180 [claim] ${} escapeControls(session)
+judged:engine          scripts/lib/claims.mjs:180 [claim] ${} claimExpiry(readRepoClaim())
+escaped                scripts/lib/claims.mjs:192 [claim] ${} escapeControls(epicId)
+escaped                scripts/lib/claims.mjs:196 [claim] ${} escapeControls(epicId)
+escaped                scripts/lib/claims.mjs:200 [claim] ${} escapeControls(epicId)
+escaped                scripts/lib/claims.mjs:204 [claim] ${} escapeControls(epicId)
+escaped                scripts/lib/claims.mjs:204 [claim] ${} escapeControls(held.session)
+literal                scripts/lib/claims.mjs:205 [claim] ${} isLiveClaim(held) ? "STOLEN while live" : "its claim had expired"
+escaped                scripts/lib/claims.mjs:210 [claim] ${} escapeControls(epicId)
+escaped                scripts/lib/claims.mjs:210 [claim] ${} escapeControls(session)
+judged:engine          scripts/lib/claims.mjs:210 [claim] ${} claimExpiry(epic.claim)
+escaped                scripts/lib/claims.mjs:211 [claim] ${} escapeControls(epicId)
+escaped                scripts/lib/claims.mjs:211 [claim] ${} escapeControls(session)
+literal                scripts/lib/claims.mjs:212 [claim] ${} STATE_UNCHANGED
+literal                scripts/lib/claims.mjs:236 [unclaim] ${} SESSION_HINT
+escaped                scripts/lib/claims.mjs:248 [unclaim] ${} escapeControls(held.session)
+escaped                scripts/lib/claims.mjs:248 [unclaim] ${} escapeControls(session)
+escaped                scripts/lib/claims.mjs:262 [unclaim] ${} escapeControls(epicId)
+escaped                scripts/lib/claims.mjs:264 [unclaim] ${} escapeControls(epicId)
+escaped                scripts/lib/claims.mjs:266 [unclaim] ${} escapeControls(epicId)
+escaped                scripts/lib/claims.mjs:269 [unclaim] ${} escapeControls(held.session)
+escaped                scripts/lib/claims.mjs:269 [unclaim] ${} escapeControls(session)
+escaped                scripts/lib/claims.mjs:274 [unclaim] ${} escapeControls(epicId)
+escaped                scripts/lib/claims.mjs:275 [unclaim] ${} escapeControls(epicId)
+literal                scripts/lib/claims.mjs:275 [unclaim] ${} STATE_UNCHANGED
+literal                scripts/lib/claims.mjs:333 [formatOwners] ${} repo.live ? "BUSY" : "STALE"
+sink                   scripts/lib/claims.mjs:333 [formatOwners] ${} repo.session
+sink                   scripts/lib/claims.mjs:333 [formatOwners] ${} repo.claimedAt
+literal                scripts/lib/claims.mjs:334 [formatOwners] ${} repo.live ? "live until" : "expired at"
+sink                   scripts/lib/claims.mjs:334 [formatOwners] ${} repo.expiresAt || "an unreadable time"
+literal                scripts/lib/claims.mjs:338 [formatOwners] ${} epics.length
+sink                   scripts/lib/claims.mjs:340 [formatOwners] ${} r.id
+literal                scripts/lib/claims.mjs:340 [formatOwners] ${} r.live ? "HELD" : "STALE"
+sink                   scripts/lib/claims.mjs:340 [formatOwners] ${} r.session
+sink                   scripts/lib/claims.mjs:340 [formatOwners] ${} r.claimedAt
+literal                scripts/lib/claims.mjs:341 [formatOwners] ${} r.live ? "live until" : "expired at"
+sink                   scripts/lib/claims.mjs:341 [formatOwners] ${} r.expiresAt || "an unreadable time"
+sink                   scripts/lib/claims.mjs:347 [formatOwners] ${} stale
+not-output             scripts/lib/claims.mjs:102 [writeRepoClaim] + JSON.stringify(claim, null, 2)
+literal                scripts/lib/claims.mjs:342 [formatOwners] + (r.epicStatus === "archived" ? " ⚠ epic is ARCHIVED" : "")
+judged:json            scripts/lib/claims.mjs:370 [owners] + JSON.stringify({ quiescent: rows.length === 0, claims: rows }, null, 2)
+judged:escaped         scripts/lib/claims.mjs:373 [owners] + formatOwners(rows)
+literal                scripts/lib/commit-watch.mjs:149 [observeLockPaths] ${} LOCK
+judged:not-output      scripts/lib/commit-watch.mjs:241 [beginObservation] ${} target
+judged:not-output      scripts/lib/commit-watch.mjs:241 [beginObservation] ${} process.pid
+judged:not-output      scripts/lib/commit-watch.mjs:148 [observeLockPaths] + commitObservePath(root)
+judged:not-output      scripts/lib/commit-watch.mjs:239 [beginObservation] + JSON.stringify({ anchor: nextAnchor || record.anchor, reported: merged })
+judged:engine          scripts/lib/constants.mjs:109 [withdrawnGate] ${} n
+judged:sink-flow       scripts/lib/constants.mjs:157 [gateSummary] ${} entry.baseSha
+judged:sink-flow       scripts/lib/constants.mjs:157 [gateSummary] ${} entry.headSha
+literal                scripts/lib/constants.mjs:159 [gateSummary] ${} artifacts.length
+literal                scripts/lib/constants.mjs:159 [gateSummary] ${} artifacts.length === 1 ? "" : "s"
+literal                scripts/lib/constants.mjs:160 [gateSummary] ${} NO_GATE_EVIDENCE
+judged:sink-flow       scripts/lib/constants.mjs:161 [gateSummary] ${} entry.reviewer
+judged:sink-flow       scripts/lib/constants.mjs:162 [gateSummary] ${} entry.verdict
+judged:sink-flow       scripts/lib/constants.mjs:162 [gateSummary] ${} evidence
+judged:sink-flow       scripts/lib/constants.mjs:162 [gateSummary] ${} who
+judged:sink-flow       scripts/lib/constants.mjs:162 [gateSummary] ${} extra
+escaped                scripts/lib/constants.mjs:199 [releaseLine] ${} escapeControls(s.id)
+judged:engine          scripts/lib/constants.mjs:199 [releaseLine] ${} s.members
+literal                scripts/lib/constants.mjs:199 [releaseLine] ${} s.members === 1 ? "" : "s"
+literal                scripts/lib/constants.mjs:199 [releaseLine] ${} s.deferred.length
+literal                scripts/lib/constants.mjs:841 [VERB_FLAGS] ${} PURGE_KINDS.join("|")
+judged:engine          scripts/lib/constants.mjs:1049 [escapeControls] ${} c.charCodeAt(0).toString(16).padStart(4, "0")
+judged:engine          scripts/lib/constants.mjs:1073 [unstorableSkipLine] ${} kind
+escaped                scripts/lib/constants.mjs:1073 [unstorableSkipLine] ${} escapeControls(name)
+judged:justified       scripts/lib/constants.mjs:1078 [shellQuote] ${} String(token).replace(/'/g, "'\\''")
+judged:engine          scripts/lib/constants.mjs:1101 [printedId] ${} kind
+judged:engine          scripts/lib/constants.mjs:1111 [noRemedyMessage] ${} kind
+escaped                scripts/lib/constants.mjs:1111 [noRemedyMessage] ${} escapeControls(id)
+judged:passthrough     scripts/lib/constants.mjs:1122 [asCode] ${} remedy
+judged:engine          scripts/lib/constants.mjs:1147 [flagInValuePositionMessage] ${} flag
+judged:engine          scripts/lib/constants.mjs:1147 [flagInValuePositionMessage] ${} requires
+escaped                scripts/lib/constants.mjs:1147 [flagInValuePositionMessage] ${} escapeControls(token)
+judged:engine          scripts/lib/constants.mjs:1149 [flagInValuePositionMessage] ${} flag
+escaped                scripts/lib/constants.mjs:1149 [flagInValuePositionMessage] ${} escapeControls(token)
+judged:sink-flow       scripts/lib/constants.mjs:1476 [mirroredEpicIdPrefix] ${} system
+judged:sink-flow       scripts/lib/constants.mjs:1476 [mirroredEpicIdPrefix] ${} slug(scope)
+judged:engine          scripts/lib/constants.mjs:1598 [warnDetachedTree] ${} tag
+literal                scripts/lib/constants.mjs:1598 [warnDetachedTree] ${} tag ? ` (at ${tag})` : ""
+judged:engine          scripts/lib/constants.mjs:1600 [warnDetachedTree] ${} writes || "state"
+escaped                scripts/lib/constants.mjs:1610 [warnRootDivergence] ${} escapeControls(d.target)
+escaped                scripts/lib/constants.mjs:1611 [warnRootDivergence] ${} escapeControls(d.cwd)
+escaped                scripts/lib/constants.mjs:1612 [warnRootDivergence] ${} escapeControls(d.target)
+judged:not-output      scripts/lib/created-at.mjs:43 [idNeedle] ${} epicId
+not-output             scripts/lib/created-at.mjs:98 [introducedAt] ${} idNeedle(epicId)
+judged:engine          scripts/lib/created-at.mjs:158 [recoverCreatedAt] ${} recovered
+judged:engine          scripts/lib/created-at.mjs:158 [recoverCreatedAt] ${} unrecoverable
+judged:engine          scripts/lib/created-at.mjs:159 [recoverCreatedAt] ${} missing
+judged:engine          scripts/lib/created-at.mjs:165 [recoverCreatedAt] ${} summary
+literal                scripts/lib/created-at.mjs:165 [recoverCreatedAt] ${} STATE_UNCHANGED
+judged:not-output      scripts/lib/cross-spec-review.mjs:99 [releaseSpecFiles] ${} r.id
+judged:not-output      scripts/lib/cross-spec-review.mjs:99 [releaseSpecFiles] ${} path.relative(r.root, abs).split(path.sep).join("/")
+literal                scripts/lib/cross-spec-review.mjs:179 [crossSpecLine] ${} NO_CROSS_SPEC_REVIEW
+literal                scripts/lib/cross-spec-review.mjs:179 [crossSpecLine] ${} specs.length
+judged:sink-flow       scripts/lib/cross-spec-review.mjs:183 [crossSpecLine] ${} entry.reviewer
+judged:sink-flow       scripts/lib/cross-spec-review.mjs:184 [crossSpecLine] ${} entry.verdict
+judged:sink-flow       scripts/lib/cross-spec-review.mjs:184 [crossSpecLine] ${} n
+literal                scripts/lib/cross-spec-review.mjs:184 [crossSpecLine] ${} n === 1 ? "" : "s"
+judged:sink-flow       scripts/lib/cross-spec-review.mjs:184 [crossSpecLine] ${} who
+judged:sink-flow       scripts/lib/cross-spec-review.mjs:185 [crossSpecLine] + crossSpecMarking(release, specs)
+judged:sink-flow       scripts/lib/dependency-order.mjs:35 [blockedWithoutDependsOnNote] ${} e.id
+escaped                scripts/lib/dependency-order.mjs:36 [blockedWithoutDependsOnNote] ${} printedId(e.id)
+escaped                scripts/lib/dependency-order.mjs:36 [blockedWithoutDependsOnNote] ${} orNoRemedy(() => `\`update-epic ${printedId(e.id)} --link "depends-on:<id>:<why>"\``)
+judged:sink-flow       scripts/lib/dependency-order.mjs:150 [dependencyNotes] ${} to.id
+judged:sink-flow       scripts/lib/dependency-order.mjs:150 [dependencyNotes] ${} eff.get(to.id)
+judged:sink-flow       scripts/lib/dependency-order.mjs:151 [dependencyNotes] ${} from.id
+judged:sink-flow       scripts/lib/dependency-order.mjs:151 [dependencyNotes] ${} from.priority
+judged:sink-flow       scripts/lib/dependency-order.mjs:151 [dependencyNotes] ${} to.id
+judged:sink-flow       scripts/lib/dependency-order.mjs:152 [dependencyNotes] ${} to.priority
+judged:sink-flow       scripts/lib/dependency-order.mjs:152 [dependencyNotes] ${} to.status
+judged:sink-flow       scripts/lib/dependency-order.mjs:152 [dependencyNotes] ${} why
+judged:sink-flow       scripts/lib/dependency-order.mjs:152 [dependencyNotes] ${} lifted
+judged:passthrough     scripts/lib/detour-stack.mjs:40 [die] ${} msg
+escaped                scripts/lib/detour-stack.mjs:115 [pushDetour] ${} escapeControls(id)
+escaped                scripts/lib/detour-stack.mjs:117 [pushDetour] ${} escapeControls(id)
+escaped                scripts/lib/detour-stack.mjs:122 [pushDetour] ${} escapeControls(detourId)
+escaped                scripts/lib/detour-stack.mjs:122 [pushDetour] ${} printedId(detourId)
+escaped                scripts/lib/detour-stack.mjs:125 [pushDetour] ${} escapeControls(detourId)
+escaped                scripts/lib/detour-stack.mjs:128 [pushDetour] ${} escapeControls(id)
+escaped                scripts/lib/detour-stack.mjs:174 [pushDetour] ${} escapeControls(detourId)
+escaped                scripts/lib/detour-stack.mjs:174 [pushDetour] ${} escapeControls(id)
+escaped                scripts/lib/detour-stack.mjs:175 [pushDetour] ${} escapeControls(d)
+literal                scripts/lib/detour-stack.mjs:175 [pushDetour] ${} owedBefore.map(d => `'${escapeControls(d)}'`).join(", ")
+escaped                scripts/lib/detour-stack.mjs:178 [pushDetour] ${} escapeControls(id)
+escaped                scripts/lib/detour-stack.mjs:178 [pushDetour] ${} escapeControls(detourId)
+judged:passthrough     scripts/lib/detour-stack.mjs:178 [pushDetour] ${} pushReport
+escaped                scripts/lib/detour-stack.mjs:182 [pushDetour] ${} escapeControls(id)
+escaped                scripts/lib/detour-stack.mjs:182 [pushDetour] ${} escapeControls(detourId)
+literal                scripts/lib/detour-stack.mjs:183 [pushDetour] ${} STATE_UNCHANGED
+escaped                scripts/lib/detour-stack.mjs:189 [pushDetour] ${} escapeControls(id)
+judged:passthrough     scripts/lib/detour-stack.mjs:189 [pushDetour] ${} note
+escaped                scripts/lib/detour-stack.mjs:221 [popDetour] ${} escapeControls(pausedEpic)
+escaped                scripts/lib/detour-stack.mjs:221 [popDetour] ${} escapeControls(expected)
+escaped                scripts/lib/detour-stack.mjs:222 [popDetour] ${} escapeControls(pausedEpic)
+escaped                scripts/lib/detour-stack.mjs:225 [popDetour] ${} escapeControls(pausedEpic)
+escaped                scripts/lib/detour-stack.mjs:227 [popDetour] ${} escapeControls(pausedEpic)
+escaped                scripts/lib/detour-stack.mjs:249 [popDetour] ${} escapeControls(detourId)
+escaped                scripts/lib/detour-stack.mjs:249 [popDetour] ${} escapeControls(detour.status)
+escaped                scripts/lib/detour-stack.mjs:253 [popDetour] ${} escapeControls(pausedEpic)
+escaped                scripts/lib/detour-stack.mjs:254 [popDetour] ${} escapeControls(pausedEpic)
+literal                scripts/lib/detour-stack.mjs:255 [popDetour] ${} STATE_UNCHANGED
+escaped                scripts/lib/detour-stack.mjs:273 [popDetour] ${} escapeControls(pausedEpic)
+escaped                scripts/lib/detour-stack.mjs:274 [popDetour] ${} escapeControls(d)
+literal                scripts/lib/detour-stack.mjs:274 [popDetour] ${} owed.map(d => `'${escapeControls(d)}'`).join(", ")
+escaped                scripts/lib/detour-stack.mjs:276 [popDetour] ${} printedId(pausedEpic)
+escaped                scripts/lib/detour-stack.mjs:276 [popDetour] ${} printedId(d)
+judged:escaped         scripts/lib/detour-stack.mjs:281 [popDetour] ${} detourId
+escaped                scripts/lib/detour-stack.mjs:122 [pushDetour] + orNoRemedy(() => `\`add-epic --id ${printedId(detourId)} ` + "…\`")
+literal                scripts/lib/detour-stack.mjs:175 [pushDetour] + (owedBefore.length ? ` against ${owedBefore.map(d => `'${escapeControls(d)}'`).join(", ")}` : "")
+literal                scripts/lib/detour-stack.mjs:274 [popDetour] + (owed.length ? ` and owes a verdict against ${owed.map(d => `'${escapeControls(d)}'`).join(", ")}` : "")
+judged:escaped         scripts/lib/detour-stack.mjs:276 [popDetour] + [...new Set(targets.map(d => orNoRemedy(() => `\`record-reconcile ${printedId(pausedEpic)} --detour ${printedId(d)} --verdict valid|invalidated\``)))].join(", "
+escaped                scripts/lib/detour-stack.mjs:277 [popDetour] + orNoRemedy(() => "`honcho-memory pop " + printedId(pausedEpic) + " \"<detour>; reconcile = …\"`")
+escaped                scripts/lib/detour-stack.mjs:277 [popDetour] + printedId(pausedEpic)
+escaped                scripts/lib/disposition.mjs:77 [dispositionError] ${} escapeControls(outcome)
+literal                scripts/lib/disposition.mjs:77 [dispositionError] ${} KNOWN_OUTCOMES.join("|")
+escaped                scripts/lib/disposition.mjs:80 [dispositionError] ${} escapeControls(outcome)
+judged:sink-flow       scripts/lib/disposition.mjs:157 [correctionMarking] ${} prior.outcome || "unknown"
+judged:sink-flow       scripts/lib/disposition.mjs:163 [correctionNote] ${} why
+escaped                scripts/lib/disposition.mjs:173 [engineStamp] ${} escapeControls(recordedBy)
+literal                scripts/lib/disposition.mjs:173 [engineStamp] ${} ENGINE_STAMP_TOKENS.join("|")
+escaped                scripts/lib/disposition.mjs:176 [engineStamp] ${} escapeControls(outcome)
+literal                scripts/lib/disposition.mjs:176 [engineStamp] ${} KNOWN_OUTCOMES.join("|")
+escaped                scripts/lib/disposition.mjs:368 [storyDispositionError] ${} escapeControls(state)
+literal                scripts/lib/disposition.mjs:368 [storyDispositionError] ${} KNOWN_STORY_DISPOSITIONS.join("|")
+judged:engine          scripts/lib/disposition.mjs:370 [storyDispositionError] ${} state
+not-output             scripts/lib/epic-progress.mjs:95 [isArchived] ${} id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+escaped                scripts/lib/epic-progress.mjs:180 [reconcileArchived] ${} escapeControls(e.id)
+judged:sink-flow       scripts/lib/epic-progress.mjs:414 [orderQueueWithDependencies] ${} e.id
+judged:sink-flow       scripts/lib/epic-progress.mjs:414 [orderQueueWithDependencies] ${} d
+judged:sink-flow       scripts/lib/epic-progress.mjs:447 [bar] ${} p.warn
+judged:sink-flow       scripts/lib/epic-progress.mjs:454 [bar] ${} p.excluded
+judged:sink-flow       scripts/lib/epic-progress.mjs:454 [bar] ${} p.excludedLabel || "lifecycle"
+judged:sink-flow       scripts/lib/epic-progress.mjs:455 [bar] ${} p.done
+judged:sink-flow       scripts/lib/epic-progress.mjs:455 [bar] ${} p.total
+literal                scripts/lib/epic-progress.mjs:455 [bar] ${} p.source === "plan" ? "tasks" : "stories"
+judged:sink-flow       scripts/lib/epic-progress.mjs:455 [bar] ${} lifecycle
+judged:sink-flow       scripts/lib/epic-progress.mjs:456 [bar] ${} lifecycle
+literal                scripts/lib/gate-guard.mjs:40 [setGateGuard] ${} on ? "on" : "off"
+escaped                scripts/lib/gate-guard.mjs:52 [setGateGuard] ${} escapeControls(live.id)
+escaped                scripts/lib/gate-guard.mjs:54 [setGateGuard] ${} escapeControls(live.id)
+escaped                scripts/lib/gate-guard.mjs:55 [setGateGuard] ${} escapeControls(live.id)
+judged:engine          scripts/lib/gate-guard.mjs:71 [setGateGuard] ${} val
+judged:engine          scripts/lib/gate-guard.mjs:72 [setGateGuard] ${} val
+literal                scripts/lib/gate-guard.mjs:72 [setGateGuard] ${} STATE_UNCHANGED
+escaped                scripts/lib/gate-guard.mjs:112 [gateGuardCheck] ${} escapeControls(active.id)
+escaped                scripts/lib/gate-guard.mjs:133 [gateGuardCheck] ${} escapeControls(active.id)
+judged:engine          scripts/lib/gate-guard.mjs:60 [setGateGuard] + out.join("\n")
+literal                scripts/lib/gate-review-writeback.mjs:56 [recordGateReview] ${} KNOWN_GATE_NUMBERS.join("|")
+literal                scripts/lib/gate-review-writeback.mjs:60 [recordGateReview] ${} KNOWN_GATE_VERDICTS.join("|")
+judged:engine          scripts/lib/gate-review-writeback.mjs:88 [recordGateReview] ${} missingEvidence.join(" and ")
+judged:engine          scripts/lib/gate-review-writeback.mjs:122 [recordGateReview] ${} baseSha
+judged:engine          scripts/lib/gate-review-writeback.mjs:122 [recordGateReview] ${} headSha
+escaped                scripts/lib/gate-review-writeback.mjs:128 [recordGateReview] ${} escapeControls(id)
+judged:engine          scripts/lib/gate-review-writeback.mjs:165 [recordGateReview] ${} gate
+judged:engine          scripts/lib/gate-review-writeback.mjs:171 [recordGateReview] ${} gate
+judged:engine          scripts/lib/gate-review-writeback.mjs:176 [recordGateReview] ${} gate
+escaped                scripts/lib/gate-review-writeback.mjs:176 [recordGateReview] ${} escapeControls(verdict)
+escaped                scripts/lib/gate-review-writeback.mjs:176 [recordGateReview] ${} escapeControls(id)
+escaped                scripts/lib/gate-review-writeback.mjs:177 [recordGateReview] ${} escapeControls(id)
+judged:engine          scripts/lib/gate-review-writeback.mjs:177 [recordGateReview] ${} gate
+literal                scripts/lib/gate-review-writeback.mjs:177 [recordGateReview] ${} STATE_UNCHANGED
+not-output             scripts/lib/git.mjs:129 [fullSha] ${} String(rev)
+not-output             scripts/lib/git.mjs:254 [objectExists] ${} sha
+not-output             scripts/lib/git.mjs:275 [reachableFromAnyRef] ${} sha
+judged:not-output      scripts/lib/git.mjs:324 [differsFromHead] ${} p
+not-output             scripts/lib/git.mjs:393 [resolveCommits] ${} v
+judged:engine          scripts/lib/git.mjs:409 [unresolvedCommitsMessage] ${} flags
+literal                scripts/lib/git.mjs:409 [unresolvedCommitsMessage] ${} unresolved.length === 1 ? "value" : "values"
+literal                scripts/lib/git.mjs:410 [unresolvedCommitsMessage] ${} unresolved.map(v => escapeControls(JSON.stringify(v))).join(", ")
+literal                scripts/lib/git.mjs:411 [unresolvedCommitsMessage] ${} unresolved.length === 1 ? "does" : "do"
+not-output             scripts/lib/git.mjs:114 [appendRetraction] + line
+not-output             scripts/lib/git.mjs:175 [appendDetourLog] + line
+judged:not-output      scripts/lib/git.mjs:432 [commitsNotReachedBy] + head
+judged:not-output      scripts/lib/git.mjs:432 [commitsNotReachedBy] + [...list].sort().join(" ")
+not-output             scripts/lib/git.mjs:436 [commitsNotReachedBy] + head
+judged:engine          scripts/lib/help.mjs:24 [flagLine] ${} spec.flag
+judged:engine          scripts/lib/help.mjs:24 [flagLine] ${} spec.flag
+judged:engine          scripts/lib/help.mjs:24 [flagLine] ${} spec.requires
+judged:engine          scripts/lib/help.mjs:27 [flagLine] ${} sig.padEnd(width)
+judged:engine          scripts/lib/help.mjs:27 [flagLine] ${} marks.join(", ")
+judged:engine          scripts/lib/help.mjs:27 [flagLine] ${} sig
+judged:engine          scripts/lib/help.mjs:40 [verbHelp] ${} command
+judged:engine          scripts/lib/help.mjs:40 [verbHelp] ${} pos.form
+literal                scripts/lib/help.mjs:40 [verbHelp] ${} pos && pos.max > 0 ? ` ${pos.form}` : ""
+judged:engine          scripts/lib/help.mjs:57 [verbHelp] ${} s.flag
+judged:engine          scripts/lib/help.mjs:57 [verbHelp] ${} s.flag
+judged:engine          scripts/lib/help.mjs:57 [verbHelp] ${} s.requires
+judged:engine          scripts/lib/help.mjs:65 [verbHelp] ${} head
+judged:engine          scripts/lib/help.mjs:70 [verbHelp] ${} head
+judged:engine          scripts/lib/help.mjs:73 [verbHelp] ${} head
+literal                scripts/lib/help.mjs:73 [verbHelp] ${} own.length
+literal                scripts/lib/help.mjs:73 [verbHelp] ${} own.length === 1 ? "" : "s"
+judged:engine          scripts/lib/help.mjs:97 [verbHelp] ${} epicBatchKeys().join(", ")
+literal                scripts/lib/help.mjs:103 [verbHelp] ${} DOCS_INDEX_URL
+judged:engine          scripts/lib/help.mjs:46 [verbHelp] + POSITIONAL_USAGE[command]
+judged:engine          scripts/lib/help.mjs:89 [verbHelp] + POSITIONAL_USAGE[command]
+judged:engine          scripts/lib/help.mjs:104 [verbHelp] + out.join("\n")
+judged:sink-flow       scripts/lib/integrity.mjs:124 [recordedShas] ${} gate
+judged:sink-flow       scripts/lib/integrity.mjs:125 [recordedShas] ${} gate
+escaped                scripts/lib/integrity.mjs:188 [withdrawnArchiveNote] ${} escapeControls(JSON.stringify(String(withdrawal.reason ?? "")))
+judged:sink-flow       scripts/lib/integrity.mjs:213 [CHECKS] ${} p.done
+judged:sink-flow       scripts/lib/integrity.mjs:213 [CHECKS] ${} p.total
+judged:sink-flow       scripts/lib/integrity.mjs:213 [CHECKS] ${} p.source
+judged:sink-flow       scripts/lib/integrity.mjs:234 [CHECKS] ${} gate
+judged:sink-flow       scripts/lib/integrity.mjs:234 [CHECKS] ${} entry.baseSha
+judged:sink-flow       scripts/lib/integrity.mjs:234 [CHECKS] ${} entry.headSha
+judged:sink-flow       scripts/lib/integrity.mjs:235 [CHECKS] ${} uncontained.join(", ")
+escaped                scripts/lib/integrity.mjs:249 [CHECKS] ${} asCode(gateRemedy(e.id, 2))
+judged:sink-flow       scripts/lib/integrity.mjs:260 [CHECKS] ${} withdrawnArchiveNote(x)
+escaped                scripts/lib/integrity.mjs:262 [CHECKS] ${} asCode(gateRemedy(x.epic.id, 2))
+judged:sink-flow       scripts/lib/integrity.mjs:295 [CHECKS] ${} w.sha
+judged:sink-flow       scripts/lib/integrity.mjs:295 [CHECKS] ${} w.reason
+literal                scripts/lib/integrity.mjs:295 [CHECKS] ${} withdrawn.map(w => `${w.sha} ("${w.reason}")`).join("; ")
+judged:sink-flow       scripts/lib/integrity.mjs:297 [CHECKS] ${} pair.join(", then ")
+escaped                scripts/lib/integrity.mjs:299 [CHECKS] ${} printedId(e.id)
+escaped                scripts/lib/integrity.mjs:299 [CHECKS] ${} orNoRemedy(() => `\`update-epic ${printedId(e.id)} --attribute-commit <sha>\``)
+escaped                scripts/lib/integrity.mjs:323 [CHECKS] ${} escapeControls(JSON.stringify(String(withdrawal.reason ?? "")))
+judged:sink-flow       scripts/lib/integrity.mjs:343 [CHECKS] ${} c.dir
+judged:sink-flow       scripts/lib/integrity.mjs:345 [CHECKS] ${} c.dir
+judged:sink-flow       scripts/lib/integrity.mjs:372 [CHECKS] ${} owed.join(", then ")
+judged:sink-flow       scripts/lib/integrity.mjs:424 [CHECKS] ${} gate
+judged:sink-flow       scripts/lib/integrity.mjs:424 [CHECKS] ${} entry.reviewedAt
+judged:sink-flow       scripts/lib/integrity.mjs:425 [CHECKS] ${} attributed[attributed.length - 1]
+judged:sink-flow       scripts/lib/integrity.mjs:425 [CHECKS] ${} mergedAt
+judged:sink-flow       scripts/lib/integrity.mjs:436 [CHECKS] ${} apart
+literal                scripts/lib/integrity.mjs:466 [CHECKS] ${} members.length
+judged:sink-flow       scripts/lib/integrity.mjs:467 [CHECKS] ${} e.id
+judged:sink-flow       scripts/lib/integrity.mjs:467 [CHECKS] ${} e.lane || "openspec"
+judged:sink-flow       scripts/lib/integrity.mjs:494 [CHECKS] ${} l.type
+judged:sink-flow       scripts/lib/integrity.mjs:494 [CHECKS] ${} l.epic
+escaped                scripts/lib/integrity.mjs:494 [CHECKS] ${} escapeControls(l.type)
+literal                scripts/lib/integrity.mjs:494 [CHECKS] ${} KNOWN_LINK_TYPES.join(", ")
+escaped                scripts/lib/integrity.mjs:498 [CHECKS] ${} escapeControls(e.id)
+escaped                scripts/lib/integrity.mjs:499 [CHECKS] ${} printedId(e.id)
+escaped                scripts/lib/integrity.mjs:503 [CHECKS] ${} printedId(e.id)
+escaped                scripts/lib/integrity.mjs:503 [CHECKS] ${} orNoRemedy(() => `\`update-epic ${printedId(e.id)} --clear-links --link "<type>:<epic>[:<reason>]" ...\``)
+judged:sink-flow       scripts/lib/integrity.mjs:539 [CHECKS] ${} e.status
+literal                scripts/lib/integrity.mjs:539 [CHECKS] ${} KNOWN_STATUSES.join(", ")
+escaped                scripts/lib/integrity.mjs:548 [CHECKS] ${} printedId(e.id)
+judged:sink-flow       scripts/lib/integrity.mjs:548 [CHECKS] ${} KNOWN_STATUSES.filter(st => st !== "archived").join("|")
+escaped                scripts/lib/integrity.mjs:548 [CHECKS] ${} orNoRemedy(() => `\`update-epic ${printedId(e.id)} --status <${KNOWN_STATUSES.filter(st => st !== "archived").join("|")}>\``)
+escaped                scripts/lib/integrity.mjs:551 [CHECKS] ${} asCode(dispositionInvocation(e))
+judged:sink-flow       scripts/lib/integrity.mjs:571 [CHECKS] ${} r.where
+judged:sink-flow       scripts/lib/integrity.mjs:571 [CHECKS] ${} r.epic
+judged:sink-flow       scripts/lib/integrity.mjs:576 [CHECKS] ${} r.epic
+escaped                scripts/lib/integrity.mjs:578 [CHECKS] ${} printedId(r.epic)
+escaped                scripts/lib/integrity.mjs:578 [CHECKS] ${} orNoRemedy(() => `\`add-epic --id ${printedId(r.epic)} --lane <lane>\``)
+escaped                scripts/lib/integrity.mjs:579 [CHECKS] ${} printedId(r.holder)
+escaped                scripts/lib/integrity.mjs:579 [CHECKS] ${} printedId(r.epic)
+escaped                scripts/lib/integrity.mjs:579 [CHECKS] ${} orNoRemedy(() => `\`record-reconcile ${printedId(r.holder)} --detour ${printedId(r.epic)} --verdict valid|invalidated\``)
+judged:sink-flow       scripts/lib/integrity.mjs:619 [CHECKS] ${} superseded.get(e.id)
+judged:sink-flow       scripts/lib/integrity.mjs:620 [CHECKS] ${} e.status
+escaped                scripts/lib/integrity.mjs:621 [CHECKS] ${} printedId(e.id)
+escaped                scripts/lib/integrity.mjs:621 [CHECKS] ${} orNoRemedy(() => `\`update-epic ${printedId(e.id)} --status archived --outcome superseded ` + `--reason "<what replaced it>" --no-deferrals\``)
+judged:sink-flow       scripts/lib/integrity.mjs:691 [CHECKS] ${} e.status
+judged:sink-flow       scripts/lib/integrity.mjs:691 [CHECKS] ${} rel.id
+judged:sink-flow       scripts/lib/integrity.mjs:694 [CHECKS] ${} owed.join(", then ")
+escaped                scripts/lib/integrity.mjs:696 [CHECKS] ${} asCode(deliveredArchiveInvocation(e, carry))
+escaped                scripts/lib/integrity.mjs:699 [CHECKS] ${} printedId(rel.id, "release")
+escaped                scripts/lib/integrity.mjs:699 [CHECKS] ${} printedId(e.id)
+escaped                scripts/lib/integrity.mjs:699 [CHECKS] ${} orNoRemedy(() => `\`release ${printedId(rel.id, "release")} --defer ${printedId(e.id)} --reason "<why>"\``)
+escaped                scripts/lib/integrity.mjs:787 [CHECKS] ${} printedId(epic)
+escaped                scripts/lib/integrity.mjs:787 [CHECKS] ${} orNoRemedy(() => `\`update-epic ${printedId(epic)} --withdraw-commit <value> --withdrawal-reason "<why>"\``)
+escaped                scripts/lib/integrity.mjs:789 [CHECKS] ${} asCode(gateRemedy(epic, 1))
+escaped                scripts/lib/integrity.mjs:790 [CHECKS] ${} asCode(gateRemedy(epic, 2))
+literal                scripts/lib/integrity.mjs:792 [CHECKS] ${} list.length
+judged:sink-flow       scripts/lib/integrity.mjs:794 [CHECKS] ${} remedies.join("; ")
+judged:sink-flow       scripts/lib/integrity.mjs:795 [CHECKS] ${} r.where
+escaped                scripts/lib/integrity.mjs:795 [CHECKS] ${} escapeControls(JSON.stringify(r.sha))
+judged:sink-flow       scripts/lib/integrity.mjs:818 [CHECKS] ${} r.where
+judged:sink-flow       scripts/lib/integrity.mjs:818 [CHECKS] ${} r.sha.slice(0, 7)
+literal                scripts/lib/integrity.mjs:822 [CHECKS] ${} arms.orphaned.length
+judged:sink-flow       scripts/lib/integrity.mjs:826 [CHECKS] ${} cite(arms.orphaned)
+literal                scripts/lib/integrity.mjs:830 [CHECKS] ${} arms.absent.length
+judged:sink-flow       scripts/lib/integrity.mjs:834 [CHECKS] ${} cite(arms.absent)
+judged:sink-flow       scripts/lib/integrity.mjs:864 [CHECKS] ${} shellQuote(t.repo)
+judged:sink-flow       scripts/lib/integrity.mjs:867 [CHECKS] ${} role
+judged:sink-flow       scripts/lib/integrity.mjs:867 [CHECKS] ${} shown
+judged:sink-flow       scripts/lib/integrity.mjs:868 [CHECKS] ${} remedy
+escaped                scripts/lib/integrity.mjs:894 [CHECKS] ${} escapeControls(e.claim.session)
+judged:sink-flow       scripts/lib/integrity.mjs:895 [CHECKS] ${} e.claim.claimedAt
+escaped                scripts/lib/integrity.mjs:902 [CHECKS] ${} escapeControls(e.claim.session)
+judged:sink-flow       scripts/lib/integrity.mjs:902 [CHECKS] ${} claimExpiry(e.claim) || "an unreadable time"
+judged:sink-flow       scripts/lib/integrity.mjs:903 [CHECKS] ${} e.claim.claimedAt
+judged:sink-flow       scripts/lib/integrity.mjs:903 [CHECKS] ${} e.claim.ttlMinutes
+sink                   scripts/lib/integrity.mjs:923 [formatIntegrity] ${} id
+literal                scripts/lib/integrity.mjs:923 [formatIntegrity] ${} findings.length
+sink                   scripts/lib/integrity.mjs:923 [formatIntegrity] ${} title
+sink                   scripts/lib/integrity.mjs:925 [formatIntegrity] ${} f.epic
+literal                scripts/lib/integrity.mjs:925 [formatIntegrity] ${} f.epic ? `\`${f.epic}\` — ` : ""
+sink                   scripts/lib/integrity.mjs:925 [formatIntegrity] ${} f.detail
+sink                   scripts/lib/integrity.mjs:929 [formatIntegrity] ${} report.reduce((n, c) => n + c.findings.length, 0)
+literal                scripts/lib/integrity.mjs:929 [formatIntegrity] ${} report.length
+literal                scripts/lib/integrity.mjs:189 [withdrawnArchiveNote] + (archivedUngated ? " — and it was archived ungated before the withdrawn review was recorded" : "")
+literal                scripts/lib/integrity.mjs:372 [CHECKS] + (owed.length ? `first meet what \`delivered\` requires, ${owed.join(", then ")}, then ` : "")
+literal                scripts/lib/integrity.mjs:373 [CHECKS] + (carry.length ? "tick its open tasks in its task source and archive it, or record where they went: " : "")
+escaped                scripts/lib/integrity.mjs:374 [CHECKS] + asCode(deliveredArchiveInvocation(e, carry))
+judged:sink-flow       scripts/lib/integrity.mjs:467 [CHECKS] + members.map(e => `\`${e.id}\` (${e.lane || "openspec"})`).join(" and ")
+judged:sink-flow       scripts/lib/integrity.mjs:497 [CHECKS] + (holdsOwedReconcileRecord(e) ? `'${escapeControls(e.id)}' owes a reconcile, so record that verdict FIRST — ` + orNoRemedy(() => `\`record-reconcile ${printedId(
+escaped                scripts/lib/integrity.mjs:499 [CHECKS] + orNoRemedy(() => `\`record-reconcile ${printedId(e.id)} --detour <detourId> --verdict valid|invalidated\``)
+judged:sink-flow       scripts/lib/integrity.mjs:572 [CHECKS] + (r.drop ? "" : r.kind === "owed-reconcile" // This check only reports a reference to a MISSING epic, so an owed-reconcile link here // points at a detour remove
+literal                scripts/lib/integrity.mjs:694 [CHECKS] + (owed.length ? `first meet what \`delivered\` requires, ${owed.join(", then ")}, then ` : "")
+literal                scripts/lib/integrity.mjs:695 [CHECKS] + (carry.length ? "tick its open tasks in its task source and archive it, or record where they went: " : "")
+judged:sink-flow       scripts/lib/integrity.mjs:795 [CHECKS] + [...new Set(list.map(r => `${r.where} ${escapeControls(JSON.stringify(r.sha))}`))].join(", ")
+literal                scripts/lib/integrity.mjs:861 [CHECKS] + (CONTROL_CHARACTER.test(t.repo) ? "remove it with set-tracker's secondary `--remove`, passing the recorded value exactly as its " + "`--repo` (it holds a contro
+escaped                scripts/lib/integrity.mjs:897 [CHECKS] + orNoRemedy(() => "`unclaim " + printedId(e.id) + " --session " + commandValue(e.claim.session, "<session>") + " --steal`")
+escaped                scripts/lib/integrity.mjs:897 [CHECKS] + printedId(e.id)
+escaped                scripts/lib/integrity.mjs:897 [CHECKS] + commandValue(e.claim.session, "<session>")
+escaped                scripts/lib/integrity.mjs:905 [CHECKS] + orNoRemedy(() => "`claim " + printedId(e.id) + " --session <you>`")
+escaped                scripts/lib/integrity.mjs:905 [CHECKS] + printedId(e.id)
+judged:escaped         scripts/lib/integrity.mjs:943 [integrity] + formatIntegrity(runIntegrity(loadState()))
+escaped                scripts/lib/lane-routing.mjs:62 [setLaneRouting] ${} escapeControls(raw)
+escaped                scripts/lib/lane-routing.mjs:67 [setLaneRouting] ${} escapeControls(raw)
+literal                scripts/lib/lane-routing.mjs:67 [setLaneRouting] ${} KNOWN_LANES.join("|")
+literal                scripts/lib/lane-routing.mjs:78 [setLaneRouting] ${} lr.overrides.length
+literal                scripts/lib/lane-routing.mjs:79 [setLaneRouting] ${} lr.overrides.length
+literal                scripts/lib/lane-routing.mjs:80 [setLaneRouting] ${} STATE_UNCHANGED
+escaped                scripts/lib/lane-routing.mjs:112 [suggestLane] ${} escapeControls(positional)
+judged:json            scripts/lib/lane-routing.mjs:120 [suggestLane] + JSON.stringify(laneSuggestion(loadState(), text))
+not-output             scripts/lib/lessons.mjs:49 [frontmatterField] ${} key
+escaped                scripts/lib/lessons.mjs:113 [adviceText] ${} escapeControls(h.rule)
+escaped                scripts/lib/lessons.mjs:113 [adviceText] ${} escapeControls(h.file)
+judged:escaped         scripts/lib/lessons.mjs:114 [adviceText] ${} body
+escaped                scripts/lib/links.mjs:129 [unknownLinkTypeMessage] ${} escapeControls(raw)
+escaped                scripts/lib/links.mjs:129 [unknownLinkTypeMessage] ${} escapeControls(type)
+judged:engine          scripts/lib/links.mjs:130 [unknownLinkTypeMessage] ${} t.type
+judged:engine          scripts/lib/links.mjs:130 [unknownLinkTypeMessage] ${} t.drives
+literal                scripts/lib/links.mjs:130 [unknownLinkTypeMessage] ${} LINK_TYPES_READ.map(t => `${t.type} — ${t.drives}`).join("; ")
+judged:engine          scripts/lib/links.mjs:131 [unknownLinkTypeMessage] ${} LINK_TYPES_WRITTEN.map(t => t.type).join(", ")
+literal                scripts/lib/links.mjs:132 [unknownLinkTypeMessage] ${} LINK_TYPES_ANNOTATION.join(", ")
+escaped                scripts/lib/links.mjs:136 [unknownLinkTypeMessage] ${} escapeControls(owingEpic)
+escaped                scripts/lib/links.mjs:137 [unknownLinkTypeMessage] ${} printedId(owingEpic)
+escaped                scripts/lib/links.mjs:137 [unknownLinkTypeMessage] ${} orNoRemedy(() => `\`record-reconcile ${printedId(owingEpic)} --detour <detourId> --verdict valid|invalidated\``)
+judged:sink-flow       scripts/lib/links.mjs:336 [epicReferences] ${} e.id
+judged:sink-flow       scripts/lib/links.mjs:339 [epicReferences] ${} e.id
+judged:sink-flow       scripts/lib/links.mjs:341 [epicReferences] ${} e.id
+judged:sink-flow       scripts/lib/links.mjs:343 [epicReferences] ${} e.id
+judged:sink-flow       scripts/lib/links.mjs:351 [epicReferences] ${} e.id
+judged:sink-flow       scripts/lib/links.mjs:357 [epicReferences] ${} e.id
+judged:sink-flow       scripts/lib/links.mjs:363 [epicReferences] ${} r.id
+judged:sink-flow       scripts/lib/links.mjs:371 [epicReferences] ${} r.id
+judged:engine          scripts/lib/links.mjs:442 [ordinal] ${} n
+judged:engine          scripts/lib/links.mjs:443 [ordinal] ${} n
+judged:engine          scripts/lib/links.mjs:443 [ordinal] ${} { 1: "st", 2: "nd", 3: "rd" }[n % 10] || "th"
+literal                scripts/lib/links.mjs:452 [deferralNote] ${} ordinal(history.count)
+escaped                scripts/lib/links.mjs:452 [deferralNote] ${} escapeControls(history.detours.join(", "))
+literal                scripts/lib/links.mjs:135 [unknownLinkTypeMessage] + (owingEpic ? ` '${escapeControls(owingEpic)}' owes a reconcile, so its links cannot be cleared yet: record the verdict FIRST ` + `with ${orNoRemedy(() => `\`rec
+judged:engine          scripts/lib/migrations.mjs:207 [upgrade] ${} running
+judged:engine          scripts/lib/migrations.mjs:207 [upgrade] ${} newest
+judged:engine          scripts/lib/migrations.mjs:243 [upgrade] ${} applied
+judged:engine          scripts/lib/migrations.mjs:243 [upgrade] ${} state.pmVersion || "unknown"
+judged:engine          scripts/lib/migrations.mjs:244 [upgrade] ${} applied
+judged:engine          scripts/lib/migrations.mjs:245 [upgrade] ${} state.pmVersion || "unknown"
+literal                scripts/lib/migrations.mjs:245 [upgrade] ${} STATE_UNCHANGED
+escaped                scripts/lib/migrations.mjs:254 [upgrade] ${} escapeControls(stamped)
+literal                scripts/lib/migrations.mjs:286 [upgrade] ${} rewritten.length
+literal                scripts/lib/migrations.mjs:287 [upgrade] ${} rewritten.length === 1 ? "" : "s"
+judged:engine          scripts/lib/migrations.mjs:288 [upgrade] ${} rewritten.join(" ")
+judged:engine          scripts/lib/migrations.mjs:289 [upgrade] ${} state.pmVersion || "unknown"
+judged:engine          scripts/lib/migrations.mjs:254 [upgrade] + delta.map(s => s.body).join("\n\n")
+judged:escaped         scripts/lib/migrations.mjs:265 [upgrade] + l
+literal                scripts/lib/platform.mjs:70 [assertKnownPlatform] ${} KNOWN_PLATFORMS.join("|")
+judged:passthrough     scripts/lib/purge-logs.mjs:102 [die] ${} msg
+literal                scripts/lib/purge-logs.mjs:132 [purgeLogs] ${} PURGE_KINDS.join("|")
+literal                scripts/lib/purge-logs.mjs:160 [purgeLogs] ${} files.length
+judged:engine          scripts/lib/purge-logs.mjs:160 [purgeLogs] ${} kind
+literal                scripts/lib/purge-logs.mjs:163 [purgeLogs] ${} doomed.length
+judged:engine          scripts/lib/purge-logs.mjs:163 [purgeLogs] ${} bytes
+literal                scripts/lib/purge-logs.mjs:164 [purgeLogs] ${} confirmed ? " REMOVED" : " would be removed"
+judged:engine          scripts/lib/purge-logs.mjs:165 [purgeLogs] ${} f.kind
+literal                scripts/lib/purge-logs.mjs:165 [purgeLogs] ${} f.size
+escaped                scripts/lib/purge-logs.mjs:165 [purgeLogs] ${} escapeControls(f.name)
+literal                scripts/lib/purge-logs.mjs:172 [purgeLogs] + L.join("\n")
+judged:passthrough     scripts/lib/rank.mjs:64 [reorder] ${} msg
+escaped                scripts/lib/rank.mjs:81 [reorder] ${} escapeControls(id)
+escaped                scripts/lib/rank.mjs:83 [reorder] ${} escapeControls(id)
+escaped                scripts/lib/rank.mjs:85 [reorder] ${} escapeControls(id)
+escaped                scripts/lib/rank.mjs:94 [reorder] ${} escapeControls(band)
+escaped                scripts/lib/rank.mjs:95 [reorder] ${} id
+escaped                scripts/lib/rank.mjs:95 [reorder] ${} byId.get(id).priority
+escaped                scripts/lib/rank.mjs:105 [reorder] ${} escapeControls(band)
+escaped                scripts/lib/rank.mjs:106 [reorder] ${} escapeControls(missing.join(", "))
+escaped                scripts/lib/rank.mjs:113 [reorder] ${} escapeControls(band)
+escaped                scripts/lib/rank.mjs:113 [reorder] ${} i + 1
+escaped                scripts/lib/rank.mjs:113 [reorder] ${} id
+escaped                scripts/lib/rank.mjs:113 [reorder] ${} escapeControls(ids.map((id, i) => `${i + 1}. ${id}`).join(" "))
+escaped                scripts/lib/rank.mjs:114 [reorder] ${} escapeControls(band)
+literal                scripts/lib/rank.mjs:114 [reorder] ${} STATE_UNCHANGED
+escaped                scripts/lib/rank.mjs:95 [reorder] + escapeControls(offBand.map(id => `${id} (${byId.get(id).priority})`).join(", "))
+literal                scripts/lib/reconciler-writeback.mjs:37 [recordReconcile] ${} KNOWN_RECONCILE_VERDICTS.join("|")
+escaped                scripts/lib/reconciler-writeback.mjs:42 [recordReconcile] ${} escapeControls(id)
+escaped                scripts/lib/reconciler-writeback.mjs:52 [recordReconcile] ${} escapeControls(id)
+escaped                scripts/lib/reconciler-writeback.mjs:52 [recordReconcile] ${} escapeControls(d)
+literal                scripts/lib/reconciler-writeback.mjs:52 [recordReconcile] ${} owed.map(d => `'${escapeControls(d)}'`).join(", ")
+escaped                scripts/lib/reconciler-writeback.mjs:53 [recordReconcile] ${} escapeControls(id)
+judged:passthrough     scripts/lib/reconciler-writeback.mjs:54 [recordReconcile] ${} why
+judged:passthrough     scripts/lib/reconciler-writeback.mjs:54 [recordReconcile] ${} owedPhrase
+escaped                scripts/lib/reconciler-writeback.mjs:62 [recordReconcile] ${} escapeControls(id)
+literal                scripts/lib/reconciler-writeback.mjs:62 [recordReconcile] ${} unmigrated.length
+escaped                scripts/lib/reconciler-writeback.mjs:63 [recordReconcile] ${} escapeControls(l.epic)
+literal                scripts/lib/reconciler-writeback.mjs:63 [recordReconcile] ${} unmigrated.map(l => `'${escapeControls(l.epic)}'`).join(", ")
+escaped                scripts/lib/reconciler-writeback.mjs:73 [recordReconcile] ${} escapeControls(detourId)
+escaped                scripts/lib/reconciler-writeback.mjs:76 [recordReconcile] ${} escapeControls(id)
+escaped                scripts/lib/reconciler-writeback.mjs:80 [recordReconcile] ${} escapeControls(detourId)
+escaped                scripts/lib/reconciler-writeback.mjs:80 [recordReconcile] ${} escapeControls(id)
+escaped                scripts/lib/reconciler-writeback.mjs:86 [recordReconcile] ${} escapeControls(id)
+escaped                scripts/lib/reconciler-writeback.mjs:86 [recordReconcile] ${} escapeControls(detourId)
+escaped                scripts/lib/reconciler-writeback.mjs:114 [recordReconcile] ${} escapeControls(verdict)
+escaped                scripts/lib/reconciler-writeback.mjs:114 [recordReconcile] ${} escapeControls(id)
+escaped                scripts/lib/reconciler-writeback.mjs:114 [recordReconcile] ${} escapeControls(detourId)
+escaped                scripts/lib/reconciler-writeback.mjs:115 [recordReconcile] ${} escapeControls(id)
+escaped                scripts/lib/reconciler-writeback.mjs:116 [recordReconcile] ${} escapeControls(detourId)
+literal                scripts/lib/reconciler-writeback.mjs:116 [recordReconcile] ${} STATE_UNCHANGED
+judged:passthrough     scripts/lib/refusal.mjs:56 [refusalFor] ${} err.message
+judged:passthrough     scripts/lib/refusal.mjs:82 [refusalFor] + message
+judged:passthrough     scripts/lib/releases.mjs:42 [die] ${} msg
+judged:engine          scripts/lib/releases.mjs:62 [epicReasonPair] ${} flagName
+judged:engine          scripts/lib/releases.mjs:66 [epicReasonPair] ${} flagName
+escaped                scripts/lib/releases.mjs:66 [epicReasonPair] ${} escapeControls(JSON.stringify(value))
+escaped                scripts/lib/releases.mjs:66 [epicReasonPair] ${} escapeControls(JSON.stringify(outOfBand))
+escaped                scripts/lib/releases.mjs:121 [release] ${} escapeControls(id)
+judged:engine          scripts/lib/releases.mjs:122 [release] ${} EPIC_ID_FORMAT.source
+escaped                scripts/lib/releases.mjs:130 [release] ${} escapeControls(id)
+escaped                scripts/lib/releases.mjs:131 [release] ${} printedId(id, "release")
+escaped                scripts/lib/releases.mjs:131 [release] ${} orNoRemedy(() => `\`release ${printedId(id, "release")} --intent "<what this release is for>"\``)
+escaped                scripts/lib/releases.mjs:153 [release] ${} escapeControls(epicId)
+judged:engine          scripts/lib/releases.mjs:170 [release] ${} reasonFlags.join(" and --")
+judged:engine          scripts/lib/releases.mjs:172 [release] ${} reasonFlags[0]
+escaped                scripts/lib/releases.mjs:193 [release] ${} escapeControls(one.epic)
+judged:engine          scripts/lib/releases.mjs:193 [release] ${} one.flag
+judged:engine          scripts/lib/releases.mjs:193 [release] ${} others[0].flag
+escaped                scripts/lib/releases.mjs:194 [release] ${} escapeControls(id)
+escaped                scripts/lib/releases.mjs:201 [release] ${} escapeControls(deferred.epic)
+judged:passthrough     scripts/lib/releases.mjs:205 [release] ${} derr
+escaped                scripts/lib/releases.mjs:215 [release] ${} escapeControls(unmember.epic)
+escaped                scripts/lib/releases.mjs:220 [release] ${} escapeControls(unmember.epic)
+escaped                scripts/lib/releases.mjs:221 [release] ${} escapeControls(id)
+judged:escaped         scripts/lib/releases.mjs:221 [release] ${} printedId(unmember.epic) && unmember.epic
+escaped                scripts/lib/releases.mjs:221 [release] ${} orNoRemedy(() => `--unmember "${printedId(unmember.epic) && unmember.epic}:<why>"`)
+escaped                scripts/lib/releases.mjs:230 [release] ${} escapeControls(unmember.epic)
+escaped                scripts/lib/releases.mjs:230 [release] ${} escapeControls(id)
+escaped                scripts/lib/releases.mjs:231 [release] ${} escapeControls(epic.release)
+literal                scripts/lib/releases.mjs:231 [release] ${} epic.release ? `it belongs to '${escapeControls(epic.release)}'` : "it belongs to no release"
+escaped                scripts/lib/releases.mjs:242 [release] ${} escapeControls(undefer.epic)
+escaped                scripts/lib/releases.mjs:247 [release] ${} escapeControls(undefer.epic)
+escaped                scripts/lib/releases.mjs:248 [release] ${} escapeControls(id)
+judged:escaped         scripts/lib/releases.mjs:248 [release] ${} printedId(undefer.epic) && undefer.epic
+escaped                scripts/lib/releases.mjs:248 [release] ${} orNoRemedy(() => `--undefer "${printedId(undefer.epic) && undefer.epic}:<why>"`)
+escaped                scripts/lib/releases.mjs:253 [release] ${} escapeControls(undefer.epic)
+escaped                scripts/lib/releases.mjs:253 [release] ${} escapeControls(id)
+escaped                scripts/lib/releases.mjs:266 [release] ${} escapeControls(epicId)
+escaped                scripts/lib/releases.mjs:266 [release] ${} escapeControls(id)
+escaped                scripts/lib/releases.mjs:267 [release] ${} escapeControls(wasDeferred.reason)
+escaped                scripts/lib/releases.mjs:294 [release] ${} escapeControls(unmember.epic)
+escaped                scripts/lib/releases.mjs:294 [release] ${} escapeControls(id)
+escaped                scripts/lib/releases.mjs:294 [release] ${} escapeControls(unmember.reason)
+escaped                scripts/lib/releases.mjs:303 [release] ${} escapeControls(undefer.epic)
+escaped                scripts/lib/releases.mjs:303 [release] ${} escapeControls(id)
+escaped                scripts/lib/releases.mjs:303 [release] ${} escapeControls(undefer.reason)
+escaped                scripts/lib/releases.mjs:304 [release] ${} escapeControls(was && was.reason)
+escaped                scripts/lib/releases.mjs:310 [release] ${} escapeControls(id)
+judged:escaped         scripts/lib/releases.mjs:310 [release] ${} releaseLine(releaseSummaries(state, state.epics).find(s => s.id === id))
+escaped                scripts/lib/releases.mjs:311 [release] ${} escapeControls(id)
+literal                scripts/lib/releases.mjs:312 [release] ${} STATE_UNCHANGED
+escaped                scripts/lib/releases.mjs:337 [releaseShow] ${} escapeControls(flags.join(", "))
+literal                scripts/lib/releases.mjs:338 [releaseShow] ${} SHOW
+literal                scripts/lib/releases.mjs:343 [releaseShow] ${} rest.length
+escaped                scripts/lib/releases.mjs:343 [releaseShow] ${} escapeControls(rest.join(", "))
+literal                scripts/lib/releases.mjs:359 [releaseShow] ${} releases.length
+literal                scripts/lib/releases.mjs:359 [releaseShow] ${} releases.length === 1 ? "" : "s"
+sink                   scripts/lib/releases.mjs:361 [releaseShow] ${} releaseLine(r)
+sink                   scripts/lib/releases.mjs:361 [releaseShow] ${} crossSpecLine(state, epics, r.id)
+sink                   scripts/lib/releases.mjs:362 [releaseShow] ${} r.intent
+literal                scripts/lib/releases.mjs:362 [releaseShow] ${} r.intent ? ` — ${r.intent}` : ""
+sink                   scripts/lib/releases.mjs:362 [releaseShow] ${} r.target
+literal                scripts/lib/releases.mjs:362 [releaseShow] ${} r.target ? ` (target: ${r.target})` : ""
+escaped                scripts/lib/releases.mjs:374 [releaseShow] ${} escapeControls(id)
+escaped                scripts/lib/releases.mjs:376 [releaseShow] ${} escapeControls(r.id)
+literal                scripts/lib/releases.mjs:376 [releaseShow] ${} releases.map(r => `'${escapeControls(r.id)}'`).join(", ")
+judged:sink-flow       scripts/lib/releases.mjs:383 [releaseShow] ${} rel.id
+judged:sink-flow       scripts/lib/releases.mjs:383 [releaseShow] ${} rel.intent
+literal                scripts/lib/releases.mjs:383 [releaseShow] ${} rel.intent ? ` — ${rel.intent}` : ""
+sink                   scripts/lib/releases.mjs:384 [releaseShow] ${} rel.target || "—"
+literal                scripts/lib/releases.mjs:385 [releaseShow] ${} members.length
+sink                   scripts/lib/releases.mjs:388 [releaseShow] ${} e.id
+sink                   scripts/lib/releases.mjs:388 [releaseShow] ${} e.title
+literal                scripts/lib/releases.mjs:388 [releaseShow] ${} e.title ? ` — ${e.title}` : ""
+sink                   scripts/lib/releases.mjs:388 [releaseShow] ${} e.status || "?"
+sink                   scripts/lib/releases.mjs:389 [releaseShow] ${} e.priority
+literal                scripts/lib/releases.mjs:389 [releaseShow] ${} e.priority ? ` · ${e.priority}` : ""
+literal                scripts/lib/releases.mjs:391 [releaseShow] ${} deferred.length
+sink                   scripts/lib/releases.mjs:394 [releaseShow] ${} d.epic
+sink                   scripts/lib/releases.mjs:394 [releaseShow] ${} d.reason
+sink                   scripts/lib/releases.mjs:394 [releaseShow] ${} d.recordedAt
+literal                scripts/lib/releases.mjs:394 [releaseShow] ${} d.recordedAt ? ` (${d.recordedAt})` : ""
+sink                   scripts/lib/releases.mjs:406 [releaseShow] ${} cross.replace(/^ · /, "")
+literal                scripts/lib/releases.mjs:408 [releaseShow] ${} amendments.length
+judged:sink-flow       scripts/lib/releases.mjs:410 [releaseShow] ${} a.via
+judged:sink-flow       scripts/lib/releases.mjs:411 [releaseShow] ${} a.was
+sink                   scripts/lib/releases.mjs:412 [releaseShow] ${} a.op
+sink                   scripts/lib/releases.mjs:412 [releaseShow] ${} a.epic
+sink                   scripts/lib/releases.mjs:412 [releaseShow] ${} via
+sink                   scripts/lib/releases.mjs:412 [releaseShow] ${} a.reason || "no reason given"
+sink                   scripts/lib/releases.mjs:412 [releaseShow] ${} was
+sink                   scripts/lib/releases.mjs:413 [releaseShow] ${} a.at
+literal                scripts/lib/releases.mjs:413 [releaseShow] ${} a.at ? ` (${a.at})` : ""
+literal                scripts/lib/releases.mjs:456 [recordCrossSpecReview] ${} KNOWN_CROSS_SPEC_VERDICTS.join("|")
+escaped                scripts/lib/releases.mjs:464 [recordCrossSpecReview] ${} escapeControls(id)
+escaped                scripts/lib/releases.mjs:465 [recordCrossSpecReview] ${} printedId(id, "release")
+escaped                scripts/lib/releases.mjs:465 [recordCrossSpecReview] ${} orNoRemedy(() => `\`release ${printedId(id, "release")} --intent "<what this release is for>"\``)
+escaped                scripts/lib/releases.mjs:475 [recordCrossSpecReview] ${} escapeControls(id)
+literal                scripts/lib/releases.mjs:475 [recordCrossSpecReview] ${} specs.length
+literal                scripts/lib/releases.mjs:476 [recordCrossSpecReview] ${} CROSS_SPEC_MIN_SPECS
+escaped                scripts/lib/releases.mjs:493 [recordCrossSpecReview] ${} escapeControls(id)
+escaped                scripts/lib/releases.mjs:494 [recordCrossSpecReview] ${} escapeControls(unreadable.join(", "))
+escaped                scripts/lib/releases.mjs:515 [recordCrossSpecReview] ${} escapeControls(verdict)
+escaped                scripts/lib/releases.mjs:515 [recordCrossSpecReview] ${} escapeControls(id)
+literal                scripts/lib/releases.mjs:516 [recordCrossSpecReview] ${} recorded.length
+literal                scripts/lib/releases.mjs:516 [recordCrossSpecReview] ${} recorded.length === 1 ? "" : "s"
+escaped                scripts/lib/releases.mjs:517 [recordCrossSpecReview] ${} escapeControls(id)
+literal                scripts/lib/releases.mjs:518 [recordCrossSpecReview] ${} recorded.length
+literal                scripts/lib/releases.mjs:518 [recordCrossSpecReview] ${} recorded.length === 1 ? "" : "s"
+literal                scripts/lib/releases.mjs:518 [recordCrossSpecReview] ${} STATE_UNCHANGED
+literal                scripts/lib/releases.mjs:366 [releaseShow] + out.map(escapeControls).join("\n")
+literal                scripts/lib/releases.mjs:375 [releaseShow] + (releases.length ? `Declared here: ${releases.map(r => `'${escapeControls(r.id)}'`).join(", ")}.` : "No releases are declared in this repo yet.")
+literal                scripts/lib/releases.mjs:416 [releaseShow] + out.map(escapeControls).join("\n")
+judged:escaped         scripts/lib/remove-epic.mjs:17 [epicSummaryTable] ${} escapeControls(e.id).padEnd(24)
+judged:escaped         scripts/lib/remove-epic.mjs:17 [epicSummaryTable] ${} escapeControls(String(e.title)).slice(0, 50).padEnd(50)
+escaped                scripts/lib/remove-epic.mjs:17 [epicSummaryTable] ${} e.lane
+escaped                scripts/lib/remove-epic.mjs:17 [epicSummaryTable] ${} e.priority
+escaped                scripts/lib/remove-epic.mjs:17 [epicSummaryTable] ${} e.status
+escaped                scripts/lib/remove-epic.mjs:17 [epicSummaryTable] ${} escapeControls(`${e.lane}/${e.priority}/${e.status}`)
+escaped                scripts/lib/remove-epic.mjs:40 [removeEpic] ${} escapeControls(id)
+escaped                scripts/lib/remove-epic.mjs:58 [removeEpic] ${} escapeControls(id)
+literal                scripts/lib/remove-epic.mjs:58 [removeEpic] ${} directChildren.length
+literal                scripts/lib/remove-epic.mjs:59 [removeEpic] ${} descendants.length
+judged:escaped         scripts/lib/remove-epic.mjs:60 [removeEpic] ${} epicSummaryTable([epic, ...descendants])
+escaped                scripts/lib/remove-epic.mjs:61 [removeEpic] ${} escapeControls(id)
+literal                scripts/lib/remove-epic.mjs:62 [removeEpic] ${} descendants.length
+escaped                scripts/lib/remove-epic.mjs:85 [removeEpic] ${} r.where
+escaped                scripts/lib/remove-epic.mjs:85 [removeEpic] ${} r.epic
+escaped                scripts/lib/remove-epic.mjs:87 [removeEpic] ${} escapeControls(i)
+literal                scripts/lib/remove-epic.mjs:87 [removeEpic] ${} [...toRemove].map(i => `'${escapeControls(i)}'`).join(", ")
+literal                scripts/lib/remove-epic.mjs:88 [removeEpic] ${} blocking.length
+literal                scripts/lib/remove-epic.mjs:90 [removeEpic] ${} frames.length
+judged:escaped         scripts/lib/remove-epic.mjs:90 [removeEpic] ${} cite(frames)
+literal                scripts/lib/remove-epic.mjs:93 [removeEpic] ${} owed.length
+judged:escaped         scripts/lib/remove-epic.mjs:93 [removeEpic] ${} cite(owed)
+escaped                scripts/lib/remove-epic.mjs:95 [removeEpic] ${} printedId(r.holder)
+escaped                scripts/lib/remove-epic.mjs:95 [removeEpic] ${} printedId(r.epic)
+literal                scripts/lib/remove-epic.mjs:123 [removeEpic] ${} removedIds.length
+escaped                scripts/lib/remove-epic.mjs:123 [removeEpic] ${} escapeControls(removedIds.join(", "))
+literal                scripts/lib/remove-epic.mjs:124 [removeEpic] ${} STATE_UNCHANGED
+literal                scripts/lib/remove-epic.mjs:128 [removeEpic] ${} affected.length
+escaped                scripts/lib/remove-epic.mjs:129 [removeEpic] ${} escapeControls([...new Set(affected)].join(", "))
+judged:engine          scripts/lib/remove-epic.mjs:137 [removeEpic] ${} flag
+literal                scripts/lib/remove-epic.mjs:139 [removeEpic] ${} tombstoned.length
+escaped                scripts/lib/remove-epic.mjs:141 [removeEpic] ${} escapeControls(tombstoned.map(t => t.path).join(", "))
+judged:engine          scripts/lib/remove-epic.mjs:142 [removeEpic] ${} how
+literal                scripts/lib/remove-epic.mjs:89 [removeEpic] + (frames.length ? ` ${frames.length} detour-stack reference(s): ${cite(frames)}. Resume or pop the detour first (/pm:resume), then remove.\n` : "")
+judged:passthrough     scripts/lib/remove-epic.mjs:92 [removeEpic] + (owed.length ? ` ${owed.length} reconcile obligation link(s): ${cite(owed)}. Removing it would leave the owed ` + "verdict nothing to be recorded against. Answe
+judged:escaped         scripts/lib/remove-epic.mjs:95 [removeEpic] + [...new Set(owed.map(r => orNoRemedy(() => `\`record-reconcile ${printedId(r.holder)} --detour ${printedId(r.epic)} --verdict valid|invalidated\``)))].join(", "
+judged:escaped         scripts/lib/render.mjs:28 [tableRow] ${} cells.map(escapeTableCell).join(" | ")
+literal                scripts/lib/render.mjs:56 [render] ${} new Date().toISOString()
+sink                   scripts/lib/render.mjs:64 [render] ${} active.id
+sink                   scripts/lib/render.mjs:64 [render] ${} active.title
+sink                   scripts/lib/render.mjs:64 [render] ${} active.role
+sink                   scripts/lib/render.mjs:64 [render] ${} active.priority
+sink                   scripts/lib/render.mjs:64 [render] ${} bar(active.progress)
+sink                   scripts/lib/render.mjs:64 [render] ${} staleMarker(active)
+sink                   scripts/lib/render.mjs:71 [render] ${} active.externalUrl || active.externalId
+sink                   scripts/lib/render.mjs:75 [render] ${} activeEpic.id
+escaped                scripts/lib/render.mjs:89 [render] ${} f.pausedEpic
+escaped                scripts/lib/render.mjs:89 [render] ${} f.spawnedDetour || "-"
+literal                scripts/lib/render.mjs:96 [render] ${} CLAIMED_COMPLETION_NOTE
+judged:sink-flow       scripts/lib/render.mjs:115 [render] ${} e.disposition.carriedTo
+judged:sink-flow       scripts/lib/render.mjs:116 [render] ${} from
+judged:sink-flow       scripts/lib/render.mjs:117 [render] ${} l.type
+judged:sink-flow       scripts/lib/render.mjs:117 [render] ${} l.epic
+judged:sink-flow       scripts/lib/render.mjs:125 [render] ${} archived
+literal                scripts/lib/render.mjs:125 [render] ${} kids.length
+judged:sink-flow       scripts/lib/render.mjs:126 [render] ${} rollup
+judged:sink-flow       scripts/lib/render.mjs:126 [render] ${} progress
+judged:sink-flow       scripts/lib/render.mjs:131 [render] ${} outcomeOf(e)
+judged:sink-flow       scripts/lib/render.mjs:131 [render] ${} correctionMarking(e.disposition)
+judged:sink-flow       scripts/lib/render.mjs:137 [render] ${} e.priority
+judged:sink-flow       scripts/lib/render.mjs:137 [render] ${} e.effectivePriority
+escaped                scripts/lib/render.mjs:138 [render] ${} indent
+escaped                scripts/lib/render.mjs:138 [render] ${} e.id
+escaped                scripts/lib/render.mjs:139 [render] ${} e.status
+escaped                scripts/lib/render.mjs:139 [render] ${} outcome
+escaped                scripts/lib/render.mjs:139 [render] ${} e.reconcileNeeded ? " ⚠" : ""
+escaped                scripts/lib/render.mjs:139 [render] ${} miss
+escaped                scripts/lib/render.mjs:139 [render] ${} autonomous
+escaped                scripts/lib/render.mjs:139 [render] ${} staleMarker(e)
+sink                   scripts/lib/render.mjs:165 [render] ${} n
+judged:sink-flow       scripts/lib/render.mjs:186 [render] ${} e.description
+judged:sink-flow       scripts/lib/render.mjs:192 [render] ${} e.priority
+judged:sink-flow       scripts/lib/render.mjs:192 [render] ${} e.effectivePriority
+sink                   scripts/lib/render.mjs:193 [render] ${} e.id
+sink                   scripts/lib/render.mjs:193 [render] ${} prio
+sink                   scripts/lib/render.mjs:193 [render] ${} e.lane
+sink                   scripts/lib/render.mjs:193 [render] ${} e.status
+sink                   scripts/lib/render.mjs:193 [render] ${} e.title
+sink                   scripts/lib/render.mjs:193 [render] ${} why
+judged:sink-flow       scripts/lib/render.mjs:214 [render] ${} r.target
+judged:sink-flow       scripts/lib/render.mjs:215 [render] ${} r.intent
+sink                   scripts/lib/render.mjs:216 [render] ${} releaseLine(r)
+sink                   scripts/lib/render.mjs:216 [render] ${} crossSpecLine(state, epics, r.id)
+sink                   scripts/lib/render.mjs:216 [render] ${} intent
+sink                   scripts/lib/render.mjs:216 [render] ${} target
+sink                   scripts/lib/render.mjs:218 [render] ${} d.epic
+sink                   scripts/lib/render.mjs:218 [render] ${} d.reason
+sink                   scripts/lib/render.mjs:218 [render] ${} d.recordedAt.slice(0, 10)
+literal                scripts/lib/render.mjs:218 [render] ${} d.recordedAt ? ` (${d.recordedAt.slice(0, 10)})` : ""
+judged:sink-flow       scripts/lib/render.mjs:237 [render] ${} d.carriedTo
+escaped                scripts/lib/render.mjs:238 [render] ${} epic.id
+escaped                scripts/lib/render.mjs:238 [render] ${} outcomeOf(epic)
+escaped                scripts/lib/render.mjs:238 [render] ${} correctionMarking(d)
+escaped                scripts/lib/render.mjs:238 [render] ${} why
+escaped                scripts/lib/render.mjs:238 [render] ${} carried
+escaped                scripts/lib/render.mjs:238 [render] ${} correctionNote(d)
+escaped                scripts/lib/render.mjs:265 [render] ${} row.id
+escaped                scripts/lib/render.mjs:281 [render] ${} sha
+escaped                scripts/lib/render.mjs:281 [render] ${} epic
+literal                scripts/lib/render.mjs:317 [render] ${} epicRelevant ? "yes" : "no"
+literal                scripts/lib/render.mjs:325 [render] ${} PROJECT_MD
+judged:not-output      scripts/lib/render.mjs:342 [normalizeForDiffSummary] + out.slice(0, afterHeading)
+judged:not-output      scripts/lib/render.mjs:342 [normalizeForDiffSummary] + out.slice(end)
+not-output             scripts/lib/render.mjs:365 [writeRenderStamp] + JSON.stringify(stamp, null, 2)
+literal                scripts/lib/review-mode.mjs:24 [setReviewMode] ${} KNOWN_REVIEW_MODES.join("|")
+escaped                scripts/lib/review-mode.mjs:33 [setReviewMode] ${} escapeControls(mode)
+escaped                scripts/lib/review-mode.mjs:36 [setReviewMode] ${} escapeControls(mode)
+literal                scripts/lib/review-mode.mjs:36 [setReviewMode] ${} STATE_UNCHANGED
+judged:not-output      scripts/lib/rules.mjs:51 [secondaryTrackerKey] ${} entry.system
+judged:not-output      scripts/lib/rules.mjs:51 [secondaryTrackerKey] ${} entry.repo
+judged:not-output      scripts/lib/rules.mjs:52 [secondaryTrackerKey] ${} entry.system
+judged:not-output      scripts/lib/rules.mjs:52 [secondaryTrackerKey] ${} entry.projectKey
+judged:sink-flow       scripts/lib/rules.mjs:107 [pmCmd] ${} prefix
+judged:sink-flow       scripts/lib/rules.mjs:107 [pmCmd] ${} name
+judged:sink-flow       scripts/lib/rules.mjs:139 [closedItemStep] ${} n
+literal                scripts/lib/rules.mjs:145 [closedItemStep] ${} AGENT_OUTCOMES.join("|")
+judged:sink-flow       scripts/lib/rules.mjs:147 [closedItemStep] ${} sys
+judged:sink-flow       scripts/lib/rules.mjs:149 [closedItemStep] ${} pmCmd(platform, "status")
+literal                scripts/lib/rules.mjs:323 [GATE_PROCEDURE_ITEMS] ${} AGENT_OUTCOMES.join("|")
+literal                scripts/lib/rules.mjs:329 [GATE_PROCEDURE_ITEMS] ${} AGENT_OUTCOMES.join("|")
+literal                scripts/lib/rules.mjs:394 [gateProcedureLines] ${} i + 1
+judged:sink-flow       scripts/lib/rules.mjs:394 [gateProcedureLines] ${} item.title
+judged:sink-flow       scripts/lib/rules.mjs:394 [gateProcedureLines] ${} resolve(item.lines[0])
+judged:sink-flow       scripts/lib/rules.mjs:418 [intakeLines] ${} pmCmd(platform, "triage")
+judged:sink-flow       scripts/lib/rules.mjs:502 [reportingLines] ${} pmCmd(platform, "status")
+judged:sink-flow       scripts/lib/rules.mjs:502 [reportingLines] ${} pmCmd(platform, "next")
+judged:sink-flow       scripts/lib/rules.mjs:548 [inwardListStep] ${} tracker.repo
+literal                scripts/lib/rules.mjs:548 [inwardListStep] ${} GH_LIST_LIMIT
+literal                scripts/lib/rules.mjs:550 [inwardListStep] ${} GH_LIST_LIMIT
+judged:sink-flow       scripts/lib/rules.mjs:556 [inwardListStep] ${} sys
+judged:sink-flow       scripts/lib/rules.mjs:556 [inwardListStep] ${} scope
+literal                scripts/lib/rules.mjs:556 [inwardListStep] ${} scope ? ` (${scope})` : ""
+judged:sink-flow       scripts/lib/rules.mjs:591 [registrationStep] ${} prefix
+judged:sink-flow       scripts/lib/rules.mjs:591 [registrationStep] ${} idPart
+judged:sink-flow       scripts/lib/rules.mjs:591 [registrationStep] ${} keyPart
+judged:sink-flow       scripts/lib/rules.mjs:602 [registrationStep] ${} prefix
+judged:sink-flow       scripts/lib/rules.mjs:602 [registrationStep] ${} idPart
+judged:sink-flow       scripts/lib/rules.mjs:614 [watermarkStep] ${} n
+judged:sink-flow       scripts/lib/rules.mjs:649 [rulesBlock] ${} pmCmd(platform, "detour")
+judged:sink-flow       scripts/lib/rules.mjs:651 [rulesBlock] ${} pmCmd(platform, "detour")
+judged:sink-flow       scripts/lib/rules.mjs:663 [rulesBlock] ${} pmCmd(platform, "status")
+judged:sink-flow       scripts/lib/rules.mjs:664 [rulesBlock] ${} pmCmd(platform, "resume")
+judged:sink-flow       scripts/lib/rules.mjs:685 [rulesBlock] ${} pmCmd(platform, "epic")
+judged:sink-flow       scripts/lib/rules.mjs:687 [rulesBlock] ${} pmCmd(platform, "sync")
+literal                scripts/lib/rules.mjs:713 [rulesBlock] ${} DOCS_INDEX_URL
+literal                scripts/lib/rules.mjs:714 [rulesBlock] ${} DOCS_MCP_URL
+judged:sink-flow       scripts/lib/rules.mjs:717 [rulesBlock] ${} pmCmd(platform, "changelog")
+judged:sink-flow       scripts/lib/rules.mjs:780 [rulesBlock] ${} mode
+judged:sink-flow       scripts/lib/rules.mjs:786 [rulesBlock] ${} pmCmd(platform, "feedback")
+judged:sink-flow       scripts/lib/rules.mjs:790 [rulesBlock] ${} pmCmd(platform, "feedback")
+judged:sink-flow       scripts/lib/rules.mjs:803 [rulesBlock] ${} tracker.projectKey
+sink                   scripts/lib/rules.mjs:812 [rulesBlock] ${} sys
+sink                   scripts/lib/rules.mjs:812 [rulesBlock] ${} outwardScopeSuffix
+sink                   scripts/lib/rules.mjs:814 [rulesBlock] ${} sys
+sink                   scripts/lib/rules.mjs:815 [rulesBlock] ${} sys
+sink                   scripts/lib/rules.mjs:817 [rulesBlock] ${} sys
+sink                   scripts/lib/rules.mjs:818 [rulesBlock] ${} pmCmd(platform, "epic")
+sink                   scripts/lib/rules.mjs:822 [rulesBlock] ${} sys
+sink                   scripts/lib/rules.mjs:827 [rulesBlock] ${} sys
+sink                   scripts/lib/rules.mjs:847 [rulesBlock] ${} scope
+sink                   scripts/lib/rules.mjs:847 [rulesBlock] ${} sys
+sink                   scripts/lib/rules.mjs:847 [rulesBlock] ${} scope
+sink                   scripts/lib/rules.mjs:849 [rulesBlock] ${} sys
+sink                   scripts/lib/rules.mjs:851 [rulesBlock] ${} sys
+sink                   scripts/lib/rules.mjs:851 [rulesBlock] ${} pmCmd(platform, "sync")
+sink                   scripts/lib/rules.mjs:882 [rulesBlock] ${} st.system
+sink                   scripts/lib/rules.mjs:882 [rulesBlock] ${} scope
+literal                scripts/lib/rules.mjs:882 [rulesBlock] ${} scope ? ` · ${scope}` : ""
+sink                   scripts/lib/rules.mjs:885 [rulesBlock] ${} st.system
+sink                   scripts/lib/rules.mjs:890 [rulesBlock] ${} pmCmd(platform, "sync")
+sink                   scripts/lib/rules.mjs:902 [rulesBlock] ${} st.repo
+sink                   scripts/lib/rules.mjs:902 [rulesBlock] ${} JSON.stringify(st.repo)
+sink                   scripts/lib/rules.mjs:902 [rulesBlock] ${} st.projectKey
+literal                scripts/lib/rules.mjs:902 [rulesBlock] ${} st.repo ? (usesGhIssueList(st) ? `repo (\`${st.repo}\`)` : `repo ${JSON.stringify(st.repo)}`) : `project (\`${st.projectKey}\`)`
+sink                   scripts/lib/rules.mjs:925 [rulesBlock] ${} pmCmd(platform, "sync")
+sink                   scripts/lib/rules.mjs:927 [rulesBlock] ${} pmCmd(platform, "sync")
+judged:engine          scripts/lib/rules.mjs:1007 [rulesBlockArrangement] ${} file
+literal                scripts/lib/rules.mjs:1007 [rulesBlockArrangement] ${} markers.length
+judged:engine          scripts/lib/rules.mjs:1021 [rulesBlockAmbiguousMessage] ${} shown
+judged:engine          scripts/lib/rules.mjs:1023 [rulesBlockAmbiguousMessage] ${} m.line
+judged:engine          scripts/lib/rules.mjs:1023 [rulesBlockAmbiguousMessage] ${} m.kind
+judged:engine          scripts/lib/rules.mjs:1025 [rulesBlockAmbiguousMessage] ${} shown
+judged:engine          scripts/lib/rules.mjs:1080 [writeRules] ${} name
+judged:engine          scripts/lib/rules.mjs:1080 [writeRules] ${} platform
+judged:engine          scripts/lib/rules.mjs:1091 [writeRules] ${} name
+judged:engine          scripts/lib/rules.mjs:1091 [writeRules] ${} platform
+judged:engine          scripts/lib/rules.mjs:1093 [writeRules] ${} name
+judged:engine          scripts/lib/rules.mjs:1094 [writeRules] ${} name
+judged:engine          scripts/lib/rules.mjs:1094 [writeRules] ${} platform
+judged:sink-flow       scripts/lib/rules.mjs:586 [registrationStep] + itemPlaceholders
+literal                scripts/lib/rules.mjs:1034 [rulesBlockAmbiguousMessage] + L.join("\n")
+judged:engine          scripts/lib/rules.mjs:1087 [writeRules] + existing.slice(0, end)
+judged:engine          scripts/lib/rules.mjs:1087 [writeRules] + block.split("\n").join("\r\n")
+judged:engine          scripts/lib/rules.mjs:1093 [writeRules] + block
+judged:passthrough     scripts/lib/save-report.mjs:36 [reportSave] ${} line
+escaped                scripts/lib/self-hosting.mjs:130 [delegateToCheckout] ${} escapeControls(target)
+judged:engine          scripts/lib/self-hosting.mjs:131 [delegateToCheckout] ${} r.error.message
+escaped                scripts/lib/state.mjs:109 [seedCreationFields] ${} escapeControls(String(id))
+judged:engine          scripts/lib/state.mjs:120 [seedCreationFields] ${} expected
+judged:engine          scripts/lib/state.mjs:120 [seedCreationFields] ${} found
+judged:engine          scripts/lib/state.mjs:133 [seedCreationFields] ${} verb
+judged:engine          scripts/lib/state.mjs:133 [seedCreationFields] ${} reason
+judged:engine          scripts/lib/state.mjs:159 [persistFailure] ${} expectedRevision
+judged:engine          scripts/lib/state.mjs:160 [persistFailure] ${} diskRevision === null || diskRevision === undefined ? "unreadable" : diskRevision
+literal                scripts/lib/state.mjs:189 [revisionOfText] ${} STATE_DISPLAY_PATH
+judged:engine          scripts/lib/state.mjs:189 [revisionOfText] ${} reason
+judged:passthrough     scripts/lib/state.mjs:206 [unreadableStateMessage] ${} err.message
+literal                scripts/lib/state.mjs:207 [unreadableStateMessage] ${} STATE_DISPLAY_PATH
+literal                scripts/lib/state.mjs:208 [unreadableStateMessage] ${} STATE_DISPLAY_PATH
+literal                scripts/lib/state.mjs:208 [unreadableStateMessage] ${} STATE_DISPLAY_PATH
+literal                scripts/lib/state.mjs:209 [unreadableStateMessage] ${} STATE_DISPLAY_PATH
+literal                scripts/lib/state.mjs:210 [unreadableStateMessage] ${} STATE_DISPLAY_PATH
+literal                scripts/lib/state.mjs:210 [unreadableStateMessage] ${} STATE_DISPLAY_PATH
+judged:engine          scripts/lib/state.mjs:225 [shapeProblem] ${} bad
+escaped                scripts/lib/state.mjs:246 [readStateFile] ${} escapeControls((e && (e.code || e.message)) || e)
+escaped                scripts/lib/state.mjs:250 [readStateFile] ${} escapeControls(e.message)
+literal                scripts/lib/state.mjs:340 [lockPaths] ${} STATE_PATH
+literal                scripts/lib/state.mjs:340 [lockPaths] ${} STATE_PATH
+literal                scripts/lib/state.mjs:496 [lockRefusalMessage] ${} directory ? "rm -r" : "rm"
+judged:engine          scripts/lib/state.mjs:496 [lockRefusalMessage] ${} shown
+judged:engine          scripts/lib/state.mjs:500 [lockRefusalMessage] ${} shown
+literal                scripts/lib/state.mjs:500 [lockRefusalMessage] ${} STATE_LOCK_WAIT_MS
+judged:engine          scripts/lib/state.mjs:501 [lockRefusalMessage] ${} bShown
+judged:engine          scripts/lib/state.mjs:502 [lockRefusalMessage] ${} expected
+judged:engine          scripts/lib/state.mjs:502 [lockRefusalMessage] ${} stale
+literal                scripts/lib/state.mjs:503 [lockRefusalMessage] ${} lock.breakHeld.directory ? "rm -r" : "rm"
+judged:engine          scripts/lib/state.mjs:503 [lockRefusalMessage] ${} bShown
+judged:engine          scripts/lib/state.mjs:506 [lockRefusalMessage] ${} shown
+literal                scripts/lib/state.mjs:506 [lockRefusalMessage] ${} directory ? "a directory" : "a path"
+judged:engine          scripts/lib/state.mjs:507 [lockRefusalMessage] ${} stale
+judged:engine          scripts/lib/state.mjs:507 [lockRefusalMessage] ${} expected
+judged:engine          scripts/lib/state.mjs:508 [lockRefusalMessage] ${} rm
+judged:engine          scripts/lib/state.mjs:510 [lockRefusalMessage] ${} shown
+judged:engine          scripts/lib/state.mjs:510 [lockRefusalMessage] ${} describeHolder(lock.holder)
+literal                scripts/lib/state.mjs:511 [lockRefusalMessage] ${} STATE_LOCK_WAIT_MS
+judged:engine          scripts/lib/state.mjs:511 [lockRefusalMessage] ${} expected
+judged:engine          scripts/lib/state.mjs:511 [lockRefusalMessage] ${} stale
+judged:engine          scripts/lib/state.mjs:512 [lockRefusalMessage] ${} rm
+judged:engine          scripts/lib/state.mjs:520 [describeHolder] ${} info.kind
+judged:engine          scripts/lib/state.mjs:522 [describeHolder] ${} c.pid
+escaped                scripts/lib/state.mjs:523 [describeHolder] ${} escapeControls(c.host)
+escaped                scripts/lib/state.mjs:524 [describeHolder] ${} escapeControls(c.acquiredAt)
+literal                scripts/lib/state.mjs:676 [saveState] ${} STATE_PATH
+judged:not-output      scripts/lib/state.mjs:676 [saveState] ${} process.pid
+judged:not-output      scripts/lib/state.mjs:676 [saveState] ${} Date.now()
+judged:not-output      scripts/lib/state.mjs:695 [saveState] ${} expected
+judged:not-output      scripts/lib/state.mjs:675 [saveState] + JSON.stringify(next, null, 2)
+not-output             scripts/lib/subcommands.mjs:88 [ensureGitignore] ${} prefix
+not-output             scripts/lib/subcommands.mjs:88 [ensureGitignore] ${} missing.join("\n")
+judged:not-output      scripts/lib/subcommands.mjs:191 [changedFiles] ${} p
+judged:not-output      scripts/lib/subcommands.mjs:200 [ownArtifacts] ${} epic.id
+judged:not-output      scripts/lib/subcommands.mjs:275 [looksLikeUnloggedMinimalDetour] ${} activeEpicId
+judged:engine          scripts/lib/subcommands.mjs:383 [supersedeAmended] ${} shortSha(entry.sha)
+escaped                scripts/lib/subcommands.mjs:406 [supersedeAmended] ${} printedId(epic.id)
+judged:engine          scripts/lib/subcommands.mjs:406 [supersedeAmended] ${} replaced
+judged:engine          scripts/lib/subcommands.mjs:406 [supersedeAmended] ${} reason
+judged:engine          scripts/lib/subcommands.mjs:409 [supersedeAmended] ${} label
+judged:engine          scripts/lib/subcommands.mjs:409 [supersedeAmended] ${} reason
+judged:engine          scripts/lib/subcommands.mjs:410 [supersedeAmended] ${} reason
+escaped                scripts/lib/subcommands.mjs:415 [supersedeAmended] ${} escapeControls(id)
+judged:engine          scripts/lib/subcommands.mjs:415 [supersedeAmended] ${} label
+escaped                scripts/lib/subcommands.mjs:471 [attributionNudge] ${} printedId(epic.id)
+judged:engine          scripts/lib/subcommands.mjs:471 [attributionNudge] ${} s
+literal                scripts/lib/subcommands.mjs:471 [attributionNudge] ${} list.map(s => `--attribute-commit ${s}`).join(" ")
+escaped                scripts/lib/subcommands.mjs:482 [attributionNudge] ${} asCode(cmd(e))
+judged:engine          scripts/lib/subcommands.mjs:483 [attributionNudge] ${} exclusion
+escaped                scripts/lib/subcommands.mjs:487 [attributionNudge] ${} escapeControls(epic.id)
+escaped                scripts/lib/subcommands.mjs:490 [attributionNudge] ${} asCode(cmd(epic))
+judged:engine          scripts/lib/subcommands.mjs:492 [attributionNudge] ${} exclusion
+escaped                scripts/lib/subcommands.mjs:495 [attributionNudge] ${} asCode(cmd(epic))
+judged:engine          scripts/lib/subcommands.mjs:495 [attributionNudge] ${} exclusion
+judged:engine          scripts/lib/subcommands.mjs:628 [runNudge] ${} shortSha(c.sha)
+judged:engine          scripts/lib/subcommands.mjs:633 [runNudge] ${} named.join(", ")
+judged:engine          scripts/lib/subcommands.mjs:635 [runNudge] ${} named[0]
+judged:engine          scripts/lib/subcommands.mjs:640 [runNudge] ${} r
+judged:engine          scripts/lib/subcommands.mjs:646 [runNudge] ${} shortSha(s)
+judged:engine          scripts/lib/subcommands.mjs:646 [runNudge] ${} dead.map(s => `\`${shortSha(s)}\``).join(", ")
+literal                scripts/lib/subcommands.mjs:652 [runNudge] ${} dead.length > 1 ? "These commits" : "This commit"
+judged:engine          scripts/lib/subcommands.mjs:654 [runNudge] ${} deadProvenance
+judged:engine          scripts/lib/subcommands.mjs:654 [runNudge] ${} deadSentence
+judged:engine          scripts/lib/subcommands.mjs:658 [runNudge] ${} detected
+escaped                scripts/lib/subcommands.mjs:658 [runNudge] ${} escapeControls(ctx.detourId)
+judged:engine          scripts/lib/subcommands.mjs:663 [runNudge] ${} detected
+judged:engine          scripts/lib/subcommands.mjs:666 [runNudge] ${} detected
+judged:engine          scripts/lib/subcommands.mjs:669 [runNudge] ${} deadSentence
+escaped                scripts/lib/subcommands.mjs:748 [sync] ${} escapeControls(e.id)
+judged:engine          scripts/lib/subcommands.mjs:785 [sync] ${} claim.label
+escaped                scripts/lib/subcommands.mjs:785 [sync] ${} escapeControls(fname)
+escaped                scripts/lib/subcommands.mjs:785 [sync] ${} escapeControls(claim.epic)
+escaped                scripts/lib/subcommands.mjs:791 [sync] ${} escapeControls(id)
+escaped                scripts/lib/subcommands.mjs:798 [sync] ${} escapeControls(fname)
+escaped                scripts/lib/subcommands.mjs:799 [sync] ${} commandValue(planPath, "<plan path>")
+escaped                scripts/lib/subcommands.mjs:821 [sync] ${} escapeControls(fname)
+escaped                scripts/lib/subcommands.mjs:821 [sync] ${} escapeControls(near.id)
+escaped                scripts/lib/subcommands.mjs:823 [sync] ${} printedId(near.id)
+escaped                scripts/lib/subcommands.mjs:823 [sync] ${} commandValue(planPath, "<plan path>")
+escaped                scripts/lib/subcommands.mjs:823 [sync] ${} orNoRemedy(() => `\`update-epic ${printedId(near.id)} --plan ${commandValue(planPath, "<plan path>")}\``)
+escaped                scripts/lib/subcommands.mjs:824 [sync] ${} printedId(id)
+escaped                scripts/lib/subcommands.mjs:824 [sync] ${} commandValue(planPath, "<plan path>")
+escaped                scripts/lib/subcommands.mjs:824 [sync] ${} orNoRemedy(() => `\`add-epic --id ${printedId(id)} --lane superpowers --plan ${commandValue(planPath, "<plan path>")}\``)
+literal                scripts/lib/subcommands.mjs:857 [sync] ${} backfilled.length
+judged:engine          scripts/lib/subcommands.mjs:858 [sync] ${} backfilled.join(", ")
+literal                scripts/lib/subcommands.mjs:859 [sync] ${} backfilled.length
+judged:engine          scripts/lib/subcommands.mjs:859 [sync] ${} backfilled.join(", ")
+judged:engine          scripts/lib/subcommands.mjs:863 [sync] ${} added
+judged:engine          scripts/lib/subcommands.mjs:867 [sync] ${} added
+literal                scripts/lib/subcommands.mjs:867 [sync] ${} STATE_UNCHANGED
+judged:passthrough     scripts/lib/subcommands.mjs:922 [retractDetour] ${} msg
+escaped                scripts/lib/subcommands.mjs:937 [retractDetour] ${} escapeControls(arg)
+escaped                scripts/lib/subcommands.mjs:949 [retractDetour] ${} escapeControls(arg)
+escaped                scripts/lib/subcommands.mjs:958 [retractDetour] ${} escapeControls(sha)
+literal                scripts/lib/subcommands.mjs:958 [retractDetour] ${} commits.length
+judged:engine          scripts/lib/subcommands.mjs:958 [retractDetour] ${} commits.join(", ")
+judged:engine          scripts/lib/subcommands.mjs:967 [retractDetour] ${} label
+escaped                scripts/lib/subcommands.mjs:968 [retractDetour] ${} escapeControls(sha)
+escaped                scripts/lib/subcommands.mjs:973 [retractDetour] ${} escapeControls(sha)
+escaped                scripts/lib/subcommands.mjs:975 [retractDetour] ${} escapeControls(sha)
+escaped                scripts/lib/subcommands.mjs:979 [retractDetour] ${} escapeControls(sha)
+literal                scripts/lib/subcommands.mjs:987 [retractDetour] ${} derived.length
+judged:engine          scripts/lib/subcommands.mjs:987 [retractDetour] ${} label
+escaped                scripts/lib/subcommands.mjs:1002 [honchoMemoryLine] ${} escapeControls(epicId)
+escaped                scripts/lib/subcommands.mjs:1002 [honchoMemoryLine] ${} escapeControls(reason)
+escaped                scripts/lib/subcommands.mjs:1003 [honchoMemoryLine] ${} escapeControls(epicId)
+escaped                scripts/lib/subcommands.mjs:1003 [honchoMemoryLine] ${} escapeControls(reason)
+escaped                scripts/lib/subcommands.mjs:1004 [honchoMemoryLine] ${} escapeControls(action)
+literal                scripts/lib/subcommands.mjs:1017 [appendHonchoMemory] ${} new Date().toISOString()
+not-output             scripts/lib/subcommands.mjs:1017 [appendHonchoMemory] ${} line
+judged:passthrough     scripts/lib/subcommands.mjs:1037 [honchoMemory] ${} e.message
+escaped                scripts/lib/subcommands.mjs:1049 [honchoMemory] ${} escapeControls(epicId)
+judged:escaped         scripts/lib/subcommands.mjs:1049 [honchoMemory] ${} note
+not-output             scripts/lib/subcommands.mjs:155 [snapshot] + buildBrief(state)
+judged:engine          scripts/lib/subcommands.mjs:412 [supersedeAmended] + commands.join(", ")
+judged:engine          scripts/lib/subcommands.mjs:482 [attributionNudge] + candidates.map(e => `- ${asCode(cmd(e))}` + (e.attributedCommits.length === 0 ? " (attributes no commits yet)" : "")).join("\n")
+literal                scripts/lib/subcommands.mjs:482 [attributionNudge] + (e.attributedCommits.length === 0 ? " (attributes no commits yet)" : "")
+judged:engine          scripts/lib/subcommands.mjs:640 [runNudge] + loggedRows.map(r => `\`retract-detour ${r} --reason "<why>"\``).join(", ")
+literal                scripts/lib/subcommands.mjs:659 [runNudge] + (detourLogged ? " (logged to detours.log)" : " (bookkeeping only — not added to the detour trail)")
+judged:engine          scripts/lib/subcommands.mjs:661 [runNudge] + retractPointer
+judged:engine          scripts/lib/subcommands.mjs:665 [runNudge] + retractPointer
+judged:escaped         scripts/lib/subcommands.mjs:1018 [appendHonchoMemory] + line
+sink                   scripts/lib/tool-currency.mjs:191 [openspecCurrencyLines] ${} c.project
+sink                   scripts/lib/tool-currency.mjs:192 [openspecCurrencyLines] ${} c.installed
+literal                scripts/lib/tool-currency.mjs:194 [openspecCurrencyLines] ${} OPENSPEC_GENERATED_PATHS.join(" and ")
+sink                   scripts/lib/tool-currency.mjs:206 [openspecCurrencyLines] ${} id
+sink                   scripts/lib/tool-currency.mjs:206 [openspecCurrencyLines] ${} c.changes.map(id => `\`${id}\``).join(", ")
+literal                scripts/lib/tool-currency.mjs:207 [openspecCurrencyLines] ${} c.changes.length === 1 ? "is" : "are"
+literal                scripts/lib/tracker-refresh-writeback.mjs:41 [recordTrackerRefresh] ${} KNOWN_REFRESH_VERDICTS.join("|")
+escaped                scripts/lib/tracker-refresh-writeback.mjs:54 [recordTrackerRefresh] ${} escapeControls(id)
+escaped                scripts/lib/tracker-refresh-writeback.mjs:57 [recordTrackerRefresh] ${} escapeControls(id)
+escaped                scripts/lib/tracker-refresh-writeback.mjs:75 [recordTrackerRefresh] ${} escapeControls(id)
+judged:engine          scripts/lib/tracker-refresh-writeback.mjs:75 [recordTrackerRefresh] ${} verdict
+escaped                scripts/lib/tracker-refresh-writeback.mjs:76 [recordTrackerRefresh] ${} escapeControls(id)
+judged:engine          scripts/lib/tracker-refresh-writeback.mjs:76 [recordTrackerRefresh] ${} verdict
+literal                scripts/lib/tracker-refresh-writeback.mjs:77 [recordTrackerRefresh] ${} STATE_UNCHANGED
+judged:engine          scripts/lib/tracker.mjs:33 [setTracker] ${} flag
+escaped                scripts/lib/tracker.mjs:33 [setTracker] ${} escapeControls(JSON.stringify(bad))
+literal                scripts/lib/tracker.mjs:51 [setTracker] ${} KNOWN_TRACKER_DIRECTIONS.join("|")
+escaped                scripts/lib/tracker.mjs:59 [setTracker] ${} escapeControls(direction)
+escaped                scripts/lib/tracker.mjs:77 [setTracker] ${} escapeControls(JSON.stringify(repo))
+escaped                scripts/lib/tracker.mjs:97 [setTracker] ${} system
+escaped                scripts/lib/tracker.mjs:97 [setTracker] ${} repo
+escaped                scripts/lib/tracker.mjs:97 [setTracker] ${} projectKey
+escaped                scripts/lib/tracker.mjs:97 [setTracker] ${} repo ? ` ${repo}` : ` ${projectKey}`
+escaped                scripts/lib/tracker.mjs:97 [setTracker] ${} escapeControls(`${system}${repo ? ` ${repo}` : ` ${projectKey}`}`)
+escaped                scripts/lib/tracker.mjs:104 [setTracker] ${} system
+escaped                scripts/lib/tracker.mjs:104 [setTracker] ${} repo
+escaped                scripts/lib/tracker.mjs:104 [setTracker] ${} projectKey
+escaped                scripts/lib/tracker.mjs:104 [setTracker] ${} repo ? ` ${repo}` : ` ${projectKey}`
+escaped                scripts/lib/tracker.mjs:104 [setTracker] ${} escapeControls(`${system}${repo ? ` ${repo}` : ` ${projectKey}`}`)
+escaped                scripts/lib/tracker.mjs:105 [setTracker] ${} system
+escaped                scripts/lib/tracker.mjs:105 [setTracker] ${} repo
+escaped                scripts/lib/tracker.mjs:105 [setTracker] ${} projectKey
+escaped                scripts/lib/tracker.mjs:105 [setTracker] ${} repo ? ` ${repo}` : ` ${projectKey}`
+escaped                scripts/lib/tracker.mjs:105 [setTracker] ${} escapeControls(`${system}${repo ? ` ${repo}` : ` ${projectKey}`}`)
+literal                scripts/lib/tracker.mjs:106 [setTracker] ${} STATE_UNCHANGED
+escaped                scripts/lib/tracker.mjs:126 [setTracker] ${} entry.system
+escaped                scripts/lib/tracker.mjs:126 [setTracker] ${} entry.repo
+escaped                scripts/lib/tracker.mjs:126 [setTracker] ${} entry.projectKey
+escaped                scripts/lib/tracker.mjs:126 [setTracker] ${} entry.repo ? ` ${entry.repo}` : ` ${entry.projectKey}`
+escaped                scripts/lib/tracker.mjs:126 [setTracker] ${} escapeControls(`${entry.system}${entry.repo ? ` ${entry.repo}` : ` ${entry.projectKey}`}`)
+literal                scripts/lib/tracker.mjs:128 [setTracker] ${} STATE_UNCHANGED
+judged:engine          scripts/lib/tracker.mjs:159 [setTracker] ${} field
+escaped                scripts/lib/tracker.mjs:159 [setTracker] ${} escapeControls(JSON.stringify(t[field]))
+escaped                scripts/lib/tracker.mjs:159 [setTracker] ${} escapeControls(previous.system)
+judged:engine          scripts/lib/tracker.mjs:166 [setTracker] ${} kept
+escaped                scripts/lib/tracker.mjs:166 [setTracker] ${} escapeControls(previous.system)
+literal                scripts/lib/tracker.mjs:167 [setTracker] ${} KNOWN_TRACKER_DIRECTIONS.join("|")
+judged:passthrough     scripts/lib/tracker.mjs:196 [setTracker] ${} line
+escaped                scripts/lib/tracker.mjs:200 [setTracker] ${} t.system
+escaped                scripts/lib/tracker.mjs:200 [setTracker] ${} t.projectKey
+escaped                scripts/lib/tracker.mjs:200 [setTracker] ${} t.projectKey ? ` ${t.projectKey}` : ""
+escaped                scripts/lib/tracker.mjs:200 [setTracker] ${} escapeControls(`${t.system}${t.projectKey ? ` ${t.projectKey}` : ""}`)
+literal                scripts/lib/tracker.mjs:201 [setTracker] ${} STATE_UNCHANGED
+literal                scripts/lib/triage.mjs:186 [triage] ${} f.limit === true ? "no value" : escapeControls(JSON.stringify(f.limit))
+judged:json            scripts/lib/triage.mjs:197 [triage] + JSON.stringify({ ask, lane: laneSuggestion(state, ask), backlog: { total: epics.length, open: epics.filter(e => e.status !== "archived").length, byStatus, activ
+judged:json            scripts/lib/unconsidered.mjs:30 [unconsideredOutcomesReport] + JSON.stringify({ count: rows.length, unconsidered: rows.map(({ epic, invocation, deliveredBlockedBy }) => ({ id: epic.id, title: epic.title || epic.id, lane: ep
+judged:not-output      scripts/lib/update-epic.mjs:62 [missingGateWithdrawals] ${} r.gate
+judged:engine          scripts/lib/update-epic.mjs:107 [echoedTokens] ${} name
+judged:engine          scripts/lib/update-epic.mjs:107 [echoedTokens] ${} shellQuote(`--${name}=`)
+judged:engine          scripts/lib/update-epic.mjs:107 [echoedTokens] ${} name
+judged:engine          scripts/lib/update-epic.mjs:107 [echoedTokens] ${} value(`--${name}`, inline)
+judged:engine          scripts/lib/update-epic.mjs:111 [echoedTokens] ${} name
+judged:escaped         scripts/lib/update-epic.mjs:207 [regressionRefusal] ${} quoted(i.reason)
+literal                scripts/lib/update-epic.mjs:207 [regressionRefusal] ${} o.items.map(i => `withdrawal reason ${quoted(i.reason)}`).join(", ")
+judged:engine          scripts/lib/update-epic.mjs:208 [regressionRefusal] ${} i.n
+judged:escaped         scripts/lib/update-epic.mjs:208 [regressionRefusal] ${} quoted(i.title)
+literal                scripts/lib/update-epic.mjs:208 [regressionRefusal] ${} o.items.map(i => `story ${i.n} ${quoted(i.title)}`).join(", ")
+literal                scripts/lib/update-epic.mjs:209 [regressionRefusal] ${} o.kind === "gate2" ? "Gate 2" : "handoff"
+escaped                scripts/lib/update-epic.mjs:209 [regressionRefusal] ${} escapeControls(o.detail)
+judged:engine          scripts/lib/update-epic.mjs:209 [regressionRefusal] ${} named
+escaped                scripts/lib/update-epic.mjs:225 [regressionRefusal] ${} asCode(l)
+escaped                scripts/lib/update-epic.mjs:240 [regressionRefusal] ${} escapeControls(id)
+judged:engine          scripts/lib/update-epic.mjs:243 [regressionRefusal] ${} status
+judged:engine          scripts/lib/update-epic.mjs:247 [regressionRefusal] ${} [...new Set(reenter)].join(", ")
+literal                scripts/lib/update-epic.mjs:247 [regressionRefusal] ${} reenter.length === 1 ? "" : "s"
+literal                scripts/lib/update-epic.mjs:248 [regressionRefusal] ${} reenter.length === 1 ? "is" : "are"
+literal                scripts/lib/update-epic.mjs:249 [regressionRefusal] ${} reenter.length === 1 ? "it" : "them"
+literal                scripts/lib/update-epic.mjs:249 [regressionRefusal] ${} REENTER_PLACEHOLDER
+literal                scripts/lib/update-epic.mjs:257 [regressionRefusal] ${} remedies ? "Or, once it is met, record" : "To make this change, record"
+judged:engine          scripts/lib/update-epic.mjs:259 [regressionRefusal] ${} invocation
+judged:engine          scripts/lib/update-epic.mjs:288 [updateEpic] ${} linkTypeVocabulary()
+literal                scripts/lib/update-epic.mjs:288 [updateEpic] ${} AGENT_OUTCOMES.join("|")
+literal                scripts/lib/update-epic.mjs:332 [updateEpic] ${} KNOWN_GATE_NUMBERS.join("|")
+escaped                scripts/lib/update-epic.mjs:333 [updateEpic] ${} escapeControls(JSON.stringify(unknownGate))
+judged:engine          scripts/lib/update-epic.mjs:340 [updateEpic] ${} twice
+escaped                scripts/lib/update-epic.mjs:370 [updateEpic] ${} escapeControls(id)
+judged:engine          scripts/lib/update-epic.mjs:379 [updateEpic] ${} g
+escaped                scripts/lib/update-epic.mjs:383 [updateEpic] ${} escapeControls(id)
+judged:engine          scripts/lib/update-epic.mjs:383 [updateEpic] ${} g
+judged:engine          scripts/lib/update-epic.mjs:393 [updateEpic] ${} g
+escaped                scripts/lib/update-epic.mjs:393 [updateEpic] ${} escapeControls(id)
+escaped                scripts/lib/update-epic.mjs:395 [updateEpic] ${} asCode(gateRemedy(id, g))
+judged:passthrough     scripts/lib/update-epic.mjs:403 [updateEpic] ${} perr
+literal                scripts/lib/update-epic.mjs:407 [updateEpic] ${} KNOWN_STATUSES.join("|")
+literal                scripts/lib/update-epic.mjs:416 [updateEpic] ${} KNOWN_LANES.join("|")
+escaped                scripts/lib/update-epic.mjs:449 [updateEpic] ${} escapeControls(id)
+escaped                scripts/lib/update-epic.mjs:449 [updateEpic] ${} escapeControls(id)
+escaped                scripts/lib/update-epic.mjs:451 [updateEpic] ${} escapeControls(d)
+literal                scripts/lib/update-epic.mjs:451 [updateEpic] ${} owed.map(d => `'${escapeControls(d)}'`).join(", ")
+escaped                scripts/lib/update-epic.mjs:452 [updateEpic] ${} printedId(id)
+escaped                scripts/lib/update-epic.mjs:452 [updateEpic] ${} orNoRemedy(() => `\`record-reconcile ${printedId(id)} --detour <detourId> --verdict valid|invalidated\``)
+judged:passthrough     scripts/lib/update-epic.mjs:467 [updateEpic] ${} e.message
+escaped                scripts/lib/update-epic.mjs:488 [updateEpic] ${} escapeControls(name)
+escaped                scripts/lib/update-epic.mjs:488 [updateEpic] ${} escapeControls(name)
+judged:engine          scripts/lib/update-epic.mjs:488 [updateEpic] ${} declared.setOnly
+escaped                scripts/lib/update-epic.mjs:493 [updateEpic] ${} escapeControls(name)
+escaped                scripts/lib/update-epic.mjs:493 [updateEpic] ${} escapeControls(name)
+judged:engine          scripts/lib/update-epic.mjs:494 [updateEpic] ${} r.flag
+judged:engine          scripts/lib/update-epic.mjs:494 [updateEpic] ${} r.key
+literal                scripts/lib/update-epic.mjs:494 [updateEpic] ${} nullableRows.map(r => `${r.flag} (${r.key})`).join(", ")
+judged:engine          scripts/lib/update-epic.mjs:505 [updateEpic] ${} contradictory.join(", --clear ")
+judged:engine          scripts/lib/update-epic.mjs:506 [updateEpic] ${} contradictory.join(", --")
+literal                scripts/lib/update-epic.mjs:517 [updateEpic] ${} KNOWN_REVIEW_MODES.join("|")
+escaped                scripts/lib/update-epic.mjs:523 [updateEpic] ${} escapeControls(reviewMode)
+escaped                scripts/lib/update-epic.mjs:524 [updateEpic] ${} escapeControls(global)
+judged:passthrough     scripts/lib/update-epic.mjs:542 [updateEpic] ${} e.message
+judged:passthrough     scripts/lib/update-epic.mjs:566 [updateEpic] ${} err
+escaped                scripts/lib/update-epic.mjs:571 [updateEpic] ${} escapeControls(f.story)
+escaped                scripts/lib/update-epic.mjs:571 [updateEpic] ${} escapeControls(id)
+literal                scripts/lib/update-epic.mjs:571 [updateEpic] ${} stories.length
+literal                scripts/lib/update-epic.mjs:571 [updateEpic] ${} stories.length === 1 ? "y" : "ies"
+judged:engine          scripts/lib/update-epic.mjs:582 [updateEpic] ${} n
+escaped                scripts/lib/update-epic.mjs:582 [updateEpic] ${} escapeControls(id)
+escaped                scripts/lib/update-epic.mjs:583 [updateEpic] ${} escapeControls(target.disposition.state)
+escaped                scripts/lib/update-epic.mjs:583 [updateEpic] ${} escapeControls(target.disposition.reason)
+judged:engine          scripts/lib/update-epic.mjs:588 [updateEpic] ${} n
+escaped                scripts/lib/update-epic.mjs:588 [updateEpic] ${} escapeControls(id)
+escaped                scripts/lib/update-epic.mjs:658 [updateEpic] ${} escapeControls(JSON.stringify(v))
+escaped                scripts/lib/update-epic.mjs:666 [updateEpic] ${} escapeControls(JSON.stringify(v))
+judged:engine          scripts/lib/update-epic.mjs:666 [updateEpic] ${} colons
+escaped                scripts/lib/update-epic.mjs:685 [updateEpic] ${} escapeControls(JSON.stringify(pair.what))
+escaped                scripts/lib/update-epic.mjs:685 [updateEpic] ${} escapeControls(JSON.stringify(pair.reason))
+judged:engine          scripts/lib/update-epic.mjs:707 [updateEpic] ${} k
+literal                scripts/lib/update-epic.mjs:707 [updateEpic] ${} supplied.map(k => `--${k}`).join(", ")
+literal                scripts/lib/update-epic.mjs:708 [updateEpic] ${} supplied.length === 1 ? "is" : "are"
+escaped                scripts/lib/update-epic.mjs:709 [updateEpic] ${} escapeControls(id)
+escaped                scripts/lib/update-epic.mjs:778 [updateEpic] ${} escapeControls(alsoAttributed.join(", "))
+escaped                scripts/lib/update-epic.mjs:785 [updateEpic] ${} escapeControls(id)
+escaped                scripts/lib/update-epic.mjs:785 [updateEpic] ${} escapeControls(missing.join(", "))
+literal                scripts/lib/update-epic.mjs:786 [updateEpic] ${} epic.attributedCommits && epic.attributedCommits.length ? escapeControls(epic.attributedCommits.join(", ")) : "(none)"
+judged:engine          scripts/lib/update-epic.mjs:805 [updateEpic] ${} gate
+escaped                scripts/lib/update-epic.mjs:833 [updateEpic] ${} escapeControls(p)
+escaped                scripts/lib/update-epic.mjs:833 [updateEpic] ${} escapeControls(epic.id)
+escaped                scripts/lib/update-epic.mjs:845 [updateEpic] ${} escapeControls(epic.id)
+escaped                scripts/lib/update-epic.mjs:845 [updateEpic] ${} escapeControls(epic.rank)
+escaped                scripts/lib/update-epic.mjs:846 [updateEpic] ${} escapeControls(epic.priority)
+escaped                scripts/lib/update-epic.mjs:846 [updateEpic] ${} escapeControls(newPriority)
+escaped                scripts/lib/update-epic.mjs:847 [updateEpic] ${} escapeControls(newPriority)
+escaped                scripts/lib/update-epic.mjs:901 [updateEpic] ${} escapeControls(id)
+judged:engine          scripts/lib/update-epic.mjs:901 [updateEpic] ${} row.flag
+judged:engine          scripts/lib/update-epic.mjs:901 [updateEpic] ${} row.clearNote
+judged:passthrough     scripts/lib/update-epic.mjs:924 [updateEpic] ${} verdict.message
+escaped                scripts/lib/update-epic.mjs:982 [updateEpic] ${} escapeControls(epic.claim.session)
+escaped                scripts/lib/update-epic.mjs:982 [updateEpic] ${} escapeControls(id)
+escaped                scripts/lib/update-epic.mjs:1011 [updateEpic] ${} escapeControls(wrote.join(", "))
+escaped                scripts/lib/update-epic.mjs:1011 [updateEpic] ${} escapeControls(id)
+escaped                scripts/lib/update-epic.mjs:1012 [updateEpic] ${} escapeControls(missing.join(", "))
+literal                scripts/lib/update-epic.mjs:1012 [updateEpic] ${} missing.length === 1 ? "is" : "are"
+judged:engine          scripts/lib/update-epic.mjs:1032 [updateEpic] ${} stillThere.join(", ")
+escaped                scripts/lib/update-epic.mjs:1032 [updateEpic] ${} escapeControls(id)
+judged:engine          scripts/lib/update-epic.mjs:1046 [updateEpic] ${} notLanded.join(", gate ")
+escaped                scripts/lib/update-epic.mjs:1046 [updateEpic] ${} escapeControls(id)
+escaped                scripts/lib/update-epic.mjs:1058 [updateEpic] ${} escapeControls(id)
+escaped                scripts/lib/update-epic.mjs:1059 [updateEpic] ${} escapeControls(id)
+judged:engine          scripts/lib/update-epic.mjs:241 [regressionRefusal] + findings
+judged:engine          scripts/lib/update-epic.mjs:241 [regressionRefusal] + remedies
+literal                scripts/lib/update-epic.mjs:242 [regressionRefusal] + (status !== undefined ? ` --status ${status} is dropped from the printed invocation, because the change directory ` + "archived on disk re-archives the epic wha
+literal                scripts/lib/update-epic.mjs:246 [regressionRefusal] + (reenter.length ? ` The ${[...new Set(reenter)].join(", ")} value${reenter.length === 1 ? "" : "s"} carried a newline or ` + `another control character and ${re
+literal                scripts/lib/update-epic.mjs:251 [regressionRefusal] + (carry.length ? " Its open tasks have no command of their own: tick them in the task source, or keep the handoff " + "the invocation carries, naming the epic th
+literal                scripts/lib/update-epic.mjs:451 [updateEpic] + (owed.length ? ` (owed against ${owed.map(d => `'${escapeControls(d)}'`).join(", ")})` : "")
+sink                   scripts/lib/verify-specs.mjs:178 [formatSpecCoverage] ${} report.root
+sink                   scripts/lib/verify-specs.mjs:186 [formatSpecCoverage] ${} report.root
+literal                scripts/lib/verify-specs.mjs:186 [formatSpecCoverage] ${} report.documents.length
+sink                   scripts/lib/verify-specs.mjs:189 [formatSpecCoverage] ${} String(d.epics.length).padStart(3)
+sink                   scripts/lib/verify-specs.mjs:189 [formatSpecCoverage] ${} d.path
+sink                   scripts/lib/verify-specs.mjs:190 [formatSpecCoverage] ${} i
+sink                   scripts/lib/verify-specs.mjs:190 [formatSpecCoverage] ${} d.epics.map(i => `\`${i}\``).join(", ")
+sink                   scripts/lib/verify-specs.mjs:194 [formatSpecCoverage] ${} report.documents.length - uncovered
+literal                scripts/lib/verify-specs.mjs:194 [formatSpecCoverage] ${} report.documents.length
+sink                   scripts/lib/verify-specs.mjs:195 [formatSpecCoverage] ${} uncovered
+sink                   scripts/lib/verify-specs.mjs:256 [formatHeaderCandidates] ${} report.root
+literal                scripts/lib/verify-specs.mjs:264 [formatHeaderCandidates] ${} report.proposals.length
+sink                   scripts/lib/verify-specs.mjs:267 [formatHeaderCandidates] ${} p.path
+sink                   scripts/lib/verify-specs.mjs:269 [formatHeaderCandidates] ${} c.id
+sink                   scripts/lib/verify-specs.mjs:269 [formatHeaderCandidates] ${} c.label
+literal                scripts/lib/verify-specs.mjs:269 [formatHeaderCandidates] ${} c.label ? ` (under **${c.label}:**)` : ""
+escaped                scripts/lib/verify-specs.mjs:271 [formatHeaderCandidates] ${} printedId(c.id)
+escaped                scripts/lib/verify-specs.mjs:271 [formatHeaderCandidates] ${} commandValue(p.path, "<spec path>")
+escaped                scripts/lib/verify-specs.mjs:271 [formatHeaderCandidates] ${} orNoRemedy(() => `update-epic ${printedId(c.id)} --spec ${commandValue(p.path, "<spec path>")}`)
+literal                scripts/lib/verify-specs.mjs:277 [formatHeaderCandidates] ${} report.unknown.length
+sink                   scripts/lib/verify-specs.mjs:280 [formatHeaderCandidates] ${} u.id
+sink                   scripts/lib/verify-specs.mjs:280 [formatHeaderCandidates] ${} u.label
+literal                scripts/lib/verify-specs.mjs:280 [formatHeaderCandidates] ${} u.label ? ` (under **${u.label}:**)` : ""
+sink                   scripts/lib/verify-specs.mjs:280 [formatHeaderCandidates] ${} u.path
+literal                scripts/lib/verify-specs.mjs:292 [danglingBlock] ${} dangling.length
+judged:sink-flow       scripts/lib/verify-specs.mjs:294 [danglingBlock] ${} d.epic
+judged:sink-flow       scripts/lib/verify-specs.mjs:294 [danglingBlock] ${} d.path
+literal                scripts/lib/verify-specs.mjs:190 [formatSpecCoverage] + (d.epics.length ? ` — ${d.epics.map(i => `\`${i}\``).join(", ")}` : "")
+judged:escaped         scripts/lib/verify-specs.mjs:325 [verifySpecs] + formatHeaderCandidates(headerCandidates(state, absRoot))
+judged:escaped         scripts/lib/verify-specs.mjs:328 [verifySpecs] + formatSpecCoverage(specCoverage(state, absRoot))
+judged:json            scripts/lib/worktree-hygiene.mjs:50 [verifyWorktrees] ${} epicId
+judged:json            scripts/lib/worktree-hygiene.mjs:37 [verifyWorktrees] + JSON.stringify({ orphaned: [] })
+judged:json            scripts/lib/worktree-hygiene.mjs:63 [verifyWorktrees] + JSON.stringify({ orphaned })
+judged:json            scripts/lib/worktree-hygiene.mjs:97 [changesets] + JSON.stringify({ changesets: [] })
+judged:json            scripts/lib/worktree-hygiene.mjs:108 [changesets] + JSON.stringify({ changesets: out })
+literal                scripts/lib/write-conflicts.mjs:33 [rotateIfNeeded] ${} WRITE_CONFLICTS_LOG
+literal                scripts/lib/write-conflicts.mjs:45 [recordConflict] ${} new Date().toISOString()
+judged:engine          scripts/lib/write-conflicts.mjs:45 [recordConflict] ${} verb
+judged:engine          scripts/lib/write-conflicts.mjs:45 [recordConflict] ${} expected
+judged:engine          scripts/lib/write-conflicts.mjs:45 [recordConflict] ${} found
+literal                scripts/lib/write-conflicts.mjs:96 [consumeConflictWarning] ${} new Date().toISOString()
+
+interpolations: 1447 — judged 523, escaped 451, literal 265, not-output 17, sink 191

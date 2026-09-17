@@ -21,7 +21,14 @@ import fs from "node:fs";
 import path from "node:path";
 import { run, tmpRepo, writeState, gitRepo, commitFiles, detourLog, autoDetourState } from "./helpers.mjs";
 
-const WATCH = (cwd) => path.join(cwd, ".conductor", "commit-watch.json");
+// commit-nudge-reads-the-whole-move: the HEAD watermark (`commit-watch.json`) is replaced by the
+// reflog anchor in `commit-observe.json`; the engine never reads or writes the old file.
+const RECORD = (cwd) => path.join(cwd, ".conductor", "commit-observe.json");
+const record = (cwd) => JSON.parse(fs.readFileSync(RECORD(cwd), "utf8"));
+const reflogLastLine = (cwd) => {
+  const lines = fs.readFileSync(path.join(cwd, ".git", "logs", "HEAD"), "utf8").trim().split("\n");
+  return lines[lines.length - 1];
+};
 const git = (cwd, ...args) => execFileSync("git", args, { cwd, encoding: "utf8" }).trim();
 const head = (cwd) => git(cwd, "rev-parse", "HEAD");
 
@@ -30,7 +37,7 @@ function nudge(cwd, command) {
   return run(["commit-nudge"], { cwd, input: JSON.stringify({ tool_input: { command } }) });
 }
 
-/** Prime the HEAD watermark the way the field does: the hook runs on EVERY Bash tool call, so
+/** Prime the reflog anchor the way the field does: the hook runs on EVERY Bash tool call, so
  *  by the time an interesting command arrives the previous call has already recorded where HEAD
  *  was. A fixture that skips this is testing the cold-start rung, not the steady state. */
 function prime(cwd) {
@@ -165,51 +172,52 @@ test("a BACKGROUNDED commit is caught on the next tool call rather than lost (gh
   commitFiles(cwd, { "a.txt": "1" }, "fix: still running");   // the background commit completes
   const out = nudge(cwd, "ls");
   assert.ok(out.includes("hookSpecificOutput"),
-    "the watermark is stale by exactly one commit, so the very next call notices it");
+    "the anchor is behind by exactly one commit, so the very next call notices it");
   assert.match(detourLog(cwd), /still running/);
-  // The entry describes the COMMIT, not the call that happened to notice it. gitShortSha() and
-  // headChangedFiles() both read HEAD, so a delayed notice is still attributed correctly —
+  // The entry describes the COMMIT, not the call that happened to notice it. The observed rung logs
+  // each reported commit under its own sha and changed paths, so a delayed notice is still correct —
   // assert it rather than trust it, since this is the one place that could silently drift.
   assert.match(detourLog(cwd), new RegExp(`\\t${git(cwd, "rev-parse", "--short", "HEAD")}\\t`),
     "the logged sha must be the commit's, not a stale or unrelated one");
 });
 
-// ─────────────────── the watermark itself, and how this degrades ───────────────────
+// ─────────────────── the observation record itself, and how this degrades ───────────────────
 
-test("the HEAD watermark is persisted on EVERY invocation, including silent ones", () => {
-  // Mutation guard for the persist. Delete it and every later call sees a stale (or absent)
-  // baseline, which pins the hook on the cold-start rung forever — invisible to any test that
-  // only ever calls the hook once.
+test("the reflog anchor is persisted on EVERY invocation, including silent ones", () => {
+  // Mutation guard for the persist. Delete it and every later call has no anchor, which pins the
+  // hook on the cold-start rung forever — invisible to any test that only calls the hook once.
   const cwd = tmpRepo(); run(["init"], { cwd }); gitRepo(cwd);
   nudge(cwd, "ls");                       // silent: nothing landed
-  assert.ok(fs.existsSync(WATCH(cwd)), "a silent call must still record where HEAD was");
-  assert.equal(JSON.parse(fs.readFileSync(WATCH(cwd), "utf8")).head, head(cwd));
+  assert.ok(fs.existsSync(RECORD(cwd)), "a silent call must still record where the reflog ended");
+  assert.equal(Buffer.from(record(cwd).anchor.lineBase64, "base64").toString("utf8"), reflogLastLine(cwd));
   commitFiles(cwd, { "a.txt": "1" }, "fix: a later commit");
   nudge(cwd, "ls");
-  assert.equal(JSON.parse(fs.readFileSync(WATCH(cwd), "utf8")).head, head(cwd),
-    "and must move the watermark forward as HEAD moves");
+  assert.equal(Buffer.from(record(cwd).anchor.lineBase64, "base64").toString("utf8"), reflogLastLine(cwd),
+    "and must move the anchor forward as the reflog grows");
+  assert.equal(fs.existsSync(path.join(cwd, ".conductor", "commit-watch.json")), false,
+    "the 0.44.0 watermark file is never written by this engine");
 });
 
-test("the watermark is recorded even for a command that never mentions a commit (gh#104)", () => {
+test("the anchor is recorded even for a command that never mentions a commit (gh#104)", () => {
   // The trap this guards: leaving the /git\s+commit/ text check ahead of the observation would
-  // make gh#104's own repro the only thing that ever primes the cache.
+  // make gh#104's own repro the only thing that ever primes the record.
   const cwd = tmpRepo(); run(["init"], { cwd }); gitRepo(cwd);
   nudge(cwd, "echo hello");
-  assert.equal(JSON.parse(fs.readFileSync(WATCH(cwd), "utf8")).head, head(cwd));
+  assert.equal(Buffer.from(record(cwd).anchor.lineBase64, "base64").toString("utf8"), reflogLastLine(cwd));
 });
 
-test("a corrupt watermark file degrades to the pre-observation path instead of throwing", () => {
+test("a corrupt observation record degrades to the pre-observation path instead of throwing", () => {
   const cwd = tmpRepo(); run(["init"], { cwd }); gitRepo(cwd); activeEpicState(cwd);
-  fs.writeFileSync(WATCH(cwd), "{ this is not json");
+  fs.writeFileSync(RECORD(cwd), "{ this is not json");
   commitFiles(cwd, { "a.txt": "1" }, "fix: a real commit");
   const out = nudge(cwd, 'git commit -m "fix: a real commit"');
   assert.ok(out.includes("hookSpecificOutput"),
-    "an unreadable watermark must never disable the hook, and must never crash it");
-  assert.equal(JSON.parse(fs.readFileSync(WATCH(cwd), "utf8")).head, head(cwd),
-    "and the corrupt file is replaced with a usable value, so the repo self-heals onto the observed path");
+    "an unreadable record must never disable the hook, and must never crash it");
+  assert.equal(Buffer.from(record(cwd).anchor.lineBase64, "base64").toString("utf8"), reflogLastLine(cwd),
+    "and the corrupt file is replaced with a usable anchor, so the repo self-heals onto the observed path");
 });
 
-// ─────────────────── the COLD-START rung: no watermark exists yet ───────────────────
+// ─────────────────── the COLD-START rung: no anchor exists yet ───────────────────
 // One invocation per repository lands here — the first hook run after the plugin is updated —
 // and it still uses the old subject-vs-HEAD parse. Both flag-form defects in the
 // `autodetour-parser-misses-am-and-f` epic are therefore fixed there too rather than only
@@ -218,7 +226,7 @@ test("a corrupt watermark file degrades to the pre-observation path instead of t
 test("cold start: a rejected -am commit is suppressed, not waved through on an empty subject", () => {
   const cwd = tmpRepo(); run(["init"], { cwd }); autoDetourState(cwd); gitRepo(cwd);
   commitFiles(cwd, { "prior.txt": "1" }, "chore: an unrelated prior commit");
-  // No prime(): no watermark, so this is the parse rung. `-am` used to match nothing, giving
+  // No prime(): no anchor, so this is the parse rung. `-am` used to match nothing, giving
   // subject "" — which short-circuited the HEAD comparison and logged the prior commit under a
   // subject that was never committed.
   const out = nudge(cwd, 'git commit -am "fix: rejected, never landed"');
@@ -254,20 +262,18 @@ test("reflogs disabled: the hook falls back rather than going permanently silent
   assert.match(detourLog(cwd), /AUTO-DETOUR/);
 });
 
-test("a reflog whose top entry is not HEAD cannot classify the move, so it falls back", () => {
-  // The top reflog entry can describe an OLDER position — an expired or pruned entry, a reflog
-  // written by a git that stopped logging. Here the surviving top entry is a `checkout`, which
-  // would classify a commit that really landed as "not a commit" and silence the hook: a false
-  // NEGATIVE, the direction that fails silently. Only comparing the entry's sha against HEAD
-  // catches it.
+test("a reflog whose anchored entry is gone cannot be walked, so it falls back", () => {
+  // The anchored line can vanish — a `git reflog delete`, a rewrite of the log. With no position to
+  // read from, the move is UNVERIFIABLE, not a denial: the subject-vs-HEAD fallback must carry a
+  // real commit through rather than silence the hook, the direction that fails silently.
   const cwd = tmpRepo(); run(["init"], { cwd }); autoDetourState(cwd); gitRepo(cwd);
   git(cwd, "checkout", "-q", "-b", "side");
-  prime(cwd);
-  commitFiles(cwd, { "a.txt": "1" }, "fix: real, but its reflog entry is gone");
-  git(cwd, "reflog", "delete", "HEAD@{0}");      // top entry is now the earlier `checkout`
-  const out = nudge(cwd, 'git commit -m "fix: real, but its reflog entry is gone"');
+  prime(cwd);                                    // anchored at the `checkout` line
+  commitFiles(cwd, { "a.txt": "1" }, "fix: real, but its anchor is gone");
+  git(cwd, "reflog", "delete", "HEAD@{1}");      // the anchored `checkout` line
+  const out = nudge(cwd, 'git commit -m "fix: real, but its anchor is gone"');
   assert.ok(out.includes("hookSpecificOutput"),
-    "an unclassifiable move is UNVERIFIABLE, not a denial — the fallback must carry it through");
+    "an unwalkable reflog is UNVERIFIABLE, not a denial — the fallback must carry it through");
   assert.match(detourLog(cwd), /AUTO-DETOUR/);
 });
 
@@ -277,23 +283,25 @@ test("an UNBORN HEAD is a position, not a failure: the initial commit is noticed
   git(cwd, "config", "user.email", "test@example.com");
   git(cwd, "config", "user.name", "Test");
   prime(cwd);                                   // records the unborn position
-  assert.equal(JSON.parse(fs.readFileSync(WATCH(cwd), "utf8")).head, "",
-    "a repo with no commits has a real, comparable HEAD position");
+  assert.deepEqual(record(cwd).anchor, { size: 0, lineBase64: "" },
+    "a repo with no reflog yet is anchored at its start, a real and comparable position");
   commitFiles(cwd, { "a.txt": "1" }, "fix: the very first commit");
   const out = nudge(cwd, "git commit");
   assert.ok(out.includes("hookSpecificOutput"),
     "`commit (initial)` is a commit, and the move off UNBORN is observable");
 });
 
-test("commit-nudge stays dormant before /pm:init and writes no watermark", () => {
+test("commit-nudge stays dormant before /pm:init and writes no observation record", () => {
   const cwd = tmpRepo();
   assert.equal(nudge(cwd, 'git commit -m "fix: x"'), "");
-  assert.equal(fs.existsSync(WATCH(cwd)), false,
+  assert.equal(fs.existsSync(RECORD(cwd)), false,
     "an uninitialized repo must not grow a .conductor/ file from a hook that is meant to be dormant");
 });
 
-test("the watermark file is git-ignored in every pm-managed repo", () => {
+test("the observation record (and the old watermark) are git-ignored in every pm-managed repo", () => {
   const cwd = tmpRepo(); run(["init"], { cwd });
-  assert.match(fs.readFileSync(path.join(cwd, ".gitignore"), "utf8"), /^\.conductor\/commit-watch\.json$/m,
-    "an engine-written file nobody ignores is #106 all over again");
+  const gi = fs.readFileSync(path.join(cwd, ".gitignore"), "utf8");
+  assert.match(gi, /^\.conductor\/commit-observe\.json\*$/m,
+    "an engine-written file nobody ignores is #106 all over again — the glob covers its lock and temp file");
+  assert.match(gi, /^\.conductor\/commit-watch\.json$/m, "a 0.44.0 session sharing the checkout still writes the old file");
 });

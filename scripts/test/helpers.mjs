@@ -375,3 +375,112 @@ export function fixtureCommits(cwd, names, { orphan = false } = {}) {
 export function fixtureCommit(cwd, name = "fixture", opts) {
   return fixtureCommits(cwd, [name], opts)[0];
 }
+
+// ───────── commit-nudge-reads-the-whole-move: hermetic observation fixtures ─────────
+
+/** git in a fixture, hermetic through the env hermetic-git.mjs sets (no template, no signing). */
+export function fixtureGit(cwd, ...args) {
+  return execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+}
+
+function initFixtureGit(dir) {
+  fixtureGit(dir, "init", "-q", "-b", "main");
+  fixtureGit(dir, "config", "user.email", "test@example.com");
+  fixtureGit(dir, "config", "user.name", "Test");
+  fixtureGit(dir, "config", "commit.gpgsign", "false");
+}
+
+/** A pm-managed fixture repository in which the commit hook can be observed the way
+ *  `hooks/hooks.json` invokes it.
+ *
+ *  `nested: true` puts the conductor at `projects/sub/` of the git repository; `clone: true` makes
+ *  the repository a clone of an upstream that `upstreamCommit()` can advance, for `pull --rebase`.
+ *  The epic `epicId` is registered (claude-code lane) and set active, and everything init wrote is
+ *  committed as a baseline. Setup failures throw — a fixture that half-built would make every
+ *  absence assertion vacuous. */
+export function observationRepo({ nested = false, clone = false, epicId = "epic-a" } = {}) {
+  let gitRoot;
+  let upstream = null;
+  if (clone) {
+    upstream = tmpRepo();
+    initFixtureGit(upstream);
+    fs.writeFileSync(path.join(upstream, "UPSTREAM.md"), "upstream\n");
+    fixtureGit(upstream, "add", "UPSTREAM.md");
+    fixtureGit(upstream, "commit", "-q", "-m", "chore: upstream root");
+    // A non-bare upstream accepts a push to its checked-out branch only with this set.
+    fixtureGit(upstream, "config", "receive.denyCurrentBranch", "updateInstead");
+    gitRoot = tmpRepo();
+    fs.rmdirSync(gitRoot);
+    execFileSync("git", ["clone", "-q", upstream, gitRoot], { stdio: ["ignore", "ignore", "pipe"] });
+    fixtureGit(gitRoot, "config", "user.email", "test@example.com");
+    fixtureGit(gitRoot, "config", "user.name", "Test");
+    fixtureGit(gitRoot, "config", "commit.gpgsign", "false");
+    fixtureGit(gitRoot, "config", "pull.rebase", "true");
+  } else {
+    gitRoot = tmpRepo();
+    initFixtureGit(gitRoot);
+  }
+  // `nested: true` is `projects/sub/`; a string names the git-root-relative directory instead.
+  const cwd = typeof nested === "string" ? path.join(gitRoot, nested) : nested ? path.join(gitRoot, "projects", "sub") : gitRoot;
+  fs.mkdirSync(cwd, { recursive: true });
+  const quiet = (args) => execFileSync("node", [ENGINE, ...args], {
+    cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"],
+    env: { ...process.env, CLAUDE_PROJECT_DIR: cwd, PM_CACHE_ROOT: EMPTY_CACHE },
+  });
+  quiet(["init", "--platform", "claude-code"]);
+  if (epicId) {
+    quiet(["add-epic", "--id", epicId, "--lane", "claude-code"]);
+    quiet(["set-active", epicId]);
+  }
+  fixtureGit(gitRoot, "add", "-A");
+  fixtureGit(gitRoot, "commit", "-q", "-m", "chore: baseline");
+  if (clone) fixtureGit(gitRoot, "push", "-q", "origin", "HEAD");
+
+  const repo = {
+    gitRoot, cwd, upstream,
+    git: (...args) => fixtureGit(gitRoot, ...args),
+    head: () => fixtureGit(gitRoot, "rev-parse", "HEAD"),
+    /** Write `files` (paths relative to the GIT ROOT) and commit exactly those paths. */
+    commit(files, message) {
+      for (const [rel, content] of Object.entries(files)) {
+        const p = path.join(gitRoot, rel);
+        fs.mkdirSync(path.dirname(p), { recursive: true });
+        fs.writeFileSync(p, content);
+      }
+      fixtureGit(gitRoot, "add", "--", ...Object.keys(files));
+      fixtureGit(gitRoot, "commit", "-q", "-m", message);
+      return fixtureGit(gitRoot, "rev-parse", "HEAD");
+    },
+    /** Advance the upstream of a `clone: true` fixture by one commit. */
+    upstreamCommit(message = "chore: upstream moved") {
+      if (!upstream) throw new Error("upstreamCommit() needs observationRepo({ clone: true })");
+      fs.appendFileSync(path.join(upstream, "UPSTREAM.md"), `${message}\n`);
+      fixtureGit(upstream, "commit", "-q", "-am", message);
+      return fixtureGit(upstream, "rev-parse", "HEAD");
+    },
+    observe: (event = "PostToolUse", command = "true") => observe(event, cwd, command),
+    detours: () => detourLog(cwd),
+  };
+  return repo;
+}
+
+/** One commit-hook observation: pipes a `{hook_event_name, tool_name: "Bash", tool_input}` payload
+ *  into `commit-nudge --platform claude-code` exactly as hooks/hooks.json does, and returns
+ *  `{ status, stdout, stderr, context }` — `context` is the parsed additionalContext, or "". */
+export function observe(event, cwd, command = "true") {
+  const r = spawnSync("node", [ENGINE, "commit-nudge", "--platform", "claude-code"], {
+    cwd,
+    env: { ...process.env, CLAUDE_PROJECT_DIR: cwd, PM_CACHE_ROOT: EMPTY_CACHE },
+    encoding: "utf8",
+    input: JSON.stringify({ hook_event_name: event, tool_name: "Bash", tool_input: { command } }),
+  });
+  let context = "", eventName = null;
+  if (r.stdout && r.stdout.trim()) {
+    try {
+      const j = JSON.parse(r.stdout);
+      context = j.hookSpecificOutput?.additionalContext || "";
+      eventName = j.hookSpecificOutput?.hookEventName ?? null;
+    } catch { context = ""; }
+  }
+  return { status: r.status, stdout: r.stdout || "", stderr: r.stderr || "", context, eventName };
+}

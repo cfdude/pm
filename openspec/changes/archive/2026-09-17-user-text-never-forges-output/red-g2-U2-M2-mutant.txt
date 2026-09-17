@@ -1,0 +1,17 @@
+# REGRESSION GUARD mutants — Gate 2 U2-M2 (test 5.3h). Each applied alone, run, restored; nothing committed.
+
+## a. supersedeAmended compares a row's epic field: const mine = open.filter(r => r.epic === state.active)
+ℹ pass 0
+ℹ fail 1
+  AssertionError [ERR_ASSERTION]: subcommands.mjs:supersedeAmended: a row's epic field is used only as appendRetraction()'s epic — const mine = open.filter(r => r.epic === state.active);
+
+## b. render's detour loop compares the destructured epic: if (epic === state.active) continue;
+ℹ pass 0
+ℹ fail 1
+  AssertionError [ERR_ASSERTION]: each row's fields reach only tableRow()
+
+## c. a new reader appended to tool-currency.mjs: detourEpics() { return readDetourRows().map(r => r.epic) }
+ℹ pass 0
+ℹ fail 1
+  AssertionError [ERR_ASSERTION]: the detours.log readers are exactly the ones checked against design D7
+  +   'tool-currency.mjs:detourEpics'

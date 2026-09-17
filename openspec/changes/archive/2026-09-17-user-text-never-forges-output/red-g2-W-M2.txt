@@ -1,0 +1,135 @@
+# Gate 2 W-M2 — the W-M2 tests against the sweep and judgments at 533ad3a
+✖ mutant (Gate 2 W-M2): a MEMBER call named like an escaper — fake.escapeControls(`…`) — escapes nothing (556.665916ms)
+✖ mutant (Gate 2 W-M2): fs.writeSync to a file descriptor is output, not a filesystem call (406.355292ms)
+✖ mutant (Gate 2 W-M2): a push is a sink only when X.map(escapeControls) is joined or returned — not in a comment, a string or a dropped expression (403.826125ms)
+✖ a string holding "const escapeControls =" does not un-trust the real import (Gate 2 W-M2 false positive) (389.445583ms)
+✖ normaliseExpr never collapses whitespace inside a string or template literal (Gate 2 W-M2) (0.234083ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 0
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1803.023916
+
+✖ failing tests:
+
+test at scripts/test/output-interpolations.test.mjs:172:1
+✖ mutant (Gate 2 W-M2): a MEMBER call named like an escaper — fake.escapeControls(`…`) — escapes nothing (556.665916ms)
+  AssertionError [ERR_ASSERTION]: UNCLASSIFIED scripts/lib/claims.mjs:204 [claim] ${} fake.escapeControls(`${held.session}`)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-interpolations.test.mjs:174:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/output-interpolations.test.mjs:177:1
+✖ mutant (Gate 2 W-M2): fs.writeSync to a file descriptor is output, not a filesystem call (406.355292ms)
+  AssertionError [ERR_ASSERTION]
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-interpolations.test.mjs:180:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/output-interpolations.test.mjs:183:1
+✖ mutant (Gate 2 W-M2): a push is a sink only when X.map(escapeControls) is joined or returned — not in a comment, a string or a dropped expression (403.826125ms)
+  AssertionError [ERR_ASSERTION]: // L.map(escapeControls).join("\n")
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-interpolations.test.mjs:187:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/output-interpolations.test.mjs:194:1
+✖ a string holding "const escapeControls =" does not un-trust the real import (Gate 2 W-M2 false positive) (389.445583ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + [
+  +   'UNCLASSIFIED scripts/lib/claims.mjs:120 [refuseHeld] ${} escapeControls(claim.session)',
+  +   'UNCLASSIFIED scripts/lib/claims.mjs:120 [refuseHeld] ${} escapeControls(claim.claimedAt)',
+  +   'UNCLASSIFIED scripts/lib/claims.mjs:177 [claim] ${} escapeControls(stolenFrom.session)',
+  +   'UNCLASSIFIED scripts/lib/claims.mjs:181 [claim] ${} escapeControls(session)',
+  +   'UNCLASSIFIED scripts/lib/claims.mjs:193 [claim] ${} escapeControls(epicId)',
+  +   'UNCLASSIFIED scripts/lib/claims.mjs:197 [claim] ${} escapeControls(epicId)',
+  +   'UNCLASSIFIED scripts/lib/claims.mjs:201 [claim] ${} escapeControls(epicId)',
+  +   'UNCLASSIFIED scripts/lib/claims.mjs:205 [claim] ${} escapeControls(epicId)',
+  +   'UNCLASSIFIED scripts/lib/claims.mjs:205 [claim] ${} escapeControls(held.session)',
+  +   'UNCLASSIFIED scripts/lib/claims.mjs:211 [claim] ${} escapeControls(epicId)',
+  +   'UNCLASSIFIED scripts/lib/claims.mjs:211 [claim] ${} escapeControls(session)',
+  +   'UNCLASSIFIED scripts/lib/claims.mjs:212 [claim] ${} escapeControls(epicId)',
+  +   'UNCLASSIFIED scripts/lib/claims.mjs:212 [claim] ${} escapeControls(session)',
+  +   'UNCLASSIFIED scripts/lib/claims.mjs:249 [unclaim] ${} escapeControls(held.session)',
+  +   'UNCLASSIFIED scripts/lib/claims.mjs:249 [unclaim] ${} escapeControls(session)',
+  +   'UNCLASSIFIED scripts/lib/claims.mjs:263 [unclaim] ${} escapeControls(epicId)',
+  +   'UNCLASSIFIED scripts/lib/claims.mjs:265 [unclaim] ${} escapeControls(epicId)',
+  +   'UNCLASSIFIED scripts/lib/claims.mjs:267 [unclaim] ${} escapeControls(epicId)',
+  +   'UNCLASSIFIED scripts/lib/claims.mjs:270 [unclaim] ${} escapeControls(held.session)',
+  +   'UNCLASSIFIED scripts/lib/claims.mjs:270 [unclaim] ${} escapeControls(session)',
+  +   'UNCLASSIFIED scripts/lib/claims.mjs:275 [unclaim] ${} escapeControls(epicId)',
+  +   'UNCLASSIFIED scripts/lib/claims.mjs:276 [unclaim] ${} escapeControls(epicId)'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-interpolations.test.mjs:196:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 'UNCLASSIFIED scripts/lib/claims.mjs:120 [refuseHeld] ${} escapeControls(claim.session)', 'UNCLASSIFIED scripts/lib/claims.mjs:120 [refuseHeld] ${} escapeControls(claim.claimedAt)', 'UNCLASSIFIED scripts/lib/claims.mjs:177 [claim] ${} escapeControls(stolenFrom.session)', 'UNCLASSIFIED scripts/lib/claims.mjs:181 [claim] ${} escapeControls(session)', 'UNCLASSIFIED scripts/lib/claims.mjs:193 [claim] ${} escapeControls(epicId)', 'UNCLASSIFIED scripts/lib/claims.mjs:197 [claim] ${} escapeControls(epicId)', 'UNCLASSIFIED scripts/lib/claims.mjs:201 [claim] ${} escapeControls(epicId)', 'UNCLASSIFIED scripts/lib/claims.mjs:205 [claim] ${} escapeControls(epicId)', 'UNCLASSIFIED scripts/lib/claims.mjs:205 [claim] ${} escapeControls(held.session)', 'UNCLASSIFIED scripts/lib/claims.mjs:211 [claim] ${} escapeControls(epicId)', 'UNCLASSIFIED scripts/lib/claims.mjs:211 [claim] ${} escapeControls(session)', 'UNCLASSIFIED scripts/lib/claims.mjs:212 [claim] ${} escapeControls(epicId)', 'UNCLASSIFIED scripts/lib/claims.mjs:212 [claim] ${} escapeControls(session)', 'UNCLASSIFIED scripts/lib/claims.mjs:249 [unclaim] ${} escapeControls(held.session)', 'UNCLASSIFIED scripts/lib/claims.mjs:249 [unclaim] ${} escapeControls(session)', 'UNCLASSIFIED scripts/lib/claims.mjs:263 [unclaim] ${} escapeControls(epicId)', 'UNCLASSIFIED scripts/lib/claims.mjs:265 [unclaim] ${} escapeControls(epicId)', 'UNCLASSIFIED scripts/lib/claims.mjs:267 [unclaim] ${} escapeControls(epicId)', 'UNCLASSIFIED scripts/lib/claims.mjs:270 [unclaim] ${} escapeControls(held.session)', 'UNCLASSIFIED scripts/lib/claims.mjs:270 [unclaim] ${} escapeControls(session)', 'UNCLASSIFIED scripts/lib/claims.mjs:275 [unclaim] ${} escapeControls(epicId)', 'UNCLASSIFIED scripts/lib/claims.mjs:276 [unclaim] ${} escapeControls(epicId)' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/output-interpolations.test.mjs:199:1
+✖ normaliseExpr never collapses whitespace inside a string or template literal (Gate 2 W-M2) (0.234083ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'f("a b", `c ${d}`)'
+  - 'f("a  b", `c   ${d}`)'
+          ^
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-interpolations.test.mjs:201:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'f("a b", `c ${d}`)',
+    expected: 'f("a  b", `c   ${d}`)',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

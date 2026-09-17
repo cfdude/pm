@@ -1,0 +1,292 @@
+✖ 3.1/3.3 Layer C: every inward section's registration line and lane-routing call, filled per its quoting instruction, run through sh (1801.189125ms)
+✖ 3.2 jira keys ABC-123 and ABC-124 register as two distinct epics; the same key twice is refused (196.37525ms)
+✖ 3.3a suggest-lane --ask reads a flag-shaped text; the positional form is unchanged; both at once is refused; help lists --ask (217.3565ms)
+✖ 3.4 every github-issues listing step names --limit, and the truncation stop precedes the closed-item step (2.713ms)
+✖ 3.5 no emitted section names /pm:epic list (5.401208ms)
+✖ 3.6 every secondary section carries the watermark step before its closed-item step (2.703209ms)
+✖ 3.7 the completion-sync reminder names no writeback step the block does not emit (0.263292ms)
+✖ 3.8 the outward record-the-key line carries --external-updated-at, and an epic recorded by it is not counted never-re-read (0.263083ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 0
+ℹ fail 8
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2304.316667
+
+✖ failing tests:
+
+test at scripts/test/emitted-invocations.test.mjs:1791:1
+✖ 3.1/3.3 Layer C: every inward section's registration line and lane-routing call, filled per its quoting instruction, run through sh (1801.189125ms)
+  AssertionError [ERR_ASSERTION]: ## Secondary tracker sync (github-issues · o/s): registration does not use --title=
+  ## Secondary tracker sync (github-issues · o/s): registration does not use --external-url=
+  ## Secondary tracker sync (github-issues · o/s): lane routing is not `suggest-lane --ask=`: suggest-lane "<issue-title>"
+  ## Secondary tracker sync (github-issues · o/s) ["Ordinary title"]: registration exited 1: sh: issue-updated-at: No such file or directory
+      add-epic --id gh-o-s-40 --title "Ordinary title" --status untriaged --external-id 40 --external-url https://github.com/o/n/issues/40 --external-updated-at <issue-updated-at> --lane claude-code --priority P2
+  ## Secondary tracker sync (github-issues · o/s) ["it's \"done\" $(touch pwned) `id`"]: registration exited 1: sh: issue-updated-at: No such file or directory
+      add-epic --id gh-o-s-41 --title "it's "done" $(touch pwned) `id`" --status untriaged --external-id 41 --external-url https://github.com/o/n/issues/41 --external-updated-at <issue-updated-at> --lane claude-code --priority P2
+  ## Secondary tracker sync (github-issues · o/s) ["--limit=5 ignored"]: registration exited 1: sh: issue-updated-at: No such file or directory
+      add-epic --id gh-o-s-42 --title "--limit=5 ignored" --status untriaged --external-id 42 --external-url https://github.com/o/n/issues/42 --external-updated-at <issue-updated-at> --lane claude-code --priority P2
+  ## Secondary tracker sync (github-issues · o/s) ["-h"]: registration exited 1: sh: issue-updated-at: No such file or directory
+      add-epic --id gh-o-s-43 --title "-h" --status untriaged --external-id 43 --external-url https://github.com/o/n/issues/43 --external-updated-at <issue-updated-at> --lane claude-code --priority P2
+  ## Secondary tracker sync (github-issues · o/s) ["--help"]: registration exited 1: sh: issue-updated-at: No such file or directory
+      add-epic --id gh-o-s-44 --title "--help" --status untriaged --external-id 44 --external-url https://github.com/o/n/issues/44 --external-updated-at <issue-updated-at> --lane claude-code --priority P2
+  ## Secondary tracker sync (github-issues · o/s) ["-x starts with a dash"]: registration exited 1: sh: issue-updated-at: No such file or directory
+      add-epic --id gh-o-s-45 --title "-x starts with a dash" --status untriaged --external-id 45 --external-url https://github.com/o/n/issues/45 --external-updated-at <issue-updated-at> --lane claude-code --priority P2
+  ## Secondary tracker sync (github-issues · o/s) ["line one\nline two"]: registration exited 1: sh: issue-updated-at: No such file or directory
+      add-epic --id gh-o-s-46 --title "line one
+  line two" --status untriaged --external-id 46 --external-url https://github.com/o/n/issues/46 --external-updated-at <issue-updated-at> --lane claude-code --priority P2
+  ## Secondary tracker sync (github-issues · o/s): a title executed a command (pwned exists)
+  ## Secondary tracker sync (jira · SEC): registration does not use --title=
+  ## Secondary tracker sync (jira · SEC): registration does not use --external-url=
+  ## Secondary tracker sync (jira · SEC): lane routing is not `suggest-lane --ask=`: suggest-lane "<issue-title>"
+  ## Secondary tracker sync (jira · SEC) ["Ordinary title"]: registration exited 1: sh: issue-updated-at: No such file or directory
+      add-epic --id jira-sec-ABC-120 --title "Ordinary title" --status untriaged --external-id ABC-120 --external-url https://jira.example/browse/ABC-120 --external-updated-at <issue-updated-at> --lane claude-code --priority P2
+  ## Secondary tracker sync (jira · SEC) ["it's \"done\" $(touch pwned) `id`"]: registration exited 1: sh: issue-updated-at: No such file or directory
+      add-epic --id jira-sec-ABC-121 --title "it's "done" $(touch pwned) `id`" --status untriaged --external-id ABC-121 --external-url https://jira.example/browse/ABC-121 --external-updated-at <issue-updated-at> --lane claude-code --priority P2
+  ## Secondary tracker sync (jira · SEC) ["--limit=5 ignored"]: registration exited 1: sh: issue-updated-at: No such file or directory
+      add-epic --id jira-sec-ABC-122 --title "--limit=5 ignored" --status untriaged --external-id ABC-122 --external-url https://jira.example/browse/ABC-122 --external-updated-at <issue-updated-at> --lane claude-code --priority P2
+  ## Secondary tracker sync (jira · SEC) ["-h"]: registration exited 1: sh: issue-updated-at: No such file or directory
+      add-epic --id jira-sec-ABC-123 --title "-h" --status untriaged --external-id ABC-123 --external-url https://jira.example/browse/ABC-123 --external-updated-at <issue-updated-at> --lane claude-code --priority P2
+  ## Secondary tracker sync (jira · SEC) ["--help"]: registration exited 1: sh: issue-updated-at: No such file or directory
+      add-epic --id jira-sec-ABC-124 --title "--help" --status untriaged --external-id ABC-124 --external-url https://jira.example/browse/ABC-124 --external-updated-at <issue-updated-at> --lane claude-code --priority P2
+  ## Secondary tracker sync (jira · SEC) ["-x starts with a dash"]: registration exited 1: sh: issue-updated-at: No such file or directory
+      add-epic --id jira-sec-ABC-125 --title "-x starts with a dash" --status untriaged --external-id ABC-125 --external-url https://jira.example/browse/ABC-125 --external-updated-at <issue-updated-at> --lane claude-code --priority P2
+  ## Secondary tracker sync (jira · SEC) ["line one\nline two"]: registration exited 1: sh: issue-updated-at: No such file or directory
+      add-epic --id jira-sec-ABC-126 --title "line one
+  line two" --status untriaged --external-id ABC-126 --external-url https://jira.example/browse/ABC-126 --external-updated-at <issue-updated-at> --lane claude-code --priority P2
+  ## Secondary tracker sync (jira · SEC): a title executed a command (pwned exists)
+  ## GitHub issue sync (o/n): registration does not use --title=
+  ## GitHub issue sync (o/n): registration does not use --external-url=
+  ## GitHub issue sync (o/n): lane routing is not `suggest-lane --ask=`: suggest-lane "<issue-title>"
+  ## GitHub issue sync (o/n): title "it's \"done\" $(touch pwned) `id`" did not read back byte-identical (389 chars stored)
+  ## GitHub issue sync (o/n) ["--limit=5 ignored"]: registration exited 1: conductor: unknown flag --limit for add-epic — it accepts: --id, --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --description, --notes, --external-updated-at, --add-story, --force
+      add-epic --id gh-o-n-42 --title "--limit=5 ignored" --status untriaged --external-id 42 --external-url https://github.com/o/n/issues/42 --external-updated-at 2026-09-01T00:00:00.000Z --lane claude-code --priority P2
+  ## GitHub issue sync (o/n) ["-h"]: lane routing exited 0: conductor.mjs suggest-lane "<free text>" — takes no flags.
+  ## GitHub issue sync (o/n) ["--help"]: registration exited 1: conductor: --title requires a value — '--help' arrived where that value belonged and was read as a flag, not as the value. If it IS the value, write --title=--help
+      add-epic --id gh-o-n-44 --title "--help" --status untriaged --external-id 44 --external-url https://github.com/o/n/issues/44 --external-updated-at 2026-09-01T00:00:00.000Z --lane claude-code --priority P2
+  ## GitHub issue sync (o/n): a title executed a command (pwned exists)
+  ## Inward tracker sync (jira · ABC): registration does not use --title=
+  ## Inward tracker sync (jira · ABC): registration does not use --external-url=
+  ## Inward tracker sync (jira · ABC): lane routing is not `suggest-lane --ask=`: suggest-lane "<issue-title>"
+  ## Inward tracker sync (jira · ABC) ["Ordinary title"]: registration exited 1: conductor: --id required, format ^[a-z0-9][a-z0-9._-]*$
+      add-epic --id jira-abc-ABC-120 --title "Ordinary title" --status untriaged --external-id ABC-120 --external-url https://jira.example/browse/ABC-120 --external-updated-at 2026-09-01T00:00:00.000Z --lane claude-code --priority P2
+  ## Inward tracker sync (jira · ABC) ["it's \"done\" $(touch pwned) `id`"]: registration exited 1: conductor: --id required, format ^[a-z0-9][a-z0-9._-]*$
+      add-epic --id jira-abc-ABC-121 --title "it's "done" $(touch pwned) `id`" --status untriaged --external-id ABC-121 --external-url https://jira.example/browse/ABC-121 --external-updated-at 2026-09-01T00:00:00.000Z --lane claude-code --priority P2
+  ## Inward tracker sync (jira · ABC) ["--limit=5 ignored"]: registration exited 1: conductor: unknown flag --limit for add-epic — it accepts: --id, --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --description, --notes, --external-updated-at, --add-story, --force
+      add-epic --id jira-abc-ABC-122 --title "--limit=5 ignored" --status untriaged --external-id ABC-122 --external-url https://jira.example/browse/ABC-122 --external-updated-at 2026-09-01T00:00:00.000Z --lane claude-code --priority P2
+  ## Inward tracker sync (jira · ABC) ["-h"]: registration exited 1: conductor: --id required, format ^[a-z0-9][a-z0-9._-]*$
+      add-epic --id jira-abc-ABC-123 --title "-h" --status untriaged --external-id ABC-123 --external-url https://jira.example/browse/ABC-123 --external-updated-at 2026-09-01T00:00:00.000Z --lane claude-code --priority P2
+  ## Inward tracker sync (jira · ABC) ["--help"]: registration exited 1: conductor: --title requires a value — '--help' arrived where that value belonged and was read as a flag, not as the value. If it IS the value, write --title=--help
+      add-epic --id jira-abc-ABC-124 --title "--help" --status untriaged --external-id ABC-124 --external-url https://jira.example/browse/ABC-124 --external-updated-at 2026-09-01T00:00:00.000Z --lane claude-code --priority P2
+  ## Inward tracker sync (jira · ABC) ["-x starts with a dash"]: registration exited 1: conductor: --id required, format ^[a-z0-9][a-z0-9._-]*$
+      add-epic --id jira-abc-ABC-125 --title "-x starts with a dash" --status untriaged --external-id ABC-125 --external-url https://jira.example/browse/ABC-125 --external-updated-at 2026-09-01T00:00:00.000Z --lane claude-code --priority P2
+  ## Inward tracker sync (jira · ABC) ["line one\nline two"]: registration exited 1: conductor: --id required, format ^[a-z0-9][a-z0-9._-]*$
+      add-epic --id jira-abc-ABC-126 --title "line one
+  line two" --status untriaged --external-id ABC-126 --external-url https://jira.example/browse/ABC-126 --external-updated-at 2026-09-01T00:00:00.000Z --lane claude-code --priority P2
+  ## Inward tracker sync (jira · ABC): a title executed a command (pwned exists)
+  + actual - expected
+  
+  + [
+  +   '## Secondary tracker sync (github-issues · o/s): registration does not use --title=',
+  +   '## Secondary tracker sync (github-issues · o/s): registration does not use --external-url=',
+  +   '## Secondary tracker sync (github-issues · o/s): lane routing is not `suggest-lane --ask=`: suggest-lane "<issue-title>"',
+  +   '## Secondary tracker sync (github-issues · o/s) ["Ordinary title"]: registration exited 1: sh: issue-updated-at: No such file or directory\n' +
+  +     '    add-epic --id gh-o-s-40 --title "Ordinary title" --status untriaged --external-id 40 --external-url https://github.com/o/n/issues/40 --external-updated-at <issue-updated-at> --lane claude-code --priority P2',
+  +   '## Secondary tracker sync (github-issues · o/s) ["it\'s \\"done\\" $(touch pwned) `id`"]: registration exited 1: sh: issue-updated-at: No such file or directory\n' +
+  +     '    add-epic --id gh-o-s-41 --title "it\'s "done" $(touch pwned) `id`" --status untriaged --external-id 41 --external-url https://github.com/o/n/issues/41 --external-updated-at <issue-updated-at> --lane claude-code --priority P2',
+  +   '## Secondary tracker sync (github-issues · o/s) ["--limit=5 ignored"]: registration exited 1: sh: issue-updated-at: No such file or directory\n' +
+  +     '    add-epic --id gh-o-s-42 --title "--limit=5 ignored" --status untriaged --external-id 42 --external-url https://github.com/o/n/issues/42 --external-updated-at <issue-updated-at> --lane claude-code --priority P2',
+  +   '## Secondary tracker sync (github-issues · o/s) ["-h"]: registration exited 1: sh: issue-updated-at: No such file or directory\n' +
+  +     '    add-epic --id gh-o-s-43 --title "-h" --status untriaged --external-id 43 --external-url https://github.com/o/n/issues/43 --external-updated-at <issue-updated-at> --lane claude-code --priority P2',
+  +   '## Secondary tracker sync (github-issues · o/s) ["--help"]: registration exited 1: sh: issue-updated-at: No such file or directory\n' +
+  +     '    add-epic --id gh-o-s-44 --title "--help" --status untriaged --external-id 44 --external-url https://github.com/o/n/issues/44 --external-updated-at <issue-updated-at> --lane claude-code --priority P2',
+  +   '## Secondary tracker sync (github-issues · o/s) ["-x starts with a dash"]: registration exited 1: sh: issue-updated-at: No such file or directory\n' +
+  +     '    add-epic --id gh-o-s-45 --title "-x starts with a dash" --status untriaged --external-id 45 --external-url https://github.com/o/n/issues/45 --external-updated-at <issue-updated-at> --lane claude-code --priority P2',
+  +   '## Secondary tracker sync (github-issues · o/s) ["line one\\nline two"]: registration exited 1: sh: issue-updated-at: No such file or directory\n' +
+  +     '    add-epic --id gh-o-s-46 --title "line one\n' +
+  +     'line two" --status untriaged --external-id 46 --external-url https://github.com/o/n/issues/46 --external-updated-at <issue-updated-at> --lane claude-code --priority P2',
+  +   '## Secondary tracker sync (github-issues · o/s): a title executed a command (pwned exists)',
+  +   '## Secondary tracker sync (jira · SEC): registration does not use --title=',
+  +   '## Secondary tracker sync (jira · SEC): registration does not use --external-url=',
+  +   '## Secondary tracker sync (jira · SEC): lane routing is not `suggest-lane --ask=`: suggest-lane "<issue-title>"',
+  +   '## Secondary tracker sync (jira · SEC) ["Ordinary title"]: registration exited 1: sh: issue-updated-at: No such file or directory\n' +
+  +     '    add-epic --id jira-sec-ABC-120 --title "Ordinary title" --status untriaged --external-id ABC-120 --external-url https://jira.example/browse/ABC-120 --external-updated-at <issue-updated-at> --lane claude-code --priority P2',
+  +   '## Secondary tracker sync (jira · SEC) ["it\'s \\"done\\" $(touch pwned) `id`"]: registration exited 1: sh: issue-updated-at: No such file or directory\n' +
+  +     '    add-epic --id jira-sec-ABC-121 --title "it\'s "done" $(touch pwned) `id`" --status untriaged --external-id ABC-121 --external-url https://jira.example/browse/ABC-121 --external-updated-at <issue-updated-at> --lane claude-code --priority P2',
+  +   '## Secondary tracker sync (jira · SEC) ["--limit=5 ignored"]: registration exited 1: sh: issue-updated-at: No such file or directory\n' +
+  +     '    add-epic --id jira-sec-ABC-122 --title "--limit=5 ignored" --status untriaged --external-id ABC-122 --external-url https://jira.example/browse/ABC-122 --external-updated-at <issue-updated-at> --lane claude-code --priority P2',
+  +   '## Secondary tracker sync (jira · SEC) ["-h"]: registration exited 1: sh: issue-updated-at: No such file or directory\n' +
+  +     '    add-epic --id jira-sec-ABC-123 --title "-h" --status untriaged --external-id ABC-123 --external-url https://jira.example/browse/ABC-123 --external-updated-at <issue-updated-at> --lane claude-code --priority P2',
+  +   '## Secondary tracker sync (jira · SEC) ["--help"]: registration exited 1: sh: issue-updated-at: No such file or directory\n' +
+  +     '    add-epic --id jira-sec-ABC-124 --title "--help" --status untriaged --external-id ABC-124 --external-url https://jira.example/browse/ABC-124 --external-updated-at <issue-updated-at> --lane claude-code --priority P2',
+  +   '## Secondary tracker sync (jira · SEC) ["-x starts with a dash"]: registration exited 1: sh: issue-updated-at: No such file or directory\n' +
+  +     '    add-epic --id jira-sec-ABC-125 --title "-x starts with a dash" --status untriaged --external-id ABC-125 --external-url https://jira.example/browse/ABC-125 --external-updated-at <issue-updated-at> --lane claude-code --priority P2',
+  +   '## Secondary tracker sync (jira · SEC) ["line one\\nline two"]: registration exited 1: sh: issue-updated-at: No such file or directory\n' +
+  +     '    add-epic --id jira-sec-ABC-126 --title "line one\n' +
+  +     'line two" --status untriaged --external-id ABC-126 --external-url https://jira.example/browse/ABC-126 --external-updated-at <issue-updated-at> --lane claude-code --priority P2',
+  +   '## Secondary tracker sync (jira · SEC): a title executed a command (pwned exists)',
+  +   '## GitHub issue sync (o/n): registration does not use --title=',
+  +   '## GitHub issue sync (o/n): registration does not use --external-url=',
+  +   '## GitHub issue sync (o/n): lane routing is not `suggest-lane --ask=`: suggest-lane "<issue-title>"',
+  +   '## GitHub issue sync (o/n): title "it\'s \\"done\\" $(touch pwned) `id`" did not read back byte-identical (389 chars stored)',
+  +   '## GitHub issue sync (o/n) ["--limit=5 ignored"]: registration exited 1: conductor: unknown flag --limit for add-epic — it accepts: --id, --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --description, --notes, --external-updated-at, --add-story, --force\n' +
+  +     '    add-epic --id gh-o-n-42 --title "--limit=5 ignored" --status untriaged --external-id 42 --external-url https://github.com/o/n/issues/42 --external-updated-at 2026-09-01T00:00:00.000Z --lane claude-code --priority P2',
+  +   '## GitHub issue sync (o/n) ["-h"]: lane routing exited 0: conductor.mjs suggest-lane "<free text>" — takes no flags.',
+  +   `## GitHub issue sync (o/n) ["--help"]: registration exited 1: conductor: --title requires a value — '--help' arrived where that value belonged and was read as a flag, not as the value. If it IS the value, write --title=--help\n` +
+  +     '    add-epic --id gh-o-n-44 --title "--help" --status untriaged --external-id 44 --external-url https://github.com/o/n/issues/44 --external-updated-at 2026-09-01T00:00:00.000Z --lane claude-code --priority P2',
+  +   '## GitHub issue sync (o/n): a title executed a command (pwned exists)',
+  +   '## Inward tracker sync (jira · ABC): registration does not use --title=',
+  +   '## Inward tracker sync (jira · ABC): registration does not use --external-url=',
+  +   '## Inward tracker sync (jira · ABC): lane routing is not `suggest-lane --ask=`: suggest-lane "<issue-title>"',
+  +   '## Inward tracker sync (jira · ABC) ["Ordinary title"]: registration exited 1: conductor: --id required, format ^[a-z0-9][a-z0-9._-]*$\n' +
+  +     '    add-epic --id jira-abc-ABC-120 --title "Ordinary title" --status untriaged --external-id ABC-120 --external-url https://jira.example/browse/ABC-120 --external-updated-at 2026-09-01T00:00:00.000Z --lane claude-code --priority P2',
+  +   '## Inward tracker sync (jira · ABC) ["it\'s \\"done\\" $(touch pwned) `id`"]: registration exited 1: conductor: --id required, format ^[a-z0-9][a-z0-9._-]*$\n' +
+  +     '    add-epic --id jira-abc-ABC-121 --title "it\'s "done" $(touch pwned) `id`" --status untriaged --external-id ABC-121 --external-url https://jira.example/browse/ABC-121 --external-updated-at 2026-09-01T00:00:00.000Z --lane claude-code --priority P2',
+  +   '## Inward tracker sync (jira · ABC) ["--limit=5 ignored"]: registration exited 1: conductor: unknown flag --limit for add-epic — it accepts: --id, --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --description, --notes, --external-updated-at, --add-story, --force\n' +
+  +     '    add-epic --id jira-abc-ABC-122 --title "--limit=5 ignored" --status untriaged --external-id ABC-122 --external-url https://jira.example/browse/ABC-122 --external-updated-at 2026-09-01T00:00:00.000Z --lane claude-code --priority P2',
+  +   '## Inward tracker sync (jira · ABC) ["-h"]: registration exited 1: conductor: --id required, format ^[a-z0-9][a-z0-9._-]*$\n' +
+  +     '    add-epic --id jira-abc-ABC-123 --title "-h" --status untriaged --external-id ABC-123 --external-url https://jira.example/browse/ABC-123 --external-updated-at 2026-09-01T00:00:00.000Z --lane claude-code --priority P2',
+  +   `## Inward tracker sync (jira · ABC) ["--help"]: registration exited 1: conductor: --title requires a value — '--help' arrived where that value belonged and was read as a flag, not as the value. If it IS the value, write --title=--help\n` +
+  +     '    add-epic --id jira-abc-ABC-124 --title "--help" --status untriaged --external-id ABC-124 --external-url https://jira.example/browse/ABC-124 --external-updated-at 2026-09-01T00:00:00.000Z --lane claude-code --priority P2',
+  +   '## Inward tracker sync (jira · ABC) ["-x starts with a dash"]: registration exited 1: conductor: --id required, format ^[a-z0-9][a-z0-9._-]*$\n' +
+  +     '    add-epic --id jira-abc-ABC-125 --title "-x starts with a dash" --status untriaged --external-id ABC-125 --external-url https://jira.example/browse/ABC-125 --external-updated-at 2026-09-01T00:00:00.000Z --lane claude-code --priority P2',
+  +   '## Inward tracker sync (jira · ABC) ["line one\\nline two"]: registration exited 1: conductor: --id required, format ^[a-z0-9][a-z0-9._-]*$\n' +
+  +     '    add-epic --id jira-abc-ABC-126 --title "line one\n' +
+  +     'line two" --status untriaged --external-id ABC-126 --external-url https://jira.example/browse/ABC-126 --external-updated-at 2026-09-01T00:00:00.000Z --lane claude-code --priority P2',
+  +   '## Inward tracker sync (jira · ABC): a title executed a command (pwned exists)'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1823:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ '## Secondary tracker sync (github-issues · o/s): registration does not use --title=', '## Secondary tracker sync (github-issues · o/s): registration does not use --external-url=', '## Secondary tracker sync (github-issues · o/s): lane routing is not `suggest-lane --ask=`: suggest-lane "<issue-title>"', '## Secondary tracker sync (github-issues · o/s) ["Ordinary title"]: registration exited 1: sh: issue-updated-at: No such file or directory\n    add-epic --id gh-o-s-40 --title "Ordinary title" --status untriaged --external-id 40 --external-url https://github.com/o/n/issues/40 --external-updated-at <issue-updated-at> --lane claude-code --priority P2', '## Secondary tracker sync (github-issues · o/s) ["it\'s \\"done\\" $(touch pwned) `id`"]: registration exited 1: sh: issue-updated-at: No such file or directory\n    add-epic --id gh-o-s-41 --title "it\'s "done" $(touch pwned) `id`" --status untriaged --external-id 41 --external-url https://github.com/o/n/issues/41 --external-updated-at <issue-updated-at> --lane claude-code --priority P2', '## Secondary tracker sync (github-issues · o/s) ["--limit=5 ignored"]: registration exited 1: sh: issue-updated-at: No such file or directory\n    add-epic --id gh-o-s-42 --title "--limit=5 ignored" --status untriaged --external-id 42 --external-url https://github.com/o/n/issues/42 --external-updated-at <issue-updated-at> --lane claude-code --priority P2', '## Secondary tracker sync (github-issues · o/s) ["-h"]: registration exited 1: sh: issue-updated-at: No such file or directory\n    add-epic --id gh-o-s-43 --title "-h" --status untriaged --external-id 43 --external-url https://github.com/o/n/issues/43 --external-updated-at <issue-updated-at> --lane claude-code --priority P2', '## Secondary tracker sync (github-issues · o/s) ["--help"]: registration exited 1: sh: issue-updated-at: No such file or directory\n    add-epic --id gh-o-s-44 --title "--help" --status untriaged --external-id 44 --external-url https://github.com/o/n/issues/44 --external-updated-at <issue-updated-at> --lane claude-code --priority P2', '## Secondary tracker sync (github-issues · o/s) ["-x starts with a dash"]: registration exited 1: sh: issue-updated-at: No such file or directory\n    add-epic --id gh-o-s-45 --title "-x starts with a dash" --status untriaged --external-id 45 --external-url https://github.com/o/n/issues/45 --external-updated-at <issue-updated-at> --lane claude-code --priority P2', '## Secondary tracker sync (github-issues · o/s) ["line one\\nline two"]: registration exited 1: sh: issue-updated-at: No such file or directory\n    add-epic --id gh-o-s-46 --title "line one\nline two" --status untriaged --external-id 46 --external-url https://github.com/o/n/issues/46 --external-updated-at <issue-updated-at> --lane claude-code --priority P2', '## Secondary tracker sync (github-issues · o/s): a title executed a command (pwned exists)', '## Secondary tracker sync (jira · SEC): registration does not use --title=', '## Secondary tracker sync (jira · SEC): registration does not use --external-url=', '## Secondary tracker sync (jira · SEC): lane routing is not `suggest-lane --ask=`: suggest-lane "<issue-title>"', '## Secondary tracker sync (jira · SEC) ["Ordinary title"]: registration exited 1: sh: issue-updated-at: No such file or directory\n    add-epic --id jira-sec-ABC-120 --title "Ordinary title" --status untriaged --external-id ABC-120 --external-url https://jira.example/browse/ABC-120 --external-updated-at <issue-updated-at> --lane claude-code --priority P2', '## Secondary tracker sync (jira · SEC) ["it\'s \\"done\\" $(touch pwned) `id`"]: registration exited 1: sh: issue-updated-at: No such file or directory\n    add-epic --id jira-sec-ABC-121 --title "it\'s "done" $(touch pwned) `id`" --status untriaged --external-id ABC-121 --external-url https://jira.example/browse/ABC-121 --external-updated-at <issue-updated-at> --lane claude-code --priority P2', '## Secondary tracker sync (jira · SEC) ["--limit=5 ignored"]: registration exited 1: sh: issue-updated-at: No such file or directory\n    add-epic --id jira-sec-ABC-122 --title "--limit=5 ignored" --status untriaged --external-id ABC-122 --external-url https://jira.example/browse/ABC-122 --external-updated-at <issue-updated-at> --lane claude-code --priority P2', '## Secondary tracker sync (jira · SEC) ["-h"]: registration exited 1: sh: issue-updated-at: No such file or directory\n    add-epic --id jira-sec-ABC-123 --title "-h" --status untriaged --external-id ABC-123 --external-url https://jira.example/browse/ABC-123 --external-updated-at <issue-updated-at> --lane claude-code --priority P2', '## Secondary tracker sync (jira · SEC) ["--help"]: registration exited 1: sh: issue-updated-at: No such file or directory\n    add-epic --id jira-sec-ABC-124 --title "--help" --status untriaged --external-id ABC-124 --external-url https://jira.example/browse/ABC-124 --external-updated-at <issue-updated-at> --lane claude-code --priority P2', '## Secondary tracker sync (jira · SEC) ["-x starts with a dash"]: registration exited 1: sh: issue-updated-at: No such file or directory\n    add-epic --id jira-sec-ABC-125 --title "-x starts with a dash" --status untriaged --external-id ABC-125 --external-url https://jira.example/browse/ABC-125 --external-updated-at <issue-updated-at> --lane claude-code --priority P2', '## Secondary tracker sync (jira · SEC) ["line one\\nline two"]: registration exited 1: sh: issue-updated-at: No such file or directory\n    add-epic --id jira-sec-ABC-126 --title "line one\nline two" --status untriaged --external-id ABC-126 --external-url https://jira.example/browse/ABC-126 --external-updated-at <issue-updated-at> --lane claude-code --priority P2', '## Secondary tracker sync (jira · SEC): a title executed a command (pwned exists)', '## GitHub issue sync (o/n): registration does not use --title=', '## GitHub issue sync (o/n): registration does not use --external-url=', '## GitHub issue sync (o/n): lane routing is not `suggest-lane --ask=`: suggest-lane "<issue-title>"', '## GitHub issue sync (o/n): title "it\'s \\"done\\" $(touch pwned) `id`" did not read back byte-identical (389 chars stored)', '## GitHub issue sync (o/n) ["--limit=5 ignored"]: registration exited 1: conductor: unknown flag --limit for add-epic — it accepts: --id, --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --description, --notes, --external-updated-at, --add-story, --force\n    add-epic --id gh-o-n-42 --title "--limit=5 ignored" --status untriaged --external-id 42 --external-url https://github.com/o/n/issues/42 --external-updated-at 2026-09-01T00:00:00.000Z --lane claude-code --priority P2', '## GitHub issue sync (o/n) ["-h"]: lane routing exited 0: conductor.mjs suggest-lane "<free text>" — takes no flags.', `## GitHub issue sync (o/n) ["--help"]: registration exited 1: conductor: --title requires a value — '--help' arrived where that value belonged and was read as a flag, not as the value. If it IS the value, write --title=--help\n    add-epic --id gh-o-n-44 --title "--help" --status untriaged --external-id 44 --external-url https://github.com/o/n/issues/44 --external-updated-at 2026-09-01T00:00:00.000Z --lane claude-code --priority P2`, '## GitHub issue sync (o/n): a title executed a command (pwned exists)', '## Inward tracker sync (jira · ABC): registration does not use --title=', '## Inward tracker sync (jira · ABC): registration does not use --external-url=', '## Inward tracker sync (jira · ABC): lane routing is not `suggest-lane --ask=`: suggest-lane "<issue-title>"', '## Inward tracker sync (jira · ABC) ["Ordinary title"]: registration exited 1: conductor: --id required, format ^[a-z0-9][a-z0-9._-]*$\n    add-epic --id jira-abc-ABC-120 --title "Ordinary title" --status untriaged --external-id ABC-120 --external-url https://jira.example/browse/ABC-120 --external-updated-at 2026-09-01T00:00:00.000Z --lane claude-code --priority P2', '## Inward tracker sync (jira · ABC) ["it\'s \\"done\\" $(touch pwned) `id`"]: registration exited 1: conductor: --id required, format ^[a-z0-9][a-z0-9._-]*$\n    add-epic --id jira-abc-ABC-121 --title "it\'s "done" $(touch pwned) `id`" --status untriaged --external-id ABC-121 --external-url https://jira.example/browse/ABC-121 --external-updated-at 2026-09-01T00:00:00.000Z --lane claude-code --priority P2', '## Inward tracker sync (jira · ABC) ["--limit=5 ignored"]: registration exited 1: conductor: unknown flag --limit for add-epic — it accepts: --id, --title, --lane, --priority, --status, --parent, --external-id, --external-url, --plan, --spec, --link, --description, --notes, --external-updated-at, --add-story, --force\n    add-epic --id jira-abc-ABC-122 --title "--limit=5 ignored" --status untriaged --external-id ABC-122 --external-url https://jira.example/browse/ABC-122 --external-updated-at 2026-09-01T00:00:00.000Z --lane claude-code --priority P2', '## Inward tracker sync (jira · ABC) ["-h"]: registration exited 1: conductor: --id required, format ^[a-z0-9][a-z0-9._-]*$\n    add-epic --id jira-abc-ABC-123 --title "-h" --status untriaged --external-id ABC-123 --external-url https://jira.example/browse/ABC-123 --external-updated-at 2026-09-01T00:00:00.000Z --lane claude-code --priority P2', `## Inward tracker sync (jira · ABC) ["--help"]: registration exited 1: conductor: --title requires a value — '--help' arrived where that value belonged and was read as a flag, not as the value. If it IS the value, write --title=--help\n    add-epic --id jira-abc-ABC-124 --title "--help" --status untriaged --external-id ABC-124 --external-url https://jira.example/browse/ABC-124 --external-updated-at 2026-09-01T00:00:00.000Z --lane claude-code --priority P2`, '## Inward tracker sync (jira · ABC) ["-x starts with a dash"]: registration exited 1: conductor: --id required, format ^[a-z0-9][a-z0-9._-]*$\n    add-epic --id jira-abc-ABC-125 --title "-x starts with a dash" --status untriaged --external-id ABC-125 --external-url https://jira.example/browse/ABC-125 --external-updated-at 2026-09-01T00:00:00.000Z --lane claude-code --priority P2', '## Inward tracker sync (jira · ABC) ["line one\\nline two"]: registration exited 1: conductor: --id required, format ^[a-z0-9][a-z0-9._-]*$\n    add-epic --id jira-abc-ABC-126 --title "line one\nline two" --status untriaged --external-id ABC-126 --external-url https://jira.example/browse/ABC-126 --external-updated-at 2026-09-01T00:00:00.000Z --lane claude-code --priority P2', '## Inward tracker sync (jira · ABC): a title executed a command (pwned exists)' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:1826:1
+✖ 3.2 jira keys ABC-123 and ABC-124 register as two distinct epics; the same key twice is refused (196.37525ms)
+  AssertionError [ERR_ASSERTION]: ## Inward tracker sync (jira · ABC): ABC-123 registers: conductor: --id required, format ^[a-z0-9][a-z0-9._-]*$
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1836:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:1845:1
+✖ 3.3a suggest-lane --ask reads a flag-shaped text; the positional form is unchanged; both at once is refused; help lists --ask (217.3565ms)
+  AssertionError [ERR_ASSERTION]: conductor: unknown flag --ask for suggest-lane — it accepts no flags
+  usage: conductor.mjs suggest-lane "<free text>" [flags]
+    If '--ask=--limit=5 ignored' is part of the text, quote the whole value.
+  Nothing was written.
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1848:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:1863:1
+✖ 3.4 every github-issues listing step names --limit, and the truncation stop precedes the closed-item step (2.713ms)
+  AssertionError [ERR_ASSERTION]: ## Secondary tracker sync (github-issues · o/s): 1. `gh issue list --repo o/s --state open --json number,title,url,labels`.
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1866:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '1. `gh issue list --repo o/s --state open --json number,title,url,labels`.',
+    expected: /gh issue list .*--limit \d+/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:1874:1
+✖ 3.5 no emitted section names /pm:epic list (5.401208ms)
+  AssertionError [ERR_ASSERTION]: rules[claude-code · none · github-issues] names an epic list command pm does not ship
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1876:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:1880:1
+✖ 3.6 every secondary section carries the watermark step before its closed-item step (2.703209ms)
+  AssertionError [ERR_ASSERTION]: ## Secondary tracker sync (github-issues · o/s): watermark step before the closed-item step
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1887:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:1892:1
+✖ 3.7 the completion-sync reminder names no writeback step the block does not emit (0.263292ms)
+  AssertionError [ERR_ASSERTION]: an inward-only github-issues primary with no secondary emits no writeback step:
+  ## Sync after completing tracker-linked work
+  
+  After you close/transition a tracker-linked issue as part of completing an epic (the
+  writeback steps above), immediately re-sync with your tracker(s) — run `/pm:sync` — to pull
+  in anything new that appeared while you were heads-down. You're already doing tracker I/O
+  for this epic, so this is the cheapest moment to catch it; this applies whether you have one
+  tracker or several (primary + secondary) configured.
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1898:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: "## Sync after completing tracker-linked work  After you close/transition a tracker-linked issue as part of completing an epic (the writeback steps above), immediately re-sync with your tracker(s) — run `/pm:sync` — to pull in anything new that appeared while you were heads-down. You're already doing tracker I/O for this epic, so this is the cheapest moment to catch it; this applies whether you have one tracker or several (primary + secondary) configured. ",
+    expected: /writeback steps above/,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:1906:1
+✖ 3.8 the outward record-the-key line carries --external-updated-at, and an epic recorded by it is not counted never-re-read (0.263083ms)
+  AssertionError [ERR_ASSERTION]: update-epic <id> --external-id <KEY> --external-url <url>
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1913:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'update-epic <id> --external-id <KEY> --external-url <url>',
+    expected: /--external-updated-at <[^>]+>/,
+    operator: 'match',
+    diff: 'simple'
+  }

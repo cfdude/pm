@@ -74,7 +74,10 @@ test("gh#129: an epic that has attributed nothing yet gets the catch-up rule; on
   assert.match(laterCtx, /--attribute-commit/, "but the per-commit obligation still stands");
 });
 
-test("gh#129: commits made during a detour are attributed to the DETOUR epic, not the paused parent", () => {
+// commit-nudge-reads-the-whole-move (#199) supersedes the single-target rule this test used to pin:
+// during a detour the hint names EVERY candidate — the detour epic first, then the paused parent —
+// and decides none, because a commit to the parent's own files is the parent's work.
+test("gh#129 / #199: a commit during a detour names the DETOUR epic first and the paused parent too, deciding neither", () => {
   const cwd = tmpRepo();
   run(["init"], { cwd });
   writeState(cwd, {
@@ -90,10 +93,12 @@ test("gh#129: commits made during a detour are attributed to the DETOUR epic, no
   commitFiles(cwd, { "a.txt": "1" }, "fix(y): detour work");
   const ctx = ctxOf(nudge(cwd, "git commit -m x"));
   assert.match(ctx, /--attribute-commit/, "a commit during a detour is still a commit to attribute");
-  assert.match(ctx, /update-epic detour-1 /,
-    "state.active names the PAUSED parent while a detour is live; the work belongs to the detour");
-  assert.doesNotMatch(ctx, /update-epic paused-a /,
-    "attributing a detour's commit to the paused parent is unrecoverable — the array is append-only");
+  const detourAt = ctx.search(/update-epic detour-1 /);
+  const pausedAt = ctx.search(/update-epic paused-a /);
+  assert.ok(detourAt >= 0, "state.active names the PAUSED parent while a detour is live; the detour must still be named");
+  assert.ok(pausedAt > detourAt,
+    "the paused parent is a candidate too, listed after the detour when the commit touches none of its files");
+  assert.match(ctx, /choosing is yours/, "and the choice is stated as the agent's — the array is append-only");
 });
 
 test("gh#129: the clause carries the ONE exclusion, so the archive-move commit is not attributed on autopilot", () => {
@@ -144,7 +149,7 @@ test("gh#129: SILENT where the engine would be guessing — no active epic, no a
   // heuristic still emits its own advisory, but a sha must never be named — obs.head is
   // non-null here while no commit is known to have landed, which is gh#104 in a new costume.
   const cold = repoWithActive([]);
-  // deliberately NOT primed: no .conductor/commit-watch.json exists
+  // deliberately NOT primed: no .conductor/commit-observe.json exists
   commitFiles(cold, { "a.txt": "1" }, "feat(x): real work");
   const coldCtx = ctxOf(nudge(cold, "git commit -m 'feat(x): real work'"));
   assert.match(coldCtx, /Commit detected/, "the legacy rung still runs — this is a no-regression check");

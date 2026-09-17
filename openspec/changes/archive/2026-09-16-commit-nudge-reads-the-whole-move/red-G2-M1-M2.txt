@@ -1,0 +1,54 @@
+✔ G2-M4 REGRESSION GUARD: the anchor is the LAST occurrence of its line ending at or before the recorded size (2.00725ms)
+✖ 2.7 a commit reset away in the same call is named rewritten or abandoned, never logged or attributed (424.74175ms)
+✔ 4.2a a row whose commit was rewritten and pruned can be retracted by the row's sha (1110.604625ms)
+✖ 4.3 every retract-detour refusal names its reason and writes nothing (1358.335084ms)
+✔ 7.3 REGRESSION GUARD: one active epic prints one command; an epic with no array is never a candidate; no active epic prints no hint (1799.748583ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 3
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4748.42025
+
+✖ failing tests:
+
+test at scripts/test/commit-observation.test.mjs:261:1
+✖ 2.7 a commit reset away in the same call is named rewritten or abandoned, never logged or attributed (424.74175ms)
+  AssertionError [ERR_ASSERTION]: a dead-only report states its provenance: Rewritten or abandoned since the last observation: `8379a1b` — not logged, not attributed (reachable from no branch). If a rebase rewrote them, attribute what the rebase produced by hand.
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-observation.test.mjs:274:39)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at node:internal/test_runner/test:1305:31
+      at node:internal/process/task_queues:151:7
+      at AsyncResource.runInAsyncScope (node:async_hooks:226:14)
+      at AsyncResource.runMicrotask (node:internal/process/task_queues:148:8) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'Rewritten or abandoned since the last observation: `8379a1b` — not logged, not attributed (reachable from no branch). If a rebase rewrote them, attribute what the rebase produced by hand.',
+    expected: /landed since the last observation/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/commit-observation.test.mjs:409:1
+✖ 4.3 every retract-detour refusal names its reason and writes nothing (1358.335084ms)
+  AssertionError [ERR_ASSERTION]: retract-detour HEAD --reason x: conductor: retract-detour refused — 'HEAD' resolves to no commit, and a value that resolves to none must be at least 7 hexadecimal characters — a shorter one could match the rows of many commits
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-observation.test.mjs:445:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: "conductor: retract-detour refused — 'HEAD' resolves to no commit, and a value that resolves to none must be at least 7 hexadecimal characters — a shorter one could match the rows of many commits\n",
+    expected: /takes a commit sha, not a ref/,
+    operator: 'match',
+    diff: 'simple'
+  }

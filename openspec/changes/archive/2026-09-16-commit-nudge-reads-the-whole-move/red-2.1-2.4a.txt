@@ -1,0 +1,171 @@
+✖ 2.1 a commit followed by a checkout in the same call is reported (405.945291ms)
+✖ 2.2 two commits in one call are both reported, older first, in one attribution command (442.28525ms)
+✖ 2.3 hooks.json wires commit-nudge for Bash on PostToolUse and PostToolUseFailure, and on no pre-call event (0.827333ms)
+✖ 2.3b a commit in a failing call is reported on PostToolUseFailure; unreadable state writes nothing and defers it (412.398417ms)
+✖ 2.4 overlapping observations: A reads, a commit lands, B completes, A writes — reported exactly once (306.08925ms)
+✖ 2.4 the observation lock held by another process: nothing reported or written; reported after release (411.859375ms)
+✖ 2.4 a lock older than 10 s was left by a killed hook, and is broken (412.614542ms)
+✖ 2.4 the anchored reflog line itself is gone: nothing reported from the reflog, and the record re-anchors (421.095167ms)
+✔ 2.4a reflog expiry at the front loses no commit (460.935416ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 1
+ℹ fail 8
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3315.433042
+
+✖ failing tests:
+
+test at scripts/test/commit-observation.test.mjs:33:1
+✖ 2.1 a commit followed by a checkout in the same call is reported (405.945291ms)
+  AssertionError [ERR_ASSERTION]: the commit landed since the last observation and must be named. Output: ""
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-observation.test.mjs:41:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/commit-observation.test.mjs:45:1
+✖ 2.2 two commits in one call are both reported, older first, in one attribution command (442.28525ms)
+  AssertionError [ERR_ASSERTION]: both commits must be named. Output: "Commit detected. Diff shape (small, fix/chore-prefixed, unrelated to the active epic) looks like a MINIMAL detour, so it was auto-logged to `.conductor/detours.log` as an AUTO-DETOUR entry. Review it — if that's wrong, edit/remove the line.\n\nATTRIBUTION — `epic-a` has attributed no commits yet: attribute every commit of this epic's work that already landed, IN THE ORDER THEY LANDED, and then this one — `update-epic epic-a --attribute-commit faf04789d1180f1658705885f02fb3020d16a11f`. The array is append-only and a recorded Gate 2 `headSha` must reach EVERY entry, so a commit left unattributed is work that gate is never checked against. ONE exclusion: a commit that only moves or deletes a change's artifacts — the `/opsx:archive` move above all — is lifecycle bookkeeping and must NOT be attributed; it lands after the reviewed range, so attributing it makes this epic's own Gate 2 read stale."
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-observation.test.mjs:54:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/commit-observation.test.mjs:60:1
+✖ 2.3 hooks.json wires commit-nudge for Bash on PostToolUse and PostToolUseFailure, and on no pre-call event (0.827333ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+      'PostToolUse',
+  -   'PostToolUseFailure'
+    ]
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-observation.test.mjs:65:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 'PostToolUse' ],
+    expected: [ 'PostToolUse', 'PostToolUseFailure' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/commit-observation.test.mjs:74:1
+✖ 2.3b a commit in a failing call is reported on PostToolUseFailure; unreadable state writes nothing and defers it (412.398417ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'PostToolUse'
+  - 'PostToolUseFailure'
+                ^
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-observation.test.mjs:83:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'PostToolUse',
+    expected: 'PostToolUseFailure',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/commit-observation.test.mjs:108:1
+✖ 2.4 overlapping observations: A reads, a commit lands, B completes, A writes — reported exactly once (306.08925ms)
+  TypeError: beginObservation is not a function
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-observation.test.mjs:113:15)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at scripts/test/commit-observation.test.mjs:128:1
+✖ 2.4 the observation lock held by another process: nothing reported or written; reported after release (411.859375ms)
+  AssertionError [ERR_ASSERTION]: a skipped observation says nothing
+  + actual - expected
+  
+  + '{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"Commit detected. Diff shape (small, fix/chore-prefixed, unrelated to the active epic) looks like a MINIMAL detour, so it was auto-logged to `.conductor/detours.log` as an AUTO-DETOUR entry. Review it — if that\'s wrong, edit/remove the line.\\n\\nATTRIBUTION — `epic-a` has attributed no commits yet: attribute every commit of this epic\'s work that already landed, IN THE ORDER THEY LANDED, and then this one — `update-epic epic-a --attribute-commit a1f7df1c4737feba1f6a0bb4d5b7faebcbe3790f`. The array is append-only and a recorded Gate 2 `headSha` must reach EVERY entry, so a commit left unattributed is work that gate is never checked against. ONE exclusion: a commit that only moves or deletes a change\'s artifacts — the `/opsx:archive` move above all — is lifecycle bookkeeping and must NOT be attributed; it lands after the reviewed range, so attributing it makes this epic\'s own Gate 2 read stale."}}'
+  - ''
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-observation.test.mjs:138:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"Commit detected. Diff shape (small, fix/chore-prefixed, unrelated to the active epic) looks like a MINIMAL detour, so it was auto-logged to `.conductor/detours.log` as an AUTO-DETOUR entry. Review it — if that\'s wrong, edit/remove the line.\\n\\nATTRIBUTION — `epic-a` has attributed no commits yet: attribute every commit of this epic\'s work that already landed, IN THE ORDER THEY LANDED, and then this one — `update-epic epic-a --attribute-commit a1f7df1c4737feba1f6a0bb4d5b7faebcbe3790f`. The array is append-only and a recorded Gate 2 `headSha` must reach EVERY entry, so a commit left unattributed is work that gate is never checked against. ONE exclusion: a commit that only moves or deletes a change\'s artifacts — the `/opsx:archive` move above all — is lifecycle bookkeeping and must NOT be attributed; it lands after the reviewed range, so attributing it makes this epic\'s own Gate 2 read stale."}}',
+    expected: '',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/commit-observation.test.mjs:146:1
+✖ 2.4 a lock older than 10 s was left by a killed hook, and is broken (412.614542ms)
+  AssertionError [ERR_ASSERTION]: and the lock is released afterwards
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-observation.test.mjs:157:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/commit-observation.test.mjs:161:1
+✖ 2.4 the anchored reflog line itself is gone: nothing reported from the reflog, and the record re-anchors (421.095167ms)
+  AssertionError [ERR_ASSERTION]: an unverifiable reflog reports nothing from the reflog
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-observation.test.mjs:169:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

@@ -7,7 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFileSync, execSync } from "node:child_process";
 import { isInitialized, loadState, readJSON } from "./state.mjs";
-import { ROOT, RENDER_STAMP_PATH, STATE_PATH } from "./constants.mjs";
+import { ROOT, RENDER_STAMP_PATH, STATE_PATH, jsonText } from "./constants.mjs";
 
 /** `verify-worktrees` — cross-references `git worktree list` against epic status (and, since
  *  the `df-verify-worktrees-merged-not-just-archived` fix, actual merge state) to catch a
@@ -34,7 +34,7 @@ export function verifyWorktrees() {
   try {
     out = execSync("git worktree list --porcelain", { cwd: ROOT, encoding: "utf8" });
   } catch {
-    process.stdout.write(JSON.stringify({ orphaned: [] }) + "\n");
+    process.stdout.write(jsonText({ orphaned: [] }) + "\n");
     return;
   }
   const orphaned = [];
@@ -60,7 +60,7 @@ export function verifyWorktrees() {
       currentHead = null;
     }
   }
-  process.stdout.write(JSON.stringify({ orphaned }) + "\n");
+  process.stdout.write(jsonText({ orphaned }) + "\n");
 }
 
 /** True if `sha` is an ancestor of the current branch's HEAD (i.e. already merged in) —
@@ -94,7 +94,7 @@ export function changesets() {
   try {
     entries = fs.readdirSync(dir, { withFileTypes: true });
   } catch {
-    process.stdout.write(JSON.stringify({ changesets: [] }) + "\n");
+    process.stdout.write(jsonText({ changesets: [] }) + "\n");
     return;
   }
   const out = [];
@@ -105,7 +105,7 @@ export function changesets() {
     out.push({ id, path: p, body: fs.readFileSync(p, "utf8") });
   }
   out.sort((a, b) => a.id.localeCompare(b.id));
-  process.stdout.write(JSON.stringify({ changesets: out }) + "\n");
+  process.stdout.write(jsonText({ changesets: out }) + "\n");
 }
 
 /** `verify-state` — mechanically catches an undetected hand-edit of state.json (CLAUDE.md

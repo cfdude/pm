@@ -1179,7 +1179,8 @@ archived on disk re-archives the epic.
 and records the disposition it implies. It is the invocation's own argument tokens, as given, minus
 `--status`, `--outcome`, `--reason`, `--carried-to`, `--correct-disposition` and the deferral flags
 (with their values), plus `--status archived`, an `--outcome` placeholder naming the agent outcomes,
-and `--reason "<why>"`. Which token is a
+`--reason "<why>"`, and exactly the flags the bullets below add under their conditions — nothing else.
+Which token is a
 dropped flag's value follows the engine's own flag walk: an inline `--flag=value` token drops alone,
 and a following token drops with its flag only where that token is not itself flag-shaped. A flag
 given with no value echoes with no value, a repeated flag echoes once per occurrence, and an inline
@@ -1195,6 +1196,15 @@ trailing newline), and a promise of byte-for-byte reconstruction there would be 
 - It MUST carry the placeholder `<--no-deferrals | --deferral "<epicId>:<section>">` if and only if
   the epic has no deferral assertion. A deferral assertion is a claim to be made, not a default to
   print.
+- It MUST carry `--carried-to <epicId>` if and only if the record the invocation leaves has a checkbox
+  task source (a `tasks.md` or plan file) whose open tasks break the handoff demand — so the
+  `delivered` it offers would otherwise be refused, and no verb ticks a checkbox. The handoff's
+  `--reason` is the one the invocation already carries, printed once, never a second time. Whether a
+  flag is already carried is decided by the invocation's own template, never by an echoed token: a
+  user value naming `--carried-to` or `--reason` is data. The handoff goes only with `delivered`, and
+  the refusal MUST say so in prose naming `delivered` and no archive-only flag; for any other outcome
+  the flag is removed (before Gate 2 R-I1 the flag was absent and the filled invocation was refused
+  "task(s) outstanding").
 
 An update to an archived epic never passes through `--status archived`, so the archive gate never
 sees it. Reproduced on 0.42.0:
@@ -1323,6 +1333,17 @@ sees it. Reproduced on 0.42.0:
 - **THEN** it exits zero; the epic is an archived `superseded` openspec-lane epic whose prior
   `delivered` disposition is kept under `superseded`; its latest note is `Rob's move`; it has no links;
   and it gained exactly the two stories `two words` and `--x`
+
+#### Scenario: A checkbox source's open tasks travel on the printed invocation
+
+- **WHEN** an archived agent-recorded `delivered` `superpowers`-lane epic whose plan was fully ticked runs
+  `update-epic <id> --plan <a plan with a task still open>`, once with no other flag and once with
+  `--title "moved --carried-to later"`
+- **THEN** each is refused; each printed invocation carries `--carried-to <epicId>` and exactly one
+  `--reason` outside the echoed title; the refusal says the handoff goes only with `delivered`; and
+  each invocation, filled with `delivered`, a reason, a correction reason and a receiving epic, exits
+  zero with the plan re-pointed (before Gate 2 F-I1 the title suppressed the flag and the filled
+  invocation was refused "task(s) outstanding")
 
 #### Scenario: Leaving the archive is not refused where nothing re-archives the epic
 
@@ -2009,3 +2030,49 @@ are history kept on purpose, and a finding over them would outlive every remedy.
 - **WHEN** an epic attributes a unique short hash of a commit this repository holds, and `integrity`
   runs
 - **THEN** no finding of this kind names it
+
+### Requirement: The post-commit attribution hint names every candidate epic and decides none
+
+When the commit hook prints an attribution hint for live commits it reports, the hint SHALL name every
+**candidate epic** that carries an attribution array, and no other epic:
+
+- while a detour is live: the detour epic and every epic paused on the detour stack;
+- otherwise: the active epic.
+
+With no candidate the hook SHALL print no attribution hint. Where more than one candidate exists, the
+hint SHALL give each candidate its own runnable `update-epic <id> --attribute-commit <sha>…` command
+and SHALL state that choosing among them is the agent's decision. A candidate whose own artifacts (as
+`commit-observation` defines them) the reported commits touch SHALL be ordered before one whose
+artifacts they do not touch; ordering is the only use the hint makes of changed paths, and changed
+paths never add a candidate. The hook SHALL NOT write any epic's attribution array, consistent with
+"Commit attribution is written by a named flag the emitted instructions require".
+
+Where one observation reports more than one live commit, each command SHALL name every such commit in
+landing order, as one invocation.
+
+#### Scenario: During a detour the hint names the paused epic as well
+
+- **WHEN** epic P is paused behind detour D, both carry attribution arrays, and a commit lands
+- **THEN** the hint prints a runnable command for D and one for P, and states the choice is the
+  agent's
+
+#### Scenario: A commit confined to the paused epic's change directory lists that epic first
+
+- **WHEN** epic P is paused behind detour D and a commit touches only `openspec/changes/P/tasks.md`
+- **THEN** the command naming P is printed before the command naming D
+
+#### Scenario: Touching an epic's files never makes it a candidate
+
+- **WHEN** no epic is active, no detour is live, and a commit touches only `openspec/changes/E/` for a
+  registered epic E — including the move of that directory under `openspec/changes/archive/`
+- **THEN** the hook prints no attribution hint
+
+#### Scenario: The hint never records an attribution
+
+- **WHEN** the hook prints a hint naming one or more candidates
+- **THEN** every epic's attribution array in `state.json` is unchanged by that hook run
+
+#### Scenario: A single candidate keeps a single command
+
+- **WHEN** no detour is live, epic A is active, and a commit touches no epic's own artifacts
+- **THEN** the hint prints exactly one command, naming A

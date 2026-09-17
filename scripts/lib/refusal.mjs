@@ -6,7 +6,7 @@
 // testable without a subprocess and without a hidden self-test verb in the shipped CLI.
 
 import { conflictExitCode, StateUnreadableError, unreadableStateMessage } from "./state.mjs";
-import { UNREADABLE_INPUT_EXIT_CODE } from "./constants.mjs";
+import { UNREADABLE_INPUT_EXIT_CODE, jsonText } from "./constants.mjs";
 import { VERB_EFFECTS } from "./verb-effects.mjs";
 import { RulesBlockAmbiguousError, rulesBlockAmbiguousMessage } from "./rules.mjs";
 
@@ -16,8 +16,8 @@ import { RulesBlockAmbiguousError, rulesBlockAmbiguousMessage } from "./rules.mj
  *  - `gate-guard` (PreToolUse) → exit 2, BLOCK. Any other status on PreToolUse lets the tool call
  *    proceed, which would silently disable the unconditional reconcile block exactly when the
  *    record saying whether one is owed cannot be read. Not a wedge: Bash is not matched by it.
- *  - `commit-nudge` (PostToolUse) → exit 2, which there shows stderr to Claude — the actor who can
- *    run the remedy — and cannot block anything.
+ *  - `commit-nudge` (PostToolUse and PostToolUseFailure) → exit 2, which on both shows stderr to
+ *    Claude — the actor who can run the remedy — and cannot block anything.
  *  - `brief` (SessionStart) → exit 0 with the warning as the ONLY additional context. SessionStart
  *    shows a non-zero hook's stderr to the human only, so that channel would miss the agent.
  *
@@ -73,7 +73,7 @@ export function refusalFor(verb, err) {
     case "warn":
       return {
         exitCode: 0, stderr: "",
-        stdout: JSON.stringify({
+        stdout: jsonText({
           hookSpecificOutput: {
             hookEventName: "SessionStart",
             additionalContext:

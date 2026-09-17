@@ -5,7 +5,7 @@
 // when the developer has NAMED their checkout in PM_ENGINE_DELEGATION, the installed engine
 // re-execs that checkout's engine and becomes a transparent pass-through.
 //
-// The opt-in is the security boundary, and half of this file exists to hold it. The four hooks
+// The opt-in is the security boundary, and half of this file exists to hold it. The hooks (five events)
 // evaluate this handoff in EVERY project on the machine, initialized or not, on roughly every
 // turn. A project-supplied `.claude-plugin/plugin.json` naming `pm` is two lines of JSON an
 // attacker writes, so it can never be what authorizes execution; only an absolute path that

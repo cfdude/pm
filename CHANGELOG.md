@@ -6,7 +6,202 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [Unreleased]
+## [0.45.0] — 2026-09-17
+
+The first batch of Important findings from the independent review of 0.43.0: what the commit hook
+observes, what the commands pm emits actually do when they are run, and what user-supplied text can
+do to pm's own output.
+
+**Requires `/reload-plugins`.** Plugin versions install side by side, so until a session reloads it
+keeps 0.44.0's commit hook and engine — which still write `.conductor/commit-watch.json` and none of
+what follows.
+
+### Fixed
+
+* **A commit followed by a checkout in the same call was never reported** (commit-nudge read only
+  the top reflog entry, so `checkout: moving from tmp to main` read as no commit — and the watermark
+  had already moved past it, so no later call reported it either). The hook now keeps a reflog
+  anchor in `.conductor/commit-observe.json` — the reflog's byte size and its last line, stored as
+  bytes (`anchor.lineBase64`) — and reports every `commit…` entry since, oldest first. #184
+* **Two commits in one call reported only HEAD**, so the attribution hint named one and the
+  append-only array was left short. Every commit is named, and the attribution command carries
+  every `--attribute-commit`, in landing order, as one invocation.
+* **`commit --amend` double-logged.** An amend now replaces: when the replaced commit is on no
+  branch, the engine retracts its automatic row, and for each epic that attributes it prints
+  `update-epic <id> --withdraw-commit <replaced> --withdrawal-reason "amended into <new>"` before
+  any attribution command — or, where `update-epic` would refuse that withdrawal for a delivered
+  epic, says so instead of printing a command that fails. An undone amend replaces nothing.
+* **The active epic's own work was logged as a detour from it.** A commit touching the active epic's
+  own artifacts (`openspec/changes/<id>/`, its plan path, its spec path) writes no `AUTO-DETOUR` row,
+  and a commit confined to a paused epic's own artifacts writes no `DETOUR-COMMIT` row. Decided from
+  paths, never from a subject prefix. #184
+* **A nested conductor logged its own bookkeeping.** Changed paths are compared from the conductor
+  root (read with `-z`, so a non-ASCII root still matches), so a commit touching only
+  `projects/sub/.conductor/state.json` and `projects/sub/PROJECT.md` is bookkeeping, while a mixed
+  commit touching a file outside the root is still logged. #195
+* **During a detour the attribution hint named only the detour epic.** It now lists every candidate
+  — the detour epic and each paused epic, or the active epic — one runnable command each, states
+  that choosing is the agent's, and orders a candidate whose own files the commits touch first.
+  It never adds a candidate from paths and never writes an attribution. #199
+* **The only correction for a wrong automatic row was a hand-edit** of git-ignored `detours.log`,
+  which left the false row in the tracked `PROJECT.md`. See `retract-detour` below. #173
+* **Commits the hook could not have attributed safely are no longer offered.** A commit rewritten by
+  `pull --rebase` or reset away is named as rewritten or abandoned, with no row and no
+  `--attribute-commit`.
+* **Overlapping hook runs cannot drop or repeat a commit.** The observation runs under an `O_EXCL`
+  lock with a reported-sha set; a run that cannot take the lock within 200 ms skips, and the next run
+  reports. The lock is broken on liveness — at once for a dead holder, after 10 s where liveness
+  cannot be confirmed, never for age while its holder is confirmed alive — and a run releases only
+  its own lock.
+* **Remedies the engine printed and then refused.** `integrity`'s `delivered-release-epic-left-open`
+  printed a `delivered` archive for an openspec member with no Gate 2 (exit 1), and the archive
+  refusal's own Gate 2 remedy lacked `--base-sha`/`--head-sha` (exit 1 again). Every gate remedy is
+  now rendered from one declaration carrying its gate's evidence — the sha range for Gate 2,
+  `--artifact` for Gate 1 — including `integrity`'s malformed-value finding, which is now gate-aware.
+  `unconsidered-outcomes` and `integrity`'s `epic-in-undefined-status` offer `delivered` only where the
+  archive gate would accept it (gh-189: 12 of 20 entries printed a choice that exited 1). An amend that
+  withdrew an archived `delivered` epic's only attribution printed attribute-first, which is refused;
+  every site now prints the Gate 2 re-record THEN `--attribute-commit`.
+* **Tracker recipes that could not run as written.** The secondary `gh issue list` line requested no
+  `updatedAt` while its registration line required one, and the secondary section had no watermark
+  step. `gh issue list` without `--limit` stops at 30 items, so later items were never registered and
+  the closed-item step proposed archiving their epics; the step now passes `--limit 1000` with a
+  truncation stop. A jira registration line derived `jira-abc-<issue-number>`, refused for the key
+  `ABC-123`; non-numeric keys now derive `<issue-key-slug>`. A `github-issues` `--repo` was spliced
+  into a shell line unquoted (`--repo 'a/b; touch pwned'` was accepted) and is now refused unless it
+  is `owner/name`. Item titles were wrapped in double quotes with no instruction; the recipe now
+  says to fill item values as one single-quoted word and emits `--title=`, `--external-url=` and
+  `suggest-lane --ask=`, so a title like `--help` or ``$(touch pwned)`` stays data. Both inward
+  sections pointed at `/pm:epic list`, which does not exist; an inward-only primary's completion-sync
+  reminder cited "writeback steps above" that the block never emitted.
+* **A primary vendor switch kept a stale scope and could silently turn on outward creation.**
+  `set-tracker --system jira --project ABC` kept the old `repo`, which headed the jira section and
+  seeded its ids; the old `repo`/`projectKey`/`instance` not re-given are now dropped and each is
+  printed. A legacy github-issues primary with no recorded direction became an outward jira
+  tracker; the switch now records the direction the old tracker resolved to, and says so.
+* **The brief claimed what it could not check.** `✓ all active epics are mirrored to jira` printed
+  while the active epic was linked to a GitHub secondary; with any secondary it now says every
+  active epic carries an external link. `never re-read — run /pm:sync` counted epics `/pm:sync` never
+  reads; it now names `record-tracker-refresh`, which clears every epic it counts, and the outward
+  record-the-key line carries `--external-updated-at` so an outward-created link starts with a
+  watermark.
+* **Shipped docs taught refused gate forms and hand-edits.** The hierarchy child's `record-gate-review
+  --gate 1|2 --verdict pass` exited 1; SKILL and `/pm:review-mode` taught the sha range for Gate 1,
+  which records the wrong kind of evidence — every form now matches its gate. `/pm:review-mode` said
+  an epic override had no unset (`update-epic <id> --clear review-mode` clears it). `/pm:upgrade` named
+  a nonexistent `/pm:integrity`; `/pm:cross-spec-review` ran a checkout-only path. `init`'s stderr,
+  the commit nudge, `/pm:init` and SKILL told the agent to edit `state.json`; each now names the verb.
+* **Gate 2 fixes to the above.** A primary `set-tracker --remove` saved a refused `--repo` (the
+  `--remove` exemption now applies to the secondary role only). The brief's not-yet-in-the-outward-
+  tracker remedy recorded no watermark. The repo shape refused GitHub Enterprise; `HOST/owner/name`
+  is accepted. Printed invocations interpolated raw epic ids; every one now goes through
+  `printedId()`, which shell-quotes an id outside the id format (a legacy `My Plan`). A checkbox-source
+  release member was offered an archive the gate refuses on open tasks; the drift-heal step's archive
+  was refused on open work too (it now names a stories source's `--story <n> --done` first, or carries
+  `--carried-to <epicId> --reason "<which tasks moved>"`); `update-epic`'s archived-`delivered`
+  regression refusal printed an invocation missing that handoff flag (it now carries it, only with
+  `delivered`); and `unconsidered-outcomes` named a checkbox handoff blocker with an empty remedy.
+* **A value the engine did not write could forge a line of its output.** A newline (or CR, NEL,
+  U+2028, U+2029) in a detour reason, disposition reason, title, description, story title,
+  withdrawal reason, session name, plan heading, `.changesets` fragment, lesson frontmatter, unknown
+  id, legacy release id or tracker value started a line the engine never wrote: a `NOW:` line in the
+  brief, a `## heading` in PROJECT.md, a runnable `update-epic … --status archived` line inside the
+  archive refusal, a `✓ integrity: all checks pass` line from `integrity`, a `## FORGED rule`
+  heading in the managed rules block, a forged `owners` row. Every governed value is now escaped on
+  PROJECT.md, the brief, the rules block, every hook's decoded output, `integrity`, `release show`,
+  `owners`, every verb's stdout/stderr and refusals, and `.conductor/honcho-memories.log` (one line
+  per entry). A project or log directory named with a line terminator is escaped in engine messages
+  too (`render`'s `rendered <path>`, `set-activity-log on`, a `honcho-memory` filesystem failure, the
+  verbose engine banner). `.conductor/detours.log` escapes its epic and note fields at write, since
+  the engine parses that log by line and tab.
+* **Forged PROJECT.md table cells.** A `|` in a detour reason or a minimal detour note added a cell,
+  and a newline in a disposition reason added a row — the Dispositions table escaped `|` and nothing
+  else. Every data row of every table is built by one function that escapes control characters, then
+  `\`, then `|`, so `a\|b` stays one cell under GitHub-flavored-Markdown splitting.
+* **JSON on stdout left DEL, C1 and U+2028/U+2029 raw** — `JSON.stringify` escapes only C0 — so a
+  legacy status holding U+2028 put a line start into `triage`'s output. Every stdout JSON document
+  goes through one serialiser that escapes them; the parsed value is unchanged.
+* **Ids holding a control character were stored.** `sync` (active changes and plan files) and the
+  archive backfill registered a directory or file name holding a newline as an epic id, and
+  `release "r<newline>FORGED" --intent …` stored that release id. See Changed.
+* **Tracker scopes holding a control character were stored.** `set-tracker --system`, `--project` and
+  `--repo` now refuse a control character, for both roles, before anything is read or written —
+  including a primary `--remove`, which exited 0 and wrote `## FORGED` into `CLAUDE.md` and
+  `state.json`. `--role secondary --remove` is not refused, so a legacy secondary stays removable.
+* **A printed command could carry a control-character id.** Every printed command naming an epic
+  or release id goes through `printedId()` — release ids included now, among them `integrity`'s
+  `release <id> --defer` remedy — and a legacy id holding a control character prints no command:
+  `<kind> '<escaped id>' holds a control character; no verb can rename it`, never a hand-edit
+  instruction. A non-id value in a printed command (a session name, a spec path, a plan path) takes a
+  placeholder when it holds one.
+
+### Added
+
+* **`retract-detour <sha> --reason "<why>"`** — the inverse of the hook's automatic logging. Appends
+  one `RETRACTED` row covering every `AUTO-DETOUR` and `DETOUR-COMMIT` row of that commit (matched by
+  prefix, whatever the row's abbreviation length), removes nothing, and re-renders `PROJECT.md`
+  without them. Refuses, naming why and writing nothing: a value that is not a hex sha (a ref such as
+  `HEAD`), no matching row, a `MINIMAL`-only row, an already-retracted commit, a missing or empty
+  reason, a too-short or ambiguous sha of a pruned commit, and a detached tree. #173
+* **`deliveredBlockedBy` on every `unconsidered-outcomes` entry** — always present, `[]` when nothing
+  blocks: `{kind, detail, remedy}` per obligation blocking `delivered`, in the order to run them
+  (Gate 2 before the handoff). A checkbox source's handoff remedy is the `delivered` archive carrying
+  `--carried-to <epicId> --reason "<which tasks moved>"`.
+* **`suggest-lane --ask=<text>`** — the same lookup for a flag-shaped text, which cannot be passed
+  positionally. The positional form is unchanged; both together are refused.
+* **The `tracker-repo-not-a-github-repository` integrity check** — names a `github-issues` tracker
+  whose recorded repo fails `[HOST/]owner/name` (it gets no `gh` step), with the re-record, and for a
+  secondary its `--remove` printed shell-quoted.
+* **The emitted-invocation sweep** (`scripts/test/emitted-invocations.test.mjs`): every invocation in
+  the rules block (every platform × tracker role/system/direction), `init`, the commit nudge and the
+  shipped docs passes the pre-dispatch check; every engine-printed remedy is executed against a
+  fixture reproducing its finding and the finding is asserted gone; Layer A also reads the whole output
+  of every run in the file, and a source scan requires every printed-invocation template in
+  `scripts/lib` to be reached by a fixture. Deliberate refused examples in docs carry
+  `<!-- pm:refused <class> -->`, and the argv check reports a refusal `class`.
+* **The brief's `blocked-without-depends-on` remedy** is a registered brief remedy with its own fixture.
+* **The output-integrity poison sweep** (`scripts/test/output-text-integrity.test.mjs`, developer-
+  facing): one accumulated fixture runs a poisoned value through every value-bearing flag and
+  free-text positional (the key set is held equal to the flag and positional registries), every
+  declared non-argv input, and legacy poison recipes written straight into `state.json` (ids, a
+  release, a detour frame, trackers, a stored priority, a session, a `pmVersion`) — then sweeps every
+  surface: `render`, `write-rules`, every hook verb, every read-only verb, every id-taking positional
+  and every recipe's own output. Each recipe declares that its value is rendered, why it is not, or
+  which check refuses it.
+* **The per-interpolation output sweep** (`scripts/test/output-interpolations.mjs`, developer-facing):
+  a lexer classifies every `${…}` and non-literal `+` operand in the engine as escaped, literal,
+  sunk at a line join, not output, or judged with a stated reason; the suite fails on an unclassified,
+  stale or over-broad judgment. It is best-effort by design — its known limits are listed at the top
+  of the file — and the poison sweep above is the behavioural backstop.
+
+### Changed
+
+* **`commit-nudge` is also wired on `PostToolUseFailure`**, so a commit inside a Bash call that then
+  failed is reported; the output envelope names the event it answers. A failed Bash call now spawns
+  one hook process (63 ms per no-op run measured, mean of 20); a successful one gains none.
+* **Every report states its provenance:** the commits "landed since the last observation — this
+  call, another terminal, or a parallel call; the hook cannot tell which". A commit made in another
+  terminal is still reported by the next observation and can still be auto-logged against the active
+  epic (proposal defect 3): that is a stated residual, not a fix, and `retract-detour` corrects the
+  row.
+* **On unreadable `state.json`, `commit-nudge` writes nothing, the observation record included**, on
+  both post-call events, so the commit is reported by the first run after the file is repaired.
+* **The rules block's tracker sections change for every tracker-configured repo** — the listing
+  step, the quoting sentence, the secondary watermark step, the non-numeric key placeholder and the
+  reminder wording — and are re-rendered by `/pm:upgrade`. No `state.json` change and no migration.
+  A repo whose recorded `github-issues` repo fails `[HOST/]owner/name` stops receiving a literal `gh`
+  line (it gets the vendor-neutral step) until it re-runs `set-tracker`, and `integrity` names it.
+* **`sync` skips a name that cannot be an epic id.** A change directory, plan file or archive
+  directory whose name holds a control character or whitespace is no longer registered; `sync`
+  registers the rest and names it on stderr on every run, quiet included — rename it to register it.
+  `integrity`'s `archive-directory-has-no-epic` says such a directory must be renamed. Uppercase
+  names are unaffected, and an entry an epic already holds prints nothing.
+* **`release` validates a new id first.** A new release id must match `^[a-z0-9][a-z0-9._-]*$`,
+  checked before the missing-intent refusal (which prints the id inside a command) and before any
+  write. An existing release with a legacy id is still updated and shown.
+* **Display wording changes only where a value holds a control character** (now a visible escape) or,
+  in a PROJECT.md table cell, a `\` or `|` (now escaped). A description written with newlines renders
+  as one line. No `state.json` schema change and no migration.
 
 ## [0.44.0] — 2026-09-16
 

@@ -1,0 +1,83 @@
+✔ Layer B integrity:heal-archived-epic-passed-gate-2 [nothing outstanding] {remedy} — the remedy clears what printed it (736.696084ms)
+✖ Layer B integrity:heal-archived-epic-passed-gate-2 [checkbox source] {archive, carrying the open task} — the remedy clears what printed it (599.496584ms)
+✖ Layer B integrity:heal-archived-epic-passed-gate-2 [stories source] {remedy} — the remedy clears what printed it (409.632584ms)
+✖ Layer B regression:handoff-checkbox {the printed invocation, carrying the open task} — the remedy clears what printed it (281.855083ms)
+✔ Layer B 2.7a legacy id: heal-archived-epic-passed-gate-2 {remedy} — the remedy clears what printed it (366.459917ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 2
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2440.726334
+
+✖ failing tests:
+
+test at scripts/test/emitted-invocations.test.mjs:851:7
+✖ Layer B integrity:heal-archived-epic-passed-gate-2 [checkbox source] {archive, carrying the open task} — the remedy clears what printed it (599.496584ms)
+  AssertionError [ERR_ASSERTION]: step 4: `update-epic hp --status archived --outcome delivered --no-deferrals` exited 1:
+  conductor: cannot archive 'hp' as delivered — 1 of 1/2 task(s) outstanding. Either record where the work went with --carried-to <epicId> --reason "<which tasks moved>", or — if the outstanding item is lifecycle bookkeeping rather than delivery — declare it in the task source by putting the literal <!-- pm:lifecycle --> on that task's own line. Naming a receiver for work nobody carried anywhere is a fabricated record.
+  
+  printed:
+    • `hp` — archived by the drift heal with a passing Gate 2 but no recorded disposition. This is the ordinary end of the documented workflow, and the fix is the ordinary next step: `update-epic hp --status archived --outcome delivered --no-deferrals`
+  
+  1 !== 0
+  
+      at followRemedy (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-45/r2/pre/scripts/test/emitted-invocations.test.mjs:808:12)
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-45/r2/pre/scripts/test/emitted-invocations.test.mjs:855:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:851:7
+✖ Layer B integrity:heal-archived-epic-passed-gate-2 [stories source] {remedy} — the remedy clears what printed it (409.632584ms)
+  AssertionError [ERR_ASSERTION]: the story is recorded done before the archive:
+    • `hs` — archived by the drift heal with a passing Gate 2 but no recorded disposition. This is the ordinary end of the documented workflow, and the fix is the ordinary next step: `update-epic hs --status archived --outcome delivered --no-deferrals`
+      at Object.observe (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-45/r2/pre/scripts/test/emitted-invocations.test.mjs:1075:16)
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-45/r2/pre/scripts/test/emitted-invocations.test.mjs:853:26)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:851:7
+✖ Layer B regression:handoff-checkbox {the printed invocation, carrying the open task} — the remedy clears what printed it (281.855083ms)
+  AssertionError [ERR_ASSERTION]: the invocation carries the handoff:
+  conductor: this update to 'hc' would break an obligation its archived 'delivered' record met, so nothing was written.
+    broken: the handoff demand — 1 of 1/2 task(s) outstanding
+    To make this change, record the disposition it implies. The invocation runs the full archive gate on the record it leaves:
+    update-epic hc '--plan' 'docs/superpowers/plans/2026-08-02-hc.md' --status archived --outcome <delivered|killed|superseded|abandoned|declined|unreconstructable> --reason "<why>" --correct-disposition "<why the recorded one was wrong>"
+  
+      at Object.observe (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-45/r2/pre/scripts/test/emitted-invocations.test.mjs:1696:12)
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-45/r2/pre/scripts/test/emitted-invocations.test.mjs:853:26)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at node:internal/test_runner/test:1305:31
+      at node:internal/process/task_queues:151:7
+      at AsyncResource.runInAsyncScope (node:async_hooks:226:14)
+      at AsyncResource.runMicrotask (node:internal/process/task_queues:148:8) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: `  update-epic hc '--plan' 'docs/superpowers/plans/2026-08-02-hc.md' --status archived --outcome <delivered|killed|superseded|abandoned|declined|unreconstructable> --reason "<why>" --correct-disposition "<why the recorded one was wrong>"`,
+    expected: /--carried-to <epicId>/,
+    operator: 'match',
+    diff: 'simple'
+  }

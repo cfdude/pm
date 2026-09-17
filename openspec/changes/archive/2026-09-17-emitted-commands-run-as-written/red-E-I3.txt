@@ -1,0 +1,96 @@
+✔ Layer B brief:blocked-without-depends-on [id] {remedy} — the remedy clears what printed it (629.339208ms)
+✖ Layer B brief:blocked-without-depends-on [legacy id My Plan] {remedy} — the remedy clears what printed it (74.843458ms)
+✖ 2.1 every exported registry entry has a Layer B builder, and the unconstructable count is asserted (8.971834ms)
+✖ E-I3 every epic id a printed invocation interpolates goes through printedId() (20.063958ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 1
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 813.477625
+
+✖ failing tests:
+
+test at scripts/test/emitted-invocations.test.mjs:842:7
+✖ Layer B brief:blocked-without-depends-on [legacy id My Plan] {remedy} — the remedy clears what printed it (74.843458ms)
+  AssertionError [ERR_ASSERTION]: the id is printed shell-quoted (Gate 2 E-I3):
+    ⚠ `My Plan` is `blocked` with no `depends-on` link — nothing records what it waits on (`update-epic My Plan --link "depends-on:<id>:<why>"`)
+      at Object.observe (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1350:16)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:844:26)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '  ⚠ `My Plan` is `blocked` with no `depends-on` link — nothing records what it waits on (`update-epic My Plan --link "depends-on:<id>:<why>"`)',
+    expected: /update-epic 'My Plan' --link/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:1754:1
+✖ 2.1 every exported registry entry has a Layer B builder, and the unconstructable count is asserted (8.971834ms)
+  AssertionError [ERR_ASSERTION]: builders keyed by no registry entry: blocked-without-depends-on
+  + actual - expected
+  
+  + [
+  +   'blocked-without-depends-on'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1771:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'blocked-without-depends-on' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:2520:1
+✖ E-I3 every epic id a printed invocation interpolates goes through printedId() (20.063958ms)
+  AssertionError [ERR_ASSERTION]: raw epic ids in printed invocations
+  + actual - expected
+  
+  + [
+  +   'scripts/lib/active-pointer.mjs:68  `record-reconcile ${…} --detour <detourId> --verdict valid|invalidated` — ${e.id}',
+  +   'scripts/lib/dependency-order.mjs:145  `update-epic ${…} --link "depends-on:<id>:<why>"` — ${e.id}',
+  +   'scripts/lib/detour-stack.mjs:121  `add-epic --id ${…} ` — ${detourId}',
+  +   'scripts/lib/detour-stack.mjs:275  `record-reconcile ${…} --detour ${…} --verdict valid|invalidated` — ${pausedEpic}',
+  +   'scripts/lib/detour-stack.mjs:275  `record-reconcile ${…} --detour ${…} --verdict valid|invalidated` — ${d}',
+  +   'scripts/lib/detour-stack.mjs:276  `honcho-memory pop ${…}` — ${pausedEpic}',
+  +   'scripts/lib/integrity.mjs:564  `add-epic --id ${…} --lane <lane>` — ${r.epic}',
+  +   'scripts/lib/integrity.mjs:564  `record-reconcile ${…} --detour ${…}` — ${r.epic}',
+  +   'scripts/lib/links.mjs:137  `record-reconcile ${…} --detour <detourId> --verdict valid|invalidated` — ${owingEpic}',
+  +   'scripts/lib/remove-epic.mjs:94  `record-reconcile ${…} --detour ${…} --verdict valid|invalidated` — ${r.holder}',
+  +   'scripts/lib/remove-epic.mjs:94  `record-reconcile ${…} --detour ${…} --verdict valid|invalidated` — ${r.epic}',
+  +   'scripts/lib/subcommands.mjs:816  `update-epic ${…} --plan ${…}` — ${near.id}',
+  +   'scripts/lib/subcommands.mjs:817  `add-epic --id ${…} --lane superpowers --plan ${…}` — ${id}',
+  +   'scripts/lib/update-epic.mjs:441  `record-reconcile ${…} --detour <detourId> --verdict valid|invalidated` — ${id}',
+  +   'scripts/lib/verify-specs.mjs:270  `update-epic ${…} --spec ${…}` — ${c.id}'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:2521:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at node:internal/test_runner/test:1305:31
+      at node:internal/process/task_queues:151:7
+      at AsyncResource.runInAsyncScope (node:async_hooks:226:14)
+      at AsyncResource.runMicrotask (node:internal/process/task_queues:148:8) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'scripts/lib/active-pointer.mjs:68  `record-reconcile ${…} --detour <detourId> --verdict valid|invalidated` — ${e.id}', 'scripts/lib/dependency-order.mjs:145  `update-epic ${…} --link "depends-on:<id>:<why>"` — ${e.id}', 'scripts/lib/detour-stack.mjs:121  `add-epic --id ${…} ` — ${detourId}', 'scripts/lib/detour-stack.mjs:275  `record-reconcile ${…} --detour ${…} --verdict valid|invalidated` — ${pausedEpic}', 'scripts/lib/detour-stack.mjs:275  `record-reconcile ${…} --detour ${…} --verdict valid|invalidated` — ${d}', 'scripts/lib/detour-stack.mjs:276  `honcho-memory pop ${…}` — ${pausedEpic}', 'scripts/lib/integrity.mjs:564  `add-epic --id ${…} --lane <lane>` — ${r.epic}', 'scripts/lib/integrity.mjs:564  `record-reconcile ${…} --detour ${…}` — ${r.epic}', 'scripts/lib/links.mjs:137  `record-reconcile ${…} --detour <detourId> --verdict valid|invalidated` — ${owingEpic}', 'scripts/lib/remove-epic.mjs:94  `record-reconcile ${…} --detour ${…} --verdict valid|invalidated` — ${r.holder}', 'scripts/lib/remove-epic.mjs:94  `record-reconcile ${…} --detour ${…} --verdict valid|invalidated` — ${r.epic}', 'scripts/lib/subcommands.mjs:816  `update-epic ${…} --plan ${…}` — ${near.id}', 'scripts/lib/subcommands.mjs:817  `add-epic --id ${…} --lane superpowers --plan ${…}` — ${id}', 'scripts/lib/update-epic.mjs:441  `record-reconcile ${…} --detour <detourId> --verdict valid|invalidated` — ${id}', 'scripts/lib/verify-specs.mjs:270  `update-epic ${…} --spec ${…}` — ${c.id}' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

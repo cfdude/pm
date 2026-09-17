@@ -28,6 +28,7 @@ Sibling shapes, same family:
 | titles match between generator and mirror | whether the mirror's body contradicts the generator |
 | the operation returned no error | whether it persisted |
 | the check reported nothing | whether the check could report anything |
+| every emitted command line passes the argv check | whether the engine accepts it once domain logic runs, or running it clears what printed it — 0.44.0's sweep, see [[a-one-off-sweep-certifies-only-the-day-it-ran]] |
 
 **Why "it passes" is not evidence.** A green test distinguishes nothing unless you know it can go
 red. Where a check confirms what you already expect, that is the moment to doubt the check — see

@@ -1,0 +1,53 @@
+✖ G2-I1 a nested conductor under a non-ASCII directory: its bookkeeping commit is not a detour, on either branch (541.630625ms)
+✖ G2-I1 sweep: upgrade's commit nudge names its rewritten files in a nested conductor under a non-ASCII directory (779.98625ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1366.121083
+
+✖ failing tests:
+
+test at scripts/test/commit-observation.test.mjs:694:1
+✖ G2-I1 a nested conductor under a non-ASCII directory: its bookkeeping commit is not a detour, on either branch (541.630625ms)
+  AssertionError [ERR_ASSERTION]: AUTO-DETOUR: 2026-09-17T04:00:28.251Z	c91bb1a	AUTO-DETOUR	epic-a	chore(conductor): register epic-b
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-observation.test.mjs:706:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/commit-observation.test.mjs:710:1
+✖ G2-I1 sweep: upgrade's commit nudge names its rewritten files in a nested conductor under a non-ASCII directory (779.98625ms)
+  AssertionError [ERR_ASSERTION]: projects/süb: conductor: refreshed rules block in CLAUDE.md (platform: claude-code)
+  conductor: PROJECT.md unchanged (skipped rewrite)
+  conductor: upgraded (7 migration(s)), pmVersion now 0.44.0
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-observation.test.mjs:720:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'conductor: refreshed rules block in CLAUDE.md (platform: claude-code)\nconductor: PROJECT.md unchanged (skipped rewrite)\nconductor: upgraded (7 migration(s)), pmVersion now 0.44.0\n',
+    expected: /COMMIT THIS UPGRADE[\s\S]*git add [^\n]*\.conductor\/state\.json/,
+    operator: 'match',
+    diff: 'simple'
+  }

@@ -7,7 +7,7 @@ import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { writeRules } from "./rules.mjs";
 import { render } from "./render.mjs";
-import { KNOWN_REVIEW_MODES } from "./constants.mjs";
+import { KNOWN_REVIEW_MODES, escapeControls } from "./constants.mjs";
 import { resolvePlatform } from "./platform.mjs";
 
 /** `set-review-mode --mode off|standard|thorough` — the repo-level dial, mirroring Comet's
@@ -30,10 +30,10 @@ export function setReviewMode() {
   writeRules(resolvePlatform({}, state));   // refresh CLAUDE.md so the agent sees the new active mode
   render();
   reportSave(saved, {
-    changed: `conductor: review mode is now '${mode}'`,
+    changed: `conductor: review mode is now '${escapeControls(mode)}'`,
     // NAMES THE STATE FILE, not the invocation: the rules block and PROJECT.md were rewritten
     // either way, so "nothing changed" alone would be false about what this verb just did.
-    unchanged: `conductor: review mode was already '${mode}' — ${STATE_UNCHANGED} ` +
+    unchanged: `conductor: review mode was already '${escapeControls(mode)}' — ${STATE_UNCHANGED} ` +
       "(the rules block and PROJECT.md were re-rendered)",
   });
 }

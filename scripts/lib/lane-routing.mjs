@@ -6,7 +6,7 @@ import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
-import { KNOWN_LANES } from "./constants.mjs";
+import { KNOWN_LANES, escapeControls, jsonText } from "./constants.mjs";
 import { checkedPositionals } from "./argv-surface.mjs";
 
 export function laneMatchTest(match, text) {
@@ -59,12 +59,12 @@ export function setLaneRouting() {
       if (typeof raw !== "string") continue;
       const i = raw.lastIndexOf(":");
       if (i <= 0 || i === raw.length - 1) {
-        process.stderr.write(`conductor: bad --add '${raw}': expected "<match>:<lane>"\n`); process.exit(1);
+        process.stderr.write(`conductor: bad --add '${escapeControls(raw)}': expected "<match>:<lane>"\n`); process.exit(1);
       }
       const match = raw.slice(0, i).trim();
       const lane = raw.slice(i + 1).trim();
       if (!KNOWN_LANES.includes(lane)) {
-        process.stderr.write(`conductor: bad --add '${raw}': lane must be one of ${KNOWN_LANES.join("|")}\n`); process.exit(1);
+        process.stderr.write(`conductor: bad --add '${escapeControls(raw)}': lane must be one of ${KNOWN_LANES.join("|")}\n`); process.exit(1);
       }
       lr.overrides = lr.overrides.filter(o => o.match !== match);   // last --add for a match wins
       lr.overrides.push({ match, lane });
@@ -102,9 +102,20 @@ export function suggestLane() {
   // The check's classified positional, never `process.argv[3]`: that slot holds the first flag when
   // the line carries no text. Read-only today, so `--force` is refused before it could get here —
   // bound to the classification anyway, so a later argv-level row cannot reopen it.
-  const [text] = checkedPositionals("suggest-lane");
-  if (typeof text !== "string" || !text.length) {
-    process.stderr.write("usage: conductor.mjs suggest-lane \"<free text>\"\n"); process.exit(1);
+  const [positional] = checkedPositionals("suggest-lane");
+  // `--ask=<text>` carries the text as a flag VALUE, so a title shaped like a flag routes like any
+  // other. One verb, one text: both at once is a surplus argument, never a silent pick of one.
+  const f = parseFlags(process.argv.slice(3));
+  requireFlagValues("suggest-lane", f);
+  const ask = typeof f.ask === "string" ? f.ask : undefined;
+  if (ask !== undefined && typeof positional === "string") {
+    process.stderr.write(`conductor: suggest-lane takes ONE text — '${escapeControls(positional)}' is an extra argument ` +
+      "it does not read, because --ask already gave the text. Nothing was written.\n");
+    process.exit(1);
   }
-  process.stdout.write(JSON.stringify(laneSuggestion(loadState(), text)) + "\n");
+  const text = ask !== undefined ? ask : positional;
+  if (typeof text !== "string" || !text.length) {
+    process.stderr.write("usage: conductor.mjs suggest-lane \"<free text>\" | --ask=<text>\n"); process.exit(1);
+  }
+  process.stdout.write(jsonText(laneSuggestion(loadState(), text)) + "\n");
 }

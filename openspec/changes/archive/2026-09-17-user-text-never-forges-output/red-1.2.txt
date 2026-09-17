@@ -1,0 +1,31 @@
+✖ 1.2 escapeTableCell escapes every control character as escapeControls does, then backslashes, then pipes (2.389166ms)
+✔ 1.2 escapeControls is idempotent over its own output (0.164916ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 1
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 37.222875
+
+✖ failing tests:
+
+test at scripts/test/output-text-integrity.test.mjs:56:1
+✖ 1.2 escapeTableCell escapes every control character as escapeControls does, then backslashes, then pipes (2.389166ms)
+  AssertionError [ERR_ASSERTION]: constants.mjs must export escapeTableCell beside escapeControls
+  + actual - expected
+  
+  + 'undefined'
+  - 'function'
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-text-integrity.test.mjs:58:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'function',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

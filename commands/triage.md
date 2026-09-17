@@ -34,7 +34,8 @@ render stamp"` reads the ask — while `triage --limit 5` with no ask still prin
 that begins with `--` but is not shaped like a flag (`"--story <n> is 1-indexed"`) is the ask, not
 a flag.
 
-Read-only — it writes nothing and re-renders nothing. It prints one JSON object:
+Read-only — it writes nothing and re-renders nothing. It prints one JSON object as a single compact
+line (shown expanded below for reading; parse it, do not match its layout):
 
 ```json
 {

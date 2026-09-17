@@ -1,0 +1,30 @@
+# RED for task 2.4a, run against an OFFSET-anchor mutant of commit-watch.mjs locateAnchor()
+# (return anchor.size when the file is at least that long). On the 0.44.0 engine this test passes:
+# see red-2.1-2.4a.txt, where 2.4a is the one passing test — the task names it RED against an offset anchor.
+✖ 2.4a reflog expiry at the front loses no commit (451.147583ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 489.876333
+
+✖ failing tests:
+
+test at scripts/test/commit-observation.test.mjs:178:1
+✖ 2.4a reflog expiry at the front loses no commit (451.147583ms)
+  AssertionError [ERR_ASSERTION]: reported despite the front entry's removal: ""
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-observation.test.mjs:188:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

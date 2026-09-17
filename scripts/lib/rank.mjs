@@ -50,6 +50,7 @@
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
+import { escapeControls } from "./constants.mjs";
 
 /** `reorder <id> <id> …` — set the manual rank of one whole priority band, atomically.
  *
@@ -77,11 +78,11 @@ export function reorder() {
 
   const seen = new Set();
   for (const id of ids) {
-    if (seen.has(id)) fail(`'${id}' is named twice — a rank is a position, and one epic has one`);
+    if (seen.has(id)) fail(`'${escapeControls(id)}' is named twice — a rank is a position, and one epic has one`);
     seen.add(id);
-    if (!byId.has(id)) fail(`epic '${id}' not found`);
+    if (!byId.has(id)) fail(`epic '${escapeControls(id)}' not found`);
     if (byId.get(id).status === "archived") {
-      fail(`epic '${id}' is archived — ranking finished work orders a band nobody will read`);
+      fail(`epic '${escapeControls(id)}' is archived — ranking finished work orders a band nobody will read`);
     }
   }
 
@@ -90,8 +91,8 @@ export function reorder() {
   if (offBand.length) {
     // Ranks from two bands in one call cannot both be 1..N, so the numbering would silently mean
     // something different for each half.
-    fail(`rank is a placement WITHIN one priority band, and these are not all ${band}: ` +
-      offBand.map(id => `${id} (${byId.get(id).priority})`).join(", "));
+    fail(`rank is a placement WITHIN one priority band, and these are not all ${escapeControls(band)}: ` +
+      escapeControls(offBand.map(id => `${id} (${byId.get(id).priority})`).join(", ")));
   }
 
   // COMPLETENESS is the whole mechanism. Accepting a subset would let `1..N` be written over a
@@ -101,16 +102,16 @@ export function reorder() {
     .filter(e => e.priority === band && e.status !== "archived" && !seen.has(e.id))
     .map(e => e.id);
   if (missing.length) {
-    fail(`reorder takes the WHOLE ${band} band so the numbering stays contiguous — ` +
-      `not named: ${missing.join(", ")}. Add them in the position you want them.`);
+    fail(`reorder takes the WHOLE ${escapeControls(band)} band so the numbering stays contiguous — ` +
+      `not named: ${escapeControls(missing.join(", "))}. Add them in the position you want them.`);
   }
 
   ids.forEach((id, i) => { byId.get(id).rank = i + 1; });
   const saved = saveState(state, { verb: "reorder" });
   reportSave(saved, {
     stream: process.stdout,
-    changed: `conductor: ${band} reordered — ${ids.map((id, i) => `${i + 1}. ${id}`).join("  ")}`,
-    unchanged: `conductor: ${band} was already in that order — ${STATE_UNCHANGED}`,
+    changed: `conductor: ${escapeControls(band)} reordered — ${escapeControls(ids.map((id, i) => `${i + 1}. ${id}`).join("  "))}`,
+    unchanged: `conductor: ${escapeControls(band)} was already in that order — ${STATE_UNCHANGED}`,
   });
   render();
 }

@@ -1,0 +1,11 @@
+# RED for Gate 2 V-M2: the new 5.3h mutant test run against the pre-V-M2 check (only `.epic` inspected),
+# the check already moved behind the detourReaderFindings() helper.
+✔ 5.3h source guard (Gate 2 U2-M2): no reader matches a detours.log row's epic field against a stored id (design D7) (6.651584ms)
+✖ 5.3h mutants (Gate 2 V-M2): a row's epic read as ["epic"] or destructured is caught like .epic (3.531209ms)
+✖ failing tests:
+test at scripts/test/output-text-integrity.test.mjs:854:1
+✖ 5.3h mutants (Gate 2 V-M2): a row's epic read as ["epic"] or destructured is caught like .epic (3.531209ms)
+  AssertionError [ERR_ASSERTION]: not caught: const logged = rows.find(r => r["epic"] === state.active);
+    actual: false,
+    expected: true,
+  }

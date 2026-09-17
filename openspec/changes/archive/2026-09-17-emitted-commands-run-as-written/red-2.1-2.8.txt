@@ -1,0 +1,794 @@
+✔ Layer B integrity:archived-with-zero-ticked-tasks — reproduces its condition and prints no engine invocation (304.701417ms)
+✔ Layer B integrity:verdict-range-omits-cited-commits — reproduces its condition and prints no engine invocation (241.688375ms)
+✖ Layer B integrity:archived-with-no-gate-2-review {remedy} — the remedy clears what printed it (562.852833ms)
+✖ Layer B integrity:archived-with-withdrawn-gate-2 {remedy} — the remedy clears what printed it (590.906042ms)
+✖ Layer B integrity:delivered-epic-attributed-no-commits [never attributed] {remedy} — the remedy clears what printed it (512.486042ms)
+✖ Layer B integrity:delivered-epic-attributed-no-commits [withdrawn] {remedy} — the remedy clears what printed it (711.368417ms)
+✔ Layer B integrity:archived-openspec-epic-with-no-gate-1 — reproduces its condition and prints no engine invocation (466.369833ms)
+✔ Layer B integrity:archive-directory-has-no-epic — reproduces its condition and prints no engine invocation (163.034708ms)
+✖ Layer B integrity:heal-archived-epic-passed-gate-2 {remedy} — the remedy clears what printed it (541.477709ms)
+✔ Layer B integrity:gate-recorded-as-bookkeeping — reproduces its condition and prints no engine invocation (465.825375ms)
+✔ Layer B integrity:change-registered-under-two-lanes — reproduces its condition and prints no engine invocation (289.910458ms)
+✔ Layer B integrity:link-of-unknown-type {remedy} — the remedy clears what printed it (315.730375ms)
+✖ Layer B integrity:epic-in-undefined-status [openspec, no Gate 2 → queued] {queued} — the remedy clears what printed it (173.600875ms)
+✖ Layer B integrity:epic-in-undefined-status [openspec, no Gate 2 → killed] {killed} — the remedy clears what printed it (178.11525ms)
+✖ Layer B integrity:epic-in-undefined-status [openspec, no Gate 2 → superseded] {superseded} — the remedy clears what printed it (200.59225ms)
+✖ Layer B integrity:epic-in-undefined-status [openspec, no Gate 2 → abandoned] {abandoned} — the remedy clears what printed it (268.044ms)
+✖ Layer B integrity:epic-in-undefined-status [openspec, no Gate 2 → declined] {declined} — the remedy clears what printed it (295.810458ms)
+✖ Layer B integrity:epic-in-undefined-status [openspec, no Gate 2 → unreconstructable] {unreconstructable} — the remedy clears what printed it (196.031708ms)
+✔ Layer B integrity:dangling-epic-reference [release deferral] — reproduces its condition and prints no engine invocation (184.221ms)
+✔ Layer B integrity:dangling-epic-reference [detour-stack frame] — reproduces its condition and prints no engine invocation (180.022375ms)
+✖ Layer B integrity:superseded-epic-never-ended {remedy} — the remedy clears what printed it (353.326834ms)
+✖ Layer B integrity:delivered-release-epic-left-open [archive] {archive} — the remedy clears what printed it (515.411917ms)
+✖ Layer B integrity:delivered-release-epic-left-open [release --defer] {release --defer} — the remedy clears what printed it (580.232042ms)
+✔ Layer B integrity:recorded-sha-the-repository-cannot-resolve [absent] — reproduces its condition and prints no engine invocation (479.17625ms)
+✔ Layer B integrity:recorded-sha-the-repository-cannot-resolve [orphaned] — reproduces its condition and prints no engine invocation (422.384958ms)
+✖ Layer B integrity:recorded-sha-the-repository-cannot-resolve [malformed gate1] {re-record} — the remedy clears what printed it (209.638041ms)
+✖ Layer B integrity:recorded-sha-the-repository-cannot-resolve [malformed gate2] {re-record} — the remedy clears what printed it (284.718667ms)
+✔ Layer B integrity:recorded-sha-the-repository-cannot-resolve [malformed attributedCommits] {withdraw} — the remedy clears what printed it (407.323083ms)
+✔ Layer B integrity:advisory-claim-shape [archived] {remedy} — the remedy clears what printed it (319.264792ms)
+✔ Layer B integrity:advisory-claim-shape [expired] {remedy} — the remedy clears what printed it (319.994625ms)
+✖ Layer B obligation:gate2-missing {remedy} — the remedy clears what printed it (377.772958ms)
+✖ Layer B obligation:gate2-withdrawn {remedy} — the remedy clears what printed it (506.797666ms)
+✖ Layer B obligation:gate2-stale {remedy} — the remedy clears what printed it (575.829875ms)
+✖ Layer B obligation:gate2-attribution-withdrawn {re-record then attribute, then the refused invocation} — the remedy clears what printed it (554.132125ms)
+✖ Layer B obligation:handoff {tick the story} — the remedy clears what printed it (288.744458ms)
+✔ Layer B brief:tracker-refresh-owed {remedy} — the remedy clears what printed it (438.987334ms)
+✔ Layer B brief:ungated-archive {remedy} — the remedy clears what printed it (644.290792ms)
+✔ Layer B brief:withdrawn-gate2-archive {remedy} — the remedy clears what printed it (728.539333ms)
+✖ Layer B brief:not-in-outward-tracker {remedy} — the remedy clears what printed it (355.314833ms)
+✔ Layer B brief:never-re-read — reproduces its condition and prints no engine invocation (291.030375ms)
+✖ Layer B unconsidered:openspec-no-gate-2 {killed} — the remedy clears what printed it (178.99975ms)
+✖ Layer B unconsidered:openspec-no-gate-2 {superseded} — the remedy clears what printed it (190.266333ms)
+✖ Layer B unconsidered:openspec-no-gate-2 {abandoned} — the remedy clears what printed it (183.323292ms)
+✖ Layer B unconsidered:openspec-no-gate-2 {declined} — the remedy clears what printed it (178.833959ms)
+✖ Layer B unconsidered:openspec-no-gate-2 {unreconstructable} — the remedy clears what printed it (169.275125ms)
+✖ Layer B unconsidered:claude-code (REGRESSION GUARD 2.8) {delivered} — the remedy clears what printed it (176.993792ms)
+✖ Layer B regression:stale {remedy, then the refused command} — the remedy clears what printed it (574.427959ms)
+✖ Layer B regression:attribution-withdrawn {remedy, then the refused command} — the remedy clears what printed it (526.328542ms)
+✖ Layer B regression:stale {remedy, then the printed invocation} — the remedy clears what printed it (528.32ms)
+✖ Layer B regression:attribution-withdrawn {remedy, then the printed invocation} — the remedy clears what printed it (513.138125ms)
+✔ 2.8 REGRESSION GUARD: a withdrawal on an archived delivered record whose Gate 2 is ALREADY stale still exits 0 (688.970834ms)
+✖ 2.8 REGRESSION GUARD: deliveredObligations() reports Gate 2 failures under kind gate2, the variant in its own field (1.552833ms)
+✔ Layer B nudge:auto-logged [retract-detour] {retract} — the remedy clears what printed it (521.067584ms)
+✔ Layer B nudge:auto-logged [attribute] {attribute} — the remedy clears what printed it (530.320833ms)
+✔ Layer B nudge:several candidates [detour-d] {attribute to detour-d} — the remedy clears what printed it (687.232959ms)
+✔ Layer B nudge:several candidates [epic-a] {attribute to epic-a} — the remedy clears what printed it (692.573083ms)
+✔ Layer B nudge:amend [withdraw] {withdraw} — the remedy clears what printed it (652.623125ms)
+✔ Layer B nudge:amend [prints none where update-epic would refuse] — reproduces its condition and prints no engine invocation (694.707084ms)
+✖ Layer B 2.7a legacy id: heal-archived-epic-passed-gate-2 {remedy} — the remedy clears what printed it (220.889875ms)
+✖ Layer B 2.7a legacy id: delivered-epic-attributed-no-commits {remedy} — the remedy clears what printed it (221.1805ms)
+✖ Layer B 2.7a legacy id: the nudge [--attribute-commit] {attribute} — the remedy clears what printed it (292.391167ms)
+✖ Layer B 2.7a legacy id: the nudge [--withdraw-commit] {withdraw} — the remedy clears what printed it (478.526042ms)
+✖ 2.1 every exported registry entry has a Layer B builder, and the unconstructable count is asserted (4.52875ms)
+ℹ tests 63
+ℹ suites 0
+ℹ pass 25
+ℹ fail 38
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 24451.784083
+
+✖ failing tests:
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B integrity:archived-with-no-gate-2-review {remedy} — the remedy clears what printed it (562.852833ms)
+  AssertionError [ERR_ASSERTION]: step 2: no remedy invocation to follow in:
+    • `ug` — archived by the drift heal with no Gate 2 review recorded by anyone. A standing condition, not an episode: it holds until a real passing verdict with its commit range supersedes it — record-gate-review ug --gate 2 --verdict pass --base-sha <sha> --head-sha <sha>
+      at followRemedy (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:755:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:800:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B integrity:archived-with-withdrawn-gate-2 {remedy} — the remedy clears what printed it (590.906042ms)
+  AssertionError [ERR_ASSERTION]: step 2: no remedy invocation to follow in:
+    • `wg` — archived with its Gate 2 withdrawn (withdrawal reason "fixture reason"). A standing condition, not an episode: a withdrawal takes a verdict back and does not discharge Gate 2, so this holds until a real verdict is recorded — record-gate-review wg --gate 2 --verdict pass --base-sha <sha> --head-sha <sha>
+      at followRemedy (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:755:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:800:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B integrity:delivered-epic-attributed-no-commits [never attributed] {remedy} — the remedy clears what printed it (512.486042ms)
+  AssertionError [ERR_ASSERTION]: step 2: no remedy invocation to follow in:
+    • `na` — recorded as delivered with a passing Gate 2 but attributed no commits — record the range that shipped with: update-epic na --attribute-commit <sha>
+      at followRemedy (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:755:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:800:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B integrity:delivered-epic-attributed-no-commits [withdrawn] {remedy} — the remedy clears what printed it (711.368417ms)
+  AssertionError [ERR_ASSERTION]: step 2: no remedy invocation to follow in:
+    • `wd` — recorded as delivered with a passing Gate 2 and attributes no commits, having WITHDRAWN cdb7a682e03c1065571855c81e869354166d081f ("amended into 629e0a9"). A withdrawal corrects the record and does not discharge the obligation — attribute the commits that actually shipped: update-epic wd --attribute-commit <sha>
+      at followRemedy (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:755:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:800:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B integrity:heal-archived-epic-passed-gate-2 {remedy} — the remedy clears what printed it (541.477709ms)
+  AssertionError [ERR_ASSERTION]: step 2: no remedy invocation to follow in:
+    • `hg` — archived by the drift heal with a passing Gate 2 but no recorded disposition. This is the ordinary end of the documented workflow, and the fix is the ordinary next step: update-epic hg --status archived --outcome delivered --no-deferrals
+      at followRemedy (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:755:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:800:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B integrity:epic-in-undefined-status [openspec, no Gate 2 → queued] {queued} — the remedy clears what printed it (173.600875ms)
+  AssertionError [ERR_ASSERTION]: delivered is not offered for an openspec epic with no Gate 2
+      at Object.observe (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1004:16)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:798:26)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'update-epic ud --status archived --outcome <delivered|killed|superseded|abandoned|declined|unreconstructable> --reason "<why>" --no-deferrals',
+    expected: /--outcome <[^>]*\bdelivered\b/,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B integrity:epic-in-undefined-status [openspec, no Gate 2 → killed] {killed} — the remedy clears what printed it (178.11525ms)
+  AssertionError [ERR_ASSERTION]: delivered is not offered for an openspec epic with no Gate 2
+      at Object.observe (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1004:16)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:798:26)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'update-epic ud --status archived --outcome <delivered|killed|superseded|abandoned|declined|unreconstructable> --reason "<why>" --no-deferrals',
+    expected: /--outcome <[^>]*\bdelivered\b/,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B integrity:epic-in-undefined-status [openspec, no Gate 2 → superseded] {superseded} — the remedy clears what printed it (200.59225ms)
+  AssertionError [ERR_ASSERTION]: delivered is not offered for an openspec epic with no Gate 2
+      at Object.observe (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1004:16)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:798:26)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'update-epic ud --status archived --outcome <delivered|killed|superseded|abandoned|declined|unreconstructable> --reason "<why>" --no-deferrals',
+    expected: /--outcome <[^>]*\bdelivered\b/,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B integrity:epic-in-undefined-status [openspec, no Gate 2 → abandoned] {abandoned} — the remedy clears what printed it (268.044ms)
+  AssertionError [ERR_ASSERTION]: delivered is not offered for an openspec epic with no Gate 2
+      at Object.observe (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1004:16)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:798:26)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'update-epic ud --status archived --outcome <delivered|killed|superseded|abandoned|declined|unreconstructable> --reason "<why>" --no-deferrals',
+    expected: /--outcome <[^>]*\bdelivered\b/,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B integrity:epic-in-undefined-status [openspec, no Gate 2 → declined] {declined} — the remedy clears what printed it (295.810458ms)
+  AssertionError [ERR_ASSERTION]: delivered is not offered for an openspec epic with no Gate 2
+      at Object.observe (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1004:16)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:798:26)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'update-epic ud --status archived --outcome <delivered|killed|superseded|abandoned|declined|unreconstructable> --reason "<why>" --no-deferrals',
+    expected: /--outcome <[^>]*\bdelivered\b/,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B integrity:epic-in-undefined-status [openspec, no Gate 2 → unreconstructable] {unreconstructable} — the remedy clears what printed it (196.031708ms)
+  AssertionError [ERR_ASSERTION]: delivered is not offered for an openspec epic with no Gate 2
+      at Object.observe (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1004:16)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:798:26)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'update-epic ud --status archived --outcome <delivered|killed|superseded|abandoned|declined|unreconstructable> --reason "<why>" --no-deferrals',
+    expected: /--outcome <[^>]*\bdelivered\b/,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B integrity:superseded-epic-never-ended {remedy} — the remedy clears what printed it (353.326834ms)
+  AssertionError [ERR_ASSERTION]: step 2: no remedy invocation to follow in:
+    • `old` — `new` declares that it supersedes this epic, which is still `queued` — one piece of work carrying two live rows. End it with the record the consolidation implies: update-epic old --status archived --outcome superseded --reason "<what replaced it>" --no-deferrals
+      at followRemedy (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:755:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:800:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B integrity:delivered-release-epic-left-open [archive] {archive} — the remedy clears what printed it (515.411917ms)
+  AssertionError [ERR_ASSERTION]: the Gate 2 precondition is named before the archive:
+    • `left` — still `queued` in release `1.0.0`, which has already delivered — and it is not in that release's deferred[], so the record says neither that it shipped nor that it was cut. Give it the ending it actually had: update-epic left --status archived --outcome delivered --no-deferrals — or, if it was cut, record that instead: release 1.0.0 --defer left --reason "<why>"
+      at Object.observe (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1070:16)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:798:26)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B integrity:delivered-release-epic-left-open [release --defer] {release --defer} — the remedy clears what printed it (580.232042ms)
+  AssertionError [ERR_ASSERTION]: step 2: no remedy invocation to follow in:
+    • `left` — still `queued` in release `1.0.0`, which has already delivered — and it is not in that release's deferred[], so the record says neither that it shipped nor that it was cut. Give it the ending it actually had: update-epic left --status archived --outcome delivered --no-deferrals — or, if it was cut, record that instead: release 1.0.0 --defer left --reason "<why>"
+      at followRemedy (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:755:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:800:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B integrity:recorded-sha-the-repository-cannot-resolve [malformed gate1] {re-record} — the remedy clears what printed it (209.638041ms)
+  AssertionError [ERR_ASSERTION]: the Gate 1 value's remedy re-records Gate 1: record-gate-review mf --gate <n> --verdict <v> --base-sha <sha> --head-sha <sha>
+      at Object.observe (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1133:18)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:798:26)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'record-gate-review mf --gate <n> --verdict <v> --base-sha <sha> --head-sha <sha>',
+    expected: /--gate 1\b/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B integrity:recorded-sha-the-repository-cannot-resolve [malformed gate2] {re-record} — the remedy clears what printed it (284.718667ms)
+  AssertionError [ERR_ASSERTION]: no meaning for placeholder <n> (--gate) in `record-gate-review mf --gate @@PH0@@ --verdict @@PH1@@ --base-sha @@PH2@@ --head-sha @@PH3@@`
+      at file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:737:14
+      at String.replace (<anonymous>)
+      at fill (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:734:27)
+      at fillByMeaning (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:740:42)
+      at followRemedy (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:759:18)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:800:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B obligation:gate2-missing {remedy} — the remedy clears what printed it (377.772958ms)
+  AssertionError [ERR_ASSERTION]: step 2: no remedy invocation to follow in:
+  conductor: cannot archive openspec-lane epic 'om' — missing a passing Gate 2 (implementation review) verdict. Run 'record-gate-review om --gate 2 --verdict pass' after a real fresh-context implementation review before archiving.
+  
+      at followRemedy (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:755:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:800:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B obligation:gate2-withdrawn {remedy} — the remedy clears what printed it (506.797666ms)
+  AssertionError [ERR_ASSERTION]: step 2: no remedy invocation to follow in:
+  conductor: cannot archive openspec-lane epic 'ow' — its Gate 2 (implementation review) verdict was withdrawn, and no verdict has been recorded since. Withdrawal reason: "fixture reason". A withdrawal takes the verdict back; it does not remove the obligation. Run 'record-gate-review ow --gate 2 --verdict pass' after a real fresh-context implementation review, or record the outcome the work actually had.
+  
+      at followRemedy (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:755:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:800:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B obligation:gate2-stale {remedy} — the remedy clears what printed it (575.829875ms)
+  AssertionError [ERR_ASSERTION]: step 2: no remedy invocation to follow in:
+  conductor: cannot archive openspec-lane epic 'os' — its passing Gate 2 reviewed up to d5c548061de02ba7e4ff0e057fab20c09f067724, which does not reach the commit(s) attributed to this epic: fc3d605352d7ff9e09935cd9b605d6d8bca4f9bb. Re-review the full range and record it, or correct the attribution.
+  
+      at followRemedy (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:755:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:800:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B obligation:gate2-attribution-withdrawn {re-record then attribute, then the refused invocation} — the remedy clears what printed it (554.132125ms)
+  AssertionError [ERR_ASSERTION]: the Gate 2 re-record is printed BEFORE --attribute-commit:
+  conductor: cannot archive openspec-lane epic 'oa' — it carries a passing Gate 2 and attributes no commits, having withdrawn 1 (380db5393c413bbb0336dbf22f7fe9be737a23a9). A withdrawal corrects the record; it does not remove the obligation. Attribute the commits that actually shipped, then re-record Gate 2 over the range that covers them.
+  
+      at Object.observe (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1248:14)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:798:26)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B obligation:handoff {tick the story} — the remedy clears what printed it (288.744458ms)
+  AssertionError [ERR_ASSERTION]: step 2: no remedy invocation to follow in:
+  conductor: cannot archive 'oh' as delivered — 1 of 0/1 task(s) outstanding. The outstanding story is:
+    [ ] 1. left behind
+  Finish them, or record what happened to each: --story <n> --done (it shipped) or --story <n> --wont-do "<reason>" (it will not be done, and why — the row and its reason stay on the record). If the whole remainder moved to another epic, --carried-to <epicId> --reason "<which stories moved>" instead. Naming a receiver for work nobody carried anywhere is a fabricated record.
+  
+      at followRemedy (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:755:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:800:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B brief:not-in-outward-tracker {remedy} — the remedy clears what printed it (355.314833ms)
+  AssertionError [ERR_ASSERTION]: step 2: no remedy invocation to follow in:
+    ⚠ not yet in jira — create issues + record keys (update-epic): `un`
+      at followRemedy (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:755:10)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:800:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B unconsidered:openspec-no-gate-2 {killed} — the remedy clears what printed it (178.99975ms)
+  AssertionError [ERR_ASSERTION]: delivered is not offered (gh-189): update-epic uc --status archived --outcome <delivered|killed|superseded|abandoned|declined|unreconstructable> --reason "<why>" --no-deferrals
+      at Object.observe (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1357:12)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:798:26)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'update-epic uc --status archived --outcome <delivered|killed|superseded|abandoned|declined|unreconstructable> --reason "<why>" --no-deferrals',
+    expected: /--outcome <[^>]*\bdelivered\b/,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B unconsidered:openspec-no-gate-2 {superseded} — the remedy clears what printed it (190.266333ms)
+  AssertionError [ERR_ASSERTION]: delivered is not offered (gh-189): update-epic uc --status archived --outcome <delivered|killed|superseded|abandoned|declined|unreconstructable> --reason "<why>" --no-deferrals
+      at Object.observe (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1357:12)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:798:26)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'update-epic uc --status archived --outcome <delivered|killed|superseded|abandoned|declined|unreconstructable> --reason "<why>" --no-deferrals',
+    expected: /--outcome <[^>]*\bdelivered\b/,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B unconsidered:openspec-no-gate-2 {abandoned} — the remedy clears what printed it (183.323292ms)
+  AssertionError [ERR_ASSERTION]: delivered is not offered (gh-189): update-epic uc --status archived --outcome <delivered|killed|superseded|abandoned|declined|unreconstructable> --reason "<why>" --no-deferrals
+      at Object.observe (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1357:12)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:798:26)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'update-epic uc --status archived --outcome <delivered|killed|superseded|abandoned|declined|unreconstructable> --reason "<why>" --no-deferrals',
+    expected: /--outcome <[^>]*\bdelivered\b/,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B unconsidered:openspec-no-gate-2 {declined} — the remedy clears what printed it (178.833959ms)
+  AssertionError [ERR_ASSERTION]: delivered is not offered (gh-189): update-epic uc --status archived --outcome <delivered|killed|superseded|abandoned|declined|unreconstructable> --reason "<why>" --no-deferrals
+      at Object.observe (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1357:12)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:798:26)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'update-epic uc --status archived --outcome <delivered|killed|superseded|abandoned|declined|unreconstructable> --reason "<why>" --no-deferrals',
+    expected: /--outcome <[^>]*\bdelivered\b/,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B unconsidered:openspec-no-gate-2 {unreconstructable} — the remedy clears what printed it (169.275125ms)
+  AssertionError [ERR_ASSERTION]: delivered is not offered (gh-189): update-epic uc --status archived --outcome <delivered|killed|superseded|abandoned|declined|unreconstructable> --reason "<why>" --no-deferrals
+      at Object.observe (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1357:12)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:798:26)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'update-epic uc --status archived --outcome <delivered|killed|superseded|abandoned|declined|unreconstructable> --reason "<why>" --no-deferrals',
+    expected: /--outcome <[^>]*\bdelivered\b/,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B unconsidered:claude-code (REGRESSION GUARD 2.8) {delivered} — the remedy clears what printed it (176.993792ms)
+  AssertionError [ERR_ASSERTION]: and names nothing blocking it
+  
+  undefined !== []
+  
+      at Object.observe (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1376:12)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:798:26)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B regression:stale {remedy, then the refused command} — the remedy clears what printed it (574.427959ms)
+  AssertionError [ERR_ASSERTION]: the Gate 2 re-record is named before the invocation:
+  conductor: this update to 'rs' would break an obligation its archived 'delivered' record met, so nothing was written.
+    broken: the Gate 2 demand — its passing Gate 2 reviewed up to 0b1a88bff6e4cbc333f39237189de6e25bc8c3cd, which does not reach the commit(s) attributed to this epic: 4cae5d643ab3f36696dd86ddaac7c93ee3e0b458
+    To make this change, record the disposition it implies. The invocation runs the full archive gate on the record it leaves:
+    update-epic rs '--attribute-commit' '4cae5d643ab3f36696dd86ddaac7c93ee3e0b458' --status archived --outcome <delivered|killed|superseded|abandoned|declined|unreconstructable> --reason "<why>" --correct-disposition "<why the recorded one was wrong>"
+  
+      at Object.observe (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1411:14)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:798:26)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B regression:attribution-withdrawn {remedy, then the refused command} — the remedy clears what printed it (526.328542ms)
+  AssertionError [ERR_ASSERTION]: re-record, then --attribute-commit, then the invocation:
+  conductor: this update to 'rw' would break an obligation its archived 'delivered' record met, so nothing was written.
+    broken: the Gate 2 demand — it carries a passing Gate 2 and attributes no commits, having withdrawn 1 (0e316439571248de55635c18042cbfca068f148f)
+    To make this change, record the disposition it implies. The invocation runs the full archive gate on the record it leaves:
+    update-epic rw '--withdraw-commit' '0e316439571248de55635c18042cbfca068f148f' '--withdrawal-reason' 'amended into 63429be' --status archived --outcome <delivered|killed|superseded|abandoned|declined|unreconstructable> --reason "<why>" --correct-disposition "<why the recorded one was wrong>"
+  
+      at Object.observe (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1443:14)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:798:26)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B regression:stale {remedy, then the printed invocation} — the remedy clears what printed it (528.32ms)
+  AssertionError [ERR_ASSERTION]: the Gate 2 re-record is named before the invocation:
+  conductor: this update to 'rs' would break an obligation its archived 'delivered' record met, so nothing was written.
+    broken: the Gate 2 demand — its passing Gate 2 reviewed up to 0694556aacb9d502b4ff5253456241d36cb14999, which does not reach the commit(s) attributed to this epic: d5504f8491e3c15d370688fbd411bd66a1f5ea93
+    To make this change, record the disposition it implies. The invocation runs the full archive gate on the record it leaves:
+    update-epic rs '--attribute-commit' 'd5504f8491e3c15d370688fbd411bd66a1f5ea93' --status archived --outcome <delivered|killed|superseded|abandoned|declined|unreconstructable> --reason "<why>" --correct-disposition "<why the recorded one was wrong>"
+  
+      at Object.observe (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1411:14)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:798:26)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B regression:attribution-withdrawn {remedy, then the printed invocation} — the remedy clears what printed it (513.138125ms)
+  AssertionError [ERR_ASSERTION]: re-record, then --attribute-commit, then the invocation:
+  conductor: this update to 'rw' would break an obligation its archived 'delivered' record met, so nothing was written.
+    broken: the Gate 2 demand — it carries a passing Gate 2 and attributes no commits, having withdrawn 1 (04d5aad1243dd3b8ed6fb1e453b0790d96fe1904)
+    To make this change, record the disposition it implies. The invocation runs the full archive gate on the record it leaves:
+    update-epic rw '--withdraw-commit' '04d5aad1243dd3b8ed6fb1e453b0790d96fe1904' '--withdrawal-reason' 'amended into b506a93' --status archived --outcome <delivered|killed|superseded|abandoned|declined|unreconstructable> --reason "<why>" --correct-disposition "<why the recorded one was wrong>"
+  
+      at Object.observe (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1443:14)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:798:26)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:1473:1
+✖ 2.8 REGRESSION GUARD: deliveredObligations() reports Gate 2 failures under kind gate2, the variant in its own field (1.552833ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + undefined
+  - 'gate2-missing'
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1478:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 'gate2-missing',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B 2.7a legacy id: heal-archived-epic-passed-gate-2 {remedy} — the remedy clears what printed it (220.889875ms)
+  AssertionError [ERR_ASSERTION]: the id is printed shell-quoted:
+    • `My Plan` — archived by the drift heal with a passing Gate 2 but no recorded disposition. This is the ordinary end of the documented workflow, and the fix is the ordinary next step: update-epic My Plan --status archived --outcome delivered --no-deferrals
+      at Object.observe (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1613:12)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:798:26)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '  • `My Plan` — archived by the drift heal with a passing Gate 2 but no recorded disposition. This is the ordinary end of the documented workflow, and the fix is the ordinary next step: update-epic My Plan --status archived --outcome delivered --no-deferrals',
+    expected: /update-epic 'My Plan' --status archived/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B 2.7a legacy id: delivered-epic-attributed-no-commits {remedy} — the remedy clears what printed it (221.1805ms)
+  AssertionError [ERR_ASSERTION]: the id is printed shell-quoted:
+    • `My Plan` — recorded as delivered with a passing Gate 2 but attributed no commits — record the range that shipped with: update-epic My Plan --attribute-commit <sha>
+      at Object.observe (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1632:12)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:798:26)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '  • `My Plan` — recorded as delivered with a passing Gate 2 but attributed no commits — record the range that shipped with: update-epic My Plan --attribute-commit <sha>',
+    expected: /update-epic 'My Plan' --attribute-commit/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B 2.7a legacy id: the nudge [--attribute-commit] {attribute} — the remedy clears what printed it (292.391167ms)
+  AssertionError [ERR_ASSERTION]: Commit `a535e7f` landed since the last observation — this call, another terminal, or a parallel call; the hook cannot tell which. If this was a MINIMAL detour, run `/pm:detour --minimal "<what>"` to record it. Otherwise update `.conductor/state.json` if an epic's status or stories changed.
+  
+  ATTRIBUTION — `My Plan` has attributed no commits yet: attribute every commit of this epic's work that already landed, IN THE ORDER THEY LANDED, and then this one — `update-epic My Plan --attribute-commit a535e7ff011d38220ef0371fecc89e10e260d482`. The array is append-only and a recorded Gate 2 `headSha` must reach EVERY entry, so a commit left unattributed is work that gate is never checked against. ONE exclusion: a commit that only moves or deletes a change's artifacts — the `/opsx:archive` move above all — is lifecycle bookkeeping and must NOT be attributed; it lands after the reviewed range, so attributing it makes this epic's own Gate 2 read stale.
+      at Object.observe (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1650:29)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:798:26)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'Commit `a535e7f` landed since the last observation — this call, another terminal, or a parallel call; the hook cannot tell which. If this was a MINIMAL detour, run `/pm:detour --minimal "<what>"` to record it. Otherwise update `.conductor/state.json` if an epic\'s status or stories changed.\n\nATTRIBUTION — `My Plan` has attributed no commits yet: attribute every commit of this epic\'s work that already landed, IN THE ORDER THEY LANDED, and then this one — `update-epic My Plan --attribute-commit a535e7ff011d38220ef0371fecc89e10e260d482`. The array is append-only and a recorded Gate 2 `headSha` must reach EVERY entry, so a commit left unattributed is work that gate is never checked against. ONE exclusion: a commit that only moves or deletes a change\'s artifacts — the `/opsx:archive` move above all — is lifecycle bookkeeping and must NOT be attributed; it lands after the reviewed range, so attributing it makes this epic\'s own Gate 2 read stale.',
+    expected: /update-epic 'My Plan' --attribute-commit/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:796:7
+✖ Layer B 2.7a legacy id: the nudge [--withdraw-commit] {withdraw} — the remedy clears what printed it (478.526042ms)
+  AssertionError [ERR_ASSERTION]: Commit `2352e58` landed since the last observation — this call, another terminal, or a parallel call; the hook cannot tell which. If this was a MINIMAL detour, run `/pm:detour --minimal "<what>"` to record it. Otherwise update `.conductor/state.json` if an epic's status or stories changed.
+  
+  AMEND — `5b7f83e` was amended into 2352e58 and is on no branch, so it is replaced, not added. Withdraw its attribution BEFORE attributing anything else: `update-epic My Plan --withdraw-commit 5b7f83e152f8b26738036fd1ede92ee8004846c5 --withdrawal-reason "amended into 2352e58"`.
+  
+  ATTRIBUTION — record this commit against its epic now, before the next one: `update-epic My Plan --attribute-commit 2352e58245384ab8d16ab672f488d01761a20149`. ONE exclusion: a commit that only moves or deletes a change's artifacts — the `/opsx:archive` move above all — is lifecycle bookkeeping and must NOT be attributed; it lands after the reviewed range, so attributing it makes this epic's own Gate 2 read stale.
+      at Object.observe (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1671:29)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:798:26)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'Commit `2352e58` landed since the last observation — this call, another terminal, or a parallel call; the hook cannot tell which. If this was a MINIMAL detour, run `/pm:detour --minimal "<what>"` to record it. Otherwise update `.conductor/state.json` if an epic\'s status or stories changed.\n\nAMEND — `5b7f83e` was amended into 2352e58 and is on no branch, so it is replaced, not added. Withdraw its attribution BEFORE attributing anything else: `update-epic My Plan --withdraw-commit 5b7f83e152f8b26738036fd1ede92ee8004846c5 --withdrawal-reason "amended into 2352e58"`.\n\nATTRIBUTION — record this commit against its epic now, before the next one: `update-epic My Plan --attribute-commit 2352e58245384ab8d16ab672f488d01761a20149`. ONE exclusion: a commit that only moves or deletes a change\'s artifacts — the `/opsx:archive` move above all — is lifecycle bookkeeping and must NOT be attributed; it lands after the reviewed range, so attributing it makes this epic\'s own Gate 2 read stale.',
+    expected: /update-epic 'My Plan' --withdraw-commit/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:1682:1
+✖ 2.1 every exported registry entry has a Layer B builder, and the unconstructable count is asserted (4.52875ms)
+  AssertionError [ERR_ASSERTION]: archive-gate.mjs exports DELIVERED_OBLIGATIONS
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1686:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

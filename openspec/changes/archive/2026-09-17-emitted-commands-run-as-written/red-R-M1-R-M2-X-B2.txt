@@ -1,0 +1,84 @@
+✔ Layer B integrity:tracker-repo-not-a-github-repository [primary] {re-record} — the remedy clears what printed it (450.119334ms)
+✔ Layer B integrity:tracker-repo-not-a-github-repository [secondary] {remove, then re-record} — the remedy clears what printed it (260.389167ms)
+✖ Layer B integrity:tracker-repo-not-a-github-repository [secondary, flag-shaped value] {remove, then re-record} — the remedy clears what printed it (51.712625ms)
+✖ 4.2 a legacy malformed github-issues repo loads for every read verb, and no emitted shell command contains it (349.889208ms)
+✖ R-M2 integrity's secondary removal, run through sh as printed, expands nothing and removes the entry (209.516666ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 2
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1365.998708
+
+✖ failing tests:
+
+test at scripts/test/emitted-invocations.test.mjs:851:7
+✖ Layer B integrity:tracker-repo-not-a-github-repository [secondary, flag-shaped value] {remove, then re-record} — the remedy clears what printed it (51.712625ms)
+  AssertionError [ERR_ASSERTION]: Layer A over integrity:tracker-repo-not-a-github-repository [secondary, flag-shaped value]'s output:
+  integrity:tracker-repo-not-a-github-repository [secondary, flag-shaped value]:1: refused (help-in-value-position) `set-tracker --role secondary --system github-issues --repo '--help' --remove` — conductor: --repo requires a value — '--help' arrived where that value belonged and was read as a flag, not as the value. If it IS the value, write --repo=--help
+  + actual - expected
+  
+  + [
+  +   "integrity:tracker-repo-not-a-github-repository [secondary, flag-shaped value]:1: refused (help-in-value-position) `set-tracker --role secondary --system github-issues --repo '--help' --remove` — conductor: --repo requires a value — '--help' arrived where that value belonged and was read as a flag, not as the value. If it IS the value, write --repo=--help"
+  + ]
+  - []
+  
+      at assertLayerA (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-45/r2/pre/scripts/test/emitted-invocations.test.mjs:822:10)
+      at async TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-45/r2/pre/scripts/test/emitted-invocations.test.mjs:854:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ "integrity:tracker-repo-not-a-github-repository [secondary, flag-shaped value]:1: refused (help-in-value-position) `set-tracker --role secondary --system github-issues --repo '--help' --remove` — conductor: --repo requires a value — '--help' arrived where that value belonged and was read as a flag, not as the value. If it IS the value, write --repo=--help" ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:2249:1
+✖ 4.2 a legacy malformed github-issues repo loads for every read verb, and no emitted shell command contains it (349.889208ms)
+  AssertionError [ERR_ASSERTION]: integrity's only span carrying the value is the secondary removal, shell-quoted:
+    • the primary github-issues tracker records repo "a/b; touch pwned", which is not [HOST/]owner/name, so no `gh issue list` step is emitted for it — re-record it: `set-tracker --repo <owner/name>` (`HOST/owner/name` on GitHub Enterprise)
+    • the secondary github-issues tracker records repo "a/b; touch pwned", which is not [HOST/]owner/name, so no `gh issue list` step is emitted for it — remove it — `set-tracker --role secondary --system github-issues --repo 'a/b; touch pwned' --remove` — then re-record it: `set-tracker --role secondary --system github-issues --repo <owner/name>` (`HOST/owner/name` on GitHub Enterprise)
+  + actual - expected
+  
+    [
+  +   "set-tracker --role secondary --system github-issues --repo 'a/b; touch pwned' --remove"
+  -   "set-tracker --role secondary --system github-issues --repo='a/b; touch pwned' --remove"
+    ]
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-45/r2/pre/scripts/test/emitted-invocations.test.mjs:2269:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ "set-tracker --role secondary --system github-issues --repo 'a/b; touch pwned' --remove" ],
+    expected: [ "set-tracker --role secondary --system github-issues --repo='a/b; touch pwned' --remove" ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:2275:1
+✖ R-M2 integrity's secondary removal, run through sh as printed, expands nothing and removes the entry (209.516666ms)
+  AssertionError [ERR_ASSERTION]: `set-tracker --role secondary --system github-issues --repo '--help' --remove` exited 1:
+  conductor: --repo requires a value — '--help' arrived where that value belonged and was read as a flag, not as the value. If it IS the value, write --repo=--help
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-robsherman-Documents-Repos-pm/6e8d4b47-4277-41f4-9b04-fc3cd23d9e92/scratchpad/apply-45/r2/pre/scripts/test/emitted-invocations.test.mjs:2284:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

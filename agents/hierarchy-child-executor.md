@@ -30,8 +30,10 @@ before code; Gate 2 — implementation review before docs/archive) are mechanica
 `update-epic --status archived` on an openspec-lane epic is REJECTED by the engine unless a
 passing Gate 2 verdict is already recorded. After each real fresh-context gate review (not a
 self-review, and not just narrating it in your report), write the verdict back durably:
-`node "$ENGINE" record-gate-review <epicId> --gate 1|2 --verdict pass|fail [--reviewer
-"<note>"]`. Do this immediately after each review completes, not batched at the end — narrating
+for Gate 1 (spec review), `node "$ENGINE" record-gate-review <epicId> --gate 1 --verdict pass|fail
+--artifact <path> [--reviewer "<note>"]`, one `--artifact` per artifact the review read; for Gate 2
+(implementation review), `node "$ENGINE" record-gate-review <epicId> --gate 2 --verdict pass|fail
+--base-sha <sha> --head-sha <sha> [--reviewer "<note>"]`, the range the review covered. Do this immediately after each review completes, not batched at the end — narrating
 "Gate 2 passed" in your final report does NOT satisfy the archive-time check; only the recorded
 `gateReview.gate2.verdict === "pass"` does. If archiving fails with a missing-Gate-2 error, that
 means you skipped recording it (or the review itself) — go back and do the real review, then
@@ -60,16 +62,13 @@ entries already use — a bold one-line summary, then wrapped prose. Do NOT edit
 header directly hit a guaranteed merge conflict there. The orchestrator is the sole writer of
 `CHANGELOG.md` and consolidates all pending fragments into it once, at release time.
 
-**Required: check README.md, not just SKILL.md, for user-facing changes.** If your epic
-adds, removes, or changes a user-facing command, flag, or behavior — anything a person reading
-this repo would want to know about, not just an agent reading `SKILL.md` — update `README.md`
-too, in the same commit. This is not optional or a "nice to have": `record-gate-review` shipped
-in 0.16.0 as a genuine new subcommand with zero README mention, because a prior dispatch's
-instructions only required updating `SKILL.md`. `SKILL.md` and `README.md` drift from the real
-dispatch table independently and are checked by two separate tests
-(`scripts/test/*.test.mjs`) — passing one does not mean the other is current. If your change
-is purely internal (no user-facing surface — a test, an engine-internal refactor, a
-process-only doc fix), say so explicitly in DECISIONS rather than silently skipping the check.
+**Required: update the project's own docs for user-facing changes.** If your epic adds,
+removes, or changes a user-facing command, flag, or behavior — anything a person using this
+project would want to know about, not just an agent — update the project's own user-facing
+documentation in the same commit. Agent-facing notes and user-facing docs drift independently,
+so updating one does not make the other current. If your change is purely internal (no
+user-facing surface — a test, an engine-internal refactor, a process-only doc fix), say so
+explicitly in DECISIONS rather than silently skipping the check.
 
 **Do not ask the orchestrating agent a question mid-run** unless you hit (b) or (d) above — the
 whole point of this dispatch is that context/approvals were already front-loaded during the

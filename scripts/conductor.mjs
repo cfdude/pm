@@ -20,9 +20,9 @@
  *   render         regenerate PROJECT.md from state.json + live tasks.md
  *   brief          SessionStart: print additionalContext JSON (DORMANT if not init'd)
  *   snapshot       PreCompact: render + write .conductor/brief.txt (DORMANT if not init'd)
- *   commit-nudge   PostToolUse(Bash): fires on EVERY Bash call and decides by OBSERVING the
- *                  repo — a HEAD watermark (.conductor/commit-watch.json) plus the reflog
- *                  action — never by reading the command text (see lib/commit-watch.mjs).
+ *   commit-nudge   PostToolUse/PostToolUseFailure(Bash): fires after EVERY Bash call and decides by OBSERVING the
+ *                  repo — a reflog anchor (.conductor/commit-observe.json) and every commit
+ *                  entry after it — never by reading the command text (see lib/commit-watch.mjs).
  *                  When a commit really landed: log detour commits + nudge; also auto-logs an
  *                  AUTO-DETOUR entry when a small fix/chore commit's diff shape looks like an
  *                  unlogged minimal detour AND an epic is active (see
@@ -33,6 +33,8 @@
  *                  suggestion, and the backlog's shape. Emits `verdict: null`: whether two
  *                  asks are the SAME ask is judgment, and judgment is the agent's.
  *   log-detour "x" record a MINIMAL detour in detours.log (with the current git SHA)
+ *   retract-detour <sha> --reason "why"  retract the automatic AUTO-DETOUR/DETOUR-COMMIT rows of
+ *                  one commit: appends a RETRACTED row, removes nothing, re-renders PROJECT.md
  *   push-detour    the SUBSTANTIAL detour's PUSH, as a verb rather than the hand-edit of
  *                  state.json it used to be: pauses the parent, pushes the frame, writes both
  *                  protocol links, activates the detour and emits the Honcho line — one guarded
@@ -85,7 +87,7 @@ import {
 import { resolvePlatform, assertKnownPlatform, platformFlag, resolveAndRecordPlatform, rulesTarget } from "./lib/platform.mjs";
 import { loadState, readStdin } from "./lib/state.mjs";
 import { refusalFor } from "./lib/refusal.mjs";
-import { ROOT, warnRootDivergence, warnDetachedTree } from "./lib/constants.mjs";
+import { ROOT, escapeControls, warnRootDivergence, warnDetachedTree } from "./lib/constants.mjs";
 import { isDetachedTree } from "./lib/git.mjs";
 import { VERB_EFFECTS } from "./lib/verb-effects.mjs";
 import { checkCommandLine } from "./lib/argv-surface.mjs";
@@ -93,7 +95,7 @@ import { setActive, clearActive } from "./lib/active-pointer.mjs";
 import { setAutonomy } from "./lib/autonomy.mjs";
 import { parseFlags, planHierarchy, addEpic, requireFlagValues } from "./lib/add-epic.mjs";
 import { render } from "./lib/render.mjs";
-import { init, brief, snapshot, commitNudge, sync, logDetour, honchoMemory } from "./lib/subcommands.mjs";
+import { init, brief, snapshot, commitNudge, sync, logDetour, retractDetour, honchoMemory } from "./lib/subcommands.mjs";
 import { pushDetour, popDetour } from "./lib/detour-stack.mjs";
 import { addMany } from "./lib/add-many.mjs";
 import { recordReconcile } from "./lib/reconciler-writeback.mjs";
@@ -134,7 +136,7 @@ import { unconsideredOutcomesReport } from "./lib/unconsidered.mjs";
 // printed twice.
 //
 // OPT-IN ONLY, via PM_ENGINE_DELEGATION naming the checkout's absolute path. This is the single
-// place the engine can execute code it did not ship, and the four hooks reach it in every
+// place the engine can execute code it did not ship, and the hooks (five events) reach it in every
 // project on the machine — see the trust-boundary note at the top of lib/self-hosting.mjs
 // before loosening the condition.
 const delegated = delegateToCheckout({ selfPath: fileURLToPath(import.meta.url) });
@@ -144,7 +146,7 @@ if (delegated !== null) process.exit(delegated);
 
 const cmd = process.argv[2];
 
-const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|push-detour|pop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n";
+const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n";
 
 // ---------- the command-line check (every-verb-refuses-what-it-does-not-read) ----------
 //
@@ -238,7 +240,7 @@ const showEngineBanner = process.env.PM_VERBOSE_ENGINE_BANNER
   : (process.env.PM_QUIET_ENGINE_BANNER || process.env.CLAUDE_PROJECT_DIR) ? false : true;
 if (showEngineBanner) {
   process.stderr.write(
-    `conductor: engine ${pluginVersion() || "unknown"} @ ${path.dirname(fileURLToPath(import.meta.url))}\n`
+    `conductor: engine ${pluginVersion() || "unknown"} @ ${escapeControls(path.dirname(fileURLToPath(import.meta.url)))}\n`
   );
 }
 // ---------- #111: the activity log's ONE instrumentation point ----------
@@ -286,6 +288,7 @@ try {
   "commit-nudge": commitNudge,
   sync: () => sync(false),
   "log-detour": logDetour,
+  "retract-detour": retractDetour,
   "push-detour": pushDetour,
   "pop-detour": popDetour,
   "honcho-memory": honchoMemory,

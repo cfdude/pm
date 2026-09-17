@@ -1,0 +1,9 @@
+# Gate 2 E-I4 — test-only fix, so the RED is mutation survival, not a failing engine run.
+# Mutants: m23 --link→--linx in dependencyNotes()'s brief note; m24 --verdict→--verdikt in owedReconcileNotice().
+# Run: scripts/test/emitted-invocations.test.mjs ALONE (no name filter), on a copy of the tree.
+## before (HEAD eca6030's test file)
+m23_depnote_escape_EI: exit=0 pass=106 fail=0 SURVIVED
+m24_owed_reconcile_escape_EI: exit=0 pass=106 fail=0 SURVIVED
+## after (this commit's test file)
+m23_depnote_escape_EI: exit=1 pass=106 fail=2 KILLED by: E-I4 printers outside the registries (fixture sanity) | E-I4 Layer A over EVERY output — refused (unknown-flag) `update-epic bl --linx "depends-on:<id>:<why>"`
+m24_owed_reconcile_escape_EI: exit=1 pass=107 fail=1 KILLED by: E-I4 Layer A over EVERY output — refused (unknown-flag) `record-reconcile rp --detour <detourId> --verdikt valid|invalidated`

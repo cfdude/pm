@@ -4,7 +4,7 @@
 
 import {
   EPIC_FLAGS, KNOWN_GATE_NUMBERS, KNOWN_LANES, KNOWN_STATUSES, KNOWN_REVIEW_MODES, REVIEW_MODE_RANK,
-  CONTROL_CHARACTER, epicFlagsFor, escapeControls, isFlagToken, nullableEpicFlags, splitFlagToken,
+  CONTROL_CHARACTER, asCode, epicFlagsFor, escapeControls, orNoRemedy, isFlagToken, nullableEpicFlags, printedId, shellQuote, splitFlagToken,
 } from "./constants.mjs";
 import { activate, owedReconcileNotice } from "./active-pointer.mjs";
 import { globalReviewMode } from "./rules.mjs";
@@ -12,7 +12,7 @@ import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave } from "./save-report.mjs";
 import { noteEntry, parentError, parseFlags, parseLinkFlags, parseStoryFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
-import { archiveGate, AGENT_OUTCOMES, deliveredObligations, dispositionInvocation } from "./archive-gate.mjs";
+import { archiveGate, AGENT_OUTCOMES, deliveredObligations, dispositionInvocation, gateRemedy, obligationArchiveFlags, obligationRemedy } from "./archive-gate.mjs";
 import { deferralAssertion, isEngineStamped, isStoryDisposed, outcomeOf, storyDisposition, storyDispositionError } from "./disposition.mjs";
 import { isArchived } from "./epic-progress.mjs";
 import { claimArtifacts } from "./source-artifacts.mjs";
@@ -83,8 +83,6 @@ const INVOCATION_DROPPED_FLAGS = new Set([
 
 const REENTER_PLACEHOLDER = "<re-enter this value>";
 
-/** POSIX single-quoting: every token arrives whole, apostrophes included. */
-const shellQuote = (token) => `'${token.replace(/'/g, "'\\''")}'`;
 
 /** The refused call's own tokens, as the printed invocation echoes them. Decided by the same walk
  *  the command-line check (lib/argv-surface.mjs) makes over raw argv, never from parsed flags — parsing loses shape (a
@@ -121,7 +119,85 @@ function echoedTokens(tokens) {
  *  refusal. So no line but the printed invocation names those flags, and the invocation is the
  *  only line beginning `  update-epic `. User-supplied values (story titles) are JSON-quoted, and
  *  a finding's control characters escaped, so no value can start a line of its own. */
-function regressionRefusal({ id, snapshot, broken, argv, status }) {
+/** Would writing `next` over the stored `snapshot` break an obligation an archived `delivered`
+ *  record meets? Returns the broken obligations — `deliveredObligations()`'s own `{kind, …}` entries
+ *  (`gate2`, `handoff`), empty for "no refusal". `status` is the call's RAW `--status` value
+ *  (undefined when absent).
+ *
+ *  WHEN, every half read from `snapshot`, never from `next`:
+ *    - the stored outcome is `delivered`;
+ *    - the call does not archive (`str(status) !== "archived"` — that case is the archive gate's);
+ *    - the record will be archived when the call returns: EITHER its change directory is archived on
+ *      disk (render()'s heal re-archives it whatever status the call writes) OR it is stored
+ *      `archived` and the call carries no `--status` at all (`status === undefined`, deliberately
+ *      the raw test and not `str()`).
+ *  PER OBLIGATION, and only a REGRESSION counts: an obligation the stored record already fails is
+ *  no ground for refusal.
+ *
+ *  Two callers, and the reason it is one function: `update-epic`'s refusal below, and the commit
+ *  hook, which asks it before printing `update-epic <id> --withdraw-commit` for an amended commit —
+ *  a printed command the engine refuses would be an instruction that does not run. */
+export function deliveredRegression(id, snapshot, next, { status } = {}) {
+  const asString = (v) => (typeof v === "string" ? v : undefined);
+  if (outcomeOf(snapshot) !== "delivered" || asString(status) === "archived") return [];
+  if (!(isArchived(id) || (snapshot.status === "archived" && status === undefined))) return [];
+  const carriedToOf = (e) => (e.disposition && e.disposition.carriedTo) || undefined;
+  const before = deliveredObligations(snapshot, { carriedTo: carriedToOf(snapshot) });
+  const after = deliveredObligations(next, { carriedTo: carriedToOf(next) });
+  return after.filter(o => !before.some(b => b.kind === o.kind));
+}
+
+/** THE ONE SIMULATION of `--withdraw-commit`'s removal (Gate 2 G2-I2). Two callers: `update-epic`
+ *  below, which writes what it returns, and the commit hook, which asks deliveredRegression() about
+ *  the record it would leave before printing the command — so the hook's "would this be refused?"
+ *  can never drift from the refusal itself.
+ *
+ *  ONE OCCURRENCE PER REQUEST, and the LAST one. The array does not de-duplicate, so a commit can
+ *  appear twice; removing the last match means the record's tail moves only when the tail itself
+ *  is what you withdrew. Matched by COMMIT IDENTITY first (a full hash withdraws the short entry
+ *  of the same commit), then by exact spelling (a value that does not resolve still withdraws the
+ *  entry written exactly that way). `removed` carries the ENTRY REMOVED, not the value typed — that
+ *  entry is what the record held.
+ *
+ *  STORED entries resolve by identity only when they are SHAPED as a commit name: a legacy `HEAD`
+ *  in the record names whatever HEAD was when it was typed, and resolving it now would match it
+ *  against today's HEAD. Such an entry is matched by its exact spelling alone.
+ *
+ *  @param withdrawResolved Map from each requested value to the full commit it resolves to (a value
+ *         absent from it matches by spelling only). Defaults to resolving `shas` here.
+ *  @returns {{remaining: string[], removed: string[], missing: string[]}} */
+export function planWithdrawal(attributedCommits, shas, withdrawResolved = resolveCommits(shas).resolved) {
+  const remaining = Array.isArray(attributedCommits) ? attributedCommits.slice() : [];
+  const storedResolved = resolveCommits(remaining.filter(isCommitNameShaped)).resolved;
+  const removed = [], missing = [];
+  for (const sha of shas) {
+    const full = withdrawResolved.get(sha);
+    let at = -1;
+    if (full) {
+      for (let i = remaining.length - 1; i >= 0; i--) {
+        if (storedResolved.get(remaining[i]) === full) { at = i; break; }
+      }
+    }
+    if (at === -1) at = remaining.lastIndexOf(sha);
+    if (at === -1) { missing.push(sha); continue; }
+    removed.push(remaining[at]);
+    remaining.splice(at, 1);
+  }
+  return { remaining, removed, missing };
+}
+
+/** The attribution fields a withdrawal planned by planWithdrawal() leaves on `epic`: the removed
+ *  entries out of `attributedCommits` AND appended to `withdrawnCommits`. Removing alone is not the
+ *  record — an emptied array then reads `none-attributed` instead of `attribution-withdrawn`. */
+export function withdrawnRecord(epic, { remaining, removed }, reason, withdrawnAt) {
+  return {
+    attributedCommits: remaining,
+    withdrawnCommits: (Array.isArray(epic.withdrawnCommits) ? epic.withdrawnCommits : [])
+      .concat(removed.map(sha => ({ sha, reason, withdrawnAt }))),
+  };
+}
+
+function regressionRefusal({ id, snapshot, next, broken, argv, status }) {
   const quoted = (v) => escapeControls(JSON.stringify(String(v ?? "")));
   const findings = broken.map(o => {
     // `items` is shaped BY KIND: the handoff's are stories (rendered exactly as before), and a
@@ -132,14 +208,37 @@ function regressionRefusal({ id, snapshot, broken, argv, status }) {
         : ` (${o.items.map(i => `story ${i.n} ${quoted(i.title)}`).join(", ")})`;
     return `  broken: the ${o.kind === "gate2" ? "Gate 2" : "handoff"} demand — ${escapeControls(o.detail)}${named}\n`;
   }).join("");
+  // THE REMEDY LINES, BEFORE THE INVOCATION (emitted-instructions: a remedy the engine will refuse
+  // must not be printed as the way out). Each broken obligation's lines come from
+  // DELIVERED_OBLIGATIONS — rendered once, read the same at every site naming that obligation — and
+  // are introduced by prose and set in code spans, so the invocation stays the ONLY line beginning
+  // `  update-epic `. They are computed on the record the edit would LEAVE (`next`): that is the
+  // record whose obligation must be met again.
+  const remedyLines = broken.flatMap(o => obligationRemedy(next, o));
+  const twoStep = broken.some(o => o.variant === "gate2-attribution-withdrawn");
+  const remedies = !remedyLines.length ? ""
+    : (twoStep
+      ? "  Meet it first. Run BOTH lines, in this order, before retrying — running only the re-record lets " +
+        "the withdrawal through with `delivered` attributing no commits, and attributing first is refused " +
+        "because the recorded Gate 2 head does not reach the new commit:\n"
+      : "  Meet it first, then retry this command:\n") +
+      remedyLines.map(l => `    - ${asCode(l)}\n`).join("");
   const { echoed, reenter } = echoedTokens(argv);
-  const invocation = dispositionInvocation(id, {
+  // A checkbox source's open tasks have no command of their own (no verb ticks a checkbox), so the
+  // handoff travels ON the invocation, computed like the remedies on the record the edit leaves
+  // (Gate 2 R-I1: without it the invocation, filled with `delivered`, is refused "task(s) outstanding").
+  const carry = broken.flatMap(o => obligationArchiveFlags(next, o));
+  const invocation = dispositionInvocation(snapshot, {
+    carry,
     echoed,
     correction: !isEngineStamped(snapshot.disposition),
     deferrals: snapshot.deferralAssertion ? "asserted" : "placeholder",
+    // The stored `delivered` was considered; this refusal exists so the edit can be made without
+    // losing it, so the invocation keeps offering it (epic-disposition: the one excepted rendering).
+    keepDelivered: true,
   });
-  return `conductor: this update to '${id}' would break an obligation its archived 'delivered' ` +
-    "record met, so nothing was written.\n" + findings +
+  return `conductor: this update to '${escapeControls(id)}' would break an obligation its archived 'delivered' ` +
+    "record met, so nothing was written.\n" + findings + remedies +
     (status !== undefined
       ? `  --status ${status} is dropped from the printed invocation, because the change directory ` +
         "archived on disk re-archives the epic whatever status this call writes.\n"
@@ -149,8 +248,14 @@ function regressionRefusal({ id, snapshot, broken, argv, status }) {
         `another control character and ${reenter.length === 1 ? "is" : "are"} not echoed: re-enter ` +
         `${reenter.length === 1 ? "it" : "them"} where the invocation shows ${REENTER_PLACEHOLDER}.\n`
       : "") +
-    "  To make this change, record the disposition it implies. The invocation runs the full archive " +
-    "gate on the record it leaves:\n" +
+    (carry.length
+      ? "  Its open tasks have no command of their own: tick them in the task source, or keep the handoff " +
+        "the invocation carries, naming the epic they moved to and which tasks moved. That handoff goes only " +
+        "with `delivered`: for any other outcome, remove it from the invocation and give that outcome's reason " +
+        "instead, since work that was not delivered was not carried anywhere.\n"
+      : "") +
+    `  ${remedies ? "Or, once it is met, record" : "To make this change, record"} the disposition it implies. ` +
+    "The invocation runs the full archive gate on the record it leaves:\n" +
     `  ${invocation}\n`;
 }
 
@@ -262,7 +367,7 @@ export function updateEpic() {
   const withdrawResolved = withdrawTyped.length ? resolveCommits(withdrawTyped).resolved : new Map();
   const state = loadState();
   const epic = state.epics.find(e => e.id === id);
-  if (!epic) { process.stderr.write(`conductor: epic '${id}' not found\n`); process.exit(1); }
+  if (!epic) { process.stderr.write(`conductor: epic '${escapeControls(id)}' not found\n`); process.exit(1); }
   // The record as it stood BEFORE this invocation, taken before any mutation. The archived-epic
   // regression check below compares the obligations on it with those on the record the call
   // leaves, and reads its trigger from it — `--status` overwrites `epic.status` long before then.
@@ -275,7 +380,7 @@ export function updateEpic() {
     //   5. Nothing to withdraw. Keeps the flag from becoming a general "reset the gate" lever.
     if (!stored) {
       process.stderr.write(
-        `conductor: '${id}' holds no Gate ${g} verdict to withdraw — withdrawal takes back a ` +
+        `conductor: '${escapeControls(id)}' holds no Gate ${g} verdict to withdraw — withdrawal takes back a ` +
         "recorded verdict, and there is none. Nothing was written.\n");
       process.exit(1);
     }
@@ -285,9 +390,9 @@ export function updateEpic() {
     //      be false, and would relabel "never reviewed" as "withdrawn" on every surface.
     if (stored.verdict === "ungated") {
       process.stderr.write(
-        `conductor: Gate ${g} of '${id}' is an \`ungated\` entry — the engine's record that no review ` +
+        `conductor: Gate ${g} of '${escapeControls(id)}' is an \`ungated\` entry — the engine's record that no review ` +
         "happened, not a review that can be taken back. An ungated entry is cleared by recording a " +
-        `real verdict: record-gate-review ${id} --gate ${g} --verdict pass|fail. Nothing was written.\n`);
+        `real verdict, with that gate's evidence: ${asCode(gateRemedy(id, g))}. Nothing was written.\n`);
       process.exit(1);
     }
   }
@@ -341,10 +446,10 @@ export function updateEpic() {
     if (holdsOwedReconcileRecord(epic)) {
       const owed = ownedDetours(epic);
       process.stderr.write(
-        `conductor: --clear-links on '${id}' is refused — '${id}' owes a reconcile and its links hold the ` +
+        `conductor: --clear-links on '${escapeControls(id)}' is refused — '${escapeControls(id)}' owes a reconcile and its links hold the ` +
         "record that verdict must be written against" +
-        (owed.length ? ` (owed against ${owed.map(d => `'${d}'`).join(", ")})` : "") +
-        `. Record it first: \`record-reconcile ${id} --detour <detourId> --verdict valid|invalidated\`` +
+        (owed.length ? ` (owed against ${owed.map(d => `'${escapeControls(d)}'`).join(", ")})` : "") +
+        `. Record it first: ${orNoRemedy(() => `\`record-reconcile ${printedId(id)} --detour <detourId> --verdict valid|invalidated\``)}` +
         " (or /pm:upgrade first if a link predates 0.44.0), then clear. Nothing was written.\n");
       process.exit(1);
     }
@@ -380,12 +485,12 @@ export function updateEpic() {
     const declared = EPIC_FLAGS.find(r => r.flag === name && r.commands.includes("update-epic"));
     if (declared && declared.setOnly) {
       process.stderr.write(
-        `conductor: --clear ${name}: '${name}' is deliberately set-only — ${declared.setOnly}. ` +
+        `conductor: --clear ${escapeControls(name)}: '${escapeControls(name)}' is deliberately set-only — ${declared.setOnly}. ` +
         "Nothing was written.\n");
       process.exit(1);
     }
     process.stderr.write(
-      `conductor: --clear ${name}: '${name}' is not a field this command can unset. ` +
+      `conductor: --clear ${escapeControls(name)}: '${escapeControls(name)}' is not a field this command can unset. ` +
       `Clearable fields: ${nullableRows.map(r => `${r.flag} (${r.key})`).join(", ")}. ` +
       "Name the FLAG, not the state key — they are two namespaces. Nothing was written.\n");
     process.exit(1);
@@ -415,8 +520,8 @@ export function updateEpic() {
     const global = globalReviewMode(state);
     if (REVIEW_MODE_RANK[reviewMode] < REVIEW_MODE_RANK[global]) {
       process.stderr.write(
-        `conductor: --review-mode '${reviewMode}' would de-escalate below the repo-global dial ` +
-        `('${global}') — an epic-level override may only escalate above the global dial, never below it\n`);
+        `conductor: --review-mode '${escapeControls(reviewMode)}' would de-escalate below the repo-global dial ` +
+        `('${escapeControls(global)}') — an epic-level override may only escalate above the global dial, never below it\n`);
       process.exit(1);
     }
   }
@@ -463,7 +568,7 @@ export function updateEpic() {
     const n = Number(f.story);
     const stories = Array.isArray(epic.stories) ? epic.stories : [];
     if (!Number.isInteger(n) || n < 1 || n > stories.length) {
-      process.stderr.write(`conductor: --story ${f.story} is out of range — '${id}' has ${stories.length} stor${stories.length === 1 ? "y" : "ies"} (1-indexed)\n`);
+      process.stderr.write(`conductor: --story ${escapeControls(f.story)} is out of range — '${escapeControls(id)}' has ${stories.length} stor${stories.length === 1 ? "y" : "ies"} (1-indexed)\n`);
       process.exit(1);
     }
     storyIndex = n - 1;
@@ -474,13 +579,13 @@ export function updateEpic() {
     const target = stories[storyIndex];
     if (isStoryDisposed(target)) {
       process.stderr.write(
-        `conductor: story ${n} of '${id}' already carries a recorded disposition ` +
-        `('${target.disposition.state}': ${target.disposition.reason}). Replacing it would ` +
+        `conductor: story ${n} of '${escapeControls(id)}' already carries a recorded disposition ` +
+        `('${escapeControls(target.disposition.state)}': ${escapeControls(target.disposition.reason)}). Replacing it would ` +
         "destroy a judgment somebody made.\n");
       process.exit(1);
     }
     if (storyMutation === "wont-do" && target.done) {
-      process.stderr.write(`conductor: story ${n} of '${id}' is already done — work that shipped cannot be dropped\n`);
+      process.stderr.write(`conductor: story ${n} of '${escapeControls(id)}' is already done — work that shipped cannot be dropped\n`);
       process.exit(1);
     }
   } else if (f.done === true) {
@@ -550,7 +655,7 @@ export function updateEpic() {
       const colons = (v.match(/:/g) || []).length;
       if (colons === 0) {
         process.stderr.write(
-          `conductor: --declined-deferral "${v}" has no separator — it must read ` +
+          `conductor: --declined-deferral ${escapeControls(JSON.stringify(v))} has no separator — it must read ` +
           `"<what>:<why not>", or "<what>::<why not>" where <what> itself contains a colon. ` +
           `The reason is what distinguishes a deliberate decline from work nobody considered, ` +
           `so it is not optional.\n`);
@@ -558,7 +663,7 @@ export function updateEpic() {
       }
       if (colons > 1) {
         process.stderr.write(
-          `conductor: --declined-deferral "${v}" is ambiguous — it carries ${colons} colons, so ` +
+          `conductor: --declined-deferral ${escapeControls(JSON.stringify(v))} is ambiguous — it carries ${colons} colons, so ` +
           `where <what> ends cannot be inferred. Separate the halves explicitly with "::":\n` +
           `  --declined-deferral "<what>::<why not>"\n` +
           `Splitting on the first colon here would silently truncate <what> and dump the rest ` +
@@ -577,7 +682,7 @@ export function updateEpic() {
       if (!pair.what || !pair.reason) {
         process.stderr.write(
           `conductor: --declined-deferral needs BOTH halves non-empty — got ` +
-          `what="${pair.what}", reason="${pair.reason}". What was declined, and why not: a blank ` +
+          `what=${escapeControls(JSON.stringify(pair.what))}, reason=${escapeControls(JSON.stringify(pair.reason))}. What was declined, and why not: a blank ` +
           `half records a decline nobody can read, which is the silence this assertion removes.\n`);
         process.exit(1);
       }
@@ -601,7 +706,7 @@ export function updateEpic() {
     process.stderr.write(
       `conductor: ${supplied.map(k => `--${k}`).join(", ")} ` +
       `${supplied.length === 1 ? "is" : "are"} recorded only when an epic is ARCHIVED, and this ` +
-      `invocation does not archive '${id}' — nothing would have been written.\n` +
+      `invocation does not archive '${escapeControls(id)}' — nothing would have been written.\n` +
       `  To record one: add --status archived --outcome <outcome> --reason "<why>".\n` +
       `  To CORRECT one already recorded: re-run the archive with ` +
       `--correct-disposition "<why the recorded one was wrong>" alongside the corrected flags.\n`);
@@ -670,45 +775,19 @@ export function updateEpic() {
       withdrawResolved.has(w) ? withdrawResolved.get(w) === attributed[i] : w === v));
     if (alsoAttributed.length) {
       process.stderr.write(
-        `conductor: cannot attribute and withdraw ${alsoAttributed.join(", ")} in one ` +
+        `conductor: cannot attribute and withdraw ${escapeControls(alsoAttributed.join(", "))} in one ` +
         `invocation — the two record contradictory things about the same commit.\n`);
       process.exit(1);
     }
-    const remaining = Array.isArray(epic.attributedCommits) ? epic.attributedCommits.slice() : [];
-    // STORED entries resolve by identity only when they are SHAPED as a commit name: a legacy `HEAD`
-    // in the record names whatever HEAD was when it was typed, and resolving it now would match it
-    // against today's HEAD. Such an entry is matched by its exact spelling alone.
-    const storedResolved = resolveCommits(remaining.filter(isCommitNameShaped)).resolved;
-    // ONE OCCURRENCE PER REQUEST, and the LAST one. The array does not de-duplicate, so a commit can
-    // appear twice; removing the last match means the record's tail moves only when the tail itself
-    // is what you withdrew. Matched by COMMIT IDENTITY first (a full hash withdraws the short entry
-    // of the same commit), then by exact spelling (a value that does not resolve still withdraws the
-    // entry written exactly that way). The withdrawal record carries the ENTRY REMOVED, not the
-    // value typed — that entry is what the record held.
-    const removed = [], missing = [];
-    for (const sha of shas) {
-      const full = withdrawResolved.get(sha);
-      let at = -1;
-      if (full) {
-        for (let i = remaining.length - 1; i >= 0; i--) {
-          if (storedResolved.get(remaining[i]) === full) { at = i; break; }
-        }
-      }
-      if (at === -1) at = remaining.lastIndexOf(sha);
-      if (at === -1) { missing.push(sha); continue; }
-      removed.push(remaining[at]);
-      remaining.splice(at, 1);
-    }
+    const { remaining, removed, missing } = planWithdrawal(epic.attributedCommits, shas, withdrawResolved);
     if (missing.length) {
       process.stderr.write(
-        `conductor: '${id}' never attributed ${missing.join(", ")} — nothing to withdraw. ` +
-        `It currently attributes: ${epic.attributedCommits && epic.attributedCommits.length ? epic.attributedCommits.join(", ") : "(none)"}.\n`);
+        `conductor: '${escapeControls(id)}' never attributed ${escapeControls(missing.join(", "))} — nothing to withdraw. ` +
+        `It currently attributes: ${epic.attributedCommits && epic.attributedCommits.length ? escapeControls(epic.attributedCommits.join(", ")) : "(none)"}.\n`);
       process.exit(1);
     }
     const withdrawnAt = new Date().toISOString();
-    epic.attributedCommits = remaining;
-    epic.withdrawnCommits = (epic.withdrawnCommits || []).concat(
-      removed.map(sha => ({ sha, reason: why, withdrawnAt })));
+    Object.assign(epic, withdrawnRecord(epic, { remaining, removed }, why, withdrawnAt));
     withdrawnEntries.push(...removed.map(sha => ({ sha, withdrawnAt })));
   }
 
@@ -751,7 +830,7 @@ export function updateEpic() {
   // not hold two opposite claims about one file, and this is the un-ignore path (derived from
   // an action the operator already takes, rather than a new verb nobody would find).
   for (const p of claimArtifacts(state, epic)) {
-    announcements.push(`conductor: cleared the sync-ignore tombstone on '${p}' — \`${epic.id}\` now claims it\n`);
+    announcements.push(`conductor: cleared the sync-ignore tombstone on '${escapeControls(p)}' — \`${escapeControls(epic.id)}\` now claims it\n`);
   }
   // A manual `rank` is a placement among ONE band's peers, so it does not survive a move to
   // another band — it would collide with that band's own 1..N numbering, and the number would
@@ -763,9 +842,9 @@ export function updateEpic() {
   const newPriority = str(f.priority);
   if (newPriority !== undefined) {
     if (newPriority !== epic.priority && epic.rank !== undefined) {
-      announcements.push(`conductor: cleared \`${epic.id}\`'s rank (${epic.rank}) — it was a ` +
-        `placement among ${epic.priority} epics, and this moves it to ${newPriority}. ` +
-        `Re-run \`reorder\` on the ${newPriority} band to place it.\n`);
+      announcements.push(`conductor: cleared \`${escapeControls(epic.id)}\`'s rank (${escapeControls(epic.rank)}) — it was a ` +
+        `placement among ${escapeControls(epic.priority)} epics, and this moves it to ${escapeControls(newPriority)}. ` +
+        `Re-run \`reorder\` on the ${escapeControls(newPriority)} band to place it.\n`);
       delete epic.rank;
     }
     epic.priority = newPriority;
@@ -819,7 +898,7 @@ export function updateEpic() {
     const had = row.key in epic;
     delete epic[row.key];
     if (had && row.clearNote) {
-      announcements.push(`conductor: cleared \`${id}\`'s ${row.flag} — ${row.clearNote}\n`);
+      announcements.push(`conductor: cleared \`${escapeControls(id)}\`'s ${row.flag} — ${row.clearNote}\n`);
     }
   }
 
@@ -868,14 +947,12 @@ export function updateEpic() {
   // PER OBLIGATION, and only a REGRESSION refuses: an obligation the record already failed is no
   // ground for refusal (a legacy record keeps its notes, links and priority editable), and an
   // already-failing handoff must not mask a Gate 2 this call breaks.
-  if (outcomeOf(snapshot) === "delivered" && str(f.status) !== "archived" &&
-      (isArchived(id) || (snapshot.status === "archived" && f.status === undefined))) {
-    const carriedToOf = (e) => (e.disposition && e.disposition.carriedTo) || undefined;
-    const before = deliveredObligations(snapshot, { carriedTo: carriedToOf(snapshot) });
-    const after = deliveredObligations(epic, { carriedTo: carriedToOf(epic) });
-    const broken = after.filter(o => !before.some(b => b.kind === o.kind));
+  {
+    // ONE predicate, shared with the commit hook's amend handling (commit-nudge-reads-the-whole-move
+    // Decision 7), so the hook can never print a withdrawal this refusal would refuse.
+    const broken = deliveredRegression(id, snapshot, epic, { status: f.status });
     if (broken.length) {
-      process.stderr.write(regressionRefusal({ id, snapshot, broken, argv: argv.slice(1), status: str(f.status) }));
+      process.stderr.write(regressionRefusal({ id, snapshot, next: epic, broken, argv: argv.slice(1), status: str(f.status) }));
       process.exit(1);
     }
   }
@@ -902,7 +979,7 @@ export function updateEpic() {
   // who resumes it.
   if (status === "archived" && epic.claim) {
     process.stderr.write(
-      `conductor: cleared the advisory claim held by '${epic.claim.session}' — '${id}' has ended\n`);
+      `conductor: cleared the advisory claim held by '${escapeControls(epic.claim.session)}' — '${escapeControls(id)}' has ended\n`);
     delete epic.claim;
   }
 
@@ -931,8 +1008,8 @@ export function updateEpic() {
     const missing = missingAttributions(loadState(), id, wrote);
     if (missing.length) {
       process.stderr.write(
-        `conductor: --attribute-commit wrote ${wrote.join(", ")} to '${id}' and ` +
-        `${missing.join(", ")} ${missing.length === 1 ? "is" : "are"} NOT in .conductor/state.json ` +
+        `conductor: --attribute-commit wrote ${escapeControls(wrote.join(", "))} to '${escapeControls(id)}' and ` +
+        `${escapeControls(missing.join(", "))} ${missing.length === 1 ? "is" : "are"} NOT in .conductor/state.json ` +
         "afterwards. NOTHING has been recorded for those commits — do not treat this epic's " +
         "attribution as current. Re-run the attribution, then verify with `git show` against the " +
         "COMMIT rather than against the working tree.\n");
@@ -952,7 +1029,7 @@ export function updateEpic() {
         .every(w => w.sha !== sha || w.withdrawnAt !== withdrawnAt)).map(w => w.sha);
     if (stillThere.length) {
       process.stderr.write(
-        `conductor: --withdraw-commit did NOT land for ${stillThere.join(", ")} on '${id}' — ` +
+        `conductor: --withdraw-commit did NOT land for ${stillThere.join(", ")} on '${escapeControls(id)}' — ` +
         ".conductor/state.json holds no withdrawal record for them afterwards. Do not treat " +
         "this epic's attribution as corrected; re-run the withdrawal.\n");
       process.exit(1);
@@ -966,7 +1043,7 @@ export function updateEpic() {
     const notLanded = missingGateWithdrawals(loadState(), id, gateWithdrawals);
     if (notLanded.length) {
       process.stderr.write(
-        `conductor: --withdraw-gate-review did NOT land for gate ${notLanded.join(", gate ")} on '${id}' — ` +
+        `conductor: --withdraw-gate-review did NOT land for gate ${notLanded.join(", gate ")} on '${escapeControls(id)}' — ` +
         ".conductor/state.json still holds the verdict, or holds no withdrawal record for it, " +
         "afterwards. Do not treat this epic's gate record as corrected; re-run the withdrawal.\n");
       process.exit(1);
@@ -978,8 +1055,8 @@ export function updateEpic() {
   // binds the write surface, and a rule implemented once at the verb that introduced it is how
   // twenty siblings came to print success on a save that wrote nothing.
   reportSave(saved, {
-    changed: `conductor: updated '${id}'`,
-    unchanged: `conductor: nothing changed on '${id}' — every value this invocation supplied is ` +
+    changed: `conductor: updated '${escapeControls(id)}'`,
+    unchanged: `conductor: nothing changed on '${escapeControls(id)}' — every value this invocation supplied is ` +
       "already the value the record holds. Nothing was written.",
   });
 }

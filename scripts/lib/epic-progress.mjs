@@ -5,7 +5,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { ROOT, CHANGES_DIR, ARCHIVE_DIR, PLANS_DIR, laneRank, isOpenspecLane, withdrawnGate } from "./constants.mjs";
+import { ROOT, CHANGES_DIR, ARCHIVE_DIR, PLANS_DIR, laneRank, isOpenspecLane, withdrawnGate, escapeControls } from "./constants.mjs";
 import { engineStamp, isArchiveBackfilled, isStoryDisposed } from "./disposition.mjs";
 import { effectivePriorityOf, priorityRank } from "./dependency-order.mjs";
 import { isArmed, isUnmigrated } from "./links.mjs";
@@ -177,7 +177,7 @@ export function reconcileArchived(state) {
       if (!pausedByAnyFrame.has(e.id) && !links.some(l => isArmed(l) || isUnmigrated(l))) {
         e.reconcileNeeded = false; changed = true;
         process.stderr.write(
-          `conductor: cleared the reconcile obligation on '${e.id}' — it holds no may-invalidate link a ` +
+          `conductor: cleared the reconcile obligation on '${escapeControls(e.id)}' — it holds no may-invalidate link a ` +
           "verdict could be recorded against and no detour frame pausing it, so no record-reconcile " +
           "could ever be accepted and it would have blocked the epic permanently\n");
       }

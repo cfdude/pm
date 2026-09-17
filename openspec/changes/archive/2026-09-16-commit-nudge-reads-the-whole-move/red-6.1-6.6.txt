@@ -1,0 +1,124 @@
+✖ 6.1 a TDD commit touching the active epic's change directory is not an AUTO-DETOUR (434.536083ms)
+✖ 6.2 a task-tick commit for the active epic is not an AUTO-DETOUR (449.777875ms)
+✖ 6.3 a commit touching the active epic's plan file is not an AUTO-DETOUR (521.861208ms)
+✖ 6.4 a commit confined to a paused epic's artifacts is not a DETOUR-COMMIT (570.531916ms)
+✖ 6.5 a nested conductor's bookkeeping commit is not a detour, on either branch (413.1665ms)
+✔ 6.6 REGRESSION GUARD: a nested mixed commit, a mismatched change directory and #173's shape still log (1297.648541ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 1
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3727.658875
+
+✖ failing tests:
+
+test at scripts/test/commit-observation.test.mjs:620:1
+✖ 6.1 a TDD commit touching the active epic's change directory is not an AUTO-DETOUR (434.536083ms)
+  AssertionError [ERR_ASSERTION]: 2026-09-17T02:43:03.479Z	3c9972f	AUTO-DETOUR	epic-a	fix(a): make the red test green
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-observation.test.mjs:625:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/commit-observation.test.mjs:628:1
+✖ 6.2 a task-tick commit for the active epic is not an AUTO-DETOUR (449.777875ms)
+  AssertionError [ERR_ASSERTION]: 2026-09-17T02:43:03.928Z	6b4ac71	AUTO-DETOUR	epic-a	chore(openspec): tick epic-a 1.1
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-observation.test.mjs:632:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/commit-observation.test.mjs:635:1
+✖ 6.3 a commit touching the active epic's plan file is not an AUTO-DETOUR (521.861208ms)
+  AssertionError [ERR_ASSERTION]: 2026-09-17T02:43:04.450Z	1acde64	AUTO-DETOUR	epic-a	chore(plan): tick a step
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-observation.test.mjs:644:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/commit-observation.test.mjs:647:1
+✖ 6.4 a commit confined to a paused epic's artifacts is not a DETOUR-COMMIT (570.531916ms)
+  AssertionError [ERR_ASSERTION]: 2026-09-17T02:43:05.016Z	60de9cc	DETOUR-COMMIT	detour-d	chore(openspec): tick epic-a
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-observation.test.mjs:652:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/commit-observation.test.mjs:655:1
+✖ 6.5 a nested conductor's bookkeeping commit is not a detour, on either branch (413.1665ms)
+  AssertionError [ERR_ASSERTION]: AUTO-DETOUR: 2026-09-17T02:43:05.436Z	b14bf4e	AUTO-DETOUR	epic-a	chore(conductor): register epic-b
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-observation.test.mjs:665:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

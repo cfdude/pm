@@ -24,7 +24,7 @@ import { isInitialized, loadState } from "./state.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { laneSuggestion } from "./lane-routing.mjs";
 import { supersededEpics } from "./links.mjs";
-import { isFlagToken } from "./constants.mjs";
+import { escapeControls, isFlagToken, jsonText } from "./constants.mjs";
 import { checkedPositionals } from "./argv-surface.mjs";
 
 /** Words shorter than this carry no discriminating power and appear everywhere ("of", "to",
@@ -183,7 +183,7 @@ export function triage() {
     if (!Number.isInteger(n) || n <= 0) {
       process.stderr.write(
         `conductor: triage: --limit must be a positive integer (got ` +
-        `${f.limit === true ? "no value" : JSON.stringify(f.limit)})\n`);
+        `${f.limit === true ? "no value" : escapeControls(JSON.stringify(f.limit))})\n`);
       process.exit(1);
     }
     limit = n;
@@ -194,7 +194,7 @@ export function triage() {
   const byStatus = {};
   for (const e of epics) byStatus[e.status || "queued"] = (byStatus[e.status || "queued"] || 0) + 1;
 
-  process.stdout.write(JSON.stringify({
+  process.stdout.write(jsonText({
     ask,
     lane: laneSuggestion(state, ask),
     backlog: {

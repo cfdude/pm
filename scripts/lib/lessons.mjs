@@ -35,6 +35,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { isInitialized, readStdin } from "./state.mjs";
 import { requirePlatformFlag } from "./add-epic.mjs";
+import { escapeControls, jsonText } from "./constants.mjs";
 
 /** The lessons corpus lives at `docs/lessons/` under the project root. Resolved at CALL time,
  *  not at module load, so a test (and a hook fired in a different project) sees its own root. */
@@ -107,7 +108,9 @@ export function matchLessons(event, lessons) {
 
 /** The `additionalContext` string for a set of hits. */
 export function adviceText(hits) {
-  const body = hits.map(h => `• ${h.rule}\n  (docs/lessons/${h.file})`).join("\n");
+  // `rule` is a workspace lesson's frontmatter and `file` a workspace filename — governed values
+  // (user-text-never-forges-output D0), escaped so neither can begin a line of the advice.
+  const body = hits.map(h => `• ${escapeControls(h.rule)}\n  (docs/lessons/${escapeControls(h.file)})`).join("\n");
   return `📓 Lesson from this repo's own history — this cost time before:\n${body}\n` +
     "Proceed if it does not apply; the hook only advises.";
 }
@@ -132,7 +135,7 @@ export function lessonAdvice() {
   if (!lessons.length) return;               // no corpus, or none of it matchable
   const hits = matchLessons(event, lessons);
   if (!hits.length) return;
-  process.stdout.write(JSON.stringify({
+  process.stdout.write(jsonText({
     hookSpecificOutput: {
       hookEventName: "PreToolUse",
       additionalContext: adviceText(hits),

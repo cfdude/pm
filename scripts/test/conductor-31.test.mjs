@@ -82,7 +82,17 @@ const VERB_BASELINE = {
   "purge-logs": () => ["purge-logs", "--keep", "5"],
   changelog: () => ["changelog", "--since", "0.0.1"],
   "plan-hierarchy": () => ["plan-hierarchy", "--parent", "e1"],
+  // emitted-commands-run-as-written: `--ask=<text>` carries a flag-shaped item title as a value.
+  "suggest-lane": () => ["suggest-lane", "--ask", "fix a typo"],
   "push-detour": () => ["push-detour", "e1", "--detour", "other", "--reason", "blocked", "--reconcile"],
+  // No verb writes an automatic row without git, so the baseline seeds one (state.json untouched).
+  "retract-detour": (cwd) => {
+    const log = path.join(cwd, ".conductor", "detours.log");
+    if (!fs.existsSync(log) || !fs.readFileSync(log, "utf8").includes("\tabcdef1\tAUTO-DETOUR")) {
+      fs.appendFileSync(log, "2026-09-01T00:00:00.000Z\tabcdef1\tAUTO-DETOUR\te1\tseeded\n");
+    }
+    return ["retract-detour", "abcdef1", "--reason", "x"];
+  },
   "record-reconcile": () => ["record-reconcile", "e1", "--detour", "other", "--verdict", "valid"],
   "record-tracker-refresh": () => ["record-tracker-refresh", "ext",
     "--verdict", "unchanged", "--external-updated-at", "2026-08-01T00:00:00.000Z"],

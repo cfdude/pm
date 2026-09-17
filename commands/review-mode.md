@@ -69,9 +69,11 @@ repo-level setting: it applies uniformly regardless of which epic is active, EXC
 single epic has an escalation-only override (below).
 
 Then RECORD the verdict, whatever the lane. This dial is lane-agnostic — the table above names a
-Superpowers task review — and `record-gate-review <id> --gate 1|2 --verdict pass|fail --base-sha
-<a> --head-sha <b>` now accepts any lane to match, so a review this dial asked for has somewhere
-to land as checkable fields instead of prose. Recording one creates no archive obligation: the
+Superpowers task review — and `record-gate-review` now accepts any lane to match, with each gate's
+own evidence (`record-gate-review <id> --gate 1 --verdict pass|fail --artifact <path>` for a spec
+review, `record-gate-review <id> --gate 2 --verdict pass|fail --base-sha <a> --head-sha <b>` for an
+implementation review), so a review this dial asked for has somewhere to land as checkable fields
+instead of prose. Recording one creates no archive obligation: the
 archive gate remains openspec-only. See `/pm:epic`'s "Record a gate verdict".
 
 ## Per-epic override (escalate only, never de-escalate)
@@ -95,6 +97,6 @@ Rules:
 - If the repo-global dial is later raised above a previously-set epic override, the global dial
   wins again for that epic — the override never pins a *lower* effective mode than the current
   global dial; it only ever adds a floor above it.
-- Clearing an override requires setting `--review-mode` to a value at or above the current global
-  dial (there is no separate "unset" — set it equal to the current global dial to make the
-  override a no-op).
+- Clear an override with `update-epic <id> --clear review-mode`: the epic then follows the global
+  dial again. (Setting `--review-mode` equal to the global dial also makes it a no-op, but leaves
+  the override recorded.)

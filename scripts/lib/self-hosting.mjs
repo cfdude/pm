@@ -1,7 +1,7 @@
 // scripts/lib/self-hosting.mjs
 // gh-134: hand execution off to the checkout's engine when pm is being developed.
 //
-// Every entry point the plugin ships — `hooks/hooks.json` (4 hooks) and `commands/*.md` (15
+// Every entry point the plugin ships — `hooks/hooks.json` (6 hook entries) and `commands/*.md` (15
 // slash commands) — invokes `${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs`, which resolves to
 // the INSTALLED plugin, not the checkout being edited. Working on pm itself therefore runs an
 // engine a full release behind the working tree; the PostToolUse hook fires on every commit
@@ -13,8 +13,8 @@
 // ─────────────────────────── THE TRUST BOUNDARY ───────────────────────────
 //
 // This module decides whether to execute code the PROJECT supplies, and that decision is
-// evaluated in EVERY project on the machine, initialized or not, by four hooks — SessionStart,
-// PreToolUse, PostToolUse, PreCompact — on roughly every turn. Before this handoff existed,
+// evaluated in EVERY project on the machine, initialized or not, by five hook events — SessionStart,
+// PreToolUse, PostToolUse, PostToolUseFailure, PreCompact — on roughly every turn. Before this handoff existed,
 // those hooks could only ever run code that shipped with the plugin.
 //
 // So the authorization MUST come from something the project cannot write. The first version of
@@ -40,7 +40,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
-import { ROOT } from "./constants.mjs";
+import { ROOT, escapeControls } from "./constants.mjs";
 import { readJSON } from "./state.mjs";
 
 /** Opt-in, and the whole trust boundary: the ABSOLUTE PATH of the checkout whose engine may be
@@ -127,7 +127,7 @@ export function delegateToCheckout({
   });
   if (r.error) {
     process.stderr.write(
-      `conductor: could not hand off to the checkout engine at ${target} ` +
+      `conductor: could not hand off to the checkout engine at ${escapeControls(target)} ` +
       `(${r.error.message}); running the installed engine instead\n`
     );
     return null;

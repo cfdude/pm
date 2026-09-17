@@ -145,3 +145,15 @@ vacuous zero: the check RAN, which is the distinction this whole document exists
 The reason it is an `integrity` check at all is that `owners` only answers when someone thinks to
 ask, and a stale claim is by construction left behind by a session that is no longer there to
 ask.
+
+## `tracker-repo-not-a-github-repository` — 0 findings
+
+Added 2026-09-17 by `emitted-commands-run-as-written` (Gate 2 E-I2). A github-issues repo recorded
+before `set-tracker` refused a value that is not `[HOST/]owner/name` still loads, and every emitter
+treats it as absent when building a shell command — so upgrading dropped that tracker's
+`gh issue list` step with no notice anywhere. This check is where it is said, with the `set-tracker`
+re-record that restores the step (a secondary's exact-match `--remove` first).
+
+Zero here, measured 2026-09-17: this repository's one tracker is the github-issues primary
+`cfdude/pm`, which has the shape, and it records no secondary. The check RAN; a repo carrying a
+legacy value would be named here.

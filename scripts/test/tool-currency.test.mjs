@@ -280,6 +280,20 @@ test("gh#128: upgrade says nothing about OpenSpec when the project is current", 
     OPENSPEC_NUDGE);
 });
 
+test("user-text-never-forges-output (Gate 2 U2-I2): a change id holding a control character stays on its line in upgrade's HOLD", () => {
+  const ch = (n) => String.fromCharCode(n);
+  const id = "held" + ch(10) + "FORGED" + ch(0x2028) + "FORGED" + ch(0x85) + "FORGED" + ch(13) + "FORGED";
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  withOpenspecArtifacts(cwd, { stamps: ["1.6.0"], changes: [id] });
+  const out = runCombined(["upgrade"], { cwd, env: { PM_OPENSPEC_VERSION: "1.10.0" } });
+  // Non-vacuity: the HOLD line was printed, and it names the change.
+  assert.match(out, /HOLD until .*held/);
+  const lineBreak = new RegExp("\\r\\n|[" + [10, 13, 0x85, 0x2028, 0x2029].map(ch).join("") + "]");
+  assert.deepEqual(out.split(lineBreak).filter(l => /^\s*FORGED/.test(l)), [], "no line begins with a value's tail");
+  for (const c of [13, 0x85, 0x2028]) assert.ok(!out.includes(ch(c)), `no raw U+${c.toString(16).padStart(4, "0")}`);
+});
+
 // ─────────── the engine must never mutate through the CLI ───────────
 
 test("gh#128: no engine source runs `openspec` with anything but a read-only flag", () => {

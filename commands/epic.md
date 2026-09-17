@@ -125,14 +125,36 @@ written:
   the verb reads is refused before anything is written:
   `conductor: add-epic takes no positional arguments — 'Title' is an extra argument it does not read. Nothing was written.`
   followed by `If 'Title' belongs to --title's value, quote the whole value.`
-- **An epic id is positional wherever a verb takes one.** `remove-epic --id e2`, `set-active --id
-  e2` and the rest are diagnosed with the line you meant, not only on `update-epic`.
+- **An epic id is positional wherever a verb takes one.** `remove-epic --id e2`<!-- pm:refused id-as-flag -->, `set-active --id
+  e2`<!-- pm:refused id-as-flag --> and the rest are diagnosed with the line you meant, not only on `update-epic`.
 - **`--force` is accepted on every mutating verb here** — `add-epic`, `add-many`, `update-epic`,
   `reorder`, `remove-epic`, `set-active`, `clear-active`, `set-autonomy` and
   `record-gate-review` — and refused on read-only verbs. It belongs to the guarded write of
   `.conductor/state.json`, not to any verb's parser, so it may stand anywhere on the line and is
   never read as an id. `add-epic`, `update-epic` and `claim` used to refuse it outright.
   `node "$ENGINE" <verb> --help` lists it under "Accepted on every mutating verb".
+
+## Ids are refused at input; free text is escaped on display
+
+An **epic id** must match `^[a-z0-9][a-z0-9._-]*$` at `add-epic` and `add-many` (a batch with one
+bad id writes nothing), and no path can store one holding a control character or whitespace —
+`sync` and the archive backfill skip such a name (see `/pm:sync`). A **release id** must match the
+same format when the release is created (see `release` in `/pm:status`).
+
+**Free text is stored exactly as written** — titles, descriptions, notes, story titles, every
+reason, session names, reviewer identities — and is **escaped wherever it is displayed**: a
+newline or other control character (C0, DEL, C1, U+2028, U+2029) prints as a visible escape
+(backslash, `u`, four hex digits), so no value can start a line of PROJECT.md, the session brief,
+the rules block, `integrity`, a hook's output or a refusal. A PROJECT.md table cell additionally
+escapes `\` and `|`, so a value can neither add nor split a cell. A refusal quoting an unknown id
+quotes it the same way, on one line.
+
+**A stored id holding a control character gets no command.** Only a record written by an older
+engine can hold one. Every printed command that names an epic or release id goes through one
+printer, which shell-quotes an id outside the format (a legacy `My Plan`) — but an escaped id would
+name a different record and a raw one would break the line, so in place of the command it prints
+`epic '<escaped id>' holds a control character; no verb can rename it` (or `release '…'`). It
+never tells you to hand-edit `state.json`.
 
 ## Bulk create — `add-many`
 
@@ -161,7 +183,7 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" add-many --from /path/to/batc
   chaining, no write race.
 - JSON only (the engine is zero-dependency). `parent` is optional; a bare `{ "epics": [...] }`
   batch works too.
-- **A batch key is not a command-line flag.** `add-many --from b.json --external-id X` is refused
+- **A batch key is not a command-line flag.** `add-many --from b.json --external-id X`<!-- pm:refused unknown-flag --> is refused
   before the batch is read (`unknown flag --external-id for add-many — it accepts: --from,
   --force`); it used to create the batch and drop the flag.
 - **`description`** is the durable rationale, in state-key spelling — a batch entry carries
@@ -459,7 +481,7 @@ The id is positional. Parent/status/lane/link changes are validated like `add-ep
 self-parent, no cycle, known status, known lane, `--link`'s epic must be a known epic id). On an
 unknown id, or any invalid flag value, it exits non-zero and writes nothing — including an
 unrecognized flag name, which used to silently no-op and print a false "updated" success, and an
-unquoted multi-word value: `update-epic e1 --title My Title` stored `My` and now refuses `'Title'`
+unquoted multi-word value: `update-epic e1 --title My Title`<!-- pm:refused extra-positional --> stored `My` and now refuses `'Title'`
 as an extra argument, with a hint to quote the whole value. Both refusals happen before dispatch
 and apply to every verb on this page — see "The command line" above.
 
@@ -658,7 +680,7 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" remove-epic <id> [--cascade]
   together in one atomic write. The preview table and `--cascade`'s actual blast radius always
   agree — a human confirming from the table is confirming the real deletion set, not just the
   direct children.
-- **`--cascade` takes no value, in either spelling.** `remove-epic p --cascade true` used to be
+- **`--cascade` takes no value, in either spelling.** `remove-epic p --cascade true`<!-- pm:refused extra-positional --> used to be
   accepted; now `true` is an extra argument
   (`conductor: remove-epic takes <id> — 'true' is an extra argument it does not read. Nothing was written.`
   then `--cascade takes no value.`), and `--cascade=true` is refused naming `--cascade`. Write

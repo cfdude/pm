@@ -1,0 +1,25 @@
+✖ G2-M-b an observation whose lock was broken releases only its own lock, never its successor's (339.3605ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 377.638042
+
+✖ failing tests:
+
+test at scripts/test/commit-observation.test.mjs:244:1
+✖ G2-M-b an observation whose lock was broken releases only its own lock, never its successor's (339.3605ms)
+  AssertionError [ERR_ASSERTION]: A's release removed B's lock
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-observation.test.mjs:265:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

@@ -28,7 +28,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import {
-  ACTIVITY_SEGMENT_MAX_BYTES, ACTIVITY_RETENTION_MAX_BYTES,
+  ACTIVITY_SEGMENT_MAX_BYTES, ACTIVITY_RETENTION_MAX_BYTES, escapeControls,
 } from "./constants.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { isDetachedTree } from "./git.mjs";
@@ -73,7 +73,7 @@ export function setActivityLog() {
   const saved = saveState(state);
   reportSave(saved, {
     changed: `conductor: activity log ${arg}${arg === "on"
-      ? ` — writing to ${activityDir()} (git-ignored). Read it with \`activity\`.`
+      ? ` — writing to ${escapeControls(activityDir())} (git-ignored). Read it with \`activity\`.`
       : " — nothing further is recorded. What was already recorded is kept."}`,
     unchanged: `conductor: the activity log was already ${arg} — ${STATE_UNCHANGED}`,
   });

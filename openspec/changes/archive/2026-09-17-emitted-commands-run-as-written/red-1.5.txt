@@ -1,0 +1,9 @@
+✔ 1.5 Layer A: every rules block (platform × tracker matrix), init's output and every commit-nudge variant (2517.663292ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2559.298167

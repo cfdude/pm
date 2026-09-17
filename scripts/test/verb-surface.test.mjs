@@ -387,6 +387,14 @@ function fixture(pre = []) {
 /** A working invocation of EVERY dispatched verb. Completeness is asserted against the dispatch
  *  table below; each is first asserted to exit 0 on its own, so a broken fixture can never read as
  *  a refusal in the sweeps that append to it. Fixtures from the proposal's sweep.mjs. */
+const SEED_AUTO_DETOUR_ROW = (cwd) => {
+  // retract-detour's baseline needs an automatic row to retract. No verb writes one in a repository
+  // without git, so the row is seeded as the file holds it; `abcdef1` resolves to nothing here, which
+  // is the pruned-commit matching path.
+  fs.mkdirSync(path.join(cwd, ".conductor"), { recursive: true });
+  fs.appendFileSync(path.join(cwd, ".conductor", "detours.log"),
+    "2026-09-01T00:00:00.000Z\tabcdef1\tAUTO-DETOUR\te1\tseeded\n");
+};
 const DISPATCH_BASELINE = {
   init: { args: ["init"] },
   render: { args: ["render"] },
@@ -395,6 +403,7 @@ const DISPATCH_BASELINE = {
   "commit-nudge": { args: ["commit-nudge"], input: "{}" },
   sync: { args: ["sync"] },
   "log-detour": { args: ["log-detour", "x"] },
+  "retract-detour": { seed: SEED_AUTO_DETOUR_ROW, args: ["retract-detour", "abcdef1", "--reason", "x"] },
   "push-detour": { args: PUSH },
   "pop-detour": { pre: [PUSH], args: ["pop-detour"] },
   "honcho-memory": { args: ["honcho-memory", "push", "e1", "why"] },
@@ -455,7 +464,7 @@ test("DISPATCH_BASELINE covers exactly the dispatch table", () => {
 test("every DISPATCH_BASELINE invocation exits 0 on its own", () => {
   const failed = [];
   for (const [verb, b] of Object.entries(DISPATCH_BASELINE)) {
-    const cwd = fixture(b.pre);
+    const cwd = fixture(b.pre); if (b.seed) b.seed(cwd);
     for (const step of b.local || []) run(step, { cwd });
     const r = engine(b.args, { cwd, input: b.input || "" });
     if (r.status !== 0) failed.push(`${verb} exited ${r.status}: ${r.stderr.trim().split("\n").slice(-2).join(" | ")}`);
@@ -466,7 +475,7 @@ test("every DISPATCH_BASELINE invocation exits 0 on its own", () => {
 test("Every dispatched verb refuses an undeclared flag and writes nothing", () => {
   const wrong = [];
   for (const [verb, b] of Object.entries(DISPATCH_BASELINE)) {
-    const cwd = fixture(b.pre);
+    const cwd = fixture(b.pre); if (b.seed) b.seed(cwd);
     for (const step of b.local || []) run(step, { cwd });
     const before = treeSnapshot(cwd);
     const r = engine([...b.args, "--zzz-undeclared"], { cwd, input: b.input || "" });
@@ -485,7 +494,7 @@ test("A help token after every verb's working invocation prints help and writes 
   const wrong = [];
   for (const [verb, b] of Object.entries(DISPATCH_BASELINE)) {
     for (const token of ["--help", "-h"]) {
-      const cwd = fixture(b.pre);
+      const cwd = fixture(b.pre); if (b.seed) b.seed(cwd);
       for (const step of b.local || []) run(step, { cwd });
       const before = treeSnapshot(cwd);
       const r = engine([...b.args, token], { cwd, input: b.input || "" });
@@ -633,7 +642,7 @@ const lastDetourText = (cwd) => {
 /** How many positionals each baseline carries, counted by hand rather than by the classifier under
  *  test: the fill below depends on it. */
 const POSITIONAL_COUNTS = {
-  "log-detour": 1, "push-detour": 1, "honcho-memory": 3, "update-epic": 1, "remove-epic": 1, reorder: 2,
+  "log-detour": 1, "retract-detour": 1, "push-detour": 1, "honcho-memory": 3, "update-epic": 1, "remove-epic": 1, reorder: 2,
   "set-active": 1, "suggest-lane": 1, triage: 1, "set-autonomy": 1, "record-reconcile": 1,
   "record-gate-review": 1, "record-cross-spec-review": 1, "record-tracker-refresh": 1, release: 1,
   "set-gate-guard": 1, claim: 1, unclaim: 1, "set-activity-log": 1,
@@ -647,7 +656,7 @@ test("Every verb with a bounded arity refuses a stray positional and writes noth
   for (const [verb, b] of Object.entries(DISPATCH_BASELINE)) {
     if (VERB_POSITIONALS[verb].max === Infinity) continue;
     checked++;
-    const cwd = fixture(b.pre);
+    const cwd = fixture(b.pre); if (b.seed) b.seed(cwd);
     for (const step of b.local || []) run(step, { cwd });
     // A baseline may use fewer positionals than the maximum (`pop-detour` takes an optional one), so
     // fill up to the maximum first: `zzzstray` is then the first token beyond it on every verb.
@@ -989,4 +998,24 @@ test("An undeclared flag on a free-text verb is refused with the quote-the-whole
   const bounded = checkCommandLine("set-active", line("set-active", "e1", "--no-verify"), { initialized: true });
   assert.equal(bounded.kind, "refuse");
   assert.doesNotMatch(bounded.message, /quote the whole value/, "a verb without free text gets no quoting hint");
+});
+
+// ═══════════════ emitted-commands-run-as-written 1.2 — every refusal carries a class ═══════════════
+// The emitted-invocation sweep compares a doc marker's declared class with the engine's refusal.
+// Refusal MESSAGES are prose other changes edit; the class is the stable value a test compares.
+
+test("checkCommandLine: every refusal kind carries its class", async () => {
+  const { checkCommandLine } = await import(ARGV_SURFACE);
+  const cases = [
+    ["unknown-flag", line("activity", "--bogus")],
+    ["extra-positional", line("set-activity-log", "on", "extra")],
+    ["id-as-flag", line("remove-epic", "--id", "e2")],
+    ["value-on-valueless-flag", line("remove-epic", "e2", "--cascade=true")],
+    ["help-in-value-position", line("add-epic", "--id", "h1", "--title", "--help")],
+  ];
+  for (const [cls, argv] of cases) {
+    const r = checkCommandLine(argv[2], argv, { initialized: true });
+    assert.equal(r.kind, "refuse", `${argv.slice(2).join(" ")} is refused`);
+    assert.equal(r.class, cls, `${argv.slice(2).join(" ")} is refused with class ${cls}; got ${r.class}`);
+  }
 });

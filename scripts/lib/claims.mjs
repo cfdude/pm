@@ -43,7 +43,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
-import { CLAIM_DEFAULT_TTL_MINUTES, CLAIM_MAX_TTL_MINUTES, REPO_CLAIM_DEFAULT_TTL_MINUTES, isFlagToken, splitFlagToken } from "./constants.mjs";
+import { CLAIM_DEFAULT_TTL_MINUTES, jsonText, CLAIM_MAX_TTL_MINUTES, REPO_CLAIM_DEFAULT_TTL_MINUTES, escapeControls, isFlagToken, splitFlagToken } from "./constants.mjs";
 import { isDetachedTree } from "./git.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { resolveSession, SESSION_HINT } from "./session-identity.mjs";
@@ -116,7 +116,7 @@ function die(msg) {
 /** The shared refusal when someone else holds a LIVE claim. One phrasing, both verbs, so the
  *  two surfaces cannot describe the same situation differently. */
 function refuseHeld(what, claim, verb) {
-  die(`${what} is claimed by session '${claim.session}' since ${claim.claimedAt} ` +
+  die(`${what} is claimed by session '${escapeControls(claim.session)}' since ${escapeControls(claim.claimedAt)} ` +
     `(live until ${claimExpiry(claim)}). Nothing was written. ` +
     `Wait for it, or take it deliberately with \`${verb} … --steal\`.`);
 }
@@ -173,11 +173,11 @@ export function claim() {
     }
     if (stolenFrom) {
       process.stderr.write(
-        `conductor: took over the repository marker from session '${stolenFrom.session}' ` +
+        `conductor: took over the repository marker from session '${escapeControls(stolenFrom.session)}' ` +
         `(${isLiveClaim(stolenFrom) ? "STOLEN while live" : "its claim had expired"})\n`);
     }
     process.stderr.write(
-      `conductor: repository marked busy by '${session}' until ${claimExpiry(readRepoClaim())}\n`);
+      `conductor: repository marked busy by '${escapeControls(session)}' until ${claimExpiry(readRepoClaim())}\n`);
     return;
   }
 
@@ -189,26 +189,26 @@ export function claim() {
   const ttl = ttlFrom(f, CLAIM_DEFAULT_TTL_MINUTES);
   const state = loadState();
   const epic = state.epics.find(e => e.id === epicId);
-  if (!epic) die(`epic '${epicId}' not found`);
+  if (!epic) die(`epic '${escapeControls(epicId)}' not found`);
   // An ARCHIVED epic has ENDED. Claiming one would record ownership of work that is over, which
   // is the same dangling shape `integrity` reports below — refused at the source rather than
   // only audited after the fact.
-  if (epic.status === "archived") die(`epic '${epicId}' is archived — there is no work to claim`);
+  if (epic.status === "archived") die(`epic '${escapeControls(epicId)}' is archived — there is no work to claim`);
 
   const held = epic.claim;
   if (held && held.session !== session && isLiveClaim(held) && !steal) {
-    refuseHeld(`epic '${epicId}'`, held, "claim");
+    refuseHeld(`epic '${escapeControls(epicId)}'`, held, "claim");
   }
   if (held && held.session !== session) {
     process.stderr.write(
-      `conductor: took over '${epicId}' from session '${held.session}' ` +
+      `conductor: took over '${escapeControls(epicId)}' from session '${escapeControls(held.session)}' ` +
       `(${isLiveClaim(held) ? "STOLEN while live" : "its claim had expired"})\n`);
   }
   epic.claim = makeClaim(session, ttl);
   const saved = saveState(state);
   reportSave(saved, {
-    changed: `conductor: '${epicId}' claimed by '${session}' until ${claimExpiry(epic.claim)}`,
-    unchanged: `conductor: '${epicId}' already carried this exact claim by '${session}' — ` +
+    changed: `conductor: '${escapeControls(epicId)}' claimed by '${escapeControls(session)}' until ${claimExpiry(epic.claim)}`,
+    unchanged: `conductor: '${escapeControls(epicId)}' already carried this exact claim by '${escapeControls(session)}' — ` +
       `${STATE_UNCHANGED}`,
   });
 }
@@ -245,7 +245,7 @@ export function unclaim() {
       refuseHeld("this repository", held, "unclaim --repo");
     }
     if (held.session !== session) {
-      process.stderr.write(`conductor: cleared a marker held by '${held.session}', not '${session}'\n`);
+      process.stderr.write(`conductor: cleared a marker held by '${escapeControls(held.session)}', not '${escapeControls(session)}'\n`);
     }
     clearRepoClaim();
     process.stderr.write("conductor: repository marker cleared\n");
@@ -259,20 +259,20 @@ export function unclaim() {
   const epicId = positional[0];
   const state = loadState();
   const epic = state.epics.find(e => e.id === epicId);
-  if (!epic) die(`epic '${epicId}' not found`);
+  if (!epic) die(`epic '${escapeControls(epicId)}' not found`);
   const held = epic.claim;
-  if (!held) { process.stderr.write(`conductor: '${epicId}' was not claimed — nothing to release\n`); return; }
+  if (!held) { process.stderr.write(`conductor: '${escapeControls(epicId)}' was not claimed — nothing to release\n`); return; }
   if (held.session !== session && isLiveClaim(held) && !steal) {
-    refuseHeld(`epic '${epicId}'`, held, "unclaim");
+    refuseHeld(`epic '${escapeControls(epicId)}'`, held, "unclaim");
   }
   if (held.session !== session) {
-    process.stderr.write(`conductor: cleared a claim held by '${held.session}', not '${session}'\n`);
+    process.stderr.write(`conductor: cleared a claim held by '${escapeControls(held.session)}', not '${escapeControls(session)}'\n`);
   }
   delete epic.claim;
   const saved = saveState(state);
   reportSave(saved, {
-    changed: `conductor: '${epicId}' released`,
-    unchanged: `conductor: '${epicId}' held no claim to release — ${STATE_UNCHANGED}`,
+    changed: `conductor: '${escapeControls(epicId)}' released`,
+    unchanged: `conductor: '${escapeControls(epicId)}' held no claim to release — ${STATE_UNCHANGED}`,
   });
 }
 
@@ -326,7 +326,7 @@ export function formatOwners(rows) {
     L.push("");
     L.push("Quiescent means nothing has SAID it is mid-operation. It is a cooperative signal, not a lock:");
     L.push("a session that never claimed is invisible here.");
-    return L.join("\n");
+    return L.map(escapeControls).join("\n");
   }
   const repo = rows.find(r => r.scope === "repo");
   L.push(repo
@@ -347,7 +347,8 @@ export function formatOwners(rows) {
     L.push(`${stale} stale marker(s) — a session that died mid-epic looks exactly like this. ` +
       "Take one over with `claim <id> --session <you>`; it does not need --steal once expired.");
   }
-  return L.join("\n");
+  // One entry per line: escaping each keeps a stored session name or id on its line.
+  return L.map(escapeControls).join("\n");
 }
 
 /** `owners` — read-only. Writes nothing, renders nothing, exits 0 whatever it finds.
@@ -366,7 +367,7 @@ export function owners() {
   requireFlagValues("owners", f);
   const rows = ownerRows(loadState(), readRepoClaim());
   if (f.json === true) {
-    process.stdout.write(JSON.stringify({ quiescent: rows.length === 0, claims: rows }, null, 2) + "\n");
+    process.stdout.write(jsonText({ quiescent: rows.length === 0, claims: rows }, null, 2) + "\n");
     return;
   }
   process.stdout.write(formatOwners(rows) + "\n");

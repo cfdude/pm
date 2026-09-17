@@ -8,14 +8,60 @@ import { getAutonomy } from "./autonomy.mjs";
 import { staleMarker } from "./active-pointer.mjs";
 import { isRenderableLink, deferralHistory, deferralNote, daysSince } from "./links.mjs";
 import { correctionMarking, correctionNote, outcomeOf, recordedDispositions } from "./disposition.mjs";
-import { gateTableRows } from "./archive-gate.mjs";
+import { gateRemedy, gateTableRows } from "./archive-gate.mjs";
 import { ungatedArchives, withdrawnArchiveNote } from "./integrity.mjs";
-import { KNOWN_LANES, anyInwardProcedureEmittable, outwardApplies, releaseLine, releaseSummaries } from "./constants.mjs";
+import { KNOWN_LANES, anyInwardProcedureEmittable, asCode, escapeControls, outwardApplies, printedId, releaseLine, releaseSummaries, orNoRemedy } from "./constants.mjs";
 import { crossSpecLine } from "./cross-spec-review.mjs";
-import { dependencyNotes } from "./dependency-order.mjs";
+import { blockedWithoutDependsOnNote, dependencyNotes } from "./dependency-order.mjs";
 import { conflictCount, conflictWarningLatched, consumeConflictWarning } from "./write-conflicts.mjs";
 import { CONFLICT_WARN_THRESHOLD } from "./constants.mjs";
 import { openspecCurrencyLines } from "./tool-currency.mjs";
+
+/** Every brief warning that prints an engine invocation, each `{id, render}` — THE registry
+ *  buildBrief() renders them from, exported so the suite's Layer B builds a fixture for each entry
+ *  and runs its remedy (emitted-commands-run-as-written): a warning added here without a fixture
+ *  fails the suite. A brief line printing an engine verb that is NOT an entry here is a finding of
+ *  the call-site sweep unless justified. */
+export const BRIEF_REMEDIES = [
+  {
+    id: "tracker-refresh-owed",
+    render: (active) => `  ⚠ TRACKER REFRESH OWED: re-read \`${active.externalUrl || active.externalId}\` ` +
+      "(body, comments, labels, state) before drawing specs or a plan, then " +
+      `${orNoRemedy(() => `\`record-tracker-refresh ${printedId(active.id)} --verdict unchanged|material-change --external-updated-at <iso>\``)}.`,
+  },
+  {
+    id: "ungated-archive",
+    render: (e) => `  ⚠ \`${e.id}\` — ${asCode(gateRemedy(e.id, 2))}`,
+  },
+  {
+    id: "withdrawn-gate2-archive",
+    render: (x) => `  ⚠ \`${x.epic.id}\` — ${withdrawnArchiveNote(x)} — ${asCode(gateRemedy(x.epic.id, 2))}`,
+  },
+  {
+    id: "not-in-outward-tracker",
+    render: (tracker, unmirrored) => `  ⚠ not yet in ${tracker.system} — create issues + record keys ` +
+      // --external-updated-at, as the rules block's outward line (task 3.8): a key recorded without the
+      // created issue's timestamp is counted never-re-read wherever an inward procedure reads it (E-I1).
+      `(\`update-epic <id> --external-id <KEY> --external-url <url> --external-updated-at <iso>\`): ` +
+      unmirrored.map(e => `\`${e.id}\``).join(", "),
+  },
+  {
+    id: "blocked-without-depends-on",
+    // Rendered by dependencyNotes() — the same function PROJECT.md's dependency warnings call — so the
+    // brief's DEPENDENCY WARNINGS line and this entry cannot diverge (Gate 2 E-I3).
+    render: blockedWithoutDependsOnNote,
+  },
+  {
+    id: "never-re-read",
+    // The remedy clears EVERY epic the line counts — including one linked through an outward-only
+    // primary while a secondary makes the repo inward, whose link no inward procedure reads (repro.txt
+    // §B8). `/pm:sync` alone never touches that epic, so it is named as the path for listed items only.
+    render: (count) => `  ⚠ ${count} tracker-linked epic(s) never re-read since mirroring — re-read each and record it ` +
+      "with `record-tracker-refresh <id> --verdict unchanged|material-change --external-updated-at <iso>` " +
+      "(`/pm:sync` does this for the items it lists)",
+  },
+];
+const briefRemedy = (id, ...args) => BRIEF_REMEDIES.find(r => r.id === id).render(...args);
 
 export function buildBrief(state, { consume = false } = {}) {
   const epics = resolveEpics(state);
@@ -66,10 +112,7 @@ export function buildBrief(state, { consume = false } = {}) {
     // The refresh debt is re-taught every briefing rather than remembered by the session that
     // incurred it — a compaction is exactly when it would otherwise be lost, and it was incurred
     // at activation, which may have been many turns ago.
-    if (active.trackerRefreshNeeded)
-      L.push(`  ⚠ TRACKER REFRESH OWED: re-read \`${active.externalUrl || active.externalId}\` ` +
-        "(body, comments, labels, state) before drawing specs or a plan, then " +
-        "`record-tracker-refresh " + active.id + " --verdict unchanged|material-change --external-updated-at <iso>`.");
+    if (active.trackerRefreshNeeded) L.push(briefRemedy("tracker-refresh-owed", active));
   } else if (activeEpic && activeEpic.status === "archived") {
     L.push(`NOW: (no active epic — \`${activeEpic.id}\` was archived; the active pointer clears on next /pm:sync or commit)`);
   } else {
@@ -219,7 +262,7 @@ export function buildBrief(state, { consume = false } = {}) {
   if (ungated.length) {
     L.push("UNGATED ARCHIVES (archived with no Gate 2 review — clears when a real verdict supersedes it):");
     for (const e of ungated.slice(0, NEXT_CAP)) {
-      L.push(`  ⚠ \`${e.id}\` — \`record-gate-review ${e.id} --gate 2 --verdict pass --base-sha <sha> --head-sha <sha>\``);
+      L.push(briefRemedy("ungated-archive", e));
     }
     if (ungated.length > NEXT_CAP) L.push(`  (+${ungated.length - NEXT_CAP} more — see PROJECT.md)`);
     L.push("");
@@ -231,8 +274,7 @@ export function buildBrief(state, { consume = false } = {}) {
   if (withdrawnArchives.length) {
     L.push("WITHDRAWN GATE 2 ARCHIVES (archived with the Gate 2 verdict taken back — clears when a real verdict is recorded):");
     for (const x of withdrawnArchives.slice(0, NEXT_CAP)) {
-      L.push(`  ⚠ \`${x.epic.id}\` — ${withdrawnArchiveNote(x)} — ` +
-        `\`record-gate-review ${x.epic.id} --gate 2 --verdict pass --base-sha <sha> --head-sha <sha>\``);
+      L.push(briefRemedy("withdrawn-gate2-archive", x));
     }
     if (withdrawnArchives.length > NEXT_CAP) L.push(`  (+${withdrawnArchives.length - NEXT_CAP} more — see \`integrity\`)`);
     L.push("");
@@ -272,9 +314,14 @@ export function buildBrief(state, { consume = false } = {}) {
     const unmirrored = epics.filter(e =>
       ["queued", "active", "paused"].includes(e.status) && !missing(e) && !e.externalId);
     trackerLines.push(unmirrored.length
-      ? `  ⚠ not yet in ${tracker.system} — create issues + record keys (update-epic): ` +
-        unmirrored.map(e => `\`${e.id}\``).join(", ")
-      : `  ✓ all active epics are mirrored to ${tracker.system}`);
+      ? briefRemedy("not-in-outward-tracker", tracker, unmirrored)
+      // With a secondary configured, an external id no longer shows WHICH tracker holds the link (a
+      // secondary-linked epic carries one too), so the line claims only what it checked. Attributing
+      // by URL shape was rejected: only a github-issues URL is predictable, and a partial attribution
+      // is a second rule to drift.
+      : secondaryTrackers.length
+        ? "  ✓ every active epic carries an external link (this record cannot tell which tracker holds it)"
+        : `  ✓ all active epics are mirrored to ${tracker.system}`);
   }
   // Freshness — locally computable and nothing more. How many linked items have NEWER remote
   // activity is a network call the engine is forbidden to make, so the honest population is the
@@ -306,7 +353,7 @@ export function buildBrief(state, { consume = false } = {}) {
   const neverReRead = epics.filter(e =>
     e.externalId && !e.externalUpdatedAt && !missing(e) && e.status !== "archived");
   if (inwardHere && neverReRead.length) {
-    trackerLines.push(`  ⚠ ${neverReRead.length} tracker-linked epic(s) never re-read since mirroring — run \`/pm:sync\``);
+    trackerLines.push(briefRemedy("never-re-read", neverReRead.length));
   }
   // The block renders whenever it HAS something to say, not only when a PRIMARY tracker exists.
   // Gating the whole block on `tracker` split two emitters that read the same predicate: the
@@ -355,5 +402,10 @@ export function buildBrief(state, { consume = false } = {}) {
     "Resume via `/pm:resume` + reconcile gate. Mirror every PUSH/POP to a one-line Honcho memory.");
   L.push("");
   L.push("Manage with /pm:status · /pm:next · /pm:detour · /pm:resume, or the `conductor` skill.");
-  return L.join("\n");
+  // THE LINE SINK (user-text-never-forges-output): every entry of L is one line the engine composed,
+  // and none legitimately holds a control character — so escaping each entry here, at the one join,
+  // is what guarantees no stored value (a reason, a title, a release id, a tracker scope) can begin a
+  // line of the brief, whichever interpolation carried it. escapeControls() is idempotent, so the
+  // shared helpers that already escape (gateTableRows) are not double-escaped.
+  return L.map(escapeControls).join("\n");
 }
