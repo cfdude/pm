@@ -107,22 +107,38 @@ test("2.3b a commit in a failing call is reported on PostToolUseFailure; unreada
 
 test("2.4 overlapping observations: A reads, a commit lands, B completes, A writes — reported exactly once", async () => {
   const { beginObservation } = await import("../lib/commit-watch.mjs");
-  {
-    const repo = observationRepo();
-    repo.observe();
-    const a = beginObservation({ root: repo.cwd });
-    assert.notEqual(a.verdict, "skipped", "A holds the lock");
-    const sha = repo.commit({ "src/race.txt": "1" }, "fix: lands mid-observation");
-    const b = repo.observe("PostToolUse", "ls");
-    a.finish(a.candidates.map((c) => c.sha));
-    const sizeAfterA = readRecord(repo.cwd).anchor.size;
-    const c = repo.observe("PostToolUse", "ls");
-    const reports = [b, c].filter((o) => o.context.includes(short(repo, sha))).length
-      + (a.candidates.some((x) => x.sha === sha) ? 1 : 0);
-    assert.equal(reports, 1, "reported exactly once across A, B and the third observation");
-    assert.ok(readRecord(repo.cwd).anchor.size >= sizeAfterA, "the anchor never moves backwards");
-    assert.ok(rowsFor(repo, sha).length <= 1, "at most one commit-derived row");
-  }
+  const repo = observationRepo();
+  repo.observe();
+  const reflogLines = () => fs.readFileSync(path.join(repo.gitRoot, ".git", "logs", "HEAD"), "utf8").trim().split("\n");
+  const preCommitLine = reflogLines().at(-1);
+
+  const a = beginObservation({ root: repo.cwd });
+  assert.notEqual(a.verdict, "skipped", "A holds the lock");
+  const sha = repo.commit({ "src/race.txt": "1" }, "fix: lands mid-observation");
+  const recordDuringA = fs.readFileSync(OBSERVE_RECORD(repo.cwd), "utf8");
+
+  // B runs to completion while A holds the record. It must SKIP — no report, no write — because a
+  // B that wrote a newer anchor and reported set would be overwritten by A's older ones, and a third
+  // run would report the commit again (the unlocked interleaving Gate 1 round 2 simulated).
+  const b = repo.observe("PostToolUse", "ls");
+  assert.equal(b.status, 0, b.stderr);
+  assert.equal(b.stdout, "", "B skips while A holds the observation");
+  assert.equal(fs.readFileSync(OBSERVE_RECORD(repo.cwd), "utf8"), recordDuringA, "and B writes nothing");
+  assert.equal(rowsFor(repo, sha).length, 0, "and logs nothing");
+
+  a.finish(a.candidates.map((c) => c.sha));
+  assert.equal(a.candidates.some((x) => x.sha === sha), false, "A read the reflog before the commit landed");
+  assert.equal(readRecord(repo.cwd).anchor.line, preCommitLine,
+    "A's write leaves the anchor BEFORE the commit, so the commit is still ahead of it");
+
+  const c = repo.observe("PostToolUse", "ls");
+  assert.ok(c.context.includes(short(repo, sha)), `the third observation reports it: ${JSON.stringify(c.stdout)}`);
+  assert.equal(readRecord(repo.cwd).anchor.line, reflogLines().at(-1), "and the anchor moves past it");
+  assert.ok(readRecord(repo.cwd).reported.includes(sha), "into the reported set");
+
+  const d = repo.observe("PostToolUse", "ls");
+  assert.ok(!d.context.includes(short(repo, sha)), "a later observation never reports it again");
+  assert.ok(rowsFor(repo, sha).length <= 1, "at most one commit-derived row");
 });
 
 test("2.4 the observation lock held by another process: nothing reported or written; reported after release", () => {

@@ -276,33 +276,38 @@ export function commitNudge() {
   // after the anchor for the next run (commit-watch.mjs, Decision 3).
   const obs = beginObservation();
   if (obs.verdict === "skipped") return;
-  let state;
   try {
     if (obs.verdict === "no-commit") { obs.finish([]); return; }   // nothing landed. Assert nothing.
     // BEFORE the record or anything derived from state is written: an unreadable file refuses here,
     // so no anchor advance, no heal, no render and no detour-log line follows
     // (state-file-refuses-to-guess; conductor.mjs maps the refusal to exit 2 for this hook). The
     // commit therefore stays after the anchor and the first readable run reports it.
-    state = loadState();
+    const state = loadState();
+    const ctx = detourContext(state);
+
+    if (obs.verdict === "landed") {
+      // The observed path needs no parser at all: each subject comes from its commit, which is what
+      // closes `-am` / `-F` / editor commits / escaped quotes as a class rather than one flag form
+      // at a time.
+      const commits = obs.candidates.map(c => ({ sha: c.sha, subject: commitSubject(c.sha) || "" }));
+      // gh#129 — the commit-TIME half of the attribution obligation, and ONLY on the observed rung:
+      // on the unverifiable rung nothing is known to have landed, and naming HEAD there would
+      // assert a commit the repository never confirmed against an APPEND-ONLY array.
+      const attribution = attributionNudge(state, ctx, commits.map(c => c.sha));
+      runNudge(state, ctx, commits, attribution, event);
+    } else {
+      const subject = unverifiableSubject(cmd);
+      // null: the unverifiable rung, and the old heuristic said no.
+      if (subject !== null) runNudge(state, ctx, [{ sha: null, subject }], null, event);
+    }
+    // The record LAST, once the output naming these commits has been written: a commit is reported
+    // when the output names it, so a run that dies before that point must leave it after the anchor
+    // for the next run. Repeating a report is already guarded where rows are written (the prefix-
+    // matched duplicate check); dropping one would be silent. The cost is that the lock is held
+    // across render() and the self-heal save, so a concurrent observation skips more often — and a
+    // skip only defers.
     obs.finish(obs.candidates.map(c => c.sha));
   } finally { obs.release(); }
-  const ctx = detourContext(state);
-
-  if (obs.verdict === "landed") {
-    // The observed path needs no parser at all: each subject comes from its commit, which is what
-    // closes `-am` / `-F` / editor commits / escaped quotes as a class rather than one flag form at
-    // a time.
-    const commits = obs.candidates.map(c => ({ sha: c.sha, subject: commitSubject(c.sha) || "" }));
-    // gh#129 — the commit-TIME half of the attribution obligation, and ONLY on the observed rung:
-    // on the unverifiable rung nothing is known to have landed, and naming HEAD there would assert
-    // a commit the repository never confirmed against an APPEND-ONLY array.
-    const attribution = attributionNudge(state, ctx, commits.map(c => c.sha));
-    runNudge(state, ctx, commits, attribution, event);
-    return;
-  }
-  const subject = unverifiableSubject(cmd);
-  if (subject === null) return;              // unverifiable rung, and the old heuristic said no
-  runNudge(state, ctx, [{ sha: null, subject }], null, event);
 }
 
 /** The epic a commit that just landed belongs to, or null wherever the engine would have to
