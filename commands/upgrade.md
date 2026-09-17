@@ -227,9 +227,12 @@ different commit.
 migration only stamps epics that are already `archived` in state; the archive-drift heal flips the
 rest to `archived` *afterwards* and stamps them `unknown` at that moment. So every repo that
 followed the documented `/opsx:archive` → heal flow lands on `unknown` rather than `delivered`,
-by one step. That is the expected shape, not a bug. The check names the exact remedy —
-`update-epic <id> --status archived --outcome delivered --no-deferrals` — and the archive gate
-lets an agent replace an engine-written stamp, so nothing is stuck at `unknown`.
+by one step. That is the expected shape, not a bug. Run the step each finding prints rather than a
+bare `update-epic <id> --status archived --outcome delivered --no-deferrals`: the step consults what
+`delivered` requires of that epic, naming a stories source's `update-epic <id> --story <n> --done`
+first, or carrying `--carried-to <epicId> --reason "<which tasks moved>"` for a checkbox source with
+open tasks — the bare form is refused on open work. The archive gate lets an agent replace an
+engine-written stamp, so nothing is stuck at `unknown`.
 
 **Two things about the emitted output will differ from `0.26.0`, deliberately.** The "Sync after
 completing tracker-linked work" reminder now leaves the rules block where no inward procedure is

@@ -368,7 +368,7 @@ Pairs: 7.0–7.1 land with 7.2. The single-writer rule for hierarchy runs is NOT
 
 ## 10. Docs (after Gate 2)
 
-- [ ] 10.1 `commands/tracker.md` — "ongoing responsibilities" split by direction; the worked listing
+- [x] 10.1 `commands/tracker.md` — "ongoing responsibilities" split by direction; the worked listing
       step with `--limit`, `updatedAt` and the truncation stop; the secondary watermark step; the
       non-github key placeholder; the quoting rule for item values; the `--repo` shape — `owner/name` or
       GitHub Enterprise `HOST/owner/name` (Gate 2 E-I2) — and its `--remove` exemption, which is
@@ -378,15 +378,16 @@ Pairs: 7.0–7.1 land with 7.2. The single-writer rule for hierarchy runs is NOT
       `suggest-lane "<issue-title>"` — the emitted step is now `suggest-lane --ask=<issue-title>`
       (found by 9.1's sweep; sync.md is not otherwise in this section); ALSO `commands/tracker.md:127`,
       whose outward record-the-key form lacks `--external-updated-at <iso>` (Gate 2 minor)
-- [ ] 10.2 `commands/unconsidered-outcomes.md` — `deliveredBlockedBy`, and that an openspec-lane epic
+- [x] 10.2 `commands/unconsidered-outcomes.md` — `deliveredBlockedBy`, and that an openspec-lane epic
       never reviewed at Gate 2 is not offered `delivered`; a checkbox source's handoff blocker's remedy is
       the `delivered` archive carrying `--carried-to <epicId> --reason "<which tasks moved>"` (Gate 2 U-I1)
-- [ ] 10.3 (moved to 7.0/7.2 — the review-mode unset line is test-driven)
-- [ ] 10.4 `skills/conductor/SKILL.md` — tracker section (limit, watermark on secondaries, key
+- [x] 10.3 (moved to 7.0/7.2 — the review-mode unset line is test-driven; satisfied there: 7.0 and 7.2 are
+      ticked and `commands/review-mode.md` names `update-epic <id> --clear review-mode`)
+- [x] 10.4 `skills/conductor/SKILL.md` — tracker section (limit, watermark on secondaries, key
       placeholder, quoting item values, direction kept on a vendor switch), the brief's two tracker
       lines, `deliveredBlockedBy`; ALSO `SKILL.md:243`, whose outward record-the-key form lacks
       `--external-updated-at <iso>` (Gate 2 minor)
-- [ ] 10.4a `commands/status.md` "Auditing the record itself" — the new
+- [x] 10.4a `commands/status.md` "Auditing the record itself" — the new
       `tracker-repo-not-a-github-repository` check in its enumeration (Gate 2 E-I2), and that
       `delivered-release-epic-left-open`'s archive alternative carries `--carried-to` for a checkbox
       source with open tasks (Gate 2 E-I5); the drift-heal step's new shape — `heal-archived-epic-passed-gate-2`
@@ -396,13 +397,13 @@ Pairs: 7.0–7.1 land with 7.2. The single-writer rule for hierarchy runs is NOT
       (Gate 2 F-M1); ALSO `commands/status.md:136`, whose 0.27.0 upgrade note still calls the bare
       `update-epic <id> --status archived --outcome delivered --no-deferrals` "the exact remedy" — it is now the
       printed step, which names a stories source's `--story <n> --done` first or carries `--carried-to` (Gate 2 F-M4)
-- [ ] 10.4b `commands/upgrade.md:231` — the same 0.27.0 note calls the bare `--outcome delivered --no-deferrals`
+- [x] 10.4b `commands/upgrade.md:231` — the same 0.27.0 note calls the bare `--outcome delivered --no-deferrals`
       form "the exact remedy"; name the check's printed step instead, as 10.4a does (Gate 2 F-M4)
-- [ ] 10.5 `README.md` where tracker sync, `unconsidered-outcomes` or gate recording are described
-- [ ] 10.5a `commands/lane-routing.md` and README's verb reference / flag table — `suggest-lane --ask=<text>`,
+- [x] 10.5 `README.md` where tracker sync, `unconsidered-outcomes` or gate recording are described
+- [x] 10.5a `commands/lane-routing.md` and README's verb reference / flag table — `suggest-lane --ask=<text>`,
       why it exists (a flag-shaped text cannot be passed positionally), and that the positional form is
       unchanged; `docs/parity-ledger.json` needs no change (no new file)
-- [ ] 10.6 `CHANGELOG.md` `[Unreleased]` — Fixed (remedies that were refused; secondary recipe, jira ids,
+- [x] 10.6 `CHANGELOG.md` `[Unreleased]` — Fixed (remedies that were refused; secondary recipe, jira ids,
       30-item cap, unquoted repo and item titles, stale scope and silent outward switch on vendor change; docs teaching refused gate forms and
       hand-edits; Gate 2: primary `set-tracker --remove` saving a refused repo, the brief's outward
       remedy without a watermark, GitHub Enterprise repos refused, raw epic ids in printed invocations,
@@ -413,7 +414,8 @@ Pairs: 7.0–7.1 land with 7.2. The single-writer rule for hierarchy runs is NOT
       (`deliveredBlockedBy`; the emitted-invocation sweep, incl. the whole-output Layer A and the
       printed-template reach scan; the `tracker-repo-not-a-github-repository` integrity check; the
       brief's `blocked-without-depends-on` remedy entry)
-- [ ] 10.7 Full suite green, written to a file and read from the file
+- [x] 10.7 Full suite green, written to a file and read from the file — 1757 tests, 1757 pass, 0 fail
+      (`node --test scripts/test/*.test.mjs`, exit 0, read back from the saved output)
 
 ## 11. Gate 2 and close
 

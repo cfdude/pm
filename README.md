@@ -309,6 +309,27 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" set-tracker --role secondary 
 
 See `commands/tracker.md` for the full `--role`/`--remove` contract.
 
+**The inward recipe runs as written, for every role and system.** The primary and every secondary
+share one listing step — for `github-issues`, `gh issue list … --limit 1000 --json
+number,title,url,updatedAt,labels` (`gh` stops at 30 without `--limit`) with a **truncation stop**:
+a list that reached its bound may be truncated, so raise `--limit` and never run the closed-item
+step on it. Every secondary carries the watermark step the primary has. A system whose keys are not
+numbers derives its id from `<issue-key-slug>` (`ABC-123` → `jira-abc-abc-123`); the old
+`jira-abc-<issue-number>` line was refused. Item values are third-party text, so the recipe says to
+fill `<issue-title>`, `<issue-url>` and `<issue-key>` as ONE single-quoted word (`'` written as
+`'\''`, never double quotes) and emits them attached — `--title=<issue-title>`,
+`--external-url=<issue-url>`, `suggest-lane --ask=<issue-title>` — so a title like `--help` or
+``it's "done" $(touch pwned)`` reaches the engine as a title and runs nothing.
+
+**`set-tracker` refuses a `github-issues` `--repo` that is not `owner/name` or GitHub Enterprise
+`HOST/owner/name`**, for both roles, before writing anything — except `--role secondary … --remove`,
+which matches the recorded value exactly so a legacy malformed secondary stays removable; the primary
+gets no such exemption. A legacy repo failing the shape still loads, receives no `gh` line, and is
+named by `integrity`'s `tracker-repo-not-a-github-repository` with the re-record. **Switching a
+primary's vendor** drops the old `repo`/`projectKey`/`instance` the call does not re-give, printing
+each, and keeps the direction the repo was getting — a legacy github-issues primary switched to
+jira no longer silently turns on outward issue creation.
+
 **Resyncing after completion:** where at least one configured tracker has an **emittable inward
 procedure** — direction includes `inward` *and* it names a scope to read — the rules block
 instructs the agent to re-sync (`/pm:sync`) right after closing/transitioning a linked issue as
@@ -339,6 +360,14 @@ the open list is what proposes a disposition for an epic whose item is no longer
 disposition is what clears the count. Measured on this repository when the old behavior was filed
 as a bug: 59 counted, 29 of them already ended or closed, and `/pm:sync` — the action the line
 names — could not clear those 29, because an epic that ended has no open item to read.
+
+The line's remedy clears every epic it counts: re-read each and record
+`record-tracker-refresh <id> --verdict unchanged|material-change --external-updated-at <iso>`,
+which `/pm:sync` does for the items it lists — an epic linked through an outward-only primary is
+listed by no inward step. The outward "record its key" line carries `--external-updated-at <iso>`,
+so an outward-created link starts with a watermark. With any secondary tracker configured, the
+mirror line says only what the record shows: `✓ every active epic carries an external link (this
+record cannot tell which tracker holds it)`.
 
 ## Commands
 
@@ -531,7 +560,20 @@ archived `delivered` epic that does not archive may not break a Gate 2 or handof
 archive met** (for example `--lane openspec` with no Gate 2). The comparison is per obligation, and
 one that already failed is no ground for refusal. The refusal writes nothing and prints one
 runnable `update-epic` invocation that records the disposition the change implies and goes through
-the full gate. See `commands/epic.md`.
+the full gate. **Each broken obligation's remedy is printed first**, and the invocation keeps
+offering `delivered`: a broken Gate 2 names the re-record with its sha range; an attribution
+withdrawn by an amend names two lines in a load-bearing order — re-record Gate 2 over the replacing
+commit, THEN `--attribute-commit` it (attributing first is refused); a checkbox source's open tasks
+put `--carried-to <epicId> --reason "<which tasks moved>"` on the invocation itself, a handoff that
+goes only with `delivered`. See `commands/epic.md`.
+
+**Every gate remedy the engine prints carries its gate's evidence** — `--base-sha`/`--head-sha` for
+Gate 2, `--artifact` for Gate 1 — rendered from one declaration, so an archive refusal, `integrity`,
+the brief and `update-epic` cannot print a pass form the engine then refuses. An epic id inside any
+printed command is shell-quoted when it falls outside the id format (a legacy `My Plan`), and a
+permanent suite test extracts every invocation pm emits or ships, checks it against the engine's
+argv surface, and executes every engine-printed remedy against a fixture reproducing its finding,
+asserting the finding is gone.
 
 **A withdrawn Gate 2 is withdrawn, never absent.** `--withdraw-gate-review 2` moves the verdict out,
 so the obligation reappears exactly as for a gate never recorded — a withdrawal discharges nothing —
@@ -788,7 +830,10 @@ because declining by never registering the ask destroys the record that anyone c
 `set-lane-routing --add "<match>:<lane>" [--add …] | --remove "<match>" | --clear` defines
 keyword/glob rules checked before the generic lane heuristic — for when "anything touching
 billing always goes through openspec" needs to be a rule, not a CLAUDE.md carve-out.
-`suggest-lane "<free text>"` looks one up.
+`suggest-lane "<free text>"` looks one up; `suggest-lane --ask=<text>` is the same lookup for a
+text that is shaped like a flag (`--limit=5 ignored`, `--help`), which cannot be passed positionally
+because the engine classifies the token, not the shell word. The positional form is unchanged;
+passing both is refused. The emitted tracker recipes use `--ask=`.
 
 **It is an input, not an answer.** Routing reads THE ASK — words, size, the overrides recorded
 here — and nothing else; it cannot ask whether the work serves something the project already
@@ -941,8 +986,9 @@ openspec-lane epic with a passing Gate 2 and no (or a withdrawn) Gate 1, an epic
 again (`archived-with-withdrawn-gate-2`), an epic the archive-drift heal flipped that reads `outcome: unknown`
 while carrying a passing Gate 2, an epic sitting in a status the engine does not define, a dangling
 epic reference, an archive directory no epic corresponds to, **a recorded commit sha this repository can no longer resolve**, an epic still
-open in a release that has already delivered, and an epic another epic declares it supersedes
-that never ended.
+open in a release that has already delivered, an epic another epic declares it supersedes
+that never ended, and a `github-issues` tracker whose recorded repo is not `[HOST/]owner/name`
+(`tracker-repo-not-a-github-repository`, which gets no `gh` listing step until it is re-recorded).
 
 **The release one closes a real loop.** A release object carries no delivery marker, so "this
 release delivered" is read from its members: at least one holds a `delivered` disposition, and
@@ -951,7 +997,11 @@ non-terminal that the release's own `deferred[]` does not name is reported, beca
 says neither that it shipped nor that it was cut. That is the shape of #137: 0.27.0 shipped, all
 twenty of its member epics stayed `queued`, and `next` recommended two P0s that had shipped hours
 earlier. Both new checks report only epics whose status is non-terminal, so neither can add a
-finding for work that has already ended.
+finding for work that has already ended. The finding offers two alternatives, each clearing it on
+its own: archive it — naming first what `delivered` requires (a Gate 2 re-record with its range for
+an openspec member never reviewed, and `--carried-to <epicId> --reason "<which tasks moved>"` on
+the archive for a checkbox source with open tasks) — or `release <id> --defer <epicId> --reason
+"<why>"`.
 
 **That last one has a deadline.** The shas in `attributedCommits` and in a gate verdict's
 `baseSha`/`headSha` *are* the evidence — "a reviewer read this range" is only checkable while the
@@ -978,9 +1028,11 @@ the work.
 **Expect a burst of `heal-archived-epic-passed-gate-2` on your first run after upgrading.** Every
 repo that followed the documented `/opsx:archive` → heal flow lands on `outcome: unknown` rather
 than `delivered` — the migration only stamps epics already `archived` in state, and the heal flips
-the rest afterwards — so they miss it by one step. That is expected, not a bug; the finding names
-the exact remedy (`update-epic <id> --status archived --outcome delivered --no-deferrals`), and
-the archive gate lets an agent replace an engine stamp, so nothing is frozen at `unknown`.
+the rest afterwards — so they miss it by one step. That is expected, not a bug; run the step the
+finding prints — a stories source's `update-epic <id> --story <n> --done` first where a story is
+open, or the archive carrying `--carried-to <epicId> --reason "<which tasks moved>"` for a checkbox
+source with open tasks, rather than the bare `--outcome delivered --no-deferrals` the gate refuses on
+open work — and the archive gate lets an agent replace an engine stamp, so nothing is frozen at `unknown`.
 
 Every check is reported with its count **including the ones that found nothing**, so a check that
 measured nothing is visibly a check that ran. It writes no state, blocks no command and repairs
@@ -1143,6 +1195,13 @@ stamp can be evidence-derived — the 0.27.0 migration wrote `delivered` whereve
 verdict existed — and handing those back would ask an agent to re-derive what the record already
 derived correctly. An `unknown` value alone is not enough either, because an epic carrying no
 disposition at all also reads `unknown`, and that is a state no archive path produces.
+
+**It offers only the outcomes the archive gate accepts for that epic.** An openspec-lane epic never
+reviewed at Gate 2 is not offered `delivered` (gh-189: 12 of 20 entries printed a choice that
+exited 1). Each entry's `deliveredBlockedBy` — always present, `[]` when nothing blocks — lists
+`{kind, detail, remedy}` per blocking obligation, in the order to run them, Gate 2 before the
+handoff; a checkbox source's handoff remedy is the `delivered` archive carrying `--carried-to
+<epicId> --reason "<which tasks moved>"`. Recording the blocker re-offers `delivered` on the next call.
 
 Where a record genuinely cannot be reconstructed, `--outcome unreconstructable` says so with its
 required reason. The set shrinks only by somebody deciding — never by the engine guessing.

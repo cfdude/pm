@@ -49,6 +49,54 @@ what follows.
   reports. The lock is broken on liveness — at once for a dead holder, after 10 s where liveness
   cannot be confirmed, never for age while its holder is confirmed alive — and a run releases only
   its own lock.
+* **Remedies the engine printed and then refused.** `integrity`'s `delivered-release-epic-left-open`
+  printed a `delivered` archive for an openspec member with no Gate 2 (exit 1), and the archive
+  refusal's own Gate 2 remedy lacked `--base-sha`/`--head-sha` (exit 1 again). Every gate remedy is
+  now rendered from one declaration carrying its gate's evidence — the sha range for Gate 2,
+  `--artifact` for Gate 1 — including `integrity`'s malformed-value finding, which is now gate-aware.
+  `unconsidered-outcomes` and `integrity`'s `epic-in-undefined-status` offer `delivered` only where the
+  archive gate would accept it (gh-189: 12 of 20 entries printed a choice that exited 1). An amend that
+  withdrew an archived `delivered` epic's only attribution printed attribute-first, which is refused;
+  every site now prints the Gate 2 re-record THEN `--attribute-commit`.
+* **Tracker recipes that could not run as written.** The secondary `gh issue list` line requested no
+  `updatedAt` while its registration line required one, and the secondary section had no watermark
+  step. `gh issue list` without `--limit` stops at 30 items, so later items were never registered and
+  the closed-item step proposed archiving their epics; the step now passes `--limit 1000` with a
+  truncation stop. A jira registration line derived `jira-abc-<issue-number>`, refused for the key
+  `ABC-123`; non-numeric keys now derive `<issue-key-slug>`. A `github-issues` `--repo` was spliced
+  into a shell line unquoted (`--repo 'a/b; touch pwned'` was accepted) and is now refused unless it
+  is `owner/name`. Item titles were wrapped in double quotes with no instruction; the recipe now
+  says to fill item values as one single-quoted word and emits `--title=`, `--external-url=` and
+  `suggest-lane --ask=`, so a title like `--help` or ``$(touch pwned)`` stays data. Both inward
+  sections pointed at `/pm:epic list`, which does not exist; an inward-only primary's completion-sync
+  reminder cited "writeback steps above" that the block never emitted.
+* **A primary vendor switch kept a stale scope and could silently turn on outward creation.**
+  `set-tracker --system jira --project ABC` kept the old `repo`, which headed the jira section and
+  seeded its ids; the old `repo`/`projectKey`/`instance` not re-given are now dropped and each is
+  printed. A legacy github-issues primary with no recorded direction became an outward jira
+  tracker; the switch now records the direction the old tracker resolved to, and says so.
+* **The brief claimed what it could not check.** `✓ all active epics are mirrored to jira` printed
+  while the active epic was linked to a GitHub secondary; with any secondary it now says every
+  active epic carries an external link. `never re-read — run /pm:sync` counted epics `/pm:sync` never
+  reads; it now names `record-tracker-refresh`, which clears every epic it counts, and the outward
+  record-the-key line carries `--external-updated-at` so an outward-created link starts with a
+  watermark.
+* **Shipped docs taught refused gate forms and hand-edits.** The hierarchy child's `record-gate-review
+  --gate 1|2 --verdict pass` exited 1; SKILL and `/pm:review-mode` taught the sha range for Gate 1,
+  which records the wrong kind of evidence — every form now matches its gate. `/pm:review-mode` said
+  an epic override had no unset (`update-epic <id> --clear review-mode` clears it). `/pm:upgrade` named
+  a nonexistent `/pm:integrity`; `/pm:cross-spec-review` ran a checkout-only path. `init`'s stderr,
+  the commit nudge, `/pm:init` and SKILL told the agent to edit `state.json`; each now names the verb.
+* **Gate 2 fixes to the above.** A primary `set-tracker --remove` saved a refused `--repo` (the
+  `--remove` exemption now applies to the secondary role only). The brief's not-yet-in-the-outward-
+  tracker remedy recorded no watermark. The repo shape refused GitHub Enterprise; `HOST/owner/name`
+  is accepted. Printed invocations interpolated raw epic ids; every one now goes through
+  `printedId()`, which shell-quotes an id outside the id format (a legacy `My Plan`). A checkbox-source
+  release member was offered an archive the gate refuses on open tasks; the drift-heal step's archive
+  was refused on open work too (it now names a stories source's `--story <n> --done` first, or carries
+  `--carried-to <epicId> --reason "<which tasks moved>"`); `update-epic`'s archived-`delivered`
+  regression refusal printed an invocation missing that handoff flag (it now carries it, only with
+  `delivered`); and `unconsidered-outcomes` named a checkbox handoff blocker with an empty remedy.
 
 ### Added
 
@@ -58,6 +106,23 @@ what follows.
   without them. Refuses, naming why and writing nothing: a value that is not a hex sha (a ref such as
   `HEAD`), no matching row, a `MINIMAL`-only row, an already-retracted commit, a missing or empty
   reason, a too-short or ambiguous sha of a pruned commit, and a detached tree. #173
+* **`deliveredBlockedBy` on every `unconsidered-outcomes` entry** — always present, `[]` when nothing
+  blocks: `{kind, detail, remedy}` per obligation blocking `delivered`, in the order to run them
+  (Gate 2 before the handoff). A checkbox source's handoff remedy is the `delivered` archive carrying
+  `--carried-to <epicId> --reason "<which tasks moved>"`.
+* **`suggest-lane --ask=<text>`** — the same lookup for a flag-shaped text, which cannot be passed
+  positionally. The positional form is unchanged; both together are refused.
+* **The `tracker-repo-not-a-github-repository` integrity check** — names a `github-issues` tracker
+  whose recorded repo fails `[HOST/]owner/name` (it gets no `gh` step), with the re-record, and for a
+  secondary its `--remove` printed shell-quoted.
+* **The emitted-invocation sweep** (`scripts/test/emitted-invocations.test.mjs`): every invocation in
+  the rules block (every platform × tracker role/system/direction), `init`, the commit nudge and the
+  shipped docs passes the pre-dispatch check; every engine-printed remedy is executed against a
+  fixture reproducing its finding and the finding is asserted gone; Layer A also reads the whole output
+  of every run in the file, and a source scan requires every printed-invocation template in
+  `scripts/lib` to be reached by a fixture. Deliberate refused examples in docs carry
+  `<!-- pm:refused <class> -->`, and the argv check reports a refusal `class`.
+* **The brief's `blocked-without-depends-on` remedy** is a registered brief remedy with its own fixture.
 
 ### Changed
 
@@ -71,6 +136,11 @@ what follows.
   row.
 * **On unreadable `state.json`, `commit-nudge` writes nothing, the observation record included**, on
   both post-call events, so the commit is reported by the first run after the file is repaired.
+* **The rules block's tracker sections change for every tracker-configured repo** — the listing
+  step, the quoting sentence, the secondary watermark step, the non-numeric key placeholder and the
+  reminder wording — and are re-rendered by `/pm:upgrade`. No `state.json` change and no migration.
+  A repo whose recorded `github-issues` repo fails `[HOST/]owner/name` stops receiving a literal `gh`
+  line (it gets the vendor-neutral step) until it re-runs `set-tracker`, and `integrity` names it.
 
 ## [0.44.0] — 2026-09-16
 

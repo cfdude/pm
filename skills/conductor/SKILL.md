@@ -240,16 +240,31 @@ the verb, since a repeated `set-tracker --remove` exits 1 before its block write
   inward-only any more and `jira`/`linear` are not outward-only; before you act on a tracker,
   read its recorded `direction` out of `.conductor/state.json`.
   - **`outward`** — create an issue for any epic lacking `externalId`, record the key with
-    `update-epic <id> --external-id <KEY> --external-url <url>`, and transition the linked issue
-    toward the `statusIntent` semantic target on each status change. The brief lists only
-    unmirrored epics; it never fabricates transition drift.
-  - **`inward`** — as part of `/pm:sync`, list open items in the tracker's scope and register the
-    ones whose `externalUrl` matches no epic, using the recipe the rules block emits. That recipe
-    **runs as written**: it carries a derived `--id` (`<system>-<scope>-<number>`, so the same
-    item yields the same epic id in every repo and session and a re-run is refused as a duplicate
-    rather than inventing a slug), a `<lane>` from `suggest-lane` rather than a hardcoded
-    `claude-code`, and `--external-updated-at` so a freshly mirrored epic starts with a watermark.
-    A `P0`/`P1`/`P2`/`P3` label overrides the `P2` default.
+    `update-epic <id> --external-id <KEY> --external-url <url> --external-updated-at <iso>` (`<iso>`:
+    the created issue's own updated timestamp, so an outward-created link starts with a watermark and
+    never enters the never-re-read count), and transition the linked issue toward the `statusIntent`
+    semantic target on each status change. The brief lists only unmirrored epics; it never
+    fabricates transition drift.
+  - **`inward`** — as part of `/pm:sync`, list ALL open items in the tracker's scope and register
+    the ones whose `externalUrl` matches no epic, using the recipe the rules block emits. The
+    listing step is one declaration shared by the primary and every secondary: for `github-issues`
+    it is `gh issue list … --limit 1000 --json number,title,url,updatedAt,labels` (`gh` returns 30
+    items without `--limit`), and it carries a **truncation stop** — a list that reached its bound
+    may be truncated, so raise `--limit` and never run the closed-item step on it. Other systems
+    are told to read every page. That recipe **runs as written**: it carries a derived `--id`
+    (`<system>-<scope>-<number>`, so the same item yields the same epic id in every repo and
+    session and a re-run is refused as a duplicate rather than inventing a slug; for a system whose
+    keys are not numbers, `<issue-key-slug>` — the key lowercased with every run outside `a-z0-9`
+    turned into `-`, so `ABC-123` gives `jira-abc-abc-123`), a `<lane>` from `suggest-lane
+    --ask=<issue-title>` rather than a hardcoded `claude-code`, and `--external-updated-at` so a
+    freshly mirrored epic starts with a watermark. A `P0`/`P1`/`P2`/`P3` label overrides the `P2`
+    default.
+    **Item values are quoted by you, as the recipe says.** `<issue-title>`, `<issue-url>` and
+    `<issue-key>` are third-party text: fill each as ONE single-quoted word, writing every `'`
+    inside as `'\''`, never in double quotes (`$(…)`, backticks and `"` change the command). The
+    line uses `--title=`, `--external-url=` and `--ask=` because the engine classifies a token, not
+    a shell word: a title such as `--limit=5 ignored` or `--help` reaches the engine as a value
+    only in the attached form.
     The pull has a **reciprocal half**: the list is of OPEN items, so an epic linked to an item
     that is not in it has an item that is no longer open. Read that item — absence from a list
     also covers deleted, transferred and out-of-scope — and where the epic is not already
@@ -267,6 +282,18 @@ the verb, since a repeated `set-tracker --remove` exits 1 before its block write
     tracker is the consequential default and must be chosen. Remedy:
     `set-tracker --system jira --direction outward`. Existing repos are unaffected; the migration
     stamped each tracker with the direction it already behaved with.
+  - **Switching a primary's vendor keeps the direction and drops the old scope.** When `--system`
+    differs from the recorded system, `repo`/`projectKey`/`instance` not re-given in the same call
+    are dropped, each printed (`conductor: dropped repo="o/n" recorded for github-issues`); an
+    unrecorded direction is recorded as the one the old tracker RESOLVED to, and printed, so a
+    legacy github-issues primary switched to jira stays `inward` instead of silently gaining outward
+    creation. `statusIntent` and `mechanism` are kept.
+  - **A `github-issues` `--repo` is `owner/name` or GitHub Enterprise `HOST/owner/name`**, refused
+    otherwise before anything is written, for both roles — except `--role secondary … --remove`,
+    which matches the recorded value exactly so a legacy malformed secondary stays removable (the
+    primary has no remove handler and gets no exemption). A legacy repo failing the shape still
+    loads but receives no `gh` line, and `integrity`'s `tracker-repo-not-a-github-repository`
+    names it with the re-record.
 
   See `commands/tracker.md` and `commands/sync.md`.
 - **Primary + secondary trackers:** exactly one **primary** tracker (`state.tracker`, everything
@@ -275,7 +302,8 @@ the verb, since a repeated `set-tracker --remove` exits 1 before its block write
   with the same flags plus `--remove`. Re-running with a matching `system`+`repo`/`project`
   upserts in place (namespace-prefixed key — `repo`- and `project`-keyed entries never collide
   even if the string values match). A secondary tracker gets inward pull (same as `github-issues`
-  above, but deduped by `externalUrl` — globally unique — not bare `externalId`, since two
+  above — the same listing step, registration line, and a **watermark step** before its closed-item
+  step — but deduped by `externalUrl` — globally unique — not bare `externalId`, since two
   secondary trackers can each have an issue numbered the same) plus a new capability, **status
   writeback**: when an epic sourced from a secondary tracker reaches `archived`, you close the
   linked issue there too. It NEVER gets outward-created issues — that stays exclusive to the
@@ -299,6 +327,14 @@ the verb, since a repeated `set-tracker --remove` exits 1 before its block write
   **provenance** — does this epic have an `externalId` — never on direction: an epic with none
   re-reads its LOCAL source (plan, or proposal plus tasks) and `record-tracker-refresh` refuses it
   by name.
+- **The brief's two tracker lines claim only what the record shows.** The never-re-read line names
+  a remedy that clears every epic it counts — re-read each and record it with
+  `record-tracker-refresh <id> --verdict unchanged|material-change --external-updated-at <iso>`,
+  `/pm:sync` doing that for the items it lists — because an epic linked through an outward-only
+  primary is read by no inward step, and pointing only at `/pm:sync` left it counted forever. The
+  mirror line, with any secondary tracker configured, reads `✓ every active epic carries an
+  external link (this record cannot tell which tracker holds it)` instead of claiming every epic is
+  mirrored to the primary: an external id does not say which tracker it came from.
 - **The brief's freshness line counts only epics that can still become work.** `⚠ N
   tracker-linked epic(s) never re-read since mirroring` excludes every `archived` epic: the
   ARCHIVE DISPOSITION discharges the refresh obligation outright, whatever the outcome, because
@@ -778,7 +814,12 @@ it waits on.
   EXCLUDED, because re-deciding it would ask you to re-derive what the record already got right,
   and so is an agent-recorded outcome, whatever its value — somebody was asked. Where a record
   genuinely cannot be reconstructed, `--outcome unreconstructable` says so with its required
-  reason. The set shrinks only by somebody deciding; the engine never guesses. Note the SEAM: an
+  reason. The invocation offers only outcomes the archive gate would accept for THAT epic: an
+  openspec-lane epic with no passing Gate 2 is not offered `delivered`, and each row's
+  `deliveredBlockedBy` (always present, `[]` when nothing blocks) lists `{kind, detail, remedy}`
+  per blocking obligation, in the order to run them — Gate 2 before the handoff. A checkbox
+  source's handoff remedy is the `delivered` archive itself carrying `--carried-to <epicId>
+  --reason "<which tasks moved>"`. The set shrinks only by somebody deciding; the engine never guesses. Note the SEAM: an
   epic sitting in an undefined status such as `done` is NOT archived, so this walker cannot reach
   it — `integrity`'s unknown-status check reports that one, and this verb reaches it only after a
   human moves it to `archived`.

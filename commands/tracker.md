@@ -123,8 +123,16 @@ items in …" step would carry an unfilled placeholder and could not be run as w
 
 ## Your ongoing responsibilities once a tracker is set
 
+What you owe depends on the tracker's `direction` — the rules block emits only the section(s) that
+direction calls for.
+
+**Outward (`outward` or `both`)** — local epics mirrored out:
+
 - An epic with no `externalId` → create the issue in the tracker, then record its key:
-  `update-epic <id> --external-id <KEY> --external-url <url>`.
+  `update-epic <id> --external-id <KEY> --external-url <url> --external-updated-at <iso>`, where
+  `<iso>` is the created issue's own updated timestamp. That watermark is what keeps an
+  outward-created link out of the brief's "never re-read" count — without it the count names an
+  epic `/pm:sync` never reads.
 - An epic changes status → transition the linked issue toward the `statusIntent` semantic target,
   resolving the real workflow transition with your own tooling.
 - A parent epic → create it as a tracker epic and link its children.
@@ -132,6 +140,11 @@ items in …" step would carry an unfilled placeholder and could not be run as w
 The brief's `TRACKER SYNC` line lists epics still needing an issue created. Transition sync is on
 you at the moment of each status change — the engine cannot see the tracker's state and will not
 fabricate transition drift.
+
+**Inward (`inward` or `both`)** — tracker items pulled in, as part of `/pm:sync`: list every open
+item, register the ones not yet mirrored, re-read the ones updated since their watermark, and
+propose a disposition for a linked epic whose item is no longer open. The steps are worked through
+below.
 
 ## Inward sync, worked through on `github-issues` (items → new untriaged epics)
 
@@ -149,26 +162,54 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" set-tracker --system github-i
 Once set, the CLAUDE.md rules block gains a "GitHub issue sync" section. As part of running
 `/pm:sync`:
 
-1. `gh issue list --repo <repo> --state open --json number,title,url,labels`.
+1. `gh issue list --repo <repo> --state open --limit 1000 --json number,title,url,updatedAt,labels`.
+   - **`--limit` is explicit.** Without it `gh issue list` returns at most 30 items, so items past
+     30 were never registered and the closed-item step then proposed archiving every linked epic
+     whose item was on page two. 1000 is a bound, not a claim about any repo's size: **if the list
+     returns 1000 items it may be truncated — raise `--limit` and list again, and do not run the
+     closed-item step on a list that reached its bound.** A system with no CLI pm can name gets
+     the same stop in its own words: list every page, or do not run the closed-item step.
+   - **`updatedAt` is requested** because the registration line in step 3 needs the item's
+     updated timestamp. The secondary section's listing line used to omit it, so its own
+     registration line could not be filled.
    - **Preflight first (#105):** this step needs the `gh` CLI **and** an authenticated
      GitHub account — `command -v gh` and `gh auth status`. Neither is a pm dependency, so
      check rather than assume. If either is missing, say so, name what to install or
      authenticate, and stop the section. An inward sync is a READ of the tracker and has no
      credential-free substitute (anonymous listing is not available), so reporting a clean
      sync you could not perform is the failure mode to avoid.
-2. For each issue, check whether an epic already carries that item's `externalUrl` — if so, skip
-   it. Re-running sync must never create a duplicate epic for the same issue. `externalUrl` is
-   globally unique; a bare `externalId` is only unique within one tracker/repo.
+2. For each issue, check `.conductor/state.json` for an epic that already carries that item's
+   `externalUrl` — if so, skip it. Re-running sync must never create a duplicate epic for the same
+   issue. `externalUrl` is globally unique; a bare `externalId` is only unique within one
+   tracker/repo. (Reading the file is not a hand-edit. The step used to point at `/pm:epic list`,
+   which does not exist.)
 3. Otherwise register it with the recipe the rules block emits, which **runs as written**:
-   `add-epic --id <derived> --status untriaged --external-id <issue-number> --external-url
-   <issue-url> --lane <lane> --title "<issue-title>" --external-updated-at <iso> --priority P2`,
+   `add-epic --id <derived> --title=<issue-title> --status untriaged --external-id <issue-number>
+   --external-url=<issue-url> --external-updated-at <issue-updated-at> --lane <lane> --priority P2`,
    unless the issue carries a `P0`/`P1`/`P2`/`P3` label, in which case use that label's priority.
+   - **Item values are filled as ONE shell-quoted word.** `<issue-title>` and `<issue-url>` (and
+     `<issue-key>` on other systems) are third-party text. Wrap each in single quotes and write
+     every `'` inside it as `'\''`; never use double quotes, because `$(…)`, backticks and `"`
+     inside them change the command. A title such as ``it's "done" $(touch pwned) `id` `` then
+     reaches the engine byte-for-byte and runs nothing. The rules block states this sentence
+     directly above the line it governs.
+   - **`--title=` and `--external-url=` stay attached to their values.** Quoting changes what the
+     shell passes, never how the engine classifies a token: `--title '--limit=5 ignored'` is
+     refused as an unknown flag even quoted, while `--title='--limit=5 ignored'` — one word — is
+     stored exactly. The inline form is what lets a title that starts with `-`, or reads `--help`,
+     arrive as a title.
    - **`--id` is derived, not invented** — `<system>-<scope>-<number>`, so the same item yields
      the same epic id in every repo and every session and a second run is refused as a duplicate
      rather than landing under a slug the agent made up from the title. Two sessions hit exactly
      that failure the same afternoon, back when the emitted recipe omitted the required `--id`.
-   - **`<lane>` comes from lane routing** (`suggest-lane "<issue-title>"`), never a hardcoded
-     `claude-code`. The lane decides whether the work leaves any spec, plan or gate record;
+   - **A system whose keys are not numbers** (Jira's `ABC-123`) gets `--id
+     <prefix>-<issue-key-slug> … --external-id <issue-key>`, and the recipe defines the
+     placeholder inline: the key lowercased, every run of characters outside `a-z0-9` replaced by
+     `-` — `ABC-123` → `abc-123`, giving `jira-abc-abc-123`. The id repeats the project key on
+     purpose: a numeric suffix alone would derive one id for `ABC-123` and `XYZ-123`. The old
+     `jira-abc-<issue-number>` line was refused outright, since `ABC-123` is not a valid id suffix.
+   - **`<lane>` comes from lane routing** (`suggest-lane --ask=<issue-title>`, quoted the same
+     way), never a hardcoded `claude-code`. The lane decides whether the work leaves any spec, plan or gate record;
      hardcoding it decided that silently for every mirrored item. Override where routing is wrong
      and record why: `update-epic <id> --notes "lane: <chosen> not <routed> — <why>"`.
    - **`--external-updated-at`** carries the item's own updated timestamp, so a freshly mirrored
@@ -176,8 +217,51 @@ Once set, the CLAUDE.md rules block gains a "GitHub issue sync" section. As part
 4. `add-epic` rejects a duplicate (exits non-zero, writes nothing) as a second line of defense
    against a stale local view producing one.
 
+The emitted section then carries the watermark step (re-read each linked item updated since its
+`externalUpdatedAt`, and record it) and the closed-item step (propose a disposition for a linked
+epic whose item left the open list — never on a truncated list). For an openspec-lane epic the
+closed-item step adds that `delivered` also needs a passing Gate 2.
+
 The engine never calls `gh` itself — steps 1–3 are yours, the same "instruction layer, not
 integration layer" law as every other tracker.
+
+### `--repo` must be a GitHub repository
+
+A `github-issues` tracker's `--repo` is `owner/name`, or `HOST/owner/name` for GitHub Enterprise
+(the shape `gh issue list -R` accepts). Anything else is refused before anything is written, for
+the primary and a secondary alike, because the value lands in a shell line:
+`set-tracker --system github-issues --repo 'a/b; touch pwned'` used to be saved and emitted as
+`` `gh issue list --repo a/b; touch pwned …` ``.
+
+`conductor: --repo "a/b; x" is not a GitHub repository — a github-issues tracker records its repo as owner/name, or HOST/owner/name for GitHub Enterprise (letters, digits, `-`, and `.`/`_` in the name). Nothing was written.`
+
+- **`--remove` is exempt on the SECONDARY role only.** `set-tracker --role secondary --system
+  github-issues --repo <recorded value> --remove` matches the recorded value exactly and writes
+  nothing new, so a malformed secondary recorded before this rule stays removable. The primary
+  has no remove handler — `--remove` there falls through to the merge — so a primary `--remove`
+  with a malformed `--repo` is refused like any other.
+- **A repo recorded before the rule still loads**, and no emitter places it in a shell line: that
+  tracker gets the vendor-neutral "list open items with your own tooling" step instead of `gh`.
+  That loss is not silent — `integrity` reports `tracker-repo-not-a-github-repository` for it,
+  with the re-record that restores the `gh` step (for a secondary, its `--remove` first, printed
+  shell-quoted as one `--repo=` word).
+
+### Switching the primary tracker's vendor
+
+When `--system` names a different system than the one recorded:
+
+- **Scope the call does not re-give is dropped.** `repo`, `projectKey` and `instance` recorded for
+  the old system are deleted unless the same call passes them, and each is printed as it goes —
+  `conductor: dropped repo="o/n" recorded for github-issues`. Before this, `set-tracker --system
+  jira --project ABC` kept the old `repo`, which then headed the jira section and seeded its ids.
+  There is no restore verb: re-pass the field (`--repo`, `--project`, `--instance`).
+- **The direction you were getting is kept.** An explicit `--direction` is recorded; otherwise a
+  recorded direction is kept; otherwise the direction the old tracker RESOLVED to is recorded, and
+  said: `conductor: direction inward recorded — kept from the previous github-issues tracker, which
+  resolved to it; …`. A legacy github-issues primary with no recorded direction used to become an
+  outward jira tracker on the switch, turning on issue creation nobody asked for. Change it with
+  `set-tracker --direction <inward|outward|both>`.
+- `statusIntent` and `mechanism` are kept — they describe how you work, not where.
 
 ## Primary + secondary trackers
 
@@ -193,7 +277,10 @@ A secondary tracker gets exactly two behaviors, both narrower than primary:
 1. **Inward pull** — open issues become untriaged epics, same shape as the inward sync above and
    deduped by `externalUrl` (globally unique) rather than bare `externalId` (only unique within
    one tracker/repo — two secondary trackers can each have an issue numbered `#42` without
-   colliding).
+   colliding). The secondary section shares the primary's listing step (`--limit`, `updatedAt`,
+   the truncation stop) and its registration line, and carries the same **watermark step** before
+   its closed-item step — re-read each linked item updated since its `externalUpdatedAt` and
+   record it — which it used to lack.
 2. **Completion status writeback** — when an epic sourced from a secondary tracker reaches
    `archived`, you close/transition the linked issue there too. This is new: even the primary
    `github-issues` inward-only case never did this.

@@ -70,6 +70,23 @@ A quoted text that begins with `--` but is not shaped like a flag (it contains a
 still text. `--help` anywhere after either verb prints its
 help and writes nothing.
 
+### `--ask=<text>` — a text shaped like a flag
+
+Quoting changes what the shell passes, never how the engine classifies a token, so a text that IS
+flag-shaped cannot be passed positionally: `suggest-lane '--limit=5 ignored'`<!-- pm:refused unknown-flag --> is refused as an
+unknown flag, quoted or not, and a text reading `--help` prints help. Pass it attached to `--ask`
+instead — the value after `=` is never reclassified:
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" suggest-lane --ask='--limit=5 ignored'
+```
+
+The positional form is unchanged and is still the one to use for text you typed. `--ask` exists for
+text you did not write — a tracker item's title — which is why the emitted inward-sync recipes
+route with `suggest-lane --ask=<issue-title>`, the title filled as one single-quoted word. Giving
+both `--ask` and a positional text is refused as an extra argument (one verb, one text), and giving
+neither prints the usage.
+
 **`suggest-lane` is an input, not an answer.** It reads THE ASK and nothing else: the words, the
 size, the overrides recorded here. It cannot ask what a person would ask — whether this work
 SERVES something the project already committed to — because pm holds no milestone or product
