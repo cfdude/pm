@@ -27,6 +27,20 @@ the other. "Full bidirectional mirror" is likewise dropped as a description of t
 primary path: the two behaviors it named — create the issue, transition the issue — are both
 outward, and no non-`github-issues` primary has ever received an inward pull instruction.
 
+**One exception to the merge: scope does not survive a change of system.** When `--system` names a
+system different from the one recorded, the recorded scope fields (`repo`, `projectKey`,
+`instance`) that the same command does not supply SHALL be dropped, and the command's output SHALL
+name each field it dropped. A scope belongs to the tracker it was recorded for; carried across a
+vendor switch it becomes the new tracker's scope, and every emitted heading, listing step and
+derived id then names the old tracker.
+
+**A change of system SHALL NOT change the direction the repo resolves to unless the command says
+so.** A primary with no recorded `direction` resolves by system (`github-issues` inward, any other
+outward), so switching the system alone would silently turn outward creation on or off. When the
+command changes the system and supplies no `--direction`, it SHALL record the direction the tracker
+resolved to BEFORE the switch, and its output SHALL name the direction recorded and why. An
+explicitly recorded direction is kept unchanged.
+
 #### Scenario: Setting a tracker without --role
 - **WHEN** the agent runs `set-tracker --system jira --instance onvex --project JOB --mechanism
   mcp --intent active:in-progress`
@@ -51,6 +65,24 @@ outward, and no non-`github-issues` primary has ever received an inward pull ins
 #### Scenario: A non-github primary can be inward
 - **WHEN** `state.tracker` is `{system: "jira", projectKey: "JOB", direction: "inward"}`
 - **THEN** the repo receives an inward sync section naming `jira` and no outward section
+
+#### Scenario: Switching vendor drops the old scope
+- **WHEN** a github-issues primary recorded with `repo: "o/n"` is changed with `set-tracker
+  --system jira --project ABC`
+- **THEN** `state.tracker` carries no `repo`, the output names `repo` as dropped, and the emitted
+  inward section and derived id name `ABC` (today they name `o/n`)
+
+#### Scenario: Switching vendor does not turn on outward creation
+- **WHEN** a github-issues primary with no recorded direction is changed with `set-tracker --system
+  jira --project ABC`
+- **THEN** `state.tracker.direction` is `inward`, the output names it as kept from the prior tracker,
+  and the rules block carries no outward "External tracker sync" section (today the switch resolves
+  `outward` and emits it)
+
+#### Scenario: Re-stating the same system keeps its scope
+- **WHEN** `set-tracker --system jira --direction both` runs against a jira primary with
+  `projectKey: "ABC"`
+- **THEN** `projectKey` is preserved
 
 ### Requirement: Secondary tracker registration
 `set-tracker --role secondary` SHALL upsert an entry into `state.secondaryTrackers`, keyed by a
@@ -330,6 +362,12 @@ instruction was emitted at all, which is exactly the scope-less case.
 - **THEN** the reminder is present and every writeback step it references is a step the same block
   emitted
 
+#### Scenario: An inward-only github-issues primary is not pointed at absent steps
+- **WHEN** the rules block is emitted for `{system: "github-issues", repo: "o/n", direction: "inward"}`
+  with no secondary trackers
+- **THEN** the reminder's text contains no reference to writeback steps above it, because the block
+  emits none (today it says "the writeback steps above")
+
 #### Scenario: A scope-less inward primary gets no reminder
 - **WHEN** the rules block is emitted for a single primary tracker whose direction includes
   `inward` but which names no `repo` or `projectKey`, with no secondary trackers
@@ -476,6 +514,11 @@ brief MUST NOT claim how many linked items have newer remote activity: that numb
 network call the engine is forbidden to make, so emitting it would be fabricated. The live drift
 count belongs in `/pm:sync`'s own in-session output, reported by the agent that made the call.
 
+The line SHALL name a remedy that, followed, clears the count for EVERY epic it counts — including an
+epic linked through an outward-only primary while a secondary makes the repo inward, whose link no
+inward procedure reads. Naming only `/pm:sync` there sends the agent to a procedure that never
+touches that epic.
+
 #### Scenario: Never-re-read epics are counted
 - **WHEN** the brief is built for an inward repo with three epics that have an external id and no
   watermark
@@ -500,6 +543,24 @@ count belongs in `/pm:sync`'s own in-session output, reported by the agent that 
 - **WHEN** the brief is built for any tracker configuration
 - **THEN** it contains no claim about how many external items have changed since they were last
   read
+
+#### Scenario: An outward-recorded key starts with a watermark
+- **WHEN** the rules block is emitted for a primary whose direction includes `outward`
+- **THEN** its line for recording a newly created issue's key carries `--external-updated-at` with the
+  created issue's own timestamp, and an epic recorded that way is not counted never-re-read (today
+  the line carries no watermark)
+
+#### Scenario: The brief's create-and-record remedy starts with a watermark
+- **WHEN** the brief reports active epics not yet in an outward primary whose direction is `both`, and
+  the agent records each key with the invocation that line names, filled
+- **THEN** that invocation carries `--external-updated-at`, and the recorded epic is not counted
+  never-re-read (before Gate 2 E-I1 the brief's form omitted it, so following it raised that count)
+
+#### Scenario: The named remedy clears an outward-linked epic
+- **WHEN** the brief counts an epic linked through an outward-only primary in a repo whose only
+  inward procedure is a secondary's, and the agent follows the remedy the line names for it
+- **THEN** that epic is no longer counted (today the line names only `/pm:sync`, whose procedure
+  never reads that epic)
 
 ### Requirement: A tracker-linked epic is re-read before specs are drawn, keyed on provenance
 Before an epic becomes the active piece of work — the point at which specs or a plan are drawn for
@@ -602,6 +663,31 @@ recipe registers an epic from an external item, the epic's id SHALL be determine
 itself rather than left to the agent's invention, and the same external item SHALL produce the
 same id across repos and sessions.
 
+This binds EVERY emitted inward procedure — the primary's and each secondary's, for every tracker
+system — and not only the github-issues primary the suite used to execute. In particular:
+
+- The listing step SHALL fetch every field a later step of the same procedure consumes. A recipe
+  that asks for an item's updated timestamp after a listing step that never requested it cannot be
+  filled from what the procedure fetched.
+- The listing step SHALL NOT be silently truncated. Where the listing tool pages or caps its result,
+  the emitted step SHALL name an explicit bound, and the procedure SHALL stop before its closed-item
+  step when the listing may have been truncated — an item missing from a truncated list is not an
+  item that closed.
+- The derived epic id SHALL be a valid epic id for the item keys the tracker actually uses, including
+  keys that are not bare numbers (`ABC-123`), and distinct keys SHALL derive distinct ids.
+- A recorded tracker value SHALL NOT be interpolated into an emitted shell command unless it has a
+  shape that cannot alter that command.
+- A placeholder the agent fills from the external ITEM (its title, its url) is third-party text. The
+  procedure SHALL instruct the agent to shell-quote every such value when filling it, and SHALL say
+  how, so that a title carrying `"`, `$(…)`, a backtick or an apostrophe is stored exactly and
+  executes nothing. Quoting does not change the token the engine receives, so every item-sourced
+  value SHALL also be placed where the engine reads it as a value whatever its shape: a title that
+  begins with `-` or is shaped like a flag (`--limit=5 ignored`), or that holds a newline, SHALL
+  register and route exactly as any other title. `suggest-lane` SHALL therefore accept its text as
+  the value of a declared flag (`--ask=<text>`) as well as positionally, and the emitted lane-routing
+  step SHALL use the flag form.
+- The procedure SHALL name only commands that exist.
+
 #### Scenario: The emitted registration recipe executes verbatim
 - **WHEN** the inward registration command emitted in the rules block is run with only its
   placeholders filled in from a real external item
@@ -611,6 +697,51 @@ same id across repos and sessions.
 - **WHEN** the emitted recipe is followed for the same external item in two different sessions
 - **THEN** both produce the same epic id, and the second is refused as a duplicate rather than
   creating a second epic under a different invented id
+
+#### Scenario: A secondary's recipe can be filled from its own listing
+- **WHEN** the rules block is emitted for a github-issues secondary tracker
+- **THEN** its listing step requests the updated timestamp that its registration line consumes
+  (today it requests `number,title,url,labels` only)
+
+#### Scenario: A non-numeric item key registers
+- **WHEN** the registration recipe emitted for an inward jira tracker scoped to `ABC` is filled from
+  the items `ABC-123` and `ABC-124`
+- **THEN** both invocations exit zero and create two distinct epics (today the id is refused)
+
+#### Scenario: The listing is bounded and a truncated list ends nothing
+- **WHEN** the rules block is emitted for an inward github-issues tracker
+- **THEN** its listing step names an explicit result bound, and the procedure instructs the agent
+  not to run the closed-item step when the number of items returned reaches that bound
+
+#### Scenario: A repository value cannot alter the emitted command
+- **WHEN** the recorded github-issues repository is not an `[HOST/]owner/name` value
+- **THEN** no emitted shell command contains that value
+
+#### Scenario: A hostile or ordinary item title is stored exactly
+- **WHEN** the registration line of any emitted inward section is filled, following the section's
+  own quoting instruction, from an item titled ``it's "done" $(touch pwned) `id` `` and run through a
+  shell
+- **THEN** it exits zero, the epic's title reads back byte-identical to the item title, and no
+  `pwned` file exists (today the recipe wraps the title in double quotes and gives no instruction)
+
+#### Scenario: A flag-shaped, dash-leading or multi-line title registers and routes
+- **WHEN** the registration line and the lane-routing step of any emitted inward section are filled,
+  following the section's own quoting instruction, from items titled `--limit=5 ignored`, `-h`,
+  `--help`, `-x starts with a dash` and a title holding a newline, and run through a shell
+- **THEN** each lane-routing call and each registration exits zero and each epic's title reads back
+  byte-identical (today `--title '--limit=5 ignored'` is refused as an unknown flag, and
+  `suggest-lane '--foo'` is refused telling the agent to quote a value it already quoted)
+
+#### Scenario: suggest-lane reads its text from --ask and still positionally
+- **WHEN** `suggest-lane --ask='--limit=5 ignored'` runs, and separately `suggest-lane "fix a typo"`
+- **THEN** both exit zero, the first routing on the text `--limit=5 ignored` (today `--ask` is refused
+  as an undeclared flag) and the second behaving exactly as today
+
+#### Scenario: The dedup step names no absent command
+- **WHEN** any inward section is emitted
+- **THEN** it names no `/pm:` command form that pm does not ship (today it names `/pm:epic list`) —
+  asserted against the rules block directly, because a shipped-command existence check reads only
+  the name `epic`, which exists
 
 ### Requirement: Lane at mirror time comes from lane routing
 The emitted inward registration recipe SHALL derive a mirrored item's lane from the repo's lane
@@ -637,3 +768,76 @@ capability may be read as delivering it.
 - **WHEN** the routed lane is wrong for a particular item
 - **THEN** the recipe permits registering it in a different lane, with the reason recorded on the
   epic
+
+### Requirement: A secondary tracker's inward pull re-reads what is already linked
+Every emitted secondary inward procedure SHALL carry the same watermark step the primary's carries:
+for each epic already linked to an item in that tracker, compare the item's updated timestamp with
+the epic's watermark, read the items that are newer, and record what was read — never advancing a
+watermark from the listing alone.
+
+#### Scenario: The secondary section has a watermark step
+- **WHEN** the rules block is emitted with a secondary tracker
+- **THEN** its section instructs comparing each linked item's updated timestamp with the epic's
+  watermark and recording what was read, and states that listing alone never advances it (today the
+  section has no such step)
+
+### Requirement: A github-issues repository is recorded as an owner/name pair
+`set-tracker` SHALL refuse, for either role, a `--repo` on a `github-issues` tracker that is not an
+`owner/name` pair of characters GitHub permits in those names — optionally prefixed by a GitHub
+Enterprise `HOST/`, the form `gh issue list -R` accepts — exiting non-zero and writing nothing.
+`--remove` on the secondary role is exempt: it matches the recorded value exactly and writes nothing
+new, so a legacy malformed entry stays removable. `--remove` on the primary role is NOT exempt — the
+primary has no remove, so the value would otherwise be recorded.
+A value recorded before this rule that does not have that shape SHALL NOT fail any read; emitters
+treat it as absent for the purpose of building a shell command, and `integrity` SHALL name it with
+the `set-tracker` re-record that restores its listing step, so the lost step is never silent. For a
+secondary, `integrity` names its removal first, carrying the recorded value as one shell-quoted word
+in inline `--repo=<quoted>` form (a value holding a control character: named without the value, per
+`output-text-integrity`).
+
+#### Scenario: A repository carrying a shell metacharacter is refused
+- **WHEN** the agent runs `set-tracker --system github-issues --repo 'a/b; touch pwned'`
+- **THEN** it exits non-zero naming the expected shape, and `state.json` is byte-identical (today it
+  is accepted)
+
+#### Scenario: A malformed repository is refused on the primary even with --remove
+- **WHEN** a github-issues primary records `o/n`, and the agent runs
+  `set-tracker --repo 'a/b; touch pwned' --remove`
+- **THEN** it exits non-zero naming the expected shape, and `state.json` is byte-identical (before
+  this rule's correction the value was saved and rendered into the rules block)
+
+#### Scenario: A legacy malformed secondary is removable
+- **WHEN** a state file carries a github-issues secondary whose `repo` is `a/b; touch pwned`, and the
+  agent runs `set-tracker --role secondary --system github-issues --repo 'a/b; touch pwned' --remove`
+- **THEN** it exits zero and the entry is gone
+
+#### Scenario: A legacy malformed repository still loads
+- **WHEN** a state file recorded before this rule carries such a repository
+- **THEN** every read verb succeeds, and the value never appears unquoted in any output: the only
+  emitted command carrying it is `integrity`'s removal of a secondary, where it is one shell-quoted word
+  in inline `--repo=<quoted>` form, so a shell expands nothing in it and a flag-shaped value (`--help`)
+  is read as data (Gate 2 X-B2, R-M1) (a value holding a control character: named without the value, per
+  `output-text-integrity`); everywhere else it is JSON-quoted data or absent
+
+#### Scenario: A GitHub Enterprise repository is accepted
+- **WHEN** the agent runs `set-tracker --system github-issues --repo ghe.example.com/o/n`, for either role
+- **THEN** it exits zero, and the emitted listing step names `--repo ghe.example.com/o/n` (before Gate 2
+  E-I2 it was refused)
+
+#### Scenario: A legacy malformed repository is named, with the re-record that restores it
+- **WHEN** a state file carries a github-issues primary or secondary whose `repo` fails the shape, and
+  `integrity` runs
+- **THEN** it reports that tracker as receiving no `gh` listing step, and the commands it names, filled
+  and run in order, clear the finding and restore the step (before Gate 2 E-I2 the step was dropped
+  with no notice anywhere)
+
+### Requirement: The brief's mirror line claims only what it checked
+The brief's outward mirror line SHALL state only what the engine verified. An epic's carrying an
+external id does not show it is mirrored to the PRIMARY tracker when a secondary tracker is
+configured, because a secondary-linked epic carries one too; the line MUST NOT say every active epic
+is mirrored to the primary on that evidence.
+
+#### Scenario: A secondary-linked active epic is not claimed for the primary
+- **WHEN** the brief is built for an outward jira primary and a github-issues secondary, and the only
+  active epic is linked to a github-issues item
+- **THEN** the brief does not state that all active epics are mirrored to jira (today it does)

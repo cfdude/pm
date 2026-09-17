@@ -1179,7 +1179,8 @@ archived on disk re-archives the epic.
 and records the disposition it implies. It is the invocation's own argument tokens, as given, minus
 `--status`, `--outcome`, `--reason`, `--carried-to`, `--correct-disposition` and the deferral flags
 (with their values), plus `--status archived`, an `--outcome` placeholder naming the agent outcomes,
-and `--reason "<why>"`. Which token is a
+`--reason "<why>"`, and exactly the flags the bullets below add under their conditions — nothing else.
+Which token is a
 dropped flag's value follows the engine's own flag walk: an inline `--flag=value` token drops alone,
 and a following token drops with its flag only where that token is not itself flag-shaped. A flag
 given with no value echoes with no value, a repeated flag echoes once per occurrence, and an inline
@@ -1195,6 +1196,15 @@ trailing newline), and a promise of byte-for-byte reconstruction there would be 
 - It MUST carry the placeholder `<--no-deferrals | --deferral "<epicId>:<section>">` if and only if
   the epic has no deferral assertion. A deferral assertion is a claim to be made, not a default to
   print.
+- It MUST carry `--carried-to <epicId>` if and only if the record the invocation leaves has a checkbox
+  task source (a `tasks.md` or plan file) whose open tasks break the handoff demand — so the
+  `delivered` it offers would otherwise be refused, and no verb ticks a checkbox. The handoff's
+  `--reason` is the one the invocation already carries, printed once, never a second time. Whether a
+  flag is already carried is decided by the invocation's own template, never by an echoed token: a
+  user value naming `--carried-to` or `--reason` is data. The handoff goes only with `delivered`, and
+  the refusal MUST say so in prose naming `delivered` and no archive-only flag; for any other outcome
+  the flag is removed (before Gate 2 R-I1 the flag was absent and the filled invocation was refused
+  "task(s) outstanding").
 
 An update to an archived epic never passes through `--status archived`, so the archive gate never
 sees it. Reproduced on 0.42.0:
@@ -1323,6 +1333,17 @@ sees it. Reproduced on 0.42.0:
 - **THEN** it exits zero; the epic is an archived `superseded` openspec-lane epic whose prior
   `delivered` disposition is kept under `superseded`; its latest note is `Rob's move`; it has no links;
   and it gained exactly the two stories `two words` and `--x`
+
+#### Scenario: A checkbox source's open tasks travel on the printed invocation
+
+- **WHEN** an archived agent-recorded `delivered` `superpowers`-lane epic whose plan was fully ticked runs
+  `update-epic <id> --plan <a plan with a task still open>`, once with no other flag and once with
+  `--title "moved --carried-to later"`
+- **THEN** each is refused; each printed invocation carries `--carried-to <epicId>` and exactly one
+  `--reason` outside the echoed title; the refusal says the handoff goes only with `delivered`; and
+  each invocation, filled with `delivered`, a reason, a correction reason and a receiving epic, exits
+  zero with the plan re-pointed (before Gate 2 F-I1 the title suppressed the flag and the filled
+  invocation was refused "task(s) outstanding")
 
 #### Scenario: Leaving the archive is not refused where nothing re-archives the epic
 
