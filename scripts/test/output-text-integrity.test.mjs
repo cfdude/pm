@@ -1020,10 +1020,15 @@ export const LEGACY_RECIPES = [
     const ids = readState(c.cwd).epics.filter(e => e.priority === band && e.status !== "archived").map(e => e.id).reverse();
     return pm(c.cwd, ["reorder", ...ids]);
   } },
-  { key: "update-epic --priority over a ranked legacy epic (the rank-clear announcement)", rendered: true, run: (c, v) => {
+  { key: "update-epic --priority over a ranked legacy epic whose id and stored priority hold a control character (the rank-clear announcement, Gate 2 U2-I2)", rendered: true, run: (c, v) => {
     const id = "rk-" + v;
-    legacyWrite(c.cwd, s => { s.epics.push(legacyEpic(id, "queued", { priority: "P3", rank: 1 })); });
+    legacyWrite(c.cwd, s => { s.epics.push(legacyEpic(id, "queued", { priority: "P3-" + v, rank: 1 })); });
     return pm(c.cwd, ["update-epic", id, "--priority", "P2"]);
+  } },
+  { key: "update-epic --clear parent over a legacy epic id (the cleared-field announcement, Gate 2 U2-I2)", rendered: true, run: (c, v) => {
+    const id = "cp-" + v;
+    legacyWrite(c.cwd, s => { s.epics.push(legacyEpic(id, "queued", { parent: "base" })); });
+    return pm(c.cwd, ["update-epic", id, "--clear", "parent"]);
   } },
   { key: "update-epic --plan over a legacy epic id and a tombstoned plan (the un-ignore announcement)", rendered: true, run: (c, v) => {
     const id = "pl-" + v;
