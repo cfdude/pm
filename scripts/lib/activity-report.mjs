@@ -306,7 +306,7 @@ export function activity() {
   const { events, malformed } = readEvents({ since: val("since"), epic: val("epic") });
   const report = buildReport(events, { currentRevision: state ? state.revision : null, malformed });
   if (f.json === true) {
-    process.stdout.write(jsonText({ enabled: state ? activityEnabled(state) : null, ...report }, 2) + "\n");
+    process.stdout.write(jsonText({ enabled: state ? activityEnabled(state) : null, ...report }, null, 2) + "\n");
     return;
   }
   process.stdout.write(formatReport(report, { enabled: state ? activityEnabled(state) : null }) + "\n");

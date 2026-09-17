@@ -367,7 +367,7 @@ export function owners() {
   requireFlagValues("owners", f);
   const rows = ownerRows(loadState(), readRepoClaim());
   if (f.json === true) {
-    process.stdout.write(jsonText({ quiescent: rows.length === 0, claims: rows }, 2) + "\n");
+    process.stdout.write(jsonText({ quiescent: rows.length === 0, claims: rows }, null, 2) + "\n");
     return;
   }
   process.stdout.write(formatOwners(rows) + "\n");

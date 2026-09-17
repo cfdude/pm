@@ -669,7 +669,7 @@ test("5.3g (Gate 2 U2-M1) jsonText escapes what JSON.stringify leaves raw, parse
   const ch = (n) => String.fromCharCode(n);
   const value = { s: "a" + LF + "b" + LS + "c" + PS + "d" + NEL + "e" + ch(0x7f) + ch(0x9f) + "f", n: [1, "x"] };
   for (const space of [undefined, 2]) {
-    const text = jsonText(value, space);
+    const text = jsonText(value, null, space);
     for (const c of [LS, PS, NEL, ch(0x7f), ch(0x9f)]) assert.ok(!text.includes(c), `raw U+${c.charCodeAt(0).toString(16)} (space ${space})`);
     assert.deepEqual(JSON.parse(text), value);
   }
@@ -682,6 +682,89 @@ test("5.3g (Gate 2 U2-M1) jsonText escapes what JSON.stringify leaves raw, parse
     for (const m of src.matchAll(/(?:stdout\.write\(|stdout:|console\.log\()\s*JSON\.stringify\(/g)) offenders.push(`${f}: ${m[0]}`);
   }
   assert.deepEqual(offenders, [], "every JSON document written to stdout goes through jsonText()");
+});
+
+test("5.3i (Gate 2 V-I1) every stdout JSON document is JSON.stringify's own bytes at its documented spacing — only the escaped code points differ", async () => {
+  // jsonText(value, space) read `null, 2` as a null spacing, so unconsidered-outcomes lost the indentation
+  // its command doc shows, and no test compared bytes. The ORACLE is independent of jsonText: the value
+  // stdout parses to, re-serialised by JSON.stringify at the spacing the verb has always printed, with only
+  // DEL, C1 and U+2028/U+2029 written as their escapes.
+  const RAW = new RegExp("[" + ch(0x7f) + "-" + ch(0x9f) + LS + PS + "]", "g");
+  const oracle = (parsed, space) => JSON.stringify(parsed, null, space).replace(RAW, c => escOf(c.charCodeAt(0)));
+  const HOSTILE = "json" + LS + "surface" + NEL + "poison" + ch(0x7f) + PS;
+  const repo = observationRepo();
+  const cwd = repo.cwd;
+  ok(cwd, ["add-epic", "--id", "sprint", "--lane", "claude-code", "--title", "sprint json surface"]);
+  ok(cwd, ["add-epic", "--id", "child-a", "--lane", "claude-code", "--parent", "sprint"]);
+  ok(cwd, ["add-epic", "--id", "child-b", "--lane", "claude-code", "--parent", "sprint"]);
+  ok(cwd, ["claim", "epic-a", "--session", "s1"]);
+  const { engineStamp } = await import(lib("disposition.mjs"));
+  legacyWrite(cwd, s => {
+    s.epics.find(e => e.id === "child-a").title = "child " + HOSTILE;
+    s.epics.push({ id: "old-one", title: "old " + HOSTILE, priority: "P2", status: "archived", role: "epic",
+      lane: "claude-code", stories: [], links: [], disposition: engineStamp("migration", { recordedAt: "2026-08-01T00:00:00.000Z" }) });
+  });
+  fs.mkdirSync(path.join(cwd, ".changesets"), { recursive: true });
+  fs.mkdirSync(path.join(cwd, "docs", "lessons"), { recursive: true });
+  fs.writeFileSync(path.join(cwd, "docs", "lessons", "edit.md"),
+    '---\ndetect: {"tool":"Edit","pathEndsWith":"CLAUDE.md"}\nrule: keep ' + HOSTILE + ' below the marker\ntrigger: about to edit\n---\n\nBody.\n');
+  const broken = tmpRepo();
+  fs.mkdirSync(path.join(broken, ".conductor"), { recursive: true });
+  fs.writeFileSync(path.join(broken, ".conductor", "state.json"), "{ not json");
+  const cases = [
+    { verb: "changesets (none)", args: ["changesets"] },
+    { verb: "unconsidered-outcomes", args: ["unconsidered-outcomes"], space: 2 },
+    { verb: "activity --json", args: ["activity", "--json"], space: 2 },
+    { verb: "owners --json", args: ["owners", "--json"], space: 2 },
+    { verb: "triage", args: ["triage", "sprint json surface"] },
+    { verb: "suggest-lane", args: ["suggest-lane", "a caching bug"] },
+    { verb: "plan-hierarchy", args: ["plan-hierarchy", "--parent", "sprint"] },
+    { verb: "verify-worktrees", args: ["verify-worktrees"] },
+    { verb: "brief", args: ["brief", "--platform", "claude-code"] },
+    { verb: "lesson-advice", args: ["lesson-advice", "--platform", "claude-code"],
+      input: JSON.stringify({ tool_name: "Edit", tool_input: { file_path: "/x/CLAUDE.md" } }) },
+    { verb: "changesets", args: ["changesets"], before: () => fs.writeFileSync(path.join(cwd, ".changesets", "one.md"), "---\ntype: fixed\n---\nA fix " + HOSTILE + "\n") },
+    { verb: "commit-nudge", run: () => { repo.observe(); repo.commit({ "src.txt": "x\n" }, "fix: small"); return repo.observe("PostToolUse", "git commit -m x"); } },
+    { verb: "brief (unreadable state warn)", dir: broken, args: ["brief", "--platform", "claude-code"] },
+  ];
+  const mismatched = [];
+  for (const c of cases) {
+    if (c.before) c.before();
+    const r = c.run ? c.run() : pm(c.dir || cwd, c.args, { input: c.input });
+    assert.ok(r.stdout.trim(), `non-vacuity: ${c.verb} printed a JSON document (exit ${r.status}):\n${r.stderr}`);
+    const parsed = JSON.parse(r.stdout);
+    const doc = r.stdout.replace(/\n$/, "");
+    if (doc !== oracle(parsed, c.space)) mismatched.push(`${c.verb}: stdout is not JSON.stringify(parsed, null, ${c.space}) byte for byte:\n${doc.slice(0, 120)}`);
+    assert.equal(RAW.test(r.stdout), false, `${c.verb}: no raw DEL, C1 or U+2028/U+2029`);
+    RAW.lastIndex = 0;
+  }
+  assert.deepEqual(mismatched, [], "value unchanged, whitespace unchanged, only the escaped code points differ");
+  // The compact ones cannot hide lost indentation, and a caller that means spacing passes it THIRD.
+  const libDir = new URL("../lib/", import.meta.url);
+  const callers = [];
+  for (const f of ["../conductor.mjs", ...fs.readdirSync(libDir).filter(n => n.endsWith(".mjs")).map(n => `../lib/${n}`)]) {
+    const src = fs.readFileSync(new URL(f, import.meta.url), "utf8");
+    for (const m of src.matchAll(/\bjsonText\(/g)) {
+      let d = 0, top = [], i = m.index + m[0].length - 1, q = null;
+      for (; i < src.length; i++) {
+        const c = src[i];
+        if (q) { if (c === "\\") i++; else if (c === q) q = null; continue; }
+        if (c === '"' || c === "'" || c === "`") q = c;
+        else if ("([{".includes(c)) d++;
+        else if (")]}".includes(c)) { d--; if (d === 0) break; }
+        else if (c === "," && d === 1) top.push(i);
+      }
+      const args = [];
+      let from = m.index + m[0].length;
+      for (const at of [...top, i]) { args.push(src.slice(from, at).trim()); from = at + 1; }
+      if (args[args.length - 1] === "") args.pop();
+      callers.push({ where: `${f}:${src.slice(0, m.index).split("\n").length}`, args });
+    }
+  }
+  const calls = callers.filter(c => c.args.length);   // a prose mention `jsonText()` passes nothing
+  assert.ok(calls.length >= 14, `every jsonText caller found (${calls.length})`);
+  assert.deepEqual(calls.filter(c => !(c.args.length === 1 || (c.args.length === 3 && c.args[1] === "null"))).map(c => `${c.where} (${c.args.length} args)`), [],
+    "jsonText takes (value, replacer, space): a caller passing spacing passes it third, after null");
 });
 
 test("5.3h source guard (Gate 2 U2-M2): no reader matches a detours.log row's epic field against a stored id (design D7)", () => {

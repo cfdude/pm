@@ -1,0 +1,33 @@
+✖ 5.3i (Gate 2 V-I1) every stdout JSON document is JSON.stringify's own bytes at its documented spacing — only the escaped code points differ (1302.264041ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1346.419917
+
+✖ failing tests:
+
+test at scripts/test/output-text-integrity.test.mjs:687:1
+✖ 5.3i (Gate 2 V-I1) every stdout JSON document is JSON.stringify's own bytes at its documented spacing — only the escaped code points differ (1302.264041ms)
+  AssertionError [ERR_ASSERTION]: value unchanged, whitespace unchanged, only the escaped code points differ
+  + actual - expected
+  
+  + [
+  +   'unconsidered-outcomes: stdout is not JSON.stringify(parsed, null, 2) byte for byte:\n' +
+  +     '{"count":1,"unconsidered":[{"id":"old-one","title":"old json\\u2028surface\\u0085poison\\u007f\\u2029","lane":"claude-code",'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-text-integrity.test.mjs:741:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'unconsidered-outcomes: stdout is not JSON.stringify(parsed, null, 2) byte for byte:\n{"count":1,"unconsidered":[{"id":"old-one","title":"old json\\u2028surface\\u0085poison\\u007f\\u2029","lane":"claude-code",' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

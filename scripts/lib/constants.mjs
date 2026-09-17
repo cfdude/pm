@@ -1056,8 +1056,10 @@ const JSON_RAW_CONTROLS = new RegExp("[" + String.fromCharCode(0x7f) + "-" + Str
  *  then every character in JSON_RAW_CONTROLS written as its JSON escape (escapeControls' form, which
  *  is valid JSON). Such a character can only occur inside a string literal, so the result parses to
  *  exactly the same value — and no stored value puts a line start into a JSON verb's stdout for a
- *  reader that splits lines before it parses. Every stdout JSON document goes through this. */
-export const jsonText = (value, space) => JSON.stringify(value, null, space).replace(JSON_RAW_CONTROLS, escapeControls);
+ *  reader that splits lines before it parses. Every stdout JSON document goes through this.
+ *  JSON.stringify's own (value, replacer, space) signature (Gate 2 V-I1): a two-argument form read
+ *  `jsonText(v, null, 2)` as a null spacing and silently dropped a verb's indentation. */
+export const jsonText = (value, replacer, space) => JSON.stringify(value, replacer, space).replace(JSON_RAW_CONTROLS, escapeControls);
 /** The CELL escaper for a PROJECT.md table (user-text-never-forges-output D1): escapeControls(),
  *  then every backslash doubled, then every `|` escaped. GitHub-flavored Markdown splits a row with a
  *  backslash escaping the one character after it, so the backslash MUST go first — a pipe-only
