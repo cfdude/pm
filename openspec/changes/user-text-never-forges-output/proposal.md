@@ -52,7 +52,8 @@ nothing already stored.
   `.conductor/honcho-memories.log`. Governed values are record and log fields, workspace file and
   directory names and contents, argv and env; files shipped with the plugin are engine-written.
 - An emitted runnable command never carries an identifier holding a control character: the output
-  says in prose what to do instead.
+  says in prose what to do instead (for an epic or release id, that no verb can rename it; a tracker
+  scope is replaced — re-recorded, or a secondary removed — under change 2's wording).
 - Every PROJECT.md table cell additionally escapes `\` and `|`, so a value can neither add nor split a
   cell under GitHub-flavored-Markdown splitting.
 - An epic id holding a control character or whitespace is never stored: `add-epic` and `add-many`
@@ -62,7 +63,7 @@ nothing already stored.
 - A release id must match `^[a-z0-9][a-z0-9._-]*$` at creation, checked before the missing-intent
   refusal; `release` refuses a malformed new id and writes nothing.
 - `set-tracker` refuses a control character in `--system`, `--project` or `--repo` (both roles, not on
-  `--remove`), so a tracker scope can never forge the rules file.
+  `--role secondary --remove`), so a tracker scope can never forge the rules file.
 - Already-stored values the new input rules would refuse are still read — the strict reader is not
   tightened — and are made safe by the output rule, not by refusing the record.
 - A test holds the output rule over populations the engine already declares (the flag and

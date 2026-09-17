@@ -105,7 +105,7 @@ mechanism, so the smaller diff wins.
 | Field class | Where handled | Why |
 |---|---|---|
 | Epic id, release id | refused at input (D4, D5); escaped in prose at output; never put into an emitted command when it holds a control character (D4a) | ids are pasted into emitted commands (`update-epic <id> …`); an escaped id in a command names a different epic, so the only safe id is one that never needed escaping. Output handling remains for legacy values. |
-| Tracker `system`, `projectKey`, `repo` | refused at input for a control character (D8); escaped in prose at output; D4a in emitted commands | a recorded scope is identifier-like: it heads a rules-block section and is pasted into `gh issue list --repo …`. |
+| Tracker `system`, `projectKey`, `repo` | refused at input for a control character (D8); escaped in prose at output; in emitted commands REPLACED, not renamed — primary re-recorded with a placeholder, secondary removed via `--remove` (D4a tracker-scope bullet, wording owned by change 2's `tracker-repo-not-a-github-repository`) | a recorded scope is identifier-like: it heads a rules-block section and is pasted into `gh issue list --repo …`. |
 | Titles (incl. plan headings), descriptions, notes, detour reasons, disposition/deferral/withdrawal/link reasons, release intent/target, story titles, reviewer identity, session names, tracker instance/mechanism/intent, external ids/urls, plan/spec paths, log-detour notes, honcho reasons, `.changesets` fragments, lesson frontmatter | escaped at output | free text is legitimately arbitrary (tracker titles are third-party); refusing a newline in a title would make the inward sync recipe fail on a real issue. The stored value stays exactly what was written. |
 | Unknown ids in a refusal (never stored) | escaped at output | nothing to store; the refusal is the only surface |
 
@@ -209,7 +209,15 @@ id is printed as `emitted-commands-run-as-written` prints it (shell-quoted via `
 - A re-enterable caller token (the `gate-integrity` printed-invocation case): its position carries a
   placeholder. That requirement (`openspec/specs/gate-integrity/spec.md`, "The printed invocation") was
   checked and is NOT modified.
-- An identifier — epic id, release id, tracker system/project/repo — cannot be re-entered through a
+- A tracker scope — system/project/repo — is NOT in the no-remedy class: it is REPLACED, not
+  re-entered. A primary is re-recorded with a placeholder in the value's position
+  (`set-tracker --repo <owner/name>`); a secondary is removed with `set-tracker --role secondary
+  --remove` — named in prose without the value when it holds a control character, shell-quoted
+  (`shellQuote()`, not `printedId()`) otherwise — then re-recorded. Sibling
+  `emitted-commands-run-as-written`'s `tracker-repo-not-a-github-repository` integrity check owns that
+  wording; this change only sweeps it as a printer (tasks 7.2, 8.1). No output says no verb can rename
+  a tracker scope.
+- An identifier — epic id, release id — cannot be re-entered through a
   one-line placeholder, because what must be typed is the stored value. So the output prints NO runnable
   invocation for it, and says instead, naming the record: `<record kind> '<escaped id>' holds a control
   character; no verb can rename it`. It never instructs a hand-edit of `.conductor/state.json`
@@ -226,8 +234,10 @@ id is printed as `emitted-commands-run-as-written` prints it (shell-quoted via `
   too — as-is when matching, shell-quoted otherwise, no-remedy on a control character. Population today:
   all ten stored release ids in this repository match the format, so the quoting branch changes no
   output here. The rules block's
-  `gh issue list --repo` is NOT a site: the sibling's repo-shape check means a repo holding a control
-  character never reaches that line.
+  `gh issue list --repo` is NOT a site: the sibling's `usesGhIssueList()` shape requirement means a
+  repo holding a control character never reaches that line. That holds for the rules block only —
+  `integrity`'s `tracker-repo-not-a-github-repository` does name such a repo, under the tracker-scope
+  bullet above.
 - Because no command is printed, nothing here violates the sibling's rule that every printed remedy
   runs; the missing rename verb is an inverse decision, recorded in task 8.2.
 After D4, D5 and D8 only legacy values reach this branch.
@@ -258,7 +268,11 @@ caller typed a newline; acceptable, because a memory is a one-line note by defin
 `set-tracker` refuses a `--system`, `--project` or `--repo` value containing a control character, for
 both roles, before `loadState` and before the rules file is touched; exit 1, naming the flag, quoting the
 escaped value. `--role secondary --remove` is not refused, so a legacy entry stays removable (its match
-key is whatever was stored). `--instance`, `--mechanism` and `--intent` are free text and escaped at
+key is whatever was stored). A PRIMARY `--remove` is refused like any other primary call, matching
+change 2's scoping of its own `--remove` exemption (Gate 2 E-C1): the primary has no remove handler, so
+`--remove` falls through to the merge. Measured on the 0.44.0 engine: `set-tracker --system
+"jira<LF>## FORGED" --project ABC --direction inward --remove` exits 0 and `## FORGED` lands in both
+`CLAUDE.md` and `state.json`. `--instance`, `--mechanism` and `--intent` are free text and escaped at
 output. The `owner/name` shape of `--repo` belongs to sibling change 2 (its Decision 4). Order is
 explicit: this control-character check runs FIRST, before change 2's shape check, so a value failing
 both gets this refusal. Change 2's test 4.1 asserts only a non-zero exit, the escaped value and no
@@ -290,7 +304,7 @@ from before this change are escaped in the rules block's prose and handled by D4
   (this repository's `.conductor/detours.log` line 25 holds a backslash before a backtick, which the
   Recent-detours table will now render differently). Raw text gains backslashes, and inside a cell an escaped control character carries a doubled backslash in the raw
   text and a single one when rendered.
-- **A control-character identifier gets no command.** The reader is told the record exists and that no
+- **A control-character epic or release id gets no command.** The reader is told the record exists and that no
   verb can rename it — no runnable line and no hand-edit instruction. Worse ergonomics than a runnable
   line, and the only honest option, since no one-line command can name it in a POSIX shell. Only legacy
   values can reach it; this repository's `state.json` holds none (measured: zero string values with a
@@ -304,10 +318,12 @@ from before this change are escaped in the rules block's prose and handled by D4
   tracker recipes). Apply order is 1 → 2 → 3: rebase onto 2's wording and escape the values inside it; do
   not revert its text. Two explicit boundaries: (1) change 2 owns the `--repo owner/name` shape check at
   `set-tracker`; this change owns the control-character refusal for `--system`, `--project` and `--repo`
-  (D8). (2) For an identifier holding a control character, D4a prints no runnable command and no
+  (D8). (2) For an epic or release id holding a control character, D4a prints no runnable command and no
   hand-edit instruction — only that no verb can rename it — so it neither conflicts with change 2's
   "every printed remedy runs" rule nor with its "nothing tells an agent to hand-edit state.json" rule.
-  The rules block's `gh issue list --repo` is left to change 2's repo-shape check. (3) The no-remedy
+  The rules block's `gh issue list --repo` is left to change 2's repo-shape check, and a tracker scope's
+  remedy (re-record a primary with a placeholder; remove a secondary via `--remove`) is change 2's
+  `tracker-repo-not-a-github-repository` wording — never "no verb can rename it". (3) The no-remedy
   exception and its two scenarios ("A record no verb can rename prints no remedy", "A change no verb can
   make is named") are OWNED here, absorbed from change 2 at the 0.45.0 cross-spec review; change 2 keeps
   only a cross-reference.

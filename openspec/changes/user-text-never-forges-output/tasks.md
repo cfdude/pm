@@ -110,9 +110,10 @@ Pairs: 5.1–5.3c land with 5.4.
       release ids written into `state.json` directly — design D3 exception). Fails on 0.44.0, measured:
       `integrity.mjs`'s `delivered-release-epic-left-open` prints `release ${rel.id} --defer …` raw, so
       the output holds a line beginning `FORGED --defer` and the unquoted `release Legacy Release --defer`
-- [ ] 5.4 GREEN: an emitted invocation whose identifier (epic id, release id, tracker
-      system/project/repo) holds a CONTROL CHARACTER is not printed; the prose line of design D4a
-      replaces it (an epic or release id merely failing `EPIC_ID_FORMAT` is printed as
+- [ ] 5.4 GREEN: an emitted invocation whose identifier (epic id or release id) holds a CONTROL
+      CHARACTER is not printed; the prose line of design D4a replaces it (a tracker system/project/repo
+      is NOT in that class — it is replaced, not renamed, under change 2's
+      `tracker-repo-not-a-github-repository` wording, which this task does not touch; an epic or release id merely failing `EPIC_ID_FORMAT` is printed as
       emitted-commands-run-as-written prints it, shell-quoted via `printedId()`; a tracker value without
       a control character keeps change 2's shape rules) — add the no-remedy builder and hook it into
       `printedId()` as the single site (design D4a); route printed release-id commands through
@@ -120,7 +121,9 @@ Pairs: 5.1–5.3c land with 5.4.
       changes `printedId()`'s return (a string or the no-remedy signal), enumerate EVERY caller at sweep
       time with `rg -n "printedId\(" scripts/lib scripts/conductor.mjs` — never a fixed list — and state
       for each that it handles the no-remedy signal (the message names the record and says no verb can rename it; no hand-edit
-      instruction; `gh issue list --repo` excluded — change 2's repo-shape check stops it first);
+      instruction; the rules block's `gh issue list --repo` excluded — change 2's `usesGhIssueList()`
+      shape requirement stops a control-character repo before that line, which holds for the rules
+      block only, not for `integrity`);
       and escape every governed value in a refusal or
       report line: the handoff refusal's story titles (`archive-gate.mjs`),
       `delivered-epic-attributed-no-commits`'s sha and reason and `archive-directory-has-no-epic`'s
@@ -131,7 +134,7 @@ Pairs: 5.1–5.3c land with 5.4.
 
 ## 6. Ids are refused at input
 
-Pairs: 6.1–6.5b land with 6.6, 6.7 and 6.8 (one commit; they share the fixture).
+Pairs: 6.1–6.5b (6.4c included) land with 6.6, 6.7 and 6.8 (one commit; they share the fixture).
 
 - [ ] 6.1 RED: spec "sync skips a change directory whose name holds a newline" (repro H)
 - [ ] 6.2 RED: spec "sync skips a plan file whose name holds a newline" (repro H)
@@ -145,6 +148,8 @@ Pairs: 6.1–6.5b land with 6.6, 6.7 and 6.8 (one commit; they share the fixture
       malformed release is still updatable" and "An uppercase plan filename still registers, and a held
       one is not reported"; plus `add-epic --id "e1<LF>x"` and an `add-many` batch with such an id still
       refuse with nothing written
+- [ ] 6.4c RED: spec "A primary tracker system with a newline is refused even with --remove" — fails
+      on 0.44.0, measured: exits 0 and `## FORGED` lands in `CLAUDE.md` and `state.json`
 - [ ] 6.5b REGRESSION GUARD: a legacy secondary tracker whose `repo` holds a control character (written
       into `state.json` directly) is removed by `set-tracker --role secondary --remove` with that value
 - [ ] 6.6 GREEN: `STORABLE_EPIC_ID` and `pushEpic()`'s `InvalidEpicIdError`; `sync` (active changes, plan
@@ -154,7 +159,8 @@ Pairs: 6.1–6.5b land with 6.6, 6.7 and 6.8 (one commit; they share the fixture
 - [ ] 6.7 GREEN: `release()` create branch refuses a non-matching id FIRST — before the
       missing-intent refusal and any write — printing no runnable invocation with it (design D5)
 - [ ] 6.8 GREEN: `set-tracker` refuses a control character in `--system`/`--project`/`--repo` for both
-      roles before `loadState`, except on `--remove`, and BEFORE change 2's owner/name shape check
+      roles before `loadState`, except on `--role secondary --remove` (a primary `--remove` is refused, as
+      change 2 scoped its own exemption), and BEFORE change 2's owner/name shape check
       (design D8); change 2's tests 4.1 and 4.5 must stay green
 
 ## 7. The rule is held by registries, not by this task list
@@ -170,7 +176,10 @@ Pairs: 7.1 lands with 7.2.
       `.changesets` fragment, workspace lesson frontmatter, `PM_SESSION`) — including
       `retract-detour --reason` (a real auto-logged row built through the commit-nudge hook;
       `rendered: true` via its stdout, or `notRendered` because `render` drops RETRACTED rows) and
-      `suggest-lane --ask` (`notRendered`: JSON output); the commit-nudge anchor → commit → amend →
+      `suggest-lane --ask` (`notRendered`: JSON output); `integrity`'s
+      `tracker-repo-not-a-github-repository` as a printer over legacy primary and secondary github-issues
+      trackers whose `repo` holds a control character (it builds its secondary removal with
+      `shellQuote()`, not `printedId()`, and names `--remove` in prose without the value); the commit-nudge anchor → commit → amend →
       observe sequence and `retract-detour` with a poisoned sha positional as surfaces; each recipe declared
       `rendered: true` (its tag must appear escaped on some surface), `notRendered: "<why>"`, or
       `exempt: "<refusing check>"` (an exempt recipe still runs, must exit non-zero, and its refusal
@@ -205,18 +214,24 @@ Pairs: 7.1 lands with 7.2.
       - every reader of a governed non-argv input (`rg -n "readFileSync|readdirSync|process\.env" scripts/lib`),
         each stated as engine-written (plugin-shipped file) or covered by a `SOURCE_RECIPES` entry;
       - every writer of a tracker's `system`/`projectKey`/`repo` (`rg -n "\.system\s*=|projectKey\s*=|\.repo\s*=" scripts/lib`),
-        each stated as passing D8's refusal or legacy-tolerant.
+        each stated as passing D8's refusal or legacy-tolerant;
+      - every printer of a tracker scope inside an emitted command, including `integrity`'s
+        `tracker-repo-not-a-github-repository` (built with `shellQuote()`, not `printedId()`, so the
+        `printedId()` caller list does not reach it), each stated as carrying no control-character
+        value.
       A site where the rule does not hold is a FINDING unless justified in the commit.
 - [ ] 8.2 **Inverse of every operation added or modified** — the id refusal at `pushEpic` (inverse:
       `remove-epic`, unchanged; a skipped directory's inverse is renaming it, no verb); the release
       create refusal (inverse: none needed — nothing was stored). DECIDED, not deferred: no
       release-rename verb is shipped and none is filed — nothing is stranded today (the Gate 1 review
       verified a legacy release id is still updated and removed), and this change stores nothing new
-      that would need renaming; no rename verb for a stored epic id, release id or tracker scope holding a
+      that would need renaming; no rename verb for a stored epic id or release id holding a
       control character (DECLINED: D4a's message says no verb can rename it; population measured at zero
-      in this repository's `state.json`, and D4/D5/D8 stop new ones); the tracker-scope refusal (inverse: `set-tracker --role secondary
-      --remove`, deliberately NOT refused so a legacy entry stays removable; a primary is overwritten by
-      the next `set-tracker`); escaping (inverse: none — output only, the stored value is unchanged).
+      in this repository's `state.json`, and D4/D5 stop new ones); a tracker scope needs no rename verb —
+      it is replaced (change 2's `tracker-repo-not-a-github-repository` names the re-record); the
+      tracker-scope refusal (inverse: `set-tracker --role secondary --remove`, deliberately NOT refused
+      so a legacy entry stays removable; a primary `--remove` IS refused, and a primary is replaced by the
+      next well-formed `set-tracker`); escaping (inverse: none — output only, the stored value is unchanged).
       Each unshipped inverse named and justified in the commit message
 - [ ] 8.3 **Verify against the commit** — `git show --stat <sha>` for every task commit; every file the
       task claims is present in THAT commit, including the test file and each `red-<task>.txt`
@@ -240,7 +255,7 @@ Pairs: 7.1 lands with 7.2.
 - [ ] 9.1 `commands/sync.md` — a change directory, plan file or archive directory whose name holds a
       control character or whitespace is skipped and named on every run, and must be renamed to register
 - [ ] 9.1a `commands/tracker.md` — `--system`/`--project`/`--repo` refuse control characters;
-      `--remove` does not
+      `--role secondary --remove` does not
 - [ ] 9.2 `commands/epic.md` and the release command doc (`rg -l "release <id>" commands`) — the id
       format for releases at creation; free text is stored as written and escaped on display
 - [ ] 9.3 `skills/conductor/SKILL.md` and `README.md` where the id format or PROJECT.md rendering is
