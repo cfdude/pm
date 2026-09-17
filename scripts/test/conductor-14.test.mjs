@@ -306,7 +306,7 @@ test("a scoped non-github tracker set inward gets an inward section naming its o
   assert.ok(!block.includes(OUTWARD_HEADING), "an inward tracker gets no outward section");
   assert.ok(block.includes("## Inward tracker sync (jira · JOB)"),
     "the primary slot must emit the vendor-neutral inward section the secondary path already has");
-  assert.match(block, /List open items in jira \(JOB\) with your own tooling/);
+  assert.match(block, /List ALL open items in jira \(JOB\) with your own tooling/);
   assert.ok(!block.includes("gh issue list"), "no vendor-specific command for a non-github tracker");
   assert.match(block, /externalUrl/,
     "dedup must be instructed on externalUrl — issue numbers are unique only within one tracker");
@@ -636,7 +636,9 @@ function emittedRegistration(block, { number, url, title, updatedAt }) {
   const cmd = line.slice(line.indexOf("`") + 1, line.lastIndexOf("`"));
   const filled = cmd
     .replace(/<issue-number>/g, String(number))
-    .replace(/"<issue-title>"/g, "TITLE")
+    // The recipe emits `--title=<issue-title>` (emitted-commands-run-as-written): the value stays
+    // attached to its flag, so a title shaped like a flag is still a title.
+    .replace(/<issue-title>/g, "TITLE")
     .replace(/<issue-url>/g, url)
     .replace(/<issue-updated-at>/g, updatedAt || "2026-08-23T09:30:00Z")
     // `<lane>` is a documented placeholder like the others: the recipe takes it from lane

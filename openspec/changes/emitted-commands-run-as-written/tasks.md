@@ -163,36 +163,36 @@ Pairs: 2.1–2.8 (incl. 2.7a) land with 2.9.
 
 Pairs: 3.1–3.9 (incl. 3.3a) land with 3.10.
 
-- [ ] 3.1 RED: Layer C — for every inward section the matrix emits (primary github-issues/jira ×
+- [x] 3.1 RED: Layer C — for every inward section the matrix emits (primary github-issues/jira ×
       inward/both; github-issues and jira secondaries), the registration line filled from a synthetic
       item of that system's key shape, following the section's quoting instruction, run through
       `sh -c`, exits 0; `<issue-updated-at>` is filled only when that section's listing step names an
       updated field (today the github-issues secondary cannot be filled)
-- [ ] 3.2 RED: jira keys `ABC-123` and `ABC-124` register as two distinct epics; the same key twice is
+- [x] 3.2 RED: jira keys `ABC-123` and `ABC-124` register as two distinct epics; the same key twice is
       refused as a duplicate (`repro.txt` §B3)
-- [ ] 3.3 RED: items titled ``it's "done" $(touch pwned) `id` ``, `--limit=5 ignored`, `-h`, `--help`,
+- [x] 3.3 RED: items titled ``it's "done" $(touch pwned) `id` ``, `--limit=5 ignored`, `-h`, `--help`,
       `-x starts with a dash`, and a title holding a newline — each registration and each
       `suggest-lane --ask=` call, filled per the section's quoting sentence and run through `sh -c`,
       exits 0 (neither prints help); titles read back byte-identical; no `pwned` file exists; every
       inward section emits `--title=`, `--external-url=` and `suggest-lane --ask=`
-- [ ] 3.3a RED: `suggest-lane --ask='--limit=5 ignored'` exits 0 routing on that text; `suggest-lane
+- [x] 3.3a RED: `suggest-lane --ask='--limit=5 ignored'` exits 0 routing on that text; `suggest-lane
       "fix a typo"` is unchanged; `suggest-lane --ask=x "y"` is refused as a surplus positional;
       `suggest-lane --help` lists `--ask`
-- [ ] 3.4 RED: every github-issues listing step names `--limit`, and the procedure carries the
+- [x] 3.4 RED: every github-issues listing step names `--limit`, and the procedure carries the
       truncation stop before its closed-item step
-- [ ] 3.5 RED: no emitted section names `/pm:epic list` — asserted against the rendered rules block,
+- [x] 3.5 RED: no emitted section names `/pm:epic list` — asserted against the rendered rules block,
       because Layer A's `/pm:<name>` check reads only `epic`, which exists
-- [ ] 3.6 RED: every secondary section carries the watermark step before its closed-item step
-- [ ] 3.7 RED: the completion-sync reminder's "steps above" reference resolves — for an inward-only
+- [x] 3.6 RED: every secondary section carries the watermark step before its closed-item step
+- [x] 3.7 RED: the completion-sync reminder's "steps above" reference resolves — for an inward-only
       github-issues primary with no secondary the block names no absent writeback step (replaces the
       heading-only assertion; `repro.txt` §B4-B6)
-- [ ] 3.8 RED: the outward section's record-the-key line carries `--external-updated-at`, and an epic
+- [x] 3.8 RED: the outward section's record-the-key line carries `--external-updated-at`, and an epic
       recorded by that line, filled, is not counted never-re-read by the brief
-- [ ] 3.9 REGRESSION GUARD: the github-issues primary's existing recipe test in `conductor-14` and the
+- [x] 3.9 REGRESSION GUARD: the github-issues primary's existing recipe test in `conductor-14` and the
       0.26.0 rules fixtures (`scripts/test/fixtures/rules-0.26.0-*.txt`) — update the fixtures only
       where this change's text changes, and say which lines in the commit; `conductor-14`'s
       `/"<issue-title>"/g` fill helper is rewritten for the `--title=<issue-title>` form
-- [ ] 3.10 GREEN: `inwardListStep()` and `watermarkStep()` shared by primary and secondary; the quoting
+- [x] 3.10 GREEN: `inwardListStep()` and `watermarkStep()` shared by primary and secondary; the quoting
       sentence, `--title=`/`--external-url=` and `suggest-lane --ask=`; the `--ask` registry row in
       `constants.mjs`, `suggest-lane`'s positional `min` set to 0, and `suggest-lane` reading `--ask`
       (help projects it from the row); the `<issue-key-slug>`/`<issue-key>` placeholders for

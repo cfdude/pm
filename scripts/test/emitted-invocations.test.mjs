@@ -1701,3 +1701,226 @@ test("2.1 every exported registry entry has a Layer B builder, and the unconstru
     .flatMap(m => Object.values(m)).flatMap(s => (Array.isArray(s) ? s : [s])).filter(s => s.unconstructable).length;
   assert.equal(declared, UNCONSTRUCTABLE, "declared-unconstructable builders");
 });
+
+// ═══════════════════════════════ Layer C — tracker recipes execute for every role and system ═══════════════════════════════
+//
+// design.md Decision 1 Layer C and Decision 3. Every inward section the tracker matrix emits — the
+// primary's and each secondary's, github-issues and jira — has its registration line filled from a
+// synthetic item of that system's key shape, FOLLOWING THE SECTION'S OWN QUOTING INSTRUCTION, and
+// run through `sh -c`. A title that is shell-hostile, flag-shaped, help-shaped or multi-line must
+// store byte-identically and execute nothing.
+
+const INWARD_HEADINGS = /^## (GitHub issue sync|Inward tracker sync|Secondary tracker sync) \(/;
+
+/** Every distinct inward section across the tracker matrix (claude-code platform), with the
+ *  configuration that produced it. */
+export async function inwardSections() {
+  const { rulesBlock } = await import(lib("rules.mjs"));
+  const seen = new Map();
+  for (const { tracker, secondaries } of trackerMatrix()) {
+    const lines = rulesBlock(tracker, "standard", secondaries, "claude-code").split("\n");
+    for (let i = 0; i < lines.length; i++) {
+      if (!INWARD_HEADINGS.test(lines[i])) continue;
+      let j = i + 1;
+      while (j < lines.length && !/^## /.test(lines[j])) j++;
+      const text = lines.slice(i, j).join("\n");
+      const secondary = /^## Secondary/.test(lines[i]);
+      const cfg = secondary ? secondaries.find(s => text.includes(`(${s.system}`)) : tracker;
+      if (!seen.has(text)) seen.set(text, { heading: lines[i], text, system: cfg.system, secondary, tracker, secondaries });
+    }
+  }
+  return [...seen.values()];
+}
+
+/** The section's quoting sentence, if it carries one: item values filled as ONE single-quoted word. */
+const quotingInstruction = (section) => /ONE shell-quoted word/.test(section.text) && /'\\''/.test(section.text);
+const posixQuote = (v) => `'${v.replace(/'/g, "'\\''")}'`;
+
+/** The span in a section that begins `prefix`, joined across its wrapped lines. */
+function sectionSpan(section, prefix) {
+  const spans = [];
+  const joined = section.text.replace(/\n\s+/g, " ");
+  for (const m of joined.matchAll(/`([^`]+)`/g)) if (m[1].startsWith(prefix)) spans.push(m[1]);
+  return spans;
+}
+
+/** Does the section's listing step request an updated timestamp for the item? */
+const listingFetchesUpdated = (section) => {
+  // The whole step, wrapped lines included: from `1. ` to the next numbered step.
+  const m = /^1\. [\s\S]*?(?=^2\. )/m.exec(section.text);
+  const step1 = (m ? m[0] : "").replace(/\n\s+/g, " ");
+  return /updatedAt/.test(step1) || /updated timestamp/.test(step1);
+};
+
+/** Fill one recipe line from `item` following the section's own instruction, as a shell line. */
+function fillRecipe(section, line, item) {
+  const quoted = quotingInstruction(section);
+  // Item-sourced values: one shell word per the instruction, or — where the section gives none —
+  // exactly what its text shows (a value dropped inside the double quotes it prints).
+  const itemValue = (v) => (quoted ? posixQuote(v) : v);
+  let out = line
+    .replace(/<issue-title>/g, () => itemValue(item.title))
+    .replace(/<issue-url>/g, () => itemValue(item.url))
+    .replace(/<issue-key-slug>/g, item.key.toLowerCase().replace(/[^a-z0-9]+/g, "-"))
+    .replace(/<issue-key>/g, () => itemValue(item.key))
+    .replace(/<issue-number>/g, item.key)
+    .replace(/<lane>/g, "claude-code");
+  if (listingFetchesUpdated(section)) out = out.replace(/<issue-updated-at>/g, AT);
+  return out;
+}
+
+function shRun(cwd, line) {
+  const r = spawnSync("sh", ["-c", `node "${ENGINE}" ${line}`], {
+    cwd, encoding: "utf8",
+    env: { ...process.env, CLAUDE_PROJECT_DIR: cwd, PM_CACHE_ROOT: EMPTY_CACHE, PM_QUIET_ENGINE_BANNER: "1" },
+  });
+  return { status: r.status, stdout: r.stdout || "", stderr: r.stderr || "" };
+}
+
+const HOSTILE_TITLES = [
+  "Ordinary title",
+  "it's \"done\" $(touch pwned) `id`",
+  "--limit=5 ignored",
+  "-h",
+  "--help",
+  "-x starts with a dash",
+  "line one\nline two",
+];
+const itemFor = (section, n) => section.system === "github-issues"
+  ? { key: String(40 + n), url: `https://github.com/o/n/issues/${40 + n}` }
+  : { key: `ABC-${120 + n}`, url: `https://jira.example/browse/ABC-${120 + n}` };
+
+test("3.1/3.3 Layer C: every inward section's registration line and lane-routing call, filled per its quoting instruction, run through sh", async () => {
+  const sections = await inwardSections();
+  assert.ok(sections.some(s => s.secondary && s.system === "github-issues") && sections.some(s => s.secondary && s.system === "jira") &&
+    sections.some(s => !s.secondary && s.system === "github-issues") && sections.some(s => !s.secondary && s.system === "jira"),
+    `the matrix emits primary and secondary inward sections for both systems: ${sections.map(s => s.heading).join(" | ")}`);
+  const problems = [];
+  for (const section of sections) {
+    const [registration] = sectionSpan(section, "add-epic --id ");
+    const [routing] = sectionSpan(section, "suggest-lane");
+    if (!registration || !routing) { problems.push(`${section.heading}: no registration line or no lane-routing call`); continue; }
+    for (const flag of ["--title=", "--external-url="]) {
+      if (!registration.includes(flag)) problems.push(`${section.heading}: registration does not use ${flag}`);
+    }
+    if (!routing.startsWith("suggest-lane --ask=")) problems.push(`${section.heading}: lane routing is not \`suggest-lane --ask=\`: ${routing}`);
+    const repo = remedyRepo();
+    HOSTILE_TITLES.forEach((title, n) => {
+      const item = { ...itemFor(section, n), title };
+      const reg = fillRecipe(section, registration, item);
+      const r = shRun(repo.cwd, reg);
+      if (r.status !== 0) { problems.push(`${section.heading} [${JSON.stringify(title)}]: registration exited ${r.status}: ${r.stderr.split("\n")[0]}\n    ${reg}`); return; }
+      const epic = repo.state().epics.find(e => e.externalUrl === item.url);
+      if (!epic) problems.push(`${section.heading} [${JSON.stringify(title)}]: no epic registered for ${item.url}`);
+      // The read-back value is NOT printed: when a title executed, it holds the command's output
+      // (for `id`, the machine's user and groups), which does not belong in a saved test transcript.
+      else if (epic.title !== title) problems.push(`${section.heading}: title ${JSON.stringify(title)} did not read back byte-identical (${epic.title.length} chars stored)`);
+      const lane = shRun(repo.cwd, fillRecipe(section, routing, item));
+      if (lane.status !== 0 || !/"lane"/.test(lane.stdout)) {
+        problems.push(`${section.heading} [${JSON.stringify(title)}]: lane routing exited ${lane.status}: ${(lane.stderr || lane.stdout).split("\n")[0]}`);
+      }
+    });
+    if (fs.existsSync(path.join(repo.cwd, "pwned"))) problems.push(`${section.heading}: a title executed a command (pwned exists)`);
+  }
+  assert.deepEqual(problems, [], problems.join("\n"));
+});
+
+test("3.2 jira keys ABC-123 and ABC-124 register as two distinct epics; the same key twice is refused", async () => {
+  const sections = (await inwardSections()).filter(s => s.system === "jira" && !s.secondary && /· ABC\)/.test(s.heading));
+  assert.ok(sections.length, "an inward jira primary scoped to ABC is emitted");
+  for (const section of sections) {
+    const [registration] = sectionSpan(section, "add-epic --id ");
+    const repo = remedyRepo();
+    const itemA = { key: "ABC-123", url: "https://jira.example/browse/ABC-123", title: "A" };
+    const itemB = { key: "ABC-124", url: "https://jira.example/browse/ABC-124", title: "B" };
+    for (const item of [itemA, itemB]) {
+      const r = shRun(repo.cwd, fillRecipe(section, registration, item));
+      assert.equal(r.status, 0, `${section.heading}: ${item.key} registers: ${r.stderr}`);
+    }
+    const ids = repo.state().epics.filter(e => /ABC-12[34]/.test(e.externalUrl || "")).map(e => e.id);
+    assert.equal(new Set(ids).size, 2, `two distinct ids: ${ids}`);
+    const again = shRun(repo.cwd, fillRecipe(section, registration, { ...itemA, url: "https://jira.example/browse/ABC-123?again" }));
+    assert.notEqual(again.status, 0, "the same key derives the same id, refused as a duplicate");
+  }
+});
+
+test("3.3a suggest-lane --ask reads a flag-shaped text; the positional form is unchanged; both at once is refused; help lists --ask", () => {
+  const repo = remedyRepo();
+  const ask = repo.run(["suggest-lane", "--ask=--limit=5 ignored"]);
+  assert.equal(ask.status, 0, ask.stderr);
+  assert.deepEqual(JSON.parse(ask.stdout), { lane: null, matched: null });
+  repo.ok(["set-lane-routing", "--add", "limit=5:superpowers"]);
+  assert.equal(JSON.parse(repo.run(["suggest-lane", "--ask=--limit=5 ignored"]).stdout).lane, "superpowers",
+    "it routes on the text --limit=5 ignored");
+  const positional = repo.run(["suggest-lane", "fix a typo"]);
+  assert.equal(positional.status, 0, positional.stderr);
+  assert.deepEqual(JSON.parse(positional.stdout), { lane: null, matched: null });
+  const both = repo.run(["suggest-lane", "--ask=x", "y"]);
+  assert.notEqual(both.status, 0, "--ask and a positional text together are refused");
+  assert.match(both.stderr, /extra argument/);
+  const help = repo.run(["suggest-lane", "--help"]);
+  assert.match(help.stdout + help.stderr, /--ask/);
+});
+
+test("3.4 every github-issues listing step names --limit, and the truncation stop precedes the closed-item step", async () => {
+  for (const section of (await inwardSections()).filter(s => s.system === "github-issues")) {
+    const step1 = section.text.split("\n").find(l => /^1\. /.test(l));
+    assert.match(step1, /gh issue list .*--limit \d+/, `${section.heading}: ${step1}`);
+    const flat = section.text.replace(/\n\s+/g, " ");
+    const stop = flat.search(/do not run the closed-item step/i);
+    const closed = flat.search(/did NOT appear in the open list/);
+    assert.ok(stop !== -1 && closed !== -1 && stop < closed, `${section.heading}: truncation stop before the closed-item step`);
+  }
+});
+
+test("3.5 no emitted section names /pm:epic list", async () => {
+  for (const { label, text } of await renderedRulesBlocks()) {
+    assert.ok(!/pm:epic list|\$pm-epic list|pm-epic list/.test(text), `${label} names an epic list command pm does not ship`);
+  }
+});
+
+test("3.6 every secondary section carries the watermark step before its closed-item step", async () => {
+  const secondaries = (await inwardSections()).filter(s => s.secondary);
+  assert.ok(secondaries.length >= 2);
+  for (const section of secondaries) {
+    const flat = section.text.replace(/\n\s+/g, " ");
+    const watermark = flat.search(/listing alone must never advance the watermark/);
+    const closed = flat.search(/did NOT appear in the open list/);
+    assert.ok(watermark !== -1 && watermark < closed, `${section.heading}: watermark step before the closed-item step`);
+    assert.match(flat, /record-tracker-refresh|--external-updated-at <iso>/);
+  }
+});
+
+test("3.7 the completion-sync reminder names no writeback step the block does not emit", async () => {
+  const { rulesBlock } = await import(lib("rules.mjs"));
+  const block = rulesBlock({ system: "github-issues", repo: "o/n", direction: "inward" }, "standard", [], "claude-code");
+  const reminder = block.slice(block.indexOf("## Sync after completing tracker-linked work"));
+  assert.ok(block.includes("## Sync after completing tracker-linked work"), "the reminder is present");
+  const head = reminder.split("\n## ")[0];
+  assert.doesNotMatch(head.replace(/\n/g, " "), /writeback steps above/, `an inward-only github-issues primary with no secondary emits no writeback step:\n${head}`);
+  const withSecondary = rulesBlock({ system: "github-issues", repo: "o/n", direction: "inward" }, "standard",
+    [{ system: "jira", projectKey: "SEC", role: "secondary" }], "claude-code");
+  if (/writeback steps above/.test(withSecondary.replace(/\n/g, " "))) {
+    assert.match(withSecondary, /Completion status writeback/, "where the reference is printed, the step exists");
+  }
+});
+
+test("3.8 the outward record-the-key line carries --external-updated-at, and an epic recorded by it is not counted never-re-read", async () => {
+  const { rulesBlock } = await import(lib("rules.mjs"));
+  const block = rulesBlock({ system: "jira", projectKey: "ABC", direction: "outward" }, "standard",
+    [{ system: "github-issues", repo: "o/s", role: "secondary" }], "claude-code");
+  const flat = block.replace(/\n\s+/g, " ");
+  const line = [...flat.matchAll(/`(update-epic <id> --external-id [^`]+)`/g)].map(m => m[1])[0];
+  assert.ok(line, "the outward section names its record-the-key line");
+  assert.match(line, /--external-updated-at <[^>]+>/, line);
+  const repo = remedyRepo();
+  repo.ok(["set-tracker", "--system", "jira", "--project", "ABC", "--direction", "outward"]);
+  repo.ok(["set-tracker", "--role", "secondary", "--system", "github-issues", "--repo", "o/s"]);
+  repo.ok(["add-epic", "--id", "ow", "--lane", "claude-code", "--title", "ow"]);
+  const argv = fillByMeaning(expandForms(line)[0], { positional: "ow", "external-id": "ABC-9",
+    "external-url": "https://jira.example/browse/ABC-9", "external-updated-at": AT });
+  repo.ok(argv);
+  const brief = repo.run(["brief"]);
+  const text = brief.stdout.trim() ? JSON.parse(brief.stdout).hookSpecificOutput.additionalContext : "";
+  assert.doesNotMatch(text, /never re-read/, text);
+});

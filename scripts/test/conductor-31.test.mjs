@@ -82,6 +82,8 @@ const VERB_BASELINE = {
   "purge-logs": () => ["purge-logs", "--keep", "5"],
   changelog: () => ["changelog", "--since", "0.0.1"],
   "plan-hierarchy": () => ["plan-hierarchy", "--parent", "e1"],
+  // emitted-commands-run-as-written: `--ask=<text>` carries a flag-shaped item title as a value.
+  "suggest-lane": () => ["suggest-lane", "--ask", "fix a typo"],
   "push-detour": () => ["push-detour", "e1", "--detour", "other", "--reason", "blocked", "--reconcile"],
   // No verb writes an automatic row without git, so the baseline seeds one (state.json untouched).
   "retract-detour": (cwd) => {

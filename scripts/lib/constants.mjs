@@ -762,6 +762,11 @@ export const VERB_FLAGS = [
   { flag: "direction", commands: ["set-tracker"], placeholder: "inward|outward|both" },
   { flag: "intent", commands: ["set-tracker"], repeats: true },
   { flag: "remove", commands: ["set-tracker"], valueless: true },
+  // suggest-lane's text as the VALUE of a declared flag. A title that begins with `-` or is shaped
+  // like a flag (`--limit=5 ignored`) is classified as a flag even inside shell quotes when passed
+  // positionally; `--ask=<text>` is one token whose value is never reclassified, so the emitted
+  // lane-routing step routes any item title (emitted-commands-run-as-written, Decision 3).
+  { flag: "ask", commands: ["suggest-lane"], requires: "the text to route" },
   // record-reconcile and record-tracker-refresh. `--verdict` is spelled the same on four verbs
   // and means four different vocabularies, so it is four scoped rows and not one shared one;
   // what they agree on — that it takes a value — is what the row carries.
@@ -915,7 +920,9 @@ export const VERB_POSITIONALS = {
   "retract-detour": { min: 1, max: 1, form: "<sha>", idFirst: false, freeText: false },
   "record-cross-spec-review": { min: 1, max: 1, form: "<releaseId>", idFirst: false, freeText: false },
   "set-activity-log": { min: 1, max: 1, form: "on|off", idFirst: false, freeText: false },
-  "suggest-lane": { min: 1, max: 1, form: "\"<free text>\"", idFirst: false, freeText: true },
+  // min 0 since `--ask=<text>` (emitted-commands-run-as-written): the verb refuses when neither the
+  // flag nor a text is given, and refuses both at once.
+  "suggest-lane": { min: 0, max: 1, form: "\"<free text>\"", idFirst: false, freeText: true },
   triage: { min: 1, max: 1, form: "\"<the ask, in its own words>\"", idFirst: false, freeText: true },
   "pop-detour": { min: 0, max: 1, form: "[<epicId>]", idFirst: true, freeText: false },
   "set-gate-guard": { min: 0, max: 1, form: "[on|off]", idFirst: false, freeText: false },
@@ -932,7 +939,7 @@ export const VERB_POSITIONALS = {
 
 export const FLAGLESS_VERBS = [
   "sync", "log-detour", "honcho-memory",
-  "reorder", "set-active", "clear-active", "suggest-lane", "set-gate-guard",
+  "reorder", "set-active", "clear-active", "set-gate-guard",
   "verify-worktrees", "verify-state", "integrity", "changesets", "upgrade",
   // #111's toggle. Its argument is the POSITIONAL `on|off` — `set-activity-log --on` is refused
   // by the same check that refuses `set-activity-log maybe` — so it has no flag surface to
@@ -1402,6 +1409,11 @@ export function mirroredEpicIdPrefix(tracker) {
  *  the suite's source scan fails any emitter that carries the `github-issues` literal itself,
  *  because a vendor literal in an emitter is how the direction rule came to be applied at one of
  *  two sites in the first place. */
+/** Are this tracker's item keys bare numbers (`42`)? Only then can a registration recipe derive an
+ *  epic id from `<issue-number>` directly; every other system's keys (`ABC-123`) are slugged into
+ *  the id and recorded verbatim as the external id. Exported so an emitter never names a vendor. */
+export const itemKeysAreNumbers = (tracker) => !!tracker && tracker.system === "github-issues";
+
 export const usesGhIssueList = (tracker) =>
   !!tracker && tracker.system === "github-issues" && !!tracker.repo;
 
