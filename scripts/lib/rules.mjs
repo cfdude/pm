@@ -895,9 +895,11 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
       ...closedItemStep(platform, st.system, 5),
       "",
       "**Completion status writeback** — when an epic whose `externalUrl` matches this secondary",
-      // A repo that fails the owner/name shape (a legacy value) is quoted as DATA, never set in a
-      // code span an agent may lift into a shell line.
-      `tracker's ${st.repo ? (usesGhIssueList(st) || !itemKeysAreNumbers(st) ? `repo (\`${st.repo}\`)` : `repo ${JSON.stringify(st.repo)}`) : `project (\`${st.projectKey}\`)`} transitions to`,
+      // Only a repo that HAS the owner/name shape (a github-issues repo usesGhIssueList() accepts) is
+      // set in a code span. Any other — a legacy malformed github-issues value, or a repo recorded on a
+      // non-github secondary, which no shape rule covers — is quoted as DATA: a backtick in it would
+      // break the span, and a span is what an agent lifts into a shell line (Gate 2 E-M5).
+      `tracker's ${st.repo ? (usesGhIssueList(st) ? `repo (\`${st.repo}\`)` : `repo ${JSON.stringify(st.repo)}`) : `project (\`${st.projectKey}\`)`} transitions to`,
       "`status: \"archived\"`, close/transition the linked issue here too, using your own",
       "tooling — check its current state first so a re-run does not error on an already-closed",
       "issue.",

@@ -355,13 +355,15 @@ Pairs: 7.0–7.1 land with 7.2. The single-writer rule for hierarchy runs is NOT
       `--remove` exemption); the vendor-switch scope drop and direction record; ALSO
       `commands/tracker.md:170` and `commands/sync.md:103`, which still teach
       `suggest-lane "<issue-title>"` — the emitted step is now `suggest-lane --ask=<issue-title>`
-      (found by 9.1's sweep; sync.md is not otherwise in this section)
+      (found by 9.1's sweep; sync.md is not otherwise in this section); ALSO `commands/tracker.md:127`,
+      whose outward record-the-key form lacks `--external-updated-at <iso>` (Gate 2 minor)
 - [ ] 10.2 `commands/unconsidered-outcomes.md` — `deliveredBlockedBy`, and that an openspec-lane epic
       never reviewed at Gate 2 is not offered `delivered`
 - [ ] 10.3 (moved to 7.0/7.2 — the review-mode unset line is test-driven)
 - [ ] 10.4 `skills/conductor/SKILL.md` — tracker section (limit, watermark on secondaries, key
       placeholder, quoting item values, direction kept on a vendor switch), the brief's two tracker
-      lines, `deliveredBlockedBy`
+      lines, `deliveredBlockedBy`; ALSO `SKILL.md:243`, whose outward record-the-key form lacks
+      `--external-updated-at <iso>` (Gate 2 minor)
 - [ ] 10.5 `README.md` where tracker sync, `unconsidered-outcomes` or gate recording are described
 - [ ] 10.5a `commands/lane-routing.md` and README's verb reference / flag table — `suggest-lane --ask=<text>`,
       why it exists (a flag-shaped text cannot be passed positionally), and that the positional form is

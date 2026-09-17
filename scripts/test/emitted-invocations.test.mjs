@@ -821,11 +821,18 @@ async function assertLayerA(label, out) {
 }
 
 /** Register one builder as tests: one per alternative (fresh fixture each), or the prints-none check. */
-function registerBuilder(label, spec) {
-  if (spec.unconstructable) return;
+/** The cases of one builder spec that are registered as tests: a whole spec or ANY array element
+ *  declaring `unconstructable` is skipped (it is counted by 2.1 instead) — Gate 2 E-M4, where only a
+ *  whole spec was skipped and an unconstructable element was still run. `k` keeps each case's index. */
+export function buildableCases(spec) {
+  if (!Array.isArray(spec) && spec.unconstructable) return [];
   const cases = Array.isArray(spec) ? spec : [spec];
-  cases.forEach((c0, k) => {
-    const name = `${label}${cases.length > 1 ? ` [${c0.case || k}]` : ""}`;
+  return cases.map((c, k) => ({ c, k, many: cases.length > 1 })).filter(x => !x.c.unconstructable);
+}
+
+function registerBuilder(label, spec) {
+  buildableCases(spec).forEach(({ c: c0, k, many }) => {
+    const name = `${label}${many ? ` [${c0.case || k}]` : ""}`;
     // A producer may read in-process (a library function, not a verb run): its output joins the corpus.
     const c = { ...c0, produce: (fx) => { const out = c0.produce(fx); CORPUS.push({ args: ["produce", name], text: out }); return out; } };
     if (c.prints === "none") {
@@ -1593,11 +1600,33 @@ test("2.8 REGRESSION GUARD: a withdrawal on an archived delivered record whose G
 });
 
 test("2.8 REGRESSION GUARD: deliveredObligations() reports Gate 2 failures under kind gate2, the variant in its own field", async () => {
-  const { deliveredObligations } = await import(lib("archive-gate.mjs"));
+  const { DELIVERED_OBLIGATIONS, deliveredObligations } = await import(lib("archive-gate.mjs"));
   const out = deliveredObligations({ id: "k", title: "k", status: "queued", role: "epic", lane: "openspec", links: [] });
   assert.equal(out.length, 1);
   assert.equal(out[0].kind, "gate2");
   assert.equal(out[0].variant, "gate2-missing");
+  // EVERY Gate 2 variant, not only the one a bare epic reaches (Gate 2 E-M1): deliveredRegression
+  // compares by kind, so one variant under its own kind would read a stale→withdrawn move as a regression.
+  const gate2 = DELIVERED_OBLIGATIONS.filter(o => /^gate2-/.test(o.variant));
+  assert.ok(gate2.length >= 4, `the Gate 2 variants: ${gate2.map(o => o.variant).join(", ")}`);
+  for (const o of gate2) assert.equal(o.kind, "gate2", `${o.variant} reports under kind gate2`);
+});
+
+test("2.8 REGRESSION GUARD: the refusal's invocation keeps offering delivered where the pre-edit record already blocks it", () => {
+  // Gate 2 E-M2 — keepDelivered. The pre-edit record's Gate 2 is already stale (so blockedDelivered()
+  // names it), and the edit newly breaks the HANDOFF: the refusal's invocation must still offer the
+  // `delivered` that was considered, which the epic-aware default would omit.
+  const repo = remedyRepo();
+  const [c1, c2] = openspecEpic(repo, "kd", 2);
+  passGate2(repo, "kd", repo.parent(c1), c2);
+  repo.ok(archiveDelivered("kd"));
+  passGate2(repo, "kd", repo.parent(c1), c1);
+  const r = repo.run(["update-epic", "kd", "--add-story", "left behind"]);
+  assert.notEqual(r.status, 0, `fixture: the new outstanding story is a handoff regression:\n${r.stderr}`);
+  assert.match(r.stderr, /broken: the handoff demand/, r.stderr);
+  const [line] = invocationLines(r.stderr);
+  assert.ok(line, `the refusal prints its invocation:\n${r.stderr}`);
+  assert.match(line, /--outcome <[^>]*\bdelivered\b/, `delivered stays offered: ${line}`);
 });
 
 // ─────────────── the commit nudge as a printer ───────────────
@@ -2335,6 +2364,39 @@ registerBuilder("9.1 update-epic's refusal to withdraw an ungated Gate 2", {
     name: "record a real verdict",
     cleared(fx) { assert.equal(fx.repo.epic("wu").gateReview.gate2.verdict, "pass", "the ungated entry is superseded by a real verdict"); },
   }],
+});
+
+test("E-M4 an unconstructable array element is not registered as a test; a whole unconstructable spec neither", () => {
+  assert.deepEqual(buildableCases([{ case: "a" }, { case: "b", unconstructable: "why" }]).map(x => x.c.case), ["a"]);
+  assert.deepEqual(buildableCases({ unconstructable: "why" }), []);
+  assert.deepEqual(buildableCases({ case: "one" }).map(x => [x.c.case, x.many]), [["one", false]]);
+});
+
+test("E-M3 every closed-item step in every rules block states the Gate 2 condition beside its outcome list", async () => {
+  const { rulesBlock } = await import(lib("rules.mjs"));
+  let steps = 0;
+  for (const { tracker, secondaries } of trackerMatrix()) {
+    const flat = rulesBlock(tracker, "standard", secondaries, "claude-code").replace(/\n\s+/g, " ");
+    for (const m of flat.matchAll(/did NOT appear in the open list you just read[\s\S]*?need a second ending\. Then re-render with `[^`]+`\./g)) {
+      steps++;
+      const after = flat.slice(m.index + m[0].length, m.index + m[0].length + 200);
+      assert.match(after, /^ For an openspec-lane epic, `delivered` also needs a passing Gate 2/, `${m[0]}${after}`);
+    }
+  }
+  assert.ok(steps > 20, `only ${steps} closed-item steps found across the matrix`);
+});
+
+test("E-M5 a repo on a non-github secondary is quoted as data in the writeback line, never set in a code span", async () => {
+  const { rulesBlock } = await import(lib("rules.mjs"));
+  const BT = "`";
+  const repo = `team${BT}x`;
+  const block = rulesBlock(null, "standard", [{ system: "jira", repo, projectKey: "SEC", role: "secondary" }], "claude-code");
+  const line = block.split("\n").find(l => l.startsWith("tracker's repo"));
+  assert.ok(line, `the writeback line names the repo:\n${block}`);
+  assert.ok(line.includes(JSON.stringify(repo)), line);
+  assert.ok(!line.includes(`(${BT}${repo}${BT})`), line);
+  const gh = rulesBlock(null, "standard", [{ system: "github-issues", repo: "o/s", role: "secondary" }], "claude-code");
+  assert.ok(gh.includes("tracker's repo (`o/s`)"), "a shaped github-issues repo is still spanned");
 });
 
 test("9.1 the rules block's disposition rule states the Gate 2 condition beside its placeholder-id outcome list", async () => {

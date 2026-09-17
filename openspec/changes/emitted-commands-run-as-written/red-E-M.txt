@@ -1,0 +1,16 @@
+# Gate 2 minors E-M1..E-M5. E-M1/M2/M3/M4 are test-only: RED is mutation survival. E-M5 is an engine fix: its mutant m25 IS the pre-fix code.
+# m07 gate2-stale kind renamed; m11 keepDelivered ignored; m17 closedItemStep's Gate 2 sentence removed; m25 non-github secondary repo spanned (pre-fix rules.mjs); m26 buildableCases keeps unconstructable elements (pre-fix harness behaviour).
+## before (fab5450's test file; m07/m11/m17 filtered as the reviewer ran them)
+m07_kind_stale: exit=0 pass=2 fail=0 SURVIVED
+m11_no_keep: exit=0 pass=2 fail=0 SURVIVED
+m17_closeditem_sentence: exit=0 pass=1 fail=0 SURVIVED
+## after (this commit)
+m07_kind_stale: exit=1 pass=2 fail=1 KILLED by: ✖ 2.8 REGRESSION GUARD: deliveredObligations() reports Gate 2 failures under kind gate2, the variant in its own field (3.110084ms) | ✖ failing tests:
+m11_no_keep: exit=1 pass=2 fail=1 KILLED by: ✖ 2.8 REGRESSION GUARD: the refusal's invocation keeps offering delivered where the pre-edit record already blocks it (527.113458ms) | ✖ failing tests:
+m17_closeditem_sentence: exit=1 pass=0 fail=1 KILLED by: ✖ E-M3 every closed-item step in every rules block states the Gate 2 condition beside its outcome list (6.625792ms) | ✖ failing tests:
+m25_nongh_span: exit=1 pass=0 fail=1 KILLED by: ✖ E-M5 a repo on a non-github secondary is quoted as data in the writeback line, never set in a code span (6.454333ms) | ✖ failing tests:
+m26_element_unconstructable: exit=1 pass=0 fail=1 KILLED by: ✖ E-M4 an unconstructable array element is not registered as a test; a whole unconstructable spec neither (1.192791ms) | ✖ failing tests:
+## the reviewer's own runs (l1 harness, b577cba), wider filters
+m07_kind: exit=0 pass=6 fail=0 SURVIVED
+m11_no_keep: exit=0 pass=4 fail=0 SURVIVED
+m17_closeditem_sentence: exit=0 pass=40 fail=0 SURVIVED
