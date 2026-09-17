@@ -117,7 +117,9 @@ adding one is a visible change to the test.
 - **THEN** in each fixture every command offered exits zero and a re-run of `integrity` no longer
   reports that member; for an openspec-lane member with no passing Gate 2, the archive alternative
   names the Gate 2 precondition before offering `--outcome delivered` (today it offers an archive the
-  gate refuses with exit 1)
+  gate refuses with exit 1); and for a member whose task source is a checkbox file with a task still
+  open, the archive alternative carries `--carried-to <epicId>` (no verb ticks a checkbox), so filled
+  it exits zero (before Gate 2 E-I5 it offered a bare archive refused "task(s) outstanding")
 
 #### Scenario: The regression refusal's remedy runs
 - **WHEN** an edit to an archived `delivered` openspec-lane epic is refused because it would break

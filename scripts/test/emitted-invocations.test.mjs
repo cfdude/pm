@@ -1121,6 +1121,29 @@ const INTEGRITY_BUILDERS = {
       meaning: (fx) => ({ ...rangeMeaning(fx.repo, "left")(), reason: REASON, defer: "left" }),
       alternatives: [{ name, select: (invs) => invs.filter(pick) }],
     })),
+    // Gate 2 E-I5 — a member whose work is a CHECKBOX source (a plan) with a task still open. No verb ticks
+    // a checkbox, so the archive alternative must itself carry the handoff: `--carried-to` names where the
+    // remaining work went. Without it, the printed archive exits 1 "task(s) outstanding".
+    {
+      case: "checkbox source",
+      setup() {
+        const repo = remedyRepo();
+        repo.ok(["add-epic", "--id", "shipped", "--lane", "claude-code", "--title", "shipped"]);
+        repo.ok(["add-epic", "--id", "later", "--lane", "claude-code", "--title", "later"]);
+        const plan = repo.file("docs/superpowers/plans/2026-08-01-cb.md", "# cb\n\n- [x] 1. done\n- [ ] 2. still open\n");
+        repo.ok(["add-epic", "--id", "cb", "--lane", "superpowers", "--title", "cb", "--plan", plan]);
+        repo.ok(["release", "1.0.0", "--intent", "fixture", "--member", "shipped", "--member", "cb"]);
+        repo.ok(["update-epic", "shipped", "--status", "archived", "--outcome", "delivered", "--no-deferrals"]);
+        const plain = repo.run(["update-epic", "cb", "--status", "archived", "--outcome", "delivered", "--no-deferrals"]);
+        assert.notEqual(plain.status, 0, "fixture: a bare delivered archive is refused on the open task");
+        assert.match(plain.stderr, /outstanding/, plain.stderr);
+        return { repo, epicId: "cb" };
+      },
+      produce: integrityProducer("delivered-release-epic-left-open"),
+      reported: blockHas(),
+      meaning: () => ({ "carried-to": "later", reason: REASON }),
+      alternatives: [{ name: "archive, carrying the open task", select: (invs) => invs.filter(i => !i.text.startsWith("release ")) }],
+    },
   ],
   "recorded-sha-the-repository-cannot-resolve": [
     {

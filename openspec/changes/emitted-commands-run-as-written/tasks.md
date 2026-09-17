@@ -107,7 +107,8 @@ Pairs: 2.1–2.8 (incl. 2.7a) land with 2.9.
 - [x] 2.3 RED: `delivered-release-epic-left-open` on an openspec member with no Gate 2 — alternative 1
       (archive) in one fixture: Gate 2 precondition named first, each command exits 0, `integrity` no
       longer reports the member; alternative 2 (`release --defer`) in a second fresh fixture, same
-      assertion (`repro.txt` §D1-D2)
+      assertion (`repro.txt` §D1-D2); AND (Gate 2 E-I5) a checkbox-source member with an open task — the
+      archive alternative carries `--carried-to <epicId>` and, filled, clears the finding
 - [x] 2.4 RED: `unconsidered-outcomes` on an engine-stamped openspec-lane epic with no Gate 2 — the
       invocation's choices exclude `delivered`, `deliveredBlockedBy` names `gate2-missing` with its
       remedy; one fresh fixture per offered outcome, each exits 0 and the epic leaves the set (gh-189;

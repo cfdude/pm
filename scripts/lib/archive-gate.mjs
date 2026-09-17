@@ -405,8 +405,21 @@ export const DELIVERED_OBLIGATIONS = [
     // ticked in its own file, and moved work is recorded with `--carried-to` on the archive itself.
     remedy: (epic) => (outstandingSummary(epic).source === "stories"
       ? [`update-epic ${printedId(epic.id)} --story <n> --done`] : []),
+    // A checkbox source has no standalone remedy command — no verb ticks a checkbox — so the handoff
+    // travels ON the archive invocation itself (design Decision 2: tick the tasks, or record
+    // `--carried-to`). A printer offering `--outcome delivered` for such an epic appends these flags;
+    // without them the printed archive is refused "task(s) outstanding" (Gate 2 E-I5).
+    archiveFlags: (epic) => (outstandingSummary(epic).source === "stories"
+      ? [] : ["--carried-to <epicId>", "--reason \"<which tasks moved>\""]),
   },
 ];
+
+/** The flags a failing obligation needs ON the delivered archive invocation itself (only the handoff
+ *  of a checkbox source has any). */
+export function obligationArchiveFlags(epic, obligation) {
+  const entry = DELIVERED_OBLIGATIONS.find(o => o.variant === obligation.variant);
+  return entry && entry.archiveFlags ? entry.archiveFlags(epic) : [];
+}
 
 /** The remedy lines for one failing obligation entry (as deliveredObligations() returns it). */
 export function obligationRemedy(epic, obligation) {

@@ -21,7 +21,7 @@
 import { isInitialized, loadState } from "./state.mjs";
 import { archivedChanges, epicProgress, isArchived, strippedChangeId } from "./epic-progress.mjs";
 import { KNOWN_STATUSES, escapeControls, gateArtifacts, gateHasEvidence, isOpenspecLane, printedId, releaseMembers, withdrawnGate } from "./constants.mjs";
-import { AGENT_OUTCOMES, deliveredObligations, dispositionInvocation, gateRemedy, obligationRemedy } from "./archive-gate.mjs";
+import { AGENT_OUTCOMES, deliveredObligations, dispositionInvocation, gateRemedy, obligationArchiveFlags, obligationRemedy } from "./archive-gate.mjs";
 import { commitDate, isAncestor, isCommitNameShaped, objectExists, reachableFromAnyRef } from "./git.mjs";
 import { isArchiveBackfilled, outcomeOf, stampedBy } from "./disposition.mjs";
 import { epicReferences, holdsOwedReconcileRecord, isKnownLinkType, isRenderableLink, KNOWN_LINK_TYPES, supersededEpics } from "./links.mjs";
@@ -667,13 +667,18 @@ export const CHECKS = [
           // member with no passing Gate 2 is refused `delivered`, so each failing obligation's remedy
           // is named FIRST. The two alternatives stay explicitly separate ("either … or …"), each
           // clearing the finding on its own.
-          const owed = deliveredObligations(e).flatMap(o => obligationRemedy(e, o)).map(l => `\`${l}\``);
+          const failing = deliveredObligations(e);
+          const owed = failing.flatMap(o => obligationRemedy(e, o)).map(l => `\`${l}\``);
+          // A checkbox source's open tasks have no command of their own: the archive carries them
+          // (`--carried-to`), unless they are ticked in the task source first (Gate 2 E-I5).
+          const carry = failing.flatMap(o => obligationArchiveFlags(e, o));
           out.push({ epic: e.id, detail:
             `still \`${e.status}\` in release \`${rel.id}\`, which has already delivered — and ` +
             "it is not in that release's deferred[], so the record says neither that it shipped " +
             "nor that it was cut. Give it the ending it actually had — either it shipped: " +
             (owed.length ? `first meet what \`delivered\` requires, ${owed.join(", then ")}, then ` : "") +
-            `\`update-epic ${printedId(e.id)} --status archived --outcome delivered --no-deferrals\` — or it ` +
+            (carry.length ? "tick its open tasks in its task source and archive it, or record where they went: " : "") +
+            `\`update-epic ${printedId(e.id)} --status archived --outcome delivered${carry.map(f => ` ${f}`).join("")} --no-deferrals\` — or it ` +
             `was cut, and you record that instead: \`release ${rel.id} --defer ${printedId(e.id)} --reason "<why>"\`` });
         }
       }
