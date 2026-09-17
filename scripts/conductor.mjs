@@ -87,7 +87,7 @@ import {
 import { resolvePlatform, assertKnownPlatform, platformFlag, resolveAndRecordPlatform, rulesTarget } from "./lib/platform.mjs";
 import { loadState, readStdin } from "./lib/state.mjs";
 import { refusalFor } from "./lib/refusal.mjs";
-import { ROOT, warnRootDivergence, warnDetachedTree } from "./lib/constants.mjs";
+import { ROOT, escapeControls, warnRootDivergence, warnDetachedTree } from "./lib/constants.mjs";
 import { isDetachedTree } from "./lib/git.mjs";
 import { VERB_EFFECTS } from "./lib/verb-effects.mjs";
 import { checkCommandLine } from "./lib/argv-surface.mjs";
@@ -240,7 +240,7 @@ const showEngineBanner = process.env.PM_VERBOSE_ENGINE_BANNER
   : (process.env.PM_QUIET_ENGINE_BANNER || process.env.CLAUDE_PROJECT_DIR) ? false : true;
 if (showEngineBanner) {
   process.stderr.write(
-    `conductor: engine ${pluginVersion() || "unknown"} @ ${path.dirname(fileURLToPath(import.meta.url))}\n`
+    `conductor: engine ${pluginVersion() || "unknown"} @ ${escapeControls(path.dirname(fileURLToPath(import.meta.url)))}\n`
   );
 }
 // ---------- #111: the activity log's ONE instrumentation point ----------

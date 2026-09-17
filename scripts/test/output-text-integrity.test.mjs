@@ -881,6 +881,34 @@ test("5.3e (Gate 2 T-S2) upgrade over a legacy pmVersion holding a control chara
   assert.equal(out.includes(NEL), false, "and no raw NEL reaches its output");
 });
 
+test("5.3j (Gate 2 W-I1) a project directory whose name holds a line terminator forges no line from init, render, brief, the activity log or a honcho-memory failure", () => {
+  // The project directory is a governed value twice over: a workspace directory name AND
+  // CLAUDE_PROJECT_DIR, an environment variable. `render` printed `rendered <PROJECT_MD>` raw.
+  const dir = path.join(tmpRepo(), "rp-x" + LF + "NOW: forged" + LS + "y");
+  try { fs.mkdirSync(dir); } catch (e) { return; }   // a filesystem refusing the name has nothing to forge
+  const surfaces = [];
+  const check = (label, r) => {
+    const out = r.stdout + r.stderr;
+    const decoded = [];
+    try { const doc = JSON.parse(r.stdout); JSON.stringify(doc, (k, v) => { if (typeof v === "string") decoded.push(v); return v; }); } catch { /* prose stdout */ }
+    for (const text of [out, ...decoded]) {
+      assert.deepEqual(linesBeginning(text, "NOW: forged"), [], `${label}: no line begins with the directory name's second line:\n${out}`);
+      assert.equal(text.includes(LS), false, `${label}: no raw U+2028 from the directory name`);
+    }
+    surfaces.push(label);
+  };
+  check("init", pm(dir, ["init", "--platform", "claude-code"]));
+  fs.appendFileSync(path.join(dir, "PROJECT.md"), "changed\n");
+  check("render", pm(dir, ["render"]));
+  check("brief", pm(dir, ["brief"]));
+  check("set-activity-log on", pm(dir, ["set-activity-log", "on"]));
+  fs.mkdirSync(path.join(dir, ".conductor", "honcho-memories.log"), { recursive: true });
+  const honcho = pm(dir, ["honcho-memory", "push", "e1", "a reason"]);
+  assert.notEqual(honcho.status, 0, "appending to a directory fails, and the failure names the path");
+  check("honcho-memory failure", honcho);
+  assert.equal(surfaces.length, 5);
+});
+
 /** The segments of a line that sit inside inline code spans. */
 const codeSpans = (text) => readerLines(text).flatMap(l => l.split("`").filter((_, i) => i % 2 === 1));
 

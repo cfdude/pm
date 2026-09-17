@@ -274,6 +274,17 @@ Pairs: 7.1 lands with 7.2.
         (`red-g2-V-M3.txt`). V-M1: 5.3g refuses JSON.stringify anywhere in a declaration that writes stdout
         (aliased and variable mutants; `red-g2-V-M1.txt`). V-M2: 5.3h refuses a row's epic read by bracket,
         optional chain or destructuring (three mutants; `red-g2-V-M2.txt`).
+      - **Gate 2 W-round.** W-I1: a project directory is a governed value (a workspace name and
+        CLAUDE_PROJECT_DIR), and `render` printed `rendered <PROJECT_MD>` raw, so a directory named with a
+        line terminator forged a line from `init` and `render`. Every stdout/stderr interpolation of a path
+        or env-derived value re-derived with rg (PROJECT_MD, ROOT, CONDUCTOR_DIR, STATE_PATH, rulesTarget,
+        process.env, cwd, activityDir, `.message` of an fs error): also escaped `set-activity-log on`'s
+        `writing to <activityDir()>`, `honcho-memory`'s fs failure message (EISDIR names the absolute
+        path) and the verbose engine banner's install directory; `rules-target` stays raw (justified: a
+        machine-read filename); lock and rules-file paths are printed RELATIVE to the same root they are
+        built from, so no root segment reaches them. Test 5.3j runs init/render/brief/set-activity-log and
+        a failing honcho-memory in a directory named with LF and U+2028 (`red-g2-W-I1.txt`, one site
+        fixed at a time).
 - [x] 8.2 **Inverse of every operation added or modified** — the id refusal at `pushEpic` (inverse:
       `remove-epic`, unchanged; a skipped directory's inverse is renaming it, no verb); the release
       create refusal (inverse: none needed — nothing was stored). DECIDED, not deferred: no

@@ -1034,7 +1034,7 @@ export function honchoMemory() {
   try {
     appendHonchoMemory(action, epicId, reason);
   } catch (e) {
-    process.stderr.write(`conductor: ${e.message}\n`);
+    process.stderr.write(`conductor: ${escapeControls(e.message)}\n`);
     process.exit(1);
   }
 

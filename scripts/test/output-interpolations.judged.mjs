@@ -120,9 +120,8 @@ x("constants.mjs", "withdrawnGate", {
 // ── engine-composed: numbers, registry and vocabulary values, validated values, engine paths/versions/shas
 x("conductor.mjs", "showEngineBanner", {
   "pluginVersion() || \"unknown\"": 1,
-  "path.dirname(fileURLToPath(import.meta.url))": 1,
   "platform": 1,
-}, "engine", "the engine's own install directory and shipped version; a validated platform");
+}, "engine", "the engine's shipped version and a validated platform (its install directory is escaped: a self-hosted checkout engine lives in the workspace, Gate 2 W-I1)");
 x("conductor.mjs", "showEngineBanner", {
   "rulesTarget(resolvePlatform({ platform: declared }, loadState()), ROOT)": 1,
 }, "justified", "rules-target prints ONE machine-read path (evals/observe.py opens it); escaping would name a different file. It is the rules file under the harness's CLAUDE_PROJECT_DIR");
@@ -131,8 +130,7 @@ x("conductor.mjs", "helpAt", {
 }, "passthrough", "an argv-surface refusal, whose caller tokens are escaped where it is built");
 x("activity-log.mjs", "setActivityLog", {
   "arg": 2,
-  "activityDir()": 1,
-}, "engine", "arg is validated on|off before this line; activityDir() is the engine's log directory under ROOT");
+}, "engine", "arg is validated on|off before this line (activityDir() is escaped: it sits under CLAUDE_PROJECT_DIR, a governed value, Gate 2 W-I1)");
 x("activity-log.mjs", "segmentName", {
   "at.toISOString().replace(/[:.]/g, \"-\")": 1,
 }, "not-output", "a segment file name");
@@ -537,9 +535,6 @@ x("subcommands.mjs", "sync", {
 x("subcommands.mjs", "sync", {
   "backfilled.join(\", \")": 2,
 }, "engine", "backfilled ids passed STORABLE_EPIC_ID (no control character) before registration");
-x("subcommands.mjs", "honchoMemory", {
-  "e.message": 1,
-}, "passthrough", "honchoMemoryLine()/appendHonchoMemory refusals, escaped where built");
 x("subcommands.mjs", "honchoMemory", {
   "note": 1,
 }, "escaped", "deferralNote() escapes the detour ids (Gate 2 T-I5)");

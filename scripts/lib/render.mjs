@@ -322,7 +322,7 @@ export function render() {
     return;
   }
   fs.writeFileSync(PROJECT_MD, content);
-  process.stderr.write(`conductor: rendered ${PROJECT_MD}\n`);
+  process.stderr.write(`conductor: rendered ${escapeControls(PROJECT_MD)}\n`);
 }
 
 /** Normalizes the two sources of PROJECT.md diff noise that are never "epic-relevant" on
