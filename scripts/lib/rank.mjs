@@ -110,7 +110,7 @@ export function reorder() {
   const saved = saveState(state, { verb: "reorder" });
   reportSave(saved, {
     stream: process.stdout,
-    changed: `conductor: ${band} reordered — ${ids.map((id, i) => `${i + 1}. ${id}`).join("  ")}`,
+    changed: `conductor: ${band} reordered — ${escapeControls(ids.map((id, i) => `${i + 1}. ${id}`).join("  "))}`,
     unchanged: `conductor: ${band} was already in that order — ${STATE_UNCHANGED}`,
   });
   render();

@@ -580,6 +580,68 @@ test("6.5b REGRESSION GUARD: a legacy secondary tracker whose repo holds a contr
   assert.deepEqual(readState(cwd).secondaryTrackers || [], [], "the legacy entry was removed");
 });
 
+test("6.6a REGRESSION GUARD (Gate 2 T-I6): init's QUIET sync still names a skipped change directory and plan file", () => {
+  const cwd = tmpRepo();
+  const change = path.join(cwd, "openspec", "changes", "sx" + LF + "NOW: forged");
+  fs.mkdirSync(change, { recursive: true });
+  fs.writeFileSync(path.join(change, "proposal.md"), "# p\n");
+  const plans = path.join(cwd, "docs", "superpowers", "plans");
+  fs.mkdirSync(plans, { recursive: true });
+  fs.writeFileSync(path.join(plans, "px" + LF + "forged.md"), "# p\n");
+  const r = ok(cwd, ["init", "--platform", "claude-code"]);   // init runs sync(quiet = true)
+  assert.match(r.stderr, /sync skipped change '[^\n]*' — its name holds a control character or whitespace/, `the change skip is said under quiet:\n${r.stderr}`);
+  assert.match(r.stderr, /sync skipped plan '[^\n]*' — its name holds a control character or whitespace/, `the plan skip is said under quiet:\n${r.stderr}`);
+  assert.deepEqual(linesBeginning(r.stderr, "NOW: forged"), []);
+  assert.equal(hasControlId(cwd), false);
+});
+
+test("6.6b REGRESSION GUARD (Gate 2 T-M3): a CLAIMED plan file whose name holds a space is reported as claimed, never as unstorable", () => {
+  const cwd = initRepo();
+  const plans = path.join(cwd, "docs", "superpowers", "plans");
+  fs.mkdirSync(plans, { recursive: true });
+  fs.writeFileSync(path.join(plans, "My Plan.md"), "# mine\n");
+  ok(cwd, ["add-epic", "--id", "my-plan", "--lane", "superpowers", "--plan", path.join("docs", "superpowers", "plans", "My Plan.md")]);
+  const r = ok(cwd, ["sync"]);
+  assert.match(r.stderr, /already claimed by epic 'my-plan'/, `the claimed rung answers first:\n${r.stderr}`);
+  assert.doesNotMatch(r.stderr, /control character or whitespace/, `the final-rung check never fires for a held entry:\n${r.stderr}`);
+});
+
+test("6.6c REGRESSION GUARD (Gate 2 T-M2): pushEpic() refuses an unstorable id itself, whichever path calls it", async () => {
+  const { pushEpic, InvalidEpicIdError } = await import(lib("state.mjs"));
+  for (const id of ["e" + LF + "x", "has space", ""]) {
+    const state = { epics: [] };
+    assert.throws(() => pushEpic(state, { id, title: "t", lane: "claude-code", links: [] }), InvalidEpicIdError, `pushEpic refuses ${JSON.stringify(id)}`);
+    assert.equal(state.epics.length, 0, "and stores nothing");
+  }
+  const state = { epics: [] };
+  pushEpic(state, { id: "MASTER-ok", title: "t", lane: "superpowers", links: [] });
+  assert.equal(state.epics.length, 1, "an uppercase id is storable");
+});
+
+/** The segments of a line that sit inside inline code spans. */
+const codeSpans = (text) => readerLines(text).flatMap(l => l.split("`").filter((_, i) => i % 2 === 1));
+
+test("5.3d (Gate 2 T-M1, T-M4) an undefined status and an engine-stamped unknown outcome on a control-character id print the no-remedy PROSE (legacy values, design D3 exception)", async () => {
+  const cwd = initRepo();
+  const AT = "2026-09-01T00:00:00.000Z";
+  const odd = "odd" + LF + "FORGEDA", stamped = "stamped" + LF + "FORGEDB";
+  const epic = (id, status, extra = {}) => ({ id, title: "legacy", priority: "P2", status, role: "epic", lane: "claude-code", links: [], ...extra });
+  legacyWrite(cwd, s => {
+    s.epics.push(epic(odd, "bogus"), epic(stamped, "archived", {
+      disposition: { outcome: "unknown", recordedBy: "migration", recordedAt: AT }, deferralAssertion: { none: true, recordedAt: AT } }));
+  });
+  for (const [args, id] of [[["integrity"], odd], [["unconsidered-outcomes"], stamped]]) {
+    const r = pm(cwd, args);
+    const out = r.stdout + r.stderr;
+    assert.equal(r.status, 0, `${args[0]} exits 0:\n${out}`);
+    for (const tail of ["FORGEDA", "FORGEDB"]) assert.deepEqual(linesBeginning(out, tail), [], `${args[0]}: no line begins ${tail}`);
+    for (const inv of await printedInvocations(out)) assert.equal(await namesId(inv, id), false, `${args[0]}: no printed command names the id: ${inv}`);
+    assert.match(out, NO_RENAME, `${args[0]} reached dispositionInvocation()'s no-remedy path:\n${out}`);
+    assert.deepEqual(codeSpans(out).filter(s => NO_RENAME.test(s)), [], `${args[0]}: the no-remedy message is prose, not a code span:\n${out}`);
+    assert.doesNotMatch(out, HAND_EDIT);
+  }
+});
+
 // ═══════════════════════════════ 7. the rule is held by registries, not by a task list ═══════════════════════════════
 //
 // design D3. ONE accumulated fixture: every recipe runs, IN DECLARATION ORDER, against one repository,
@@ -746,7 +808,11 @@ recipe("update-epic --add-story", { rendered: true, expect: "fail", run: (c, v) 
   return pm(c.cwd, ["update-epic", "st", "--status", "archived", "--outcome", "delivered", "--no-deferrals"]);
 } });
 recipe("update-epic --story", { exempt: EXEMPT.number("story"), run: (c, v) => pm(c.cwd, ["update-epic", "st", "--story", v, "--done"]) });
-recipe("update-epic --wont-do", { notRendered: "a story's won't-do reason is stored and printed by no surface", run: (c, v) => pm(c.cwd, ["update-epic", "st", "--story", "1", "--wont-do", v]) });
+// Gate 2 T-I4: the recorded reason IS printed — by the refusal a SECOND disposition of the same story gets.
+recipe("update-epic --wont-do", { rendered: true, expect: "fail", run: (c, v) => {
+  ok(c.cwd, ["update-epic", "st", "--story", "1", "--wont-do", v]);
+  return pm(c.cwd, ["update-epic", "st", "--story", "1", "--wont-do", "again"]);
+} });
 
 // ── gates, reconcile, tracker refresh ──
 recipe("record-gate-review --gate", { exempt: EXEMPT.vocab("gate"), run: (c, v) => pm(c.cwd, ["record-gate-review", "ue", "--gate", v, "--verdict", "pass"]) });
@@ -841,6 +907,52 @@ export const SOURCE_RECIPES = [
   { key: "PM_SESSION", rendered: true, run: (c, v) => pm(c.cwd, ["claim", "cl3"], { env: { PM_SESSION: v } }) },
 ];
 
+// ── Gate 2 T-S1: the SUCCESS paths over what an older engine could have stored. Every argv recipe above
+//    passes its poison as a NEW value, which the input rules refuse wherever it is an id — so an id only
+//    ever reached a REFUSAL branch, and the success lines that print a stored id went unswept. These run
+//    after the sweep's legacy write (design D3's documented exception), each on records of its own, so the
+//    legacy epics the non-vacuity assertions depend on are left untouched. ──
+const LEGACY_AT = "2026-09-01T00:00:00.000Z";
+const legacyEpic = (id, status, extra = {}) =>
+  ({ id, title: "legacy", priority: "P2", status, role: "epic", lane: "claude-code", links: [], attributedCommits: [], ...extra });
+const legacyKilled = { disposition: { outcome: "killed", reason: "legacy", recordedAt: LEGACY_AT }, deferralAssertion: { none: true, recordedAt: LEGACY_AT } };
+export const LEGACY_RECIPES = [
+  { key: "remove-epic over a legacy epic id (its removal line)", rendered: true, run: (c, v) => {
+    const id = "rm-" + v;
+    legacyWrite(c.cwd, s => { s.epics.push(legacyEpic(id, "queued")); });
+    return pm(c.cwd, ["remove-epic", id]);
+  } },
+  { key: "reorder over legacy epic ids (its reordered line)", rendered: true, run: (c, v) => {
+    legacyWrite(c.cwd, s => { s.epics.push(legacyEpic("ro-a-" + v, "queued", { priority: "P0" }), legacyEpic("ro-b-" + v, "queued", { priority: "P0" })); });
+    // reorder takes the WHOLE band: read it back from the record rather than typing it.
+    const band = readState(c.cwd).epics.filter(e => e.priority === "P0" && e.status !== "archived").map(e => e.id).reverse();
+    return pm(c.cwd, ["reorder", ...band]);
+  } },
+  { key: "release --intent over a legacy release id (its update line)", rendered: true, run: (c, v) => {
+    const id = "ru-" + v;
+    legacyWrite(c.cwd, s => { s.releases = [...(s.releases || []), { id, intent: "legacy", deferred: [] }]; });
+    return pm(c.cwd, ["release", id, "--intent", "reworded"]);
+  } },
+  { key: "honcho-memory push over add-many may-invalidate link ids (the deferral note)", rendered: true, run: (c, v) => {
+    const id = fresh("mi");
+    // The EPIC half of an add-many link is not validated (a batch may link forward), so this is argv's
+    // route to a stored control-character link id — and deferralNote() prints every one of them.
+    ok(c.cwd, batchArgs(c, { id, lane: "claude-code", links: [{ type: "may-invalidate", epic: "a-" + v }, { type: "may-invalidate", epic: "b-" + v }] }));
+    return pm(c.cwd, ["honcho-memory", "push", id, "why"]);
+  } },
+  { key: "integrity over a legacy archived epic whose claim session holds a control character (the unclaim remedy)", rendered: true, run: (c, v) => {
+    legacyWrite(c.cwd, s => { s.epics.push(legacyEpic(fresh("ca"), "archived", { ...legacyKilled, claim: { session: v, claimedAt: LEGACY_AT, ttlMinutes: 60 } })); });
+    return pm(c.cwd, ["integrity"]);
+  } },
+  { key: "sync over a tombstoned plan file whose name holds a control character (the --plan remedy)", rendered: true, run: (c, v) => {
+    const rel = path.join("docs", "superpowers", "plans", `tomb-${v}.md`);
+    fs.mkdirSync(path.join(c.cwd, "docs", "superpowers", "plans"), { recursive: true });
+    fs.writeFileSync(path.join(c.cwd, rel), "# tombstoned\n");
+    legacyWrite(c.cwd, s => { s.syncIgnore = [...(s.syncIgnore || []), { path: rel, epic: "gone", reason: "removed by remove-epic" }]; });
+    return pm(c.cwd, ["sync"]);
+  } },
+];
+
 /** Every string inside a JSON document, recursively — a hook's output judged after decoding. */
 const jsonStrings = (x) => (typeof x === "string" ? [x] : Array.isArray(x) ? x.flatMap(jsonStrings)
   : x && typeof x === "object" ? Object.values(x).flatMap(jsonStrings) : []);
@@ -852,15 +964,18 @@ test("7.1 POISON_RECIPES covers exactly the registry projection, each recipe dec
   assert.deepEqual(keys.filter((k, i) => keys.indexOf(k) !== i), [], "no key has two recipes");
   assert.deepEqual(want.filter(k => !keys.includes(k)), [], "value-bearing flags and free-text positionals with no recipe");
   assert.deepEqual(keys.filter(k => !want.includes(k)), [], "recipes keyed by nothing the registries declare");
-  for (const r of [...POISON_RECIPES, ...SOURCE_RECIPES]) {
+  for (const r of [...POISON_RECIPES, ...SOURCE_RECIPES, ...LEGACY_RECIPES]) {
     const kinds = ["rendered", "notRendered", "exempt"].filter(k => r[k] !== undefined);
     assert.equal(kinds.length, 1, `${r.key}: declared exactly one of rendered / notRendered / exempt (got ${kinds.join(", ") || "none"})`);
   }
 });
 
-/** Invocation tokens in an IDENTIFIER position: the epic id of an id-first verb, a release id, and the
- *  value of every flag that names an epic, a release or a tracker scope (assertion (e)). */
+/** Invocation tokens that must never carry a control-character value (assertion (e)): the epic id of an
+ *  id-first verb, a release id, the value of every flag that names an epic, a release or a tracker scope
+ *  (ID_FLAGS), and the value of every flag carrying a governed value that is NOT an id — a session name,
+ *  a workspace path — which takes a placeholder instead (VALUE_FLAGS, commandValue(); Gate 2 T-I7). */
 const ID_FLAGS = new Set(["--id", "--detour", "--parent", "--carried-to", "--member", "--defer", "--repo", "--system", "--project"]);
+const VALUE_FLAGS = new Set(["--session", "--plan", "--spec"]);
 async function identifierTokens(inv) {
   const { VERB_POSITIONALS } = await import(lib("constants.mjs"));
   const toks = inv.trim().split(/\s+/);
@@ -869,7 +984,7 @@ async function identifierTokens(inv) {
   const out = [];
   if (pos && (pos.idFirst || pos.form === "<releaseId>" || verb === "release") && toks[1] && !toks[1].startsWith("--")) out.push(toks[1]);
   if (verb === "honcho-memory" && toks[2]) out.push(toks[2]);
-  toks.forEach((t, i) => { if (i > 0 && ID_FLAGS.has(toks[i - 1])) out.push(t); });
+  toks.forEach((t, i) => { if (i > 0 && (ID_FLAGS.has(toks[i - 1]) || VALUE_FLAGS.has(toks[i - 1]))) out.push(t); });
   return out;
 }
 
@@ -938,6 +1053,20 @@ test("7.2 the sweep: every governed input, one accumulated record, every surface
     s.secondaryTrackers = [{ system: "github-issues", role: "secondary", repo: "o/s" + poison("L8"), direction: "inward" }];
   });
   assert.ok(readState(cwd).epics.find(e => e.id === legacyAttr).attributedCommits.includes(c1), "fixture: C1 attributed before the amend");
+
+  // ── the success paths over legacy records (Gate 2 T-S1), in order, swept like every other recipe ──
+  for (const [i, r] of LEGACY_RECIPES.entries()) {
+    const tagged = { ...r, tag: `G${i}` };
+    all.push(tagged);
+    let res;
+    try { res = r.run(c, poison(tagged.tag)); }
+    catch (e) { problems.push(`${r.key}: the recipe's fixture step failed — ${e.message.split("\n")[0]}`); continue; }
+    seen(r.key, res);
+    const wantFail = r.expect === "fail";
+    if (wantFail !== (res.status !== 0)) {
+      problems.push(`${r.key}: exited ${res.status}, declared ${wantFail ? "non-zero" : "0"} — ${(res.stderr || res.stdout).split("\n")[0].slice(0, 200)}`);
+    }
+  }
 
   // ── surfaces ──
   // the commit nudge as a SEQUENCE: amend the attributed commit, observe; commit, observe.

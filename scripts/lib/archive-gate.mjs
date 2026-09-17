@@ -15,7 +15,7 @@
 // READS that quantity rather than computing one of its own. Two counters is how a guard comes
 // to refuse an epic that renders as complete.
 
-import { CONTROL_CHARACTER, escapeControls, gateHasEvidence, gateSummary, isOpenspecLane, noRemedyMessage, orNoRemedy, printedId, withdrawnGate } from "./constants.mjs";
+import { CONTROL_CHARACTER, asCode, escapeControls, gateHasEvidence, gateSummary, isOpenspecLane, noRemedyMessage, orNoRemedy, printedId, withdrawnGate } from "./constants.mjs";
 import { commitsNotReachedBy, isCommitNameShaped, resolveCommits } from "./git.mjs";
 import { LIFECYCLE_MARKER, epicProgress, outstandingWork } from "./epic-progress.mjs";
 import { KNOWN_OUTCOMES, agentDisposition, correctionError, dispositionError, isEngineStamped, isStoryDisposed, outcomeOf } from "./disposition.mjs";
@@ -575,7 +575,7 @@ export function archiveGate(epic, request = {}) {
     const refusal = `cannot archive openspec-lane epic '${escapeControls(epic.id)}' — ${gate2Failure.detail}.`;
     // Every remedy below is rendered by DELIVERED_OBLIGATIONS, the same lines the regression refusal,
     // `integrity` and `unconsidered-outcomes` print for this obligation, each in its own code span.
-    const lines = obligationRemedy(epic, gate2Failure).map(l => `\`${l}\``);
+    const lines = obligationRemedy(epic, gate2Failure).map(asCode);
     switch (gate2Failure.variant) {
       case "gate2-withdrawn": {
         // A withdrawn Gate 2 quotes its reason, JSON-quoted with every control character escaped, so a
@@ -641,7 +641,7 @@ export function archiveGate(epic, request = {}) {
     // be written and the only key was `--carried-to`, naming a receiver for work that was
     // dropped rather than moved — the fabricated record this very message warns against.
     const remedy = outstandingSummary(epic).source === "stories"
-      ? `Finish them, or record what happened to each: \`${obligationRemedy(epic, handoffFailure)[0]}\` (it shipped) or ` +
+      ? `Finish them, or record what happened to each: ${asCode(obligationRemedy(epic, handoffFailure)[0])} (it shipped) or ` +
         `--story <n> --wont-do "<reason>" (it will not be done, and why — the row and its ` +
         `reason stay on the record). If the whole remainder moved to another epic, ` +
         `--carried-to <epicId> --reason "<which stories moved>" instead.`

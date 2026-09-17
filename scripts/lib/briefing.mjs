@@ -10,7 +10,7 @@ import { isRenderableLink, deferralHistory, deferralNote, daysSince } from "./li
 import { correctionMarking, correctionNote, outcomeOf, recordedDispositions } from "./disposition.mjs";
 import { gateRemedy, gateTableRows } from "./archive-gate.mjs";
 import { ungatedArchives, withdrawnArchiveNote } from "./integrity.mjs";
-import { KNOWN_LANES, anyInwardProcedureEmittable, escapeControls, outwardApplies, printedId, releaseLine, releaseSummaries, orNoRemedy } from "./constants.mjs";
+import { KNOWN_LANES, anyInwardProcedureEmittable, asCode, escapeControls, outwardApplies, printedId, releaseLine, releaseSummaries, orNoRemedy } from "./constants.mjs";
 import { crossSpecLine } from "./cross-spec-review.mjs";
 import { blockedWithoutDependsOnNote, dependencyNotes } from "./dependency-order.mjs";
 import { conflictCount, conflictWarningLatched, consumeConflictWarning } from "./write-conflicts.mjs";
@@ -31,11 +31,11 @@ export const BRIEF_REMEDIES = [
   },
   {
     id: "ungated-archive",
-    render: (e) => `  ⚠ \`${e.id}\` — \`${gateRemedy(e.id, 2)}\``,
+    render: (e) => `  ⚠ \`${e.id}\` — ${asCode(gateRemedy(e.id, 2))}`,
   },
   {
     id: "withdrawn-gate2-archive",
-    render: (x) => `  ⚠ \`${x.epic.id}\` — ${withdrawnArchiveNote(x)} — \`${gateRemedy(x.epic.id, 2)}\``,
+    render: (x) => `  ⚠ \`${x.epic.id}\` — ${withdrawnArchiveNote(x)} — ${asCode(gateRemedy(x.epic.id, 2))}`,
   },
   {
     id: "not-in-outward-tracker",

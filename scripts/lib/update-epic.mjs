@@ -4,7 +4,7 @@
 
 import {
   EPIC_FLAGS, KNOWN_GATE_NUMBERS, KNOWN_LANES, KNOWN_STATUSES, KNOWN_REVIEW_MODES, REVIEW_MODE_RANK,
-  CONTROL_CHARACTER, epicFlagsFor, escapeControls, orNoRemedy, isFlagToken, nullableEpicFlags, printedId, shellQuote, splitFlagToken,
+  CONTROL_CHARACTER, asCode, epicFlagsFor, escapeControls, orNoRemedy, isFlagToken, nullableEpicFlags, printedId, shellQuote, splitFlagToken,
 } from "./constants.mjs";
 import { activate, owedReconcileNotice } from "./active-pointer.mjs";
 import { globalReviewMode } from "./rules.mjs";
@@ -222,7 +222,7 @@ function regressionRefusal({ id, snapshot, next, broken, argv, status }) {
         "the withdrawal through with `delivered` attributing no commits, and attributing first is refused " +
         "because the recorded Gate 2 head does not reach the new commit:\n"
       : "  Meet it first, then retry this command:\n") +
-      remedyLines.map(l => `    - \`${l}\`\n`).join("");
+      remedyLines.map(l => `    - ${asCode(l)}\n`).join("");
   const { echoed, reenter } = echoedTokens(argv);
   // A checkbox source's open tasks have no command of their own (no verb ticks a checkbox), so the
   // handoff travels ON the invocation, computed like the remedies on the record the edit leaves
@@ -392,7 +392,7 @@ export function updateEpic() {
       process.stderr.write(
         `conductor: Gate ${g} of '${escapeControls(id)}' is an \`ungated\` entry — the engine's record that no review ` +
         "happened, not a review that can be taken back. An ungated entry is cleared by recording a " +
-        `real verdict, with that gate's evidence: \`${gateRemedy(id, g)}\`. Nothing was written.\n`);
+        `real verdict, with that gate's evidence: ${asCode(gateRemedy(id, g))}. Nothing was written.\n`);
       process.exit(1);
     }
   }
@@ -580,7 +580,7 @@ export function updateEpic() {
     if (isStoryDisposed(target)) {
       process.stderr.write(
         `conductor: story ${n} of '${escapeControls(id)}' already carries a recorded disposition ` +
-        `('${escapeControls(target.disposition.state)}': ${target.disposition.reason}). Replacing it would ` +
+        `('${escapeControls(target.disposition.state)}': ${escapeControls(target.disposition.reason)}). Replacing it would ` +
         "destroy a judgment somebody made.\n");
       process.exit(1);
     }

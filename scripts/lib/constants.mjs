@@ -196,7 +196,7 @@ export function releaseSummaries(state, epics) {
 
 /** The ONE wording for a release line, shared by both surfaces exactly as gateSummary() is. */
 export const releaseLine = (s) =>
-  `\`${s.id}\`: ${s.members} epic${s.members === 1 ? "" : "s"}, ${s.deferred.length} deferred`;
+  `\`${escapeControls(s.id)}\`: ${s.members} epic${s.members === 1 ? "" : "s"}, ${s.deferred.length} deferred`;
 
 export const KNOWN_PLATFORMS = ["claude-code", "hermes", "codex"];
 
@@ -1107,8 +1107,19 @@ export class NoRemedy extends Error {
 
 /** THE wording for a record no verb can rename (spec output-text-integrity): names the record kind
  *  and its escaped id, prints no command, and never directs a hand-edit of the state file. */
-export const noRemedyMessage = (kind, id) =>
-  `${kind} '${escapeControls(id)}' holds a control character; no verb can rename it`;
+export const noRemedyMessage = (kind, id) => {
+  const message = `${kind} '${escapeControls(id)}' holds a control character; no verb can rename it`;
+  NO_REMEDY_TEXTS.add(message);
+  return message;
+};
+/** Every no-remedy message this process has produced, so asCode() can tell one from a command by
+ *  IDENTITY with what the engine emitted rather than by reading its wording. */
+const NO_REMEDY_TEXTS = new Set();
+
+/** A remedy builder's result as inline code — unless it is the no-remedy message, which is PROSE and
+ *  must not read as a command to run (Gate 2 T-M4). Every caller that wraps a builder's result in
+ *  backticks itself goes through this instead. */
+export const asCode = (remedy) => (NO_REMEDY_TEXTS.has(remedy) ? remedy : `\`${remedy}\``);
 
 /** Build a printed remedy, or — when an id inside it holds a control character — the no-remedy
  *  message in its place. Every printedId() caller builds through this (or is a builder that does). */

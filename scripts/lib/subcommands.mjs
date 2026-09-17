@@ -14,7 +14,7 @@ import { assertRulesBlockWritable, writeRules } from "./rules.mjs";
 import { buildBrief } from "./briefing.mjs";
 import { COMMIT_DERIVED_KINDS, appendDetourLog, appendRetraction, fullSha, gitShortSha, isCommitNameShaped, isDetachedTree, readDetourRows, rowMatches, rowShasOverlap, shortSha } from "./git.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
-import { STORABLE_EPIC_ID, escapeControls, printedId, orNoRemedy, commandValue, unstorableSkipLine } from "./constants.mjs";
+import { STORABLE_EPIC_ID, asCode, escapeControls, printedId, orNoRemedy, commandValue, unstorableSkipLine } from "./constants.mjs";
 import { beginObservation, isAmend, isLiveCommit } from "./commit-watch.mjs";
 import { deliveredRegression, planWithdrawal, withdrawnRecord } from "./update-epic.mjs";
 import { deferralHistory, deferralNote, detourContext } from "./links.mjs";
@@ -479,7 +479,7 @@ function attributionNudge(state, ctx, shas, files = []) {
   if (candidates.length > 1) {
     return "ATTRIBUTION — the engine recorded nothing; choosing is yours. Each of these epics could own " +
       "what landed (a candidate whose own files the commits touch is listed first):\n" +
-      candidates.map(e => `- \`${cmd(e)}\`` + (e.attributedCommits.length === 0 ? " (attributes no commits yet)" : "")).join("\n") +
+      candidates.map(e => `- ${asCode(cmd(e))}` + (e.attributedCommits.length === 0 ? " (attributes no commits yet)" : "")).join("\n") +
       `\n${exclusion}`;
   }
   const epic = candidates[0];
@@ -487,12 +487,12 @@ function attributionNudge(state, ctx, shas, files = []) {
     return `ATTRIBUTION — \`${escapeControls(epic.id)}\` has attributed no commits yet: ` +
       "attribute every commit of this epic's work that " +
       "already landed, IN THE ORDER THEY LANDED, and then this one — " +
-      `\`${cmd(epic)}\`. The array is append-only and a recorded Gate 2 \`headSha\` must reach EVERY ` +
+      `${asCode(cmd(epic))}. The array is append-only and a recorded Gate 2 \`headSha\` must reach EVERY ` +
       "entry, so a commit left unattributed is work that gate is never checked against. " +
       `${exclusion}`;
   }
   return `ATTRIBUTION — record this commit against its epic now, before the next one: ` +
-    `\`${cmd(epic)}\`. ${exclusion}`;
+    `${asCode(cmd(epic))}. ${exclusion}`;
 }
 
 /** The pre-observation heuristic, kept intact for the UNVERIFIABLE rung only: no git, no

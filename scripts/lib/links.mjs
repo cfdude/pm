@@ -449,5 +449,5 @@ export function ordinal(n) {
  *  how a signal becomes noise. */
 export function deferralNote(history) {
   if (!history || history.count < 2) return null;
-  return `${ordinal(history.count)} deferral of this epic (detours recorded: ${history.detours.join(", ")})`;
+  return `${ordinal(history.count)} deferral of this epic (detours recorded: ${escapeControls(history.detours.join(", "))})`;
 }

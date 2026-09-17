@@ -120,7 +120,7 @@ export function removeEpic() {
   render();
   const removedIds = [...toRemove];
   reportSave(saved, {
-    changed: `conductor: removed ${removedIds.length} epic(s): ${removedIds.join(", ")}`,
+    changed: `conductor: removed ${removedIds.length} epic(s): ${escapeControls(removedIds.join(", "))}`,
     unchanged: `conductor: nothing matched for removal — ${STATE_UNCHANGED}`,
   });
   if (affected.length) {

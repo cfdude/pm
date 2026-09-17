@@ -20,7 +20,7 @@
 
 import { isInitialized, loadState } from "./state.mjs";
 import { archivedChanges, epicProgress, isArchived, strippedChangeId } from "./epic-progress.mjs";
-import { CONTROL_CHARACTER, KNOWN_STATUSES, escapeControls, gateArtifacts, gateHasEvidence, isGithubRepo, isOpenspecLane, printedId, releaseMembers, shellQuote, withdrawnGate, orNoRemedy, commandValue, STORABLE_EPIC_ID } from "./constants.mjs";
+import { CONTROL_CHARACTER, KNOWN_STATUSES, asCode, escapeControls, gateArtifacts, gateHasEvidence, isGithubRepo, isOpenspecLane, printedId, releaseMembers, shellQuote, withdrawnGate, orNoRemedy, commandValue, STORABLE_EPIC_ID } from "./constants.mjs";
 import { AGENT_OUTCOMES, deliveredArchiveInvocation, deliveredObligations, dispositionInvocation, gateRemedy, obligationArchiveFlags, obligationRemedy } from "./archive-gate.mjs";
 import { commitDate, isAncestor, isCommitNameShaped, objectExists, reachableFromAnyRef } from "./git.mjs";
 import { isArchiveBackfilled, outcomeOf, stampedBy } from "./disposition.mjs";
@@ -246,7 +246,7 @@ export const CHECKS = [
       return ungatedArchives(state.epics).filter(x => x.kind === "ungated").map(({ epic: e }) => ({ epic: e.id, detail:
         "archived by the drift heal with no Gate 2 review recorded by anyone. A standing " +
         "condition, not an episode: it holds until a real passing verdict with its commit range " +
-        `supersedes it — \`${gateRemedy(e.id, 2)}\`` }));
+        `supersedes it — ${asCode(gateRemedy(e.id, 2))}` }));
     },
   },
   {
@@ -259,7 +259,7 @@ export const CHECKS = [
       return ungatedArchives(state.epics).filter(x => x.kind === "withdrawn").map(x => ({ epic: x.epic.id, detail:
         `archived with its ${withdrawnArchiveNote(x)}. A standing condition, not an episode: a ` +
         "withdrawal takes a verdict back and does not discharge Gate 2, so this holds until a real " +
-        `verdict is recorded — \`${gateRemedy(x.epic.id, 2)}\`` }));
+        `verdict is recorded — ${asCode(gateRemedy(x.epic.id, 2))}` }));
     },
   },
   {
@@ -289,7 +289,7 @@ export const CHECKS = [
           // order (re-record Gate 2 over the replacing commit, THEN attribute it). `--attribute-commit`
           // alone is refused on an archived record whose Gate 2 head does not reach the new commit.
           // The never-withdrawn arm is `none-attributed`, not a delivered obligation, and keeps its line.
-          const pair = obligationRemedy(e, { variant: "gate2-attribution-withdrawn" }).map(l => `\`${l}\``);
+          const pair = obligationRemedy(e, { variant: "gate2-attribution-withdrawn" }).map(asCode);
           out.push({ epic: e.id, detail: withdrawn.length
             ? `recorded as delivered with a passing Gate 2 and attributes no commits, having ` +
               `WITHDRAWN ${withdrawn.map(w => `${w.sha} ("${w.reason}")`).join("; ")}. A ` +
@@ -363,7 +363,7 @@ export const CHECKS = [
         // `delivered-release-epic-left-open` does (Gate 2 R-I1): an open story's remedy first, and a
         // checkbox source's open tasks carried on the archive itself.
         const failing = deliveredObligations(e);
-        const owed = failing.flatMap(o => obligationRemedy(e, o)).map(l => `\`${l}\``);
+        const owed = failing.flatMap(o => obligationRemedy(e, o)).map(asCode);
         const carry = failing.flatMap(o => obligationArchiveFlags(e, o));
         out.push({ epic: e.id, detail:
           "archived by the drift heal with a passing Gate 2 but no recorded disposition. This " +
@@ -371,7 +371,7 @@ export const CHECKS = [
           "step: " +
           (owed.length ? `first meet what \`delivered\` requires, ${owed.join(", then ")}, then ` : "") +
           (carry.length ? "tick its open tasks in its task source and archive it, or record where they went: " : "") +
-          `\`${deliveredArchiveInvocation(e, carry)}\`` });
+          asCode(deliveredArchiveInvocation(e, carry)) });
       }
       return out;
     },
@@ -548,7 +548,7 @@ export const CHECKS = [
           `${orNoRemedy(() => `\`update-epic ${printedId(e.id)} --status <${KNOWN_STATUSES.filter(st => st !== "archived").join("|")}>\``)}, or, where the work ` +
           // The archive remedy is rendered by archive-gate.mjs's ONE renderer — a second copy of
           // the invocation here is how the vocabulary in a remedy comes to outlive the verb's.
-          `ended, \`${dispositionInvocation(e)}\`. ` +
+          `ended, ${asCode(dispositionInvocation(e))}. ` +
           "The check will not choose for you — which legal status an undefined one should become " +
           "is a judgment about what happened to the work." });
       }
@@ -683,7 +683,7 @@ export const CHECKS = [
           // is named FIRST. The two alternatives stay explicitly separate ("either … or …"), each
           // clearing the finding on its own.
           const failing = deliveredObligations(e);
-          const owed = failing.flatMap(o => obligationRemedy(e, o)).map(l => `\`${l}\``);
+          const owed = failing.flatMap(o => obligationRemedy(e, o)).map(asCode);
           // A checkbox source's open tasks have no command of their own: the archive carries them
           // (`--carried-to`), unless they are ticked in the task source first (Gate 2 E-I5).
           const carry = failing.flatMap(o => obligationArchiveFlags(e, o));
@@ -693,7 +693,7 @@ export const CHECKS = [
             "nor that it was cut. Give it the ending it actually had — either it shipped: " +
             (owed.length ? `first meet what \`delivered\` requires, ${owed.join(", then ")}, then ` : "") +
             (carry.length ? "tick its open tasks in its task source and archive it, or record where they went: " : "") +
-            `\`${deliveredArchiveInvocation(e, carry)}\` — or it ` +
+            `${asCode(deliveredArchiveInvocation(e, carry))} — or it ` +
             // The release id goes through printedId() too (D4a): shell-quoted when it fails the id
             // format, the no-remedy message when it holds a control character.
             `was cut, and you record that instead: ${orNoRemedy(() => `\`release ${printedId(rel.id, "release")} --defer ${printedId(e.id)} --reason "<why>"\``)}` });
@@ -786,8 +786,8 @@ export const CHECKS = [
         if (holders.has("attributedCommits")) {
           remedies.push(`withdraw the attribution (${orNoRemedy(() => `\`update-epic ${printedId(epic)} --withdraw-commit <value> --withdrawal-reason "<why>"\``)})`);
         }
-        if (holders.has("gate1")) remedies.push(`re-record Gate 1 with its artifacts (\`${gateRemedy(epic, 1)}\`)`);
-        if (holders.has("gate2")) remedies.push(`re-record Gate 2 over resolvable shas (\`${gateRemedy(epic, 2)}\`)`);
+        if (holders.has("gate1")) remedies.push(`re-record Gate 1 with its artifacts (${asCode(gateRemedy(epic, 1))})`);
+        if (holders.has("gate2")) remedies.push(`re-record Gate 2 over resolvable shas (${asCode(gateRemedy(epic, 2))})`);
         out.push({ epic, detail:
           `${list.length} recorded value(s) are not a commit object name — a ref or string stored ` +
           "before commit values were resolved when written, so no commit can be checked against it " +
