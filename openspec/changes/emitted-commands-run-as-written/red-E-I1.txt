@@ -1,0 +1,27 @@
+✖ Layer B brief:not-in-outward-tracker {remedy} — the remedy clears what printed it (1688.666625ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1774.375458
+
+✖ failing tests:
+
+test at scripts/test/emitted-invocations.test.mjs:842:7
+✖ Layer B brief:not-in-outward-tracker {remedy} — the remedy clears what printed it (1688.666625ms)
+  AssertionError [ERR_ASSERTION]: step 5: still reported after running update-epic un --external-id ABC-1 --external-url https://jira.example/browse/ABC-1:
+    ⚠ 1 tracker-linked epic(s) never re-read since mirroring — re-read each and record it with `record-tracker-refresh <id> --verdict unchanged|material-change --external-updated-at <iso>` (`/pm:sync` does this for the items it lists)
+      at followRemedy (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:811:12)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:846:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

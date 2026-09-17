@@ -188,7 +188,7 @@ Pairs: 3.1–3.9 (incl. 3.3a) land with 3.10.
 - [x] 3.7 RED: the completion-sync reminder's "steps above" reference resolves — for an inward-only
       github-issues primary with no secondary the block names no absent writeback step (replaces the
       heading-only assertion; `repro.txt` §B4-B6)
-- [x] 3.8 RED: the outward section's record-the-key line carries `--external-updated-at`, and an epic
+- [x] 3.8 RED (Gate 2 E-I1: the brief's not-in-outward-tracker remedy too, its builder on `--direction both` so an omitted watermark fails): the outward section's record-the-key line carries `--external-updated-at`, and an epic
       recorded by that line, filled, is not counted never-re-read by the brief
 - [x] 3.9 REGRESSION GUARD: the github-issues primary's existing recipe test in `conductor-14` and the
       0.26.0 rules fixtures (`scripts/test/fixtures/rules-0.26.0-*.txt`) — update the fixtures only

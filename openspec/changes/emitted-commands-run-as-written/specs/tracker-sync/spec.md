@@ -210,6 +210,12 @@ touches that epic.
   created issue's own timestamp, and an epic recorded that way is not counted never-re-read (today
   the line carries no watermark)
 
+#### Scenario: The brief's create-and-record remedy starts with a watermark
+- **WHEN** the brief reports active epics not yet in an outward primary whose direction is `both`, and
+  the agent records each key with the invocation that line names, filled
+- **THEN** that invocation carries `--external-updated-at`, and the recorded epic is not counted
+  never-re-read (before Gate 2 E-I1 the brief's form omitted it, so following it raised that count)
+
 #### Scenario: The named remedy clears an outward-linked epic
 - **WHEN** the brief counts an epic linked through an outward-only primary in a repo whose only
   inward procedure is a secondary's, and the agent follows the remedy the line names for it

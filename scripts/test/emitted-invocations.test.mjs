@@ -1380,13 +1380,15 @@ const BRIEF_BUILDERS = {
   "not-in-outward-tracker": {
     setup() {
       const repo = remedyRepo();
-      repo.ok(["set-tracker", "--system", "jira", "--project", "ABC", "--direction", "outward"]);
+      // `both`, not `outward`: an inward procedure exists, so a key recorded WITHOUT a watermark is
+      // counted never-re-read — the remedy must carry --external-updated-at to clear (Gate 2 E-I1).
+      repo.ok(["set-tracker", "--system", "jira", "--project", "ABC", "--direction", "both"]);
       repo.ok(["add-epic", "--id", "un", "--lane", "claude-code", "--title", "un"]);
       return { repo, epicId: "un" };
     },
-    produce: briefLines("not yet in jira"),
-    reported: (out) => out.includes("`un`"),
-    meaning: () => ({ positional: "un", "external-id": "ABC-1", "external-url": "https://jira.example/browse/ABC-1" }),
+    produce: (fx) => [briefLines("not yet in jira")(fx), briefLines("never re-read")(fx)].filter(Boolean).join("\n"),
+    reported: (out) => out.includes("`un`") || /never re-read/.test(out),
+    meaning: () => ({ positional: "un", "external-id": "ABC-1", "external-url": "https://jira.example/browse/ABC-1", "external-updated-at": AT }),
   },
   "never-re-read": {
     // 5.2 — an epic linked through an OUTWARD-ONLY primary, in a repo whose only inward procedure is a

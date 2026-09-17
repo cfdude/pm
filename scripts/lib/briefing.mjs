@@ -40,7 +40,10 @@ export const BRIEF_REMEDIES = [
   {
     id: "not-in-outward-tracker",
     render: (tracker, unmirrored) => `  ⚠ not yet in ${tracker.system} — create issues + record keys ` +
-      `(\`update-epic <id> --external-id <KEY> --external-url <url>\`): ` + unmirrored.map(e => `\`${e.id}\``).join(", "),
+      // --external-updated-at, as the rules block's outward line (task 3.8): a key recorded without the
+      // created issue's timestamp is counted never-re-read wherever an inward procedure reads it (E-I1).
+      `(\`update-epic <id> --external-id <KEY> --external-url <url> --external-updated-at <iso>\`): ` +
+      unmirrored.map(e => `\`${e.id}\``).join(", "),
   },
   {
     id: "blocked-without-depends-on",
