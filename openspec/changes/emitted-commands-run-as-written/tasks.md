@@ -79,7 +79,9 @@ Pairs: 2.1–2.8 (incl. 2.7a) land with 2.9.
       exists. Each alternative runs in its own fresh fixture. The commit nudge is a printer too, with
       builders per variant: after `retract-detour <sha> --reason …` the row is gone from `PROJECT.md`;
       after `update-epic <id> --withdraw-commit <replaced> --withdrawal-reason …` the sha is gone from
-      `attributedCommits`; each `--attribute-commit` line attributes to its epic. (Fails today: the two registries are not exported.)
+      `attributedCommits`; the amend builder also has a `prints: none` variant for the path where
+      update-epic would refuse that withdraw (change 1 suppresses the line only there), asserting no
+      withdraw line is printed; each `--attribute-commit` line attributes to its epic. (Fails today: the two registries are not exported.)
 - [ ] 2.2 RED: stale Gate 2 (a commit attributed after the reviewed head) — the archive refusal's
       remedy filled with base = parent of the first attributed commit and head = the last attributed
       commit exits 0 and the same archive then succeeds; missing and withdrawn Gate 2 likewise
@@ -103,8 +105,8 @@ Pairs: 2.1–2.8 (incl. 2.7a) land with 2.9.
       assert the finding IS reported) and the malformed-value arm
       on a Gate 1 range — the Gate 1 remedy carries `--artifact`, not a range, and clears the finding
 - [ ] 2.7a RED: a legacy epic id `My Plan` in a hand-written state (passes the strict reader) — the
-      drift-heal disposition remedy (`integrity.mjs:357`), the attribute-commit remedy (`:293,295`) and
-      the nudge's `--attribute-commit` line print it shell-quoted; each, run, exits 0 and clears its
+      drift-heal disposition remedy (`integrity.mjs:357`), the attribute-commit remedy (`:293,295`), the
+      nudge's `--attribute-commit` line and its `--withdraw-commit` line print it shell-quoted; each, run, exits 0 and clears its
       condition
 - [ ] 2.8 REGRESSION GUARD: a `claude-code`-lane unconsidered entry still offers `delivered` with
       `deliveredBlockedBy: []` and clears when run with `delivered`; the regression refusal still

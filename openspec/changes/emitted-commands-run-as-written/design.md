@@ -230,8 +230,10 @@ from the record, never cached.
 **Epic ids in printed commands.** `EPIC_ID_FORMAT` (`^[a-z0-9][a-z0-9._-]*$`, today a regex literal at
 `add-epic.mjs:360`, `add-many.mjs:61` and `verify-specs.mjs:54`) is exported from `constants.mjs`, with
 `printedId(id)` returning the id as-is when it matches and shell-quoted (`update-epic.mjs:87`'s
-`shellQuote`, moved to `constants.mjs`) otherwise. Every printed command naming a stored id goes
-through it; the sites found bare at f49871a are `integrity.mjs:293,295` (attribute-commit remedy),
+`shellQuote`, moved to `constants.mjs`) otherwise. `printedId()` is the SINGLE printing site for an
+epic id inside a printed command — no renderer interpolates `epic.id` into a command directly — which
+is what lets change 3 hook its no-remedy handling for a control-character id into this one function.
+Every printed command naming a stored id goes through it; the sites found bare at f49871a are `integrity.mjs:293,295` (attribute-commit remedy),
 `integrity.mjs:357` (drift-heal disposition) and `subcommands.mjs:350` (the commit nudge's
 `--attribute-commit`), plus every renderer this change introduces (`gateRemedy`,
 `dispositionInvocation`, `BRIEF_REMEDIES`). The call-site sweep derives the rest (task 9.1).
