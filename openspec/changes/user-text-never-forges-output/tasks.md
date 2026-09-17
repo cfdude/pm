@@ -197,7 +197,7 @@ Pairs: 7.1 lands with 7.2.
       Any governed-value site the sweep exposes is fixed in this commit and listed in its message.
       Size: re-derived at 7.1 (it was 120 flag entries plus 4 free-text positionals at f49871a, before
       changes 1 and 2); many share one recipe body
-- [ ] 7.3 REGRESSION GUARD (mutation check): temporarily remove one escape from `briefing.mjs` (its line
+- [x] 7.3 REGRESSION GUARD (mutation check): temporarily remove one escape from `briefing.mjs` (its line
       sink, which carries the detour reason — design D1 implementation note) and one `tableRow` use from `render.mjs`; confirm the sweep fails on each, save
       both runs as `red-7.3-mutant.txt`, restore; nothing of the mutation is committed
 

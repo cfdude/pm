@@ -1,0 +1,151 @@
+=== MUTANT 1: briefing.mjs line sink removed (return L.join) — carries the detour reason ===
+diff --git a/scripts/lib/briefing.mjs b/scripts/lib/briefing.mjs
+index d48d49c..b1f386d 100644
+--- a/scripts/lib/briefing.mjs
++++ b/scripts/lib/briefing.mjs
+@@ -407,5 +407,5 @@ export function buildBrief(state, { consume = false } = {}) {
+   // is what guarantees no stored value (a reason, a title, a release id, a tracker scope) can begin a
+   // line of the brief, whichever interpolation carried it. escapeControls() is idempotent, so the
+   // shared helpers that already escape (gateTableRows) are not double-escaped.
+-  return L.map(escapeControls).join("\n");
++  return L.join("\n");
+ }
+✖ 7.2 the sweep: every governed input, one accumulated record, every surface (design D3) (14290.536958ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 14340.687833
+
+✖ failing tests:
+
+test at scripts/test/output-text-integrity.test.mjs:873:1
+✖ 7.2 the sweep: every governed input, one accumulated record, every surface (design D3) (14290.536958ms)
+  AssertionError [ERR_ASSERTION]: 
+  (a) add-epic --external-id (decoded): a line begins FORGED — "FORGED"
+  (b) add-epic --external-id (decoded): holds a raw U+2028
+  (b) add-epic --external-id (decoded): holds a raw U+0085
+  (b) add-epic --external-id (decoded): holds a raw CR
+  (a) add-epic --external-url (decoded): a line begins FORGED — "FORGED"
+  (b) add-epic --external-url (decoded): holds a raw U+2028
+  (b) add-epic --external-url (decoded): holds a raw U+0085
+  (b) add-epic --external-url (decoded): holds a raw CR
+  (a) add-many --external-id (decoded): a line begins FORGED — "FORGED"
+  (b) add-many --external-id (decoded): holds a raw U+2028
+  (b) add-many --external-id (decoded): holds a raw U+0085
+  (b) add-many --external-id (decoded): holds a raw CR
+  (a) add-many --external-url (decoded): a line begins FORGED — "FORGED"
+  (b) add-many --external-url (decoded): holds a raw U+2028
+  (b) add-many --external-url (decoded): holds a raw U+0085
+  (b) add-many --external-url (decoded): holds a raw CR
+  (a) update-epic --external-id (decoded): a line begins FORGED — "FORGED"
+  (b) update-epic --external-id (decoded): holds a raw U+2028
+  (b) update-epic --external-id (decoded): holds a raw U+0085
+  (b) update-epic --external-id (decoded): holds a raw CR
+  (a) update-epic --external-url (decoded): a line begins FORGED — "FORGED"
+  (b) update-epic --external-url (decoded): holds a raw U+2028
+  (b) update-epic --external-url (decoded): holds a raw U+0085
+  (b) update-epic --external-url (decoded): holds a raw CR
+  (a) brief (decoded): a line begins FORGED — "FORGED"
+  (b) brief (decoded): holds a raw U+2028
+  (b) brief (decoded): holds a raw U+0085
+  (b) brief (decoded): holds a raw CR
+  (a) PROJECT.md: a line begins FORGED — "FORGED\\u2028FORGED\\u0085FORGED\\u000dFORGED|FORGED-ZQL1QZ` (claude-code, epic, P1) — —"
+  + actual - expected
+  
+  + [
+  +   '(a) add-epic --external-id (decoded): a line begins FORGED — "FORGED"',
+  +   '(b) add-epic --external-id (decoded): holds a raw U+2028',
+  +   '(b) add-epic --external-id (decoded): holds a raw U+0085',
+  +   '(b) add-epic --external-id (decoded): holds a raw CR',
+  +   '(a) add-epic --external-url (decoded): a line begins FORGED — "FORGED"',
+  +   '(b) add-epic --external-url (decoded): holds a raw U+2028',
+  +   '(b) add-epic --external-url (decoded): holds a raw U+0085',
+  +   '(b) add-epic --external-url (decoded): holds a raw CR',
+  +   '(a) add-many --external-id (decoded): a line begins FORGED — "FORGED"',
+  +   '(b) add-many --external-id (decoded): holds a raw U+2028',
+  +   '(b) add-many --external-id (decoded): holds a raw U+0085',
+  +   '(b) add-many --external-id (decoded): holds a raw CR',
+  +   '(a) add-many --external-url (decoded): a line begins FORGED — "FORGED"',
+  +   '(b) add-many --external-url (decoded): holds a raw U+2028',
+  +   '(b) add-many --external-url (decoded): holds a raw U+0085',
+  +   '(b) add-many --external-url (decoded): holds a raw CR',
+  +   '(a) update-epic --external-id (decoded): a line begins FORGED — "FORGED"',
+  +   '(b) update-epic --external-id (decoded): holds a raw U+2028',
+  +   '(b) update-epic --external-id (decoded): holds a raw U+0085',
+  +   '(b) update-epic --external-id (decoded): holds a raw CR',
+  +   '(a) update-epic --external-url (decoded): a line begins FORGED — "FORGED"',
+  +   '(b) update-epic --external-url (decoded): holds a raw U+2028',
+  +   '(b) update-epic --external-url (decoded): holds a raw U+0085',
+  +   '(b) update-epic --external-url (decoded): holds a raw CR',
+  +   '(a) brief (decoded): a line begins FORGED — "FORGED"',
+  +   '(b) brief (decoded): holds a raw U+2028',
+  +   '(b) brief (decoded): holds a raw U+0085',
+  +   '(b) brief (decoded): holds a raw CR',
+  +   '(a) PROJECT.md: a line begins FORGED — "FORGED\\\\u2028FORGED\\\\u0085FORGED\\\\u000dFORGED|FORGED-ZQL1QZ` (claude-code, epic, P1) — —"'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-text-integrity.test.mjs:1013:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ '(a) add-epic --external-id (decoded): a line begins FORGED — "FORGED"', '(b) add-epic --external-id (decoded): holds a raw U+2028', '(b) add-epic --external-id (decoded): holds a raw U+0085', '(b) add-epic --external-id (decoded): holds a raw CR', '(a) add-epic --external-url (decoded): a line begins FORGED — "FORGED"', '(b) add-epic --external-url (decoded): holds a raw U+2028', '(b) add-epic --external-url (decoded): holds a raw U+0085', '(b) add-epic --external-url (decoded): holds a raw CR', '(a) add-many --external-id (decoded): a line begins FORGED — "FORGED"', '(b) add-many --external-id (decoded): holds a raw U+2028', '(b) add-many --external-id (decoded): holds a raw U+0085', '(b) add-many --external-id (decoded): holds a raw CR', '(a) add-many --external-url (decoded): a line begins FORGED — "FORGED"', '(b) add-many --external-url (decoded): holds a raw U+2028', '(b) add-many --external-url (decoded): holds a raw U+0085', '(b) add-many --external-url (decoded): holds a raw CR', '(a) update-epic --external-id (decoded): a line begins FORGED — "FORGED"', '(b) update-epic --external-id (decoded): holds a raw U+2028', '(b) update-epic --external-id (decoded): holds a raw U+0085', '(b) update-epic --external-id (decoded): holds a raw CR', '(a) update-epic --external-url (decoded): a line begins FORGED — "FORGED"', '(b) update-epic --external-url (decoded): holds a raw U+2028', '(b) update-epic --external-url (decoded): holds a raw U+0085', '(b) update-epic --external-url (decoded): holds a raw CR', '(a) brief (decoded): a line begins FORGED — "FORGED"', '(b) brief (decoded): holds a raw U+2028', '(b) brief (decoded): holds a raw U+0085', '(b) brief (decoded): holds a raw CR', '(a) PROJECT.md: a line begins FORGED — "FORGED\\\\u2028FORGED\\\\u0085FORGED\\\\u000dFORGED|FORGED-ZQL1QZ` (claude-code, epic, P1) — —"' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+=== MUTANT 2: render.mjs Detour-stack row built without tableRow() ===
+diff --git a/scripts/lib/render.mjs b/scripts/lib/render.mjs
+index e1b9720..bf9a1a6 100644
+--- a/scripts/lib/render.mjs
++++ b/scripts/lib/render.mjs
+@@ -86,7 +86,7 @@ export function render() {
+     md.push("| # | Paused epic | Reason | Detour | Reconcile on resume |");
+     md.push("|---|-------------|--------|--------|---------------------|");
+     state.detourStack.forEach((f, i) => {
+-      md.push(tableRow(String(i + 1), `\`${f.pausedEpic}\``, f.reason, `\`${f.spawnedDetour || "-"}\``, f.reconcileOnResume ? "⚠ yes" : "no"));
++      md.push(`| ${i + 1} | \`${f.pausedEpic}\` | ${f.reason} | \`${f.spawnedDetour || "-"}\` | ${f.reconcileOnResume ? "⚠ yes" : "no"} |`);
+     });
+   }
+   md.push("");
+✖ 7.2 the sweep: every governed input, one accumulated record, every surface (design D3) (14385.1035ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 14426.711625
+
+✖ failing tests:
+
+test at scripts/test/output-text-integrity.test.mjs:873:1
+✖ 7.2 the sweep: every governed input, one accumulated record, every surface (design D3) (14385.1035ms)
+  AssertionError [ERR_ASSERTION]: 
+  (c) PROJECT.md: a row under "| # | Paused epic | Reason | Detour | Reconcile on resume |" has 6 cells, not 5
+  (c) PROJECT.md: a row under "| # | Paused epic | Reason | Detour | Reconcile on resume |" has 8 cells, not 5
+  + actual - expected
+  
+  + [
+  +   '(c) PROJECT.md: a row under "| # | Paused epic | Reason | Detour | Reconcile on resume |" has 6 cells, not 5',
+  +   '(c) PROJECT.md: a row under "| # | Paused epic | Reason | Detour | Reconcile on resume |" has 8 cells, not 5'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/output-text-integrity.test.mjs:1013:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ '(c) PROJECT.md: a row under "| # | Paused epic | Reason | Detour | Reconcile on resume |" has 6 cells, not 5', '(c) PROJECT.md: a row under "| # | Paused epic | Reason | Detour | Reconcile on resume |" has 8 cells, not 5' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
