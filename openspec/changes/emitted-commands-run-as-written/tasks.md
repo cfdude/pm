@@ -226,7 +226,8 @@ Pairs: 4.1–4.4 land with 4.7.
       pwned' --remove` on a legacy entry exits 0 and removes it (passes today; must survive 4.7)
 - [x] 4.6 REGRESSION GUARD: `set-tracker --system jira --direction both` on a jira primary keeps
       `projectKey`; `set-tracker --intent paused:todo` still merges
-- [x] 4.7 GREEN: `isGithubRepo()` in `constants.mjs`, required by `usesGhIssueList()` and by
+- [x] 4.7 GREEN (Gate 2 E-I2: the shape accepts an optional GitHub Enterprise `HOST/`, and `integrity`'s
+      `tracker-repo-not-a-github-repository` names a stored repo failing it, with a Layer B builder per role): `isGithubRepo()` in `constants.mjs`, required by `usesGhIssueList()` and by
       `set-tracker` for both roles except `--role secondary --remove` (Gate 2 E-C1); the vendor-switch scope drop and direction record
       with their messages (design Decision 4); 4.1–4.6 pass, suite green
 

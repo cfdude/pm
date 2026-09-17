@@ -60,7 +60,7 @@ system — and not only the github-issues primary the suite used to execute. In 
   not to run the closed-item step when the number of items returned reaches that bound
 
 #### Scenario: A repository value cannot alter the emitted command
-- **WHEN** the recorded github-issues repository is not an `owner/name` pair
+- **WHEN** the recorded github-issues repository is not an `[HOST/]owner/name` value
 - **THEN** no emitted shell command contains that value
 
 #### Scenario: A hostile or ordinary item title is stored exactly
@@ -268,12 +268,14 @@ watermark from the listing alone.
 
 ### Requirement: A github-issues repository is recorded as an owner/name pair
 `set-tracker` SHALL refuse, for either role, a `--repo` on a `github-issues` tracker that is not an
-`owner/name` pair of characters GitHub permits in those names, exiting non-zero and writing nothing.
+`owner/name` pair of characters GitHub permits in those names — optionally prefixed by a GitHub
+Enterprise `HOST/`, the form `gh issue list -R` accepts — exiting non-zero and writing nothing.
 `--remove` on the secondary role is exempt: it matches the recorded value exactly and writes nothing
 new, so a legacy malformed entry stays removable. `--remove` on the primary role is NOT exempt — the
 primary has no remove, so the value would otherwise be recorded.
 A value recorded before this rule that does not have that shape SHALL NOT fail any read; emitters
-treat it as absent for the purpose of building a shell command.
+treat it as absent for the purpose of building a shell command, and `integrity` SHALL name it with
+the `set-tracker` re-record that restores its listing step, so the lost step is never silent.
 
 #### Scenario: A repository carrying a shell metacharacter is refused
 - **WHEN** the agent runs `set-tracker --system github-issues --repo 'a/b; touch pwned'`
@@ -294,6 +296,18 @@ treat it as absent for the purpose of building a shell command.
 #### Scenario: A legacy malformed repository still loads
 - **WHEN** a state file recorded before this rule carries such a repository
 - **THEN** every read verb succeeds, and no emitted shell command contains the value
+
+#### Scenario: A GitHub Enterprise repository is accepted
+- **WHEN** the agent runs `set-tracker --system github-issues --repo ghe.example.com/o/n`, for either role
+- **THEN** it exits zero, and the emitted listing step names `--repo ghe.example.com/o/n` (before Gate 2
+  E-I2 it was refused)
+
+#### Scenario: A legacy malformed repository is named, with the re-record that restores it
+- **WHEN** a state file carries a github-issues primary or secondary whose `repo` fails the shape, and
+  `integrity` runs
+- **THEN** it reports that tracker as receiving no `gh` listing step, and the commands it names, filled
+  and run in order, clear the finding and restore the step (before Gate 2 E-I2 the step was dropped
+  with no notice anywhere)
 
 ### Requirement: The brief's mirror line claims only what it checked
 The brief's outward mirror line SHALL state only what the engine verified. An epic's carrying an

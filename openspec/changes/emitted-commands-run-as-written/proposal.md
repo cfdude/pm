@@ -161,7 +161,8 @@ earlier (`anyInwardProcedureEmittable`); its dangling text for an inward-only pr
 - Output shape: `unconsidered-outcomes` JSON gains a per-entry field (additive); emitted rules text
   changes for every tracker-configured repo (re-rendered by `/pm:upgrade`). No `state.json` schema
   change, no migration — but a repo whose recorded github-issues `repo` is not `owner/name` stops
-  receiving a literal `gh` line (it gets the vendor-neutral step) until it re-runs `set-tracker`.
+  receiving a literal `gh` line (it gets the vendor-neutral step) until it re-runs `set-tracker` —
+  and `integrity` names it with that re-record. GitHub Enterprise `HOST/owner/name` is accepted.
 - Tests: a new `scripts/test/emitted-invocations.test.mjs`; `conductor-14` tracker recipe tests
   extended to every system/role.
 - Docs: `commands/{init,tracker,review-mode,upgrade,cross-spec-review,unconsidered-outcomes}.md`,

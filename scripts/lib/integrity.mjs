@@ -20,7 +20,7 @@
 
 import { isInitialized, loadState } from "./state.mjs";
 import { archivedChanges, epicProgress, isArchived, strippedChangeId } from "./epic-progress.mjs";
-import { KNOWN_STATUSES, escapeControls, gateArtifacts, gateHasEvidence, isOpenspecLane, printedId, releaseMembers, withdrawnGate } from "./constants.mjs";
+import { CONTROL_CHARACTER, KNOWN_STATUSES, escapeControls, gateArtifacts, gateHasEvidence, isGithubRepo, isOpenspecLane, printedId, releaseMembers, shellQuote, withdrawnGate } from "./constants.mjs";
 import { AGENT_OUTCOMES, deliveredObligations, dispositionInvocation, gateRemedy, obligationArchiveFlags, obligationRemedy } from "./archive-gate.mjs";
 import { commitDate, isAncestor, isCommitNameShaped, objectExists, reachableFromAnyRef } from "./git.mjs";
 import { isArchiveBackfilled, outcomeOf, stampedBy } from "./disposition.mjs";
@@ -816,6 +816,38 @@ export const CHECKS = [
             "records claim is unrecoverable locally; a fork, another clone or the PR record is " +
             `the only place left to look. ${cite(arms.absent)}` });
         }
+      }
+      return out;
+    },
+  },
+  {
+    id: "tracker-repo-not-a-github-repository",
+    title: "a github-issues tracker whose recorded repo is not [HOST/]owner/name — it gets no `gh` listing step",
+    /** A repo recorded before `set-tracker` refused the shape (0.44.0 and earlier) still loads, and
+     *  every emitter treats it as ABSENT for building a shell command — so upgrading silently drops
+     *  that tracker's `gh issue list` step (Gate 2 E-I2). This check is where that is said, with the
+     *  re-record that restores it. The legacy value is printed JSON-quoted with controls escaped; in
+     *  the secondary's removal line it is shell-quoted as ONE word, since `--remove` matches it exactly,
+     *  unless it holds a control character, which no printed command may carry. */
+    run(state) {
+      const out = [];
+      const entries = [
+        ...(state.tracker ? [{ t: state.tracker, role: "primary" }] : []),
+        ...(Array.isArray(state.secondaryTrackers) ? state.secondaryTrackers : []).map(t => ({ t, role: "secondary" })),
+      ];
+      for (const { t, role } of entries) {
+        if (!t || t.system !== "github-issues" || typeof t.repo !== "string" || isGithubRepo(t.repo)) continue;
+        const shown = escapeControls(JSON.stringify(t.repo));
+        const remedy = role === "primary"
+          ? `re-record it: \`set-tracker --repo <owner/name>\` (\`HOST/owner/name\` on GitHub Enterprise)`
+          : (CONTROL_CHARACTER.test(t.repo)
+            ? "remove it with set-tracker's secondary `--remove`, passing the recorded value exactly as its " +
+              "`--repo` (it holds a control character, so no command carrying it is printed), then "
+            : `remove it — \`set-tracker --role secondary --system github-issues --repo ${shellQuote(t.repo)} --remove\` — then `) +
+            "re-record it: `set-tracker --role secondary --system github-issues --repo <owner/name>` " +
+            "(`HOST/owner/name` on GitHub Enterprise)";
+        out.push({ detail: `the ${role} github-issues tracker records repo ${shown}, which is not [HOST/]owner/name, ` +
+          `so no \`gh issue list\` step is emitted for it — ${remedy}` });
       }
       return out;
     },

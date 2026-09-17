@@ -58,7 +58,7 @@ export function setTracker() {
     const removingSecondary = role === "secondary" && !!f.remove;
     if (system === "github-issues" && repo !== undefined && !removingSecondary && !isGithubRepo(repo)) {
       process.stderr.write(`conductor: --repo ${escapeControls(JSON.stringify(repo))} is not a GitHub repository — ` +
-        "a github-issues tracker records its repo as owner/name (letters, digits, `-`, and `.`/`_` in the name). " +
+        "a github-issues tracker records its repo as owner/name, or HOST/owner/name for GitHub Enterprise (letters, digits, `-`, and `.`/`_` in the name). " +
         "Nothing was written.\n");
       process.exit(1);
     }

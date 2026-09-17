@@ -1414,13 +1414,16 @@ export function mirroredEpicIdPrefix(tracker) {
  *  the id and recorded verbatim as the external id. Exported so an emitter never names a vendor. */
 export const itemKeysAreNumbers = (tracker) => !!tracker && tracker.system === "github-issues";
 
-/** A GitHub repository as `owner/name`, in the characters GitHub permits in those names. The shape
- *  is what makes a recorded repo safe to place in an emitted SHELL line: `a/b; touch pwned` is not
- *  one, and neither is anything holding a control character. `set-tracker` refuses a github-issues
- *  `--repo` failing it (except with `--role secondary --remove`, which writes nothing new); a value recorded before
- *  the rule still loads, and emitters treat it as absent for building a shell command. */
+/** A GitHub repository as `[HOST/]owner/name` — the form `gh issue list -R` accepts, the optional
+ *  HOST being a GitHub Enterprise hostname (Gate 2 E-I2) — in the characters GitHub permits in those
+ *  names. The shape is what makes a recorded repo safe to place in an emitted SHELL line:
+ *  `a/b; touch pwned` is not one, and neither is anything holding a control character. `set-tracker`
+ *  refuses a github-issues `--repo` failing it (except with `--role secondary --remove`, which writes
+ *  nothing new); a value recorded before the rule still loads, emitters treat it as absent for
+ *  building a shell command, and `integrity` names it (tracker-repo-not-a-github-repository). */
 export const isGithubRepo = (value) =>
-  typeof value === "string" && /^[A-Za-z0-9][A-Za-z0-9-]*\/[A-Za-z0-9._-]+$/.test(value);
+  typeof value === "string" &&
+  /^(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)+\/)?[A-Za-z0-9][A-Za-z0-9-]*\/[A-Za-z0-9._-]+$/.test(value);
 
 export const usesGhIssueList = (tracker) =>
   !!tracker && tracker.system === "github-issues" && isGithubRepo(tracker.repo);

@@ -1,0 +1,147 @@
+✖ Layer B integrity:tracker-repo-not-a-github-repository [primary] {re-record} — the remedy clears what printed it (226.85525ms)
+✖ Layer B integrity:tracker-repo-not-a-github-repository [secondary] {remove, then re-record} — the remedy clears what printed it (45.455917ms)
+✖ 2.1 every exported registry entry has a Layer B builder, and the unconstructable count is asserted (7.348375ms)
+✖ E-I2 a GitHub Enterprise HOST/owner/name repo is accepted for both roles, and its gh step names it (51.670708ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 0
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 385.617166
+
+✖ failing tests:
+
+test at scripts/test/emitted-invocations.test.mjs:849:7
+✖ Layer B integrity:tracker-repo-not-a-github-repository [primary] {re-record} — the remedy clears what printed it (226.85525ms)
+  AssertionError [ERR_ASSERTION]: integrity printed no block for tracker-repo-not-a-github-repository:
+  INTEGRITY — records that cannot be true.
+  Findings are reported, never repaired: nothing here writes state or blocks a command.
+  
+  archived-with-zero-ticked-tasks — 0 finding(s): an archived epic whose task source exists and has nothing ticked
+  verdict-range-omits-cited-commits — 0 finding(s): a gate verdict's note cites commits its recorded range does not contain
+  archived-with-no-gate-2-review — 0 finding(s): an epic archived with an `ungated` Gate 2 — no review from anyone
+  archived-with-withdrawn-gate-2 — 0 finding(s): an archived openspec-lane epic whose Gate 2 verdict was withdrawn and not recorded again
+  delivered-epic-attributed-no-commits — 0 finding(s): a delivered epic with a passing Gate 2 whose attribution array is present and empty
+  archived-openspec-epic-with-no-gate-1 — 0 finding(s): an openspec-lane epic archived with a passing Gate 2 and no Gate 1 verdict
+  archive-directory-has-no-epic — 0 finding(s): a directory under openspec/changes/archive/ that corresponds to no epic
+  heal-archived-epic-passed-gate-2 — 0 finding(s): an epic the heal archived reads `unknown` while carrying a passing Gate 2
+  gate-recorded-as-bookkeeping — 0 finding(s): a gate verdict recorded as bookkeeping rather than as review
+  change-registered-under-two-lanes — 0 finding(s): one change id registered as two epics under different lanes
+  link-of-unknown-type — 0 finding(s): a stored link whose type nothing in the engine knows — an edge that reads as a relationship and is not one
+  epic-in-undefined-status — 0 finding(s): an epic in a status the engine does not define — a record no terminal rule can reach
+  dangling-epic-reference — 0 finding(s): a reference in the record that names an epic the record does not hold
+  superseded-epic-never-ended — 0 finding(s): an epic another epic declares it supersedes, still carrying a non-terminal status
+  delivered-release-epic-left-open — 0 finding(s): an epic still open in a release that has already delivered, and was not deliberately cut
+  recorded-sha-the-repository-cannot-resolve — 0 finding(s): a recorded commit sha this repository can no longer resolve — orphaned, or already gone
+  advisory-claim-shape — 0 finding(s): an advisory claim that cannot be true — expired, or held on an epic that has ended
+  
+  0 finding(s) across 17 check(s).
+  
+      at integrityBlock (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:746:10)
+      at Object.produce (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:882:48)
+      at Object.produce (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:837:58)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:852:36)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: -1,
+    expected: -1,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:849:7
+✖ Layer B integrity:tracker-repo-not-a-github-repository [secondary] {remove, then re-record} — the remedy clears what printed it (45.455917ms)
+  AssertionError [ERR_ASSERTION]: integrity printed no block for tracker-repo-not-a-github-repository:
+  INTEGRITY — records that cannot be true.
+  Findings are reported, never repaired: nothing here writes state or blocks a command.
+  
+  archived-with-zero-ticked-tasks — 0 finding(s): an archived epic whose task source exists and has nothing ticked
+  verdict-range-omits-cited-commits — 0 finding(s): a gate verdict's note cites commits its recorded range does not contain
+  archived-with-no-gate-2-review — 0 finding(s): an epic archived with an `ungated` Gate 2 — no review from anyone
+  archived-with-withdrawn-gate-2 — 0 finding(s): an archived openspec-lane epic whose Gate 2 verdict was withdrawn and not recorded again
+  delivered-epic-attributed-no-commits — 0 finding(s): a delivered epic with a passing Gate 2 whose attribution array is present and empty
+  archived-openspec-epic-with-no-gate-1 — 0 finding(s): an openspec-lane epic archived with a passing Gate 2 and no Gate 1 verdict
+  archive-directory-has-no-epic — 0 finding(s): a directory under openspec/changes/archive/ that corresponds to no epic
+  heal-archived-epic-passed-gate-2 — 0 finding(s): an epic the heal archived reads `unknown` while carrying a passing Gate 2
+  gate-recorded-as-bookkeeping — 0 finding(s): a gate verdict recorded as bookkeeping rather than as review
+  change-registered-under-two-lanes — 0 finding(s): one change id registered as two epics under different lanes
+  link-of-unknown-type — 0 finding(s): a stored link whose type nothing in the engine knows — an edge that reads as a relationship and is not one
+  epic-in-undefined-status — 0 finding(s): an epic in a status the engine does not define — a record no terminal rule can reach
+  dangling-epic-reference — 0 finding(s): a reference in the record that names an epic the record does not hold
+  superseded-epic-never-ended — 0 finding(s): an epic another epic declares it supersedes, still carrying a non-terminal status
+  delivered-release-epic-left-open — 0 finding(s): an epic still open in a release that has already delivered, and was not deliberately cut
+  recorded-sha-the-repository-cannot-resolve — 0 finding(s): a recorded commit sha this repository can no longer resolve — orphaned, or already gone
+  advisory-claim-shape — 0 finding(s): an advisory claim that cannot be true — expired, or held on an epic that has ended
+  
+  0 finding(s) across 17 check(s).
+  
+      at integrityBlock (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:746:10)
+      at Object.produce (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:882:48)
+      at Object.produce (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:837:58)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:852:36)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: -1,
+    expected: -1,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:1860:1
+✖ 2.1 every exported registry entry has a Layer B builder, and the unconstructable count is asserted (7.348375ms)
+  AssertionError [ERR_ASSERTION]: builders keyed by no registry entry: tracker-repo-not-a-github-repository
+  + actual - expected
+  
+  + [
+  +   'tracker-repo-not-a-github-repository'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:1877:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'tracker-repo-not-a-github-repository' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/emitted-invocations.test.mjs:2206:1
+✖ E-I2 a GitHub Enterprise HOST/owner/name repo is accepted for both roles, and its gh step names it (51.670708ms)
+  AssertionError [ERR_ASSERTION]: fixture step failed: set-tracker --system github-issues --repo ghe.example.com/o/n --direction inward
+  conductor: --repo "ghe.example.com/o/n" is not a GitHub repository — a github-issues tracker records its repo as owner/name (letters, digits, `-`, and `.`/`_` in the name). Nothing was written.
+  
+  
+  1 !== 0
+  
+      at Object.ok (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:714:55)
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/emitted-invocations.test.mjs:2209:8)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at node:internal/test_runner/test:1305:31
+      at node:internal/process/task_queues:151:7
+      at AsyncResource.runInAsyncScope (node:async_hooks:226:14)
+      at AsyncResource.runMicrotask (node:internal/process/task_queues:148:8) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

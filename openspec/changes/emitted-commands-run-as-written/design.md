@@ -347,7 +347,9 @@ never-re-read count.
 
 ### 4. Repository shape and vendor switch (`tracker.mjs`)
 
-- `isGithubRepo(value)` in `constants.mjs`: `^[A-Za-z0-9](?:[A-Za-z0-9-]*)\/[A-Za-z0-9._-]+$`.
+- `isGithubRepo(value)` in `constants.mjs`: an optional GitHub Enterprise `HOST/` (dotted hostname labels)
+  then `^[A-Za-z0-9](?:[A-Za-z0-9-]*)\/[A-Za-z0-9._-]+$` — `[HOST/]OWNER/REPO`, what `gh issue list -R`
+  accepts (Gate 2 E-I2: the owner/name-only shape refused GitHub Enterprise).
   `set-tracker` refuses a github-issues `--repo` failing it, for both roles, before anything is
   written, quoting the refused value through `escapeControls` (`constants.mjs`) so the refusal
   cannot itself carry a control character — EXCEPT with `--role secondary --remove`, which matches the recorded value exactly
@@ -451,7 +453,9 @@ appears) matched 55, and that reading is what rule 6 excludes. `init` stderr and
 - [Changed rules text for every tracker-configured repo] → re-rendered by `/pm:upgrade`; no state
   change, so rollback is re-rendering with the prior plugin.
 - [A legacy github-issues `repo` that fails the shape loses its literal `gh` line] → it receives the
-  vendor-neutral step, and `set-tracker --repo owner/name` restores it.
+  vendor-neutral step, and `set-tracker --repo owner/name` restores it. `integrity`'s
+  `tracker-repo-not-a-github-repository` check names every such tracker with that re-record (for a
+  secondary, its `--remove` first), so the lost step is never silent (Gate 2 E-I2).
 
 ## Migration Plan
 

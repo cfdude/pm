@@ -527,7 +527,9 @@ export function trackerMatrix() {
     }
   }
   const secondarySets = [[], [{ system: "github-issues", repo: "o/s", role: "secondary" }],
-    [{ system: "jira", projectKey: "SEC", role: "secondary" }]];
+    [{ system: "jira", projectKey: "SEC", role: "secondary" }],
+    // A GitHub Enterprise HOST/owner/name repo (Gate 2 E-I2): its registration line runs too.
+    [{ system: "github-issues", repo: "ghe.example.com/o/s", role: "secondary" }]];
   const out = [];
   for (const tracker of primaries) for (const secondaries of secondarySets) out.push({ tracker, secondaries });
   return out;
@@ -1175,6 +1177,33 @@ const INTEGRITY_BUILDERS = {
       reported: blockHas(),
       meaning: () => ({ "carried-to": "later", reason: REASON }),
       alternatives: [{ name: "archive, carrying the open task", select: (invs) => invs.filter(i => !i.text.startsWith("release ")) }],
+    },
+  ],
+  // Gate 2 E-I2 — a github-issues repo recorded before the shape rule, which silently lost its `gh`
+  // listing step on upgrade. Named, with the re-record that clears it; one fixture per role.
+  "tracker-repo-not-a-github-repository": [
+    {
+      case: "primary",
+      setup: () => ({ repo: trackerRepo({ system: "github-issues", repo: HOSTILE_REPO, direction: "inward" }) }),
+      observe(fx) { assert.doesNotMatch(fx.repo.run(["rules"]).stdout, /gh issue list/, "fixture: no gh step for the legacy value"); },
+      produce: integrityProducer("tracker-repo-not-a-github-repository"),
+      reported: (out) => /primary/.test(out),
+      meaning: () => ({ repo: "o/n" }),
+      alternatives: [{ name: "re-record", cleared(fx) {
+        assert.doesNotMatch(integrityBlock(fx.repo, "tracker-repo-not-a-github-repository"), /primary/);
+        assert.match(fx.repo.run(["rules"]).stdout, /gh issue list --repo o\/n /, "the gh step is back");
+      } }],
+    },
+    {
+      case: "secondary",
+      setup: () => ({ repo: trackerRepo(null, [{ system: "github-issues", repo: HOSTILE_REPO, role: "secondary", direction: "inward" }]) }),
+      produce: integrityProducer("tracker-repo-not-a-github-repository"),
+      reported: (out) => /secondary/.test(out),
+      meaning: () => ({ repo: "o/s" }),
+      alternatives: [{ name: "remove, then re-record", cleared(fx) {
+        assert.doesNotMatch(integrityBlock(fx.repo, "tracker-repo-not-a-github-repository"), /secondary/);
+        assert.deepEqual(fx.repo.state().secondaryTrackers.map(t => t.repo), ["o/s"]);
+      } }],
     },
   ],
   "recorded-sha-the-repository-cannot-resolve": [
@@ -2174,6 +2203,22 @@ test("4.6 REGRESSION GUARD: re-stating the same system keeps its scope; --intent
   assert.equal(repo.state().tracker.projectKey, "ABC");
   repo.ok(["set-tracker", "--intent", "paused:todo"]);
   assert.deepEqual(repo.state().tracker.statusIntent, { active: "in-progress", paused: "todo" });
+});
+
+test("E-I2 a GitHub Enterprise HOST/owner/name repo is accepted for both roles, and its gh step names it", async () => {
+  const GHE = "ghe.example.com/o/n";
+  const repo = remedyRepo();
+  repo.ok(["set-tracker", "--system", "github-issues", "--repo", GHE, "--direction", "inward"]);
+  repo.ok(["set-tracker", "--role", "secondary", "--system", "github-issues", "--repo", "ghe.example.com/o/s"]);
+  assert.equal(repo.state().tracker.repo, GHE);
+  const block = repo.run(["rules"]).stdout;
+  assert.match(block, /gh issue list --repo ghe\.example\.com\/o\/n /, "the primary's listing step");
+  assert.match(block, /gh issue list --repo ghe\.example\.com\/o\/s /, "the secondary's listing step");
+  assert.match(repo.run(["integrity"]).stdout, /tracker-repo-not-a-github-repository — 0 finding/);
+  for (const bad of ["a/b/c/d", "-h.example.com/o/n", "ghe.example.com//n"]) {
+    const r = remedyRepo().run(["set-tracker", "--system", "github-issues", "--repo", bad]);
+    assert.notEqual(r.status, 0, `refused: ${bad}`);
+  }
 });
 
 // ═══════════════════════════════ 5 — brief tracker lines ═══════════════════════════════

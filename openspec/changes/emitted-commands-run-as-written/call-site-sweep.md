@@ -104,6 +104,12 @@ the primary and every secondary. Each placeholder it prints (`<issue-title>`, `<
   it exactly), `constants.mjs:1338-1340` (`trackerScope`, feeding headings and the id slug),
   `briefing.mjs:359` (brief label), `tracker.mjs:90,105,135,153` (writes and messages).
 - `claims.mjs:158,240` read `--repo` of the `claim` verb, an unrelated boolean flag.
+- Added at Gate 2 (E-I2): `integrity.mjs` `tracker-repo-not-a-github-repository` reads both roles' `repo`
+  through `isGithubRepo()` — prose JSON-quoted, and the secondary's `--remove` line shell-quoted as one
+  word (or described without the value where it holds a control character). The shape now accepts an
+  optional `HOST/`; every shell-bound reader above goes through the same predicate, so none needed a
+  separate edit, and `mirroredEpicIdPrefix()` slugs the host into the id (`gh-ghe-example-com-o-n-<n>`),
+  which Layer C runs through `sh` for a GitHub Enterprise secondary.
 
 ## 9. `/pm:epic` and `state.json` in emitted engine text
 
