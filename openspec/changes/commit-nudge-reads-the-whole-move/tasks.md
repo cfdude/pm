@@ -226,10 +226,10 @@ Pairs: 7.1–7.2 land with 7.4.
       it restores today's rung); `commit-watch.json` left behind by 0.44.0 (not removed by any engine:
       git-ignored and inert, and removing it would break an unreloaded 0.44.0 session sharing the
       checkout). Each unshipped inverse named and justified in the commit message
-- [ ] 8.3 **Verify against the commit** — `git show --stat <sha>` for every task commit; every file the
+- [x] 8.3 **Verify against the commit** — `git show --stat <sha>` for every task commit; every file the
       task claims is present in THAT commit, including each `red-<task>.txt`, `hooks/hooks.json` and
       the test file
-- [ ] 8.4 **Attribute every commit** as it lands: `update-epic commit-nudge-reads-the-whole-move
+- [x] 8.4 **Attribute every commit** as it lands: `update-epic commit-nudge-reads-the-whole-move
       --attribute-commit <sha>`. The archive commit, and any commit that only relocates this change's
       artifacts, is excluded
 - [ ] 8.5 **Dispositions** <!-- pm:lifecycle --> — `update-epic commit-nudge-reads-the-whole-move --status archived --outcome delivered --no-deferrals`
