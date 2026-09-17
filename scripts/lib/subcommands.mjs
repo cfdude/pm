@@ -13,7 +13,7 @@ import { render } from "./render.mjs";
 import { assertRulesBlockWritable, writeRules } from "./rules.mjs";
 import { buildBrief } from "./briefing.mjs";
 import { appendDetourLog, gitShortSha, isDetachedTree, shortSha } from "./git.mjs";
-import { beginObservation } from "./commit-watch.mjs";
+import { beginObservation, isLiveCommit } from "./commit-watch.mjs";
 import { deferralHistory, deferralNote, detourContext } from "./links.mjs";
 import { activeChangeIds, archivedChanges, firstHeading, planFiles, reconcileArchived, strippedChangeId } from "./epic-progress.mjs";
 import { claimedSourceArtifacts, epicSourceArtifacts, normalizeArtifactPath, syncIgnoredArtifacts } from "./source-artifacts.mjs";
@@ -289,12 +289,15 @@ export function commitNudge() {
       // The observed path needs no parser at all: each subject comes from its commit, which is what
       // closes `-am` / `-F` / editor commits / escaped quotes as a class rather than one flag form
       // at a time.
-      const commits = obs.candidates.map(c => ({ sha: c.sha, subject: commitSubject(c.sha) || "" }));
+      // LIVE commits only get a row or an attribution command (Decision 4); a dead one is named.
+      const live = obs.candidates.filter(c => isLiveCommit(c.sha));
+      const dead = obs.candidates.filter(c => !live.includes(c)).map(c => c.sha);
+      const commits = live.map(c => ({ sha: c.sha, subject: commitSubject(c.sha) || "" }));
       // gh#129 — the commit-TIME half of the attribution obligation, and ONLY on the observed rung:
       // on the unverifiable rung nothing is known to have landed, and naming HEAD there would
       // assert a commit the repository never confirmed against an APPEND-ONLY array.
       const attribution = attributionNudge(state, ctx, commits.map(c => c.sha));
-      runNudge(state, ctx, commits, attribution, event);
+      runNudge(state, ctx, commits, attribution, event, dead);
     } else {
       const subject = unverifiableSubject(cmd);
       // null: the unverifiable rung, and the old heuristic said no.
@@ -464,7 +467,7 @@ function unverifiableSubject(cmd) {
 /** Log the commit, self-heal an archived active pointer, re-render, and emit the advisory.
  *  Reached only once a commit is believed to have landed — by observation, or by the fallback
  *  heuristic above. */
-function runNudge(state, ctx, commits, attribution = null, event = "PostToolUse") {
+function runNudge(state, ctx, commits, attribution = null, event = "PostToolUse", dead = []) {
   // DETERMINISTIC: if we are inside a detour, record each commit in the trail. Each commit is
   // judged on ITS OWN subject and changed paths, and its row carries its own sha; `sha: null` is
   // the unverifiable rung, which knows no commit and keeps HEAD's reading.
@@ -519,7 +522,14 @@ function runNudge(state, ctx, commits, attribution = null, event = "PostToolUse"
   const detected = named.length > 1
     ? `Commits ${named.join(", ")} detected (oldest first)`
     : named.length === 1 ? `Commit ${named[0]} detected` : "Commit detected";
-  const msg = ctx.active
+  // Dead commits get one sentence and nothing else. The replacement a rebase wrote is a `(pick)`
+  // entry, which is not reported (design Non-Goals), so the sentence says to attribute it by hand.
+  const deadSentence = dead.length
+    ? `Rewritten or abandoned since the last observation: ${dead.map(s => `\`${shortSha(s)}\``).join(", ")} — ` +
+      "not logged, not attributed (reachable from no branch). If a rebase rewrote them, attribute " +
+      "what the rebase produced by hand."
+    : "";
+  const msg = !commits.length ? deadSentence : (ctx.active
     // "(logged to detours.log)" is now a CLAIM about what just happened, so it is conditional:
     // a bookkeeping-only commit, or a re-fire for a sha already in the trail, writes no row, and
     // saying otherwise would send the agent looking for a line that is not there.
@@ -532,7 +542,8 @@ function runNudge(state, ctx, commits, attribution = null, event = "PostToolUse"
       "epic) looks like a MINIMAL detour, so it was auto-logged to `.conductor/detours.log` " +
       "as an AUTO-DETOUR entry. Review it — if that's wrong, edit/remove the line."
     : `${detected}. If this was a MINIMAL detour, run \`/pm:detour --minimal "<what>"\` ` +
-      "to record it. Otherwise update `.conductor/state.json` if an epic's status or stories changed.";
+      "to record it. Otherwise update `.conductor/state.json` if an epic's status or stories changed.")
+    + (commits.length && deadSentence ? `\n\n${deadSentence}` : "");
   // The attribution clause is a SECOND paragraph, never a longer first one: the three messages
   // above are about the DETOUR record and are decided by different inputs, so splicing the two
   // obligations into one sentence would make each harder to act on than either alone.

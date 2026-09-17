@@ -214,3 +214,18 @@ export function beginObservation({ root = ROOT } = {}) {
 
 /** Is this candidate an amend, whose `old` is the commit it replaced? */
 export const isAmend = (entry) => AMEND_ACTION.test(entry.action);
+
+/** Is this commit reachable from a branch? (design Decision 4)
+ *
+ *  `for-each-ref --contains` with an empty answer means the commit was rewritten (`pull --rebase`,
+ *  `rebase`), reset away, or made on a detached HEAD and abandoned. Such a commit is named, never
+ *  logged or offered for attribution: a dead sha on an append-only attribution array is a Gate 2
+ *  endpoint nothing can reach. An empty `refs/heads` makes every commit dead; accepted.
+ *
+ *  git failing to answer at all reads as LIVE — the pre-filter behaviour, and the direction in which
+ *  a wrong answer is visible (a row that can be retracted) rather than silent. */
+export function isLiveCommit(sha, root = ROOT) {
+  try {
+    return gitOut(["for-each-ref", "--contains", sha, "--count=1", "--format=%(refname)", "refs/heads"], root) !== "";
+  } catch { return true; }
+}

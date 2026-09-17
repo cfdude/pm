@@ -68,12 +68,12 @@ Pairs: 2.1–2.4a land with 2.5; 2.6–2.7 land with 2.8.
       `PostToolUseFailure` entry, envelope echoes the event, `ensureGitignore` gains
       `.conductor/commit-observe.json*`, `CONDUCTOR_OWN_FILES` gains `.conductor/commit-observe.json`;
       the engine never reads or writes `commit-watch.json` (design Decisions 1–3, 6). Suite green
-- [ ] 2.6 RED: in the clone fixture, commit X then `git pull --rebase` over an upstream commit, observe:
+- [x] 2.6 RED: in the clone fixture, commit X then `git pull --rebase` over an upstream commit, observe:
       X is named as rewritten or abandoned, no `detours.log` row, no `--attribute-commit` naming X
       (passes today by silence, fixture `rrb`; RED against 2.5's walk)
-- [ ] 2.7 RED: commit Y then `git reset --hard HEAD~1`, observe: Y named as rewritten or abandoned, no
+- [x] 2.7 RED: commit Y then `git reset --hard HEAD~1`, observe: Y named as rewritten or abandoned, no
       row, no `--attribute-commit` naming Y (passes today by silence; RED against 2.5's walk)
-- [ ] 2.8 GREEN: the live-commit filter (Decision 4). Suite green
+- [x] 2.8 GREEN: the live-commit filter (Decision 4). Suite green
 
 ## 3. The provenance statement
 

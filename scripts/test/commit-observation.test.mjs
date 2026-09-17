@@ -203,3 +203,31 @@ test("2.4a reflog expiry at the front loses no commit", () => {
   assert.equal(o.status, 0, o.stderr);
   assert.ok(o.context.includes(short(repo, sha)), `reported despite the front entry's removal: ${JSON.stringify(o.stdout)}`);
 });
+
+test("2.6 a commit rewritten by `pull --rebase` is named rewritten or abandoned, never logged or attributed", () => {
+  const repo = observationRepo({ clone: true });
+  repo.observe();
+  const x = repo.commit({ "src/x.txt": "1" }, "fix: rewritten by the rebase");
+  repo.upstreamCommit();
+  repo.git("pull", "-q", "--rebase");
+  assert.equal(repo.git("for-each-ref", "--contains", x, "refs/heads"), "", "fixture: X is on no branch");
+  const o = repo.observe("PostToolUse", "git commit -m x && git pull --rebase");
+  assert.equal(o.status, 0, o.stderr);
+  assert.match(o.context, /rewritten or abandoned/i, `X is named as dead: ${JSON.stringify(o.stdout)}`);
+  assert.ok(o.context.includes(short(repo, x)));
+  assert.equal(rowsFor(repo, x).length, 0, "no detour-trail row for a dead commit");
+  assert.doesNotMatch(o.context, new RegExp(`--attribute-commit ${x}`), "and no attribution command naming it");
+});
+
+test("2.7 a commit reset away in the same call is named rewritten or abandoned, never logged or attributed", () => {
+  const repo = observationRepo();
+  repo.observe();
+  const y = repo.commit({ "src/y.txt": "1" }, "fix: reset away");
+  repo.git("reset", "-q", "--hard", "HEAD~1");
+  const o = repo.observe("PostToolUse", "git commit -m y && git reset --hard HEAD~1");
+  assert.equal(o.status, 0, o.stderr);
+  assert.match(o.context, /rewritten or abandoned/i, `Y is named as dead: ${JSON.stringify(o.stdout)}`);
+  assert.ok(o.context.includes(short(repo, y)));
+  assert.equal(rowsFor(repo, y).length, 0, "no row");
+  assert.doesNotMatch(o.context, new RegExp(`--attribute-commit ${y}`), "no attribution command naming it");
+});

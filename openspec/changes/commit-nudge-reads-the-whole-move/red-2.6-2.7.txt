@@ -1,0 +1,46 @@
+✖ 2.6 a commit rewritten by `pull --rebase` is named rewritten or abandoned, never logged or attributed (641.962417ms)
+✖ 2.7 a commit reset away in the same call is named rewritten or abandoned, never logged or attributed (425.322167ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1106.887958
+
+✖ failing tests:
+
+test at scripts/test/commit-observation.test.mjs:207:1
+✖ 2.6 a commit rewritten by `pull --rebase` is named rewritten or abandoned, never logged or attributed (641.962417ms)
+  AssertionError [ERR_ASSERTION]: X is named as dead: "{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"Commit `cf885ba` detected. Diff shape (small, fix/chore-prefixed, unrelated to the active epic) looks like a MINIMAL detour, so it was auto-logged to `.conductor/detours.log` as an AUTO-DETOUR entry. Review it — if that's wrong, edit/remove the line.\\n\\nATTRIBUTION — `epic-a` has attributed no commits yet: attribute every commit of this epic's work that already landed, IN THE ORDER THEY LANDED, and then this one — `update-epic epic-a --attribute-commit cf885bae11ff56da7c8f5215aeb1535ad027e2a2`. The array is append-only and a recorded Gate 2 `headSha` must reach EVERY entry, so a commit left unattributed is work that gate is never checked against. ONE exclusion: a commit that only moves or deletes a change's artifacts — the `/opsx:archive` move above all — is lifecycle bookkeeping and must NOT be attributed; it lands after the reviewed range, so attributing it makes this epic's own Gate 2 read stale.\"}}"
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-observation.test.mjs:216:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: "Commit `cf885ba` detected. Diff shape (small, fix/chore-prefixed, unrelated to the active epic) looks like a MINIMAL detour, so it was auto-logged to `.conductor/detours.log` as an AUTO-DETOUR entry. Review it — if that's wrong, edit/remove the line.\n\nATTRIBUTION — `epic-a` has attributed no commits yet: attribute every commit of this epic's work that already landed, IN THE ORDER THEY LANDED, and then this one — `update-epic epic-a --attribute-commit cf885bae11ff56da7c8f5215aeb1535ad027e2a2`. The array is append-only and a recorded Gate 2 `headSha` must reach EVERY entry, so a commit left unattributed is work that gate is never checked against. ONE exclusion: a commit that only moves or deletes a change's artifacts — the `/opsx:archive` move above all — is lifecycle bookkeeping and must NOT be attributed; it lands after the reviewed range, so attributing it makes this epic's own Gate 2 read stale.",
+    expected: /rewritten or abandoned/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/commit-observation.test.mjs:222:1
+✖ 2.7 a commit reset away in the same call is named rewritten or abandoned, never logged or attributed (425.322167ms)
+  AssertionError [ERR_ASSERTION]: Y is named as dead: "{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"Commit `947b78f` detected. Diff shape (small, fix/chore-prefixed, unrelated to the active epic) looks like a MINIMAL detour, so it was auto-logged to `.conductor/detours.log` as an AUTO-DETOUR entry. Review it — if that's wrong, edit/remove the line.\\n\\nATTRIBUTION — `epic-a` has attributed no commits yet: attribute every commit of this epic's work that already landed, IN THE ORDER THEY LANDED, and then this one — `update-epic epic-a --attribute-commit 947b78f97549cfbe990ab77aa61863ed6e237dec`. The array is append-only and a recorded Gate 2 `headSha` must reach EVERY entry, so a commit left unattributed is work that gate is never checked against. ONE exclusion: a commit that only moves or deletes a change's artifacts — the `/opsx:archive` move above all — is lifecycle bookkeeping and must NOT be attributed; it lands after the reviewed range, so attributing it makes this epic's own Gate 2 read stale.\"}}"
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/commit-observation.test.mjs:229:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: "Commit `947b78f` detected. Diff shape (small, fix/chore-prefixed, unrelated to the active epic) looks like a MINIMAL detour, so it was auto-logged to `.conductor/detours.log` as an AUTO-DETOUR entry. Review it — if that's wrong, edit/remove the line.\n\nATTRIBUTION — `epic-a` has attributed no commits yet: attribute every commit of this epic's work that already landed, IN THE ORDER THEY LANDED, and then this one — `update-epic epic-a --attribute-commit 947b78f97549cfbe990ab77aa61863ed6e237dec`. The array is append-only and a recorded Gate 2 `headSha` must reach EVERY entry, so a commit left unattributed is work that gate is never checked against. ONE exclusion: a commit that only moves or deletes a change's artifacts — the `/opsx:archive` move above all — is lifecycle bookkeeping and must NOT be attributed; it lands after the reviewed range, so attributing it makes this epic's own Gate 2 read stale.",
+    expected: /rewritten or abandoned/,
+    operator: 'match',
+    diff: 'simple'
+  }
