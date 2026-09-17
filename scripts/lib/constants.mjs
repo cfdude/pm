@@ -1069,7 +1069,49 @@ export const shellQuote = (token) => `'${String(token).replace(/'/g, "'\\''")}'`
  *  interpolates `epic.id` into a command directly (emitted-instructions: "An epic id in a printed
  *  command is always one shell word"); user-text-never-forges-output hooks its control-character
  *  handling into this one function. */
-export const printedId = (id) => (EPIC_ID_FORMAT.test(String(id)) ? String(id) : shellQuote(id));
+export const printedId = (id, kind = "epic") => {
+  // user-text-never-forges-output D4a: an id holding a CONTROL CHARACTER has no one-line remedy — an
+  // escaped id names a different record, and a raw one breaks the line. So there is no printable
+  // form to return: printedId() THROWS the no-remedy signal, and the command builder that called it
+  // prints noRemedyMessage() IN PLACE OF the command (orNoRemedy()). A throw rather than a sentinel
+  // value, deliberately: a caller not yet taught to handle it fails loudly instead of interpolating
+  // `[object Object]` into a command nothing would notice. Only legacy records reach this branch —
+  // every writer refuses such an id now.
+  if (CONTROL_CHARACTER.test(String(id))) throw new NoRemedy(kind, id);
+  return EPIC_ID_FORMAT.test(String(id)) ? String(id) : shellQuote(id);
+};
+
+/** The no-remedy signal printedId() throws for an id holding a control character. */
+export class NoRemedy extends Error {
+  constructor(kind, id) {
+    super(`${kind} id holds a control character`);
+    this.name = "NoRemedy";
+    this.kind = kind;
+    this.id = id;
+  }
+}
+
+/** THE wording for a record no verb can rename (spec output-text-integrity): names the record kind
+ *  and its escaped id, prints no command, and never directs a hand-edit of the state file. */
+export const noRemedyMessage = (kind, id) =>
+  `${kind} '${escapeControls(id)}' holds a control character; no verb can rename it`;
+
+/** Build a printed remedy, or — when an id inside it holds a control character — the no-remedy
+ *  message in its place. Every printedId() caller builds through this (or is a builder that does). */
+export function orNoRemedy(build) {
+  try {
+    return build();
+  } catch (e) {
+    if (e instanceof NoRemedy) return noRemedyMessage(e.kind, e.id);
+    throw e;
+  }
+}
+
+/** A caller-supplied value that is NOT an id (a session name, a workspace path) placed in a printed
+ *  command: as it is when it holds no control character, else the placeholder the reader fills —
+ *  the gate-integrity printed-invocation rule (design.md Context, re-derived at 5accfbe). */
+export const commandValue = (value, placeholder) =>
+  (CONTROL_CHARACTER.test(String(value)) ? placeholder : String(value));
 
 /** gh#182's third rule, as ONE string: "this looks like a flag but arrived where a value was
  *  expected" names the flag being filled, quotes the token, and shows the `=` form that says it

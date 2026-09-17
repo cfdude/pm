@@ -59,12 +59,12 @@ export function setLaneRouting() {
       if (typeof raw !== "string") continue;
       const i = raw.lastIndexOf(":");
       if (i <= 0 || i === raw.length - 1) {
-        process.stderr.write(`conductor: bad --add '${raw}': expected "<match>:<lane>"\n`); process.exit(1);
+        process.stderr.write(`conductor: bad --add '${escapeControls(raw)}': expected "<match>:<lane>"\n`); process.exit(1);
       }
       const match = raw.slice(0, i).trim();
       const lane = raw.slice(i + 1).trim();
       if (!KNOWN_LANES.includes(lane)) {
-        process.stderr.write(`conductor: bad --add '${raw}': lane must be one of ${KNOWN_LANES.join("|")}\n`); process.exit(1);
+        process.stderr.write(`conductor: bad --add '${escapeControls(raw)}': lane must be one of ${KNOWN_LANES.join("|")}\n`); process.exit(1);
       }
       lr.overrides = lr.overrides.filter(o => o.match !== match);   // last --add for a match wins
       lr.overrides.push({ match, lane });

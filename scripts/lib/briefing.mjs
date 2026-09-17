@@ -10,7 +10,7 @@ import { isRenderableLink, deferralHistory, deferralNote, daysSince } from "./li
 import { correctionMarking, correctionNote, outcomeOf, recordedDispositions } from "./disposition.mjs";
 import { gateRemedy, gateTableRows } from "./archive-gate.mjs";
 import { ungatedArchives, withdrawnArchiveNote } from "./integrity.mjs";
-import { KNOWN_LANES, anyInwardProcedureEmittable, escapeControls, outwardApplies, printedId, releaseLine, releaseSummaries } from "./constants.mjs";
+import { KNOWN_LANES, anyInwardProcedureEmittable, escapeControls, outwardApplies, printedId, releaseLine, releaseSummaries, orNoRemedy } from "./constants.mjs";
 import { crossSpecLine } from "./cross-spec-review.mjs";
 import { blockedWithoutDependsOnNote, dependencyNotes } from "./dependency-order.mjs";
 import { conflictCount, conflictWarningLatched, consumeConflictWarning } from "./write-conflicts.mjs";
@@ -27,7 +27,7 @@ export const BRIEF_REMEDIES = [
     id: "tracker-refresh-owed",
     render: (active) => `  ⚠ TRACKER REFRESH OWED: re-read \`${active.externalUrl || active.externalId}\` ` +
       "(body, comments, labels, state) before drawing specs or a plan, then " +
-      `\`record-tracker-refresh ${printedId(active.id)} --verdict unchanged|material-change --external-updated-at <iso>\`.`,
+      `${orNoRemedy(() => `\`record-tracker-refresh ${printedId(active.id)} --verdict unchanged|material-change --external-updated-at <iso>\``)}.`,
   },
   {
     id: "ungated-archive",

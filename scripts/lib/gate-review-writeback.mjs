@@ -2,7 +2,7 @@
 // Records an OpenSpec gate review's verdict durably against an epic. One-directional
 // dependencies only.
 
-import { KNOWN_GATE_NUMBERS, gateArtifacts, gateHasEvidence } from "./constants.mjs";
+import { KNOWN_GATE_NUMBERS, gateArtifacts, gateHasEvidence, escapeControls } from "./constants.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
@@ -125,7 +125,7 @@ export function recordGateReview() {
   }
   const state = loadState();
   const epic = state.epics.find(e => e.id === id);
-  if (!epic) { process.stderr.write(`conductor: epic '${id}' not found\n`); process.exit(1); }
+  if (!epic) { process.stderr.write(`conductor: epic '${escapeControls(id)}' not found\n`); process.exit(1); }
   // Normalized, not strict: an epic with no lane is openspec-lane everywhere else, and
   // refusing it a verdict here would leave it permanently unable to satisfy the archive
   // gate that (also normalizing) binds it.
@@ -173,7 +173,7 @@ export function recordGateReview() {
   const saved = saveState(state);
   render();
   reportSave(saved, {
-    changed: `conductor: recorded gate ${gate} review '${verdict}' for '${id}'`,
-    unchanged: `conductor: '${id}' already carried this exact gate ${gate} verdict — ${STATE_UNCHANGED}`,
+    changed: `conductor: recorded gate ${gate} review '${escapeControls(verdict)}' for '${escapeControls(id)}'`,
+    unchanged: `conductor: '${escapeControls(id)}' already carried this exact gate ${gate} verdict — ${STATE_UNCHANGED}`,
   });
 }

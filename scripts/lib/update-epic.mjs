@@ -4,7 +4,7 @@
 
 import {
   EPIC_FLAGS, KNOWN_GATE_NUMBERS, KNOWN_LANES, KNOWN_STATUSES, KNOWN_REVIEW_MODES, REVIEW_MODE_RANK,
-  CONTROL_CHARACTER, epicFlagsFor, escapeControls, isFlagToken, nullableEpicFlags, printedId, shellQuote, splitFlagToken,
+  CONTROL_CHARACTER, epicFlagsFor, escapeControls, orNoRemedy, isFlagToken, nullableEpicFlags, printedId, shellQuote, splitFlagToken,
 } from "./constants.mjs";
 import { activate, owedReconcileNotice } from "./active-pointer.mjs";
 import { globalReviewMode } from "./rules.mjs";
@@ -237,7 +237,7 @@ function regressionRefusal({ id, snapshot, next, broken, argv, status }) {
     // losing it, so the invocation keeps offering it (epic-disposition: the one excepted rendering).
     keepDelivered: true,
   });
-  return `conductor: this update to '${id}' would break an obligation its archived 'delivered' ` +
+  return `conductor: this update to '${escapeControls(id)}' would break an obligation its archived 'delivered' ` +
     "record met, so nothing was written.\n" + findings + remedies +
     (status !== undefined
       ? `  --status ${status} is dropped from the printed invocation, because the change directory ` +
@@ -367,7 +367,7 @@ export function updateEpic() {
   const withdrawResolved = withdrawTyped.length ? resolveCommits(withdrawTyped).resolved : new Map();
   const state = loadState();
   const epic = state.epics.find(e => e.id === id);
-  if (!epic) { process.stderr.write(`conductor: epic '${id}' not found\n`); process.exit(1); }
+  if (!epic) { process.stderr.write(`conductor: epic '${escapeControls(id)}' not found\n`); process.exit(1); }
   // The record as it stood BEFORE this invocation, taken before any mutation. The archived-epic
   // regression check below compares the obligations on it with those on the record the call
   // leaves, and reads its trigger from it — `--status` overwrites `epic.status` long before then.
@@ -380,7 +380,7 @@ export function updateEpic() {
     //   5. Nothing to withdraw. Keeps the flag from becoming a general "reset the gate" lever.
     if (!stored) {
       process.stderr.write(
-        `conductor: '${id}' holds no Gate ${g} verdict to withdraw — withdrawal takes back a ` +
+        `conductor: '${escapeControls(id)}' holds no Gate ${g} verdict to withdraw — withdrawal takes back a ` +
         "recorded verdict, and there is none. Nothing was written.\n");
       process.exit(1);
     }
@@ -390,7 +390,7 @@ export function updateEpic() {
     //      be false, and would relabel "never reviewed" as "withdrawn" on every surface.
     if (stored.verdict === "ungated") {
       process.stderr.write(
-        `conductor: Gate ${g} of '${id}' is an \`ungated\` entry — the engine's record that no review ` +
+        `conductor: Gate ${g} of '${escapeControls(id)}' is an \`ungated\` entry — the engine's record that no review ` +
         "happened, not a review that can be taken back. An ungated entry is cleared by recording a " +
         `real verdict, with that gate's evidence: \`${gateRemedy(id, g)}\`. Nothing was written.\n`);
       process.exit(1);
@@ -446,10 +446,10 @@ export function updateEpic() {
     if (holdsOwedReconcileRecord(epic)) {
       const owed = ownedDetours(epic);
       process.stderr.write(
-        `conductor: --clear-links on '${id}' is refused — '${id}' owes a reconcile and its links hold the ` +
+        `conductor: --clear-links on '${escapeControls(id)}' is refused — '${escapeControls(id)}' owes a reconcile and its links hold the ` +
         "record that verdict must be written against" +
-        (owed.length ? ` (owed against ${owed.map(d => `'${d}'`).join(", ")})` : "") +
-        `. Record it first: \`record-reconcile ${printedId(id)} --detour <detourId> --verdict valid|invalidated\`` +
+        (owed.length ? ` (owed against ${owed.map(d => `'${escapeControls(d)}'`).join(", ")})` : "") +
+        `. Record it first: ${orNoRemedy(() => `\`record-reconcile ${printedId(id)} --detour <detourId> --verdict valid|invalidated\``)}` +
         " (or /pm:upgrade first if a link predates 0.44.0), then clear. Nothing was written.\n");
       process.exit(1);
     }
@@ -485,12 +485,12 @@ export function updateEpic() {
     const declared = EPIC_FLAGS.find(r => r.flag === name && r.commands.includes("update-epic"));
     if (declared && declared.setOnly) {
       process.stderr.write(
-        `conductor: --clear ${name}: '${name}' is deliberately set-only — ${declared.setOnly}. ` +
+        `conductor: --clear ${name}: '${escapeControls(name)}' is deliberately set-only — ${declared.setOnly}. ` +
         "Nothing was written.\n");
       process.exit(1);
     }
     process.stderr.write(
-      `conductor: --clear ${name}: '${name}' is not a field this command can unset. ` +
+      `conductor: --clear ${name}: '${escapeControls(name)}' is not a field this command can unset. ` +
       `Clearable fields: ${nullableRows.map(r => `${r.flag} (${r.key})`).join(", ")}. ` +
       "Name the FLAG, not the state key — they are two namespaces. Nothing was written.\n");
     process.exit(1);
@@ -520,8 +520,8 @@ export function updateEpic() {
     const global = globalReviewMode(state);
     if (REVIEW_MODE_RANK[reviewMode] < REVIEW_MODE_RANK[global]) {
       process.stderr.write(
-        `conductor: --review-mode '${reviewMode}' would de-escalate below the repo-global dial ` +
-        `('${global}') — an epic-level override may only escalate above the global dial, never below it\n`);
+        `conductor: --review-mode '${escapeControls(reviewMode)}' would de-escalate below the repo-global dial ` +
+        `('${escapeControls(global)}') — an epic-level override may only escalate above the global dial, never below it\n`);
       process.exit(1);
     }
   }
@@ -568,7 +568,7 @@ export function updateEpic() {
     const n = Number(f.story);
     const stories = Array.isArray(epic.stories) ? epic.stories : [];
     if (!Number.isInteger(n) || n < 1 || n > stories.length) {
-      process.stderr.write(`conductor: --story ${f.story} is out of range — '${id}' has ${stories.length} stor${stories.length === 1 ? "y" : "ies"} (1-indexed)\n`);
+      process.stderr.write(`conductor: --story ${f.story} is out of range — '${escapeControls(id)}' has ${stories.length} stor${stories.length === 1 ? "y" : "ies"} (1-indexed)\n`);
       process.exit(1);
     }
     storyIndex = n - 1;
@@ -579,13 +579,13 @@ export function updateEpic() {
     const target = stories[storyIndex];
     if (isStoryDisposed(target)) {
       process.stderr.write(
-        `conductor: story ${n} of '${id}' already carries a recorded disposition ` +
-        `('${target.disposition.state}': ${target.disposition.reason}). Replacing it would ` +
+        `conductor: story ${n} of '${escapeControls(id)}' already carries a recorded disposition ` +
+        `('${escapeControls(target.disposition.state)}': ${target.disposition.reason}). Replacing it would ` +
         "destroy a judgment somebody made.\n");
       process.exit(1);
     }
     if (storyMutation === "wont-do" && target.done) {
-      process.stderr.write(`conductor: story ${n} of '${id}' is already done — work that shipped cannot be dropped\n`);
+      process.stderr.write(`conductor: story ${n} of '${escapeControls(id)}' is already done — work that shipped cannot be dropped\n`);
       process.exit(1);
     }
   } else if (f.done === true) {
@@ -706,7 +706,7 @@ export function updateEpic() {
     process.stderr.write(
       `conductor: ${supplied.map(k => `--${k}`).join(", ")} ` +
       `${supplied.length === 1 ? "is" : "are"} recorded only when an epic is ARCHIVED, and this ` +
-      `invocation does not archive '${id}' — nothing would have been written.\n` +
+      `invocation does not archive '${escapeControls(id)}' — nothing would have been written.\n` +
       `  To record one: add --status archived --outcome <outcome> --reason "<why>".\n` +
       `  To CORRECT one already recorded: re-run the archive with ` +
       `--correct-disposition "<why the recorded one was wrong>" alongside the corrected flags.\n`);
@@ -782,7 +782,7 @@ export function updateEpic() {
     const { remaining, removed, missing } = planWithdrawal(epic.attributedCommits, shas, withdrawResolved);
     if (missing.length) {
       process.stderr.write(
-        `conductor: '${id}' never attributed ${missing.join(", ")} — nothing to withdraw. ` +
+        `conductor: '${escapeControls(id)}' never attributed ${missing.join(", ")} — nothing to withdraw. ` +
         `It currently attributes: ${epic.attributedCommits && epic.attributedCommits.length ? epic.attributedCommits.join(", ") : "(none)"}.\n`);
       process.exit(1);
     }
@@ -830,7 +830,7 @@ export function updateEpic() {
   // not hold two opposite claims about one file, and this is the un-ignore path (derived from
   // an action the operator already takes, rather than a new verb nobody would find).
   for (const p of claimArtifacts(state, epic)) {
-    announcements.push(`conductor: cleared the sync-ignore tombstone on '${p}' — \`${epic.id}\` now claims it\n`);
+    announcements.push(`conductor: cleared the sync-ignore tombstone on '${escapeControls(p)}' — \`${epic.id}\` now claims it\n`);
   }
   // A manual `rank` is a placement among ONE band's peers, so it does not survive a move to
   // another band — it would collide with that band's own 1..N numbering, and the number would
@@ -979,7 +979,7 @@ export function updateEpic() {
   // who resumes it.
   if (status === "archived" && epic.claim) {
     process.stderr.write(
-      `conductor: cleared the advisory claim held by '${epic.claim.session}' — '${id}' has ended\n`);
+      `conductor: cleared the advisory claim held by '${escapeControls(epic.claim.session)}' — '${escapeControls(id)}' has ended\n`);
     delete epic.claim;
   }
 
@@ -1008,7 +1008,7 @@ export function updateEpic() {
     const missing = missingAttributions(loadState(), id, wrote);
     if (missing.length) {
       process.stderr.write(
-        `conductor: --attribute-commit wrote ${wrote.join(", ")} to '${id}' and ` +
+        `conductor: --attribute-commit wrote ${wrote.join(", ")} to '${escapeControls(id)}' and ` +
         `${missing.join(", ")} ${missing.length === 1 ? "is" : "are"} NOT in .conductor/state.json ` +
         "afterwards. NOTHING has been recorded for those commits — do not treat this epic's " +
         "attribution as current. Re-run the attribution, then verify with `git show` against the " +
@@ -1029,7 +1029,7 @@ export function updateEpic() {
         .every(w => w.sha !== sha || w.withdrawnAt !== withdrawnAt)).map(w => w.sha);
     if (stillThere.length) {
       process.stderr.write(
-        `conductor: --withdraw-commit did NOT land for ${stillThere.join(", ")} on '${id}' — ` +
+        `conductor: --withdraw-commit did NOT land for ${stillThere.join(", ")} on '${escapeControls(id)}' — ` +
         ".conductor/state.json holds no withdrawal record for them afterwards. Do not treat " +
         "this epic's attribution as corrected; re-run the withdrawal.\n");
       process.exit(1);
@@ -1043,7 +1043,7 @@ export function updateEpic() {
     const notLanded = missingGateWithdrawals(loadState(), id, gateWithdrawals);
     if (notLanded.length) {
       process.stderr.write(
-        `conductor: --withdraw-gate-review did NOT land for gate ${notLanded.join(", gate ")} on '${id}' — ` +
+        `conductor: --withdraw-gate-review did NOT land for gate ${notLanded.join(", gate ")} on '${escapeControls(id)}' — ` +
         ".conductor/state.json still holds the verdict, or holds no withdrawal record for it, " +
         "afterwards. Do not treat this epic's gate record as corrected; re-run the withdrawal.\n");
       process.exit(1);
@@ -1055,8 +1055,8 @@ export function updateEpic() {
   // binds the write surface, and a rule implemented once at the verb that introduced it is how
   // twenty siblings came to print success on a save that wrote nothing.
   reportSave(saved, {
-    changed: `conductor: updated '${id}'`,
-    unchanged: `conductor: nothing changed on '${id}' — every value this invocation supplied is ` +
+    changed: `conductor: updated '${escapeControls(id)}'`,
+    unchanged: `conductor: nothing changed on '${escapeControls(id)}' — every value this invocation supplied is ` +
       "already the value the record holds. Nothing was written.",
   });
 }

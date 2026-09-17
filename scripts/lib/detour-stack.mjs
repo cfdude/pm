@@ -31,7 +31,7 @@
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
-import { printedId } from "./constants.mjs";
+import { printedId, escapeControls, orNoRemedy } from "./constants.mjs";
 import { render } from "./render.mjs";
 import { activate, owedReconcileNotice } from "./active-pointer.mjs";
 import { deferralHistory, deferralNote, ownedDetours } from "./links.mjs";
@@ -112,20 +112,20 @@ export function pushDetour() {
 
   const state = loadState();
   const paused = state.epics.find(e => e.id === id);
-  if (!paused) die(`epic '${id}' not found`);
+  if (!paused) die(`epic '${escapeControls(id)}' not found`);
   if (paused.status === "archived") {
-    die(`epic '${id}' is archived — an epic that has ended cannot be paused for a detour, and a ` +
+    die(`epic '${escapeControls(id)}' is archived — an epic that has ended cannot be paused for a detour, and a ` +
       "frame naming it would never be resumable");
   }
   const detour = state.epics.find(e => e.id === detourId);
   if (!detour) {
-    die(`detour epic '${detourId}' not found — register it first (\`add-epic --id ${printedId(detourId)} ` +
-      "…\`), so the frame cannot name work that does not exist");
+    die(`detour epic '${escapeControls(detourId)}' not found — register it first (` + orNoRemedy(() => `\`add-epic --id ${printedId(detourId)} ` +
+      "…\`") + "), so the frame cannot name work that does not exist");
   }
-  if (detour.status === "archived") die(`detour epic '${detourId}' is archived — there is nothing left to build`);
+  if (detour.status === "archived") die(`detour epic '${escapeControls(detourId)}' is archived — there is nothing left to build`);
   if (id === detourId) die("the paused epic and the detour cannot be the same epic");
   if ((state.detourStack || []).some(fr => fr && fr.pausedEpic === id)) {
-    die(`epic '${id}' is already on the detour stack — resume it before pausing it again, or the ` +
+    die(`epic '${escapeControls(id)}' is already on the detour stack — resume it before pausing it again, or the ` +
       "stack holds two frames whose pops would contradict each other");
   }
 
@@ -171,15 +171,15 @@ export function pushDetour() {
   const pushReport = reconcileOnResume
     ? " — reconcile gate armed for /pm:resume"
     : alreadyOwed
-      ? ` — no reconcile for '${detourId}'; '${id}' still owes a reconcile` +
-        (owedBefore.length ? ` against ${owedBefore.map(d => `'${d}'`).join(", ")}` : "")
+      ? ` — no reconcile for '${escapeControls(detourId)}'; '${escapeControls(id)}' still owes a reconcile` +
+        (owedBefore.length ? ` against ${owedBefore.map(d => `'${escapeControls(d)}'`).join(", ")}` : "")
       : " — NO reconcile on resume";
   reportSave(saved, {
-    changed: `conductor: paused '${id}' and made detour '${detourId}' active${pushReport}`,
+    changed: `conductor: paused '${escapeControls(id)}' and made detour '${escapeControls(detourId)}' active${pushReport}`,
     // A frame carries `pausedAt`, so a PUSH always differs from disk. Bound rather than
     // exempted for the same reason add-epic is: the argument for "cannot no-op" is about
     // today's frame shape, not about this verb.
-    unchanged: `conductor: '${id}' was already paused for detour '${detourId}' on exactly these ` +
+    unchanged: `conductor: '${escapeControls(id)}' was already paused for detour '${escapeControls(detourId)}' on exactly these ` +
       `terms — ${STATE_UNCHANGED}`,
   });
   // gh#94's disclosure, now at the moment of the deferral itself rather than one step after it.
@@ -218,13 +218,13 @@ export function popDetour() {
       "would discard the only record that something was parked");
   }
   if (expected && expected !== pausedEpic) {
-    die(`the top of the detour stack is '${pausedEpic}', not '${expected}' — the stack is LIFO, ` +
-      `so resume '${pausedEpic}' first`);
+    die(`the top of the detour stack is '${escapeControls(pausedEpic)}', not '${escapeControls(expected)}' — the stack is LIFO, ` +
+      `so resume '${escapeControls(pausedEpic)}' first`);
   }
   const epic = state.epics.find(e => e.id === pausedEpic);
-  if (!epic) die(`paused epic '${pausedEpic}' is not in the record — it cannot be resumed`);
+  if (!epic) die(`paused epic '${escapeControls(pausedEpic)}' is not in the record — it cannot be resumed`);
   if (epic.status === "archived") {
-    die(`paused epic '${pausedEpic}' is archived — it ended while parked, so there is nothing to ` +
+    die(`paused epic '${escapeControls(pausedEpic)}' is archived — it ended while parked, so there is nothing to ` +
       "resume. End the frame by removing the epic's pause deliberately rather than by popping it");
   }
 
@@ -246,12 +246,12 @@ export function popDetour() {
   const detour = detourId ? state.epics.find(e => e.id === detourId) : null;
   if (detour && detour.status !== "archived") {
     process.stderr.write(
-      `conductor: detour '${detourId}' is still ${detour.status}, not archived — resuming anyway, ` +
+      `conductor: detour '${escapeControls(detourId)}' is still ${detour.status}, not archived — resuming anyway, ` +
       "but confirm its work is finished and committed before building on the resumed epic\n");
   }
   reportSave(saved, {
-    changed: `conductor: resumed '${pausedEpic}'`,
-    unchanged: `conductor: '${pausedEpic}' was already resumed on exactly these terms — ` +
+    changed: `conductor: resumed '${escapeControls(pausedEpic)}'`,
+    unchanged: `conductor: '${escapeControls(pausedEpic)}' was already resumed on exactly these terms — ` +
       `${STATE_UNCHANGED}`,
   });
   // READ BACK AFTER render(): its heal can clear an obligation nothing could answer (a hand-set flag
@@ -270,11 +270,11 @@ export function popDetour() {
     const owed = ownedDetours(resumed);
     const targets = owed.length ? owed : [detourId || "<detourId>"];
     process.stderr.write(
-      `conductor: RECONCILE GATE — '${pausedEpic}' carries reconcileNeeded` +
-      (owed.length ? ` and owes a verdict against ${owed.map(d => `'${d}'`).join(", ")}` : "") +
+      `conductor: RECONCILE GATE — '${escapeControls(pausedEpic)}' carries reconcileNeeded` +
+      (owed.length ? ` and owes a verdict against ${owed.map(d => `'${escapeControls(d)}'`).join(", ")}` : "") +
       ". Run the reconciler BEFORE writing code, then " +
-      targets.map(d => `\`record-reconcile ${printedId(pausedEpic)} --detour ${printedId(d)} --verdict valid|invalidated\``).join(", ") +
-      ", then `honcho-memory pop " + printedId(pausedEpic) + " \"<detour>; reconcile = …\"` for the memory line\n");
+      [...new Set(targets.map(d => orNoRemedy(() => `\`record-reconcile ${printedId(pausedEpic)} --detour ${printedId(d)} --verdict valid|invalidated\``)))].join(", ") +
+      ", then " + orNoRemedy(() => "`honcho-memory pop " + printedId(pausedEpic) + " \"<detour>; reconcile = …\"`") + " for the memory line\n");
     return;
   }
   // Nothing to reconcile, so the resume is complete and the memory line is true now.

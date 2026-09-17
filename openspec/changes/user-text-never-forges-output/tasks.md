@@ -94,24 +94,24 @@ Pairs: 4.1 lands with 4.2.
 
 Pairs: 5.1–5.3c land with 5.4.
 
-- [ ] 5.1 RED: spec "An unknown id is quoted back on one line" — the fixture pushes one detour frame
+- [x] 5.1 RED: spec "An unknown id is quoted back on one line" — the fixture pushes one detour frame
       first (without it `pop-detour` never reaches the id); all six verbs, `state.json` byte-identical
       (repro F)
-- [ ] 5.2 RED: spec "A story title cannot forge an invocation in the archive refusal" (repro D)
-- [ ] 5.3 RED: spec "A withdrawal reason cannot forge an integrity line" (repro E) — real commits via
+- [x] 5.2 RED: spec "A story title cannot forge an invocation in the archive refusal" (repro D)
+- [x] 5.3 RED: spec "A withdrawal reason cannot forge an integrity line" (repro E) — real commits via
       the helpers fixture, never a placeholder sha
-- [ ] 5.3a RED: specs "A stored id holding a control character is never put into an emitted command",
+- [x] 5.3a RED: specs "A stored id holding a control character is never put into an emitted command",
       "A record no verb can rename prints no remedy" and "A change no verb can make is named, not
       delegated to a hand-edit" (legacy id written into `state.json` directly — design D3 exception)
-- [ ] 5.3b RED (against the engine after change 1): spec "The commit nudge never prints a command naming
+- [x] 5.3b RED (against the engine after change 1): spec "The commit nudge never prints a command naming
       a control-character id" — legacy control-character ids on the active detour epic, the paused epic
       and an attributed epic; record the anchor, make a real commit, amend the attributed commit,
       observe; assert no printed command names any of the three ids and no line is forged
-- [ ] 5.3c RED: spec "A release id in an integrity remedy is routed through the id printer" (legacy
+- [x] 5.3c RED: spec "A release id in an integrity remedy is routed through the id printer" (legacy
       release ids written into `state.json` directly — design D3 exception). Fails on 0.44.0, measured:
       `integrity.mjs`'s `delivered-release-epic-left-open` prints `release ${rel.id} --defer …` raw, so
       the output holds a line beginning `FORGED --defer` and the unquoted `release Legacy Release --defer`
-- [ ] 5.4 GREEN: an emitted invocation whose identifier (epic id or release id) holds a CONTROL
+- [x] 5.4 GREEN: an emitted invocation whose identifier (epic id or release id) holds a CONTROL
       CHARACTER is not printed; the prose line of design D4a replaces it (a tracker system/project/repo
       is NOT in that class — it is replaced, not renamed, under change 2's
       `tracker-repo-not-a-github-repository` wording, which this task does not touch; an epic or release id merely failing `EPIC_ID_FORMAT` is printed as

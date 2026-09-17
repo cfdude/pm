@@ -14,7 +14,7 @@ import { assertRulesBlockWritable, writeRules } from "./rules.mjs";
 import { buildBrief } from "./briefing.mjs";
 import { COMMIT_DERIVED_KINDS, appendDetourLog, appendRetraction, fullSha, gitShortSha, isCommitNameShaped, isDetachedTree, readDetourRows, rowMatches, rowShasOverlap, shortSha } from "./git.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
-import { escapeControls, printedId } from "./constants.mjs";
+import { escapeControls, printedId, orNoRemedy, commandValue } from "./constants.mjs";
 import { beginObservation, isAmend, isLiveCommit } from "./commit-watch.mjs";
 import { deliveredRegression, planWithdrawal, withdrawnRecord } from "./update-epic.mjs";
 import { deferralHistory, deferralNote, detourContext } from "./links.mjs";
@@ -403,7 +403,7 @@ function supersedeAmended(state, candidates) {
       if (!plan.removed.length) continue;
       const next = { ...epic, ...withdrawnRecord(epic, plan, reason, new Date().toISOString()) };
       if (deliveredRegression(epic.id, epic, next, { status: undefined }).length) refused.push(epic.id);
-      else commands.push(`\`update-epic ${printedId(epic.id)} --withdraw-commit ${replaced} --withdrawal-reason "${reason}"\``);
+      else commands.push(orNoRemedy(() => `\`update-epic ${printedId(epic.id)} --withdraw-commit ${replaced} --withdrawal-reason "${reason}"\``));
     }
     if (!retractedNow && !commands.length && !refused.length) continue;
     let text = `AMEND — \`${label}\` was ${reason} and is on no branch, so it is replaced, not added.`;
@@ -412,7 +412,7 @@ function supersedeAmended(state, candidates) {
       text += " Withdraw its attribution BEFORE attributing anything else: " + commands.join(", ") + ".";
     }
     for (const id of refused) {
-      text += ` \`${id}\` is a delivered epic holding \`${label}\`, whose record the withdrawal would break; ` +
+      text += ` \`${escapeControls(id)}\` is a delivered epic holding \`${label}\`, whose record the withdrawal would break; ` +
         "`update-epic`'s refusal of that withdrawal names the remedy.";
     }
     lines.push(text);
@@ -467,7 +467,8 @@ function attributionNudge(state, ctx, shas, files = []) {
   if (!list.length) return null;
   const candidates = attributionCandidates(state, ctx, files);
   if (!candidates.length) return null;
-  const cmd = (epic) => `update-epic ${printedId(epic.id)} ${list.map(s => `--attribute-commit ${s}`).join(" ")}`;
+  // The no-remedy message in place of the command for an id holding a control character (D4a).
+  const cmd = (epic) => orNoRemedy(() => `update-epic ${printedId(epic.id)} ${list.map(s => `--attribute-commit ${s}`).join(" ")}`);
   // The exclusion travels WITH the commands, once: the archive move is the one commit obeying them
   // would damage, since it lands after the reviewed range and makes the epic's own Gate 2 stale.
   const exclusion =
@@ -483,7 +484,7 @@ function attributionNudge(state, ctx, shas, files = []) {
   }
   const epic = candidates[0];
   if (epic.attributedCommits.length === 0) {
-    return `ATTRIBUTION — \`${epic.id}\` has attributed no commits yet: ` +
+    return `ATTRIBUTION — \`${escapeControls(epic.id)}\` has attributed no commits yet: ` +
       "attribute every commit of this epic's work that " +
       "already landed, IN THE ORDER THEY LANDED, and then this one — " +
       `\`${cmd(epic)}\`. The array is append-only and a recorded Gate 2 \`headSha\` must reach EVERY ` +
@@ -654,7 +655,7 @@ function runNudge(state, ctx, commits, attribution = null, event = "PostToolUse"
     // "(logged to detours.log)" is now a CLAIM about what just happened, so it is conditional:
     // a bookkeeping-only commit, or a re-fire for a sha already in the trail, writes no row, and
     // saying otherwise would send the agent looking for a line that is not there.
-    ? `${detected} during DETOUR \`${ctx.detourId}\`` +
+    ? `${detected} during DETOUR \`${escapeControls(ctx.detourId)}\`` +
       (detourLogged ? " (logged to detours.log)" : " (bookkeeping only — not added to the detour trail)") + ". " +
       "When the detour is done: archive it, `/pm:resume` to pop the stack, and run the " +
       "RECONCILE check on the paused parent epic. Write a one-line Honcho memory on resume." + retractPointer
@@ -741,7 +742,7 @@ export function sync(quiet = false) {
   for (const e of state.epics) {
     if ((e.lane || "openspec") === "openspec" && e.status === "planned" && onDiskChanges.has(e.id)) {
       e.status = "untriaged";
-      if (!quiet) process.stderr.write(`conductor: '${e.id}' proposed — planned → untriaged\n`);
+      if (!quiet) process.stderr.write(`conductor: '${escapeControls(e.id)}' proposed — planned → untriaged\n`);
     }
   }
   const known = new Set(state.epics.map(e => e.id));
@@ -775,20 +776,20 @@ export function sync(quiet = false) {
     const claim = claimed.get(norm);
     if (claim) {
       if (!quiet) process.stderr.write(
-        `conductor: sync skipped ${claim.label} '${fname}' — already claimed by epic '${claim.epic}'\n`);
+        `conductor: sync skipped ${claim.label} '${escapeControls(fname)}' — already claimed by epic '${escapeControls(claim.epic)}'\n`);
       continue;
     }
 
     // 2. The pre-existing id guard, unchanged in behavior and in wording.
     if (known.has(id)) {
-      if (!quiet) process.stderr.write(`conductor: sync skipped plan '${id}' — id already exists\n`);
+      if (!quiet) process.stderr.write(`conductor: sync skipped plan '${escapeControls(id)}' — id already exists\n`);
       continue;
     }
 
     // 3. TOMBSTONED — `remove-epic` said no. Removal used to buy you only until the next sync.
     if (ignored.has(norm)) {
       if (!quiet) process.stderr.write(
-        `conductor: sync skipped plan '${fname}' — sync-ignore tombstone (removed epic); ` +
+        `conductor: sync skipped plan '${escapeControls(fname)}' — sync-ignore tombstone (removed epic); ` +
         `attach it to an epic with \`update-epic <id> --plan ${planPath}\` to un-ignore it\n`);
       continue;
     }
@@ -811,10 +812,10 @@ export function sync(quiet = false) {
       e.id !== id && strippedChangeId(e.id) === strippedChangeId(id) && !epicSourceArtifacts(e).length);
     if (near) {
       if (!quiet) process.stderr.write(
-        `conductor: sync skipped plan '${fname}' — epic '${near.id}' has the same name without ` +
+        `conductor: sync skipped plan '${escapeControls(fname)}' — epic '${escapeControls(near.id)}' has the same name without ` +
         `the date prefix and claims no plan. If it IS that epic's plan: ` +
-        `\`update-epic ${printedId(near.id)} --plan ${planPath}\`. If it is genuinely different work: ` +
-        `\`add-epic --id ${printedId(id)} --lane superpowers --plan ${planPath}\`\n`);
+        `${orNoRemedy(() => `\`update-epic ${printedId(near.id)} --plan ${commandValue(planPath, "<plan path>")}\``)}. If it is genuinely different work: ` +
+        `${orNoRemedy(() => `\`add-epic --id ${printedId(id)} --lane superpowers --plan ${commandValue(planPath, "<plan path>")}\``)}\n`);
       continue;
     }
 
@@ -944,7 +945,7 @@ export function retractDetour() {
     const distinct = [...new Set(matching.map(r => r.sha))].sort((x, y) => y.length - x.length);
     const commits = distinct.filter(x => !distinct.some(y => y !== x && y.length > x.length && y.startsWith(x)));
     if (commits.length > 1) {
-      refuse(`'${sha}' is ambiguous — it matches rows of ${commits.length} different commits (${commits.join(", ")}); ` +
+      refuse(`'${escapeControls(sha)}' is ambiguous — it matches rows of ${commits.length} different commits (${commits.join(", ")}); ` +
         "give more of the sha");
     }
     label = distinct[0];
@@ -954,18 +955,18 @@ export function retractDetour() {
   if (!matching.length) {
     refuse(full
       ? `commit ${label} has no AUTO-DETOUR or DETOUR-COMMIT row to retract (it has no row in .conductor/detours.log)`
-      : `'${sha}' resolves to no commit and matches no row in .conductor/detours.log`);
+      : `'${escapeControls(sha)}' resolves to no commit and matches no row in .conductor/detours.log`);
   }
   const derived = matching.filter(r => COMMIT_DERIVED_KINDS.has(r.kind));
   if (!derived.length) {
     refuse(matching.some(r => r.kind === "MINIMAL")
-      ? `'${sha}' has only a MINIMAL row — a MINIMAL row is a declaration, not an automatic row, and ` +
+      ? `'${escapeControls(sha)}' has only a MINIMAL row — a MINIMAL row is a declaration, not an automatic row, and ` +
         "is not retractable"
-      : `'${sha}' has no AUTO-DETOUR or DETOUR-COMMIT row to retract`);
+      : `'${escapeControls(sha)}' has no AUTO-DETOUR or DETOUR-COMMIT row to retract`);
   }
   const retracted = rows.filter(r => r.kind === "RETRACTED").map(r => r.sha);
   if (derived.every(r => retracted.some(x => rowShasOverlap(x, r.sha)))) {
-    refuse(`'${sha}' is already retracted — the row stays in the log and is already hidden from PROJECT.md`);
+    refuse(`'${escapeControls(sha)}' is already retracted — the row stays in the log and is already hidden from PROJECT.md`);
   }
   if (!full && !derived.some(r => r.sha === label)) label = derived[0].sha;
   if (!appendRetraction(label, derived[0].epic, reason)) {
@@ -990,7 +991,7 @@ export function honchoMemoryLine(action, epicId, reason) {
   // forges-output D7). A memory then carries a visible escape where a newline was typed.
   if (action === "push") return `paused ${escapeControls(epicId)} for ${escapeControls(reason)}`;
   if (action === "pop") return `resumed ${escapeControls(epicId)}, reconciled vs ${escapeControls(reason)}`;
-  throw new Error(`honchoMemoryLine: unknown action '${action}' (expected 'push' or 'pop')`);
+  throw new Error(`honchoMemoryLine: unknown action '${escapeControls(action)}' (expected 'push' or 'pop')`);
 }
 
 /** Format one memory line, append a timestamped copy to `.conductor/honcho-memories.log`, and

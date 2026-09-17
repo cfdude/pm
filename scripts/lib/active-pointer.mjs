@@ -8,7 +8,7 @@ import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
 import { ownedDetours } from "./links.mjs";
-import { printedId } from "./constants.mjs";
+import { printedId, escapeControls, orNoRemedy } from "./constants.mjs";
 
 /** Enforce the single-active invariant: `id` becomes the one active epic AND the
  *  top-level `.active` pointer. Any OTHER epic left at status "active" is demoted to
@@ -63,10 +63,10 @@ export function owedReconcileNotice(state, previousActiveId) {
   if (!e || e.reconcileNeeded !== true) return;
   const owed = ownedDetours(e);
   process.stderr.write(
-    `conductor: '${e.id}' is no longer the active epic and still owes a reconcile` +
-    (owed.length ? ` against ${owed.map(d => `'${d}'`).join(", ")}` : "") +
+    `conductor: '${escapeControls(e.id)}' is no longer the active epic and still owes a reconcile` +
+    (owed.length ? ` against ${owed.map(d => `'${escapeControls(d)}'`).join(", ")}` : "") +
     " — the obligation is kept, and gate-guard blocks edits again when it is active. Answer it with " +
-    `\`record-reconcile ${printedId(e.id)} --detour <detourId> --verdict valid|invalidated\`.\n`);
+    `${orNoRemedy(() => `\`record-reconcile ${printedId(e.id)} --detour <detourId> --verdict valid|invalidated\``)}.\n`);
 }
 
 const STALE_DAYS = 14;
@@ -95,9 +95,9 @@ export function setActive() {
   if (!id) { process.stderr.write("usage: conductor.mjs set-active <id>\n"); process.exit(1); }
   const state = loadState();
   const t = state.epics.find(e => e.id === id);
-  if (!t) { process.stderr.write(`conductor: epic '${id}' not found\n`); process.exit(1); }
+  if (!t) { process.stderr.write(`conductor: epic '${escapeControls(id)}' not found\n`); process.exit(1); }
   if (t.status === "archived" || isArchived(id)) {
-    process.stderr.write(`conductor: epic '${id}' is archived — cannot make it active\n`); process.exit(1);
+    process.stderr.write(`conductor: epic '${escapeControls(id)}' is archived — cannot make it active\n`); process.exit(1);
   }
   const previous = state.active;
   activate(state, id);
@@ -105,8 +105,8 @@ export function setActive() {
   owedReconcileNotice(state, previous);
   render();
   reportSave(saved, {
-    changed: `conductor: active is now '${id}'`,
-    unchanged: `conductor: '${id}' was already the active epic — ${STATE_UNCHANGED}`,
+    changed: `conductor: active is now '${escapeControls(id)}'`,
+    unchanged: `conductor: '${escapeControls(id)}' was already the active epic — ${STATE_UNCHANGED}`,
   });
 }
 

@@ -50,6 +50,7 @@
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
+import { escapeControls } from "./constants.mjs";
 
 /** `reorder <id> <id> …` — set the manual rank of one whole priority band, atomically.
  *
@@ -77,11 +78,11 @@ export function reorder() {
 
   const seen = new Set();
   for (const id of ids) {
-    if (seen.has(id)) fail(`'${id}' is named twice — a rank is a position, and one epic has one`);
+    if (seen.has(id)) fail(`'${escapeControls(id)}' is named twice — a rank is a position, and one epic has one`);
     seen.add(id);
-    if (!byId.has(id)) fail(`epic '${id}' not found`);
+    if (!byId.has(id)) fail(`epic '${escapeControls(id)}' not found`);
     if (byId.get(id).status === "archived") {
-      fail(`epic '${id}' is archived — ranking finished work orders a band nobody will read`);
+      fail(`epic '${escapeControls(id)}' is archived — ranking finished work orders a band nobody will read`);
     }
   }
 

@@ -25,7 +25,7 @@
 // different claims, and the second is the bug — the issue's own "what would have been enough"
 // is a statement, not membership.
 
-import { printedId } from "./constants.mjs";
+import { printedId, orNoRemedy } from "./constants.mjs";
 
 /** The note for a `blocked` epic with no live `depends-on` link. Its remedy is an engine invocation,
  *  so the brief registers THIS function as a `BRIEF_REMEDIES` entry (briefing.mjs) — the registry
@@ -33,7 +33,7 @@ import { printedId } from "./constants.mjs";
  *  its remedy (Gate 2 E-I3). */
 export function blockedWithoutDependsOnNote(e) {
   return `\`${e.id}\` is \`blocked\` with no \`depends-on\` link — nothing records what it ` +
-    `waits on (\`update-epic ${printedId(e.id)} --link "depends-on:<id>:<why>"\`)`;
+    `waits on (${orNoRemedy(() => `\`update-epic ${printedId(e.id)} --link "depends-on:<id>:<why>"\``)})`;
 }
 
 /** Priority ordering. Declared here rather than promoted into constants.mjs: it is a leaf

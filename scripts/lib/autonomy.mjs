@@ -7,7 +7,7 @@ import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
-import { KNOWN_AUTONOMY_LEVELS, KNOWN_PREAUTHORIZE_CATEGORIES } from "./constants.mjs";
+import { KNOWN_AUTONOMY_LEVELS, KNOWN_PREAUTHORIZE_CATEGORIES, escapeControls } from "./constants.mjs";
 
 // `autonomy` is optional per epic — absent means "off", today's behavior, unchanged.
 // getAutonomy() is the ONLY place that should read epic.autonomy directly; everywhere
@@ -50,7 +50,7 @@ export function setAutonomy() {
   requireFlagValues("set-autonomy", f);
   const state = loadState();
   const epic = state.epics.find(e => e.id === id);
-  if (!epic) { process.stderr.write(`conductor: epic '${id}' not found\n`); process.exit(1); }
+  if (!epic) { process.stderr.write(`conductor: epic '${escapeControls(id)}' not found\n`); process.exit(1); }
 
   const level = typeof f.level === "string" ? f.level : undefined;
   if (level !== undefined && !KNOWN_AUTONOMY_LEVELS.includes(level)) {
@@ -99,8 +99,8 @@ export function setAutonomy() {
   const saved = saveState(state);
   render();
   reportSave(saved, {
-    changed: `conductor: autonomy for '${id}' is now level=${a.level}`,
-    unchanged: `conductor: autonomy for '${id}' already reads level=${a.level} with exactly the ` +
+    changed: `conductor: autonomy for '${escapeControls(id)}' is now level=${a.level}`,
+    unchanged: `conductor: autonomy for '${escapeControls(id)}' already reads level=${a.level} with exactly the ` +
       `pre-authorizations and context this invocation supplied — ${STATE_UNCHANGED}`,
   });
 }

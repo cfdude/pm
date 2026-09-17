@@ -15,7 +15,7 @@
 // READS that quantity rather than computing one of its own. Two counters is how a guard comes
 // to refuse an epic that renders as complete.
 
-import { escapeControls, gateHasEvidence, gateSummary, isOpenspecLane, printedId, withdrawnGate } from "./constants.mjs";
+import { CONTROL_CHARACTER, escapeControls, gateHasEvidence, gateSummary, isOpenspecLane, noRemedyMessage, orNoRemedy, printedId, withdrawnGate } from "./constants.mjs";
 import { commitsNotReachedBy, isCommitNameShaped, resolveCommits } from "./git.mjs";
 import { LIFECYCLE_MARKER, epicProgress, outstandingWork } from "./epic-progress.mjs";
 import { KNOWN_OUTCOMES, agentDisposition, correctionError, dispositionError, isEngineStamped, isStoryDisposed, outcomeOf } from "./disposition.mjs";
@@ -217,9 +217,10 @@ export const DEFERRAL_PLACEHOLDER = `<--no-deferrals | --deferral "<epicId>:<sec
  *  placeholders MEAN where the caller knows (the attribution-withdrawn pair names the replacing
  *  commit). */
 export function gateRemedy(id, gate, { base = "<sha>", head = "<sha>" } = {}) {
-  return String(gate) === "1"
+  // An id holding a control character yields the no-remedy message instead of a command (D4a).
+  return orNoRemedy(() => (String(gate) === "1"
     ? `record-gate-review ${printedId(id)} --gate 1 --verdict pass --artifact <path>`
-    : `record-gate-review ${printedId(id)} --gate 2 --verdict pass --base-sha ${base} --head-sha ${head}`;
+    : `record-gate-review ${printedId(id)} --gate 2 --verdict pass --base-sha ${base} --head-sha ${head}`));
 }
 
 /** The invocation that would record a disposition for ONE epic — rendered once, so no caller
@@ -245,6 +246,8 @@ export function gateRemedy(id, gate, { base = "<sha>", head = "<sha>" } = {}) {
  *                checkbox source's open tasks — the refusal's invocation keeps offering `delivered`,
  *                so it must carry the handoff that makes `delivered` recordable (Gate 2 R-I1). */
 export function dispositionInvocation(epic, { echoed = [], correction = false, deferrals = "bare", keepDelivered = false, carry = [] } = {}) {
+  // A record no verb can rename gets the no-remedy message in place of the invocation (D4a).
+  if (CONTROL_CHARACTER.test(String(epic.id))) return noRemedyMessage("epic", epic.id);
   const outcomes = keepDelivered || !blockedDelivered(epic).length
     ? AGENT_OUTCOMES : AGENT_OUTCOMES.filter(o => o !== "delivered");
   const template = ` --status archived --outcome <${outcomes.join("|")}> --reason "<why>"`;
@@ -289,7 +292,7 @@ export function blockedDelivered(epic) {
  *  integrity's `delivered-release-epic-left-open` and `heal-archived-epic-passed-gate-2`, and by
  *  blockedDelivered() as a checkbox handoff's remedy, so the three cannot drift apart. */
 export function deliveredArchiveInvocation(epic, carry = []) {
-  return `update-epic ${printedId(epic.id)} --status archived --outcome delivered${carry.map(f => ` ${f}`).join("")} --no-deferrals`;
+  return orNoRemedy(() => `update-epic ${printedId(epic.id)} --status archived --outcome delivered${carry.map(f => ` ${f}`).join("")} --no-deferrals`);
 }
 
 /** THE WALKER: the archived epics whose outcome NOBODY CONSIDERED, each with the invocation that
@@ -417,7 +420,7 @@ export const DELIVERED_OBLIGATIONS = [
     },
     remedy: (epic) => [
       gateRemedy(epic.id, 2, { base: REPLACING_PARENT, head: REPLACING }),
-      `update-epic ${printedId(epic.id)} --attribute-commit ${REPLACING}`,
+      orNoRemedy(() => `update-epic ${printedId(epic.id)} --attribute-commit ${REPLACING}`),
     ],
   },
   {
@@ -431,7 +434,7 @@ export const DELIVERED_OBLIGATIONS = [
     // Per source: only the STORIES source has a verb that records a story done. A checkbox source is
     // ticked in its own file, and moved work is recorded with `--carried-to` on the archive itself.
     remedy: (epic) => (outstandingSummary(epic).source === "stories"
-      ? [`update-epic ${printedId(epic.id)} --story <n> --done`] : []),
+      ? [orNoRemedy(() => `update-epic ${printedId(epic.id)} --story <n> --done`)] : []),
     // A checkbox source has no standalone remedy command — no verb ticks a checkbox — so the handoff
     // travels ON the archive invocation itself (design Decision 2: tick the tasks, or record
     // `--carried-to`). EVERY printer offering `--outcome delivered` for such an epic appends these flags
@@ -454,7 +457,8 @@ export function obligationArchiveFlags(epic, obligation) {
 /** The remedy lines for one failing obligation entry (as deliveredObligations() returns it). */
 export function obligationRemedy(epic, obligation) {
   const entry = DELIVERED_OBLIGATIONS.find(o => o.variant === obligation.variant);
-  return entry ? entry.remedy(epic) : [];
+  // De-duplicated: for a record no verb can rename, every line of a pair is the SAME no-remedy message.
+  return entry ? [...new Set(entry.remedy(epic))] : [];
 }
 
 /**
@@ -488,18 +492,18 @@ export function archiveGate(epic, request = {}) {
   const { outcome, reason } = request;
   if (outcome === undefined) {
     return { ok: false, message:
-      `cannot archive '${epic.id}' — no outcome recorded. Pass --outcome ` +
+      `cannot archive '${escapeControls(epic.id)}' — no outcome recorded. Pass --outcome ` +
       `<${AGENT_OUTCOMES.join("|")}> (and --reason "<why>" for anything but delivered), so ` +
       `the record says how this work ended rather than only that it stopped.` };
   }
   if (!AGENT_OUTCOMES.includes(outcome)) {
     return { ok: false, message:
-      `cannot archive '${epic.id}' — --outcome '${outcome}' is not one of ` +
+      `cannot archive '${escapeControls(epic.id)}' — --outcome '${escapeControls(outcome)}' is not one of ` +
       `${AGENT_OUTCOMES.join("|")}. 'unknown' records that nobody was asked, and running this ` +
       `verb means somebody was.` };
   }
   const invalid = dispositionError({ outcome, reason });
-  if (invalid) return { ok: false, message: `cannot archive '${epic.id}' — ${invalid}` };
+  if (invalid) return { ok: false, message: `cannot archive '${escapeControls(epic.id)}' — ${invalid}` };
 
   // REPLACEMENT, and its refusal. An agent's disposition replaces an ENGINE-stamped one —
   // outcome, reason and timestamp together — because a disposition nobody chose is exactly what
@@ -523,10 +527,10 @@ export function archiveGate(epic, request = {}) {
   const correction = request.correction;
   if (correction !== undefined) {
     const cerr = correctionError({ prior: existing, reason: correction });
-    if (cerr) return { ok: false, message: `cannot correct '${epic.id}' — ${cerr}` };
+    if (cerr) return { ok: false, message: `cannot correct '${escapeControls(epic.id)}' — ${cerr}` };
   } else if (existing && !isEngineStamped(existing)) {
     return { ok: false, message:
-      `cannot archive '${epic.id}' — it already carries an agent-recorded outcome ` +
+      `cannot archive '${escapeControls(epic.id)}' — it already carries an agent-recorded outcome ` +
       `'${outcomeOf(epic)}'${existing.recordedAt ? `, recorded ${existing.recordedAt}` : ""}. ` +
       `Replacing it would destroy a judgment somebody made. If it is WRONG, correct it: add ` +
       `--correct-disposition "<why the recorded one was wrong>", which keeps the prior record ` +
@@ -539,7 +543,7 @@ export function archiveGate(epic, request = {}) {
   // would make the guard's message a guess.
   if (!epic.deferralAssertion && !request.deferralAssertion) {
     return { ok: false, message:
-      `cannot archive '${epic.id}' — no deferral assertion recorded. Say what this change ` +
+      `cannot archive '${escapeControls(epic.id)}' — no deferral assertion recorded. Say what this change ` +
       `deferred: --deferral "<epicId>:<artifact section>" for work now held by a registered ` +
       `epic, --declined-deferral "<what>::<why not>" for one you are deliberately not doing, ` +
       `or --no-deferrals if there are none. What was deferred is yours to identify; this ` +
@@ -568,7 +572,7 @@ export function archiveGate(epic, request = {}) {
   const failing = outcome === "delivered" ? deliveredObligations(epic, { carriedTo: request.carriedTo }) : [];
   const gate2Failure = failing.find(o => o.kind === "gate2");
   if (gate2Failure) {
-    const refusal = `cannot archive openspec-lane epic '${epic.id}' — ${gate2Failure.detail}.`;
+    const refusal = `cannot archive openspec-lane epic '${escapeControls(epic.id)}' — ${gate2Failure.detail}.`;
     // Every remedy below is rendered by DELIVERED_OBLIGATIONS, the same lines the regression refusal,
     // `integrity` and `unconsidered-outcomes` print for this obligation, each in its own code span.
     const lines = obligationRemedy(epic, gate2Failure).map(l => `\`${l}\``);
@@ -625,11 +629,12 @@ export function archiveGate(epic, request = {}) {
     // Only the STORIES source can name them: those rows are on the epic and survive archiving.
     // A checkbox source cannot be read here at all — by this point `openspec/changes/<id>/`
     // has moved — so it keeps the unnamed form rather than guessing at titles. The titles come
-    // from the finding's `items` and are rendered raw here, exactly as they always were.
+    // from the finding's `items`, each escaped so a title cannot begin a line of the refusal (and so
+    // cannot forge the invocation below it — user-text-never-forges-output repro D).
     const { items } = handoffFailure;
     const named = items.length
       ? ` The outstanding stor${items.length === 1 ? "y is" : "ies are"}:\n` +
-        items.map(i => `  [ ] ${i.n}. ${i.title}`).join("\n") + "\n"
+        items.map(i => `  [ ] ${i.n}. ${escapeControls(i.title)}`).join("\n") + "\n"
       : " ";
     // The REMEDY IS PER SOURCE, and offering the wrong one is a dead end the caller cannot
     // detect: an inline story has no task source, so `<!-- pm:lifecycle -->` has nowhere to
@@ -645,7 +650,7 @@ export function archiveGate(epic, request = {}) {
         `— declare it in the task source by putting the literal ${LIFECYCLE_MARKER} on that ` +
         `task's own line.`;
     return { ok: false, message:
-      `cannot archive '${epic.id}' as delivered — ${handoffFailure.detail}.${named}${remedy} Naming a receiver ` +
+      `cannot archive '${escapeControls(epic.id)}' as delivered — ${handoffFailure.detail}.${named}${remedy} Naming a receiver ` +
       `for work nobody carried anywhere is a fabricated record.` };
   }
 

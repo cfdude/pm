@@ -7,6 +7,7 @@ import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
+import { escapeControls } from "./constants.mjs";
 
 /** The verdicts a refresh can record. `unchanged` and `material-change` are the whole
  *  vocabulary: the question the gate asks is "did the linked item's content move in a way that
@@ -50,10 +51,10 @@ export function recordTrackerRefresh() {
 
   const state = loadState();
   const epic = state.epics.find(e => e.id === id);
-  if (!epic) { process.stderr.write(`conductor: epic '${id}' not found\n`); process.exit(1); }
+  if (!epic) { process.stderr.write(`conductor: epic '${escapeControls(id)}' not found\n`); process.exit(1); }
   if (!epic.externalId) {
     process.stderr.write(
-      `conductor: epic '${id}' has no external id — there is no linked item to have refreshed. ` +
+      `conductor: epic '${escapeControls(id)}' has no external id — there is no linked item to have refreshed. ` +
       "An epic with no external origin re-reads its LOCAL source (its plan document, or its " +
       "OpenSpec proposal and tasks); that is instruction, and nothing about it is recorded here\n");
     process.exit(1);
@@ -71,8 +72,8 @@ export function recordTrackerRefresh() {
   const saved = saveState(state);
   render();
   reportSave(saved, {
-    changed: `conductor: recorded tracker refresh for '${id}' (${verdict})`,
-    unchanged: `conductor: '${id}' already carried this exact tracker refresh (${verdict}) — ` +
+    changed: `conductor: recorded tracker refresh for '${escapeControls(id)}' (${verdict})`,
+    unchanged: `conductor: '${escapeControls(id)}' already carried this exact tracker refresh (${verdict}) — ` +
       `${STATE_UNCHANGED}`,
   });
 }

@@ -9,7 +9,7 @@ import { activate, owedReconcileNotice } from "./active-pointer.mjs";
 import { isInitialized, loadState, pushEpic, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
-import { EPIC_DEDUP_KEYS, EPIC_ID_FORMAT, KNOWN_LANES, KNOWN_STATUSES, flagInValuePositionMessage, isFlagToken, repeatableFlagNames, splitFlagToken, valueBearingFlagsFor } from "./constants.mjs";
+import { EPIC_DEDUP_KEYS, EPIC_ID_FORMAT, KNOWN_LANES, KNOWN_STATUSES, flagInValuePositionMessage, isFlagToken, repeatableFlagNames, splitFlagToken, valueBearingFlagsFor, escapeControls } from "./constants.mjs";
 import { isKnownLinkType, mergeLinks, unknownLinkTypeMessage, linkTypeVocabulary } from "./links.mjs";
 import { creationStamp } from "./disposition.mjs";
 import { rankOf } from "./epic-progress.mjs";
@@ -154,7 +154,7 @@ export function parseLinkFlags(raw, knownEpicIds, { owingEpic } = {}) {
   return (raw || []).filter(s => typeof s === "string").map(s => {
     const [type, epic, ...rest] = s.split(":");
     if (!type || !epic) {
-      throw new Error(`bad --link '${s}': expected "<type>:<epic>[:<reason>]"`);
+      throw new Error(`bad --link '${escapeControls(s)}': expected "<type>:<epic>[:<reason>]"`);
     }
     // ORDER IS DELIBERATE: the epic half first. A value that mis-split (#70's regression,
     // `type:related:epic:...`, which parses as type="type" epic="related") is best diagnosed by
@@ -162,7 +162,7 @@ export function parseLinkFlags(raw, knownEpicIds, { owingEpic } = {}) {
     // structure, where "'type' is not a known link type" would send the reader off to fix a
     // vocabulary they never got wrong.
     if (!knownEpicIds.has(epic)) {
-      throw new Error(`bad --link '${s}': '${epic}' is not a known epic id`);
+      throw new Error(`bad --link '${escapeControls(s)}': '${escapeControls(epic)}' is not a known epic id`);
     }
     if (!isKnownLinkType(type)) {
       throw new Error(unknownLinkTypeMessage(s, type, { owingEpic }));
@@ -259,7 +259,7 @@ export function planHierarchy() {
   if (!parent) { process.stderr.write("usage: conductor.mjs plan-hierarchy --parent <id>\n"); process.exit(1); }
   const state = loadState();
   if (!state.epics.some(e => e.id === parent)) {
-    process.stderr.write(`conductor: epic '${parent}' not found\n`); process.exit(1);
+    process.stderr.write(`conductor: epic '${escapeControls(parent)}' not found\n`); process.exit(1);
   }
   // Archived children are done — exclude them from the plan entirely. This also means a
   // depends-on reference to an archived sibling falls outside `childIds` below and is
@@ -285,7 +285,7 @@ export function planHierarchy() {
       const stuck = children.filter(e => !placed.has(e.id)).map(e => e.id);
       const cycle = findCyclePath(stuck, deps);
       process.stderr.write(
-        `conductor: plan-hierarchy: dependency cycle among children of '${parent}': ${cycle.join(" -> ")}\n`);
+        `conductor: plan-hierarchy: dependency cycle among children of '${escapeControls(parent)}': ${cycle.join(" -> ")}\n`);
       process.exit(1);
     }
     // Manual rank applies HERE too, not only in resolveEpics()'s comparator. This is the same
@@ -325,13 +325,13 @@ export function planHierarchy() {
  *  Shared by add-epic, update-epic, and add-many so the tree stays acyclic. */
 export function parentError(epics, id, parent) {
   if (parent === undefined || parent === null) return null;
-  if (parent === id) return `epic '${id}' cannot be its own parent`;
+  if (parent === id) return `epic '${escapeControls(id)}' cannot be its own parent`;
   const byId = new Map(epics.map(e => [e.id, e]));
-  if (!byId.has(parent)) return `parent '${parent}' is not a known epic`;
+  if (!byId.has(parent)) return `parent '${escapeControls(parent)}' is not a known epic`;
   // Walk ancestors of `parent`; reaching `id` means this edge would close a cycle.
   let cur = byId.get(parent), guard = 0;
   while (cur && cur.parent && guard++ < 10000) {
-    if (cur.parent === id) return `setting parent '${parent}' on '${id}' would create a cycle`;
+    if (cur.parent === id) return `setting parent '${escapeControls(parent)}' on '${escapeControls(id)}' would create a cycle`;
     cur = byId.get(cur.parent);
   }
   return null;
@@ -370,7 +370,7 @@ export function addEpic() {
   }
   const state = loadState();
   if (state.epics.some(e => e.id === id)) {
-    process.stderr.write(`conductor: epic '${id}' already exists\n`); process.exit(1);
+    process.stderr.write(`conductor: epic '${escapeControls(id)}' already exists\n`); process.exit(1);
   }
   const externalId = str(f["external-id"]);
   const externalUrl = str(f["external-url"]);
@@ -393,7 +393,7 @@ export function addEpic() {
       return false;
     });
     if (dup) {
-      process.stderr.write(`conductor: epic with external-id '${externalId}' already exists ('${dup.id}') — skipped\n`);
+      process.stderr.write(`conductor: epic with external-id '${escapeControls(externalId)}' already exists ('${escapeControls(dup.id)}') — skipped\n`);
       process.exit(1);
     }
   }
@@ -461,11 +461,11 @@ export function addEpic() {
   owedReconcileNotice(state, previousActive);
   render();
   reportSave(saved, {
-    changed: `conductor: added epic '${id}' (${lane}, ${status})`,
+    changed: `conductor: added epic '${escapeControls(id)}' (${lane}, ${status})`,
     // Unreachable in practice — a duplicate id is refused above, and pushEpic() stamps a
     // registration date, so a creation always differs from disk. Bound anyway rather than
     // exempted: "cannot no-op" is an argument about today's guards, and the report costs one
     // line while the exemption would have to be re-audited every time one of them moves.
-    unchanged: `conductor: '${id}' was already recorded exactly as supplied — ${STATE_UNCHANGED}`,
+    unchanged: `conductor: '${escapeControls(id)}' was already recorded exactly as supplied — ${STATE_UNCHANGED}`,
   });
 }

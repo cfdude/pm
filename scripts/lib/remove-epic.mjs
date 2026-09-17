@@ -8,7 +8,7 @@ import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { epicReferences } from "./links.mjs";
 import { tombstoneArtifacts } from "./source-artifacts.mjs";
 import { render } from "./render.mjs";
-import { printedId } from "./constants.mjs";
+import { printedId, escapeControls, orNoRemedy } from "./constants.mjs";
 
 /** Render a short (id, title, summary) table for human review — used when a removal is
  *  blocked by children, so the operator sees exactly what's in play without a raw dump. */
@@ -37,7 +37,7 @@ export function removeEpic() {
 
   const state = loadState();
   const epic = state.epics.find(e => e.id === id);
-  if (!epic) { process.stderr.write(`conductor: epic '${id}' not found\n`); process.exit(1); }
+  if (!epic) { process.stderr.write(`conductor: epic '${escapeControls(id)}' not found\n`); process.exit(1); }
 
   // Walk the FULL descendant tree (BFS), not just direct children — the block-path preview
   // and the --cascade removal must agree on blast radius, or a human approving --cascade off
@@ -55,10 +55,10 @@ export function removeEpic() {
 
   if (descendants.length && !cascade) {
     process.stderr.write(
-      `conductor: cannot remove '${id}' — it has ${directChildren.length} direct child epic(s) ` +
+      `conductor: cannot remove '${escapeControls(id)}' — it has ${directChildren.length} direct child epic(s) ` +
       `and ${descendants.length} descendant(s) total:\n` +
       `${epicSummaryTable([epic, ...descendants])}\n` +
-      `Reassign or remove the descendants first, or re-run with --cascade to remove '${id}' ` +
+      `Reassign or remove the descendants first, or re-run with --cascade to remove '${escapeControls(id)}' ` +
       `and all ${descendants.length} descendant(s) together.\n`);
     process.exit(1);
   }
@@ -84,7 +84,7 @@ export function removeEpic() {
     const owed = blocking.filter(r => r.kind === "owed-reconcile");
     const cite = (list) => list.map(r => `${r.where} → \`${r.epic}\``).join("; ");
     process.stderr.write(
-      `conductor: cannot remove ${[...toRemove].map(i => `'${i}'`).join(", ")} — still held by ` +
+      `conductor: cannot remove ${[...toRemove].map(i => `'${escapeControls(i)}'`).join(", ")} — still held by ` +
       `${blocking.length} reference(s) that cannot be stripped.\n` +
       (frames.length
         ? `  ${frames.length} detour-stack reference(s): ${cite(frames)}. Resume or pop the detour first (/pm:resume), then remove.\n`
@@ -92,7 +92,7 @@ export function removeEpic() {
       (owed.length
         ? `  ${owed.length} reconcile obligation link(s): ${cite(owed)}. Removing it would leave the owed ` +
           "verdict nothing to be recorded against. Answer it first — " +
-          [...new Set(owed.map(r => `\`record-reconcile ${printedId(r.holder)} --detour ${printedId(r.epic)} --verdict valid|invalidated\``))].join(", ") +
+          [...new Set(owed.map(r => orNoRemedy(() => `\`record-reconcile ${printedId(r.holder)} --detour ${printedId(r.epic)} --verdict valid|invalidated\``)))].join(", ") +
           " — then remove.\n"
         : ""));
     process.exit(1);

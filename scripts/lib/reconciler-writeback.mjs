@@ -7,6 +7,7 @@ import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
 import { isArmed, isUnmigrated, liveReconcileFrame, ownedDetours } from "./links.mjs";
+import { escapeControls } from "./constants.mjs";
 
 const KNOWN_RECONCILE_VERDICTS = ["valid", "invalidated"];
 
@@ -38,7 +39,7 @@ export function recordReconcile() {
   }
   const state = loadState();
   const epic = state.epics.find(e => e.id === id);
-  if (!epic) { process.stderr.write(`conductor: epic '${id}' not found\n`); process.exit(1); }
+  if (!epic) { process.stderr.write(`conductor: epic '${escapeControls(id)}' not found\n`); process.exit(1); }
 
   // ACCEPTANCE (gates-bind-to-verified-evidence Decision 2). A verdict answers ONLY a detour this
   // epic's obligation was ARMED for by `push-detour --reconcile`. The verb used to push a
@@ -48,8 +49,8 @@ export function recordReconcile() {
   // write and names what IS owed, so the caller learns the one invocation that is accepted.
   const owed = ownedDetours(epic);
   const owedPhrase = owed.length
-    ? `'${id}' owes a verdict against: ${owed.map(d => `'${d}'`).join(", ")}`
-    : `'${id}' owes no reconcile verdict against any detour`;
+    ? `'${escapeControls(id)}' owes a verdict against: ${owed.map(d => `'${escapeControls(d)}'`).join(", ")}`
+    : `'${escapeControls(id)}' owes no reconcile verdict against any detour`;
   const refuse = (why) => { process.stderr.write(`conductor: ${why} — ${owedPhrase}. Nothing was written.\n`); process.exit(1); };
   //  0. An UNMIGRATED link — one written before arming records existed — may carry an obligation
   //     nothing can count, so EVERY verdict on this epic waits for the stamp, whichever detour it
@@ -58,8 +59,8 @@ export function recordReconcile() {
   const unmigrated = (Array.isArray(epic.links) ? epic.links : []).filter(isUnmigrated);
   if (unmigrated.length) {
     process.stderr.write(
-      `conductor: '${id}' holds ${unmigrated.length} may-invalidate link(s) written before reconcile ` +
-      `arming was recorded (${unmigrated.map(l => `'${l.epic}'`).join(", ")}). Run /pm:upgrade first ` +
+      `conductor: '${escapeControls(id)}' holds ${unmigrated.length} may-invalidate link(s) written before reconcile ` +
+      `arming was recorded (${unmigrated.map(l => `'${escapeControls(l.epic)}'`).join(", ")}). Run /pm:upgrade first ` +
       "(`upgrade`): it stamps each link with whether a reconcile is owed against it, and only then " +
       "can a verdict be matched to the detour it answers. Nothing was written.\n");
     process.exit(1);
@@ -69,20 +70,20 @@ export function recordReconcile() {
   // hand-edit left pointing at a missing epic is never answered in its name. AFTER the unmigrated
   // refusal (Gate 2 m2), so an epic awaiting /pm:upgrade is told that whatever --detour says.
   if (!state.epics.some(e => e.id === detourId)) {
-    process.stderr.write(`conductor: detour epic '${detourId}' not found\n`); process.exit(1);
+    process.stderr.write(`conductor: detour epic '${escapeControls(detourId)}' not found\n`); process.exit(1);
   }
   //  1. Never the epic itself.
-  if (detourId === id) refuse(`'${id}' cannot answer a reconcile against itself`);
+  if (detourId === id) refuse(`'${escapeControls(id)}' cannot answer a reconcile against itself`);
   //  2. Only a detour this epic's link ARMS.
   const link = (Array.isArray(epic.links) ? epic.links : []).find(l => l && l.type === "may-invalidate" && l.epic === detourId);
   if (!isArmed(link)) {
-    refuse(`'${detourId}' is not a detour '${id}' was paused for with --reconcile, so there is no ` +
+    refuse(`'${escapeControls(detourId)}' is not a detour '${escapeControls(id)}' was paused for with --reconcile, so there is no ` +
       "reconcile obligation for this verdict to answer");
   }
   //  3. Not while that detour's frame is still on the stack: the detour has not been resumed from,
   //     so its work is not finished and nothing has yet been reconciled against it.
   if ((state.detourStack || []).some(fr => fr && fr.pausedEpic === id && fr.spawnedDetour === detourId)) {
-    refuse(`'${id}' is still paused for '${detourId}' — pop the detour (/pm:resume) before recording ` +
+    refuse(`'${escapeControls(id)}' is still paused for '${escapeControls(detourId)}' — pop the detour (/pm:resume) before recording ` +
       "the verdict against it");
   }
 
@@ -110,8 +111,8 @@ export function recordReconcile() {
   const saved = saveState(state);
   render();
   reportSave(saved, {
-    changed: `conductor: recorded reconcile verdict '${verdict}' for '${id}' vs '${detourId}'`,
-    unchanged: `conductor: '${id}' already carried this exact reconcile verdict against ` +
-      `'${detourId}' — ${STATE_UNCHANGED}`,
+    changed: `conductor: recorded reconcile verdict '${escapeControls(verdict)}' for '${escapeControls(id)}' vs '${escapeControls(detourId)}'`,
+    unchanged: `conductor: '${escapeControls(id)}' already carried this exact reconcile verdict against ` +
+      `'${escapeControls(detourId)}' — ${STATE_UNCHANGED}`,
   });
 }
