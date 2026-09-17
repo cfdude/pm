@@ -78,7 +78,7 @@ x("claims.mjs", "owners", {
   "formatOwners(rows)": 1,
 }, "escaped", "formatOwners() returns its L through L.map(escapeControls)");
 x("claims.mjs", "owners", {
-  "JSON.stringify({ quiescent: rows.length === 0, claims: rows }, null, 2)": 1,
+  "jsonText({ quiescent: rows.length === 0, claims: rows }, 2)": 1,
 }, "json", "--json: the whole stdout is one JSON document");
 j("verify-specs.mjs", "danglingBlock", ALL, "sink-flow", "spread into verify-specs' L, joined through L.map(escapeControls)");
 x("verify-specs.mjs", "verifySpecs", {
@@ -89,7 +89,7 @@ x("activity-report.mjs", "activity", {
   "formatReport(report, { enabled: state ? activityEnabled(state) : null })": 1,
 }, "escaped", "formatReport() returns its L through L.map(escapeControls)");
 x("activity-report.mjs", "activity", {
-  "JSON.stringify({ enabled: state ? activityEnabled(state) : null, ...report }, null, 2)": 1,
+  "jsonText({ enabled: state ? activityEnabled(state) : null, ...report }, 2)": 1,
 }, "json", "--json: one JSON document");
 x("activity-report.mjs", "activity", {
   "e.message": 1,
@@ -149,7 +149,7 @@ x("add-epic.mjs", "addEpic", {
   "perr": 1,
 }, "passthrough", "parseStoryFlags / parseLinkFlags / parentError messages, each escaping the values it quotes where it is built");
 x("add-epic.mjs", "planHierarchy", {
-  "JSON.stringify(plan)": 1,
+  "jsonText(plan)": 1,
 }, "json", "the plan is one JSON document");
 x("add-epic.mjs", "requireFlagValues", {
   "err": 1,

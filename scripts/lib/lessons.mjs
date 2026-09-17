@@ -35,7 +35,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { isInitialized, readStdin } from "./state.mjs";
 import { requirePlatformFlag } from "./add-epic.mjs";
-import { escapeControls } from "./constants.mjs";
+import { escapeControls, jsonText } from "./constants.mjs";
 
 /** The lessons corpus lives at `docs/lessons/` under the project root. Resolved at CALL time,
  *  not at module load, so a test (and a hook fired in a different project) sees its own root. */
@@ -135,7 +135,7 @@ export function lessonAdvice() {
   if (!lessons.length) return;               // no corpus, or none of it matchable
   const hits = matchLessons(event, lessons);
   if (!hits.length) return;
-  process.stdout.write(JSON.stringify({
+  process.stdout.write(jsonText({
     hookSpecificOutput: {
       hookEventName: "PreToolUse",
       additionalContext: adviceText(hits),

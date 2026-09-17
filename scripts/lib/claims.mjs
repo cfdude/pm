@@ -43,7 +43,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
-import { CLAIM_DEFAULT_TTL_MINUTES, CLAIM_MAX_TTL_MINUTES, REPO_CLAIM_DEFAULT_TTL_MINUTES, escapeControls, isFlagToken, splitFlagToken } from "./constants.mjs";
+import { CLAIM_DEFAULT_TTL_MINUTES, jsonText, CLAIM_MAX_TTL_MINUTES, REPO_CLAIM_DEFAULT_TTL_MINUTES, escapeControls, isFlagToken, splitFlagToken } from "./constants.mjs";
 import { isDetachedTree } from "./git.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { resolveSession, SESSION_HINT } from "./session-identity.mjs";
@@ -367,7 +367,7 @@ export function owners() {
   requireFlagValues("owners", f);
   const rows = ownerRows(loadState(), readRepoClaim());
   if (f.json === true) {
-    process.stdout.write(JSON.stringify({ quiescent: rows.length === 0, claims: rows }, null, 2) + "\n");
+    process.stdout.write(jsonText({ quiescent: rows.length === 0, claims: rows }, 2) + "\n");
     return;
   }
   process.stdout.write(formatOwners(rows) + "\n");

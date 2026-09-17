@@ -1047,6 +1047,17 @@ export const CONTROL_CHARACTER = /[\u0000-\u001f\u007f-\u009f\u2028\u2029]/;
  *  leaves C1 controls and U+2028/U+2029 raw. */
 export const escapeControls = (s) => String(s).replace(new RegExp(CONTROL_CHARACTER.source, "g"),
   c => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`);
+/** The characters JSON.stringify leaves raw that a reader counts as a line terminator or control:
+ *  DEL, the C1 controls (NEL among them) and U+2028/U+2029. Built from code points so no raw one
+ *  sits in this source file. */
+const JSON_RAW_CONTROLS = new RegExp("[" + String.fromCharCode(0x7f) + "-" + String.fromCharCode(0x9f) +
+  String.fromCharCode(0x2028) + String.fromCharCode(0x2029) + "]", "g");
+/** A JSON document as printed text (user-text-never-forges-output, Gate 2 U2-M1): JSON.stringify(),
+ *  then every character in JSON_RAW_CONTROLS written as its JSON escape (escapeControls' form, which
+ *  is valid JSON). Such a character can only occur inside a string literal, so the result parses to
+ *  exactly the same value — and no stored value puts a line start into a JSON verb's stdout for a
+ *  reader that splits lines before it parses. Every stdout JSON document goes through this. */
+export const jsonText = (value, space) => JSON.stringify(value, null, space).replace(JSON_RAW_CONTROLS, escapeControls);
 /** The CELL escaper for a PROJECT.md table (user-text-never-forges-output D1): escapeControls(),
  *  then every backslash doubled, then every `|` escaped. GitHub-flavored Markdown splits a row with a
  *  backslash escaping the one character after it, so the backslash MUST go first — a pipe-only

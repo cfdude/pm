@@ -77,7 +77,14 @@ position (the `gate-integrity` printed-invocation clause), and is otherwise prin
   no value can begin a line, no value can open or close the ``` fence PROJECT.md embeds the brief in,
   because a fence opens and closes only at line start.
 - Non-hook JSON outputs (`triage`, `suggest-lane`, and any other verb whose whole stdout is one JSON
-  document): `JSON.stringify` already escapes C0; their consumer parses rather than reads lines.
+  document) are not a prose surface: their consumer parses rather than reads lines. The earlier
+  reason — "`JSON.stringify` already escapes C0" — was incomplete (Gate 2 U2-M1): it leaves DEL, the
+  C1 controls (NEL among them) and U+2028/U+2029 raw, so a legacy status holding U+2028 put a line
+  start into `triage`'s stdout. DECIDED, fixed rather than declined, because the fix is free and
+  changes no parsed value: every JSON document written to stdout (hook and non-hook) goes through
+  `jsonText()` (`constants.mjs`), which writes each of those characters as its JSON escape. A source
+  guard (test 5.3g) refuses a stdout `JSON.stringify` that bypasses it. The spec's surface definition
+  is unchanged; this is stricter than it requires.
 - Changing what `add-epic` or `add-many` accept (both already enforce the id format).
 - Tightening the strict reader, or a migration that rewrites stored values.
 - The `owner/name` shape of a github-issues `--repo` — sibling `emitted-commands-run-as-written` owns it

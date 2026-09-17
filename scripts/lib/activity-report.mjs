@@ -30,7 +30,7 @@ import path from "node:path";
 import { isInitialized, loadState, StateUnreadableError } from "./state.mjs";
 import { activityDir, activityEnabled, segments } from "./activity-log.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
-import { escapeControls } from "./constants.mjs";
+import { escapeControls, jsonText } from "./constants.mjs";
 
 /** Every event, oldest first, optionally scoped. Returns `{events, malformed, segmentsRead}`.
  *
@@ -306,7 +306,7 @@ export function activity() {
   const { events, malformed } = readEvents({ since: val("since"), epic: val("epic") });
   const report = buildReport(events, { currentRevision: state ? state.revision : null, malformed });
   if (f.json === true) {
-    process.stdout.write(JSON.stringify({ enabled: state ? activityEnabled(state) : null, ...report }, null, 2) + "\n");
+    process.stdout.write(jsonText({ enabled: state ? activityEnabled(state) : null, ...report }, 2) + "\n");
     return;
   }
   process.stdout.write(formatReport(report, { enabled: state ? activityEnabled(state) : null }) + "\n");

@@ -9,7 +9,7 @@ import { activate, owedReconcileNotice } from "./active-pointer.mjs";
 import { isInitialized, loadState, pushEpic, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
-import { EPIC_DEDUP_KEYS, EPIC_ID_FORMAT, KNOWN_LANES, KNOWN_STATUSES, flagInValuePositionMessage, isFlagToken, repeatableFlagNames, splitFlagToken, valueBearingFlagsFor, escapeControls } from "./constants.mjs";
+import { EPIC_DEDUP_KEYS, EPIC_ID_FORMAT, jsonText, KNOWN_LANES, KNOWN_STATUSES, flagInValuePositionMessage, isFlagToken, repeatableFlagNames, splitFlagToken, valueBearingFlagsFor, escapeControls } from "./constants.mjs";
 import { isKnownLinkType, mergeLinks, unknownLinkTypeMessage, linkTypeVocabulary } from "./links.mjs";
 import { creationStamp } from "./disposition.mjs";
 import { rankOf } from "./epic-progress.mjs";
@@ -316,7 +316,7 @@ export function planHierarchy() {
       })),
     })),
   };
-  process.stdout.write(JSON.stringify(plan) + "\n");
+  process.stdout.write(jsonText(plan) + "\n");
 }
 
 /** Validate a proposed `parent` for epic `id` against the current `epics`.

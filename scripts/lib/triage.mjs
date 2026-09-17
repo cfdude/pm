@@ -24,7 +24,7 @@ import { isInitialized, loadState } from "./state.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { laneSuggestion } from "./lane-routing.mjs";
 import { supersededEpics } from "./links.mjs";
-import { escapeControls, isFlagToken } from "./constants.mjs";
+import { escapeControls, isFlagToken, jsonText } from "./constants.mjs";
 import { checkedPositionals } from "./argv-surface.mjs";
 
 /** Words shorter than this carry no discriminating power and appear everywhere ("of", "to",
@@ -194,7 +194,7 @@ export function triage() {
   const byStatus = {};
   for (const e of epics) byStatus[e.status || "queued"] = (byStatus[e.status || "queued"] || 0) + 1;
 
-  process.stdout.write(JSON.stringify({
+  process.stdout.write(jsonText({
     ask,
     lane: laneSuggestion(state, ask),
     backlog: {

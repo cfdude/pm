@@ -6,7 +6,7 @@
 // testable without a subprocess and without a hidden self-test verb in the shipped CLI.
 
 import { conflictExitCode, StateUnreadableError, unreadableStateMessage } from "./state.mjs";
-import { UNREADABLE_INPUT_EXIT_CODE } from "./constants.mjs";
+import { UNREADABLE_INPUT_EXIT_CODE, jsonText } from "./constants.mjs";
 import { VERB_EFFECTS } from "./verb-effects.mjs";
 import { RulesBlockAmbiguousError, rulesBlockAmbiguousMessage } from "./rules.mjs";
 
@@ -73,7 +73,7 @@ export function refusalFor(verb, err) {
     case "warn":
       return {
         exitCode: 0, stderr: "",
-        stdout: JSON.stringify({
+        stdout: jsonText({
           hookSpecificOutput: {
             hookEventName: "SessionStart",
             additionalContext:

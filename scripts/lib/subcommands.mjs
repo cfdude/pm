@@ -14,7 +14,7 @@ import { assertRulesBlockWritable, writeRules } from "./rules.mjs";
 import { buildBrief } from "./briefing.mjs";
 import { COMMIT_DERIVED_KINDS, appendDetourLog, appendRetraction, fullSha, gitShortSha, isCommitNameShaped, isDetachedTree, readDetourRows, rowMatches, rowShasOverlap, shortSha } from "./git.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
-import { STORABLE_EPIC_ID, asCode, escapeControls, printedId, orNoRemedy, commandValue, unstorableSkipLine } from "./constants.mjs";
+import { STORABLE_EPIC_ID, asCode, escapeControls, jsonText, printedId, orNoRemedy, commandValue, unstorableSkipLine } from "./constants.mjs";
 import { beginObservation, isAmend, isLiveCommit } from "./commit-watch.mjs";
 import { deliveredRegression, planWithdrawal, withdrawnRecord } from "./update-epic.mjs";
 import { deferralHistory, deferralNote, detourContext } from "./links.mjs";
@@ -130,7 +130,7 @@ export function brief() {
   // consume: true — this IS a briefing actually reaching a session (SessionStart), so a
   // threshold warning surfaced here must be consumed (see briefing.mjs's buildBrief comment).
   const context = buildBrief(loadState(), { consume: true });
-  process.stdout.write(JSON.stringify({
+  process.stdout.write(jsonText({
     hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: context },
   }));
 }
@@ -670,7 +670,7 @@ function runNudge(state, ctx, commits, attribution = null, event = "PostToolUse"
   // The attribution clause is a SECOND paragraph, never a longer first one: the three messages
   // above are about the DETOUR record and are decided by different inputs, so splicing the two
   // obligations into one sentence would make each harder to act on than either alone.
-  process.stdout.write(JSON.stringify({
+  process.stdout.write(jsonText({
     hookSpecificOutput: {
       hookEventName: event,
       // The amend paragraph sits BEFORE the attribution one: a withdrawal of the replaced commit is

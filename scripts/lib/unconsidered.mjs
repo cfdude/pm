@@ -18,6 +18,7 @@
 
 import { unconsideredOutcomes } from "./archive-gate.mjs";
 import { recordedByOf } from "./disposition.mjs";
+import { jsonText } from "./constants.mjs";
 import { isInitialized, loadState } from "./state.mjs";
 
 /** READ-ONLY. Prints the archived epics whose outcome nobody considered, each with the exact
@@ -27,7 +28,7 @@ export function unconsideredOutcomesReport() {
   if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
   const state = loadState();
   const rows = unconsideredOutcomes(state.epics || []);
-  process.stdout.write(JSON.stringify({
+  process.stdout.write(jsonText({
     count: rows.length,
     unconsidered: rows.map(({ epic, invocation, deliveredBlockedBy }) => ({
       id: epic.id,

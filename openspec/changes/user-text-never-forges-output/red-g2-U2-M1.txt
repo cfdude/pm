@@ -1,0 +1,21 @@
+# RED — Gate 2 U2-M1
+
+## 1. The triage test against the engine before jsonText() (all JSON stdout still JSON.stringify)
+✖ U2-M1: a legacy status holding U+2028, NEL and DEL reaches triage's JSON escaped, and parses to the stored value (167.927125ms)
+ℹ pass 0
+ℹ fail 1
+✖ failing tests:
+✖ U2-M1: a legacy status holding U+2028, NEL and DEL reaches triage's JSON escaped, and parses to the stored value (167.927125ms)
+  AssertionError [ERR_ASSERTION]: stdout holds no raw U+2028
+
+## 2. After jsonText(): triage's stdout write reverted alone to JSON.stringify (restored afterwards)
+✖ 5.3g (Gate 2 U2-M1) jsonText escapes what JSON.stringify leaves raw, parses to the same value, and every stdout JSON document goes through it (5.325417ms)
+✖ U2-M1: a legacy status holding U+2028, NEL and DEL reaches triage's JSON escaped, and parses to the stored value (162.217042ms)
+ℹ pass 0
+ℹ fail 2
+✖ failing tests:
+✖ 5.3g (Gate 2 U2-M1) jsonText escapes what JSON.stringify leaves raw, parses to the same value, and every stdout JSON document goes through it (5.325417ms)
+  AssertionError [ERR_ASSERTION]: every JSON document written to stdout goes through jsonText()
+  +   'triage.mjs: stdout.write(JSON.stringify('
+✖ U2-M1: a legacy status holding U+2028, NEL and DEL reaches triage's JSON escaped, and parses to the stored value (162.217042ms)
+  AssertionError [ERR_ASSERTION]: stdout holds no raw U+2028

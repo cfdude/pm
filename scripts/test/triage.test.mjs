@@ -273,3 +273,20 @@ test("the scorer is a pure function of the epics it is given", async () => {
   assert.deepEqual(a, b, "same input, same output — no clock, no filesystem, no ordering luck");
   assert.equal(a[0].id, "quokka-telemetry");
 });
+
+// ───────────── user-text-never-forges-output, Gate 2 U2-M1: JSON stdout carries no raw line terminator ─────────────
+// JSON.stringify escapes C0 inside a string but leaves DEL, the C1 controls (NEL among them) and
+// U+2028/U+2029 raw, so a legacy stored value put a line start into a JSON verb's stdout for any
+// reader that splits lines before it parses. Written as `\u` escapes instead: valid JSON, same value.
+test("U2-M1: a legacy status holding U+2028, NEL and DEL reaches triage's JSON escaped, and parses to the stored value", () => {
+  const ch = (n) => String.fromCharCode(n);
+  const status = "queued" + ch(0x2028) + "FORGED" + ch(0x85) + "FORGED" + ch(0x7f) + ch(0x2029);
+  const cwd = repoWith([{ id: "json-poison", title: "escape the json poison surface", status }]);
+  const out = run(["triage", "json poison surface"], { cwd });
+  for (const c of [0x2028, 0x2029, 0x85, 0x7f]) assert.ok(!out.includes(ch(c)), `stdout holds no raw U+${c.toString(16).padStart(4, "0")}`);
+  const parsed = JSON.parse(out);
+  const hit = parsed.candidates.find(x => x.id === "json-poison");
+  assert.ok(hit, "non-vacuity: the poisoned epic is a candidate");
+  assert.equal(hit.status, status, "the parsed value is exactly the stored value");
+  assert.equal(parsed.backlog.byStatus[status], 1);
+});

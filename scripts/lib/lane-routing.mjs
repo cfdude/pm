@@ -6,7 +6,7 @@ import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
-import { KNOWN_LANES, escapeControls } from "./constants.mjs";
+import { KNOWN_LANES, escapeControls, jsonText } from "./constants.mjs";
 import { checkedPositionals } from "./argv-surface.mjs";
 
 export function laneMatchTest(match, text) {
@@ -117,5 +117,5 @@ export function suggestLane() {
   if (typeof text !== "string" || !text.length) {
     process.stderr.write("usage: conductor.mjs suggest-lane \"<free text>\" | --ask=<text>\n"); process.exit(1);
   }
-  process.stdout.write(JSON.stringify(laneSuggestion(loadState(), text)) + "\n");
+  process.stdout.write(jsonText(laneSuggestion(loadState(), text)) + "\n");
 }

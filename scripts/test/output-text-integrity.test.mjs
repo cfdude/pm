@@ -664,6 +664,26 @@ test("5.3f source guard (Gate 2 T-M4): no printer sets a no-remedy-capable build
   assert.deepEqual(offenders, [], "wrap a builder's result with asCode(), not a typed backtick");
 });
 
+test("5.3g (Gate 2 U2-M1) jsonText escapes what JSON.stringify leaves raw, parses to the same value, and every stdout JSON document goes through it", async () => {
+  const { jsonText } = await import(lib("constants.mjs"));
+  const ch = (n) => String.fromCharCode(n);
+  const value = { s: "a" + LF + "b" + LS + "c" + PS + "d" + NEL + "e" + ch(0x7f) + ch(0x9f) + "f", n: [1, "x"] };
+  for (const space of [undefined, 2]) {
+    const text = jsonText(value, space);
+    for (const c of [LS, PS, NEL, ch(0x7f), ch(0x9f)]) assert.ok(!text.includes(c), `raw U+${c.charCodeAt(0).toString(16)} (space ${space})`);
+    assert.deepEqual(JSON.parse(text), value);
+  }
+  // Source guard: a stdout JSON document built with JSON.stringify directly bypasses the escape.
+  const libDir = new URL("../lib/", import.meta.url);
+  const sources = [["conductor.mjs", fs.readFileSync(new URL("../conductor.mjs", import.meta.url), "utf8")],
+    ...fs.readdirSync(libDir).filter(f => f.endsWith(".mjs")).map(f => [f, fs.readFileSync(new URL(f, libDir), "utf8")])];
+  const offenders = [];
+  for (const [f, src] of sources) {
+    for (const m of src.matchAll(/(?:stdout\.write\(|stdout:|console\.log\()\s*JSON\.stringify\(/g)) offenders.push(`${f}: ${m[0]}`);
+  }
+  assert.deepEqual(offenders, [], "every JSON document written to stdout goes through jsonText()");
+});
+
 test("5.3e (Gate 2 T-S2) upgrade over a legacy pmVersion holding a control character forges no line (legacy value, design D3 exception)", () => {
   const cwd = initRepo();
   legacyWrite(cwd, s => { s.pmVersion = "0.1.0" + LF + "FORGED" + NEL + "FORGED"; });
