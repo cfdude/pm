@@ -12,9 +12,8 @@
       openspec/changes/emitted-commands-run-as-written/specs/emitted-instructions/spec.md --artifact
       openspec/changes/emitted-commands-run-as-written/specs/tracker-sync/spec.md --artifact
       openspec/changes/emitted-commands-run-as-written/specs/epic-disposition/spec.md --artifact
-      openspec/changes/emitted-commands-run-as-written/specs/conductor-record/spec.md --artifact
-      openspec/changes/emitted-commands-run-as-written/specs/verb-surface/spec.md`
-- [ ] 0.2 **Cross-spec review** (required task item 5) — release 0.45.0 holds this change's five spec
+      openspec/changes/emitted-commands-run-as-written/specs/conductor-record/spec.md`
+- [ ] 0.2 **Cross-spec review** (required task item 5) — release 0.45.0 holds this change's four spec
       files and its siblings' (`commit-nudge-reads-the-whole-move`, `user-text-never-forges-output`).
       Run the `cross-spec-review` skill after all three pass Gate 1 and again after any later
       amendment; record `record-cross-spec-review 0.45.0 --verdict pass|fail --reviewer "<identity>"`
@@ -119,14 +118,14 @@ Pairs: 3.1–3.9 (incl. 3.3a) land with 3.10.
       updated field (today the github-issues secondary cannot be filled)
 - [ ] 3.2 RED: jira keys `ABC-123` and `ABC-124` register as two distinct epics; the same key twice is
       refused as a duplicate (`repro.txt` §B3)
-- [ ] 3.3 RED: items titled ``it's "done" $(touch pwned) `id` ``, `--limit=5 ignored`, `-x starts with a
-      dash`, and a title holding a newline — each registration and each `suggest-lane` call, filled per
-      the section's quoting sentence and run through `sh -c`, exits 0; titles read back byte-identical;
-      no `pwned` file exists; every inward section emits `--title=`, `--external-url=` and
-      `suggest-lane --`
-- [ ] 3.3a RED (verb-surface ADDED): `suggest-lane -- '--limit=5 ignored'` exits 0 routing on that text;
-      `suggest-lane -- fix a typo` still refuses naming `a`; `triage --foo`'s refusal names `--`; a lone
-      `--` on a non-free-text verb is treated as today
+- [ ] 3.3 RED: items titled ``it's "done" $(touch pwned) `id` ``, `--limit=5 ignored`, `-h`, `--help`,
+      `-x starts with a dash`, and a title holding a newline — each registration and each
+      `suggest-lane --ask=` call, filled per the section's quoting sentence and run through `sh -c`,
+      exits 0 (neither prints help); titles read back byte-identical; no `pwned` file exists; every
+      inward section emits `--title=`, `--external-url=` and `suggest-lane --ask=`
+- [ ] 3.3a RED: `suggest-lane --ask='--limit=5 ignored'` exits 0 routing on that text; `suggest-lane
+      "fix a typo"` is unchanged; `suggest-lane --ask=x "y"` is refused as a surplus positional;
+      `suggest-lane --help` lists `--ask`
 - [ ] 3.4 RED: every github-issues listing step names `--limit`, and the procedure carries the
       truncation stop before its closed-item step
 - [ ] 3.5 RED: no emitted section names `/pm:epic list` — asserted against the rendered rules block,
@@ -141,8 +140,8 @@ Pairs: 3.1–3.9 (incl. 3.3a) land with 3.10.
       0.26.0 rules fixtures (`scripts/test/fixtures/rules-0.26.0-*.txt`) — update the fixtures only
       where this change's text changes, and say which lines in the commit
 - [ ] 3.10 GREEN: `inwardListStep()` and `watermarkStep()` shared by primary and secondary; the quoting
-      sentence, `--title=`/`--external-url=` and `suggest-lane --`; the lone-`--` rule and refusal hint
-      in `argv-surface.mjs` for the four free-text verbs; the `<issue-key-slug>`/`<issue-key>` placeholders for
+      sentence, `--title=`/`--external-url=` and `suggest-lane --ask=`; the `--ask` registry row in
+      `constants.mjs` and `suggest-lane` reading it (help projects it from the row); the `<issue-key-slug>`/`<issue-key>` placeholders for
       non-github systems; the reminder clause; the dedup wording; the outward line (design Decision 3);
       3.1–3.9 pass, suite green
 
@@ -230,8 +229,8 @@ Pairs: 7.1 lands with 7.2. The single-writer rule for hierarchy runs is NOT here
         line printing an engine verb that is NOT a `BRIEF_REMEDIES` entry, justified;
       - every item-sourced placeholder in emitted text (`rg -n "<issue-(title|url|key)>" scripts/lib`),
         each covered by the quoting sentence;
-      - every reader of the free-text verb set and of a lone `--` (`rg -n "freeText|FREE_TEXT|\"--\"" scripts/lib/argv-surface.mjs scripts/lib/add-epic.mjs scripts/lib/help.mjs`),
-        each stated as honouring or not needing the end-of-flags rule;
+      - every reader of `suggest-lane`'s text (`rg -n "suggest-lane|suggestLane" scripts commands skills README.md`),
+        each stated as reading `--ask` or the positional, and every emitted `suggest-lane` line using `--ask=`;
       - every reader of a tracker's `direction` (`rg -n "directionOf|\.direction\b" scripts/lib`), each
         stated as unaffected by the vendor-switch record;
       - every caller of `dispositionInvocation`, `deliveredObligations`, `unconsideredOutcomes`
@@ -291,6 +290,9 @@ Pairs: 7.1 lands with 7.2. The single-writer rule for hierarchy runs is NOT here
       placeholder, quoting item values, direction kept on a vendor switch), the brief's two tracker
       lines, `deliveredBlockedBy`
 - [ ] 10.5 `README.md` where tracker sync, `unconsidered-outcomes` or gate recording are described
+- [ ] 10.5a `commands/lane-routing.md` and README's verb reference / flag table — `suggest-lane --ask=<text>`,
+      why it exists (a flag-shaped text cannot be passed positionally), and that the positional form is
+      unchanged; `docs/parity-ledger.json` needs no change (no new file)
 - [ ] 10.6 `CHANGELOG.md` `[Unreleased]` — Fixed (remedies that were refused; secondary recipe, jira ids,
       30-item cap, unquoted repo and item titles, stale scope and silent outward switch on vendor change; docs teaching refused gate forms and
       hand-edits) and Added (`deliveredBlockedBy`; the emitted-invocation sweep)

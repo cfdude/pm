@@ -109,7 +109,8 @@ earlier (`anyInwardProcedureEmittable`); its dangling text for an inward-only pr
   `set-tracker` refuses a github-issues `--repo` that is not `owner/name`, and no emitter
   interpolates one into a shell line; a primary vendor switch drops scope the call does not re-give and never silently turns on the
   outward direction; item-sourced placeholders (title, url) are shell-quoted by an instruction the
-  recipe carries;
+  recipe carries and passed in inline `--flag=value` form (`--title=`, `--external-url=`, and a new
+  `suggest-lane --ask=<text>` flag, positional form kept) so a flag- or help-shaped title is data;
   the completion-sync reminder no longer points at absent steps; `/pm:epic list` is gone.
 - **Brief tracker lines:** the mirror line states what it checked, not a mirror it cannot attribute;
   the never-re-read line names a remedy that clears every epic it counts.
@@ -138,8 +139,6 @@ earlier (`anyInwardProcedureEmittable`); its dangling text for an inward-only pr
   evidence forms that match the gate.
 
 ### Modified Capabilities
-- `verb-surface`: ADDED — a lone `--` ends flags on a free-text verb, so `suggest-lane` can route a
-  title shaped like a flag; the free-text refusal names `--` instead of telling the agent to quote.
 - `tracker-sync`: "Every command pm emits must run as written" extended to every tracker
   role/system/direction (fields, truncation, non-numeric keys, repo shape); "Primary tracker
   configuration" drops a stale scope on vendor switch and keeps the direction the user had; "The

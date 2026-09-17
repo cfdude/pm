@@ -267,12 +267,21 @@ classifies, and `FLAG_TOKEN` (`^--[a-z][a-z0-9-]*(?:=|$)`) reads `--limit=5 igno
 inside quotes. So the registration line emits `--title=<issue-title>` (inline form: the whole
 `--title=…` token is ONE word, and a value after `=` is never reclassified; measured:
 `--title='--limit=5 ignored'` is accepted and stored exactly) and `--external-url=<issue-url>`, and
-lane routing emits `suggest-lane -- <issue-title>` (verb-surface ADDED: a lone `--` ends flags on a
-free-text verb). The quoting rule applies to the whole value after `=` or after `--`. It states once,
+lane routing emits `suggest-lane --ask=<issue-title>`. `--ask` is a NEW value-bearing registry row
+on `suggest-lane` (`constants.mjs`), so the argv check and `--help` project it like any other flag;
+the positional form keeps working unchanged. Supplying both `--ask` and a positional text is refused
+as a surplus positional — one verb, one text. The inline `--flag=value` form is what carries a
+flag-shaped or help-shaped value through the pre-dispatch check: measured, `add-epic
+'--title=a=b --limit=5 x'`, `--title=--help` and `--title=-h` each exit 0 and read back exactly.
+*Alternative rejected:* a lone `--` ending flags on free-text verbs — it contradicts three existing
+`verb-surface` requirements (undeclared flag-shaped tokens are refused; argv-level flags never join
+the text, so `log-detour -- fixed --force` would log `fixed --force`; a help token anywhere prints
+help), and no requirement there is modified by this change. The quoting rule applies to the whole
+token, `--title=…` and `--ask=…` alike. It states once,
 above the registration line: "Fill every placeholder
 taken from the item — `<issue-title>`, `<issue-url>` — as ONE shell-quoted word: wrap the value in
 single quotes and write each `'` inside it as `'\''`. Never use double quotes: `$(…)`, backticks and
-`"` inside them change the command. Keep `--title=` and `--` exactly where they are: they are what let
+`"` inside them change the command. Keep `--title=` and `--ask=` attached to their values: that is what lets
 a title that starts with `-` reach the engine as a title." A newline inside single quotes is literal,
 so a multi-line title stays one word. The engine-derived placeholders (`<issue-number>`,
 `<issue-key-slug>`, `<lane>`) and the timestamp need no quoting — their shapes are fixed.
