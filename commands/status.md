@@ -239,6 +239,12 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" release 0.27.0 --intent "<wha
 node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" release 0.27.0 --member <epicId> [--member <epicId>]...
 ```
 
+- **A new release id must match `^[a-z0-9][a-z0-9._-]*$`** — lowercase letters, digits, `.`, `_`,
+  `-`. It is checked FIRST, before the missing-intent refusal and before any write, because that
+  refusal prints `release <id> --intent …` with the id in it:
+  `conductor: release '<escaped id>' cannot be created — a new release id must match … Nothing was written.`
+  An existing release whose id predates the rule is still updated and shown by its stored id.
+  Intent, target and every reason are free text, stored as written and escaped on display.
 - **Intent prose is required to create one** and the same refusal covers naming a release that
   does not exist — an id with no statement of what it is for is unreadable later, which is the
   failure this records against.

@@ -405,6 +405,15 @@ counts. Re-renders `PROJECT.md` from `.conductor/state.json` first. Also surface
 episode, so every session sees it until a real verdict supersedes it), **handoffs** from both
 ends, and each release's `N epics, M deferred`.
 
+**No value the engine did not write can start a line.** Titles, reasons, notes, story titles,
+session names, tracker titles pulled in by an inward sync, workspace file names, the project
+directory's path — each is stored as written and rendered with its control characters (C0, DEL,
+C1, U+2028, U+2029) escaped, on PROJECT.md, the brief, the managed rules block, every hook's
+output, `integrity`, `release show` and every refusal; JSON on stdout escapes DEL, C1 and
+U+2028/U+2029 as well. A `PROJECT.md` table cell additionally escapes `\` and `|`, so a value can
+neither add nor split a cell. Before this, a detour reason holding a newline forged a `NOW:` line in
+the brief, and a story title forged a runnable archive invocation inside an archive refusal.
+
 **Progress excludes lifecycle bookkeeping.** A task that is bookkeeping about the change's own
 lifecycle — above all the task that archives the change itself, which cannot be ticked before the
 thing that ticks it — carries the literal marker `<!-- pm:lifecycle -->` on its own task line.
@@ -570,7 +579,10 @@ goes only with `delivered`. See `commands/epic.md`.
 **Every gate remedy the engine prints carries its gate's evidence** — `--base-sha`/`--head-sha` for
 Gate 2, `--artifact` for Gate 1 — rendered from one declaration, so an archive refusal, `integrity`,
 the brief and `update-epic` cannot print a pass form the engine then refuses. An epic id inside any
-printed command is shell-quoted when it falls outside the id format (a legacy `My Plan`), and a
+printed command is shell-quoted when it falls outside the id format (a legacy `My Plan`) — release
+ids included — while a legacy epic or release id holding a control character gets no command at
+all, only `<kind> '<escaped id>' holds a control character; no verb can rename it`, because no
+one-line command can name it. A
 permanent suite test extracts every invocation pm emits or ships, checks it against the engine's
 argv surface, and executes every engine-printed remedy against a fixture reproducing its finding,
 asserting the finding is gone.
@@ -653,7 +665,9 @@ reviewed as a set.
 Picks up any new OpenSpec proposals or Superpowers plans not yet tracked as epics, and
 reconciles `openspec/changes/archive/` — an archived change the conductor never knew about is
 registered as an epic already in `archived` status. That backfill is announced once and marked by
-`archiveBackfilledAt`, never a silent side effect. Where a tracker's `direction` includes `inward`
+`archiveBackfilledAt`, never a silent side effect. A change directory, plan file or archive
+directory whose name holds a control character or whitespace is **skipped and named on stderr on
+every run** — it cannot be an epic id, so rename it to register it. Where a tracker's `direction` includes `inward`
 **and** it names a scope to read, `/pm:sync` also pulls open items in as untriaged epics,
 deduplicated by `externalUrl` (globally unique) rather than bare `externalId`.
 
@@ -957,6 +971,9 @@ Membership being derived is right, but nothing ever presented the derived view, 
 opened the release object saw `deferred[]` populated and members absent — "exclusions and no
 members", the opposite of the truth. It is a pure read. `show` is reserved as the first positional,
 so a release cannot be named `show`.
+
+**A new release id must match `^[a-z0-9][a-z0-9._-]*$`**, checked before the missing-intent refusal
+and before any write; a release stored before the rule is still updated and shown by its id.
 
 **`--unmember` and `--undefer` are the two inverses**, each requiring its reason inline
 (`"<epicId>:<why>"`) or via `--reason`, and each recording it in the release's `amendments[]` where

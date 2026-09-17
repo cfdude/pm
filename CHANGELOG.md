@@ -97,6 +97,39 @@ what follows.
   `--carried-to <epicId> --reason "<which tasks moved>"`); `update-epic`'s archived-`delivered`
   regression refusal printed an invocation missing that handoff flag (it now carries it, only with
   `delivered`); and `unconsidered-outcomes` named a checkbox handoff blocker with an empty remedy.
+* **A value the engine did not write could forge a line of its output.** A newline (or CR, NEL,
+  U+2028, U+2029) in a detour reason, disposition reason, title, description, story title,
+  withdrawal reason, session name, plan heading, `.changesets` fragment, lesson frontmatter, unknown
+  id, legacy release id or tracker value started a line the engine never wrote: a `NOW:` line in the
+  brief, a `## heading` in PROJECT.md, a runnable `update-epic … --status archived` line inside the
+  archive refusal, a `✓ integrity: all checks pass` line from `integrity`, a `## FORGED rule`
+  heading in the managed rules block, a forged `owners` row. Every governed value is now escaped on
+  PROJECT.md, the brief, the rules block, every hook's decoded output, `integrity`, `release show`,
+  `owners`, every verb's stdout/stderr and refusals, and `.conductor/honcho-memories.log` (one line
+  per entry). A project or log directory named with a line terminator is escaped in engine messages
+  too (`render`'s `rendered <path>`, `set-activity-log on`, a `honcho-memory` filesystem failure, the
+  verbose engine banner). `.conductor/detours.log` escapes its epic and note fields at write, since
+  the engine parses that log by line and tab.
+* **Forged PROJECT.md table cells.** A `|` in a detour reason or a minimal detour note added a cell,
+  and a newline in a disposition reason added a row — the Dispositions table escaped `|` and nothing
+  else. Every data row of every table is built by one function that escapes control characters, then
+  `\`, then `|`, so `a\|b` stays one cell under GitHub-flavored-Markdown splitting.
+* **JSON on stdout left DEL, C1 and U+2028/U+2029 raw** — `JSON.stringify` escapes only C0 — so a
+  legacy status holding U+2028 put a line start into `triage`'s output. Every stdout JSON document
+  goes through one serialiser that escapes them; the parsed value is unchanged.
+* **Ids holding a control character were stored.** `sync` (active changes and plan files) and the
+  archive backfill registered a directory or file name holding a newline as an epic id, and
+  `release "r<newline>FORGED" --intent …` stored that release id. See Changed.
+* **Tracker scopes holding a control character were stored.** `set-tracker --system`, `--project` and
+  `--repo` now refuse a control character, for both roles, before anything is read or written —
+  including a primary `--remove`, which exited 0 and wrote `## FORGED` into `CLAUDE.md` and
+  `state.json`. `--role secondary --remove` is not refused, so a legacy secondary stays removable.
+* **A printed command could carry a control-character id.** Every printed command naming an epic
+  or release id goes through `printedId()` — release ids included now, among them `integrity`'s
+  `release <id> --defer` remedy — and a legacy id holding a control character prints no command:
+  `<kind> '<escaped id>' holds a control character; no verb can rename it`, never a hand-edit
+  instruction. A non-id value in a printed command (a session name, a spec path, a plan path) takes a
+  placeholder when it holds one.
 
 ### Added
 
@@ -123,6 +156,19 @@ what follows.
   `scripts/lib` to be reached by a fixture. Deliberate refused examples in docs carry
   `<!-- pm:refused <class> -->`, and the argv check reports a refusal `class`.
 * **The brief's `blocked-without-depends-on` remedy** is a registered brief remedy with its own fixture.
+* **The output-integrity poison sweep** (`scripts/test/output-text-integrity.test.mjs`, developer-
+  facing): one accumulated fixture runs a poisoned value through every value-bearing flag and
+  free-text positional (the key set is held equal to the flag and positional registries), every
+  declared non-argv input, and legacy poison recipes written straight into `state.json` (ids, a
+  release, a detour frame, trackers, a stored priority, a session, a `pmVersion`) — then sweeps every
+  surface: `render`, `write-rules`, every hook verb, every read-only verb, every id-taking positional
+  and every recipe's own output. Each recipe declares that its value is rendered, why it is not, or
+  which check refuses it.
+* **The per-interpolation output sweep** (`scripts/test/output-interpolations.mjs`, developer-facing):
+  a lexer classifies every `${…}` and non-literal `+` operand in the engine as escaped, literal,
+  sunk at a line join, not output, or judged with a stated reason; the suite fails on an unclassified,
+  stale or over-broad judgment. It is best-effort by design — its known limits are listed at the top
+  of the file — and the poison sweep above is the behavioural backstop.
 
 ### Changed
 
@@ -141,6 +187,17 @@ what follows.
   reminder wording — and are re-rendered by `/pm:upgrade`. No `state.json` change and no migration.
   A repo whose recorded `github-issues` repo fails `[HOST/]owner/name` stops receiving a literal `gh`
   line (it gets the vendor-neutral step) until it re-runs `set-tracker`, and `integrity` names it.
+* **`sync` skips a name that cannot be an epic id.** A change directory, plan file or archive
+  directory whose name holds a control character or whitespace is no longer registered; `sync`
+  registers the rest and names it on stderr on every run, quiet included — rename it to register it.
+  `integrity`'s `archive-directory-has-no-epic` says such a directory must be renamed. Uppercase
+  names are unaffected, and an entry an epic already holds prints nothing.
+* **`release` validates a new id first.** A new release id must match `^[a-z0-9][a-z0-9._-]*$`,
+  checked before the missing-intent refusal (which prints the id inside a command) and before any
+  write. An existing release with a legacy id is still updated and shown.
+* **Display wording changes only where a value holds a control character** (now a visible escape) or,
+  in a PROJECT.md table cell, a `\` or `|` (now escaped). A description written with newlines renders
+  as one line. No `state.json` schema change and no migration.
 
 ## [0.44.0] — 2026-09-16
 

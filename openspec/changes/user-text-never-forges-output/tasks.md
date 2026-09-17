@@ -349,19 +349,26 @@ Pairs: 7.1 lands with 7.2.
 
 ## 9. Docs (after Gate 2)
 
-- [ ] 9.1 `commands/sync.md` — a change directory, plan file or archive directory whose name holds a
+- [x] 9.1 `commands/sync.md` — a change directory, plan file or archive directory whose name holds a
       control character or whitespace is skipped and named on every run, and must be renamed to register
-- [ ] 9.1a `commands/tracker.md` — `--system`/`--project`/`--repo` refuse control characters;
+- [x] 9.1a `commands/tracker.md` — `--system`/`--project`/`--repo` refuse control characters;
       `--role secondary --remove` does not
-- [ ] 9.2 `commands/epic.md` and the release command doc (`rg -l "release <id>" commands`) — the id
+- [x] 9.2 `commands/epic.md` and the release command doc (`rg -l "release <id>" commands`) — the id
       format for releases at creation; free text is stored as written and escaped on display
-- [ ] 9.3 `skills/conductor/SKILL.md` and `README.md` where the id format or PROJECT.md rendering is
+- [x] 9.3 `skills/conductor/SKILL.md` and `README.md` where the id format or PROJECT.md rendering is
       described (`rg -n "a-z0-9\]\[|PROJECT.md" skills/conductor/SKILL.md README.md`)
-- [ ] 9.4 `CHANGELOG.md` `[Unreleased]` — Fixed (forged lines in PROJECT.md, brief, integrity,
+- [x] 9.4 `CHANGELOG.md` `[Unreleased]` — Fixed (forged lines in PROJECT.md, brief, integrity,
       refusals, the rules file and hook output; forged table cells; ids with control characters stored by
       sync, backfill and release; tracker scopes with control characters stored by set-tracker) and
       Changed (sync skips names holding a control character or whitespace; release ids validated at
       creation, before the missing-intent refusal)
+      - Done with what Gate 2 added: JSON stdout escapes DEL, C1 and U+2028/U+2029 (CHANGELOG Fixed,
+        SKILL.md, README); project/log paths escaped in engine messages (CHANGELOG Fixed, README); the
+        poison sweep and the per-interpolation sweep with its known limits (CHANGELOG Added only —
+        developer-facing, and CONTRIBUTING.md has no test-description section); the `printedId()`
+        no-remedy message (commands/epic.md, SKILL.md, README, CHANGELOG Fixed); the release-id
+        format (commands/status.md, README). Also fixed the pre-existing mismatch in
+        `commands/triage.md` (it showed indented JSON; `triage` prints one compact line)
 - [ ] 9.5 Full suite green, written to a file and read from the file
 
 ## 10. Gate 2 and close

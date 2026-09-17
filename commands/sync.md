@@ -46,6 +46,25 @@ is written, deliberately — `remove-epic` tombstones because the epic is GONE, 
 survives and clearing may well mean *let sync find this plan's real owner*. `--clear spec` does the
 same for a design document.
 
+## A name that cannot be an epic id is skipped, and named every run
+
+An epic id is pasted into every command the engine prints, so a name holding a **control
+character** (a newline, a tab, U+2028, …) **or whitespace** can never become one. A change
+directory under `openspec/changes/`, a plan file, or an archive directory whose name holds either
+is **not registered**: `sync` registers everything else in the same run and prints one stderr line
+naming the entry, with its control characters escaped:
+
+`conductor: sync skipped <kind> '<name>' — its name holds a control character or whitespace, so it cannot be an epic id; rename it to register it`
+
+The line is printed on **every** run while the entry exists, including the quiet sync the commit
+hook runs, because a skipped change has no other reported condition — silencing it would make an
+unregistered change look like a clean sync. **Rename it to register it**; no verb can register it
+under its current name. The check runs at the final registration step, after the claimed, known,
+tombstone and near-match rungs above, so a name an epic already holds prints nothing. Uppercase
+names are unaffected. An archive directory is additionally reported by `integrity`'s
+`archive-directory-has-no-epic`, whose detail says it must be renamed rather than that `/pm:sync`
+registers it.
+
 ## The archive backfill — `openspec/changes/archive/`
 
 `sync` also walks `openspec/changes/archive/`. An archived change the conductor holds no epic for

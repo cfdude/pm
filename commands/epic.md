@@ -134,6 +134,28 @@ written:
   never read as an id. `add-epic`, `update-epic` and `claim` used to refuse it outright.
   `node "$ENGINE" <verb> --help` lists it under "Accepted on every mutating verb".
 
+## Ids are refused at input; free text is escaped on display
+
+An **epic id** must match `^[a-z0-9][a-z0-9._-]*$` at `add-epic` and `add-many` (a batch with one
+bad id writes nothing), and no path can store one holding a control character or whitespace —
+`sync` and the archive backfill skip such a name (see `/pm:sync`). A **release id** must match the
+same format when the release is created (see `release` in `/pm:status`).
+
+**Free text is stored exactly as written** — titles, descriptions, notes, story titles, every
+reason, session names, reviewer identities — and is **escaped wherever it is displayed**: a
+newline or other control character (C0, DEL, C1, U+2028, U+2029) prints as a visible escape
+(backslash, `u`, four hex digits), so no value can start a line of PROJECT.md, the session brief,
+the rules block, `integrity`, a hook's output or a refusal. A PROJECT.md table cell additionally
+escapes `\` and `|`, so a value can neither add nor split a cell. A refusal quoting an unknown id
+quotes it the same way, on one line.
+
+**A stored id holding a control character gets no command.** Only a record written by an older
+engine can hold one. Every printed command that names an epic or release id goes through one
+printer, which shell-quotes an id outside the format (a legacy `My Plan`) — but an escaped id would
+name a different record and a raw one would break the line, so in place of the command it prints
+`epic '<escaped id>' holds a control character; no verb can rename it` (or `release '…'`). It
+never tells you to hand-edit `state.json`.
+
 ## Bulk create — `add-many`
 
 To register a parent epic and its children in one atomic operation (e.g. a sprint of audit

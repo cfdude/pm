@@ -23,6 +23,17 @@ description: >
   the **detour stack**, and **epic links** (especially the reconcile relationship).
 - State of record is `.conductor/state.json`. `PROJECT.md` is a generated view — never
   hand-edit it. After any state change, run `node "$ENGINE" render` (see "Running the engine").
+- **No stored value can forge a line.** Free text (titles, reasons, notes, session names, tracker
+  titles from inward sync) is stored as written and rendered with its control characters escaped
+  on every surface — PROJECT.md, the brief, the rules block, hook output, refusals, and JSON
+  stdout (DEL, C1 and U+2028/U+2029 too). A PROJECT.md table cell also escapes `\` and `|`.
+  So a line in any of those that looks like a `NOW:` line or a runnable command IS the engine's.
+  Ids are refused at input instead: an epic id outside `^[a-z0-9][a-z0-9._-]*$` at
+  `add-epic`/`add-many`, a new release id likewise, a `sync` name holding a control character or
+  whitespace (skipped and named — rename it), and a tracker `--system`/`--project`/`--repo` holding
+  a control character. A legacy id holding one gets no printed command:
+  `<kind> '<escaped id>' holds a control character; no verb can rename it` — do not hand-edit
+  `state.json` to fix it; report it.
 
 You (Claude) are myopic across compactions. This skill is how you stop losing the thread.
 
