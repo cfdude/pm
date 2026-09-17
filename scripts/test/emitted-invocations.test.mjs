@@ -2654,7 +2654,9 @@ test("E-I4 printers outside the registries: each fixture prints the invocation i
  *  positional after a verb that takes an epic id, or the value of an id-bearing flag — must place
  *  `printedId(…)` there. A raw `${e.id}` prints a legacy `My Plan` as two shell words. */
 const NOT_AN_EPIC_POSITIONAL = new Set(["release", "record-cross-spec-review", "retract-detour", "reorder", "honcho-memory", "suggest-lane", "triage"]);
-const EPIC_ID_FLAGS = new Set(["--id", "--detour", "--parent", "--carried-to"]);
+// Every flag whose value is a bare epic id (`release --member/--defer`, the archive's `--carried-to`).
+// `--unmember`/`--undefer`/`--link`/`--deferral` carry `<epicId>:<…>` — not a whole-token slot.
+const EPIC_ID_FLAGS = new Set(["--id", "--detour", "--parent", "--carried-to", "--member", "--defer"]);
 export function rawEpicIdSites(templates = printedTemplates()) {
   const bad = [];
   for (const t of templates) {

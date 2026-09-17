@@ -16,3 +16,11 @@ conductor-15 54s
 reconcile-obligation 35s
 emitted-invocations 35s
 full-suite 182s (1730 tests, 1730 pass)
+
+# Re-measured 2026-09-17 after the Gate 2 fixes (E-I4's whole-output corpus + PRINTER_FIXTURES, E-I2's GHE
+# secondary set in trackerMatrix, new Layer B cases), each file alone, back-to-back, then the full suite:
+emitted-invocations 42s ℹ pass 119 ℹ fail 0
+state-file-refuses-to-guess 61s ℹ pass 46 ℹ fail 0
+conductor-15 53s ℹ pass 71 ℹ fail 0
+full-suite 175s ℹ pass 1745 ℹ fail 0
+# -> emitted-invocations (42s) still below the slowest existing file (61s): no further sharing needed.
