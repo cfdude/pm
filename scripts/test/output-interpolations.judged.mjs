@@ -174,10 +174,9 @@ x("archive-gate.mjs", "blockedDelivered", {
   "o.detail": 1,
 }, "passthrough", "o.detail is a DELIVERED_OBLIGATIONS detail, escaped where it is built");
 x("archive-gate.mjs", "DELIVERED_OBLIGATIONS", {
-  "esc(staleness.headSha)": 1,
   "summary.outstanding": 1,
   "summary.claimed": 1,
-}, "escaped", "esc() is escapeControls over String(v); the rest are counts");
+}, "engine", "task counts from the source's checkboxes (esc() is resolved by the sweep as escapeControls, not judged)");
 x("archive-gate.mjs", "deliveredArchiveInvocation", {
   "f": 1,
 }, "engine", "carry flags from obligationArchiveFlags(): engine placeholders");
@@ -510,6 +509,10 @@ x("subcommands.mjs", "supersedeAmended", {
   "commands.join(\", \")": 1,
 }, "engine", "reflog object names and git short shas; the reason is `amended into <sha>`; commands through orNoRemedy/printedId; ids escaped");
 x("subcommands.mjs", "attributionNudge", {
+  "asCode(cmd(e))": 1,
+  "asCode(cmd(epic))": 2,
+}, "escaped", "cmd() is attributionNudge's local builder: orNoRemedy(() => a template of printedId(epic.id) and resolved commit names); asCode() only wraps it");
+x("subcommands.mjs", "attributionNudge", {
   "s": 1,
   "exclusion": 3,
   "candidates.map(e => `- ${asCode(cmd(e))}` + (e.attributedCommits.length === 0 ? \" (attributes no commits yet)\" : \"\")).join(\"\\n\")": 1,
@@ -560,9 +563,8 @@ x("update-epic.mjs", "echoedTokens", {
   "value(`--${name}`, inline)": 1,
 }, "engine", "flag names are DECLARED (argv-surface refuses others first); values are shell-quoted only when they hold no control character, else REENTER_PLACEHOLDER");
 x("update-epic.mjs", "regressionRefusal", {
-  "quoted(i.reason)": 1,
-  "quoted(i.title)": 1,
-}, "escaped", "quoted() is escapeControls(JSON.stringify(...))");
+  "asCode(l)": 1,
+}, "escaped", "l is one line of obligationRemedy()'s output (remedyLines), a remedy builder composed through printedId/orNoRemedy; asCode() only wraps it (quoted() is resolved by the sweep as escapeControls)");
 x("update-epic.mjs", "regressionRefusal", {
   "i.n": 1,
   "named": 1,

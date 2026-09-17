@@ -1,0 +1,55 @@
+✔ the sweep resolves the repository from scripts/test and reaches the engine's files (2.051209ms)
+✔ every interpolation into engine output is escaped, literal, sunk or judged — no UNCLASSIFIED, STALE, EXCESS or WIDE (119.967084ms)
+✔ mutant (Gate 2 U2-I1): a raw stored session in claim()'s takeover line is UNCLASSIFIED (111.827667ms)
+✔ mutant (Gate 2 U2-I1): a raw title added to supersedeAmended()'s withdrawal command is UNCLASSIFIED (115.575334ms)
+✔ a second copy of a judged expression is EXCESS, and a judged expression that is gone is STALE (206.751417ms)
+✔ only a sink-flow or json judgment may cover a whole declaration (107.89075ms)
+✖ mutant (Gate 2 V-I2): `asCode(held.session)` in claim()'s takeover line is UNCLASSIFIED (107.657792ms)
+✖ mutant (Gate 2 V-I2): `orNoRemedy(() => held.session)` in claim()'s takeover line is UNCLASSIFIED (97.108ms)
+✖ mutant (Gate 2 V-I2): `held.session || held.x && "y"` in claim()'s takeover line is UNCLASSIFIED (97.831125ms)
+✖ mutant (Gate 2 V-I2): `held.session ?? held.x && "y"` in claim()'s takeover line is UNCLASSIFIED (93.64325ms)
+✖ mutant (Gate 2 V-I2): `held.session + 1` in claim()'s takeover line is UNCLASSIFIED (95.826042ms)
+✖ mutant (Gate 2 V-I2): `held.session + held.x.length` in claim()'s takeover line is UNCLASSIFIED (98.376959ms)
+✖ mutant (Gate 2 V-I2): a local named esc is trusted only while it is escapeControls — `.map(esc)` over an identity esc is UNCLASSIFIED (96.89225ms)
+✖ mutant (Gate 2 V-I2): an escaper name is trusted only as the real import — a local escapeControls shadowing it is not (92.061708ms)
+✖ failing tests:
+test at scripts/test/output-interpolations.test.mjs:75:3
+✖ mutant (Gate 2 V-I2): `asCode(held.session)` in claim()'s takeover line is UNCLASSIFIED (107.657792ms)
+  AssertionError [ERR_ASSERTION]
+    diff: 'simple'
+  }
+test at scripts/test/output-interpolations.test.mjs:75:3
+✖ mutant (Gate 2 V-I2): `orNoRemedy(() => held.session)` in claim()'s takeover line is UNCLASSIFIED (97.108ms)
+  AssertionError [ERR_ASSERTION]
+    diff: 'simple'
+  }
+test at scripts/test/output-interpolations.test.mjs:75:3
+✖ mutant (Gate 2 V-I2): `held.session || held.x && "y"` in claim()'s takeover line is UNCLASSIFIED (97.831125ms)
+  AssertionError [ERR_ASSERTION]
+    diff: 'simple'
+  }
+test at scripts/test/output-interpolations.test.mjs:75:3
+✖ mutant (Gate 2 V-I2): `held.session ?? held.x && "y"` in claim()'s takeover line is UNCLASSIFIED (93.64325ms)
+  AssertionError [ERR_ASSERTION]
+    diff: 'simple'
+  }
+test at scripts/test/output-interpolations.test.mjs:75:3
+✖ mutant (Gate 2 V-I2): `held.session + 1` in claim()'s takeover line is UNCLASSIFIED (95.826042ms)
+  AssertionError [ERR_ASSERTION]
+    diff: 'simple'
+  }
+test at scripts/test/output-interpolations.test.mjs:75:3
+✖ mutant (Gate 2 V-I2): `held.session + held.x.length` in claim()'s takeover line is UNCLASSIFIED (98.376959ms)
+  AssertionError [ERR_ASSERTION]
+    diff: 'simple'
+  }
+test at scripts/test/output-interpolations.test.mjs:81:1
+✖ mutant (Gate 2 V-I2): a local named esc is trusted only while it is escapeControls — `.map(esc)` over an identity esc is UNCLASSIFIED (96.89225ms)
+  AssertionError [ERR_ASSERTION]
+    diff: 'simple'
+  }
+test at scripts/test/output-interpolations.test.mjs:88:1
+✖ mutant (Gate 2 V-I2): an escaper name is trusted only as the real import — a local escapeControls shadowing it is not (92.061708ms)
+  AssertionError [ERR_ASSERTION]
+    diff: 'simple'
+  }

@@ -9,12 +9,19 @@
 // METHOD. A small JS lexer (comments, quotes, nested template literals, regex literals) finds each
 // interpolation with its line and enclosing top-level declaration. Each is classified, in order:
 //   escaped       the whole value is a call to an escaper or id printer (escapeControls, escapeTableCell,
-//                 printedId, commandValue, orNoRemedy, noRemedyMessage, asCode, tableRow,
-//                 unstorableSkipLine), a `.map(<escaper>).join(…)`, or it sits inside the argument of
-//                 escapeControls / escapeTableCell / tableRow. shellQuote is deliberately NOT an escaper;
-//   literal       every value it can print is literal: a string, a number, `.length`/`.size`, an
+//                 printedId, commandValue, noRemedyMessage, tableRow, unstorableSkipLine), a
+//                 `.map(<escaper>).join(…)`, or it sits inside the argument of escapeControls /
+//                 escapeTableCell / tableRow. asCode and orNoRemedy escape NOTHING themselves: they count
+//                 only around a BUILT remedy — a template or `+` chain of literals and escaper calls, an
+//                 escaper call, or a call to a remedy builder of archive-gate.mjs (Gate 2 V-I2). An
+//                 escaper is trusted only under the name it is really bound to in that file: imported
+//                 from its home module, declared there, or a local alias whose value is the escaper or
+//                 an arrow returning a whole call to it — never a name alone (`esc`), and never a local
+//                 declaration shadowing the real one. shellQuote is deliberately NOT an escaper;
+//   literal       every value it can print is literal: a string, a number, `<name>.length`/`.size`, an
 //                 ALL_CAPS constant (or its `.join`), a Date rendering, a template or `+` chain of
-//                 literals (whose own values are swept where they sit), a ternary / `&&` of those;
+//                 literals (whose own values are swept where they sit), a ternary / `&&` of those (an
+//                 `&&` only when no looser `||`, `??`, `?` or `,` sits beside it at the top level);
 //   sink          it sits inside `X.push(…)` in a declaration that joins X through `X.map(escapeControls)`;
 //   not-output    it sits inside a call that builds no printed text (RegExp, path, fs, child_process,
 //                 JSON.parse, import);
@@ -180,10 +187,100 @@ function topLevelFunctions(src) {
 }
 
 // shellQuote is NOT here: it quotes for the shell and leaves a control character raw, so each use is judged.
-// orNoRemedy / asCode return what their builder built, whose own values are swept inside it.
-const ESCAPERS = ["escapeControls", "escapeTableCell", "printedId", "commandValue", "orNoRemedy", "noRemedyMessage", "asCode", "tableRow", "unstorableSkipLine"];
+// Each escaper with the module that declares it: a name is trusted only as a binding to THAT declaration.
+export const ESCAPER_HOMES = {
+  escapeControls: "scripts/lib/constants.mjs", escapeTableCell: "scripts/lib/constants.mjs", printedId: "scripts/lib/constants.mjs",
+  commandValue: "scripts/lib/constants.mjs", noRemedyMessage: "scripts/lib/constants.mjs", unstorableSkipLine: "scripts/lib/constants.mjs",
+  tableRow: "scripts/lib/render.mjs",
+  // WRAPPERS, not escapers: they return what their argument built (Gate 2 V-I2). See builtRemedy().
+  asCode: "scripts/lib/constants.mjs", orNoRemedy: "scripts/lib/constants.mjs",
+  // Remedy BUILDERS: each returns a command composed from printedId()/commandValue() and engine text, its own
+  // interpolations swept where they sit. Trusted only inside asCode()/orNoRemedy() and only as the real import.
+  gateRemedy: "scripts/lib/archive-gate.mjs", obligationRemedy: "scripts/lib/archive-gate.mjs",
+  dispositionInvocation: "scripts/lib/archive-gate.mjs", deliveredArchiveInvocation: "scripts/lib/archive-gate.mjs",
+};
+const WRAPPERS = new Set(["asCode", "orNoRemedy"]);
+const BUILDERS = new Set(["gateRemedy", "obligationRemedy", "dispositionInvocation", "deliveredArchiveInvocation"]);
 /** Calls whose ARGUMENT text is escaped as a whole, so every value interpolated inside it is too. */
-const ESCAPING_SPANS = /\b(escapeControls|escapeTableCell|tableRow)\(/g;
+const SPAN_ESCAPERS = new Set(["escapeControls", "escapeTableCell", "tableRow"]);
+
+/** The escapers a file may use, as a Map of LOCAL name → real name. A real name counts when the file is its
+ *  home and declares it at the top level, or imports it from its home module (`as` aliases included) — and
+ *  is not also declared locally, which would shadow the import. A local `const A = B` or
+ *  `const A = (v) => B(…)` (B trusted) aliases B, but only if EVERY declaration of A in the file does. */
+export function trustedEscapers(rel, src) {
+  const names = new Map();
+  // Line comments first: a `//` comment may hold `/*` (a glob such as `commands/*.md`).
+  const code = src.replace(/(^|\s)\/\/[^\n]*/g, "$1").replace(/\/\*[\s\S]*?\*\//g, "");
+  const declared = (n) => [...code.matchAll(new RegExp(`(?:^|[^\\w$.])(?:const|let|var|function|class)\\s+${n.replace(/\$/g, "\\$")}\\b`, "g"))].length;
+  for (const [real, home] of Object.entries(ESCAPER_HOMES)) {
+    if (rel === home && new RegExp(`^export\\s+(?:const|function)\\s+${real}\\b`, "m").test(code) && declared(real) === 1) names.set(real, real);
+  }
+  for (const m of code.matchAll(/import\s*\{([^}]*)\}\s*from\s*["']([^"']+)["']/g)) {
+    const from = path.posix.normalize(path.posix.join(path.posix.dirname(rel), m[2]));
+    for (const spec of m[1].split(",").map(t => t.trim()).filter(Boolean)) {
+      const [real, local = real] = spec.split(/\s+as\s+/).map(t => t.trim());
+      if (ESCAPER_HOMES[real] === from && declared(local) === 0) names.set(local, real);
+    }
+  }
+  const aliasDecls = [...code.matchAll(/(?:const|let)\s+([\w$]+)\s*=\s*([^;\n]+);?/g)];
+  for (const name of new Set(aliasDecls.map(m => m[1]))) {
+    if (names.has(name)) continue;
+    const rhs = aliasDecls.filter(m => m[1] === name).map(m => m[2].trim());
+    const realOf = (r) => {
+      if (names.has(r) && !WRAPPERS.has(names.get(r)) && !BUILDERS.has(names.get(r))) return names.get(r);
+      const arrow = /^\(?\s*[\w$]+\s*\)?\s*=>\s*([\s\S]+)$/.exec(r);
+      const callee = arrow && /^([\w$]+)\(/.exec(arrow[1]);
+      return callee && names.has(callee[1]) && SPAN_ESCAPERS.has(names.get(callee[1])) && wholeCallTo(arrow[1], [callee[1]]) ? names.get(callee[1]) : null;
+    };
+    const reals = rhs.map(realOf);
+    if (reals.length === declared(name) && reals.every(r => r && r === reals[0])) names.set(name, reals[0]);
+  }
+  return names;
+}
+/** Local names bound to one of `reals`. */
+const localNames = (names, reals) => [...names].filter(([, real]) => reals.has(real)).map(([local]) => local);
+const ESCAPER_REALS = new Set(Object.keys(ESCAPER_HOMES).filter(n => !WRAPPERS.has(n) && !BUILDERS.has(n)));
+
+/** An escaped call: a whole call to a trusted escaper, or to asCode()/orNoRemedy() around a built remedy. */
+function escapedCall(expr, names) {
+  const m = /^([\w$]+)\(/.exec(expr);
+  if (!m || !names.has(m[1]) || !wholeCallTo(expr, [m[1]])) return false;
+  const real = names.get(m[1]);
+  if (ESCAPER_REALS.has(real)) return true;
+  if (!WRAPPERS.has(real)) return false;
+  const arg = expr.slice(m[0].length, -1).trim();
+  if (real === "asCode") return builtRemedy(arg, names);
+  const thunk = /^\(\s*\)\s*=>\s*([\s\S]+)$/.exec(arg);
+  return !!thunk && builtRemedy(thunk[1].trim(), names);
+}
+/** A remedy as built: a template (its values swept where they sit), a `+` chain of literals, templates and
+ *  escaped calls holding a string, an escaped call, or a call to a trusted remedy builder (optionally indexed). */
+function builtRemedy(expr, names) {
+  let e = expr.trim();
+  while (/^\(.*\)$/s.test(e) && balancedParens(e.slice(1, -1))) e = e.slice(1, -1).trim();
+  const toks = lex(e).contexts[0].tokens;
+  if (toks.length === 1 && toks[0].kind === "template") return true;
+  if (escapedCall(e, names)) return true;
+  const call = /^([\w$]+)\(/.exec(e);
+  if (call && names.has(call[1]) && BUILDERS.has(names.get(call[1]))) {
+    const bare = e.replace(/\[\d+\]$/, "");
+    if (wholeCallTo(bare, [call[1]])) return true;
+  }
+  const ops = [];
+  let k = 0;
+  while (k < toks.length) {
+    const end = operandEnd(toks, k);
+    if (end < 0) return false;
+    ops.push(e.slice(toks[k].start, toks[end - 1].end));
+    if (end === toks.length) break;
+    if (!(toks[end].kind === "punct" && toks[end].text === "+")) return false;
+    k = end + 1;
+  }
+  if (ops.length < 2) return false;
+  const stringy = ops.some(o => { const t = lex(o).contexts[0].tokens; return t.length === 1 && isStringy(t[0]); });
+  return stringy && ops.every(o => { const t = lex(o).contexts[0].tokens; return (t.length === 1 && isLiteral(t[0])) || escapedCall(o.trim(), names); });
+}
 function wholeCallTo(expr, names) {
   const m = /^([\w$]+)\(/.exec(expr);
   if (!m || !names.includes(m[1])) return false;
@@ -193,18 +290,25 @@ function wholeCallTo(expr, names) {
   }
   return false;
 }
+// Anchored to the WHOLE operand (Gate 2 V-I2): `held.session + held.x.length` is not a count. `<name> + 1`
+// is not here at all — a name alone cannot say it is a number — so an ordinal judges it.
 const SIMPLE_ENGINE = [
-  /^\d+$/, /\.length$/, /\.size$/, /^[A-Z][A-Z0-9_]*$/, /^[A-Z][A-Z0-9_]*\.join\((["'][^"']*["'])?\)$/,
-  /^new Date\([^)]*\)\.toISOString\(\)$/, /^[\w$.]+ \+ 1$/, /^ordinal\([\w$.]+\)$/,
+  /^\d+$/, /^[\w$.]+\.length$/, /^[\w$.]+\.size$/, /^[A-Z][A-Z0-9_]*$/, /^[A-Z][A-Z0-9_]*\.join\((["'][^"']*["'])?\)$/,
+  /^new Date\([^)]*\)\.toISOString\(\)$/, /^ordinal\([\w$.]+\)$/,
 ];
-const MAPPED_ESCAPE = /^[\w$.]+(?:\.filter\([^)]*\))?\.map\((?:escapeControls|esc|printedId|\(?[\w$]+\)? => (?:escapeControls|printedId)\(.*\))\)\.join\((?:"[^"]*"|'[^']*')?\)$/;
-function literalOnly(expr) {
+const reAlt = (xs) => xs.map(n => n.replace(/\$/g, "\\$")).join("|") || "(?!)";
+/** `X.map(<escaper>).join(…)`, with the escaper named as the file really binds it. */
+function mappedEscape(e, names) {
+  const plain = reAlt(localNames(names, new Set(["escapeControls", "printedId"])));
+  return new RegExp(`^[\\w$.]+(?:\\.filter\\([^)]*\\))?\\.map\\((?:${plain}|\\(?[\\w$]+\\)? => (?:${plain})\\(.*\\))\\)\\.join\\((?:"[^"]*"|'[^']*')?\\)$`).test(e);
+}
+function literalOnly(expr, names) {
   let e = expr.trim();
   while (/^\(.*\)$/.test(e) && balancedParens(e.slice(1, -1))) e = e.slice(1, -1).trim();
-  if (wholeCallTo(e, ESCAPERS) || MAPPED_ESCAPE.test(e)) return true;
+  if (escapedCall(e, names) || mappedEscape(e, names)) return true;
   if (/^`[\s\S]*`$/.test(e) && lex(e).contexts[0].tokens.length === 1) return true;   // a template: structure
   const and = splitTop(e, "&&");
-  if (and) return literalOnly(and[1]);                // `cond && <safe>` prints the safe half or a falsy literal
+  if (and) return literalOnly(and[1], names);                // `cond && <safe>` prints the safe half or a falsy literal
   // `X.map(v => `…`).join(…)`: the callback's template is STRUCTURE, its values swept where they sit.
   if (/^[\w$.\[\]()]+?\.map\(\(?[\w$, ]*\)? => `[^`]*`\)\.join\((?:"[^"]*"|'[^']*')?\)$/.test(e)) return true;
   // A `+` chain of literals and templates only.
@@ -224,7 +328,7 @@ function literalOnly(expr) {
     else if (depth === 0 && t.kind === "punct" && t.text === "?" && q < 0) q = k;
     else if (depth === 0 && t.kind === "punct" && t.text === ":" && q >= 0) {
       const a = e.slice(toks[q + 1].start, toks[k - 1].end), b = e.slice(toks[k + 1] ? toks[k + 1].start : e.length);
-      return literalOnly(a) && literalOnly(b);
+      return literalOnly(a, names) && literalOnly(b, names);
     }
   }
   return false;
@@ -240,7 +344,9 @@ function splitTop(e, op) {
     const t = toks[k];
     if (t.kind === "punct" && ["(", "[", "{"].includes(t.text)) depth++;
     else if (t.kind === "punct" && [")", "]", "}"].includes(t.text)) depth--;
-    else if (depth === 0 && t.kind === "punct" && t.text === "?") return null;   // a ternary binds looser
+    // A ternary, `||`, `??`, assignment or comma binds looser than `&&`: splitting past one would judge the
+    // right half of `a || b && "y"` as if it were the whole value (Gate 2 V-I2).
+    else if (depth === 0 && t.kind === "punct" && ["?", "||", "??", ",", "=", "||=", "??=", "&&="].includes(t.text) && t.text !== op) return null;
     else if (depth === 0 && t.kind === "punct" && t.text === op) at = k;
   }
   return at < 0 ? null : [e.slice(0, toks[at].start).trim(), e.slice(toks[at].end).trim()];
@@ -263,15 +369,17 @@ export function sweepInterpolations({ repo = REPO, read = (rel) => fs.readFileSy
     const fns = topLevelFunctions(src);
     const pushes = balancedCallSpans(src, /\b([\w$]+)\.push\(/g);
     const notOutput = balancedCallSpans(src, NOT_OUTPUT_CALLS);
-    const escaping = balancedCallSpans(src, ESCAPING_SPANS);
+    const names = trustedEscapers(rel, src);
+    const spanNames = localNames(names, SPAN_ESCAPERS);
+    const escaping = spanNames.length ? balancedCallSpans(src, new RegExp(`\\b(${reAlt(spanNames)})\\(`, "g")) : [];
     for (const v of values) {
       const expr = src.slice(v.start, v.end).trim().replace(/\s+/g, " ");
       const fn = fns.filter(f => f.start <= v.start && v.start < f.end).pop();
       const fnSrc = fn ? src.slice(fn.start, fn.end) : "";
       let cls;
-      if (wholeCallTo(expr, ESCAPERS)) cls = "escaped";
+      if (escapedCall(expr, names)) cls = "escaped";
       else if (escaping.some(p => p.start < v.start && v.end <= p.end)) cls = "escaped";
-      else if (literalOnly(expr)) cls = "literal";
+      else if (literalOnly(expr, names)) cls = "literal";
       else if (pushes.some(p => p.start < v.start && v.end <= p.end && new RegExp(`\\b${p.name}\\.map\\(escapeControls\\)`).test(fnSrc))) cls = "sink";
       else if (notOutput.some(p => p.start < v.start && v.end <= p.end)) cls = "not-output";
       else {

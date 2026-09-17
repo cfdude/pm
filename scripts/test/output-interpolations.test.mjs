@@ -58,3 +58,36 @@ test("only a sink-flow or json judgment may cover a whole declaration", () => {
     assert.ok(typeof jd.why === "string" && jd.why.trim(), `${jd.file} [${jd.fn}] carries a reason`);
   }
 });
+
+// ── Gate 2 V-I2: six raw values the classifier accepted in place of claim()'s escaped session ──
+// asCode/orNoRemedy were escapers whatever they wrapped, splitTop split `a || b && "y"` at the `&&`, and the
+// `.length` / `+ 1` patterns accepted any left operand. Each of these printed held.session raw with 0 findings.
+const SESSION = "from session '${escapeControls(held.session)}' ";
+const V_I2_MUTANTS = [
+  "asCode(held.session)",
+  "orNoRemedy(() => held.session)",
+  "held.session || held.x && \"y\"",
+  "held.session ?? held.x && \"y\"",
+  "held.session + 1",
+  "held.session + held.x.length",
+];
+for (const expr of V_I2_MUTANTS) {
+  test(`mutant (Gate 2 V-I2): \`${expr}\` in claim()'s takeover line is UNCLASSIFIED`, () => {
+    const { findings } = sweepMutated("scripts/lib/claims.mjs", SESSION, `from session '\${${expr}}' `);
+    assert.ok(findings.some(f => f.startsWith("UNCLASSIFIED scripts/lib/claims.mjs:") && f.endsWith(`[claim] \${} ${expr}`)), findings.join("\n"));
+  });
+}
+
+test("mutant (Gate 2 V-I2): a local named esc is trusted only while it is escapeControls — `.map(esc)` over an identity esc is UNCLASSIFIED", () => {
+  const { findings } = sweepMutated("scripts/lib/archive-gate.mjs",
+    "const esc = (v) => escapeControls(String(v));", "const esc = (v) => String(v);");
+  assert.ok(findings.some(f => /^UNCLASSIFIED scripts\/lib\/archive-gate\.mjs:\d+ \[DELIVERED_OBLIGATIONS\] \$\{\} staleness\.uncovered\.map\(esc\)\.join\(", "\)$/.test(f)), findings.join("\n"));
+  assert.ok(findings.some(f => /^UNCLASSIFIED scripts\/lib\/archive-gate\.mjs:\d+ \[DELIVERED_OBLIGATIONS\] \$\{\} esc\(staleness\.headSha\)$/.test(f)), findings.join("\n"));
+});
+
+test("mutant (Gate 2 V-I2): an escaper name is trusted only as the real import — a local escapeControls shadowing it is not", () => {
+  const { findings } = sweepMutated("scripts/lib/claims.mjs",
+    "REPO_CLAIM_DEFAULT_TTL_MINUTES, escapeControls, isFlagToken, splitFlagToken } from \"./constants.mjs\";",
+    "REPO_CLAIM_DEFAULT_TTL_MINUTES, isFlagToken, splitFlagToken } from \"./constants.mjs\";\nconst escapeControls = (s) => s;");
+  assert.ok(findings.some(f => /^UNCLASSIFIED scripts\/lib\/claims\.mjs:\d+ \[claim\] \$\{\} escapeControls\(held\.session\)$/.test(f)), findings.join("\n"));
+});
