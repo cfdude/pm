@@ -110,7 +110,7 @@ Pairs: 2.1 lands with 2.2; 2.3 with 2.4; 2.5 with 2.6; 2.7 with 2.8.
 - [x] 2.9 REGRESSION GUARD: an unidentified tool blocks exactly as today — payloads `"{}"`, `""`,
       `not json`, and `{"tool_name":"Frobnicate"}` each exit 2 while a reconcile is owed; and
       `{"tool_name":"Edit","tool_input":{"command":"rg foo"}}` exits 2 regardless of command text
-- [ ] 2.10 REGRESSION GUARD: nothing owed — a Bash write shape exits 0; and the existing
+- [x] 2.10 REGRESSION GUARD: nothing owed — a Bash write shape exits 0; and the existing
       `reconcile-obligation.test.mjs` Edit-payload assertions still pass unchanged
 
 ## 3. The matcher, and every site that says Bash is not matched

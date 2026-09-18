@@ -483,3 +483,31 @@ test("2.9 REGRESSION GUARD: an editing tool is unaffected by any command text in
       "no shape is named for an editing tool — the label is a decision about a Bash command");
   }
 });
+
+test("2.10 REGRESSION GUARD: nothing owed — a Bash write shape is not blocked at all", () => {
+  // The guard needs a LIVE active epic that owes something. `on` alone never means a call is
+  // blocked, and neither does a recognized write shape: this change adds no obligation of its own.
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  run(["add-epic", "--id", "q", "--lane", "claude-code", "--title", "q"], { cwd });
+  run(["set-active", "q"], { cwd });
+  for (const setting of ["on", "off"]) {
+    run(["set-gate-guard", setting], { cwd });
+    for (const command of ["cat > src/x.js <<EOF", "rm .conductor/state.json", "sed -i '' s/a/b/ f.js"]) {
+      const r = guard(cwd, bash(command));
+      assert.equal(r.status, 0, `nothing is owed, so nothing blocks (guard ${setting}): ${command}`);
+      assert.equal(r.stderr, "");
+    }
+    assert.equal(guard(cwd, { tool_name: "Edit", tool_input: {} }).status, 0);
+  }
+});
+
+test("2.10 REGRESSION GUARD: an ARCHIVED active epic still owes nothing, Bash included", () => {
+  // An epic that has ENDED owes nothing — the filter is at the resolution, so this arm inherits it
+  // rather than having to remember it, and a stale `reconcileNeeded` cannot wedge Bash either.
+  const cwd = owingRepo();
+  run(["update-epic", "p", "--status", "archived", "--outcome", "abandoned",
+    "--reason", "ended while the obligation still stood", "--no-deferrals"], { cwd });
+  assert.equal(guard(cwd, bash("cat > src/x.js <<EOF")).status, 0);
+  assert.equal(guard(cwd, { tool_name: "Edit", tool_input: {} }).status, 0);
+});
