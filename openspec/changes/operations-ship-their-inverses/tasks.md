@@ -156,7 +156,12 @@ commit message, and commit the refusal and the verb together.
 - [x] 3.5 **RED** — tests: a dropped frame's armed `may-invalidate` link stops being reported as
   owed, the record shows it dropped with its reason and NOT as reconciled, no reconcile verdict is
   written, and `remove-epic` on that epic is then no longer blocked by a frame or an owed reconcile.
-  Save `red-3.5.txt`.
+  ~~Save `red-3.5.txt`.~~ **AMENDED at Gate 2 (I-M1):** no `red-3.5.txt` exists and none can. 3.6's
+  obligation-ending half was inseparable from 3.4's `dropDetour()` — it requires the frame removal,
+  the link disarm and the flag clear in ONE `saveState` — so these tests passed the moment they were
+  written and a RED file would be theatre. **`red-3.5-mutation-evidence.txt`** substitutes: each
+  shipped guard neutered in turn, with the scenario that then fails. Stated in ecdd929's message at
+  the time; this line is the source it should also have been recorded in.
 - [x] 3.6 **GREEN** — end the obligation in the SAME `saveState` as the frame removal; a transition
   half-written is a record that disagrees with itself (this module's own header). Recompute
   `reconcileNeeded` by the SAME rule `reconciler-writeback.mjs` applies at its verdict transition
@@ -170,7 +175,11 @@ commit message, and commit the refusal and the verb together.
   owed reconcile*), and note that clearing the flag here is the second exception the delta's MODIFIED
   block adds. Commit RED+GREEN together.
 - [x] 3.7 **RED** — tests: `drop-detour` on an epic with no live frame exits non-zero writing
-  nothing; with no reason or an empty reason exits non-zero writing nothing. Save `red-3.7.txt`.
+  nothing; with no reason or an empty reason exits non-zero writing nothing. ~~Save `red-3.7.txt`.~~
+  **AMENDED at Gate 2 (I-M1):** no `red-3.7.txt` exists and none can — 3.8's two refusals must
+  precede the single write 3.6 requires, so they shipped inside 3.4's commit and these tests passed
+  as written. Covered by the same **`red-3.5-mutation-evidence.txt`**, which neuters each refusal in
+  turn.
 - [x] 3.8 **GREEN** — the two refusals. Commit RED+GREEN together.
 - [x] 3.9 **REGRESSION GUARD** — assert `record-reconcile` refuses a verdict against a DROPPED
   detour, and that it refuses through its existing unarmed-link arm

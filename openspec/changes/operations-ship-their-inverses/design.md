@@ -211,6 +211,25 @@ branch their closing sentence on it and say the finding persists by design, poin
 live field beside it. `dangling-epic-reference` is left alone: it already reported superseded rows in
 0.45.0, so that behaviour is pre-existing and not this change's to widen or narrow.
 
+### Gate 2 Minor findings declined, one line each
+
+- **`drop-detour` writes no Honcho line and no `detours.log` row, unlike push/pop.** Declined. A push
+  and a pop are STACK TRANSITIONS with a narrative that outlives the repo — "paused X for Y", "resumed
+  X, reconciled vs Y" — which is what the memory line carries. A drop ends an obligation rather than
+  moving work between epics, and it already records itself durably where the obligation lived: the
+  disarmed link keeps `dropped: {reason, droppedAt}`. A memory line saying "ended a pause" restates a
+  record the state file holds.
+- **No integrity check for a live epic left `paused` with no frame after a drop.** Declined. Not
+  leaving that status alone is the deliberate behaviour of task 3.3 — the verb's own success line says
+  the epic "is not resumed and its status is unchanged" — and the next status write resolves it. A
+  check would report a shape the verb is specified to produce.
+- **The `dropped` stamp renders nowhere; dropped vs owed is visible only in the JSON.** Declined here
+  for the reason the revoked grant is (Risks, below): this change does not add a rendering surface for
+  links, and adding one for `dropped` alone would put half a concept on PROJECT.md. It belongs with
+  whatever renders link state as a whole.
+- Not declined and not in scope: `agents/hierarchy-child-executor.md` and `skills/conductor/SKILL.md`
+  still describing grants with no revocation is **tasks 5.3/5.4**, scheduled after Gate 2.
+
 ## Risks / Trade-offs
 
 - **A revoked grant renders nowhere, because grants render nowhere.** → This change does not add
