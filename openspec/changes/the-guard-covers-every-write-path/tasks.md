@@ -134,7 +134,7 @@ Pairs: 3.1 lands with 3.2.
 - [x] 3.4 GREEN: `scripts/lib/state.mjs:201` — the comment on `unreadableStateMessage` asserts "Bash
       is not matched by it"; correct it to the affirmed-Bash exemption. Re-derive the line number with
       `rg` at edit time
-- [ ] 3.4b GREEN: `scripts/lib/refusal.mjs:18` — the `gate-guard` row's "Not a wedge: Bash is not
+- [x] 3.4b GREEN: `scripts/lib/refusal.mjs:18` — the `gate-guard` row's "Not a wedge: Bash is not
       matched by it" is false under the new matcher; restate it as the affirmed-Bash-with-a-command
       exemption. Re-derive the line with `rg` at edit time
 - [ ] 3.4c GREEN: `skills/conductor/SKILL.md:206` ("`gate-guard` blocks Edit/Write/NotebookEdit
