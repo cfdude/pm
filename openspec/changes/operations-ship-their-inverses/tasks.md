@@ -51,12 +51,12 @@ and named in that commit's message.
   empty reason exits non-zero writing nothing. Save `red-1.3.txt`.
 - [x] 1.4 **GREEN** — the three refusals, each before `loadState()`-derived mutation so a refusal
   leaves the file byte-identical. Commit RED+GREEN together.
-- [ ] 1.5 **RED** — tests: `--level off` leaves grants intact and unrevoked; `--level autonomous`
+- [x] 1.5 **RED** — tests: `--level off` leaves grants intact and unrevoked; `--level autonomous`
   reports the count and identity of the live grants it arms, reports nothing about revoked ones, and
   says so explicitly when there are none; a revoked grant is not restored by re-arming; and
   **setting an already-autonomous epic to autonomous again still prints the same report**, so the
   `reportSave()` `unchanged` branch does not swallow it. Save `red-1.5.txt`.
-- [ ] 1.6 **GREEN** — the re-arm report, printed on BOTH of `reportSave()`'s branches. Commit
+- [x] 1.6 **GREEN** — the re-arm report, printed on BOTH of `reportSave()`'s branches. Commit
   RED+GREEN together.
 - [ ] 1.7 **RED** — tests: `--preauthorize ":x"` exits non-zero writing nothing and the epic gains
   no autonomy block; an action with no reason is still accepted; a grant already on disk whose

@@ -134,3 +134,63 @@ test("A --revoke-reason with no --revoke is refused rather than dropped", () => 
   assert.ok(err, "a reason with nothing to attach to exits non-zero");
   assert.deepEqual(stateBytes(cwd), before, "nothing was written");
 });
+
+// ───────── Turning off does not revoke; turning on says what it restores (1.5) ─────────
+
+test("Scenario: Turning autonomy off leaves the grants intact", () => {
+  const cwd = repoWithEpic();
+  run(["set-autonomy", "a", "--preauthorize", "rm -rf build/:it is regenerated",
+    "--preauthorize", "category:filesystem:scratch only"], { cwd });
+  run(["set-autonomy", "a", "--level", "autonomous"], { cwd });
+  run(["set-autonomy", "a", "--level", "off"], { cwd });
+  const a = autonomyOf(cwd, "a");
+  assert.equal(a.level, "off");
+  assert.equal(a.preAuthorized.length, 2, "deletion is not the inverse of granting");
+  assert.ok(a.preAuthorized.every(g => !g.revoked), "and turning off is not revoking either");
+});
+
+test("Scenario: Turning autonomy on enumerates the grants it arms", () => {
+  const cwd = repoWithEpic();
+  run(["set-autonomy", "a",
+    "--preauthorize", "rm -rf build/:it is regenerated",
+    "--preauthorize", "category:filesystem:scratch only",
+    "--preauthorize", "drop-scratch-table:reviewed"], { cwd });
+  run(["set-autonomy", "a", "--revoke", "drop-scratch-table", "--revoke-reason", "no longer safe"], { cwd });
+
+  const out = runCombined(["set-autonomy", "a", "--level", "autonomous"], { cwd });
+  assert.match(out, /2/, "the count of live grants is reported");
+  assert.match(out, /rm -rf build\//, "each live grant's action is named");
+  assert.match(out, /category:filesystem/, "a category grant is named by its category");
+  assert.ok(!/drop-scratch-table/.test(out), "a revoked grant is not presented as restored");
+});
+
+test("Scenario: Arming an already-autonomous epic reports the same set", () => {
+  const cwd = repoWithEpic();
+  run(["set-autonomy", "a", "--preauthorize", "rm -rf build/:it is regenerated"], { cwd });
+  run(["set-autonomy", "a", "--level", "autonomous"], { cwd });
+  // The SECOND call changes nothing, so it takes reportSave()'s `unchanged` branch.
+  const out = runCombined(["set-autonomy", "a", "--level", "autonomous"], { cwd });
+  assert.match(out, /rm -rf build\//,
+    "the report states what is LIVE and is not conditional on the write having changed anything");
+});
+
+test("Scenario: Arming an epic with no grants says so", () => {
+  const cwd = repoWithEpic();
+  const out = runCombined(["set-autonomy", "a", "--level", "autonomous"], { cwd });
+  assert.match(out, /no pre-authoriz/i,
+    "silence here is indistinguishable from a report that was not produced");
+});
+
+test("Scenario: A revoked grant is not restored by re-arming autonomy", () => {
+  const cwd = repoWithEpic();
+  run(["set-autonomy", "a", "--preauthorize", "drop-scratch-table:reviewed"], { cwd });
+  run(["set-autonomy", "a", "--revoke", "drop-scratch-table", "--revoke-reason", "no longer safe"], { cwd });
+  run(["set-autonomy", "a", "--level", "off"], { cwd });
+  const out = runCombined(["set-autonomy", "a", "--level", "autonomous"], { cwd });
+  assert.ok(autonomyOf(cwd, "a").preAuthorized[0].revoked, "still revoked");
+  // The precondition for the negative below: a report that was never produced satisfies
+  // "does not name it" for free (docs/lessons/git-rewinds-restore-tracked-conductor-state's
+  // vacuous half). Assert the report EXISTS before asserting what it omits.
+  assert.match(out, /arming no pre-authoriz/i, "the re-arm report was produced and names none");
+  assert.ok(!/drop-scratch-table/.test(out), "and not restored by re-arming");
+});

@@ -34,6 +34,23 @@ export function isRevoked(grant) {
   return !!(grant && typeof grant === "object" && grant.revoked && typeof grant.revoked === "object");
 }
 
+/** What a grant NAMES — its identity, for matching and for the re-arm report below. `null` where it
+ *  names nothing: a `{action: ""}` a release before this one stored, which no revoke can reach
+ *  because a revoke names a STORED value and an empty one is not expressible as a flag value. */
+export function grantLabel(grant) {
+  if (!grant || typeof grant !== "object") return null;
+  if (typeof grant.category === "string" && grant.category) return `category:${grant.category}`;
+  if (typeof grant.action === "string" && grant.action) return grant.action;
+  return null;
+}
+
+/** The grants that authorise something: named, and not revoked. ONE predicate, so the re-arm report
+ *  and `integrity`'s grant check cannot come to disagree about which grants are live. */
+export function liveGrants(autonomy) {
+  return (autonomy && Array.isArray(autonomy.preAuthorized) ? autonomy.preAuthorized : [])
+    .filter(g => !isRevoked(g) && grantLabel(g) !== null);
+}
+
 /** Read a `--revoke` value as the grant identity it names, through the IDENTICAL first-colon split
  *  the grant itself went through. A stored action therefore never contains a colon, which is what
  *  makes both spellings name the same grant: the bare stored action, and the whole original
@@ -185,6 +202,24 @@ export function setAutonomy() {
   epic.autonomy = a;
   const saved = saveState(state);
   render();
+  // THE RE-ARM REPORT, printed on BOTH of reportSave()'s branches and therefore written AFTER it.
+  // `--level off` does NOT clear grants — deletion is not the inverse of granting, and an epic taken
+  // off autonomy for an afternoon has not withdrawn anybody's judgment about which actions were safe
+  // — so the fix binds where the measured harm is. The harm was never that the grants SURVIVE; it is
+  // that re-arming restores them SILENTLY. A report conditional on the write having changed anything
+  // would be swallowed on the second `--level autonomous`, which is the invocation that arms an epic
+  // somebody already armed; the report states what is LIVE, not what moved.
+  if (level === "autonomous") {
+    const live = liveGrants(a);
+    process.stderr.write(live.length
+      ? `conductor: arming ${live.length} pre-authorization${live.length === 1 ? "" : "s"} on ` +
+        `'${escapeControls(id)}': ${live.map(g => escapeControls(grantLabel(g))).join(", ")}\n`
+      // Said out loud rather than left silent: silence here is indistinguishable from a report that
+      // was not produced, which is the whole defect this line closes.
+      : `conductor: arming no pre-authorizations on '${escapeControls(id)}' — it holds none that ` +
+        "are live (a revoked grant is not restored by re-arming, and a grant naming nothing " +
+        "authorises nothing)\n");
+  }
   reportSave(saved, {
     changed: `conductor: autonomy for '${escapeControls(id)}' is now level=${escapeControls(a.level)}`,
     unchanged: `conductor: autonomy for '${escapeControls(id)}' already reads level=${escapeControls(a.level)} with exactly the ` +

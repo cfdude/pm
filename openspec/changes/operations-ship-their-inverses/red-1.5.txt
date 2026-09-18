@@ -1,0 +1,226 @@
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-IVWzzI/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-IVWzzI/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-g20Wzr/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-g20Wzr/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-WN199m/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-WN199m/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-tNxxHt/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-tNxxHt/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-2kcTOz/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-2kcTOz/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: 'a' holds no pre-authorization naming 'rename-field' — a revoke that silently matched nothing would report success for an authorisation that is still live. Nothing was written.
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Un5P8V/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Un5P8V/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: every grant 'a' holds for 'drop-scratch-table' is already revoked — a second revocation would overwrite the first one's reason and date with a later pair describing nothing that happened. Nothing was written.
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-UTnCqM/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-UTnCqM/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: --revoke requires --revoke-reason "<why>" — the revocation is kept on the record beside the grant it takes back, and a reason is what distinguishes a deliberate withdrawal from a grant nobody can account for
+conductor: --revoke-reason requires a non-empty reason
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-7ROCXS/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-7ROCXS/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: --revoke-reason explains a revocation, and this invocation revokes nothing — pass --revoke "<action>" (or "category:<name>") alongside it. Nothing was written.
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-zwtJQp/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-zwtJQp/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-zwtJQp/PROJECT.md
+conductor: autonomy for 'a' is now level=autonomous
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-zwtJQp/PROJECT.md
+conductor: autonomy for 'a' is now level=off
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-DkRCqY/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-DkRCqY/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-qP7oEQ/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-qP7oEQ/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-qP7oEQ/PROJECT.md
+conductor: autonomy for 'a' is now level=autonomous
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-FJ08Hf/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-FJ08Hf/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-AePCDc/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-AePCDc/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' already reads level=off with exactly the pre-authorizations and context this invocation supplied — nothing was written to .conductor/state.json
+✔ Scenario: A granted action is revoked and no longer authorises (1249.724208ms)
+✔ Scenario: A category grant is revoked by naming the category (1202.834791ms)
+✔ Scenario: A revoke names the stored value, however the grant spelled it (1019.404ms)
+✔ Scenario: A revoke over a mixed match leaves the earlier revocation untouched (1628.504375ms)
+✔ Scenario: Revoking a grant the epic does not hold is refused (1114.479834ms)
+✔ Scenario: Revoking an already-revoked grant is refused (1362.440625ms)
+✔ Scenario: Revoking without a reason is refused (1099.44275ms)
+✔ A --revoke-reason with no --revoke is refused rather than dropped (859.5345ms)
+✔ Scenario: Turning autonomy off leaves the grants intact (1261.071ms)
+✖ Scenario: Turning autonomy on enumerates the grants it arms (1100.795666ms)
+✖ Scenario: Arming an already-autonomous epic reports the same set (1059.656125ms)
+✖ Scenario: Arming an epic with no grants says so (955.534292ms)
+✖ Scenario: A revoked grant is not restored by re-arming autonomy (1283.934459ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 9
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 15354.115666
+
+✖ failing tests:
+
+test at scripts/test/autonomy-revocation.test.mjs:152:1
+✖ Scenario: Turning autonomy on enumerates the grants it arms (1100.795666ms)
+  AssertionError [ERR_ASSERTION]: each live grant's action is named
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/autonomy-revocation.test.mjs:162:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: "conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-DkRCqY/PROJECT.md\nconductor: autonomy for 'a' is now level=autonomous\n",
+    expected: /rm -rf build\//,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/autonomy-revocation.test.mjs:167:1
+✖ Scenario: Arming an already-autonomous epic reports the same set (1059.656125ms)
+  AssertionError [ERR_ASSERTION]: the report states what is LIVE and is not conditional on the write having changed anything
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/autonomy-revocation.test.mjs:173:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: "conductor: PROJECT.md unchanged (skipped rewrite)\nconductor: autonomy for 'a' already reads level=autonomous with exactly the pre-authorizations and context this invocation supplied — nothing was written to .conductor/state.json\n",
+    expected: /rm -rf build\//,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/autonomy-revocation.test.mjs:177:1
+✖ Scenario: Arming an epic with no grants says so (955.534292ms)
+  AssertionError [ERR_ASSERTION]: silence here is indistinguishable from a report that was not produced
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/autonomy-revocation.test.mjs:180:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: "conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-FJ08Hf/PROJECT.md\nconductor: autonomy for 'a' is now level=autonomous\n",
+    expected: /no pre-authoriz/i,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/test/autonomy-revocation.test.mjs:184:1
+✖ Scenario: A revoked grant is not restored by re-arming autonomy (1283.934459ms)
+  AssertionError [ERR_ASSERTION]: the re-arm report was produced and names none
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/autonomy-revocation.test.mjs:194:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: "conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-AePCDc/PROJECT.md\nconductor: autonomy for 'a' is now level=autonomous\n",
+    expected: /arming no pre-authoriz/i,
+    operator: 'match',
+    diff: 'simple'
+  }
