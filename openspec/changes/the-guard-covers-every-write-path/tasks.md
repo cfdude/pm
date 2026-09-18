@@ -1,6 +1,6 @@
 ## 0. Before any code
 
-- [ ] 0.1 Gate 1 — two fresh-context lenses over these artifacts BY PATH (lens A: correctness and
+- [x] 0.1 Gate 1 — two fresh-context lenses over these artifacts BY PATH (lens A: correctness and
       testability of every WHEN/THEN against today's 0.45.0 engine, each RED scenario reproduced in a
       hermetic scratch repo; lens B: absent edits — every site asserting in prose that Bash is not
       matched, every call site of the guard's messages, the inverses the specs do not name); fix every
@@ -14,7 +14,7 @@
       openspec/changes/the-guard-covers-every-write-path/specs/state-write-guard/spec.md --artifact
       openspec/changes/the-guard-covers-every-write-path/specs/tracker-sync/spec.md --artifact
       openspec/changes/the-guard-covers-every-write-path/specs/managed-rules-block/spec.md`
-- [ ] 0.2 **Cross-spec review** (required task item 5) — release 0.46.0 holds this change's four spec
+- [x] 0.2 **Cross-spec review** (required task item 5) — release 0.46.0 holds this change's four spec
       files — `gate-integrity`, `state-write-guard`, `tracker-sync` and `managed-rules-block` — and the
       sibling `operations-ship-their-inverses`'s, which is more than two counted flat.
       Run the `cross-spec-review` skill after both changes pass Gate 1 and again after any later round
@@ -31,7 +31,7 @@ repos are created under the OS temp dir by the existing test helpers, never insi
 
 Pairs: 1.1 and 1.1b land with 1.2.
 
-- [ ] 1.1 RED: a table-driven test of the exported write-shape function over the closed list and the
+- [x] 1.1 RED: a table-driven test of the exported write-shape function over the closed list and the
       exclusions in design D2 — blocks `cat > src/x.js <<EOF`, `printf x >> f`, `sed -i '' s/a/b/ f.js`,
       `tee -a notes.txt`, `cp a b`, `git apply p.patch`, `awk '{print}' f > out.txt`, the both-streams
       and no-clobber redirections `cmd &> out.txt`, `cmd &>> out.txt`, `cmd >| out.txt` and
@@ -55,7 +55,7 @@ Pairs: 1.1 and 1.1b land with 1.2.
       label from the closed list, and that for a target path carrying an unusual character sequence
       it contains neither that sequence nor the target path (a "no substring of the input"
       assertion is unsatisfiable: a single character of the command is a substring). Fails today: the function does not exist
-- [ ] 1.1b RED + MUTATION (pairs with 1.2) — the engine-invocation exemption's ONLY falsifiable
+- [x] 1.1b RED + MUTATION (pairs with 1.2) — the engine-invocation exemption's ONLY falsifiable
       surface. Assert the EXPORTED predicate directly: true for `node "${CLAUDE_PLUGIN_ROOT}/…/
       conductor.mjs" <verb>` and `node "$ENGINE" <verb>`, false for a runtime given an inline
       script, a test flag, or no verb. Then run the mutation: with the predicate deleted the test
@@ -64,7 +64,7 @@ Pairs: 1.1 and 1.1b land with 1.2.
       word, always the runtime) — which is the structural fact and forward commitment the
       `gate-integrity` delta carries. Fails today: the predicate returns false for both spellings
       pm emits
-- [ ] 1.2 GREEN: add the scanner to `scripts/lib/gate-guard.mjs` as one exported function returning
+- [x] 1.2 GREEN: add the scanner to `scripts/lib/gate-guard.mjs` as one exported function returning
       the matched shape's fixed label or null — the single site design D2's closed list lives at, and
       the label is the only thing a caller may print. The engine-invocation PREDICATE is exported
       beside it (the `gate-integrity` delta requires it, and 1.1b is why: it is the exemption's only

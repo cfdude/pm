@@ -73,6 +73,133 @@ export function setGateGuard() {
   });
 }
 
+// ───────────── the closed write-shape list (the-guard-covers-every-write-path, design D2) ─────────────
+//
+// The guard is registered for `Bash` as well as for the editing tools, because an agent blocked on
+// `Edit` wrote the same file with `cat > f <<EOF`, `sed -i` or `tee` in one hop. What a command
+// STRING can be resolved to is small and bounded, and the rows below are the whole of it: ONE site,
+// CLOSED, each row carrying a FIXED label, so the block message names a decision about this command
+// while printing no text taken from it.
+//
+// IT CANNOT SEE, and must never claim to: a path built from a variable or `$(…)`; anything behind
+// `eval`; a script or a Makefile target invoked by name; an interpreter given inline source
+// (`python -c`, `node -e`); a program that writes files of its own accord; an in-place editor
+// reached through another command's arguments (`find … -exec sed -i …`, `xargs … sed -i`), which is
+// not a position this list reads. It has no quoting model either, so a `>` inside a quoted string
+// or a heredoc body reads as a redirection — an accepted false positive. The instruction layer
+// stays primary; this is a backstop, and its own message says so.
+
+/** The fixed labels, and the whole of what a caller may print. Text the engine wrote itself needs
+ *  neither escaping nor a length bound; a target path or a matched fragment would need both. */
+export const WRITE_SHAPE_LABELS = Object.freeze({
+  redirect: "a redirection into a file",
+  inPlace: "an in-place stream editor",
+  tee: "tee",
+  gitApply: "git apply",
+  record: "a write to the conductor record",
+  cp: "cp", mv: "mv", install: "install", rsync: "rsync", dd: "dd", truncate: "truncate", patch: "patch",
+});
+
+const DEVICE_PATH = /^\/dev\//;
+/** A `tee` argument beginning `&` is a descriptor word, never a file. */
+const NEVER_A_FILE = /^(\/dev\/|&)/;
+/** The conductor record: `.conductor`, `.conductor/state.json`, a `*` glob of that directory, or a
+ *  trailing `*` appended to either name, at any directory prefix. The discriminator is whether the
+ *  WRITTEN argument names the record among its expansions — a trailing `*` does, so it matches even
+ *  though it also reaches the lock. NOT a longer LITERAL filename, and not a glob that cannot expand
+ *  to the record: `.conductor/state.json.lock` is a different file and `.conductor/state.json.*`
+ *  reaches only such files, and the engine's own lock refusal prints the literal path. A trailing
+ *  `*` and only `*` — `?` and `[…]` are out of scope under the incomplete-by-construction rule. */
+const RECORD_PATH = /(^|\/)\.conductor(\*|\/(state\.json\*?|\*))?\/?$/;
+const ENGINE_PATH = /(^|\/)conductor\.mjs$/;
+const VARIABLE_REF = /^\$(\{[A-Za-z_][A-Za-z0-9_]*\}|[A-Za-z_][A-Za-z0-9_]*)$/;
+const IN_PLACE_EDITORS = ["sed", "gsed", "perl", "ruby"];
+/** Copiers and movers, read ONLY as a segment's leading command word. The label is LOOKED UP in
+ *  WRITE_SHAPE_LABELS rather than sliced from the command: its value is one of these seven
+ *  literals, but its lexeme is command text, and the message may carry none. */
+const COMMAND_WORD_SHAPES = ["cp", "mv", "install", "rsync", "dd", "truncate", "patch"];
+
+/** Strip ONE surrounding quote character at each end. There is no quoting model here (Non-Goals);
+ *  this is the common spelling (`rm '.conductor/state.json'`) and nothing more. */
+function unquoteOnce(word) {
+  return String(word).replace(/^['"]/, "").replace(/['"]$/, "");
+}
+
+/** Segments, split on newline, `;`, `&&`, `||` and `|` — EXCEPT a `|` immediately following `>`.
+ *  `>|` is the no-clobber-override redirection operator, and splitting there would hide it from the
+ *  redirection arm entirely (`cmd >| out.txt` passed on the prototype until this was fixed). */
+function segments(text) {
+  return text.split(/\n|;|&&|\|\||(?<!>)\|/);
+}
+
+/** A segment's leading command word and the words after it, skipping a `VAR=value` prefix and a
+ *  leading `sudo`/`env`/`command`. The command word is taken after its last `/`. */
+function segmentHead(seg) {
+  const words = seg.trim().split(/\s+/).filter(Boolean);
+  let i = 0;
+  while (i < words.length && /^[A-Za-z_][A-Za-z0-9_]*=/.test(words[i])) i++;
+  if (words[i] === "sudo" || words[i] === "command" || words[i] === "env") i++;
+  return { word: (words[i] || "").split("/").pop(), rest: words.slice(i + 1) };
+}
+
+/** An invocation of pm's own engine: a runtime whose first argument — one surrounding quote stripped
+ *  from each end — is a path ending `conductor.mjs` OR an unexpanded variable reference, followed by
+ *  a verb. Both spellings pm actually emits are covered: the quoted plugin-root path and
+ *  `node "$ENGINE" <verb>`, which the guard cannot expand.
+ *
+ *  EXPORTED because this is the exemption's ONLY falsifiable surface. Under the list as it stands no
+ *  command-word row is REACHABLE from a `node`-led segment — the arm reads the segment's LEADING
+ *  word, always the runtime and never the verb — so removing the call site below changes no
+ *  command's outcome and a case-based check of exit codes cannot fail. Any future row keyed on
+ *  something other than the leading command word must re-establish that reachability before it
+ *  ships. The commands this gate names as the way through it are engine invocations, and a gate that
+ *  blocked its own completing command would have no exit. */
+export function isEngineInvocation(word, rest) {
+  if (word !== "node") return false;
+  const first = unquoteOnce(rest[0] || "");
+  if (!(ENGINE_PATH.test(first) || VARIABLE_REF.test(first))) return false;
+  return rest.length > 1 && !rest[1].startsWith("-");   // a verb follows
+}
+
+/** The matched write shape's FIXED LABEL, or null. The single site design D2's closed list lives at,
+ *  and the label is the only thing a caller may print. */
+export function writeShape(command) {
+  const text = String(command || "");
+  for (const seg of segments(text)) {
+    // 1. REDIRECTION INTO A FILE, per segment — `>`/`>>`, optionally preceded by one or more fd
+    //    digits, optionally `&`-prefixed or `|`-suffixed (the no-clobber override). Excluded: a
+    //    `/dev/` target; an fd DUPLICATION, which is `&` followed by digits or `-` (`>&2`, `2>&1`,
+    //    `>&-`) and deliberately not `&` followed by a path, since `node --test >& out.txt` writes a
+    //    file; and a `>` whose immediately preceding character is `-`, the arrow that appears in the
+    //    `rg` patterns and `git log` format strings this repository mandates.
+    //    This arm runs for EVERY segment, the engine-exempt ones included — an exemption that
+    //    swallowed redirections would make "prefix it with an engine invocation" a one-line bypass.
+    const redirection = /(^|[^<>|-])[0-9]*>>?\|?(&?)\s*([^\s;|)]+)/g;
+    let m;
+    while ((m = redirection.exec(seg)) !== null) {
+      const [, , ampersand, target] = m;
+      if (ampersand && /^([0-9]+|-)$/.test(target)) continue;   // a descriptor, not a file
+      if (DEVICE_PATH.test(target)) continue;
+      return WRITE_SHAPE_LABELS.redirect;
+    }
+    // 2. SEGMENT-LEADING COMMAND WORDS.
+    const { word, rest } = segmentHead(seg);
+    if (!word) continue;
+    if (isEngineInvocation(word, rest)) continue;   // the exemption, command-word arm ONLY
+    if (IN_PLACE_EDITORS.includes(word) &&
+        rest.some(a => /^-[a-zA-Z]*i/.test(a) || /^--in-place(=|$)/.test(a))) return WRITE_SHAPE_LABELS.inPlace;
+    if (word === "tee" && !rest.every(a => NEVER_A_FILE.test(a) || a.startsWith("-"))) return WRITE_SHAPE_LABELS.tee;
+    if (COMMAND_WORD_SHAPES.includes(word)) return WRITE_SHAPE_LABELS[word];
+    if (word === "git" && rest[0] === "apply") return WRITE_SHAPE_LABELS.gitApply;
+    // 3. DESTROYING THE CONDUCTOR RECORD. Not a lesser evasion than writing over a source file: the
+    //    guard is dormant while no record exists, so a deletion turns the whole block OFF. `rm` is on
+    //    the list for the record and for nothing else — `mv` and `truncate` are already unconditional
+    //    command words above, and the guard gets no general path policy out of this.
+    if (word === "rm" && rest.some(a => RECORD_PATH.test(unquoteOnce(a)))) return WRITE_SHAPE_LABELS.record;
+  }
+  return null;
+}
+
 /** PreToolUse hook body: block Edit/Write/NotebookEdit while the active epic still owes a
  *  reconcile (`reconcileNeeded` — see reconcileArchived()'s comment for why this can be
  *  legitimately true with an empty detour stack). Dormant until /pm:init. As of the
