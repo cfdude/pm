@@ -673,7 +673,7 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     "   the judgment only ever living in conversation. It is accepted only for a detour pushed",
     "   `--reconcile` and already popped, and `reconcileNeeded` clears only when no such detour is",
     "   left unanswered; `pop-detour` names every detour owed.",
-    "   AND A BASH WRITE IS A WRITE: a heredoc redirection, an in-place `sed`, a `tee`, a",
+    "   A BASH WRITE IS A WRITE TOO: a heredoc redirection, an in-place `sed`, a `tee`, a",
     "   copier or anything else that puts bytes in a file is forbidden while the reconcile is owed,",
     "   exactly as `Edit` is. The PreToolUse guard mechanically blocks a closed list of those",
     "   shapes, and that list is incomplete BY CONSTRUCTION — a path built from a variable, an",

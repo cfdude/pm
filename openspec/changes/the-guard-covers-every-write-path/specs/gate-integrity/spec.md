@@ -34,7 +34,29 @@ any spelling that NAMES either among the files it acts on, the trailing-glob for
 included — SHALL be on the list. Deleting the record is not a lesser evasion than writing over a source file: the
 guard is dormant while no record exists, so a deletion turns the whole block off rather than
 slipping one write past it, and renaming and truncating the record are already recognized by
-their own commands. The match SHALL be on the record's own path — `.conductor/state.json`, the
+their own commands.
+
+**The removal SHALL be recognized under every command that spells it**, not under `rm` alone: the
+removers `unlink` and `shred` name the same file, and `git rm` — the verb a repository under version
+control actually uses — removes it too. `git mv` renames it. A row keyed on the word `rm` leaves
+`git rm -f .conductor/state.json` allowed, and once the record is gone the guard is dormant, so the
+NEXT call takes no path through this requirement at all: the bypass is the whole gate, not one write.
+Correspondingly, a git verb SHALL be read as the invocation's SUBCOMMAND, after git's global options
+are skipped — `-C`, `-c`, `--git-dir`, `--work-tree`, `--namespace`, `--exec-path` in their
+separate-value spelling, one word otherwise — because `git -C <path> <verb>` is how a session that
+must not change directory spells every git call, and a row reading the first argument is evaded by
+it. Only the SUBCOMMAND'S OWN arguments SHALL be tested against the record's path: a path that is a
+global option's value is not a file the subcommand acts on, and `git -C .conductor status` is a read.
+A record named RELATIVE to a directory the command itself moves into — `git -C <dir> rm state.json`,
+or the older `cd .conductor && rm state.json` — is NOT decided here: record-ness would depend on a
+working directory the command string changes, which is the incomplete-by-construction requirement
+below rather than a member of the list this one misses. It is pre-existing and this requirement does
+not narrow or widen it.
+Git verbs other than `apply`, `rm` and `mv` remain absent — `checkout`, `restore`, `stash` and
+`reset` each leave the record readable where they touch it at all, and `git restore` is a remedy the
+unreadable-state branch must never block.
+
+The match SHALL be on the record's own path — `.conductor/state.json`, the
 `.conductor` directory itself, a glob of that directory's contents, or a trailing `*` on either
 name (the next paragraph, which completes this enumeration rather than qualifying it) — written
 at any directory prefix, so that an absolute path to the same record is recognized as the same
@@ -207,6 +229,24 @@ in the guard's documentation rather than left to be discovered.
 - **WHEN** the active epic owes a reconcile and the guard is invoked with a payload naming tool
   `Bash` and a command that removes `.conductor/state.json*`, or `.conductor*`
 - **THEN** it exits 2
+
+#### Scenario: Destroying the record through git is blocked
+
+- **WHEN** the active epic owes a reconcile and the guard is invoked with a payload naming tool
+  `Bash` and a command that removes `.conductor/state.json` through `git rm`, including through
+  the `git -C <path> rm` spelling, or removes it as `unlink` or `shred`
+- **THEN** it exits 2
+
+#### Scenario: A git global option's value is not a file the subcommand acts on
+
+- **WHEN** the active epic owes a reconcile and the guard is invoked with a payload naming tool
+  `Bash` and `git -C .conductor status`
+- **THEN** it exits 0 and prints nothing
+
+#### Scenario: A git subcommand is read after git's global options
+
+- **WHEN** the guard resolves the write shape of `git -C <path> apply p.patch`
+- **THEN** it is the same shape as `git apply p.patch`
 
 #### Scenario: Removing the state lock stays runnable
 

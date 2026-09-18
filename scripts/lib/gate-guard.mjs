@@ -116,6 +116,15 @@ const RECORD_PATH = /(^|\/)\.conductor(\*|\/(state\.json\*?|\*))?\/?$/;
 const ENGINE_PATH = /(^|\/)conductor\.mjs$/;
 const VARIABLE_REF = /^\$(\{[A-Za-z_][A-Za-z0-9_]*\}|[A-Za-z_][A-Za-z0-9_]*)$/;
 const IN_PLACE_EDITORS = ["sed", "gsed", "perl", "ruby"];
+/** Removers read ONLY against the record (below). `rm` is the common spelling; `unlink` and `shred`
+ *  remove the same file under different names and were a one-word evasion of the same row. None of
+ *  them is an unconditional command word — the guard gets no general path policy out of this. */
+const RECORD_REMOVERS = ["rm", "unlink", "shred"];
+/** Git's global options that take a SEPARATE value word. Every OTHER flag-shaped word consumes
+ *  itself alone: `git -p rm .conductor/state.json` must not swallow `rm` as `-p`'s value, which is
+ *  what a blanket "skip a flag and the word after it" rule would do. Glued spellings (`-C/path`,
+ *  `--git-dir=x`) are one word and fall out of the same loop. */
+const GIT_GLOBAL_VALUE_OPTS = ["-C", "-c", "--git-dir", "--work-tree", "--namespace", "--exec-path"];
 /** Copiers and movers, read ONLY as a segment's leading command word. The label is LOOKED UP in
  *  WRITE_SHAPE_LABELS rather than sliced from the command: its value is one of these seven
  *  literals, but its lexeme is command text, and the message may carry none. */
@@ -142,6 +151,23 @@ function segmentHead(seg) {
   while (i < words.length && /^[A-Za-z_][A-Za-z0-9_]*=/.test(words[i])) i++;
   if (words[i] === "sudo" || words[i] === "command" || words[i] === "env") i++;
   return { word: (words[i] || "").split("/").pop(), rest: words.slice(i + 1) };
+}
+
+/** A git invocation's SUBCOMMAND and the subcommand's OWN arguments, with git's global options
+ *  skipped first. A row that read `rest[0]` was evaded by `git -C <path> apply p.patch` — this
+ *  repository's own mandated spelling, since a session's bash cwd persists and `git -C` is how
+ *  CLAUDE.md says to avoid a stray `cd`.
+ *
+ *  The two halves are returned SEPARATELY and the record rows below read `args` only. Reading the
+ *  whole of `rest` would block `git -C .conductor status`, a read of the record's own directory:
+ *  `.conductor` matches RECORD_PATH, and a path that is git's global option value is not a file the
+ *  subcommand acts on. */
+function gitSubcommand(rest) {
+  let i = 0;
+  while (i < rest.length && rest[i].startsWith("-")) {
+    i += GIT_GLOBAL_VALUE_OPTS.includes(rest[i]) ? 2 : 1;
+  }
+  return { sub: rest[i] || "", args: rest.slice(i + 1) };
 }
 
 /** An invocation of pm's own engine: a runtime whose first argument — one surrounding quote stripped
@@ -192,12 +218,28 @@ export function writeShape(command) {
         rest.some(a => /^-[a-zA-Z]*i/.test(a) || /^--in-place(=|$)/.test(a))) return WRITE_SHAPE_LABELS.inPlace;
     if (word === "tee" && !rest.every(a => NEVER_A_FILE.test(a) || a.startsWith("-"))) return WRITE_SHAPE_LABELS.tee;
     if (COMMAND_WORD_SHAPES.includes(word)) return WRITE_SHAPE_LABELS[word];
-    if (word === "git" && rest[0] === "apply") return WRITE_SHAPE_LABELS.gitApply;
     // 3. DESTROYING THE CONDUCTOR RECORD. Not a lesser evasion than writing over a source file: the
-    //    guard is dormant while no record exists, so a deletion turns the whole block OFF. `rm` is on
-    //    the list for the record and for nothing else — `mv` and `truncate` are already unconditional
-    //    command words above, and the guard gets no general path policy out of this.
-    if (word === "rm" && rest.some(a => RECORD_PATH.test(unquoteOnce(a)))) return WRITE_SHAPE_LABELS.record;
+    //    guard is dormant while no record exists, so a deletion turns the whole block OFF —
+    //    demonstrated end to end at Gate 2, where `git rm -f .conductor/state.json` was allowed and
+    //    the heredoc blocked a moment earlier then passed. The removers are on the list for the
+    //    record and for nothing else — `mv` and `truncate` are already unconditional command words
+    //    above, and the guard gets no general path policy out of this.
+    if (RECORD_REMOVERS.includes(word) && rest.some(a => RECORD_PATH.test(unquoteOnce(a)))) {
+      return WRITE_SHAPE_LABELS.record;
+    }
+    // 4. GIT, READ THROUGH ITS SUBCOMMAND. `apply` writes whatever the patch says whoever the
+    //    target; `rm` and `mv` are on the list FOR THE RECORD ONLY, the same bound their bare
+    //    counterparts carry (`rm`) — a general `git mv` row would be a path policy this guard does
+    //    not have. `checkout`, `restore`, `stash` and `reset` stay off the list because each leaves
+    //    a readable record behind and `git restore` is a remedy the unreadable-state branch must
+    //    never block — a reason about what the verb does to the RECORD, not about it being read-only.
+    if (word === "git") {
+      const { sub, args } = gitSubcommand(rest);
+      if (sub === "apply") return WRITE_SHAPE_LABELS.gitApply;
+      if ((sub === "rm" || sub === "mv") && args.some(a => RECORD_PATH.test(unquoteOnce(a)))) {
+        return WRITE_SHAPE_LABELS.record;
+      }
+    }
   }
   return null;
 }

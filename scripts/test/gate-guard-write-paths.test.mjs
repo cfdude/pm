@@ -50,6 +50,36 @@ const BLOCKS = [
   "mv a b",
   "truncate -s 0 f",
   "git apply p.patch",
+  // 4.8 (G2-M1): every DECLARED command word gets a behavioural case. Removing `"rsync"` from the
+  // list used to be caught only by 1.3's source scan, which asserts the row is declared and not
+  // that anything honours it — the half-checked guard of docs/lessons/a-guard-can-check-the-wrong-half.
+  "install -m 644 a b",
+  "rsync -a src/ dst/",
+  "dd if=a of=b",
+  "patch -p1 -i p.diff",
+  // 4.7 (G2-I2): the scan is PER SEGMENT, and the segment carrying the write is not the first. This
+  // is pm's own emitted marker remedy, and slicing `segments()` to the first segment left the whole
+  // suite green until this row existed.
+  "rg foo && sed -i.bak '7d' CLAUDE.md",
+  "git status --short; cat > src/x.js <<EOF",
+  "cat notes\nsed -i '' s/a/b/ src/x.js",
+  // 4.6 (G2-I1): destroying the record through git. `rm` alone left `git rm -f .conductor/state.json`
+  // allowed, and a removed record leaves the guard DORMANT — the whole gate off, not one write past
+  // it. `-C` is this repo's own mandated spelling, so the subcommand is read after git's globals.
+  "git rm -f .conductor/state.json",
+  "git rm .conductor/state.json",
+  "git -C /Users/r/Repos/pm rm -f .conductor/state.json",
+  "git -c commit.gpgsign=false rm .conductor/state.json",
+  "git --git-dir=/tmp/g rm .conductor/state.json",
+  "git -p rm .conductor/state.json",              // `-p` takes no value: it must not swallow `rm`
+  "git rm -r .conductor",
+  "git mv .conductor/state.json /tmp/x",
+  // …and the same reader closes `git -C <path> apply`, which evaded the shipped `git apply` row
+  "git -C /Users/r/Repos/pm apply p.patch",
+  "git -c user.name=x apply p.patch",
+  // the record's own removers under their other names
+  "unlink .conductor/state.json",
+  "shred -u .conductor/state.json",
   // destroying the conductor record turns the guard OFF, which is larger than the write it stands
   // in for: gateGuardCheck() returns at isInitialized() once the file is gone
   "rm .conductor/state.json",
@@ -93,6 +123,16 @@ const ALLOWS = [
   "rm .conductor/state.json.*",
   "rm -rf .conductor/state.json.*",
   "rm -rf .conductorish",
+  // 4.6: a path that is git's GLOBAL OPTION VALUE is not a file the subcommand acts on. Reading the
+  // record rows over the whole of `rest` would block a read of the record's own directory.
+  "git -C .conductor status",
+  "git -C .conductor log --oneline",
+  "git -C /Users/r/Repos/pm status --short",
+  "git rm src/x.js",                              // `git rm` is on the list for the RECORD only
+  "git mv src/a src/b",
+  "git -p rm .conductor/state.json.lock",         // the lock remedy, through a valueless global flag
+  "unlink src/x.js",
+  "shred -u src/x.js",
   // touch and mkdir create without content — not the skip this gate exists to stop
   "touch src/x.js",
   "mkdir -p src",
@@ -205,6 +245,8 @@ test("1.3 REGRESSION GUARD: the closed shape list has exactly one definition sit
     ...Object.values(WRITE_SHAPE_LABELS).filter(l => l.includes(" ")),   // the multi-word labels
     '["sed", "gsed", "perl", "ruby"]',
     '["cp", "mv", "install", "rsync", "dd", "truncate", "patch"]',
+    '["rm", "unlink", "shred"]',
+    '["-C", "-c", "--git-dir", "--work-tree", "--namespace", "--exec-path"]',
     "\\.conductor(\\*|\\/(state\\.json\\*?|\\*))?",
   ];
   for (const row of rows) {
@@ -253,6 +295,33 @@ test("2.1 a heredoc redirection is blocked while a reconcile is owed, and the bl
   assert.match(r.stderr, /still owes a reconcile/);
   assert.ok(r.stderr.includes(WRITE_SHAPE_LABELS.redirect),
     `the block must name the matched shape's fixed label; stderr was:\n${r.stderr}`);
+});
+
+test("4.7 the hook reads the WHOLE command, not its first line", () => {
+  // `lessons.mjs` reads line one only, by an explicit precision decision; this reader must not.
+  // Reducing the read to line one left the entire suite green — `writeShape` splits on `\n` itself,
+  // so no UNIT row can reach that mutant. Only a payload whose write is on a later line can.
+  const cwd = owingRepo();
+  const r = guard(cwd, bash("rg foo src/\nsed -i '' s/a/b/ src/x.js"));
+  assert.equal(r.status, 2, `a write on line 2 must block; got ${r.status}: ${r.stderr}`);
+  assert.ok(r.stderr.includes(WRITE_SHAPE_LABELS.inPlace), r.stderr);
+});
+
+test("4.6 destroying the record through git is blocked, and a git read of it is not", () => {
+  // The demonstrated end-to-end bypass: `rm` blocked, `git rm` allowed, and with the record gone the
+  // guard returns at isInitialized() so every previously-blocked shape passes.
+  const cwd = owingRepo();
+  for (const command of [
+    "git rm -f .conductor/state.json",
+    "git -C /Users/r/Repos/pm rm -f .conductor/state.json",
+    "unlink .conductor/state.json",
+  ]) {
+    const r = guard(cwd, bash(command));
+    assert.equal(r.status, 2, `expected a block for ${command}: ${r.stderr}`);
+    assert.ok(r.stderr.includes(WRITE_SHAPE_LABELS.record), r.stderr);
+  }
+  const ok = guard(cwd, bash("git -C .conductor status --short"));
+  assert.equal(ok.status, 0, `a read of the record's directory must stay runnable: ${ok.stderr}`);
 });
 
 test("2.1 an in-place stream editor is blocked", () => {

@@ -179,14 +179,39 @@ are left to the incomplete-by-construction requirement rather than turned into a
 `'.conductor/state.json'*` — a `*` outside the surrounding quote — is the no-quoting-model
 non-goal, named in the spec so a later gate does not rediscover it as new.
 
-Only `rm` needs the record row: `mv` and `truncate` are already unconditional command words above,
-so the record is covered against them whatever their target. `rm` is on the list for the record
-and for nothing else — the guard gets no general path policy out of this (Non-Goals).
+The record row covers three removers and two git verbs. `mv` and `truncate` are already
+unconditional command words above, so the record is covered against them whatever their target;
+`rm`, `unlink` and `shred` are on the list FOR THE RECORD and for nothing else, and so are
+`git rm` and `git mv` — the guard gets no general path policy out of this (Non-Goals).
+
+**Gate 2 correction.** The row shipped keyed on `word === "rm"` alone, and the justification below
+named only read-only git verbs, so it never reached the question of a git verb that DESTROYS the
+record. `git rm -f .conductor/state.json` was allowed through the real hook, and the call after it —
+a heredoc blocked a moment earlier — was allowed too, because a removed record returns the guard at
+`isInitialized()`. That is the entire gate off, not one write past it, and it is decidable from the
+command string, so it fell in no declared non-goal. `unlink` and `shred` were the same row one word
+over.
+
+A git invocation is therefore read through its SUBCOMMAND, with git's global options skipped first.
+The skip cannot be "a flag and the word after it": only `-C`, `-c`, `--git-dir`, `--work-tree`,
+`--namespace` and `--exec-path` take a separate value, and `git -p rm <record>` must not read `rm` as
+`-p`'s value. Glued spellings (`-C/path`, `--git-dir=x`) are one word and fall out of the same loop.
+The subcommand's OWN arguments are what the record pattern reads — never git's globals, or
+`git -C .conductor status`, a read, would block. The cost of that choice, named rather than left to
+be found: `git -C /repo/.conductor rm state.json` passes, because `state.json` alone is not the
+record's path. That is not a sibling site left unguarded — it is the SAME pre-existing class as
+`cd .conductor && rm state.json`, which the shipped guard has always allowed, since record-ness
+there depends on a working directory the command string changes. Deciding it would require a cwd
+model, which is the incomplete-by-construction non-goal, and this fix neither widens nor narrows it. The same reader repairs `git -C <path> apply
+p.patch`, which evaded the shipped `git apply` row while being this repository's own mandated
+spelling (CLAUDE.md: never `cd`, use `git -C`).
 
 `touch` and `mkdir` are deliberately absent: they create a file or directory without content,
 which is not the skip this gate exists to stop, and including them would add noise for nothing.
-Git verbs other than `apply` are absent for the same reason — `git checkout -b` is routine and
-`git restore` is a remedy the unreadable-state branch must never block.
+Git verbs other than `apply`, `rm` and `mv` are absent for a reason about the RECORD rather than
+about being read-only: `checkout`, `restore`, `stash` and `reset` leave the record readable where
+they touch it at all, so none of them turns the guard dormant, and `git restore` is additionally a
+remedy the unreadable-state branch must never block.
 
 The list is CLOSED and lives in one exported function, so the spec's "closed, documented list"
 has a single site to test and a single site to grow.
