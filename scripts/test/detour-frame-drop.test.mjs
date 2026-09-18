@@ -286,6 +286,10 @@ test("REGRESSION GUARD: pop-detour is unchanged for every case that worked befor
 test("REGRESSION GUARD: pop-detour still refuses an epic that ended while parked", () => {
   // The message that used to be the only exit — and that named no verb — now names one. The
   // REFUSAL itself is unchanged behaviour.
+  //
+  // The prose above used to be the WHOLE assertion: the match was `/ended while parked/`, which the
+  // 0.45.0 message satisfies word for word, so the suite could not see whether a verb was named at
+  // all. The verb name is asserted below (Gate 2 I-I1).
   const cwd = repo();
   pushed(cwd, "p", "d");
   const s = readState(cwd);
@@ -293,5 +297,43 @@ test("REGRESSION GUARD: pop-detour still refuses an epic that ended while parked
   fs.writeFileSync(stateFile(cwd), JSON.stringify(s, null, 2) + "\n");
   const err = expectFail(() => run(["pop-detour", "p"], { cwd }));
   assert.ok(err);
-  assert.match(String(err.stderr || err.message), /ended while parked/);
+  const msg = String(err.stderr || err.message);
+  assert.match(msg, /ended while parked/);
+  assert.match(msg, /drop-detour p --reason "<why>"/,
+    "and the remedy names the verb that ends the frame, with the epic it must be given");
+});
+
+test("Scenario: the remove-epic refusal on a detour-stack frame names the verb that ends the pause", () => {
+  // The jam's SECOND refusal. `remove-epic` is where a reader arrives after `pop-detour` has told
+  // them the epic ended while parked; a remedy naming only "resume or pop" sends them back to the
+  // refusal they just came from. Both exits are named, and the drop is proved to be one: following
+  // the printed line unblocks the removal.
+  const cwd = repo();
+  pushed(cwd, "p", "d");
+  run(["update-epic", "p", "--status", "paused"], { cwd });
+  const err = expectFail(() => run(["remove-epic", "p"], { cwd }));
+  assert.ok(err, "a live frame still blocks the removal");
+  const msg = String(err.stderr || err.message);
+  assert.match(msg, /detour-stack reference/, "through the frame arm, unchanged");
+  assert.match(msg, /Resume or pop the detour first \(\/pm:resume\)/, "the coming-back exit, unchanged");
+  assert.match(msg, /drop-detour p --reason "<why>"/,
+    "and the not-coming-back exit, naming the PAUSED epic the verb takes as its positional");
+  // The remedy is printed because it works: run it verbatim and the removal is no longer blocked.
+  run(["drop-detour", "p", "--reason", "not coming back"], { cwd });
+  run(["remove-epic", "p"], { cwd });
+  assert.equal(epicOf(cwd, "p"), undefined, "the epic is removable once the pause is ended");
+});
+
+test("Scenario: the remove-epic remedy names the paused epic even when the DETOUR is the epic being removed", () => {
+  // A frame holds two ids and `drop-detour` takes only one of them. Deriving the remedy from the
+  // reference that blocked the removal would print `drop-detour d`, which refuses ("no live detour-stack
+  // frame pauses 'd'") — a remedy that does nothing, the defect class the adjacent comment warns about.
+  const cwd = repo();
+  pushed(cwd, "p", "d");
+  const err = expectFail(() => run(["remove-epic", "d"], { cwd }));
+  assert.ok(err, "the detour is held by the frame too");
+  const msg = String(err.stderr || err.message);
+  assert.match(msg, /drop-detour p --reason "<why>"/,
+    "the remedy names 'p', the epic the frame pauses — not 'd', which drop-detour would refuse");
+  assert.doesNotMatch(msg, /drop-detour d /, "and never the detour id");
 });

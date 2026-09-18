@@ -224,8 +224,13 @@ export function popDetour() {
   const epic = state.epics.find(e => e.id === pausedEpic);
   if (!epic) die(`paused epic '${escapeControls(pausedEpic)}' is not in the record — it cannot be resumed`);
   if (epic.status === "archived") {
+    // THE REMEDY NAMES THE VERB. This message is one of the two the proposal quotes as proof that
+    // "no verb does that", and shipping the verb without rewording them would leave the engine
+    // asserting the defect this change removed. `drop-detour` takes the PAUSED epic, which is the
+    // epic this refusal is already about.
     die(`paused epic '${escapeControls(pausedEpic)}' is archived — it ended while parked, so there is nothing to ` +
-      "resume. End the frame by removing the epic's pause deliberately rather than by popping it");
+      "resume. End the frame deliberately rather than by popping it: " +
+      orNoRemedy(() => `\`drop-detour ${printedId(pausedEpic)} --reason "<why>"\``));
   }
 
   // ONE state object, ONE saveState, and the ORDER below is load-bearing — see this module's

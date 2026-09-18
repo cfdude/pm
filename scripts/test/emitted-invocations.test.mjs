@@ -2882,6 +2882,28 @@ const PRINTER_FIXTURES = {
     return [[repo.run(["update-epic", "fp", "--status", "archived", "--outcome", "killed",
       "--reason", REASON, "--no-deferrals"]), /drop-detour fp --reason/]];
   },
+  "the jam's two refusals: pop-detour on an epic that ended while parked, and remove-epic on a frame"() {
+    // Gate 2 I-I1. The frame-drop remedy is printed from THREE sites — the archive gate's (above),
+    // pop-detour's and remove-epic's — and each is its own template, so each needs its own reach.
+    const out = [];
+    {
+      // The measured jam: the epic is archived while a frame still pauses it. Written rather than
+      // driven, because the archive gate (the fixture above) is what stops the verb reaching it.
+      const repo = remedyRepo();
+      repo.write({
+        epics: [
+          { id: "jp", title: "jp", priority: "P2", status: "archived", role: "epic", lane: "claude-code", links: [] },
+          { id: "jd", title: "jd", priority: "P2", status: "queued", role: "detour", lane: "claude-code", links: [] },
+        ],
+        detourStack: [{ pausedEpic: "jp", spawnedDetour: "jd", reason: REASON, pausedAt: "2026-01-01T00:00:00.000Z" }],
+      });
+      out.push([repo.run(["pop-detour", "jp"]), /drop-detour jp --reason "<why>"/]);
+      // And the same frame is what blocks remove-epic — on the DETOUR id here, to reach the arm
+      // that derives the remedy from the frame's pausedEpic rather than from the blocking reference.
+      out.push([repo.run(["remove-epic", "jd"]), /drop-detour jp --reason "<why>"/]);
+    }
+    return out;
+  },
   "activity log off"() {
     const repo = remedyRepo();
     return [[repo.run(["activity"]), /set-activity-log on/]];

@@ -506,6 +506,12 @@ x("remove-epic.mjs", "removeEpic", {
   "[...new Set(owed.map(r => orNoRemedy(() => `\\`record-reconcile ${printedId(r.holder)} --detour ${printedId(r.epic)} --verdict valid|invalidated\\``)))].join(\", \")": 1,
 }, "escaped", "each command through orNoRemedy/printedId");
 x("remove-epic.mjs", "removeEpic", {
+  "dropTargets.map(p => orNoRemedy(() => `\\`drop-detour ${printedId(p)} --reason \"<why>\"\\``)).join(\", \")": 1,
+}, "escaped", "the frame arm's drop-detour remedy (Gate 2 I-I1): each command through orNoRemedy/printedId, over paused-epic ids already de-duplicated through a Set");
+x("remove-epic.mjs", "removeEpic", {
+  "dropLine": 1,
+}, "passthrough", "a conditional `+` chain of literals and the escaped drop-detour command list, which is swept where it sits");
+x("remove-epic.mjs", "removeEpic", {
   "flag": 1,
   "how": 1,
 }, "engine", "a literal flag name and engine wording");
