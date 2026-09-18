@@ -83,11 +83,28 @@ export function removeEpic() {
     const frames = blocking.filter(r => r.kind === "frame");
     const owed = blocking.filter(r => r.kind === "owed-reconcile");
     const cite = (list) => escapeControls(list.map(r => `${r.where} → \`${r.epic}\``).join("; "));
+    // BOTH exits are named, and the second one is derived from the FRAME rather than from the
+    // reference that blocked: a frame holds two ids (`pausedEpic` and `spawnedDetour`) and
+    // `drop-detour` takes only the first. Printing the blocking reference's own id would emit
+    // `drop-detour <detour>`, which the verb refuses as naming no live frame — a remedy that does
+    // nothing, which is what the wording ruling above (Decision 5) exists to prevent.
+    const dropTargets = [...new Set(
+      (Array.isArray(state.detourStack) ? state.detourStack : [])
+        .filter(fr => fr && typeof fr === "object" &&
+          (toRemove.has(fr.pausedEpic) || toRemove.has(fr.spawnedDetour)))
+        .map(fr => fr.pausedEpic)
+        // drop-detour needs the paused epic as a positional; a frame that names none has no remedy
+        // to print, and `dangling-epic-reference` is the check that reports that shape.
+        .filter(p => typeof p === "string" && p))];
+    const dropLine = dropTargets.length
+      ? " Or, where it is not coming back, end the pause: " +
+        dropTargets.map(p => orNoRemedy(() => `\`drop-detour ${printedId(p)} --reason "<why>"\``)).join(", ") + "."
+      : "";
     process.stderr.write(
       `conductor: cannot remove ${[...toRemove].map(i => `'${escapeControls(i)}'`).join(", ")} — still held by ` +
       `${blocking.length} reference(s) that cannot be stripped.\n` +
       (frames.length
-        ? `  ${frames.length} detour-stack reference(s): ${cite(frames)}. Resume or pop the detour first (/pm:resume), then remove.\n`
+        ? `  ${frames.length} detour-stack reference(s): ${cite(frames)}. Resume or pop the detour first (/pm:resume), then remove.${dropLine}\n`
         : "") +
       (owed.length
         ? `  ${owed.length} reconcile obligation link(s): ${cite(owed)}. Removing it would leave the owed ` +

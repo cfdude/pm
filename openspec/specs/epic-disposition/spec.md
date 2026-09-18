@@ -199,6 +199,24 @@ identified and cannot identify. An implementer reading this MUST NOT build a pro
 populate that message; a refusal that named specific deferrals would require exactly the scanner
 this requirement rules out, and shipping it would make the guard's message a guess.
 
+**AN ASSERTED DEFERRAL SHALL NAME A REAL EPIC.** The engine cannot identify the deferrals and does
+not try — but a deferral the agent HAS identified makes a checkable claim, that a named epic now
+holds the work, and that claim SHALL be checked before it is stored. The interactive archive verb
+SHALL refuse, writing nothing and exiting non-zero, a deferral whose epic half is **empty**, names
+an epic **the record does not hold**, or names **the epic being archived**. The refusal SHALL name
+the offending value and which of the three it is.
+
+Each of the three is the assertion failing in the way the assertion exists to prevent. An empty half
+records an assertion asserting nothing, which is the silence "there are none" is the sayable form
+of — and it is not equivalent to that assertion, because it claims a deferral exists and then
+declines to say where it went. An unknown epic records work handed to nothing. The epic being
+archived records work handed to the record that just ended. This is the validation every sibling
+that stores an epic id already performs; that it was written for the declined half of the same
+assertion and never reached this half is the absent-edit defect class, not an exemption.
+
+The check is a **write-time refusal and not a scan**: it reads the id the agent supplied, against
+the epic list already loaded, and asks nothing about prose.
+
 #### Scenario: A design-doc deferral becomes a backlog epic with provenance
 - **WHEN** a change's design doc defers an identical zero-fall-through fix in a second code path,
   and the agent registers it before archiving
@@ -221,16 +239,54 @@ this requirement rules out, and shipping it would make the guard's message a gue
 - **THEN** the decline is stored as a disposition with its reason and is readable later, rather than
   existing only in the session that made the call
 
+#### Scenario: A deferral naming no epic is refused
+- **WHEN** the agent archives an epic asserting a deferral whose epic half is empty
+- **THEN** the command exits non-zero naming the empty half, the epic is not archived, and the state
+  of record is byte-identical to before the call
+
+#### Scenario: A deferral naming an epic the record does not hold is refused
+- **WHEN** the agent archives an epic asserting a deferral to an id no epic in the record carries
+- **THEN** the command exits non-zero naming that id as unknown, the epic is not archived, and the
+  state of record is byte-identical to before the call — the dangling reference is refused at the
+  write rather than reported afterwards by the read-only integrity check
+
+#### Scenario: A deferral naming the archiving epic itself is refused
+- **WHEN** the agent archives an epic asserting a deferral whose epic half is that same epic's id
+- **THEN** the command exits non-zero saying the epic cannot defer work to itself, and the state of
+  record is byte-identical to before the call
+
+#### Scenario: A deferral section may be empty, and a valid deferral still archives
+- **WHEN** the agent archives an epic asserting a deferral naming a different, registered epic and
+  supplying an **empty artifact-section half**
+- **THEN** the archive proceeds and the assertion reads back holding that epic — this requirement
+  constrains the half that names where the work went, and leaves the artifact-section half exactly as
+  it is today, so the both-halves-non-empty rule the declined flag carries is NOT what is reused here:
+  only the epic half is checked
+
 ### Requirement: Unfinished work at archive records where it went
 Archiving an epic that **has outstanding work** SHALL require a handoff disposition: a `carried-to`
 reference naming the epic that now owns the work, with which tasks, as the reason.
+
+**THE NAMED RECEIVER SHALL BE A REAL, OTHER EPIC.** A handoff is the one thing standing between
+outstanding work and its disappearance, so the reference SHALL be refused, writing nothing and
+exiting non-zero, when it is **empty**, names an epic **the record does not hold**, or names **the
+epic being archived**. The refusal SHALL name the offending value and which of the three it is.
+
+The self-reference is the sharpest of the three and is the reason this rule is stated here rather
+than left to the read-only integrity check. A handoff to the archiving epic satisfies the guard
+while conveying nothing: the work is recorded as owned by a record that has just ended, the gate
+that exists to stop a remainder vanishing reports success, and a reader afterwards cannot
+distinguish it from a genuine handoff. Every id-storing sibling in the record validates its target;
+this one did not.
 
 **The demand binds `outcome: delivered` only** — the same binding the archive gate takes in
 `gate-integrity`, for the same reason. `killed`, `superseded` and `abandoned` already carry a
 required reason that answers where the work went: nowhere, and why. A change killed at Gate 1 with
 no code written has every task outstanding by construction, so a handoff demand that bound every
 outcome would refuse the exact archive this release exists to make recordable. `carried-to` is how
-a *delivered* epic accounts for a remainder it did not finish.
+a *delivered* epic accounts for a remainder it did not finish. **The validation above, unlike the
+demand, binds wherever the reference is supplied**: a receiver named alongside any outcome is a
+claim about where work went, and a false one is no less false for accompanying a `killed`.
 
 This MUST NOT block a legitimate archive — the archive proceeds once the handoff is recorded. Both the archiving epic and the
 receiving epic MUST show the relationship in `PROJECT.md` and the briefing. The link vocabulary
@@ -271,6 +327,24 @@ in the audited archive, and none of those paths receives a named receiver from a
   `outcome: delivered` with no `carried-to` reference
 - **THEN** the transition is refused, stating the same outstanding count the record renders, so the
   handoff cannot vanish silently
+
+#### Scenario: A handoff naming the archiving epic itself is refused
+- **WHEN** an epic holding outstanding work is archived through the interactive verb as
+  `outcome: delivered` with a `carried-to` reference naming that same epic
+- **THEN** the command exits non-zero saying an epic cannot carry work to itself, the epic is not
+  archived, and the state of record is byte-identical to before the call
+
+#### Scenario: A handoff naming an epic the record does not hold is refused
+- **WHEN** an epic is archived through the interactive verb with a `carried-to` reference to an id
+  no epic in the record carries
+- **THEN** the command exits non-zero naming that id as unknown, and the state of record is
+  byte-identical to before the call
+
+#### Scenario: A handoff supplied alongside a non-delivered outcome is validated too
+- **WHEN** an epic is archived through the interactive verb with `outcome: killed`, its reason, and
+  a `carried-to` reference naming an id no epic carries
+- **THEN** the command exits non-zero, because the reference is a claim about where work went
+  whether or not this outcome demanded one
 
 #### Scenario: The refusal names the declaration as well as the handoff
 - **WHEN** a fully delivered change is archived through the interactive verb and its only

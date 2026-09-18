@@ -155,9 +155,15 @@ when a value was actually removed) /
 (hard-delete, `--cascade` for a parent + descendants) ·
 **`push-detour <parent> --detour <id> --reason "<why>" (--reconcile | --no-reconcile)` /
 `pop-detour [<paused-id>]`** the substantial detour's PUSH and POP — verbs since 0.35.0, where
-both used to be a documented hand-edit of `state.json` (see "PUSH protocol" / "POP protocol")
+both used to be a documented hand-edit of `state.json` (see "PUSH protocol" / "POP protocol") ·
+**`drop-detour <paused-id> --reason "<why>"`** END a frame for an epic that is NOT coming back —
+selects by epic wherever the frame sits (not LIFO), never resumes it, never moves the active
+pointer, accepts an already-archived epic, and ENDS the reconcile obligation the push armed
+without answering it (no verdict; the `may-invalidate` link is disarmed and kept with the drop's
+reason). Ending an obligation is not answering it
 · **`set-active <id>` / `clear-active`**
-set the top-level active epic · `set-autonomy <id>` grant an epic broad execution trust (see
+set the top-level active epic · `set-autonomy <id>` grant an epic broad execution trust, and
+`set-autonomy <id> --revoke <action> --revoke-reason "<why>"` take a grant back (see
 "Epic-level autonomy" below) · `plan-hierarchy --parent <id>` batched execution plan for a
 parent's children (see "Epic-hierarchy orchestration" below) · `verify-worktrees` flag orphaned
 hierarchy-dispatch worktrees · `verify-state` fail loudly if state.json's mtime is newer than
@@ -203,7 +209,9 @@ dormancy. The message names git remedies (`git checkout --ours|--theirs`, `git s
 `git restore`) and, for a file git has never had, `mv .conductor/state.json
 .conductor/state.json.damaged` then `/pm:init`. **Never hand-repair it by guessing which side of a
 conflict to keep** — that is the user's call. Meanwhile `gate-guard` blocks Edit/Write/NotebookEdit
-(exit 2) and Bash is not matched, so the remedies run from the shell; `brief` injects only the
+(exit 2), and it is matched for Bash too — so what keeps the remedies runnable is its carve-out, not
+a gap: over an unreadable record an affirmed Bash call carrying command text is allowed whatever its
+shape, because one remedy above redirects into the record itself. Run them from the shell; `brief` injects only the
 warning; `snapshot` writes nothing (exit 11, never 2, which would block compaction);
 `commit-nudge`, on both post-call events (`PostToolUse` and `PostToolUseFailure`), writes nothing, the observation record included (exit 2 when a commit has landed, which stays unreported until the file is fixed; 0 otherwise, without reading state). `verify-state` never loads the file,
 and `activity` reports the revision and the log's on/off state as unknown.
@@ -478,9 +486,12 @@ bullet reached 3/15.
    without its inverse, and not justified, is a FINDING. Why the sweep misses this class is
    mechanical, not a matter of diligence: enumerating the callers of a thing that is written
    never leads to the question of whether it can be unwritten. Six instances shipped past both
-   gates here while the call-site obligation was already in force, the most consequential a
-   safety surface — pre-authorization grants accumulate with no revoke, so turning autonomy off
-   leaves every prior grant intact and turning it back on silently restores all of them.
+   gates here while the call-site obligation was already in force, and the most consequential
+   was a safety surface: pre-authorization grants accumulated with no revoke, so turning autonomy
+   off left every prior grant intact and turning it back on silently restored all of them. It was
+   closed by shipping the inverse — `set-autonomy <id> --revoke` — and the evidence is kept rather
+   than deleted, because a practice recorded without what went wrong to earn it reads as a
+   preference.
 
 2. **Verify against the commit, not the working tree.** The commit is the unit of verification.
    Reading a file in the working tree is NOT verification. For every task, run
@@ -691,8 +702,12 @@ The step otherwise lost after compaction. Do not skip it.
      `update-epic <paused-id> --clear-links` and `remove-epic <detour-id>` are refused
      (`remove-epic` is for an epic registered in error, and even then waits for the verdict).
    - **Hard backstop (on by default):** a PreToolUse hook mechanically blocks
-     `Edit`/`Write`/`NotebookEdit` while `reconcileNeeded` is still true on the active epic —
-     this is unconditional, regardless of the repo's `gateGuard` setting; see `/pm:gate-guard`.
+     `Edit`/`Write`/`NotebookEdit` — and a `Bash` call whose command matches a closed, documented
+     list of write shapes (a redirection to a file, an in-place stream editor, `tee`, a copier,
+     `git apply`, destroying the conductor record) — while `reconcileNeeded` is still true on the
+     active epic. It is unconditional, regardless of the repo's `gateGuard` setting; the reconcile
+     arm ships no inverse because any switch silencing Bash writes there would bypass the whole
+     gate. The list is incomplete by construction and the block says so; see `/pm:gate-guard`.
 4. **Write a one-line Honcho memory.** With a reconcile gate armed, `pop-detour` deliberately
    emitted none — `resumed X, reconciled vs Y` is not true until step 3's verdict exists. Get the
    exact ready-to-copy string (and log it) via:
@@ -1111,6 +1126,28 @@ CLAUDE.md (see `/pm:epic` → `set-autonomy`).
    - This taxonomy is fixed at four categories by default; a project needing a different
      taxonomy should say so explicitly during the preflight scan rather than silently
      inventing new category names (`set-autonomy` will reject anything not in this list).
+
+### Revoking a grant, and what re-arming restores
+
+A pre-authorization is taken back with
+`set-autonomy <epicId> --revoke "<action>" --revoke-reason "<why>"`, or
+`--revoke "category:<name>"` mirroring the grant syntax. **A revoke RECORDS rather than deletes:**
+the grant stays in `preAuthorized[]` carrying `revoked: { reason, revokedAt }`, so "authorised and
+then taken back" is distinguishable from "never authorised" — the same record-don't-delete rule
+`--withdraw-gate-review` and `linkOnce`'s `superseded` follow. `--revoke` names the STORED value
+after the identical first-colon split `--preauthorize` applies, so whatever a grant stored is
+exactly what revokes it. It refuses, writing nothing, for an empty action, for an action the epic
+does not hold, and for one whose every match is already revoked; `--revoke-reason` is required and
+is refused on its own. A revoke marks only the UNREVOKED matches — re-granting is the documented
+un-revoke, so an epic can legitimately hold a revoked and a live entry for the same action at once.
+
+**`--level off` does not clear grants**, and that is deliberate: deletion is not the inverse of
+granting, and an epic taken off autonomy for an afternoon has not withdrawn anybody's judgment
+about which actions were safe. The measured harm was never that grants survive — it was that
+re-arming restored them SILENTLY. So `--level autonomous` reports the count and identity of the
+live grants it arms, and says so explicitly when there are none. A revoked grant is not restored
+by re-arming and does not appear in that report — which is why the decision rule below reads rule
+(a) as satisfied by no revoked grant and by no grant that names nothing.
 
 This same read-and-scan process is the one reused, unchanged, by any future work that needs to
 scan several epics at once (e.g. a parent epic's children) — it takes one epic id at a time

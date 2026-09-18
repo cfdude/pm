@@ -740,6 +740,13 @@ export const VERB_FLAGS = [
   { flag: "preauthorize", commands: ["set-autonomy"], repeats: true },
   { flag: "context", commands: ["set-autonomy"], repeats: true },
   { flag: "notify", commands: ["set-autonomy"], repeats: true },
+  // THE INVERSE `--preauthorize` NEVER SHIPPED (operations-ship-their-inverses). TWO flags and not
+  // one colon-packed value, and that is forced rather than stylistic: `--preauthorize` splits on the
+  // FIRST colon, so packing the revocation's reason after a colon would have to guess where the
+  // action ends between two free-text halves — the guess `--declined-deferral` already refuses to
+  // make. Not `repeats`, so the reason is unambiguously paired with the grant it takes back.
+  { flag: "revoke", commands: ["set-autonomy"], placeholder: "<action>|category:<name>" },
+  { flag: "revoke-reason", commands: ["set-autonomy"], requires: REASON_REQUIRES },
   // set-lane-routing. A valueless `--add`/`--remove` arrived as `[true]` and was skipped, or
   // matched against the literal string "true" — a rule that silently removed nothing.
   { flag: "add", commands: ["set-lane-routing"], repeats: true, requires: "a \"<match>:<lane>\" value" },
@@ -809,7 +816,7 @@ export const VERB_FLAGS = [
   { flag: "detour", commands: ["push-detour"] },
   // `retract-detour` (commit-nudge-reads-the-whole-move) joins the row: a retraction's reason is held
   // to the same standard, and push-detour's semantics are untouched.
-  { flag: "reason", commands: ["push-detour", "retract-detour"], requires: REASON_REQUIRES },
+  { flag: "reason", commands: ["push-detour", "drop-detour", "retract-detour"], requires: REASON_REQUIRES },
   // The reconcile decision is SAID, never defaulted — see pushDetour() in lib/detour-stack.mjs
   // for why, and KNOWN_STATUSES' neighbour `--no-deferrals` for the precedent.
   { flag: "reconcile", commands: ["push-detour"], valueless: true },
@@ -916,6 +923,9 @@ export const VERB_POSITIONALS = {
   "update-epic": EPIC_ID, "remove-epic": EPIC_ID, "set-active": EPIC_ID, "set-autonomy": EPIC_ID,
   "record-reconcile": EPIC_ID, "record-gate-review": EPIC_ID, "record-tracker-refresh": EPIC_ID,
   "push-detour": EPIC_ID,
+  // REQUIRED, unlike `pop-detour`'s: the drop SELECTS a frame by the epic it pauses rather than
+  // taking the top, so the positional is the selector and not an assertion about what the top is.
+  "drop-detour": EPIC_ID,
   // One commit sha, never free text: the row it retracts is named by exactly one value.
   "retract-detour": { min: 1, max: 1, form: "<sha>", idFirst: false, freeText: false },
   "record-cross-spec-review": { min: 1, max: 1, form: "<releaseId>", idFirst: false, freeText: false },

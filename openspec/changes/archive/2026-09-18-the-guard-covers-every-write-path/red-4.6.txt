@@ -1,0 +1,476 @@
+RED for task 4.6 (Gate 2 finding G2-I1) — `scripts/test/gate-guard-write-paths.test.mjs` run against
+the PRE-GREEN engine, i.e. `scripts/lib/gate-guard.mjs` exactly as committed at 0e4f217, with the new
+rows already in the test file. Captured by writing `git show HEAD:scripts/lib/gate-guard.mjs` over the
+working copy, running the file, and restoring the GREEN version afterwards — no git index was touched,
+because a sibling change was committing on the same branch at the time.
+
+4 of 33 tests fail. What each one shows:
+
+  1.1 every recognized write shape is matched
+      `git rm -f .conductor/state.json` returns null — the record row was keyed on `word === "rm"`
+      alone, so the verb a version-controlled repository actually removes files with walked past it.
+      Once the record is gone the guard returns at `isInitialized()`, so this is not one write past
+      the gate: it is the gate off.
+  1.1 the return value carries no text taken from the command
+      Re-asserts every BLOCKS row, so it fails on the same rows.
+  1.3 REGRESSION GUARD: the closed shape list has exactly one definition site
+      The two new single-site rows — `["rm", "unlink", "shred"]` and the git global-option list —
+      are not yet defined anywhere, so the scan finds them in no file rather than in exactly one.
+  4.6 destroying the record through git is blocked, and a git read of it is not
+      The same bypass through the REAL hook, over a fixture repo whose active epic owes a reconcile:
+      exit 0 where 2 is required.
+
+NOT a RED, and deliberately so — recorded here rather than asserted in prose:
+  - task 4.7's two rows (`rg foo && sed -i.bak '7d' CLAUDE.md`, and a two-line command whose write is
+    on line 2) PASS against this engine. That is the whole finding: the per-segment and whole-command
+    properties were already correct and no test could fail if they stopped being. They are regression
+    guards, proven by mutation instead (see red-4.6-mutation-evidence.txt).
+  - task 4.8's four command-word rows (`install`, `rsync`, `dd`, `patch`) pass here too, for the same
+    reason: declared and honoured, with nothing behavioural asserting it.
+
+Raw run follows.
+
+================================================================================
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-zd3gcm/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-zd3gcm/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-zd3gcm/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-zd3gcm/PROJECT.md
+conductor: active is now 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-zd3gcm/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-zd3gcm/PROJECT.md
+conductor: detour 'd' is still queued, not archived — resuming anyway, but confirm its work is finished and committed before building on the resumed epic
+conductor: resumed 'p'
+conductor: RECONCILE GATE — 'p' carries reconcileNeeded and owes a verdict against 'd'. Run the reconciler BEFORE writing code, then `record-reconcile p --detour d --verdict valid|invalidated`, then `honcho-memory pop p "<detour>; reconcile = …"` for the memory line
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-TARyL0/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-TARyL0/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-TARyL0/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-TARyL0/PROJECT.md
+conductor: active is now 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-TARyL0/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-TARyL0/PROJECT.md
+conductor: detour 'd' is still queued, not archived — resuming anyway, but confirm its work is finished and committed before building on the resumed epic
+conductor: resumed 'p'
+conductor: RECONCILE GATE — 'p' carries reconcileNeeded and owes a verdict against 'd'. Run the reconciler BEFORE writing code, then `record-reconcile p --detour d --verdict valid|invalidated`, then `honcho-memory pop p "<detour>; reconcile = …"` for the memory line
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-M9ro2B/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-M9ro2B/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-M9ro2B/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-M9ro2B/PROJECT.md
+conductor: active is now 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-M9ro2B/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-M9ro2B/PROJECT.md
+conductor: detour 'd' is still queued, not archived — resuming anyway, but confirm its work is finished and committed before building on the resumed epic
+conductor: resumed 'p'
+conductor: RECONCILE GATE — 'p' carries reconcileNeeded and owes a verdict against 'd'. Run the reconciler BEFORE writing code, then `record-reconcile p --detour d --verdict valid|invalidated`, then `honcho-memory pop p "<detour>; reconcile = …"` for the memory line
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-9pvJaH/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-9pvJaH/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-9pvJaH/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-9pvJaH/PROJECT.md
+conductor: active is now 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-9pvJaH/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-9pvJaH/PROJECT.md
+conductor: detour 'd' is still queued, not archived — resuming anyway, but confirm its work is finished and committed before building on the resumed epic
+conductor: resumed 'p'
+conductor: RECONCILE GATE — 'p' carries reconcileNeeded and owes a verdict against 'd'. Run the reconciler BEFORE writing code, then `record-reconcile p --detour d --verdict valid|invalidated`, then `honcho-memory pop p "<detour>; reconcile = …"` for the memory line
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-rORlSm/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-rORlSm/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-rORlSm/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-rORlSm/PROJECT.md
+conductor: active is now 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-rORlSm/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-rORlSm/PROJECT.md
+conductor: detour 'd' is still queued, not archived — resuming anyway, but confirm its work is finished and committed before building on the resumed epic
+conductor: resumed 'p'
+conductor: RECONCILE GATE — 'p' carries reconcileNeeded and owes a verdict against 'd'. Run the reconciler BEFORE writing code, then `record-reconcile p --detour d --verdict valid|invalidated`, then `honcho-memory pop p "<detour>; reconcile = …"` for the memory line
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-gjewIY/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-gjewIY/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-gjewIY/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-gjewIY/PROJECT.md
+conductor: active is now 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-gjewIY/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-gjewIY/PROJECT.md
+conductor: detour 'd' is still queued, not archived — resuming anyway, but confirm its work is finished and committed before building on the resumed epic
+conductor: resumed 'p'
+conductor: RECONCILE GATE — 'p' carries reconcileNeeded and owes a verdict against 'd'. Run the reconciler BEFORE writing code, then `record-reconcile p --detour d --verdict valid|invalidated`, then `honcho-memory pop p "<detour>; reconcile = …"` for the memory line
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-zeczRH/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-zeczRH/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-zeczRH/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-zeczRH/PROJECT.md
+conductor: active is now 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-zeczRH/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-zeczRH/PROJECT.md
+conductor: detour 'd' is still queued, not archived — resuming anyway, but confirm its work is finished and committed before building on the resumed epic
+conductor: resumed 'p'
+conductor: RECONCILE GATE — 'p' carries reconcileNeeded and owes a verdict against 'd'. Run the reconciler BEFORE writing code, then `record-reconcile p --detour d --verdict valid|invalidated`, then `honcho-memory pop p "<detour>; reconcile = …"` for the memory line
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: gate guard is now off
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-wvAq92/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-wvAq92/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-wvAq92/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-wvAq92/PROJECT.md
+conductor: active is now 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-wvAq92/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-wvAq92/PROJECT.md
+conductor: detour 'd' is still queued, not archived — resuming anyway, but confirm its work is finished and committed before building on the resumed epic
+conductor: resumed 'p'
+conductor: RECONCILE GATE — 'p' carries reconcileNeeded and owes a verdict against 'd'. Run the reconciler BEFORE writing code, then `record-reconcile p --detour d --verdict valid|invalidated`, then `honcho-memory pop p "<detour>; reconcile = …"` for the memory line
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Voo8ZN/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Voo8ZN/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Voo8ZN/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Voo8ZN/PROJECT.md
+conductor: active is now 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Voo8ZN/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Voo8ZN/PROJECT.md
+conductor: detour 'd' is still queued, not archived — resuming anyway, but confirm its work is finished and committed before building on the resumed epic
+conductor: resumed 'p'
+conductor: RECONCILE GATE — 'p' carries reconcileNeeded and owes a verdict against 'd'. Run the reconciler BEFORE writing code, then `record-reconcile p --detour d --verdict valid|invalidated`, then `honcho-memory pop p "<detour>; reconcile = …"` for the memory line
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-REKqRF/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-REKqRF/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-REKqRF/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-REKqRF/PROJECT.md
+conductor: active is now 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-REKqRF/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-REKqRF/PROJECT.md
+conductor: detour 'd' is still queued, not archived — resuming anyway, but confirm its work is finished and committed before building on the resumed epic
+conductor: resumed 'p'
+conductor: RECONCILE GATE — 'p' carries reconcileNeeded and owes a verdict against 'd'. Run the reconciler BEFORE writing code, then `record-reconcile p --detour d --verdict valid|invalidated`, then `honcho-memory pop p "<detour>; reconcile = …"` for the memory line
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-M5X2N7/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-M5X2N7/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-M5X2N7/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-M5X2N7/PROJECT.md
+conductor: active is now 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-M5X2N7/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-M5X2N7/PROJECT.md
+conductor: detour 'd' is still queued, not archived — resuming anyway, but confirm its work is finished and committed before building on the resumed epic
+conductor: resumed 'p'
+conductor: RECONCILE GATE — 'p' carries reconcileNeeded and owes a verdict against 'd'. Run the reconciler BEFORE writing code, then `record-reconcile p --detour d --verdict valid|invalidated`, then `honcho-memory pop p "<detour>; reconcile = …"` for the memory line
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-UAbTie/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-UAbTie/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-UAbTie/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-UAbTie/PROJECT.md
+conductor: active is now 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-UAbTie/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-UAbTie/PROJECT.md
+conductor: detour 'd' is still queued, not archived — resuming anyway, but confirm its work is finished and committed before building on the resumed epic
+conductor: resumed 'p'
+conductor: RECONCILE GATE — 'p' carries reconcileNeeded and owes a verdict against 'd'. Run the reconciler BEFORE writing code, then `record-reconcile p --detour d --verdict valid|invalidated`, then `honcho-memory pop p "<detour>; reconcile = …"` for the memory line
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-5OyCxj/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-5OyCxj/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-5OyCxj/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-5OyCxj/PROJECT.md
+conductor: active is now 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-5OyCxj/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-5OyCxj/PROJECT.md
+conductor: detour 'd' is still queued, not archived — resuming anyway, but confirm its work is finished and committed before building on the resumed epic
+conductor: resumed 'p'
+conductor: RECONCILE GATE — 'p' carries reconcileNeeded and owes a verdict against 'd'. Run the reconciler BEFORE writing code, then `record-reconcile p --detour d --verdict valid|invalidated`, then `honcho-memory pop p "<detour>; reconcile = …"` for the memory line
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-XjucP5/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-XjucP5/PROJECT.md
+conductor: gate guard is now on
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-mE6xr4/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-mE6xr4/PROJECT.md
+conductor: gate guard is now off
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-9G3mJi/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-9G3mJi/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-9G3mJi/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-9G3mJi/PROJECT.md
+conductor: active is now 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-9G3mJi/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-9G3mJi/PROJECT.md
+conductor: detour 'd' is still queued, not archived — resuming anyway, but confirm its work is finished and committed before building on the resumed epic
+conductor: resumed 'p'
+conductor: RECONCILE GATE — 'p' carries reconcileNeeded and owes a verdict against 'd'. Run the reconciler BEFORE writing code, then `record-reconcile p --detour d --verdict valid|invalidated`, then `honcho-memory pop p "<detour>; reconcile = …"` for the memory line
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Zxargw/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Zxargw/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Zxargw/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Zxargw/PROJECT.md
+conductor: active is now 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Zxargw/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Zxargw/PROJECT.md
+conductor: detour 'd' is still queued, not archived — resuming anyway, but confirm its work is finished and committed before building on the resumed epic
+conductor: resumed 'p'
+conductor: RECONCILE GATE — 'p' carries reconcileNeeded and owes a verdict against 'd'. Run the reconciler BEFORE writing code, then `record-reconcile p --detour d --verdict valid|invalidated`, then `honcho-memory pop p "<detour>; reconcile = …"` for the memory line
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-bAqIJV/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-bAqIJV/PROJECT.md
+conductor: added epic 'q' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-bAqIJV/PROJECT.md
+conductor: active is now 'q'
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: gate guard is now on
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: gate guard is now off
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-urOMQb/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-urOMQb/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-urOMQb/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-urOMQb/PROJECT.md
+conductor: active is now 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-urOMQb/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-urOMQb/PROJECT.md
+conductor: detour 'd' is still queued, not archived — resuming anyway, but confirm its work is finished and committed before building on the resumed epic
+conductor: resumed 'p'
+conductor: RECONCILE GATE — 'p' carries reconcileNeeded and owes a verdict against 'd'. Run the reconciler BEFORE writing code, then `record-reconcile p --detour d --verdict valid|invalidated`, then `honcho-memory pop p "<detour>; reconcile = …"` for the memory line
+conductor: 'p' is no longer the active epic and still owes a reconcile against 'd' — the obligation is kept, and gate-guard blocks edits again when it is active. Answer it with `record-reconcile p --detour <detourId> --verdict valid|invalidated`.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-urOMQb/PROJECT.md
+conductor: updated 'p'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Ix0Ex6/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Ix0Ex6/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Ix0Ex6/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Ix0Ex6/PROJECT.md
+conductor: active is now 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Ix0Ex6/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Ix0Ex6/PROJECT.md
+conductor: detour 'd' is still queued, not archived — resuming anyway, but confirm its work is finished and committed before building on the resumed epic
+conductor: resumed 'p'
+conductor: RECONCILE GATE — 'p' carries reconcileNeeded and owes a verdict against 'd'. Run the reconciler BEFORE writing code, then `record-reconcile p --detour d --verdict valid|invalidated`, then `honcho-memory pop p "<detour>; reconcile = …"` for the memory line
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-oRmlzB/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-oRmlzB/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-oRmlzB/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-oRmlzB/PROJECT.md
+conductor: active is now 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-oRmlzB/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-oRmlzB/PROJECT.md
+conductor: detour 'd' is still queued, not archived — resuming anyway, but confirm its work is finished and committed before building on the resumed epic
+conductor: resumed 'p'
+conductor: RECONCILE GATE — 'p' carries reconcileNeeded and owes a verdict against 'd'. Run the reconciler BEFORE writing code, then `record-reconcile p --detour d --verdict valid|invalidated`, then `honcho-memory pop p "<detour>; reconcile = …"` for the memory line
+✖ 1.1 every recognized write shape is matched (2.592208ms)
+✔ 1.1 no read-only command, lock remedy or engine invocation is matched (0.907375ms)
+✖ 1.1 the return value carries no text taken from the command (4.966792ms)
+✔ 1.1 the labels are a frozen closed set (0.168625ms)
+✔ 1.1b the engine-invocation predicate recognizes both spellings pm emits (0.1785ms)
+✔ 1.1b the predicate is not an exemption for a spelling pm never emits (0.143208ms)
+✔ 1.1b the exemption covers the command-word arm only — a redirection still blocks (0.114458ms)
+✔ 1.1b an UNFILLED command template blocks, and the filled command passes (0.240292ms)
+✖ 1.3 REGRESSION GUARD: the closed shape list has exactly one definition site (21.289042ms)
+✔ 1.3 REGRESSION GUARD: the scan reaches real sources — an empty walk would pass vacuously (0.472791ms)
+✔ 2.1 a heredoc redirection is blocked while a reconcile is owed, and the block names the shape (2038.877417ms)
+✔ 4.7 the hook reads the WHOLE command, not its first line (1964.399084ms)
+✖ 4.6 destroying the record through git is blocked, and a git read of it is not (1636.950208ms)
+✔ 2.1 an in-place stream editor is blocked (1682.755167ms)
+✔ 2.1 the block message carries a label, not the command (1465.530333ms)
+✔ 2.1 the block states the obligation the check cannot enforce (1487.980541ms)
+✔ 2.8b REGRESSION GUARD: the guard setting does not reach the Bash arm of the reconcile block (1852.746209ms)
+✔ 2.8c a payload naming Bash with no readable command blocks (1974.078125ms)
+✔ 2.3 a read-only Bash command is not blocked while a reconcile is owed (2031.46875ms)
+✔ 2.3 every engine invocation the gate names as its own exit stays runnable (1934.247583ms)
+✔ 2.5 every remedy the unreadable-state message prints stays runnable (1812.716208ms)
+✔ 2.5 an editing tool still blocks over an unreadable record (1967.299667ms)
+✔ 2.5 a Bash payload with no readable command does not inherit the exemption (1742.3655ms)
+✔ 2.7 the refresh block covers a Bash write on the same terms, and names the shape (676.57125ms)
+✔ 2.7 the refresh arm KEEPS its inverse — set-gate-guard off silences it, Bash included (845.03825ms)
+✔ 2.9 REGRESSION GUARD: an unidentified tool blocks exactly as it does today (1807.111333ms)
+✔ 2.9 REGRESSION GUARD: an editing tool is unaffected by any command text in the payload (1376.402917ms)
+✔ 2.10 REGRESSION GUARD: nothing owed — a Bash write shape is not blocked at all (1489.467583ms)
+✔ 2.10 REGRESSION GUARD: an ARCHIVED active epic still owes nothing, Bash included (1540.828042ms)
+✔ 3.1 the shipped hook configuration registers the gate guard for Bash (0.231041ms)
+✔ 2.1 destroying the conductor record is blocked through the hook, trailing globs included (1495.183541ms)
+✔ 2.3 removing the state lock stays runnable through the hook, glob spelling included (1230.693709ms)
+✔ the marker refusal's own `sed` remedy is a recognized write shape (1.314291ms)
+ℹ tests 33
+ℹ suites 0
+ℹ pass 29
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 34334.903708
+
+✖ failing tests:
+
+test at scripts/test/gate-guard-write-paths.test.mjs:148:1
+✖ 1.1 every recognized write shape is matched (2.592208ms)
+  AssertionError [ERR_ASSERTION]: expected a write shape for: git rm -f .conductor/state.json
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/gate-guard-write-paths.test.mjs:151:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/gate-guard-write-paths.test.mjs:163:1
+✖ 1.1 the return value carries no text taken from the command (4.966792ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(LABELS.includes(writeShape(cmd)))
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/gate-guard-write-paths.test.mjs:172:36)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/gate-guard-write-paths.test.mjs:240:1
+✖ 1.3 REGRESSION GUARD: the closed shape list has exactly one definition site (21.289042ms)
+  AssertionError [ERR_ASSERTION]: the closed list's row "[\"rm\", \"unlink\", \"shred\"]" must appear in gate-guard.mjs and in no other engine source — not defined a second time, and not QUOTED VERBATIM either, because a copy of a row in prose goes stale the same way a copy in code does. Say it in other words, or import the label. Found in: (nowhere — the guard cannot see its own list)
+  + actual - expected
+  
+  + []
+  - [
+  -   'scripts/lib/gate-guard.mjs'
+  - ]
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/gate-guard-write-paths.test.mjs:254:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ 'scripts/lib/gate-guard.mjs' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test/gate-guard-write-paths.test.mjs:310:1
+✖ 4.6 destroying the record through git is blocked, and a git read of it is not (1636.950208ms)
+  AssertionError [ERR_ASSERTION]: expected a block for git rm -f .conductor/state.json: 
+  
+  0 !== 2
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/gate-guard-write-paths.test.mjs:320:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

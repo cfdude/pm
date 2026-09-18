@@ -16,10 +16,14 @@
 
 ## The `pm` engine — hard constraints (must follow)
 
-- **`scripts/conductor.mjs` is ZERO-DEPENDENCY.** Node 18+ built-ins only (`node:fs`,
-  `node:path`, `node:os`, `node:child_process`, `node:url`). **Never** add an npm package or a
-  `package.json` dependency. If a format needs parsing, prefer JSON (native) over pulling a
-  parser.
+- **The ENGINE is ZERO-RUNTIME-DEPENDENCY.** `scripts/conductor.mjs` + `scripts/lib/*.mjs` use Node 18+
+  built-ins only (`node:fs`, `node:path`, `node:os`, `node:child_process`, `node:url`) — the code users
+  run in real time ships with no `node_modules` and nothing to install. **Never** add an npm package to
+  the engine. If a format needs parsing, prefer JSON (native) over pulling a parser.
+  **Dev-only dependencies are permitted**: anything used only to develop and test the source
+  (`package.json` `devDependencies`, `node_modules` gitignored, never shipped or committed) may exist —
+  the distinction is WHO pays: a user installing the plugin pays nothing; a contributor runs `npm i`.
+  Anything added here must earn its place against a measured problem, not preference.
 - **Tests:** `node --test scripts/test/*.test.mjs`. All tests pass before any commit — no
   exceptions, no `--no-verify`.
 - **Architectural law — `pm` is an INSTRUCTION layer, never an INTEGRATION layer.** It emits
@@ -252,7 +256,8 @@ measured across one audited repository, a rule carried by a mandatory task secti
    never by removing the record. The archive verb takes TWO halves in ONE invocation — the
    disposition AND a deferral assertion — because the gate refuses either half alone:
    `update-epic <id> --status archived --outcome delivered|killed|superseded|abandoned|declined|unreconstructable --reason "<why>" --no-deferrals`
-   (every outcome except `delivered` requires the reason). `--no-deferrals` is the explicit
+   (every outcome except `delivered` requires the reason; for an openspec-lane epic, `delivered` also needs a passing Gate 2,
+   and `unconsidered-outcomes` or the archive gate's refusal names the review to record first). `--no-deferrals` is the explicit
    "there are none" and is a claim, not a default — swap it for `--deferral
    "<epicId>:<artifact section>"` where work is now held by a registered epic, or
    `--declined-deferral "<what>:<why not>"` where you are deliberately not doing it; both
@@ -445,29 +450,36 @@ This tracker is inward: open items in github-issues become conductor epics, same
 OpenSpec/Superpowers auto-registration `sync` already does for on-disk changes/plans. The
 pm plugin NEVER calls github-issues itself — as part of running `/pm:sync`, YOU (the interactive
 agent) do:
-1. `gh issue list --repo cfdude/pm --state open --json number,title,url,updatedAt,labels`.
+1. `gh issue list --repo cfdude/pm --state open --limit 1000 --json number,title,url,updatedAt,labels`.
    Preflight, BEFORE running that line: this step needs the `gh` CLI **and** an authenticated GitHub account — `command -v gh` and `gh auth status`. If either is missing, say so, name what to install or authenticate, and STOP this section; an inward sync is a READ and has no credential-free substitute, so reporting a clean sync you could not perform is worse than reporting that you could not perform it.
-2. For each item, check whether an epic's `externalUrl` already matches that item's URL
-   (`/pm:epic list` or read `.conductor/state.json`) — if so, skip it (already
-   mirrored; re-running sync must never create a duplicate epic for the same item). Match
-   on `externalUrl` when both sides carry one, never on a bare `externalId`: item numbers
-   are unique only within one tracker/repo, so two trackers can each hold an item numbered
-   the same without those being the same item. Where one side has no URL, they are not a
-   duplicate either — a URL-less legacy epic must not block a genuinely distinct item.
+   If it returns 1000 items the list may be truncated: raise `--limit` and list again, and
+   do not run the closed-item step on a list that reached its bound — an item missing from a
+   truncated list is not an item that closed.
+2. For each item, check `.conductor/state.json` for an epic whose `externalUrl` matches that
+   item's URL — if so, skip it (already mirrored; re-running sync must never create a duplicate
+   epic for the same item). Match on `externalUrl` when both sides carry one, never on a bare
+   `externalId`: item numbers are unique only within one tracker/repo, so two trackers can each
+   hold an item numbered the same without those being the same item. Where one side has no URL,
+   they are not a duplicate either — a URL-less legacy epic must not block a genuinely distinct item.
 3. Otherwise register a new untriaged epic, running this line as written with only its
-   placeholders filled in:
-   `add-epic --id gh-cfdude-pm-<issue-number> --title "<issue-title>" --status untriaged --external-id <issue-number> --external-url <issue-url> --external-updated-at <issue-updated-at> --lane <lane> --priority P2`
-   Take `<lane>` from LANE ROUTING, never a fixed value: run `suggest-lane "<issue-title>"`
+   placeholders filled in. Fill every placeholder taken from the item — `<issue-title>`, `<issue-url>` — as
+   ONE shell-quoted word: wrap the value in single quotes and write each `'` inside it as `'\''`.
+   Never use double quotes: `$(…)`, backticks and `"` inside them change the command. Keep
+   `--title=` and `--ask=` attached to their values: that is what lets a title that starts with
+   `-` reach the engine as a title.
+   `add-epic --id gh-cfdude-pm-<issue-number> --title=<issue-title> --status untriaged --external-id <issue-number> --external-url=<issue-url> --external-updated-at <issue-updated-at> --lane <lane> --priority P2`
+   Take `<lane>` from LANE ROUTING, never a fixed value: run `suggest-lane --ask=<issue-title>`
    and use the lane it returns; when it returns none, apply this repo's generic lane
    heuristic. The lane decides whether the work leaves any spec, plan or gate record, so
    a hardcoded one decides that silently for every mirrored item. If the routed lane is
    wrong for a particular item, register it in the lane you judge correct and record the
    reason on the epic: `update-epic <id> --notes "lane: <chosen> not <routed> — <why>"`.
-   The id is DERIVED, never invented: `gh-cfdude-pm-<issue-number>` — this tracker's
-   system and scope, then the item's own number. The same item therefore yields the same
-   epic id in every repo and every session, so a second registration of it is refused as a
-   duplicate instead of landing as a second epic under a different invented slug. Use a
-   `P0`/`P1`/`P2`/`P3` label's priority when the item carries one, `P2` otherwise.
+   The id is DERIVED, never invented: `gh-cfdude-pm-<issue-number>` — this tracker's system and scope,
+   then the item's own key. The same item therefore yields the same epic id in every repo and
+   every session, so a second registration of it is refused as a duplicate instead of landing as
+   a second epic under a different invented slug, and the same key in two different trackers
+   derives two DISTINCT ids. Use a `P0`/`P1`/`P2`/`P3` label's priority when the item carries
+   one, `P2` otherwise.
 4. Set `--title` from the item title so the epic is legible before you triage it further.
 5. For every epic ALREADY linked to an item here, compare that item's tracker-side
    updated timestamp against the epic's `externalUpdatedAt` watermark, and READ the ones
@@ -486,11 +498,13 @@ agent) do:
    to the work; github-issues closing an item does not say which one and pm will not guess. An epic
    that is already `archived` owes nothing here — it ended, and a record that ended does not
    need a second ending. Then re-render with `/pm:status`.
+   For an openspec-lane epic, `delivered` also needs a passing Gate 2 — the archive gate refuses
+   it otherwise, and `unconsidered-outcomes` or that refusal names the review to record first.
 
 ## Sync after completing tracker-linked work
 
-After you close/transition a tracker-linked issue as part of completing an epic (the
-writeback steps above), immediately re-sync with your tracker(s) — run `/pm:sync` — to pull
+After you finish an epic linked to an item here, immediately re-sync with your tracker(s) —
+run `/pm:sync` — to pull
 in anything new that appeared while you were heads-down. You're already doing tracker I/O
 for this epic, so this is the cheapest moment to catch it; this applies whether you have one
 tracker or several (primary + secondary) configured.

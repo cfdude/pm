@@ -470,6 +470,7 @@ every agent never to use, with none of the engine's guarantees applied to it.
 ```bash
 push-detour <parent-epic-id> --detour <detour-epic-id> --reason "<why>" (--reconcile | --no-reconcile)
 pop-detour [<paused-epic-id>]
+drop-detour <paused-epic-id> --reason "<why>"
 ```
 
 `push-detour` validates that both epics exist and neither has ended, requires a non-empty reason,
@@ -489,6 +490,17 @@ write. The optional epic id is an assertion, not a selector: the stack is LIFO, 
 that is not on top is refused. While the resumed epic owes ANY reconcile it prints the RECONCILE
 GATE naming every detour owed, and emits no POP Honcho line, because "reconciled vs X" is not true
 until the verdict exists.
+
+`drop-detour` is the inverse `push-detour` never shipped, for the case the pop cannot serve: the
+paused epic is **not coming back**. It selects the frame naming that epic **wherever it sits in the
+stack** (a buried jam is the case with no other exit), never resumes the epic, never moves the
+active pointer, never changes its status, and **accepts an epic that is already archived** —
+because that is the state an existing jam is already in, and the state the archive-drift heal can
+still produce. It requires a non-empty reason, and it **ends** the reconcile obligation the push
+armed rather than answering it: no verdict is written, and the `may-invalidate` link is *disarmed
+and kept*, carrying the drop and its reason, so the record distinguishes *dropped* from
+*reconciled*. The interactive archive verb now refuses an epic a live frame still pauses and names
+this verb as the remedy — the two are one fix and neither ships alone.
 
 **The obligation cannot be erased by an ordinary verb.** `clear-active`, `set-active <other>`
 and archive-then-unarchive all leave it owed — moving the active pointer off an owing epic warns —
@@ -793,11 +805,26 @@ grep). See the `conductor` skill's "Epic-level autonomy" section for the full pr
 
 | Flag | Does |
 |------|------|
-| `--level off\|autonomous` | The trust level itself. |
+| `--level off\|autonomous` | The trust level itself. `off` does NOT clear grants — see below. |
 | `--preauthorize "<action>:<reason>"` | Pre-approve one specific action (repeatable). |
 | `--preauthorize "category:<name>:<reason>"` | Pre-approve a whole class of routine actions (`filesystem`, `network`, `schema`, `external-api`) without enumerating each one. |
+| `--revoke "<action>"` / `--revoke "category:<name>"` | Take a grant back. The inverse `--preauthorize` never had. |
+| `--revoke-reason "<why>"` | Required by `--revoke`; refused on its own. |
 | `--context "<note>"` | Record background/decisions supplied during preflight (repeatable). |
 | `--notify "<what>"` | Durably record a WARN-class decision as it happens, not just for an end-of-epic report. |
+
+**A revoke RECORDS rather than deletes.** The grant stays readable carrying its revocation and its
+required reason (matching `--withdraw-gate-review` and `linkOnce`'s `superseded`), because
+deleting it would make "authorised and then taken back" indistinguishable from "never authorised."
+A revoked grant is never honoured and never restored. `--revoke` names the STORED value after the
+same first-colon split `--preauthorize` applies, so whatever it stored is exactly what revokes it;
+it refuses, writing nothing, when the action is empty, when the epic holds no grant by that name,
+and when every matching grant is already revoked.
+
+**`--level off` does NOT clear grants**, and re-arming reports what it restores. Deletion is not
+the inverse of granting, so turning autonomy off leaves the grants live; `--level autonomous` then
+prints the count and identity of the live grants it is arming, and says so explicitly when there
+are none. A revoked grant is not restored by re-arming and is not in that report.
 
 </details>
 
@@ -817,6 +844,18 @@ adjudicated). A single epic can escalate above the repo's dial via `update-epic 
 A hard `PreToolUse` guard blocking `Edit`/`Write`/`NotebookEdit` while the active epic still
 owes a reconcile — **on by default and unconditional** for that specific case; `set-gate-guard
 off` no longer bypasses it.
+
+The matcher covers **`Bash`** too, where it blocks only a member of a closed, documented list of
+write shapes (a redirection into a file, an in-place stream editor, `tee`, a copier, `git apply`,
+destroying the conductor record) and passes everything else. The list is incomplete by
+construction and the block says so, naming the matched shape with a fixed label and stating that a
+Bash write is forbidden whether or not the check detects it. Destroying `.conductor/state.json` is
+on the list because the guard is dormant while no record exists — deleting it turns the block off
+— and the record match is the exact path, so the engine's own `rm .conductor/state.json.lock`
+remedy stays runnable. An invocation of pm's own engine is never itself a write shape, so the
+commands the gate names as its exit (and `drop-detour`) stay reachable; a redirection in the same
+segment still blocks. Two fail-open modes are named: an unreadable record allows every Bash call
+carrying a command, and an absent record leaves the guard dormant.
 
 </details>
 
@@ -1525,7 +1564,7 @@ put it in CLAUDE.md if you want the whole hierarchy to honour it.
 | SessionStart (startup / resume / **compact**) | Injects the briefing via `additionalContext` — the index comes back the moment context is summarized away. |
 | PreCompact | Calls `snapshot` (`render` + `.conductor/brief.txt`) right before the context window collapses. |
 | PostToolUse and PostToolUseFailure (every `Bash` call, succeeded or failed) | Calls `commit-nudge`. It OBSERVES the repository rather than reading the command text: it keeps an observation record (`.conductor/commit-observe.json`, git-ignored) holding a **reflog anchor** — the byte size of HEAD's reflog and its last line, stored as bytes (`anchor.lineBase64`), since a reflog is not guaranteed to be UTF-8 — and the set of shas it has already reported. Each run reports every `commit…` reflog entry after the anchor, oldest first, whatever happened to HEAD afterwards, so `-m`, `-am`, `-F`, an editor commit, a commit inside a script, a commit followed by a `checkout`, several commits in one call and a commit inside a call that then failed are all noticed, while a command that merely *mentions* `git commit`, a rejected commit, a commit in another repo and a plain `checkout`/`reset` are silent. A commit reachable from no branch (rewritten by `pull --rebase`, reset away) is named as rewritten or abandoned and gets no row and no attribution command. Every report says the commits **landed since the last observation — this call, another terminal, or a parallel call**; the hook cannot tell which. The observation runs under an O_EXCL lock broken on **liveness**: at once when its holder is confirmed dead, after 10 s when liveness cannot be confirmed, never for age alone while the holder is confirmed alive (a 10-minute pid-reuse backstop aside); a run that cannot take it within 200 ms skips and the next run reports. Then it nudges a state update, and auto-detects an unlogged minimal detour from commit shape (only while an epic is active, and never for a commit touching that epic's own artifacts or only pm's own generated files, compared from the conductor root). A wrong automatic row is corrected with `retract-detour`. An amend replaces: the replaced commit's row is retracted and, where it is attributed, the `update-epic <id> --withdraw-commit` to run first is printed. On an **observed** commit it also prints the attribution command for every **candidate** — the detour epic and each paused epic while a detour is live, otherwise the active epic — one runnable `update-epic <id> --attribute-commit <sha>…` each, stating that choosing is the agent's, so the per-commit attribution obligation is prompted while it is still actionable rather than only checked at the archive gate. The prompt is louder while a lone candidate's `attributedCommits` is still empty and one line thereafter, and it is absent where the engine would be guessing: no candidate, an epic with no attribution array, or an unobserved commit. It never writes an attribution itself. |
-| PreToolUse (gate-guard) | Hard-blocks `Edit`/`Write`/`NotebookEdit` while the active epic owes a reconcile — on by default, unconditional for that case. Also blocks them while `.conductor/state.json` exists but cannot be read, because whether a reconcile is owed is then unknown; Bash is not matched, so the remedies stay runnable. |
+| PreToolUse (gate-guard) | Hard-blocks `Edit`/`Write`/`NotebookEdit` while the active epic owes a reconcile — on by default, unconditional for that case. Matched for `Bash` too, where it blocks only a member of a closed, documented list of write shapes (a redirection to a file, an in-place stream editor, `tee`, a copier, `git apply`, destroying the conductor record) and passes everything else; the list is incomplete by construction and the block says so. Also blocks while `.conductor/state.json` exists but cannot be read, because whether a reconcile is owed is then unknown — with one carve-out that keeps the remedies runnable: an affirmed `Bash` call carrying command text is allowed whatever its shape. |
 | PreToolUse (lesson advisor) | Calls `lesson-advice` on `Bash`/`Edit`/`Write`/`NotebookEdit`. Matches the pending tool call against every `docs/lessons/*.md` entry that declares a `detect:` matcher in its frontmatter, and injects that lesson's `rule` **before** the mistake. **Advisory only — it never blocks and always exits 0**, which is why it is a separate entry from the gate guard. Silent in a project with no `docs/lessons/`, and dormant until `/pm:init`. Precision is the constraint, not coverage: a lesson that cannot be matched with near-certainty carries no `detect:` and stays retrieval-only, and only the command's **first line** is matched, so a heredoc body or an `echo` that merely names a command is data rather than a trigger. Adding a matcher is a frontmatter edit, never a code change. |
 
 **Tool currency.** `pm` and `superpowers` are plugins that update themselves, but **OpenSpec is a
@@ -1590,8 +1629,10 @@ conductor: .conductor/state.json cannot be read — it does not parse as JSON (U
 ```
 
 Meanwhile the hooks never write over it. `gate-guard` **blocks `Edit`/`Write`/`NotebookEdit`**
-(exit 2) until the file is fixed — Bash is not matched by that hook, so run the remedy from the
-shell. `brief` starts the session with only this warning in place of a briefing; `snapshot` writes
+(exit 2) until the file is fixed. The hook is matched for `Bash` too, so what keeps the remedies
+runnable is an explicit carve-out rather than a gap: over an unreadable record an affirmed `Bash`
+call carrying command text is allowed whatever its shape, because one remedy above redirects into
+the record itself. Run the remedy from the shell. `brief` starts the session with only this warning in place of a briefing; `snapshot` writes
 nothing and exits 11 (never 2, which would block compaction); `commit-nudge`, when a commit has
 landed, writes nothing, the observation record included, and exits 2 on `PostToolUse` and `PostToolUseFailure` alike — the commit is reported by the first run after the file is repaired (with no commit it exits 0 without reading state), which shows the message to the agent. `verify-state` never loads
 the file, and `activity` reports the revision and whether the log is on as unknown. An absent

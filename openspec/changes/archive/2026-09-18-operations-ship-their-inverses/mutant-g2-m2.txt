@@ -1,0 +1,366 @@
+MUTATION EVIDENCE for Gate 2 I-M2 — the "ONE saveState" invariant of dropDetour().
+
+The finding: a second saveState(state, { verb: "drop-detour" }) inserted between the link disarm
+and the reconcileNeeded recompute writes the half-transitioned record gate-integrity says the
+engine cannot produce — owing, link disarmed, no frame — and detour-frame-drop.test.mjs still
+reported 17 pass / 0 fail, because every test there reads the state only after the verb returns.
+
+MUTANT APPLIED (scripts/lib/detour-stack.mjs, inside dropDetour()):
+    saveState(state, { verb: "drop-detour" });  // MUTANT (Gate 2 I-M2)
+  placed immediately after the link disarm and before the reconcileNeeded recompute.
+
+Generated: 2026-09-18T12:11:06Z against d75a3e9 + the new source-shape assertion.
+
+=== node --test scripts/test/detour-frame-drop.test.mjs ===
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-LaQR1R/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-LaQR1R/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-LaQR1R/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-LaQR1R/PROJECT.md
+conductor: updated 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-LaQR1R/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: cannot archive 'p' — a live detour-stack frame still pauses it, spawned for detour 'd'. Archiving it would leave a frame naming an epic that has ended: `pop-detour` refuses it, `remove-epic` refuses the frame, and every frame beneath it becomes unreachable. End the pause deliberately first — `drop-detour p --reason "<why it is not coming back>"` — then archive.
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-udkgv5/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-udkgv5/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-udkgv5/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-udkgv5/PROJECT.md
+conductor: updated 'd'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-7f9CkQ/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-7f9CkQ/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-7f9CkQ/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-7f9CkQ/PROJECT.md
+conductor: updated 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-7f9CkQ/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-7f9CkQ/PROJECT.md
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-7f9CkQ/PROJECT.md
+conductor: updated 'p'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Nj3jW5/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Nj3jW5/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Nj3jW5/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Nj3jW5/PROJECT.md
+conductor: updated 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Nj3jW5/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-Nj3jW5/PROJECT.md
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-2ipXhR/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-2ipXhR/PROJECT.md
+conductor: added epic 'base' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-2ipXhR/PROJECT.md
+conductor: added epic 'dbase' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-2ipXhR/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-2ipXhR/PROJECT.md
+conductor: added epic 'dx' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-2ipXhR/PROJECT.md
+conductor: updated 'base'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-2ipXhR/PROJECT.md
+conductor: paused 'base' and made detour 'dbase' active — reconcile gate armed for /pm:resume
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-2ipXhR/PROJECT.md
+conductor: updated 'a'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-2ipXhR/PROJECT.md
+conductor: paused 'a' and made detour 'dx' active — reconcile gate armed for /pm:resume
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: nothing changed on 'a' — every value this invocation supplied is already the value the record holds. Nothing was written.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-2ipXhR/PROJECT.md
+conductor: dropped the detour frame pausing 'a' for detour 'dx' — the reconcile obligation it armed is ENDED, not answered: no verdict was written, and the may-invalidate link keeps its record carrying the drop and this reason. 'a' is not resumed and its status is unchanged
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-2ipXhR/PROJECT.md
+conductor: detour 'dbase' is still queued, not archived — resuming anyway, but confirm its work is finished and committed before building on the resumed epic
+conductor: resumed 'base'
+conductor: RECONCILE GATE — 'base' carries reconcileNeeded and owes a verdict against 'dbase'. Run the reconciler BEFORE writing code, then `record-reconcile base --detour dbase --verdict valid|invalidated`, then `honcho-memory pop base "<detour>; reconcile = …"` for the memory line
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-HhcO9I/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-HhcO9I/PROJECT.md
+conductor: added epic 'base' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-HhcO9I/PROJECT.md
+conductor: added epic 'dbase' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-HhcO9I/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-HhcO9I/PROJECT.md
+conductor: added epic 'dx' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-HhcO9I/PROJECT.md
+conductor: updated 'base'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-HhcO9I/PROJECT.md
+conductor: paused 'base' and made detour 'dbase' active — reconcile gate armed for /pm:resume
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-HhcO9I/PROJECT.md
+conductor: updated 'a'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-HhcO9I/PROJECT.md
+conductor: paused 'a' and made detour 'dx' active — reconcile gate armed for /pm:resume
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-HhcO9I/PROJECT.md
+conductor: dropped the detour frame pausing 'base' for detour 'dbase' — the reconcile obligation it armed is ENDED, not answered: no verdict was written, and the may-invalidate link keeps its record carrying the drop and this reason. 'base' is not resumed and its status is unchanged
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-4e1QNE/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-4e1QNE/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-4e1QNE/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-4e1QNE/PROJECT.md
+conductor: updated 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-4e1QNE/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-4e1QNE/PROJECT.md
+conductor: dropped the detour frame pausing 'p' for detour 'd' — the reconcile obligation it armed is ENDED, not answered: no verdict was written, and the may-invalidate link keeps its record carrying the drop and this reason. 'p' is not resumed and its status is unchanged
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-5yOjS9/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-5yOjS9/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-5yOjS9/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-5yOjS9/PROJECT.md
+conductor: updated 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-5yOjS9/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-5yOjS9/PROJECT.md
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-5yOjS9/PROJECT.md
+conductor: dropped the detour frame pausing 'p' for detour 'd' — the reconcile obligation it armed is ENDED, not answered: no verdict was written, and the may-invalidate link keeps its record carrying the drop and this reason. 'p' is not resumed and its status is unchanged
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-DG0fXT/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-DG0fXT/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-DG0fXT/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-DG0fXT/PROJECT.md
+conductor: updated 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-DG0fXT/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-DG0fXT/PROJECT.md
+conductor: dropped the detour frame pausing 'p' for detour 'd' — the reconcile obligation it armed is ENDED, not answered: no verdict was written, and the may-invalidate link keeps its record carrying the drop and this reason. 'p' is not resumed and its status is unchanged
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-RpkIjS/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-RpkIjS/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-RpkIjS/PROJECT.md
+conductor: added epic 'd1' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-RpkIjS/PROJECT.md
+conductor: added epic 'd2' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-RpkIjS/PROJECT.md
+conductor: updated 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-RpkIjS/PROJECT.md
+conductor: paused 'p' and made detour 'd1' active — reconcile gate armed for /pm:resume
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-RpkIjS/PROJECT.md
+conductor: detour 'd1' is still queued, not archived — resuming anyway, but confirm its work is finished and committed before building on the resumed epic
+conductor: resumed 'p'
+conductor: RECONCILE GATE — 'p' carries reconcileNeeded and owes a verdict against 'd1'. Run the reconciler BEFORE writing code, then `record-reconcile p --detour d1 --verdict valid|invalidated`, then `honcho-memory pop p "<detour>; reconcile = …"` for the memory line
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: nothing changed on 'p' — every value this invocation supplied is already the value the record holds. Nothing was written.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-RpkIjS/PROJECT.md
+conductor: paused 'p' and made detour 'd2' active — reconcile gate armed for /pm:resume
+conductor: `p` — 2nd deferral of this epic (detours recorded: d1, d2)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-RpkIjS/PROJECT.md
+conductor: 'p' held no frame to drop — nothing was written to .conductor/state.json
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-492o0W/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-492o0W/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-492o0W/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-492o0W/PROJECT.md
+conductor: updated 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-492o0W/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-DVvUED/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-DVvUED/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-DVvUED/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-DVvUED/PROJECT.md
+conductor: updated 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-DVvUED/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-DVvUED/PROJECT.md
+conductor: dropped the detour frame pausing 'p' for detour 'd' — the reconcile obligation it armed is ENDED, not answered: no verdict was written, and the may-invalidate link keeps its record carrying the drop and this reason. 'p' is not resumed and its status is unchanged
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-DVvUED/PROJECT.md
+conductor: removed 1 epic(s): p
+conductor: stripped 1 dangling reference(s) to removed epic(s), held by: epic `d` links[]
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-C5sSwn/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-C5sSwn/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-C5sSwn/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: no live detour-stack frame pauses 'p' — there is no pause to end. `pop-detour` resumes the epic at the top of the stack; this verb ends a frame for an epic that is not coming back
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-0ZlCnr/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-0ZlCnr/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-0ZlCnr/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-0ZlCnr/PROJECT.md
+conductor: updated 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-0ZlCnr/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+usage: conductor.mjs drop-detour <pausedEpicId> --reason "<why>"
+conductor: --reason requires a non-empty reason
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-jUcVww/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-jUcVww/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-jUcVww/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-jUcVww/PROJECT.md
+conductor: updated 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-jUcVww/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-jUcVww/PROJECT.md
+conductor: dropped the detour frame pausing 'p' for detour 'd' — the reconcile obligation it armed is ENDED, not answered: no verdict was written, and the may-invalidate link keeps its record carrying the drop and this reason. 'p' is not resumed and its status is unchanged
+conductor: 'd' is not a detour 'p' was paused for with --reconcile, so there is no reconcile obligation for this verdict to answer — 'p' owes no reconcile verdict against any detour. Nothing was written.
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-j4cuP4/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-j4cuP4/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-j4cuP4/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-j4cuP4/PROJECT.md
+conductor: updated 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-j4cuP4/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-j4cuP4/PROJECT.md
+conductor: added epic 'q' (claude-code, queued)
+conductor: the top of the detour stack is 'p', not 'q' — the stack is LIFO, so resume 'p' first
+conductor: the detour stack is empty — there is nothing paused to resume
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-M86WHc/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-M86WHc/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-M86WHc/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-M86WHc/PROJECT.md
+conductor: updated 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-M86WHc/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: paused epic 'p' is archived — it ended while parked, so there is nothing to resume. End the frame deliberately rather than by popping it: `drop-detour p --reason "<why>"`
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-AFSQ7T/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-AFSQ7T/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-AFSQ7T/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-AFSQ7T/PROJECT.md
+conductor: updated 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-AFSQ7T/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: nothing changed on 'p' — every value this invocation supplied is already the value the record holds. Nothing was written.
+conductor: cannot remove 'p' — still held by 1 reference(s) that cannot be stripped.
+  1 detour-stack reference(s): a detour-stack frame's pausedEpic → `p`. Resume or pop the detour first (/pm:resume), then remove. Or, where it is not coming back, end the pause: `drop-detour p --reason "<why>"`.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-AFSQ7T/PROJECT.md
+conductor: dropped the detour frame pausing 'p' for detour 'd' — the reconcile obligation it armed is ENDED, not answered: no verdict was written, and the may-invalidate link keeps its record carrying the drop and this reason. 'p' is not resumed and its status is unchanged
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-AFSQ7T/PROJECT.md
+conductor: removed 1 epic(s): p
+conductor: stripped 1 dangling reference(s) to removed epic(s), held by: epic `d` links[]
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-CD9jty/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-CD9jty/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-CD9jty/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-CD9jty/PROJECT.md
+conductor: updated 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-CD9jty/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: cannot remove 'd' — still held by 2 reference(s) that cannot be stripped.
+  1 detour-stack reference(s): a detour-stack frame's spawnedDetour → `d`. Resume or pop the detour first (/pm:resume), then remove. Or, where it is not coming back, end the pause: `drop-detour p --reason "<why>"`.
+  1 reconcile obligation link(s): epic `p` links[] (a reconcile it owes is recorded against it) → `d`. Removing it would leave the owed verdict nothing to be recorded against. Answer it first — `record-reconcile p --detour d --verdict valid|invalidated` — then remove.
+✔ Scenario: Archiving a parked epic through the interactive verb is refused (433.974875ms)
+✔ Scenario: Archiving an epic with no frame is unaffected (294.891958ms)
+✔ Scenario: An already-archived parked epic still records its real disposition (493.439458ms)
+✔ Scenario: The drift heal still archives a parked epic (432.689083ms)
+✔ Scenario: A jammed frame is dropped and the stack is usable again (856.055625ms)
+✔ Scenario: A buried frame is dropped without disturbing the frames above it (756.079375ms)
+✔ Scenario: Dropping a frame does not resume or revive the epic (445.835833ms)
+✔ Scenario: An already-archived epic's frame is droppable (501.573959ms)
+✔ Scenario: A dropped frame's reconcile obligation is ended, not answered (448.139ms)
+✔ Scenario: A drop leaves an obligation an earlier detour still owes (721.476667ms)
+✔ 3.6: a render after the drop neither re-arms nor re-clears anything (507.821209ms)
+✔ Scenario: Removing the epic afterwards is no longer blocked (562.282083ms)
+✔ Scenario: Dropping a frame for an epic that has none is refused (289.458459ms)
+✔ Scenario: Dropping a frame without a reason is refused (473.484917ms)
+✔ REGRESSION GUARD: record-reconcile refuses a DROPPED detour through its existing unarmed-link arm (504.419417ms)
+✔ REGRESSION GUARD: pop-detour is unchanged for every case that worked before (616.187208ms)
+✔ REGRESSION GUARD: pop-detour still refuses an epic that ended while parked (423.689166ms)
+✔ Scenario: the remove-epic refusal on a detour-stack frame names the verb that ends the pause (610.370292ms)
+✔ Scenario: the remove-epic remedy names the paused epic even when the DETOUR is the epic being removed (418.198458ms)
+✖ drop-detour writes the whole transition in exactly ONE saveState (0.755ms)
+ℹ tests 20
+ℹ suites 0
+ℹ pass 19
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9830.441375
+
+✖ failing tests:
+
+test at scripts/test/detour-frame-drop.test.mjs:370:1
+✖ drop-detour writes the whole transition in exactly ONE saveState (0.755ms)
+  AssertionError [ERR_ASSERTION]: dropDetour() calls saveState() 2 time(s); the frame removal, the link disarm and the reconcileNeeded recompute are ONE write or the record can be read half-transitioned
+  
+  2 !== 1
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/detour-frame-drop.test.mjs:385:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

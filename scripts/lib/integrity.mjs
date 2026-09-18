@@ -26,6 +26,7 @@ import { commitDate, isAncestor, isCommitNameShaped, objectExists, reachableFrom
 import { isArchiveBackfilled, outcomeOf, stampedBy } from "./disposition.mjs";
 import { epicReferences, holdsOwedReconcileRecord, isKnownLinkType, isRenderableLink, KNOWN_LINK_TYPES, supersededEpics } from "./links.mjs";
 import { claimExpiry, isLiveClaim } from "./claim-shape.mjs";
+import { getAutonomy, grantLabel } from "./autonomy.mjs";
 
 /** The outcomes that are their own explanation. Each carries a REQUIRED reason saying why the
  *  work did not complete, so an epic holding one is a record working rather than a record
@@ -565,8 +566,11 @@ export const CHECKS = [
       // The reported instance was a release deferral left behind by remove-epic; `PROJECT.md`
       // renders one of those as a deferral pointing at nothing.
       const held = new Set((state.epics || []).map(e => e && e.id));
+      // NON-EMPTY, explicitly. epicReferences() became value-agnostic so `empty-epic-id` below could
+      // see a holder at all; this check's own predicate is what keeps an empty value out of it, so
+      // one defect is never counted under two headings.
       return epicReferences(state)
-        .filter(r => !held.has(r.epic))
+        .filter(r => r.epic && !held.has(r.epic))
         .map(r => ({ epic: r.holder || undefined, detail:
           `${r.where} names \`${r.epic}\`, which is not an epic in this record` +
           (r.drop ? "" : r.kind === "owed-reconcile"
@@ -580,6 +584,99 @@ export const CHECKS = [
               "the link cannot be stripped while the obligation stands"
             : " — a detour-stack frame, so `/pm:resume` would pop a frame that " +
             "names nothing") }));
+    },
+  },
+  {
+    id: "self-referential-epic-id",
+    title: "a stored epic id whose value is the id of the epic that holds it",
+    /** THE SHARPEST OF THE THREE, and the reason the write-time refusal exists as well. A
+     *  self-referential `carriedTo` SATISFIES the archive gate's handoff obligation while conveying
+     *  nothing: the work is recorded as owned by a record that has just ended, the gate that exists
+     *  to stop a remainder vanishing reports success, and a reader afterwards cannot distinguish it
+     *  from a genuine handoff.
+     *
+     *  Driven from epicReferences()'s declared set, the SAME set `empty-epic-id` below reads and
+     *  the same one `dangling-epic-reference` and `remove-epic` read. Two checks over two
+     *  hand-written lists of holders is the sibling-site defect this change exists to close, and a
+     *  self-reference is no less false in a deferral than in a `carriedTo`.
+     *
+     *  `dangling-epic-reference` cannot see this shape by construction: a self-reference names an
+     *  epic the record demonstrably DOES hold.
+     *
+     *  A HISTORICAL holder is reported on the same footing and worded differently (Gate 2 I-I2). The
+     *  spec's enumeration names a superseded `carriedTo` explicitly, so it is not skipped; but
+     *  `--correct-disposition` repairs the LIVE field by moving the bad value verbatim under
+     *  `disposition.superseded`, which the record-don't-delete rule this release ships makes
+     *  immutable. Telling a reader who has already done the repair to "point it at the epic that
+     *  actually holds the work" is a remedy no verb can perform, and the finding is not a defect but
+     *  the record of one that was corrected. */
+    run(state) {
+      return epicReferences(state)
+        .filter(r => r.epic && r.holder && r.epic === r.holder)
+        .map(r => ({ epic: r.holder, detail:
+          `${r.where} names \`${r.epic}\` — itself. A reference to the record that holds it reads as a ` +
+          "relationship to another record and conveys nothing; a `carriedTo` of this shape satisfies " +
+          "the archive gate's handoff obligation while leaving the work it names owned by an epic " +
+          "that has ended. " + (r.historical
+            ? "This is the SUPERSEDED half of a corrected disposition — history, which no verb rewrites — so " +
+              "the finding persists by design once the live field is repaired, and there is nothing to do " +
+              "about it. Check that the live `carriedTo` beside it names the epic that actually holds the work."
+            : "Point it at the epic that actually holds the work, or remove the claim.") }));
+    },
+  },
+  {
+    id: "empty-epic-id",
+    title: "a stored epic id whose value is an empty string",
+    /** The shape `dangling-epic-reference` passes over BY CONSTRUCTION — an empty string names no
+     *  epic, so "names an epic the record does not hold" is not the question it answers — and the
+     *  reason epicReferences() had to become value-agnostic: while its `add()` emitted a holder only
+     *  for a non-empty value, a check driven from that set could never fire.
+     *
+     *  Each consumer applies its own predicate, so a finding is reported exactly once: an empty id
+     *  is this check and never a dangling reference, an unknown non-empty id is a dangling reference
+     *  and never this one. */
+    run(state) {
+      return epicReferences(state)
+        .filter(r => !r.epic)
+        .map(r => ({ epic: r.holder || undefined, detail:
+          `${r.where} holds an empty epic id — it claims a reference and then declines to say what it ` +
+          "points at, which is not the sayable form of \"there is none\". The write-time refusals " +
+          "make this unwritable going forward; " + (r.historical
+            // Same ruling as `self-referential-epic-id` above (Gate 2 I-I2).
+            ? "this one is the SUPERSEDED half of a corrected disposition — history, which no verb rewrites — " +
+              "so it persists by design and there is nothing to do about it."
+            : "a record already holding one is repaired by re-recording " +
+              "the reference with the epic it meant.") }));
+    },
+  },
+  {
+    id: "grant-names-nothing",
+    title: "an autonomy pre-authorization whose action and category are both empty",
+    /** NOT a reference, and deliberately not driven from epicReferences(): a grant is not a pointer
+     *  to another record. It is here for the reason the other two are — it is already on disk, the
+     *  write-time refusal `epic-autonomy` requires binds only writes that have not happened, and NO
+     *  REVOKE CAN REACH IT, because a revoke names a stored value and an empty one is not
+     *  expressible as a flag value. This report is the only surface that sees it.
+     *
+     *  `grantLabel()` is the same predicate the re-arm report uses for "does this grant name
+     *  something", so the two cannot come to disagree about which grants are live. */
+    run(state) {
+      const out = [];
+      for (const e of state.epics || []) {
+        if (!e || typeof e !== "object") continue;
+        getAutonomy(e).preAuthorized.forEach((g, i) => {
+          if (grantLabel(g) !== null) return;
+          out.push({ epic: e.id, detail:
+            `autonomy.preAuthorized[${i}] names neither an action nor a category. A grant that names ` +
+            "nothing matches nothing or everything depending on who reads it, it authorises nothing, " +
+            "and no revoke can take it back — a revoke names a stored value and an empty one cannot " +
+            "be typed as a flag value. NO VERB PRINTS A REMEDY FOR IT, and that is deliberate rather " +
+            "than an omission: a revoke cannot name it and a grants clear-all is deletion, which this " +
+            "capability rules out. It is reported so that a reader knows the grant is there and knows " +
+            "it authorises nothing." });
+        });
+      }
+      return out;
     },
   },
   {

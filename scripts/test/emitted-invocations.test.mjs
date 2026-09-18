@@ -1173,6 +1173,46 @@ const INTEGRITY_BUILDERS = {
       reported: (out) => out.includes("`gone`"),
     },
   ],
+  // The three shapes a stored value can take that cannot be true. All three PRINT NO INVOCATION:
+  // the two reference checks describe a repair that is a re-record of whatever the reference meant
+  // (which no single command can be written for without guessing the intent), and the grant check
+  // has no remedy AT ALL by design — a revoke cannot name an empty value and a grants clear-all is
+  // deletion, which `epic-autonomy` rules out. Every fixture is HAND-WRITTEN because after this
+  // change's write-time refusals the engine can no longer produce any of them.
+  "self-referential-epic-id": {
+    prints: "none",
+    setup() {
+      const repo = remedyRepo();
+      repo.write({ epics: [{ id: "sr", title: "sr", priority: "P1", status: "archived", role: "epic", lane: "claude-code", links: [],
+        disposition: { outcome: "delivered", recordedAt: AT, carriedTo: "sr" } }] });
+      return { repo, epicId: "sr" };
+    },
+    produce: integrityProducer("self-referential-epic-id"),
+    reported: blockHas(),
+  },
+  "empty-epic-id": {
+    prints: "none",
+    setup() {
+      const repo = remedyRepo();
+      repo.write({ epics: [{ id: "ee", title: "ee", priority: "P1", status: "archived", role: "epic", lane: "claude-code", links: [],
+        disposition: { outcome: "delivered", recordedAt: AT },
+        deferralAssertion: { deferrals: [{ epic: "", section: "" }], declined: [], recordedAt: AT } }] });
+      return { repo, epicId: "ee" };
+    },
+    produce: integrityProducer("empty-epic-id"),
+    reported: blockHas(),
+  },
+  "grant-names-nothing": {
+    prints: "none",
+    setup() {
+      const repo = remedyRepo();
+      repo.write({ epics: [{ id: "gn", title: "gn", priority: "P1", status: "queued", role: "epic", lane: "claude-code", links: [],
+        autonomy: { level: "off", context: [], notifications: [], preAuthorized: [{ action: "", grantedAt: AT, reason: "no action" }] } }] });
+      return { repo, epicId: "gn" };
+    },
+    produce: integrityProducer("grant-names-nothing"),
+    reported: blockHas(),
+  },
   "superseded-epic-never-ended": {
     setup() {
       const repo = remedyRepo();
@@ -2830,6 +2870,39 @@ const PRINTER_FIXTURES = {
       [repo.run(["remove-epic", "rd"]), /record-reconcile rp --detour rd --verdict/],
       [repo.run(["clear-active"]), /record-reconcile rp --detour <detourId>/],
     ];
+  },
+  "archiving an epic a live detour frame still pauses"() {
+    // The frame-drop refusal's remedy. It is an arm of the archive gate itself — not an INTEGRITY
+    // check and not a DELIVERED_OBLIGATIONS variant — so it reaches Layer A through a printer
+    // fixture rather than through a builder.
+    const repo = remedyRepo();
+    repo.ok(["add-epic", "--id", "fp", "--lane", "claude-code", "--title", "fp", "--status", "active"]);
+    repo.ok(["add-epic", "--id", "fd", "--lane", "claude-code", "--title", "fd"]);
+    repo.ok(["push-detour", "fp", "--detour", "fd", "--reason", REASON, "--reconcile"]);
+    return [[repo.run(["update-epic", "fp", "--status", "archived", "--outcome", "killed",
+      "--reason", REASON, "--no-deferrals"]), /drop-detour fp --reason/]];
+  },
+  "the jam's two refusals: pop-detour on an epic that ended while parked, and remove-epic on a frame"() {
+    // Gate 2 I-I1. The frame-drop remedy is printed from THREE sites — the archive gate's (above),
+    // pop-detour's and remove-epic's — and each is its own template, so each needs its own reach.
+    const out = [];
+    {
+      // The measured jam: the epic is archived while a frame still pauses it. Written rather than
+      // driven, because the archive gate (the fixture above) is what stops the verb reaching it.
+      const repo = remedyRepo();
+      repo.write({
+        epics: [
+          { id: "jp", title: "jp", priority: "P2", status: "archived", role: "epic", lane: "claude-code", links: [] },
+          { id: "jd", title: "jd", priority: "P2", status: "queued", role: "detour", lane: "claude-code", links: [] },
+        ],
+        detourStack: [{ pausedEpic: "jp", spawnedDetour: "jd", reason: REASON, pausedAt: "2026-01-01T00:00:00.000Z" }],
+      });
+      out.push([repo.run(["pop-detour", "jp"]), /drop-detour jp --reason "<why>"/]);
+      // And the same frame is what blocks remove-epic — on the DETOUR id here, to reach the arm
+      // that derives the remedy from the frame's pausedEpic rather than from the blocking reference.
+      out.push([repo.run(["remove-epic", "jd"]), /drop-detour jp --reason "<why>"/]);
+    }
+    return out;
   },
   "activity log off"() {
     const repo = remedyRepo();

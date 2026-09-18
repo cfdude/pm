@@ -1,0 +1,42 @@
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-CpcraQ/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-CpcraQ/PROJECT.md
+conductor: gate guard is now on
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-UW5hF3/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-UW5hF3/PROJECT.md
+conductor: gate guard is now off
+✖ 2.7 the refresh block covers a Bash write on the same terms, and names the shape (215.660625ms)
+✔ 2.7 the refresh arm KEEPS its inverse — set-gate-guard off silences it, Bash included (302.622416ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 1
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 569.327583
+
+✖ failing tests:
+
+test at scripts/test/gate-guard-write-paths.test.mjs:437:1
+✖ 2.7 the refresh block covers a Bash write on the same terms, and names the shape (215.660625ms)
+  AssertionError [ERR_ASSERTION]: the refresh block names the matched shape too; stderr was:
+  conductor: gate guard — 'a' owes a tracker refresh: re-read its linked item (body, comments, labels, state) before drawing specs or a plan for it, then record the verdict with `record-tracker-refresh <id> --verdict unchanged|material-change --external-updated-at <iso>`. Turn the guard off with `set-gate-guard off` if you cannot reach the tracker — an honest bypass beats a blind `unchanged`.
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/gate-guard-write-paths.test.mjs:443:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

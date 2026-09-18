@@ -418,6 +418,25 @@ records an empty reason. A refusal costs one re-run; the silent truncation it re
 the record that dispositions exist to preserve, and stayed live in a repo because its author
 correctly would not hand-edit `state.json` to fix it.
 
+**A reference a disposition stores must name a real, OTHER epic.** `--carried-to` and the EPIC
+half of each `--deferral` are validated BEFORE the archive gate decides, and each refuses — writing
+nothing, and naming which — when the id is:
+
+- **empty** — an assertion that claims a reference and then declines to say what it points at is
+  not the sayable form of "there are none";
+- **unknown** — no epic in the record carries that id, so the work would be recorded as handed to
+  nothing;
+- **the archiving epic itself** — an epic cannot hand work to itself; that is the record that just
+  ended, and it SATISFIES the handoff obligation while conveying nothing, which is exactly what
+  that gate exists to stop.
+
+It binds wherever the reference is SUPPLIED, not only where the handoff is demanded: a receiver
+named alongside `--outcome killed` is still a claim about where work went, and a false one is no
+less false for the company it keeps. The `--deferral` ARTIFACT-SECTION half may be empty and this
+change keeps it that way; `--declined-deferral`'s `<what>` is free text and never an epic id, so
+none of this reaches it. `integrity` reports the two shapes a write-time refusal cannot reach — a
+self-reference and an empty id already on disk — see `/pm:status`.
+
 **These three flags are refused outside an archive, rather than silently dropped.** A deferral
 assertion is written only inside the archive transition, so supplying `--deferral`,
 `--declined-deferral` or `--no-deferrals` on any other invocation computed the assertion, threw
@@ -672,7 +691,10 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" remove-epic <id> [--cascade]
   reports any that a hand-edit leaves behind.
 - **Blocked while a detour-stack frame names the epic.** A frame is control state rather than a
   record: dropping it would discard a paused epic's resume path, and keeping it would leave
-  `/pm:resume` popping a frame that names nothing. Resume or pop the detour first.
+  `/pm:resume` popping a frame that names nothing. Resume or pop the detour first — or, where the
+  paused epic is not coming back, end the pause with `drop-detour <paused epic> --reason "<why>"`.
+  The refusal names both exits, and the drop-detour one always names the epic the frame PAUSES, which
+  is the only id that verb accepts.
 - **Blocked by default if the epic has any descendants** (`parent: <id>`, walked recursively —
   children, grandchildren, etc.). The command prints a short `(id, title, lane/priority/status)`
   table of the parent plus every descendant at any depth and exits non-zero — reassign or remove
@@ -854,9 +876,12 @@ bullet reached 3/15.
    without its inverse, and not justified, is a FINDING. Why the sweep misses this class is
    mechanical, not a matter of diligence: enumerating the callers of a thing that is written
    never leads to the question of whether it can be unwritten. Six instances shipped past both
-   gates here while the call-site obligation was already in force, the most consequential a
-   safety surface — pre-authorization grants accumulate with no revoke, so turning autonomy off
-   leaves every prior grant intact and turning it back on silently restores all of them.
+   gates here while the call-site obligation was already in force, and the most consequential
+   was a safety surface: pre-authorization grants accumulated with no revoke, so turning autonomy
+   off left every prior grant intact and turning it back on silently restored all of them. It was
+   closed by shipping the inverse — `set-autonomy <id> --revoke` — and the evidence is kept rather
+   than deleted, because a practice recorded without what went wrong to earn it reads as a
+   preference.
 2. **Verify against the commit, not the working tree.** The commit is the unit of verification.
    Reading a file in the working tree is NOT verification. For every task, run
    `git show --stat <that task's sha>` and assert that every file the task claims to change

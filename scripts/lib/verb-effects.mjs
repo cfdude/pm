@@ -96,6 +96,7 @@ export const VERB_EFFECTS = {
   // record of one. Both go through saveState()'s normal path, so they inherit the write-conflict
   // guard and 0.32.0's read-back verification the hand-edit never had.
   "push-detour": { effect: "mutates", writes: "state.json (the paused epic's status, the detour-stack frame, both protocol links and the active pointer), .conductor/honcho-memories.log, plus render()'s writes" },
+  "drop-detour": { effect: "mutates", writes: "state.json (the named epic's detour-stack frame, the may-invalidate link's arming record and drop stamp, and reconcileNeeded), plus render()'s writes — never the epic's status and never the active pointer" },
   "pop-detour": { effect: "mutates", writes: "state.json (the popped frame, the resumed epic's status and reconcileNeeded, and the active pointer), .conductor/honcho-memories.log, plus render()'s writes" },
   "honcho-memory": { effect: "mutates", writes: ".conductor/honcho-memories.log (append-only)" },
   "add-epic": { effect: "mutates", writes: "state.json, plus render()'s writes" },

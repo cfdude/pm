@@ -169,8 +169,8 @@ export function reconcileArchived(state) {
     } else if (e.reconcileNeeded === true) {
       // THE ONE CLEAR, and it is announced: an obligation with NOTHING a verdict could answer — no
       // live frame, no armed may-invalidate link (answered or not), no unmigrated one. No
-      // `record-reconcile` can ever be accepted for it, so leaving it would wedge Edit/Write on the
-      // epic with no CLI way out. The engine cannot produce this state (pushing arms a link, and
+      // `record-reconcile` can ever be accepted for it, so leaving it would wedge Edit/Write — and a
+      // Bash write shape, since the guard matches Bash — on the epic with no CLI way out. The engine cannot produce this state (pushing arms a link, and
       // removing an armed one is refused); it arises from a hand-edited file or from the 0.44.0
       // stamp's stated trade-off (an owing epic whose every link already carried a verdict).
       const links = Array.isArray(e.links) ? e.links : [];

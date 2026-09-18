@@ -316,12 +316,55 @@ export function detourContext(state) {
  *  always will. Sweeping it would strip the provenance the entry exists to carry, and reporting
  *  it would make every tombstone a permanent finding. See ignoreArtifact() in
  *  source-artifacts.mjs. */
+/** WHY A STORED EPIC ID CANNOT BE TRUE — `null` where it can. The ONE predicate behind both halves
+ *  of the disposition's reference rule (`--carried-to` and a deferral assertion's epic), so a
+ *  second copy of it cannot come to disagree with the first. That second copy is the sibling-site
+ *  defect this whole change is about, and writing the rule twice inside the change closing it is the
+ *  failure mode being avoided here.
+ *
+ *  Three shapes, each named so the refusal can say WHICH:
+ *    "empty" — the value is blank. An assertion asserting nothing: it claims a reference exists and
+ *      then declines to say what it points at. NOT equivalent to "there is none", which has its own
+ *      sayable form.
+ *    "unknown" — it names an epic the record does not hold: work handed to nothing.
+ *    "self" — it names the epic that holds it: work handed to the record that just ended, which
+ *      SATISFIES the handoff gate while conveying nothing and is indistinguishable afterwards from a
+ *      genuine handoff.
+ *
+ *  Lives here beside epicReferences() on purpose: this is the write-time half of the same rule the
+ *  read-time integrity checks apply to what is already on disk, and the two belong in one module. */
+export function storedEpicIdError(value, { self, state }) {
+  const id = typeof value === "string" ? value.trim() : "";
+  if (!id) return "empty";
+  if (id === self) return "self";
+  const held = ((state && state.epics) || []).some(e => e && e.id === id);
+  return held ? null : "unknown";
+}
+
 export function epicReferences(state) {
   const refs = [];
   // Every reference carries a KIND, so a reader wording an undroppable one (`drop: null`) can say
   // WHY it cannot be dropped instead of assuming it is a detour frame: `frame` | `owed-reconcile` |
   // `record`.
-  const add = (holder, where, epic, drop, kind = "record") => { if (typeof epic === "string" && epic) refs.push({ holder, where, epic, drop, kind }); };
+  // VALUE-AGNOSTIC: the holder is enumerated whatever its value, and each CONSUMER applies its own
+  // predicate. It used to be `typeof epic === "string" && epic`, which meant an empty id never
+  // entered the emitted set — so a check driven from this declaration could not see the one shape it
+  // existed to report. Loosening it further (dropping the `typeof` too) is NOT the fix: `e.parent`
+  // and `l.epic` are read unconditionally, so every epic without a parent would emit a holder whose
+  // value is `undefined` and `dangling-epic-reference` would report all of them.
+  //
+  // Each consumer keeps its own test, and a finding is reported by EXACTLY ONE of them:
+  //   dangling-epic-reference — non-empty and not held;   empty-epic-id — empty;
+  //   self-referential-epic-id — equal to its holder;     remove-epic's sweep — `toRemove.has(epic)`,
+  //     which no empty value can satisfy because no epic id is the empty string.
+  // `historical` marks a holder inside a record no verb can rewrite — today only the superseded half
+  // of a corrected disposition. It changes NO consumer's predicate: every check that reports the row
+  // still reports it. It exists so a consumer can word the finding truthfully, because the remedy a
+  // live field gets ("re-record it with the epic it meant") is a remedy that does nothing there
+  // (Gate 2 I-I2). NOT a `kind`: kind's three values say what the reference IS, and a superseded
+  // `carriedTo` is a `record` exactly as the live one is.
+  const add = (holder, where, epic, drop, kind = "record", historical = false) =>
+    { if (typeof epic === "string") refs.push({ holder, where, epic, drop, kind, historical }); };
 
   if (state && typeof state.active === "string") {
     add(null, "state.active", state.active, () => { state.active = null; });
@@ -349,7 +392,7 @@ export function epicReferences(state) {
       const prior = e.disposition.superseded;
       if (prior && typeof prior === "object") {
         add(e.id, `epic \`${e.id}\` disposition.superseded.carriedTo`, prior.carriedTo,
-          () => { delete prior.carriedTo; });
+          () => { delete prior.carriedTo; }, "record", true);
       }
     }
     const da = e.deferralAssertion;

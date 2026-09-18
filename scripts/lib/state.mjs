@@ -198,8 +198,12 @@ export class StateUnreadableError extends Error {
 const STATE_DISPLAY_PATH = ".conductor/state.json";
 
 /** The whole refusal, as the top-level catch prints it (design D2). Every remedy is a SHELL command:
- *  gate-guard blocks Edit/Write/NotebookEdit while the file is unreadable, and Bash is not matched by
- *  it, so a remedy that needed an edit tool would be a wedge. The untracked remedy is not decoration:
+ *  gate-guard blocks the editing tools while the file is unreadable, and since the-guard-covers-every-
+ *  write-path it is matched for Bash too — so what keeps these remedies runnable is no longer that the
+ *  hook misses Bash, but an explicit carve-out: over an UNREADABLE record an affirmed Bash call
+ *  CARRYING A COMMAND is allowed whatever its shape. That carve-out exists for the `git show …> …`
+ *  line below, which is itself a recognized write shape, and for the `mv`. A remedy that needed an
+ *  edit tool would still be a wedge. The untracked remedy is not decoration:
  *  a repository `init`'d and damaged before its first commit has nothing for git to restore, and
  *  `init` itself refuses while the damaged file is in place. */
 export function unreadableStateMessage(err) {
@@ -489,7 +493,10 @@ function tryBreakStaleLock(judged, at = null) {
 }
 
 /** The refusal for a lock this save could not take — naming the path, the stale age, and the shell
- *  command that removes it, because while a reconcile is owed Edit and Write are blocked. */
+ *  command that removes it, because while a reconcile is owed the editing tools are blocked. The
+ *  gate guard matches Bash now, but this remedy STAYS RUNNABLE: its `rm` is keyed on the record's own
+ *  path (or a trailing `*` on it), never on a longer literal filename beneath it, and this message
+ *  always prints the LITERAL lock path rather than a glob. */
 function lockRefusalMessage(lock, expected) {
   const shown = path.relative(process.env.CLAUDE_PROJECT_DIR || process.cwd(), lock.path) || lock.path;
   const directory = lock.directory || (lock.holder && lock.holder.kind === "directory");

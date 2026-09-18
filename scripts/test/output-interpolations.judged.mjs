@@ -112,6 +112,12 @@ j("disposition.mjs", "correctionNote", ALL, "sink-flow", "printed only by render
 x("constants.mjs", "releaseLine", {
   "s.members": 1,
 }, "engine", "a count (its id is escaped)");
+x("detour-stack.mjs", "dropDetour", {
+  "orNoRemedy(() => \"`pop-detour`\")": 1,
+}, "engine", "a literal verb name inside orNoRemedy's code span — the no-frame refusal points at the resume verb; every other value the refusal quotes goes through escapeControls at the interpolation");
+x("autonomy.mjs", "grantLabel", {
+  "grant.category": 1,
+}, "passthrough", "a grant's identity; its ONE printing consumer is setAutonomy()'s re-arm report, which wraps each label in escapeControls() at the print site — liveGrants() reads the label only for its is-it-named test");
 j("links.mjs", "epicReferences", ALL, "sink-flow", "`where` labels are printed by integrity (sink) and by remove-epic, which escapes its citation (Gate 2 T-S2) and the stripped-holder list");
 x("constants.mjs", "withdrawnGate", {
   "n": 1,
@@ -307,6 +313,12 @@ x("gate-guard.mjs", "setGateGuard", {
   "val": 2,
   "out.join(\"\\n\")": 1,
 }, "engine", "val is validated on|off; out holds engine lines and escaped ids");
+x("gate-guard.mjs", "reconcileBlockMessage", {
+  "shape": 1,
+}, "engine", "a FIXED LABEL from the frozen WRITE_SHAPE_LABELS set — writeShape() returns a member of it or null, and gate-guard-write-paths.test.mjs asserts every non-null return is a member. The label is text the engine wrote: the message carries no target path and no matched fragment, which is why it needs neither escaping nor a length bound");
+x("gate-guard.mjs", "trackerBlockMessage", {
+  "shape": 1,
+}, "engine", "the same FIXED LABEL, on the arm that keeps its inverse — see reconcileBlockMessage above");
 x("git.mjs", "commitsNotReachedBy", {
   "head": 1,
   "[...list].sort().join(\" \")": 1,
@@ -494,6 +506,12 @@ x("remove-epic.mjs", "removeEpic", {
   "[...new Set(owed.map(r => orNoRemedy(() => `\\`record-reconcile ${printedId(r.holder)} --detour ${printedId(r.epic)} --verdict valid|invalidated\\``)))].join(\", \")": 1,
 }, "escaped", "each command through orNoRemedy/printedId");
 x("remove-epic.mjs", "removeEpic", {
+  "dropTargets.map(p => orNoRemedy(() => `\\`drop-detour ${printedId(p)} --reason \"<why>\"\\``)).join(\", \")": 1,
+}, "escaped", "the frame arm's drop-detour remedy (Gate 2 I-I1): each command through orNoRemedy/printedId, over paused-epic ids already de-duplicated through a Set");
+x("remove-epic.mjs", "removeEpic", {
+  "dropLine": 1,
+}, "passthrough", "a conditional `+` chain of literals and the escaped drop-detour command list, which is swept where it sits");
+x("remove-epic.mjs", "removeEpic", {
   "flag": 1,
   "how": 1,
 }, "engine", "a literal flag name and engine wording");
@@ -584,7 +602,9 @@ x("update-epic.mjs", "updateEpic", {
   "row.clearNote": 1,
   "stillThere.join(\", \")": 1,
   "notLanded.join(\", gate \")": 1,
-}, "engine", "registry vocabularies and flag rows, validated gate numbers, story indices and colon counts, declared flag names, and resolved full commit names");
+  "flag": 1,
+  "REFERENCE_WHY[kind]": 1,
+}, "engine", "registry vocabularies and flag rows, validated gate numbers, story indices and colon counts, declared flag names, and resolved full commit names; the reference refusal's `flag` is one of two literal flag names its two call sites pass, and REFERENCE_WHY is a literal table keyed by storedEpicIdError()'s three-value vocabulary");
 x("update-epic.mjs", "updateEpic", {
   "perr": 1,
   "e.message": 2,

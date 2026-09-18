@@ -336,10 +336,19 @@ Each hook SHALL treat a present-but-unreadable `state.json` as defined above by 
 reporting the condition on the channel its hook event actually delivers, and SHALL NOT crash with an
 uncaught exception. The exit status of each is fixed by what that event does with it:
 
-- **`gate-guard` (PreToolUse on Edit/Write/NotebookEdit)** SHALL exit 2 and block. While the record
-  cannot be read the guard cannot know whether a reconcile is owed, and exiting 0 silently disables
-  the one block this plugin makes unconditional. Its message MUST name the file and a remedy
-  reachable through Bash, which this hook does not match — so the block is never a wedge.
+- **`gate-guard` (PreToolUse on Bash/Edit/Write/NotebookEdit)** SHALL exit 2 and block, EXCEPT for a
+  call whose payload affirmatively names the tool `Bash` AND carries readable command text, which it
+  SHALL allow — whatever that command is, including one matching a recognized write shape. While the
+  record cannot be read the guard cannot know whether a reconcile is owed, and exiting 0 for an
+  editing tool silently disables the one block this plugin makes unconditional. Its message MUST name
+  the file and a remedy reachable through Bash. Every such remedy is a shell command and one of them
+  is itself a redirection into a file, so wedge-freedom rests on the Bash exemption above and no
+  longer on the hook not matching Bash. The exemption SHALL be decided from the payload alone, so a
+  payload that is absent, does not parse, names no tool, or names `Bash` while carrying no readable
+  command takes the blocking path. The readable-command condition costs the exemption nothing —
+  every remedy this message names is a command, and a payload with none is a payload nothing can be
+  decided from — and it keeps this carve-out consistent with the `gate-integrity` capability's rule
+  that an undecidable Bash call blocks.
 - **`brief` (SessionStart)** SHALL exit 0 and deliver, as the session's additional context, a warning
   that names the file, states that the conductor is tracking nothing until it is fixed, and names the
   remedy — IN PLACE of any briefing content. SessionStart does not show a non-zero hook's stderr to
@@ -359,7 +368,10 @@ These exit statuses SHALL hold however the unreadable-state refusal is raised du
 invocation — from its own load, or from anything it calls — and not only where the hook handles it
 explicitly. An exit other than 2 from a PreToolUse hook lets the tool call proceed, so a refusal that
 escapes to a generic handler with a generic code would silently restore the fail-open this
-requirement closes.
+requirement closes. The Bash exemption above is the single stated carve-out. It SHALL be DECIDED
+from the payload before the record is loaded and APPLIED when the load raises the refusal, so that
+it is reached whichever code path raises it — and so that it is not an unconditional allow for
+Bash, which is what deciding and applying it in one step at the top of the hook would make it.
 
 #### Scenario: gate-guard blocks on a conflicted state file
 
@@ -367,6 +379,19 @@ requirement closes.
   the PreToolUse gate-guard hook runs
 - **THEN** it exits 2, and its stderr names `.conductor/state.json` and a git command that restores
   or resolves the file
+
+#### Scenario: The remedy stays runnable while the record is unreadable
+
+- **WHEN** a conflict-marker line is prepended to `state.json` and the gate-guard hook runs with a
+  payload naming tool `Bash` and one of the remedy commands its own message names, including the one
+  that redirects into `.conductor/state.json`
+- **THEN** it exits 0 and writes nothing
+
+#### Scenario: A Bash payload with no command does not inherit the exemption
+
+- **WHEN** a conflict-marker line is prepended to `state.json` and the gate-guard hook runs with a
+  payload naming tool `Bash` and no readable command text
+- **THEN** it exits 2 with the unreadable-state message
 
 #### Scenario: gate-guard does not crash on a wrong-shape file
 

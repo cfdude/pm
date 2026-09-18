@@ -342,9 +342,12 @@ bullet reached 3/15.
    without its inverse, and not justified, is a FINDING. Why the sweep misses this class is
    mechanical, not a matter of diligence: enumerating the callers of a thing that is written
    never leads to the question of whether it can be unwritten. Six instances shipped past both
-   gates here while the call-site obligation was already in force, the most consequential a
-   safety surface — pre-authorization grants accumulate with no revoke, so turning autonomy off
-   leaves every prior grant intact and turning it back on silently restores all of them.
+   gates here while the call-site obligation was already in force, and the most consequential
+   was a safety surface: pre-authorization grants accumulated with no revoke, so turning autonomy
+   off left every prior grant intact and turning it back on silently restored all of them. It was
+   closed by shipping the inverse — `set-autonomy <id> --revoke` — and the evidence is kept rather
+   than deleted, because a practice recorded without what went wrong to earn it reads as a
+   preference.
 2. **Verify against the commit, not the working tree.** The commit is the unit of verification.
    Reading a file in the working tree is NOT verification. For every task, run
    `git show --stat <that task's sha>` and assert that every file the task claims to change

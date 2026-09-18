@@ -505,6 +505,41 @@ export function archiveGate(epic, request = {}) {
   const invalid = dispositionError({ outcome, reason });
   if (invalid) return { ok: false, message: `cannot archive '${escapeControls(epic.id)}' — ${invalid}` };
 
+  // AN EPIC A LIVE DETOUR FRAME STILL PAUSES DOES NOT ARCHIVE THROUGH THIS VERB. No archive path
+  // consulted the stack, so archiving a parked epic exited 0 and jammed the whole stack: `pop-detour`
+  // then refuses it ("it ended while parked"), `remove-epic` refuses the frame as an unstrippable
+  // reference, and the stack is last-in-first-out, so EVERY FRAME BENEATH is unreachable too. The
+  // only exit was to restore the epic to `paused` and resume it — an epic at a live status carrying
+  // a terminal disposition, a record that says the work both ended and is under way.
+  //
+  // IT BINDS THE TRANSITION INTO `archived`, NOT AN INVOCATION AGAINST AN EPIC ALREADY THERE, and
+  // that scope is the requirement rather than a nicety. `/opsx:archive` moves the change on disk,
+  // the drift heal flips the epic and stamps `outcome: unknown`, and a LATER call to this verb is
+  // the only remaining moment a real disposition can be recorded. A parked epic reaches exactly that
+  // state by the heal path this rule deliberately leaves unbound, so an unscoped refusal would block
+  // the correction path on precisely the population this rule exists to rescue — and would do it
+  // while a frame-drop performed afterwards left the epic stranded at `outcome: unknown`.
+  //
+  // `wasArchived` is the STORED status, read from the snapshot the caller took before its field
+  // writes. It cannot be read off `epic` here: this function runs AFTER those writes, so `epic.status`
+  // is already `archived` on the very transition this arm exists to catch.
+  //
+  // THE OTHER FOUR ARCHIVE PATHS ARE NOT BOUND, and here that is structural rather than a scope test
+  // somebody has to maintain: this function has exactly one call site. The heal reflects what is on
+  // disk and refusing there would make the record contradict reality to protect a stack; the backfill
+  // and the two archived-at-creation paths register epics this conductor never paused.
+  const { frame, wasArchived } = request;
+  if (frame && !wasArchived) {
+    const detour = frame && typeof frame.spawnedDetour === "string" ? frame.spawnedDetour : undefined;
+    return { ok: false, message:
+      `cannot archive '${escapeControls(epic.id)}' — a live detour-stack frame still pauses it` +
+      (detour ? `, spawned for detour '${escapeControls(detour)}'` : "") + ". Archiving it would leave a frame " +
+      "naming an epic that has ended: `pop-detour` refuses it, `remove-epic` refuses the frame, and " +
+      "every frame beneath it becomes unreachable. End the pause deliberately first — " +
+      orNoRemedy(() => `\`drop-detour ${printedId(epic.id)} --reason "<why it is not coming back>"\``) +
+      " — then archive." };
+  }
+
   // REPLACEMENT, and its refusal. An agent's disposition replaces an ENGINE-stamped one —
   // outcome, reason and timestamp together — because a disposition nobody chose is exactly what
   // an agent is entitled to answer. It is REFUSED against another agent's record, which would

@@ -1114,7 +1114,9 @@ recipe("update-epic --outcome", { exempt: EXEMPT.vocab("outcome"), run: (c, v) =
 recipe("update-epic --reason", { rendered: true, run: (c, v) => pm(c.cwd, ["update-epic", "k1", "--status", "archived", "--outcome", "killed", "--reason", v, "--no-deferrals"]) });
 recipe("update-epic --deferral", { notRendered: "a deferral assertion is read by the archive gate and printed by no surface", run: (c, v) => pm(c.cwd, ["update-epic", "k2", "--status", "archived", "--outcome", "killed", "--reason", "r", "--deferral", `base:${v}`]) });
 recipe("update-epic --declined-deferral", { notRendered: "a deferral assertion is read by the archive gate and printed by no surface", run: (c, v) => pm(c.cwd, ["update-epic", "k3", "--status", "archived", "--outcome", "killed", "--reason", "r", "--declined-deferral", `${v}:why not`]) });
-recipe("update-epic --carried-to", { rendered: true, run: (c, v) => pm(c.cwd, ["update-epic", "k4", "--status", "archived", "--outcome", "delivered", "--carried-to", v, "--no-deferrals"]) });
+// A handoff receiver must now name a real, OTHER epic (operations-ship-their-inverses), so a poisoned
+// value can never be stored — it is refused at the write, with the value escaped in the refusal.
+recipe("update-epic --carried-to", { exempt: EXEMPT.knownEpic("carried-to"), run: (c, v) => pm(c.cwd, ["update-epic", "k4", "--status", "archived", "--outcome", "delivered", "--carried-to", v, "--no-deferrals"]) });
 recipe("update-epic --correct-disposition", { rendered: true, run: (c, v) => (ok(c.cwd, ["update-epic", "k5", "--status", "archived", "--outcome", "killed", "--reason", "r", "--no-deferrals"]), pm(c.cwd, ["update-epic", "k5", "--status", "archived", "--outcome", "abandoned", "--reason", "r2", "--correct-disposition", v, "--no-deferrals"])) });
 recipe("update-epic --review-mode", { exempt: EXEMPT.vocab("review-mode"), run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--review-mode", v]) });
 recipe("update-epic --add-story", { rendered: true, expect: "fail", run: (c, v) => {
@@ -1162,6 +1164,18 @@ recipe("set-autonomy --level", { exempt: EXEMPT.vocab("level"), run: (c, v) => p
 recipe("set-autonomy --preauthorize", { notRendered: "autonomy grants, context and notifications are read back by the agent from state.json; no surface prints them", run: (c, v) => pm(c.cwd, ["set-autonomy", "ue", "--preauthorize", `${v}:because`]) });
 recipe("set-autonomy --context", { notRendered: "autonomy grants, context and notifications are read back by the agent from state.json; no surface prints them", run: (c, v) => pm(c.cwd, ["set-autonomy", "ue", "--context", v]) });
 recipe("set-autonomy --notify", { notRendered: "autonomy grants, context and notifications are read back by the agent from state.json; no surface prints them", run: (c, v) => pm(c.cwd, ["set-autonomy", "ue", "--notify", v]) });
+// The revoke pair. Granted and taken back in ONE invocation so the MATCH path runs against a poisoned
+// stored action rather than falling through as "matches nothing".
+// The revoke's value IS printed — by the refusal that names what it could not match — so the
+// poisoned value goes through the arm that renders it rather than the one that matches silently.
+recipe("set-autonomy --revoke", { rendered: true, expect: "fail", run: (c, v) => pm(c.cwd, ["set-autonomy", "ue", "--revoke", v, "--revoke-reason", "no longer safe"]) });
+// Granted in its OWN invocation: the revoke runs before this call's grants, so a grant and its
+// revoke in one line would refuse as "holds no pre-authorization naming …".
+recipe("set-autonomy --revoke-reason", { notRendered: "autonomy grants, context and notifications are read back by the agent from state.json; no surface prints them", run: (c, v) => {
+  const action = fresh("rv");
+  ok(c.cwd, ["set-autonomy", "ue", "--preauthorize", `${action}:because`]);
+  return pm(c.cwd, ["set-autonomy", "ue", "--revoke", action, "--revoke-reason", v]);
+} });
 recipe("set-lane-routing --add", { notRendered: "a lane-routing override is read by suggest-lane, whose output is JSON", run: (c, v) => pm(c.cwd, ["set-lane-routing", "--add", `${v}:claude-code`]) });
 recipe("set-lane-routing --remove", { notRendered: "removing an override prints the count removed, not the match", run: (c, v) => pm(c.cwd, ["set-lane-routing", "--remove", v]) });
 recipe("set-review-mode --mode", { exempt: EXEMPT.vocab("mode"), run: (c, v) => pm(c.cwd, ["set-review-mode", "--mode", v]) });
@@ -1177,6 +1191,19 @@ recipe("set-tracker --intent", { notRendered: "a status intent is stored for the
 // ── detours and memories ──
 recipe("push-detour --detour", { exempt: EXEMPT.knownEpic("detour"), run: (c, v) => pm(c.cwd, ["push-detour", "base", "--detour", v, "--reason", "r", "--no-reconcile"]) });
 recipe("push-detour --reason", { rendered: true, run: (c, v) => pm(c.cwd, ["push-detour", "base", "--detour", "rd", "--reason", v, "--reconcile"]) });
+// A drop's reason is stored on the may-invalidate link it disarms; no surface prints it. Pushed in
+// its own invocation because the drop needs a frame that already exists.
+recipe("drop-detour --reason", { notRendered: "a drop's reason is stored on the link it disarms and printed by no surface", run: (c, v) => {
+  // Its OWN pair of epics: `base` is shared by every recipe in this fixture and may already be
+  // paused or on the stack by the time this one runs.
+  const p = fresh("dp"), d = fresh("dd");
+  ok(c.cwd, ["add-epic", "--id", p, "--lane", "claude-code", "--status", "queued"]);
+  ok(c.cwd, ["add-epic", "--id", d, "--lane", "claude-code", "--status", "queued"]);
+  ok(c.cwd, ["push-detour", p, "--detour", d, "--reason", "r", "--reconcile"]);
+  const out = pm(c.cwd, ["drop-detour", p, "--reason", v]);
+  ok(c.cwd, ["set-active", "base"]);
+  return out;
+} });
 recipe("log-detour <positional>", { rendered: true, run: (c, v) => pm(c.cwd, ["log-detour", v]) });
 recipe("honcho-memory <positional>", { rendered: true, run: (c, v) => pm(c.cwd, ["honcho-memory", "push", "base", v]) });
 recipe("retract-detour --reason", { notRendered: "render drops RETRACTED rows, and the verb does not echo the reason", run: (c, v) => {

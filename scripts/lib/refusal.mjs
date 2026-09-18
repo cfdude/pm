@@ -15,7 +15,14 @@ import { RulesBlockAmbiguousError, rulesBlockAmbiguousMessage } from "./rules.mj
  *
  *  - `gate-guard` (PreToolUse) → exit 2, BLOCK. Any other status on PreToolUse lets the tool call
  *    proceed, which would silently disable the unconditional reconcile block exactly when the
- *    record saying whether one is owed cannot be read. Not a wedge: Bash is not matched by it.
+ *    record saying whether one is owed cannot be read. NOT A WEDGE, and the reason changed in
+ *    the-guard-covers-every-write-path: the hook IS matched for Bash now, so what keeps the remedies
+ *    runnable is the gate guard's own carve-out — over an unreadable record an affirmed Bash call
+ *    CARRYING A COMMAND is allowed whatever its shape, because one remedy the message prints
+ *    redirects into the record itself and would otherwise match the shape list.
+ *    A Bash payload with no readable command does not inherit it,
+ *    which costs the carve-out nothing: every remedy named is a command. The suffix this module
+ *    appends below stays true for that reason rather than for the old one.
  *  - `commit-nudge` (PostToolUse and PostToolUseFailure) → exit 2, which on both shows stderr to
  *    Claude — the actor who can run the remedy — and cannot block anything.
  *  - `brief` (SessionStart) → exit 0 with the warning as the ONLY additional context. SessionStart

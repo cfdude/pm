@@ -213,9 +213,11 @@ export const GATE_PROCEDURE_ITEMS = [
       "   diligence: enumerating the callers of a thing that is written never leads to the",
       "   question of whether it can be unwritten. Measured here, six instances shipped past both",
       "   gates while the call-site obligation was already in force, and the most consequential",
-      "   is a safety surface — pre-authorization grants accumulate with no revoke, so turning",
-      "   autonomy off leaves every prior grant intact and turning it back on silently restores",
-      "   all of them.",
+      "   was a safety surface: pre-authorization grants accumulated with no revoke, so turning",
+      "   autonomy off left every prior grant intact and turning it back on silently restored",
+      "   all of them. It was closed by shipping the inverse — `set-autonomy <id> --revoke` — and",
+      "   the evidence is kept rather than deleted, because a practice recorded without what went",
+      "   wrong to earn it reads as a preference.",
     ],
   },
   {
@@ -673,6 +675,12 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     "   the judgment only ever living in conversation. It is accepted only for a detour pushed",
     "   `--reconcile` and already popped, and `reconcileNeeded` clears only when no such detour is",
     "   left unanswered; `pop-detour` names every detour owed.",
+    "   A BASH WRITE IS A WRITE TOO: a heredoc redirection, an in-place `sed`, a `tee`, a",
+    "   copier or anything else that puts bytes in a file is forbidden while the reconcile is owed,",
+    "   exactly as `Edit` is. The PreToolUse guard mechanically blocks a closed list of those",
+    "   shapes, and that list is incomplete BY CONSTRUCTION — a path built from a variable, an",
+    "   `eval`, a script invoked by name, an interpreter given inline source all pass it. Passing",
+    "   the check is not permission; this line is the obligation and the check is only its backstop.",
     "4. **Honcho** — on every PUSH and POP, also write a one-line memory to Honcho",
     "   (\"paused X for Y\" / \"resumed X, reconciled vs Y\") so the relationship survives outside",
     "   this repo. `push-detour` prints the PUSH line for you and logs it to",
@@ -752,7 +760,11 @@ export function rulesBlock(tracker, reviewMode, secondaryTrackers = [], platform
     "   order, before treating it as a stop:",
     "   a. Already pre-authorized in the preflight — either an exact `action` match or the",
     "      action falls under a granted `category` (per the category heuristic)? → proceed,",
-    "      record via `--notify`.",
+    "      record via `--notify`. A REVOKED grant covers NOTHING, and neither does a grant that",
+    "      names nothing — an empty action or category, which a state file written before the",
+    "      revoke shipped can still hold and which no `--revoke` can name. Both authorise nothing",
+    "      whatever the level says, and `set-autonomy <id> --level autonomous` prints the live",
+    "      grants it is arming so you can read what is actually in force.",
     "   b. No backup/restore path exists? → STOP regardless of autonomy level.",
     "   c. Destructive but restorable (backed up first)? → WARN — `--notify` it immediately, proceed.",
     "   d. No context to act on? → STOP — a real gap, not a false stall.",
@@ -1012,8 +1024,11 @@ export class RulesBlockAmbiguousError extends Error {
   }
 }
 
-/** The whole refusal as the top-level catch prints it. The fix is a SHELL command, because while a
- *  reconcile is owed the gate guard blocks Edit and Write. Lines are deleted highest first, so
+/** The whole refusal as the top-level catch prints it. The fix is a SHELL command — and, since the
+ *  gate guard matches Bash, an in-place editor is a recognized write shape, so while a reconcile is
+ *  owed this `sed` is blocked as surely as `Edit` is. ACCEPTED: a damaged marker arrangement is not
+ *  time-critical and is not the guard's own escape hatch, and the way through is the one the gate
+ *  always names — complete the reconcile gate. Stated normatively in the managed-rules-block spec. Lines are deleted highest first, so
  *  each deletion leaves the numbers still to delete unchanged. */
 export function rulesBlockAmbiguousMessage(err) {
   const shown = path.relative(ROOT, err.file) || path.basename(err.file);

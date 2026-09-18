@@ -47,7 +47,13 @@ epic is archived `delivered`, an update that breaks a Gate 2 or handoff obligati
 recording a disposition. Do not route around it. Either leave the obligation met (record the real
 Gate 2 first) or name the refusal in `CONCERNS`.
 
-a. An action already covered by `preAuthorized`? → proceed, note it.
+a. An action already covered by a LIVE `preAuthorized` grant? → proceed, note it. **A REVOKED
+   grant covers nothing, and neither does one naming nothing.** A grant taken back with
+   `set-autonomy --revoke` stays in `preAuthorized[]` carrying a `revoked` stamp — it is kept as
+   record, not as authorisation, so it never satisfies this rule. Likewise a grant whose action AND
+   category are both empty authorises nothing. You are the only actor that acts on `preAuthorized`:
+   every engine reader already honours the revocation, so a grant the engine considers dead must
+   not be honoured here.
 b. No backup/restore path for a destructive action? → STOP regardless of anything else.
 c. Destructive but restorable (backed up first)? → proceed, but log it as a decision.
 d. No context to act on — a genuine unresolved unknown, not something you can infer from the
