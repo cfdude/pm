@@ -253,6 +253,20 @@ function reconcileBlockMessage(active, shape) {
     "obligation is not.\n";
 }
 
+/** The tracker-refresh block's message. It covers a Bash call ON THE SAME TERMS as the reconcile
+ *  block — same closed list, same fixed label, no text taken from the command — and it KEEPS the
+ *  inverse this branch already had. The asymmetry is deliberate and is on the record in both
+ *  directions: the reconcile arm ships no switch because one that silenced Bash writes there would
+ *  be a bypass for the whole gate, while here the escape hatch is the point. */
+function trackerBlockMessage(active, shape) {
+  return `conductor: gate guard — '${escapeControls(active.id)}' owes a tracker refresh: re-read its linked item ` +
+    "(body, comments, labels, state) before drawing specs or a plan for it, then record the " +
+    "verdict with `record-tracker-refresh <id> --verdict unchanged|material-change " +
+    "--external-updated-at <iso>`. Turn the guard off with `set-gate-guard off` if you cannot " +
+    "reach the tracker — an honest bypass beats a blind `unchanged`.\n" +
+    (shape ? `  This call matched a recognized write shape: ${shape}.\n` : "");
+}
+
 /** PreToolUse hook body: block Edit/Write/NotebookEdit while the active epic still owes a
  *  reconcile (`reconcileNeeded` — see reconcileArchived()'s comment for why this can be
  *  legitimately true with an empty detour stack). Dormant until /pm:init. As of the
@@ -334,13 +348,7 @@ export function gateGuardCheck() {
   // unauthenticated, or facing a deleted upstream item must be able to proceed honestly, and a
   // `--verdict unchanged` recorded blind is a worse outcome than an honest bypass.
   if (state.gateGuard === true && active.trackerRefreshNeeded) {
-    process.stderr.write(
-      `conductor: gate guard — '${escapeControls(active.id)}' owes a tracker refresh: re-read its linked item ` +
-      "(body, comments, labels, state) before drawing specs or a plan for it, then record the " +
-      "verdict with `record-tracker-refresh <id> --verdict unchanged|material-change " +
-      "--external-updated-at <iso>`. Turn the guard off with `set-gate-guard off` if you cannot " +
-      "reach the tracker — an honest bypass beats a blind `unchanged`.\n"
-    );
+    process.stderr.write(trackerBlockMessage(active, shape));
     process.exit(2);
   }
 }

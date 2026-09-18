@@ -93,10 +93,10 @@ Pairs: 2.1 lands with 2.2; 2.3 with 2.4; 2.5 with 2.6; 2.7 with 2.8.
 - [x] 2.6 GREEN: take the Bash exemption BEFORE the state load, local to `gateGuardCheck` (design D4).
       `refusalFor()` and its unit test at `scripts/test/state-file-refuses-to-guess.test.mjs:273` are
       NOT touched
-- [ ] 2.7 RED: the tracker-refresh arm — with `set-gate-guard on` and a refresh owed, a Bash write
+- [x] 2.7 RED: the tracker-refresh arm — with `set-gate-guard on` and a refresh owed, a Bash write
       shape exits 2 and a non-write exits 0; with the guard off both exit 0. Fails today: the first
       case exits 2 only because `tool_input` is ignored, and the matcher never delivers it
-- [ ] 2.8 GREEN: the same shape check on the tracker branch, still under the `gateGuard` flag
+- [x] 2.8 GREEN: the same shape check on the tracker branch, still under the `gateGuard` flag
 - [x] 2.8b REGRESSION GUARD (pairs with 2.2): the guard setting does not reach the reconcile arm — with
       `set-gate-guard off` and a reconcile owed, a Bash write shape still exits 2. Passes on 0.45.0
       (the flag already cannot reach that branch) and pins the property against the natural wrong

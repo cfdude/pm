@@ -15,7 +15,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
-import { ENGINE, EMPTY_CACHE, tmpRepo, run } from "./helpers.mjs";
+import { ENGINE, EMPTY_CACHE, tmpRepo, run, readState, writeState } from "./helpers.mjs";
 import { writeShape, isEngineInvocation, WRITE_SHAPE_LABELS } from "../lib/gate-guard.mjs";
 
 const LABELS = Object.values(WRITE_SHAPE_LABELS);
@@ -418,4 +418,41 @@ test("2.5 a Bash payload with no readable command does not inherit the exemption
     assert.equal(r.status, 2, `expected the unreadable-state block for ${JSON.stringify(payload)}`);
     assert.match(r.stderr, /\.conductor\/state\.json/);
   }
+});
+
+// ─────────────── 2.7 / 2.8 — the tracker-refresh arm, which KEEPS its inverse ───────────────
+
+/** A repo whose live active epic owes a tracker refresh. */
+function refreshRepo() {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  const state = readState(cwd);
+  state.epics = [{ id: "a", title: "A", priority: "P1", status: "active", role: "epic",
+    lane: "claude-code", links: [], externalId: "7", trackerRefreshNeeded: true }];
+  state.active = "a";
+  writeState(cwd, state);
+  return cwd;
+}
+
+test("2.7 the refresh block covers a Bash write on the same terms, and names the shape", () => {
+  const cwd = refreshRepo();
+  run(["set-gate-guard", "on"], { cwd });
+  const blocked = guard(cwd, bash("cat > src/x.js <<EOF"));
+  assert.equal(blocked.status, 2, blocked.stderr);
+  assert.match(blocked.stderr, /refresh/i);
+  assert.ok(blocked.stderr.includes(WRITE_SHAPE_LABELS.redirect),
+    `the refresh block names the matched shape too; stderr was:\n${blocked.stderr}`);
+  assert.equal(guard(cwd, bash("rg foo 2>/dev/null")).status, 0, "a non-write passes");
+});
+
+test("2.7 the refresh arm KEEPS its inverse — set-gate-guard off silences it, Bash included", () => {
+  // The asymmetry with the reconcile block is deliberate and is the release's own theme: the
+  // reconcile arm ships no inverse because a switch that silenced Bash writes there would bypass
+  // the whole gate, while here the escape hatch is the point — an agent that cannot reach its
+  // tracker must be able to proceed honestly rather than record a blind `unchanged`.
+  const cwd = refreshRepo();
+  run(["set-gate-guard", "off"], { cwd });
+  assert.equal(guard(cwd, bash("cat > src/x.js <<EOF")).status, 0);
+  assert.equal(guard(cwd, bash("rg foo 2>/dev/null")).status, 0);
+  assert.equal(guard(cwd, { tool_name: "Edit", tool_input: {} }).status, 0);
 });
