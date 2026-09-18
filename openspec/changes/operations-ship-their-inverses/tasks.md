@@ -46,10 +46,10 @@ and named in that commit's message.
   category:<name>>` and `--revoke-reason "<why>"`, both registered in `constants.mjs` `VERB_FLAGS`
   for `set-autonomy`, matching against the STORED value after the identical first-colon split the
   grant went through. `getAutonomy()` stays the only direct reader of `epic.autonomy`. Commit RED+GREEN together, naming `red-1.1.txt`.
-- [ ] 1.3 **RED** — tests: revoking a grant the epic does not hold exits non-zero writing nothing;
+- [x] 1.3 **RED** — tests: revoking a grant the epic does not hold exits non-zero writing nothing;
   revoking an already-revoked grant exits non-zero writing nothing; revoking with no reason or an
   empty reason exits non-zero writing nothing. Save `red-1.3.txt`.
-- [ ] 1.4 **GREEN** — the three refusals, each before `loadState()`-derived mutation so a refusal
+- [x] 1.4 **GREEN** — the three refusals, each before `loadState()`-derived mutation so a refusal
   leaves the file byte-identical. Commit RED+GREEN together.
 - [ ] 1.5 **RED** — tests: `--level off` leaves grants intact and unrevoked; `--level autonomous`
   reports the count and identity of the live grants it arms, reports nothing about revoked ones, and

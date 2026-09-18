@@ -88,3 +88,49 @@ test("Scenario: A revoke over a mixed match leaves the earlier revocation untouc
     "the earlier revocation's reason and date describe a DIFFERENT event and are never re-stamped");
   assert.equal(a.preAuthorized[1].revoked.reason, "second reason");
 });
+
+// ───────── The three refusals (1.3) ─────────
+
+test("Scenario: Revoking a grant the epic does not hold is refused", () => {
+  const cwd = repoWithEpic();
+  run(["set-autonomy", "a", "--preauthorize", "drop-scratch-table:reviewed"], { cwd });
+  const before = stateBytes(cwd);
+  const err = expectFail(() => run(["set-autonomy", "a", "--revoke", "rename-field",
+    "--revoke-reason", "typo"], { cwd }));
+  assert.ok(err, "a revoke that matched nothing exits non-zero");
+  assert.match(String(err.stderr || err.message), /rename-field/, "the refusal names the value it could not match");
+  assert.deepEqual(stateBytes(cwd), before, "the state of record is byte-identical");
+});
+
+test("Scenario: Revoking an already-revoked grant is refused", () => {
+  const cwd = repoWithEpic();
+  run(["set-autonomy", "a", "--preauthorize", "drop-scratch-table:reviewed"], { cwd });
+  run(["set-autonomy", "a", "--revoke", "drop-scratch-table", "--revoke-reason", "first"], { cwd });
+  const before = stateBytes(cwd);
+  const err = expectFail(() => run(["set-autonomy", "a", "--revoke", "drop-scratch-table",
+    "--revoke-reason", "second"], { cwd }));
+  assert.ok(err, "every match already revoked exits non-zero");
+  assert.deepEqual(stateBytes(cwd), before,
+    "a second revocation would overwrite the first one's reason and date with one describing nothing");
+});
+
+test("Scenario: Revoking without a reason is refused", () => {
+  const cwd = repoWithEpic();
+  run(["set-autonomy", "a", "--preauthorize", "drop-scratch-table:reviewed"], { cwd });
+  const before = stateBytes(cwd);
+  assert.ok(expectFail(() => run(["set-autonomy", "a", "--revoke", "drop-scratch-table"], { cwd })),
+    "no --revoke-reason at all exits non-zero");
+  assert.ok(expectFail(() => run(["set-autonomy", "a", "--revoke", "drop-scratch-table",
+    "--revoke-reason", "   "], { cwd })), "an empty reason exits non-zero");
+  assert.deepEqual(stateBytes(cwd), before, "the state of record is byte-identical after both");
+});
+
+test("A --revoke-reason with no --revoke is refused rather than dropped", () => {
+  // every-verb-refuses-what-it-does-not-read: a reason for a revocation nobody asked for is a value
+  // this verb would parse and discard while reporting success.
+  const cwd = repoWithEpic();
+  const before = stateBytes(cwd);
+  const err = expectFail(() => run(["set-autonomy", "a", "--revoke-reason", "orphaned"], { cwd }));
+  assert.ok(err, "a reason with nothing to attach to exits non-zero");
+  assert.deepEqual(stateBytes(cwd), before, "nothing was written");
+});

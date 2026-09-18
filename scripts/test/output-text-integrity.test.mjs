@@ -1164,8 +1164,16 @@ recipe("set-autonomy --context", { notRendered: "autonomy grants, context and no
 recipe("set-autonomy --notify", { notRendered: "autonomy grants, context and notifications are read back by the agent from state.json; no surface prints them", run: (c, v) => pm(c.cwd, ["set-autonomy", "ue", "--notify", v]) });
 // The revoke pair. Granted and taken back in ONE invocation so the MATCH path runs against a poisoned
 // stored action rather than falling through as "matches nothing".
-recipe("set-autonomy --revoke", { notRendered: "autonomy grants, context and notifications are read back by the agent from state.json; no surface prints them", run: (c, v) => pm(c.cwd, ["set-autonomy", "ue", "--preauthorize", `${v}:because`, "--revoke", v, "--revoke-reason", "no longer safe"]) });
-recipe("set-autonomy --revoke-reason", { notRendered: "autonomy grants, context and notifications are read back by the agent from state.json; no surface prints them", run: (c, v) => pm(c.cwd, ["set-autonomy", "ue", "--preauthorize", "rv:because", "--revoke", "rv", "--revoke-reason", v]) });
+// The revoke's value IS printed — by the refusal that names what it could not match — so the
+// poisoned value goes through the arm that renders it rather than the one that matches silently.
+recipe("set-autonomy --revoke", { rendered: true, expect: "fail", run: (c, v) => pm(c.cwd, ["set-autonomy", "ue", "--revoke", v, "--revoke-reason", "no longer safe"]) });
+// Granted in its OWN invocation: the revoke runs before this call's grants, so a grant and its
+// revoke in one line would refuse as "holds no pre-authorization naming …".
+recipe("set-autonomy --revoke-reason", { notRendered: "autonomy grants, context and notifications are read back by the agent from state.json; no surface prints them", run: (c, v) => {
+  const action = fresh("rv");
+  ok(c.cwd, ["set-autonomy", "ue", "--preauthorize", `${action}:because`]);
+  return pm(c.cwd, ["set-autonomy", "ue", "--revoke", action, "--revoke-reason", v]);
+} });
 recipe("set-lane-routing --add", { notRendered: "a lane-routing override is read by suggest-lane, whose output is JSON", run: (c, v) => pm(c.cwd, ["set-lane-routing", "--add", `${v}:claude-code`]) });
 recipe("set-lane-routing --remove", { notRendered: "removing an override prints the count removed, not the match", run: (c, v) => pm(c.cwd, ["set-lane-routing", "--remove", v]) });
 recipe("set-review-mode --mode", { exempt: EXEMPT.vocab("mode"), run: (c, v) => pm(c.cwd, ["set-review-mode", "--mode", v]) });

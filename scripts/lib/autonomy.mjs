@@ -78,6 +78,15 @@ export function setAutonomy() {
   }
   const f = parseFlags(argv.slice(1));
   requireFlagValues("set-autonomy", f);
+  // A reason for a revocation nobody asked for is a value this verb would parse and DISCARD while
+  // reporting success — every-verb-refuses-what-it-does-not-read. Before loadState(), the position
+  // every other pre-write guard here takes.
+  if (f["revoke-reason"] !== undefined && typeof f.revoke !== "string") {
+    process.stderr.write(
+      "conductor: --revoke-reason explains a revocation, and this invocation revokes nothing — " +
+      "pass --revoke \"<action>\" (or \"category:<name>\") alongside it. Nothing was written.\n");
+    process.exit(1);
+  }
   const state = loadState();
   const epic = state.epics.find(e => e.id === id);
   if (!epic) { process.stderr.write(`conductor: epic '${escapeControls(id)}' not found\n`); process.exit(1); }
@@ -105,6 +114,33 @@ export function setAutonomy() {
   if (typeof f.revoke === "string") {
     const target = grantIdentity(f.revoke);
     const revokeReason = typeof f["revoke-reason"] === "string" ? f["revoke-reason"].trim() : "";
+    // THE THREE REFUSALS, all of them BEFORE the map below, so a refused revoke leaves
+    // `.conductor/state.json` byte-identical: nothing is saved and `epic.autonomy` is never
+    // assigned. A revoke that recorded nothing true is the shape each of them removes.
+    if (!revokeReason) {
+      process.stderr.write(
+        "conductor: --revoke requires --revoke-reason \"<why>\" — the revocation is kept on the " +
+        "record beside the grant it takes back, and a reason is what distinguishes a deliberate " +
+        "withdrawal from a grant nobody can account for\n");
+      process.exit(1);
+    }
+    const matches = a.preAuthorized.filter(g => namesGrant(g, target));
+    if (!matches.length) {
+      process.stderr.write(
+        `conductor: '${escapeControls(id)}' holds no pre-authorization naming ` +
+        `'${escapeControls(target.category !== undefined ? `category:${target.category}` : target.action)}' — ` +
+        "a revoke that silently matched nothing would report success for an authorisation that is " +
+        "still live. Nothing was written.\n");
+      process.exit(1);
+    }
+    if (matches.every(isRevoked)) {
+      process.stderr.write(
+        `conductor: every grant '${escapeControls(id)}' holds for ` +
+        `'${escapeControls(target.category !== undefined ? `category:${target.category}` : target.action)}' is already ` +
+        "revoked — a second revocation would overwrite the first one's reason and date with a later " +
+        "pair describing nothing that happened. Nothing was written.\n");
+      process.exit(1);
+    }
     const revokedAt = new Date().toISOString();
     a.preAuthorized = a.preAuthorized.map(g =>
       namesGrant(g, target) && !isRevoked(g)
