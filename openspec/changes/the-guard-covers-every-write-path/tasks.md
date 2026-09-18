@@ -279,7 +279,7 @@ inline fix, so the fix is attributable and the re-review has an id to check.
 
 ## 6. Close
 
-- [ ] 6.1 Gate 2 — two fresh-context lenses over the committed range (lens A: spec alignment and real
+- [x] 6.1 Gate 2 — two fresh-context lenses over the committed range (lens A: spec alignment and real
       tests; lens B: absent edits, error and edge handling, the honesty of every message). Fix Critical
       and Important, then record
       `record-gate-review the-guard-covers-every-write-path --gate 2 --verdict pass --reviewer "<identity>"
