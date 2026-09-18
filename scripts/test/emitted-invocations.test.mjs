@@ -1173,6 +1173,46 @@ const INTEGRITY_BUILDERS = {
       reported: (out) => out.includes("`gone`"),
     },
   ],
+  // The three shapes a stored value can take that cannot be true. All three PRINT NO INVOCATION:
+  // the two reference checks describe a repair that is a re-record of whatever the reference meant
+  // (which no single command can be written for without guessing the intent), and the grant check
+  // has no remedy AT ALL by design — a revoke cannot name an empty value and a grants clear-all is
+  // deletion, which `epic-autonomy` rules out. Every fixture is HAND-WRITTEN because after this
+  // change's write-time refusals the engine can no longer produce any of them.
+  "self-referential-epic-id": {
+    prints: "none",
+    setup() {
+      const repo = remedyRepo();
+      repo.write({ epics: [{ id: "sr", title: "sr", priority: "P1", status: "archived", role: "epic", lane: "claude-code", links: [],
+        disposition: { outcome: "delivered", recordedAt: AT, carriedTo: "sr" } }] });
+      return { repo, epicId: "sr" };
+    },
+    produce: integrityProducer("self-referential-epic-id"),
+    reported: blockHas(),
+  },
+  "empty-epic-id": {
+    prints: "none",
+    setup() {
+      const repo = remedyRepo();
+      repo.write({ epics: [{ id: "ee", title: "ee", priority: "P1", status: "archived", role: "epic", lane: "claude-code", links: [],
+        disposition: { outcome: "delivered", recordedAt: AT },
+        deferralAssertion: { deferrals: [{ epic: "", section: "" }], declined: [], recordedAt: AT } }] });
+      return { repo, epicId: "ee" };
+    },
+    produce: integrityProducer("empty-epic-id"),
+    reported: blockHas(),
+  },
+  "grant-names-nothing": {
+    prints: "none",
+    setup() {
+      const repo = remedyRepo();
+      repo.write({ epics: [{ id: "gn", title: "gn", priority: "P1", status: "queued", role: "epic", lane: "claude-code", links: [],
+        autonomy: { level: "off", context: [], notifications: [], preAuthorized: [{ action: "", grantedAt: AT, reason: "no action" }] } }] });
+      return { repo, epicId: "gn" };
+    },
+    produce: integrityProducer("grant-names-nothing"),
+    reported: blockHas(),
+  },
   "superseded-epic-never-ended": {
     setup() {
       const repo = remedyRepo();

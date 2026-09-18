@@ -346,7 +346,18 @@ export function epicReferences(state) {
   // Every reference carries a KIND, so a reader wording an undroppable one (`drop: null`) can say
   // WHY it cannot be dropped instead of assuming it is a detour frame: `frame` | `owed-reconcile` |
   // `record`.
-  const add = (holder, where, epic, drop, kind = "record") => { if (typeof epic === "string" && epic) refs.push({ holder, where, epic, drop, kind }); };
+  // VALUE-AGNOSTIC: the holder is enumerated whatever its value, and each CONSUMER applies its own
+  // predicate. It used to be `typeof epic === "string" && epic`, which meant an empty id never
+  // entered the emitted set — so a check driven from this declaration could not see the one shape it
+  // existed to report. Loosening it further (dropping the `typeof` too) is NOT the fix: `e.parent`
+  // and `l.epic` are read unconditionally, so every epic without a parent would emit a holder whose
+  // value is `undefined` and `dangling-epic-reference` would report all of them.
+  //
+  // Each consumer keeps its own test, and a finding is reported by EXACTLY ONE of them:
+  //   dangling-epic-reference — non-empty and not held;   empty-epic-id — empty;
+  //   self-referential-epic-id — equal to its holder;     remove-epic's sweep — `toRemove.has(epic)`,
+  //     which no empty value can satisfy because no epic id is the empty string.
+  const add = (holder, where, epic, drop, kind = "record") => { if (typeof epic === "string") refs.push({ holder, where, epic, drop, kind }); };
 
   if (state && typeof state.active === "string") {
     add(null, "state.active", state.active, () => { state.active = null; });

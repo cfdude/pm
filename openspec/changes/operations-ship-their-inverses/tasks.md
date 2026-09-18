@@ -104,12 +104,12 @@ and named in that commit's message.
   `declinedPairs()`'s both-halves rule copied over. One helper shared with 2.2, not two — a second
   copy is the sibling-site defect this change is about.
   Commit RED+GREEN together.
-- [ ] 2.5 **RED** — tests for the three integrity checks: a self-referential `carriedTo` is
+- [x] 2.5 **RED** — tests for the three integrity checks: a self-referential `carriedTo` is
   reported; a self-referential DEFERRAL is reported (same declared set, not `carriedTo` alone); an
   empty deferral epic is reported; an autonomy grant whose action and category are both empty is
   reported; and a record whose references all name other existing epics and whose grants all name
   something reports none of them. Save `red-2.5.txt`.
-- [ ] 2.6 **GREEN** — `scripts/lib/integrity.mjs`: the checks, driven from `epicReferences()`'s
+- [x] 2.6 **GREEN** — `scripts/lib/integrity.mjs`: the checks, driven from `epicReferences()`'s
   declared set rather than an inline enumeration of holders. **That declaration must first become
   VALUE-AGNOSTIC**: `add()` at `links.mjs:324` is `if (typeof epic === "string" && epic)`, so an
   empty id never enters the emitted set and a check driven from it can never fire. Enumerate the
@@ -117,7 +117,7 @@ and named in that commit's message.
   and `remove-epic`'s sweep keep their existing non-empty test (2.7 asserts it). Self-reference and
   empty-id cover the SAME declared set, not `carriedTo` alone. The grant check is separate and is not
   driven from that set: a grant is not a reference. Commit RED+GREEN together.
-- [ ] 2.7 **REGRESSION GUARD** — the value-agnostic enumeration in 2.6 changes what every consumer
+- [x] 2.7 **REGRESSION GUARD** — the value-agnostic enumeration in 2.6 changes what every consumer
   of `epicReferences()` sees, so assert each is unchanged: `dangling-epic-reference` still reports a
   non-empty unknown id exactly once and is not duplicated by the new empty-id check; `remove-epic`'s
   reference sweep and its `frame` / `owed-reconcile` refusals behave exactly as before, in particular
