@@ -14,6 +14,8 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { spawnSync } from "node:child_process";
+import { ENGINE, EMPTY_CACHE, tmpRepo, run } from "./helpers.mjs";
 import { writeShape, isEngineInvocation, WRITE_SHAPE_LABELS } from "../lib/gate-guard.mjs";
 
 const LABELS = Object.values(WRITE_SHAPE_LABELS);
@@ -217,4 +219,93 @@ test("1.3 REGRESSION GUARD: the scan reaches real sources — an empty walk woul
   const files = sweptSources();
   assert.ok(files.length >= 20, `expected the engine's whole lib to be swept, walked ${files.length}`);
   assert.ok(files.includes("scripts/lib/gate-guard.mjs"));
+});
+
+// ─────────────── 2 — the guard reads the payload it used to drain and discard ───────────────
+
+const guard = (cwd, payload) => {
+  const r = spawnSync("node", [ENGINE, "gate-guard"], {
+    cwd, encoding: "utf8",
+    input: typeof payload === "string" ? payload : JSON.stringify(payload),
+    env: { ...process.env, CLAUDE_PROJECT_DIR: cwd, PM_CACHE_ROOT: EMPTY_CACHE },
+  });
+  return { status: r.status, stdout: r.stdout || "", stderr: r.stderr || "" };
+};
+const bash = (command) => ({ tool_name: "Bash", tool_input: { command } });
+
+/** A repo whose live active epic `p` owes a reconcile — pushed `--reconcile`, then popped. */
+function owingRepo() {
+  const cwd = tmpRepo();
+  run(["init"], { cwd });
+  for (const id of ["p", "d"]) run(["add-epic", "--id", id, "--lane", "claude-code", "--title", id], { cwd });
+  run(["set-active", "p"], { cwd });
+  run(["push-detour", "p", "--detour", "d", "--reason", "it touched shared code", "--reconcile"], { cwd });
+  run(["pop-detour", "p"], { cwd });
+  return cwd;
+}
+
+test("2.1 a heredoc redirection is blocked while a reconcile is owed, and the block names the shape", () => {
+  const cwd = owingRepo();
+  const r = guard(cwd, bash("cat > src/x.js <<EOF\nq\nEOF"));
+  assert.equal(r.status, 2, `expected a block, got ${r.status}: ${r.stderr}`);
+  assert.match(r.stderr, /still owes a reconcile/);
+  assert.ok(r.stderr.includes(WRITE_SHAPE_LABELS.redirect),
+    `the block must name the matched shape's fixed label; stderr was:\n${r.stderr}`);
+});
+
+test("2.1 an in-place stream editor is blocked", () => {
+  const cwd = owingRepo();
+  const r = guard(cwd, bash("sed -i '' s/a/b/ src/x.js"));
+  assert.equal(r.status, 2);
+  assert.ok(r.stderr.includes(WRITE_SHAPE_LABELS.inPlace), r.stderr);
+});
+
+test("2.1 the block message carries a label, not the command", () => {
+  const cwd = owingRepo();
+  const odd = "zq7-marker-zq7";
+  const r = guard(cwd, bash(`cat > src/${odd}/x.js <<EOF`));
+  assert.equal(r.status, 2);
+  assert.ok(r.stderr.includes(WRITE_SHAPE_LABELS.redirect), r.stderr);
+  assert.ok(!r.stderr.includes(odd), "no text taken from the command reaches the message");
+  assert.ok(!r.stderr.includes("src/"), "not the target path either");
+});
+
+test("2.1 the block states the obligation the check cannot enforce", () => {
+  // The check is incomplete by construction — `eval`, a variable-built path, a script by name and an
+  // interpreter given inline source all pass — so the message carries the instruction the mechanism
+  // cannot. Today's "Completing the reconcile gate is the only way through" is DROPPED: this change
+  // does not make it true either.
+  const cwd = owingRepo();
+  const r = guard(cwd, bash("cat > src/x.js <<EOF"));
+  assert.match(r.stderr, /Bash write is forbidden/i);
+  assert.ok(!/only way through/.test(r.stderr),
+    "the sentence this change does not make true must be gone, not re-justified");
+});
+
+test("2.8b REGRESSION GUARD: the guard setting does not reach the Bash arm of the reconcile block", () => {
+  // Pins the property against the natural wrong implementation, in which the reconcile and tracker
+  // arms share one flag-gated shape check. A switch that silenced Bash writes here would be a bypass
+  // for the whole reconcile gate — which is the defect this change closes.
+  const cwd = owingRepo();
+  run(["set-gate-guard", "off"], { cwd });
+  assert.equal(guard(cwd, bash("cat > src/x.js <<EOF")).status, 2, "`set-gate-guard off` must not reach it");
+  assert.equal(guard(cwd, { tool_name: "Edit", tool_input: {} }).status, 2);
+});
+
+test("2.8c a payload naming Bash with no readable command blocks", () => {
+  // An undecidable Bash call takes the block, never the allow — the same principle that governs an
+  // unidentifiable tool. Fails against the natural wrong implementation, in which
+  // `tool_name === "Bash"` alone selects the allow path.
+  const cwd = owingRepo();
+  for (const payload of [
+    { tool_name: "Bash" },
+    { tool_name: "Bash", tool_input: null },
+    { tool_name: "Bash", tool_input: "rg foo" },
+    { tool_name: "Bash", tool_input: { command: 7 } },
+    { tool_name: "Bash", tool_input: { command: null } },
+  ]) {
+    const r = guard(cwd, payload);
+    assert.equal(r.status, 2, `expected a block for ${JSON.stringify(payload)}: ${r.stderr}`);
+    assert.match(r.stderr, /still owes a reconcile/);
+  }
 });

@@ -307,6 +307,9 @@ x("gate-guard.mjs", "setGateGuard", {
   "val": 2,
   "out.join(\"\\n\")": 1,
 }, "engine", "val is validated on|off; out holds engine lines and escaped ids");
+x("gate-guard.mjs", "reconcileBlockMessage", {
+  "shape": 1,
+}, "engine", "a FIXED LABEL from the frozen WRITE_SHAPE_LABELS set — writeShape() returns a member of it or null, and gate-guard-write-paths.test.mjs asserts every non-null return is a member. The label is text the engine wrote: the message carries no target path and no matched fragment, which is why it needs neither escaping nor a length bound");
 x("git.mjs", "commitsNotReachedBy", {
   "head": 1,
   "[...list].sort().join(\" \")": 1,

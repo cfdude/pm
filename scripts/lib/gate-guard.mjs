@@ -200,6 +200,59 @@ export function writeShape(command) {
   return null;
 }
 
+/** The command text of an AFFIRMATIVELY-identified Bash call, or null for everything else: an
+ *  editing tool, an unknown tool name, an unparseable payload, an absent payload, and a payload
+ *  naming `Bash` while carrying no readable command.
+ *
+ *  ONLY AN AFFIRMED BASH CALL TAKES THE SHAPE PATH (design D3). Defaulting an unidentifiable call
+ *  to it would convert a malformed payload into a silent hole in the one block this plugin makes
+ *  unconditional; and where `tool_input` is absent, is not an object, or its `command` is not a
+ *  string, there is no command text for the closed list to decide from, and an undecidable call
+ *  takes the block, never the allow.
+ *
+ *  This is the engine's SECOND reader of the PreToolUse payload. `lessons.mjs` reads the same two
+ *  fields and reads the command's FIRST LINE ONLY — an explicit precision decision there, because a
+ *  heredoc body can contain any phrase and a lesson matching its own body fired twice. Here the
+ *  WHOLE command is read, and it must be: a write shape after a `&&` is the evasion this guard
+ *  exists to catch, and a false positive costs a block that running the gate clears. The two
+ *  readers differ deliberately; neither is the other's bug. */
+function affirmedBashCommand(payload) {
+  let event;
+  try { event = JSON.parse(payload); } catch { return null; }
+  if (!event || typeof event !== "object" || event.tool_name !== "Bash") return null;
+  const input = event.tool_input;
+  if (!input || typeof input !== "object") return null;
+  return typeof input.command === "string" ? input.command : null;
+}
+
+/** The reconcile block's message (design D6). `shape` is a FIXED LABEL from WRITE_SHAPE_LABELS or
+ *  null — the message interpolates NO text taken from the command: not the target path, not the
+ *  matched fragment. That is subtractive rather than defensive: text the engine wrote itself needs
+ *  neither escaping nor a length bound, where an interpolated path would need both.
+ *
+ *  "Completing the reconcile gate is the only way through" is DROPPED rather than re-justified.
+ *  This change does not make it true either — every undecidable form passes, and an unreadable
+ *  record allows every Bash call — so what replaces it is the obligation itself, which is the
+ *  instruction layer doing the work the mechanism cannot. */
+function reconcileBlockMessage(active, shape) {
+  return `conductor: gate guard — '${escapeControls(active.id)}' still owes a reconcile (a detour touched shared ` +
+    "code). Run the reconcile gate (reconciler agent, per the conductor skill's POP protocol) " +
+    // NO BYPASS SENTENCE HERE, and its absence is the fix. This branch is UNCONDITIONAL —
+    // `set-gate-guard off` does not reach it, by design (the reconcile skip is the highest-stakes
+    // one, and the opt-in was never actually turned on in real usage). The message nevertheless
+    // told the reader to turn the guard off to bypass, which is simply false: verified by setting
+    // it off and watching this branch still exit 2. It also contradicted commands/gate-guard.md's
+    // "There is no bypass for this specific case". The tracker branch below keeps its bypass
+    // sentence because there the flag really does gate it.
+    "before writing source. There is NO bypass for this case: `set-gate-guard off` does not " +
+    "reach it.\n" +
+    (shape ? `  This call matched a recognized write shape: ${shape}.\n` : "") +
+    "  A Bash write is forbidden while this reconcile is owed WHETHER OR NOT this check sees it: " +
+    "a path built from a variable, anything behind `eval`, a script invoked by name and an " +
+    "interpreter given inline source all pass unrecognized. The check is a backstop; the " +
+    "obligation is not.\n";
+}
+
 /** PreToolUse hook body: block Edit/Write/NotebookEdit while the active epic still owes a
  *  reconcile (`reconcileNeeded` — see reconcileArchived()'s comment for why this can be
  *  legitimately true with an empty detour stack). Dormant until /pm:init. As of the
@@ -213,8 +266,11 @@ export function writeShape(command) {
  *  (stderr becomes the reason shown to the agent). */
 export function gateGuardCheck() {
   if (!isInitialized()) return;         // DORMANT until /pm:init
-  readStdin();                          // drain, unused — this check needs no tool_input
-  requirePlatformFlag("gate-guard");    // after the drain, so a refusal leaves no writer holding a pipe
+  // The payload is no longer discarded. `tool_name` decides which path this call takes, and for an
+  // affirmed Bash call `tool_input.command` is what the closed shape list reads.
+  const payload = readStdin();          // drained FIRST, so a refusal leaves no writer holding a pipe
+  requirePlatformFlag("gate-guard");    // after the drain, and BEFORE any exemption is acted on
+  const command = affirmedBashCommand(payload);
   const state = loadState();
   const activeEpic = state.active ? state.epics.find(e => e.id === state.active) : null;
   // AN EPIC THAT HAS ENDED OWES NOTHING. `state.active` can legitimately name an ARCHIVED epic
@@ -234,21 +290,12 @@ export function gateGuardCheck() {
   // UNCONDITIONAL. `set-gate-guard off` does not reach this case: writing source before the
   // reconcile gate runs on a detour POP is the single highest-stakes skip, and the opt-in was
   // never actually turned on in real usage.
+  // The matched write shape's FIXED LABEL for an affirmed Bash call, null for every other tool —
+  // which is exactly what makes the message for an editing tool byte-identical to today's, minus
+  // the sentence this change does not make true.
+  const shape = command === null ? null : writeShape(command);
   if (active.reconcileNeeded) {
-    process.stderr.write(
-      `conductor: gate guard — '${escapeControls(active.id)}' still owes a reconcile (a detour touched shared ` +
-      "code). Run the reconcile gate (reconciler agent, per the conductor skill's POP protocol) " +
-      // NO BYPASS SENTENCE HERE, and its absence is the fix. This branch is UNCONDITIONAL —
-      // `set-gate-guard off` does not reach it, by design (the reconcile skip is the
-      // highest-stakes one, and the opt-in was never actually turned on in real usage). The
-      // message nevertheless told the reader to turn the guard off to bypass, which is simply
-      // false: verified by setting it off and watching this branch still exit 2. It also
-      // contradicted commands/gate-guard.md's "There is no bypass for this specific case".
-      // The tracker branch below keeps its bypass sentence because there the flag really does
-      // gate it.
-      "before writing source. There is NO bypass for this case: `set-gate-guard off` does not " +
-      "reach it. Completing the reconcile gate is the only way through.\n"
-    );
+    process.stderr.write(reconcileBlockMessage(active, shape));
     process.exit(2);
   }
   // OPT-OUT, under the repo-level `gateGuard` flag — the generalization this hook's own source

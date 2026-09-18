@@ -78,10 +78,10 @@ Pairs: 1.1 and 1.1b land with 1.2.
 
 Pairs: 2.1 lands with 2.2; 2.3 with 2.4; 2.5 with 2.6; 2.7 with 2.8.
 
-- [ ] 2.1 RED: with `p` owing a reconcile, the hook fed `{"tool_name":"Bash","tool_input":{"command":
+- [x] 2.1 RED: with `p` owing a reconcile, the hook fed `{"tool_name":"Bash","tool_input":{"command":
       "cat > src/x.js <<EOF..."}}` exits 2 and names the matched shape. Fails today: it exits 2 with a
       message naming no shape, and — the defect — the matcher never delivers the call at all
-- [ ] 2.2 GREEN: parse the drained payload, take `tool_name`, and for `Bash` block the reconcile
+- [x] 2.2 GREEN: parse the drained payload, take `tool_name`, and for `Bash` block the reconcile
       branch only on a matched shape (design D3)
 - [ ] 2.3 RED: same state, payload `{"tool_name":"Bash","tool_input":{"command":"rg foo 2>/dev/null"}}`
       exits 0 and prints nothing. Fails today: exits 2, because `tool_input` is discarded
@@ -97,12 +97,12 @@ Pairs: 2.1 lands with 2.2; 2.3 with 2.4; 2.5 with 2.6; 2.7 with 2.8.
       shape exits 2 and a non-write exits 0; with the guard off both exit 0. Fails today: the first
       case exits 2 only because `tool_input` is ignored, and the matcher never delivers it
 - [ ] 2.8 GREEN: the same shape check on the tracker branch, still under the `gateGuard` flag
-- [ ] 2.8b REGRESSION GUARD (pairs with 2.2): the guard setting does not reach the reconcile arm — with
+- [x] 2.8b REGRESSION GUARD (pairs with 2.2): the guard setting does not reach the reconcile arm — with
       `set-gate-guard off` and a reconcile owed, a Bash write shape still exits 2. Passes on 0.45.0
       (the flag already cannot reach that branch) and pins the property against the natural wrong
       implementation, in which 2.2 and 2.8 share one flag-gated check; this is the release's own
       theme, so the no-inverse claim is pinned rather than asserted in prose
-- [ ] 2.8c RED (pairs with 2.2): a payload naming `Bash` with no readable command blocks — `tool_input`
+- [x] 2.8c RED (pairs with 2.2): a payload naming `Bash` with no readable command blocks — `tool_input`
       absent, `tool_input` not an object, and `command` not a string each exit 2 while a reconcile is
       owed; and over a conflict-marked `state.json` the same payloads exit 2 with the unreadable-state
       message rather than inheriting the D4 exemption. Fails against the natural wrong implementation,
