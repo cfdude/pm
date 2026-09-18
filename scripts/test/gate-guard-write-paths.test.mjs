@@ -529,3 +529,70 @@ test("3.1 the shipped hook configuration registers the gate guard for Bash", () 
       `the gate guard's matcher must cover ${tool}; it is \`${entry.matcher}\``);
   }
 });
+
+// ─────────── spec scenarios asserted THROUGH THE HOOK, not only over the function ───────────
+//
+// The `gate-integrity` delta's record scenarios each say "the guard is invoked with a payload
+// naming tool `Bash` and …" — an EXIT CODE, not a return value. A case table over writeShape()
+// proves the list; only these prove the gate. (a-guard-can-check-the-wrong-half: the half a check
+// asserts is not the half its name claims.)
+
+test("2.1 destroying the conductor record is blocked through the hook, trailing globs included", () => {
+  const cwd = owingRepo();
+  for (const command of [
+    "rm .conductor/state.json",
+    "rm -rf .conductor",
+    "rm -rf .conductor/*",
+    "rm .conductor/state.json*",
+    "rm -rf .conductor*",
+  ]) {
+    const r = guard(cwd, bash(command));
+    assert.equal(r.status, 2, `deleting the record turns the guard OFF, so it is a shape: ${command}`);
+    assert.ok(r.stderr.includes(WRITE_SHAPE_LABELS.record), r.stderr);
+    assert.ok(r.stderr.includes("'p'"), "the block names the epic that owes the reconcile");
+  }
+});
+
+test("2.3 removing the state lock stays runnable through the hook, glob spelling included", () => {
+  // The engine's own lock refusal prints the LITERAL path; `.conductor/state.json.*` cannot expand
+  // to the record, so it stays the runnable glob spelling for lock cleanup.
+  const cwd = owingRepo();
+  for (const command of [
+    "rm .conductor/state.json.lock",
+    "rm -r .conductor/state.json.lock",
+    "rm .conductor/state.json.*",
+  ]) {
+    const r = guard(cwd, bash(command));
+    assert.equal(r.status, 0, `a remedy pm itself prints must stay runnable: ${command}\n${r.stderr}`);
+    assert.equal(r.stderr, "");
+  }
+});
+
+test("the marker refusal's own `sed` remedy is a recognized write shape", async () => {
+  // The managed-rules-block delta's scenario, in the suite rather than only in a sweep
+  // (a-one-off-sweep-certifies-only-the-day-it-ran). The command is EXTRACTED FROM THE EMITTED
+  // MESSAGE, never hardcoded: that is what makes this fail if either module is reworded, which is
+  // the interaction the requirement now states normatively — the remedy is blocked while a
+  // reconcile is owed, and that is accepted, not a defect.
+  const { rulesBlockAmbiguousMessage, RulesBlockAmbiguousError } =
+    await import("../lib/rules.mjs");
+  const err = new RulesBlockAmbiguousError("/tmp/x/CLAUDE.md",
+    [{ line: 7, kind: "BEGIN" }, { line: 9, kind: "BEGIN" }], false);
+  const line = rulesBlockAmbiguousMessage(err).split("\n").map(l => l.trim()).find(l => l.startsWith("sed "));
+  assert.ok(line, "the refusal must still name a `sed` remedy for this guard to be about anything");
+
+  // The requirement's substance: this remedy IS a recognized write shape and is blocked while a
+  // reconcile is owed. Accepted — a damaged marker arrangement is not time-critical and is not the
+  // guard's own escape hatch, and the way through is completing the reconcile gate.
+  assert.ok(writeShape(line), `pm's own marker fix must be recognized as a write: ${line}`);
+
+  // WHICH ROW MATCHES DEPENDS ON WHETHER `<N>` IS FILLED IN, and the delta's scenario names the
+  // in-place row, so both spellings are pinned. As EMITTED the placeholder's `>` reaches the
+  // redirection arm first — the pre-existing unfilled-template class (design D7), where the
+  // template is already broken at the shell and only the filled spelling ever ran.
+  assert.equal(writeShape(line), WRITE_SHAPE_LABELS.redirect,
+    "as emitted, `<N>` is an input redirection and the redirection arm matches first");
+  assert.equal(writeShape(line.replace("<N>", "7")), WRITE_SHAPE_LABELS.inPlace,
+    "FILLED IN — the only spelling that ever ran — it matches as an in-place stream editor, which " +
+    "is the row the managed-rules-block delta's scenario names");
+});

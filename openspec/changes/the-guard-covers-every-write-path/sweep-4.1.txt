@@ -150,3 +150,13 @@ above". Design D7 says it stays true and needs no edit, and it does for every ca
 command. It is NOT true of a `Bash` payload with no readable command, which blocks. That spelling
 is a payload edge the harness does not produce, and the design's call is followed rather than
 reinterpreted; recorded here so the decision is on the record rather than unnoticed.
+
+=== ADDENDUM — a spec scenario whose LABEL holds only of the filled remedy ===
+
+`managed-rules-block`'s scenario says the `sed` remedy named by a marker refusal, run through the
+write-shape check, "matches it AS AN IN-PLACE STREAM EDITOR". Asserted in the suite against the
+message rather than a hardcoded string, that is true of the FILLED command and not of the line as
+EMITTED: the template carries `<N>`, whose `>` reaches the redirection arm first, so the emitted
+spelling matches as a redirection instead. It is BLOCKED either way, which is the requirement's
+substance and the interaction its text states. Both spellings are now pinned, and the divergence is
+the pre-existing unfilled-template class of design D7 rather than a new one.
