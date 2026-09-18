@@ -309,3 +309,36 @@ test("2.8c a payload naming Bash with no readable command blocks", () => {
     assert.match(r.stderr, /still owes a reconcile/);
   }
 });
+
+test("2.3 a read-only Bash command is not blocked while a reconcile is owed", () => {
+  const cwd = owingRepo();
+  for (const command of [
+    "rg foo 2>/dev/null",
+    "cmd > /dev/null 2>&1",
+    "git status --short",
+    "node --test 2>&1 | tail",
+    "rg 'foo->bar' src/",
+    "rm .conductor/state.json.lock",
+  ]) {
+    const r = guard(cwd, bash(command));
+    assert.equal(r.status, 0, `expected an allow for ${command}: ${r.stderr}`);
+    assert.equal(r.stderr, "", `an allow prints nothing; got: ${r.stderr}`);
+    assert.equal(r.stdout, "", "gate-guard's stdout is protocol surface — an allow is silence");
+  }
+});
+
+test("2.3 every engine invocation the gate names as its own exit stays runnable", () => {
+  // The gate names engine invocations as the way through it, so a gate that blocked one would have
+  // no exit — and the sibling change's frame-drop verb relies on that holding as the list grows.
+  const cwd = owingRepo();
+  for (const command of [
+    'node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" record-reconcile p --detour d --verdict valid --amendments none',
+    'node "$ENGINE" pop-detour p',
+    'node "$ENGINE" update-epic p --notes "lane: claude-code not openspec -> small"',
+    'node "$ENGINE" record-gate-review p --gate 2 --verdict pass',
+  ]) {
+    assert.equal(guard(cwd, bash(command)).status, 0, `the gate must not block its own exit: ${command}`);
+  }
+  // …and the exemption is not a bypass: a redirection in the same segment still blocks.
+  assert.equal(guard(cwd, bash('node "$ENGINE" status > out.txt')).status, 2);
+});

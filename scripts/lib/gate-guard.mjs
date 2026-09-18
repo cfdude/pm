@@ -287,13 +287,19 @@ export function gateGuardCheck() {
   // obligation inherits the rule instead of having to remember it.
   const active = activeEpic && activeEpic.status !== "archived" ? activeEpic : null;
   if (!active) return;
+  // The matched write shape's FIXED LABEL for an affirmed Bash call, null for every other tool —
+  // which is what keeps an editing tool's path byte-identical to today's.
+  const shape = command === null ? null : writeShape(command);
+  // AN AFFIRMED BASH CALL MATCHING NO SHAPE PASSES, on both branches below. The guard has no path
+  // policy and is not a shell parser: the list is closed, and everything outside it — `eval`, a
+  // variable-built path, a script invoked by name, an interpreter given inline source — is
+  // undecidable from a command string and stays where pm's law puts it, in the instruction the
+  // block message carries. A guard that blocked the ordinary read-only command is a guard that
+  // gets routed around, which is the defect one level up from the one being closed.
+  if (command !== null && shape === null) return;
   // UNCONDITIONAL. `set-gate-guard off` does not reach this case: writing source before the
   // reconcile gate runs on a detour POP is the single highest-stakes skip, and the opt-in was
   // never actually turned on in real usage.
-  // The matched write shape's FIXED LABEL for an affirmed Bash call, null for every other tool —
-  // which is exactly what makes the message for an editing tool byte-identical to today's, minus
-  // the sentence this change does not make true.
-  const shape = command === null ? null : writeShape(command);
   if (active.reconcileNeeded) {
     process.stderr.write(reconcileBlockMessage(active, shape));
     process.exit(2);
