@@ -153,11 +153,11 @@ commit message, and commit the refusal and the verb together.
   `--help` output describing exactly that surface. Derive the list with
   `rg -n "pop-detour" scripts/lib/*.mjs scripts/conductor.mjs` rather than from this sentence — a
   transcribed list goes stale. Commit RED+GREEN together.
-- [ ] 3.5 **RED** — tests: a dropped frame's armed `may-invalidate` link stops being reported as
+- [x] 3.5 **RED** — tests: a dropped frame's armed `may-invalidate` link stops being reported as
   owed, the record shows it dropped with its reason and NOT as reconciled, no reconcile verdict is
   written, and `remove-epic` on that epic is then no longer blocked by a frame or an owed reconcile.
   Save `red-3.5.txt`.
-- [ ] 3.6 **GREEN** — end the obligation in the SAME `saveState` as the frame removal; a transition
+- [x] 3.6 **GREEN** — end the obligation in the SAME `saveState` as the frame removal; a transition
   half-written is a record that disagrees with itself (this module's own header). Recompute
   `reconcileNeeded` by the SAME rule `reconciler-writeback.mjs` applies at its verdict transition
   (`ownedDetours(epic).length > 0 || liveReconcileFrame(state, id)`), not by a rule written fresh
@@ -169,15 +169,15 @@ commit message, and commit the refusal and the verb together.
   **Disarm the link; do not remove it** (`gate-integrity`'s *A write never destroys the record of an
   owed reconcile*), and note that clearing the flag here is the second exception the delta's MODIFIED
   block adds. Commit RED+GREEN together.
-- [ ] 3.7 **RED** — tests: `drop-detour` on an epic with no live frame exits non-zero writing
+- [x] 3.7 **RED** — tests: `drop-detour` on an epic with no live frame exits non-zero writing
   nothing; with no reason or an empty reason exits non-zero writing nothing. Save `red-3.7.txt`.
-- [ ] 3.8 **GREEN** — the two refusals. Commit RED+GREEN together.
-- [ ] 3.9 **REGRESSION GUARD** — assert `record-reconcile` refuses a verdict against a DROPPED
+- [x] 3.8 **GREEN** — the two refusals. Commit RED+GREEN together.
+- [x] 3.9 **REGRESSION GUARD** — assert `record-reconcile` refuses a verdict against a DROPPED
   detour, and that it refuses through its existing unarmed-link arm
   (`reconciler-writeback.mjs` check 2, `isArmed(link)`) rather than through a new arm. A drop that
   left the link armed would leave the epic able to record a verdict for an obligation nobody
   answered. Also assert `pop-detour` is unchanged for every case that worked before.
-- [ ] 3.10 **REFACTOR** — if 3.4 and `popDetour()` now share frame selection or link handling,
+- [x] 3.10 **REFACTOR** — if 3.4 and `popDetour()` now share frame selection or link handling,
   factor it once; do not leave two spellings of the same rule in one module.
 
 ## 4. Required task items (CLAUDE.md 1–7)

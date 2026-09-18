@@ -149,3 +149,149 @@ test("Scenario: An already-archived epic's frame is droppable", () => {
     "a record already in this state has an exit that does not require contradicting its disposition");
   assert.equal(epicOf(cwd, "p").status, "archived", "and it stays archived");
 });
+
+// ───────── Ending an obligation is not answering it ─────────
+
+test("Scenario: A dropped frame's reconcile obligation is ended, not answered", () => {
+  const cwd = repo();
+  pushed(cwd, "p", "d");
+  // THE PRECONDITION, asserted immediately before the step under test. "No longer reported as owed"
+  // is satisfied for free by a fixture where nothing was ever owed
+  // (docs/lessons/git-rewinds-restore-tracked-conductor-state's vacuous half).
+  const armed = epicOf(cwd, "p").links.find(l => l.type === "may-invalidate" && l.epic === "d");
+  assert.equal(armed.reconcileOnResume, true, "fixture: the link is ARMED");
+  assert.equal(epicOf(cwd, "p").reconcileNeeded, true, "fixture: and the obligation is owed");
+
+  run(["drop-detour", "p", "--reason", "the parent was cancelled"], { cwd });
+
+  const p = epicOf(cwd, "p");
+  assert.equal(p.reconcileNeeded, false, "no longer reported as owing a verdict against that detour");
+  const link = p.links.find(l => l.type === "may-invalidate" && l.epic === "d");
+  assert.ok(link, "the link is DISARMED, never removed — the evidence an obligation existed survives");
+  assert.equal(link.reconcileOnResume, false);
+  assert.equal(link.dropped.reason, "the parent was cancelled", "the record shows it DROPPED, with its reason");
+  assert.ok(link.dropped.droppedAt);
+  assert.equal(link.reconciled, undefined, "and NOT as reconciled — no verdict was written");
+});
+
+test("Scenario: A drop leaves an obligation an earlier detour still owes", () => {
+  const cwd = repo(["p", "d1", "d2"]);
+  pushed(cwd, "p", "d1");
+  run(["pop-detour", "p"], { cwd });           // d1's frame is gone; its verdict is still owed
+  pushed(cwd, "p", "d2");
+  assert.equal(epicOf(cwd, "p").reconcileNeeded, true, "fixture: p owes a verdict");
+  assert.deepEqual(epicOf(cwd, "p").links.filter(l => l.type === "may-invalidate" && l.reconcileOnResume === true)
+    .map(l => l.epic).sort(), ["d1", "d2"], "fixture: TWO armed links, the earlier one unanswered");
+
+  run(["drop-detour", "p", "--reason", "d2 was cancelled"], { cwd });
+
+  const p = epicOf(cwd, "p");
+  assert.equal(p.reconcileNeeded, true,
+    "a verdict can still be recorded against the earlier detour — the drop ends the obligation it names and no other");
+  assert.equal(p.links.find(l => l.epic === "d1").reconcileOnResume, true, "d1 is untouched");
+  assert.equal(p.links.find(l => l.epic === "d2").reconcileOnResume, false, "d2 is disarmed");
+});
+
+test("3.6: a render after the drop neither re-arms nor re-clears anything", () => {
+  // reconcileArchived() is a THIRD spelling of "is anything still owed" and re-derives the flag on
+  // every write path. Asserted rather than inferred, and BOTH halves — the flag AND the absence of
+  // the heal's announcement, because a heal clearing an already-false flag would be silent and
+  // indistinguishable from one that did nothing.
+  const cwd = repo();
+  pushed(cwd, "p", "d");
+  // THE DROP'S OWN OUTPUT FIRST, and this is the assertion that distinguishes the two mechanisms.
+  // dropDetour() calls render() after its save, so a drop that did NOT clear the flag itself would
+  // still end with it false — the heal would clear it, announcing that it did. Asserting only the
+  // final value cannot tell the two apart, and a mutation run proved exactly that: removing the
+  // recompute left all 17 tests green. The heal's line is the tell.
+  const dropOut = runCombined(["drop-detour", "p", "--reason", "cancelled"], { cwd });
+  assert.ok(!/cleared the reconcile obligation/.test(dropOut),
+    "the drop clears the flag in the SAME write that removes the frame and disarms the link, so the " +
+    "heal's exception — an epic owing a reconcile with no armed link and no frame — is never " +
+    `reachable between two writes:\n${dropOut}`);
+  assert.equal(epicOf(cwd, "p").reconcileNeeded, false, "cleared in the same write as the frame removal");
+
+  const out = runCombined(["render"], { cwd });
+  assert.equal(epicOf(cwd, "p").reconcileNeeded, false, "still false after the heal re-derives it");
+  assert.ok(!/cleared the reconcile obligation/.test(out),
+    "the heal's own clear never fires: clearing in the SAME write means its precondition — owing, " +
+    "no armed link, no frame — is never reachable between two writes");
+});
+
+test("Scenario: Removing the epic afterwards is no longer blocked", () => {
+  const cwd = repo();
+  pushed(cwd, "p", "d");
+  const blocked = runCombined(["remove-epic", "p"], { cwd });
+  assert.match(blocked, /frame|reconcile/i, "fixture: the removal IS blocked before the drop");
+  assert.ok(epicOf(cwd, "p"), "fixture: and the epic is still there");
+
+  run(["drop-detour", "p", "--reason", "cancelled"], { cwd });
+  run(["remove-epic", "p"], { cwd });
+  assert.equal(epicOf(cwd, "p"), undefined,
+    "neither a detour-stack reference nor an owed reconcile obligation blocks it any more");
+});
+
+// ───────── The two refusals ─────────
+
+test("Scenario: Dropping a frame for an epic that has none is refused", () => {
+  const cwd = repo();
+  const before = stateBytes(cwd);
+  const err = expectFail(() => run(["drop-detour", "p", "--reason", "nothing to end"], { cwd }));
+  assert.ok(err);
+  assert.match(String(err.stderr || err.message), /no live detour-stack frame/i);
+  assert.deepEqual(stateBytes(cwd), before, "the state of record is byte-identical");
+});
+
+test("Scenario: Dropping a frame without a reason is refused", () => {
+  const cwd = repo();
+  pushed(cwd, "p", "d");
+  const before = stateBytes(cwd);
+  assert.ok(expectFail(() => run(["drop-detour", "p"], { cwd })), "no --reason at all");
+  assert.ok(expectFail(() => run(["drop-detour", "p", "--reason", "   "], { cwd })), "a blank one");
+  assert.deepEqual(stateBytes(cwd), before, "and neither wrote anything");
+});
+
+// ───────── 3.9 REGRESSION GUARDS ─────────
+
+test("REGRESSION GUARD: record-reconcile refuses a DROPPED detour through its existing unarmed-link arm", () => {
+  // A drop that left the link ARMED would leave the epic able to record a verdict for an obligation
+  // nobody answered. The refusal must come from check 2 (`isArmed(link)`) and not from a new arm
+  // written for the drop — a second spelling of the same rule is the sibling-site defect.
+  const cwd = repo();
+  pushed(cwd, "p", "d");
+  run(["drop-detour", "p", "--reason", "cancelled"], { cwd });
+  const err = expectFail(() => run(["record-reconcile", "p", "--detour", "d",
+    "--verdict", "valid", "--amendments", "none"], { cwd }));
+  assert.ok(err, "a verdict against a dropped detour is refused");
+  assert.match(String(err.stderr || err.message),
+    /is not a detour 'p' was paused for with --reconcile/,
+    "through check 2's own words — the unarmed-link arm, unchanged");
+});
+
+test("REGRESSION GUARD: pop-detour is unchanged for every case that worked before", () => {
+  const cwd = repo(["p", "d"]);
+  pushed(cwd, "p", "d");
+  // The LIFO assertion still refuses a name that is not on top.
+  run(["add-epic", "--id", "q", "--lane", "claude-code"], { cwd });
+  assert.ok(expectFail(() => run(["pop-detour", "q"], { cwd })), "naming an epic that is not on top is refused");
+  // The ordinary pop still resumes, and still arms the reconcile gate.
+  const out = runCombined(["pop-detour", "p"], { cwd });
+  assert.equal(epicOf(cwd, "p").status, "active");
+  assert.equal(readState(cwd).active, "p");
+  assert.match(out, /RECONCILE GATE/, "and still prints the gate for an armed detour");
+  // An empty stack still refuses.
+  assert.ok(expectFail(() => run(["pop-detour"], { cwd })), "an empty stack is still refused");
+});
+
+test("REGRESSION GUARD: pop-detour still refuses an epic that ended while parked", () => {
+  // The message that used to be the only exit — and that named no verb — now names one. The
+  // REFUSAL itself is unchanged behaviour.
+  const cwd = repo();
+  pushed(cwd, "p", "d");
+  const s = readState(cwd);
+  s.epics.find(e => e.id === "p").status = "archived";
+  fs.writeFileSync(stateFile(cwd), JSON.stringify(s, null, 2) + "\n");
+  const err = expectFail(() => run(["pop-detour", "p"], { cwd }));
+  assert.ok(err);
+  assert.match(String(err.stderr || err.message), /ended while parked/);
+});

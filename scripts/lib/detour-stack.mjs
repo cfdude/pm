@@ -316,6 +316,14 @@ const DROP_USAGE = "usage: conductor.mjs drop-detour <pausedEpicId> --reason \"<
  *  link, so the heal's "an obligation with nothing to answer it" precondition is never reachable
  *  between two writes and that exception's claim that the engine cannot produce the state stays true. */
 export function dropDetour() {
+  // NOTHING IS SHARED WITH popDetour() AND THAT IS THE ANSWER TO "factor it once", not an omission
+  // (task 3.10). Their frame SELECTION rules are opposites by requirement — the pop takes the top
+  // and treats its positional as an assertion about what the top is; the drop takes the frame naming
+  // the epic wherever it sits, because a buried jam is the case with no other exit — so a shared
+  // selector would have to carry a mode flag, which is the `--force`-on-pop shape design Decision 3
+  // rejects, one level down. Their LINK handling does not overlap either: the pop touches no link at
+  // all, it re-raises `reconcileNeeded` from the frame it popped. The one rule they genuinely share —
+  // "is anything still owed" — is already factored, in links.mjs, and both read it from there.
   if (!isInitialized()) die("run /pm:init first");
   const argv = process.argv.slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
