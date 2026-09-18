@@ -1794,7 +1794,7 @@ stamped true, and answering it costs one truthful verdict.
 ### Requirement: A reconcile obligation survives until a verdict answers it
 
 `reconcileNeeded` SHALL NOT be set false by any write other than an accepted `record-reconcile`,
-with the one exception below. Moving the active pointer — `set-active`, `clear-active`,
+with the two exceptions below. Moving the active pointer — `set-active`, `clear-active`,
 `update-epic --status`, or creating an epic at `active` — every run of the archive-drift heal, and
 archiving the epic MUST leave it as it was. `gate-guard` does not block on an archived epic, as today,
 but an archived epic that owes a reconcile is otherwise still bound by it — the refusals of "A write
@@ -1810,6 +1810,22 @@ invocation can be accepted, so the obligation would block the epic permanently. 
 heal SHALL clear it and state on stderr that it did, naming the epic. The engine after this change
 cannot produce that state — pushing arms a link, and removing an armed link is refused below — so it
 arises only from a hand-edited state file or from the migration tradeoff above.
+
+**The second exception: an obligation whose frame was dropped rather than answered.** The
+frame-drop operation this capability defines SHALL clear `reconcileNeeded` where, after the drop,
+the epic owes nothing any `record-reconcile` could answer. This is an exception and not a loophole,
+and three properties make it one. It is **reason-bearing**: the drop refuses without a non-empty
+reason, so unlike a pointer move it records why the obligation ended, and the record distinguishes
+*dropped* from *answered* — no reconcile verdict is written. It **disarms rather than removes**: the
+`may-invalidate` link stays on the epic carrying its drop stamp, so "A write never destroys the
+record of an owed reconcile" binds this write unchanged and the evidence that an obligation existed
+survives it. And it clears the flag **in the same write** that disarms the link and removes the
+frame, so the first exception's precondition — an epic owing a reconcile with no armed link and no
+frame — is still unreachable between two writes, and that exception's claim that the engine cannot
+produce that state remains true.
+
+The frame-drop moves no pointer and changes no status, so the stderr-warning paragraph below is
+unaffected and its `push-detour` exemption needs no companion.
 
 Because the obligation survives, `gate-guard` SHALL block again whenever the owing epic is the active
 epic once more.
@@ -1861,6 +1877,21 @@ leave no CLI route to set work aside, which is the hand-edit the detour verbs ex
 
 - **WHEN** `p` owes a reconcile against armed detour `d`, and `clear-active` then `render` run
 - **THEN** `p` still owes a reconcile, because it holds a link a verdict can be recorded against
+
+#### Scenario: A dropped frame's obligation is cleared by the drop itself
+
+- **WHEN** `p` owes a reconcile against armed detour `d` and the frame pausing `p` is dropped with a
+  reason
+- **THEN** `p` no longer owes a reconcile, the `may-invalidate` link to `d` is still present on `p`
+  carrying the drop and its reason, no reconcile verdict is written against `d`, and `gate-guard`
+  no longer blocks on `p`
+
+#### Scenario: A drop leaves an obligation an earlier detour still owes
+
+- **WHEN** `p` carries two armed `may-invalidate` links from two successive detours, the earlier one
+  unanswered, and the frame pausing `p` for the later detour is dropped with a reason
+- **THEN** `p` still owes a reconcile, because a verdict can still be recorded against the earlier
+  detour — the drop ends the obligation it names and no other
 
 ### Requirement: A later detour never overwrites an earlier reconcile obligation
 
@@ -2076,3 +2107,518 @@ landing order, as one invocation.
 
 - **WHEN** no detour is live, epic A is active, and a commit touches no epic's own artifacts
 - **THEN** the hint prints exactly one command, naming A
+
+### Requirement: The reconcile block covers a Bash write, and declares what it cannot see
+
+The mechanical pre-tool guard SHALL be registered for `Bash` as well as for the editing tools, and
+SHALL block a Bash call whose command text matches a recognized write shape while the active epic
+owes a reconcile. The gate exists to stop source being written before a reconcile verdict is
+recorded, and a guard that watches only the editing tools stops nothing: the same file is written
+with a heredoc redirection, an in-place editor or `tee` in one hop, and the block's own message
+claims the gate is the only way through.
+
+**The set of recognized write shapes SHALL be a closed, documented list**, and the guard SHALL
+block a Bash call only on a member of it. At minimum the list SHALL recognize redirection of
+output to a file path — including the forms that redirect both standard streams, whether the `&`
+precedes the operator or follows it, and the form that overrides the no-clobber setting — an
+in-place stream editor, `tee`, and a copier — the last three AS A SEGMENT'S LEADING COMMAND
+WORD, which is the only position this list reads them in. An in-place editor reached through
+another command's arguments (`find … -exec sed -i …`, `xargs … sed -i`) is not in a position the
+list decides, and falls under the undecidable forms below rather than being a member it misses.
+
+It SHALL NOT treat as a write: a redirection whose target is a device path; a redirection that
+duplicates a file descriptor rather than naming a file, which is `&` followed by digits or `-` and
+NOT `&` followed by a path; and a `>` whose immediately preceding
+character is `-`, which is the arrow that appears inside ordinary search patterns and format
+strings rather than a redirection. Those are the idioms that appear in ordinary read-only
+commands, and a guard that blocks them is a guard that gets routed around. The arrow exclusion is
+named because this repository mandates `rg`, whose patterns carry it routinely; it does not make
+the exclusion list complete, and a bare `>` inside a quoted argument is still matched (see the
+accepted false-positive class in this change's design).
+
+**Destroying the conductor record SHALL be a recognized write shape.** A command that removes,
+renames or truncates `.conductor/state.json`, or the `.conductor` directory holding it — under
+any spelling that NAMES either among the files it acts on, the trailing-glob forms below
+included — SHALL be on the list. Deleting the record is not a lesser evasion than writing over a source file: the
+guard is dormant while no record exists, so a deletion turns the whole block off rather than
+slipping one write past it, and renaming and truncating the record are already recognized by
+their own commands.
+
+**The removal SHALL be recognized under every command that spells it**, not under `rm` alone: the
+removers `unlink` and `shred` name the same file, and `git rm` — the verb a repository under version
+control actually uses — removes it too. `git mv` renames it. A row keyed on the word `rm` leaves
+`git rm -f .conductor/state.json` allowed, and once the record is gone the guard is dormant, so the
+NEXT call takes no path through this requirement at all: the bypass is the whole gate, not one write.
+Correspondingly, a git verb SHALL be read as the invocation's SUBCOMMAND, after git's global options
+are skipped — `-C`, `-c`, `--git-dir`, `--work-tree`, `--namespace`, `--exec-path` in their
+separate-value spelling, one word otherwise — because `git -C <path> <verb>` is how a session that
+must not change directory spells every git call, and a row reading the first argument is evaded by
+it. Only the SUBCOMMAND'S OWN arguments SHALL be tested against the record's path: a path that is a
+global option's value is not a file the subcommand acts on, and `git -C .conductor status` is a read.
+A record named RELATIVE to a directory the command itself moves into — `git -C <dir> rm state.json`,
+or the older `cd .conductor && rm state.json` — is NOT decided here: record-ness would depend on a
+working directory the command string changes, which is the incomplete-by-construction requirement
+below rather than a member of the list this one misses. It is pre-existing and this requirement does
+not narrow or widen it.
+Git verbs other than `apply`, `rm` and `mv` remain absent — `checkout`, `restore`, `stash` and
+`reset` each leave the record readable where they touch it at all, and `git restore` is a remedy the
+unreadable-state branch must never block.
+
+The match SHALL be on the record's own path — `.conductor/state.json`, the
+`.conductor` directory itself, a glob of that directory's contents, or a trailing `*` on either
+name (the next paragraph, which completes this enumeration rather than qualifying it) — written
+at any directory prefix, so that an absolute path to the same record is recognized as the same
+record. One
+surrounding quote character at each end SHALL be stripped before the comparison; partial or
+embedded quoting is out of scope under this change's no-quoting-model non-goal, so a `*` written
+OUTSIDE a surrounding quote (`'.conductor/state.json'*`) is not decided here.
+
+**A trailing `*` appended to either name SHALL match, and the discriminator is the WRITTEN
+ARGUMENT, not the file it happens to reach.** `.conductor/state.json*` and `.conductor*` each name
+the record among their expansions, so each destroys it and SHALL be on the list; a match keyed on
+the literal path alone lets `rm -rf .conductor/state.json*` turn the guard off, which is the whole
+bypass this requirement closes. Correspondingly the match SHALL NOT extend to a LONGER LITERAL
+FILENAME beneath that path, nor to a glob that CANNOT expand to the record:
+`.conductor/state.json.lock` is a different file, not a longer spelling of the record, and
+`.conductor/state.json.*` reaches only such files. The engine's own lock refusal prints
+`rm .conductor/state.json.lock` — a match that reached it would block a remedy pm itself emits —
+and that remedy is always the LITERAL path, never a glob, so blocking `state.json*` although it
+would also reach the lock costs pm nothing while `state.json.*` stays the runnable glob spelling
+for lock cleanup. A trailing `*` and only `*`: `?`, `[…]` and every other glob metacharacter are
+out of scope, under the incomplete-by-construction requirement below rather than as a claim that
+they are safe.
+
+**The check is incomplete by construction and the guard SHALL say so rather than claim
+coverage.** A command string cannot be resolved to the writes it performs: a path built from a
+variable, an `eval`, a script invoked by name, an interpreter given inline source, or any program
+that writes files of its own accord all pass. The guard is a backstop under an instruction that
+remains primary, and its user-facing text SHALL state that a Bash write is forbidden while a
+reconcile is owed whether or not this check can see it.
+
+The guard has two further fail-open modes that this requirement does not close and SHALL NOT be
+described as closed: a record that cannot be read allows every Bash call CARRYING A COMMAND
+(governed by the `state-write-guard` capability, whose exemption a Bash payload with no readable
+command does not get either), and a record that is absent leaves the guard dormant altogether,
+which is this plugin's standing contract for an uninitialized repository. The second is why
+destroying the record is on the shape list above; neither is a claim that the shape list is
+exhaustive.
+
+**A tool the payload does not identify SHALL block, as before this change.** Where the hook
+payload is absent, does not parse, or names no tool, the guard SHALL take the blocking path it
+takes today for an editing tool. Treating an unidentifiable call as a Bash call would convert a
+malformed payload into a silent hole in the one block this plugin makes unconditional.
+
+**A payload naming `Bash` but carrying no readable command SHALL take the blocking path** — where
+`tool_input` is absent, is not an object, or its `command` is not a string, there is no command
+text for the shape list to decide, and the same principle that governs an unidentifiable tool
+applies: an undecidable call takes the block, never the allow.
+
+**The repo's gate-guard setting SHALL NOT reach this arm.** The reconcile block is unconditional
+today, and extending it to Bash MUST NOT make any part of it conditional: an implementation that
+put the shared shape check behind that flag would hand back the bypass this requirement closes.
+
+**An unreadable record is out of scope here** and is governed by the `state-write-guard`
+capability's requirement for hooks over an unreadable state file. Where no obligation can be read,
+there is no owed reconcile for this requirement to act on.
+
+**The block message SHALL name the write shape it matched**, so that a block is legible as a
+decision about this command rather than a blanket refusal of Bash. The name SHALL be a fixed label
+drawn from the closed list itself — the label of the shape, not the command — and the message
+SHALL NOT carry any text taken from the command. Text the engine did not write must never reach
+its output, and a label from a closed set is text the engine wrote: it needs no escaping and no
+length bound, where an interpolated path or matched fragment would need both.
+
+**An invocation of pm's own engine SHALL NOT itself be a write shape.** Where a command segment
+runs the conductor engine, no engine verb SHALL be recognized as a command-word write shape,
+whatever it is named. The commands this gate names as the way through it are engine invocations,
+and a gate that blocks its own completing command has no exit.
+
+**What counts as an engine invocation SHALL be decided by an exported predicate, and that
+predicate SHALL recognize the spellings pm itself emits.** A segment is an engine invocation when
+its leading command word is the `node` runtime and its first argument — with one surrounding quote
+character stripped from each end — is either a path ending `conductor.mjs` or an UNEXPANDED
+VARIABLE REFERENCE, followed by a further word that is the verb. The variable form is included
+because it is the spelling pm's own command documents emit (`node "$ENGINE" <verb>`) and the guard
+cannot expand it; the quoted plugin-root form (`node "${CLAUDE_PLUGIN_ROOT}/…/conductor.mjs"
+<verb>`) is the other. A predicate that recognized neither would be an exemption for a spelling pm
+never emits.
+
+**The predicate is where this rule is falsifiable, and the reason SHALL be stated rather than
+discovered.** Under the list as it stands, no command-word row is reachable from such a segment at
+all: the arm reads the segment's LEADING word, which for an engine invocation is always the
+runtime and never the verb. So the exemption cannot change any command's outcome today, and a
+case-based check of the guard's exit codes cannot fail when it is removed. The exported predicate
+SHALL therefore be asserted directly over both spellings above, so that deleting it is detectable.
+**Any future row keyed on something other than the segment's leading command word SHALL
+re-establish that an engine invocation reaches this exemption before it ships** — that is the
+condition under which the rule becomes behaviourally load-bearing, and the sibling change's
+frame-drop verb relies on it holding then, not only now.
+
+The exemption covers the command-word arm ONLY. A redirection into a file SHALL still be
+recognized in an engine segment as anywhere else — otherwise prefixing a command with an engine
+invocation would be a one-line bypass of the whole gate.
+
+**This coverage ships with no inverse, deliberately.** There is no flag, no environment variable
+and no argument that disables the Bash arm of the reconcile block while leaving the rest standing.
+A switch that silenced Bash writes would be a bypass for the entire reconcile gate, which is the
+defect this requirement closes. A false positive is answered by running the reconcile gate — the
+same answer the editing tools already get — and not by a setting. The consequence SHALL be stated
+in the guard's documentation rather than left to be discovered.
+
+#### Scenario: A heredoc redirection is blocked while a reconcile is owed
+
+- **WHEN** the active epic owes a reconcile and the guard is invoked with a payload naming tool
+  `Bash` and a command that redirects a heredoc into a source file
+- **THEN** it exits 2, and its stderr names the epic and the write shape it matched
+
+#### Scenario: An in-place stream editor is blocked
+
+- **WHEN** the active epic owes a reconcile and the guard is invoked with a payload naming tool
+  `Bash` and a command invoking a stream editor in place
+- **THEN** it exits 2
+
+#### Scenario: A read-only command that discards output is not blocked
+
+- **WHEN** the active epic owes a reconcile and the guard is invoked with a payload naming tool
+  `Bash` and a command whose only redirections send a file descriptor to a device path or to
+  another file descriptor
+- **THEN** it exits 0 and prints nothing
+
+#### Scenario: The guard setting does not reach the Bash arm of the reconcile block
+
+- **WHEN** the active epic owes a reconcile, the repo's gate-guard setting is off, and the guard
+  is invoked with a payload naming tool `Bash` and a command matching a recognized write shape
+- **THEN** it exits 2
+
+#### Scenario: An unidentified tool blocks exactly as an edit does
+
+- **WHEN** the active epic owes a reconcile and the guard is invoked with a payload that does not
+  parse, or that names no tool
+- **THEN** it exits 2 with the reconcile-owed message
+
+#### Scenario: An editing tool is unaffected by the payload's command text
+
+- **WHEN** the active epic owes a reconcile and the guard is invoked with a payload naming tool
+  `Edit`
+- **THEN** it exits 2 regardless of any command text in the payload
+
+#### Scenario: No Bash call is blocked when nothing is owed
+
+- **WHEN** the active epic owes neither a reconcile nor a tracker refresh, and the guard is
+  invoked with a payload naming tool `Bash` and a command matching a recognized write shape
+- **THEN** it exits 0 and prints nothing
+
+#### Scenario: The guard is registered for Bash
+
+- **WHEN** the shipped hook configuration is read
+- **THEN** the entry driving the gate guard has a matcher that covers `Bash`, `Edit`, `Write` and
+  `NotebookEdit`
+
+#### Scenario: The block message states the obligation the check cannot enforce
+
+- **WHEN** the guard blocks on an owed reconcile
+- **THEN** its stderr states that a Bash write is forbidden while the reconcile is owed
+
+#### Scenario: The block message carries a label, not the command
+
+- **WHEN** the guard blocks a Bash call whose command redirects into a path holding an unusual
+  character sequence
+- **THEN** its stderr holds the matched shape's fixed label, and does not contain that character
+  sequence or the target path
+
+#### Scenario: Deleting the conductor record is blocked
+
+- **WHEN** the active epic owes a reconcile and the guard is invoked with a payload naming tool
+  `Bash` and a command that removes `.conductor/state.json`
+- **THEN** it exits 2
+
+#### Scenario: A trailing glob on the record's path is blocked
+
+- **WHEN** the active epic owes a reconcile and the guard is invoked with a payload naming tool
+  `Bash` and a command that removes `.conductor/state.json*`, or `.conductor*`
+- **THEN** it exits 2
+
+#### Scenario: Destroying the record through git is blocked
+
+- **WHEN** the active epic owes a reconcile and the guard is invoked with a payload naming tool
+  `Bash` and a command that removes `.conductor/state.json` through `git rm`, including through
+  the `git -C <path> rm` spelling, or removes it as `unlink` or `shred`
+- **THEN** it exits 2
+
+#### Scenario: A git global option's value is not a file the subcommand acts on
+
+- **WHEN** the active epic owes a reconcile and the guard is invoked with a payload naming tool
+  `Bash` and `git -C .conductor status`
+- **THEN** it exits 0 and prints nothing
+
+#### Scenario: A git subcommand is read after git's global options
+
+- **WHEN** the guard resolves the write shape of `git -C <path> apply p.patch`
+- **THEN** it is the same shape as `git apply p.patch`
+
+#### Scenario: Removing the state lock stays runnable
+
+- **WHEN** the active epic owes a reconcile and the guard is invoked with a payload naming tool
+  `Bash` and the `rm .conductor/state.json.lock` remedy the engine's lock refusal prints, or the
+  glob `rm .conductor/state.json.*`, which cannot expand to the record
+- **THEN** it exits 0 and prints nothing
+
+#### Scenario: A Bash payload carrying no command blocks
+
+- **WHEN** the active epic owes a reconcile and the guard is invoked with a payload naming tool
+  `Bash` whose `tool_input` is absent, or whose `command` is not a string
+- **THEN** it exits 2 with the reconcile-owed message
+
+#### Scenario: An arrow in a search pattern is not a redirection
+
+- **WHEN** the active epic owes a reconcile and the guard is invoked with a payload naming tool
+  `Bash` and a command whose only `>` is immediately preceded by `-`
+- **THEN** it exits 0 and prints nothing
+
+#### Scenario: Every engine invocation the gate names as its own exit stays runnable
+
+- **WHEN** the active epic owes a reconcile and the guard is invoked, one at a time, with a payload
+  naming tool `Bash` and each engine invocation the guard's own messages and the conductor skill's
+  POP protocol name as the way through — `record-reconcile`, `pop-detour`, `update-epic` with a
+  quoted `--notes`, and `record-gate-review`
+- **THEN** each exits 0 and prints nothing
+
+#### Scenario: The engine-invocation predicate recognizes the spellings pm emits
+
+- **WHEN** the exported engine-invocation predicate is asked about each spelling pm's own emitted
+  commands and command documents use — a quoted plugin-root path ending `conductor.mjs` followed
+  by a verb, and a quoted variable reference followed by a verb
+- **THEN** it identifies each as an engine invocation, and does not identify a runtime invoked
+  with an inline script, with a test flag, or with no verb following
+
+#### Scenario: Redirecting an engine invocation's output into a file is still blocked
+
+- **WHEN** the active epic owes a reconcile and the guard is invoked with a payload naming tool
+  `Bash` and an invocation of the conductor engine whose output is redirected into a file path
+- **THEN** it exits 2
+
+### Requirement: An epic holding a live detour frame does not archive through the interactive verb
+
+The **interactive archive verb** — one of the five archive paths this capability enumerates — SHALL
+refuse, writing nothing and exiting non-zero, to archive an epic that a live detour-stack frame
+still names as its paused epic. The refusal SHALL name the frame's detour and the operation that
+ends the frame.
+
+**THE REFUSAL BINDS THE TRANSITION INTO `archived`, AND NOT AN INVOCATION AGAINST AN EPIC ALREADY
+THERE.** The requirement *The interactive archive verb accepts an epic that is already archived* is
+what makes the documented workflow's real disposition recordable at all: `/opsx:archive` moves the
+change on disk, the drift heal flips the epic and stamps `outcome: unknown`, and the agent's record
+is written by a later call to the same verb. That call is the **only** remaining moment at which a
+real disposition can be recorded, and a parked epic reaches exactly that state by the heal path this
+requirement deliberately leaves unbound. A refusal with no scope would therefore block the
+correction path on precisely the population this change exists to rescue — and would do it while a
+`drop-detour` performed afterwards left the epic stranded at `outcome: unknown` with no way back.
+So where the epic's status is already `archived`, this arm SHALL NOT fire; every other demand the
+archive gate makes of that invocation is unchanged.
+
+An epic that ends while parked is a real event, and the record has no way to express it. The frame
+survives the archive; the resume operation refuses it because there is nothing to resume; the
+removal operation refuses it because the frame is control state it will not strip; and the stack is
+last-in-first-out, so **every frame beneath it is unreachable as well**. The only exit is to
+contradict the record — restore the epic to paused and resume it — which leaves an epic at a live
+status carrying a terminal disposition, a record that says the work both ended and is under way.
+
+**THE REFUSAL IS NOT SUFFICIENT ON ITS OWN AND SHALL NOT SHIP ON ITS OWN.** It prevents new jams and
+does nothing for the ones already written, and the frame-ending operation the next requirement
+defines is what both the refusal's message and an already-jammed record depend on. A guard shipped
+without the operation its own message names is the defect class this change exists to close, applied
+inside the change closing it.
+
+**The other four archive paths are NOT bound by this refusal**, and the reason is the one this
+capability already gives for the Gate 2 arm: the **archive-drift heal** reflects what is on disk,
+and disk is the source of truth for OpenSpec, so a heal that refused would make the record
+contradict reality to protect a stack. It therefore remains possible for the heal to archive a
+parked epic, and that is precisely why the frame-ending operation must accept an epic that is
+**already archived** — see the next requirement. The **archive backfill registration** and the two
+**archived-at-creation paths** register epics that were never paused by this conductor.
+
+#### Scenario: Archiving a parked epic through the interactive verb is refused
+
+- **WHEN** an epic is paused by a live detour frame and the agent runs the interactive archive verb
+  on it with a valid outcome, reason and deferral assertion
+- **THEN** the command exits non-zero naming the detour the frame spawned and the operation that
+  ends the frame, and the state of record is byte-identical to before the call
+
+#### Scenario: Archiving an epic with no frame is unaffected
+
+- **WHEN** an epic that no live detour frame names is archived through the interactive verb
+- **THEN** the archive proceeds exactly as it does today
+
+#### Scenario: An already-archived parked epic still records its real disposition
+
+- **WHEN** the drift heal has flipped a parked epic to `archived` with `outcome: unknown`, its frame
+  is still live, and the agent runs the interactive archive verb on it with `--status archived` and
+  a real disposition
+- **THEN** the call is accepted and the disposition is recorded — this arm does not fire on an epic
+  whose status is already `archived`, and every other archive-gate demand binds that call unchanged
+
+#### Scenario: The drift heal still archives a parked epic
+
+- **WHEN** the change directory for a parked openspec-lane epic appears under
+  `openspec/changes/archive/` and the archive-drift heal runs
+- **THEN** the epic's status becomes `archived` and the frame survives, because the record must not
+  contradict disk — and the resulting state is exitable by the frame-ending operation rather than
+  by restoring a status the record says has ended
+
+### Requirement: A detour frame is ended by a verb, and ending one is not answering the reconcile it armed
+
+Pausing an epic for a detour SHALL have an inverse other than resuming it. A **frame-drop
+operation** SHALL remove a named epic's detour-stack frame, carrying a **non-empty reason**, for the
+case the resume path cannot serve: the paused epic is not coming back.
+
+It SHALL differ from the resume operation in exactly the ways that case demands, and the differences
+are the requirement:
+
+- It SHALL remove **the frame naming that epic wherever it sits in the stack**, not only the top
+  frame. A jam buried under later frames is the case that has no other exit, and a
+  last-in-first-out-only operation would leave it stuck. An epic is named by at most one live frame,
+  so the frame to remove is unambiguous.
+- It SHALL NOT make the epic active and SHALL NOT change its status. The epic ended, or is ending;
+  resuming it is what the resume operation is for.
+- It SHALL accept an epic whose status is **already archived**, because that is the state a jammed
+  record is already in and the state the drift heal can still produce. An operation that refused
+  there would leave every existing jam with no exit, which is what this requirement is for.
+- It SHALL **end** the reconcile obligation the push armed against that detour rather than leaving
+  it owed: an obligation that can never be answered blocks the epic's removal and is reported
+  forever as a verdict somebody owes.
+
+**ENDING AN OBLIGATION IS NOT ANSWERING IT, and the record SHALL NOT let the two be confused.** The
+frame-drop SHALL NOT write a reconcile verdict. What it records is that the obligation was dropped,
+with its reason and the detour it was owed against, kept on the record beside any verdict the epic
+carries — the same shape a withdrawn gate verdict takes. A dropped obligation SHALL NOT be reported
+as owed, and SHALL NOT be reported as reconciled.
+
+The operation SHALL be refused, writing nothing and exiting non-zero, when the named epic holds no
+live frame, and when no reason is supplied.
+
+#### Scenario: A jammed frame is dropped and the stack is usable again
+
+- **WHEN** two frames are pushed, the epic named by the top frame is archived, and the frame-drop
+  operation names that epic with a reason
+- **THEN** the command exits zero, that frame is gone, the frame beneath is now the top of the
+  stack, and resuming **the epic that lower frame pauses** succeeds — the dropped epic is archived
+  and is never resumed by this operation
+
+#### Scenario: A buried frame is dropped without disturbing the frames above it
+
+- **WHEN** two frames are pushed and the frame-drop operation names the epic of the **lower** frame
+- **THEN** the command exits zero, the lower frame is gone, the upper frame is still on the stack
+  unchanged, and the operation does not behave as a last-in-first-out pop
+
+#### Scenario: Dropping a frame does not resume or revive the epic
+
+- **WHEN** the frame-drop operation is run on a paused epic
+- **THEN** the epic's status is unchanged and it is not made the active epic — the record does not
+  claim work restarted
+
+#### Scenario: An already-archived epic's frame is droppable
+
+- **WHEN** the frame-drop operation names an epic whose status is already `archived` and which a
+  live frame still pauses
+- **THEN** the command exits zero and the frame is removed, so a record already in this state has an
+  exit that does not require contradicting its own disposition
+
+#### Scenario: A dropped frame's reconcile obligation is ended, not answered
+
+- **WHEN** a frame pushed with reconcile-on-resume is dropped with a reason
+- **THEN** the epic is no longer reported as owing a reconcile verdict against that detour, the
+  record shows the obligation as dropped with that reason rather than as reconciled, and no
+  reconcile verdict is written
+
+#### Scenario: Removing the epic afterwards is no longer blocked
+
+- **WHEN** an epic whose frame and reconcile obligation have both been dropped is removed
+- **THEN** the removal is not blocked by a detour-stack reference or by an owed reconcile obligation
+
+#### Scenario: Dropping a frame for an epic that has none is refused
+
+- **WHEN** the frame-drop operation names an epic that no live frame pauses
+- **THEN** the command exits non-zero saying so, and the state of record is byte-identical to before
+  the call
+
+#### Scenario: Dropping a frame without a reason is refused
+
+- **WHEN** the frame-drop operation is supplied with no reason, or an empty one
+- **THEN** the command exits non-zero, and the state of record is byte-identical to before the call
+
+### Requirement: The record reports a stored value that cannot be true — a reference naming itself, and a reference or a grant naming nothing
+
+The read-only integrity surface this capability defines SHALL additionally report three shapes of
+stored value that cannot be true, each with the epic it concerns and the field that holds it. All
+three are reported and not repaired, on the same contract as every other check there.
+
+1. **A self-referential reference** — a stored epic id whose value is the id of the epic that holds
+   it. It reads as a relationship to another record and conveys nothing, and a self-referential
+   `carriedTo` satisfies the archive gate's handoff obligation while leaving the work it names owned
+   by a record that ended.
+2. **A reference whose id is empty** — a stored epic id whose value is an empty string.
+3. **A grant that names nothing** — an autonomy pre-authorization whose action and whose category
+   are both empty. Unlike the two above it is not a reference, and it is here for the reason the
+   other two are: it is already on disk, the write-time refusal `epic-autonomy` requires binds only
+   writes that have not happened, and no revoke can name a value that is empty. The report is the
+   only surface that sees it.
+
+**Items 1 and 2 SHALL cover the SAME set of fields, and that set SHALL be the single declared
+enumeration of epic-id-holding fields the record already keeps** — a `carriedTo`, a superseded
+`carriedTo`, a deferral assertion's epic, a release deferral's epic, a link's epic, a parent, the
+active pointer. Two checks over two hand-written lists of holders is the sibling-site defect this
+change exists to close, and a self-reference is no less false in a deferral than in a `carriedTo`.
+
+**That enumeration SHALL be value-agnostic.** Today's declaration emits a holder only where the
+stored value is a non-empty string, so a check driven from what it emits can never see an empty id —
+the shape item 2 exists to report. The declaration SHALL therefore enumerate the holder whatever its
+value, and each consumer SHALL apply its own predicate to the value: the existing dangling-reference
+check keeps skipping an empty value, the reference sweep that strips a removed epic's mentions keeps
+behaving exactly as it does today, and the new checks report precisely the values those consumers
+pass over. A finding SHALL be reported by exactly one check — an empty id is item 2 and never a
+dangling reference, an unknown non-empty id is a dangling reference and never item 2.
+
+Every one of the three is reported **in addition to**, and not in place of, the write-time refusals
+the `epic-disposition` and `epic-autonomy` capabilities require. The two are not redundant and
+neither substitutes for the other: a refusal binds a write that has not happened yet, and does
+nothing for the records already on disk, which is where all three of these were found. The existing
+dangling-reference check cannot see any of them — an empty string names no epic, so "names an epic
+the record does not hold" passes over it by construction; a self-reference names an epic the record
+demonstrably does hold; and a grant is not a reference at all.
+
+#### Scenario: A self-referential handoff is reported
+
+- **WHEN** the integrity surface runs over a record holding an epic whose `carriedTo` is that epic's
+  own id
+- **THEN** it reports that epic and the field, and does not modify the record
+
+#### Scenario: An empty deferral reference is reported
+
+- **WHEN** the integrity surface runs over a record holding a deferral assertion whose epic half is
+  an empty string
+- **THEN** it reports that epic and the field, and does not modify the record
+
+#### Scenario: A self-referential deferral is reported
+
+- **WHEN** the integrity surface runs over a record holding a deferral assertion whose epic half is
+  the id of the epic that holds the assertion
+- **THEN** it reports that epic and the field, on the same footing as a self-referential `carriedTo`
+
+#### Scenario: A grant naming nothing is reported
+
+- **WHEN** the integrity surface runs over a record holding an epic whose autonomy carries a
+  pre-authorization with an empty action and no category
+- **THEN** it reports that epic and the grant, and does not modify the record
+
+#### Scenario: An unknown id is reported once, as a dangling reference and not as an empty one
+
+- **WHEN** the integrity surface runs over a record holding a `carriedTo` naming a non-empty id no
+  epic carries
+- **THEN** the existing dangling-reference check reports it exactly once and the empty-id check
+  reports nothing for it
+
+#### Scenario: A valid reference is not reported
+
+- **WHEN** the integrity surface runs over a record whose stored references all name other epics the
+  record holds, and whose grants all name an action or a category
+- **THEN** none of the three checks reports a finding

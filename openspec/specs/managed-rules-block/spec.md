@@ -25,8 +25,13 @@ Every write of the block into the rules file SHALL act on the marker lines as fo
 - **Any other arrangement** — an END without a BEGIN, a BEGIN without an END, an END before the
   BEGIN, or two or more of either — the write SHALL be refused: the rules file is byte-identical
   afterwards, and the refusal names the file and the line number and kind of every marker line found,
-  and names a fix reachable through Bash (for example deleting the stray lines with `sed` by line
-  number), because while a reconcile is owed Edit and Write are blocked.
+  and names a fix a human can apply by hand from the line numbers it just printed (for example
+  deleting the stray lines with `sed` by line number). The fix SHALL NOT be justified by the claim
+  that Bash escapes the reconcile gate: an in-place stream editor is a recognized write shape, so
+  while a reconcile is owed the mechanical guard blocks that `sed` as surely as it blocks `Edit`.
+  That interaction is accepted — a damaged marker arrangement is not time-critical and is not the
+  guard's own escape hatch — and the way through is the one the gate always names, completing the
+  reconcile gate.
 
 A refused write SHALL NOT be reported as success. A verb that refreshes the block — `write-rules`,
 `init`, `upgrade`, `set-tracker`, `set-review-mode` — SHALL exit 11 — the code an unreadable state file
@@ -92,6 +97,13 @@ makes after it were not made, and that after fixing the markers, running `write-
 
 - **WHEN** a non-blank rules file holds no marker lines and `write-rules` runs
 - **THEN** the original content is preserved as a prefix and exactly one block follows it
+
+#### Scenario: The marker refusal's own remedy is a recognized write shape
+
+- **WHEN** the `sed` remedy named by a refusal for an ambiguous marker arrangement is run through the
+  guard's write-shape check
+- **THEN** the check matches it as an in-place stream editor, and the requirement's own text states
+  that it is blocked while a reconcile is owed
 
 ### Requirement: The block is written literally
 
