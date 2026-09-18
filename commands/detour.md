@@ -85,6 +85,40 @@ Do NOT start fixing yet. Follow the `conductor` skill's detour protocol.
    (`honcho-memory push <parent-epic-id> "<reason>"` still exists for a pivot you are recording
    after the fact.)
 
+## When the paused epic is not coming back — `drop-detour`
+
+`/pm:resume` is for the epic that WILL resume: it pops the top frame, reactivates the epic and runs
+the reconcile gate. **`drop-detour` is for the epic that is NOT coming back** — the pause has to
+end, but there is nothing to reconcile and nobody to resume.
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" drop-detour <pausedEpicId> --reason "<why it is not coming back>"
+```
+
+It is the inverse `push-detour` never shipped, and it is deliberately **not** `pop-detour --force`:
+the two differ in every observable way — which frame is selected, whether the active pointer moves,
+whether the status changes, and whether an obligation is armed or ended. It:
+
+- **selects the frame by epic, not by position** — it ends the frame naming `<pausedEpicId>` wherever
+  it sits in the stack. A LIFO-only drop would leave a buried frame stuck, which is the jam it
+  exists to clear;
+- **never resumes the epic, never moves the active pointer, never changes its status**;
+- **accepts an epic that is already archived** — that is the state every existing jam is already in,
+  and the state the archive-drift heal can still produce;
+- **requires a non-empty `--reason`**, and refuses, writing nothing, when no frame pauses that epic
+  (naming `pop-detour` as the verb for the epic at the top of the stack).
+
+**Ending an obligation is not answering it.** No reconcile verdict is written. The paused epic's
+`may-invalidate` link is *disarmed and kept*, carrying a drop stamp (`droppedAt` + the reason), so
+the record distinguishes *dropped* from *reconciled* and the evidence that an obligation existed
+survives the obligation ending. `reconcileNeeded` is then recomputed by the same rule a verdict
+transition uses — an earlier detour still unanswered keeps the obligation; the drop ends only its
+own.
+
+**The interactive archive verb refuses an epic a live frame still pauses**, and names this verb as
+one remedy (alongside resuming it). That refusal and this verb are one fix: an exit reachable only
+when the jam is absent is no exit, so neither ships without the other.
+
 ## Rows the commit hook writes for you — and `retract-detour`
 
 The `commit-nudge` hook runs after every Bash call, on success (`PostToolUse`) and on failure

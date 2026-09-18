@@ -805,11 +805,26 @@ grep). See the `conductor` skill's "Epic-level autonomy" section for the full pr
 
 | Flag | Does |
 |------|------|
-| `--level off\|autonomous` | The trust level itself. |
+| `--level off\|autonomous` | The trust level itself. `off` does NOT clear grants — see below. |
 | `--preauthorize "<action>:<reason>"` | Pre-approve one specific action (repeatable). |
 | `--preauthorize "category:<name>:<reason>"` | Pre-approve a whole class of routine actions (`filesystem`, `network`, `schema`, `external-api`) without enumerating each one. |
+| `--revoke "<action>"` / `--revoke "category:<name>"` | Take a grant back. The inverse `--preauthorize` never had. |
+| `--revoke-reason "<why>"` | Required by `--revoke`; refused on its own. |
 | `--context "<note>"` | Record background/decisions supplied during preflight (repeatable). |
 | `--notify "<what>"` | Durably record a WARN-class decision as it happens, not just for an end-of-epic report. |
+
+**A revoke RECORDS rather than deletes.** The grant stays readable carrying its revocation and its
+required reason (matching `--withdraw-gate-review` and `linkOnce`'s `superseded`), because
+deleting it would make "authorised and then taken back" indistinguishable from "never authorised."
+A revoked grant is never honoured and never restored. `--revoke` names the STORED value after the
+same first-colon split `--preauthorize` applies, so whatever it stored is exactly what revokes it;
+it refuses, writing nothing, when the action is empty, when the epic holds no grant by that name,
+and when every matching grant is already revoked.
+
+**`--level off` does NOT clear grants**, and re-arming reports what it restores. Deletion is not
+the inverse of granting, so turning autonomy off leaves the grants live; `--level autonomous` then
+prints the count and identity of the live grants it is arming, and says so explicitly when there
+are none. A revoked grant is not restored by re-arming and is not in that report.
 
 </details>
 

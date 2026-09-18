@@ -8,7 +8,42 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+* **`drop-detour <pausedEpicId> --reason "<why>"` — the inverse `push-detour` never shipped.** It
+  ends the detour-stack frame naming that epic **wherever it sits in the stack** (a buried frame is
+  the case with no other exit), never resumes the epic, never moves the active pointer, never
+  changes its status, and accepts an epic that is already archived — the state an existing jam is
+  already in. It **ends** the reconcile obligation the push armed rather than answering it: no
+  verdict is written, and the `may-invalidate` link is disarmed and kept, carrying a drop stamp
+  (`droppedAt` + the reason), so the record distinguishes *dropped* from *reconciled*. It requires a
+  non-empty reason and refuses, writing nothing, when no frame pauses that epic. The interactive
+  archive verb now refuses an epic a live frame still pauses and names this verb as the remedy; the
+  two ship together because an exit reachable only when the jam is absent is no exit. `drop-detour`
+  writes no Honcho line, unlike push/pop: a drop ends an obligation rather than moving work between
+  epics, and it already records itself durably on the disarmed link.
+* **`set-autonomy <id> --revoke "<action>" --revoke-reason "<why>"` — the inverse
+  `--preauthorize` never had.** A revocation RECORDS rather than deletes: the grant stays readable
+  carrying its revocation and its required reason, matching `--withdraw-gate-review` and
+  `linkOnce`'s `superseded`. A revoked grant is never honoured and never restored. It refuses,
+  writing nothing, for an empty action, for an action the epic does not hold, and when every match
+  is already revoked. **`set-autonomy --level autonomous` now names what it is re-arming** — `off`
+  deliberately does NOT clear grants, so re-arming reports the count and each live grant's action
+  or category, and says so explicitly when there are none.
+
 ### Fixed
+
+* **An operation shipped without its inverse, and a stored reference nobody validated.** A
+  disposition's `--carried-to` and the epic half of each `--deferral` now refuse — writing nothing
+  — an empty id, an unknown id, and the archiving epic itself; the self-reference previously
+  satisfied the handoff obligation while recording work as owned by a record that had just ended.
+  `--preauthorize` refuses an empty action. `integrity` grows to see three shapes already on disk
+  that the existing `dangling-epic-reference` check could not: a self-referential stored id, an
+  empty stored id, and an autonomy grant naming nothing. Its declaration of id-holding fields
+  becomes value-agnostic so an empty id is enumerable at all, while `dangling-epic-reference` and
+  `remove-epic`'s sweep keep their existing non-empty predicate. The emitted rules block's
+  present-tense claim that grants accumulate with no revoke is reworded to past-tense evidence.
+  No migration: every field added is optional and read-time-defaulted.
 
 * **The reconcile gate guard covers Bash write paths.** The `PreToolUse` guard was registered for
   `Edit|Write|NotebookEdit` only, so an agent blocked on `Edit` wrote the same file with

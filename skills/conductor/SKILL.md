@@ -162,7 +162,8 @@ pointer, accepts an already-archived epic, and ENDS the reconcile obligation the
 without answering it (no verdict; the `may-invalidate` link is disarmed and kept with the drop's
 reason). Ending an obligation is not answering it
 · **`set-active <id>` / `clear-active`**
-set the top-level active epic · `set-autonomy <id>` grant an epic broad execution trust (see
+set the top-level active epic · `set-autonomy <id>` grant an epic broad execution trust, and
+`set-autonomy <id> --revoke <action> --revoke-reason "<why>"` take a grant back (see
 "Epic-level autonomy" below) · `plan-hierarchy --parent <id>` batched execution plan for a
 parent's children (see "Epic-hierarchy orchestration" below) · `verify-worktrees` flag orphaned
 hierarchy-dispatch worktrees · `verify-state` fail loudly if state.json's mtime is newer than
@@ -1125,6 +1126,28 @@ CLAUDE.md (see `/pm:epic` → `set-autonomy`).
    - This taxonomy is fixed at four categories by default; a project needing a different
      taxonomy should say so explicitly during the preflight scan rather than silently
      inventing new category names (`set-autonomy` will reject anything not in this list).
+
+### Revoking a grant, and what re-arming restores
+
+A pre-authorization is taken back with
+`set-autonomy <epicId> --revoke "<action>" --revoke-reason "<why>"`, or
+`--revoke "category:<name>"` mirroring the grant syntax. **A revoke RECORDS rather than deletes:**
+the grant stays in `preAuthorized[]` carrying `revoked: { reason, revokedAt }`, so "authorised and
+then taken back" is distinguishable from "never authorised" — the same record-don't-delete rule
+`--withdraw-gate-review` and `linkOnce`'s `superseded` follow. `--revoke` names the STORED value
+after the identical first-colon split `--preauthorize` applies, so whatever a grant stored is
+exactly what revokes it. It refuses, writing nothing, for an empty action, for an action the epic
+does not hold, and for one whose every match is already revoked; `--revoke-reason` is required and
+is refused on its own. A revoke marks only the UNREVOKED matches — re-granting is the documented
+un-revoke, so an epic can legitimately hold a revoked and a live entry for the same action at once.
+
+**`--level off` does not clear grants**, and that is deliberate: deletion is not the inverse of
+granting, and an epic taken off autonomy for an afternoon has not withdrawn anybody's judgment
+about which actions were safe. The measured harm was never that grants survive — it was that
+re-arming restored them SILENTLY. So `--level autonomous` reports the count and identity of the
+live grants it arms, and says so explicitly when there are none. A revoked grant is not restored
+by re-arming and does not appear in that report — which is why the decision rule below reads rule
+(a) as satisfied by no revoked grant and by no grant that names nothing.
 
 This same read-and-scan process is the one reused, unchanged, by any future work that needs to
 scan several epics at once (e.g. a parent epic's children) — it takes one epic id at a time

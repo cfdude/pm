@@ -263,12 +263,12 @@ commit message, and commit the refusal and the verb together.
 
 ## 5. Docs — after Gate 2
 
-- [ ] 5.1 `commands/detour.md` — document `drop-detour`, when it is the right operation and when
+- [x] 5.1 `commands/detour.md` — document `drop-detour`, when it is the right operation and when
   `/pm:resume` is, and that ending an obligation is not answering it.
-- [ ] 5.2 `commands/epic.md` — the three refusals on `--carried-to` and `--deferral`.
-- [ ] 5.3 `README.md` and `skills/conductor/SKILL.md` — the revoke, the re-arm report, and
+- [x] 5.2 `commands/epic.md` — the three refusals on `--carried-to` and `--deferral`.
+- [x] 5.3 `README.md` and `skills/conductor/SKILL.md` — the revoke, the re-arm report, and
   `drop-detour`. The SKILL's "Epic-level autonomy" section is where the revocation semantics belong.
-- [ ] 5.4 `agents/hierarchy-child-executor.md` — decision rule (a) must say that neither a REVOKED
+- [x] 5.4 `agents/hierarchy-child-executor.md` — decision rule (a) must say that neither a REVOKED
   grant nor one naming nothing covers an action. It is the only actor that acts on `preAuthorized`, and leaving it unedited would
   ship a revoke every engine reader honours and the one agent reader ignores.
 - [ ] 5.5 `CHANGELOG.md` `[Unreleased]` entry, and the `.claude-plugin/plugin.json` version bump.
