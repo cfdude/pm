@@ -8296,11 +8296,16 @@
           "at": "2026-09-15T05:11:36.862Z",
           "actor": "agent",
           "text": "lane: claude-code — key fix plus a real-frame fixture"
+        },
+        {
+          "at": "2026-09-18T05:34:30.582Z",
+          "actor": "agent",
+          "text": "0.46.0's call-site sweep adds a THIRD instance to this epic's scope, found at an unedited sibling site: drop-detour reduces detourStack depth, so diffEvents' depth comparison records it as kind 'detour-pop'. Verified in-process against the shipped diffEvents on 2026-09-18 — a buried drop (p below, q on top) returns {kind:'detour-pop', epic:null, depth:1}. The drop ENDS a pause; the pop RESUMES one, and they differ in status, active pointer and obligation. The record is not wholly wrong (every event carries verb:'drop-detour'), which is why it was left rather than fixed inside operations-ship-their-inverses: activity-log.mjs is outside that change's stated Impact and no spec of it binds the log. Fix alongside the epic:null key fix — a 'detour-drop' kind, keyed on which frame left rather than on depth alone, plus an activity-report vocabulary row."
         }
       ],
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:36.863Z",
-      "touchedAt": "2026-09-15T05:11:36.865Z"
+      "touchedAt": "2026-09-18T05:34:30.586Z"
     },
     {
       "id": "verify-state-false-hand-edit",
@@ -9462,7 +9467,7 @@
       "id": "operations-ship-their-inverses",
       "title": "operations-ship-their-inverses",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -9483,16 +9488,87 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "474383700f16552c8a4ce248a7d226a8f691bc7c",
+        "0f984c7aac5fc3296c5b57f4d612c9815488ac31",
+        "430dfd754d402cd81e477b1117a71a5df7beac5d",
+        "0e4f217dc0ae5d63503e4d6b0cf72f88ff16125c",
+        "09f0df297764a6a3a6e7b8440a7d976593adf9ee",
+        "27d5fd6df0b8f26c5a9b28095fa013e83ef4c76e",
+        "2f0458971f3c50bb5c39e11c0d25f91d0dd88a41",
+        "d71d474636a780bcf0617646a5db2e0ac9de69cc",
+        "ecdd92910b1560cb86d55d37451f7417afc8f2a7",
+        "c7a288d732aa717ae994e6ab3e33f57852756fcf",
+        "6eeb89413c8f6d26b24f8423e49dcf552703c4b9",
+        "97ab4882b7c6321b594a01e081c14d076e38f4b3",
+        "d75a3e90b50f7f8a6e6266da08d0108536d5ed85",
+        "ed27c6caf13037f2cc2a5ac0c375c9874c5d2592",
+        "8d0d8410ea5caf01b0f76d72d27c214af3a7eee8",
+        "589cc3ef945a90b72ec6c75fee59cbae37ef976c",
+        "499676bff4c5c490eb553974f42a831645f03145"
+      ],
       "createdAt": "2026-09-17T23:20:55.244Z",
-      "touchedAt": "2026-09-17T23:21:22.720Z",
-      "release": "0.46.0"
+      "touchedAt": "2026-09-18T16:59:37.118Z",
+      "release": "0.46.0",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-18T00:44:50.481Z",
+          "artifacts": [
+            "openspec/changes/operations-ship-their-inverses/design.md",
+            "openspec/changes/operations-ship-their-inverses/proposal.md",
+            "openspec/changes/operations-ship-their-inverses/specs/epic-autonomy/spec.md",
+            "openspec/changes/operations-ship-their-inverses/specs/epic-disposition/spec.md",
+            "openspec/changes/operations-ship-their-inverses/specs/gate-integrity/spec.md",
+            "openspec/changes/operations-ship-their-inverses/tasks.md"
+          ],
+          "reviewer": "two fresh-context lenses (A correctness/testability; B absent edits — call sites, DATA references, inverses): round 1 fail (2 C: the frame-drop contradicted an unmodified gate-integrity requirement, the empty-id check could not fire; 9 I incl. the change violating its own inverse rule for --context/--notify); fixes applied; combined confirmation + release cross-spec round: lens A pass, lens B 2 BLOCKS in the sibling only; narrow confirmation pass; 2026-09-17"
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-18T16:46:44.826Z",
+          "baseSha": "65d3e7ef0bc4dcf2aba73f55d99968fef95d4bb4",
+          "headSha": "499676bff4c5c490eb553974f42a831645f03145",
+          "reviewer": "two fresh-context lenses (spec conformance with 18 mutants; end-to-end repair-path drives): round 1 fail (2 I: the jam refusals still claimed no verb exists; the new integrity checks prescribed an impossible remedy on superseded history), fixes 97ab488..589cc3e; confirmation pass; re-recorded over docs commit 499676b; 2026-09-18",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-09-18T14:41:28.444Z",
+            "baseSha": "65d3e7ef0bc4dcf2aba73f55d99968fef95d4bb4",
+            "headSha": "589cc3ef945a90b72ec6c75fee59cbae37ef976c",
+            "reviewer": "two fresh-context lenses (spec conformance with 18 mutants; end-to-end repair-path drives): round 1 fail (2 I: the jam refusals still claimed no verb exists; the new integrity checks prescribed an impossible remedy on superseded history), fixes 97ab488..589cc3e; confirmation pass (printed drop-detour command executed and cleared the jam; mutants re-run to failure; fifth-copy sweep clean); 2026-09-18"
+          }
+        }
+      },
+      "startedAt": "2026-09-18T03:04:29.216Z",
+      "notes": [
+        {
+          "at": "2026-09-18T16:46:57.923Z",
+          "actor": "agent",
+          "text": "5.5's CHANGELOG half is done in 499676b; the version-bump half belongs to the release cut"
+        }
+      ],
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-18T16:59:37.110Z",
+        "reason": "every operation ships its inverse: set-autonomy --revoke records a revocation (marks only unrevoked matches, never rewrites a stamp) and the re-arm report enumerates what arming restores; --deferral/--carried-to are validated at write (non-empty, known, not self) with two read-time integrity checks whose holder enumeration is value-agnostic; drop-detour ends a jammed detour stack in one saveState (disarms, never removes, the obligation link; clears reconcileNeeded in the same write) and both jam refusals now name it; Gate 2 pass at 499676b"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-18T16:59:37.086Z",
+        "deferrals": [
+          {
+            "epic": "activity-log-detour-events-lose-epic",
+            "section": "drop-detour logs as detour-pop with epic:null — activity-log.mjs:266 classifies by depth; found by this change's sweep"
+          }
+        ],
+        "declined": []
+      },
+      "completedAt": "2026-09-18T16:59:37.110Z"
     },
     {
       "id": "the-guard-covers-every-write-path",
       "title": "the-guard-covers-every-write-path",
       "priority": "P2",
-      "status": "queued",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -9503,10 +9579,123 @@
         }
       ],
       "reconcileNeeded": false,
-      "attributedCommits": [],
+      "attributedCommits": [
+        "02e0545e901b7ea889b202d582e4197e0aaca861",
+        "d3026c21ed53d071458aa7b7660c2fd615bee7d0",
+        "0093592c67ccdf1894b6798de8eadfd48c92fad7",
+        "53c2fb14354c449e9b544b72486b98de5e9bd187",
+        "1e2b8033a69e43ab0789c517f37f55a365602fc8",
+        "0bca0995bfedd9265a7b0587ac6f1aff74cef78a",
+        "99cac8f033da6f4f483824ffe024f92bbe266153",
+        "2a6599f1cae3c1d6e4bfe38ba3c5d936504adf7a",
+        "5fa4d09aefb461ad005669bce325f08cebb2d875",
+        "6fa6ff2ddcfe4dfecd05e44efbbbd8ac3e2882b0",
+        "f66fabfb807d9f0c49144a96d7e3093fd6bedcbd",
+        "d39179bde9238d74a740ed52e4f4de9d1fd28f14",
+        "822686a4da0716b770426421ed42049e8606c4fc",
+        "7a0cafd4ffbe01888b454848f57d79316c44ab98",
+        "65d3e7ef0bc4dcf2aba73f55d99968fef95d4bb4",
+        "0e4f217dc0ae5d63503e4d6b0cf72f88ff16125c",
+        "2610ea41ec6c7e6e22187672ac69ce5562ac39b4",
+        "4b93b88e96ff3ff7a7ced385bdb1dd11f73471ce",
+        "e6513f1dfc80d0fa6d74a01d23e5287236faab21"
+      ],
       "createdAt": "2026-09-17T23:20:55.245Z",
-      "touchedAt": "2026-09-17T23:21:22.720Z",
-      "release": "0.46.0"
+      "touchedAt": "2026-09-18T16:52:02.173Z",
+      "release": "0.46.0",
+      "gateReview": {
+        "gate1": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-18T00:44:51.037Z",
+          "artifacts": [
+            "openspec/changes/the-guard-covers-every-write-path/design.md",
+            "openspec/changes/the-guard-covers-every-write-path/proposal.md",
+            "openspec/changes/the-guard-covers-every-write-path/specs/gate-integrity/spec.md",
+            "openspec/changes/the-guard-covers-every-write-path/specs/managed-rules-block/spec.md",
+            "openspec/changes/the-guard-covers-every-write-path/specs/state-write-guard/spec.md",
+            "openspec/changes/the-guard-covers-every-write-path/specs/tracker-sync/spec.md",
+            "openspec/changes/the-guard-covers-every-write-path/tasks.md"
+          ],
+          "reviewer": "two fresh-context lenses (A correctness/testability incl. a 49-case shape battery; B absent edits and consequences): round 1 fail (1 C: rm of the conductor record was a total bypass the design waved through; 11 I incl. &>/>| redirects passing, rg 'a->b' blocked, raw command text in the block message); fixes applied; combined confirmation + release cross-spec round fail (2 BLOCKS: an exemption that could not fail, a multi-digit fd redirect evading the shape); fixed; narrow confirmation pass (117-case regex diff, mutation proofs); 2026-09-17"
+        },
+        "gate2": {
+          "verdict": "pass",
+          "reviewedAt": "2026-09-18T16:46:44.197Z",
+          "baseSha": "79b050e61f760bb2cdd226045cf0f1c6ea69027a",
+          "headSha": "e6513f1dfc80d0fa6d74a01d23e5287236faab21",
+          "reviewer": "two fresh-context lenses (spec conformance with a 26-mutant battery; end-to-end hook drives across 11 fixtures x 9 payload shapes x ~45 commands): round 1 fail (1 I: git rm destroyed the record; 1 I: per-segment scan untestable; minors), fixes 2610ea4..4b93b88; confirmation pass; re-recorded over docs commit e6513f1; 2026-09-18",
+          "superseded": {
+            "verdict": "pass",
+            "reviewedAt": "2026-09-18T14:41:27.818Z",
+            "baseSha": "79b050e61f760bb2cdd226045cf0f1c6ea69027a",
+            "headSha": "4b93b88e96ff3ff7a7ced385bdb1dd11f73471ce",
+            "reviewer": "two fresh-context lenses (spec conformance with a 26-mutant battery; end-to-end hook drives across 11 fixtures x 9 payload shapes x ~45 commands): round 1 fail (1 I: git rm destroyed the record; 1 I: per-segment scan untestable; minors), fixes 2610ea4..4b93b88; confirmation pass (22 spellings probed, both mutants re-run to failure, 0e4f217 contamination ruled bookkeeping, resolved by 4b93b88); 2026-09-18"
+          }
+        }
+      },
+      "startedAt": "2026-09-18T00:45:05.562Z",
+      "disposition": {
+        "outcome": "delivered",
+        "recordedAt": "2026-09-18T16:52:02.170Z",
+        "reason": "the reconcile/tracker guard's PreToolUse matcher now covers Bash writes: a closed write-shape list (redirections incl. multi-digit fds, heredocs, in-place editors, tee/cp/mv/unlink/shred/git rm/git mv, record destruction at exact path incl. globs/quotes) with declared limits (both fail-open modes named, no quoting model, undecidable forms pass), an engine-invocation exemption so drop-detour and every emitted remedy stay runnable, and a per-segment scan held by behavioural tests; Gate 2 pass at e6513f1"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-18T16:52:02.156Z",
+        "deferrals": [
+          {
+            "epic": "code-review-0-43-0-minors",
+            "section": "remaining accepted classes (sed marker remedies, feedback local-file write, unfilled templates) recorded in design D7"
+          }
+        ],
+        "declined": []
+      },
+      "completedAt": "2026-09-18T16:52:02.170Z"
+    },
+    {
+      "id": "mutation-pass-is-a-required-task-item",
+      "title": "Required task items demand a call-site sweep and an inverse enumeration, and neither asks whether a new guard CAN fail — make the mutation pass a numbered required item with a durable artifact",
+      "priority": "P2",
+      "status": "planned",
+      "role": "epic",
+      "lane": "superpowers",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "sweep-covers-operation-pairs",
+          "reason": "the same shape one level over — that item added the INVERSE question to the sweep; this adds the CAN-IT-FAIL question"
+        }
+      ],
+      "reconcileNeeded": false,
+      "description": "Evidence from operations-ship-their-inverses (0.46.0). The change adopted a practice its task list never asked for: after shipping drop-detour, every guard it added was NEUTERED in turn and the suite re-run, with the whole batch saved as red-3.5-mutation-evidence.txt in the change directory. Six mutants; five died; ONE SURVIVED AND WAS A REAL DEFECT — removing drop-detour's own reconcileNeeded recompute left all 17 tests green, because render() runs after the save and the drift heal cleared the flag one write later, which is exactly the intermediate state gate-integrity says the engine cannot produce. Every assertion read the final value, so nothing could tell the two mechanisms apart. The fix was to assert on the drop's OWN stderr. Nothing in the seven required task items would have found it: item 1 enumerates call sites and inverses of the thing being guarded, item 2 verifies the commit, and both gates read a diff. A test that cannot go red is invisible to all of them. Proposal: a numbered required task item — 'prove every guard this change adds can fail' — carrying the batch form (mutate, run, record, restore), the artifact convention (a named file in the change directory, so the gate can read it rather than trust a sentence), and the rule that a SURVIVING mutant is a finding to be explained, not a redundant test to delete. Precedent for the form: docs/lessons/a-guard-can-check-the-wrong-half already states the habit and has no mechanism; measured here, the habit found a defect the whole gate stack missed.",
+      "attributedCommits": [],
+      "createdAt": "2026-09-18T05:38:32.206Z",
+      "touchedAt": "2026-09-18T05:38:54.047Z",
+      "notes": [
+        {
+          "at": "2026-09-18T05:38:54.044Z",
+          "actor": "agent",
+          "text": "lane: superpowers not <none routed> — suggest-lane returned no lane for this ask. Routed AWAY from claude-code deliberately, per the asymmetric tie-break: this is a new required task item in the emitted rules block plus its three mirrors and a load-bearing-claim entry, which is a gate/discipline change with a durable record, not a sub-2-hour tweak. superpowers over openspec because it modifies one subsystem (the gate procedure's item list) rather than adding a capability."
+        }
+      ]
+    },
+    {
+      "id": "functional-assertion-test-split",
+      "title": "Split the suite: one-process assertion tests over an injected git fake; functional git tests only when the seam changes",
+      "priority": "P1",
+      "status": "planned",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "relates-to",
+          "epic": "comprehensive-code-review-after-0-43-0",
+          "reason": "root cause of the suite's 15-minute serial floor measured 2026-09-18"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-18T14:41:37.074Z",
+      "touchedAt": "2026-09-18T14:41:37.084Z"
     }
   ],
   "detourStack": [],
@@ -9517,7 +9706,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1098,
+  "revision": 1150,
   "reviewMode": "thorough",
   "releases": [
     {
@@ -9850,7 +10039,42 @@
     {
       "id": "0.46.0",
       "intent": "Cluster 4 of the 0.43.0 review: every operation ships its inverse, every stored reference is checked, and the gate guard covers every write path",
-      "deferred": []
+      "deferred": [],
+      "crossSpecReview": {
+        "verdict": "pass",
+        "reviewedAt": "2026-09-18T00:44:51.540Z",
+        "specs": [
+          {
+            "key": "operations-ship-their-inverses/specs/epic-autonomy/spec.md",
+            "sha256": "3ac3bcd3d9cebafb42dc0b7e4a3dd2cff8840bc41ad52efea223cd68c8a92302"
+          },
+          {
+            "key": "operations-ship-their-inverses/specs/epic-disposition/spec.md",
+            "sha256": "5b73ac6df83e285578c114736fea4a5ead53ff388a5a2e1e6d74d9b2166676e7"
+          },
+          {
+            "key": "operations-ship-their-inverses/specs/gate-integrity/spec.md",
+            "sha256": "a0b594b2bd9b8956439247577f9376df3e565e8aaabcbc9f06ce57487db34820"
+          },
+          {
+            "key": "the-guard-covers-every-write-path/specs/gate-integrity/spec.md",
+            "sha256": "6acc3f5004ff05cf9cd9620427470733295fd9fa6bb94fcaade4666ed5e11a3f"
+          },
+          {
+            "key": "the-guard-covers-every-write-path/specs/managed-rules-block/spec.md",
+            "sha256": "ba6d140ecd6484d946b5f663dd63592933e78ccbcff7e0003aa3d5ae69b14d77"
+          },
+          {
+            "key": "the-guard-covers-every-write-path/specs/state-write-guard/spec.md",
+            "sha256": "4b14d52fbb78700ec6b1051a204882a67e1e9394da4ba35f6f922a8ee5cff199"
+          },
+          {
+            "key": "the-guard-covers-every-write-path/specs/tracker-sync/spec.md",
+            "sha256": "07287cb4a57c4346a0b23251ab2e85587e89ece900e5eb59474437580c11b071"
+          }
+        ],
+        "reviewer": "two fresh-context lenses over both changes' spec sets, combined with Gate 1 fix confirmation: round 1 lens A pass (5 POLISH), lens B fail (2 BLOCKS: an engine-invocation exemption that could not fail, a multi-digit fd redirect evading the shape minimum); fixed; narrow confirmation round pass — MODIFIED delta fidelity diffed against the main spec, 117-case regex diff, mutation proofs both ways, drop-detour reachability verified on 0.45.0; 2026-09-17"
+      }
     }
   ],
   "archiveBackfilledAt": "2026-08-27T04:52:42.658Z"
