@@ -1,0 +1,160 @@
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ZTJcSl/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ZTJcSl/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ZTJcSl/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-5qCwhm/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-5qCwhm/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-5qCwhm/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-gEGNmS/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-gEGNmS/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-gEGNmS/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-YMmDEo/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-YMmDEo/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-YMmDEo/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-TTF44t/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-TTF44t/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-TTF44t/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-LVYQ7B/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-LVYQ7B/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-LVYQ7B/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-W2UAS1/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-W2UAS1/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-W2UAS1/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ntBhC0/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ntBhC0/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ntBhC0/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ntBhC0/PROJECT.md
+conductor: removed 1 epic(s): other
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-IgNjsM/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-IgNjsM/PROJECT.md
+conductor: added epic 'p' (claude-code, active)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-IgNjsM/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-IgNjsM/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-c1nrFX/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-c1nrFX/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-c1nrFX/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-c1nrFX/PROJECT.md
+conductor: updated 'a'
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-hAn4b2/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-hAn4b2/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-hAn4b2/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-SMg5PP/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-SMg5PP/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-SMg5PP/PROJECT.md
+conductor: added epic 'other' (claude-code, queued)
+✔ Scenario: A self-referential handoff is reported (286.446541ms)
+✔ Scenario: A self-referential deferral is reported (294.785083ms)
+✔ Scenario: An empty deferral reference is reported (281.070208ms)
+✔ Scenario: A grant naming nothing is reported (274.396375ms)
+✔ Scenario: An unknown id is reported once, as a dangling reference and not as an empty one (282.071042ms)
+✔ Scenario: A valid reference is not reported (273.407417ms)
+✔ REGRESSION GUARD: dangling-epic-reference still reports a non-empty unknown id exactly once (280.427625ms)
+✔ REGRESSION GUARD: remove-epic neither sweeps nor refuses on a holder whose value is empty (300.687542ms)
+✔ REGRESSION GUARD: remove-epic still refuses on a frame and on an owed reconcile (346.050583ms)
+✖ Scenario: correcting a self-referential handoff repairs the LIVE field and keeps the history reported (403.034375ms)
+✔ REGRESSION GUARD: the live field's remedy is unchanged for a reference that is not history (587.412125ms)
+✖ Scenario: an empty id in a superseded record is reported without the re-record remedy (270.622292ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 10
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3922.852
+
+✖ failing tests:
+
+test at scripts/test/stored-value-integrity.test.mjs:160:1
+✖ Scenario: correcting a self-referential handoff repairs the LIVE field and keeps the history reported (403.034375ms)
+  AssertionError [ERR_ASSERTION]: but NOT with the live field's remedy: no verb can rewrite a superseded record, and prescribing it is a remedy that does nothing
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/stored-value-integrity.test.mjs:179:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: "  • `a` — epic `a` disposition.superseded.carriedTo names `a` — itself. A reference to the record that holds it reads as a relationship to another record and conveys nothing; a `carriedTo` of this shape satisfies the archive gate's handoff obligation while leaving the work it names owned by an epic that has ended. Point it at the epic that actually holds the work, or remove the claim.",
+    expected: /Point it at the epic that actually holds the work/,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }
+
+test at scripts/test/stored-value-integrity.test.mjs:192:1
+✖ Scenario: an empty id in a superseded record is reported without the re-record remedy (270.622292ms)
+  AssertionError [ERR_ASSERTION]: the live remedy is not offered against a record no verb can rewrite
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/stored-value-integrity.test.mjs:202:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '  • `a` — epic `a` disposition.superseded.carriedTo holds an empty epic id — it claims a reference and then declines to say what it points at, which is not the sayable form of "there is none". The write-time refusals make this unwritable going forward; a record already holding one is repaired by re-recording the reference with the epic it meant.',
+    expected: /is repaired by re-recording the reference with the epic it meant/,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }

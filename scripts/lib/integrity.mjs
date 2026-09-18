@@ -601,7 +601,15 @@ export const CHECKS = [
      *  self-reference is no less false in a deferral than in a `carriedTo`.
      *
      *  `dangling-epic-reference` cannot see this shape by construction: a self-reference names an
-     *  epic the record demonstrably DOES hold. */
+     *  epic the record demonstrably DOES hold.
+     *
+     *  A HISTORICAL holder is reported on the same footing and worded differently (Gate 2 I-I2). The
+     *  spec's enumeration names a superseded `carriedTo` explicitly, so it is not skipped; but
+     *  `--correct-disposition` repairs the LIVE field by moving the bad value verbatim under
+     *  `disposition.superseded`, which the record-don't-delete rule this release ships makes
+     *  immutable. Telling a reader who has already done the repair to "point it at the epic that
+     *  actually holds the work" is a remedy no verb can perform, and the finding is not a defect but
+     *  the record of one that was corrected. */
     run(state) {
       return epicReferences(state)
         .filter(r => r.epic && r.holder && r.epic === r.holder)
@@ -609,7 +617,11 @@ export const CHECKS = [
           `${r.where} names \`${r.epic}\` — itself. A reference to the record that holds it reads as a ` +
           "relationship to another record and conveys nothing; a `carriedTo` of this shape satisfies " +
           "the archive gate's handoff obligation while leaving the work it names owned by an epic " +
-          "that has ended. Point it at the epic that actually holds the work, or remove the claim." }));
+          "that has ended. " + (r.historical
+            ? "This is the SUPERSEDED half of a corrected disposition — history, which no verb rewrites — so " +
+              "the finding persists by design once the live field is repaired, and there is nothing to do " +
+              "about it. Check that the live `carriedTo` beside it names the epic that actually holds the work."
+            : "Point it at the epic that actually holds the work, or remove the claim.") }));
     },
   },
   {
@@ -629,8 +641,12 @@ export const CHECKS = [
         .map(r => ({ epic: r.holder || undefined, detail:
           `${r.where} holds an empty epic id — it claims a reference and then declines to say what it ` +
           "points at, which is not the sayable form of \"there is none\". The write-time refusals " +
-          "make this unwritable going forward; a record already holding one is repaired by re-recording " +
-          "the reference with the epic it meant." }));
+          "make this unwritable going forward; " + (r.historical
+            // Same ruling as `self-referential-epic-id` above (Gate 2 I-I2).
+            ? "this one is the SUPERSEDED half of a corrected disposition — history, which no verb rewrites — " +
+              "so it persists by design and there is nothing to do about it."
+            : "a record already holding one is repaired by re-recording " +
+              "the reference with the epic it meant.") }));
     },
   },
   {

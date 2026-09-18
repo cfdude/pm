@@ -191,6 +191,26 @@ unjustified missing inverse is a finding:
   not a standing authorisation, so there is nothing live to take back. A grant is different in kind
   and that difference is the whole reason it needs a revoke.
 
+### Decision (Gate 2 I-I2): the two new checks keep reporting `disposition.superseded.*`, and word it as history
+
+The `gate-integrity` delta states that items 1 and 2 SHALL cover *the single declared enumeration of
+epic-id-holding fields the record already keeps*, and names **a superseded `carriedTo`** in that list.
+So the two new checks are NOT scoped away from it: narrowing them would need a spec amendment, and the
+shape being reported is genuinely a value that cannot be true.
+
+What was wrong was the REMEDY, not the report. A bad `carriedTo` written by 0.45.0 *is* repairable —
+`update-epic --correct-disposition` rewrites the live field — but the prior record moves verbatim
+under `disposition.superseded`, which this change's own record-don't-delete rule makes immutable. So
+the finding survives the repair, and telling the reader who just performed it to "point it at the epic
+that actually holds the work" prescribes an action no verb can perform.
+
+`epicReferences()` therefore marks that row `historical: true` — a WORDING channel, not a predicate:
+no consumer's filter changes, every check that reported the row still reports it, and `kind` is
+untouched because a superseded `carriedTo` *is* a `record` exactly as the live one is. Both new checks
+branch their closing sentence on it and say the finding persists by design, pointing the reader at the
+live field beside it. `dangling-epic-reference` is left alone: it already reported superseded rows in
+0.45.0, so that behaviour is pre-existing and not this change's to widen or narrow.
+
 ## Risks / Trade-offs
 
 - **A revoked grant renders nowhere, because grants render nowhere.** → This change does not add

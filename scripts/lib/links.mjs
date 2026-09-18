@@ -357,7 +357,14 @@ export function epicReferences(state) {
   //   dangling-epic-reference — non-empty and not held;   empty-epic-id — empty;
   //   self-referential-epic-id — equal to its holder;     remove-epic's sweep — `toRemove.has(epic)`,
   //     which no empty value can satisfy because no epic id is the empty string.
-  const add = (holder, where, epic, drop, kind = "record") => { if (typeof epic === "string") refs.push({ holder, where, epic, drop, kind }); };
+  // `historical` marks a holder inside a record no verb can rewrite — today only the superseded half
+  // of a corrected disposition. It changes NO consumer's predicate: every check that reports the row
+  // still reports it. It exists so a consumer can word the finding truthfully, because the remedy a
+  // live field gets ("re-record it with the epic it meant") is a remedy that does nothing there
+  // (Gate 2 I-I2). NOT a `kind`: kind's three values say what the reference IS, and a superseded
+  // `carriedTo` is a `record` exactly as the live one is.
+  const add = (holder, where, epic, drop, kind = "record", historical = false) =>
+    { if (typeof epic === "string") refs.push({ holder, where, epic, drop, kind, historical }); };
 
   if (state && typeof state.active === "string") {
     add(null, "state.active", state.active, () => { state.active = null; });
@@ -385,7 +392,7 @@ export function epicReferences(state) {
       const prior = e.disposition.superseded;
       if (prior && typeof prior === "object") {
         add(e.id, `epic \`${e.id}\` disposition.superseded.carriedTo`, prior.carriedTo,
-          () => { delete prior.carriedTo; });
+          () => { delete prior.carriedTo; }, "record", true);
       }
     }
     const da = e.deferralAssertion;

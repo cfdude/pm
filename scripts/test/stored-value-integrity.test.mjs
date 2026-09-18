@@ -154,3 +154,51 @@ test("REGRESSION GUARD: remove-epic still refuses on a frame and on an owed reco
   assert.match(out, /detour-stack frame|reconcile/i, "the frame and the owed reconcile still block a removal");
   assert.ok(readState(cwd).epics.find(e => e.id === "p"), "and the epic is still there");
 });
+
+// ───────── Gate 2 I-I2 — the repair path, and what the report says about history ─────────
+
+test("Scenario: correcting a self-referential handoff repairs the LIVE field and keeps the history reported", () => {
+  // The repair path the checks' remedy prescribes, run end to end. `--correct-disposition` moves the
+  // prior record — the bad value and all — under `disposition.superseded`, which is immutable by this
+  // release's own record-don't-delete rule. So the live finding CLEARS and the historical one does
+  // NOT, and the historical one must not prescribe an action no verb can perform.
+  const cwd = poisoned((s, a) => { archived(a); a.disposition.carriedTo = "a"; });
+  assert.equal(block(integrity(cwd), "self-referential-epic-id").findings.length, 1, "fixture: the live field is a finding");
+
+  run(["update-epic", "a", "--status", "archived", "--outcome", "superseded", "--reason",
+    "the work moved to 'other'", "--carried-to", "other", "--no-deferrals",
+    "--correct-disposition", "carriedTo named the epic itself, which conveys nothing"], { cwd });
+
+  const d = readState(cwd).epics.find(e => e.id === "a").disposition;
+  assert.equal(d.carriedTo, "other", "the live handoff now names the epic that holds the work");
+  assert.equal(d.superseded.carriedTo, "a", "and the prior record keeps the value that was wrong, verbatim");
+
+  const { header, findings } = block(integrity(cwd), "self-referential-epic-id");
+  assert.match(header, /1 finding/, "the historical copy is still reported — it is still a value that cannot be true");
+  assert.match(findings[0], /disposition\.superseded\.carriedTo/, "and it is the superseded field, not the live one");
+  assert.doesNotMatch(findings[0], /Point it at the epic that actually holds the work/,
+    "but NOT with the live field's remedy: no verb can rewrite a superseded record, and prescribing it is a remedy that does nothing");
+  assert.match(findings[0], /superseded|corrected|history/i,
+    "the finding says instead that it persists by design on a corrected record");
+});
+
+test("REGRESSION GUARD: the live field's remedy is unchanged for a reference that is not history", () => {
+  const cwd = poisoned((s, a) => { archived(a); a.disposition.carriedTo = "a"; });
+  const { findings } = block(integrity(cwd), "self-referential-epic-id");
+  assert.match(findings[0], /Point it at the epic that actually holds the work, or remove the claim/,
+    "a live self-reference still gets the actionable remedy");
+});
+
+test("Scenario: an empty id in a superseded record is reported without the re-record remedy", () => {
+  // The same ruling for `empty-epic-id`, which reads the same declared set. Hand-written: the
+  // write-time refusals make an empty `carriedTo` unwritable, so only a 0.45.0 record holds one.
+  const cwd = poisoned((s, a) => {
+    archived(a);
+    a.disposition.superseded = { outcome: "delivered", recordedAt: "2026-01-01T00:00:00.000Z", carriedTo: "" };
+  });
+  const { findings } = block(integrity(cwd), "empty-epic-id");
+  assert.equal(findings.length, 1);
+  assert.match(findings[0], /disposition\.superseded\.carriedTo/);
+  assert.doesNotMatch(findings[0], /is repaired by re-recording the reference with the epic it meant/,
+    "the live remedy is not offered against a record no verb can rewrite");
+});
