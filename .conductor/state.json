@@ -7834,7 +7834,7 @@
       "id": "autonomy-grants-have-no-revoke",
       "title": "set-autonomy pre-authorizations can never be revoked: --level off then autonomous silently restores every grant",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -7848,13 +7848,25 @@
       "description": "Code review 0.43.0 (B2, C1, C2). autonomy.mjs setAutonomy only appends preAuthorized; --level off keeps them; `--revoke x` exits 0 'already reads …'; `--preauthorize \":no action\"` stores {action:\"\"}. CLAUDE.md required item 1 cites this exact case as the measured safety-surface instance; it was instance (1) of archived sweep-covers-operation-pairs, whose rule shipped with no deferral. Fix: --revoke <action|category:x>, a clear-all, decide whether --level off clears grants, refuse an empty action.",
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:05.167Z",
-      "touchedAt": "2026-09-15T05:11:05.170Z"
+      "touchedAt": "2026-09-18T00:26:28.824Z",
+      "release": "0.46.0",
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-09-18T00:26:28.821Z",
+        "reason": "carried by the 0.46.0 change `operations-ship-their-inverses`, which holds its requirements, scenarios and tasks; this row would otherwise be a second live record of the same work"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-18T00:26:28.821Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-18T00:26:28.821Z"
     },
     {
       "id": "archived-paused-epic-jams-detour-stack",
       "title": "Archiving a paused epic jams the detour stack: pop-detour refuses, remove-epic refuses, and the refusal names a verb that does not exist",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -7868,7 +7880,19 @@
       "description": "Code review 0.43.0 (B2). push-detour a→d, then `update-epic a --status archived --outcome killed …` succeeds; pop-detour exits 1 ('End the frame by removing the epic's pause deliberately' — no verb does), remove-epic exits 1 (frame drop:null), every frame beneath is stuck. The only exit is un-archiving a to paused, leaving an active epic with a killed disposition. Neither update-epic --status archived nor the drift heal checks the stack. Fix: refuse archiving an epic with a live frame, or ship an explicit frame-drop verb.",
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:07.213Z",
-      "touchedAt": "2026-09-15T05:11:07.217Z"
+      "touchedAt": "2026-09-18T00:26:29.966Z",
+      "release": "0.46.0",
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-09-18T00:26:29.963Z",
+        "reason": "carried by the 0.46.0 change `operations-ship-their-inverses`, which holds its requirements, scenarios and tasks; this row would otherwise be a second live record of the same work"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-18T00:26:29.962Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-18T00:26:29.963Z"
     },
     {
       "id": "tracker-item-dedup-bypassed",
@@ -7961,7 +7985,7 @@
       "id": "gate-guard-bash-writes-unguarded",
       "title": "gate-guard's 'no bypass' covers Edit/Write/NotebookEdit only — a Bash heredoc or sed -i writes through, and the block message overclaims",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -7975,7 +7999,19 @@
       "description": "Code review 0.43.0 (C1). hooks.json PreToolUse matcher omits Bash; gate-guard.mjs block text says 'Completing the reconcile gate is the only way through'. Agents blocked on Edit commonly switch to `cat > f <<EOF` or `sed -i`. Fix: either state plainly that Bash writes are forbidden too (instruction) or add Bash with a conservative write-shape check; decide which and document.",
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:18.237Z",
-      "touchedAt": "2026-09-15T05:11:18.239Z"
+      "touchedAt": "2026-09-18T00:26:30.461Z",
+      "release": "0.46.0",
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-09-18T00:26:30.458Z",
+        "reason": "carried by the 0.46.0 change `the-guard-covers-every-write-path`, which holds its requirements, scenarios and tasks; this row would otherwise be a second live record of the same work"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-18T00:26:30.457Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-18T00:26:30.458Z"
     },
     {
       "id": "lesson-detect-matcher-hardening",
@@ -8078,7 +8114,7 @@
       "id": "disposition-references-unvalidated",
       "title": "--carried-to and --deferral accept the epic itself, an unknown id, or ':' — and each satisfies the archive gate's handoff demand",
       "priority": "P2",
-      "status": "planned",
+      "status": "archived",
       "role": "epic",
       "lane": "superpowers",
       "links": [
@@ -8092,14 +8128,26 @@
       "description": "Code review 0.43.0 (A1, A2). update-epic.mjs pairs/carriedTo: `--status archived --outcome delivered --carried-to s1` on s1 with an open story archives (the gate's own message calls this a fabricated record; integrity cannot see a self-reference). `--deferral \":\"` archives and stores {epic:\"\",section:\"\"}, which dangling-epic-reference skips; `--deferral ghost:sec` is accepted. The empty-halves guard added to --declined-deferral never reached --deferral. Siblings --link, --parent, release --member/--defer and push-detour all validate ids. Fix: refuse unknown, empty or self ids for both.",
       "attributedCommits": [],
       "createdAt": "2026-09-15T05:11:26.374Z",
-      "touchedAt": "2026-09-17T10:36:33.855Z",
+      "touchedAt": "2026-09-18T00:26:29.488Z",
       "notes": [
         {
           "at": "2026-09-17T10:36:33.851Z",
           "actor": "agent",
           "text": "0.45.0 emitted-commands-run-as-written (Gate 2 R-I1/U-I1/E-I5) widened the exposure: three printers now offer the `--carried-to <epicId>` placeholder — update-epic's archived-delivered regression refusal, integrity's delivered-release-epic-left-open / heal-archived-epic-passed-gate-2 steps, and unconsidered-outcomes' deliveredBlockedBy handoff remedy — so a filled nonexistent id or the epic's own id is accepted and satisfies the handoff demand through each of them. relates-to: emitted-commands-run-as-written."
         }
-      ]
+      ],
+      "release": "0.46.0",
+      "disposition": {
+        "outcome": "superseded",
+        "recordedAt": "2026-09-18T00:26:29.485Z",
+        "reason": "carried by the 0.46.0 change `operations-ship-their-inverses`, which holds its requirements, scenarios and tasks; this row would otherwise be a second live record of the same work"
+      },
+      "deferralAssertion": {
+        "assertedAt": "2026-09-18T00:26:29.484Z",
+        "deferrals": [],
+        "declined": []
+      },
+      "completedAt": "2026-09-18T00:26:29.485Z"
     },
     {
       "id": "release-member-moves-silently",
@@ -9409,6 +9457,56 @@
           "text": "lane: openspec not none — suggest-lane returned no match; resolved away from claude-code per the asymmetric tie-break (204 adds a verb with docs and tests; 205 changes gate-staleness semantics and needs a spec)"
         }
       ]
+    },
+    {
+      "id": "operations-ship-their-inverses",
+      "title": "operations-ship-their-inverses",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "supersedes",
+          "epic": "autonomy-grants-have-no-revoke",
+          "reason": "carried by this change"
+        },
+        {
+          "type": "supersedes",
+          "epic": "disposition-references-unvalidated",
+          "reason": "carried by this change"
+        },
+        {
+          "type": "supersedes",
+          "epic": "archived-paused-epic-jams-detour-stack",
+          "reason": "carried by this change"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-17T23:20:55.244Z",
+      "touchedAt": "2026-09-17T23:21:22.720Z",
+      "release": "0.46.0"
+    },
+    {
+      "id": "the-guard-covers-every-write-path",
+      "title": "the-guard-covers-every-write-path",
+      "priority": "P2",
+      "status": "queued",
+      "role": "epic",
+      "lane": "openspec",
+      "links": [
+        {
+          "type": "supersedes",
+          "epic": "gate-guard-bash-writes-unguarded",
+          "reason": "carried by this change"
+        }
+      ],
+      "reconcileNeeded": false,
+      "attributedCommits": [],
+      "createdAt": "2026-09-17T23:20:55.245Z",
+      "touchedAt": "2026-09-17T23:21:22.720Z",
+      "release": "0.46.0"
     }
   ],
   "detourStack": [],
@@ -9419,7 +9517,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1088,
+  "revision": 1098,
   "reviewMode": "thorough",
   "releases": [
     {
@@ -9748,6 +9846,11 @@
           "reviewer": "two fresh-context lenses per round (coherence/contradiction; falsifiability/dependency order), 6 rounds: r1 fail 7 BLOCKS, r2 fail 3, r3 fail 5, r4 fail 3, r5 split (1 contradiction adjudicated as BLOCK), r6 pass both lenses with REDs and printed remedies reproduced on 0.44.0; 2026-09-16"
         }
       }
+    },
+    {
+      "id": "0.46.0",
+      "intent": "Cluster 4 of the 0.43.0 review: every operation ships its inverse, every stored reference is checked, and the gate guard covers every write path",
+      "deferred": []
     }
   ],
   "archiveBackfilledAt": "2026-08-27T04:52:42.658Z"
