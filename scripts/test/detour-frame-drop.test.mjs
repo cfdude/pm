@@ -337,3 +337,52 @@ test("Scenario: the remove-epic remedy names the paused epic even when the DETOU
     "the remedy names 'p', the epic the frame pauses — not 'd', which drop-detour would refuse");
   assert.doesNotMatch(msg, /drop-detour d /, "and never the detour id");
 });
+
+// ───────── Gate 2 I-M2 — the "ONE saveState" invariant, observable ─────────
+
+/** Block and line comments out, line count preserved. The prose in this module says "saveState"
+ *  constantly, so counting the raw source would count sentences. */
+function stripComments(src) {
+  let out = "", inBlock = false, inLine = false, i = 0;
+  while (i < src.length) {
+    const c = src[i], d = src[i + 1];
+    if (c === "\n") { inLine = false; out += "\n"; i++; continue; }
+    if (inBlock) { if (c === "*" && d === "/") { inBlock = false; out += "  "; i += 2; } else { out += " "; i++; } continue; }
+    if (inLine) { out += " "; i++; continue; }
+    if (c === "/" && d === "*") { inBlock = true; out += "  "; i += 2; continue; }
+    if (c === "/" && d === "/") { inLine = true; out += "  "; i += 2; continue; }
+    out += c; i++;
+  }
+  return out;
+}
+
+/** One top-level function's body, by its `export function <name>` header through the closing brace
+ *  in column 0 — the shape save-report-surface.test.mjs already reads this engine with. */
+function functionSource(file, name) {
+  const src = fs.readFileSync(new URL(`../lib/${file}`, import.meta.url).pathname, "utf8");
+  const at = src.indexOf(`export function ${name}(`);
+  assert.notEqual(at, -1, `${file} still declares ${name}()`);
+  const end = src.indexOf("\n}\n", at);
+  assert.notEqual(end, -1, `${name}() has a closing brace in column 0`);
+  return src.slice(at, end + 2);
+}
+
+test("drop-detour writes the whole transition in exactly ONE saveState", () => {
+  // THE INVARIANT WAS UNOBSERVABLE (Gate 2 I-M2): a second `saveState` inserted between the link
+  // disarm and the `reconcileNeeded` recompute writes exactly the state gate-integrity says the
+  // engine cannot produce — owing, link disarmed, no frame — and every behavioural test in this
+  // file still passed, because each reads the state only after the verb returns. The rule was held
+  // by a comment. It is asserted here, over the source, the way save-report-surface.test.mjs
+  // asserts its own.
+  const body = functionSource("detour-stack.mjs", "dropDetour");
+  // Non-vacuity: a slice that grabbed the wrong function, or a stripper that ate the code, would
+  // otherwise pass with a count of one or zero.
+  assert.match(body, /verb: "drop-detour"/, "the slice is dropDetour()'s own body");
+  assert.ok(body.length > 800, `the slice is the whole body, not a fragment (${body.length} chars)`);
+  const code = stripComments(body);
+  assert.doesNotMatch(code, /the frame goes/i, "the stripper really strips — this module's prose is gone");
+  const calls = code.split("saveState(").length - 1;
+  assert.equal(calls, 1,
+    `dropDetour() calls saveState() ${calls} time(s); the frame removal, the link disarm and the ` +
+    "reconcileNeeded recompute are ONE write or the record can be read half-transitioned");
+});
