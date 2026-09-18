@@ -190,8 +190,11 @@ test("REGRESSION GUARD: the live field's remedy is unchanged for a reference tha
 });
 
 test("Scenario: an empty id in a superseded record is reported without the re-record remedy", () => {
-  // The same ruling for `empty-epic-id`, which reads the same declared set. Hand-written: the
-  // write-time refusals make an empty `carriedTo` unwritable, so only a 0.45.0 record holds one.
+  // The same ruling for `empty-epic-id`, which reads the same declared set. HAND-WRITTEN, and no
+  // engine version wrote this shape: `agentDisposition()` copies `carriedTo` only when it is
+  // non-empty, and the superseded half is a verbatim copy of a prior record built the same way. The
+  // fixture exercises the WORDING branch over a record only a hand-edit can produce — which is the
+  // population every check in this file exists for.
   const cwd = poisoned((s, a) => {
     archived(a);
     a.disposition.superseded = { outcome: "delivered", recordedAt: "2026-01-01T00:00:00.000Z", carriedTo: "" };

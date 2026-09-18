@@ -672,7 +672,10 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/conductor.mjs" remove-epic <id> [--cascade]
   reports any that a hand-edit leaves behind.
 - **Blocked while a detour-stack frame names the epic.** A frame is control state rather than a
   record: dropping it would discard a paused epic's resume path, and keeping it would leave
-  `/pm:resume` popping a frame that names nothing. Resume or pop the detour first.
+  `/pm:resume` popping a frame that names nothing. Resume or pop the detour first — or, where the
+  paused epic is not coming back, end the pause with `drop-detour <paused epic> --reason "<why>"`.
+  The refusal names both exits, and the drop-detour one always names the epic the frame PAUSES, which
+  is the only id that verb accepts.
 - **Blocked by default if the epic has any descendants** (`parent: <id>`, walked recursively —
   children, grandchildren, etc.). The command prints a short `(id, title, lane/priority/status)`
   table of the parent plus every descendant at any depth and exits non-zero — reassign or remove
