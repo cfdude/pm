@@ -1191,6 +1191,19 @@ recipe("set-tracker --intent", { notRendered: "a status intent is stored for the
 // ── detours and memories ──
 recipe("push-detour --detour", { exempt: EXEMPT.knownEpic("detour"), run: (c, v) => pm(c.cwd, ["push-detour", "base", "--detour", v, "--reason", "r", "--no-reconcile"]) });
 recipe("push-detour --reason", { rendered: true, run: (c, v) => pm(c.cwd, ["push-detour", "base", "--detour", "rd", "--reason", v, "--reconcile"]) });
+// A drop's reason is stored on the may-invalidate link it disarms; no surface prints it. Pushed in
+// its own invocation because the drop needs a frame that already exists.
+recipe("drop-detour --reason", { notRendered: "a drop's reason is stored on the link it disarms and printed by no surface", run: (c, v) => {
+  // Its OWN pair of epics: `base` is shared by every recipe in this fixture and may already be
+  // paused or on the stack by the time this one runs.
+  const p = fresh("dp"), d = fresh("dd");
+  ok(c.cwd, ["add-epic", "--id", p, "--lane", "claude-code", "--status", "queued"]);
+  ok(c.cwd, ["add-epic", "--id", d, "--lane", "claude-code", "--status", "queued"]);
+  ok(c.cwd, ["push-detour", p, "--detour", d, "--reason", "r", "--reconcile"]);
+  const out = pm(c.cwd, ["drop-detour", p, "--reason", v]);
+  ok(c.cwd, ["set-active", "base"]);
+  return out;
+} });
 recipe("log-detour <positional>", { rendered: true, run: (c, v) => pm(c.cwd, ["log-detour", v]) });
 recipe("honcho-memory <positional>", { rendered: true, run: (c, v) => pm(c.cwd, ["honcho-memory", "push", "base", v]) });
 recipe("retract-detour --reason", { notRendered: "render drops RETRACTED rows, and the verb does not echo the reason", run: (c, v) => {

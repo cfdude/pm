@@ -406,6 +406,7 @@ const DISPATCH_BASELINE = {
   "retract-detour": { seed: SEED_AUTO_DETOUR_ROW, args: ["retract-detour", "abcdef1", "--reason", "x"] },
   "push-detour": { args: PUSH },
   "pop-detour": { pre: [PUSH], args: ["pop-detour"] },
+  "drop-detour": { pre: [PUSH], args: ["drop-detour", "e1", "--reason", "not coming back"] },
   "honcho-memory": { args: ["honcho-memory", "push", "e1", "why"] },
   "add-epic": { args: ["add-epic", "--id", "n1", "--lane", "claude-code"] },
   "add-many": { args: ["add-many", "--from", "batch.json"] },
@@ -642,7 +643,7 @@ const lastDetourText = (cwd) => {
 /** How many positionals each baseline carries, counted by hand rather than by the classifier under
  *  test: the fill below depends on it. */
 const POSITIONAL_COUNTS = {
-  "log-detour": 1, "retract-detour": 1, "push-detour": 1, "honcho-memory": 3, "update-epic": 1, "remove-epic": 1, reorder: 2,
+  "log-detour": 1, "retract-detour": 1, "push-detour": 1, "drop-detour": 1, "honcho-memory": 3, "update-epic": 1, "remove-epic": 1, reorder: 2,
   "set-active": 1, "suggest-lane": 1, triage: 1, "set-autonomy": 1, "record-reconcile": 1,
   "record-gate-review": 1, "record-cross-spec-review": 1, "record-tracker-refresh": 1, release: 1,
   "set-gate-guard": 1, claim: 1, unclaim: 1, "set-activity-log": 1,

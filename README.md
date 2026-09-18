@@ -470,6 +470,7 @@ every agent never to use, with none of the engine's guarantees applied to it.
 ```bash
 push-detour <parent-epic-id> --detour <detour-epic-id> --reason "<why>" (--reconcile | --no-reconcile)
 pop-detour [<paused-epic-id>]
+drop-detour <paused-epic-id> --reason "<why>"
 ```
 
 `push-detour` validates that both epics exist and neither has ended, requires a non-empty reason,
@@ -489,6 +490,17 @@ write. The optional epic id is an assertion, not a selector: the stack is LIFO, 
 that is not on top is refused. While the resumed epic owes ANY reconcile it prints the RECONCILE
 GATE naming every detour owed, and emits no POP Honcho line, because "reconciled vs X" is not true
 until the verdict exists.
+
+`drop-detour` is the inverse `push-detour` never shipped, for the case the pop cannot serve: the
+paused epic is **not coming back**. It selects the frame naming that epic **wherever it sits in the
+stack** (a buried jam is the case with no other exit), never resumes the epic, never moves the
+active pointer, never changes its status, and **accepts an epic that is already archived** —
+because that is the state an existing jam is already in, and the state the archive-drift heal can
+still produce. It requires a non-empty reason, and it **ends** the reconcile obligation the push
+armed rather than answering it: no verdict is written, and the `may-invalidate` link is *disarmed
+and kept*, carrying the drop and its reason, so the record distinguishes *dropped* from
+*reconciled*. The interactive archive verb now refuses an epic a live frame still pauses and names
+this verb as the remedy — the two are one fix and neither ships alone.
 
 **The obligation cannot be erased by an ordinary verb.** `clear-active`, `set-active <other>`
 and archive-then-unarchive all leave it owed — moving the active pointer off an owing epic warns —

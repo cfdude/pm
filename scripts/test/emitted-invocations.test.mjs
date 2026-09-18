@@ -2871,6 +2871,17 @@ const PRINTER_FIXTURES = {
       [repo.run(["clear-active"]), /record-reconcile rp --detour <detourId>/],
     ];
   },
+  "archiving an epic a live detour frame still pauses"() {
+    // The frame-drop refusal's remedy. It is an arm of the archive gate itself — not an INTEGRITY
+    // check and not a DELIVERED_OBLIGATIONS variant — so it reaches Layer A through a printer
+    // fixture rather than through a builder.
+    const repo = remedyRepo();
+    repo.ok(["add-epic", "--id", "fp", "--lane", "claude-code", "--title", "fp", "--status", "active"]);
+    repo.ok(["add-epic", "--id", "fd", "--lane", "claude-code", "--title", "fd"]);
+    repo.ok(["push-detour", "fp", "--detour", "fd", "--reason", REASON, "--reconcile"]);
+    return [[repo.run(["update-epic", "fp", "--status", "archived", "--outcome", "killed",
+      "--reason", REASON, "--no-deferrals"]), /drop-detour fp --reason/]];
+  },
   "activity log off"() {
     const repo = remedyRepo();
     return [[repo.run(["activity"]), /set-activity-log on/]];

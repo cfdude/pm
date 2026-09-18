@@ -134,15 +134,15 @@ SHIP ON ITS OWN"). The pre-commit hook runs the whole suite, so an intermediate 
 on its own terms as well. Write the RED files for 3.1 and 3.3 separately, name both in the single
 commit message, and commit the refusal and the verb together.
 
-- [ ] 3.1 **RED** — tests: archiving an epic named by a live frame through `update-epic --status
+- [x] 3.1 **RED** — tests: archiving an epic named by a live frame through `update-epic --status
   archived` exits non-zero writing nothing, and the message names the spawned detour and
   `drop-detour`; archiving an epic with no frame is unaffected. Save `red-3.1.txt`.
-- [ ] 3.2 **GREEN** — the live-frame arm in `scripts/lib/archive-gate.mjs`, bound to the interactive
+- [x] 3.2 **GREEN** — the live-frame arm in `scripts/lib/archive-gate.mjs`, bound to the interactive
   verb only. Commit RED+GREEN together.
-- [ ] 3.3 **RED** — tests for `drop-detour`: drops the top frame and the one beneath becomes
+- [x] 3.3 **RED** — tests for `drop-detour`: drops the top frame and the one beneath becomes
   resumable; drops a BURIED frame leaving the frame above it untouched; does not change status and
   does not move the active pointer; accepts an already-archived epic. Save `red-3.3.txt`.
-- [ ] 3.4 **GREEN** — `scripts/lib/detour-stack.mjs`: `dropDetour()`, selecting by epic rather than
+- [x] 3.4 **GREEN** — `scripts/lib/detour-stack.mjs`: `dropDetour()`, selecting by epic rather than
   by position. **A new dispatched verb has more registry surface than the dispatch table** — the
   `verb-surface` capability enforces all of it suite-wide, so each of these lands in THIS commit or
   the suite fails on it: dispatch in `scripts/conductor.mjs` and the `USAGE` line; a `VERB_FLAGS`

@@ -155,7 +155,12 @@ when a value was actually removed) /
 (hard-delete, `--cascade` for a parent + descendants) ·
 **`push-detour <parent> --detour <id> --reason "<why>" (--reconcile | --no-reconcile)` /
 `pop-detour [<paused-id>]`** the substantial detour's PUSH and POP — verbs since 0.35.0, where
-both used to be a documented hand-edit of `state.json` (see "PUSH protocol" / "POP protocol")
+both used to be a documented hand-edit of `state.json` (see "PUSH protocol" / "POP protocol") ·
+**`drop-detour <paused-id> --reason "<why>"`** END a frame for an epic that is NOT coming back —
+selects by epic wherever the frame sits (not LIFO), never resumes it, never moves the active
+pointer, accepts an already-archived epic, and ENDS the reconcile obligation the push armed
+without answering it (no verdict; the `may-invalidate` link is disarmed and kept with the drop's
+reason). Ending an obligation is not answering it
 · **`set-active <id>` / `clear-active`**
 set the top-level active epic · `set-autonomy <id>` grant an epic broad execution trust (see
 "Epic-level autonomy" below) · `plan-hierarchy --parent <id>` batched execution plan for a

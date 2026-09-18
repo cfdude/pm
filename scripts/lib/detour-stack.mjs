@@ -34,7 +34,7 @@ import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { printedId, escapeControls, orNoRemedy } from "./constants.mjs";
 import { render } from "./render.mjs";
 import { activate, owedReconcileNotice } from "./active-pointer.mjs";
-import { deferralHistory, deferralNote, ownedDetours } from "./links.mjs";
+import { deferralHistory, deferralNote, isArmed, liveReconcileFrame, ownedDetours } from "./links.mjs";
 import { appendHonchoMemory } from "./subcommands.mjs";
 
 const die = (msg) => { process.stderr.write(`conductor: ${msg}\n`); process.exit(1); };
@@ -279,4 +279,99 @@ export function popDetour() {
   }
   // Nothing to reconcile, so the resume is complete and the memory line is true now.
   appendHonchoMemory("pop", pausedEpic, detourId ? `${detourId}; no reconcile was required` : "no detour recorded");
+}
+
+const DROP_USAGE = "usage: conductor.mjs drop-detour <pausedEpicId> --reason \"<why>\"\n";
+
+/** `drop-detour <pausedEpicId> --reason "<why>"` — THE INVERSE `push-detour` NEVER SHIPPED.
+ *
+ *  `pop-detour` is not it. Resuming an epic and recording that it is not coming back differ in every
+ *  observable way — which frame is selected, whether the active pointer moves, whether the status
+ *  changes, whether an obligation is armed or ended — so this is a verb and not a `--force` flag on
+ *  the pop, which would make the two one operation with a modifier.
+ *
+ *  Four properties are load-bearing, each one a requirement rather than an implementation choice:
+ *
+ *  SELECTS BY EPIC, NOT BY POSITION. `push-detour` already refuses to pause an epic that is on the
+ *  stack, so at most one frame names a given epic and the selection is unambiguous. A
+ *  last-in-first-out-only drop would leave a BURIED jam stuck, which is the condition being fixed.
+ *
+ *  NEVER ACTIVATES AND NEVER CHANGES STATUS. The epic ended, or is ending; resuming it is what
+ *  `pop-detour` is for. Nothing here touches `state.active`, so the stderr owed-reconcile warning
+ *  that binds every pointer move has nothing to say about this verb.
+ *
+ *  ACCEPTS AN ALREADY-ARCHIVED EPIC. That is the state every existing jam is already in, and the
+ *  state the drift heal can still produce — the heal reflects disk and is deliberately unbound by
+ *  the archive refusal. An operation that refused there would leave every existing jam with no exit,
+ *  which is the whole point.
+ *
+ *  ENDS THE RECONCILE OBLIGATION THE PUSH ARMED — and ENDING ONE IS NOT ANSWERING IT. No reconcile
+ *  verdict is written. The `may-invalidate` link is DISARMED and kept, carrying a drop stamp
+ *  (`droppedAt` + the reason), so the record distinguishes *dropped* from *answered* and "A write
+ *  never destroys the record of an owed reconcile" binds this write unchanged.
+ *
+ *  ONE saveState for all of it. The flag is recomputed by the SAME rule reconciler-writeback applies
+ *  at its verdict transition — `ownedDetours(epic).length > 0 || liveReconcileFrame(state, id)` —
+ *  never by a rule written fresh here, and in the SAME write that removes the frame and disarms the
+ *  link, so the heal's "an obligation with nothing to answer it" precondition is never reachable
+ *  between two writes and that exception's claim that the engine cannot produce the state stays true. */
+export function dropDetour() {
+  if (!isInitialized()) die("run /pm:init first");
+  const argv = process.argv.slice(3);
+  const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
+  const f = parseFlags(id ? argv.slice(1) : argv);
+  // Before loadState(), the position every other write surface here calls it from.
+  requireFlagValues("drop-detour", f);
+  const reason = typeof f.reason === "string" ? f.reason.trim() : "";
+  if (!id || !reason) { process.stderr.write(DROP_USAGE); process.exit(1); }
+
+  const state = loadState();
+  const frames = Array.isArray(state.detourStack) ? state.detourStack : [];
+  const at = frames.findIndex(fr => fr && fr.pausedEpic === id);
+  if (at === -1) {
+    die(`no live detour-stack frame pauses '${escapeControls(id)}' — there is no pause to end. ` +
+      orNoRemedy(() => "`pop-detour`") + " resumes the epic at the top of the stack; this verb ends a " +
+      "frame for an epic that is not coming back");
+  }
+  const frame = frames[at];
+  const epic = state.epics.find(e => e.id === id);
+  // DELIBERATELY NOT REFUSED on an archived epic: that is the state an existing jam is in.
+
+  const detourId = typeof frame.spawnedDetour === "string" ? frame.spawnedDetour : undefined;
+  const droppedAt = new Date().toISOString();
+  frames.splice(at, 1);
+  state.detourStack = frames;
+  if (epic) {
+    // DISARM, never remove. Removing an armed link on an owing epic is refused by gate-integrity's
+    // "A write never destroys the record of an owed reconcile", and that refusal binds this write
+    // unchanged — the evidence that an obligation existed has to survive the obligation ending.
+    const link = (Array.isArray(epic.links) ? epic.links : [])
+      .find(l => isArmed(l) && l.epic === detourId && !l.reconciled);
+    if (link) {
+      link.reconcileOnResume = false;
+      link.dropped = { reason, droppedAt };
+    }
+    // THE SAME SPELLING reconciler-writeback uses at its verdict transition, imported from the module
+    // that exports both — two spellings of "is anything still owed" is the sibling-site defect this
+    // change is about. An EARLIER detour still unanswered keeps the obligation, which is correct: the
+    // drop ends the obligation it names and no other.
+    if (epic.reconcileNeeded === true) {
+      epic.reconcileNeeded = ownedDetours(epic).length > 0 || liveReconcileFrame(state, id);
+    }
+  }
+
+  const saved = saveState(state, { verb: "drop-detour" });
+  render();
+  reportSave(saved, {
+    changed: `conductor: dropped the detour frame pausing '${escapeControls(id)}'` +
+      (detourId ? ` for detour '${escapeControls(detourId)}'` : "") +
+      (frame.reconcileOnResume
+        ? " — the reconcile obligation it armed is ENDED, not answered: no verdict was written, and " +
+          "the may-invalidate link keeps its record carrying the drop and this reason"
+        : "") +
+      `. '${escapeControls(id)}' is not resumed and its status is unchanged`,
+    // A frame carries `pausedAt`, so removing one always differs from disk; the no-op branch is
+    // bound rather than exempted, on the same reasoning push-detour's is.
+    unchanged: `conductor: '${escapeControls(id)}' held no frame to drop — ${STATE_UNCHANGED}`,
+  });
 }

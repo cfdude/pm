@@ -85,6 +85,8 @@ const VERB_BASELINE = {
   // emitted-commands-run-as-written: `--ask=<text>` carries a flag-shaped item title as a value.
   "suggest-lane": () => ["suggest-lane", "--ask", "fix a typo"],
   "push-detour": () => ["push-detour", "e1", "--detour", "other", "--reason", "blocked", "--reconcile"],
+  // The drop needs a frame to end, so BASELINE_PRE pushes one first.
+  "drop-detour": () => ["drop-detour", "e1", "--reason", "not coming back"],
   // No verb writes an automatic row without git, so the baseline seeds one (state.json untouched).
   "retract-detour": (cwd) => {
     const log = path.join(cwd, ".conductor", "detours.log");
@@ -242,6 +244,7 @@ test("gh-152: every command VERB_FLAGS names has a baseline invocation here", as
  *  sweep runs these: the valueless sweep below is refused before any of that state is read. */
 const BASELINE_PRE = {
   "record-reconcile": [["push-detour", "e1", "--detour", "other", "--reason", "blocked", "--reconcile"], ["pop-detour", "e1"]],
+  "drop-detour": [["push-detour", "e1", "--detour", "other", "--reason", "blocked", "--reconcile"]],
 };
 
 test("gh-152: every VERB_FLAGS baseline actually succeeds, so a non-zero exit below means the flag", async () => {

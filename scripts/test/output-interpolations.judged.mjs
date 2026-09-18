@@ -112,6 +112,9 @@ j("disposition.mjs", "correctionNote", ALL, "sink-flow", "printed only by render
 x("constants.mjs", "releaseLine", {
   "s.members": 1,
 }, "engine", "a count (its id is escaped)");
+x("detour-stack.mjs", "dropDetour", {
+  "orNoRemedy(() => \"`pop-detour`\")": 1,
+}, "engine", "a literal verb name inside orNoRemedy's code span — the no-frame refusal points at the resume verb; every other value the refusal quotes goes through escapeControls at the interpolation");
 x("autonomy.mjs", "grantLabel", {
   "grant.category": 1,
 }, "passthrough", "a grant's identity; its ONE printing consumer is setAutonomy()'s re-arm report, which wraps each label in escapeControls() at the print site — liveGrants() reads the label only for its is-it-named test");

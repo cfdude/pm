@@ -39,6 +39,10 @@
  *                  state.json it used to be: pauses the parent, pushes the frame, writes both
  *                  protocol links, activates the detour and emits the Honcho line — one guarded
  *                  write, so it inherits the conflict guard and the read-back verification
+ *   drop-detour    the INVERSE push-detour never shipped. Removes the frame naming an epic
+ *                  WHEREVER it sits in the stack, for the case pop cannot serve — the paused epic
+ *                  is not coming back. Never resumes it, never moves the pointer, and ENDS the
+ *                  reconcile obligation the push armed rather than answering it.
  *   pop-detour     the matching POP. Removes the top frame, resumes the epic, and writes
  *                  `reconcileNeeded` in the SAME write — the frame is gone before reconciliation
  *                  runs, so a second write would let the self-heal clear the obligation
@@ -96,7 +100,7 @@ import { setAutonomy } from "./lib/autonomy.mjs";
 import { parseFlags, planHierarchy, addEpic, requireFlagValues } from "./lib/add-epic.mjs";
 import { render } from "./lib/render.mjs";
 import { init, brief, snapshot, commitNudge, sync, logDetour, retractDetour, honchoMemory } from "./lib/subcommands.mjs";
-import { pushDetour, popDetour } from "./lib/detour-stack.mjs";
+import { pushDetour, popDetour, dropDetour } from "./lib/detour-stack.mjs";
 import { addMany } from "./lib/add-many.mjs";
 import { recordReconcile } from "./lib/reconciler-writeback.mjs";
 import { recordGateReview } from "./lib/gate-review-writeback.mjs";
@@ -146,7 +150,7 @@ if (delegated !== null) process.exit(delegated);
 
 const cmd = process.argv[2];
 
-const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n";
+const USAGE = "usage: conductor.mjs init|render|brief|snapshot|commit-nudge|sync|log-detour|retract-detour|push-detour|pop-detour|drop-detour|honcho-memory|add-epic|add-many|update-epic|remove-epic|reorder|set-active|clear-active|set-tracker|set-lane-routing|suggest-lane|triage|set-autonomy|record-reconcile|record-gate-review|record-cross-spec-review|record-tracker-refresh|set-review-mode|release|set-gate-guard|gate-guard|lesson-advice|plan-hierarchy|claim|unclaim|owners|activity|set-activity-log|purge-logs|verify-worktrees|verify-state|verify-specs|integrity|changesets|recover-created-at|unconsidered-outcomes|upgrade|changelog|rules|write-rules|rules-target\n";
 
 // ---------- the command-line check (every-verb-refuses-what-it-does-not-read) ----------
 //
@@ -291,6 +295,7 @@ try {
   "retract-detour": retractDetour,
   "push-detour": pushDetour,
   "pop-detour": popDetour,
+  "drop-detour": dropDetour,
   "honcho-memory": honchoMemory,
   "add-epic": addEpic,
   "add-many": addMany,

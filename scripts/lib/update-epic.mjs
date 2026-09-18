@@ -962,6 +962,11 @@ export function updateEpic() {
     const verdict = archiveGate(epic, {
       outcome: str(f.outcome), reason: str(f.reason),
       carriedTo: str(f["carried-to"]), deferralAssertion: asserted, correction,
+      // The frame and the STORED status, so the gate can bind the TRANSITION into `archived` and
+      // leave an invocation against an epic already there alone. `epic.status` is useless for that
+      // here — the field writes above have already set it — which is why `snapshot` is read.
+      frame: (state.detourStack || []).find(fr => fr && fr.pausedEpic === id),
+      wasArchived: snapshot.status === "archived",
     });
     if (!verdict.ok) { process.stderr.write(`conductor: ${verdict.message}\n`); process.exit(1); }
     // The gate BUILDS the record and this command writes it, so the disposition an epic ends
