@@ -90,10 +90,10 @@ and named in that commit's message.
 
 ## 2. Disposition references — refuse what cannot be true
 
-- [ ] 2.1 **RED** — tests against `update-epic`: `--carried-to <self>` on the archiving epic exits
+- [x] 2.1 **RED** — tests against `update-epic`: `--carried-to <self>` on the archiving epic exits
   non-zero writing nothing; `--carried-to <unknown>` exits non-zero writing nothing; `--carried-to
   <unknown>` alongside `--outcome killed` exits non-zero too. Save `red-2.1.txt`.
-- [ ] 2.2 **GREEN** — validate `--carried-to` in `scripts/lib/update-epic.mjs` before the gate
+- [x] 2.2 **GREEN** — validate `--carried-to` in `scripts/lib/update-epic.mjs` before the gate
   decides, refusing empty / unknown / self and naming which. Commit RED+GREEN together.
 - [ ] 2.3 **RED** — tests: `--deferral ":"` exits non-zero writing nothing; `--deferral
   "ghost:sec"` exits non-zero writing nothing; `--deferral "<self>:sec"` exits non-zero writing

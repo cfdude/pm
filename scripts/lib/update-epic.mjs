@@ -16,7 +16,7 @@ import { archiveGate, AGENT_OUTCOMES, deliveredObligations, dispositionInvocatio
 import { deferralAssertion, isEngineStamped, isStoryDisposed, outcomeOf, storyDisposition, storyDispositionError } from "./disposition.mjs";
 import { isArchived } from "./epic-progress.mjs";
 import { claimArtifacts } from "./source-artifacts.mjs";
-import { holdsOwedReconcileRecord, linkTypeVocabulary, mergeLinks, ownedDetours } from "./links.mjs";
+import { holdsOwedReconcileRecord, linkTypeVocabulary, mergeLinks, ownedDetours, storedEpicIdError } from "./links.mjs";
 import { isCommitNameShaped, resolveCommits, unresolvedCommitsMessage } from "./git.mjs";
 
 // The flags update-epic recognizes, as the registry projects them. Anything else is refused before
@@ -916,6 +916,39 @@ export function updateEpic() {
   // agent supplies. Re-archiving is an established shape here — `completedAt` below is already
   // guarded on `!epic.completedAt` precisely because this verb can be run twice — and it is
   // the only moment the documented `/opsx:archive` -> heal -> record flow can say `delivered`.
+  // A REFERENCE THIS DISPOSITION STORES NAMES A REAL, OTHER EPIC — or nothing is written. Runs
+  // BEFORE the gate decides, because a self-referential `--carried-to` SATISFIES the handoff
+  // obligation: the gate that exists to stop a remainder vanishing reports success while recording
+  // the work as owned by a record that has just ended.
+  //
+  // It binds wherever the reference is SUPPLIED, not only where it is demanded. The handoff demand
+  // is `delivered`-only; a receiver named alongside a `killed` is still a claim about where work
+  // went, and a false one is no less false for the company it keeps.
+  //
+  // `--carried-to ""` never arrives: requireFlagValues() already refuses a blank value-bearing flag
+  // before loadState(), so the "empty" arm is unreachable from this flag — it is declared because
+  // the SAME helper serves the deferral half, whose epic can be empty inside a non-blank value.
+  if (status === "archived") {
+    const REFERENCE_WHY = {
+      empty: "it names no epic — an assertion that claims a reference and then declines to say what " +
+        "it points at is not the sayable form of \"there are none\"",
+      unknown: "no epic in this record carries that id — the work would be recorded as handed to nothing",
+      self: "an epic cannot hand work to itself — that is the record that just ended, and it satisfies " +
+        "the gate while conveying nothing",
+    };
+    const refuseReference = (flag, value, kind) => {
+      process.stderr.write(
+        `conductor: cannot archive '${escapeControls(id)}' — ${flag} ${escapeControls(JSON.stringify(value))}: ` +
+        `${REFERENCE_WHY[kind]}. Nothing was written.\n`);
+      process.exit(1);
+    };
+    const carried = str(f["carried-to"]);
+    if (carried !== undefined) {
+      const bad = storedEpicIdError(carried, { self: id, state });
+      if (bad) refuseReference("--carried-to", carried, bad);
+    }
+  }
+
   if (status === "archived") {
     const verdict = archiveGate(epic, {
       outcome: str(f.outcome), reason: str(f.reason),

@@ -316,6 +316,31 @@ export function detourContext(state) {
  *  always will. Sweeping it would strip the provenance the entry exists to carry, and reporting
  *  it would make every tombstone a permanent finding. See ignoreArtifact() in
  *  source-artifacts.mjs. */
+/** WHY A STORED EPIC ID CANNOT BE TRUE — `null` where it can. The ONE predicate behind both halves
+ *  of the disposition's reference rule (`--carried-to` and a deferral assertion's epic), so a
+ *  second copy of it cannot come to disagree with the first. That second copy is the sibling-site
+ *  defect this whole change is about, and writing the rule twice inside the change closing it is the
+ *  failure mode being avoided here.
+ *
+ *  Three shapes, each named so the refusal can say WHICH:
+ *    "empty" — the value is blank. An assertion asserting nothing: it claims a reference exists and
+ *      then declines to say what it points at. NOT equivalent to "there is none", which has its own
+ *      sayable form.
+ *    "unknown" — it names an epic the record does not hold: work handed to nothing.
+ *    "self" — it names the epic that holds it: work handed to the record that just ended, which
+ *      SATISFIES the handoff gate while conveying nothing and is indistinguishable afterwards from a
+ *      genuine handoff.
+ *
+ *  Lives here beside epicReferences() on purpose: this is the write-time half of the same rule the
+ *  read-time integrity checks apply to what is already on disk, and the two belong in one module. */
+export function storedEpicIdError(value, { self, state }) {
+  const id = typeof value === "string" ? value.trim() : "";
+  if (!id) return "empty";
+  if (id === self) return "self";
+  const held = ((state && state.epics) || []).some(e => e && e.id === id);
+  return held ? null : "unknown";
+}
+
 export function epicReferences(state) {
   const refs = [];
   // Every reference carries a KIND, so a reader wording an undroppable one (`drop: null`) can say

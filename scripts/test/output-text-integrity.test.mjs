@@ -1114,7 +1114,9 @@ recipe("update-epic --outcome", { exempt: EXEMPT.vocab("outcome"), run: (c, v) =
 recipe("update-epic --reason", { rendered: true, run: (c, v) => pm(c.cwd, ["update-epic", "k1", "--status", "archived", "--outcome", "killed", "--reason", v, "--no-deferrals"]) });
 recipe("update-epic --deferral", { notRendered: "a deferral assertion is read by the archive gate and printed by no surface", run: (c, v) => pm(c.cwd, ["update-epic", "k2", "--status", "archived", "--outcome", "killed", "--reason", "r", "--deferral", `base:${v}`]) });
 recipe("update-epic --declined-deferral", { notRendered: "a deferral assertion is read by the archive gate and printed by no surface", run: (c, v) => pm(c.cwd, ["update-epic", "k3", "--status", "archived", "--outcome", "killed", "--reason", "r", "--declined-deferral", `${v}:why not`]) });
-recipe("update-epic --carried-to", { rendered: true, run: (c, v) => pm(c.cwd, ["update-epic", "k4", "--status", "archived", "--outcome", "delivered", "--carried-to", v, "--no-deferrals"]) });
+// A handoff receiver must now name a real, OTHER epic (operations-ship-their-inverses), so a poisoned
+// value can never be stored — it is refused at the write, with the value escaped in the refusal.
+recipe("update-epic --carried-to", { exempt: EXEMPT.knownEpic("carried-to"), run: (c, v) => pm(c.cwd, ["update-epic", "k4", "--status", "archived", "--outcome", "delivered", "--carried-to", v, "--no-deferrals"]) });
 recipe("update-epic --correct-disposition", { rendered: true, run: (c, v) => (ok(c.cwd, ["update-epic", "k5", "--status", "archived", "--outcome", "killed", "--reason", "r", "--no-deferrals"]), pm(c.cwd, ["update-epic", "k5", "--status", "archived", "--outcome", "abandoned", "--reason", "r2", "--correct-disposition", v, "--no-deferrals"])) });
 recipe("update-epic --review-mode", { exempt: EXEMPT.vocab("review-mode"), run: (c, v) => pm(c.cwd, ["update-epic", "ue", "--review-mode", v]) });
 recipe("update-epic --add-story", { rendered: true, expect: "fail", run: (c, v) => {

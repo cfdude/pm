@@ -593,7 +593,9 @@ x("update-epic.mjs", "updateEpic", {
   "row.clearNote": 1,
   "stillThere.join(\", \")": 1,
   "notLanded.join(\", gate \")": 1,
-}, "engine", "registry vocabularies and flag rows, validated gate numbers, story indices and colon counts, declared flag names, and resolved full commit names");
+  "flag": 1,
+  "REFERENCE_WHY[kind]": 1,
+}, "engine", "registry vocabularies and flag rows, validated gate numbers, story indices and colon counts, declared flag names, and resolved full commit names; the reference refusal's `flag` is one of two literal flag names its two call sites pass, and REFERENCE_WHY is a literal table keyed by storedEpicIdError()'s three-value vocabulary");
 x("update-epic.mjs", "updateEpic", {
   "perr": 1,
   "e.message": 2,
