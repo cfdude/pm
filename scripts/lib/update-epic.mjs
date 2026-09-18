@@ -930,7 +930,7 @@ export function updateEpic() {
   // the SAME helper serves the deferral half, whose epic can be empty inside a non-blank value.
   if (status === "archived") {
     const REFERENCE_WHY = {
-      empty: "it names no epic — an assertion that claims a reference and then declines to say what " +
+      empty: "the epic half is empty — an assertion that claims a reference and then declines to say what " +
         "it points at is not the sayable form of \"there are none\"",
       unknown: "no epic in this record carries that id — the work would be recorded as handed to nothing",
       self: "an epic cannot hand work to itself — that is the record that just ended, and it satisfies " +
@@ -946,6 +946,15 @@ export function updateEpic() {
     if (carried !== undefined) {
       const bad = storedEpicIdError(carried, { self: id, state });
       if (bad) refuseReference("--carried-to", carried, bad);
+    }
+    // THE EPIC HALF of each asserted deferral, through the SAME helper — not a second copy of the
+    // rule. The artifact-section half may be empty today and this change keeps it that way, so
+    // `declinedPairs()`'s both-halves rule is NOT what is reused here. `--declined-deferral`'s own
+    // `<what>` is free text and never an epic id, so none of this reaches it: a validation applied
+    // to the wrong half would be this change's own defect class turned inward.
+    for (const d of (asserted && Array.isArray(asserted.deferrals) ? asserted.deferrals : [])) {
+      const bad = storedEpicIdError(d && d.epic, { self: id, state });
+      if (bad) refuseReference("--deferral", (d && typeof d.epic === "string" ? d.epic : ""), bad);
     }
   }
 

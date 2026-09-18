@@ -95,10 +95,10 @@ and named in that commit's message.
   <unknown>` alongside `--outcome killed` exits non-zero too. Save `red-2.1.txt`.
 - [x] 2.2 **GREEN** — validate `--carried-to` in `scripts/lib/update-epic.mjs` before the gate
   decides, refusing empty / unknown / self and naming which. Commit RED+GREEN together.
-- [ ] 2.3 **RED** — tests: `--deferral ":"` exits non-zero writing nothing; `--deferral
+- [x] 2.3 **RED** — tests: `--deferral ":"` exits non-zero writing nothing; `--deferral
   "ghost:sec"` exits non-zero writing nothing; `--deferral "<self>:sec"` exits non-zero writing
   nothing; `--deferral "<other-registered>:sec"` still archives and reads back. Save `red-2.3.txt`.
-- [ ] 2.4 **GREEN** — apply the same validation to the `pairs()` output for `--deferral`, **to the
+- [x] 2.4 **GREEN** — apply the same validation to the `pairs()` output for `--deferral`, **to the
   EPIC half only**: the artifact-section half may be empty today and this change keeps it that way
   (the epic-disposition scenario now supplies an empty section explicitly), so this is not
   `declinedPairs()`'s both-halves rule copied over. One helper shared with 2.2, not two — a second

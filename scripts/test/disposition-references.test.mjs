@@ -73,3 +73,62 @@ test("A handoff naming a real, other epic still archives and reads back", () => 
   assert.equal(a.status, "archived");
   assert.equal(a.disposition.carriedTo, "other", "the valid reference is stored unchanged");
 });
+
+// ───────── A deferral is registered or explicitly declined — and it names a real epic ─────────
+
+test("Scenario: A deferral naming no epic is refused", () => {
+  const cwd = repoWithTwo();
+  const before = stateBytes(cwd);
+  const err = expectFail(() => run(archive(["--deferral", ":"]), { cwd }));
+  assert.ok(err, "an assertion asserting nothing is not the sayable form of 'there are none'");
+  assert.match(String(err.stderr || err.message), /empty/i, "the refusal names the empty half");
+  assert.deepEqual(stateBytes(cwd), before);
+  assert.equal(epicOf(cwd, "a").deferralAssertion, undefined);
+});
+
+test("Scenario: A deferral naming an epic the record does not hold is refused", () => {
+  const cwd = repoWithTwo();
+  const before = stateBytes(cwd);
+  const err = expectFail(() => run(archive(["--deferral", "ghost-epic:design.md § Deferred"]), { cwd }));
+  assert.ok(err);
+  assert.match(String(err.stderr || err.message), /ghost-epic/,
+    "refused at the WRITE, not reported afterwards by the read-only integrity check");
+  assert.deepEqual(stateBytes(cwd), before);
+});
+
+test("Scenario: A deferral naming the archiving epic itself is refused", () => {
+  const cwd = repoWithTwo();
+  const before = stateBytes(cwd);
+  const err = expectFail(() => run(archive(["--deferral", "a:design.md § Deferred"]), { cwd }));
+  assert.ok(err);
+  assert.match(String(err.stderr || err.message), /itself|to itself/);
+  assert.deepEqual(stateBytes(cwd), before);
+});
+
+test("Scenario: A deferral section may be empty, and a valid deferral still archives", () => {
+  // Only the EPIC half is checked. `declinedPairs()`'s both-halves rule is NOT what is reused here:
+  // the artifact-section half may be empty today and this change keeps it that way.
+  const cwd = repoWithTwo();
+  run(archive(["--deferral", "other:"]), { cwd });
+  const a = epicOf(cwd, "a");
+  assert.equal(a.status, "archived");
+  assert.deepEqual(a.deferralAssertion.deferrals, [{ epic: "other", section: "" }]);
+});
+
+test("A deferral naming a different, registered epic archives and reads back", () => {
+  const cwd = repoWithTwo();
+  run(archive(["--deferral", "other:design.md § Deferred: the tricky part"]), { cwd });
+  assert.deepEqual(epicOf(cwd, "a").deferralAssertion.deferrals,
+    [{ epic: "other", section: "design.md § Deferred: the tricky part" }]);
+});
+
+test("REGRESSION GUARD: --declined-deferral is untouched — both halves, its own ambiguity refusal", () => {
+  // The declined half carries a `<what>` that is free text, not an epic id, so none of the three
+  // refusals above may reach it. A validation applied to the wrong half is this change's own
+  // defect class turned inward.
+  const cwd = repoWithTwo();
+  run(archive(["--declined-deferral", "ghost-epic::not worth doing"]), { cwd });
+  assert.deepEqual(epicOf(cwd, "a").deferralAssertion.declined,
+    [{ what: "ghost-epic", reason: "not worth doing" }],
+    "a <what> that happens to look like an unknown epic id is still free text");
+});
