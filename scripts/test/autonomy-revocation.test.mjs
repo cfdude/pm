@@ -270,3 +270,61 @@ test("REGRESSION GUARD: the pre-existing empty-CATEGORY refusal still fires and 
   // An unknown non-empty category is refused by the same arm, unchanged.
   assert.ok(expectFail(() => run(["set-autonomy", "a", "--preauthorize", "category:bogus:why"], { cwd })));
 });
+
+// ───────── 1.10 The emitted instruction text: the third surface, and the falsified claim ─────────
+//
+// `epic-autonomy` names exactly three surfaces that discharge "a grant already on disk that names
+// nothing authorises nothing": the re-arm report (above), the integrity check
+// (stored-value-integrity.test.mjs), and THE EXECUTION-TIME DECISION RULE THIS PROJECT EMITS — the
+// one an agent, not the engine, applies. No engine code path evaluates a grant against a candidate
+// action, so there is no fourth reader to bind.
+//
+// The rules block also carried the very claim this change falsifies, as a live present-tense
+// statement of how pm behaves. REWORD, NEVER DELETE: the measured evidence is what makes the
+// required task item stick, and `gate-integrity`'s sweep requirement cites the same instance as a
+// PAST measurement, which stays true. What stops being true is the present tense.
+
+const REPO_ROOT = path.join(path.dirname(new URL(import.meta.url).pathname), "..", "..");
+const shippedText = (rel) => fs.readFileSync(path.join(REPO_ROOT, rel), "utf8");
+/** The four surfaces that carry the item: the RENDERED block, plus the three shipped mirrors. */
+const MIRRORS = ["skills/conductor/SKILL.md", "commands/epic.md", "commands/status.md"];
+
+test("1.10: the emitted inverse item states the grants instance as PAST measured evidence", () => {
+  const cwd = repoWithEpic();
+  const surfaces = [["rules block", run(["rules"], { cwd })], ...MIRRORS.map(m => [m, shippedText(m)])];
+  for (const [name, text] of surfaces) {
+    const flat = text.replace(/\s+/g, " ");
+    assert.ok(!/grants accumulate with no revoke/.test(flat),
+      `${name} still states the falsified claim in the present tense — pm ships --revoke now`);
+    assert.ok(!/turning it back on silently restores all of them/.test(flat),
+      `${name} still claims the restore is silent — --level autonomous reports what it arms`);
+    assert.match(flat, /accumulated with no revoke/,
+      `${name} must KEEP the instance as past measured evidence — deleting it removes what makes ` +
+      "the required item stick, and a practice recorded without its evidence reads as a preference");
+    assert.match(flat, /safety surface/, `${name} must keep the finding's classification`);
+    assert.match(flat, /--revoke/, `${name} must name the inverse that closed it`);
+  }
+});
+
+test("1.10: the emitted decision rule says a revoked grant and a grant naming nothing cover nothing", () => {
+  const cwd = repoWithEpic();
+  // THE RULES BLOCK ONLY, and that scope is derived rather than assumed: `rg "Already
+  // pre-authorized"` finds the decision rule on exactly one emitted surface plus this repo's own
+  // managed CLAUDE.md, which the block generates. SKILL.md carries the PREFLIGHT scan and defers
+  // the rule to the block ("this section defines the scan; the decision rule …"). The other actor
+  // that applies a grant — agents/hierarchy-child-executor.md's step (a), the only reader of
+  // `preAuthorized` outside the engine — carries its own wording and is task 5.4, after Gate 2.
+  const surfaces = [["rules block", run(["rules"], { cwd })]];
+  for (const [name, text] of surfaces) {
+    const flat = text.replace(/\s+/g, " ");
+    const at = flat.indexOf("a. Already pre-authorized");
+    assert.notEqual(at, -1, `${name} carries the execution-time decision rule (a)`);
+    const ruleA = flat.slice(at, flat.indexOf("b. No backup", at));
+    assert.match(ruleA, /revoked/i,
+      `${name}'s rule (a) must say a REVOKED grant does not cover an action — the engine honours the ` +
+      "revocation and the agent reader must too, or the revoke is honoured by every reader but one");
+    assert.match(ruleA, /names nothing|naming nothing/i,
+      `${name}'s rule (a) must say a grant naming nothing covers nothing — this is the THIRD surface ` +
+      "epic-autonomy names for an on-disk empty grant, and no revoke can reach one");
+  }
+});

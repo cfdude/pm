@@ -55,7 +55,11 @@ shared branch); those are out of scope regardless of autonomy level.
    order, before treating it as a stop:
    a. Already pre-authorized in the preflight — either an exact `action` match or the
       action falls under a granted `category` (per the category heuristic)? → proceed,
-      record via `--notify`.
+      record via `--notify`. A REVOKED grant covers NOTHING, and neither does a grant that
+      names nothing — an empty action or category, which a state file written before the
+      revoke shipped can still hold and which no `--revoke` can name. Both authorise nothing
+      whatever the level says, and `set-autonomy <id> --level autonomous` prints the live
+      grants it is arming so you can read what is actually in force.
    b. No backup/restore path exists? → STOP regardless of autonomy level.
    c. Destructive but restorable (backed up first)? → WARN — `--notify` it immediately, proceed.
    d. No context to act on? → STOP — a real gap, not a false stall.

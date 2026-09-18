@@ -72,13 +72,13 @@ and named in that commit's message.
   revocation field) reads back with every grant live, so the read-time default is exercised rather
   than assumed. Also assert the pre-existing empty-CATEGORY refusal still fires and still names the
   known category vocabulary — behaviour this change keeps, not behaviour it adds.
-- [ ] 1.10 **RED** — tests for the emitted instruction text and the actor that reads a grant: the
+- [x] 1.10 **RED** — tests for the emitted instruction text and the actor that reads a grant: the
   emitted rules block states the grants-with-no-revoke instance in the **past tense as measured
   evidence** rather than as a live present-tense claim, and its execution-time decision rule says that
   neither a REVOKED grant nor a grant naming nothing satisfies rule (a) — that emitted rule is the
   third surface `epic-autonomy` names for an on-disk empty grant, alongside the re-arm report (1.5)
   and the integrity check (2.5). Save `red-1.10.txt`.
-- [ ] 1.11 **GREEN** — `scripts/lib/rules.mjs` (`:216-217` the claim this change falsifies, `:759` — `:753` before the sibling shifted it
+- [x] 1.11 **GREEN** — `scripts/lib/rules.mjs` (`:216-217` the claim this change falsifies, `:759` — `:753` before the sibling shifted it
   the decision rule) plus every fixture under `scripts/test/fixtures/` and every
   `output-text-integrity` expectation the reword moves; derive that list by running the suite, not
   from this sentence. **Reword, do not delete** — the evidence is what makes the required item stick,
