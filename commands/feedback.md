@@ -45,6 +45,12 @@ mkdir -p .conductor/feedback
 # write title + body to .conductor/feedback/<YYYY-MM-DD>-<slug>.md
 ```
 
+**If the active epic owes a reconcile, this local write is blocked** — by the gate guard's
+`Edit`/`Write` and its Bash write shapes alike — so `/pm:feedback` cannot complete step 2 until the
+reconcile gate runs. That is the way through: complete the gate, then file the report. The window is
+short, and this is named rather than left to be discovered so a user who hits it does not conclude
+the command is broken.
+
 Do this every time, on every path, before any network call. Three reasons, and all three have
 happened:
 

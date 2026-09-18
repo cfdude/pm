@@ -701,8 +701,12 @@ The step otherwise lost after compaction. Do not skip it.
      `update-epic <paused-id> --clear-links` and `remove-epic <detour-id>` are refused
      (`remove-epic` is for an epic registered in error, and even then waits for the verdict).
    - **Hard backstop (on by default):** a PreToolUse hook mechanically blocks
-     `Edit`/`Write`/`NotebookEdit` while `reconcileNeeded` is still true on the active epic —
-     this is unconditional, regardless of the repo's `gateGuard` setting; see `/pm:gate-guard`.
+     `Edit`/`Write`/`NotebookEdit` — and a `Bash` call whose command matches a closed, documented
+     list of write shapes (a redirection to a file, an in-place stream editor, `tee`, a copier,
+     `git apply`, destroying the conductor record) — while `reconcileNeeded` is still true on the
+     active epic. It is unconditional, regardless of the repo's `gateGuard` setting; the reconcile
+     arm ships no inverse because any switch silencing Bash writes there would bypass the whole
+     gate. The list is incomplete by construction and the block says so; see `/pm:gate-guard`.
 4. **Write a one-line Honcho memory.** With a reconcile gate armed, `pop-detour` deliberately
    emitted none — `resumed X, reconciled vs Y` is not true until step 3's verdict exists. Get the
    exact ready-to-copy string (and log it) via:

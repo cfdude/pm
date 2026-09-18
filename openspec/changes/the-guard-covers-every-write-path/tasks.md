@@ -258,7 +258,7 @@ inline fix, so the fix is attributable and the re-review has an id to check.
 
 ## 5. Docs (after Gate 2)
 
-- [ ] 5.1 `commands/gate-guard.md` — the matcher, the closed shape list and its exclusions, what the
+- [x] 5.1 `commands/gate-guard.md` — the matcher, the closed shape list and its exclusions, what the
       check cannot see, the unreadable-state Bash exemption replacing "This is not a wedge, because
       Bash never reaches this hook", the accepted false-positive class (including the spaced
       comparisons the arrow exclusion does NOT reach), the two fail-open modes — an unreadable record
@@ -266,15 +266,15 @@ inline fix, so the fix is attributable and the re-review has an id to check.
       record and why it is not a prefix, the engine-invocation exemption and its bound, and the
       stated asymmetry that
       the reconcile arm has no inverse while the tracker arm keeps `set-gate-guard off`
-- [ ] 5.2 `skills/conductor/SKILL.md` — the POP protocol's statement of what the gate blocks, and the
+- [x] 5.2 `skills/conductor/SKILL.md` — the POP protocol's statement of what the gate blocks, and the
       unreadable-state paragraph at ~line 206 already corrected in 3.4c
-- [ ] 5.3 `README.md` — the gate-guard description, and the unreadable-state paragraph at ~line 1593
+- [x] 5.3 `README.md` — the gate-guard description, and the unreadable-state paragraph at ~line 1593
       already corrected in 3.4c
-- [ ] 5.4 `CHANGELOG.md` `[Unreleased]` entry
-- [ ] 5.5 `commands/feedback.md` — one line at step 2 saying the local-file write is blocked while a
+- [x] 5.4 `CHANGELOG.md` `[Unreleased]` entry
+- [x] 5.5 `commands/feedback.md` — one line at step 2 saying the local-file write is blocked while a
       reconcile is owed and that completing the gate is the way through, so a user who hits it reads
       why rather than concluding `/pm:feedback` is broken (design D7)
-- [ ] 5.6 Confirm `docs/parity-ledger.json` still claims every touched path and adds none (no new
+- [x] 5.6 Confirm `docs/parity-ledger.json` still claims every touched path and adds none (no new
       file under `commands/`, `agents/`, `skills/`, `hooks/` or `.claude-plugin/` is expected)
 
 ## 6. Close

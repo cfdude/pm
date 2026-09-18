@@ -6,6 +6,33 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [Unreleased]
+
+### Fixed
+
+* **The reconcile gate guard covers Bash write paths.** The `PreToolUse` guard was registered for
+  `Edit|Write|NotebookEdit` only, so an agent blocked on `Edit` wrote the same file with
+  `cat > f <<EOF`, `sed -i` or `tee` and the gate it exists to protect was skipped in one hop. Its
+  matcher is now `Bash|Edit|Write|NotebookEdit`, and for a `Bash` call it blocks only a member of a
+  **closed, documented list of write shapes** (a redirection into a file, an in-place stream
+  editor, `tee`, a copier, `git apply`, destroying the conductor record) and passes everything
+  else. **Destroying `.conductor/state.json` is on the list** — the guard is dormant while no
+  record exists, so deleting it turns the block off entirely — and the record match is the exact
+  path (plus a trailing `*`), never a longer literal filename, so the engine's own
+  `rm .conductor/state.json.lock` remedy stays runnable. A git invocation is read through its
+  subcommand, so `git rm -f .conductor/state.json` and `git -C <path> apply p.patch` are both
+  covered. The block message names the matched shape with a fixed label, interpolates no text taken
+  from the command, and states that a Bash write is forbidden whether or not the check detects it;
+  it drops the claim that completing the reconcile gate is the only way through, which this change
+  does not make true. **Wedge-freedom under the widened matcher rests on an explicit exemption:** an
+  unreadable `state.json` allows every affirmed `Bash` call carrying a command, because one of the
+  remedies the message prints redirects into the record itself. The check is incomplete by
+  construction and the docs say so — two fail-open modes (an unreadable record allows every Bash
+  call with a command; an absent record leaves the guard dormant), and every undecidable form (a
+  variable-built path, `eval`, a script by name, an interpreter given inline source) stays where
+  pm's law puts it, in the instruction the block carries. The reconcile arm deliberately ships no
+  inverse (`set-gate-guard off` still does not reach it); the tracker-refresh arm keeps its own.
+
 ## [0.45.0] — 2026-09-17
 
 The first batch of Important findings from the independent review of 0.43.0: what the commit hook

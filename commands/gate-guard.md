@@ -4,9 +4,15 @@ allowed-tools: Bash, Read
 ---
 
 The **gate guard** is a `PreToolUse` hook that mechanically blocks `Edit`/`Write`/`NotebookEdit`
+— and a `Bash` call whose command text matches one of a closed, documented list of write shapes —
 while the active epic still owes a reconcile after a detour POP (`reconcileNeeded: true`). This
 is the one place pm's law tolerates mechanical blocking over pure instruction: it protects the
 single highest-stakes skip (writing source before the reconcile gate actually runs).
+
+Its matcher is **`Bash|Edit|Write|NotebookEdit`** (`hooks/hooks.json`). Bash is covered because a
+guard that matched only the editing tools was one hop from useless: an agent blocked on `Edit`
+writes the same file with `cat > f <<EOF`, `sed -i` or `tee`. What that added coverage can and
+cannot decide is set out under "The Bash write shapes" below.
 
 ## On by default for the reconcile-owed case
 
@@ -142,17 +148,133 @@ If `${CLAUDE_PLUGIN_ROOT}` is empty:
 
 ## What it checks
 
-Every `Edit`/`Write`/`NotebookEdit` call is checked: if the currently active epic's
-`reconcileNeeded` is `true` (it still owes a reconcile — see the conductor skill's POP
-protocol), the tool call is blocked with a message pointing you at the reconciler agent. Run the
-reconcile gate first. Epics with no pending reconcile are unaffected.
+Every `Edit`/`Write`/`NotebookEdit` call is checked, and so is every `Bash` call whose command
+text resolves to one of the write shapes below: if the currently active epic's `reconcileNeeded`
+is `true` (it still owes a reconcile — see the conductor skill's POP protocol), the tool call is
+blocked with a message pointing you at the reconciler agent, naming the shape it matched when it
+matched one. Run the reconcile gate first. Epics with no pending reconcile are unaffected.
+
+## The Bash write shapes — a closed list, and what it cannot see
+
+The guard reads `tool_name` from the hook payload. Only an **affirmatively-identified** `Bash`
+call takes the shape path; anything else — `Edit`, an unknown tool name, an unparseable payload,
+an absent payload, or a `Bash` payload carrying no readable command — takes today's blocking path
+unchanged. That direction is deliberate: defaulting an unidentifiable call to the allow path would
+be a silent hole in the one unconditional block pm ships.
+
+The list is **closed**, and each row matches a FIXED label the block message prints — never the
+matched path or any slice of the command, so the message interpolates no text the engine did not
+write. It blocks:
+
+| Shape | Label |
+|---|---|
+| a redirection into a file — `>`, `>>`, `&>`, `&>>`, `>\|` or `>&`, optionally preceded by fd digits, with a path target | `a redirection into a file` |
+| a segment-leading `sed` / `gsed` / `perl` / `ruby` carrying `-i…` or `--in-place[=…]` | `an in-place stream editor` |
+| a segment-leading `tee` with a non-device argument | `tee` |
+| a segment-leading `cp`, `mv`, `install`, `rsync`, `dd`, `truncate`, `patch` | that command's name |
+| a segment-leading `git apply` | `git apply` |
+| removing the conductor record with `rm`, `unlink` or `shred` — or `git rm`/`git mv` — where the written argument names the record itself | `a write to the conductor record` |
+
+**Destroying the record is on the list**, because it is not a smaller evasion than writing over a
+file: the guard is dormant while no record exists, so `rm .conductor/state.json` turns the whole
+block OFF, and the call after it passes. **The record match is on the exact path, and that is what
+keeps pm's own remedies runnable.** It matches `.conductor`, `.conductor/state.json`, a `/*` glob
+of the directory, and a trailing `*` on either name (`.conductor/state.json*`, `.conductor*`) at
+any directory prefix, with one surrounding quote stripped from each end — the written argument as
+it expands names the record. It is **never a longer literal filename beneath it**, so
+`rm .conductor/state.json.lock` — the remedy the engine's own lock refusal prints, as the literal
+path — stays runnable, and the lock-only glob `.conductor/state.json.*` (which cannot expand to the
+record) stays the runnable spelling for lock cleanup. `state.json*` IS blocked even though it would
+also reach the lock, and that costs nothing because pm prints the literal lock path, never a glob.
+
+**Git is read through its subcommand.** `git rm -f .conductor/state.json` destroys the record
+exactly as `rm` does, so a git invocation has its global options skipped first and its subcommand
+read: `-C`, `-c`, `--git-dir`, `--work-tree`, `--namespace` and `--exec-path` each take a
+separate value word (in both the separate and the glued spelling), and every other flag-shaped word
+consumes itself alone — so **`git -p rm <record>` is not read as `rm` being `-p`'s value.** The
+subcommand's OWN arguments are what the record pattern reads, never git's globals, so `git -C
+.conductor status` (a read) passes. The reader also repairs `git -C <path> apply p.patch`, this
+repository's own mandated spelling. Its bound, named rather than left to be found: `git -C
+/repo/.conductor rm state.json` passes, because `state.json` alone is not the record's path — the
+same pre-existing class as `cd .conductor && rm state.json`.
+
+**An invocation of pm's own engine is never a command-word write shape.** A `node`-led segment
+whose first argument is a path ending `conductor.mjs` or an unexpanded variable reference
+(`node "$ENGINE" <verb>` — the spelling pm's own command docs emit), followed by a verb, is exempt
+from the command-word rows. This is what keeps the commands the gate names as its own exit — and
+the detour-stack's `drop-detour` — reachable as the list grows. The bound is exact: the exemption
+covers the command-word arm ONLY. **A redirection in the same segment still blocks**
+(`node … conductor.mjs status > out.txt`), because an exemption that swallowed redirections would
+make "prefix the command with an engine invocation" a one-line bypass. And no row is reachable from
+a `node`-led segment today anyway — the command-word arm reads the segment's leading word, always
+the runtime — so the exemption is a forward commitment, not a behaviour you can observe.
+
+**Segments are split on newline, `;`, `&&`, `||` and `|`** (except the `>|` no-clobber operator),
+and the scan runs per segment, so a write shape after a `&&` is caught. The command word is taken
+after its last `/`, and a leading `VAR=value`, `sudo`, `env` or `command` is skipped.
+
+**The two fail-open modes, stated plainly.**
+
+- **An unreadable record allows every Bash call CARRYING A COMMAND** — see the next section. This
+  is a carve-out, not a gap: one remedy the unreadable-state message prints redirects into the
+  record itself and would otherwise match the shape list.
+- **An absent record leaves the guard dormant.** With no `.conductor/state.json` the hook exits 0
+  silently for every tool. That is the plugin's standing dormancy contract, and it is exactly why
+  destroying the record is a shape.
+
+**What it CANNOT see, and must never claim to:** a path built from a variable or `$(…)`; anything
+behind `eval`; a script or Makefile target invoked by name; an interpreter given inline source
+(`python -c`, `node -e`); a program that writes files of its own accord; an in-place editor reached
+through another command's arguments (`find … -exec sed -i …`, `xargs … sed -i`). It has no quoting
+model either, so a `>` inside a quoted string or a heredoc body reads as a redirection.
+
+**Accepted false positives.** A redirect to a non-source file (`node --test > red-1.txt`,
+`cmd > /tmp/scratch`) is blocked: the guard has no path policy, and the window is short because
+running the gate is the correct next action anyway. A **spaced comparison** still blocks —
+`awk '$1 > 5' f.txt`, `jq 'select(.n > 3)'`, `rg -n 'a > b' .`, `git commit -m "fix: a > b"` — and
+that is accepted under the no-quoting-model non-goal. The **arrow** case is *not* a false positive
+and is excluded deliberately, because this repository mandates `rg`: a `>` whose immediately
+preceding character is `-` does not match, so `rg 'foo->bar' src/` and `git log --format='%h -> %s'`
+pass. What that exclusion does and does not reach is the exact boundary above — it reaches the
+unspaced arrow and nothing else.
+
+**Emitting a remedy the guard then refuses.** Widening coverage changes what pm's OWN printed
+remedies can do while a reconcile is owed, and two classes are accepted rather than fixed:
+
+- **The `sed -i.bak '<N>d' CLAUDE.md` rules-marker remedy** matches the in-place-editor row and is
+  blocked. That is accepted — it is not time-critical, and the way through is the one this gate
+  always names: run the reconcile gate. The remedy appears at **four** sites
+  (`scripts/lib/rules.mjs`, and `commands/init.md`, `commands/review-mode.md`,
+  `commands/upgrade.md`), one more than the design first enumerated.
+- **An UNFILLED command template** — `<id>`, `<sha>`, `<iso>`, `<why>`, `<existing>` — carries a
+  `>` that the redirection arm matches, so pasting one unfilled blocks while the FILLED command
+  passes. This class is pm-wide and PRE-EXISTING (it already breaks at the shell, where `<id>` is
+  an input redirection), and any template pm emits falls in it, including
+  `add-epic … --link "relates-to:<existing>:<how>"` in `commands/triage.md`.
+
+## The asymmetry: the reconcile arm has no inverse, the tracker arm keeps one
+
+`set-gate-guard off` **cannot** reach the reconcile block, Bash included. Any switch that silenced
+Bash writes while a reconcile is owed would be a bypass for the whole gate — an agent that learns
+it exists routes around the gate in one command, which is the defect this coverage closes. The
+tracker-refresh arm is the opposite and stays that way: its Bash coverage IS silenced by
+`set-gate-guard off`, because an agent that cannot reach its tracker must be able to proceed
+honestly. Both halves are stated here so the asymmetry is a decision on the record rather than an
+inconsistency someone later "fixes".
 
 ## An unreadable `state.json` blocks — fails CLOSED
 
 If `.conductor/state.json` exists but cannot be read — a merge left conflict markers in it, it is
 truncated, or its shape is wrong (not a JSON object, `epics` present and not an array or holding a
 non-object, `detourStack` present and not an array) — the guard **blocks every
-`Edit`/`Write`/`NotebookEdit` with exit 2** until the file is fixed. Before this, the same file
+`Edit`/`Write`/`NotebookEdit` and every Bash write shape with exit 2** until the file is fixed —
+**with one carve-out that keeps the remedies below runnable**: an affirmed `Bash` call carrying
+command text is ALLOWED whatever its shape, because one of the remedies the message prints redirects
+into the record itself (`git show <rev>:.conductor/state.json > .conductor/state.json`) and another
+is a `mv` of it, so a shape check here would block the escape hatch the message hands you. The
+carve-out is unconditional for such a call — not "allow unless it is a write shape". A `Bash`
+payload with NO readable command does not inherit it and blocks; there is nothing to decide from,
+and every remedy named is a command. Before this, the same file
 with a conflict marker prepended exited 0 and silently disabled the unconditional reconcile block,
 exactly when the record saying whether one is owed could not be read; with `epics: {}` the hook
 crashed with a `TypeError` (exit 1, which Claude Code also treats as allow).
@@ -170,10 +292,17 @@ conductor: .conductor/state.json cannot be read — it does not parse as JSON (U
   gate guard: Edit/Write/NotebookEdit stay blocked until the file is fixed — whether a reconcile is owed cannot be read. Bash is not blocked: run one of the commands above.
 ```
 
-**This is not a wedge, because Bash never reaches this hook.** The engine refuses on an unreadable
-file whatever tool the payload names; what keeps Bash open is `hooks/hooks.json`, which registers
-`gate-guard` for the matcher `Edit|Write|NotebookEdit` only. Every remedy the message names is a
-shell command, so fix the file from Bash:
+**This is not a wedge, and the reason is the carve-out, not the matcher.** Through 0.45.0 what kept
+Bash open was that `hooks/hooks.json` registered `gate-guard` for `Edit|Write|NotebookEdit` only;
+under the widened matcher that is no longer true, and wedge-freedom rests instead on the exemption
+above — an affirmed Bash call carrying a command is allowed even over an unreadable record. Every
+remedy the message names is a shell command, so fix the file from Bash:
+
+The printed output's closing line reads "Edit/Write/NotebookEdit stay blocked … Bash is not
+blocked: run one of the commands above." The Bash half of that sentence is true of every call the
+harness actually produces, because a `Bash` call carries a command; the one spelling that is not
+covered is a `Bash` payload with no readable command, which the harness does not produce and which
+blocks.
 
 - a merge left conflict markers → `git checkout --ours .conductor/state.json` (or `--theirs`);
 - the markers were committed → `git show <good-rev>:.conductor/state.json > .conductor/state.json`;

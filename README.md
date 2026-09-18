@@ -830,6 +830,18 @@ A hard `PreToolUse` guard blocking `Edit`/`Write`/`NotebookEdit` while the activ
 owes a reconcile — **on by default and unconditional** for that specific case; `set-gate-guard
 off` no longer bypasses it.
 
+The matcher covers **`Bash`** too, where it blocks only a member of a closed, documented list of
+write shapes (a redirection into a file, an in-place stream editor, `tee`, a copier, `git apply`,
+destroying the conductor record) and passes everything else. The list is incomplete by
+construction and the block says so, naming the matched shape with a fixed label and stating that a
+Bash write is forbidden whether or not the check detects it. Destroying `.conductor/state.json` is
+on the list because the guard is dormant while no record exists — deleting it turns the block off
+— and the record match is the exact path, so the engine's own `rm .conductor/state.json.lock`
+remedy stays runnable. An invocation of pm's own engine is never itself a write shape, so the
+commands the gate names as its exit (and `drop-detour`) stay reachable; a redirection in the same
+segment still blocks. Two fail-open modes are named: an unreadable record allows every Bash call
+carrying a command, and an absent record leaves the guard dormant.
+
 </details>
 
 <details>
