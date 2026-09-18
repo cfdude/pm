@@ -188,6 +188,24 @@ export function setAutonomy() {
     const i = s.indexOf(":");
     const action = i === -1 ? s.trim() : s.slice(0, i).trim();
     const reason = i === -1 ? undefined : s.slice(i + 1).trim();
+    // THE ACTION HALF, and only that half. An empty action is not a harmless no-op record: it is a
+    // grant whose match against any candidate action is undefined, and an implementer reading the
+    // decision rule may reasonably treat it as matching nothing or as matching everything. It is
+    // also unrevokable afterwards, because a revoke names a STORED value and an empty one is not
+    // expressible as a flag value — so the refusal belongs at the write, while the ambiguity is
+    // still one re-run away from being said correctly.
+    //
+    // NOT `declinedPairs()`'s both-halves rule copied over: "a grant with an action and no reason is
+    // still accepted" is behaviour this keeps. The rule binds the half that decides what is
+    // AUTHORISED, not the half that explains it. (The empty-CATEGORY half is refused above, by the
+    // known-vocabulary test, and has been since before this change.)
+    if (!action) {
+      process.stderr.write(
+        `conductor: --preauthorize ${escapeControls(JSON.stringify(s))} names no action — the action half is what ` +
+        "decides what is authorised, and a grant naming nothing matches nothing or everything " +
+        "depending on who reads it. Write it as \"<action>:<reason>\". Nothing was written.\n");
+      process.exit(1);
+    }
     const entry = { action, grantedAt: new Date().toISOString() };
     if (reason) entry.reason = reason;
     a.preAuthorized = [...a.preAuthorized, entry];

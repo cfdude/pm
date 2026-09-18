@@ -206,6 +206,46 @@ Pairs: 3.1 lands with 3.2.
       claims to cover is a practice-level lesson (`docs/lessons/`), and any friction in pm's own
       surfaces hit while doing this is `/pm:feedback`
 
+## 4b. Gate 2 findings (fixed before the gate is recorded)
+
+Gate 2's two lenses returned one Important that turns the whole gate off, one Important about a
+normative property no test could fail on, and three Minors. Each is a task here rather than an
+inline fix, so the fix is attributable and the re-review has an id to check.
+
+- [x] 4.5 G2-M2 — the emitted rules block's new Bash sentence was inserted INSIDE the POP-protocol
+      sentence, orphaning its `then write its verdict back durably with record-reconcile …` clause
+      six lines from its lead-in. Move the insertion after that sentence completes. Re-run
+      `scripts/test/managed-rules-block.test.mjs` and `scripts/test/emitted-invocations.test.mjs`
+- [ ] 4.6 RED + GREEN — G2-I1, the record-destruction row is keyed on `word === "rm"` alone, so
+      `git rm -f .conductor/state.json` destroys the record and the guard allows it, after which the
+      guard is dormant and every previously-blocked shape passes (demonstrated end to end through the
+      real hook). `unlink` and `shred` pass too. Add a GIT-SUBCOMMAND reader that skips git's global
+      options — `-C`, `-c`, `--git-dir`, `--work-tree`, `--namespace`, `--exec-path`, each in both the
+      separate-value and glued spellings — before reading the subcommand, and key `git rm`/`git mv` on
+      the record over the subcommand's OWN arguments (never over git's global options, or
+      `git -C .conductor status` would block). The same reader fixes `git -C <path> apply p.patch`,
+      which evades the shipped `git apply` row. Add `unlink` and `shred` beside `rm` on the record
+      row. Amend the `gate-integrity` delta's record-destruction enumeration and add its scenarios;
+      add the new literals to 1.3's single-site guard and the cases to the prototype battery
+- [ ] 4.7 RED + GREEN — G2-I2, the per-segment and multi-line scan is normative (design D2, and the
+      module comment names "a write shape after a `&&`" as the evasion the guard exists to catch) but
+      no test could fail on it: slicing `segments()` to the first segment, and reducing the hook's
+      whole-command read to line one, each left the suite green. Add `rg foo && sed -i.bak '7d'
+      CLAUDE.md` — pm's own marker remedy — at the unit level and a two-line command whose write is on
+      line 2 at the HOOK level (the unit level cannot reach the second mutant, because `writeShape`
+      splits on `\n` itself). Prove both mutants now die
+- [ ] 4.8 RED + GREEN — G2-M1, `install`, `rsync`, `dd` and `patch` are DECLARED rows with no
+      behavioural case: removing `"rsync"` from the list was caught only by 1.3's source-text scan,
+      which asserts the row is declared and not that anything honours it
+      (`docs/lessons/a-guard-can-check-the-wrong-half.md`). One BLOCKS row per command word
+- [ ] 4.9 G2-M3 — `red-1.1.txt`, `red-1.1b.txt` and `red-1.3.txt` are byte-identical module-load
+      SyntaxErrors: the named tests never ran in those captures, so they record that the export was
+      absent and NOT that the assertions discriminate. Re-capturing them honestly is not possible —
+      against a pre-export engine a module-load failure IS the truthful output — so each file states
+      what it actually showed, and the discrimination evidence it lacked is carried in from the Gate 2
+      lens-1 mutation battery (`red-1.x-mutation-evidence.txt`), which ran the named tests against a
+      shipped engine with one row neutered at a time
+
 ## 5. Docs (after Gate 2)
 
 - [ ] 5.1 `commands/gate-guard.md` — the matcher, the closed shape list and its exclusions, what the

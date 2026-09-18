@@ -194,3 +194,79 @@ test("Scenario: A revoked grant is not restored by re-arming autonomy", () => {
   assert.match(out, /arming no pre-authoriz/i, "the re-arm report was produced and names none");
   assert.ok(!/drop-scratch-table/.test(out), "and not restored by re-arming");
 });
+
+// ───────── A pre-authorization names something (1.7) ─────────
+
+test("Scenario: A grant with an empty action is refused", () => {
+  const cwd = repoWithEpic();
+  const before = stateBytes(cwd);
+  const err = expectFail(() => run(["set-autonomy", "a", "--preauthorize", ":no action"], { cwd }));
+  assert.ok(err, "an empty action half exits non-zero");
+  assert.deepEqual(stateBytes(cwd), before, "the epic gains no autonomy block it did not already have");
+  assert.equal(autonomyOf(cwd, "a"), undefined);
+});
+
+test("Scenario: A grant with an action and no reason is still accepted", () => {
+  const cwd = repoWithEpic();
+  run(["set-autonomy", "a", "--preauthorize", "drop-scratch-table"], { cwd });
+  const g = autonomyOf(cwd, "a").preAuthorized[0];
+  assert.equal(g.action, "drop-scratch-table");
+  assert.equal(g.reason, undefined,
+    "this requirement constrains the half that decides what is authorised, not the half that explains it");
+});
+
+test("Scenario: A grant already on disk that names nothing authorises nothing", () => {
+  // The refusal above binds writes that have not happened. A grant a previous release stored cannot
+  // be revoked either — a revoke names a stored value and an empty one is not expressible as a flag
+  // value — so the re-arm report is one of the three surfaces that must pass over it.
+  const cwd = repoWithEpic();
+  run(["set-autonomy", "a", "--preauthorize", "drop-scratch-table:reviewed"], { cwd });
+  const s = readState(cwd);
+  s.epics.find(e => e.id === "a").autonomy.preAuthorized.push({ action: "", grantedAt: "2026-01-01T00:00:00.000Z", reason: "no action" });
+  fs.writeFileSync(stateFile(cwd), JSON.stringify(s, null, 2) + "\n");
+
+  const out = runCombined(["set-autonomy", "a", "--level", "autonomous"], { cwd });
+  assert.match(out, /drop-scratch-table/, "the live grant is named");
+  assert.match(out, /\b1\b/, "and counted as one, not two");
+});
+
+// ───────── 1.9 REGRESSION GUARD — what this change KEEPS ─────────
+
+test("REGRESSION GUARD: a state file written before this change reads back with every grant live", () => {
+  // The revocation stamp is read-time-defaulted — `isRevoked()` asks whether the field is there —
+  // so a 0.45.0 record needs no migration. Exercised rather than assumed: the grants below carry no
+  // `revoked` key at all, which is the shape every state file on disk today has.
+  const cwd = repoWithEpic();
+  const s = readState(cwd);
+  s.epics.find(e => e.id === "a").autonomy = {
+    level: "off", context: [], notifications: [],
+    preAuthorized: [
+      { action: "drop-scratch-table", grantedAt: "2026-01-01T00:00:00.000Z", reason: "reviewed" },
+      { category: "filesystem", grantedAt: "2026-01-02T00:00:00.000Z", reason: "scratch only" },
+    ],
+  };
+  fs.writeFileSync(stateFile(cwd), JSON.stringify(s, null, 2) + "\n");
+
+  const out = runCombined(["set-autonomy", "a", "--level", "autonomous"], { cwd });
+  assert.match(out, /arming 2 pre-authorizations/, "both legacy grants read as live");
+  assert.match(out, /drop-scratch-table/);
+  assert.match(out, /category:filesystem/);
+  // And each is still revocable, which is what "live" has to mean.
+  run(["set-autonomy", "a", "--revoke", "category:filesystem", "--revoke-reason", "no longer"], { cwd });
+  assert.ok(autonomyOf(cwd, "a").preAuthorized[1].revoked);
+});
+
+test("REGRESSION GUARD: the pre-existing empty-CATEGORY refusal still fires and still names the vocabulary", () => {
+  // Behaviour this change KEEPS, not behaviour it adds: `KNOWN_PREAUTHORIZE_CATEGORIES` already
+  // refused an empty category on 0.45.0, which is why the empty-category case was deliberately not
+  // in 1.7's RED list — a test that goes green before the fix is written proves nothing.
+  const cwd = repoWithEpic();
+  const before = stateBytes(cwd);
+  const err = expectFail(() => run(["set-autonomy", "a", "--preauthorize", "category::no name"], { cwd }));
+  assert.ok(err, "an empty category half exits non-zero");
+  const msg = String(err.stderr || err.message);
+  assert.match(msg, /filesystem\|network\|schema\|external-api/, "and still names the known vocabulary");
+  assert.deepEqual(stateBytes(cwd), before, "the state of record is byte-identical");
+  // An unknown non-empty category is refused by the same arm, unchanged.
+  assert.ok(expectFail(() => run(["set-autonomy", "a", "--preauthorize", "category:bogus:why"], { cwd })));
+});

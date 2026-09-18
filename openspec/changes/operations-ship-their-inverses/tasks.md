@@ -58,17 +58,17 @@ and named in that commit's message.
   `reportSave()` `unchanged` branch does not swallow it. Save `red-1.5.txt`.
 - [x] 1.6 **GREEN** — the re-arm report, printed on BOTH of `reportSave()`'s branches. Commit
   RED+GREEN together.
-- [ ] 1.7 **RED** — tests: `--preauthorize ":x"` exits non-zero writing nothing and the epic gains
+- [x] 1.7 **RED** — tests: `--preauthorize ":x"` exits non-zero writing nothing and the epic gains
   no autonomy block; an action with no reason is still accepted; a grant already on disk whose
   action is empty is not named by the re-arm report. **The empty-CATEGORY case is NOT in this RED
   list** — it already passes on 0.45.0 (`KNOWN_PREAUTHORIZE_CATEGORIES`, `autonomy.mjs:72-77`,
   verified exit 1), so it is a regression guard in 1.9 and a test that would go GREEN before the fix
   is written proves nothing. Save `red-1.7.txt`.
-- [ ] 1.8 **GREEN** — the non-empty guard on the **ACTION half only** — the half that decides what is
+- [x] 1.8 **GREEN** — the non-empty guard on the **ACTION half only** — the half that decides what is
   authorised. It is the same rule `declinedPairs()` carries, applied to the half that needs it, NOT a
   copy of its both-halves behaviour: "a grant with an action and no reason is still accepted" is a
   scenario this change keeps. Commit RED+GREEN together.
-- [ ] 1.9 **REGRESSION GUARD** — assert that a state file written before this change (grants with no
+- [x] 1.9 **REGRESSION GUARD** — assert that a state file written before this change (grants with no
   revocation field) reads back with every grant live, so the read-time default is exercised rather
   than assumed. Also assert the pre-existing empty-CATEGORY refusal still fires and still names the
   known category vocabulary — behaviour this change keeps, not behaviour it adds.
