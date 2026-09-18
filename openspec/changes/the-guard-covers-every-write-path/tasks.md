@@ -197,7 +197,11 @@ Pairs: 3.1 lands with 3.2.
       because none of those files changes
 - [x] 4.2 **Verify against the commit, not the working tree** (item 2) — for every task above, run
       `git show --stat <that task's sha>` and assert each file the task claims appears in THAT commit.
-      A task whose claimed file is absent FAILS even with the suite green
+      A task whose claimed file is absent FAILS even with the suite green.
+      GATE 2 ADDENDUM: 4.5's claimed file `scripts/lib/rules.mjs` is in `0e4f217` — the sibling's
+      commit, for the reason on that task line — and not in a commit of this change's own authorship;
+      4.6-4.9's claimed files are all in `2610ea4`, asserted with `git show --stat`. Both shas are
+      attributed to this epic, so Gate 2's range reaches them
 - [x] 4.3 **Attribute every commit** (item 4) — at the moment each commit is made, run
       `update-epic the-guard-covers-every-write-path --attribute-commit <sha>`. The archive commit in
       6.2 is EXCLUDED
@@ -216,6 +220,10 @@ inline fix, so the fix is attributable and the re-review has an id to check.
       sentence, orphaning its `then write its verdict back durably with record-reconcile …` clause
       six lines from its lead-in. Move the insertion after that sentence completes. Re-run
       `scripts/test/managed-rules-block.test.mjs` and `scripts/test/emitted-invocations.test.mjs`
+      LANDED IN `0e4f217`, a commit authored by the concurrent sibling change: a `git add` of these
+      two files sat in the SHARED index while its own commit ran, and the sibling committed them. The
+      wording follow-up (`A BASH WRITE IS A WRITE TOO`, not a capitalised `AND` after a full stop) is
+      in `2610ea4`
 - [x] 4.6 RED + GREEN — G2-I1, the record-destruction row is keyed on `word === "rm"` alone, so
       `git rm -f .conductor/state.json` destroys the record and the guard allows it, after which the
       guard is dormant and every previously-blocked shape passes (demonstrated end to end through the
