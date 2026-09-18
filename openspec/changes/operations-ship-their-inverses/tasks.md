@@ -182,7 +182,7 @@ commit message, and commit the refusal and the verb together.
 
 ## 4. Required task items (CLAUDE.md 1–7)
 
-- [ ] 4.1 **Call-site completeness sweep — derived with `rg` AT SWEEP TIME, never typed from
+- [x] 4.1 **Call-site completeness sweep — derived with `rg` AT SWEEP TIME, never typed from
   memory.** Sweep and state where each rule holds and where it does not, justifying every omission:
   - `rg -ni "pre-authoriz|preauthoriz" scripts/ commands/ skills/ agents/ hooks/` — WIDER than
     `getAutonomy|epic\.autonomy|preAuthorized` on purpose: that narrower pattern returns 0 hits in
@@ -200,7 +200,7 @@ commit message, and commit the refusal and the verb together.
     changes the answer for.
   - `rg -n "isArmed|ownedDetours|reconcileOnResume|reconcileNeeded" scripts/` — every consumer of the
     obligation the drop ends.
-- [ ] 4.1b **Emitted-remedy sweep** — the sibling `the-guard-covers-every-write-path` ships a Bash
+- [x] 4.1b **Emitted-remedy sweep** — the sibling `the-guard-covers-every-write-path` ships a Bash
   write-shape scanner and **lands FIRST** (Coordination 1), so its own task 4.1b cannot see any
   command line THIS change emits. Enumerate them with `rg` at sweep time — never from this list —
   and run each through the scanner as shipped: `rg -n '\Wdrop-detour|--revoke|--revoke-reason'
@@ -216,7 +216,7 @@ commit message, and commit the refusal and the verb together.
   scanner blocks is a FINDING unless it is justified in that same place. A remedy pm prints that
   the guard then refuses shows up in no diff, because neither change's files need to move for it
   to be true.
-- [ ] 4.2 **Inverses — enumerate and justify.**
+- [x] 4.2 **Inverses — enumerate and justify.**
  For every operation this change adds or modifies,
   name its inverse and say whether it ships: `--preauthorize` ↔ `--revoke` (ships, pair complete);
   `push-detour` ↔ `drop-detour` (ships, pair complete); `--revoke` ↔ re-granting (ships: granting
@@ -238,14 +238,14 @@ commit message, and commit the refusal and the verb together.
   the likely justification is that both are historical record rather than control state, but this is
   the change whose thesis is that an unjustified missing inverse is a FINDING, so "obviously fine"
   is not an answer.
-- [ ] 4.3 **Verify against the commit, not the working tree.** For every task above, run
+- [x] 4.3 **Verify against the commit, not the working tree.** For every task above, run
   `git show --stat <that task's sha>` and assert every file the task claims to change appears in
   THAT commit. A task whose claimed file is absent FAILS even if the working tree holds the edit and
   the suite is green.
-- [ ] 4.4 **Attribute every commit to this epic, at the moment it is made:**
+- [x] 4.4 **Attribute every commit to this epic, at the moment it is made:**
   `update-epic <epicId> --attribute-commit <sha>`. The archive commit in 6.2 is lifecycle
   bookkeeping and MUST NOT be attributed.
-- [ ] 4.5 **Route what this work taught.** Name which of the three each item is, out loud: a
+- [x] 4.5 **Route what this work taught.** Name which of the three each item is, out loud: a
   PRACTICE/GATE adopted → register it as an epic with its evidence; FRICTION in pm itself →
   `/pm:feedback [bug|feature] "<summary>"`; a PROCESS failure → a lesson file in `docs/lessons/`
   with `trigger`, a concrete `cost`, and `enforced_in`. Candidate already visible: the inverse
