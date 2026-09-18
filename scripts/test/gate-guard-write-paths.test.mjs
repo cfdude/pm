@@ -342,3 +342,80 @@ test("2.3 every engine invocation the gate names as its own exit stays runnable"
   // …and the exemption is not a bypass: a redirection in the same segment still blocks.
   assert.equal(guard(cwd, bash('node "$ENGINE" status > out.txt')).status, 2);
 });
+
+// ─────────────── 2.5 / 2.6 — the unreadable-state exemption (design D4) ───────────────
+
+const CONFLICT_MARKER = "<<<<<<< HEAD\n";
+const statePath = (cwd) => path.join(cwd, ".conductor", "state.json");
+
+/** Every file under `.conductor/` with its bytes, so "wrote nothing" is one comparison. */
+function conductorTree(cwd) {
+  const dir = path.join(cwd, ".conductor");
+  const out = {};
+  for (const name of fs.readdirSync(dir)) {
+    const p = path.join(dir, name);
+    if (fs.statSync(p).isFile()) out[name] = fs.readFileSync(p).toString("base64");
+  }
+  return out;
+}
+
+/** An owing repo whose `state.json` a merge left conflict markers in. */
+function conflictedRepo() {
+  const cwd = owingRepo();
+  fs.writeFileSync(statePath(cwd), CONFLICT_MARKER + fs.readFileSync(statePath(cwd), "utf8"));
+  return cwd;
+}
+
+/** Every remedy the unreadable-state message itself prints, as a shell command. */
+const REMEDIES = [
+  "git checkout --ours .conductor/state.json",
+  "git checkout --theirs .conductor/state.json",
+  "git show abc1234:.conductor/state.json > .conductor/state.json",
+  "git restore .conductor/state.json",
+  "mv .conductor/state.json .conductor/state.json.damaged",
+];
+
+test("2.5 every remedy the unreadable-state message prints stays runnable", () => {
+  // Wedge-freedom no longer rests on "Bash is not matched" — it rests on THIS exemption. The
+  // exemption is unconditional for an affirmed Bash call carrying a command, whatever its shape,
+  // because one remedy the message hands you (`git show <rev>:… > …`) is itself a redirection into
+  // a file and `mv` is a command-word row.
+  const cwd = conflictedRepo();
+  const before = conductorTree(cwd);
+  for (const command of REMEDIES) {
+    const r = guard(cwd, bash(command));
+    assert.equal(r.status, 0, `a remedy the message names must stay runnable: ${command}\n${r.stderr}`);
+    assert.equal(r.stderr, "", `an allow prints nothing; got: ${r.stderr}`);
+  }
+  assert.deepEqual(conductorTree(cwd), before, "the guard writes nothing over an unreadable record");
+});
+
+test("2.5 an editing tool still blocks over an unreadable record", () => {
+  // The carve-out is for Bash and nothing else: exiting 0 for an editing tool would silently
+  // disable the one block this plugin makes unconditional, exactly when the record saying whether
+  // a reconcile is owed cannot be read.
+  const cwd = conflictedRepo();
+  const r = guard(cwd, { tool_name: "Edit", tool_input: { file_path: "src/x.js" } });
+  assert.equal(r.status, 2);
+  assert.match(r.stderr, /\.conductor\/state\.json/);
+  for (const payload of ["{}", "", "not json", JSON.stringify({ tool_name: "Frobnicate" })]) {
+    assert.equal(guard(cwd, payload).status, 2, `an unidentified tool blocks: ${JSON.stringify(payload)}`);
+  }
+});
+
+test("2.5 a Bash payload with no readable command does not inherit the exemption", () => {
+  // 2.8c's other half, which only becomes meaningful once the exemption exists: the same principle
+  // that governs an unidentified tool governs an undecidable Bash call — there is nothing to decide
+  // from, and every remedy the message names is a command.
+  const cwd = conflictedRepo();
+  for (const payload of [
+    { tool_name: "Bash" },
+    { tool_name: "Bash", tool_input: null },
+    { tool_name: "Bash", tool_input: "rg foo" },
+    { tool_name: "Bash", tool_input: { command: 7 } },
+  ]) {
+    const r = guard(cwd, payload);
+    assert.equal(r.status, 2, `expected the unreadable-state block for ${JSON.stringify(payload)}`);
+    assert.match(r.stderr, /\.conductor\/state\.json/);
+  }
+});

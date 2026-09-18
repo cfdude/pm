@@ -86,11 +86,11 @@ Pairs: 2.1 lands with 2.2; 2.3 with 2.4; 2.5 with 2.6; 2.7 with 2.8.
 - [x] 2.3 RED: same state, payload `{"tool_name":"Bash","tool_input":{"command":"rg foo 2>/dev/null"}}`
       exits 0 and prints nothing. Fails today: exits 2, because `tool_input` is discarded
 - [x] 2.4 GREEN: the allow path for an affirmed Bash call matching no shape
-- [ ] 2.5 RED: the unreadable-state exemption — over a `state.json` carrying a conflict marker, the
+- [x] 2.5 RED: the unreadable-state exemption — over a `state.json` carrying a conflict marker, the
       hook fed a Bash payload for EACH remedy command the unreadable-state message prints, including
       `git show <rev>:.conductor/state.json > .conductor/state.json`, exits 0 and writes nothing.
       Fails today: exits 2 (reproduced on 0.45.0; see proposal.md — Why)
-- [ ] 2.6 GREEN: take the Bash exemption BEFORE the state load, local to `gateGuardCheck` (design D4).
+- [x] 2.6 GREEN: take the Bash exemption BEFORE the state load, local to `gateGuardCheck` (design D4).
       `refusalFor()` and its unit test at `scripts/test/state-file-refuses-to-guess.test.mjs:273` are
       NOT touched
 - [ ] 2.7 RED: the tracker-refresh arm — with `set-gate-guard on` and a refresh owed, a Bash write

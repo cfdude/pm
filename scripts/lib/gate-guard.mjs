@@ -2,7 +2,7 @@
 // The optional opt-in PreToolUse guard that blocks writes while a reconcile is owed.
 // One-directional dependencies only.
 
-import { isInitialized, loadState, saveState, readStdin } from "./state.mjs";
+import { isInitialized, loadState, saveState, readStdin, StateUnreadableError } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
 import { requirePlatformFlag } from "./add-epic.mjs";
@@ -271,7 +271,32 @@ export function gateGuardCheck() {
   const payload = readStdin();          // drained FIRST, so a refusal leaves no writer holding a pipe
   requirePlatformFlag("gate-guard");    // after the drain, and BEFORE any exemption is acted on
   const command = affirmedBashCommand(payload);
-  const state = loadState();
+  // THE UNREADABLE-STATE EXEMPTION (design D4). DECIDED here, from the payload alone and BEFORE the
+  // load; APPLIED at the load, so it is reached whichever code path raises the refusal.
+  //
+  // It is deliberately NOT an early `return 0` for Bash: a Bash call over a READABLE record goes on
+  // to the reconcile and tracker branches below, and only an unreadable record turns the decision
+  // into an allow. And it sits AFTER `requirePlatformFlag` — a refused hook line fails OPEN with
+  // exit 1 after draining stdin (commands/gate-guard.md), and an exemption returning ahead of that
+  // check would silently delete a documented surface with no test failing.
+  //
+  // It is UNCONDITIONAL for an affirmed Bash call carrying a command — not "allow unless it is a
+  // write shape" — because one of the remedies the message itself prints is
+  // `git show <rev>:.conductor/state.json > .conductor/state.json`, a redirection into a file, and
+  // `mv .conductor/state.json .conductor/state.json.damaged` is a command-word row. A shape check
+  // here would block the escape hatch the message hands you. Wedge-freedom used to rest on "Bash is
+  // not matched"; under the widened matcher it rests on this.
+  //
+  // `refusalFor()` is NOT touched: state-file-refuses-to-guess.test.mjs unit-tests that it maps an
+  // unreadable-state refusal for this verb to exit 2, and state-write-guard requires that a refusal
+  // raised OUTSIDE the hook's own load still takes the hook's status. A local branch keeps both true.
+  let state;
+  try {
+    state = loadState();
+  } catch (err) {
+    if (command !== null && err instanceof StateUnreadableError) return;
+    throw err;
+  }
   const activeEpic = state.active ? state.epics.find(e => e.id === state.active) : null;
   // AN EPIC THAT HAS ENDED OWES NOTHING. `state.active` can legitimately name an ARCHIVED epic
   // for a stretch — the pointer is cleared by reconcileArchived(), which runs on the WRITE paths
