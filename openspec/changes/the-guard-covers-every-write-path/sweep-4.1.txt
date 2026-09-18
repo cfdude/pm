@@ -1,0 +1,152 @@
+4.1 / 4.1b — the sweeps, derived mechanically at sweep time (rg + the shipped scanner),
+never from the list in tasks.md. Run against the tip of section 3.
+
+=== 4.1 CALL SITES ===
+
+gateGuardCheck        1 definition (scripts/lib/gate-guard.mjs), 1 caller: the dispatch table
+                      scripts/conductor.mjs:314. The rule holds there and nowhere else is needed.
+readStdin             6 readers: gate-guard (now KEEPS the payload), lessons.mjs, subcommands.mjs
+                      (commitNudge), add-many.mjs (`--from -`), and conductor.mjs's refusal path
+                      (drains only when a hook verb's command line is REFUSED, which is mutually
+                      exclusive with dispatch, so it never competes with the guard's own read).
+                      add-many's is stdin-as-input, not a hook payload: untouched, correctly.
+unreadableStateMessage 1 definition (state.mjs), 1 caller (refusal.mjs). Its comment corrected; the
+                      message text unchanged — every remedy it names stays reachable via D4.
+refusalFor            1 definition (refusal.mjs), 1 caller (conductor.mjs:370) + 1 unit test.
+                      NOT TOUCHED, deliberately: state-write-guard requires that a refusal raised
+                      outside the hook's own load still takes the hook's status, and D4's local
+                      try/catch is what keeps that true.
+escapeControls on guard text  both block messages escape the epic id, as before. The one NEW
+                      interpolation in each is the shape LABEL, a member of a frozen closed set;
+                      both carry a judged entry in output-interpolations.judged.mjs.
+
+DATA references — readers of the PreToolUse payload fields. THREE, not two; tasks.md named two:
+  scripts/lib/gate-guard.mjs  tool_name + tool_input.command. Reads the WHOLE command: a write
+                              shape after a `&&` is the evasion this guard exists to catch.
+  scripts/lib/lessons.mjs     tool_name + tool_input.command, FIRST LINE ONLY — an explicit
+                              precision decision (a lesson matching its own heredoc body fired
+                              twice). Deliberately different; neither is the other's bug.
+  scripts/lib/subcommands.mjs commitNudge reads tool_input.command || tool_input.cmd on the POST
+                              events. NOT named by tasks.md. It is a different event and a
+                              different job (it observes the repo, not the text), and its `cmd`
+                              fallback is defensive: the guard does not copy it, because an absent
+                              `command` makes the guard BLOCK, which is the safe direction.
+lesson-advice         shares the wider matcher and is DELIBERATELY UNTOUCHED: it never blocks and
+                      always exits 0, and an advisor that can block is a gate nobody agreed to.
+
+INVERSES
+  tracker-refresh arm   inverse SHIPS: the existing `set-gate-guard off`, Bash included. Pinned.
+  reconcile arm         inverse ships NONE, and that is the justification, not an omission: any
+                        switch silencing Bash writes there is a bypass for the whole gate (D5).
+                        Pinned by 2.8b rather than asserted in prose.
+  the matcher itself    inverse is reverting one string in hooks/hooks.json; the engine change is
+                        inert without it, because an unmatched tool never reaches the verb.
+
+WHERE THE RULE DOES NOT HOLD, and why
+  - `find … -exec sed -i …` / `xargs … sed -i`: not a position the command-word arm reads.
+  - every undecidable form: a variable-built path, `eval`, a script by name, `python -c`/`node -e`,
+    a program that writes of its own accord. Named in the spec, the message and the docs.
+  - an unreadable record allows every Bash call carrying a command (D4); an absent record leaves
+    the guard dormant (the plugin's standing contract, and why destroying the record is a shape).
+
+STALE PROSE FOUND AND CORRECTED beyond the sites tasks.md named (3.4/3.4b/3.4c):
+  scripts/lib/gate-guard.mjs   setGateGuard's READER (user-facing) said only Edit/Write/NotebookEdit
+  scripts/lib/gate-guard.mjs   gateGuardCheck's docblock and the archived-epic comment
+  scripts/lib/epic-progress.mjs  "would wedge Edit/Write on the epic"
+  scripts/lib/rules.mjs        "the gate guard blocks Edit and Write" (design D7 named this one)
+  scripts/lib/state.mjs        lockRefusalMessage's "Edit and Write are blocked"
+  README.md                    the hooks table row for the gate guard
+  scripts/test/conductor-28.test.mjs  two comments about the two matchers differing
+STILL STALE, and correctly out of this run's scope: commands/gate-guard.md (task 5.1) and the MAIN
+specs openspec/specs/{state-write-guard,managed-rules-block}/spec.md (applied by the archive, 6.2).
+
+=== 4.1b EMITTED REMEDIES, each run through the SHIPPED writeShape() ===
+
+runnable | -                                 | state.mjs unreadable #1
+           | git checkout --ours .conductor/state.json
+BLOCKED  | a redirection into a file         | state.mjs unreadable #2
+           | git show <good-rev>:.conductor/state.json > .conductor/state.json
+BLOCKED  | a redirection into a file         | state.mjs unreadable #2 filled
+           | git show abc1234:.conductor/state.json > .conductor/state.json
+runnable | -                                 | state.mjs unreadable #3
+           | git restore .conductor/state.json
+BLOCKED  | mv                                | state.mjs unreadable #4
+           | mv .conductor/state.json .conductor/state.json.damaged
+runnable | -                                 | state.mjs lock (file)
+           | rm .conductor/state.json.lock
+runnable | -                                 | state.mjs lock (dir)
+           | rm -r .conductor/state.json.lock
+BLOCKED  | a redirection into a file         | rules.mjs marker fix
+           | sed -i.bak '<N>d' CLAUDE.md
+BLOCKED  | an in-place stream editor         | rules.mjs marker fix filled
+           | sed -i.bak '7d' CLAUDE.md
+BLOCKED  | a redirection into a file         | commands/init.md:53 marker fix
+           | sed -i.bak '<N>d' CLAUDE.md
+BLOCKED  | a redirection into a file         | commands/review-mode.md:49
+           | sed -i.bak '<N>d' CLAUDE.md
+BLOCKED  | a redirection into a file         | commands/upgrade.md:184
+           | sed -i.bak '<N>d' CLAUDE.md
+runnable | -                                 | commands/upgrade.md:336
+           | git restore .conductor/state.json
+BLOCKED  | mv                                | commands/init.md:43
+           | mv .conductor/state.json .conductor/state.json.damaged
+runnable | -                                 | feedback.md step 2 (mkdir)
+           | mkdir -p docs/feedback
+BLOCKED  | a redirection into a file         | feedback.md step 2 (write)
+           | cat > docs/feedback/2026-09-17-bug.md <<'EOF'
+BLOCKED  | a redirection into a file         | briefing.mjs template
+           | node "$ENGINE" update-epic <id> --link "depends-on:<id>:<why>"
+BLOCKED  | a redirection into a file         | autonomy.mjs template
+           | node "$ENGINE" set-autonomy <id> --preauthorize "<action>:<reason>"
+BLOCKED  | a redirection into a file         | gate-review-writeback template
+           | node "$ENGINE" record-gate-review <id> --gate 2 --verdict pass --head-sha <sha>
+BLOCKED  | a redirection into a file         | argv-surface template
+           | node "$ENGINE" update-epic <id> --attribute-commit <sha>
+runnable | -                                 | rules.mjs gate item 2
+           | git show --stat <that task's sha>
+runnable | -                                 | rules.mjs gate item 2 filled
+           | git show --stat abc1234
+BLOCKED  | a redirection into a file         | record-tracker-refresh template
+           | node "$ENGINE" record-tracker-refresh <id> --verdict unchanged --external-updated-at <iso>
+runnable | -                                 | record-reconcile (filled)
+           | node "$ENGINE" record-reconcile p --detour d --verdict valid --amendments none
+runnable | -                                 | pop-detour (filled)
+           | node "$ENGINE" pop-detour p
+runnable | -                                 | archive move
+           | git mv openspec/changes/x openspec/changes/archive/x
+BLOCKED  | a redirection into a file         | triage.md link
+           | add-epic --id <new> --link "relates-to:<existing>:<how>"
+runnable | -                                 | openspec validate
+           | openspec validate the-guard-covers-every-write-path --strict
+runnable | -                                 | the suite
+           | node --test scripts/test/*.test.mjs
+
+29 emitted command lines examined; 16 blocked while a reconcile is owed.
+
+VERDICTS
+  runnable, no action:  git checkout --ours|--theirs, git restore, the lock remedies
+                        `rm .conductor/state.json.lock` and `rm -r …` (keyed on the record's own
+                        path, never a longer literal filename — a prefix match would wedge them),
+                        `git show --stat <sha>` filled or not, `git mv` of the archive move (only
+                        `git apply` is a row), every FILLED engine invocation, the suite itself.
+  blocked, ACCEPTED:    the `sed -i.bak '<N>d'` marker fix; /pm:feedback step 2's local write;
+                        every UNFILLED command template (pre-existing: `<id>` is already an input
+                        redirection at the shell, so the filled spelling is the only one that ever
+                        ran, and it passes).
+  blocked but REACHABLE: state.mjs's `git show <rev>:… > …` and `mv … .damaged` — both match a row
+                        and both are reached only over an UNREADABLE record, where D4 allows every
+                        affirmed Bash call carrying a command. That exemption exists for these two.
+
+FINDING — A FOURTH `sed -i.bak '<N>d'` SITE. Design D7 enumerated three (rules.mjs,
+commands/review-mode.md:49, commands/upgrade.md:184). `commands/init.md:53` carries the same
+remedy and was named by neither the design nor task 4.1b. Same class, same acceptance; recorded
+here so the docs task (5.1) and Gate 2 see four sites rather than three.
+
+FINDING — A FOURTH UNFILLED-TEMPLATE SITE, same class: `commands/triage.md:90`'s
+`--link "relates-to:<existing>:<how>"`. Pre-existing and accepted for the same reason.
+
+NOTED, NOT EDITED — refusal.mjs's printed suffix "Bash is not blocked: run one of the commands
+above". Design D7 says it stays true and needs no edit, and it does for every call that carries a
+command. It is NOT true of a `Bash` payload with no readable command, which blocks. That spelling
+is a payload edge the harness does not produce, and the design's call is followed rather than
+reinterpreted; recorded here so the decision is on the record rather than unnoticed.

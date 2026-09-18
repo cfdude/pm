@@ -40,7 +40,9 @@ export function setGateGuard() {
     const out = [`GATE GUARD — ${on ? "on" : "off"}.`, ""];
     out.push("  The reconcile gate is ALWAYS enforced, whatever this flag says: an epic carrying");
     out.push("  `reconcileNeeded` blocks Edit/Write/NotebookEdit until a verdict is recorded, and");
-    out.push("  `set-gate-guard off` does not reach that case.");
+    out.push("  `set-gate-guard off` does not reach that case. A BASH WRITE IS BLOCKED TOO, on a");
+    out.push("  closed list of shapes the command text can be resolved to — see /pm:gate-guard for");
+    out.push("  the list and for what it cannot see.");
     out.push(on
       ? "  This flag additionally enforces the TRACKER REFRESH obligation."
       : "  This flag is off, so the tracker-refresh obligation is NOT enforced.");
@@ -267,7 +269,8 @@ function trackerBlockMessage(active, shape) {
     (shape ? `  This call matched a recognized write shape: ${shape}.\n` : "");
 }
 
-/** PreToolUse hook body: block Edit/Write/NotebookEdit while the active epic still owes a
+/** PreToolUse hook body: block Edit/Write/NotebookEdit — and a Bash call whose command text
+ *  matches a recognized write shape — while the active epic still owes a
  *  reconcile (`reconcileNeeded` — see reconcileArchived()'s comment for why this can be
  *  legitimately true with an empty detour stack). Dormant until /pm:init. As of the
  *  gate-guard-default-on-reconcile change, an epic with `reconcileNeeded: true` is ALWAYS
@@ -321,8 +324,8 @@ export function gateGuardCheck() {
   // and briefing.mjs:60 both drop an archived epic at the moment they resolve it. The asymmetry
   // mattered here more than anywhere, because this reader BLOCKS WRITES mechanically and the
   // reconcile branch below is deliberately unreachable by `set-gate-guard off` — so an archived
-  // epic carrying a stale `reconcileNeeded` could wedge Edit/Write/NotebookEdit with no CLI way
-  // out. Filtered HERE, at the resolution, rather than inside each branch, so a future third
+  // epic carrying a stale `reconcileNeeded` could wedge Edit/Write/NotebookEdit — and, since the
+  // matcher widened, a Bash write shape too — with no CLI way out. Filtered HERE, at the resolution, rather than inside each branch, so a future third
   // obligation inherits the rule instead of having to remember it.
   const active = activeEpic && activeEpic.status !== "archived" ? activeEpic : null;
   if (!active) return;

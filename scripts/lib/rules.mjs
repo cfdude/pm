@@ -1018,8 +1018,11 @@ export class RulesBlockAmbiguousError extends Error {
   }
 }
 
-/** The whole refusal as the top-level catch prints it. The fix is a SHELL command, because while a
- *  reconcile is owed the gate guard blocks Edit and Write. Lines are deleted highest first, so
+/** The whole refusal as the top-level catch prints it. The fix is a SHELL command — and, since the
+ *  gate guard matches Bash, an in-place editor is a recognized write shape, so while a reconcile is
+ *  owed this `sed` is blocked as surely as `Edit` is. ACCEPTED: a damaged marker arrangement is not
+ *  time-critical and is not the guard's own escape hatch, and the way through is the one the gate
+ *  always names — complete the reconcile gate. Stated normatively in the managed-rules-block spec. Lines are deleted highest first, so
  *  each deletion leaves the numbers still to delete unchanged. */
 export function rulesBlockAmbiguousMessage(err) {
   const shown = path.relative(ROOT, err.file) || path.basename(err.file);

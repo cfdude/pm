@@ -157,7 +157,7 @@ Pairs: 3.1 lands with 3.2.
 
 ## 4. Required task items
 
-- [ ] 4.1 **Call-site completeness sweep** (item 1) — derive mechanically with `rg` at sweep time, not
+- [x] 4.1 **Call-site completeness sweep** (item 1) — derive mechanically with `rg` at sweep time, not
       from this list: every caller and reader of `gateGuardCheck`, `readStdin`, `unreadableStateMessage`,
       `refusalFor`, `escapeControls` on guard text, and every occurrence of the strings
       `Edit|Write|NotebookEdit`, `Edit/Write/NotebookEdit`, `Edit and Write`, `Edit/Write`,
@@ -171,7 +171,7 @@ Pairs: 3.1 lands with 3.2.
       INVERSES: for every operation this change adds, name its inverse and whether it ships — the
       tracker arm's inverse is the existing `set-gate-guard off`; the reconcile arm ships NONE, and
       design D5 is the justification carried into the report
-- [ ] 4.1b **Emitted-remedy sweep** (item 1, the DATA half applied to text) — enumerate with `rg`
+- [x] 4.1b **Emitted-remedy sweep** (item 1, the DATA half applied to text) — enumerate with `rg`
       every command line pm EMITS as a remedy, run each through the new shape scanner, and state per
       case whether it stays runnable or is accepted as blocked (design D7). This sweep is NOT
       mechanical from a remembered list and the same remedy appears at more than one site: the
@@ -195,13 +195,13 @@ Pairs: 3.1 lands with 3.2.
       channel does not die silently; and every remaining remedy in `commands/*.md`. A remedy pm
       prints that the guard then refuses is a FINDING unless it is named here, and no diff shows it
       because none of those files changes
-- [ ] 4.2 **Verify against the commit, not the working tree** (item 2) — for every task above, run
+- [x] 4.2 **Verify against the commit, not the working tree** (item 2) — for every task above, run
       `git show --stat <that task's sha>` and assert each file the task claims appears in THAT commit.
       A task whose claimed file is absent FAILS even with the suite green
-- [ ] 4.3 **Attribute every commit** (item 4) — at the moment each commit is made, run
+- [x] 4.3 **Attribute every commit** (item 4) — at the moment each commit is made, run
       `update-epic the-guard-covers-every-write-path --attribute-commit <sha>`. The archive commit in
       6.2 is EXCLUDED
-- [ ] 4.4 **Route what the work taught you** (item 7) — name which of the three each learning is. A
+- [x] 4.4 **Route what the work taught you** (item 7) — name which of the three each learning is. A
       candidate already visible: a mechanical guard whose matcher is narrower than the behaviour it
       claims to cover is a practice-level lesson (`docs/lessons/`), and any friction in pm's own
       surfaces hit while doing this is `/pm:feedback`

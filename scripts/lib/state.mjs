@@ -493,7 +493,10 @@ function tryBreakStaleLock(judged, at = null) {
 }
 
 /** The refusal for a lock this save could not take — naming the path, the stale age, and the shell
- *  command that removes it, because while a reconcile is owed Edit and Write are blocked. */
+ *  command that removes it, because while a reconcile is owed the editing tools are blocked. The
+ *  gate guard matches Bash now, but this remedy STAYS RUNNABLE: its `rm` is keyed on the record's own
+ *  path (or a trailing `*` on it), never on a longer literal filename beneath it, and this message
+ *  always prints the LITERAL lock path rather than a glob. */
 function lockRefusalMessage(lock, expected) {
   const shown = path.relative(process.env.CLAUDE_PROJECT_DIR || process.cwd(), lock.path) || lock.path;
   const directory = lock.directory || (lock.holder && lock.holder.kind === "directory");
