@@ -61,13 +61,53 @@ test("the scan reaches real groups — an empty walk would pass this file vacuou
   assert.ok(groups.flatMap(g => g.hooks || []).length >= 4, "every group carries at least one command");
 });
 
-test("every hook's rationale survived the move — README documents each event and matcher", () => {
-  const readme = fs.readFileSync(README, "utf8");
-  for (const [event, groups] of Object.entries(doc.hooks)) {
+/** The engine verb a matcher group's first hook runs — `gate-guard`, `lesson-advice`, `brief`… This
+ *  is what the README assertion is KEYED ON, and the reason is a real vacuity: the assertion used to
+ *  key on `` `<event>` — matcher `<matcher>` `` alone, and the moment the gate guard's matcher
+ *  widened to the lesson advisor's, both PreToolUse groups produced the SAME heading string. One
+ *  section then satisfied both iterations, so deleting the gate-guard section still passed — the
+ *  check went vacuous at exactly the commit that made it matter. The verb differs per entry and is
+ *  derived from hooks.json rather than typed. */
+function verbOf(group) {
+  const command = String(((group.hooks || [])[0] || {}).command || "");
+  const m = /conductor\.mjs"?\s+([a-z][a-z-]*)/.exec(command);
+  return m ? m[1] : null;
+}
+
+/** Every matcher group whose section the README does not carry, as `<event>/<verb>` strings. A
+ *  function, not an inline loop, so the guard itself can be MUTATED and watched to fail. */
+export function undocumentedGroups(readme, hooks) {
+  const missing = [];
+  for (const [event, groups] of Object.entries(hooks)) {
     for (const group of groups) {
-      assert.ok(readme.includes(`\`${event}\` — matcher \`${group.matcher}\``),
-        `hooks/README.md must document ${event} with matcher ${group.matcher} — the comments were ` +
-        "moved out of hooks.json, and a hook whose reasoning is nowhere is a hook someone deletes");
+      const verb = verbOf(group);
+      const heading = `\`${event}\` — matcher \`${group.matcher}\``;
+      const found = readme.split("\n").some(line => line.includes(heading) && verb && line.includes(`(${verb})`));
+      if (!found) missing.push(`${event}/${verb || "?"}`);
     }
   }
+  return missing;
+}
+
+test("every hook's rationale survived the move — README documents each event, matcher and verb", () => {
+  const readme = fs.readFileSync(README, "utf8");
+  assert.deepEqual(undocumentedGroups(readme, doc.hooks), [],
+    "hooks/README.md must document each group as `<event>` — matcher `<matcher>` (<verb>) — the " +
+    "comments were moved out of hooks.json, and a hook whose reasoning is nowhere is a hook " +
+    "someone deletes. The verb is in the key because two PreToolUse groups now share one matcher");
+});
+
+test("the README assertion is not vacuous — deleting a section fails it", () => {
+  // The guard proves the half it asserts, not the half it is named for. Mutate the thing it claims
+  // to protect and watch it fail: with the gate-guard section cut out of a COPY of the README, the
+  // check must name it. Under the old matcher-only key this mutation passed.
+  const readme = fs.readFileSync(README, "utf8");
+  const start = readme.indexOf("## `PreToolUse`");
+  assert.notEqual(start, -1, "the README carries a PreToolUse section to cut");
+  const next = readme.indexOf("\n## ", start + 1);
+  const mutated = readme.slice(0, start) + (next === -1 ? "" : readme.slice(next + 1));
+  const missing = undocumentedGroups(mutated, doc.hooks);
+  assert.ok(missing.length > 0,
+    "removing a PreToolUse section from the README must be detected; the assertion reported nothing");
+  assert.ok(missing.some(m => m.startsWith("PreToolUse/")), `expected a PreToolUse group, got ${missing}`);
 });

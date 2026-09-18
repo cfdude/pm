@@ -207,8 +207,10 @@ test("28.4 hooks.json registers lesson-advice at PreToolUse, including Bash", ()
   assert.equal(entries.length, 1, "exactly one PreToolUse entry drives the lessons advisor");
   const matcher = entries[0].matcher;
   // Half the matchable lessons in this repo's own corpus match on a COMMAND. Shipping this with
-  // the gate-guard's Edit|Write|NotebookEdit matcher would leave every one of them dead on
-  // arrival, silently — coverage loss with no error anywhere.
+  // the gate guard's ORIGINAL Edit|Write|NotebookEdit matcher would have left every one of them
+  // dead on arrival, silently — coverage loss with no error anywhere. The two matchers CONVERGED
+  // in the-guard-covers-every-write-path, where the guard was widened to Bash for reasons of its
+  // own; they are still asserted separately, because either may move without the other.
   for (const tool of ["Bash", "Edit", "Write"]) {
     assert.match(tool, new RegExp(`^(?:${matcher})$`),
       `the advisor's matcher must cover ${tool}`);
@@ -224,7 +226,9 @@ test("28.4 the advisor is registered separately from the gate guard, which BLOCK
   const advisor = (hooks.hooks.PreToolUse || []).find(e =>
     (e.hooks || []).some(h => String(h.command).includes("lesson-advice")));
   assert.ok(guard && advisor && guard !== advisor,
-    "different exit semantics (block vs advise) and different matchers — separate entries");
+    "different exit semantics (block vs advise) — separate entries. They share a matcher as of " +
+    "the-guard-covers-every-write-path, which is two independent decisions landing on the same " +
+    "string and not a reason to merge them: one BLOCKS and one never can");
 });
 
 // ─────────────────── 28.5: shipped once, never twice ───────────────────

@@ -117,18 +117,18 @@ Pairs: 2.1 lands with 2.2; 2.3 with 2.4; 2.5 with 2.6; 2.7 with 2.8.
 
 Pairs: 3.1 lands with 3.2.
 
-- [ ] 3.1 RED: a test asserting the shipped `hooks/hooks.json` gate-guard entry's matcher covers
+- [x] 3.1 RED: a test asserting the shipped `hooks/hooks.json` gate-guard entry's matcher covers
       `Bash`, `Edit`, `Write` and `NotebookEdit`. Fails today: the matcher is `Edit|Write|NotebookEdit`
-- [ ] 3.1b RED: `scripts/test/hooks-schema.test.mjs:64-75` keys its README assertion on
+- [x] 3.1b RED: `scripts/test/hooks-schema.test.mjs:64-75` keys its README assertion on
       `` `${event}` — matcher `${matcher}` ``. Once both PreToolUse entries carry the same matcher one
       README section satisfies both iterations, so deleting the gate-guard section still passes —
       the assertion goes vacuous exactly when this change lands. Re-key it on the hook's COMMAND
       string (which differs per entry) and add a mutation check: with the gate-guard section removed
       from a copy of the README the assertion fails. Fails today against the current test
-- [ ] 3.2 GREEN: widen that matcher (design D1). Verify `scripts/test/hooks-schema.test.mjs` and
+- [x] 3.2 GREEN: widen that matcher (design D1). Verify `scripts/test/hooks-schema.test.mjs` and
       `scripts/test/conductor-28.test.mjs` still pass — the README heading assertion and the
       guard-vs-advisor entry assertion both read this file
-- [ ] 3.3 GREEN: `hooks/README.md` — keep two PreToolUse sections, distinguishing them with a suffix
+- [x] 3.3 GREEN: `hooks/README.md` — keep two PreToolUse sections, distinguishing them with a suffix
       after the closing backtick so the schema test's substring `includes` still matches; rewrite the
       gate-guard section's "Bash is not matched" paragraph to the new mechanism
 - [ ] 3.4 GREEN: `scripts/lib/state.mjs:201` — the comment on `unreadableStateMessage` asserts "Bash

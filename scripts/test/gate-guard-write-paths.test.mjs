@@ -511,3 +511,19 @@ test("2.10 REGRESSION GUARD: an ARCHIVED active epic still owes nothing, Bash in
   assert.equal(guard(cwd, bash("cat > src/x.js <<EOF")).status, 0);
   assert.equal(guard(cwd, { tool_name: "Edit", tool_input: {} }).status, 0);
 });
+
+// ─────────────── 3.1 — the matcher, which is where the whole defect lived ───────────────
+
+test("3.1 the shipped hook configuration registers the gate guard for Bash", () => {
+  // The engine change is INERT without this: an unmatched tool never reaches the verb, which is why
+  // rolling this change back is reverting one string. Read from the shipped file, not from a
+  // remembered value.
+  const doc = JSON.parse(fs.readFileSync(path.join(REPO, "hooks", "hooks.json"), "utf8"));
+  const entry = (doc.hooks.PreToolUse || []).find(e =>
+    (e.hooks || []).some(h => String(h.command).includes("gate-guard")));
+  assert.ok(entry, "exactly one PreToolUse entry drives the gate guard");
+  for (const tool of ["Bash", "Edit", "Write", "NotebookEdit"]) {
+    assert.match(tool, new RegExp(`^(?:${entry.matcher})$`),
+      `the gate guard's matcher must cover ${tool}; it is \`${entry.matcher}\``);
+  }
+});
