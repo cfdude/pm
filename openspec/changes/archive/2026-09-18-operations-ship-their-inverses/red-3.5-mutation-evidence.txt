@@ -1,0 +1,74 @@
+MUTATION EVIDENCE for tasks 3.5-3.9 — NOT a RED run, and the difference is stated.
+
+The obligation-ending half (3.6) and the two refusals (3.8) shipped INSIDE task 3.4's commit
+(d71d474). They were not separable: 3.6 requires the frame removal, the link disarm and the
+flag clear to land in ONE saveState, and 3.8's refusals must precede that same write. Writing
+dropDetour() without them would have shipped a verb that half-wrote a transition, which this
+module's own header forbids. So 3.5's and 3.7's tests pass the moment they are written, and a
+RED file for them would be theatre.
+
+What follows instead is the proof those tests can go RED: each shipped guard is NEUTERED in
+turn and the suite re-run. A guard proves the half it asserts, not the half it is named for
+(docs/lessons/a-guard-can-check-the-wrong-half).
+
+Generated: 2026-09-18T05:11:17Z against d71d474 + the 3.5/3.7/3.9 tests.
+
+=== MUTANT: the link is disarmed but the drop stamp is not written
+✖ Scenario: A dropped frame's reconcile obligation is ended, not answered (1388.550042ms)
+ℹ tests 17
+ℹ pass 16
+ℹ fail 1
+✖ Scenario: A dropped frame's reconcile obligation is ended, not answered (1388.550042ms)
+
+=== MUTANT: the link is left ARMED (only the flag is cleared)
+✖ Scenario: A dropped frame's reconcile obligation is ended, not answered (1737.096083ms)
+✖ Scenario: A drop leaves an obligation an earlier detour still owes (2635.4565ms)
+✖ 3.6: a render after the drop neither re-arms nor re-clears anything (2086.849125ms)
+✖ REGRESSION GUARD: record-reconcile refuses a DROPPED detour through its existing unarmed-link arm (2003.110958ms)
+ℹ tests 17
+ℹ pass 13
+ℹ fail 4
+✖ Scenario: A dropped frame's reconcile obligation is ended, not answered (1737.096083ms)
+✖ Scenario: A drop leaves an obligation an earlier detour still owes (2635.4565ms)
+✖ 3.6: a render after the drop neither re-arms nor re-clears anything (2086.849125ms)
+✖ REGRESSION GUARD: record-reconcile refuses a DROPPED detour through its existing unarmed-link arm (2003.110958ms)
+
+=== MUTANT: reconcileNeeded is never recomputed
+--- FIRST RUN: 17 pass, 0 fail. THE MUTANT SURVIVED, and that was a FINDING, not a pass.
+--- CAUSE: dropDetour() calls render() after its save. With the recompute removed, the frame is gone
+--- and the link is disarmed, so reconcileArchived()'s own "an obligation with nothing to answer it"
+--- clear fires and sets the flag false anyway — ANNOUNCING that it did. Asserting only the final
+--- value cannot tell "the drop cleared it" from "the heal cleared it one write later", and the
+--- second is precisely the state gate-integrity says the engine cannot produce.
+--- FIX: 3.6 now asserts the DROP'S OWN OUTPUT carries no "cleared the reconcile obligation" line.
+--- RE-RUN with that assertion:
+✖ 3.6: a render after the drop neither re-arms nor re-clears anything
+ℹ tests 17
+ℹ pass 16
+ℹ fail 1
+
+=== MUTANT: the no-frame refusal is removed
+✖ Scenario: Dropping a frame for an epic that has none is refused (505.86075ms)
+ℹ tests 17
+ℹ pass 16
+ℹ fail 1
+✖ Scenario: Dropping a frame for an epic that has none is refused (505.86075ms)
+
+=== MUTANT: the non-empty-reason refusal is removed
+✖ Scenario: Dropping a frame without a reason is refused (554.713834ms)
+ℹ tests 17
+ℹ pass 16
+ℹ fail 1
+✖ Scenario: Dropping a frame without a reason is refused (554.713834ms)
+
+=== MUTANT: the drop selects the TOP frame instead of the named epic
+✖ Scenario: A buried frame is dropped without disturbing the frames above it (812.049041ms)
+ℹ tests 17
+ℹ pass 16
+ℹ fail 1
+✖ Scenario: A buried frame is dropped without disturbing the frames above it (812.049041ms)
+
+=== RESTORED
+ℹ tests 17
+ℹ pass 17
+ℹ fail 0

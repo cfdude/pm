@@ -1,0 +1,174 @@
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-4ACs5p/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-4ACs5p/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ZoCaMa/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ZoCaMa/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-jpGNKx/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-jpGNKx/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-iI76A9/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-iI76A9/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-VaNdYM/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-VaNdYM/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' already reads level=off with exactly the pre-authorizations and context this invocation supplied — nothing was written to .conductor/state.json
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-dmLLy1/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-dmLLy1/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' already reads level=off with exactly the pre-authorizations and context this invocation supplied — nothing was written to .conductor/state.json
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-wiLzkM/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-wiLzkM/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ha2mYp/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ha2mYp/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+✔ Scenario: A granted action is revoked and no longer authorises (294.92975ms)
+✔ Scenario: A category grant is revoked by naming the category (287.777166ms)
+✔ Scenario: A revoke names the stored value, however the grant spelled it (313.021208ms)
+✔ Scenario: A revoke over a mixed match leaves the earlier revocation untouched (451.885792ms)
+✖ Scenario: Revoking a grant the epic does not hold is refused (299.30825ms)
+✖ Scenario: Revoking an already-revoked grant is refused (502.759792ms)
+✖ Scenario: Revoking without a reason is refused (303.9755ms)
+✖ A --revoke-reason with no --revoke is refused rather than dropped (234.469791ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 4
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2729.82575
+
+✖ failing tests:
+
+test at scripts/test/autonomy-revocation.test.mjs:94:1
+✖ Scenario: Revoking a grant the epic does not hold is refused (299.30825ms)
+  AssertionError [ERR_ASSERTION]: a revoke that matched nothing exits non-zero
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/autonomy-revocation.test.mjs:100:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/autonomy-revocation.test.mjs:105:1
+✖ Scenario: Revoking an already-revoked grant is refused (502.759792ms)
+  AssertionError [ERR_ASSERTION]: every match already revoked exits non-zero
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/autonomy-revocation.test.mjs:112:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/autonomy-revocation.test.mjs:117:1
+✖ Scenario: Revoking without a reason is refused (303.9755ms)
+  AssertionError [ERR_ASSERTION]: no --revoke-reason at all exits non-zero
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/autonomy-revocation.test.mjs:121:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/autonomy-revocation.test.mjs:128:1
+✖ A --revoke-reason with no --revoke is refused rather than dropped (234.469791ms)
+  AssertionError [ERR_ASSERTION]: a reason with nothing to attach to exits non-zero
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/autonomy-revocation.test.mjs:134:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

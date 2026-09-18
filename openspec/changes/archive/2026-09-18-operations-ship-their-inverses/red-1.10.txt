@@ -1,0 +1,250 @@
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-YsKUBI/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-YsKUBI/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-zCZIbc/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-zCZIbc/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-xUdXat/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-xUdXat/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-mC6S2Z/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-mC6S2Z/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-SGrcFe/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-SGrcFe/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: 'a' holds no pre-authorization naming 'rename-field' — a revoke that silently matched nothing would report success for an authorisation that is still live. Nothing was written.
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ljOBJI/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-ljOBJI/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: every grant 'a' holds for 'drop-scratch-table' is already revoked — a second revocation would overwrite the first one's reason and date with a later pair describing nothing that happened. Nothing was written.
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-cRAmEw/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-cRAmEw/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: --revoke requires --revoke-reason "<why>" — the revocation is kept on the record beside the grant it takes back, and a reason is what distinguishes a deliberate withdrawal from a grant nobody can account for
+conductor: --revoke-reason requires a non-empty reason
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-0dUtCE/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-0dUtCE/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: --revoke-reason explains a revocation, and this invocation revokes nothing — pass --revoke "<action>" (or "category:<name>") alongside it. Nothing was written.
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-6MSIbF/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-6MSIbF/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-6MSIbF/PROJECT.md
+conductor: arming 2 pre-authorizations on 'a': rm -rf build/, category:filesystem
+conductor: autonomy for 'a' is now level=autonomous
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-6MSIbF/PROJECT.md
+conductor: autonomy for 'a' is now level=off
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-gdIneu/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-gdIneu/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-eq2pQP/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-eq2pQP/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-eq2pQP/PROJECT.md
+conductor: arming 1 pre-authorization on 'a': rm -rf build/
+conductor: autonomy for 'a' is now level=autonomous
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-fVAWU1/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-fVAWU1/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-v8iIIR/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-v8iIIR/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' already reads level=off with exactly the pre-authorizations and context this invocation supplied — nothing was written to .conductor/state.json
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-GFLoeW/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-GFLoeW/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: --preauthorize ":no action" names no action — the action half is what decides what is authorised, and a grant naming nothing matches nothing or everything depending on who reads it. Write it as "<action>:<reason>". Nothing was written.
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-qaNm7h/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-qaNm7h/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-dvbvFq/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-dvbvFq/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=off
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-SjF780/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-SjF780/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: PROJECT.md unchanged (skipped rewrite)
+conductor: autonomy for 'a' is now level=autonomous
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-rXy4gG/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-rXy4gG/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: --preauthorize category must be one of filesystem|network|schema|external-api
+conductor: --preauthorize category must be one of filesystem|network|schema|external-api
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-p5aYh9/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-p5aYh9/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-uzab4f/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-uzab4f/PROJECT.md
+conductor: added epic 'a' (claude-code, queued)
+✔ Scenario: A granted action is revoked and no longer authorises (658.10525ms)
+✔ Scenario: A category grant is revoked by naming the category (626.966958ms)
+✔ Scenario: A revoke names the stored value, however the grant spelled it (629.955167ms)
+✔ Scenario: A revoke over a mixed match leaves the earlier revocation untouched (845.982458ms)
+✔ Scenario: Revoking a grant the epic does not hold is refused (617.451375ms)
+✔ Scenario: Revoking an already-revoked grant is refused (747.333292ms)
+✔ Scenario: Revoking without a reason is refused (718.614917ms)
+✔ A --revoke-reason with no --revoke is refused rather than dropped (477.2395ms)
+✔ Scenario: Turning autonomy off leaves the grants intact (766.884542ms)
+✔ Scenario: Turning autonomy on enumerates the grants it arms (711.72525ms)
+✔ Scenario: Arming an already-autonomous epic reports the same set (753.388292ms)
+✔ Scenario: Arming an epic with no grants says so (483.167042ms)
+✔ Scenario: A revoked grant is not restored by re-arming autonomy (1588.75225ms)
+✔ Scenario: A grant with an empty action is refused (503.797958ms)
+✔ Scenario: A grant with an action and no reason is still accepted (520.002791ms)
+✔ Scenario: A grant already on disk that names nothing authorises nothing (648.739333ms)
+✔ REGRESSION GUARD: a state file written before this change reads back with every grant live (686.708667ms)
+✔ REGRESSION GUARD: the pre-existing empty-CATEGORY refusal still fires and still names the vocabulary (587.695375ms)
+✖ 1.10: the emitted inverse item states the grants instance as PAST measured evidence (428.001333ms)
+✖ 1.10: the emitted decision rule says a revoked grant and a grant naming nothing cover nothing (411.290166ms)
+ℹ tests 20
+ℹ suites 0
+ℹ pass 18
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 13508.379916
+
+✖ failing tests:
+
+test at scripts/test/autonomy-revocation.test.mjs:292:1
+✖ 1.10: the emitted inverse item states the grants instance as PAST measured evidence (428.001333ms)
+  AssertionError [ERR_ASSERTION]: rules block still states the falsified claim in the present tense — pm ships --revoke now
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/autonomy-revocation.test.mjs:297:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/autonomy-revocation.test.mjs:309:1
+✖ 1.10: the emitted decision rule says a revoked grant and a grant naming nothing cover nothing (411.290166ms)
+  AssertionError [ERR_ASSERTION]: rules block's rule (a) must say a REVOKED grant does not cover an action — the engine honours the revocation and the agent reader must too, or the revoke is honoured by every reader but one
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/autonomy-revocation.test.mjs:317:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'a. Already pre-authorized in the preflight — either an exact `action` match or the action falls under a granted `category` (per the category heuristic)? → proceed, record via `--notify`. ',
+    expected: /revoked/i,
+    operator: 'match',
+    diff: 'simple'
+  }

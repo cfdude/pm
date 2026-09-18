@@ -6,7 +6,13 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [Unreleased]
+## [0.46.0] — 2026-09-18
+
+Cluster 4 of the independent 0.43.0 review: the defect class both gates structurally miss — an
+operation shipped without its inverse, a stored reference nobody checks, and a mechanical guard whose
+matcher was narrower than the behaviour it claimed.
+
+**Requires `/reload-plugins`.**
 
 ### Added
 

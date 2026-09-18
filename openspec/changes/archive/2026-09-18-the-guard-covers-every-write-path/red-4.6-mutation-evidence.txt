@@ -1,0 +1,65 @@
+Post-fix mutation evidence for Gate 2 tasks 4.6, 4.7 and 4.8 — each new row neutered one at a time
+against the SHIPPED engine, `scripts/test/gate-guard-write-paths.test.mjs` run after each, the file
+restored from a pristine copy between runs (verified by `diff -q` at the end).
+
+Baseline, unmutated: 33 tests, 33 pass, 0 fail.
+
+The two mutants Gate 2 lens 1 reported as LIVED — the finding of G2-I2 — now die:
+
+  MSEG   `segments()` sliced to the first segment ......... 3 fail
+  M19    the hook's whole-command read reduced to line 1 .. 1 fail
+
+M19 fails ONLY the new hook-level test, which is the point: `writeShape` splits on `\n` itself, so no
+unit-level row can reach that mutant. MSEG fails at both levels because the `&&` row reaches it too.
+
+The G2-M1 mutant, which previously died only to a SOURCE-TEXT scan asserting the row was DECLARED:
+
+  M18b   only `rsync` removed from COMMAND_WORD_SHAPES .... 3 fail, and 1.1 — a BEHAVIOURAL
+                                                            assertion — is now among them, where
+                                                            before only 1.3's source scan caught it
+
+The G2-I1 rows:
+
+  GITSUB      the `git rm`/`git mv` record row deleted ..... 3 fail
+  GITGLOBALS  the global-option skip made unconditional
+              (`i += 2` for every flag, so `git -p rm <record>`
+              reads `rm` as `-p`'s value) ................. 2 fail — the trap the six-option list exists for
+  REMOVERS    RECORD_REMOVERS reduced to `["rm"]` ......... 4 fail
+
+Raw per-mutant runs are the scratchpad files named in each section header; the summary follows.
+
+================================================================================
+=== MSEG ===
+✖ 1.1 every recognized write shape is matched (1.044042ms)
+✖ 1.1 the return value carries no text taken from the command (1.895042ms)
+✖ 4.7 the hook reads the WHOLE command, not its first line (1228.519084ms)
+ℹ pass 30
+ℹ fail 3
+=== M19 ===
+✖ 4.7 the hook reads the WHOLE command, not its first line (1188.347458ms)
+ℹ pass 32
+ℹ fail 1
+=== M18b ===
+✖ 1.1 every recognized write shape is matched (1.066208ms)
+✖ 1.1 the return value carries no text taken from the command (1.796667ms)
+✖ 1.3 REGRESSION GUARD: the closed shape list has exactly one definition site (9.169791ms)
+ℹ pass 30
+ℹ fail 3
+=== GITSUB ===
+✖ 1.1 every recognized write shape is matched (1.988459ms)
+✖ 1.1 the return value carries no text taken from the command (3.840959ms)
+✖ 4.6 destroying the record through git is blocked, and a git read of it is not (1919.699333ms)
+ℹ pass 30
+ℹ fail 3
+=== GITGLOBALS ===
+✖ 1.1 every recognized write shape is matched (1.403167ms)
+✖ 1.1 the return value carries no text taken from the command (3.379958ms)
+ℹ pass 31
+ℹ fail 2
+=== REMOVERS ===
+✖ 1.1 every recognized write shape is matched (2.094917ms)
+✖ 1.1 the return value carries no text taken from the command (3.553917ms)
+✖ 1.3 REGRESSION GUARD: the closed shape list has exactly one definition site (24.526667ms)
+✖ 4.6 destroying the record through git is blocked, and a git read of it is not (3347.60425ms)
+ℹ pass 29
+ℹ fail 4

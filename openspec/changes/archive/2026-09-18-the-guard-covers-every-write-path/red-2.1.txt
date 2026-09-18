@@ -1,0 +1,155 @@
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-85UEgJ/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-85UEgJ/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-85UEgJ/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-85UEgJ/PROJECT.md
+conductor: active is now 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-85UEgJ/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-85UEgJ/PROJECT.md
+conductor: detour 'd' is still queued, not archived — resuming anyway, but confirm its work is finished and committed before building on the resumed epic
+conductor: resumed 'p'
+conductor: RECONCILE GATE — 'p' carries reconcileNeeded and owes a verdict against 'd'. Run the reconciler BEFORE writing code, then `record-reconcile p --detour d --verdict valid|invalidated`, then `honcho-memory pop p "<detour>; reconcile = …"` for the memory line
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-McoaGj/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-McoaGj/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-McoaGj/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-McoaGj/PROJECT.md
+conductor: active is now 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-McoaGj/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-McoaGj/PROJECT.md
+conductor: detour 'd' is still queued, not archived — resuming anyway, but confirm its work is finished and committed before building on the resumed epic
+conductor: resumed 'p'
+conductor: RECONCILE GATE — 'p' carries reconcileNeeded and owes a verdict against 'd'. Run the reconciler BEFORE writing code, then `record-reconcile p --detour d --verdict valid|invalidated`, then `honcho-memory pop p "<detour>; reconcile = …"` for the memory line
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-tsjzhu/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-tsjzhu/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-tsjzhu/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-tsjzhu/PROJECT.md
+conductor: active is now 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-tsjzhu/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-tsjzhu/PROJECT.md
+conductor: detour 'd' is still queued, not archived — resuming anyway, but confirm its work is finished and committed before building on the resumed epic
+conductor: resumed 'p'
+conductor: RECONCILE GATE — 'p' carries reconcileNeeded and owes a verdict against 'd'. Run the reconciler BEFORE writing code, then `record-reconcile p --detour d --verdict valid|invalidated`, then `honcho-memory pop p "<detour>; reconcile = …"` for the memory line
+conductor: created .conductor/state.json
+conductor: created CLAUDE.md with rules block (platform: claude-code)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-3BKHod/PROJECT.md
+conductor: initialized. Triage with `update-epic <id> --priority <P0-P3> --status <status>` and `set-active <id>`, then /pm:status.
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-3BKHod/PROJECT.md
+conductor: added epic 'p' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-3BKHod/PROJECT.md
+conductor: added epic 'd' (claude-code, queued)
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-3BKHod/PROJECT.md
+conductor: active is now 'p'
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-3BKHod/PROJECT.md
+conductor: paused 'p' and made detour 'd' active — reconcile gate armed for /pm:resume
+conductor: rendered /var/folders/ng/9xps42_d057g6wm_glhntjhw0000gn/T/pm-test-3BKHod/PROJECT.md
+conductor: detour 'd' is still queued, not archived — resuming anyway, but confirm its work is finished and committed before building on the resumed epic
+conductor: resumed 'p'
+conductor: RECONCILE GATE — 'p' carries reconcileNeeded and owes a verdict against 'd'. Run the reconciler BEFORE writing code, then `record-reconcile p --detour d --verdict valid|invalidated`, then `honcho-memory pop p "<detour>; reconcile = …"` for the memory line
+✖ 2.1 a heredoc redirection is blocked while a reconcile is owed, and the block names the shape (526.159875ms)
+✖ 2.1 an in-place stream editor is blocked (518.287333ms)
+✖ 2.1 the block message carries a label, not the command (521.838167ms)
+✖ 2.1 the block states the obligation the check cannot enforce (513.649666ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 0
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2130.83875
+
+✖ failing tests:
+
+test at scripts/test/gate-guard-write-paths.test.mjs:247:1
+✖ 2.1 a heredoc redirection is blocked while a reconcile is owed, and the block names the shape (526.159875ms)
+  AssertionError [ERR_ASSERTION]: the block must name the matched shape's fixed label; stderr was:
+  conductor: gate guard — 'p' still owes a reconcile (a detour touched shared code). Run the reconcile gate (reconciler agent, per the conductor skill's POP protocol) before writing source. There is NO bypass for this case: `set-gate-guard off` does not reach it. Completing the reconcile gate is the only way through.
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/gate-guard-write-paths.test.mjs:252:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/gate-guard-write-paths.test.mjs:256:1
+✖ 2.1 an in-place stream editor is blocked (518.287333ms)
+  AssertionError [ERR_ASSERTION]: conductor: gate guard — 'p' still owes a reconcile (a detour touched shared code). Run the reconcile gate (reconciler agent, per the conductor skill's POP protocol) before writing source. There is NO bypass for this case: `set-gate-guard off` does not reach it. Completing the reconcile gate is the only way through.
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/gate-guard-write-paths.test.mjs:260:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/gate-guard-write-paths.test.mjs:263:1
+✖ 2.1 the block message carries a label, not the command (521.838167ms)
+  AssertionError [ERR_ASSERTION]: conductor: gate guard — 'p' still owes a reconcile (a detour touched shared code). Run the reconcile gate (reconciler agent, per the conductor skill's POP protocol) before writing source. There is NO bypass for this case: `set-gate-guard off` does not reach it. Completing the reconcile gate is the only way through.
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/gate-guard-write-paths.test.mjs:268:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts/test/gate-guard-write-paths.test.mjs:273:1
+✖ 2.1 the block states the obligation the check cannot enforce (513.649666ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Bash write is forbidden/i. Input:
+  
+  "conductor: gate guard — 'p' still owes a reconcile (a detour touched shared code). Run the reconcile gate (reconciler agent, per the conductor skill's POP protocol) before writing source. There is NO bypass for this case: `set-gate-guard off` does not reach it. Completing the reconcile gate is the only way through.\n"
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/gate-guard-write-paths.test.mjs:280:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: "conductor: gate guard — 'p' still owes a reconcile (a detour touched shared code). Run the reconcile gate (reconciler agent, per the conductor skill's POP protocol) before writing source. There is NO bypass for this case: `set-gate-guard off` does not reach it. Completing the reconcile gate is the only way through.\n",
+    expected: /Bash write is forbidden/i,
+    operator: 'match',
+    diff: 'simple'
+  }

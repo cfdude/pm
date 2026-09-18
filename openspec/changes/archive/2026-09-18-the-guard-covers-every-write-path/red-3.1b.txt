@@ -1,0 +1,44 @@
+✔ hooks.json has no key outside the harness's schema — an unknown key warns in EVERY session (0.6315ms)
+✔ the scan reaches real groups — an empty walk would pass this file vacuously (0.091958ms)
+✖ every hook's rationale survived the move — README documents each event, matcher and verb (2.893166ms)
+✔ the README assertion is not vacuous — deleting a section fails it (0.208209ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 46.154833
+
+✖ failing tests:
+
+test at scripts/test/hooks-schema.test.mjs:92:1
+✖ every hook's rationale survived the move — README documents each event, matcher and verb (2.893166ms)
+  AssertionError [ERR_ASSERTION]: hooks/README.md must document each group as `<event>` — matcher `<matcher>` (<verb>) — the comments were moved out of hooks.json, and a hook whose reasoning is nowhere is a hook someone deletes. The verb is in the key because two PreToolUse groups now share one matcher
+  + actual - expected
+  
+  + [
+  +   'SessionStart/brief',
+  +   'PreCompact/snapshot',
+  +   'PostToolUse/commit-nudge',
+  +   'PostToolUseFailure/commit-nudge',
+  +   'PreToolUse/gate-guard',
+  +   'PreToolUse/lesson-advice'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/robsherman/Documents/Repos/pm/scripts/test/hooks-schema.test.mjs:94:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'SessionStart/brief', 'PreCompact/snapshot', 'PostToolUse/commit-nudge', 'PostToolUseFailure/commit-nudge', 'PreToolUse/gate-guard', 'PreToolUse/lesson-advice' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
