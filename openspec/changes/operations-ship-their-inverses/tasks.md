@@ -10,7 +10,7 @@ and named in that commit's message.
 
 ## 0. Gates before code
 
-- [ ] 0.1 **Gate 1 — spec review.** Dispatch TWO fresh-context reviewers (review mode is
+- [x] 0.1 **Gate 1 — spec review.** Dispatch TWO fresh-context reviewers (review mode is
   `thorough`) over the artifacts BY PATH, not by SHA range:
   `openspec/changes/operations-ship-their-inverses/proposal.md`,
   `.../design.md`, `.../specs/epic-autonomy/spec.md`, `.../specs/epic-disposition/spec.md`,
@@ -21,7 +21,7 @@ and named in that commit's message.
   until a verdict answers it`? Fix Critical + Important, re-run `openspec validate
   operations-ship-their-inverses --strict`, then record:
   `record-gate-review <epicId> --gate 1 --verdict pass --reviewer "<identity>" --artifact openspec/changes/operations-ship-their-inverses/proposal.md --artifact openspec/changes/operations-ship-their-inverses/design.md --artifact openspec/changes/operations-ship-their-inverses/specs/epic-autonomy/spec.md --artifact openspec/changes/operations-ship-their-inverses/specs/epic-disposition/spec.md --artifact openspec/changes/operations-ship-their-inverses/specs/gate-integrity/spec.md --artifact openspec/changes/operations-ship-their-inverses/tasks.md`
-- [ ] 0.2 **Cross-spec review for release 0.46.0.** This release holds two changes and five spec
+- [x] 0.2 **Cross-spec review for release 0.46.0.** This release holds two changes and five spec
   files flat across them (three here, plus `the-guard-covers-every-write-path`'s). Invoke the
   `cross-spec-review` skill over the WHOLE release spec set, with two lenses under `thorough`, and
   ask the six questions — contradiction, double ownership, unmeetable requirements, gaps against
@@ -35,10 +35,10 @@ and named in that commit's message.
 
 ## 1. Autonomy — the revoke that was never shipped
 
-- [ ] 1.1 **RED** — tests: a granted exact action is revoked with a reason and no longer authorises;
+- [x] 1.1 **RED** — tests: a granted exact action is revoked with a reason and no longer authorises;
   a category grant is revoked by naming the category; the revoked entry is still present in
   `preAuthorized[]` carrying its revocation and reason. Save `red-1.1.txt`.
-- [ ] 1.2 **GREEN** — `scripts/lib/autonomy.mjs`: add the revoke path to `setAutonomy()`, marking
+- [x] 1.2 **GREEN** — `scripts/lib/autonomy.mjs`: add the revoke path to `setAutonomy()`, marking
   **the matched entries that are not already revoked** rather than splicing, and never rewriting an
   existing revocation stamp — re-granting is the documented un-revoke, so a live and a revoked entry
   for the same action legitimately coexist and a whole-set mark would overwrite the earlier reason
@@ -78,7 +78,7 @@ and named in that commit's message.
   neither a REVOKED grant nor a grant naming nothing satisfies rule (a) — that emitted rule is the
   third surface `epic-autonomy` names for an on-disk empty grant, alongside the re-arm report (1.5)
   and the integrity check (2.5). Save `red-1.10.txt`.
-- [ ] 1.11 **GREEN** — `scripts/lib/rules.mjs` (`:216-217` the claim this change falsifies, `:753`
+- [ ] 1.11 **GREEN** — `scripts/lib/rules.mjs` (`:216-217` the claim this change falsifies, `:759` — `:753` before the sibling shifted it
   the decision rule) plus every fixture under `scripts/test/fixtures/` and every
   `output-text-integrity` expectation the reword moves; derive that list by running the suite, not
   from this sentence. **Reword, do not delete** — the evidence is what makes the required item stick,
@@ -146,7 +146,7 @@ commit message, and commit the refusal and the verb together.
   by position. **A new dispatched verb has more registry surface than the dispatch table** — the
   `verb-surface` capability enforces all of it suite-wide, so each of these lands in THIS commit or
   the suite fails on it: dispatch in `scripts/conductor.mjs` and the `USAGE` line; a `VERB_FLAGS`
-  row for `--reason` on `drop-detour`; a positional row in `constants.mjs` (~line 916, beside
+  row for `--reason` on `drop-detour`; a positional row in `constants.mjs` (line 923, beside
   `"set-autonomy": EPIC_ID`) so an undeclared positional is refused; `--force` accepted because it
   writes; `--platform` declared if it is passed; `reportSave()` with a `changed`/`unchanged` pair so
   a save that changes nothing writes nothing (`state-write-guard`); a `verb-effects.mjs` row; and
@@ -188,13 +188,13 @@ commit message, and commit the refusal and the verb together.
     `getAutonomy|epic\.autonomy|preAuthorized` on purpose: that narrower pattern returns 0 hits in
     `scripts/lib/rules.mjs`, which emits the instruction text asserting the defect this change
     removes (`:216-217`) and the execution-time decision rule a revoked grant must not satisfy
-    (`:753`). Run BOTH patterns. Every reader of a grant must honour the revocation stamp. Known at
+    (`:759`, `:753` before the sibling shifted it). Run BOTH patterns. Every reader of a grant must honour the revocation stamp. Known at
     proposal time: `render.mjs:128` and `briefing.mjs:108` read `level` only;
     `agents/hierarchy-child-executor.md:50` is the only actor that acts on `preAuthorized`.
   - `rg -n "carriedTo|carried-to" scripts/ ` — DATA references: writers, readers **and removers**.
     `links.mjs:343` already sweeps `disposition.carriedTo` and `:351` sweeps
     `disposition.superseded.carriedTo`; state whether the new validation covers both.
-  - `rg -n "deferralAssertion|deferrals\[\]" scripts/` — same three roles; `links.mjs:356` is the
+  - `rg -n "deferralAssertion|deferrals\[\]" scripts/` — same three roles; `links.mjs:357` is the
     remover.
   - `rg -n "detourStack" scripts/` — every reader of the stack; state which ones a dropped frame
     changes the answer for.
@@ -206,7 +206,7 @@ commit message, and commit the refusal and the verb together.
   and run each through the scanner as shipped: `rg -n '\Wdrop-detour|--revoke|--revoke-reason'
   scripts/ commands/ skills/ agents/` plus the usage and refusal strings 1.2, 1.4, 3.4 and 3.8 add
   to `scripts/lib/autonomy.mjs`, `scripts/lib/detour-stack.mjs` and `scripts/lib/constants.mjs`,
-  the instruction text 1.11 rewrites in `scripts/lib/rules.mjs` (`:216-217`, `:753`), and the
+  the instruction text 1.11 rewrites in `scripts/lib/rules.mjs` (`:216-217`, `:759`), and the
   `commands/detour.md` text 5.1 writes. State per case whether it stays runnable or is accepted as
   blocked. Known at proposal time and to be RE-DERIVED rather than trusted: the UNFILLED template
   spelling — `drop-detour <pausedEpicId> --reason "<why>"` and `set-autonomy <id> --revoke <action

@@ -740,6 +740,13 @@ export const VERB_FLAGS = [
   { flag: "preauthorize", commands: ["set-autonomy"], repeats: true },
   { flag: "context", commands: ["set-autonomy"], repeats: true },
   { flag: "notify", commands: ["set-autonomy"], repeats: true },
+  // THE INVERSE `--preauthorize` NEVER SHIPPED (operations-ship-their-inverses). TWO flags and not
+  // one colon-packed value, and that is forced rather than stylistic: `--preauthorize` splits on the
+  // FIRST colon, so packing the revocation's reason after a colon would have to guess where the
+  // action ends between two free-text halves — the guess `--declined-deferral` already refuses to
+  // make. Not `repeats`, so the reason is unambiguously paired with the grant it takes back.
+  { flag: "revoke", commands: ["set-autonomy"], placeholder: "<action>|category:<name>" },
+  { flag: "revoke-reason", commands: ["set-autonomy"], requires: REASON_REQUIRES },
   // set-lane-routing. A valueless `--add`/`--remove` arrived as `[true]` and was skipped, or
   // matched against the literal string "true" — a rule that silently removed nothing.
   { flag: "add", commands: ["set-lane-routing"], repeats: true, requires: "a \"<match>:<lane>\" value" },

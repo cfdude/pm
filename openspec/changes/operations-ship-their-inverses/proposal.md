@@ -100,7 +100,7 @@ epic at `status: active` carrying a `killed` disposition — a live epic the rec
 - **Emitted instruction text, found by widening the sweep from `preAuthorized` to
   `pre-authoriz|preauthoriz`:** `scripts/lib/rules.mjs:216-217` emits into every managed `CLAUDE.md`
   the very claim this change falsifies ("grants accumulate with no revoke … turning it back on
-  silently restores all of them"), and `:753` is the execution-time decision rule that must skip a
+  silently restores all of them"), and `:759` (`:753` at proposal time; the sibling `the-guard-covers-every-write-path` added six lines at 822686a) is the execution-time decision rule that must skip a
   revoked grant. `agents/hierarchy-child-executor.md:50` is the only actor that acts on
   `preAuthorized` and must skip one too. Emitted-text fixtures under `scripts/test/fixtures/` move
   with `rules.mjs`.

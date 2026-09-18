@@ -25,6 +25,35 @@ export function getAutonomy(epic) {
   };
 }
 
+/** A grant taken back. Revocation RECORDS rather than deletes — the entry stays in
+ *  `preAuthorized[]` carrying this stamp — on the precedent `linkOnce()`'s `superseded` and
+ *  `--withdraw-gate-review` already set: a splice would make "this was authorised and then taken
+ *  back" indistinguishable from "this was never authorised", which is the evidence a safety record
+ *  exists to keep. */
+export function isRevoked(grant) {
+  return !!(grant && typeof grant === "object" && grant.revoked && typeof grant.revoked === "object");
+}
+
+/** Read a `--revoke` value as the grant identity it names, through the IDENTICAL first-colon split
+ *  the grant itself went through. A stored action therefore never contains a colon, which is what
+ *  makes both spellings name the same grant: the bare stored action, and the whole original
+ *  `--preauthorize` value pasted back. Whatever `--preauthorize` stored is exactly what
+ *  `--revoke` names. */
+function grantIdentity(value) {
+  const s = String(value);
+  if (s.startsWith("category:")) {
+    const rest = s.slice("category:".length);
+    const i = rest.indexOf(":");
+    return { category: (i === -1 ? rest : rest.slice(0, i)).trim() };
+  }
+  const i = s.indexOf(":");
+  return { action: (i === -1 ? s : s.slice(0, i)).trim() };
+}
+
+const namesGrant = (grant, target) => target.category !== undefined
+  ? grant && grant.category === target.category
+  : grant && grant.action === target.action;
+
 /** `set-autonomy <id> [--level off|autonomous] [--preauthorize "<action>:<reason>"]
  *  [--preauthorize "category:<name>:<reason>"] [--context "<note>"] [--notify "<what>"]` —
  *  writes/merges an epic's `autonomy` block. Every flag is additive (repeated calls APPEND
@@ -43,6 +72,7 @@ export function setAutonomy() {
     process.stderr.write(
       "usage: conductor.mjs set-autonomy <id> [--level off|autonomous] " +
       "[--preauthorize \"<action>:<reason>\"] [--preauthorize \"category:<filesystem|network|schema|external-api>:<reason>\"] " +
+      "[--revoke \"<action>\" --revoke-reason \"<why>\"] " +
       "[--context \"<note>\"] [--notify \"<what>\"]\n");
     process.exit(1);
   }
@@ -60,6 +90,27 @@ export function setAutonomy() {
 
   const a = { ...getAutonomy(epic) };
   if (level !== undefined) a.level = level;
+
+  // THE REVOKE RUNS BEFORE THE GRANTS BELOW, so `--revoke X --preauthorize "X:<new reason>"` in one
+  // call reads as "take it back, then grant it again on new terms" rather than revoking the grant
+  // this same invocation just made. Re-granting IS the documented un-revoke, so the two flags
+  // together have to compose in that direction.
+  //
+  // ONLY THE UNREVOKED MATCHES ARE MARKED, and an existing revocation stamp is never rewritten.
+  // Because re-granting is the un-revoke, an epic can legitimately hold a revoked entry and a live
+  // entry for the SAME action at once, so a match is a SET. Re-stamping the whole set would replace
+  // an earlier reason and date that describe something that happened with a later pair describing a
+  // different event — the data loss the already-revoked refusal exists to prevent, reached through
+  // the mixed case.
+  if (typeof f.revoke === "string") {
+    const target = grantIdentity(f.revoke);
+    const revokeReason = typeof f["revoke-reason"] === "string" ? f["revoke-reason"].trim() : "";
+    const revokedAt = new Date().toISOString();
+    a.preAuthorized = a.preAuthorized.map(g =>
+      namesGrant(g, target) && !isRevoked(g)
+        ? { ...g, revoked: revokeReason ? { reason: revokeReason, revokedAt } : { revokedAt } }
+        : g);
+  }
 
   for (const s of (f.preauthorize || [])) {
     if (typeof s !== "string") continue;

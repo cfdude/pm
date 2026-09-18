@@ -8,11 +8,11 @@ The relevant current state, verified from disk on 2026-09-17:
   `getAutonomy()` is documented as the ONLY place that reads `epic.autonomy` directly; `render.mjs`
   and `briefing.mjs` call it, and both read **only `level`** (a `🤖` marker). **No surface renders
   the grants at all**, which is the mechanical reason a silent restore is silent.
-- `scripts/lib/constants.mjs` `VERB_FLAGS` rows 738-742 declare `set-autonomy`'s four flags;
+- `scripts/lib/constants.mjs` `VERB_FLAGS` rows 739-742 declare `set-autonomy`'s four flags;
   `KNOWN_PREAUTHORIZE_CATEGORIES` is at the file's tail.
-- `scripts/lib/update-epic.mjs` — the `pairs()` helper (~line 625) splits `--deferral` and performs
-  no validation; `str(f["carried-to"])` (~line 922) is passed to the gate unchecked. The
-  both-halves-non-empty guard exists on `declinedPairs()` (~line 680) and was never applied to
+- `scripts/lib/update-epic.mjs` — the `pairs()` helper (line 625) splits `--deferral` and performs
+  no validation; `str(f["carried-to"])` (line 922) is passed to the gate unchecked. The
+  both-halves-non-empty guard exists on `declinedPairs()` (line 647 — this document said ~680, corrected at apply) and was never applied to
   `pairs()`.
 - `scripts/lib/detour-stack.mjs` — `pushDetour()` refuses a paused epic that is already archived and
   writes both links via `linkOnce()`, arming `may-invalidate.reconcileOnResume`. `popDetour()` is
@@ -21,7 +21,13 @@ The relevant current state, verified from disk on 2026-09-17:
 - `scripts/lib/links.mjs` — `ownedDetours()` filters on `isArmed(l) && !l.reconciled`;
   `epicReferences()` emits detour-stack rows with `kind: "frame"` and no `drop`, which is what makes
   `removeEpic()` refuse.
-- `scripts/lib/archive-gate.mjs` — `archiveGate()` is the one place all five archive paths share.
+- `scripts/lib/archive-gate.mjs` — `archiveGate()` has exactly ONE call site, `update-epic.mjs:920`
+  (`rg -n "archiveGate\\(" scripts/` at apply time; every other hit is a comment or the import).
+  CORRECTED AT APPLY: this line used to read "the one place all five archive paths share", which is
+  the opposite of the truth and of `archive-gate.mjs`'s own header — every other archive path
+  "never reaches this function" and stamps `unknown` itself. The consequence is in this change's
+  favour and is why Decision 4 is cheap: the refusal is bound to the interactive verb by
+  construction, not by a scope test somebody has to write.
 
 ## Goals / Non-Goals
 
@@ -159,7 +165,7 @@ holders inline — enumerating holders inline is the documented cause of the las
 family, per that function's own header comment.
 
 **And the declaration has to become value-agnostic for the read-time half to be possible at all.**
-`epicReferences()`'s `add()` is `if (typeof epic === "string" && epic)` (`links.mjs:324`), so an
+`epicReferences()`'s `add()` is `if (typeof epic === "string" && epic)` (`links.mjs:324`, re-derived at apply), so an
 empty id never enters the emitted set and an empty-id check driven from that set can never fire —
 verified against the fixture, where `--deferral ":"` stored `{"epic":"","section":""}` and
 `integrity` reported only the ghost id. Simply loosening the filter is the wrong fix: empty ids
