@@ -142,14 +142,14 @@ Pairs: 3.1 lands with 3.2.
       ("Bash is not matched by that hook, so run the remedy from the shell") — both state the reason
       the remedies stay runnable, and both reasons are now wrong. Restate each as the exemption.
       Re-derive both lines with `rg` at edit time
-- [ ] 3.5 GREEN: the reconcile block's message (design D6) — print the matched shape's FIXED LABEL
+- [x] 3.5 GREEN: the reconcile block's message (design D6) — print the matched shape's FIXED LABEL
       and no text taken from the command, drop "Completing the reconcile gate is the only way
       through" (this change does not make it true either), and state that a Bash write is forbidden
       while the reconcile is owed whether or not the check detects it. Check
       `scripts/test/output-text-integrity.test.mjs` and `output-interpolations.judged.mjs`, which
       govern this text — a label from a closed set needs neither escaping nor a length bound, and
       that is the point of choosing one
-- [ ] 3.6 GREEN: `scripts/lib/rules.mjs` — add the Bash obligation to the EMITTED managed rules block
+- [x] 3.6 GREEN: `scripts/lib/rules.mjs` — add the Bash obligation to the EMITTED managed rules block
       beside the POP protocol's reconcile-gate line (~line 668), so an agent reads it before reaching
       for a heredoc. This is repo state and reaches a repo only on `/pm:upgrade` (design — Migration
       Plan). Re-run `scripts/test/managed-rules-block.test.mjs` and

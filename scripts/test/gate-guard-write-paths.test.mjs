@@ -210,8 +210,10 @@ test("1.3 REGRESSION GUARD: the closed shape list has exactly one definition sit
   for (const row of rows) {
     const holders = sweptSources().filter(rel => fs.readFileSync(path.join(REPO, rel), "utf8").includes(row));
     assert.deepEqual(holders, ["scripts/lib/gate-guard.mjs"],
-      `the closed list's row ${JSON.stringify(row)} must be defined in gate-guard.mjs and nowhere ` +
-      `else; found in: ${holders.join(", ") || "(nowhere — the guard cannot see its own list)"}`);
+      `the closed list's row ${JSON.stringify(row)} must appear in gate-guard.mjs and in no other ` +
+      "engine source — not defined a second time, and not QUOTED VERBATIM either, because a copy " +
+      "of a row in prose goes stale the same way a copy in code does. Say it in other words, or " +
+      `import the label. Found in: ${holders.join(", ") || "(nowhere — the guard cannot see its own list)"}`);
   }
 });
 
