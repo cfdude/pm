@@ -203,7 +203,9 @@ dormancy. The message names git remedies (`git checkout --ours|--theirs`, `git s
 `git restore`) and, for a file git has never had, `mv .conductor/state.json
 .conductor/state.json.damaged` then `/pm:init`. **Never hand-repair it by guessing which side of a
 conflict to keep** — that is the user's call. Meanwhile `gate-guard` blocks Edit/Write/NotebookEdit
-(exit 2) and Bash is not matched, so the remedies run from the shell; `brief` injects only the
+(exit 2), and it is matched for Bash too — so what keeps the remedies runnable is its carve-out, not
+a gap: over an unreadable record an affirmed Bash call carrying command text is allowed whatever its
+shape, because one remedy above redirects into the record itself. Run them from the shell; `brief` injects only the
 warning; `snapshot` writes nothing (exit 11, never 2, which would block compaction);
 `commit-nudge`, on both post-call events (`PostToolUse` and `PostToolUseFailure`), writes nothing, the observation record included (exit 2 when a commit has landed, which stays unreported until the file is fixed; 0 otherwise, without reading state). `verify-state` never loads the file,
 and `activity` reports the revision and the log's on/off state as unknown.

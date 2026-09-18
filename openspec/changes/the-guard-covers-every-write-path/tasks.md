@@ -137,7 +137,7 @@ Pairs: 3.1 lands with 3.2.
 - [x] 3.4b GREEN: `scripts/lib/refusal.mjs:18` — the `gate-guard` row's "Not a wedge: Bash is not
       matched by it" is false under the new matcher; restate it as the affirmed-Bash-with-a-command
       exemption. Re-derive the line with `rg` at edit time
-- [ ] 3.4c GREEN: `skills/conductor/SKILL.md:206` ("`gate-guard` blocks Edit/Write/NotebookEdit
+- [x] 3.4c GREEN: `skills/conductor/SKILL.md:206` ("`gate-guard` blocks Edit/Write/NotebookEdit
       (exit 2) and Bash is not matched, so the remedies run from the shell") and `README.md:1593`
       ("Bash is not matched by that hook, so run the remedy from the shell") — both state the reason
       the remedies stay runnable, and both reasons are now wrong. Restate each as the exemption.
