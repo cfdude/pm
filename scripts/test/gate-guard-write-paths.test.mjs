@@ -456,3 +456,30 @@ test("2.7 the refresh arm KEEPS its inverse — set-gate-guard off silences it, 
   assert.equal(guard(cwd, bash("rg foo 2>/dev/null")).status, 0);
   assert.equal(guard(cwd, { tool_name: "Edit", tool_input: {} }).status, 0);
 });
+
+// ─────────────── 2.9 / 2.10 — nothing today's behaviour moves ───────────────
+
+test("2.9 REGRESSION GUARD: an unidentified tool blocks exactly as it does today", () => {
+  // Treating an unidentifiable call as a Bash call would convert a malformed payload into a silent
+  // hole in the one block this plugin makes unconditional — and it would change the behaviour every
+  // existing test exercises, since the suite invokes this hook with `"{}"` and with a bare
+  // `{"tool_input":{}}`.
+  const cwd = owingRepo();
+  for (const payload of ["{}", "", "not json", "[]", "null", JSON.stringify({ tool_name: "Frobnicate" }),
+    JSON.stringify({ tool_input: {} })]) {
+    const r = guard(cwd, payload);
+    assert.equal(r.status, 2, `an unidentified tool must block: ${JSON.stringify(payload)}`);
+    assert.match(r.stderr, /still owes a reconcile/);
+  }
+});
+
+test("2.9 REGRESSION GUARD: an editing tool is unaffected by any command text in the payload", () => {
+  const cwd = owingRepo();
+  for (const tool of ["Edit", "Write", "NotebookEdit"]) {
+    // `rg foo` matches no shape; an editing tool must not be decided by the shape list at all.
+    const r = guard(cwd, { tool_name: tool, tool_input: { command: "rg foo", file_path: "src/x.js" } });
+    assert.equal(r.status, 2, `${tool} blocks regardless of command text: ${r.stderr}`);
+    assert.ok(!r.stderr.includes("matched a recognized write shape"),
+      "no shape is named for an editing tool — the label is a decision about a Bash command");
+  }
+});
