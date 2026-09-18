@@ -186,3 +186,35 @@ test("1.1b an UNFILLED command template blocks, and the filled command passes", 
   assert.ok(writeShape('node "$ENGINE" update-epic <id> --attribute-commit <sha>'));
   assert.equal(writeShape('node "$ENGINE" update-epic e --attribute-commit abc1234'), null);
 });
+
+
+// ─────────────── 1.3 — the list is defined once ───────────────
+
+const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
+const sweptSources = () => ["scripts/conductor.mjs",
+  ...fs.readdirSync(path.join(REPO, "scripts", "lib")).filter(f => f.endsWith(".mjs")).sort()
+    .map(f => `scripts/lib/${f}`)];
+
+test("1.3 REGRESSION GUARD: the closed shape list has exactly one definition site", () => {
+  // A future shape must be added in ONE place. A second copy of any row — a label, the in-place
+  // editor family, the copier family or the record pattern — is a list that drifts, and a guard
+  // half of whose rows are live is worse than one whose rows are all in view.
+  const rows = [
+    ...Object.values(WRITE_SHAPE_LABELS).filter(l => l.includes(" ")),   // the multi-word labels
+    '["sed", "gsed", "perl", "ruby"]',
+    '["cp", "mv", "install", "rsync", "dd", "truncate", "patch"]',
+    "\\.conductor(\\*|\\/(state\\.json\\*?|\\*))?",
+  ];
+  for (const row of rows) {
+    const holders = sweptSources().filter(rel => fs.readFileSync(path.join(REPO, rel), "utf8").includes(row));
+    assert.deepEqual(holders, ["scripts/lib/gate-guard.mjs"],
+      `the closed list's row ${JSON.stringify(row)} must be defined in gate-guard.mjs and nowhere ` +
+      `else; found in: ${holders.join(", ") || "(nowhere — the guard cannot see its own list)"}`);
+  }
+});
+
+test("1.3 REGRESSION GUARD: the scan reaches real sources — an empty walk would pass vacuously", () => {
+  const files = sweptSources();
+  assert.ok(files.length >= 20, `expected the engine's whole lib to be swept, walked ${files.length}`);
+  assert.ok(files.includes("scripts/lib/gate-guard.mjs"));
+});

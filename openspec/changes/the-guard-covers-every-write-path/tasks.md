@@ -71,7 +71,7 @@ Pairs: 1.1 and 1.1b land with 1.2.
       falsifiable surface); those two are the module's whole new surface. The redirection arm runs per segment, and the
       engine-invocation exemption covers the command-word arm only. Node built-ins only; no new
       dependency, per the engine's hard constraints
-- [ ] 1.3 REGRESSION GUARD: a source scan asserting the shape list is defined once and not duplicated
+- [x] 1.3 REGRESSION GUARD: a source scan asserting the shape list is defined once and not duplicated
       into a second site, so a future shape is added in one place
 
 ## 2. The guard reads its payload
