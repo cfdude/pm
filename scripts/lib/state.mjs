@@ -198,8 +198,12 @@ export class StateUnreadableError extends Error {
 const STATE_DISPLAY_PATH = ".conductor/state.json";
 
 /** The whole refusal, as the top-level catch prints it (design D2). Every remedy is a SHELL command:
- *  gate-guard blocks Edit/Write/NotebookEdit while the file is unreadable, and Bash is not matched by
- *  it, so a remedy that needed an edit tool would be a wedge. The untracked remedy is not decoration:
+ *  gate-guard blocks the editing tools while the file is unreadable, and since the-guard-covers-every-
+ *  write-path it is matched for Bash too — so what keeps these remedies runnable is no longer that the
+ *  hook misses Bash, but an explicit carve-out: over an UNREADABLE record an affirmed Bash call
+ *  CARRYING A COMMAND is allowed whatever its shape. That carve-out exists for the `git show …> …`
+ *  line below, which is itself a recognized write shape, and for the `mv`. A remedy that needed an
+ *  edit tool would still be a wedge. The untracked remedy is not decoration:
  *  a repository `init`'d and damaged before its first commit has nothing for git to restore, and
  *  `init` itself refuses while the damaged file is in place. */
 export function unreadableStateMessage(err) {

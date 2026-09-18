@@ -131,7 +131,7 @@ Pairs: 3.1 lands with 3.2.
 - [x] 3.3 GREEN: `hooks/README.md` — keep two PreToolUse sections, distinguishing them with a suffix
       after the closing backtick so the schema test's substring `includes` still matches; rewrite the
       gate-guard section's "Bash is not matched" paragraph to the new mechanism
-- [ ] 3.4 GREEN: `scripts/lib/state.mjs:201` — the comment on `unreadableStateMessage` asserts "Bash
+- [x] 3.4 GREEN: `scripts/lib/state.mjs:201` — the comment on `unreadableStateMessage` asserts "Bash
       is not matched by it"; correct it to the affirmed-Bash exemption. Re-derive the line number with
       `rg` at edit time
 - [ ] 3.4b GREEN: `scripts/lib/refusal.mjs:18` — the `gate-guard` row's "Not a wedge: Bash is not
