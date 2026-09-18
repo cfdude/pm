@@ -16,10 +16,14 @@
 
 ## The `pm` engine — hard constraints (must follow)
 
-- **`scripts/conductor.mjs` is ZERO-DEPENDENCY.** Node 18+ built-ins only (`node:fs`,
-  `node:path`, `node:os`, `node:child_process`, `node:url`). **Never** add an npm package or a
-  `package.json` dependency. If a format needs parsing, prefer JSON (native) over pulling a
-  parser.
+- **The ENGINE is ZERO-RUNTIME-DEPENDENCY.** `scripts/conductor.mjs` + `scripts/lib/*.mjs` use Node 18+
+  built-ins only (`node:fs`, `node:path`, `node:os`, `node:child_process`, `node:url`) — the code users
+  run in real time ships with no `node_modules` and nothing to install. **Never** add an npm package to
+  the engine. If a format needs parsing, prefer JSON (native) over pulling a parser.
+  **Dev-only dependencies are permitted**: anything used only to develop and test the source
+  (`package.json` `devDependencies`, `node_modules` gitignored, never shipped or committed) may exist —
+  the distinction is WHO pays: a user installing the plugin pays nothing; a contributor runs `npm i`.
+  Anything added here must earn its place against a measured problem, not preference.
 - **Tests:** `node --test scripts/test/*.test.mjs`. All tests pass before any commit — no
   exceptions, no `--no-verify`.
 - **Architectural law — `pm` is an INSTRUCTION layer, never an INTEGRATION layer.** It emits
