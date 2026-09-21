@@ -5,11 +5,10 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { execFileSync, execSync } from "node:child_process";
 import { isInitialized, loadState, readJSON } from "./state.mjs";
 import { engineRoot, renderStampPath, statePath, jsonText } from "./constants.mjs";
 import { die } from "./command-exit.mjs";
-import { errStream, outStream } from "./invocation.mjs";
+import { errStream, gitOps, outStream } from "./invocation.mjs";
 
 /** `verify-worktrees` — cross-references `git worktree list` against epic status (and, since
  *  the `df-verify-worktrees-merged-not-just-archived` fix, actual merge state) to catch a
@@ -34,7 +33,7 @@ export function verifyWorktrees() {
   const byId = new Map(state.epics.map(e => [e.id, e]));
   let out;
   try {
-    out = execSync("git worktree list --porcelain", { cwd: engineRoot(), encoding: "utf8" });
+    out = gitOps().worktreeList();
   } catch {
     outStream().write(jsonText({ orphaned: [] }) + "\n");
     return;
@@ -74,7 +73,7 @@ export function isAncestorOfCurrentHead(sha) {
     // A worktree head read from `git worktree list`, not a stored value — but never interpolated into
     // a shell line, and never read as an option either (hex-gated; no `--end-of-options`, see git.mjs).
     if (typeof sha !== "string" || !/^[0-9a-fA-F]{4,64}$/.test(sha)) return false;
-    execFileSync("git", ["merge-base", "--is-ancestor", sha, "HEAD"], { cwd: engineRoot(), stdio: "ignore" });
+    gitOps().mergeBaseIsAncestorOfHead(sha);
     return true;
   } catch {
     return false;

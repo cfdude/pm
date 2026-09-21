@@ -45,10 +45,10 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { execFileSync } from "node:child_process";
 import { engineRoot } from "./constants.mjs";
 import { isDetachedTree } from "./git.mjs";
 import { breakStaleLockAt, inspectLock, lockContent, lockHolderAlive, sameLock } from "./state.mjs";
+import { gitOps } from "./invocation.mjs";
 
 export const COMMIT_OBSERVE_FILE = "commit-observe.json";
 /** Where the observation record lives for a conductor root. Per-checkout (a worktree has its own
@@ -69,9 +69,7 @@ const COMMIT_ACTION = /^commit\b/;
 const AMEND_ACTION = /^commit \(amend\)/;
 
 function gitOut(args, root) {
-  return execFileSync("git", args, {
-    cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"],
-  }).trim();
+  return gitOps().commitWatchGit(args, root);
 }
 
 /** Absolute path of HEAD's reflog file, or null when git cannot answer (no git, no repository).

@@ -20,13 +20,21 @@
 // of that one call. `setInvocation()` is called once per invocation and never concurrently: the
 // assertion half is a SINGLE process running tests in sequence.
 //
-// Depends on nothing but Node built-ins. `constants.mjs` imports THIS module (for `engineRoot`), so
-// anything imported here would cycle back into the module every other module depends on.
+// Depends on Node built-ins and one leaf: `git-gateway.mjs`, which imports NOTHING from the engine,
+// so the cycle this module's own note warns about — anything imported here cycles back into
+// `constants.mjs`, the module every other module depends on — cannot form. `constants.mjs` imports
+// THIS module for `engineRoot`; `git-gateway.mjs` imports neither.
 
 import fs from "node:fs";
 import { isatty } from "node:tty";
+import { realGit } from "./git-gateway.mjs";
 
 let CURRENT = null;
+
+/** The gateway used when nothing has called `setInvocation()`: built once, lazily, against a LIVE
+ *  view of this process. See `gitOps()` below for why it lives here rather than being imported by
+ *  its callers. */
+let PROCESS_GIT = null;
 
 /** The context used when nothing has called `setInvocation()`: the real process. Live getters, so
  *  a direct importer of a lib module keeps the behaviour it had before this module existed. */
@@ -86,6 +94,25 @@ export const errStream = (ctx = invocation()) => ctx.stderr;
 /** The input this invocation drains. `readStdin()` and the refused-hook-line drain both go through
  *  it, rather than reading fd 0 behind the caller's back. */
 export const stdinSource = (ctx = invocation()) => ctx.stdin;
+
+/** The git gateway this invocation is handed — the REAL one for a process that never entered
+ *  through `main()`, the caller's own when it supplied `io.git` (design D4: the assertion half
+ *  passes a double, the functional half the real thing, and the engine cannot tell which).
+ *
+ *  THIS ACCESSOR IS WHY NO MODULE IMPORTS THE GATEWAY. A module that imported it could not be given
+ *  a double, and a module that reached git directly would be a call site outside the gateway —
+ *  which the call-site guard fails on. Every git user therefore asks the INVOCATION for its gateway,
+ *  exactly as it asks for its root, env and streams; `lib/git-gateway.mjs` itself is imported by
+ *  this file and by `conductor.mjs` (which supplies the default) and by nothing else. */
+export function gitOps(ctx = invocation()) {
+  if (ctx.git) return ctx.git;
+  // Built once PER CONTEXT and cached on it, never per call: `realGit`'s operations read the context
+  // lazily, so one object serves every call. The thunk is a live view rather than a snapshot for the
+  // same reason the rest of PROCESS_CONTEXT is getters — a direct importer that moves
+  // CLAUDE_PROJECT_DIR between two calls must see the second one.
+  if (ctx === PROCESS_CONTEXT) return (PROCESS_GIT ??= realGit(() => PROCESS_CONTEXT));
+  return (ctx.__git ??= realGit(() => ctx));
+}
 
 /** Normalize whatever a caller passed as `stdin` into `{ read(), isTTY, real }`.
  *

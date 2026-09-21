@@ -349,21 +349,49 @@ test("g2-M07a an annotated tag resolves to the commit it names, not to the tag o
   assert.deepEqual(epicOf(cwd, "e").attributedCommits, [a]);
 });
 
+/** The source of one `export function <name>(` in an engine module, up to the next export. */
+function bodyOfModule(src, fn) {
+  const start = src.indexOf(`export function ${fn}(`);
+  assert.notEqual(start, -1, `${fn} is still exported`);
+  const next = src.indexOf("\nexport ", start + 1);
+  return src.slice(start, next === -1 ? undefined : next);
+}
+
+/** The source of one operation in lib/git-gateway.mjs's returned object literal. The operations are
+ *  separated by blank lines, and the extractor asserts the anchor it slices on still exists — a
+ *  reformat of the gateway should fail this loudly rather than silently returning the whole file. */
+function gatewayOperationBody(src, name) {
+  const start = src.indexOf(`\n    ${name}: (`);
+  assert.notEqual(start, -1, `${name} is still an operation in git-gateway.mjs`);
+  const end = src.indexOf("\n\n", start + 1);
+  assert.notEqual(end, -1, `${name}'s operation body ended before the next one — the extractor's anchor moved`);
+  return src.slice(start, end);
+}
+
 test("g2-M17 every git call resolving or walking recorded commits sets GIT_NO_LAZY_FETCH", () => {
+  // RE-POINTED BY 4.2, not weakened. The git call moved behind the injected gateway, so the
+  // ASSERTION SPLITS IN TWO rather than being dropped: the caller must still reach git (through the
+  // gateway) for the same two functions, and the environment override must still be there — now
+  // asserted WHERE IT NOW LIVES, in the operations that inherited the two calls. A guard left
+  // reading the old file would have gone quietly green on a `gitOps()` call that no longer spawns
+  // anything at all.
   const src = fs.readFileSync(new URL("../lib/git.mjs", import.meta.url), "utf8");
-  for (const fn of ["resolveCommits", "commitsNotReachedBy"]) {
-    const start = src.indexOf(`export function ${fn}(`);
-    assert.notEqual(start, -1, `${fn} is still exported from git.mjs`);
-    const next = src.indexOf("\nexport ", start + 1);
-    const body = src.slice(start, next === -1 ? undefined : next);
-    assert.match(body, /execFileSync\("git"/, `${fn} still spawns git`);
-    // 0.47.0 (task 3.3): the child environment is the INVOCATION's, so this reads
-    // `currentEnv()` rather than `process.env`. The property is unchanged — the spread is still
-    // there and GIT_NO_LAZY_FETCH is still set — which is why the anchor moves rather than the
-    // assertion.
-    assert.match(body, /env: \{ \.\.\.currentEnv\(\), GIT_NO_LAZY_FETCH: "1" \}/,
-      `${fn}'s git call must not fetch from a promisor remote`);
+  const gw = fs.readFileSync(new URL("../lib/git-gateway.mjs", import.meta.url), "utf8");
+  const GIT_NO_LAZY_FETCH = /env: \{ \.\.\.env\(\), GIT_NO_LAZY_FETCH: "1" \}/;
+  for (const [fn, op] of [["resolveCommits", "batchCheckCommits"], ["commitsNotReachedBy", "revListNotReached"]]) {
+    // 0.47.0 (task 3.3) moved the child environment from `process.env` to the invocation's; 4.2 moved
+    // the call itself to the gateway. The property is unchanged at every step — the spread is still
+    // there and GIT_NO_LAZY_FETCH is still set — which is why the anchor moves and the assertion does
+    // not.
+    assert.match(bodyOfModule(src, fn), new RegExp(`gitOps\\(\\)\\.${op}\\(`),
+      `${fn} must still reach git, through the gateway`);
+    assert.match(gatewayOperationBody(gw, op), GIT_NO_LAZY_FETCH,
+      `${op}'s git call must not fetch from a promisor remote`);
   }
+  // The override is not ambient: exactly the two operations that inherited a call passing it carry
+  // it, so a third op acquiring it (or one of these losing it) is a change rather than a detail.
+  assert.equal((gw.match(/GIT_NO_LAZY_FETCH/g) || []).length, 2,
+    "exactly two gateway operations pass GIT_NO_LAZY_FETCH");
 });
 
 test("g2-3 git calls whose input is already filtered to commit-name hex pass no --end-of-options, so an old git cannot fail them open", () => {
@@ -371,17 +399,21 @@ test("g2-3 git calls whose input is already filtered to commit-name hex pass no 
   // null, gateStaleness reads unverifiable, and the archive gate (which refuses only `stale`) lets a
   // stale Gate 2 through. Every call below filters its values to hexadecimal commit names BEFORE
   // spawning git, so no value can be read as an option and the flag buys nothing but that failure.
-  for (const rel of ["../lib/git.mjs", "../lib/worktree-hygiene.mjs"]) {
+  // 4.2: git-gateway.mjs is added to the list rather than replacing the other two — it is now the
+  // ONLY place in the engine that spawns git, so it is the file where the flag could actually appear,
+  // and a list that named only the old files would be checking two files that no longer can.
+  for (const rel of ["../lib/git.mjs", "../lib/worktree-hygiene.mjs", "../lib/git-gateway.mjs"]) {
     const src = fs.readFileSync(new URL(rel, import.meta.url), "utf8");
     assert.equal(src.includes('"--end-of-options"'), false, `${rel} still passes --end-of-options to git`);
   }
   const git = fs.readFileSync(new URL("../lib/git.mjs", import.meta.url), "utf8");
   for (const [fn, guard] of [["isAncestor", "isCommitNameShaped"], ["commitDate", "isCommitNameShaped"],
     ["objectExists", "isCommitNameShaped"], ["reachableFromAnyRef", "isCommitNameShaped"], ["commitsNotReachedBy", "FULL_COMMIT_NAME"]]) {
-    const start = git.indexOf(`export function ${fn}(`);
-    assert.notEqual(start, -1, `${fn} is still exported`);
-    const body = git.slice(start, git.indexOf("\nexport ", start + 1));
-    assert.ok(body.indexOf(guard) !== -1 && body.indexOf(guard) < body.indexOf('execFileSync("git"'),
-      `${fn} filters its values with ${guard} before it spawns git`);
+    // The SPAWN anchor moved with the call (4.2). The ordering property — the value is shape-gated
+    // BEFORE anything is handed to git — is asserted unchanged, which is the whole point: it is the
+    // order that stops `--output=<path>` reaching git as an option.
+    const body = bodyOfModule(git, fn);
+    assert.ok(body.indexOf(guard) !== -1 && body.indexOf(guard) < body.indexOf("gitOps()"),
+      `${fn} filters its values with ${guard} before it hands them to git`);
   }
 });

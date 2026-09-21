@@ -3,12 +3,11 @@
 // lib/constants.mjs.
 
 import fs from "node:fs";
-import { execFileSync, execSync } from "node:child_process";
 import { engineRoot, conductorDir, detoursLog, CONTROL_CHARACTER, escapeControls } from "./constants.mjs";
-import { currentEnv } from "./invocation.mjs";
+import { gitOps } from "./invocation.mjs";
 
 export function gitShortSha() {
-  try { return execSync("git rev-parse --short HEAD", { cwd: engineRoot(), stdio: ["ignore", "pipe", "ignore"] }).toString().trim(); }
+  try { return gitOps().shortHead(); }
   catch { return "-"; }
 }
 
@@ -54,8 +53,7 @@ export function headAttachment(root = engineRoot()) {
   if (headAttachmentCache.has(root)) return headAttachmentCache.get(root);
   let answer;
   try {
-    execFileSync("git", ["symbolic-ref", "--quiet", "HEAD"],
-      { cwd: root, stdio: ["ignore", "ignore", "ignore"] });
+    gitOps().headRef(root);
     answer = "attached";
   } catch (e) {
     answer = e && e.status === 1 ? "detached" : "unknown";
@@ -120,16 +118,14 @@ export function appendRetraction(sha, epic, reason) {
 /** The abbreviated name git gives a commit here, or `-` when git cannot answer. */
 export function shortSha(rev) {
   try {
-    return execFileSync("git", ["rev-parse", "--short", String(rev)],
-      { cwd: engineRoot(), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim() || "-";
+    return gitOps().abbreviateCommit(rev).trim() || "-";
   } catch { return "-"; }
 }
 
 /** The full object name of a commit, or null when it resolves to none. */
 export function fullSha(rev) {
   try {
-    return execFileSync("git", ["rev-parse", "--verify", "--quiet", `${String(rev)}^{commit}`],
-      { cwd: engineRoot(), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim() || null;
+    return gitOps().verifyCommitName(rev).trim() || null;
   } catch { return null; }
 }
 
@@ -202,8 +198,7 @@ export function appendDetourLog(kind, epic, note, rev) {
 export function isAncestor(a, b) {
   if (!isCommitNameShaped(a) || !isCommitNameShaped(b)) return null;
   try {
-    execFileSync("git", ["merge-base", "--is-ancestor", a, b],
-      { cwd: engineRoot(), stdio: ["ignore", "ignore", "ignore"] });
+    gitOps().mergeBaseIsAncestor(a, b);
     return true;
   } catch (e) {
     return e && e.status === 1 ? false : null;
@@ -228,8 +223,7 @@ export function commitDate(sha) {
   // Shape-gated, as isAncestor() above: a hex value is never an option, so no `--end-of-options`.
   if (!isCommitNameShaped(sha)) return null;
   try {
-    const out = execFileSync("git", ["show", "-s", "--format=%cI", sha],
-      { cwd: engineRoot(), stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
+    const out = gitOps().committerDate(sha);
     return out || null;
   } catch { return null; }
 }
@@ -253,8 +247,7 @@ export function objectExists(sha) {
   // Shape-gated, as isAncestor() above: a hex value is never an option, so no `--end-of-options`.
   if (!isCommitNameShaped(sha)) return false;
   try {
-    execFileSync("git", ["rev-parse", "--verify", "--quiet", `${sha}^{commit}`],
-      { cwd: engineRoot(), stdio: ["ignore", "ignore", "ignore"] });
+    gitOps().commitExists(sha);
     return true;
   } catch { return false; }
 }
@@ -273,9 +266,7 @@ export function reachableFromAnyRef(sha) {
   // Shape-gated, and the value rides inside its own `--contains=` token: never a separate argument.
   if (!isCommitNameShaped(sha)) return false;
   try {
-    const out = execFileSync("git",
-      ["for-each-ref", `--contains=${sha}`, "--count=1", "--format=%(refname)"],
-      { cwd: engineRoot(), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+    const out = gitOps().refsContaining(sha);
     return out.length > 0;
   } catch { return false; }
 }
@@ -319,9 +310,7 @@ export function differsFromHead(paths) {
     // `-z`: unquoted. git quotes a root-relative path holding a non-ASCII byte, so in a project nested
     // under such a directory no line ended with `/<path>` and the nudge went silent (Gate 2 G2-I1's
     // sibling of changedFiles()).
-    const out = execFileSync("git", ["diff", "-z", "--name-only", "HEAD", "--", ...paths], {
-      cwd: engineRoot(), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"],
-    });
+    const out = gitOps().diffNamesAgainstHead(paths);
     const changed = out.split("\0").filter(Boolean);
     return paths.filter(p => changed.some(l => l === p || l.endsWith(`/${p}`)));
   } catch { return []; }
@@ -391,10 +380,7 @@ export function resolveCommits(values) {
   if (!asked.length) return { resolved, unresolved };
   let lines = [];
   try {
-    lines = execFileSync("git", ["cat-file", "--batch-check"], {
-      cwd: engineRoot(), encoding: "utf8", input: asked.map(v => `${v}^{commit}\n`).join(""),
-      stdio: ["pipe", "pipe", "ignore"], env: { ...currentEnv(), GIT_NO_LAZY_FETCH: "1" },
-    }).split("\n");
+    lines = gitOps().batchCheckCommits(asked.map(v => `${v}^{commit}\n`).join("")).split("\n");
   } catch { lines = []; }
   asked.forEach((v, i) => {
     const m = /^([0-9a-f]{40}(?:[0-9a-f]{24})?) commit \d+$/.exec(lines[i] || "");
@@ -435,10 +421,7 @@ export function commitsNotReachedBy(commits, head) {
   if (unreachedCache.has(key)) return unreachedCache.get(key);
   let answer;
   try {
-    const out = execFileSync("git", ["rev-list", ...list, "^" + head], {
-      cwd: engineRoot(), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 256 * 1024 * 1024,
-      env: { ...currentEnv(), GIT_NO_LAZY_FETCH: "1" },
-    });
+    const out = gitOps().revListNotReached(list, head);
     const listed = new Set(out.split("\n").map(l => l.trim()).filter(Boolean));
     answer = new Set(list.filter(c => listed.has(c)));
   } catch { answer = null; }

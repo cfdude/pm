@@ -7,8 +7,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { execFileSync } from "node:child_process";
-import { currentCwd, currentEnv, errStream, invocation } from "./invocation.mjs";
+import { currentCwd, currentEnv, errStream, gitOps, invocation } from "./invocation.mjs";
 import { VERB_EFFECTS } from "./verb-effects.mjs";
 
 // ── the invocation's paths, as FUNCTIONS OF A CURRENT ROOT ────────────────────────────────────
@@ -1638,8 +1637,7 @@ export function rootDivergence({ env = currentEnv(), cwd = currentCwd() } = {}) 
 export function warnDetachedTree(writes) {
   let tag = "";
   try {
-    tag = execFileSync("git", ["describe", "--tags", "--exact-match", "HEAD"],
-      { cwd: engineRoot(), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+    tag = gitOps().describeExactTag();
   } catch { /* no exact tag, or no git — the message stands without it */ }
   errStream().write(
     `conductor: ⚠ DETACHED CHECKOUT${tag ? ` (at ${tag})` : ""} — this tree is not on a branch, so ` +

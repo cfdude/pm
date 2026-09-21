@@ -345,6 +345,9 @@ x("git.mjs", "commitsNotReachedBy", {
 x("git.mjs", "differsFromHead", {
   "p": 1,
 }, "not-output", "a git argument");
+x("git.mjs", "resolveCommits", {
+  "v": 1,
+}, "not-output", "a git argument — one line of the batch-check stdin payload, peeled to ^{commit}. It was SINK-FLOW inside the execFileSync `input` option until 4.2 moved the call to the injected gateway, which is why the judgment moves from the sink heuristic to here. A value reaching this point has already had whitespace and control characters filtered out above it, and the loop's own `unresolved` message escapes every value it names");
 x("git.mjs", "unresolvedCommitsMessage", {
   "flags": 1,
 }, "engine", "flags is a literal flag list passed by each caller; the values are escaped");

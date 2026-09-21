@@ -5,8 +5,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { execFileSync, execSync } from "node:child_process";
-import { currentArgv, errStream, invocation, outStream } from "./invocation.mjs";
+import { currentArgv, errStream, gitOps, invocation, outStream } from "./invocation.mjs";
 import { defaultState, isInitialized, loadState, pushEpic, saveState, readStdin } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { stampVersion } from "./plugin-meta.mjs";
@@ -192,17 +191,16 @@ function prefixCache() {
 }
 export function changedFiles(sha) {
   try {
-    const opts = { cwd: engineRoot(), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] };
     // `-z`: NUL-terminated and UNQUOTED. Without it git quotes any path holding a non-ASCII byte
     // (`"projects/s\303\274b/PROJECT.md"`, core.quotePath), so no path under a non-ASCII conductor
     // root matched the prefix and every bookkeeping commit there was logged (Gate 2 G2-I1). `-z` also
     // survives a tab or newline in a path, which `core.quotePath=false` does not.
-    const out = execFileSync("git", ["diff-tree", "-z", "--no-commit-id", "--name-only", "-r", "--root", sha], opts);
+    const out = gitOps().diffTreeNames(sha);
     // --show-prefix prints the prefix raw today; quotePath=false keeps it comparable with the -z paths
     // should that ever change.
     const cache = prefixCache();
     if (!cache.resolved) {
-      cache.value = execFileSync("git", ["-c", "core.quotePath=false", "rev-parse", "--show-prefix"], opts).replace(/\n$/, "");
+      cache.value = gitOps().showPrefix().replace(/\n$/, "");
       cache.resolved = true;
     }
     const prefix = cache.value;
@@ -226,9 +224,7 @@ export const withinOwnArtifacts = (file, artifacts) =>
 /** Subject line of one commit, or null when git cannot answer. */
 export function commitSubject(sha) {
   try {
-    return execFileSync("git", ["log", "-1", "--format=%s", sha], {
-      cwd: engineRoot(), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"],
-    }).trim();
+    return gitOps().commitSubject(sha);
   } catch { return null; }
 }
 
@@ -237,9 +233,7 @@ export function commitSubject(sha) {
  *  deliberately NOT the same answer as "no commit landed" — see commitNudge's guard. */
 export function headSubject() {
   try {
-    return execSync("git log -1 --format=%s", {
-      cwd: engineRoot(), stdio: ["ignore", "pipe", "ignore"],
-    }).toString().trim();
+    return gitOps().headSubject();
   } catch { return null; }
 }
 

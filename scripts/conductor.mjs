@@ -168,6 +168,10 @@ export async function main(argv, io = {}) {
     argv: ["node", SELF, ...argv],
     cwd, env, stdin, stdout, stderr,
     root: env.CLAUDE_PROJECT_DIR || cwd,
+    // 4.2 — the git gateway. `io.git` is how a caller hands over a DOUBLE (the assertion half's
+    // fake); when it is absent, `gitOps()` builds the real one over THIS context, so an in-process
+    // invocation without a fake still reads the invocation's root rather than the process's.
+    git: io.git,
   };
   setInvocation(ctx);
   // ---------- self-hosting handoff (gh-134) ----------

@@ -175,14 +175,14 @@ either — 4.1's set-equality guard is green the moment the gateway it reads exi
 
 ## 4. One git gateway, injected
 
-- [ ] 4.1 REGRESSION GUARD — derive the call-site set MECHANICALLY at apply time
+- [x] 4.1 REGRESSION GUARD — derive the call-site set MECHANICALLY at apply time
       (`rg -n --glob '!test/**' -e 'execFileSync\(' -e 'execSync\(' scripts` filtered to git argv) and
       assert it against the gateway's operations, so a call site added later fails the guard. This
       document measures 23 invocations across 7 modules (`git.mjs` 11, `created-at.mjs` 3,
       `subcommands.mjs` 4, `commit-watch.mjs` 1 helper + 3 callers, `worktree-hygiene.mjs` 2,
       `tool-currency.mjs` 1, `constants.mjs` 1); the brief said 19. The disagreement is the reason the
       set is derived rather than typed
-- [ ] 4.2 GREEN — the gateway module exposes one operation per invocation, and no module imports it;
+- [x] 4.2 GREEN — the gateway module exposes one operation per invocation, and no module imports it;
       every caller receives it. Verify: 4.1 green, the full suite green
 - [ ] 4.3 GREEN — the fake, injected in the assertion half. Its canned answers for the gateway's
       operations are FROZEN CAPTURES committed under `scripts/test/fixtures/`, each saying when it

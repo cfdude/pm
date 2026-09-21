@@ -38,7 +38,7 @@ import { execFileSync } from "node:child_process";
 import { engineRoot, escapeControls } from "./constants.mjs";
 import { cmpVer } from "./plugin-meta.mjs";
 import { activeChangeIds } from "./epic-progress.mjs";
-import { currentEnv } from "./invocation.mjs";
+import { currentEnv, gitOps } from "./invocation.mjs";
 
 const SEMVER = /(\d+\.\d+\.\d+)/;
 const OPENSPEC_DIR = path.join(engineRoot(), "openspec");
@@ -146,9 +146,11 @@ export function projectOpenspecVersion() {
  *  Local git plumbing only — `ls-files` reads the index and contacts nothing. */
 export function generatedArtifactsTracked() {
   try {
-    const out = execFileSync("git", ["ls-files", "--", ".claude/skills", ".claude/commands/opsx"], {
-      cwd: engineRoot(), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"],
-    });
+    // THROUGH THE GATEWAY, while this module's OTHER exec site — the `openspec --version` probe
+    // above — deliberately is not: the gateway is over GIT, and that call is the only non-git spawn
+    // in the engine. It is listed here rather than left implicit so the call-site sweep's omission
+    // is a named decision and not a miss (required task item 1).
+    const out = gitOps().lsFiles([".claude/skills", ".claude/commands/opsx"]);
     return out.split("\n").some(l => /^\.claude\/(skills\/openspec-|commands\/opsx\/)/.test(l.trim()));
   } catch { return null; }
 }

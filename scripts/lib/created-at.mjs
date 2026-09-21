@@ -23,13 +23,12 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { execFileSync } from "node:child_process";
 import { engineRoot } from "./constants.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
 import { die } from "./command-exit.mjs";
-import { errStream } from "./invocation.mjs";
+import { errStream, gitOps } from "./invocation.mjs";
 
 /** The state file as a git PATHSPEC — CWD-relative, for the reason differsFromHead()'s is: git
  *  walks UP to find a repository, so a pm-managed project nested inside a larger repo has to be
@@ -59,11 +58,9 @@ function idNeedle(epicId) {
  *  true root commit is also parentless and is a perfectly good introduction. */
 function shallowBoundaries() {
   try {
-    const isShallow = execFileSync("git", ["rev-parse", "--is-shallow-repository"],
-      { cwd: engineRoot(), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+    const isShallow = gitOps().isShallowRepository();
     if (isShallow !== "true") return new Set();
-    const p = execFileSync("git", ["rev-parse", "--git-path", "shallow"],
-      { cwd: engineRoot(), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+    const p = gitOps().gitPath("shallow");
     // RESOLVED AGAINST ROOT, not left to process.cwd(). `--git-path` answers relative to the
     // directory git ran in, which is ROOT — and readFileSync would resolve it against the
     // PROCESS's cwd instead. Those are the same directory in the common case and diverge for a
@@ -96,9 +93,7 @@ function shallowBoundaries() {
 export function introducedAt(epicId, grafted = shallowBoundaries()) {
   if (typeof epicId !== "string" || !epicId) return null;
   try {
-    const out = execFileSync(
-      "git", ["log", `-S${idNeedle(epicId)}`, "--reverse", "--format=%H %cI", "--", STATE_PATHSPEC],
-      { cwd: engineRoot(), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+    const out = gitOps().logPickaxe(idNeedle(epicId), STATE_PATHSPEC);
     const first = out.split("\n").map(l => l.trim()).filter(Boolean)[0];
     if (!first) return null;
     const [sha, date] = first.split(" ");
