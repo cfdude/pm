@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "active": "functional-assertion-test-split",
+  "active": null,
   "epics": [
     {
       "id": "pm-fix-link-flag-validation-and-update",
@@ -9682,7 +9682,7 @@
       "id": "functional-assertion-test-split",
       "title": "Split the suite: one-process assertion tests over an injected git fake; functional git tests only when the seam changes",
       "priority": "P1",
-      "status": "active",
+      "status": "archived",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -9754,7 +9754,7 @@
         "8fe0a3b79621b7e251b47f053febc2a42d9e61ca"
       ],
       "createdAt": "2026-09-18T14:41:37.074Z",
-      "touchedAt": "2026-09-21T15:19:53.532Z",
+      "touchedAt": "2026-09-21T16:49:12.182Z",
       "gateReview": {
         "gate1": {
           "verdict": "pass",
@@ -9777,7 +9777,12 @@
         }
       },
       "startedAt": "2026-09-21T03:55:42.343Z",
-      "release": "0.47.0"
+      "release": "0.47.0",
+      "disposition": {
+        "outcome": "unknown",
+        "recordedAt": "2026-09-21T16:49:12.179Z",
+        "recordedBy": "archive-drift-heal"
+      }
     },
     {
       "id": "alpha",
@@ -9867,14 +9872,14 @@
     }
   ],
   "detourStack": [],
-  "pmVersion": "0.46.0",
+  "pmVersion": "0.47.0",
   "tracker": {
     "system": "github-issues",
     "repo": "cfdude/pm",
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1221,
+  "revision": 1222,
   "reviewMode": "thorough",
   "releases": [
     {
