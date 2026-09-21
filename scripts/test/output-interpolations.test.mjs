@@ -146,7 +146,7 @@ test("mutant (Gate 2 W-I2): an ALL_CAPS literal is still literal, unless it is r
   const literal = sweepClaimWith("const HELD_SESSION = [\"a\", \"b\"];", "HELD_SESSION.join(\" \")");
   assert.deepEqual(literal.findings, [], "a literal array's join is literal");
   const reassigned = sweepClaimWith("let HELD_SESSION = \"a\";", "HELD_SESSION",
-    [["  const session = resolveSession(f);\n  if (!session) die(`claim requires", "  const session = resolveSession(f);\n  HELD_SESSION = session;\n  if (!session) die(`claim requires"]]);
+    [["  const session = resolveSession(f);\n  if (!session) refuse(`claim requires", "  const session = resolveSession(f);\n  HELD_SESSION = session;\n  if (!session) refuse(`claim requires"]]);
   assert.ok(unclassifiedInClaim(reassigned.findings, "HELD_SESSION"), reassigned.findings.join("\n"));
   const param = sweepClaimWith("const HELD_SESSION = \"a\";\nconst f2 = (HELD_SESSION) => HELD_SESSION;", "HELD_SESSION");
   assert.ok(unclassifiedInClaim(param.findings, "HELD_SESSION"), param.findings.join("\n"));
@@ -175,8 +175,8 @@ test("mutant (Gate 2 W-M2): a MEMBER call named like an escaper — fake.escapeC
 });
 
 test("mutant (Gate 2 W-M2): fs.writeSync to a file descriptor is output, not a filesystem call", () => {
-  const { findings } = sweepMutated("scripts/lib/claims.mjs", "  const session = resolveSession(f);\n  if (!session) die(`claim requires",
-    "  const session = resolveSession(f);\n  fs.writeSync(2, `taken from ${held.session}\\n`);\n  if (!session) die(`claim requires");
+  const { findings } = sweepMutated("scripts/lib/claims.mjs", "  const session = resolveSession(f);\n  if (!session) refuse(`claim requires",
+    "  const session = resolveSession(f);\n  fs.writeSync(2, `taken from ${held.session}\\n`);\n  if (!session) refuse(`claim requires");
   assert.ok(unclassifiedInClaim(findings, "held.session"), findings.join("\n"));
 });
 

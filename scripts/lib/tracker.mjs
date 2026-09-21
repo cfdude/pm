@@ -10,13 +10,14 @@ import { removeSecondaryTracker, secondaryTrackerKey, upsertSecondaryTracker, wr
 import { render } from "./render.mjs";
 import { resolvePlatform } from "./platform.mjs";
 import { CONTROL_CHARACTER, KNOWN_TRACKER_DIRECTIONS, directionOf, escapeControls, isGithubRepo } from "./constants.mjs";
+import { die } from "./command-exit.mjs";
 
 /** Write/merge the `tracker` block (role: primary, default) or upsert/remove an entry in
  *  `state.secondaryTrackers` (role: secondary). Pure local state write — the engine NEVER
  *  contacts the tracker; it only records that one is in use so the instructions it emits (rules
  *  block + brief) can assign sync work to the interactive agent. */
 export function setTracker() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
   const f = parseFlags(process.argv.slice(3));
   requireFlagValues("set-tracker", f);
   const str = (v) => (typeof v === "string" ? v : undefined);
@@ -30,17 +31,16 @@ export function setTracker() {
       const values = [].concat(f[key] === undefined ? [] : f[key]).filter(v => typeof v === "string");
       const bad = values.find(v => CONTROL_CHARACTER.test(v));
       if (bad !== undefined) {
-        process.stderr.write(`conductor: --${flag} ${escapeControls(JSON.stringify(bad))} holds a control character — a ` +
+        die(`conductor: --${flag} ${escapeControls(JSON.stringify(bad))} holds a control character — a ` +
           "tracker's recorded scope heads a section of the rules file and names the tracker in emitted " +
           "instructions, so it cannot hold one. Nothing was written.\n");
-        process.exit(1);
       }
     }
   }
   const state = loadState();
   const role = str(f.role) || "primary";
   if (role !== "primary" && role !== "secondary") {
-    process.stderr.write("conductor: --role must be primary or secondary\n"); process.exit(1);
+    die("conductor: --role must be primary or secondary\n");
   }
 
   // `direction` is EXPLICIT configuration, never inferred from the vendor's name at any site.
@@ -48,17 +48,15 @@ export function setTracker() {
   // the primary path or the secondary one.
   const direction = str(f.direction);
   if (direction !== undefined && !KNOWN_TRACKER_DIRECTIONS.includes(direction)) {
-    process.stderr.write(`conductor: --direction must be one of ${KNOWN_TRACKER_DIRECTIONS.join("|")}\n`);
-    process.exit(1);
+    die(`conductor: --direction must be one of ${KNOWN_TRACKER_DIRECTIONS.join("|")}\n`);
   }
   // A secondary tracker is PINNED to inward: the secondary role is defined as pull-only — open
   // issues come in as untriaged epics and no outward creation is specified for it anywhere — so
   // an outward secondary would be a direction with no procedure behind it.
   if (role === "secondary" && direction !== undefined && direction !== "inward") {
-    process.stderr.write(
+    die(
       `conductor: a secondary tracker is inward-only — --direction '${escapeControls(direction)}' is not available ` +
       "for --role secondary (a secondary tracker never gets outward-created issues)\n");
-    process.exit(1);
   }
 
   // THE REPOSITORY SHAPE, for either role, before anything is written. A github-issues repo is
@@ -74,10 +72,9 @@ export function setTracker() {
     const repo = str(f.repo);
     const removingSecondary = role === "secondary" && !!f.remove;
     if (system === "github-issues" && repo !== undefined && !removingSecondary && !isGithubRepo(repo)) {
-      process.stderr.write(`conductor: --repo ${escapeControls(JSON.stringify(repo))} is not a GitHub repository — ` +
+      die(`conductor: --repo ${escapeControls(JSON.stringify(repo))} is not a GitHub repository — ` +
         "a github-issues tracker records its repo as owner/name, or HOST/owner/name for GitHub Enterprise (letters, digits, `-`, and `.`/`_` in the name). " +
         "Nothing was written.\n");
-      process.exit(1);
     }
   }
 
@@ -86,16 +83,15 @@ export function setTracker() {
     const repo = str(f.repo);
     const projectKey = str(f.project);
     if (!system) {
-      process.stderr.write("conductor: set-tracker --role secondary requires --system\n"); process.exit(1);
+      die("conductor: set-tracker --role secondary requires --system\n");
     }
     if (!repo && !projectKey) {
-      process.stderr.write("conductor: set-tracker --role secondary requires --repo or --project\n"); process.exit(1);
+      die("conductor: set-tracker --role secondary requires --repo or --project\n");
     }
     if (f.remove) {
       const removed = removeSecondaryTracker(state, { system, repo, projectKey });
       if (!removed) {
-        process.stderr.write(`conductor: no matching secondary tracker (${escapeControls(`${system}${repo ? ` ${repo}` : ` ${projectKey}`}`)})\n`);
-        process.exit(1);
+        die(`conductor: no matching secondary tracker (${escapeControls(`${system}${repo ? ` ${repo}` : ` ${projectKey}`}`)})\n`);
       }
       const saved = saveState(state);
       writeRules(resolvePlatform({}, state));
@@ -184,7 +180,7 @@ export function setTracker() {
     t.statusIntent = si;
   }
   if (!t.system) {
-    process.stderr.write("conductor: set-tracker requires --system (e.g. jira)\n"); process.exit(1);
+    die("conductor: set-tracker requires --system (e.g. jira)\n");
   }
   // A NEW primary tracker defaults to `inward`. Deliberate, user-visible reversal for newly
   // registered non-github trackers: creating issues in someone else's tracker is the

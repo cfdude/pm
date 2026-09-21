@@ -241,6 +241,22 @@ x("claims.mjs", "claim", {
 x("command-exit.mjs", "conductorDie", {
   "msg": 1,
 }, "passthrough", "callers pass a literal or an already-escaped refusal, and command-exit.mjs writes it verbatim — the `conductor: ` prefix is the caller's, which is why it is not prefixed here");
+// The four modules that phrase their refusals as FRAGMENTS and add the `conductor: ` prefix in a
+// one-line local spelling (`refuse`, in each module — see its definition). The judgments named
+// `die` before 0.47.0's sweep: the wrapper took that name, the shared exit path now does, and the
+// two cannot share it without the shared one shadowing the local one at every converted call site.
+x("claims.mjs", "refuse", {
+  "msg": 1,
+}, "passthrough", "every caller escapes the values it quotes");
+x("detour-stack.mjs", "refuse", {
+  "msg": 1,
+}, "passthrough", "every caller escapes the values it quotes");
+x("purge-logs.mjs", "refuse", {
+  "msg": 1,
+}, "passthrough", "every caller passes a literal or a vocabulary list");
+x("releases.mjs", "refuse", {
+  "msg": 1,
+}, "passthrough", "every caller escapes the values it quotes");
 x("command-exit.mjs", "refusalSummary", {
   "code": 1,
 }, "not-output", "the CommandExit Error message; never printed, because die() has already written the refusal to the invocation's stderr");

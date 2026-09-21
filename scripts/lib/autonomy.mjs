@@ -8,6 +8,7 @@ import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
 import { KNOWN_AUTONOMY_LEVELS, KNOWN_PREAUTHORIZE_CATEGORIES, escapeControls } from "./constants.mjs";
+import { die } from "./command-exit.mjs";
 
 // `autonomy` is optional per epic — absent means "off", today's behavior, unchanged.
 // getAutonomy() is the ONLY place that should read epic.autonomy directly; everywhere
@@ -82,16 +83,15 @@ const namesGrant = (grant, target) => target.category !== undefined
  *  category expands to at decision-rule time. Pure local state write — no external calls,
  *  consistent with the engine's instruction-layer law. */
 export function setAutonomy() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
   const argv = process.argv.slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
   if (!id) {
-    process.stderr.write(
+    die(
       "usage: conductor.mjs set-autonomy <id> [--level off|autonomous] " +
       "[--preauthorize \"<action>:<reason>\"] [--preauthorize \"category:<filesystem|network|schema|external-api>:<reason>\"] " +
       "[--revoke \"<action>\" --revoke-reason \"<why>\"] " +
       "[--context \"<note>\"] [--notify \"<what>\"]\n");
-    process.exit(1);
   }
   const f = parseFlags(argv.slice(1));
   requireFlagValues("set-autonomy", f);
@@ -99,19 +99,17 @@ export function setAutonomy() {
   // reporting success — every-verb-refuses-what-it-does-not-read. Before loadState(), the position
   // every other pre-write guard here takes.
   if (f["revoke-reason"] !== undefined && typeof f.revoke !== "string") {
-    process.stderr.write(
+    die(
       "conductor: --revoke-reason explains a revocation, and this invocation revokes nothing — " +
       "pass --revoke \"<action>\" (or \"category:<name>\") alongside it. Nothing was written.\n");
-    process.exit(1);
   }
   const state = loadState();
   const epic = state.epics.find(e => e.id === id);
-  if (!epic) { process.stderr.write(`conductor: epic '${escapeControls(id)}' not found\n`); process.exit(1); }
+  if (!epic) { die(`conductor: epic '${escapeControls(id)}' not found\n`); }
 
   const level = typeof f.level === "string" ? f.level : undefined;
   if (level !== undefined && !KNOWN_AUTONOMY_LEVELS.includes(level)) {
-    process.stderr.write(`conductor: --level must be one of ${KNOWN_AUTONOMY_LEVELS.join("|")}\n`);
-    process.exit(1);
+    die(`conductor: --level must be one of ${KNOWN_AUTONOMY_LEVELS.join("|")}\n`);
   }
 
   const a = { ...getAutonomy(epic) };
@@ -135,28 +133,25 @@ export function setAutonomy() {
     // `.conductor/state.json` byte-identical: nothing is saved and `epic.autonomy` is never
     // assigned. A revoke that recorded nothing true is the shape each of them removes.
     if (!revokeReason) {
-      process.stderr.write(
+      die(
         "conductor: --revoke requires --revoke-reason \"<why>\" — the revocation is kept on the " +
         "record beside the grant it takes back, and a reason is what distinguishes a deliberate " +
         "withdrawal from a grant nobody can account for\n");
-      process.exit(1);
     }
     const matches = a.preAuthorized.filter(g => namesGrant(g, target));
     if (!matches.length) {
-      process.stderr.write(
+      die(
         `conductor: '${escapeControls(id)}' holds no pre-authorization naming ` +
         `'${escapeControls(target.category !== undefined ? `category:${target.category}` : target.action)}' — ` +
         "a revoke that silently matched nothing would report success for an authorisation that is " +
         "still live. Nothing was written.\n");
-      process.exit(1);
     }
     if (matches.every(isRevoked)) {
-      process.stderr.write(
+      die(
         `conductor: every grant '${escapeControls(id)}' holds for ` +
         `'${escapeControls(target.category !== undefined ? `category:${target.category}` : target.action)}' is already ` +
         "revoked — a second revocation would overwrite the first one's reason and date with a later " +
         "pair describing nothing that happened. Nothing was written.\n");
-      process.exit(1);
     }
     const revokedAt = new Date().toISOString();
     a.preAuthorized = a.preAuthorized.map(g =>
@@ -176,9 +171,8 @@ export function setAutonomy() {
       const category = (i === -1 ? rest : rest.slice(0, i)).trim();
       const reason = i === -1 ? undefined : rest.slice(i + 1).trim();
       if (!KNOWN_PREAUTHORIZE_CATEGORIES.includes(category)) {
-        process.stderr.write(
+        die(
           `conductor: --preauthorize category must be one of ${KNOWN_PREAUTHORIZE_CATEGORIES.join("|")}\n`);
-        process.exit(1);
       }
       const entry = { category, grantedAt: new Date().toISOString() };
       if (reason) entry.reason = reason;
@@ -200,11 +194,10 @@ export function setAutonomy() {
     // AUTHORISED, not the half that explains it. (The empty-CATEGORY half is refused above, by the
     // known-vocabulary test, and has been since before this change.)
     if (!action) {
-      process.stderr.write(
+      die(
         `conductor: --preauthorize ${escapeControls(JSON.stringify(s))} names no action — the action half is what ` +
         "decides what is authorised, and a grant naming nothing matches nothing or everything " +
         "depending on who reads it. Write it as \"<action>:<reason>\". Nothing was written.\n");
-      process.exit(1);
     }
     const entry = { action, grantedAt: new Date().toISOString() };
     if (reason) entry.reason = reason;

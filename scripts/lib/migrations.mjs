@@ -17,6 +17,7 @@ import { ensureGitignore } from "./subcommands.mjs";
 import { openspecCurrencyLines } from "./tool-currency.mjs";
 import { differsFromHead } from "./git.mjs";
 import { recoverCreatedAtDates } from "./created-at.mjs";
+import { die } from "./command-exit.mjs";
 
 // MIGRATIONS — APPEND-ONLY, each keyed by the release that introduced the change.
 // NEVER remove or reorder a shipped entry: a repo many versions behind replays every
@@ -199,16 +200,15 @@ function liftBackfillProvenance(state) {
 }
 
 export function upgrade() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
   const running = pluginVersion();
   const newest = newestInstalledVersion();
   if (running && newest && cmpVer(newest, running) > 0) {
-    process.stderr.write(
+    die(
       `conductor: this is pm ${running}, but ${newest} is installed — your session is still ` +
       `running the old engine.\n` +
       `Run /reload-plugins (or restart Claude Code), then /pm:upgrade again.\n` +
       `(Running the engine directly from a checkout? Set PM_CACHE_ROOT to override.)\n`);
-    process.exit(1);
   }
   const state = loadState();
   // BEFORE the first write. upgrade stamps pmVersion — what the fleet procedure reads as "this repo

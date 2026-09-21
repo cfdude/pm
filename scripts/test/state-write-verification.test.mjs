@@ -26,6 +26,7 @@ fs.mkdirSync(path.join(CWD, ".conductor"), { recursive: true });
 
 const { saveState, loadState, StatePersistError, persistFailure } = await import("../lib/state.mjs");
 const { missingAttributions, updateEpic } = await import("../lib/update-epic.mjs");
+const { CommandExit } = await import("../lib/command-exit.mjs");
 
 const { fixtureCommit } = await import("./helpers.mjs");
 // --attribute-commit resolves its value in the repo at CLAUDE_PROJECT_DIR and stores the FULL
@@ -127,15 +128,26 @@ test("140: an epic that vanished, or an array that did, counts as everything mis
   assert.deepEqual(missingAttributions({ epics: [{ id: "e1" }] }, "e1", ["aaa"]), ["aaa"]);
 });
 
-/** Run `updateEpic()` in-process with a given argv, capturing stderr and turning the command's
- *  `process.exit` into a throw so a non-zero exit is observable rather than fatal. */
+/** Run `updateEpic()` in-process with a given argv, capturing stderr and turning a refusal into a
+ *  readable status rather than a fatal error.
+ *
+ *  0.47.0 REPAIRED THIS HELPER, and the repair is the point rather than a formality. It used to
+ *  neuter `process.exit` and treat the thrown `EXIT` sentinel as the status; a refusal now arrives
+ *  as a thrown CommandExit carrying the status and never reaches `process.exit` at all, so the
+ *  installed patch was dead code and the catch re-threw the refusal as an unhandled error. The
+ *  `process.stderr.write` patch still WORKS, and unchanged: the engine writes through the
+ *  invocation's stderr, whose default is a live getter on this process's own stream. */
 function runUpdateEpic(args) {
   const argv = process.argv, exit = process.exit, write = process.stderr.write;
   let err = "", code = 0;
   process.argv = ["node", "conductor.mjs", "update-epic", ...args];
   process.stderr.write = (s) => { err += s; return true; };
   process.exit = (c) => { code = c; throw new Error("EXIT"); };
-  try { updateEpic(); } catch (e) { if (e.message !== "EXIT") throw e; }
+  try { updateEpic(); }
+  catch (e) {
+    if (e instanceof CommandExit) code = e.code;
+    else if (e.message !== "EXIT") throw e;
+  }
   finally { process.argv = argv; process.exit = exit; process.stderr.write = write; }
   return { err, code };
 }

@@ -34,6 +34,7 @@ import { isInitialized, loadState, saveState } from "./state.mjs";
 import { isDetachedTree } from "./git.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { checkedPositionals } from "./argv-surface.mjs";
+import { die } from "./command-exit.mjs";
 
 /** Re-derived per call, like write-conflicts.mjs's: the tests cache-bust by moving
  *  CLAUDE_PROJECT_DIR, and a module-scope constant would freeze the first repo seen. */
@@ -58,15 +59,13 @@ export function activityEnabled(state) {
  *  TRANSFORMED to stay valid, and nothing here is. */
 export function setActivityLog() {
   if (!isInitialized()) {
-    process.stderr.write("conductor: run /pm:init first\n");
-    process.exit(1);
+    die("conductor: run /pm:init first\n");
   }
   // The check's classified positional, never `process.argv[3]`, which holds `--force` when the line
   // carries no positional (argv-surface.mjs checkedPositionals).
   const [arg] = checkedPositionals("set-activity-log");
   if (arg !== "on" && arg !== "off") {
-    process.stderr.write("usage: conductor.mjs set-activity-log <on|off>\n");
-    process.exit(1);
+    die("usage: conductor.mjs set-activity-log <on|off>\n");
   }
   const state = loadState();
   state.activityLog = { ...(state.activityLog || {}), enabled: arg === "on" };

@@ -31,6 +31,7 @@ import { isInitialized, loadState, StateUnreadableError } from "./state.mjs";
 import { activityDir, activityEnabled, segments } from "./activity-log.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { escapeControls, jsonText } from "./constants.mjs";
+import { die } from "./command-exit.mjs";
 
 /** Every event, oldest first, optionally scoped. Returns `{events, malformed, segmentsRead}`.
  *
@@ -276,8 +277,7 @@ export function formatReport(r, { enabled = true, dir = activityDir() } = {}) {
 /** `activity [--since <iso>] [--epic <id>] [--json]` — read-only. */
 export function activity() {
   if (!isInitialized()) {
-    process.stderr.write("conductor: run /pm:init first\n");
-    process.exit(1);
+    die("conductor: run /pm:init first\n");
   }
   // #152's shared rule, not a fourth hand-rolled reinvention of it. What stood here scanned
   // `process.argv` for `--since`/`--epic` and refused a value that began with `--` — the same

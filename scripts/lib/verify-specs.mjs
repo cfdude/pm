@@ -41,6 +41,7 @@ import { EPIC_ID_FORMAT, ROOT, SPECS_DIR, escapeControls, printedId, orNoRemedy,
 import { isInitialized, loadState } from "./state.mjs";
 import { artifactClaimants, normalizeArtifactPath } from "./source-artifacts.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
+import { die } from "./command-exit.mjs";
 
 /** How far into a document the leading metadata block may start. Generous — a title, a blank
  *  line and a couple of badges — and bounded so a document with no header never has its BODY
@@ -303,7 +304,7 @@ function danglingBlock(dangling) {
  *  heal and SAVES, so a read-only report that rendered would write state on the way to saying it
  *  writes none. Read-only here means state.json is byte-identical afterwards. */
 export function verifySpecs() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
   const f = parseFlags(process.argv.slice(3));
   requireFlagValues("verify-specs", f);
   // An unregistered flag is refused before dispatch by the pre-dispatch command-line check (lib/argv-surface.mjs); without it the flag would
@@ -311,13 +312,13 @@ export function verifySpecs() {
   if (f.root !== undefined && typeof f.root !== "string") {
     // A valueless `--root` parses as boolean true. Falling back to the default would check a
     // root the caller did not ask about and report on it as though they had.
-    process.stderr.write("conductor: --root requires a value\n"); process.exit(1);
+    die("conductor: --root requires a value\n");
   }
   // `--headers` is a BOOLEAN arm: it carries no value, and a stray argument after it must not be
   // read as one. parseFlags would consume the next non-flag token, so `--headers docs/x` would
   // silently look like `headers: "docs/x"` and check the default root while looking answered.
   if (f.headers !== undefined && f.headers !== true) {
-    process.stderr.write("conductor: --headers takes no value (did you mean --root?)\n"); process.exit(1);
+    die("conductor: --headers takes no value (did you mean --root?)\n");
   }
   const absRoot = f.root ? path.resolve(ROOT, f.root) : SPECS_DIR;
   const state = loadState();

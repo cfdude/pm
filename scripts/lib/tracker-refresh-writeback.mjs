@@ -8,6 +8,7 @@ import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { parseFlags, requireFlagValues } from "./add-epic.mjs";
 import { render } from "./render.mjs";
 import { escapeControls } from "./constants.mjs";
+import { die } from "./command-exit.mjs";
 
 /** The verdicts a refresh can record. `unchanged` and `material-change` are the whole
  *  vocabulary: the question the gate asks is "did the linked item's content move in a way that
@@ -23,14 +24,13 @@ export const KNOWN_REFRESH_VERDICTS = ["unchanged", "material-change"];
  *  `remote.updatedAt > epic.externalUpdatedAt`, and mixing in a local clock makes it wrong by
  *  skew and by the tracker's own write latency. */
 export function recordTrackerRefresh() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
   const argv = process.argv.slice(3);
   const id = argv[0] && !argv[0].startsWith("--") ? argv[0] : undefined;
   if (!id) {
-    process.stderr.write(
+    die(
       "usage: conductor.mjs record-tracker-refresh <id> --verdict unchanged|material-change " +
       "--external-updated-at <iso> [--summary \"<what changed>\"]\n");
-    process.exit(1);
   }
   const f = parseFlags(argv.slice(1));
   requireFlagValues("record-tracker-refresh", f);
@@ -38,26 +38,23 @@ export function recordTrackerRefresh() {
 
   const verdict = str(f.verdict);
   if (!verdict || !KNOWN_REFRESH_VERDICTS.includes(verdict)) {
-    process.stderr.write(`conductor: --verdict must be one of ${KNOWN_REFRESH_VERDICTS.join("|")}\n`);
-    process.exit(1);
+    die(`conductor: --verdict must be one of ${KNOWN_REFRESH_VERDICTS.join("|")}\n`);
   }
   const watermark = str(f["external-updated-at"]);
   if (!watermark) {
-    process.stderr.write(
+    die(
       "conductor: record-tracker-refresh requires --external-updated-at <iso> — the item's OWN " +
       "updated timestamp, so a verdict can never be recorded without advancing the watermark\n");
-    process.exit(1);
   }
 
   const state = loadState();
   const epic = state.epics.find(e => e.id === id);
-  if (!epic) { process.stderr.write(`conductor: epic '${escapeControls(id)}' not found\n`); process.exit(1); }
+  if (!epic) { die(`conductor: epic '${escapeControls(id)}' not found\n`); }
   if (!epic.externalId) {
-    process.stderr.write(
+    die(
       `conductor: epic '${escapeControls(id)}' has no external id — there is no linked item to have refreshed. ` +
       "An epic with no external origin re-reads its LOCAL source (its plan document, or its " +
       "OpenSpec proposal and tasks); that is instruction, and nothing about it is recorded here\n");
-    process.exit(1);
   }
 
   epic.trackerRefresh = {

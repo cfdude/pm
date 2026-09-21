@@ -67,7 +67,7 @@ either — 4.1's set-equality guard is green the moment the gateway it reads exi
       `CommandExit { code }`, and the five existing local `die` helpers
       (`detour-stack.mjs:40`, `claims.mjs:111`, `add-many.mjs:44`, `releases.mjs:42`,
       `purge-logs.mjs:102`) collapse onto it. Verify by 1.2's guard and the full suite
-- [ ] 2.2 GREEN — the 189 inline `process.stderr.write(...); process.exit(1);` pairs in `scripts/lib`
+- [x] 2.2 GREEN — the 189 inline `process.stderr.write(...); process.exit(1);` pairs in `scripts/lib`
       convert to `die(...)`, module by module, with the whole suite green between modules; the two
       `process.exit(2)` hook blocks in `gate-guard.mjs:389,397` become `die(msg, 2)`. Verify: 1.2
       green, 1.1 green, and `rg -n 'process\.exit\(' scripts/lib` empty of executable hits

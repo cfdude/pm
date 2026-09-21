@@ -26,6 +26,7 @@ import { laneSuggestion } from "./lane-routing.mjs";
 import { supersededEpics } from "./links.mjs";
 import { escapeControls, isFlagToken, jsonText } from "./constants.mjs";
 import { checkedPositionals } from "./argv-surface.mjs";
+import { die } from "./command-exit.mjs";
 
 /** Words shorter than this carry no discriminating power and appear everywhere ("of", "to",
  *  "id", "pm"). A length floor is mechanical; a curated stopword list would be a second thing
@@ -151,7 +152,7 @@ export function candidateSet(epics, ask, { limit = 5 } = {}) {
  *  shape, the candidate set — and `verdict: null`, which is not decoration: it is this command
  *  stating that the decision an intake makes was not made here. */
 export function triage() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
   // The check's classified positional, never `process.argv[3]` (see suggest-lane's reader).
   const [ask] = checkedPositionals("triage");
   // gh-186. The old test was `ask.startsWith("--")`, which refused any ask whose own words begin
@@ -165,7 +166,7 @@ export function triage() {
   // the same predicate gh-182 shipped for flag VALUES — it matches a token shaped exactly like a
   // flag, so a bare `--limit` is still a flag while "--story <n> is 1-indexed" is text.
   if (typeof ask !== "string" || !ask.trim() || isFlagToken(ask)) {
-    process.stderr.write("usage: conductor.mjs triage \"<free text>\" [--limit N]\n"); process.exit(1);
+    die("usage: conductor.mjs triage \"<free text>\" [--limit N]\n");
   }
   const f = parseFlags(process.argv.slice(4));
   requireFlagValues("triage", f);
@@ -181,10 +182,9 @@ export function triage() {
   if (f.limit !== undefined) {
     const n = typeof f.limit === "string" ? Number(f.limit) : NaN;
     if (!Number.isInteger(n) || n <= 0) {
-      process.stderr.write(
+      die(
         `conductor: triage: --limit must be a positive integer (got ` +
         `${f.limit === true ? "no value" : escapeControls(JSON.stringify(f.limit))})\n`);
-      process.exit(1);
     }
     limit = n;
   }

@@ -1952,7 +1952,13 @@ function gateReviewUsageFlags() {
   const src = fs.readFileSync(path.join(REPO, "scripts", "lib", "gate-review-writeback.mjs"), "utf8");
   const at = src.indexOf("usage: conductor.mjs record-gate-review");
   assert.notEqual(at, -1, "record-gate-review must still print a usage line — the check reads its flags from it");
-  const line = src.slice(at, src.indexOf("process.exit(1)", at));
+  // Bounded by the closing of the usage STRING, not by the next `process.exit(1)`. 0.47.0 moved
+  // every refusal onto the one throwing exit path (lib/command-exit.mjs), so there is no
+  // `process.exit(` left to find here — and `indexOf` returning -1 would have silently sliced the
+  // usage line down to nothing, leaving this check green against an empty flag set.
+  const end = src.indexOf('");', at);
+  assert.notEqual(end, -1, "the usage line must end with a quote-and-paren for the flags to be read");
+  const line = src.slice(at, end);
   return new Set(line.match(FLAG_RE) || []);
 }
 

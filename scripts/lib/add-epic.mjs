@@ -14,6 +14,7 @@ import { isKnownLinkType, mergeLinks, unknownLinkTypeMessage, linkTypeVocabulary
 import { creationStamp } from "./disposition.mjs";
 import { rankOf } from "./epic-progress.mjs";
 import { assertKnownPlatform, platformFlag } from "./platform.mjs";
+import { die } from "./command-exit.mjs";
 
 /** The full repeatable set, read from BOTH flag tables — see repeatableFlagNames() in
  *  constants.mjs. Recomputed on every parseFlags() call rather than frozen at module scope, so
@@ -122,7 +123,7 @@ export function valuelessFlagError(command, f) {
  *  allowlist and BEFORE loadState(), so a refusal can never leave a partial write behind. */
 export function requireFlagValues(command, f) {
   const err = valuelessFlagError(command, f);
-  if (err) { process.stderr.write(err + "\n"); process.exit(1); }
+  if (err) { die(err + "\n"); }
 }
 
 /** every-verb-refuses-what-it-does-not-read D6 — `--platform` on a verb that DECLARES it (init and
@@ -252,14 +253,14 @@ export function findCyclePath(stuckIds, deps) {
  *  A dependency cycle among children is rejected outright (exit 1), naming the cycle path,
  *  rather than producing a bogus order. Pure read + stdout — no state mutation. */
 export function planHierarchy() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
   const f = parseFlags(process.argv.slice(3));
   requireFlagValues("plan-hierarchy", f);
   const parent = typeof f.parent === "string" ? f.parent : undefined;
-  if (!parent) { process.stderr.write("usage: conductor.mjs plan-hierarchy --parent <id>\n"); process.exit(1); }
+  if (!parent) { die("usage: conductor.mjs plan-hierarchy --parent <id>\n"); }
   const state = loadState();
   if (!state.epics.some(e => e.id === parent)) {
-    process.stderr.write(`conductor: epic '${escapeControls(parent)}' not found\n`); process.exit(1);
+    die(`conductor: epic '${escapeControls(parent)}' not found\n`);
   }
   // Archived children are done — exclude them from the plan entirely. This also means a
   // depends-on reference to an archived sibling falls outside `childIds` below and is
@@ -284,9 +285,8 @@ export function planHierarchy() {
     if (!ready.length) {
       const stuck = children.filter(e => !placed.has(e.id)).map(e => e.id);
       const cycle = findCyclePath(stuck, deps);
-      process.stderr.write(
+      die(
         `conductor: plan-hierarchy: dependency cycle among children of '${escapeControls(parent)}': ${escapeControls(cycle.join(" -> "))}\n`);
-      process.exit(1);
     }
     // Manual rank applies HERE too, not only in resolveEpics()'s comparator. This is the same
     // question — how do two epics that tie on priority order? — and it fell through to
@@ -338,7 +338,7 @@ export function parentError(epics, id, parent) {
 }
 
 export function addEpic() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
   const f = parseFlags(process.argv.slice(3));
   // An undeclared flag never reaches this line: the pre-dispatch command-line check (lib/argv-surface.mjs) refuses it by name before dispatch,
   // reading this verb's registry rows. #79's failure — `--notes "<text>"` parsed, exited 0 and wrote
@@ -355,22 +355,22 @@ export function addEpic() {
   // one `update-epic` call at a time afterwards.
   let stories;
   try { stories = parseStoryFlags(f["add-story"]); }
-  catch (e) { process.stderr.write(`conductor: ${e.message}\n`); process.exit(1); }
+  catch (e) { die(`conductor: ${e.message}\n`); }
   const id = str(f.id);
   if (!id || !EPIC_ID_FORMAT.test(id)) {
-    process.stderr.write(`conductor: --id required, format ${EPIC_ID_FORMAT.source}\n`); process.exit(1);
+    die(`conductor: --id required, format ${EPIC_ID_FORMAT.source}\n`);
   }
   const lane = str(f.lane);
   if (!lane || !KNOWN_LANES.includes(lane)) {
-    process.stderr.write(`conductor: --lane must be one of ${KNOWN_LANES.join("|")}\n`); process.exit(1);
+    die(`conductor: --lane must be one of ${KNOWN_LANES.join("|")}\n`);
   }
   const status = str(f.status) || "queued";
   if (!KNOWN_STATUSES.includes(status)) {
-    process.stderr.write(`conductor: --status must be one of ${KNOWN_STATUSES.join("|")}\n`); process.exit(1);
+    die(`conductor: --status must be one of ${KNOWN_STATUSES.join("|")}\n`);
   }
   const state = loadState();
   if (state.epics.some(e => e.id === id)) {
-    process.stderr.write(`conductor: epic '${escapeControls(id)}' already exists\n`); process.exit(1);
+    die(`conductor: epic '${escapeControls(id)}' already exists\n`);
   }
   const externalId = str(f["external-id"]);
   const externalUrl = str(f["external-url"]);
@@ -393,8 +393,7 @@ export function addEpic() {
       return false;
     });
     if (dup) {
-      process.stderr.write(`conductor: epic with external-id '${escapeControls(externalId)}' already exists ('${escapeControls(dup.id)}') — skipped\n`);
-      process.exit(1);
+      die(`conductor: epic with external-id '${escapeControls(externalId)}' already exists ('${escapeControls(dup.id)}') — skipped\n`);
     }
   }
   let links;
@@ -405,12 +404,12 @@ export function addEpic() {
     // updating an epic.
     links = mergeLinks([], parseLinkFlags(f.link, new Set(state.epics.map(e => e.id))));
   } catch (e) {
-    process.stderr.write(`conductor: ${e.message}\n`); process.exit(1);
+    die(`conductor: ${e.message}\n`);
   }
   const parent = str(f.parent);
   if (parent !== undefined) {
     const perr = parentError(state.epics, id, parent);
-    if (perr) { process.stderr.write(`conductor: ${perr}\n`); process.exit(1); }
+    if (perr) { die(`conductor: ${perr}\n`); }
   }
   // `attributedCommits: []` is NOT written here. It is stamped by pushEpic() in state.mjs —
   // the one sink every creation path routes through — because writing it at each construction

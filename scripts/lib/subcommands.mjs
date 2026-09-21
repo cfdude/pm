@@ -27,6 +27,7 @@ import { requirePlatformFlag } from "./add-epic.mjs";
 // The positionals the command-line check classified — never the raw argv tail (argv-surface.mjs).
 import { checkedPositionals } from "./argv-surface.mjs";
 import { saveHookHeal } from "./hook-write.mjs";
+import { die } from "./command-exit.mjs";
 
 /** Ensure the conductor's GENERATED artifacts are git-ignored.
  *
@@ -888,9 +889,9 @@ export function sync(quiet = false) {
 }
 
 export function logDetour() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
   const reason = checkedPositionals("log-detour").join(" ").trim();
-  if (!reason) { process.stderr.write("usage: conductor.mjs log-detour \"<what you fixed>\"\n"); process.exit(1); }
+  if (!reason) { die("usage: conductor.mjs log-detour \"<what you fixed>\"\n"); }
   const state = loadState();
   // gh#175 Gate 2 C2: HONOUR THE RETURN. appendDetourLog()'s docstring says the boolean exists
   // "so a caller never announces 'logged to detours.log' for a row that was suppressed" — the two
@@ -918,8 +919,8 @@ export function logDetour() {
  *  declared them. There is no un-retract; re-declare with `log-detour`. Every refusal names its own
  *  reason and happens before any write. */
 export function retractDetour() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
-  const refuse = (msg) => { process.stderr.write(`conductor: retract-detour refused — ${msg}\n`); process.exit(1); };
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
+  const refuse = (msg) => { die(`conductor: retract-detour refused — ${msg}\n`); };
   const [arg] = checkedPositionals("retract-detour");
   const argv = process.argv.slice(3);
   const f = parseFlags(argv[0] && !argv[0].startsWith("--") ? argv.slice(1) : argv);
@@ -980,8 +981,7 @@ export function retractDetour() {
   }
   if (!full && !derived.some(r => r.sha === label)) label = derived[0].sha;
   if (!appendRetraction(label, derived[0].epic, reason)) {
-    process.stderr.write("conductor: this tree is detached, so no retraction was written to .conductor/detours.log\n");
-    process.exit(1);
+    die("conductor: this tree is detached, so no retraction was written to .conductor/detours.log\n");
   }
   render();
   process.stderr.write(`conductor: retracted ${derived.length} automatic row(s) for ${label} — ` +
@@ -1024,18 +1024,16 @@ export function appendHonchoMemory(action, epicId, reason) {
  *  appends a timestamped copy to `.conductor/honcho-memories.log`, so there's a durable local
  *  record of what was emitted even if the agent forgets to actually send it. */
 export function honchoMemory() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
   const [action, epicId, ...rest] = checkedPositionals("honcho-memory");
   const reason = rest.join(" ").trim();
   if (!action || !epicId || !reason) {
-    process.stderr.write("usage: conductor.mjs honcho-memory <push|pop> <epicId> \"<reason>\"\n");
-    process.exit(1);
+    die("usage: conductor.mjs honcho-memory <push|pop> <epicId> \"<reason>\"\n");
   }
   try {
     appendHonchoMemory(action, epicId, reason);
   } catch (e) {
-    process.stderr.write(`conductor: ${escapeControls(e.message)}\n`);
-    process.exit(1);
+    die(`conductor: ${escapeControls(e.message)}\n`);
   }
 
   // gh#94's disclosure. `push-detour` (lib/detour-stack.mjs) now emits this at the moment of the

@@ -9,6 +9,7 @@ import path from "node:path";
 
 import { KNOWN_PLATFORMS, PLATFORM_RULES_CHAIN, isFlagToken, splitFlagToken } from "./constants.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
+import { die } from "./command-exit.mjs";
 
 /** Extract just `--platform <value>` from an argv slice.
  *
@@ -67,8 +68,7 @@ export function resolvePlatform(flags = {}, state = null) {
  *  treats an unknown --lane. Called only for an EXPLICIT flag value. */
 export function assertKnownPlatform(platform) {
   if (!KNOWN_PLATFORMS.includes(platform)) {
-    process.stderr.write(`conductor: --platform must be one of ${KNOWN_PLATFORMS.join("|")}\n`);
-    process.exit(1);
+    die(`conductor: --platform must be one of ${KNOWN_PLATFORMS.join("|")}\n`);
   }
 }
 

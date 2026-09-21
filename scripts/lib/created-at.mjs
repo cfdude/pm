@@ -28,6 +28,7 @@ import { ROOT } from "./constants.mjs";
 import { isInitialized, loadState, saveState } from "./state.mjs";
 import { reportSave, STATE_UNCHANGED } from "./save-report.mjs";
 import { render } from "./render.mjs";
+import { die } from "./command-exit.mjs";
 
 /** The state file as a git PATHSPEC — CWD-relative, for the reason differsFromHead()'s is: git
  *  walks UP to find a repository, so a pm-managed project nested inside a larger repo has to be
@@ -142,7 +143,7 @@ export function recoverCreatedAtDates(state) {
  *  and every one of those is a judgment about what happened to the work. This transforms a
  *  malformed record exactly as it transforms a well-formed one and leaves the judgment alone. */
 export function recoverCreatedAt() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
   const state = loadState();
   const { missing, recovered, unrecoverable } = recoverCreatedAtDates(state);
   // The save is guarded on nothing: with no recovery the state is identical to disk and

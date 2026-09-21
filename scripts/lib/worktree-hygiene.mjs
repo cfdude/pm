@@ -8,6 +8,7 @@ import path from "node:path";
 import { execFileSync, execSync } from "node:child_process";
 import { isInitialized, loadState, readJSON } from "./state.mjs";
 import { ROOT, RENDER_STAMP_PATH, STATE_PATH, jsonText } from "./constants.mjs";
+import { die } from "./command-exit.mjs";
 
 /** `verify-worktrees` — cross-references `git worktree list` against epic status (and, since
  *  the `df-verify-worktrees-merged-not-just-archived` fix, actual merge state) to catch a
@@ -27,7 +28,7 @@ import { ROOT, RENDER_STAMP_PATH, STATE_PATH, jsonText } from "./constants.mjs";
  *  --porcelain` and `git merge-base --is-ancestor` only; gracefully returns no orphans if
  *  listing worktrees fails (e.g. this isn't a git repo at all). */
 export function verifyWorktrees() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
   const state = loadState();
   const byId = new Map(state.epics.map(e => [e.id, e]));
   let out;
@@ -88,7 +89,7 @@ export function isAncestorOfCurrentHead(sha) {
  *  consumed files). Returns `{ changesets: [{ id, path, body }] }` sorted by id, `[]` if
  *  `.changesets/` doesn't exist or is empty — never errors on a missing directory. */
 export function changesets() {
-  if (!isInitialized()) { process.stderr.write("conductor: run /pm:init first\n"); process.exit(1); }
+  if (!isInitialized()) { die("conductor: run /pm:init first\n"); }
   const dir = path.join(ROOT, ".changesets");
   let entries;
   try {
@@ -115,25 +116,23 @@ export function changesets() {
  *  is evidence something wrote to it outside `/pm:status`/the engine's subcommands. Pure
  *  read — never modifies state.json or PROJECT.md itself. */
 export function verifyState() {
-  if (!isInitialized()) { process.stderr.write("conductor: not initialized (.conductor/state.json missing) — run /pm:init\n"); process.exit(1); }
+  if (!isInitialized()) { die("conductor: not initialized (.conductor/state.json missing) — run /pm:init\n"); }
   const stamp = readJSON(RENDER_STAMP_PATH, null);
   if (!stamp || typeof stamp.stateMtimeMs !== "number") {
-    process.stderr.write(
+    die(
       "conductor: no render stamp found (.conductor/render-stamp.json) — state.json has never " +
       "been rendered, so an accidental hand-edit can't be ruled out. Run `/pm:status` to render " +
       "and establish a baseline.\n"
     );
-    process.exit(1);
   }
   const currentMtimeMs = fs.statSync(STATE_PATH).mtimeMs;
   if (currentMtimeMs > stamp.stateMtimeMs) {
-    process.stderr.write(
+    die(
       "conductor: state.json was modified AFTER the last render — this looks like an " +
       "undetected hand-edit (CLAUDE.md forbids hand-editing state.json/PROJECT.md; the state " +
       "of record must go through the engine's subcommands). Run `/pm:status` to re-render, " +
       "review the diff, and reconcile before trusting PROJECT.md again.\n"
     );
-    process.exit(1);
   }
   process.stderr.write("conductor: state.json matches the last render — no hand-edit detected.\n");
 }
