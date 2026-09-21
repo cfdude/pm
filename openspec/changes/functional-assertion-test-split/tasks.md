@@ -459,7 +459,7 @@ either — 4.1's set-equality guard is green the moment the gateway it reads exi
 
 ## 8. Docs (after Gate 2)
 
-- [ ] 8.1 `CONTRIBUTING.md` and/or `README.md` — how to run each half AND the sweep bucket, what the
+- [x] 8.1 `CONTRIBUTING.md` and/or `README.md` — how to run each half AND the sweep bucket, what the
       drift script refuses (including a test file in neither half), and how to satisfy a certification
       demand, naming `node scripts/test/certify.mjs functional` and `… sweeps` as the two commands that
       produce one. Say explicitly whether this is user-facing (it is not) so the
@@ -470,19 +470,19 @@ either — 4.1's set-equality guard is green the moment the gateway it reads exi
       (`CONTRIBUTING.md:9,48,126`, this repo's `CLAUDE.md:27,60`, `.claude/skills/pr-workflow/SKILL.md:22,94`,
       `.claude/skills/release-checklist/SKILL.md:25,57`), and 6.6 is the task that re-points them; this
       task states each one's new shape and where its text now lives
-- [ ] 8.2 `skills/conductor/SKILL.md` and the command docs — only if any engine-facing instruction
+- [x] 8.2 `skills/conductor/SKILL.md` and the command docs — only if any engine-facing instruction
       changes; the CLI contract does not, so expect none, and say so
-- [ ] 8.3 `CHANGELOG.md` — an `## [Unreleased]` entry (the file has no such section today). The release
+- [x] 8.3 `CHANGELOG.md` — an `## [Unreleased]` entry (the file has no such section today). The release
       cut folds it into `0.47.0`; Mintlify's Changelog page and Introduction's Real Numbers table
       belong to that cut via the `release-checklist` skill, not to this change
-- [ ] 8.4 Confirm `docs/parity-ledger.json` still claims every touched path and adds none — no new file
+- [x] 8.4 Confirm `docs/parity-ledger.json` still claims every touched path and adds none — no new file
       under `commands/`, `agents/`, `skills/`, `hooks/` or `.claude-plugin/` is expected, and neither
       the drift script nor the runner (`scripts/test/certify.mjs`) may be added to a shipped directory:
       both are dev tooling and both live in the test tree
 
 ## 9. Close
 
-- [ ] 9.1 Gate 2 — two fresh-context lenses over the committed range (lens A: spec alignment and real
+- [x] 9.1 Gate 2 — two fresh-context lenses over the committed range (lens A: spec alignment and real
       tests, including that the conformance set is proven to discriminate; lens B: absent edits — the
       unguarded global reader, the un-inverted operation, error and edge handling, the honesty of every
       refusal message). Fix Critical and Important, then record
