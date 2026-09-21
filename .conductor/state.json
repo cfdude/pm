@@ -9682,7 +9682,7 @@
       "id": "functional-assertion-test-split",
       "title": "Split the suite: one-process assertion tests over an injected git fake; functional git tests only when the seam changes",
       "priority": "P1",
-      "status": "planned",
+      "status": "untriaged",
       "role": "epic",
       "lane": "openspec",
       "links": [
@@ -9695,7 +9695,7 @@
       "reconcileNeeded": false,
       "attributedCommits": [],
       "createdAt": "2026-09-18T14:41:37.074Z",
-      "touchedAt": "2026-09-18T14:41:37.084Z"
+      "touchedAt": "2026-09-21T02:37:57.561Z"
     }
   ],
   "detourStack": [],
@@ -9706,7 +9706,7 @@
     "direction": "inward"
   },
   "platform": "claude-code",
-  "revision": 1151,
+  "revision": 1152,
   "reviewMode": "thorough",
   "releases": [
     {
