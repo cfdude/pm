@@ -358,7 +358,7 @@ either — 4.1's set-equality guard is green the moment the gateway it reads exi
       Verify: a one-line engine edit with no record for the new content is refused and the refusal
       names the sweep run; an unrelated commit is not; and a fresh
       `node scripts/test/certify.mjs sweeps` satisfies the one that was refused
-- [ ] 6.4 GREEN — `.githooks/pre-commit` runs the drift script inside the existing suite lock, then
+- [x] 6.4 GREEN — `.githooks/pre-commit` runs the drift script inside the existing suite lock, then
       runs the assertion half; **it does NOT run the functional half**, and the drift script's refusal
       instead NAMES the command the developer runs to produce the missing record. Running the
       functional half here would contradict the capability twice over: the check must be produced by

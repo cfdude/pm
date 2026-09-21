@@ -41,7 +41,8 @@ trap 'rm -f "$tmpfile"' EXIT
 #     of test() declarations actually present in the TRACKED files of this half. A drop fails.
 #   * The OTHER half (scripts/test/functional/) and the sweep bucket (scripts/test/sweeps/) are NOT
 #     run here, by design: they are triggered, and this hook runs on every commit. The drift script
-#     that refuses a one-sided edit arrives in 6.4; until then the coupling is the developer's.
+#     below is what keeps the two halves aligned when only one of them ran -- it checks the record
+#     and the pairing, and it starts no runner of its own.
 # CONCURRENCY. Several agents working in separate worktrees of this repo each fire this hook,
 # and each run is a ~75s 604-test suite with --test-isolation=process. Overlapping them is the
 # exact machine load under which a previous two-agent run wedged the machine. Worktrees share
@@ -71,28 +72,34 @@ echo $$ > "$LOCKDIR/pid"
 trap 'rm -f "$tmpfile"; rm -rf "$LOCKDIR"' EXIT
 [ "$waited" -gt 0 ] && echo "pre-commit: acquired the suite lock after ${waited}s"
 
-# ─────────── THE ENROLMENT CHECK (5.3), INLINE ───────────
-# The floor below compares two counts over the files a runner was handed, so a test file in NEITHER
-# half is invisible to it -- run by nothing and counted by nothing. Reproduced in a scratch
-# repository with six half files and one leftover at the top level: both halves ran 15 tests, the
-# floor compared 15 against 15, the hook exited 0, and the leftover's two tests never ran.
+# ─────────── THE DRIFT SCRIPT (6.4) ───────────
+# ONE IMPLEMENTATION OF FOUR RULES, and this hook carries none of them itself. The enrolment check
+# lived here INLINE from 5.3 until this task, because a commit between the first file moving and the
+# drift script arriving would otherwise be a commit in which a file is run by nothing; 6.4 retires
+# that copy as it hands the check over, so the hook stops carrying two versions of one rule.
 #
-# BOTH ARMS OF THE ENUMERATION, because git's `**` does not match zero directories: the first arm is
-# the only one that reaches a file sitting directly in scripts/test/, and the second is the only one
-# that reaches a nested one (verified in a scratch repository -- the `**` arm matched six nested
-# files and missed the seventh at the top level).
+# WHAT IT REFUSES, all four of them by NAME: a tracked test file in neither half and in no bucket;
+# a functional id with no assertion twin; a staged functional file without its twin in the same
+# staged diff; and a certified module whose STAGED content has no matching contentHash in the record
+# -- where the refusal NAMES the run that produces one (`node scripts/test/certify.mjs
+# functional|sweeps`) rather than starting it.
 #
-# 6.4 RETIRES THIS COPY, handing the check to the drift script so one rule has one implementation.
-# Until then it lives here, because a commit between the first file moving and the drift script
-# arriving would otherwise be a commit in which a file is run by nothing.
-enrolled=$(git ls-files 'scripts/test/*.test.mjs' 'scripts/test/**/*.test.mjs' \
-  | grep -v -E '^scripts/test/(assert|functional|sweeps)/' || true)
-if [ -n "$enrolled" ]; then
-  echo "pre-commit: ABORT -- these tracked test files are in neither half and in no bucket:" >&2
-  echo "$enrolled" | sed 's/^/  /' >&2
-  echo "pre-commit: a test file with no home is run by nothing and counted by nothing." >&2
-  echo "pre-commit: move it under scripts/test/assert/, scripts/test/functional/ or" >&2
-  echo "pre-commit: scripts/test/sweeps/ -- or enrol it deliberately." >&2
+# IT DOES NOT RUN THE FUNCTIONAL HALF, and that is a requirement rather than a choice (design D8):
+# the check must be produced by reading files and the index, with no engine process and no git
+# fixture started by it, and it runs BEFORE the suite -- so a check that demanded a record its own
+# later step would write would refuse one step too early to ever be satisfied. It starts no test
+# runner, no engine and no fixture: `git ls-files`, `git diff --cached`, `git show :path` and
+# `git rev-parse --git-common-dir` are the whole of its access, enforced at the call.
+#
+# BEFORE THE SUITE, INSIDE THE LOCK: it reads the index, and the suite's own writes are irrelevant
+# to it, but a refusal should not make the developer wait ~75s for a suite that was never going to
+# matter.
+#
+# `-C "$PWD"` rather than a `cd`, and the git env vars are already unset above -- a drift run against
+# an inherited GIT_DIR would read the wrong index and answer about the wrong tree.
+if ! node scripts/test/drift.mjs --root "$PWD"; then
+  echo "pre-commit: ABORT -- the drift script refused this commit (see above)." >&2
+  echo "pre-commit: it checks enrolment, twin coverage, diff coupling and record freshness." >&2
   exit 1
 fi
 
