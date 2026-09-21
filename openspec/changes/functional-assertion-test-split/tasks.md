@@ -389,7 +389,7 @@ either — 4.1's set-equality guard is green the moment the gateway it reads exi
       and whose registry fetch failed). Either bump `node-version` to a version that takes the flag, or
       fall back to per-file isolation for CI only; state which in the workflow comment. Verify: CI green
       on the PR
-- [ ] 6.6 GREEN — the five other places that name the old single-glob command, each re-pointed in this
+- [x] 6.6 GREEN — the five other places that name the old single-glob command, each re-pointed in this
       task rather than left to go stale: the `release-checklist` repo skill's **Real Numbers recipe**
       (`.claude/skills/release-checklist/SKILL.md:57`, which derives the published test count from the
       old command) and its **green step** (`:25` — the Real Numbers line is the one this task's

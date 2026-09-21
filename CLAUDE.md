@@ -24,8 +24,13 @@
   (`package.json` `devDependencies`, `node_modules` gitignored, never shipped or committed) may exist —
   the distinction is WHO pays: a user installing the plugin pays nothing; a contributor runs `npm i`.
   Anything added here must earn its place against a measured problem, not preference.
-- **Tests:** `node --test scripts/test/*.test.mjs`. All tests pass before any commit — no
-  exceptions, no `--no-verify`.
+- **Tests:** three buckets, each on its own trigger. Every commit: the drift script
+  (`node scripts/test/drift.mjs`) then the assertion half
+  (`node --test --test-isolation=none scripts/test/assert/*.test.mjs`), which spawns nothing and
+  runs no git — it is driven by the git double in `scripts/test/fixtures/`. On a trigger (CI, and
+  `node scripts/test/certify.mjs functional|sweeps`): the functional half, which runs the real git
+  through the real gateway, and the sweep bucket. All tests pass before any commit — no exceptions,
+  no `--no-verify`.
 - **Architectural law — `pm` is an INSTRUCTION layer, never an INTEGRATION layer.** It emits
   instructions for the interactive Claude agent to act on (the managed `CLAUDE.md` rules block,
   the SessionStart/PreCompact brief, command-doc markdown). It must **never** open a network
@@ -57,7 +62,9 @@
   values; a port adds itself and fills its column as it goes. See
   `docs/superpowers/specs/2026-07-31-platform-parity-mechanism-design.md`.
 - Engine subcommands are dispatched at the bottom of `conductor.mjs`; every new subcommand needs
-  a matching command doc under `commands/` and coverage in `scripts/test/*.test.mjs`.
+  a matching command doc under `commands/` and coverage under `scripts/test/` — `assert/` for a test
+  that needs no repository, `functional/` for one whose subject is git's or the process boundary's,
+  with an assertion twin of the same id (the drift script refuses a functional id without one).
 - **State-transition flags are not pure functions of current state.** `reconcileNeeded` in
   particular is set at detour-POP time and must survive until reconciliation completes — POP
   protocol removes the detour-stack frame *before* reconciliation runs, so deriving the flag

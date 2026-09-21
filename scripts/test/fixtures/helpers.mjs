@@ -309,6 +309,22 @@ export function runHookAgainstFixture(testFileBody, { extraFiles = {} } = {}) {
     fs.writeFileSync(dest, content);
   }
   fs.mkdirSync(path.join(cwd, ".githooks"), { recursive: true });
+  // THE DRIFT STEP (6.4) runs the REAL script, not a stub. The hook invokes
+  // `node scripts/test/drift.mjs` before the suite, so a fixture holding a hook but not the script
+  // would abort for a reason that has nothing to do with what these fixtures test — and stubbing it
+  // would mean the hook's own wiring is never exercised. The script and its shared machinery are
+  // copied in, and the minimal tree it reads is created: an EMPTY `scripts/lib/` and an empty
+  // `conductor.mjs` derive an empty certified set, and the two empty buckets derive no functional
+  // ids — so all four checks pass on the fixture by construction, which is what lets the floor and
+  // the quiet/failure behaviour below be observed through the real hook.
+  const repoRoot = path.join(path.dirname(ENGINE), "..");
+  for (const rel of ["scripts/test/drift.mjs", "scripts/test/certification.mjs"]) {
+    fs.copyFileSync(path.join(repoRoot, rel), path.join(cwd, rel));
+  }
+  fs.writeFileSync(path.join(cwd, "scripts", "conductor.mjs"), "");
+  for (const d of ["scripts/lib", "scripts/test/functional", "scripts/test/sweeps"]) {
+    fs.mkdirSync(path.join(cwd, d), { recursive: true });
+  }
   // THE FIXTURE MUST BE TRACKED, and this is new with the re-pointed floor. `declared` is now
   // enumerated with `git ls-files`, which answers for the INDEX — a file written but never added is
   // invisible to it, the floor would compare a real count against 0, and every assertion written

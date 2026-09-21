@@ -262,5 +262,49 @@ test("a bare invocation with no subcommand prints usage and exits 0", () => {
 // 2. "update-epic allows archiving an openspec-lane epic once gate2 has a passing verdict": a
 //    passing Gate 2 requires the range, so the positive half of the pair is functional-only. Its
 //    refusals above are the half this half can prove.
-// 3. The three `.githooks/pre-commit` tests SPAWN a shell (`runHookAgainstFixture`), which 5.2's
-//    guard refuses in this half by construction.
+// 3. The three `.githooks/pre-commit` tests that RUN the hook against a fixture repository SPAWN a
+//    shell (`runHookAgainstFixture`), which 5.2's guard refuses in this half by construction. The
+//    hook's SHAPE is asserted HERE instead — it is a source read that needs no shell, so D5 puts it
+//    on the per-commit path, and the coupling check that requires both halves to move together is
+//    satisfied by that rather than worked around.
+
+// ──────────────── the pre-commit hook's SHAPE (moved here in 6.4) ────────────────
+//
+// THIS TEST READS FILES AND SPAWNS NOTHING, which is why it is in this half and not the other one.
+// What it watches is the gate whose failure mode is silence: a hook that stopped invoking the drift
+// script would commit with the two halves unpaired, and a hook that took the enrolment check back
+// inline would carry two implementations of one rule.
+
+const HOOK = path.join(path.dirname(ENGINE), "..", ".githooks", "pre-commit");
+
+test(".githooks/pre-commit exists, is executable, and runs the assertion half and the drift script", () => {
+  assert.ok(fs.existsSync(HOOK), ".githooks/pre-commit is missing");
+  assert.ok(fs.statSync(HOOK).mode & 0o111, ".githooks/pre-commit is not executable");
+  const hookText = fs.readFileSync(HOOK, "utf8");
+  // RE-POINTED WITH THE SPLIT (5.3), in the same commit as the glob it reads. The hook runs the
+  // ASSERTION HALF now — one process, one file set — and this assertion is about the half it runs
+  // and the isolation it runs it under, not about the literal pattern that used to be there.
+  assert.match(hookText, /node --test --test-isolation=none scripts\/test\/assert\/\*\.test\.mjs/,
+    ".githooks/pre-commit does not run the assertion half in one process");
+  assert.match(hookText, /set -e/, ".githooks/pre-commit does not fail the commit on a non-zero exit");
+  // The floor makes partial-suite runs possible in a way the single file did not, so the hook must
+  // cross-check the ran count against the declared count. WHAT IT MUST BE DERIVED FROM is the whole
+  // invariant and the reason the old `grep -Hc` assertion is gone: `declared` has to come from the
+  // TRACKED files of the half the runner was GIVEN (the index, via git ls-files), never from the
+  // shell's expansion of the runner's own pattern — the two shrinking in lockstep is exactly how a
+  // file renamed out of the glob used to drop from both sides at once and leave the floor blind.
+  assert.match(hookText, /declared=\$\(git ls-files 'scripts\/test\/assert\/\*\.test\.mjs'/,
+    ".githooks/pre-commit's floor does not enumerate the tracked files of the half its runner was given");
+  assert.doesNotMatch(hookText, /declared=\$\(grep /,
+    "the floor's declared count must not be the shell's expansion of the runner's own pattern");
+  // The enrolment check landed INLINE in 5.3, because a file in neither half is run by nothing and
+  // counted by nothing and the floor alone cannot see it. 6.4 RETIRED THAT COPY, handing all four
+  // checks to the drift script so one rule has one implementation — so this pins the handover, and
+  // pins BOTH halves of "one implementation at a time, never two".
+  assert.match(hookText, /node scripts\/test\/drift\.mjs/,
+    "the hook does not run the drift script, so nothing checks enrolment, the twin pairing, the " +
+    "diff coupling or the record's freshness on this commit");
+  assert.doesNotMatch(hookText, /grep -v -E '\^scripts\/test\//,
+    "the hook has taken the enrolment check back inline — the drift script owns it, and two " +
+    "implementations of one rule is the shape 6.4 exists to remove");
+});

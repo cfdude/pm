@@ -288,37 +288,15 @@ test("every dispatch-table subcommand is mentioned somewhere in README.md", () =
     `README.md's Commands section (or elsewhere in the doc) is missing a mention of: ${missing.join(", ")}`);
 });
 
-// ---------- pre-commit hook: mechanical test-before-commit safeguard ----------
-
-test(".githooks/pre-commit exists, is executable, and runs the full test suite", () => {
-  const hookPath = path.join(path.dirname(ENGINE), "..", ".githooks", "pre-commit");
-  assert.ok(fs.existsSync(hookPath), ".githooks/pre-commit is missing");
-  const stat = fs.statSync(hookPath);
-  assert.ok(stat.mode & 0o111, ".githooks/pre-commit is not executable");
-  const hookText = fs.readFileSync(hookPath, "utf8");
-  // RE-POINTED WITH THE SPLIT (5.3), in the same commit as the glob it reads. The hook runs the
-  // ASSERTION HALF now — one process, one file set — and this assertion is about the half it runs
-  // and the isolation it runs it under, not about the literal pattern that used to be there.
-  assert.match(hookText, /node --test --test-isolation=none scripts\/test\/assert\/\*\.test\.mjs/,
-    ".githooks/pre-commit does not run the assertion half in one process");
-  assert.match(hookText, /set -e/, ".githooks/pre-commit does not fail the commit on a non-zero exit");
-  // The floor makes partial-suite runs possible in a way the single file did not, so the hook must
-  // cross-check the ran count against the declared count. WHAT IT MUST BE DERIVED FROM is the whole
-  // invariant and the reason the old `grep -Hc` assertion is gone: `declared` has to come from the
-  // TRACKED files of the half the runner was GIVEN (the index, via git ls-files), never from the
-  // shell's expansion of the runner's own pattern — the two shrinking in lockstep is exactly how a
-  // file renamed out of the glob used to drop from both sides at once and leave the floor blind.
-  assert.match(hookText, /declared=\$\(git ls-files 'scripts\/test\/assert\/\*\.test\.mjs'/,
-    ".githooks/pre-commit's floor does not enumerate the tracked files of the half its runner was given");
-  assert.doesNotMatch(hookText, /declared=\$\(grep /,
-    "the floor's declared count must not be the shell's expansion of the runner's own pattern");
-  // And the enrolment check 5.3 lands inline, because a file in neither half is run by nothing and
-  // counted by nothing: the floor alone cannot see it (it compares two counts over a given set).
-  assert.match(hookText, /git ls-files 'scripts\/test\/\*\.test\.mjs' 'scripts\/test\/\*\*\/\*\.test\.mjs'/,
-    "the hook does not enumerate BOTH arms of the test-file set for the enrolment check");
-  assert.match(hookText, /grep -v -E '\^scripts\/test\/\(assert\|functional\|sweeps\)\//,
-    "the hook does not refuse a tracked test file that is in neither half");
-});
+// ---------- pre-commit hook: THE THREE TESTS THAT MUST SPAWN ----------
+//
+// THE HOOK'S SHAPE IS ASSERTED IN THE ASSERTION TWIN, and it moved there in 6.4: the test
+// that checked the hook EXISTS, is EXECUTABLE, runs the assertion half in one process, derives
+// the floor's `declared` from the index and hands the enrolment rule to the drift script reads
+// FILES AND SPAWNS NOTHING — so by D5's placement rule it belongs on the per-commit path, and
+// the fast half is where a hook that lost its drift step or took the enrolment check back
+// inline is caught first. What is left here is the part whose subject IS a shell: the hook run
+// against a fixture repository.
 
 test(".githooks/pre-commit aborts when the glob runs FEWER tests than are declared", () => {
   // The failure mode the glob introduces: a test file that stops being picked up. The suite
