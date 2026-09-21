@@ -2,7 +2,7 @@
 
 ## 0. Before any code
 
-- [ ] 0.1 Gate 1 — two fresh-context lenses over these artifacts BY PATH (lens A: is every WHEN/THEN in
+- [x] 0.1 Gate 1 — two fresh-context lenses over these artifacts BY PATH (lens A: is every WHEN/THEN in
       both spec files reachable and testable against today's 0.46.0 engine, and does any of it restate
       a requirement `verb-surface` already owns; lens B: absent edits — every `process.exit(` site that
       the conversion list misses, every `process.argv`/`process.env`/`process.stdout` reader the global
