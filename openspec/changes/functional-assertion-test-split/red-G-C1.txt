@@ -1,0 +1,22 @@
+G-C1 RED — the CI bucket step cannot go red on a failing suite.
+Clone of the repo at HEAD, with ONE deliberately failing file added UNTRACKED:
+  scripts/test/assert/zzz-gc1-proof.test.mjs  (assert.ok(false, "G-C1 proof"))
+The step body is extracted verbatim from .github/workflows/ci.yml and run with sh, from the clone root.
+
+$ sh old-assert-step.sh        # the shipped step
+assertion half: ran 1238, declared 1237
+OLD STEP EXIT=0
+OLD STEP EXIT (measured without a pipe)=0
+
+The runner's own summary, from /tmp/assert.out written by the same step:
+ℹ tests 1238
+ℹ pass 1237
+ℹ fail 1
+
+and node --test's exit status for that same glob, measured directly:
+node --test EXIT=1
+
+CONTROL — the SAME new step body, on the same clone with the failing file removed:
+  assertion half: ran 1237, declared 1237 ; NEW STEP EXIT=0 ; ℹ fail 0
+and the same new body with the failing file present: NEW STEP EXIT=1, the dumped output names
+the failing test twice and ends with '::error::the assertion half FAILED'.

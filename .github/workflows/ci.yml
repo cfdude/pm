@@ -40,6 +40,18 @@ jobs:
       # shape the invariant forbids — it aborts on every commit that has a functional half at all.
       # `git ls-files` rather than the shell's expansion of the runner's own pattern, so a glob that
       # stopped matching a file reports FEWER tests than the half declares and fires.
+      #
+      # EACH STEP'S STATUS IS THE RUNNER'S STATUS (Gate 2, G-C1), and it is written that way rather
+      # than left to a pipeline's. Every bucket step used to be
+      # `total=$(node --test … 2>&1 | tee /tmp/x.out | grep -m1 … | awk …)`: the step's status was
+      # `awk`'s, so a FAILING suite reported `ran N, declared N-1`, satisfied the floor, and exited 0.
+      # `set -e` does not trap it — `set -e` reads the status of the whole PIPELINE, which is its last
+      # command. Proven: one deliberately failing assert file → `assertion half: ran 1238, declared
+      # 1237`, `STEP EXIT=0`. The runner therefore writes to a file and its status is gated on
+      # EXPLICITLY, before any count is parsed: a bucket that ran and failed cannot be read as one
+      # that ran and passed. `set -o pipefail` would also work; the explicit gate is used because it
+      # also puts the failing output in the log, and because `grep -m1` closing the pipe early would
+      # otherwise make a PASSING suite's `tee` a status source too.
 
       - name: Syntax check
         # RE-POINTED WITH THE SPLIT (5.3), in the same commit as the first file that leaves
@@ -65,7 +77,12 @@ jobs:
         # same commit once it has been probed on that version.
         run: |
           set -e
-          total=$(node --test scripts/test/assert/*.test.mjs 2>&1 | tee /tmp/assert.out | grep -m1 -E '^(ℹ|#) tests ' | awk '{print $3}')
+          node --test scripts/test/assert/*.test.mjs > /tmp/assert.out 2>&1 || {
+            cat /tmp/assert.out
+            echo "::error::the assertion half FAILED — the runner's output is above"
+            exit 1
+          }
+          total=$(grep -m1 -E '^(ℹ|#) tests ' /tmp/assert.out | awk '{print $3}')
           declared=$(git ls-files 'scripts/test/assert/*.test.mjs' | xargs grep -c '^test(' | awk -F: '{s+=$NF} END {print s+0}')
           echo "assertion half: ran ${total}, declared ${declared}"
           if [ -z "$total" ] || [ "$total" -lt "$declared" ]; then
@@ -77,7 +94,12 @@ jobs:
         # present in CI and none can be exchanged for this run.
         run: |
           set -e
-          total=$(node --test scripts/test/functional/*.test.mjs 2>&1 | tee /tmp/functional.out | grep -m1 -E '^(ℹ|#) tests ' | awk '{print $3}')
+          node --test scripts/test/functional/*.test.mjs > /tmp/functional.out 2>&1 || {
+            cat /tmp/functional.out
+            echo "::error::the functional half FAILED — the runner's output is above"
+            exit 1
+          }
+          total=$(grep -m1 -E '^(ℹ|#) tests ' /tmp/functional.out | awk '{print $3}')
           declared=$(git ls-files 'scripts/test/functional/*.test.mjs' | xargs grep -c '^test(' | awk -F: '{s+=$NF} END {print s+0}')
           echo "functional half: ran ${total}, declared ${declared}"
           if [ -z "$total" ] || [ "$total" -lt "$declared" ]; then
@@ -89,7 +111,12 @@ jobs:
         # per-commit half. Its own floor, from its own tracked files.
         run: |
           set -e
-          total=$(node --test scripts/test/sweeps/*.test.mjs 2>&1 | tee /tmp/sweeps.out | grep -m1 -E '^(ℹ|#) tests ' | awk '{print $3}')
+          node --test scripts/test/sweeps/*.test.mjs > /tmp/sweeps.out 2>&1 || {
+            cat /tmp/sweeps.out
+            echo "::error::the sweep bucket FAILED — the runner's output is above"
+            exit 1
+          }
+          total=$(grep -m1 -E '^(ℹ|#) tests ' /tmp/sweeps.out | awk '{print $3}')
           declared=$(git ls-files 'scripts/test/sweeps/*.test.mjs' | xargs grep -c '^test(' | awk -F: '{s+=$NF} END {print s+0}')
           echo "sweep bucket: ran ${total}, declared ${declared}"
           if [ -z "$total" ] || [ "$total" -lt "$declared" ]; then
